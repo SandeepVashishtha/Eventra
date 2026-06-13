@@ -1,17 +1,19 @@
 /**
  * Route Prefetching Utilities
- * 
+ *
  * Provides functions to pre-load lazy-loaded route components.
  */
 
 const prefetchMap = new Map();
+const MAX_PREFETCH_ENTRIES = 50; // 🔥 FIX: cap the module-level map to prevent memory leak across long sessions
 const MAX_CONCURRENT_PREFETCHES = 4;
 
 async function asyncPool(iterable, iteratorFn, concurrency) {
+  const items = Array.isArray(iterable) ? iterable : [...iterable];
   const results = [];
   const executing = new Set();
 
-  for (const [index, item] of iterable.entries()) {
+  for (const [index, item] of items.entries()) {
     const promise = Promise.resolve().then(() => iteratorFn(item, index));
     results.push(promise);
     executing.add(promise);
@@ -38,6 +40,16 @@ export const prefetchRoute = async (importFn, key) => {
   try {
     const promise = importFn();
     prefetchMap.set(key, promise);
+
+    // 🔥 FIX: Bound the prefetchMap to prevent unbounded growth across long
+    // browsing sessions. Drop the oldest entry (insertion-order: first key in
+    // the Map) once we exceed the cap. The module loader has its own cache, so
+    // we don't lose correctness by evicting.
+    if (prefetchMap.size > MAX_PREFETCH_ENTRIES) {
+      const oldestKey = prefetchMap.keys().next().value;
+      if (oldestKey !== key) prefetchMap.delete(oldestKey);
+    }
+
     await promise;
     return promise;
   } catch (error) {

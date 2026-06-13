@@ -1,4 +1,4 @@
-import { AlertCircle, ChevronDown, Search, X } from "lucide-react";
+import { AlertCircle, ChevronDown, Search, X, Filter, Bookmark, RefreshCw } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import SEOHead from "../../components/SEOHead";
@@ -7,64 +7,146 @@ import ProjectHero from "./ProjectHero";
 import ProjectCard from "./ProjectCard";
 import ProjectCTA from "./ProjectCTA";
 
-import mockProjects from "./mockProjectsData.json";
-import { apiUtils, API_ENDPOINTS } from "../../config/api";
+import { projectService } from "../../services/projectService";
 import { safeJsonParse } from "../../utils/safeJsonParse";
+import useDebounce from "../../hooks/useDebounce.js";
 
+// Reusable Custom Dropdown Component
+const CustomDropdown = ({ value, options, onChange, placeholder, icon: Icon }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
 
-// Modern custom styled search input
-const ModernSearchInput = ({ value, onChange, placeholder }) => (
-  <div className="relative flex items-center w-full">
-    <Search className="absolute left-4 text-gray-400 dark:text-gray-500 w-5 h-5 pointer-events-none" />
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleKeyDown = (event, onSelect) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onSelect();
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      setIsOpen(false);
+    }
+  };
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        onKeyDown={(e) => e.key === "Escape" && setIsOpen(false)}
+        className="flex items-center justify-between gap-2 px-4 py-2.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm font-medium text-zinc-700 dark:text-zinc-200 hover:border-zinc-300 dark:hover:border-zinc-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all min-w-[160px] shadow-sm"
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+      >
+        <span className="flex items-center gap-2 truncate">
+          {Icon && <Icon size={16} className="text-zinc-500 dark:text-zinc-400 shrink-0" />}
+          <span className="truncate">{value || placeholder}</span>
+        </span>
+        <ChevronDown
+          size={16}
+          className={`text-zinc-400 transition-transform duration-200 shrink-0 ${isOpen ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.ul
+            initial={{ opacity: 0, y: -8, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.95 }}
+            transition={{ duration: 0.15 }}
+            className="absolute z-50 mt-2 w-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-xl overflow-hidden"
+            role="listbox"
+          >
+            {options.map((option) => {
+              const isSelected = value === option.value;
+              return (
+                <li
+                  key={option.value}
+                  role="option"
+                  tabIndex={0}
+                  aria-selected={isSelected}
+                  onClick={() => {
+                    onChange(option.value);
+                    setIsOpen(false);
+                  }}
+                  onKeyDown={(e) =>
+                    handleKeyDown(e, () => {
+                      onChange(option.value);
+                      setIsOpen(false);
+                    })
+                  }
+                  className={`px-4 py-2.5 text-sm cursor-pointer transition-colors ${
+                    isSelected
+                      ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium"
+                      : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700/50"
+                  }`}
+                >
+                  {option.label}
+                </li>
+              );
+            })}
+          </motion.ul>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+// Modern Search Input
+const SearchInput = ({ value, onChange, placeholder }) => (
+  <div className="relative flex-1 group">
+    <Search
+      size={18}
+      className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-blue-500 transition-colors pointer-events-none"
+    />
     <input
       type="text"
       value={value}
       onChange={onChange}
       placeholder={placeholder}
-      className="w-full pl-12 pr-10 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black dark:focus:border-white transition-all shadow-sm"
+      className="w-full pl-11 pr-10 py-2.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm"
     />
     {value && (
       <button
         onClick={() => onChange({ target: { value: "" } })}
-        className="absolute right-4 text-gray-400 dark:text-gray-500 hover:text-black dark:hover:text-white transition-colors"
+        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-lg transition-all"
+        aria-label="Clear search"
       >
-        <X className="w-4 h-4" />
+        <X size={14} />
       </button>
     )}
   </div>
 );
 
-// Skeleton loader for project cards while data is loading
+// Skeleton Loader
 const ProjectCardSkeleton = () => (
-  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden animate-pulse">
-    <div className="h-40 bg-gray-100 dark:bg-gray-700"></div>
-    <div className="p-6">
-      <div className="h-6 bg-gray-200 dark:bg-gray-600 rounded w-3/4 mb-4"></div>
-      <div className="h-4 bg-gray-100 dark:bg-gray-600 rounded w-full mb-2"></div>
-      <div className="h-4 w-5/6 bg-gray-100 dark:bg-gray-600 rounded mb-4"></div>
-      <div className="flex flex-wrap gap-2 mb-4">
-        <div className="h-6 bg-gray-100 dark:bg-gray-600 rounded-full w-16"></div>
-        <div className="h-6 bg-gray-100 dark:bg-gray-600 rounded-full w-24"></div>
+  <div className="bg-white dark:bg-zinc-800 rounded-2xl border border-zinc-200 dark:border-zinc-700 overflow-hidden animate-pulse">
+    <div className="h-48 bg-zinc-100 dark:bg-zinc-700"></div>
+    <div className="p-5 space-y-3">
+      <div className="h-5 bg-zinc-100 dark:bg-zinc-700 rounded w-3/4"></div>
+      <div className="h-4 bg-zinc-100 dark:bg-zinc-700 rounded w-full"></div>
+      <div className="h-4 bg-zinc-100 dark:bg-zinc-700 rounded w-5/6"></div>
+      <div className="flex gap-2 pt-2">
+        <div className="h-6 bg-zinc-100 dark:bg-zinc-700 rounded-full w-16"></div>
+        <div className="h-6 bg-zinc-100 dark:bg-zinc-700 rounded-full w-20"></div>
+        <div className="h-6 bg-zinc-100 dark:bg-zinc-700 rounded-full w-14"></div>
       </div>
-      <div className="flex items-center justify-between mb-4">
-        <div className="h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-700"></div>
-        <div className="h-4 bg-gray-100 dark:bg-gray-600 rounded w-1/3"></div>
-      </div>
-      <div className="flex flex-wrap gap-2 mb-4">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="h-6 bg-gray-100 dark:bg-gray-600 rounded-full w-16"></div>
-        ))}
-      </div>
-      <div className="flex items-center justify-between mt-4">
-        <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-lg w-1/3"></div>
-        <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-lg w-1/3"></div>
+      <div className="flex items-center justify-between pt-3">
+        <div className="h-8 w-8 rounded-full bg-zinc-100 dark:bg-zinc-700"></div>
+        <div className="h-8 bg-zinc-100 dark:bg-zinc-700 rounded-lg w-24"></div>
       </div>
     </div>
   </div>
 );
-
-// import ModernSearchInput from "../../components/common/ModernSearchInput";
-
 
 const ProjectGallery = () => {
   return (
@@ -85,14 +167,21 @@ const InnerGallery = () => {
   const [filterCategory, setFilterCategory] = useState("all");
   const [sortBy, setSortBy] = useState("recent");
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [categories, setCategories] = useState(["all"]);
   const [error, setError] = useState("");
-
-  const [categoryOpen, setCategoryOpen] = useState(false);
-  const [sortOpen, setSortOpen] = useState(false);
-
   const [bookmarks, setBookmarks] = useState([]);
 
+  const cardSectionRef = useRef(null);
+
+  const sortByOptions = [
+    { value: "recent", label: "Recently Updated" },
+    { value: "stars", label: "Most Stars" },
+    { value: "forks", label: "Most Forks" },
+    { value: "issues", label: "Most Issues" },
+  ];
+
+  // Load bookmarks from localStorage
   useEffect(() => {
     const saved = localStorage.getItem("eventra_bookmarked_projects");
     if (saved) {
@@ -100,7 +189,7 @@ const InnerGallery = () => {
     }
   }, []);
 
-  const handleBookmarkToggle = (projectId) => {
+  const handleBookmarkToggle = useCallback((projectId) => {
     setBookmarks((prev) => {
       const updated = prev.includes(projectId)
         ? prev.filter((id) => id !== projectId)
@@ -108,120 +197,71 @@ const InnerGallery = () => {
       localStorage.setItem("eventra_bookmarked_projects", JSON.stringify(updated));
       return updated;
     });
-  };
-
-  const cardSectionRef = useRef(null);
-
-  const sortByLabels = {
-    recent: "Recently Updated",
-    stars: "Most Stars",
-    forks: "Most Forks",
-    issues: "Most Issues",
-  };
-
-  const handleOptionKeyDown = (event, onSelect, onClose) => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      onSelect();
-    } else if (event.key === "Escape") {
-      event.preventDefault();
-      onClose();
-    }
-  };
+  }, []);
 
   const fetchProjects = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError("");
+
+      const publicRequestConfig = { skipAuth: true, withCredentials: false };
+
+      const response = await projectService.getAllProjects(publicRequestConfig);
+      const projectsData = response.data;
+      const projectsList = Array.isArray(projectsData)
+        ? projectsData
+        : projectsData?.content || projectsData?.projects || [];
+
+      const normalizedProjects = projectsList.map((p) => ({
+        ...p,
+        image: p.thumbnailUrl || p.image || "/Eventra.png",
+        stars: p.upvotes !== undefined ? p.upvotes : (p.stars || 0),
+        techStack: p.techStack || [],
+        author: p.author || "Anonymous",
+        status: p.status || "Active",
+        difficulty: p.difficulty || "Intermediate",
+      }));
+
+      setProjects(normalizedProjects);
+
       try {
-        setIsLoading(true);
-        setError("");
-
-        const publicRequestConfig = {
-          skipAuth: true,
-          withCredentials: false,
-        };
-
-        // --- PRODUCTION LOGIC: attempt real API call to Spring Boot backend ---
-        const response = await apiUtils.get(
-          API_ENDPOINTS.PROJECTS.LIST,
-          publicRequestConfig
-        );
-        const projectsData = response.data;
-const projectsList = Array.isArray(projectsData)
-  ? projectsData
-  : projectsData?.content || projectsData?.projects || [];
-if (projectsList.length > 0) {
-  setProjects(projectsList);
-          // Attempt to fetch categories from API
-          try {
-            const categoriesResponse = await apiUtils.get(
-              API_ENDPOINTS.PROJECTS.CATEGORIES,
-              publicRequestConfig
-            );
-            const categoriesData = categoriesResponse.data;
-            setCategories(["all", ...(Array.isArray(categoriesData) ? categoriesData : [])]);
-          } catch {
-            // derive categories from API project data if categories endpoint throws
-            const uniqueCategories = [...new Set(projectsData.map(p => p?.category).filter(Boolean))];
-            setCategories(["all", ...uniqueCategories]);
-          }
-          return; // exit successfully
-        }
-
-        // --- MOCK DATA FALLBACK: API returned empty or invalid array ---
-        setProjects(mockProjects);
-        const mockUniqueCategories = [
-          ...new Set(mockProjects.map((p) => p?.category).filter(Boolean)),
-        ];
-        setCategories(["all", ...mockUniqueCategories]);
-      } catch (err) {
-        if (err?.status === 401) {
-          setProjects(mockProjects);
-          const fallbackCategories = [
-            ...new Set(mockProjects.map((p) => p?.category).filter(Boolean)),
-          ];
-          setCategories(["all", ...fallbackCategories]);
-          return;
-        }
-
-        // Always gracefully fall back to mock data when API is unavailable
-        setProjects(mockProjects);
-        const fallbackCategories = [
-          ...new Set(mockProjects.map((p) => p?.category).filter(Boolean)),
-        ];
-        setCategories(["all", ...fallbackCategories]);
-      } finally {
-        setIsLoading(false);
+        const categoriesResponse = await projectService.getCategories(publicRequestConfig);
+        const categoriesData = categoriesResponse.data;
+        setCategories(["all", ...(Array.isArray(categoriesData) ? categoriesData : [])]);
+      } catch {
+        const uniqueCategories = [...new Set(normalizedProjects.map((p) => p?.category).filter(Boolean))];
+        setCategories(["all", ...uniqueCategories]);
       }
+    } catch (err) {
+      console.error("Failed to fetch projects:", err);
+      setError("Unable to load projects. Please try again later.");
+      setProjects([]);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   useEffect(() => {
     fetchProjects();
   }, [fetchProjects]);
 
- const filteredAndSortedProjects = (Array.isArray(projects) ? projects : [])
+  const filteredAndSortedProjects = (Array.isArray(projects) ? projects : [])
     .filter((project) => {
       if (filterCategory === "bookmarked") {
-        if (!bookmarks.includes(project.id)) {
-          return false;
-        }
-      } else if (
-        filterCategory !== "all" &&
-        project.category !== filterCategory
-      ) {
+        return bookmarks.includes(project.id);
+      } else if (filterCategory !== "all" && project.category !== filterCategory) {
         return false;
       }
 
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-
+      if (debouncedSearchQuery) {
+        const query = debouncedSearchQuery.toLowerCase();
         return (
           project?.title?.toLowerCase()?.includes(query) ||
           project?.description?.toLowerCase()?.includes(query) ||
           project?.category?.toLowerCase()?.includes(query) ||
           project?.author?.toLowerCase()?.includes(query) ||
           (Array.isArray(project?.techStack) &&
-            project.techStack.some((tech) =>
-              tech?.toLowerCase()?.includes(query)
-            ))
+            project.techStack.some((tech) => tech?.toLowerCase()?.includes(query)))
         );
       }
 
@@ -231,240 +271,103 @@ if (projectsList.length > 0) {
       switch (sortBy) {
         case "recent":
           return new Date(b.lastUpdated) - new Date(a.lastUpdated);
-
         case "stars":
           return (b.stars || 0) - (a.stars || 0);
-
         case "forks":
           return (b.forks || 0) - (a.forks || 0);
-
         case "issues":
           return (b.openIssues || 0) - (a.openIssues || 0);
-
         default:
           return 0;
       }
     });
 
   const scrollToCard = () => {
-    cardSectionRef.current?.scrollIntoView({
-      behavior: "smooth",
-    });
+    cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const clearAllFilters = () => {
+    setFilterCategory("all");
+    setSearchQuery("");
+    setSortBy("recent");
+  };
+
+  const categoryOptions = [
+    { value: "all", label: "All Categories" },
+    { value: "bookmarked", label: "★ Saved Projects" },
+    ...categories.filter((c) => c !== "all").map((cat) => ({ value: cat, label: cat })),
+  ];
+
+  const hasActiveFilters = searchQuery || filterCategory !== "all" || sortBy !== "recent";
+
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-l from-sky-50 via-white to-white dark:from-indigo-950 dark:to-black">
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-zinc-50 via-white to-blue-50/30 dark:from-zinc-950 dark:via-zinc-900 dark:to-blue-950/20">
       {/* HERO */}
       <ProjectHero scrollToCard={scrollToCard} />
 
       {/* MAIN CONTENT */}
-      <div
-        ref={cardSectionRef}
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
-      >
-        {/* SEARCH + FILTER */}
+      <div ref={cardSectionRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        {/* FILTER BAR */}
         <motion.div
-          className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 mb-8"
-          style={{
-            boxShadow: "0 10px 25px rgba(59, 130, 246, 0.08)",
-          }}
+          className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl p-4 sm:p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 mb-8 shadow-lg shadow-zinc-200/50 dark:shadow-zinc-950/50"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          data-aos="fade-up"
-          data-aos-duration="800"
+          transition={{ duration: 0.5, delay: 0.1 }}
         >
-          <div className="flex flex-col md:flex-row gap-4 md:items-center">
-            {/* SEARCH */}
-            <div className="flex-1">
-              <ModernSearchInput
+          <div className="flex flex-col gap-4">
+            {/* Top Row: Search + Clear */}
+            <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+              <SearchInput
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search projects by name, tech stack, or category..."
               />
+
+              {hasActiveFilters && (
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  onClick={clearAllFilters}
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-sm font-medium rounded-xl transition-all shrink-0"
+                >
+                  <X size={16} />
+                  Clear Filters
+                </motion.button>
+              )}
             </div>
 
-            {/* FILTERS */}
-            <div className="flex flex-col sm:flex-row gap-3 md:gap-4 w-full md:w-auto">
-              {/* CATEGORY */}
-              <div className="relative flex-1 sm:flex-none">
-                <motion.div
-                  className="cursor-pointer relative"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  data-aos="zoom-in"
-                  data-aos-delay="200"
-                >
-                  <button
-                    type="button"
-                    className="flex items-center justify-between px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-800 hover:ring-2 hover:ring-black/20 transition-all min-w-[180px]"
-                    onClick={() =>
-                      setCategoryOpen((prev) => !prev)
-                    }
-                    onKeyDown={(event) => {
-                      if (event.key === "Escape") {
-                        setCategoryOpen(false);
-                      }
-                    }}
-                    aria-haspopup="listbox"
-                    aria-expanded={categoryOpen}
-                    aria-controls="project-category-options"
-                  >
-                    <span className="text-gray-700 dark:text-gray-200">
-                      {filterCategory === "all"
-                        ? "All Categories"
-                        : filterCategory === "bookmarked"
-                        ? "Saved Projects"
-                        : filterCategory}
-                    </span>
+            {/* Bottom Row: Dropdowns + Result Count */}
+            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+              <div className="flex flex-wrap gap-3">
+                <CustomDropdown
+                  value={filterCategory}
+                  options={categoryOptions}
+                  onChange={setFilterCategory}
+                  placeholder="Category"
+                  icon={Filter}
+                />
 
-                    <ChevronDown
-                      className={`ml-2 text-gray-400 dark:text-gray-500 transition-transform ${
-                        categoryOpen ? "rotate-180" : ""
-                      }`}
-                      aria-hidden="true"
-                    />
-                  </button>
-
-                  <AnimatePresence>
-                    {categoryOpen && (
-                      <motion.ul
-                        id="project-category-options"
-                        role="listbox"
-                        aria-label="Project category"
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        className="absolute z-10 mt-2 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
-                      >
-                        {["all", "bookmarked", ...categories.filter(c => c !== "all")].map((cat) => {
-                          const selectCategory = () => {
-                            setFilterCategory(cat);
-                            setCategoryOpen(false);
-                          };
-                          return (
-                            <li
-                              key={cat}
-                              role="option"
-                              tabIndex={0}
-                              aria-selected={filterCategory === cat}
-                              onClick={selectCategory}
-                              onKeyDown={(event) =>
-                                handleOptionKeyDown(
-                                  event,
-                                  selectCategory,
-                                  () => setCategoryOpen(false)
-                                )
-                              }
-                              className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 focus:outline-none cursor-pointer text-gray-700 dark:text-gray-300"
-                            >
-                              {cat === "all"
-                                ? "All Categories"
-                                : cat === "bookmarked"
-                                ? "★ Saved Projects"
-                                : cat}
-                            </li>
-                          );
-                        })}
-                      </motion.ul>
-                    )}
-                  </AnimatePresence>
-                </motion.div>
+                <CustomDropdown
+                  value={sortBy}
+                  options={sortByOptions}
+                  onChange={setSortBy}
+                  placeholder="Sort by"
+                />
               </div>
 
-              {/* SORT */}
-              <div className="relative flex-1 sm:flex-none">
-                <motion.div
-                  className="cursor-pointer relative"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  data-aos="zoom-in"
-                  data-aos-delay="300"
+              {!isLoading && (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-sm text-zinc-500 dark:text-zinc-400"
                 >
-                  <button
-                    type="button"
-                    className="flex items-center justify-between px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-700 hover:ring-2 hover:ring-black/20 transition-all min-w-[200px]"
-                    onClick={() => setSortOpen((prev) => !prev)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Escape") {
-                        setSortOpen(false);
-                      }
-                    }}
-                    aria-haspopup="listbox"
-                    aria-expanded={sortOpen}
-                    aria-controls="project-sort-options"
-                  >
-                    <span className="text-gray-700 dark:text-gray-300">
-                      {sortByLabels[sortBy]}
-                    </span>
-
-                    <ChevronDown
-                      className={`ml-2 text-gray-400 dark:text-gray-500 transition-transform ${
-                        sortOpen ? "rotate-180" : ""
-                      }`}
-                      aria-hidden="true"
-                    />
-                  </button>
-
-                  <AnimatePresence>
-                    {sortOpen && (
-                      <motion.ul
-                        id="project-sort-options"
-                        role="listbox"
-                        aria-label="Sort projects"
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        className="absolute z-10 mt-2 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
-                      >
-                        {Object.entries(sortByLabels).map(
-                          ([key, label]) => {
-                            const selectSort = () => {
-                              setSortBy(key);
-                              setSortOpen(false);
-                            };
-                            return (
-                              <li
-                                key={key}
-                                role="option"
-                                tabIndex={0}
-                                aria-selected={sortBy === key}
-                                onClick={selectSort}
-                                onKeyDown={(event) =>
-                                  handleOptionKeyDown(
-                                    event,
-                                    selectSort,
-                                    () => setSortOpen(false)
-                                  )
-                                }
-                                className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 focus:outline-none cursor-pointer text-gray-700 dark:text-gray-300"
-                              >
-                                {label}
-                              </li>
-                            );
-                          }
-                        )}
-                      </motion.ul>
-                    )}
-                  </AnimatePresence>
-                </motion.div>
-              </div>
-
-              {/* CLEAR FILTERS */}
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                className="px-4 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-sm font-semibold rounded-xl flex items-center gap-2 hover:from-blue-500 hover:to-cyan-500 transition-all shadow-lg"
-                onClick={() => {
-                  setFilterCategory("all");
-                  setSearchQuery("");
-                  setSortBy("recent");
-                }}
-                data-aos="zoom-in"
-                data-aos-delay="400"
-              >
-                <X className="w-4 h-4 animate-pulse" />
-                Clear Filters
-              </motion.button>
+                  <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                    {filteredAndSortedProjects.length}
+                  </span>{" "}
+                  project{filteredAndSortedProjects.length !== 1 ? "s" : ""} found
+                </motion.p>
+              )}
             </div>
           </div>
         </motion.div>
@@ -472,111 +375,110 @@ if (projectsList.length > 0) {
         {/* CONTENT */}
         <AnimatePresence mode="wait">
           {isLoading ? (
-            <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            <motion.div
+              key="skeleton"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+            >
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <ProjectCardSkeleton
-                  key={`skeleton-${i}`}
-                />
+                <ProjectCardSkeleton key={`skeleton-${i}`} />
               ))}
-            </div>
+            </motion.div>
           ) : error ? (
             <motion.div
-              className="bg-red-50 dark:bg-red-900/40 border border-red-200 dark:border-red-700 rounded-xl p-8 text-center"
+              key="error"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/30 rounded-2xl p-8 text-center max-w-lg mx-auto"
             >
-              <AlertCircle className="mx-auto h-12 w-12 text-red-400" />
-
-              <h3 className="mt-2 text-lg font-medium text-red-900 dark:text-red-200">
+              <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertCircle className="h-8 w-8 text-red-500 dark:text-red-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-red-900 dark:text-red-200 mb-2">
                 Error loading projects
               </h3>
-
-              <p className="mt-1 text-sm text-red-700 dark:text-red-300">
-                {error}
-              </p>
-
+              <p className="text-sm text-red-700 dark:text-red-300 mb-6">{error}</p>
               <button
                 type="button"
                 onClick={fetchProjects}
                 disabled={isLoading}
-                className="mt-6 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white disabled:opacity-60 disabled:cursor-not-allowed"
-               aria-label="button">
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
                 Try Again
               </button>
             </motion.div>
           ) : filteredAndSortedProjects.length > 0 ? (
             <motion.div
-              className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr"
+              key="projects"
               initial="hidden"
               animate="show"
+              exit={{ opacity: 0 }}
               variants={{
                 hidden: { opacity: 0 },
                 show: {
                   opacity: 1,
-                  transition: {
-                    staggerChildren: 0.1,
-                  },
+                  transition: { staggerChildren: 0.08 },
                 },
               }}
-              data-aos="fade-up"
-              data-aos-delay="500"
+              className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr"
             >
-              {filteredAndSortedProjects.map(
-                (project, index) => (
-                  <ProjectCard
-                    key={project.id}
-                    project={project}
-                    index={index}
-                    isBookmarked={bookmarks.includes(project.id)}
-                    onBookmarkToggle={handleBookmarkToggle}
-                  />
-                )
-              )}
+              {filteredAndSortedProjects.map((project, index) => (
+                <ProjectCard
+                  key={project.id}
+                  project={project}
+                  index={index}
+                  isBookmarked={bookmarks.includes(project.id)}
+                  onBookmarkToggle={handleBookmarkToggle}
+                />
+              ))}
             </motion.div>
           ) : (
             <motion.div
-              className="relative overflow-hidden rounded-3xl p-10 text-center shadow-xl border border-gray-100 dark:border-gray-900 bg-white dark:bg-gray-800"
-              initial={{
-                opacity: 0,
-                y: 30,
-                scale: 0.95,
-              }}
-              animate={{
-                opacity: 1,
-                y: 0,
-                scale: 1,
-              }}
+              key="empty"
+              initial={{ opacity: 0, y: 30, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.4 }}
+              className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl p-10 text-center max-w-lg mx-auto shadow-lg"
             >
-              <div className="mx-auto max-w-sm relative z-10">
-                <div className="flex justify-center items-center w-20 h-20 rounded-full bg-white dark:bg-gray-700 shadow-lg mx-auto border border-sky-100 dark:border-gray-600">
-                  <Search className="h-10 w-10 text-black dark:text-white" />
-                </div>
+              <div className="w-20 h-20 bg-zinc-100 dark:bg-zinc-700 rounded-full flex items-center justify-center mx-auto mb-6">
+                {hasActiveFilters ? (
+                  <Search className="h-10 w-10 text-zinc-400 dark:text-zinc-500" />
+                ) : (
+                  <Bookmark className="h-10 w-10 text-zinc-400 dark:text-zinc-500" />
+                )}
+              </div>
 
-                <h3 className="mt-6 text-2xl font-bold text-gray-900 dark:text-gray-100">
-                  No Projects Found
-                </h3>
+              <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mb-3">
+                {hasActiveFilters ? "No Projects Found" : "No Projects Yet"}
+              </h3>
 
-                <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">
-                  {searchQuery ||
-                  filterCategory !== "all"
-                    ? "We couldn’t find any projects with your filters."
-                    : "No projects available right now."}
-                </p>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-8 max-w-sm mx-auto">
+                {hasActiveFilters
+                  ? "We couldn't find any projects matching your filters. Try adjusting your search or filters."
+                  : "No projects available right now. Be the first to share your creation with the community!"}
+              </p>
 
-                <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => {
-                      setFilterCategory("all");
-                      setSearchQuery("");
-                      setSortBy("recent");
-                    }}
-                    className="px-6 py-2.5 text-sm font-medium rounded-lg text-white bg-black hover:bg-zinc-800 shadow-lg transition-all"
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                {hasActiveFilters ? (
+                  <button
+                    onClick={clearAllFilters}
+                    className="px-6 py-2.5 text-sm font-medium rounded-xl text-white bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors shadow-lg"
                   >
-                    Clear Filters
-                  </motion.button>
-                </div>
+                    Clear All Filters
+                  </button>
+                ) : (
+                  <a
+                    href="/submit-project"
+                    className="px-6 py-2.5 text-sm font-medium rounded-xl text-white bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors shadow-lg inline-flex items-center justify-center gap-2"
+                  >
+                    Submit a Project
+                  </a>
+                )}
               </div>
             </motion.div>
           )}

@@ -1,0 +1,164 @@
+name: Markdown Link Validator
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Scans all .md files for dead/broken links on every PR and push to master.
+# Uses lychee-action with the existing markdown-link-check-config.json so
+# ignore patterns (LinkedIn, live site) are respected automatically.
+#
+# On PRs  — only files changed in the PR are checked (fast, targeted).
+# On push — the full repo is scanned to catch any link rot over time.
+#
+# Results are posted as a PR comment and surfaced as a workflow annotation
+# so contributors see exactly which file + line contains a broken link.
+# ══════════════════════════════════════════════════════════════════════════════
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - '**/*.md'
+  push:
+    branches: [master]
+    paths:
+      - '**/*.md'
+
+concurrency:
+  group: markdown-link-check-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  check-links:
+    name: Check Markdown Links
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1. Checkout ───────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ── 2. Resolve which .md files to scan ───────────────────────────────
+      #   PR  → only changed .md files (fast feedback loop)
+      #   Push → all .md files in the repo (full scan)
+      - name: Resolve target markdown files
+        id: targets
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch origin ${{ github.event.pull_request.base.ref }}
+            FILES=$(git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD \
+              | grep '\.md$' || true)
+          else
+            FILES=$(find . -name '*.md' \
+              -not -path './.git/*' \
+              -not -path './node_modules/*' \
+              | sort)
+          fi
+
+          if [ -z "$FILES" ]; then
+            echo "No markdown files to check."
+            echo "has_files=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Files to check:"
+            echo "$FILES"
+            # Write to a temp file so lychee can consume it
+            echo "$FILES" > /tmp/md-targets.txt
+            echo "has_files=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ── 3. Restore lychee URL cache ───────────────────────────────────────
+      - name: Restore lychee cache
+        if: steps.targets.outputs.has_files == 'true'
+        uses: actions/cache@v4
+        with:
+          path: .lychee-cache
+          key: lychee-${{ runner.os }}-${{ hashFiles('**/*.md') }}
+          restore-keys: |
+            lychee-${{ runner.os }}-
+
+      # ── 4. Run lychee link checker ────────────────────────────────────────
+      - name: Check links with lychee
+        if: steps.targets.outputs.has_files == 'true'
+        id: lychee
+        uses: lycheeverse/lychee-action@v2
+        with:
+          # Feed the resolved file list; lychee accepts newline-separated paths
+          args: >-
+            --cache
+            --no-progress
+            --scheme http,https
+            --fail-if-empty false
+            $(cat /tmp/md-targets.txt | tr '\n' ' ')
+          output: /tmp/lychee-report.md
+          fail: false          # We handle failure ourselves to post a PR comment first
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── 5. Post result as PR comment ──────────────────────────────────────
+      - name: Post link-check report as PR comment
+        if: >
+          github.event_name == 'pull_request' &&
+          steps.targets.outputs.has_files == 'true'
+        continue-on-error: true
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs   = require('fs');
+            const path = '/tmp/lychee-report.md';
+
+            const exitCode  = ${{ steps.lychee.outputs.exit_code || 0 }};
+            const hasBroken = exitCode !== 0;
+
+            let reportBody = '';
+            try {
+              reportBody = fs.existsSync(path) ? fs.readFileSync(path, 'utf8').trim() : '';
+            } catch (_) {}
+
+            const header = hasBroken
+              ? '## ❌ Broken Markdown Links Detected\n\nThe following dead links were found in this PR. Please fix them before merging.\n'
+              : '## ✅ Markdown Link Check Passed\n\nAll links in the changed Markdown files are reachable.\n';
+
+            const body = reportBody
+              ? `${header}\n<details><summary>Full lychee report</summary>\n\n${reportBody}\n</details>\n`
+              : header;
+
+            const footer = '\n\n---\n_Markdown Link Validator · GSSoC\'26_';
+
+            const { owner, repo } = context.repo;
+            const prNumber = context.payload.pull_request.number;
+
+            // Find and update an existing bot comment, or create a new one
+            const { data: comments } = await github.rest.issues.listComments({
+              owner, repo, issue_number: prNumber,
+            });
+            const existing = comments.find(c =>
+              c.user.type === 'Bot' &&
+              (c.body.includes('Markdown Link Check') || c.body.includes('Broken Markdown Links'))
+            );
+
+            const fullBody = body + footer;
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner, repo, comment_id: existing.id, body: fullBody,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: prNumber, body: fullBody,
+              });
+            }
+
+      # ── 6. Fail the job if broken links were found ────────────────────────
+      - name: Fail if broken links found
+        if: steps.targets.outputs.has_files == 'true'
+        run: |
+          EXIT_CODE="${{ steps.lychee.outputs.exit_code || 0 }}"
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "::error::Broken links detected in Markdown files. See the PR comment or lychee report for details."
+            exit 1
+          fi
+          echo "All Markdown links are valid."

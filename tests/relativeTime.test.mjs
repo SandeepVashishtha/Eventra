@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import { getRelativeTime, getSmartDateLabel } from "../src/utils/relativeTime.js";
 
-assert.equal(getRelativeTime(null), null, "null input returns null");
-assert.equal(getRelativeTime(""), null, "empty string returns null");
-assert.equal(getRelativeTime("invalid date"), null, "invalid date returns null");
+assert.equal(getRelativeTime(null), "—", "null input returns fallback");
+assert.equal(getRelativeTime(undefined), "—", "undefined input returns fallback");
+assert.equal(getRelativeTime(""), "—", "empty string returns fallback");
+assert.equal(getRelativeTime("invalid date"), "—", "invalid date returns fallback");
+assert.equal(getRelativeTime("2026-02-30T99:99:99"), "—", "malformed date string returns fallback");
 
 const now = new Date();
 const future = new Date(now.getTime() + 30000);

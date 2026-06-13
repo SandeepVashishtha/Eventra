@@ -1,19 +1,12 @@
 import assert from 'node:assert/strict';
 import { beforeEach, describe, it } from 'node:test';
-import {
-  saveFeedback,
-  getEventFeedback,
-  getAverageRating,
-  getRecommendationStats,
-  getTagStats,
-  getUserFeedback,
-  hasUserSubmittedFeedback,
-  deleteFeedback,
-  exportFeedbackAsCSV,
-  clearAllFeedback,
-} from '../src/utils/feedbackUtils.js';
+import { JSDOM } from 'jsdom';
 
 const storage = new Map();
+const dom = new JSDOM('');
+
+globalThis.window = dom.window;
+globalThis.document = dom.window.document;
 globalThis.localStorage = {
   getItem(key) {
     return storage.has(key) ? storage.get(key) : null;
@@ -28,6 +21,19 @@ globalThis.localStorage = {
     storage.clear();
   },
 };
+
+const {
+  saveFeedback,
+  getEventFeedback,
+  getAverageRating,
+  getRecommendationStats,
+  getTagStats,
+  getUserFeedback,
+  hasUserSubmittedFeedback,
+  deleteFeedback,
+  exportFeedbackAsCSV,
+  clearAllFeedback,
+} = await import('../src/utils/feedbackUtils.js');
 
 const expect = (actual) => ({
   toBe(expected) {
@@ -45,6 +51,9 @@ const expect = (actual) => ({
   not: {
     toBeNull() {
       assert.notStrictEqual(actual, null);
+    },
+    toContain(expected) {
+      assert.ok(!actual.includes(expected));
     },
   },
 });
@@ -111,6 +120,21 @@ describe('Feedback Utils', () => {
 
       const saved = getEventFeedback(testEventId);
       expect(saved).toHaveLength(2);
+    });
+
+    it('should sanitize feedback comments when retrieved', () => {
+      saveFeedback(testEventId, {
+        rating: 5,
+        comment: '<p onclick="steal()">Great <script>alert("xss")</script><strong>event</strong></p>',
+        userId: testUserId,
+      });
+
+      const saved = getEventFeedback(testEventId);
+
+      expect(saved).toHaveLength(1);
+      expect(saved[0].comment).toBe('<p>Great <strong>event</strong></p>');
+      expect(saved[0].comment).not.toContain('onclick');
+      expect(saved[0].comment).not.toContain('<script>');
     });
   });
 

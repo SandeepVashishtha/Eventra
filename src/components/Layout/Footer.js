@@ -1,6 +1,9 @@
 // Enforced dynamic copyright rendering under issue #2211
 import React, { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+
+import { SiDiscord } from "react-icons/si";
 
 import {
   FaBook,
@@ -23,73 +26,35 @@ import {
 
 const footerLinks = {
   quick_links: [
-    { name: "Home", href: "/", icon: <FaHome size={14} /> },
-    { name: "Events", href: "/events", icon: <FaCalendarAlt size={14} /> },
-    { name: "Hackathons", href: "/hackathons", icon: <FaStar size={14} /> },
-    { name: "Projects", href: "/projects", icon: <FaFolder size={14} /> },
-    { name: "About", href: "/about", icon: <FaInfoCircle size={14} /> },
+    { nameKey: "footer.links.home", href: "/", icon: <FaHome size={14} /> },
+    { nameKey: "footer.links.events", href: "/events", icon: <FaCalendarAlt size={14} /> },
+    { nameKey: "footer.links.hackathons", href: "/hackathons", icon: <FaStar size={14} /> },
+    { nameKey: "footer.links.projects", href: "/projects", icon: <FaFolder size={14} /> },
+    { nameKey: "footer.links.about", href: "/about", icon: <FaInfoCircle size={14} /> },
   ],
 
   community: [
-    {
-      name: "Create Event",
-      href: "/create-event",
-      icon: <FaPlus size={14} />,
-    },
-    {
-      name: "Community Events",
-      href: "/communityEvent",
-      icon: <FaUsers size={14} />,
-    },
-    {
-      name: "Documentation",
-      href: "/documentation",
-      icon: <FaBook size={14} />,
-    },
-    {
-      name: "Contributors",
-      href: "/contributors",
-      icon: <FaUsers size={14} />,
-    },
-    {
-      name: "Contributors Guide",
-      href: "/contributorguide",
-      icon: <FaBook size={14} />,
-    },
-    {
-      name: "LeaderBoard",
-      href: "/leaderBoard",
-      icon: <FaTrophy size={14} />,
-    },
+    { nameKey: "footer.links.createEvent", href: "/create-event", icon: <FaPlus size={14} /> },
+    { nameKey: "footer.links.communityEvents", href: "/community-event", icon: <FaUsers size={14} /> },
+    { nameKey: "footer.links.documentation", href: "/documentation", icon: <FaBook size={14} /> },
+    { nameKey: "footer.links.contributors", href: "/contributors", icon: <FaUsers size={14} /> },
+    { nameKey: "footer.links.contributorsGuide", href: "/contributorguide", icon: <FaBook size={14} /> },
+    { nameKey: "footer.links.leaderboard", href: "/leaderBoard", icon: <FaTrophy size={14} /> },
   ],
 
   support: [
-    {
-      name: "Help Center",
-      href: "/helpcenter",
-      icon: <FaQuestionCircle size={14} />,
-    },
-    {
-      name: "FAQ",
-      href: "/faq",
-      icon: <FaQuestion size={14} />,
-    },
-    {
-      name: "Contact Us",
-      href: "/contact",
-      icon: <FaEnvelope size={14} />,
-    },
-    {
-      name: "Feedback",
-      href: "/feedback",
-      icon: <FaComments size={14} />,
-    },
-    {
-      name: "API Docs",
-      href: "/apiDocs",
-      icon: <FaBookOpen size={14} />,
-    },
+    { nameKey: "footer.links.helpCenter", href: "/helpcenter", icon: <FaQuestionCircle size={14} /> },
+    { nameKey: "footer.links.faq", href: "/faq", icon: <FaQuestion size={14} /> },
+    { nameKey: "footer.links.contactUs", href: "/contact", icon: <FaEnvelope size={14} /> },
+    { nameKey: "footer.links.feedback", href: "/feedback", icon: <FaComments size={14} /> },
+    { nameKey: "footer.links.apiDocs", href: "/api-docs", icon: <FaBookOpen size={14} /> },
   ],
+};
+
+const footerSectionKeys = {
+  quick_links: "footer.sections.quickLinks",
+  community: "footer.sections.community",
+  support: "footer.sections.support",
 };
 
 const socialLinks = [
@@ -98,7 +63,7 @@ const socialLinks = [
     href: "https://github.com/sandeepvashishtha/Eventra",
     icon: (
       <FaGithub
-        className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 hover:-translate-y-1"
+        className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-600 hover:scale-110 hover:-translate-y-1"
         size={20}
       />
     ),
@@ -108,6 +73,16 @@ const socialLinks = [
     href: "https://www.linkedin.com/in/sandeepvashishtha/",
     icon: (
       <FaLinkedin
+        className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-600 hover:scale-110 hover:-translate-y-1"
+        size={20}
+      />
+    ),
+  },
+  {
+    name: "Discord",
+    href: "https://discord.gg/6MQ9r5nHT",
+    icon: (
+      <SiDiscord
         className="size-10 p-2 rounded-full text-black dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 hover:-translate-y-1"
         size={20}
       />
@@ -144,6 +119,7 @@ const isValidEmail = (value) =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
 const Newsletter = () => {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
 
   const [isSubmitting, setIsSubmitting] =
@@ -170,7 +146,7 @@ const Newsletter = () => {
     if (!trimmedEmail) {
       setFeedback({
         type: "error",
-        message: "Please enter your email address.",
+        message: t("footer.newsletter.emailRequired"),
       });
 
       return;
@@ -179,7 +155,7 @@ const Newsletter = () => {
     if (!isValidEmail(trimmedEmail)) {
       setFeedback({
         type: "error",
-        message: "Please enter a valid email address.",
+        message: t("footer.newsletter.emailInvalid"),
       });
 
       return;
@@ -201,18 +177,17 @@ const Newsletter = () => {
       if (isMounted.current) {
         setFeedback({
           type: "success",
-          message: "Thanks for subscribing!",
+          message: t("footer.newsletter.success"),
         });
 
         setEmail("");
       }
-    } catch (error) {
+    } catch {
       // 🔥 FIX: Guard state updates
       if (isMounted.current) {
         setFeedback({
           type: "error",
-          message:
-            "Something went wrong. Please try again.",
+          message: t("footer.newsletter.error"),
         });
       }
     } finally {
@@ -233,17 +208,17 @@ const Newsletter = () => {
 
   return (
     <div className="mt-4">
-      <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider mb-2">
-        Subscribe to our newsletter
+      <h4 className="text-lg font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-2">
+        {t("footer.newsletter.heading")}
       </h4>
 
-      <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">
-        Get the latest updates, event tips, and community news.
+      <p className="text-gray-600 dark:text-gray-300 text-sm mb-2">
+        {t("footer.newsletter.description")}
       </p>
 
       <form
         onSubmit={handleSubmit}
-        className="flex flex-col sm:flex-row gap-3"
+        className="flex flex-col  gap-3 max-w-lg"
       >
         <div className="relative flex-grow">
           <FaEnvelope className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -261,7 +236,7 @@ const Newsletter = () => {
                 });
               }
             }}
-            placeholder="Enter your email"
+            placeholder={t("footer.newsletter.placeholder")}
             className="pl-10 pr-4 py-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-full"
             disabled={isSubmitting}
             aria-describedby={
@@ -278,11 +253,10 @@ const Newsletter = () => {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-gray-900 to-black hover:from-indigo-600 hover:to-purple-600 dark:from-white dark:to-gray-200 dark:hover:from-indigo-400 dark:hover:to-purple-500 text-white dark:text-black rounded-md transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-indigo-500/30 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed font-semibold tracking-wide"
-        >
+          className="py-3 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium">
           {isSubmitting
-            ? "Subscribing..."
-            : "Subscribe"}
+            ? t("footer.newsletter.subscribing")
+            : t("footer.newsletter.subscribe")}
         </button>
       </form>
 
@@ -298,8 +272,8 @@ const Newsletter = () => {
             {feedback.message}
           </p>
         ) : (
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            We respect your privacy. Unsubscribe at any time.
+          <p className="text-xs text-gray-600 dark:text-gray-300">
+            {t("footer.newsletter.privacy")}
           </p>
         )}
       </div>
@@ -307,120 +281,137 @@ const Newsletter = () => {
   );
 };
 
-const SocialLinksRender = () => (
-  <div className="mt-6">
-    <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider mb-3">
-      Follow Us
-    </h4>
+const SocialLinksRender = () => {
+  const { t } = useTranslation();
+  return (
+    <div>
+      <h4 className="text-lg font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-3">
+        {t("footer.followUs")}
+      </h4>
 
-    <div className="flex flex-wrap gap-3">
-      {socialLinks.map((link) => (
-        <ExternalLink
-          key={link.name}
-          href={link.href}
-          className="text-gray-400 dark:text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-          aria-label={link.name}
-          title={link.name}
-        >
-          <span className="sr-only">
-            {link.name}
-          </span>
+      <div className="flex flex-wrap gap-4 items-center">
+        {socialLinks.map((link) => (
+          <ExternalLink
+            key={link.name}
+            href={link.href}
+            className="text-gray-500 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 rounded-full"
+            aria-label={link.name}
+            title={link.name}
+          >
+            <span className="sr-only">
+              {link.name}
+            </span>
 
-          {link.icon}
-        </ExternalLink>
-      ))}
+            {link.icon}
+          </ExternalLink>
+        ))}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
-const FooterLinksRender = () => (
-  <>
-    {Object.entries(footerLinks).map(
-      ([key, links]) => (
-        <div
-          key={key}
-          className="py-2"
-        >
-          <h4 className="text-xs font-bold text-gray-900 dark:text-gray-100 uppercase tracking-widest mb-6">
-            {key.replace("_", " ")}
-          </h4>
+const FooterLinksRender = () => {
+  const { t } = useTranslation();
+  return (
+    <>
+      {Object.entries(footerLinks).map(
+        ([key, links]) => (
+          <div
+            key={key}
+            className="py-2 flex flex-col gap-2"
+          >
+            <h4 className="text-sm font-bold mb-4 tracking-wide text-gray-900 dark:text-white uppercase">
+              {t(footerSectionKeys[key])}
+            </h4>
 
-          <ul className="space-y-4">
-            {links.map((link) => (
-              <li key={link.name}>
-                <Link
-                  to={link.href}
-                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white flex items-center gap-4 transition-all duration-300 hover:translate-x-1 group"
-                >
-                  {link.icon && (
-                    <span className="text-black dark:text-white group-hover:scale-110 transition-all duration-300">
-                      {link.icon}
-                    </span>
-                  )}
+            <ul className="space-y-3">
+              {links.map((link) => (
+                <li key={link.nameKey}>
+                  <Link
+                    to={link.href}
+                    className="text-sm text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white flex items-center gap-4 transition-all duration-300 hover:translate-x-1 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 rounded"
+                  >
+                    {link.icon && (
+                      <span className="text-gray-700 dark:text-gray-200 group-hover:scale-110 transition-all duration-300">
+                        {link.icon}
+                      </span>
+                    )}
 
-                  <span>{link.name}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )
-    )}
-  </>
-);
+                    <span>{t(link.nameKey)}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )
+      )}
+    </>
+  );
+};
 
 const Footer = () => {
+  const { t } = useTranslation();
   return (
-    <footer className="relative z-50 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 transition-colors duration-500">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-          <div className="space-y-4 lg:col-span-2">
+    <footer className="relative z-50 bg-white dark:bg-gray-900 border-t border-gray-100  dark:border-gray-800 transition-colors duration-500">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_1fr] gap-12 items-start">
+          <div className="space-y-4 max-w-md">
             <h2
-              className="text-2xl sm:text-3xl font-bold inline-block text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-black dark:from-white dark:to-gray-300 hover:from-indigo-600 hover:to-purple-600 dark:hover:from-indigo-400 dark:hover:to-purple-400 transition-all duration-300 hover:scale-105 hover:-translate-y-1 cursor-default"
-              style={{
-                fontFamily:
-                  "Anton, sans-serif",
-              }}
+              className="text-2xl sm:text-3xl font-bold inline-block text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-black dark:from-white dark:to-gray-300"
+              style={{ fontFamily: "Anton, sans-serif" }}
             >
               Eventra
             </h2>
 
-            <p className="text-gray-600 dark:text-gray-400 text-sm">
-              Open-source event management for communities worldwide.
+            <p className="text-gray-600 dark:text-gray-300 text-base leading-7">
+              {t("footer.tagline")}
             </p>
-
-            <Newsletter />
-
-            <SocialLinksRender />
           </div>
+
 
           <FooterLinksRender />
         </div>
+        <div className="mt-16 pt-10 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-12">
+
+            <div className="flex-1 max-w-lg">
+              <Newsletter />
+            </div>
+
+            <div className="lg:min-w-[220px] lg:pt-4">
+              <SocialLinksRender />
+            </div>
+
+          </div>
+        </div>
       </div>
 
+
+
+
       {/* Bottom Bar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 border-t border-gray-100 dark:border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
-        <p className="text-gray-500 dark:text-gray-400 text-sm">
-          © {new Date().getFullYear()} Eventra. All rights reserved.
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 border-t border-gray-100 dark:border-gray-800 flex flex-col md:flex-row justify-between items-center md:items-center gap-6 md:gap-0">
+        <p className="text-gray-600 dark:text-gray-300 text-sm">
+          © {new Date().getFullYear()} Eventra. {t("footer.rights")}
         </p>
 
-        <div className="flex gap-6 text-sm text-gray-500 dark:text-gray-400">
+        <div className="flex flex-wrap items-center justify-center md:justify-end gap-6 text-sm text-gray-600 dark:text-gray-300">
           <Link
             to="/privacy"
-            className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+            className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 rounded"
           >
-            Privacy Policy
+            {t("footer.privacy")}
           </Link>
 
           <Link
             to="/terms"
-            className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+            className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 rounded"
           >
-            Terms of Service
+            {t("footer.terms")}
           </Link>
         </div>
       </div>
-    </footer>
+    </footer >
   );
 };
 

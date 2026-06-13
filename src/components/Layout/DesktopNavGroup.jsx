@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+// 🔥 FIX 1: Imported React to prevent the fatal ReferenceError on React.cloneElement
+import React, { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
@@ -10,7 +11,8 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown }) 
   const btnRef = useRef(null);
   const [dropPos, setDropPos] = useState({ top: 0, left: 0 });
 
-  useEffect(() => {
+  // 🔥 FIX 2: Extracted position logic so it can respond to window resizing
+  const updatePosition = () => {
     if (isOpen && btnRef.current) {
       const rect = btnRef.current.getBoundingClientRect();
       setDropPos({
@@ -18,6 +20,17 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown }) 
         left: rect.left + rect.width / 2 + window.scrollX,
       });
     }
+  };
+
+  useEffect(() => {
+    updatePosition();
+    if (isOpen) {
+      window.addEventListener("resize", updatePosition);
+    }
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   const handleKeyDown = (event) => {
@@ -42,7 +55,8 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown }) 
         aria-expanded={isOpen}
         aria-haspopup="menu"
         aria-controls={menuId}
-        className={`relative group flex items-center gap-1 text-[12px] xl:text-[13px] font-medium transition-all duration-200 whitespace-nowrap px-2.5 py-1.5 rounded-lg ${
+        // 🔥 FIX 3: Added focus-visible states for keyboard accessibility
+        className={`relative group flex items-center gap-1 text-[12px] xl:text-[13px] font-medium transition-all duration-200 whitespace-nowrap px-2.5 py-1.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-900 ${
           isActive || isOpen
             ? "text-indigo-600 dark:text-indigo-400 font-semibold"
             : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
@@ -83,7 +97,8 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown }) 
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
             style={{
-              position: 'fixed',
+              // 🔥 FIX 2 cont: Changed 'fixed' to 'absolute'. ScrollY + absolute = correct page placement.
+              position: 'absolute',
               top: `${dropPos.top}px`,
               left: `${dropPos.left}px`,
               transform: 'translateX(-50%)',
@@ -97,7 +112,8 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown }) 
                 to={sub.href}
                 onClick={() => setOpenDropdown(null)}
                 role="menuitem"
-                className={`group flex items-center gap-3 w-full px-3 py-2.5 text-[15px] font-medium rounded-lg transition-all duration-200 border ${
+                // 🔥 FIX 3: Added focus-visible states for keyboard accessibility
+                className={`group flex items-center gap-3 w-full px-3 py-2.5 text-[15px] font-medium rounded-lg transition-all duration-200 border focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
                   location.pathname.startsWith(sub.href)
                     ? "bg-indigo-100/60 dark:bg-indigo-500/20 border-indigo-200/80 dark:border-indigo-500/50 text-indigo-600 dark:text-indigo-400 font-semibold shadow-sm"
                     : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 border-transparent"

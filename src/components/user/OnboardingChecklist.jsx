@@ -14,6 +14,7 @@ import {
   ChevronDown
 } from "lucide-react";
 import { safeJsonParse } from "../../utils/safeJsonParse";
+import { syncSecureStorage } from "../../utils/secureStorage";
 
 // Confetti Component for celebration
 const OnboardingConfetti = () => {
@@ -105,17 +106,23 @@ export default function OnboardingChecklist() {
   ]);
 
   // Check storage values and update task statuses
-  const checkTaskStatus = useCallback(() => {
+  const checkTaskStatus = useCallback(async () => {
     // 1. Check user profile / skills in local storage or state
     let interestsDone = false;
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      const parsed = safeJsonParse(storedUser, {});
-      if (parsed.skills && parsed.skills.length > 0) {
+    try {
+      const storedUser = await syncSecureStorage.getItemAsync("user");
+      if (storedUser) {
+        const parsed = safeJsonParse(storedUser, {});
+        if (parsed.skills && parsed.skills.length > 0) {
+          interestsDone = true;
+        }
+      } else if (user?.skills && user.skills.length > 0) {
         interestsDone = true;
       }
-    } else if (user?.skills && user.skills.length > 0) {
-      interestsDone = true;
+    } catch {
+      if (user?.skills && user.skills.length > 0) {
+        interestsDone = true;
+      }
     }
     
     const storedInterests = localStorage.getItem("user_interests");
