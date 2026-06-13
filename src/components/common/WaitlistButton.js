@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { joinWaitlist, leaveWaitlist, getWaitlistStatus, getWaitlistCount } from '../../services/waitlistService';
 
-// Custom hook - extracts all state & async logic
-const useWaitlist = (eventId, isFullyBooked, waitlistEnabled, isAuthenticated, token) => {
+// Custom hook - args grouped into single options object (fixes Excess Function Arguments)
+const useWaitlist = ({ eventId, isFullyBooked, waitlistEnabled, isAuthenticated, token }) => {
   const [onWaitlist, setOnWaitlist] = useState(false);
   const [position, setPosition] = useState(null);
   const [waitlistCount, setWaitlistCount] = useState(0);
@@ -49,7 +49,6 @@ const useWaitlist = (eventId, isFullyBooked, waitlistEnabled, isAuthenticated, t
   return { onWaitlist, position, waitlistCount, loading, handleClick };
 };
 
-// Sub-component: count & position info
 const WaitlistInfo = ({ waitlistCount, position, onWaitlist }) => (
   <div>
     <span className="text-sm text-gray-500">
@@ -63,7 +62,6 @@ const WaitlistInfo = ({ waitlistCount, position, onWaitlist }) => (
   </div>
 );
 
-// Sub-component: the button
 const WaitlistToggleButton = ({ onWaitlist, loading, onClick }) => (
   <button
     onClick={onClick}
@@ -76,10 +74,9 @@ const WaitlistToggleButton = ({ onWaitlist, loading, onClick }) => (
   </button>
 );
 
-// Main component - thin orchestrator
 const WaitlistButton = ({ eventId, isFullyBooked, waitlistEnabled, token, isAuthenticated }) => {
   const { onWaitlist, position, waitlistCount, loading, handleClick } =
-    useWaitlist(eventId, isFullyBooked, waitlistEnabled, isAuthenticated, token);
+    useWaitlist({ eventId, isFullyBooked, waitlistEnabled, isAuthenticated, token });
 
   if (!isFullyBooked || !waitlistEnabled) return null;
 
