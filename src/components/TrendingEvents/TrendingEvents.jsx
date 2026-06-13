@@ -9,43 +9,47 @@ const toNumber = (value) => {
   return Number.isFinite(n) ? n : 0;
 };
 
+const firstNumber = (event, keys) => {
+  for (const key of keys) {
+    const val = toNumber(event?.[key]);
+    if (val) return val;
+  }
+  return 0;
+};
+
 /**
  * Derive a score for trending using whatever metrics are available on
  * event objects. Backends may differ; this keeps UI resilient.
  */
 const getTrendingScore = (event) => {
-  // Common candidates across versions
-  const registrations =
-    toNumber(event.registrations) ||
-    toNumber(event.registrationCount) ||
-    toNumber(event.attendees) ||
-    toNumber(event.participants);
+  const registrations = firstNumber(event, [
+    "registrations",
+    "registrationCount",
+    "attendees",
+    "participants",
+  ]);
 
-  const pageViews =
-    toNumber(event.pageViews) ||
-    toNumber(event.views) ||
-    toNumber(event.viewCount);
+  const pageViews = firstNumber(event, [
+    "pageViews",
+    "views",
+    "viewCount",
+  ]);
 
-  const bookmarks =
-    toNumber(event.bookmarks) ||
-    toNumber(event.bookmarkCount) ||
-    toNumber(event.saves) ||
-    toNumber(event.saveCount);
+  const bookmarks = firstNumber(event, [
+    "bookmarks",
+    "bookmarkCount",
+    "saves",
+    "saveCount",
+  ]);
 
-  const engagement =
-    toNumber(event.engagement) ||
-    toNumber(event.likes) ||
-    toNumber(event.comments);
+  const engagement = firstNumber(event, ["engagement", "likes", "comments"]);
 
-  // Weights tuned to keep score stable even when only one metric exists.
   const score =
-    registrations * 4 +
-    engagement * 3 +
-    bookmarks * 2 +
-    pageViews * 1;
+    registrations * 4 + engagement * 3 + bookmarks * 2 + pageViews * 1;
 
   return { score, registrations, pageViews, bookmarks, engagement };
 };
+
 
 const TrendingEvents = ({ title = "Trending Events", limit = 6, fetchSize = 24 }) => {
   const [events, setEvents] = useState([]);
