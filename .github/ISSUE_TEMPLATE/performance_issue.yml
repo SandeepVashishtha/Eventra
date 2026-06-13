@@ -1,0 +1,141 @@
+name: "⚡ Performance Issue"
+description: "Report a performance problem such as slow load times, janky animations, or high memory usage."
+title: "[Perf]: "
+labels: ["performance", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## ⚡ Performance Issue Report
+        Thank you for helping us make Eventra faster! Please fill in as much detail as possible.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: "Affected Area"
+      description: "Which part of the application is slow?"
+      options:
+        - "Initial page load / LCP"
+        - "Navigation / route transition"
+        - "Event list / search results"
+        - "Home page carousel"
+        - "Dashboard"
+        - "Animations / transitions"
+        - "Offline / service worker"
+        - "Memory usage"
+        - "Other"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: "Describe the Performance Problem"
+      description: "What is slow or unresponsive? When does it happen?"
+      placeholder: |
+        The home page carousel stalls for ~2 seconds when switching between 3 cards on a mid-range Android phone.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: "Steps to Reproduce"
+      description: "How can we reproduce the slowness?"
+      placeholder: |
+        1. Open the home page on a throttled 3G connection
+        2. Wait for the carousel to load
+        3. Click the next arrow 3 times quickly
+        4. Observe the UI freezing for ~2 seconds
+    validations:
+      required: true
+
+  - type: textarea
+    id: metrics
+    attributes:
+      label: "Performance Metrics (if available)"
+      description: |
+        Please share any measurements you have. You can use:
+        - Chrome DevTools → Performance tab
+        - Lighthouse report
+        - Web Vitals (LCP, FID, CLS)
+        - `console.time()` measurements
+      placeholder: |
+        LCP: 4.8s (should be < 2.5s)
+        CLS: 0.28 (should be < 0.1)
+        Lighthouse Performance score: 42
+    validations:
+      required: false
+
+  - type: dropdown
+    id: device
+    attributes:
+      label: "Device Category"
+      description: "What device are you on?"
+      options:
+        - "High-end desktop"
+        - "Mid-range desktop / laptop"
+        - "High-end smartphone"
+        - "Mid-range smartphone"
+        - "Low-end smartphone"
+        - "Tablet"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: browser
+    attributes:
+      label: "Browser"
+      options:
+        - "Chrome / Chromium"
+        - "Firefox"
+        - "Safari"
+        - "Edge"
+        - "Samsung Internet"
+        - "Other"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: network
+    attributes:
+      label: "Network Condition"
+      options:
+        - "Fast (WiFi / Ethernet)"
+        - "4G / LTE"
+        - "3G (throttled)"
+        - "Slow 3G (throttled)"
+        - "Offline"
+    validations:
+      required: false
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: "Expected Behaviour"
+      description: "How fast should it be? What does 'good' look like?"
+      placeholder: "The carousel should switch cards in < 300ms with a smooth 60 fps animation."
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: "Additional Context"
+      description: "Any screenshots, screen recordings, Lighthouse HTML exports, or DevTools timeline exports?"
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: "Pre-submission Checklist"
+      options:
+        - label: "I searched existing issues and this hasn't been reported before."
+          required: true
+        - label: "I tested with browser extensions disabled (ad blockers can affect performance)."
+          required: false
+        - label: "I tested in an incognito / private window."
+          required: false
