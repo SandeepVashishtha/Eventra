@@ -44,8 +44,8 @@ Eventra is an open-source frontend application built with React and Vite. It sup
 
 This repository contains the frontend application. The Spring Boot backend is maintained in a separate repository — all API traffic is proxied to it both in production (via Vercel rewrites) and in local development (via Vite proxy).
 
-- Frontend repo: <https://github.com/SandeepVashishtha/Eventra>
-- Backend repo: <https://github.com/SandeepVashishtha/Eventra-Backend>
+- Frontend repo: [SandeepVashishtha/Eventra](https://github.com/SandeepVashishtha/Eventra)
+- Backend repo: [SandeepVashishtha/Eventra-Backend](https://github.com/SandeepVashishtha/Eventra-Backend)
 - Backend API base: <https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net>
 - Swagger: <https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net/swagger-ui/index.html>
 
