@@ -164,22 +164,26 @@ const MobileDrawer = ({
                   {t("nav.viewProfile")}
                 </Link>
                 <Link
-                  to="/notifications"
-                  onClick={closeMenu}
-                  className={`mobile-drawer-link flex min-h-[48px] w-full items-center gap-2 rounded-lg border-l-2 px-3 py-2 text-sm font-medium transition-all duration-200 ${
-                    isActive("/notifications")
-                      ? "border-primary bg-bg-secondary text-text"
-                      : "border-transparent text-text-light hover:bg-bg hover:text-text"
-                  }`}
-                >
-                  <Bell className="w-5 h-5" />
-                  Notifications
-                  {unreadCount > 0 && (
-                    <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">
-                      {unreadCount > 99 ? "99+" : unreadCount}
-                    </span>
-                  )}
-                </Link>
+                   to="/notifications"
+                   onClick={closeMenu}
+                   className={`mobile-drawer-link flex min-h-[48px] w-full items-center gap-2 rounded-lg border-l-2 px-3 py-2 text-sm font-medium transition-all duration-200 ${
+                     isActive("/notifications")
+                       ? "border-primary bg-bg-secondary text-text"
+                       : "border-transparent text-text-light hover:bg-bg hover:text-text"
+                   }`}
+                   aria-current={isActive("/notifications") ? "page" : undefined}
+                 >
+                   <Bell className="w-5 h-5" aria-hidden="true" />
+                   Notifications
+                   {unreadCount > 0 && (
+                     <span
+                       className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white"
+                       aria-label={`${unreadCount > 99 ? "99 or more" : unreadCount} unread notifications`}
+                     >
+                       {unreadCount > 99 ? "99+" : unreadCount}
+                     </span>
+                   )}
+                 </Link>
                 <Link
                   to="/about"
                   onClick={closeMenu}
@@ -279,21 +283,25 @@ const MobileDrawer = ({
               <button
                 type="button"
                 onClick={toggleTheme}
+                aria-pressed={isDarkMode}
+                aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
                 className="flex flex-1 items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-border text-sm font-medium text-text-light hover:bg-bg-secondary transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
-                {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
+                {isDarkMode ? <Sun size={16} aria-hidden="true" /> : <Moon size={16} aria-hidden="true" />}
                 <span>{isDarkMode ? "Light" : "Dark"}</span>
               </button>
               <button
                 type="button"
                 onClick={toggleCursor}
+                aria-pressed={cursorEnabled}
+                aria-label={cursorEnabled ? "Disable custom cursor" : "Enable custom cursor"}
                 className={`flex flex-1 items-center justify-center gap-2 py-2.5 px-3 rounded-xl border text-sm font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                   cursorEnabled
                     ? "border-primary/40 bg-primary/10 text-primary"
                     : "border-border text-text-light hover:bg-bg-secondary"
                 }`}
               >
-                <MousePointer size={16} />
+                <MousePointer size={16} aria-hidden="true" />
                 <span>Cursor: {cursorEnabled ? "On" : "Off"}</span>
               </button>
             </div>
