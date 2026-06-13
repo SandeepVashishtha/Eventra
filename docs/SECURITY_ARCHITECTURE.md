@@ -16,6 +16,7 @@ Eventra enforces cookie-based authentication using JSON Web Tokens (JWT) stored 
   - Build-time validation fails with a critical security error
   - Runtime token signing throws an error
   - Edge middleware returns HTTP 500 for protected routes
+  - SSE mock server fails to start with a fatal error
   - RBAC is NEVER bypassed
 
 This prevents unauthorized access when configuration is incomplete.

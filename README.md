@@ -251,9 +251,13 @@ For local realtime testing:
 node sse-mock-server.js
 ```
 
+Required environment variables:
+
+- `JWT_SECRET` - JWT signing secret for token generation and validation. Generate with: `openssl rand -base64 32`
+
 Optional environment flags:
 
-- `SSE_MOCK_PORT` (default `4001`)
+- `SSE_MOCK_PORT` (default `8080`)
 - `ALLOWED_ORIGIN` (default `http://localhost:3000`)
 - `SSE_DEBUG` (`true` or `false`)
 
