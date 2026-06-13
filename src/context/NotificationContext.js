@@ -19,6 +19,21 @@ const normalizeNotification = (n = {}) => ({
   timestamp: n.timestamp || n.createdAt || n.updatedAt || new Date().toISOString(),
 });
 
+// Add interval cleanup to handle background state checks
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      if (realtimeStatus === "IDLE") {
+        fetchNotifications?.();
+      }
+    }, 30000);
+
+    // CRITICAL ASSIGNED CLEANUP: Clears interval on component unmount
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [realtimeStatus, fetchNotifications]);
+};
+
 export const NotificationProvider = ({ children }) => {
   const { token } = useAuth();
   const hasCompletedInitialFetch = useRef(false);
@@ -72,19 +87,7 @@ export const NotificationProvider = ({ children }) => {
   }, [markAsRead, markAsReadRef]);
 
 
-  // Add interval cleanup to handle background state checks
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      if (realtimeStatus === "IDLE") {
-        fetchNotifications?.();
-      }
-    }, 30000);
-
-    // CRITICAL ASSIGNED CLEANUP: Clears interval on component unmount
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [realtimeStatus, fetchNotifications]);
+ useBackgroundInterval(realtimeStatus, fetchNotifications);
   
   const groupedNotifications = useMemo(
     () => notifications.reduce((groups, n) => {
