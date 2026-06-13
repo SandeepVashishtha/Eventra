@@ -17,7 +17,7 @@ import LocationFields from "./components/LocationFields";
 import RegistrationDatesFields from "./components/RegistrationDatesFields";
 import TagsInput from "./components/TagsInput";
 import StatsSection from "./components/StatsSection";
-import { useAutoSaveDraft } from "../../../hooks/useAutoSaveDraft";
+// import { useAutoSaveDraft } from "../../../hooks/useAutoSaveDraft";
 import { formatDraftAge } from "../../../utils/eventDraftUtils";
 import {
   DRAFT_KEY,
@@ -401,7 +401,7 @@ const EventCreation = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-indigo-100 to-white dark:from-gray-900 dark:to-black flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-linear-to-r from-indigo-100 to-white dark:from-gray-900 dark:to-black flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <RestoreDraftModal
         isOpen={showRestoreModal}
         onRestore={handleRestoreDraft}
