@@ -77,7 +77,8 @@ export const getDeviceFingerprint = () => {
     // Per-origin salt: different for each deployment and never a static literal
     // in the bundle. Combining the origin with a domain-specific namespace
     // avoids salt collisions if two deployments share the same hostname root.
-    const salt = `eventra:fingerprint:${window.location.origin}`;
+    const dayOffset = Math.floor(Date.now() / 86400000);
+const salt = dayOffset + `eventra:fingerprint:${window.location.origin}`;
 
     _memoizedFingerprint = CryptoJS.SHA256(fingerprintRaw + salt).toString();
     return _memoizedFingerprint;
@@ -113,7 +114,8 @@ export const getFastFingerprint = () => {
   try {
     const screenInfo = `${window.screen?.width || 0}x${window.screen?.height || 0}x${window.screen?.colorDepth || 0}`;
     const navInfo = `${window.navigator?.userAgent || ""}_${window.navigator?.language || ""}_${window.navigator?.hardwareConcurrency || 0}`;
-    const salt = `eventra:fast-fingerprint:${window.location.origin}`;
+    const dayOffset = Math.floor(Date.now() / 86400000);
+const salt = dayOffset + `eventra:fast-fingerprint:${window.location.origin}`;
     _memoizedFastFingerprint = CryptoJS.SHA256(`${screenInfo}_${navInfo}_${salt}`).toString();
     return _memoizedFastFingerprint;
   } catch {
