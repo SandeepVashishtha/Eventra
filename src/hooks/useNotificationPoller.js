@@ -1,3 +1,4 @@
+import { pushToNotificationQueue, syncNotificationQueue } from "../utils/notificationQueue.js";
 import { useState, useCallback, useRef, useEffect } from "react";
 import { apiUtils, API_ENDPOINTS } from "../config/api";
 import { useAuth } from "../context/AuthContext";
@@ -80,6 +81,7 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
       if (!endpoint) return;
       try {
         if (!options.isBackground && isMounted.current && tokenRef.current === t) setLoading(true);
+        await syncNotificationQueue(apiUtils);
         const res = await apiUtils.get(endpoint);
         if (!isMounted.current || tokenRef.current !== t) return;
         const data = res.data;
@@ -146,6 +148,7 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
         setUnreadCount((p) => Math.max(0, p - 1));
       } catch (err) {
         if (isMounted.current && tokenRef.current === t) console.error("[useNotificationPoller] markAsRead:", err);
+        pushToNotificationQueue("read", { endpoint });
       }
     },
     [token],
@@ -195,6 +198,7 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
       if (!endpoint) return;
       try { await apiUtils.delete(endpoint); }
       catch (err) {
+        pushToNotificationQueue("delete", { endpoint });
         if (isMounted.current && tokenRef.current === t) {
           console.error("[useNotificationPoller] delete:", err);
           refetchRef.current({ isBackground: true });
