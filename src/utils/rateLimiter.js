@@ -4,9 +4,19 @@
  * Limits the rate of function calls on the client side.
  * Useful for preventing rapid API calls from button spam, scroll events, etc.
  *
+ * Enhancements over the base implementation:
+ *   - `getBackoffMs(attempt)` — full-jitter exponential back-off helper so that
+ *     concurrent clients don't all retry at the same instant (thundering herd).
+ *   - `getExactTokens()` — returns raw floating-point token count for
+ *     consumers that need fractional precision (e.g. progress indicators).
+ *
  * Usage:
  *   const limiter = createRateLimiter({ maxTokens: 5, refillRate: 1 });
  *   if (limiter.tryConsume()) { // make API call }
+ *   else {
+ *     const delayMs = limiter.getBackoffMs(attempt);
+ *     await sleep(delayMs);
+ *   }
  */
 
 /**
@@ -103,6 +113,39 @@ export function createRateLimiter({
     reset() {
       tokens = maxTokens;
       lastRefill = Date.now();
+    },
+
+    /**
+     * Returns the raw floating-point token count without floor-rounding.
+     * Useful for progress indicators or smooth UI feedback.
+     *
+     * @returns {number}
+     */
+    getExactTokens() {
+      refill();
+      return tokens;
+    },
+
+    /**
+     * Returns a jittered exponential back-off delay in milliseconds.
+     *
+     * Uses the "Full Jitter" strategy from the AWS Builder's Library:
+     *   delay = random(0, min(cap, baseMs * 2^attempt))
+     *
+     * This prevents thundering-herd problems when many clients are rate-limited
+     * and all retry at the same time.
+     *
+     * @param {number} attempt   - Zero-based retry attempt index
+     * @param {Object} [opts]
+     * @param {number} [opts.baseMs=500]   - Base delay in ms
+     * @param {number} [opts.capMs=30000]  - Maximum delay in ms
+     * @returns {number}  Delay in milliseconds
+     */
+    getBackoffMs(attempt, { baseMs = 500, capMs = 30_000 } = {}) {
+      const exponential = baseMs * Math.pow(2, Math.max(0, attempt));
+      const capped = Math.min(capMs, exponential);
+      // Full jitter: random in [0, capped)
+      return Math.floor(Math.random() * capped);
     },
   };
 }
