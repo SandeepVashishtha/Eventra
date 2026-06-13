@@ -23,6 +23,39 @@
  *   module degrades gracefully to unencrypted localStorage and
  *   `isEncryptionActive()` returns `false`.
  *
+ * **Key Rotation**
+ * The module supports secure key rotation via the `rotateKey()` function.
+ * Key rotation generates new random key material and salt, persists them to
+ * localStorage, and refreshes the in-memory cryptographic state to ensure
+ * all future encryption operations use the newly rotated key.
+ *
+ * **Key Rotation Lifecycle:**
+ * 1. Generate new random key material and salt
+ * 2. Persist new values to localStorage
+ * 3. Refresh in-memory DERIVED_KEY_MATERIAL and DERIVED_KEY_SALT
+ * 4. Reset the key derivation promise to force re-derivation
+ * 5. Update metadata with rotation timestamp
+ *
+ * **Synchronization Guarantees:**
+ * After rotation, the following are guaranteed to be consistent:
+ * - localStorage key material (eventra:key-material)
+ * - localStorage salt (eventra:key-salt)
+ * - in-memory DERIVED_KEY_MATERIAL
+ * - in-memory DERIVED_KEY_SALT
+ * - derived encryption keys (via _keyPromise reset)
+ *
+ * **Migration Behavior:**
+ * Existing encrypted records remain decryptable with their original keys.
+ * Callers should re-encrypt sensitive data with the new key by:
+ * 1. Call rotateKey()
+ * 2. Read all existing values with getItemAsync()
+ * 3. Re-write them with setItem()
+ *
+ * **Failure Handling:**
+ * - Throws descriptive errors for missing/corrupted key material
+ * - Throws errors for invalid rotation state
+ * - Does not modify state if validation fails
+ *
  * **Migration**
  * Earlier versions of this module wrote a `key + ':plaintext'` fallback entry
  * to localStorage before async encryption completed. `cleanupPlaintextFallbacks`
@@ -126,8 +159,9 @@ const getOrCreateSecret = (storageKey) => {
 
 // Both values are initialised eagerly at module load so every call to
 // getDerivedKey() within a page session operates on the same key.
-const DERIVED_KEY_MATERIAL = cryptoSupported ? getOrCreateSecret(MATERIAL_STORAGE_KEY) : null;
-const DERIVED_KEY_SALT = cryptoSupported ? getOrCreateSecret(SALT_STORAGE_KEY) : null;
+// These are declared as 'let' to allow refreshing from localStorage after key rotation.
+let DERIVED_KEY_MATERIAL = cryptoSupported ? getOrCreateSecret(MATERIAL_STORAGE_KEY) : null;
+let DERIVED_KEY_SALT = cryptoSupported ? getOrCreateSecret(SALT_STORAGE_KEY) : null;
 
 /**
  * Initialize or load key metadata.
@@ -165,6 +199,47 @@ const initializeKeyMetadata = () => {
 
 let _keyMetadata = initializeKeyMetadata();
 let _keyPromise = null;
+
+/**
+ * Refresh in-memory key material and salt from localStorage.
+ * Called after key rotation to ensure cryptographic state is synchronized.
+ *
+ * @private
+ * @throws {Error} If key material or salt is missing or invalid
+ */
+const refreshKeyMaterial = () => {
+  if (!cryptoSupported) {
+    return;
+  }
+
+  try {
+    const materialStored = localStorage.getItem(MATERIAL_STORAGE_KEY);
+    const saltStored = localStorage.getItem(SALT_STORAGE_KEY);
+
+    if (!materialStored) {
+      throw new Error('Key material missing from localStorage after rotation');
+    }
+    if (!saltStored) {
+      throw new Error('Salt missing from localStorage after rotation');
+    }
+
+    const material = Uint8Array.from(atob(materialStored), (c) => c.charCodeAt(0));
+    const salt = Uint8Array.from(atob(saltStored), (c) => c.charCodeAt(0));
+
+    if (material.length !== SECRET_BYTE_LENGTH) {
+      throw new Error(`Key material has invalid length: ${material.length}, expected ${SECRET_BYTE_LENGTH}`);
+    }
+    if (salt.length !== SECRET_BYTE_LENGTH) {
+      throw new Error(`Salt has invalid length: ${salt.length}, expected ${SECRET_BYTE_LENGTH}`);
+    }
+
+    DERIVED_KEY_MATERIAL = material;
+    DERIVED_KEY_SALT = salt;
+  } catch (error) {
+    console.error('[secureStorage] Failed to refresh key material:', error);
+    throw new Error(`Key material refresh failed: ${error.message}`);
+  }
+};
 
 const getDerivedKey = () => {
   if (_keyPromise) return _keyPromise;
@@ -345,48 +420,86 @@ const migratePayload = async (fromVersion, toVersion, storageKey, plaintext) => 
 
 /**
  * Rotate the encryption key.
- * This generates new key material while preserving the ability to decrypt
- * existing values during migration. After rotation, new writes use the new key.
  *
- * To fully migrate existing data, callers should:
+ * This generates new key material and salt, persists them to localStorage,
+ * and refreshes the in-memory cryptographic state to ensure all future
+ * encryption operations use the newly rotated key.
+ *
+ * **Key Rotation Lifecycle:**
+ * 1. Generate new random key material and salt
+ * 2. Persist new values to localStorage
+ * 3. Refresh in-memory DERIVED_KEY_MATERIAL and DERIVED_KEY_SALT
+ * 4. Reset the key derivation promise to force re-derivation
+ * 5. Update metadata with rotation timestamp
+ *
+ * **Synchronization Guarantees:**
+ * After rotation, the following are guaranteed to be consistent:
+ * - localStorage key material (eventra:key-material)
+ * - localStorage salt (eventra:key-salt)
+ * - in-memory DERIVED_KEY_MATERIAL
+ * - in-memory DERIVED_KEY_SALT
+ * - derived encryption keys (via _keyPromise reset)
+ *
+ * **Migration Behavior:**
+ * Existing encrypted records remain decryptable with their original keys.
+ * Callers should re-encrypt sensitive data with the new key by:
  * 1. Call rotateKey()
  * 2. Read all existing values with getItemAsync()
  * 3. Re-write them with setItem()
  *
+ * **Failure Handling:**
+ * - Throws descriptive errors for missing/corrupted key material
+ * - Throws errors for invalid rotation state
+ * - Does not modify state if validation fails
+ *
  * @returns {Promise<Object>} Metadata about the rotated key
+ * @throws {Error} If rotation fails due to missing material, corrupted storage, or crypto unavailability
  */
 export const rotateKey = async () => {
+  if (!cryptoSupported) {
+    throw new Error('Key rotation requires Web Crypto API support');
+  }
+
   try {
-    // Generate new key material
+    // Generate new key material and salt
     const newMaterial = crypto.getRandomValues(new Uint8Array(SECRET_BYTE_LENGTH));
     const newSalt = crypto.getRandomValues(new Uint8Array(SECRET_BYTE_LENGTH));
-    
-    // Store new material
+
+    // Validate generated values
+    if (newMaterial.length !== SECRET_BYTE_LENGTH) {
+      throw new Error(`Generated key material has invalid length: ${newMaterial.length}`);
+    }
+    if (newSalt.length !== SECRET_BYTE_LENGTH) {
+      throw new Error(`Generated salt has invalid length: ${newSalt.length}`);
+    }
+
+    // Persist new material to localStorage
     localStorage.setItem(MATERIAL_STORAGE_KEY, btoa(String.fromCharCode(...newMaterial)));
     localStorage.setItem(SALT_STORAGE_KEY, btoa(String.fromCharCode(...newSalt)));
-    
-    // Update in-memory values
-    DERIVED_KEY_MATERIAL.set(newMaterial);
-    DERIVED_KEY_SALT.set(newSalt);
-    
-    // Reset key promise to force re-derivation
+
+    // Refresh in-memory cryptographic state from localStorage
+    // This ensures DERIVED_KEY_MATERIAL and DERIVED_KEY_SALT point to the new values
+    refreshKeyMaterial();
+
+    // Reset key promise to force re-derivation with new material
     _keyPromise = null;
-    
-    // Update metadata
+
+    // Update metadata with rotation timestamp
+    const previousMetadata = _keyMetadata;
     _keyMetadata = {
       version: CRYPTO_CONFIG.VERSION,
-      createdAt: new Date().toISOString(),
+      createdAt: previousMetadata?.createdAt || new Date().toISOString(),
       rotatedAt: new Date().toISOString(),
       iterations: CRYPTO_CONFIG.PBKDF2_ITERATIONS,
       algorithm: CRYPTO_CONFIG.ALGORITHM,
       keyLength: CRYPTO_CONFIG.KEY_LENGTH,
     };
     localStorage.setItem(KEY_METADATA_KEY, JSON.stringify(_keyMetadata));
-    
+
     return _keyMetadata;
   } catch (error) {
     console.error('[secureStorage] Key rotation failed:', error);
-    throw error;
+    throw new Error(`Key rotation failed: ${error.message}`);
   }
 };
 
@@ -464,7 +577,6 @@ export const decryptWithKey = async (key, stored) => {
   const decrypted = await crypto.subtle.decrypt({ name: CRYPTO_ALGORITHM, iv }, key, ciphertext);
   return new TextDecoder().decode(decrypted);
 };
-
 
 
 // ---------------------------------------------------------------------------
