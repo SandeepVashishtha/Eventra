@@ -10,7 +10,7 @@ export function useAchievements() {
 
   const fetchAchievements = useCallback(async () => {
     if (!token) return;
-    const t = token;
+    // const t = token;
     const endpoint = API_ENDPOINTS?.USERS?.ACHIEVEMENTS;
     if (!endpoint) return;
     try {

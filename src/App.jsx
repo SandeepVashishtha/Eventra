@@ -40,7 +40,7 @@ const SavedEventsPage = lazy(() => import("./Pages/SavedEventsPage"));
 const EventRecommendation = lazy(() => import("./Pages/EventRecommendation/EventRecommendation"));
 const MatchmakingHub = lazy(() => import("./Pages/Networking/MatchmakingHub"));
 const EventDetails = lazy(() => import("./Pages/Events/EventDetails"));
-const ExploreEvents = lazy(() => import("./Pages/Events/EventsPage"));
+// const ExploreEvents = lazy(() => import("./Pages/Events/EventsPage"));
 const EventsPage = lazy(() => import("./Pages/Events/EventsPage"));
 
 // Non-critical UI - deferred after first paint
@@ -51,7 +51,7 @@ const FeedbackButton = lazy(() => import("./components/FeedbackButton"));
 const BackToTop = lazy(() => import("./components/common/BackToTop"));
 const ReminderChecker = lazy(() => import("./components/reminders/ReminderChecker"));
 const SessionRecovery = lazy(() => import("./components/SessionRecovery"));
-const ComparativeAnalytics = lazy(() => import("./components/Analytics/ComparativeAnalyticsDashboard"));
+// const ComparativeAnalytics = lazy(() => import("./components/Analytics/ComparativeAnalyticsDashboard"));
 
 
 const OfflineSyncManager = () => {
