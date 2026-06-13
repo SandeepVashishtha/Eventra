@@ -68,7 +68,6 @@ const validatePassword = (password) => {
   if (!password) return { valid: false, message: "Password is required" };
   if (password.length < 8) return { valid: false, message: "Password must be at least 8 characters long" };
   
-  // Check password strength (must meet all 5 criteria)
   const criteria = [
     { test: /.{8,}/, name: "8+ characters" },
     { test: /[A-Z]/, name: "uppercase letter" },
@@ -206,7 +205,6 @@ async function handler(req, res) {
       || "unknown";
 
     try {
-      // Handle both sync (in-memory) and async (distributed) rate limiters
       const rateLimitResult = signupRateLimiter.checkAsync
         ? await signupRateLimiter.checkAsync(clientIp)
         : signupRateLimiter.check(clientIp);
@@ -218,7 +216,6 @@ async function handler(req, res) {
         });
       }
     } catch (rateLimitError) {
-      // Fail closed: if rate limiting fails, reject the request
       console.error('[signup] Rate limit check failed:', rateLimitError.message);
       return corsResponse(req, res, 500, {
         error: "Rate limiting service unavailable. Please try again later.",
@@ -294,7 +291,6 @@ async function handler(req, res) {
 
     const isProd = process.env.NODE_ENV === "production";
     const cookieValue = `token=${token}; HttpOnly; Path=/; Max-Age=${JWT_COOKIE_MAX_AGE_SECONDS}; SameSite=Strict${isProd ? '; Secure' : ''}`;
-    // Set cookie compatibly across test mocks (which may provide `set` instead of `setHeader`)
     try {
       if (typeof res.setHeader === 'function') {
         res.setHeader('Set-Cookie', cookieValue);
@@ -304,7 +300,6 @@ async function handler(req, res) {
         res.headers['Set-Cookie'] = cookieValue;
       }
     } catch (e) {
-      // Ignore write errors on test response objects
     }
 
     return corsResponse(req, res, 201, {

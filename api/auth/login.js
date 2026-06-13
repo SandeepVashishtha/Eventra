@@ -68,10 +68,8 @@ export default async function login(req, res, deps = {}) {
     return corsResponse(req, res, 405, { error: "Method not allowed" });
   }
 
-  // 2. Rate limit BEFORE any expensive work (bcrypt)
   const clientIp = getClientIp(req);
   try {
-    // Handle both sync (in-memory) and async (distributed) rate limiters
     const rateLimitResult = loginRateLimiter.checkAsync 
       ? await loginRateLimiter.checkAsync(clientIp)
       : loginRateLimiter.check(clientIp);
@@ -83,7 +81,6 @@ export default async function login(req, res, deps = {}) {
       });
     }
   } catch (rateLimitError) {
-    // Fail closed: if rate limiting fails, reject the request
     console.error('[login] Rate limit check failed:', rateLimitError.message);
     return corsResponse(req, res, 500, {
       success: false,
@@ -91,14 +88,11 @@ export default async function login(req, res, deps = {}) {
     });
   }
 
-  // 3. Input validation
   const validation = validateLoginInput(req.body);
   if (!validation.valid) {
     return corsResponse(req, res, 400, { error: validation.message });
   }
 
-  // Runtime protection: Reject requests if storage is unavailable
-  // In development, in-memory storage is allowed. In production, persistent storage is required.
   if (!users || !usersByUsername) {
     console.error("[login.js] Authentication service unavailable: storage not initialized");
     return corsResponse(req, res, 500, { error: "Authentication service unavailable" });
@@ -131,21 +125,13 @@ export default async function login(req, res, deps = {}) {
   try {
     const user = await findUserByEmail(usernameOrEmail);
 
-    // 4. Verify credentials. Always run the comparison shape regardless of
-    //    whether the user exists to avoid leaking timing/enumeration signals.
-    //    A valid dummy bcrypt hash is used for non-existent users to prevent
-    //    bcrypt from throwing errors on invalid/empty hashes, which would
-    //    leak the user's non-existence via an HTTP 500 response.
     const dummyHash = "$2b$10$v18wNUUU7wTXyTbRPTFZTeze3aHS//qr4FKA9gu1E/GfNQqTsFfRG";
     const passwordHash = user?.password ?? dummyHash;
     const isValid = await comparePassword(password, passwordHash);
 
     if (!user || !isValid) {
-      // 5. Generic message prevents account enumeration.
       return corsResponse(req, res, 401, { error: "Invalid credentials" });
     }
-
-    // Successful login: do not reset immediately to conform with test threshold expectations
 
     const token = typeof issueToken === "function" ? issueToken(user) : undefined;
 
@@ -161,7 +147,6 @@ export default async function login(req, res, deps = {}) {
           res.headers['Set-Cookie'] = cookieValue;
         }
       } catch (e) {
-        // Ignore write errors on test response objects
       }
     }
 

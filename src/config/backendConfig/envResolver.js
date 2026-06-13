@@ -8,6 +8,8 @@ import { getRuntimeEnv, isDevelopment } from "./envDetector.js";
 
 const DEV_FALLBACK_URL = "http://localhost:8080";
 
+const BACKEND_URL_KEYS = ["BACKEND_URL", "VITE_API_URL", "REACT_APP_API_URL"];
+
 /**
  * Gets the first defined environment variable from a list of keys.
  * 
@@ -40,30 +42,16 @@ export const getFirstDefinedEnvValue = (keys = []) => {
  * @returns {string} The resolved backend URL
  */
 export const resolveBackendUrl = () => {
-  // Check BACKEND_URL first (used by dev proxy and can override)
-  const backendUrl = getFirstDefinedEnvValue(["BACKEND_URL"]);
-  if (backendUrl) {
-    return backendUrl;
+  const resolvedUrl = getFirstDefinedEnvValue(BACKEND_URL_KEYS);
+  
+  if (resolvedUrl) {
+    return resolvedUrl;
   }
 
-  // Check VITE_API_URL (Vite builds - preferred)
-  const viteUrl = getFirstDefinedEnvValue(["VITE_API_URL"]);
-  if (viteUrl) {
-    return viteUrl;
-  }
-
-  // Check REACT_APP_API_URL (CRA compatibility)
-  const reactUrl = getFirstDefinedEnvValue(["REACT_APP_API_URL"]);
-  if (reactUrl) {
-    return reactUrl;
-  }
-
-  // Apply fallbacks based on environment
   if (isDevelopment()) {
     return DEV_FALLBACK_URL;
   }
 
-  // Production: no automatic fallback to avoid configuration drift
   return "";
 };
 

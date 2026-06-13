@@ -19,12 +19,16 @@ import assert from 'node:assert';
 // Mock environment variables before importing the module
 const originalEnv = { ...process.env };
 
+const RATE_LIMIT_ENV_VARS = [
+  'RATE_LIMIT_REDIS_URL',
+  'KV_REST_API_URL',
+  'KV_REST_API_TOKEN',
+  'RATE_LIMIT_MODE',
+];
+
 function setTestEnv(env) {
   // Clear all rate limit related env vars
-  delete process.env.RATE_LIMIT_REDIS_URL;
-  delete process.env.KV_REST_API_URL;
-  delete process.env.KV_REST_API_TOKEN;
-  delete process.env.RATE_LIMIT_MODE;
+  RATE_LIMIT_ENV_VARS.forEach(varName => delete process.env[varName]);
   
   // Set test environment
   Object.assign(process.env, env);
@@ -60,7 +64,6 @@ describe('Distributed Rate Limiter', () => {
       const { createRateLimiter } = await import('../api/lib/rateLimiter.js');
       const limiter = createRateLimiter(1000, 5);
       
-      // Synchronous check should work for in-memory backend
       const result = limiter.check('127.0.0.1');
       assert.strictEqual(result.allowed, true);
       assert.strictEqual(result.remaining, 4);
@@ -70,7 +73,6 @@ describe('Distributed Rate Limiter', () => {
       const { createRateLimiter } = await import('../api/lib/rateLimiter.js');
       const limiter = createRateLimiter(1000, 5);
       
-      // Async check should also work
       const result = await limiter.checkAsync('127.0.0.1');
       assert.strictEqual(result.allowed, true);
       assert.strictEqual(result.remaining, 4);
@@ -80,13 +82,11 @@ describe('Distributed Rate Limiter', () => {
       const { createRateLimiter } = await import('../api/lib/rateLimiter.js');
       const limiter = createRateLimiter(1000, 3);
       
-      // First 3 requests should be allowed
       for (let i = 0; i < 3; i++) {
         const result = await limiter.check('127.0.0.1');
         assert.strictEqual(result.allowed, true);
       }
       
-      // 4th request should be blocked
       const result = await limiter.check('127.0.0.1');
       assert.strictEqual(result.allowed, false);
       assert.strictEqual(result.remaining, 0);
@@ -94,19 +94,16 @@ describe('Distributed Rate Limiter', () => {
 
     it('should reset counter after window expires', async () => {
       const { createRateLimiter } = await import('../api/lib/rateLimiter.js');
-      const limiter = createRateLimiter(100, 2); // 100ms window
+      const limiter = createRateLimiter(100, 2);
       
-      // Use up the limit
       await limiter.check('127.0.0.1');
       await limiter.check('127.0.0.1');
       
       const blocked = await limiter.check('127.0.0.1');
       assert.strictEqual(blocked.allowed, false);
       
-      // Wait for window to expire
       await new Promise(resolve => setTimeout(resolve, 110));
       
-      // Should be allowed again
       const result = await limiter.check('127.0.0.1');
       assert.strictEqual(result.allowed, true);
     });
@@ -115,13 +112,11 @@ describe('Distributed Rate Limiter', () => {
       const { createRateLimiter } = await import('../api/lib/rateLimiter.js');
       const limiter = createRateLimiter(1000, 2);
       
-      // IP 1 uses up limit
       await limiter.check('192.168.1.1');
       await limiter.check('192.168.1.1');
       const ip1Blocked = await limiter.check('192.168.1.1');
       assert.strictEqual(ip1Blocked.allowed, false);
       
-      // IP 2 should still be allowed
       const ip2Result = await limiter.check('192.168.1.2');
       assert.strictEqual(ip2Result.allowed, true);
     });
@@ -130,11 +125,9 @@ describe('Distributed Rate Limiter', () => {
       const { createRateLimiter, enforceRateLimit } = await import('../api/lib/rateLimiter.js');
       const limiter = createRateLimiter(1000, 2);
       
-      // Should not throw for allowed requests
       await enforceRateLimit(limiter, '127.0.0.1');
       await enforceRateLimit(limiter, '127.0.0.1');
       
-      // Should throw for exceeded limit
       try {
         await enforceRateLimit(limiter, '127.0.0.1');
         assert.fail('Should have thrown an error');
@@ -155,12 +148,10 @@ describe('Distributed Rate Limiter', () => {
       const { createRateLimiter } = await import('../api/lib/rateLimiter.js');
       const limiter = createRateLimiter(1000, 5);
       
-      // Should throw when trying to use memory mode in production
       try {
         limiter.check('127.0.0.1');
         assert.fail('Should have thrown an error');
       } catch (error) {
-        // The error message should indicate memory mode is not allowed
         assert.ok(error.message);
       }
     });
@@ -173,12 +164,10 @@ describe('Distributed Rate Limiter', () => {
       const { createRateLimiter } = await import('../api/lib/rateLimiter.js');
       const limiter = createRateLimiter(1000, 5);
       
-      // Should throw when no distributed storage is configured
       try {
         limiter.check('127.0.0.1');
         assert.fail('Should have thrown an error');
       } catch (error) {
-        // The error message should indicate rate limiting is not configured
         assert.ok(error.message);
       }
     });
@@ -204,7 +193,6 @@ describe('Distributed Rate Limiter', () => {
         validateRateLimitConfig();
         assert.fail('Should have thrown an error');
       } catch (error) {
-        // Should throw an error about missing distributed storage
         assert.ok(error.message);
       }
     });
@@ -221,7 +209,6 @@ describe('Distributed Rate Limiter', () => {
         validateRateLimitConfig();
         assert.fail('Should have thrown an error');
       } catch (error) {
-        // Should throw an error about memory mode not being allowed
         assert.ok(error.message);
       }
     });
@@ -267,7 +254,6 @@ describe('Distributed Rate Limiter', () => {
     it('should export loginRateLimiter with correct limits', async () => {
       const { loginRateLimiter } = await import('../api/lib/rateLimiter.js');
       
-      // Login limiter: 10 requests per minute
       for (let i = 0; i < 10; i++) {
         const result = await loginRateLimiter.check('127.0.0.1');
         assert.strictEqual(result.allowed, true);
@@ -280,7 +266,6 @@ describe('Distributed Rate Limiter', () => {
     it('should export signupRateLimiter with correct limits', async () => {
       const { signupRateLimiter } = await import('../api/lib/rateLimiter.js');
       
-      // Signup limiter: 5 requests per minute
       for (let i = 0; i < 5; i++) {
         const result = await signupRateLimiter.check('127.0.0.1');
         assert.strictEqual(result.allowed, true);
@@ -293,11 +278,7 @@ describe('Distributed Rate Limiter', () => {
 
   describe('Redis Backend', () => {
     it('should export RedisRateLimiter class', async () => {
-      // Verify the Redis backend class exists and has the right structure
-      // Note: Actual Redis connection testing requires a running Redis instance
       const module = await import('../api/lib/rateLimiter.js');
-      
-      // The module should have the createRateLimiter function
       assert.strictEqual(typeof module.createRateLimiter, 'function');
     });
 
@@ -310,12 +291,10 @@ describe('Distributed Rate Limiter', () => {
       const { createRateLimiter } = await import('../api/lib/rateLimiter.js');
       const limiter = createRateLimiter(1000, 5);
       
-      // Synchronous check should throw for distributed backends
       try {
         limiter.check('127.0.0.1');
         assert.fail('Should have thrown an error');
       } catch (error) {
-        // Should throw an error about synchronous check not being supported
         assert.ok(error.message);
       }
     });
@@ -327,11 +306,7 @@ describe('Distributed Rate Limiter', () => {
 
   describe('KV REST API Backend', () => {
     it('should support KV REST API backend', async () => {
-      // Verify the KV backend is supported
-      // Note: Actual KV API testing requires a running KV instance or mocking
       const module = await import('../api/lib/rateLimiter.js');
-      
-      // The module should have the createRateLimiter function
       assert.strictEqual(typeof module.createRateLimiter, 'function');
     });
 
@@ -345,12 +320,10 @@ describe('Distributed Rate Limiter', () => {
       const { createRateLimiter } = await import('../api/lib/rateLimiter.js');
       const limiter = createRateLimiter(1000, 5);
       
-      // Synchronous check should throw for distributed backends
       try {
         limiter.check('127.0.0.1');
         assert.fail('Should have thrown an error');
       } catch (error) {
-        // Should throw an error about synchronous check not being supported
         assert.ok(error.message);
       }
     });

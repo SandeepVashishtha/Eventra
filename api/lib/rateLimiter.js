@@ -23,10 +23,9 @@ const REDIS_URL = process.env.RATE_LIMIT_REDIS_URL;
 const KV_REST_API_URL = process.env.KV_REST_API_URL;
 const KV_REST_API_TOKEN = process.env.KV_REST_API_TOKEN;
 
-// Determine which backend to use
+// Backend selection flags
 const USE_KV_REST = KV_REST_API_URL && KV_REST_API_TOKEN;
 const USE_REDIS = REDIS_URL && !USE_KV_REST;
-// CRITICAL: Memory mode is NOT allowed in production
 const USE_MEMORY = (RATE_LIMIT_MODE === 'memory' || NODE_ENV === 'test') && NODE_ENV !== 'production';
 
 // Redis client (lazy initialization)
@@ -52,7 +51,6 @@ async function getRedisClient() {
       },
     });
 
-    // Test connection
     await redisClient.ping();
     return redisClient;
   } catch (error) {
@@ -72,7 +70,6 @@ class InMemoryRateLimiter {
     this.store = new Map();
   }
 
-  // Synchronous check for backwards compatibility
   check(key) {
     const now = Date.now();
     const record = this.store.get(key);
@@ -91,7 +88,6 @@ class InMemoryRateLimiter {
     };
   }
 
-  // Async check for consistency with distributed backends
   async checkAsync(key) {
     return this.check(key);
   }
@@ -100,7 +96,6 @@ class InMemoryRateLimiter {
 /**
  * Upstash Redis REST API rate limiter
  * Uses fetch-based REST API for edge compatibility
- * Note: Vercel KV was migrated to Upstash Redis in December 2024
  */
 class KvRateLimiter {
   constructor(windowMs, maxRequests) {
@@ -118,8 +113,6 @@ class KvRateLimiter {
     };
 
     try {
-      // Atomic increment using Upstash Redis REST API
-      // Format: REST_URL/incr/key
       const incrRes = await fetch(`${this.kvUrl}/incr/${encodeURIComponent(redisKey)}`, {
         method: 'POST',
         headers,
@@ -131,8 +124,6 @@ class KvRateLimiter {
 
       const { result: count } = await incrRes.json();
 
-      // Set expiry on first request using EXPIRE command
-      // Format: REST_URL/expire/key/seconds
       if (count === 1) {
         const expirySeconds = Math.floor(this.windowMs / 1000);
         fetch(`${this.kvUrl}/expire/${encodeURIComponent(redisKey)}/${expirySeconds}`, {
@@ -155,7 +146,6 @@ class KvRateLimiter {
     }
   }
 
-  // Synchronous check not supported for distributed backends
   check(key) {
     throw new Error('Synchronous check not supported for distributed rate limiter. Use await check(key) instead.');
   }
@@ -180,7 +170,6 @@ class RedisRateLimiter {
     try {
       const client = await getRedisClient();
 
-      // Use Lua script for atomic INCR + EXPIRE
       const luaScript = `
         local current = redis.call('INCR', KEYS[1])
         if current == 1 then
@@ -203,7 +192,6 @@ class RedisRateLimiter {
     }
   }
 
-  // Synchronous check not supported for distributed backends
   check(key) {
     throw new Error('Synchronous check not supported for distributed rate limiter. Use await check(key) instead.');
   }
@@ -217,22 +205,16 @@ class RedisRateLimiter {
  * @returns {Object} Rate limiter with check() method (sync for memory, async for distributed)
  */
 export const createRateLimiter = (windowMs, maxRequests) => {
-  // Validate configuration in production
-  if (NODE_ENV === 'production') {
-    if (!USE_KV_REST && !USE_REDIS) {
-      console.error(
-        '[rateLimiter] CRITICAL: Production requires distributed storage. ' +
-        'Set RATE_LIMIT_REDIS_URL or KV_REST_API_URL/KV_REST_API_TOKEN. ' +
-        'RATE_LIMIT_MODE=memory is not allowed in production.'
-      );
-    }
+  if (NODE_ENV === 'production' && !USE_KV_REST && !USE_REDIS) {
+    console.error(
+      '[rateLimiter] CRITICAL: Production requires distributed storage. ' +
+      'Set RATE_LIMIT_REDIS_URL or KV_REST_API_URL/KV_REST_API_TOKEN.'
+    );
   }
 
-  // Select backend
   if (USE_MEMORY) {
     if (NODE_ENV === 'production') {
       console.error('[rateLimiter] ERROR: RATE_LIMIT_MODE=memory is not allowed in production');
-      // Fail closed in production
       return {
         check(key) {
           throw new Error('Rate limiting is not configured for production. Set RATE_LIMIT_REDIS_URL or KV_REST_API_URL/KV_REST_API_TOKEN.');
@@ -251,13 +233,11 @@ export const createRateLimiter = (windowMs, maxRequests) => {
     return new RedisRateLimiter(windowMs, maxRequests);
   }
 
-  // Fallback for development without configuration
   if (NODE_ENV === 'development') {
     console.warn('[rateLimiter] No distributed storage configured, using in-memory fallback');
     return new InMemoryRateLimiter(windowMs, maxRequests);
   }
 
-  // Production without configuration - fail closed
   return {
     check(key) {
       throw new Error(
@@ -299,7 +279,6 @@ export function validateRateLimitConfig() {
   const errors = [];
 
   if (NODE_ENV === 'production') {
-    // CRITICAL: Production MUST have distributed storage
     if (!USE_KV_REST && !USE_REDIS) {
       errors.push(
         'Production requires distributed rate limiting. ' +
@@ -316,7 +295,6 @@ export function validateRateLimitConfig() {
       errors.push('RATE_LIMIT_MODE implies Redis but RATE_LIMIT_REDIS_URL is not set.');
     }
 
-    // CRITICAL: Reject RATE_LIMIT_MODE=memory in production
     if (RATE_LIMIT_MODE === 'memory') {
       errors.push('RATE_LIMIT_MODE=memory is not allowed in production. Remove this setting or use distributed storage.');
     }
