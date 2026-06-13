@@ -83,7 +83,107 @@ const usePomodoroInterval = ({ isActive, timeLeft, setTimeLeft, setIsActive }) =
   }, [isActive, timeLeft, setTimeLeft, setIsActive]);
 };
 
-const usePomodoroLogic = () => {
+const ModeSelectors = ({ mode, switchMode }) => (
+  <div className="flex gap-1 mb-6 p-1 bg-slate-950/80 rounded-xl border border-slate-800/80 relative">
+    {Object.entries(MODES).map(([key, config]) => (
+      <button
+        key={key}
+        onClick={() => switchMode(key)}
+        className={`relative flex-1 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors z-10 ${
+          mode === key ? "text-white" : "text-gray-500 hover:text-gray-300"
+        }`}
+      >
+        {mode === key && (
+          <motion.div
+            layoutId="pomodoro-active-tab"
+            className="absolute inset-0 bg-slate-800 rounded-lg"
+            initial={false}
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            style={{ zIndex: -1 }}
+          />
+        )}
+        <span className="relative z-20">{config.label}</span>
+      </button>
+    ))}
+  </div>
+);
+
+const TimerCircle = ({ currentMode, timeLeft, progress }) => {
+  const radius = 45;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (progress / 100) * circumference;
+
+  return (
+    <div className="flex justify-center mb-6">
+      <div className="relative w-36 h-36 flex items-center justify-center">
+        <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+          <circle
+            className="text-slate-800/50 stroke-current"
+            strokeWidth="4"
+            cx="50"
+            cy="50"
+            r={radius}
+            fill="transparent"
+          />
+          <motion.circle
+            className={`${currentMode.color} stroke-current`}
+            strokeWidth="4"
+            strokeLinecap="round"
+            cx="50"
+            cy="50"
+            r={radius}
+            fill="transparent"
+            initial={{ strokeDashoffset: circumference }}
+            animate={{ strokeDashoffset }}
+            transition={{ duration: 1, ease: "linear" }}
+            style={{ strokeDasharray: circumference }}
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-3xl font-black tracking-tighter text-white tabular-nums">
+            {formatTime(timeLeft)}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const TimerControls = ({ isActive, currentMode, toggleTimer, resetTimer }) => (
+  <div className="flex items-center justify-center gap-4 mt-auto">
+    <button
+      onClick={toggleTimer}
+      className={`flex items-center justify-center w-14 h-14 rounded-2xl transition-all shadow-lg cursor-pointer ${
+        isActive
+          ? "bg-slate-800 text-white hover:bg-slate-700 shadow-none"
+          : `${currentMode.bg} text-white hover:opacity-90 shadow-indigo-500/20`
+      }`}
+      aria-label={isActive ? "Pause Timer" : "Start Timer"}
+    >
+      {isActive ? (
+        <Pause size={24} className="fill-current" />
+      ) : (
+        <Play size={24} className="fill-current ml-1" />
+      )}
+    </button>
+    <button
+      onClick={resetTimer}
+      className="flex items-center justify-center w-12 h-12 rounded-2xl bg-slate-950 border border-slate-800 text-gray-400 hover:text-white hover:border-slate-700 transition-all cursor-pointer"
+      aria-label="Reset Timer"
+      title="Reset Timer"
+    >
+      <RotateCcw size={18} />
+    </button>
+  </div>
+);
+
+const formatTime = (seconds) => {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+};
+
+const PomodoroTimer = () => {
   const [mode, setMode] = useState("FOCUS");
   const [timeLeft, setTimeLeft] = useState(MODES.FOCUS.minutes * 60);
   const [isActive, setIsActive] = useState(false);
@@ -105,27 +205,10 @@ const usePomodoroLogic = () => {
     setTimeLeft(MODES[newMode].minutes * 60);
   };
 
-  return { mode, timeLeft, isActive, toggleTimer, resetTimer, switchMode };
-};
-
-const formatTime = (seconds) => {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-};
-
-const PomodoroTimer = () => {
-  const { mode, timeLeft, isActive, toggleTimer, resetTimer, switchMode } = usePomodoroLogic();
-
-  const totalTime = MODES[mode].minutes * 60;
-  const progress = ((totalTime - timeLeft) / totalTime) * 100;
   const currentMode = MODES[mode];
   const CurrentIcon = currentMode.icon;
-
-  const radius = 45;
-  const circumference = 2 * Math.PI * radius;
-  // Progress animation: dashoffset goes from circumference (0%) to 0 (100%)
-  const strokeDashoffset = circumference - (progress / 100) * circumference;
+  const totalTime = currentMode.minutes * 60;
+  const progress = ((totalTime - timeLeft) / totalTime) * 100;
 
   return (
     <div className="bg-slate-900/40 border border-slate-800/60 rounded-3xl p-5 md:p-6 shadow-sm relative overflow-hidden flex flex-col">
@@ -135,94 +218,14 @@ const PomodoroTimer = () => {
           <span>Focus Timer</span>
         </h3>
       </div>
-
-      {/* Mode selectors with Framer Motion layout animation */}
-      <div className="flex gap-1 mb-6 p-1 bg-slate-950/80 rounded-xl border border-slate-800/80 relative">
-        {Object.entries(MODES).map(([key, config]) => (
-          <button
-            key={key}
-            onClick={() => switchMode(key)}
-            className={`relative flex-1 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors z-10 ${
-              mode === key ? "text-white" : "text-gray-500 hover:text-gray-300"
-            }`}
-          >
-            {mode === key && (
-              <motion.div
-                layoutId="pomodoro-active-tab"
-                className="absolute inset-0 bg-slate-800 rounded-lg"
-                initial={false}
-                transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                style={{ zIndex: -1 }}
-              />
-            )}
-            <span className="relative z-20">{config.label}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* Timer Circle */}
-      <div className="flex justify-center mb-6">
-        <div className="relative w-36 h-36 flex items-center justify-center">
-          <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-            {/* Background track */}
-            <circle
-              className="text-slate-800/50 stroke-current"
-              strokeWidth="4"
-              cx="50"
-              cy="50"
-              r={radius}
-              fill="transparent"
-            />
-            {/* Progress indicator */}
-            <motion.circle
-              className={`${currentMode.color} stroke-current`}
-              strokeWidth="4"
-              strokeLinecap="round"
-              cx="50"
-              cy="50"
-              r={radius}
-              fill="transparent"
-              initial={{ strokeDashoffset: circumference }}
-              animate={{ strokeDashoffset }}
-              transition={{ duration: 1, ease: "linear" }}
-              style={{ strokeDasharray: circumference }}
-            />
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-3xl font-black tracking-tighter text-white tabular-nums">
-              {formatTime(timeLeft)}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Controls */}
-      <div className="flex items-center justify-center gap-4 mt-auto">
-        <button
-          onClick={toggleTimer}
-          className={`flex items-center justify-center w-14 h-14 rounded-2xl transition-all shadow-lg cursor-pointer ${
-            isActive
-              ? "bg-slate-800 text-white hover:bg-slate-700 shadow-none"
-              : `${currentMode.bg} text-white hover:opacity-90 shadow-indigo-500/20`
-          }`}
-          aria-label={isActive ? "Pause Timer" : "Start Timer"}
-        >
-          {isActive ? (
-            <Pause size={24} className="fill-current" />
-          ) : (
-            <Play size={24} className="fill-current ml-1" />
-          )}
-        </button>
-
-        <button
-          onClick={resetTimer}
-          className="flex items-center justify-center w-12 h-12 rounded-2xl bg-slate-950 border border-slate-800 text-gray-400 hover:text-white hover:border-slate-700 transition-all cursor-pointer"
-          aria-label="Reset Timer"
-          title="Reset Timer"
-        >
-          <RotateCcw size={18} />
-        </button>
-      </div>
+      <ModeSelectors mode={mode} switchMode={switchMode} />
+      <TimerCircle currentMode={currentMode} timeLeft={timeLeft} progress={progress} />
+      <TimerControls
+        isActive={isActive}
+        currentMode={currentMode}
+        toggleTimer={toggleTimer}
+        resetTimer={resetTimer}
+      />
     </div>
   );
 };
