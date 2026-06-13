@@ -46,8 +46,8 @@ This repository contains the frontend application. The Spring Boot backend is ma
 
 - Frontend repo: [SandeepVashishtha/Eventra](https://github.com/SandeepVashishtha/Eventra)
 - Backend repo: [SandeepVashishtha/Eventra-Backend](https://github.com/SandeepVashishtha/Eventra-Backend)
-- Backend API base: <https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net>
-- Swagger: <https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net/swagger-ui/index.html>
+- Backend API base: [Azure API Host](https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net)
+- Swagger Documentation: [Swagger UI](https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net/swagger-ui/index.html)
 
 ## Key Features
 
