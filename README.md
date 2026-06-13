@@ -223,9 +223,9 @@ BLOCKED_COUNTRIES=
 | Command | Description |
 | --- | --- |
 | `npm run dev` | Start local dev server |
+| `npm run preview` | Preview production build locally |
 | `npm run start` | Alias to Vite dev server |
 | `npm run build` | Production build |
-| `npm run preview` | Preview production build locally |
 | `npm run lint` | Run ESLint on `src/` |
 | `npm run lint:fix` | Auto-fix lint issues |
 | `npm run format` | Run Prettier on source files |
