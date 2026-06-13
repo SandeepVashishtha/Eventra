@@ -98,10 +98,14 @@ export default function UserDashboard() {
     else setGreeting("Good evening");
   }, []);
 
+  // Fix #8507: Tie loading state to actual data readiness, not an arbitrary timer.
+  // A fixed timeout can leave the spinner running indefinitely if the component
+  // unmounts before it fires (e.g. navigation) or if JS is paused.
   useEffect(() => {
-    const timer = window.setTimeout(() => setLoading(false), 700);
-    return () => window.clearTimeout(timer);
-  }, []);
+    // The dashboard renders user-derived data synchronously from AuthContext.
+    // Once `user` is resolved (or explicitly null/undefined), we are ready.
+    setLoading(false);
+  }, [user]);
 
   const derivedData = useMemo(() => {
     let eventsTotal = 0;

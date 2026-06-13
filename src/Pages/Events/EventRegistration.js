@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import LoadingWithError from "../../components/common/LoadingWithError";
 import { useTranslation } from "react-i18next";
 // Calendar URL helpers — import from the timezone-aware utility instead of
 // using the old inline implementations (which were UTC-blind and hardcoded
@@ -69,6 +70,34 @@ const getRegistrationFailureMessage = (error) => {
   return message || "Registration failed. Please try again.";
 };
 
+// Fix #8507: Extracted from loadEvent to reduce method complexity.
+const HACKATHON_DEFAULT_IMAGE =
+  "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80&w=800";
+
+function buildHackathonEvent(mock) {
+  return {
+    ...mock,
+    date: mock.startDate,
+    time: "10:00 AM",
+    image: HACKATHON_DEFAULT_IMAGE,
+    attendees: mock.participants,
+    maxAttendees: 1500,
+    status: mock.status,
+  };
+}
+
+function findMockEvent(eventId) {
+  return hackathonsData.find((item) => String(item.id) === String(eventId));
+}
+
+function buildCachedEvent(cached) {
+  return {
+    ...cached.event,
+    status: getEventStatus(cached.event),
+    cacheInfo: { cachedAt: cached.cachedAt, label: getCacheAgeLabel(cached.cachedAt) },
+  };
+}
+
 const EventRegistration = () => {
   const { t } = useTranslation();
   const { eventId: routeEventId, id: routeId } = useParams();
@@ -83,6 +112,11 @@ const EventRegistration = () => {
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
+  // Fix #8507: Track load failure separately so the UI can show a retry option
+  // instead of staying stuck on the loading skeleton or silently showing nothing.
+  const [loadError, setLoadError] = useState(null);
+  // Incrementing this forces the loadEvent useEffect to re-run.
+  const [retryKey, setRetryKey] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [registered, setRegistered] = useState(false);
   const [waitlistPosition, setWaitlistPosition] = useState(-1);
@@ -146,23 +180,32 @@ const EventRegistration = () => {
       }
     };
 
+    const handleLoadError = (error) => {
+      if (isCancelled) return;
+      console.error("Failed to load event details:", error);
+      const cached = getCachedEventDetail(eventId);
+      if (cached?.event) {
+        applyLoadedEvent(buildCachedEvent(cached));
+        toast.warning(t("eventRegistration.toastShowingCached", { label: getCacheAgeLabel(cached.cachedAt) }));
+        return;
+      }
+      const mock = findMockEvent(eventId);
+      if (mock) {
+        applyLoadedEvent(buildHackathonEvent(mock));
+      } else if (!isCancelled) {
+        setLoadError("Unable to load event details. Please check your connection and try again.");
+      }
+    };
+
     const loadEvent = async () => {
       setLoading(true);
+      setLoadError(null);
 
       const isHackathonPath = location.pathname.startsWith("/register");
       if (isHackathonPath) {
-        const foundMock = hackathonsData.find((item) => String(item.id) === String(eventId));
-        if (foundMock) {
-          applyLoadedEvent({
-            ...foundMock,
-            date: foundMock.startDate,
-            time: "10:00 AM",
-            image:
-              "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80&w=800",
-            attendees: foundMock.participants,
-            maxAttendees: 1500,
-            status: foundMock.status,
-          });
+        const mock = findMockEvent(eventId);
+        if (mock) {
+          applyLoadedEvent(buildHackathonEvent(mock));
           if (!isCancelled) setLoading(false);
           prefillAuthenticatedUser();
           return;
@@ -171,50 +214,14 @@ const EventRegistration = () => {
 
       try {
         const response = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId));
-
-        if (response.status === 200 && response.data) {
-          if (isCancelled) return;
-
-          const fetchedEvent = {
-            ...response.data,
-            status: getEventStatus(response.data),
-          };
+        if (response.status === 200 && response.data && !isCancelled) {
+          const fetchedEvent = { ...response.data, status: getEventStatus(response.data) };
           applyLoadedEvent(fetchedEvent);
           saveCachedEventDetail(fetchedEvent);
-
           prefillAuthenticatedUser();
         }
       } catch (error) {
-        if (isCancelled) return;
-        console.error("Failed to load event details:", error);
-        const cached = getCachedEventDetail(eventId);
-        if (cached?.event) {
-          applyLoadedEvent({
-            ...cached.event,
-            status: getEventStatus(cached.event),
-            cacheInfo: {
-              cachedAt: cached.cachedAt,
-              label: getCacheAgeLabel(cached.cachedAt),
-            },
-          });
-
-          toast.warning(t("eventRegistration.toastShowingCached", { label: getCacheAgeLabel(cached.cachedAt) }));
-          return;
-        }
-
-        const foundMock = hackathonsData.find((item) => String(item.id) === String(eventId));
-        if (foundMock) {
-          applyLoadedEvent({
-            ...foundMock,
-            date: foundMock.startDate,
-            time: "10:00 AM",
-            image:
-              "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80&w=800",
-            attendees: foundMock.participants,
-            maxAttendees: 1500,
-            status: foundMock.status,
-          });
-        }
+        handleLoadError(error);
       } finally {
         if (!isCancelled) setLoading(false);
       }
@@ -225,7 +232,7 @@ const EventRegistration = () => {
       isCancelled = true;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventId, user, isAuthenticated, setValues, location.pathname]);
+  }, [eventId, user, isAuthenticated, setValues, location.pathname, retryKey]);
 
   const refreshEventAvailability = useCallback(async (id) => {
     try {
@@ -561,6 +568,32 @@ const EventRegistration = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900 py-12 px-4">
         <SkeletonEventCard />
+      </div>
+    );
+  }
+
+  // Fix #8507: Show a recoverable error state instead of staying stuck on the
+  // loading skeleton or silently rendering an empty/broken page.
+  // Fix #8507: Show a recoverable error state instead of staying stuck on the
+  // loading skeleton or silently rendering an empty/broken page.
+  if (loadError) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-900 px-4">
+        <LoadingWithError
+          loading={false}
+          error={loadError}
+          onRetry={() => { setLoadError(null); setRetryKey(k => k + 1); }}
+          errorTitle="Failed to load event"
+        >
+          {null}
+        </LoadingWithError>
+        <Link
+          to="/events"
+          className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 bg-gray-700 hover:bg-gray-800 text-white text-sm font-semibold rounded-xl transition-all duration-200"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Events
+        </Link>
       </div>
     );
   }

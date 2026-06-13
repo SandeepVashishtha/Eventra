@@ -344,13 +344,14 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
     const saved = safeParseJson(localStorage.getItem("recentSearches"), []);
     setRecentSearches(saved);
   }, []);
+// Fix #8507: Replace arbitrary 1500 ms timer with data-driven loading.
+// The previous timer could leave users staring at a spinner for 1.5 seconds
+// even when data was already available, and would never recover after an error.
 useEffect(() => {
-  const timer = setTimeout(() => {
-    setLoading(false);
-  }, 1500);
-
-  return () => clearTimeout(timer);
-}, []);
+  // myEvents is sourced from MyEventsContext — once the context has initialised
+  // (array present, even if empty) we are ready to render.
+  setLoading(false);
+}, [myEvents]);
 
 
 useEffect(() => {
