@@ -430,73 +430,59 @@ function handleLeaderboardFetch(event, requestUrl) {
   );
 }
 
-// Intercept fetch requests and apply offline caching strategies
-self.addEventListener('fetch', (event) => {
-  const requestUrl = new URL(event.request.url);
-
-  // Skip non-GET requests
-  if (event.request.method !== 'GET') return;
-
-  // Skip non-HTTP(S) requests e.g. chrome-extension://
-  if (!event.request.url.startsWith('http')) return;
-
-  // Skip cross-origin requests (e.g. Google Fonts, external CDNs).
-  // Calling event.respondWith() on these can throw a TypeError when the
-  // fetch is blocked (CSP, CORS, network) and the catch path returns
-  // undefined instead of a valid Response. Let the browser handle them.
-  if (requestUrl.origin !== self.location.origin) return;
-
-  // CUSTOM CACHING STRATEGY: Stale-While-Revalidate with TTL for leaderboard data.
-  // Ensures fast response, offline support, and automatic revalidation/client notification.
-  if (requestUrl.pathname === '/api/leaderboard') {
-    handleLeaderboardFetch(event, requestUrl);
-    return;
-  }
-
-  // SECURITY: Network-First strategy for API routes with sensitive data filtering
-  if (requestUrl.pathname.startsWith('/api/')) {
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          // SECURITY: Only cache responses that are safe according to security rules
-          if (response.status === 200 && isSafeToCache(requestUrl.pathname, response)) {
-            const responseCopy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              log(`[Service Worker] Caching public API response: ${requestUrl.pathname}`);
-              cache.put(event.request, responseCopy);
-            });
-          } else if (response.status === 200) {
-            log(`[Service Worker] Skipping cache for sensitive API: ${requestUrl.pathname}`);
-          }
-          return response;
-        })
-        .catch(() => {
-          // Only serve cached response if it was safe to cache (public endpoint)
-          return caches.match(event.request).then((cachedResponse) => {
-            // Only return cached response if it's from a public endpoint
-            if (cachedResponse && isSafeToCache(requestUrl.pathname, cachedResponse)) {
-              log(`[Service Worker] Serving cached public API response: ${requestUrl.pathname}`);
-              return cachedResponse;
-            }
-
-            // For sensitive endpoints or cache miss, return offline error
-            return new Response(
-              JSON.stringify({
-                error: 'You are currently offline. Event details will synchronize automatically once reconnected.',
-                offline: true
-              }),
-              {
-                headers: { 'Content-Type': 'application/json' },
-                status: 503
-              }
-            );
+/**
+ * Handle network-first caching for generic API requests.
+ *
+ * @param {FetchEvent} event - The fetch event
+ * @param {URL} requestUrl - The parsed request URL
+ */
+function handleApiFetch(event, requestUrl) {
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => {
+        // SECURITY: Only cache responses that are safe according to security rules
+        if (response.status === 200 && isSafeToCache(requestUrl.pathname, response)) {
+          const responseCopy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            log(`[Service Worker] Caching public API response: ${requestUrl.pathname}`);
+            cache.put(event.request, responseCopy);
           });
-        })
-    );
-    return;
-  }
+        } else if (response.status === 200) {
+          log(`[Service Worker] Skipping cache for sensitive API: ${requestUrl.pathname}`);
+        }
+        return response;
+      })
+      .catch(() => {
+        // Only serve cached response if it was safe to cache (public endpoint)
+        return caches.match(event.request).then((cachedResponse) => {
+          // Only return cached response if it's from a public endpoint
+          if (cachedResponse && isSafeToCache(requestUrl.pathname, cachedResponse)) {
+            log(`[Service Worker] Serving cached public API response: ${requestUrl.pathname}`);
+            return cachedResponse;
+          }
 
-  // Cache-First strategy for static assets and page views
+          // For sensitive endpoints or cache miss, return offline error
+          return new Response(
+            JSON.stringify({
+              error: 'You are currently offline. Event details will synchronize automatically once reconnected.',
+              offline: true
+            }),
+            {
+              headers: { 'Content-Type': 'application/json' },
+              status: 503
+            }
+          );
+        });
+      })
+  );
+}
+
+/**
+ * Handle cache-first caching for static assets.
+ *
+ * @param {FetchEvent} event - The fetch event
+ */
+function handleStaticFetch(event) {
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
@@ -536,4 +522,37 @@ self.addEventListener('fetch', (event) => {
         });
     })
   );
+}
+
+// Intercept fetch requests and apply offline caching strategies
+self.addEventListener('fetch', (event) => {
+  const requestUrl = new URL(event.request.url);
+
+  // Skip non-GET requests
+  if (event.request.method !== 'GET') return;
+
+  // Skip non-HTTP(S) requests e.g. chrome-extension://
+  if (!event.request.url.startsWith('http')) return;
+
+  // Skip cross-origin requests (e.g. Google Fonts, external CDNs).
+  // Calling event.respondWith() on these can throw a TypeError when the
+  // fetch is blocked (CSP, CORS, network) and the catch path returns
+  // undefined instead of a valid Response. Let the browser handle them.
+  if (requestUrl.origin !== self.location.origin) return;
+
+  // CUSTOM CACHING STRATEGY: Stale-While-Revalidate with TTL for leaderboard data.
+  // Ensures fast response, offline support, and automatic revalidation/client notification.
+  if (requestUrl.pathname === '/api/leaderboard') {
+    handleLeaderboardFetch(event, requestUrl);
+    return;
+  }
+
+  // SECURITY: Network-First strategy for API routes with sensitive data filtering
+  if (requestUrl.pathname.startsWith('/api/')) {
+    handleApiFetch(event, requestUrl);
+    return;
+  }
+
+  // Cache-First strategy for static assets and page views
+  handleStaticFetch(event);
 });
