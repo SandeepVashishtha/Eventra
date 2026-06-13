@@ -116,44 +116,52 @@ BLOCKED_COUNTRIES=
 - Self-hosted deployments can configure this based on their requirements
 - No restrictions are applied when the variable is empty or unset
 
-## CORS Configuration
+## Content Security Policy (CSP) Backend Origin Configuration
 
-The API enforces a strict allowlist-based CORS policy via the `ALLOWED_ORIGINS` environment variable. This controls which domains can make cross-origin requests to Eventra APIs.
+The Edge Middleware dynamically configures the Content-Security-Policy (CSP) `connect-src` directive using backend origins from environment variables. This allows flexible deployment across different environments without modifying source code.
 
 **Configuration:**
-- Set `ALLOWED_ORIGINS` to a comma-separated list of trusted origin URLs
-- Include the full URL with protocol (http/https) and port if non-standard
-- Origins are case-sensitive and must match exactly
-- Whitespace around origins is trimmed automatically
-- Leave empty to block all cross-origin requests (fail closed)
+- The middleware reads backend origins from `BACKEND_URL`, `VITE_API_URL`, and `REACT_APP_API_URL` (in that priority order)
+- Each valid origin is validated and added to the CSP `connect-src` directive
+- Only `http` and `https` protocols are allowed
+- Invalid URLs are rejected with a warning logged to the console
+
+**Security Considerations:**
+- Origins are validated before being added to CSP
+- Malformed URLs or unsupported protocols are safely rejected
+- If no valid backend origin is configured, CSP will not include backend origins (API calls may be blocked, but the application will not crash)
+- The application fails safely with a warning rather than crashing
 
 **Examples:**
+
+Development environment:
 ```env
-# Production deployment
-ALLOWED_ORIGINS=https://eventra.com,https://www.eventra.com,https://api.eventra.com
-
-# Development with localhost (localhost is auto-allowed in non-production)
-ALLOWED_ORIGINS=
-
-# Block all cross-origin requests
-ALLOWED_ORIGINS=
+BACKEND_URL=http://localhost:8080
+VITE_API_URL=http://localhost:8080
+REACT_APP_API_URL=http://localhost:8080/api
 ```
 
-**Development Support:**
-In non-production environments (`NODE_ENV !== "production"`), common localhost origins are automatically allowed:
-- `http://localhost:3000`
-- `http://localhost:5173`
-- `http://127.0.0.1:3000`
-- `http://127.0.0.1:5173`
+Production environment:
+```env
+BACKEND_URL=https://api.example.com
+VITE_API_URL=https://api.example.com
+REACT_APP_API_URL=https://api.example.com/api
+```
 
-These development origins are **blocked** in production unless explicitly added to `ALLOWED_ORIGINS`.
+Multiple backends (if needed):
+```env
+# All valid origins will be added to CSP
+BACKEND_URL=https://api-primary.example.com
+VITE_API_URL=https://api-secondary.example.com
+REACT_APP_API_URL=https://api-tertiary.example.com
+```
 
-**Security Notes:**
-- Never use wildcard (`*`) in production
-- Only explicitly listed origins receive CORS access
-- Untrusted origins receive no CORS headers (browser blocks the request)
-- This prevents unauthorized cross-origin access and information disclosure
-- See `docs/SECURITY_ARCHITECTURE.md` for detailed security rationale
+**Behavior:**
+- The middleware checks environment variables in priority order: `BACKEND_URL` → `VITE_API_URL` → `REACT_APP_API_URL`
+- Duplicate origins are automatically deduplicated
+- If no valid backend origin is configured, a warning is logged but the application continues to run
+- The CSP will still include other trusted sources like `https://api.github.com`
+- Changes to environment variables require a redeployment of the Edge Middleware
 
 ### Server-Side Variables
 
