@@ -12,6 +12,7 @@ const BackToTop = ({
   const [visible, setVisible] = useState(false);
   const [progress, setProgress] = useState(0);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+  const [hasChatbot, setHasChatbot] = useState(false);
 
   const prefersReducedMotion =
     typeof window !== "undefined"
@@ -33,6 +34,7 @@ const BackToTop = ({
     const handleChatbotState = () => {
       if (typeof document === "undefined") return;
       setIsChatbotOpen(document.querySelector('[data-chatbot-open]') !== null);
+      setHasChatbot(document.querySelector('[data-chatbot-launcher]') !== null);
     };
 
     handleChatbotState();
@@ -68,9 +70,13 @@ const BackToTop = ({
   const radius = 18;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
-  const positionClass = (avoidChatbot && isChatbotOpen)
-    ? "fixed bottom-[calc(1.5rem+var(--safe-area-bottom))] left-[calc(1rem+var(--safe-area-left))] z-50 sm:bottom-6 sm:left-6"
-    : "fixed bottom-[calc(1rem+var(--safe-area-bottom))] right-[calc(1rem+var(--safe-area-right))] z-50 sm:bottom-6 sm:right-6";
+  
+  let positionClass = "";
+  if (avoidChatbot && hasChatbot) {
+    positionClass = "fixed bottom-[calc(5.5rem+var(--safe-area-bottom))] right-[calc(1rem+var(--safe-area-right))] z-50 sm:bottom-24 sm:right-6";
+  } else {
+    positionClass = "fixed bottom-[calc(1rem+var(--safe-area-bottom))] right-[calc(1rem+var(--safe-area-right))] z-50 sm:bottom-6 sm:right-6";
+  }
 
   return (
     <button
@@ -90,7 +96,7 @@ const BackToTop = ({
         "focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2",
         "active:scale-95",
         "flex items-center justify-center",
-        visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none",
+        (visible && !isChatbotOpen) ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none",
         className
       ].filter(Boolean).join(" ")}
     >

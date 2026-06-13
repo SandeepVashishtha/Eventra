@@ -236,7 +236,7 @@ export default function OnboardingChecklist() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: 50 }}
             onClick={() => setIsOpen(true)}
-            className="fixed bottom-6 left-6 z-40 flex items-center gap-2.5 px-4 py-3 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-semibold shadow-2xl border border-slate-800 dark:border-slate-200 cursor-pointer group"
+            className="fixed bottom-24 left-6 z-40 flex items-center gap-2.5 px-4 py-3 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-semibold shadow-2xl border border-slate-800 dark:border-slate-200 cursor-pointer group"
           >
             <div className="relative flex items-center justify-center w-6 h-6">
               <svg className="w-6 h-6 transform -rotate-90">
@@ -278,7 +278,7 @@ export default function OnboardingChecklist() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 100 }}
             transition={{ duration: prefersReducedMotion ? 0 : 0.25, ease: "easeOut" }}
-            className="fixed bottom-6 left-6 z-40 w-full max-w-sm bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden"
+            className="fixed bottom-6 left-6 z-[110] w-full max-w-sm bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden"
           >
             {/* Header */}
             <div className="p-4 bg-slate-50 dark:bg-slate-850 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
