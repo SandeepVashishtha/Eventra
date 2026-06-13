@@ -50,8 +50,8 @@ try {
       }
     }
   }
-} catch (e) {
-  // Ignore
+} catch (error) {
+  // Ignore missing or malformed .env files
 }
 function loadEnvFile() {
   try {
