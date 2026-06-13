@@ -169,6 +169,13 @@ export const AuthProvider = ({ children }) => {
     
     if (!hadPreviousSession || expiryToastShownRef.current) return;
     expiryToastShownRef.current = true;
+    toast.info(
+      "Security notice: Your session has expired. Please log in again to continue securely.",
+      {
+        toastId: "session-expired",
+        autoClose: 5000,
+      }
+    );
     
     toast.info("Session expired. Please log in again.", {
       toastId: "session-expired",

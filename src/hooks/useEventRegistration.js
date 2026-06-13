@@ -320,7 +320,9 @@ const useEventRegistration = (eventIdParam) => {
       return;
     }
     if (!isAuthenticated() || !user?.id) {
-      toast.error("Please log in to register for events.");
+      toast.error(
+        "Authentication required. Please log in to register for events."
+      );
       navigate("/login", {
         state: { from: registrationPath },
       });
