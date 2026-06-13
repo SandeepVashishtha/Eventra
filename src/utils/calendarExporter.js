@@ -248,3 +248,72 @@ export const downloadBulkICSFile = (events, filename = "registered-events") => {
     }, 200);
   }
 };
+
+/**
+ * Pure function that builds and returns the ICS content string for a single event
+ * without triggering a download. Useful for server-side rendering, unit testing,
+ * or constructing a data URI.
+ *
+ * @param {CalendarEvent} event
+ * @returns {string|null} ICS content string, or null if the event date is invalid
+ */
+export const buildICSContent = (event) => {
+  const { title, description, date, endDate, location, id } = event;
+
+  const formattedStart = formatToICSDate(date);
+  if (!formattedStart) return null;
+
+  const formattedEnd = endDate
+    ? formatToICSDate(endDate)
+    : formatToICSDate(new Date(new Date(date).getTime() + 2 * 60 * 60 * 1000));
+  const createdDate = formatToICSDate(new Date());
+
+  const icsLines = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Eventra//Event Organizer Platform//EN",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+    "BEGIN:VEVENT",
+    `UID:eventra-${id || Date.now()}@eventra.com`,
+    `DTSTAMP:${createdDate}`,
+    `DTSTART:${formattedStart}`,
+    `DTEND:${formattedEnd}`,
+    `SUMMARY:${escapeICSText(title || "Eventra Scheduled Event")}`,
+    `DESCRIPTION:${escapeICSText(description || "Event organized through the Eventra Platform.")}`,
+    `LOCATION:${escapeICSText(location || "Virtual / Online Event")}`,
+    ...(event.joiningLink ? [`URL:${event.joiningLink}`] : []),
+    "STATUS:CONFIRMED",
+    "SEQUENCE:0",
+    "BEGIN:VALARM",
+    "TRIGGER:-PT1H",
+    "ACTION:DISPLAY",
+    "DESCRIPTION:Reminder: Your event starts in 1 hour",
+    "END:VALARM",
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ];
+
+  return icsLines.join("\r\n");
+};
+
+/**
+ * Generates a `webcal://` protocol link that opens directly in Apple Calendar,
+ * Outlook for Mac, and other native calendar apps — skipping the browser download step.
+ *
+ * The link is derived from a publicly-reachable HTTPS URL to an `.ics` feed.
+ *
+ * @param {string} httpsUrl - A public HTTPS URL to an .ics file or feed
+ * @returns {string|null}   The webcal:// equivalent, or null if httpsUrl is invalid
+ */
+export const generateWebCalLink = (httpsUrl) => {
+  if (!httpsUrl || typeof httpsUrl !== "string") return null;
+  try {
+    const url = new URL(httpsUrl);
+    if (url.protocol !== "https:") return null;
+    url.protocol = "webcal:";
+    return url.toString();
+  } catch {
+    return null;
+  }
+};
