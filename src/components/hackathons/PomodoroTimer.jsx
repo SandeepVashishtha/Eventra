@@ -26,7 +26,7 @@ const MODES = {
   },
 };
 
-const PomodoroTimer = () => {
+const usePomodoroLogic = () => {
   const [mode, setMode] = useState("FOCUS");
   const [timeLeft, setTimeLeft] = useState(MODES.FOCUS.minutes * 60);
   const [isActive, setIsActive] = useState(false);
@@ -36,23 +36,23 @@ const PomodoroTimer = () => {
   useEffect(() => {
     try {
       const savedState = localStorage.getItem("pomodoroState");
-      if (savedState) {
-        const { savedMode, savedTimeLeft, savedTimestamp, savedIsActive } = JSON.parse(savedState);
+      if (!savedState) return;
 
-        // Ensure the saved mode still exists
-        if (MODES[savedMode]) {
-          setMode(savedMode);
+      const { savedMode, savedTimeLeft, savedTimestamp, savedIsActive } = JSON.parse(savedState);
 
-          if (savedIsActive) {
-            const elapsedSeconds = Math.floor((Date.now() - savedTimestamp) / 1000);
-            const newTimeLeft = Math.max(0, savedTimeLeft - elapsedSeconds);
-            setTimeLeft(newTimeLeft);
-            setIsActive(newTimeLeft > 0);
-          } else {
-            setTimeLeft(savedTimeLeft);
-            setIsActive(false);
-          }
-        }
+      // Ensure the saved mode still exists
+      if (!MODES[savedMode]) return;
+
+      setMode(savedMode);
+
+      if (savedIsActive) {
+        const elapsedSeconds = Math.floor((Date.now() - savedTimestamp) / 1000);
+        const newTimeLeft = Math.max(0, savedTimeLeft - elapsedSeconds);
+        setTimeLeft(newTimeLeft);
+        setIsActive(newTimeLeft > 0);
+      } else {
+        setTimeLeft(savedTimeLeft);
+        setIsActive(false);
       }
     } catch (err) {
       console.error("Failed to parse pomodoro state:", err);
@@ -79,8 +79,6 @@ const PomodoroTimer = () => {
     } else if (timeLeft === 0 && isActive) {
       setIsActive(false);
       clearInterval(timerRef.current);
-      // Automatically switch to break or back to focus could be added here
-      // For now, it just stops
     }
 
     return () => clearInterval(timerRef.current);
@@ -100,11 +98,17 @@ const PomodoroTimer = () => {
     setTimeLeft(MODES[newMode].minutes * 60);
   };
 
-  const formatTime = (seconds) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-  };
+  return { mode, timeLeft, isActive, toggleTimer, resetTimer, switchMode };
+};
+
+const formatTime = (seconds) => {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+};
+
+const PomodoroTimer = () => {
+  const { mode, timeLeft, isActive, toggleTimer, resetTimer, switchMode } = usePomodoroLogic();
 
   const totalTime = MODES[mode].minutes * 60;
   const progress = ((totalTime - timeLeft) / totalTime) * 100;
