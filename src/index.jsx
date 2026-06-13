@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import * as Sentry from "@sentry/react";
 
 import "./index.css";
 import "./i18n/i18n";
@@ -13,6 +14,11 @@ import { initCspReporting } from "./utils/cspReporting";
 import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
 import { RealTimeProvider } from "./context/RealTimeContext";
 import { HelmetProvider } from "react-helmet-async";
+
+// Initialize Sentry
+Sentry.init({
+  dsn: "https://0f5776d794dcf89120ca6b00a5923f93@o4511372299075584.ingest.de.sentry.io/4511556614946896",
+});
 
 // Initialize Global Runtime Monitoring
 initializeGlobalErrorHandling();

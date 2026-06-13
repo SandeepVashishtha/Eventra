@@ -320,7 +320,9 @@ const useEventRegistration = (eventIdParam) => {
       return;
     }
     if (!isAuthenticated() || !user?.id) {
-      toast.error("Please log in to register for events.");
+      toast.error(
+        "Authentication required. Please log in to register for events."
+      );
       navigate("/login", {
         state: { from: registrationPath },
       });
@@ -404,7 +406,6 @@ const useEventRegistration = (eventIdParam) => {
       setSubmitting(false);
     }
     // Fixed: Added isEventFull to dependency array
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId, event, formData, isAuthenticated, user, token, navigate, registrationPath, addRegistration, clearSession, isEventFull]);
 
   // Handle form submission

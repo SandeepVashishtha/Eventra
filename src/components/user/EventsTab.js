@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import ReactDOM from "react-dom"; // 🔥 FIX: Required for Portal
 import { motion, AnimatePresence } from "framer-motion";
 import { useReducedMotion } from '../../hooks/useReducedMotion';
@@ -26,15 +26,6 @@ import EmptyState from "../common/EmptyState";
 import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
 import { useOfflineStatus } from "../../hooks/useOfflineStatus";
 import LazyImage from "../common/LazyImage";
-import { SEARCH_ROUTES } from "../../constants/routes";
-import { SEARCH_ROUTES } from "../Hero";
-
-const SEARCH_ROUTES = {
-  events: "/events",
-  hackathons: "/hackathons",
-  projects: "/projects",
-  networking: "/networking"
-};
 
 const fadeUp = (prefersReducedMotion) => ({
   hidden: { opacity: 0, y: 20 },
@@ -206,18 +197,14 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
         </Link>
       </div>
 
-  </Link>
-
-  <span className="absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900 text-white text-xs px-3 py-1 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none shadow-lg">
-    View Event Details
-  </span>
-</div>
-
+      <span className="absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900 text-white text-xs px-3 py-1 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none shadow-lg">
+        View Event Details
+      </span>
     </motion.div>
   );
 };
 
-const WaitlistCard = ({ event, index, onLeaveWaitlist }) => {
+const WaitlistCard = memo(({ event, index, onLeaveWaitlist }) => {
   const prefersReducedMotion = useReducedMotion();
   const fadeUpVariants = fadeUp(prefersReducedMotion);
   const { user } = useAuth();
@@ -282,7 +269,8 @@ const WaitlistCard = ({ event, index, onLeaveWaitlist }) => {
       </div>
     </motion.div>
   );
-};
+});
+WaitlistCard.displayName = "WaitlistCard";
 
 const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const prefersReducedMotion = useReducedMotion();
@@ -450,7 +438,7 @@ const addToRecentEvents = (event) => {
 
   const filtered = existing.filter((e) => e.id !== event.id);
 
-  const updated = [event, ...filtered].slice(0, 6);
+  const updated = [{ id: event.id, title: event.title || event.name, date: event.date }, ...filtered].slice(0, 6);
 
   localStorage.setItem("recentEvents", JSON.stringify(updated));
 
@@ -461,11 +449,11 @@ const addToRecentEvents = (event) => {
 
   const handleCancelClick = (id, title) => setCancelTarget({ id, title });
   const handleCancelDismiss = () => setCancelTarget(null);
-  const handleCancelConfirm = () => {
+  const handleCancelConfirm = useCallback(() => {
     if (!cancelTarget) return;
     removeRegistration(cancelTarget.id);
     setCancelTarget(null);
-  };
+  }, [cancelTarget, removeRegistration]);
 
   return (
     <motion.div
@@ -682,12 +670,17 @@ const addToRecentEvents = (event) => {
             itemLabel="events"
             browseLabel="Browse Events"
             browsePath="/events"
-            onClear={() => {
-              setSearchQuery("");
-              setFilterStatus("All");
-              setFilterType("All");
-              setSortBy("soonest");
-            }}
+          onClear={() => {
+  setSearchQuery("");
+  setFilterStatus("All");
+  setFilterType("All");
+  setSortBy("soonest");
+
+  removeFromStorage("eventSearchQuery");
+  removeFromStorage("eventFilterStatus");
+  removeFromStorage("eventFilterType");
+  removeFromStorage("eventSortBy");
+}}
           />
         </motion.div>
       ) : (

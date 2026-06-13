@@ -18,8 +18,8 @@ import {
 import { safeJsonParse } from "../../../utils/safeJsonParse";
 import {
   fetchRepository,
-  fetchContributors,
-  fetchPullRequests,
+  // fetchContributors,
+  // fetchPullRequests,
 } from "../../../utils/githubApiClient";
 import { ENV } from "../../../config/env";
 
@@ -246,7 +246,7 @@ export default function GitHubStats() {
                     <div className="p-2 sm:p-3 md:p-4 bg-gray-50 dark:bg-gray-700 rounded-full shadow-inner [&>svg]:w-7 [&>svg]:h-7 sm:[&>svg]:w-9 sm:[&>svg]:h-9 md:[&>svg]:w-10 md:[&>svg]:h-10">
                       {icon}
                     </div>
-                    <p className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100 text-center break-words px-1">
+                    <p className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100 text-center wrap-break-word px-1">
                       {value}
                     </p>
                     <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 text-center px-1">
