@@ -78,7 +78,16 @@ const getOrCreateSecret = (storageKey) => {
     // localStorage unavailable — fall through to generate a session-scoped value
   }
 
-  const secret = crypto.getRandomValues(new Uint8Array(SECRET_BYTE_LENGTH));
+  let secret;
+  if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+    secret = crypto.getRandomValues(new Uint8Array(SECRET_BYTE_LENGTH));
+  } else {
+    // Fallback: generate pseudorandom array if Web Crypto is unavailable (SSR / non-secure)
+    secret = new Uint8Array(SECRET_BYTE_LENGTH);
+    for (let i = 0; i < SECRET_BYTE_LENGTH; i++) {
+      secret[i] = Math.floor(Math.random() * 256);
+    }
+  }
   try {
     localStorage.setItem(storageKey, btoa(String.fromCharCode(...secret)));
   } catch {
