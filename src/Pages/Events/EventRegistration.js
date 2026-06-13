@@ -70,6 +70,34 @@ const getRegistrationFailureMessage = (error) => {
   return message || "Registration failed. Please try again.";
 };
 
+// Fix #8507: Extracted from loadEvent to reduce method complexity.
+const HACKATHON_DEFAULT_IMAGE =
+  "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80&w=800";
+
+function buildHackathonEvent(mock) {
+  return {
+    ...mock,
+    date: mock.startDate,
+    time: "10:00 AM",
+    image: HACKATHON_DEFAULT_IMAGE,
+    attendees: mock.participants,
+    maxAttendees: 1500,
+    status: mock.status,
+  };
+}
+
+function findMockEvent(eventId) {
+  return hackathonsData.find((item) => String(item.id) === String(eventId));
+}
+
+function buildCachedEvent(cached) {
+  return {
+    ...cached.event,
+    status: getEventStatus(cached.event),
+    cacheInfo: { cachedAt: cached.cachedAt, label: getCacheAgeLabel(cached.cachedAt) },
+  };
+}
+
 const EventRegistration = () => {
   const { t } = useTranslation();
   const { eventId: routeEventId, id: routeId } = useParams();
@@ -152,24 +180,32 @@ const EventRegistration = () => {
       }
     };
 
+    const handleLoadError = (error) => {
+      if (isCancelled) return;
+      console.error("Failed to load event details:", error);
+      const cached = getCachedEventDetail(eventId);
+      if (cached?.event) {
+        applyLoadedEvent(buildCachedEvent(cached));
+        toast.warning(t("eventRegistration.toastShowingCached", { label: getCacheAgeLabel(cached.cachedAt) }));
+        return;
+      }
+      const mock = findMockEvent(eventId);
+      if (mock) {
+        applyLoadedEvent(buildHackathonEvent(mock));
+      } else if (!isCancelled) {
+        setLoadError("Unable to load event details. Please check your connection and try again.");
+      }
+    };
+
     const loadEvent = async () => {
       setLoading(true);
-      setLoadError(null); // Fix #8507: reset error on each attempt
+      setLoadError(null);
 
       const isHackathonPath = location.pathname.startsWith("/register");
       if (isHackathonPath) {
-        const foundMock = hackathonsData.find((item) => String(item.id) === String(eventId));
-        if (foundMock) {
-          applyLoadedEvent({
-            ...foundMock,
-            date: foundMock.startDate,
-            time: "10:00 AM",
-            image:
-              "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80&w=800",
-            attendees: foundMock.participants,
-            maxAttendees: 1500,
-            status: foundMock.status,
-          });
+        const mock = findMockEvent(eventId);
+        if (mock) {
+          applyLoadedEvent(buildHackathonEvent(mock));
           if (!isCancelled) setLoading(false);
           prefillAuthenticatedUser();
           return;
@@ -178,56 +214,14 @@ const EventRegistration = () => {
 
       try {
         const response = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId));
-
-        if (response.status === 200 && response.data) {
-          if (isCancelled) return;
-
-          const fetchedEvent = {
-            ...response.data,
-            status: getEventStatus(response.data),
-          };
+        if (response.status === 200 && response.data && !isCancelled) {
+          const fetchedEvent = { ...response.data, status: getEventStatus(response.data) };
           applyLoadedEvent(fetchedEvent);
           saveCachedEventDetail(fetchedEvent);
-
           prefillAuthenticatedUser();
         }
       } catch (error) {
-        if (isCancelled) return;
-        console.error("Failed to load event details:", error);
-        const cached = getCachedEventDetail(eventId);
-        if (cached?.event) {
-          applyLoadedEvent({
-            ...cached.event,
-            status: getEventStatus(cached.event),
-            cacheInfo: {
-              cachedAt: cached.cachedAt,
-              label: getCacheAgeLabel(cached.cachedAt),
-            },
-          });
-
-          toast.warning(t("eventRegistration.toastShowingCached", { label: getCacheAgeLabel(cached.cachedAt) }));
-          return;
-        }
-
-        const foundMock = hackathonsData.find((item) => String(item.id) === String(eventId));
-        if (foundMock) {
-          applyLoadedEvent({
-            ...foundMock,
-            date: foundMock.startDate,
-            time: "10:00 AM",
-            image:
-              "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80&w=800",
-            attendees: foundMock.participants,
-            maxAttendees: 1500,
-            status: foundMock.status,
-          });
-        } else {
-          // Fix #8507: All fallbacks exhausted — surface an error so the user
-          // can retry instead of seeing a blank/stuck loading state.
-          if (!isCancelled) {
-            setLoadError("Unable to load event details. Please check your connection and try again.");
-          }
-        }
+        handleLoadError(error);
       } finally {
         if (!isCancelled) setLoading(false);
       }

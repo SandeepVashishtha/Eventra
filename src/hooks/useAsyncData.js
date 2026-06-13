@@ -1,42 +1,36 @@
-/**
- * @fileoverview useAsyncData — Generic hook that prevents infinite loading states.
- *
- * Fix for Issue #8507: Broken Error Handling Causes Infinite Loading States.
- *
- * Problems solved:
- *   1. Failed requests that leave `loading = true` forever (no recovery path).
- *   2. No retry option shown to the user after a failure.
- *   3. No configurable timeout so a hung network call can trap the UI indefinitely.
- *
- * Usage:
- *   const { data, loading, error, retry } = useAsyncData(
- *     () => eventService.getAllEvents(),
- *     { timeout: 10000 }
- *   );
- */
 import { useState, useCallback, useEffect, useRef } from "react";
 
+const DEFAULT_TIMEOUT = 15_000;
+
+function makeTimeoutPromise(ms) {
+  return new Promise((_, reject) => {
+    const id = setTimeout(
+      () => reject(new Error(`Request timed out after ${ms / 1000}s. Check your connection and try again.`)),
+      ms
+    );
+    // Return id so caller can clear it.
+    makeTimeoutPromise._lastId = id;
+  });
+}
+
+function extractMessage(err) {
+  return err?.message || err?.data?.message || "Something went wrong. Please try again.";
+}
+
 /**
- * @template T
- * @param {() => Promise<T>} asyncFn   Async function that returns data.
- * @param {object}  [options]
- * @param {number}  [options.timeout=15000]     Ms before the request is force-failed.
- * @param {boolean} [options.immediate=true]    Run on mount.
- * @param {any[]}   [options.deps=[]]           Re-run when these values change.
- * @returns {{ data: T|null, loading: boolean, error: string|null, retry: () => void }}
+ * useAsyncData — prevents infinite loading states (fix for #8507).
+ *
+ * @param {() => Promise<any>} asyncFn
+ * @param {{ timeout?: number, immediate?: boolean, deps?: any[] }} options
+ * @returns {{ data: any, loading: boolean, error: string|null, retry: () => void }}
  */
 export function useAsyncData(asyncFn, options = {}) {
-  const {
-    timeout = 15_000,
-    immediate = true,
-    deps = [],
-  } = options;
+  const { timeout = DEFAULT_TIMEOUT, immediate = true, deps = [] } = options;
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(immediate);
   const [error, setError] = useState(null);
 
-  // Keep a stable ref so the timeout callback doesn't close over a stale value.
   const isMounted = useRef(true);
   const asyncFnRef = useRef(asyncFn);
   useEffect(() => { asyncFnRef.current = asyncFn; });
@@ -46,45 +40,26 @@ export function useAsyncData(asyncFn, options = {}) {
     setLoading(true);
     setError(null);
 
-    // Safety net: if the promise never settles, force-fail after `timeout` ms.
-    let timeoutId;
-    const timeoutPromise = new Promise((_, reject) => {
-      timeoutId = setTimeout(
-        () => reject(new Error(`Request timed out after ${timeout / 1000}s. Check your connection and try again.`)),
-        timeout
-      );
-    });
+    const timeoutPromise = makeTimeoutPromise(timeout);
+    const timeoutId = makeTimeoutPromise._lastId;
 
     try {
       const result = await Promise.race([asyncFnRef.current(), timeoutPromise]);
-      if (isMounted.current) {
-        setData(result);
-      }
+      if (isMounted.current) setData(result);
     } catch (err) {
-      if (isMounted.current) {
-        // Never leave loading=true on failure.
-        const message =
-          err?.message ||
-          err?.data?.message ||
-          "Something went wrong. Please try again.";
-        setError(message);
-      }
+      if (isMounted.current) setError(extractMessage(err));
     } finally {
       clearTimeout(timeoutId);
-      if (isMounted.current) {
-        setLoading(false); // Always reset — this is the core of the fix.
-      }
+      if (isMounted.current) setLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
 
   useEffect(() => {
     isMounted.current = true;
     if (immediate) execute();
-    return () => {
-      isMounted.current = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => { isMounted.current = false; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [execute]);
 
   return { data, loading, error, retry: execute };
