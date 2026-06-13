@@ -234,6 +234,42 @@ For vulnerabilities, do not open public GitHub issues. Please refer to our respo
 
 ---
 
+## 8. Persistent Authentication Storage Requirements
+
+**CRITICAL**: Eventra enforces fail-closed security for authentication storage. In-memory user storage is permitted ONLY in development environments.
+
+### 8.1 Production Storage Requirements
+
+- **DATABASE_URL is mandatory in production**: The application will fail to start if `DATABASE_URL` is missing, empty, or whitespace-only when `NODE_ENV=production`.
+- **No fallback to in-memory storage**: Production never falls back to Map-based storage. This prevents silent account loss after server restarts or serverless cold starts.
+- **Fail-fast initialization**: The authentication modules validate storage configuration during module initialization, rejecting startup before accepting any requests.
+- **Runtime protection**: Authentication endpoints return HTTP 500 with a generic "Authentication service unavailable" error if persistent storage is not configured.
+
+### 8.2 Development Storage
+
+- In-memory Map storage is allowed when `NODE_ENV` is not `production` (development, test, etc.).
+- This preserves existing development and test workflows without requiring database setup.
+- Development warnings are logged but do not prevent startup.
+
+### 8.3 Security Rationale
+
+- **Prevents account loss**: Without persistent storage, all user accounts vanish on server restart, causing 401 authentication failures for previously valid credentials.
+- **Serverless compatibility**: Serverless platforms (Vercel, AWS Lambda) have cold starts that reset in-memory state. Persistent storage is required for production deployments.
+- **Fail-closed design**: The application refuses to operate in an unsafe configuration rather than silently accepting data that will be lost.
+
+### 8.4 Configuration
+
+Set `DATABASE_URL` in your production environment:
+
+```bash
+# Required in production
+DATABASE_URL=postgresql://user:password@host:5432/database
+```
+
+The validation script (`scripts/validate-env.js`) enforces this requirement during build time in production.
+
+---
+
 ## 9. Developer Security Checklist
 
 Before submitting a Pull Request, ensure:
@@ -243,3 +279,4 @@ Before submitting a Pull Request, ensure:
 - [ ] Sensitive files or credentials are not checked into git.
 - [ ] All local imports under `src/` specify correct `.js` extensions.
 - [ ] State-changing endpoints are validated for both authentication and CSRF.
+- [ ] Authentication storage validation is tested for both production and development modes.

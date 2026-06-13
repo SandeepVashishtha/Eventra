@@ -21,6 +21,7 @@ import { getClientIp } from "../lib/getClientIp.js";
 import { loginRateLimiter, enforceRateLimit } from "../lib/rateLimiter.js";
 import { getJwtSecret, JWT_EXPIRES_IN, JWT_COOKIE_MAX_AGE_SECONDS } from "./jwt-config.js";
 import { buildCorsHeaders, corsResponse } from "./cors.js";
+import { isPersistentStorageConfigured } from "./storage-config.js";
 import { users, usersByUsername } from "./signup.js";
 
 /**
@@ -80,6 +81,13 @@ export default async function login(req, res, deps = {}) {
   const validation = validateLoginInput(req.body);
   if (!validation.valid) {
     return corsResponse(req, res, 400, { error: validation.message });
+  }
+
+  // Runtime protection: Reject requests if storage is unavailable
+  // In development, in-memory storage is allowed. In production, persistent storage is required.
+  if (!users || !usersByUsername) {
+    console.error("[login.js] Authentication service unavailable: storage not initialized");
+    return corsResponse(req, res, 500, { error: "Authentication service unavailable" });
   }
 
   const usernameOrEmail = req.body.usernameOrEmail || req.body.email;
