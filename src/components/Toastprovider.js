@@ -151,6 +151,11 @@ const ToastProvider = () => {
             key={item.id}
             role={item.type === "error" ? "alert" : "status"}
             aria-live={item.type === "error" ? "assertive" : "polite"}
+            aria-label={
+              item.type === "error"
+                ? `Security alert: ${item.message}`
+                : item.message
+            }
             style={{
               width: "min(360px, calc(100vw - 2rem))",
               background: palette.bg,

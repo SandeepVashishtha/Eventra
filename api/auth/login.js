@@ -21,6 +21,7 @@ import { getClientIp } from "../lib/getClientIp.js";
 import { loginRateLimiter, enforceRateLimit } from "../lib/rateLimiter.js";
 import { getJwtSecret, JWT_EXPIRES_IN, JWT_COOKIE_MAX_AGE_SECONDS } from "./jwt-config.js";
 import { buildCorsHeaders, corsResponse, handlePreflight } from "./cors.js";
+import { isPersistentStorageConfigured } from "./storage-config.js";
 import { users, usersByUsername } from "./signup.js";
 
 /**
@@ -82,6 +83,13 @@ export default async function login(req, res, deps = {}) {
     return corsResponse(req, res, 400, { error: validation.message });
   }
 
+  // Runtime protection: Reject requests if storage is unavailable
+  // In development, in-memory storage is allowed. In production, persistent storage is required.
+  if (!isPersistentStorageConfigured() || !users || !usersByUsername) {
+    console.error("[login.js] Authentication service unavailable: storage not initialized");
+    return corsResponse(req, res, 500, { error: "Authentication service unavailable" });
+  }
+
   const usernameOrEmail = req.body.usernameOrEmail || req.body.email;
   const { password } = req.body;
 
@@ -111,7 +119,11 @@ export default async function login(req, res, deps = {}) {
 
     // 4. Verify credentials. Always run the comparison shape regardless of
     //    whether the user exists to avoid leaking timing/enumeration signals.
-    const passwordHash = user?.password ?? "";
+    //    A valid dummy bcrypt hash is used for non-existent users to prevent
+    //    bcrypt from throwing errors on invalid/empty hashes, which would
+    //    leak the user's non-existence via an HTTP 500 response.
+    const dummyHash = "$2b$10$v18wNUUU7wTXyTbRPTFZTeze3aHS//qr4FKA9gu1E/GfNQqTsFfRG";
+    const passwordHash = user?.password ?? dummyHash;
     const isValid = await comparePassword(password, passwordHash);
 
     if (!user || !isValid) {

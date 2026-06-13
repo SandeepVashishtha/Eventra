@@ -1,6 +1,6 @@
-import { useMemo, useCallback } from "react";
-import { FixedSizeGrid } from "react-window";
-import { AutoSizer } from "react-virtualized-auto-sizer";
+// import { useMemo, useCallback } from "react";
+// import { FixedSizeGrid } from "react-window";
+// import { AutoSizer } from "react-virtualized-auto-sizer";
 import HackathonCard from "../../Pages/Hackathons/HackathonCard";
 
 /**

@@ -88,7 +88,7 @@ const getResultIcon = (type) => {
 const fadeUp = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.6 } } };
 const Hero = () => {
   const { t, i18n } = useTranslation();
-  const controls = useAnimation(); 
+  const controls = useAnimation();
   const prefersReducedMotion = useReducedMotion();
 
   useDocumentTitle("Eventra | Home");
@@ -100,7 +100,7 @@ const Hero = () => {
   const [phraseIndex, setPhraseIndex] = useState(0);
   const [showResults, setShowResults] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
-  
+
   const { searchTerm, debouncedTerm, setSearchTerm, clear: clearSearchTerm } = useDebouncedSearch("", 300);
 
   const { scrollYProgress } = useScroll({
@@ -175,7 +175,7 @@ const Hero = () => {
         icon: Handshake,
       },
     ],
-    [t, i18n.language]
+    [t]
   );
 
   return (
@@ -268,14 +268,14 @@ const Hero = () => {
 
           <motion.div variants={fadeUp} className="mx-auto mb-10 w-full max-w-2xl">
             <div className="relative">
-             <div className="relative rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm focus-within:border-brand-violet/50 transition-colors">
+              <div className="relative rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm focus-within:border-brand-violet/50 transition-colors">
                 <ModernSearchInput
                   value={searchTerm}
                   onChange={(e) => handleSearch(e.target.value)}
                   placeholder="Search events, hackathons, projects..."
                   onFocus={() => searchTerm && setShowResults(true)}
                   onBlur={() => setTimeout(() => setShowResults(false), 200)}
-                  className="border-0 bg-transparent text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-0"
+                  inputClassName="border-0 bg-transparent text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-0"
                 >
                   <AnimatePresence>
                     {showResults && (
@@ -374,7 +374,7 @@ const Hero = () => {
                     <div className="mb-2 rounded-full bg-gray-100 dark:bg-slate-800 p-2 text-gray-700 dark:text-gray-300 border border-transparent transition-colors">
                       <stat.icon className="h-5 w-5" aria-hidden="true" />
                     </div>
-                    <p className="mb-1 text-2xl font-bold tabular-nums text-gray-900 dark:text-white sm:text-3xl"> 
+                    <p className="mb-1 text-2xl font-bold tabular-nums text-gray-900 dark:text-white sm:text-3xl">
                       {statsReady ? (
                         <CountUp
                           end={stat.value}
