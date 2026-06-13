@@ -10,14 +10,14 @@ const NotificationSettings = lazy(() => import("../../Pages/NotificationSettings
 const NotificationCenter = lazy(() => import("../../Pages/Notifications/NotificationCenter"));
 const EventCreation = lazy(() => import("../common/EventCreation/EventCreation"));
 const HostHackathon = lazy(() => import("../../Pages/Hackathons/HostHackathon"));
-const UserProfile = lazy(() => import("../user/UserProfile"));
+const UserProfile = lazy(() => import("../../Pages/User/Profile"));
 const EditProfile = lazy(() => import("../user/EditProfile"));
 const Settings = lazy(() => import("../../Pages/Settings"));
 const AuthPage = lazy(() => import("../auth/AuthPage"));
 const Unauthorized = lazy(() => import("../auth/Unauthorized"));
 const PasswordReset = lazy(() => import("../auth/PasswordReset"));
-const AdminDashboard = lazy(() => import("../admin/AdminDashboard"));
-const Dashboard = lazy(() => import("../Dashboard"));
+const AdminDashboard = lazy(() => import("../../Pages/Admin/AdminPanel"));
+const Dashboard = lazy(() => import("../../Pages/Dashboard/Dashboard"));
 const SurveyEngine = lazy(() => import("../../Pages/Feedback/SurveyEngine"));
 const MatchmakingHub = lazy(() => import("../../Pages/Networking/MatchmakingHub"));
 const CollaborativeFloorPlan = lazy(() => import("../events/CollaborativeFloorPlan"));
