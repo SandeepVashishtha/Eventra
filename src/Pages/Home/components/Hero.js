@@ -175,7 +175,7 @@ const Hero = () => {
         icon: Handshake,
       },
     ],
-    [t, i18n.language]
+    [t]
   );
 
   return (

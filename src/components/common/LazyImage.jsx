@@ -30,7 +30,7 @@ const LazyImage = ({
   ...props
 }) => {
   const [loaded, setLoaded] = useState(false);
-  const [setError] = useState(false);
+  const [, setError] = useState(false);
   const imgRef = useRef(null);
 
   useEffect(() => {

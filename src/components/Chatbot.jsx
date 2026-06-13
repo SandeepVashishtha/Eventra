@@ -104,7 +104,7 @@ export default function Chatbot() {
   const [messages, setMessages] = useLocalStorage("eventra_chatbot_history", getInitialMessages(t));
   const replyTimerRef = useRef(null);
   const prevLangRef = useRef(i18n.language);
-  const quickPrompts = useMemo(() => getQuickPrompts(t), [t, i18n.language]);
+  const quickPrompts = useMemo(() => getQuickPrompts(t), [t]);
 
   const clearReplyTimer = useCallback(() => {
     if (replyTimerRef.current) {
