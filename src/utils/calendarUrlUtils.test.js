@@ -9,7 +9,7 @@
  * URL values are deterministic regardless of the test runner's locale.
  */
 
-import { describe, test, expect, vi } from "vitest";
+import { describe, test, expect} from "vitest";
 import {
   getGoogleCalendarUrl,
   getOutlookCalendarUrl,

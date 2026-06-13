@@ -2,8 +2,8 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { getJwtSecret, JWT_EXPIRES_IN, JWT_COOKIE_MAX_AGE_SECONDS } from "./jwt-config.js";
 import { createRateLimiter } from "../lib/rateLimiter.js";
-
 import { buildCorsHeaders, corsResponse } from "./cors.js";
+import { assertPersistentStorageConfigured, isInMemoryStorageAllowed } from "./storage-config.js";
 
 
 // ---------------------------------------------------------------------------
@@ -20,19 +20,21 @@ import { buildCorsHeaders, corsResponse } from "./cors.js";
 // See GitHub issue #4195 for full details on the production impact.
 // ---------------------------------------------------------------------------
 
-if (process.env.NODE_ENV === "production" && !process.env.DATABASE_URL) {
-  // Emit a clear error rather than silently accepting registrations that will
-  // vanish on the next cold start. This prevents the confusing 401 behaviour
-  // that users experience after a serverless function restart.
-  console.error(
-    "[signup.js] FATAL: In-memory user store is active in a production environment. " +
-    "Set DATABASE_URL to a persistent database to prevent data loss on cold starts."
-  );
-}
+// Fail-fast: Prevent production startup without persistent storage
+assertPersistentStorageConfigured();
 
-const users = new Map();
-const usersById = new Map();
-const usersByUsername = new Map();
+// Only create in-memory Maps if allowed (development/testing)
+let users, usersById, usersByUsername;
+if (isInMemoryStorageAllowed()) {
+  users = new Map();
+  usersById = new Map();
+  usersByUsername = new Map();
+} else {
+  // Production: Maps remain undefined - must use persistent storage
+  users = null;
+  usersById = null;
+  usersByUsername = null;
+}
 
 // ---------------------------------------------------------------------------
 // JWT Configuration
@@ -134,6 +136,13 @@ async function handler(req, res) {
   }
 
   try {
+    // Runtime protection: Reject requests if storage is unavailable
+    // In development, in-memory storage is allowed. In production, persistent storage is required.
+    if (!users || !usersById || !usersByUsername) {
+      console.error("[signup.js] Authentication service unavailable: storage not initialized");
+      return corsResponse(req, res, 500, { error: "Authentication service unavailable" });
+    }
+
     if (!req.body || typeof req.body !== "object") {
       return corsResponse(req, res, 400, { error: "Request body is required" });
     }
@@ -234,6 +243,10 @@ async function handler(req, res) {
     };
 
     // Store user (in production, save to database)
+    if (!users || !usersById || !usersByUsername) {
+      console.error("[signup.js] Authentication service unavailable: storage not initialized");
+      return corsResponse(req, res, 500, { error: "Authentication service unavailable" });
+    }
     users.set(normalizedEmail, newUser);
     usersById.set(userId, newUser);
     if (newUser.username) {

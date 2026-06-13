@@ -404,7 +404,6 @@ const useEventRegistration = (eventIdParam) => {
       setSubmitting(false);
     }
     // Fixed: Added isEventFull to dependency array
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId, event, formData, isAuthenticated, user, token, navigate, registrationPath, addRegistration, clearSession, isEventFull]);
 
   // Handle form submission
