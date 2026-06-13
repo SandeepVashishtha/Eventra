@@ -4,6 +4,7 @@ import "./App.css";
 import "./styles/reduced-motion.css";
 import "./styles/print.css";
 import { toast } from "react-toastify";
+import EnvironmentSecurityDashboard from "./components/dev/EnvironmentSecurityDashboard";
 
 // Critical path - loaded eagerly (needed before first paint)
 import Navbar from "./components/navbar/Navbar";

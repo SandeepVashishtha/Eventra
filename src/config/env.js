@@ -40,3 +40,4 @@ export const ENV = {
 export const SENTRY_DSN = getEnvVar("REACT_APP_SENTRY_DSN", "");
 
 export const isSentryEnabled = Boolean(SENTRY_DSN && process.env.NODE_ENV === "production");
+export { requiredEnvVars };
