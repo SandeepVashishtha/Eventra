@@ -85,7 +85,7 @@ const EventCreation = () => {
   const [showRestoreModal, setShowRestoreModal] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState(null);
   const [restoreDraftMessage, setRestoreDraftMessage] = useState(
-    `A previously saved event draft was found${lastSavedAt ? " (saved " + formatDraftAge(lastSavedAt) + ")" : ""}. Would you like to restore it?`
+    "A previously saved event draft was found. Would you like to restore it?"
   );
   const location = useLocation();
 
@@ -298,6 +298,16 @@ const EventCreation = () => {
         setRestoreDraftMessage(
           "A duplicated event draft is ready. Would you like to restore it and continue editing?"
         );
+      } else {
+        try {
+          const parsed = safeJsonParse(saved, {});
+          const savedAt = parsed?.savedAt;
+          setRestoreDraftMessage(
+            `A previously saved event draft was found${savedAt ? ` (saved ${formatDraftAge(savedAt)})` : ""}. Would you like to restore it?`
+          );
+        } catch {
+          // keep default message
+        }
       }
     }
 
@@ -310,10 +320,13 @@ const EventCreation = () => {
 
       if (saved) {
         const parsed = safeJsonParse(saved, {});
+        // Draft is stored as { data: formFields, savedAt: "..." }
+        // Spread parsed.data; fall back to parsed itself for legacy plain-object drafts
+        const restoredData = parsed?.data || parsed;
 
         setFormData((prev) => ({
           ...prev,
-          ...parsed,
+          ...restoredData,
           banner: null,
           bannerPreview: null,
         }));
@@ -336,12 +349,19 @@ const EventCreation = () => {
   useEffect(() => {
     if (!isDraftLoaded) return;
 
-    const saveable = { ...formData };
-    delete saveable.banner;
-    delete saveable.bannerPreview;
+    const timer = setTimeout(() => {
+      const saveable = { ...formData };
+      delete saveable.banner;
+      delete saveable.bannerPreview;
 
-    localStorage.setItem(DRAFT_KEY, JSON.stringify({ data: saveable, savedAt: new Date().toISOString() }));
-    setLastSavedAt(new Date().toISOString());
+      localStorage.setItem(
+        DRAFT_KEY,
+        JSON.stringify({ data: saveable, savedAt: new Date().toISOString() })
+      );
+      setLastSavedAt(new Date().toISOString());
+    }, 1000);
+
+    return () => clearTimeout(timer);
   }, [formData, isDraftLoaded]);
 
   useEffect(() => {
