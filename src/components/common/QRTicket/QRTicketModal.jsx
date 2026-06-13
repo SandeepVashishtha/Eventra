@@ -4,28 +4,28 @@
  *
  * Usage (e.g. in EventDetails.js or RegistrationsTab.jsx):
  *
- *   import QRTicketModal from "../common/QRTicket/QRTicketModal";
+ * import QRTicketModal from "../common/QRTicket/QRTicketModal";
  *
- *   const [showTicket, setShowTicket] = useState(false);
+ * const [showTicket, setShowTicket] = useState(false);
  *
- *   <button onClick={() => setShowTicket(true)}>View Ticket</button>
+ * <button onClick={() => setShowTicket(true)}>View Ticket</button>
  *
- *   <QRTicketModal
- *     isOpen={showTicket}
- *     onClose={() => setShowTicket(false)}
- *     ticket={{
- *       eventName: registration.eventName,
- *       eventOrganizer: "GirlScript Foundation",
- *       date: registration.eventDate,
- *       time: registration.eventTime,
- *       venue: registration.venue,
- *       seat: registration.seat || "General",
- *       holderName: user.name,
- *       ticketId: registration.ticketId,
- *       ticketType: registration.ticketTier || "General",
- *       qrValue: `https://eventra.app/verify/${registration.ticketId}`,
- *     }}
- *   />
+ * <QRTicketModal
+ * isOpen={showTicket}
+ * onClose={() => setShowTicket(false)}
+ * ticket={{
+ * eventName: registration.eventName,
+ * eventOrganizer: "GirlScript Foundation",
+ * date: registration.eventDate,
+ * time: registration.eventTime,
+ * venue: registration.venue,
+ * seat: registration.seat || "General",
+ * holderName: user.name,
+ * ticketId: registration.ticketId,
+ * ticketType: registration.ticketTier || "General",
+ * qrValue: `https://eventra.app/verify/${registration.ticketId}`,
+ * }}
+ * />
  */
 
 import { useRef, useEffect } from "react";
@@ -42,18 +42,71 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
 
   const modalRef = useRef(null);
 
-  // Focus modal on open to capture localized keyboard events
+  // Deep Fix 1: Global Escape Listener to prevent ghosting
   useEffect(() => {
-    if (isOpen && modalRef.current) {
-      modalRef.current.focus();
+    const handleGlobalKeyDown = (e) => {
+      if (e.key === "Escape" && isOpen) {
+        onClose();
+      }
+    };
+    if (isOpen) {
+      window.addEventListener("keydown", handleGlobalKeyDown);
     }
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, [isOpen, onClose]);
+
+  // Deep Fix 2: Safe Body Scroll Lock (Prevents layout destruction on unmount)
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    // Cache the original style before mutating so we don't destroy parent layout rules
+    const originalStyle = window.getComputedStyle(document.body).overflow;
+    document.body.style.overflow = "hidden";
+    
+    return () => { 
+      document.body.style.overflow = originalStyle; 
+    };
   }, [isOpen]);
 
-  // Lock body scroll while open
+  // Deep Fix 3: WCAG Strict Focus Trap for Accessibility
   useEffect(() => {
-    document.body.style.overflow = isOpen ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
-  }, [isOpen]);
+    if (!isOpen || !modalRef.current) return;
+
+    const focusableElements = modalRef.current.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    
+    if (focusableElements.length === 0) return;
+
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+
+    const handleFocusTrap = (e) => {
+      if (e.key !== "Tab") return;
+
+      if (e.shiftKey) {
+        if (document.activeElement === firstElement) {
+          e.preventDefault();
+          lastElement.focus();
+        }
+      } else {
+        if (document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement.focus();
+        }
+      }
+    };
+
+    modalRef.current.addEventListener("keydown", handleFocusTrap);
+    // Focus the modal automatically
+    modalRef.current.focus();
+
+    return () => {
+      if (modalRef.current) {
+        modalRef.current.removeEventListener("keydown", handleFocusTrap);
+      }
+    };
+  }, [isOpen, handleFocusTrap]);
 
   const handleShare = async () => {
     const shareUrl = ticket?.qrValue || window.location.href;
@@ -113,7 +166,7 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
     <div
       ref={modalRef}
       tabIndex={-1}
-      onKeyDown={(e) => e.key === "Escape" && onClose()}
+      // Removed inline onKeyDown since we now handle Escape globally and Tab securely
       className="fixed inset-0 z-50 flex items-center justify-center p-4 outline-none"
       style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
@@ -141,7 +194,7 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
         </div>
 
         {/* Action buttons */}
-        <div className="flex gap-3 w-full max-w-[340px]">
+        <div className="flex gap-3 w-full max-w-85">
           {/* Download PNG */}
           <button
             onClick={downloadPNG}
