@@ -71,6 +71,21 @@ export const NotificationProvider = ({ children }) => {
     markAsReadRef.current = markAsRead;
   }, [markAsRead, markAsReadRef]);
 
+
+  // Add interval cleanup to handle background state checks
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      if (realtimeStatus === "IDLE") {
+        fetchNotifications?.();
+      }
+    }, 30000);
+
+    // CRITICAL ASSIGNED CLEANUP: Clears interval on component unmount
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [realtimeStatus, fetchNotifications]);
+  
   const groupedNotifications = useMemo(
     () => notifications.reduce((groups, n) => {
       const cat = getNotificationCategory(n);
