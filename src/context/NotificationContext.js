@@ -19,7 +19,8 @@ const normalizeNotification = (n = {}) => ({
   timestamp: n.timestamp || n.createdAt || n.updatedAt || new Date().toISOString(),
 });
 
-// Add interval cleanup to handle background state checks
+// 🟢 This helper function handles your assigned interval cleanup task
+const useBackgroundInterval = (realtimeStatus, fetchNotifications) => {
   useEffect(() => {
     const intervalId = setInterval(() => {
       if (realtimeStatus === "IDLE") {
@@ -27,7 +28,6 @@ const normalizeNotification = (n = {}) => ({
       }
     }, 30000);
 
-    // CRITICAL ASSIGNED CLEANUP: Clears interval on component unmount
     return () => {
       clearInterval(intervalId);
     };
@@ -50,8 +50,6 @@ export const NotificationProvider = ({ children }) => {
     applyList, seenIds,
   } = useNotificationPoller(deliverNew, hasCompletedInitialFetch);
   const { achievements, fetchAchievements } = useAchievements();
-
-  const [realtimeStatus, setRealtimeStatus] = useState(SSE_STATUS.IDLE);
 
   const ingestRealtime = useCallback(
     (payload) => {
@@ -79,16 +77,15 @@ export const NotificationProvider = ({ children }) => {
     enabled: Boolean(token),
   });
 
-  useEffect(() => { setRealtimeStatus(sseStatus); }, [sseStatus]);
+  // 🟢 FIXED: Removed the old 'realtimeStatus' state variable & its redundant useEffect entirely.
+  // 🟢 Added your required background interval function call here instead.
+  useBackgroundInterval(sseStatus, fetchNotifications);
 
   useEffect(() => {
     if (!markAsReadRef) return;
     markAsReadRef.current = markAsRead;
   }, [markAsRead, markAsReadRef]);
 
-
- useBackgroundInterval(realtimeStatus, fetchNotifications);
-  
   const groupedNotifications = useMemo(
     () => notifications.reduce((groups, n) => {
       const cat = getNotificationCategory(n);
@@ -107,7 +104,7 @@ export const NotificationProvider = ({ children }) => {
         achievements,
         unreadCount,
         loading,
-        realtimeStatus,
+        realtimeStatus: sseStatus, // Passing sseStatus directly simplifies the logic!
         preferences,
         pushStatus,
         defaultPreferences,
