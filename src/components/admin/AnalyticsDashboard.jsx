@@ -95,11 +95,14 @@ const getInitialLiveCount = () => {
 };
 
 const AnalyticsDashboard = () => {
-  const [checkins, setCheckins] = useState(getInitialCheckins);
+  const { analytics, loading: analyticsLoading } = useAnalytics();
+  const [setCheckins] = useState(getInitialCheckins);
   const [hourlyData, setHourlyData] = useState(INITIAL_HOURLY_DATA);
   const [liveCount, setLiveCount] = useState(getInitialLiveCount);
   const [activeCheckinsPerMinute, setActiveCheckinsPerMinute] = useState(5.4);
-  const [activeTab, setActiveTab] = useState('analytics');
+  const [activeTab] = useState('analytics');
+
+  const categoryData = analytics?.categoryBreakdown || FALLBACK_CATEGORY_DATA;
 
   // Real-time SSE stream — takes priority over local simulation when connected
   const { recentCheckins: streamCheckins, status: streamStatus } = useAnalyticsStream();
@@ -137,7 +140,7 @@ const AnalyticsDashboard = () => {
     } else {
       toast.info(`🔔 Check-in Verified: ${cleanCheckinData.name} matched to ${cleanCheckinData.event}`);
     }
-  }, []);
+  }, [setCheckins]);
 
   // Process real-time SSE stream
   useEffect(() => {
@@ -199,7 +202,11 @@ const AnalyticsDashboard = () => {
     }, 12000);
 
     return () => clearInterval(interval);
-  }, [isStreamActive]);
+  }, [isStreamActive,
+  setCheckins,
+  setLiveCount,
+  setActiveCheckinsPerMinute,
+  setHourlyData,]);
 
   // Manual check-in trigger
   const triggerManualCheckin = () => {
@@ -421,13 +428,10 @@ const AnalyticsDashboard = () => {
                 ))}
               </div>
             </div>
-          ))}
-        </div>
-        {/* Closing tag for line 502 wrapper — fix for #7244 */}
-      </div>
-      </>
-  )}
-</div>
+          </div>
+        </>
+      )}
+    </div>
   );
 };
 

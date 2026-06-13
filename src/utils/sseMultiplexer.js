@@ -1,5 +1,5 @@
 import { logger } from "./logger.js";
-import { API_BASE_URL } from "../config/api.js";
+import { SSE_BASE_URL } from "../config/backendConfig.js";
 
 const MULTIPLEX_CHANNEL_NAME = "eventra_sse_multiplexer";
 const LOCK_NAME = "eventra_sse_leader_lock";
@@ -29,8 +29,8 @@ const MESSAGE_REQUIRED_FIELDS = {
   UNSUBSCRIBE_ALL: ["tabId", "paths"],
   QUERY_SUBSCRIBERS: ["tabId"],
   SUBSCRIBERS_RESPONSE: ["tabId", "paths"],
-  SSE_MESSAGE: ["path", "data"],
-  SSE_STATUS: ["path", "status"],
+  SSE_MESSAGE: ["tabId", "path", "data"],
+  SSE_STATUS: ["tabId", "path", "status"],
   RECONNECT_REQUEST: ["path"],
   PING: ["tabId"],
   PONG: ["tabId"],
@@ -300,7 +300,18 @@ class SseMultiplexer {
     switch (msg.type) {
       case "SUBSCRIBE":
         this.addGlobalSubscriber(msg.path, msg.tabId);
-        if (this.isLeader) this.reconcileConnections();
+        if (this.isLeader) {
+          this.reconcileConnections();
+          const currentStatus = this.pathStatuses.get(msg.path);
+          if (currentStatus) {
+            this.broadcastMessage({
+              type: "SSE_STATUS",
+              tabId: this.tabId,
+              path: msg.path,
+              status: currentStatus,
+            });
+          }
+        }
         break;
 
       case "UNSUBSCRIBE":
@@ -327,7 +338,20 @@ class SseMultiplexer {
 
       case "SUBSCRIBERS_RESPONSE":
         if (msg.paths) {
-          msg.paths.forEach((p) => this.addGlobalSubscriber(p, msg.tabId));
+          msg.paths.forEach((p) => {
+            this.addGlobalSubscriber(p, msg.tabId);
+            if (this.isLeader) {
+              const currentStatus = this.pathStatuses.get(p);
+              if (currentStatus) {
+                this.broadcastMessage({
+                  type: "SSE_STATUS",
+                  tabId: this.tabId,
+                  path: p,
+                  status: currentStatus,
+                });
+              }
+            }
+          });
           if (this.isLeader) this.reconcileConnections();
         }
         break;
@@ -423,9 +447,7 @@ class SseMultiplexer {
   }
 
   openEventSource(path) {
-    const sseBaseUrl =
-      API_BASE_URL ||
-      (typeof window !== "undefined" ? window.location.origin : "http://localhost:8080");
+    const sseBaseUrl = SSE_BASE_URL;
 
     logger.log(`[SSE Multiplexer] Leader tab opening physical EventSource: ${sseBaseUrl}${path}`);
     this.updatePathStatus(path, "connecting");
@@ -449,6 +471,7 @@ class SseMultiplexer {
       // Broadcast to follower tabs
       this.broadcastMessage({
         type: "SSE_MESSAGE",
+        tabId: this.tabId,
         path,
         data: payload,
         eventType: evt.type,
@@ -478,7 +501,7 @@ class SseMultiplexer {
 
     // Broadcast status to other tabs if we are the leader
     if (this.isLeader) {
-      this.broadcastMessage({ type: "SSE_STATUS", path, status });
+      this.broadcastMessage({ type: "SSE_STATUS", tabId: this.tabId, path, status });
     }
 
     // Trigger local status listeners
@@ -506,28 +529,35 @@ class SseMultiplexer {
 
       const now = Date.now();
       let changed = false;
+      const staleTabs = [];
 
       for (const [tabId, lastSeen] of this.lastSeenFollowers) {
         if (now - lastSeen > MISSING_TIMEOUT) {
-          logger.log(
-            `[SSE Multiplexer] Follower tab ${tabId} missed heartbeats. Removing stale subscriptions.`
-          );
-          const paths = this.tabIdToPaths.get(tabId);
-          if (paths) {
-            for (const path of paths) {
-              const tabs = this.globalSubscribers.get(path);
-              if (tabs) {
-                tabs.delete(tabId);
-                if (tabs.size === 0) {
-                  this.globalSubscribers.delete(path);
-                }
+          staleTabs.push(tabId);
+        }
+      }
+
+      for (const tabId of staleTabs) {
+        logger.log(
+          `[SSE Multiplexer] Follower tab ${tabId} missed heartbeats. Removing stale subscriptions.`
+        );
+        const paths = this.tabIdToPaths.get(tabId);
+        if (paths) {
+          const pathsToRemove = [];
+          for (const path of paths) {
+            const tabs = this.globalSubscribers.get(path);
+            if (tabs) {
+              tabs.delete(tabId);
+              if (tabs.size === 0) {
+                pathsToRemove.push(path);
               }
             }
-            this.tabIdToPaths.delete(tabId);
           }
-          this.lastSeenFollowers.delete(tabId);
-          changed = true;
+          pathsToRemove.forEach((p) => this.globalSubscribers.delete(p));
+          this.tabIdToPaths.delete(tabId);
         }
+        this.lastSeenFollowers.delete(tabId);
+        changed = true;
       }
 
       if (changed) {
@@ -540,6 +570,14 @@ class SseMultiplexer {
     if (this.pingInterval) {
       clearInterval(this.pingInterval);
       this.pingInterval = null;
+    }
+    if (this.localStorageInterval) {
+      clearInterval(this.localStorageInterval);
+      this.localStorageInterval = null;
+    }
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
     }
     this.lastSeenFollowers = null;
   }

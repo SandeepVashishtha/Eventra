@@ -17,14 +17,6 @@ const REQUEST_TIMEOUT = 10000;
 const MAX_CONTRIBUTOR_PAGES = 10;
 const PROFILE_FETCH_DELAY_MS = 100; // Throttle profile API calls to avoid rate limiting
 
-let profileFetchCounter = 0;
-export const throttleProfileFetch = async () => {
-  profileFetchCounter++;
-  if (profileFetchCounter % 5 === 0) {
-    await new Promise(resolve => setTimeout(resolve, PROFILE_FETCH_DELAY_MS));
-  }
-};
-
 const fetchJsonWithTimeout = async (url) => {
   const proxyUrl = url.startsWith("https://api.github.com")
     ? `/api/github-proxy?path=${encodeURIComponent(
@@ -91,7 +83,6 @@ const ContributorsInner = () => {
 
   // Fetch GitHub profile details
   const fetchGitHubProfile = useCallback(async (username) => {
-    await throttleProfileFetch();
     if (!username) {
       return {
         followers: 0,

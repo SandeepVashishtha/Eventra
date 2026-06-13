@@ -10,10 +10,7 @@ const allowedTypes = [
   "image/png",
   "image/webp",
 ];
-if (!allowedTypes.includes(file.type)) {
-  alert("Please upload JPG, PNG, or WEBP images only.");
-  return;
-}
+
 const TagInput = ({ tags, onAdd, onRemove, newTag, setNewTag, placeholder = "Add a tag" }) => {
   const handleKeyDown = (e) => {
     if (e.key === "Enter" || e.key === ",") {
@@ -83,26 +80,29 @@ const EventMediaSection = ({
     const file = e.target.files[0];
     if (!file) return;
 
+    if (!allowedTypes.includes(file.type)) {
+      alert("Please upload JPG, PNG, or WEBP images only.");
+      return;
+    }
+
     if (file.size > MAX_BANNER_SIZE) {
       alert("Image is too large (max 5MB)");
       return;
     }
 
     setIsUploading(true);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setFormData((prev) => ({
+    const objectUrl = URL.createObjectURL(file);
+    setFormData((prev) => {
+      if (prev.bannerPreview && prev.bannerPreview.startsWith("blob:")) {
+        URL.revokeObjectURL(prev.bannerPreview);
+      }
+      return {
         ...prev,
         banner: file,
-        bannerPreview: reader.result,
-      }));
-      setIsUploading(false);
-    };
-    reader.onerror = () => {
-      logger.error("Failed to read file");
-      setIsUploading(false);
-    };
-    reader.readAsDataURL(file);
+        bannerPreview: objectUrl,
+      };
+    });
+    setIsUploading(false);
   };
 
   return (
@@ -119,7 +119,14 @@ const EventMediaSection = ({
               <img src={formData.bannerPreview} alt="Preview" className="w-full h-full object-cover" />
               <button
                 type="button"
-                onClick={() => setFormData(prev => ({ ...prev, banner: null, bannerPreview: null }))}
+                onClick={() => {
+                  setFormData(prev => {
+                    if (prev.bannerPreview && prev.bannerPreview.startsWith("blob:")) {
+                      URL.revokeObjectURL(prev.bannerPreview);
+                    }
+                    return { ...prev, banner: null, bannerPreview: null };
+                  });
+                }}
                 className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 <X className="w-4 h-4" />

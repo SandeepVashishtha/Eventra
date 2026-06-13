@@ -1,44 +1,25 @@
-// Centralized JWT configuration shared by all auth endpoints.
-// JWT_SECRET is mandatory in every environment so Eventra never falls back to
-// a predictable signing key that could be used to forge tokens.
-const requireJwtSecret = () => {
-  const secret = process.env.JWT_SECRET?.trim();
+/**
+ * Returns the JWT signing secret from environment variables.
+ * 
+ * SECURITY: JWT_SECRET is mandatory. There is NO fallback secret.
+ * This prevents token signing with publicly known secrets and ensures
+ * fail-closed security behavior.
+ * 
+ * @throws {Error} If JWT_SECRET is missing, empty, or whitespace-only
+ * @returns {string} The JWT signing secret
+ */
+export const getJwtSecret = () => {
+  const secret = process.env.JWT_SECRET;
 
-  if (secret) {
-    return secret;
-  }
-
-  const env = process.env.NODE_ENV;
-  const isLocal = env === "development" || env === "test" || !env;
-
-  if (isLocal) {
-    console.warn(
-      "\x1b[33m%s\x1b[0m",
-      `[JWT WARNING] JWT_SECRET environment variable is not configured. Falling back to the default local ${
-        env === "test" ? "test" : "development"
-      } secret. This is insecure for staging/production environments!`
+  if (!secret || !secret.trim()) {
+    throw new Error(
+      "JWT_SECRET environment variable is required. " +
+      "Generate a secure secret using: openssl rand -base64 32"
     );
-    return env === "test"
-      ? "test-secret-for-test-environments"
-      : "eventra-local-development-jwt-secret";
   }
 
-  throw new Error(
-    "Missing required environment variable: JWT_SECRET. Eventra cannot start in non-local environments without a JWT signing secret."
-  );
+  return secret;
 };
 
-export const getJwtSecret = () => requireJwtSecret();
-
-export const JWT_SECRET = requireJwtSecret();
-
-export const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "1h";
-
-export const JWT_COOKIE_MAX_AGE_SECONDS = (() => {
-  const val = JWT_EXPIRES_IN;
-  const match = val.match(/^(\d+)(m|h|d)$/);
-  if (!match) return 3600;
-  const n = parseInt(match[1], 10);
-  const unit = match[2];
-  return unit === 'm' ? n * 60 : unit === 'h' ? n * 3600 : n * 86400;
-})();
+export const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
+export const JWT_COOKIE_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;

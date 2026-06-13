@@ -46,12 +46,11 @@ import {
 } from "../../utils/offlineEventCache";
 import { pushToQueue } from "../../utils/offlineQueue";
 import { logError } from "../../utils/errorLogger";
+import { logAbuseAttempt } from "../../utils/abuseLogger";
 import hackathonsData from "../../Pages/Hackathons/hackathonMockData.json";
 import registrationLocks from "../../utils/registrationLocks";
 
 export const MAX_NOTES_CHARS = 500;
-
-import { logAbuseAttempt } from "../../utils/abuseLogger";
 
 // Registration lock map to prevent concurrent registrations for the same event
 // const registrationLocks = new Map();
@@ -263,16 +262,16 @@ const useEventRegistration = (eventIdParam) => {
         const freshEvent = freshRes.data;
         const capacity = freshEvent.maxAttendees ?? 0;
         const attendees = freshEvent.attendees ?? 0;
-        return attendees >= capacity;
+        return capacity > 0 && attendees >= capacity;
       }
       const capacity = currentEvent?.maxAttendees ?? 0;
       const attendees = currentEvent?.attendees ?? 0;
-      return attendees >= capacity;
+      return capacity > 0 && attendees >= capacity;
     } catch (error) {
       console.error("[checkEventCapacity] Failed to check capacity:", error);
       const capacity = currentEvent?.maxAttendees ?? 0;
       const attendees = currentEvent?.attendees ?? 0;
-      return attendees >= capacity;
+      return capacity > 0 && attendees >= capacity;
     }
   }, []);
 
@@ -405,7 +404,6 @@ const useEventRegistration = (eventIdParam) => {
       setSubmitting(false);
     }
     // Fixed: Added isEventFull to dependency array
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId, event, formData, isAuthenticated, user, token, navigate, registrationPath, addRegistration, clearSession, isEventFull]);
 
   // Handle form submission

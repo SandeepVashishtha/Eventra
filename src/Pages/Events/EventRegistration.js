@@ -1,7 +1,13 @@
-import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
-import ReactDOM from "react-dom"; // 🔥 FIX: Required for Portal
-import { motion, AnimatePresence } from "framer-motion";
-import { useReducedMotion } from '../../hooks/useReducedMotion';
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
+// Calendar URL helpers — import from the timezone-aware utility instead of
+// using the old inline implementations (which were UTC-blind and hardcoded
+// a 1-hour event duration — fixed in issue #2015).
+import { getGoogleCalendarUrl, getOutlookCalendarUrl, getYahooCalendarUrl, generateIcsFileBlobUrl, getWebcalSubscriptionUrl } from "../../utils/calendarUrlUtils";
+import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
+import hackathonsData from "../Hackathons/hackathonMockData.json";
+import { motion } from "framer-motion";
+import { toast } from "react-toastify";
 import {
   Calendar,
   MapPin,
@@ -359,18 +365,172 @@ useEffect(() => {
     localStorage.getItem("recentEvents") || "[]"
   );
 
-  setRecentEvents(storedRecent);
-}, []);
+    // FIX (TOCTOU): Re-check capacity immediately before the POST so the
+    // endpoint decision is based on fresh server data, not on the stale
+    // React state snapshotted when handleSubmit ran. This collapses the
+    // check-then-act window to the minimum possible latency (one request).
+    // refreshEventAvailability also calls setEvent with the latest data, so
+    // the local event state is updated as a side-effect.
+    let isFreshlyFull = false;
+    try {
+      const latestAvailability = await refreshEventAvailability(eventId);
+      isFreshlyFull = latestAvailability != null
+        ? latestAvailability.isFull
+        : (event ? event.attendees >= event.maxAttendees : false);
+    } catch {
+      // If the availability refresh itself fails, fall back to local state
+      // rather than blocking registration entirely.
+      isFreshlyFull = event ? event.attendees >= event.maxAttendees : false;
+    }
 
+    if (isFreshlyFull) {
+      try {
+        const { joinWaitlist, getQueuePosition } = await import("../../utils/waitlistUtils");
+        await joinWaitlist(eventId, user, { ...formData, eventTitle: event?.title || "the event" });
+        const pos = getQueuePosition(eventId, user.id);
+        setWaitlistPosition(pos);
+        setRegistered(true);
+        toast.success(t("eventRegistration.toastWaitlistSuccess"));
+        clearSession();
+        return;
+      } catch (err) {
+        toast.error(err.message || t("eventRegistration.toastRegistrationError"));
+        return;
+      } finally {
+        registrationLocks.delete(eventId);
+        isSubmittingRef.current = false;
+        setSubmitting(false);
+      }
+    }
 
+    const endpoint = API_ENDPOINTS.EVENTS?.REGISTER
+        ? API_ENDPOINTS.EVENTS.REGISTER(eventId)
+        : `/api/events/${eventId}/register`;
 
-  const availableTypes = useMemo(() => {
-    const types = [...new Set([...registeredEvents, ...hostedEvents].map((event) => event?.type).filter(Boolean))];
-    return types.map((type) => type.charAt(0).toUpperCase() + type.slice(1));
-  }, [registeredEvents, hostedEvents]);
+        // FIX (offline queue dedup): Generate a stable idempotency key once per
+        // submission attempt. It travels with the payload to the backend (which
+        // should honour it for duplicate detection) and is also passed to
+        // pushToQueue so the queue can deduplicate by eventId+userId before
+        // writing to IndexedDB / localStorage.
+        const idempotencyKey =
+        typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `idem-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
-const normalizedSearch = debouncedTerm.trim().toLowerCase();
+    try {
+      const response = await apiUtils.post(
+        endpoint,
+        {
+          ...formData,
+          priority: formData.priority,
+          eventId: parseInt(eventId),
+          idempotencyKey,
+        },
+        token
+      );
 
+      const regData = response.data || {};
+      const registrationId = regData.registrationId || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `reg-${Date.now()}`);
+      const qrToken = regData.qrToken || "";
+
+      setRegistered(true);
+      toast.success(t("eventRegistration.toastRegistrationSuccess"));
+      addRegistration(event, formData, registrationId, qrToken);
+      clearSession();
+    } catch (error) {
+      const failureMessage = getRegistrationFailureMessage(error);
+
+      if (isCapacityConflictError(error)) {
+        await refreshEventAvailability(eventId);
+      }
+
+      const isOfflineFailure = error?.isNetworkError || error?.isTimeout;
+      const isAlreadyRegistered = failureMessage === "You are already registered for this event.";
+
+      if (isOfflineFailure) {
+        const payload = {
+          ...formData,
+          eventId: parseInt(eventId),
+          // Carry the idempotency key into the queued payload so that when
+          // the queue replays, the backend rejects any true duplicate.
+          idempotencyKey,
+        };
+
+        const success = await pushToQueue(
+          {
+            actionType: isFreshlyFull ? "JOIN_WAITLIST" : "REGISTER_EVENT",
+            endpoint,
+            eventId: parseInt(eventId),
+            // FIX (offline queue dedup): Pass at the item level so pushToQueue
+            // can skip enqueueing if an identical eventId+userId+actionType
+            // entry already exists in the queue.
+            idempotencyKey,
+            payload,
+          },
+          user.id
+        );
+
+        if (success) {
+          setRegistered(true);
+          const offlineRegId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `reg-offline-${Date.now()}`;
+          addRegistration(event, formData, offlineRegId, "");
+          clearSession();
+          toast.warning(t("eventRegistration.toastNetworkQueued"), {
+            autoClose: 4000,
+          });
+        } else {
+          toast.error(
+            t("eventRegistration.toastOfflineQueueFull")
+          );
+        }
+        return;
+      }
+
+      if (isAlreadyRegistered) {
+        setRegistered(true);
+        toast.success(isFreshlyFull ? t("eventRegistration.toastWaitlistSuccess") : t("eventRegistration.toastRegistrationSuccess"));
+        const existingRegId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `reg-existing-${Date.now()}`;
+        // Do not pass the current form values — the server rejected this
+        // submission as a duplicate, so formData is unconfirmed. Storing it
+        // would overwrite the locally-cached registration with values that
+        // may differ from the authoritative server record.
+        addRegistration(event, {}, existingRegId, "");
+        clearSession();
+        toast.info(failureMessage);
+        return;
+      }
+
+      toast.error(failureMessage);
+    } finally {
+      isSubmittingRef.current = false;
+      setSubmitting(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    eventId,
+    event,
+    formData,
+    isAuthenticated,
+    user,
+    token,
+    navigate,
+    registrationPath,
+    addRegistration,
+    clearSession,
+    refreshEventAvailability,
+  ]);
+
+  // Handle form submission
+  const handleSubmit = useCallback(async (e) => {
+    e.preventDefault();
+
+    if (!isAuthenticated() || !user?.id) {
+      toast.error(t("eventRegistration.toastLoginRequired"));
+      navigate("/login", {
+        state: { from: registrationPath },
+      });
+      return;
+    }
 
   const filteredEvents = useMemo(() => {
     const pool = [...registeredEvents, ...hostedEvents];
@@ -433,9 +593,126 @@ const normalizedSearch = debouncedTerm.trim().toLowerCase();
   const upcomingCount = [...registeredEvents, ...hostedEvents].filter((event) => getEventStatus(event) === "Upcoming").length;
   const completedCount = [...registeredEvents, ...hostedEvents].filter((event) => getEventStatus(event) === "Completed").length;
 
-const addToRecentEvents = (event) => {
-  const existing =
-    JSON.parse(localStorage.getItem("recentEvents")) || [];
+  const handleConflictProceed = useCallback(() => {
+    if (isSubmittingRef.current) {
+      return;
+    }
+    if (registrationLocks.has(eventId)) {
+      return;
+    }
+    isSubmittingRef.current = true;
+    registrationLocks.set(eventId, true);
+    proceedWithRegistration();
+  }, [eventId, proceedWithRegistration]);
+
+  const handleSelectAlternative = useCallback((alternativeEvent) => {
+    setShowConflictModal(false);
+    navigate(`/events/${alternativeEvent.id}/register`);
+    toast.info(t("eventRegistration.toastRedirectingTo", { title: alternativeEvent.title }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigate]);
+
+  const isEventFull = event ? event.attendees >= event.maxAttendees : false;
+  const status = getEventStatus(event);
+  // const isPastEvent = status === "past" || status === "ended";
+  const isCancelledEvent = status === "cancelled";
+  const isRegistrationBlocked = isEventRegistrationClosed(event);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900 py-12 px-4">
+        <SkeletonEventCard />
+      </div>
+    );
+  }
+
+  if (!event) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-900 px-4">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">{t("eventRegistration.notFoundTitle")}</h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-6 text-center max-w-md">
+          {t("eventRegistration.notFoundDescription")}
+        </p>
+        <Link
+          to="/events"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-black text-white rounded-lg hover:bg-zinc-800 transition-colors font-medium"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          {t("eventRegistration.notFoundBackToEvents")}
+        </Link>
+      </div>
+    );
+  }
+
+  if (isRegistrationBlocked) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-900 px-4">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+          {t("eventRegistration.pastEventTitle")}
+        </h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-6 text-center max-w-md">
+          {isCancelledEvent
+            ? "This event has been cancelled."
+            : t("eventRegistration.pastEventDescription")}
+        </p>
+        <Link
+          to={isHackathonPath ? `/hackathons/${event.id}` : `/events/${event.id}`}
+          className="inline-flex items-center gap-2 px-6 py-3 bg-black text-white rounded-lg hover:bg-zinc-800 transition-colors font-medium"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          {t("eventRegistration.pastEventBackToDetails")}
+        </Link>
+      </div>
+    );
+  }
+
+
+  // Show skeleton while joining the waitlist specifically
+  if (submitting && isEventFull) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 px-4 py-12 gap-4">
+        <WaitlistSkeleton />
+        <WaitlistPositionSkeleton />
+        <p className="sr-only" role="status" aria-live="polite">
+          Joining the waitlist, please wait…
+        </p>
+      </div>
+    );
+  }
+
+  if (registered) {
+    const googleCalendarUrl = getGoogleCalendarUrl(event);
+    const outlookCalendarUrl = getOutlookCalendarUrl(event);
+    const yahooCalendarUrl = getYahooCalendarUrl(event);
+    const webcalUrl = event.id ? getWebcalSubscriptionUrl(event.id) : generateIcsFileBlobUrl(event);
+    const shareText = `I'm attending ${event.title} on Eventra! Join me there!`;
+    const shareUrl = `${window.location.origin}/events/${event.id}`;
+
+    const handleNativeShare = () => {
+      if (navigator.share) {
+        navigator
+          .share({
+            title: event.title,
+            text: shareText,
+            url: shareUrl,
+          })
+          .catch((err) => {
+            if (err.name !== "AbortError") {
+              toast.error(t("eventRegistration.toastShareError"));
+            }
+          });
+      } else {
+        navigator.clipboard
+          .writeText(shareUrl)
+          .then(() => {
+            toast.success(t("eventRegistration.toastLinkCopied"));
+          })
+          .catch((err) => {
+            logger.error("Failed to copy link:", err);
+            toast.error(t("eventRegistration.toastCopyLinkError"));
+          });
+      }
+    };
 
   const filtered = existing.filter((e) => e.id !== event.id);
 
@@ -443,18 +720,79 @@ const addToRecentEvents = (event) => {
 
   localStorage.setItem("recentEvents", JSON.stringify(updated));
 
-  setRecentEvents(updated);
-};
+          <div className="bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200/40 dark:border-slate-800/50 rounded-3xl p-5 mb-8 text-left">
+            <h3 title={event.title} className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-3 line-clamp-2 wrap-break-word min-w-0">
+              {event.title}
+            </h3>
+
+            <div className="space-y-2.5 text-xs text-gray-600 dark:text-gray-400">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-indigo-500" />
+                <span>
+                  {new Date(event.date).toLocaleDateString("en-US", {
+                    weekday: "long",
+                    month: "long",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </span>
+              </div>
 
 
 
-  const handleCancelClick = (id, title) => setCancelTarget({ id, title });
-  const handleCancelDismiss = () => setCancelTarget(null);
-  const handleCancelConfirm = useCallback(() => {
-    if (!cancelTarget) return;
-    removeRegistration(cancelTarget.id);
-    setCancelTarget(null);
-  }, [cancelTarget, removeRegistration]);
+          <div className="mb-6">
+            <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">
+              {t("eventRegistration.successAddToCalendar")}
+            </p>
+            <div className="flex gap-3 justify-center flex-wrap">
+              <a
+                href={googleCalendarUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 min-w-30 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
+              >
+                <svg className="w-4 h-4 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z" />
+                </svg>
+                {t("eventRegistration.successCalendarGoogle")}
+              </a>
+              <a
+                href={outlookCalendarUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 min-w-30 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
+              >
+                <svg className="w-4 h-4 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
+                </svg>
+                {t("eventRegistration.successCalendarOutlook")}
+              </a>
+              <a
+                href={yahooCalendarUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 min-w-30 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
+              >
+                <svg className="w-4 h-4 text-purple-600" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+                </svg>
+                Yahoo
+              </a>
+              <a
+                href={webcalUrl || '#'}
+                {...(event.id
+                  ? {}
+                  : { download: event.title ? `${event.title}.ics` : 'event.ics' }
+                )}
+                className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
+              >
+                <svg className="w-4 h-4 text-slate-600 dark:text-slate-400" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19 3h-14c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14h-4v-4h-2l4-4 4 4h-2v4z" />
+                </svg>
+                Apple / ICS
+              </a>
+            </div>
+          </div>
 
   return (
     <motion.div
@@ -618,9 +956,38 @@ const addToRecentEvents = (event) => {
             {item.title || item.name}
           </h3>
 
-          <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-            {item.date || "Upcoming Event"}
-          </p>
+        <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden">
+          <div className="relative h-64 overflow-hidden">
+            <img
+              loading="lazy"
+              src={event.image}
+              alt={event.title}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent"></div>
+            <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+              <h1 title={event.title} className="text-3xl font-bold mb-2 wrap-break-word">{event.title}</h1>
+              <div className="flex flex-wrap gap-4 text-sm">
+                <span className="flex items-center gap-1">
+                  <Calendar className="w-4 h-4" />
+                  {new Date(event.date).toLocaleDateString("en-US", {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Clock className="w-4 h-4" />
+                  {event.time}
+                </span>
+                <span className="flex items-center gap-1">
+                  <MapPin className="w-4 h-4" />
+                  {event.location}
+                </span>
+              </div>
+            </div>
+          </div>
 
           <Link
             to={`/events/${item.id}`}

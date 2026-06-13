@@ -4,6 +4,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 import { fetchGitHubRepo, getGitHubRepoDetails } from "../../utils/githubApiClient.js";
 import { safeJsonParse } from "../../utils/safeJsonParse";
+import { useAuth } from "../../context/AuthContext.js";
+import { toast } from "react-toastify";
+import { projectService } from "../../services/projectService.js";
 
 // Cache Keys & Constants
 const CACHE_KEY = "eventra_github_metrics_cache";
@@ -65,7 +68,7 @@ const ConcentricTechRings = ({ techStack }) => {
   return (
     <div className="flex items-center gap-5 p-4 rounded-2xl bg-slate-50/40 dark:bg-slate-950/35 border border-slate-100/50 dark:border-slate-800/20 backdrop-blur-xs">
       {/* SVG Container */}
-      <div className="relative w-[92px] h-[92px] shrink-0">
+      <div className="relative w-23 h-23 shrink-0">
         <svg className="w-full h-full -rotate-90" viewBox="0 0 88 88">
           <defs>
             {techGradients.map((grad, i) => (
@@ -122,7 +125,7 @@ const ConcentricTechRings = ({ techStack }) => {
       <div className="flex-1 space-y-2.5 min-w-0">
         {list.map((tech, i) => {
           const pct = sweeps[i];
-          const grad = techGradients[i];
+          // const grad = techGradients[i];
 
           return (
             <div key={tech} className="space-y-1">
@@ -146,13 +149,14 @@ const ConcentricTechRings = ({ techStack }) => {
 
 const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
   useReducedMotion();
-  const [isLoaded, setIsLoaded] = useState(false);
+  const { token, isAuthenticated } = useAuth();
+  const [setIsLoaded] = useState(false);
   const [metrics, setMetrics] = useState(null);
   const [metricsLoading, setMetricsLoading] = useState(true);
 
   // Mouse Tracking state for dynamic light glow bubble
   const cardRef = useRef(null);
-  const [coords, setCoords] = useState({ x: 0, y: 0 });
+  const [setCoords] = useState({ x: 0, y: 0 });
   
 
   const handleMouseMove = (e) => {
@@ -164,24 +168,41 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
     });
   };
 
-  const handleIncrementStar = (e) => {
+  const handleIncrementStar = async (e) => {
     e.preventDefault();
     e.stopPropagation();
     
-    const repoDetails = getGitHubRepoDetails(project.githubUrl);
-    const key = repoDetails ? `${repoDetails.owner}/${repoDetails.repo}` : `mock-${project.id}`;
-    
-    setMetrics(prev => {
-      const updated = { ...prev, stars: (prev?.stars || 0) + 1 };
-      try {
-        let cache = {};
-        const saved = localStorage.getItem(CACHE_KEY);
-        cache = saved ? safeJsonParse(saved, {}) : {};
-        cache[key] = { data: updated, timestamp: Date.now() };
-        localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
-      } catch {}
-      return updated;
-    });
+    if (!isAuthenticated()) {
+      toast.error("You must be logged in to upvote a project.");
+      return;
+    }
+
+    try {
+      await projectService.upvoteProject(project.id, {
+        headers: {
+          Authorization: token
+        }
+      });
+      
+      const repoDetails = getGitHubRepoDetails(project.githubUrl);
+      const key = repoDetails ? `${repoDetails.owner}/${repoDetails.repo}` : `mock-${project.id}`;
+      
+      setMetrics(prev => {
+        const updated = { ...prev, stars: (prev?.stars || 0) + 1 };
+        try {
+          let cache = {};
+          const saved = localStorage.getItem(CACHE_KEY);
+          cache = saved ? safeJsonParse(saved, {}) : {};
+          cache[key] = { data: updated, timestamp: Date.now() };
+          localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+        } catch {}
+        return updated;
+      });
+      toast.success("Project upvoted successfully!");
+    } catch (err) {
+      const message = err?.data?.message || err?.message || "Failed to upvote project.";
+      toast.error(message);
+    }
   };
 
   const handleIncrementFork = (e) => {
@@ -211,7 +232,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
     if (!repoDetails) {
       // Fallback directly to mock data if there is no valid repo
       setMetrics({
-        stars: project.stars || 0,
+        stars: project.stars || project.upvotes || 0,
         forks: project.forks || 0,
         issues: project.openIssues || 0,
         pullRequests: project.pullRequests || 0,
@@ -259,7 +280,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
         setMetricsLoading(false);
       } catch {
         setMetrics({
-          stars: project.stars || 0,
+          stars: project.stars || project.upvotes || 0,
           forks: project.forks || 0,
           issues: project.openIssues || 0,
           pullRequests: project.pullRequests || 0,
@@ -272,6 +293,18 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
   }, [project]);
 
   if (!project) return null;
+
+  const isValidUrl = (string) => {
+    try {
+      const parsed = new URL(string);
+      return parsed.protocol === "http:" || parsed.protocol === "https:";
+    } catch {
+      return false;
+    }
+  };
+
+  const hasValidRepo = project.githubUrl && getGitHubRepoDetails(project.githubUrl);
+  const hasValidLiveDemo = project.liveDemo && isValidUrl(project.liveDemo);
 
   // Header decorative random codes
  const csIcons = [Code2, Cpu, GitPullRequest];
@@ -328,7 +361,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
           onLoad={() => setIsLoaded(true)}
           className="relative w-full h-full object-cover hover:scale-102 transition-transform duration-500 z-10"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none z-20" />
+        <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent pointer-events-none z-20" />
       </div>
 
       {/* Main Content Layout */}
@@ -341,6 +374,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
         {/* Categories & Level badge pills */}
         <div className="flex flex-wrap gap-2 pt-1">
           <span className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider bg-indigo-600/20 text-white rounded-lg border border-indigo-500/30">
+            {project.category || "Uncategorized"}
           </span>
           <span className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-wider border rounded-lg ${getDifficultyColor(project.difficulty)}`}>
             {project.difficulty || "Unknown"}
@@ -362,7 +396,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
         {/* Author / Committer Header */}
         <div className="flex items-center justify-between pt-1 border-t border-slate-100/80 dark:border-slate-800/30">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-pink-500 text-white flex items-center justify-center text-xs font-black uppercase shrink-0 shadow-sm">
+            <div className="w-8 h-8 rounded-lg bg-linear-to-br from-indigo-500 to-pink-500 text-white flex items-center justify-center text-xs font-black uppercase shrink-0 shadow-sm">
               {project.author?.charAt(0) || "U"}
             </div>
             <div className="flex flex-col min-w-0">
@@ -433,7 +467,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
 
       {/* Custom Action buttons panel */}
       <div className="relative z-10 px-5 pb-5 pt-1 flex flex-col sm:flex-row gap-3 mt-auto">
-        {project.githubUrl ? (
+        {hasValidRepo ? (
           <motion.a
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
@@ -450,7 +484,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
           </div>
         )}
 
-        {project.liveDemo ? (
+        {hasValidLiveDemo ? (
           <motion.a
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}

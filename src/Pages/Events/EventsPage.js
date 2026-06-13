@@ -9,6 +9,7 @@ import EventCTA from "./EventCTA";
 import EventFiltersToolbar from "./EventFiltersToolbar";
 import { EventCardSkeleton } from "../../components/common/SkeletonLoaders";
 import SearchEmptyState from "../../components/common/SearchEmptyState";
+import EmptyState from "../../components/common/EmptyState";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import ActiveFilters from "./ActiveFilters";
 import PaginationControls from "./PaginationControls";
@@ -45,7 +46,8 @@ const renderCardSection = (
   viewMode,
   searchQuery,
   onClearSearch,
-  filteredEvents
+  filteredEvents,
+  // hasFilters
 ) => {
   if (isLoading) {
     return <ExploreEventsSkeleton />;
@@ -66,18 +68,31 @@ const renderCardSection = (
   }
 
   if (paginatedEvents.length === 0) {
-    return (
-      <div className="relative overflow-hidden rounded-3xl p-10 text-center border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-[0_10px_25px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)]">
-        <SearchEmptyState
-          query={searchQuery}
-          itemLabel="events"
-          browseLabel="Browse All Events"
-          browsePath="/events"
-          onClear={onClearSearch}
-          popularTags={["AI", "Blockchain", "Web", "DevOps", "React", "UX"]}
+    const hasSearch = searchQuery && searchQuery.trim() !== "";
+    if (hasSearch) {
+      return (
+        <div className="relative overflow-hidden rounded-3xl p-10 text-center border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-[0_10px_25px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)]">
+          <SearchEmptyState
+            query={searchQuery}
+            itemLabel="events"
+            browseLabel="Browse All Events"
+            browsePath="/events"
+            onClear={onClearSearch}
+            popularTags={["AI", "Blockchain", "Web", "DevOps", "React", "UX"]}
+          />
+        </div>
+      );
+    } else {
+      return (
+        <EmptyState
+          type="filters"
+          title="No events match your filters"
+          description="Try adjusting your sliders, removing location parameters, or resetting categories."
+          actionLabel="Clear Filters"
+          onAction={onClearSearch}
         />
-      </div>
-    );
+      );
+    }
   }
   if (viewMode === "grid" && paginatedEvents.length > 50) {
     return <VirtualizedEventGrid events={paginatedEvents} />;
@@ -311,7 +326,7 @@ const EventsPage = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 text-slate-900 dark:text-gray-100 overflow-x-hidden">
+    <div className="flex flex-col min-h-screen bg-linear-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 text-slate-900 dark:text-gray-100 overflow-x-hidden">
       <EventHero
         searchQuery={localSearchInput}
         setSearchQuery={setLocalSearchInput}
@@ -347,6 +362,7 @@ const EventsPage = () => {
             currentFilterConfig={currentFilterConfig}
             onApplyPreset={applyFilterPreset}
             visibleEvents={listing.paginatedEvents}
+            totalElements={listing.totalElements}
           />
         </div>
 
@@ -377,7 +393,10 @@ const EventsPage = () => {
             listing.viewMode,
             listing.searchQuery,
             clearSearchAndFilters,
-            listing.filteredEvents
+            listing.filteredEvents,
+            hasActiveAdvancedFilters(listing.advancedFilters) ||
+              listing.filterType !== "all" ||
+              listing.categoryFilter !== "all"
           )}
 
           {!listing.isLoading && listing.totalPages > 1 && (
