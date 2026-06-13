@@ -147,7 +147,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // Hook to handle periodic token validation and auto-logout on expiration
-  const { clearExpiredSession: handleExpiredSession } = useTokenExpiry({
+  useTokenExpiry({
     token,
     user,
     onExpired: clearSession
@@ -286,7 +286,7 @@ export const AuthProvider = ({ children }) => {
     
     try {
       // Security Contract: Strip authorization keys from display profile object stored in localStorage
-      const { roles, permissions, scopes, ...displayProfile } = sessionUser;
+      const { roles: _roles, permissions: _permissions, scopes: _scopes, ...displayProfile } = sessionUser;
       await syncSecureStorage.setItem("user", JSON.stringify(displayProfile));
     } catch (error) {
       console.error("[AuthContext] Error persisting user profile safely:", error);

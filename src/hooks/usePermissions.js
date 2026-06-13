@@ -1,18 +1,3 @@
-/**
- * @fileoverview usePermissions hook
- * @module hooks/usePermissions
- * 
- * Provides authorization helper utilities (such as hasRole, hasPermission, etc.)
- * derived from the authenticated user's profile.
- * 
- * Design Principles:
- * 1. Pure Hooks: This hook does not query the AuthContext directly to prevent circular dependency
- *    issues since the AuthContext provider uses this hook to build its value.
- * 2. Immutable Outputs: Results are heavily memoized using React's useMemo to ensure
- *    reference-stable callback references and avoid component re-render cascades.
- * 3. Fallback Resilience: Gracefully handles null/undefined user states by returning falsy outputs.
- */
-
 import { useMemo } from "react";
 import { ROLES } from "../config/roles.js";
 
