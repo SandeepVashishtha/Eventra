@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import InteractiveWhiteboard from "./InteractiveWhiteboard";
+import PomodoroTimer from "./PomodoroTimer";
 import { logger } from "../../utils/logger";
 
 // Initial constants removed to support real-time sync database values
@@ -81,10 +82,7 @@ const TeamWorkspace = () => {
             ]);
           }
         } catch (err) {
-          setPollingLogs((prev) => [
-            ...prev,
-            `[HTTP-Poll] Fetch network error: ${err.message}`,
-          ]);
+          setPollingLogs((prev) => [...prev, `[HTTP-Poll] Fetch network error: ${err.message}`]);
         }
       };
 
@@ -500,6 +498,9 @@ const TeamWorkspace = () => {
 
             {/* Right Column: Pinned Announcements & Team info */}
             <div className="space-y-6">
+              {/* Pomodoro Timer */}
+              <PomodoroTimer />
+
               {/* Pins announcements list */}
               <div className="bg-slate-900/40 border border-slate-800/60 rounded-3xl p-5 md:p-6 shadow-sm">
                 <h3 className="text-sm font-extrabold text-gray-300 uppercase tracking-widest flex items-center gap-2 mb-4">

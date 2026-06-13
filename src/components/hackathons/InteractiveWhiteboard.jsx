@@ -1,7 +1,16 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
-  Square, Circle, PenTool, RotateCcw, Trash2, Plus, Move,
-  Check, Palette, HelpCircle, X
+  Square,
+  Circle,
+  PenTool,
+  RotateCcw,
+  Trash2,
+  Plus,
+  Move,
+  Check,
+  Palette,
+  HelpCircle,
+  X,
 } from "lucide-react";
 import { toast } from "react-toastify";
 
@@ -11,7 +20,7 @@ const COLORS = [
   { name: "Emerald", value: "#10b981" },
   { name: "Amber", value: "#f59e0b" },
   { name: "Sky", value: "#0ea5e9" },
-  { name: "White", value: "#ffffff" }
+  { name: "White", value: "#ffffff" },
 ];
 
 const BRUSH_SIZES = [2, 4, 8, 12];
@@ -29,8 +38,14 @@ const InteractiveWhiteboard = () => {
   // Drawing History & Sticky Notes State
   const [elements, setElements] = useState([]); // array of paths and shapes
   const [stickies, setStickies] = useState([
-    { id: 1, x: 80, y: 100, text: "Idea: AI-driven scheduler for hackathons! 🚀", color: "#6366f1" },
-    { id: 2, x: 320, y: 150, text: "Stack: React + Tailwind + SSE fallback", color: "#10b981" }
+    {
+      id: 1,
+      x: 80,
+      y: 100,
+      text: "Idea: AI-driven scheduler for hackathons! 🚀",
+      color: "#6366f1",
+    },
+    { id: 2, x: 320, y: 150, text: "Stack: React + Tailwind + SSE fallback", color: "#10b981" },
   ]);
 
   // Temporary drag-drawing state
@@ -105,7 +120,7 @@ const InteractiveWhiteboard = () => {
     const handleResize = () => {
       const canvas = canvasRef.current;
       if (!canvas) return;
-      
+
       const rect = canvas.parentElement.getBoundingClientRect();
       canvas.width = rect.width;
       canvas.height = Math.max(rect.height, 450);
@@ -124,36 +139,38 @@ const InteractiveWhiteboard = () => {
     const clientX = e.clientX || (e.touches && e.touches[0].clientX);
     const clientY = e.clientY || (e.touches && e.touches[0].clientY);
 
-    const sticky = stickies.find(s => s.id === stickyId);
+    const sticky = stickies.find((s) => s.id === stickyId);
     if (!sticky) return;
 
     setDraggingSticky(stickyId);
     setDragOffset({
       x: clientX - sticky.x,
-      y: clientY - sticky.y
+      y: clientY - sticky.y,
     });
   };
 
   const handleStickyDragMove = (e) => {
     if (draggingSticky === null) return;
-    
+
     const clientX = e.clientX || (e.touches && e.touches[0].clientX);
     const clientY = e.clientY || (e.touches && e.touches[0].clientY);
 
-    setStickies(prev => prev.map(s => {
-      if (s.id === draggingSticky) {
-        const bounds = canvasRef.current.getBoundingClientRect();
-        let newX = clientX - dragOffset.x;
-        let newY = clientY - dragOffset.y;
+    setStickies((prev) =>
+      prev.map((s) => {
+        if (s.id === draggingSticky) {
+          const bounds = canvasRef.current.getBoundingClientRect();
+          let newX = clientX - dragOffset.x;
+          let newY = clientY - dragOffset.y;
 
-        // Keep inside canvas bounds
-        newX = Math.max(10, Math.min(bounds.width - 150, newX));
-        newY = Math.max(10, Math.min(bounds.height - 150, newY));
+          // Keep inside canvas bounds
+          newX = Math.max(10, Math.min(bounds.width - 150, newX));
+          newY = Math.max(10, Math.min(bounds.height - 150, newY));
 
-        return { ...s, x: newX, y: newY };
-      }
-      return s;
-    }));
+          return { ...s, x: newX, y: newY };
+        }
+        return s;
+      })
+    );
   };
 
   const handleStickyDragEnd = () => {
@@ -162,11 +179,11 @@ const InteractiveWhiteboard = () => {
 
   // Sticky Content updates
   const handleStickyTextChange = (id, newText) => {
-    setStickies(stickies.map(s => s.id === id ? { ...s, text: newText } : s));
+    setStickies(stickies.map((s) => (s.id === id ? { ...s, text: newText } : s)));
   };
 
   const handleDeleteSticky = (id) => {
-    setStickies(stickies.filter(s => s.id !== id));
+    setStickies(stickies.filter((s) => s.id !== id));
     toast.info("Sticky note removed.");
   };
 
@@ -189,74 +206,93 @@ const InteractiveWhiteboard = () => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
     const rect = canvas.getBoundingClientRect();
-    const clientX = e.clientX ?? (e.touches?.[0]?.clientX ?? 0);
-    const clientY = e.clientY ?? (e.touches?.[0]?.clientY ?? 0);
+    const clientX = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
+    const clientY = e.clientY ?? e.touches?.[0]?.clientY ?? 0;
     return { x: clientX - rect.left, y: clientY - rect.top };
   };
 
-  const handleMouseDown = useCallback((e) => {
-    if (tool === "sticky") return;
-    e.stopPropagation();
-    const coords = getCanvasCoords(e);
-    if (tool === "pen") {
-      setCurrentElement({
-        type: "path", color, size, isSolid,
-        points: [{ x: coords.x, y: coords.y }],
-      });
-    } else {
-      setCurrentElement({
-        type: "shape", shapeType: tool, color, size, isSolid,
-        x: coords.x, y: coords.y, width: 0, height: 0,
-      });
-    }
-    setIsDrawing(true);
-  }, [tool, color, size, isSolid]);
+  const handleMouseDown = useCallback(
+    (e) => {
+      if (tool === "sticky") return;
+      e.stopPropagation();
+      const coords = getCanvasCoords(e);
+      if (tool === "pen") {
+        setCurrentElement({
+          type: "path",
+          color,
+          size,
+          isSolid,
+          points: [{ x: coords.x, y: coords.y }],
+        });
+      } else {
+        setCurrentElement({
+          type: "shape",
+          shapeType: tool,
+          color,
+          size,
+          isSolid,
+          x: coords.x,
+          y: coords.y,
+          width: 0,
+          height: 0,
+        });
+      }
+      setIsDrawing(true);
+    },
+    [tool, color, size, isSolid]
+  );
 
   // Drawing move handler
-  const handleMouseMove = useCallback((e) => {
-    if (tool === "sticky") return;
-    if (!isDrawing) return;
-    e.stopPropagation();
-    const coords = getCanvasCoords(e);
+  const handleMouseMove = useCallback(
+    (e) => {
+      if (tool === "sticky") return;
+      if (!isDrawing) return;
+      e.stopPropagation();
+      const coords = getCanvasCoords(e);
 
-    setCurrentElement((prev) => {
-      if (!prev) return prev;
-      if (prev.type === "path") {
+      setCurrentElement((prev) => {
+        if (!prev) return prev;
+        if (prev.type === "path") {
+          return {
+            ...prev,
+            points: [...prev.points, { x: coords.x, y: coords.y }],
+          };
+        }
+
+        // shape
         return {
           ...prev,
-          points: [...prev.points, { x: coords.x, y: coords.y }],
+          width: coords.x - prev.x,
+          height: coords.y - prev.y,
         };
-      }
-
-      // shape
-      return {
-        ...prev,
-        width: coords.x - prev.x,
-        height: coords.y - prev.y,
-      };
-    });
-  }, [tool, isDrawing]);
+      });
+    },
+    [tool, isDrawing]
+  );
 
   // Finalize drawing on mouse up / touch end / mouse leave
-  const handleMouseUp = useCallback((e) => {
-    if (tool === "sticky") return;
-    if (!isDrawing) return;
-    if (e && typeof e.stopPropagation === "function") {
-      e.stopPropagation();
-    }
-
-    setCurrentElement((prev) => {
-      if (prev) {
-        setElements((els) => [...els, prev]);
+  const handleMouseUp = useCallback(
+    (e) => {
+      if (tool === "sticky") return;
+      if (!isDrawing) return;
+      if (e && typeof e.stopPropagation === "function") {
+        e.stopPropagation();
       }
-      return null;
-    });
 
-    setIsDrawing(false);
-  }, [tool, isDrawing]);
+      setCurrentElement((prev) => {
+        if (prev) {
+          setElements((els) => [...els, prev]);
+        }
+        return null;
+      });
+
+      setIsDrawing(false);
+    },
+    [tool, isDrawing]
+  );
 
   return (
-    <div 
+    <div
       className="flex flex-col h-full bg-slate-950 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl relative select-none"
       onMouseMove={handleStickyDragMove}
       onTouchMove={handleStickyDragMove}
@@ -266,7 +302,6 @@ const InteractiveWhiteboard = () => {
     >
       {/* Premium Toolbar Header */}
       <div className="bg-slate-900/80 backdrop-blur-md px-4 py-3 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 z-10">
-        
         {/* Tool Selectors */}
         <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-xl p-1 shrink-0">
           <button
@@ -280,7 +315,7 @@ const InteractiveWhiteboard = () => {
           >
             <PenTool size={16} />
           </button>
-          
+
           <button
             onClick={() => setTool("rect")}
             className={`p-2 rounded-lg transition-all ${
@@ -392,11 +427,10 @@ const InteractiveWhiteboard = () => {
             <Trash2 size={16} />
           </button>
         </div>
-
       </div>
 
       {/* Drawing Arena Area */}
-      <div 
+      <div
         className="flex-1 relative bg-[#090a0f] overflow-hidden cursor-crosshair min-h-[450px]"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
@@ -419,7 +453,7 @@ const InteractiveWhiteboard = () => {
               left: `${sticky.x}px`,
               top: `${sticky.y}px`,
               borderColor: `${sticky.color}40`,
-              backgroundColor: "#0d0f18"
+              backgroundColor: "#0d0f18",
             }}
           >
             {/* Grab Handle Header */}
@@ -430,7 +464,10 @@ const InteractiveWhiteboard = () => {
             >
               <Move size={12} />
               <button
-                onClick={(e) => { e.stopPropagation(); handleDeleteSticky(sticky.id); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteSticky(sticky.id);
+                }}
                 className="text-gray-500 hover:text-red-400 p-0.5 rounded transition-colors bg-transparent border-none cursor-pointer"
               >
                 <X size={10} />
@@ -457,9 +494,12 @@ const InteractiveWhiteboard = () => {
           <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-slate-500 pointer-events-none space-y-3 select-none">
             <HelpCircle size={36} className="text-slate-600" />
             <div>
-              <div className="font-bold text-sm text-slate-400">Collaborative Whiteboard Canvas</div>
+              <div className="font-bold text-sm text-slate-400">
+                Collaborative Whiteboard Canvas
+              </div>
               <p className="text-xs text-slate-600 max-w-sm mt-1 leading-relaxed">
-                Sketch flows using the pen tool, draw diagrams with rectangles/circles, or place floating Sticky Notes. Click and drag sticky headers to reorganize.
+                Sketch flows using the pen tool, draw diagrams with rectangles/circles, or place
+                floating Sticky Notes. Click and drag sticky headers to reorganize.
               </p>
             </div>
           </div>
