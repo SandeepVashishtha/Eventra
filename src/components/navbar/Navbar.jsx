@@ -91,7 +91,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             : "bg-transparent border-b border-transparent"
         }`}
       >
-        <div className="relative px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-3">
+        <div className="relative px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-6">
           {/* Logo - Left Section */}
           <Link to="/" aria-label="Eventra home logo template" className="relative z-10 flex items-center shrink-0">
             <div className="flex items-center gap-2 sm:gap-2.5">
@@ -111,7 +111,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           </Link>
 
           {/* Desktop Links - Wrapping instead of absolute positioning */}
-          <div className="hidden lg:flex items-center justify-center flex-1 overflow-x-auto">
+          <div className="hidden lg:flex items-center justify-center flex-1 min-w-0 overflow-x-auto px-4">
             <DesktopNavbar />
           </div>
 
