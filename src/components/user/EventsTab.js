@@ -450,7 +450,7 @@ const addToRecentEvents = (event) => {
 
   const filtered = existing.filter((e) => e.id !== event.id);
 
-  const updated = [event, ...filtered].slice(0, 6);
+  const updated = [{ id: event.id, title: event.title || event.name, date: event.date }, ...filtered].slice(0, 6);
 
   localStorage.setItem("recentEvents", JSON.stringify(updated));
 
