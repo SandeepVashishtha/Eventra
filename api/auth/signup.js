@@ -69,14 +69,14 @@ const validatePassword = (password) => {
   if (password.length < 8) return { valid: false, message: "Password must be at least 8 characters long" };
   
   const criteria = [
-    { test: /.{8,}/, name: "8+ characters" },
-    { test: /[A-Z]/, name: "uppercase letter" },
-    { test: /[a-z]/, name: "lowercase letter" },
-    { test: /\d/, name: "number" },
-    { test: /[!@#$%^&*(),.?":{}|<>]/, name: "special character" },
+    /.{8,}/,
+    /[A-Z]/,
+    /[a-z]/,
+    /\d/,
+    /[!@#$%^&*(),.?":{}|<>]/,
   ];
   
-  const metCriteria = criteria.filter(c => c.test.test(password));
+  const metCriteria = criteria.filter(c => c.test(password));
   if (metCriteria.length < 5) {
     return {
       valid: false,
@@ -100,6 +100,51 @@ const validatePassword = (password) => {
 // serverless instances cold-starting within the same millisecond both
 // produced `user_<timestamp>_1`. See google.js for the full rationale.
 const generateUserId = () => crypto.randomUUID();
+
+function setCookie(res, token) {
+  const isProd = process.env.NODE_ENV === "production";
+  const cookieValue = `token=${token}; HttpOnly; Path=/; Max-Age=${JWT_COOKIE_MAX_AGE_SECONDS}; SameSite=Strict${isProd ? '; Secure' : ''}`;
+  try {
+    if (typeof res.setHeader === 'function') {
+      res.setHeader('Set-Cookie', cookieValue);
+    } else if (typeof res.set === 'function') {
+      res.set({ 'Set-Cookie': cookieValue });
+    } else if (res.headers && typeof res.headers === 'object') {
+      res.headers['Set-Cookie'] = cookieValue;
+    }
+  } catch (e) {
+  }
+}
+
+function getClientIp(req) {
+  return req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim()
+    || req.headers?.["x-real-ip"]
+    || req.socket?.remoteAddress
+    || "unknown";
+}
+
+function validateSignupInput(body) {
+  const { firstName, lastName, email, password, confirmPassword } = body;
+  const errors = [];
+  
+  const firstNameValidation = validateName(firstName);
+  if (!firstNameValidation.valid) errors.push(`First name: ${firstNameValidation.message}`);
+  
+  const lastNameValidation = validateName(lastName);
+  if (!lastNameValidation.valid) errors.push(`Last name: ${lastNameValidation.message}`);
+  
+  if (!email || !email.trim()) errors.push("Email is required");
+  
+  if (password) {
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) errors.push(passwordValidation.message);
+  }
+  
+  if (!confirmPassword) errors.push("Please confirm your password");
+  if (password && confirmPassword && password !== confirmPassword) errors.push("Passwords do not match");
+  
+  return errors;
+}
 
 // ---------------------------------------------------------------------------
 // Default Roles and Permissions
@@ -134,8 +179,6 @@ async function handler(req, res) {
   }
 
   try {
-    // Runtime protection: Reject requests if storage is unavailable
-    // In development, in-memory storage is allowed. In production, persistent storage is required.
     if (!users || !usersById || !usersByUsername) {
       console.error("[signup.js] Authentication service unavailable: storage not initialized");
       return corsResponse(req, res, 500, { error: "Authentication service unavailable" });
@@ -146,44 +189,14 @@ async function handler(req, res) {
     }
 
     const { firstName, lastName, email, password, confirmPassword } = req.body;
-
-    // -----------------------------------------------------------------------
-    // Input Validation
-    // -----------------------------------------------------------------------
-
-    // Validate firstName
-    const firstNameValidation = validateName(firstName);
-    if (!firstNameValidation.valid) {
-      return corsResponse(req, res, 400, { error: `First name: ${firstNameValidation.message}` });
+    const validationErrors = validateSignupInput(req.body);
+    if (validationErrors.length > 0) {
+      return corsResponse(req, res, 400, { error: validationErrors[0] });
     }
 
-    // Validate lastName
-    const lastNameValidation = validateName(lastName);
-    if (!lastNameValidation.valid) {
-      return corsResponse(req, res, 400, { error: `Last name: ${lastNameValidation.message}` });
-    }
-
-    // Validate email
-    if (!email || !email.trim()) {
-      return corsResponse(req, res, 400, { error: "Email is required" });
-    }
     const normalizedEmail = email.trim().toLowerCase();
     if (!validateEmail(normalizedEmail)) {
       return corsResponse(req, res, 400, { error: "Invalid email format" });
-    }
-
-    // Validate password
-    const passwordValidation = validatePassword(password);
-    if (!passwordValidation.valid) {
-      return corsResponse(req, res, 400, { error: passwordValidation.message });
-    }
-
-    // Validate confirmPassword matches password
-    if (!confirmPassword) {
-      return corsResponse(req, res, 400, { error: "Please confirm your password" });
-    }
-    if (password !== confirmPassword) {
-      return corsResponse(req, res, 400, { error: "Passwords do not match" });
     }
 
     // -----------------------------------------------------------------------
@@ -199,10 +212,7 @@ async function handler(req, res) {
     // Run after input validation so malformed requests don't burn the budget.
     // -----------------------------------------------------------------------
 
-    const clientIp = req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim()
-      || req.headers?.["x-real-ip"]
-      || req.socket?.remoteAddress
-      || "unknown";
+    const clientIp = getClientIp(req);
 
     try {
       const rateLimitResult = signupRateLimiter.checkAsync
@@ -289,18 +299,7 @@ async function handler(req, res) {
       createdAt: newUser.createdAt,
     };
 
-    const isProd = process.env.NODE_ENV === "production";
-    const cookieValue = `token=${token}; HttpOnly; Path=/; Max-Age=${JWT_COOKIE_MAX_AGE_SECONDS}; SameSite=Strict${isProd ? '; Secure' : ''}`;
-    try {
-      if (typeof res.setHeader === 'function') {
-        res.setHeader('Set-Cookie', cookieValue);
-      } else if (typeof res.set === 'function') {
-        res.set({ 'Set-Cookie': cookieValue });
-      } else if (res.headers && typeof res.headers === 'object') {
-        res.headers['Set-Cookie'] = cookieValue;
-      }
-    } catch (e) {
-    }
+    setCookie(res, token);
 
     return corsResponse(req, res, 201, {
       message: "Account created successfully",

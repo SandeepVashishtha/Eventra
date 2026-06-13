@@ -38,15 +38,67 @@ function validateLoginInput(body) {
   const usernameOrEmail = body.usernameOrEmail || body.email;
   const { password } = body;
 
-  if (!usernameOrEmail || typeof usernameOrEmail !== "string" || usernameOrEmail.trim() === "") {
+  if (!usernameOrEmail?.trim()) {
     return { valid: false, message: "Username or email is required" };
   }
 
-  if (!password || typeof password !== "string" || password === "") {
+  if (!password) {
     return { valid: false, message: "Password is required" };
   }
 
   return { valid: true };
+}
+
+function setCookie(res, token) {
+  const isProd = process.env.NODE_ENV === "production";
+  const cookieValue = `token=${token}; HttpOnly; Path=/; Max-Age=${JWT_COOKIE_MAX_AGE_SECONDS}; SameSite=Strict${isProd ? '; Secure' : ''}`;
+  try {
+    if (typeof res.setHeader === 'function') {
+      res.setHeader('Set-Cookie', cookieValue);
+    } else if (typeof res.set === 'function') {
+      res.set({ 'Set-Cookie': cookieValue });
+    } else if (res.headers && typeof res.headers === 'object') {
+      res.headers['Set-Cookie'] = cookieValue;
+    }
+  } catch (e) {
+  }
+}
+
+function buildUserResponse(user) {
+  const roles = user.roles || ["USER"];
+  const primaryRole = roles[0] || "ATTENDEE";
+  const normalizedRole = primaryRole === "EVENT_MANAGER" ? "ORGANIZER" : primaryRole;
+  return {
+    id: user.id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    email: user.email,
+    username: user.username,
+    role: normalizedRole,
+    roles: roles,
+    permissions: user.permissions || ["event:read"],
+  };
+}
+
+function createDefaultDeps() {
+  return {
+    findUserByEmail: async (ident) => {
+      const normalized = ident.trim().toLowerCase();
+      const userByEmail = users.get(normalized);
+      if (userByEmail) return userByEmail;
+      return usersByUsername.get(normalized);
+    },
+    comparePassword: async (plain, hash) => bcrypt.compare(plain, hash),
+    issueToken: (user) => {
+      const jwtPayload = {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        roles: user.roles || ["USER"],
+      };
+      return jwt.sign(jwtPayload, getJwtSecret(), { expiresIn: JWT_EXPIRES_IN });
+    },
+  };
 }
 
 /**
@@ -101,69 +153,23 @@ export default async function login(req, res, deps = {}) {
   const usernameOrEmail = req.body.usernameOrEmail || req.body.email;
   const { password } = req.body;
 
-  const {
-    findUserByEmail = async (ident) => {
-      const normalized = ident.trim().toLowerCase();
-      const userByEmail = users.get(normalized);
-      if (userByEmail) return userByEmail;
-      return usersByUsername.get(normalized);
-    },
-    comparePassword = async (plain, hash) => {
-      return bcrypt.compare(plain, hash);
-    },
-    issueToken = (user) => {
-      const jwtPayload = {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        roles: user.roles || ["USER"],
-      };
-      return jwt.sign(jwtPayload, getJwtSecret(), { expiresIn: JWT_EXPIRES_IN });
-    },
-  } = deps;
+  const mergedDeps = { ...createDefaultDeps(), ...deps };
 
   try {
-    const user = await findUserByEmail(usernameOrEmail);
+    const user = await mergedDeps.findUserByEmail(usernameOrEmail);
 
     const dummyHash = "$2b$10$v18wNUUU7wTXyTbRPTFZTeze3aHS//qr4FKA9gu1E/GfNQqTsFfRG";
     const passwordHash = user?.password ?? dummyHash;
-    const isValid = await comparePassword(password, passwordHash);
+    const isValid = await mergedDeps.comparePassword(password, passwordHash);
 
     if (!user || !isValid) {
       return corsResponse(req, res, 401, { error: "Invalid credentials" });
     }
 
-    const token = typeof issueToken === "function" ? issueToken(user) : undefined;
+    const token = mergedDeps.issueToken(user);
+    if (token) setCookie(res, token);
 
-    if (token) {
-      const isProd = process.env.NODE_ENV === "production";
-      const cookieValue = `token=${token}; HttpOnly; Path=/; Max-Age=${JWT_COOKIE_MAX_AGE_SECONDS}; SameSite=Strict${isProd ? '; Secure' : ''}`;
-      try {
-        if (typeof res.setHeader === 'function') {
-          res.setHeader('Set-Cookie', cookieValue);
-        } else if (typeof res.set === 'function') {
-          res.set({ 'Set-Cookie': cookieValue });
-        } else if (res.headers && typeof res.headers === 'object') {
-          res.headers['Set-Cookie'] = cookieValue;
-        }
-      } catch (e) {
-      }
-    }
-
-    const roles = user.roles || ["USER"];
-    const primaryRole = roles[0] || "ATTENDEE";
-    const normalizedRole = primaryRole === "EVENT_MANAGER" ? "ORGANIZER" : primaryRole;
-
-    const userResponse = {
-      id: user.id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      username: user.username,
-      role: normalizedRole,
-      roles: roles,
-      permissions: user.permissions || ["event:read"],
-    };
+    const userResponse = buildUserResponse(user);
 
     return corsResponse(req, res, 200, {
       message: "Login successful",

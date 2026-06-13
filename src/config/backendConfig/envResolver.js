@@ -21,9 +21,7 @@ export const getFirstDefinedEnvValue = (keys = []) => {
   
   for (const key of keys) {
     const value = runtimeEnv[key];
-    if (value !== undefined && value !== null && value !== "") {
-      return value;
-    }
+    if (value) return value;
   }
 
   return "";

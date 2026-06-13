@@ -108,9 +108,7 @@ class KvRateLimiter {
   async check(key) {
     const windowStart = Math.floor(Date.now() / this.windowMs) * this.windowMs;
     const redisKey = `ratelimit:${key}:${windowStart}`;
-    const headers = {
-      Authorization: `Bearer ${this.kvToken}`,
-    };
+    const headers = { Authorization: `Bearer ${this.kvToken}` };
 
     try {
       const incrRes = await fetch(`${this.kvUrl}/incr/${encodeURIComponent(redisKey)}`, {
@@ -134,12 +132,7 @@ class KvRateLimiter {
         });
       }
 
-      const allowed = count <= this.maxRequests;
-      return {
-        allowed,
-        remaining: Math.max(0, this.maxRequests - count),
-        resetAt: windowStart + this.windowMs,
-      };
+      return this.buildResult(count, windowStart);
     } catch (error) {
       console.error('[rateLimiter] KV check failed:', error.message);
       throw new Error(`KV rate limit check failed: ${error.message}`);
@@ -148,6 +141,14 @@ class KvRateLimiter {
 
   check(key) {
     throw new Error('Synchronous check not supported for distributed rate limiter. Use await check(key) instead.');
+  }
+
+  buildResult(count, windowStart) {
+    return {
+      allowed: count <= this.maxRequests,
+      remaining: Math.max(0, this.maxRequests - count),
+      resetAt: windowStart + this.windowMs,
+    };
   }
 }
 
@@ -169,7 +170,6 @@ class RedisRateLimiter {
 
     try {
       const client = await getRedisClient();
-
       const luaScript = `
         local current = redis.call('INCR', KEYS[1])
         if current == 1 then
@@ -177,15 +177,8 @@ class RedisRateLimiter {
         end
         return current
       `;
-
       const count = await client.eval(luaScript, 1, redisKey, expirySeconds);
-
-      const allowed = count <= this.maxRequests;
-      return {
-        allowed,
-        remaining: Math.max(0, this.maxRequests - count),
-        resetAt: windowStart + this.windowMs,
-      };
+      return this.buildResult(count, windowStart);
     } catch (error) {
       console.error('[rateLimiter] Redis check failed:', error.message);
       throw new Error(`Redis rate limit check failed: ${error.message}`);
@@ -194,6 +187,14 @@ class RedisRateLimiter {
 
   check(key) {
     throw new Error('Synchronous check not supported for distributed rate limiter. Use await check(key) instead.');
+  }
+
+  buildResult(count, windowStart) {
+    return {
+      allowed: count <= this.maxRequests,
+      remaining: Math.max(0, this.maxRequests - count),
+      resetAt: windowStart + this.windowMs,
+    };
   }
 }
 
@@ -204,6 +205,14 @@ class RedisRateLimiter {
  * @param {number} maxRequests - Maximum requests per window
  * @returns {Object} Rate limiter with check() method (sync for memory, async for distributed)
  */
+function createFailClosedLimiter(message) {
+  return {
+    check(key) {
+      throw new Error(message);
+    },
+  };
+}
+
 export const createRateLimiter = (windowMs, maxRequests) => {
   if (NODE_ENV === 'production' && !USE_KV_REST && !USE_REDIS) {
     console.error(
@@ -215,11 +224,7 @@ export const createRateLimiter = (windowMs, maxRequests) => {
   if (USE_MEMORY) {
     if (NODE_ENV === 'production') {
       console.error('[rateLimiter] ERROR: RATE_LIMIT_MODE=memory is not allowed in production');
-      return {
-        check(key) {
-          throw new Error('Rate limiting is not configured for production. Set RATE_LIMIT_REDIS_URL or KV_REST_API_URL/KV_REST_API_TOKEN.');
-        },
-      };
+      return createFailClosedLimiter('Rate limiting is not configured for production. Set RATE_LIMIT_REDIS_URL or KV_REST_API_URL/KV_REST_API_TOKEN.');
     }
     console.warn('[rateLimiter] Using in-memory storage (not suitable for production)');
     return new InMemoryRateLimiter(windowMs, maxRequests);
@@ -238,14 +243,10 @@ export const createRateLimiter = (windowMs, maxRequests) => {
     return new InMemoryRateLimiter(windowMs, maxRequests);
   }
 
-  return {
-    check(key) {
-      throw new Error(
-        'Rate limiting is not configured. ' +
-        'Set RATE_LIMIT_REDIS_URL or KV_REST_API_URL/KV_REST_API_TOKEN in production.'
-      );
-    },
-  };
+  return createFailClosedLimiter(
+    'Rate limiting is not configured. ' +
+    'Set RATE_LIMIT_REDIS_URL or KV_REST_API_URL/KV_REST_API_TOKEN in production.'
+  );
 };
 
 // Pre-configured limiters
@@ -276,28 +277,28 @@ export const enforceRateLimit = async (limiter, key) => {
  * Call this during application initialization to fail fast if misconfigured
  */
 export function validateRateLimitConfig() {
+  if (NODE_ENV !== 'production') return true;
+
   const errors = [];
 
-  if (NODE_ENV === 'production') {
-    if (!USE_KV_REST && !USE_REDIS) {
-      errors.push(
-        'Production requires distributed rate limiting. ' +
-        'Set RATE_LIMIT_REDIS_URL or KV_REST_API_URL/KV_REST_API_TOKEN. ' +
-        'RATE_LIMIT_MODE=memory is not allowed in production.'
-      );
-    }
+  if (!USE_KV_REST && !USE_REDIS) {
+    errors.push(
+      'Production requires distributed rate limiting. ' +
+      'Set RATE_LIMIT_REDIS_URL or KV_REST_API_URL/KV_REST_API_TOKEN. ' +
+      'RATE_LIMIT_MODE=memory is not allowed in production.'
+    );
+  }
 
-    if (USE_KV_REST && !KV_REST_API_TOKEN) {
-      errors.push('KV_REST_API_URL is set but KV_REST_API_TOKEN is missing.');
-    }
+  if (USE_KV_REST && !KV_REST_API_TOKEN) {
+    errors.push('KV_REST_API_URL is set but KV_REST_API_TOKEN is missing.');
+  }
 
-    if (USE_REDIS && !REDIS_URL) {
-      errors.push('RATE_LIMIT_MODE implies Redis but RATE_LIMIT_REDIS_URL is not set.');
-    }
+  if (USE_REDIS && !REDIS_URL) {
+    errors.push('RATE_LIMIT_MODE implies Redis but RATE_LIMIT_REDIS_URL is not set.');
+  }
 
-    if (RATE_LIMIT_MODE === 'memory') {
-      errors.push('RATE_LIMIT_MODE=memory is not allowed in production. Remove this setting or use distributed storage.');
-    }
+  if (RATE_LIMIT_MODE === 'memory') {
+    errors.push('RATE_LIMIT_MODE=memory is not allowed in production. Remove this setting or use distributed storage.');
   }
 
   if (errors.length > 0) {
