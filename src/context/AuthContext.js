@@ -8,7 +8,7 @@ import { useTokenExpiry } from "../hooks/useTokenExpiry.js";
 import { isTokenValid } from "../utils/tokenUtils.js";
 import { toast } from "react-toastify";
 import { ROLES, ROLE_PERMISSIONS } from "../config/roles.js";
-import { getSessionChannel, closeSessionChannel, SESSION_TERMINATED } from "../utils/sessionBroadcast.js";
+import { getSessionChannel, closeSessionChannel, SESSION_TERMINATED, broadcastSessionTerminated } from "../utils/sessionBroadcast.js";
 
 // Create context for Authentication
 const AuthContext = createContext();
@@ -360,6 +360,7 @@ export const AuthProvider = ({ children }) => {
       console.warn("[AuthContext] Backend logout request failed (best-effort error):", error);
     }
     clearSession();
+    broadcastSessionTerminated();
     setAuthRequest({ loading: false, error: null });
   }, [clearSession]);
 
