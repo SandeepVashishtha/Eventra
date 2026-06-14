@@ -6,7 +6,60 @@
  * from completing.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import assert from 'node:assert/strict';
+import { beforeEach, describe, it } from 'node:test';
+
+const expect = (actual) => ({
+  toBe(expected) {
+    assert.strictEqual(actual, expected);
+  },
+  toEqual(expected) {
+    assert.deepStrictEqual(actual, expected);
+  },
+  toBeNull() {
+    assert.strictEqual(actual, null);
+  },
+  toContain(expected) {
+    assert.ok(actual.includes(expected));
+  },
+  toHaveLength(expected) {
+    assert.strictEqual(actual.length, expected);
+  },
+  not: {
+    toBeNull() {
+      assert.notStrictEqual(actual, null);
+    },
+  },
+});
+
+const vi = {
+  fn(implementation) {
+    const onceQueue = [];
+    let defaultImplementation = implementation;
+
+    const mock = (...args) => {
+      if (onceQueue.length > 0) {
+        return onceQueue.shift()(...args);
+      }
+      return defaultImplementation?.(...args);
+    };
+
+    mock.mockResolvedValueOnce = (value) => {
+      onceQueue.push(() => Promise.resolve(value));
+      return mock;
+    };
+    mock.mockRejectedValueOnce = (error) => {
+      onceQueue.push(() => Promise.reject(error));
+      return mock;
+    };
+    mock.mockImplementation = (nextImplementation) => {
+      defaultImplementation = nextImplementation;
+      return mock;
+    };
+
+    return mock;
+  },
+};
 
 // ── Inline the fetch orchestration logic for unit testing ─────────────────────
 

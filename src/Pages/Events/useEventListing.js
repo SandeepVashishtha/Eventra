@@ -3,6 +3,16 @@ import mockEvents from "./eventsMockData.json";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { getEventStatus } from "../../utils/eventUtils";
 import useDebounce from "../../hooks/useDebounce";
+import { useStableFilters } from "../../hooks/useStableFilters";
+import {
+  applyAdvancedFilters,
+  getDateRange,
+  // getDefaultFilters,
+  getPriceStats,
+  normalizeAdvancedFilters,
+} from "../../utils/advancedFilterUtils";
+import { getRouteSearchResults } from "../../utils/searchUtils.mjs";
+
 
 const DEFAULT_EVENTS_PER_PAGE = 12;
 
@@ -24,6 +34,7 @@ const normalizeEvent = (event) => ({
 const useEventListing = () => {
   const [events, setEvents] = useState([]);
   const [filterType, setFilterType] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [viewMode, setViewMode] = useState("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 400);
@@ -34,10 +45,7 @@ const useEventListing = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [eventsPerPage, setEventsPerPage] = useState(DEFAULT_EVENTS_PER_PAGE);
 
-  const [advancedFilters, setAdvancedFilters] = useState({
-    category: "",
-    status: "",
-  });
+  const [advancedFilters, setAdvancedFiltersState] = useStableFilters({});
 
   const [pagination, setPagination] = useState({
     totalPages: 1,
@@ -48,6 +56,7 @@ const useEventListing = () => {
 
   const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
   const isInitialMount = useRef(true);
+  const latestRequestRef = useRef(0);
 
   const buildQueryParams = useCallback(() => {
     const params = new URLSearchParams();
@@ -63,12 +72,28 @@ const useEventListing = () => {
       params.append("status", filterType.toUpperCase());
     }
 
-    if (advancedFilters?.category) {
-      params.append("category", advancedFilters.category);
+    if (advancedFilters?.categories?.length) {
+      advancedFilters.categories.forEach((category) => {
+        params.append("category", category);
+      });
     }
 
-    if (advancedFilters?.status) {
-      params.append("status", advancedFilters.status.toUpperCase());
+    if (advancedFilters?.statuses?.length) {
+      advancedFilters.statuses.forEach((status) => {
+        params.append("status", status.toUpperCase());
+      });
+    }
+
+    if (advancedFilters?.skillLevels?.length) {
+      advancedFilters.skillLevels.forEach((level) => {
+        params.append("skillLevel", level.toLowerCase());
+      });
+    }
+
+    if (advancedFilters?.tags?.length) {
+      advancedFilters.tags.forEach((tag) => {
+        params.append("tag", tag);
+      });
     }
 
     const sortValue = SORT_MAPPING[sortType];
@@ -87,6 +112,7 @@ const useEventListing = () => {
   ]);
 
   const fetchEvents = useCallback(async () => {
+    const requestId = ++latestRequestRef.current;
     setIsLoading(true);
     setLoadError("");
 
@@ -96,6 +122,9 @@ const useEventListing = () => {
       const response = await apiUtils.get(
         `${API_ENDPOINTS.EVENTS.LIST}?${query}`,
       );
+
+      // Discard stale responses from earlier requests
+      if (requestId !== latestRequestRef.current) return;
 
       const responseData = response?.data || {};
 
@@ -115,8 +144,6 @@ const useEventListing = () => {
         last: responseData.last ?? true,
       });
     } catch (error) {
-      console.error("Failed to fetch events:", error);
-
       if (process.env.NODE_ENV === "development") {
         const normalizedMockEvents = mockEvents.map(normalizeEvent);
         setEvents(normalizedMockEvents);
@@ -150,9 +177,6 @@ const useEventListing = () => {
     }
   }, [buildQueryParams]);
 
-  // RACE CONDITION FIX: Call fetchEvents immediately on mount, without scheduling
-  // mock data concurrently. This prevents race conditions where mock data could
-  // overwrite real API responses based on timing.
   useEffect(() => {
     fetchEvents();
   }, [fetchEvents]);
@@ -177,46 +201,99 @@ const useEventListing = () => {
     setCurrentPage(page);
   };
 
+  const setAdvancedFilters = useCallback((filters) => {
+    setAdvancedFiltersState(normalizeAdvancedFilters(filters));
+  }, [setAdvancedFiltersState, normalizeAdvancedFilters]);
+
+  const priceStats = useMemo(() => getPriceStats(events), [events]);
+  const dateRangeStats = useMemo(() => getDateRange(events), [events]);
+
   const filteredEvents = useMemo(() => {
-    const now = new Date();
-    return events.filter((event) => {
-      // Filter by Search Query
-      const query = debouncedSearchQuery.trim().toLowerCase();
-      if (query) {
-        const inTitle = event.title?.toLowerCase().includes(query);
-        const inDesc = event.description?.toLowerCase().includes(query);
-        const inLocation = event.location?.toLowerCase().includes(query);
-        if (!inTitle && !inDesc && !inLocation) return false;
-      }
+    // 1. Fuzzy search first (or all events if no query)
+    let filtered = debouncedSearchQuery.trim()
+      ? getRouteSearchResults(
+          events,
+          debouncedSearchQuery,
+          [
+            { name: "title", weight: 0.8 },
+            { name: "category", weight: 0.5 },
+            { name: "tags", weight: 0.4 },
+            { name: "location.name", weight: 0.3 },
+            { name: "location.city", weight: 0.3 },
+            { name: "description", weight: 0.1 },
+          ]
+        )
+      : [...events];
 
-      // Filter by Type/Status
-      const eventDate = new Date(event.date || event.startDate);
-      if (filterType === "upcoming") {
-        return eventDate >= now;
-      }
-      if (filterType === "past") {
-        return eventDate < now;
-      }
-      if (filterType === "conference") {
-        return event.type?.toLowerCase() === "conference" || event.category?.toLowerCase() === "conference";
-      }
-      if (filterType === "workshop") {
-        return event.type?.toLowerCase() === "workshop" || event.category?.toLowerCase() === "workshop";
-      }
-
-      return true; // "all"
+    // 2. Status timing filter
+    filtered = filtered.filter((event) => {
+      const status = getEventStatus(event);
+      if (filterType === "live" && status !== "live") return false;
+      if (filterType === "upcoming" && status !== "upcoming") return false;
+      if (filterType === "past" && status !== "past" && status !== "ended") return false;
+      return true;
     });
-  }, [events, filterType, debouncedSearchQuery]);
+
+    // 3. Category filter
+    const target = categoryFilter && categoryFilter !== "all"
+      ? categoryFilter.toLowerCase()
+      : null;
+
+    if (target) {
+      filtered = filtered.filter((event) => {
+        const cat = event.category?.toLowerCase() || "";
+        const type = event.type?.toLowerCase() || "";
+
+        if (target === "hackathon" || target === "hackathons") {
+          return type === "hackathon" || cat.includes("hackathon");
+        } else if (["tech talks", "tech-talks", "conference"].includes(target)) {
+          return (
+            type === "conference" || type === "summit" ||
+            cat.includes("tech") || cat.includes("conference") || cat.includes("summit")
+          );
+        } else if (["cultural", "networking", "cultural & networking"].includes(target)) {
+          return cat.includes("networking") || cat.includes("cultural") || cat.includes("community");
+        } else {
+          const norm = (s) => s.replace(/[^a-z0-9]+/g, "");
+          const nTarget = norm(target), nCat = norm(cat), nType = norm(type);
+          return (
+            nCat.includes(nTarget) || nType.includes(nTarget) ||
+            nTarget.includes(nCat) || nTarget.includes(nType)
+          );
+        }
+      });
+    }
+
+    // 4. Advanced filters
+    return applyAdvancedFilters(filtered, advancedFilters);
+  }, [events, filterType, categoryFilter, debouncedSearchQuery, advancedFilters]);
 
   const sortedEvents = useMemo(() => {
     return [...filteredEvents].sort((a, b) => {
+      if (sortType === "Title A-Z") {
+        return (a.title || "").localeCompare(b.title || "");
+      }
+      if (sortType === "Title Z-A") {
+        return (b.title || "").localeCompare(a.title || "");
+      }
+      if (sortType === "Price Low to High") {
+        const priceA = a.price === "Free" || !a.price ? 0 : parseFloat(a.price);
+        const priceB = b.price === "Free" || !b.price ? 0 : parseFloat(b.price);
+        return priceA - priceB;
+      }
+      if (sortType === "Price High to Low") {
+        const priceA = a.price === "Free" || !a.price ? 0 : parseFloat(a.price);
+        const priceB = b.price === "Free" || !b.price ? 0 : parseFloat(b.price);
+        return priceB - priceA;
+      }
+
       const dateA = new Date(a.date || a.startDate);
       const dateB = new Date(b.date || b.startDate);
 
-      if (sortType === "Upcoming") {
-        return dateA - dateB; // Earliest first
+      if (sortType === "Upcoming" || sortType === "Oldest") {
+        return dateA - dateB;
       }
-      // Default: Newest (Latest first)
+      // Default / Newest
       return dateB - dateA;
     });
   }, [filteredEvents, sortType]);
@@ -226,7 +303,6 @@ const useEventListing = () => {
     return sortedEvents.slice(startIndex, startIndex + eventsPerPage);
   }, [sortedEvents, currentPage, eventsPerPage]);
 
-  // Derive pagination totals based on the filtered dataset
   const totalElements = pagination.totalPages > 1 ? pagination.totalElements : sortedEvents.length;
   const totalPages = pagination.totalPages > 1 ? pagination.totalPages : Math.ceil(sortedEvents.length / eventsPerPage) || 1;
 
@@ -236,6 +312,7 @@ const useEventListing = () => {
     fetchEvents,
     filteredEvents,
     filterType,
+    categoryFilter,
     loadError,
     isLoading,
     paginatedEvents,
@@ -246,8 +323,11 @@ const useEventListing = () => {
     viewMode,
     advancedFilters,
     isAdvancedFiltersOpen,
+    priceStats,
+    dateRangeStats,
     setEventsPerPage,
     setFilterType,
+    setCategoryFilter,
     setSafePage,
     setSearchQuery,
     setSortType,

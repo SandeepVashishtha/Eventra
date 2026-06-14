@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState ,useRef  } from "react";
 import { Bell, CalendarDays, Clock, MapPin, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
@@ -128,7 +128,7 @@ const RemindersPage = () => {
                     <div className="p-5">
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                         <div>
-                          <h2 className="text-xl font-bold text-gray-950 dark:text-white">
+                          <h2 title={event.title} className="text-xl font-bold text-gray-950 dark:text-white line-clamp-2 break-words min-w-0">
                             {event.title}
                           </h2>
                           <div className="mt-3 space-y-2 text-sm text-gray-600 dark:text-gray-300">
