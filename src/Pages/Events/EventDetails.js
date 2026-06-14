@@ -121,6 +121,94 @@ const createDuplicateDraft = (sourceEvent) => {
 };
 
 const EventDetails = () => {
+  const { eventId } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { addRecentlyViewed } = useRecentlyViewed();
+
+  const isOrganizer = user?.roles?.includes(ROLES.ORGANIZER) || user?.roles?.includes(ROLES.ADMIN);
+
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
+  const [exportingRegistrants, setExportingRegistrants] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [event, setEvent] = useState(null);
+  const [fetchLoading, setFetchLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+
+  const { isRegistered } = useMyEvents();
+  const [linkCopied, setLinkCopied] = useState(false);
+  const latestRequestIdRef = useRef(0);
+  const abortControllerRef = useRef(null);
+
+  const loadEvent = useCallback(async () => {
+    abortControllerRef.current?.abort();
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    const requestId = ++latestRequestIdRef.current;
+    const isLatestRequest = () =>
+      latestRequestIdRef.current === requestId &&
+      abortControllerRef.current === controller &&
+      !controller.signal.aborted;
+
+    setFetchLoading(true);
+    setFetchError(null);
+
+    try {
+      const res = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId), {
+        signal: controller.signal,
+      });
+      if (!isLatestRequest()) return;
+      if (res.ok && res.data) {
+        const raw = res.data?.data ?? res.data;
+        setEvent({ ...raw, status: getEventStatus(raw) });
+      } else {
+        throw new Error(res.data?.message || `Event not found (${res.status})`);
+      }
+    } catch (error) {
+      if (!isLatestRequest()) return;
+      if (isRequestCanceled(error, controller.signal)) return;
+
+      // Fall back to bundled mock data when the API is unreachable
+      const fallback = mockEvents.find((item) => String(item.id) === eventId);
+      if (fallback) {
+        setEvent({ ...fallback, status: getEventStatus(fallback) });
+      } else {
+        setFetchError("Event not found.");
+      }
+    } finally {
+      const shouldFinishLoading = isLatestRequest();
+      if (abortControllerRef.current === controller) {
+        abortControllerRef.current = null;
+      }
+      if (shouldFinishLoading) {
+        setFetchLoading(false);
+      }
+    }
+  }, [eventId, setEvent, setFetchLoading, setFetchError]);
+
+  useEffect(() => {
+    loadEvent();
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, [loadEvent]);
+
+  // Safely handle localStorage cache updates via hook
+  useEffect(() => {
+    if (!event) return;
+    addRecentlyViewed(event);
+  }, [event, addRecentlyViewed]);
+
+  const handlePrint = () => {
+    setIsPrinting(true);
+    setTimeout(() => {
+      window.print();
+      setIsPrinting(false);
+    }, 500);
+  };
 
   const handleDuplicateEvent = async () => {
     if (!event) {

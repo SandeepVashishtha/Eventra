@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { authService } from '../../services/authService';
 import './Auth.css';
@@ -157,7 +157,7 @@ export default function LoginForm() {
         </button>
 
         <p className="text-center text-sm text-gray-500 mt-6">
-          Don't have an account?
+          Don&apos;t have an account?
           <Link
             to="/signup"
             className="ml-1 font-semibold text-indigo-600 hover:text-indigo-500"

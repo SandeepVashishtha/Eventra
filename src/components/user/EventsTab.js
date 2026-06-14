@@ -1,6 +1,3 @@
-
-import { useEffect, useMemo, useState } from "react";
-import ReactDOM from "react-dom";
 import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import ReactDOM from "react-dom"; // 🔥 FIX: Required for Portal
 import { motion, AnimatePresence } from "framer-motion";
@@ -134,13 +131,7 @@ const EventCard = ({
         </span>
         <StatusBadge status={status} />
       </div>
-      <div className="px-6 py-4 flex gap-3">
-        {showCancel ? (
-          <>
-            <button
-              onClick={() =>
-                onRemoveRegistration?.(event?.id, event?.title)
-              }
+
       {event?.tags?.length > 0 && (
         <div className="px-6 pb-3 flex flex-wrap gap-1.5">
           {event.tags.slice(0, 3).map((tag) => (
@@ -158,17 +149,15 @@ const EventCard = ({
         {showCancel ? (
           <>
             <button
-             className="group/btn w-full sm:flex-1"
+              className="group/btn w-full sm:flex-1"
               onClick={() => onRemoveRegistration?.(event?.id, event?.title)}
               disabled={isOffline}
             >
               <Trash2 size={13} /> Cancel
             </button>
 
-            <button onClick={() => onViewTicket?.(event)}>
-              <Ticket size={13} /> Ticket
             <button
-             className="group/btn w-full sm:flex-1"
+              className="group/btn w-full sm:flex-1"
               onClick={() => onViewTicket?.(event)}
             >
               <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-indigo-650 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
@@ -199,10 +188,9 @@ const EventCard = ({
       </span>
     </motion.div>
   );
-});
+};
 
 /* ---------------- Waitlist Card ---------------- */
-const WaitlistCard = ({ event }) => {
 const WaitlistCard = memo(({ event, index, onLeaveWaitlist }) => {
   const prefersReducedMotion = useReducedMotion();
   const fadeUpVariants = fadeUp(prefersReducedMotion);
@@ -222,10 +210,6 @@ const WaitlistCard = memo(({ event, index, onLeaveWaitlist }) => {
   }, [event.id, user]);
 
   return (
-    <div className="p-4 rounded-xl border">
-      <h4>{event.title}</h4>
-      <p>Position #{queuePos > 0 ? queuePos : "..."}</p>
-    </div>
     <motion.div
       className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl backdrop-blur-sm transition-all duration-500 hover:scale-[1.02] flex flex-col z-10 overflow-hidden"
       custom={index}
@@ -341,7 +325,6 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const [filterType, setFilterType] = useState("All");
   const [sortBy, setSortBy] = useState("soonest");
   const [cancelTarget, setCancelTarget] = useState(null);
-  const [recentEvents, setRecentEvents] = useState([]);
 
   const [recentSearches, setRecentSearches] = useState([]);
 
@@ -443,29 +426,6 @@ const normalizedSearch = debouncedTerm.trim().toLowerCase();
   const upcomingCount = [...registeredEvents, ...hostedEvents].filter((event) => getEventStatus(event) === "Upcoming").length;
   const completedCount = [...registeredEvents, ...hostedEvents].filter((event) => getEventStatus(event) === "Completed").length;
 
-const addToRecentEvents = (event) => {
-  const existing =
-    JSON.parse(localStorage.getItem("recentEvents")) || [];
-
-  const filtered = existing.filter((e) => e.id !== event.id);
-
-  const updated = [{ id: event.id, title: event.title || event.name, date: event.date }, ...filtered].slice(0, 6);
-
-  localStorage.setItem("recentEvents", JSON.stringify(updated));
-
-  setRecentEvents(updated);
-};
-
-    return pool.filter((event) => {
-      const text =
-        `${event?.title} ${event?.location} ${event?.description}`.toLowerCase();
-
-      return !debouncedTerm ||
-        text.includes(debouncedTerm.toLowerCase());
-    });
-  }, [registeredEvents, hostedEvents, debouncedTerm]);
-
-  const handleCancelConfirm = () => {
   const handleCancelClick = (id, title) => setCancelTarget({ id, title });
   const handleCancelDismiss = () => setCancelTarget(null);
   const handleCancelConfirm = useCallback(() => {
@@ -481,36 +441,6 @@ const addToRecentEvents = (event) => {
           <Calendar /> Events
         </h2>
       </div>
-
-      {/* Search Empty State FIXED OUTSIDE PROPS */}
-      <SearchEmptyState
-        query={searchQuery}
-        itemLabel="events"
-        browseLabel="Browse Events"
-        browsePath="/events"
-        onClear={() => setSearchQuery("")}
-      />
-        <Link
-          to="/events"
-          className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-blue-100 dark:bg-blue-900 text-black dark:text-white font-bold shadow-sm overflow-hidden group transform transition-all duration-300 hover:-translate-y-1 hover:bg-blue-200 dark:hover:bg-blue-800"
-        >
-          <span className="relative z-10 flex items-center">
-            Explore Events
-            <svg
-              className="ml-3 w-5 h-5 text-black dark:text-white transition-transform duration-300 group-hover:translate-x-2"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fillRule="evenodd"
-                d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </span>
-        </Link>
-      </div>
-
       {registeredCount + hostedCount > 0 && (
         <motion.div className="my-events-summary" variants={staggerVariants} initial="hidden" animate="visible">
           {[
@@ -532,107 +462,7 @@ const addToRecentEvents = (event) => {
         </motion.div>
       )}
 
-      {registeredCount + hostedCount > 0 && (
-        <div className="my-events-toolbar">
-          <div className="ud-search-wrap my-events-search">
-            <Search size={14} className="ud-search-icon" />
-            <input
-            className="ud-search focus:ring-2 focus:ring-indigo-500 transition-all duration-300"
-              placeholder="Search your events…"
-              value={searchQuery}
-           onChange={(e) => {
-  const value = e.target.value;
-  setSearchQuery(value);
-}}
-            />
-            {searchQuery && (
-              <button className="ud-search-clear" onClick={() => setSearchQuery("")} aria-label="Clear search query">
-                <X size={13} />
-              </button>
-            )}
-            {isDebouncing && (
-              <span
-                className="ud-search-spinner"
-                aria-label="Searching…"
-                style={{
-                  position: "absolute",
-                  right: searchQuery ? 32 : 10,
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  width: 14,
-                  height: 14,
-                  border: "2px solid #6366f1",
-                  borderTopColor: "transparent",
-                  borderRadius: "50%",
-                  animation: "spin 0.6s linear infinite",
-                }}
-              />
-            )}
-          </div>
-          
-          {recentSearches.length > 0 && (
-            <button
-              onClick={() => {
-                localStorage.removeItem("recentSearches");
-                setRecentSearches([]);
-              }}
-              className="text-sm text-red-500 hover:underline mt-2"
-            >
-              Clear History
-            </button>
-          )}
-
-          <StyledDropdown
-            label=""
-            value={filterStatus === "All" ? "" : filterStatus}
-            placeholder="All Statuses"
-            options={["Upcoming", "Today", "Completed"]}
-            onChange={(val) => setFilterStatus(val || "All")}
-          />
-
-          {availableTypes.length > 1 && (
-            <StyledDropdown
-              label=""
-              value={filterType === "All" ? "" : filterType}
-              placeholder="All Types"
-              options={availableTypes}
-              onChange={(val) => setFilterType(val || "All")}
-            />
-          )}
-
-          <StyledDropdown
-            label=""
-            value={
-              sortBy === "soonest"
-                ? "Soonest First"
-                : sortBy === "registered"
-                ? "Registration Date"
-                : "Event Name"
-            }
-            placeholder="Sort by"
-            options={["Soonest First", "Registration Date", "Event Name"]}
-            onChange={(val) => {
-              if (val === "Soonest First" || !val) setSortBy("soonest");
-              else if (val === "Registration Date") setSortBy("registered");
-              else if (val === "Event Name") setSortBy("name");
-            }}
-          />
-        </div>
-      )}
-
-      {/* Recent Events */}
-      {recentEvents.length > 0 && (
-        <section>
-          <h2>Recently Viewed</h2>
-          {recentEvents.map((item) => (
-            <div key={item.id}>
-              <h3>{item.title}</h3>
-              <Link to={`/events/${item.id}`}>View</Link>
-            </div>
-          ))}
-        </section>
-        </div>
-      ) : registeredCount + hostedCount === 0 ? (
+      {registeredCount + hostedCount === 0 ? (
         <EmptyState
           title="No events yet"
           description="You have not registered for or hosted any events yet. Explore upcoming events to get started."
@@ -640,116 +470,218 @@ const addToRecentEvents = (event) => {
           actionLabel="Explore Events"
           actionPath="/events"
         />
-      ) : filteredEvents.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="w-full mt-4"
-        >
-          <SearchEmptyState
-            query={searchQuery}
-            itemLabel="events"
-            browseLabel="Browse Events"
-            browsePath="/events"
-          onClear={() => {
-  setSearchQuery("");
-  setFilterStatus("All");
-  setFilterType("All");
-  setSortBy("soonest");
-
-  removeFromStorage("eventSearchQuery");
-  removeFromStorage("eventFilterStatus");
-  removeFromStorage("eventFilterType");
-  removeFromStorage("eventSortBy");
-}}
-          />
-        </motion.div>
       ) : (
-        <>
-          {filteredRegisteredEvents.length > 0 && (
-            <section className="space-y-4">
-              <div className="ud-tab-header">
-              <h3 className="ud-page-title bg-gradient-to-r from-indigo-600 to-pink-600 bg-clip-text text-transparent font-extrabold">
-                  <Ticket size={18} /> Registered Events
-                </h3>
-                <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
-                  {filteredRegisteredEvents.length} event{filteredRegisteredEvents.length === 1 ? "" : "s"}
-                </span>
-              </div>
-              <motion.div className="ud-items-grid" variants={staggerVariants} initial="hidden" animate="visible">
-                {filteredRegisteredEvents.map((event, index) => (
-                  <EventCard
-                    key={event.eventId || event.id}
-                    event={event}
-                    index={index}
-                    onRemoveRegistration={handleCancelClick}
-                    showCancel
-                    onViewTicket={onViewTicket}
-                    onViewRecent={addToRecentEvents}
-                  />
-                ))}
-              </motion.div>
+        <div className="my-events-container">
+          <div className="my-events-toolbar">
+            <div className="ud-search-wrap my-events-search">
+              <Search size={14} className="ud-search-icon" />
+              <input
+                className="ud-search focus:ring-2 focus:ring-indigo-500 transition-all duration-300"
+                placeholder="Search your events…"
+                value={searchQuery}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSearchQuery(value);
+                }}
+              />
+              {searchQuery && (
+                <button className="ud-search-clear" onClick={() => setSearchQuery("")} aria-label="Clear search query">
+                  <X size={13} />
+                </button>
+              )}
+              {isDebouncing && (
+                <span
+                  className="ud-search-spinner"
+                  aria-label="Searching…"
+                  style={{
+                    position: "absolute",
+                    right: searchQuery ? 32 : 10,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    width: 14,
+                    height: 14,
+                    border: "2px solid #6366f1",
+                    borderTopColor: "transparent",
+                    borderRadius: "50%",
+                    animation: "spin 0.6s linear infinite",
+                  }}
+                />
+              )}
+            </div>
+            
+            {recentSearches.length > 0 && (
+              <button
+                onClick={() => {
+                  localStorage.removeItem("recentSearches");
+                  setRecentSearches([]);
+                }}
+                className="text-sm text-red-500 hover:underline mt-2"
+              >
+                Clear History
+              </button>
+            )}
+
+            <StyledDropdown
+              label=""
+              value={filterStatus === "All" ? "" : filterStatus}
+              placeholder="All Statuses"
+              options={["Upcoming", "Today", "Completed"]}
+              onChange={(val) => setFilterStatus(val || "All")}
+            />
+
+            {availableTypes.length > 1 && (
+              <StyledDropdown
+                label=""
+                value={filterType === "All" ? "" : filterType}
+                placeholder="All Types"
+                options={availableTypes}
+                onChange={(val) => setFilterType(val || "All")}
+              />
+            )}
+
+            <StyledDropdown
+              label=""
+              value={
+                sortBy === "soonest"
+                  ? "Soonest First"
+                  : sortBy === "registered"
+                  ? "Registration Date"
+                  : "Event Name"
+              }
+              placeholder="Sort by"
+              options={["Soonest First", "Registration Date", "Event Name"]}
+              onChange={(val) => {
+                if (val === "Soonest First" || !val) setSortBy("soonest");
+                else if (val === "Registration Date") setSortBy("registered");
+                else if (val === "Event Name") setSortBy("name");
+              }}
+            />
+          </div>
+
+          {/* Recent Events */}
+          {recentEvents.length > 0 && (
+            <section>
+              <h2>Recently Viewed</h2>
+              {recentEvents.map((item) => (
+                <div key={item.id}>
+                  <h3>{item.title}</h3>
+                  <Link to={`/events/${item.id}`}>View</Link>
+                </div>
+              ))}
             </section>
           )}
 
-          {filteredHostedEvents.length > 0 && (
-            <section className="space-y-4">
-              <div className="ud-tab-header">
-                <h3 className="ud-page-title">
-                  <Calendar size={18} /> Hosted Events
-                </h3>
-                <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
-                  {filteredHostedEvents.length} event{filteredHostedEvents.length === 1 ? "" : "s"}
-                </span>
-              </div>
-              <motion.div className="ud-items-grid" variants={staggerVariants} initial="hidden" animate="visible">
-                {filteredHostedEvents.map((event, index) => (
-                  <EventCard
-                    key={event.id}
-                    event={event}
-                    index={index}
-                    showCancel={false}
-                    onViewRecent={addToRecentEvents}
-                  />
-                ))}
-              </motion.div>
-            </section>
-          )}
+          {filteredEvents.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="w-full mt-4"
+            >
+              <SearchEmptyState
+                query={searchQuery}
+                itemLabel="events"
+                browseLabel="Browse Events"
+                browsePath="/events"
+                onClear={() => {
+                  setSearchQuery("");
+                  setFilterStatus("All");
+                  setFilterType("All");
+                  setSortBy("soonest");
+                  removeFromStorage("eventSearchQuery");
+                  removeFromStorage("eventFilterStatus");
+                  removeFromStorage("eventFilterType");
+                  removeFromStorage("eventSortBy");
+                }}
+              />
+            </motion.div>
+          ) : (
+            <>
+              {filteredRegisteredEvents.length > 0 && (
+                <section className="space-y-4">
+                  <div className="ud-tab-header">
+                    <h3 className="ud-page-title bg-gradient-to-r from-indigo-600 to-pink-600 bg-clip-text text-transparent font-extrabold">
+                      <Ticket size={18} /> Registered Events
+                    </h3>
+                    <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
+                      {filteredRegisteredEvents.length} event{filteredRegisteredEvents.length === 1 ? "" : "s"}
+                    </span>
+                  </div>
+                  <motion.div className="ud-items-grid" variants={staggerVariants} initial="hidden" animate="visible">
+                    {filteredRegisteredEvents.map((event, index) => (
+                      <EventCard
+                        key={event.eventId || event.id}
+                        event={event}
+                        index={index}
+                        onRemoveRegistration={handleCancelClick}
+                        showCancel
+                        onViewTicket={onViewTicket}
+                        onViewRecent={addToRecentEvents}
+                      />
+                    ))}
+                  </motion.div>
+                </section>
+              )}
 
-          {waitlistEvents.length > 0 && (
-            <section className="space-y-4 mt-6">
-              <div className="ud-tab-header">
-                <h3 className="ud-page-title flex items-center gap-2">
-                  <Clock size={18} className="text-amber-500" /> Waitlisted Events
-                </h3>
-                <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
-                  {waitlistEvents.length} event{waitlistEvents.length === 1 ? "" : "s"}
-                </span>
-              </div>
-              <motion.div className="ud-items-grid" variants={staggerVariants} initial="hidden" animate="visible">
-                {waitlistEvents.map((event, index) => (
-                  <WaitlistCard
-                    key={event.id}
-                    event={event}
-                    index={index}
-                    onLeaveWaitlist={async (id) => {
-                      if (window.confirm(`Are you sure you want to leave the waitlist for "${event.title}"?`)) {
-                        try {
-                          const { leaveWaitlist } = await import("../../utils/waitlistUtils.js");
-                          await leaveWaitlist(id, user.id || user.email);
-                          toast.success("Left the waitlist successfully.");
-                          triggerWaitlistUpdate();
-                        } catch (err) {
-                          toast.error(err.message || "Failed to leave waitlist.");
-                        }
-                      }
-                    }}
-                  />
-                ))}
-              </motion.div>
-            </section>
+              {filteredHostedEvents.length > 0 && (
+                <section className="space-y-4">
+                  <div className="ud-tab-header">
+                    <h3 className="ud-page-title">
+                      <Calendar size={18} /> Hosted Events
+                    </h3>
+                    <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
+                      {filteredHostedEvents.length} event{filteredHostedEvents.length === 1 ? "" : "s"}
+                    </span>
+                  </div>
+                  <motion.div className="ud-items-grid" variants={staggerVariants} initial="hidden" animate="visible">
+                    {filteredHostedEvents.map((event, index) => (
+                      <EventCard
+                        key={event.id}
+                        event={event}
+                        index={index}
+                        showCancel={false}
+                        onViewRecent={addToRecentEvents}
+                      />
+                    ))}
+                  </motion.div>
+                </section>
+              )}
+
+              {waitlistEvents.length > 0 && (
+                <section className="space-y-4 mt-6">
+                  <div className="ud-tab-header">
+                    <h3 className="ud-page-title flex items-center gap-2">
+                      <Clock size={18} className="text-amber-500" /> Waitlisted Events
+                    </h3>
+                    <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
+                      {waitlistEvents.length} event{waitlistEvents.length === 1 ? "" : "s"}
+                    </span>
+                  </div>
+                  <motion.div className="ud-items-grid" variants={staggerVariants} initial="hidden" animate="visible">
+                    {waitlistEvents.map((event, index) => (
+                      <WaitlistCard
+                        key={event.id}
+                        event={event}
+                        index={index}
+                        onLeaveWaitlist={async (id) => {
+                          if (window.confirm(`Are you sure you want to leave the waitlist for "${event.title}"?`)) {
+                            try {
+                              const { leaveWaitlist } = await import("../../utils/waitlistUtils.js");
+                              await leaveWaitlist(id, user.id || user.email);
+                              toast.success("Left the waitlist successfully.");
+                              triggerWaitlistUpdate();
+                            } catch (err) {
+                              toast.error(err.message || "Failed to leave waitlist.");
+                            }
+                          }
+                        }}
+                      />
+                    ))}
+                  </motion.div>
+                </section>
+              )}
+            </>
           )}
-        </>
+        </div>
       )}
 
       {/* Cancel Modal (FIXED PORTAL LOCATION) */}
