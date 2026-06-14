@@ -208,7 +208,7 @@ const useUnsavedChanges = (formData) => {
   }, [formData]);
 };
 
-const useEventFormHandlers = (formData, setFormData, errors, setErrors, newTag, setNewTag, currentStep, setCurrentStep, submitEventForm) => {
+const useEventInputHandlers = (setFormData, errors, setErrors) => {
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     if (name.startsWith("location.coordinates.")) {
@@ -234,6 +234,23 @@ const useEventFormHandlers = (formData, setFormData, errors, setErrors, newTag, 
     }
   };
 
+  const handleDurationChange = (isMultiDay) => {
+    setFormData((prev) => ({
+      ...prev,
+      isMultiDay,
+      date: "",
+      startDate: "",
+      endDate: "",
+      startTime: "",
+      endTime: "",
+    }));
+    setErrors({});
+  };
+
+  return { handleInputChange, handleDurationChange };
+};
+
+const useEventImageUpload = (setFormData, errors, setErrors) => {
   const handleImageUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -260,6 +277,10 @@ const useEventFormHandlers = (formData, setFormData, errors, setErrors, newTag, 
     reader.readAsDataURL(file);
   };
 
+  return { handleImageUpload };
+};
+
+const useEventTags = (formData, setFormData, newTag, setNewTag) => {
   const addTag = () => {
     const trimmed = newTag.trim();
     if (trimmed && !formData.tags.some((tag) => tag.toLowerCase() === trimmed.toLowerCase())) {
@@ -272,6 +293,10 @@ const useEventFormHandlers = (formData, setFormData, errors, setErrors, newTag, 
     setFormData((prev) => ({ ...prev, tags: prev.tags.filter((tag) => tag !== tagToRemove) }));
   };
 
+  return { addTag, removeTag };
+};
+
+const useEventNavigation = (formData, setErrors, currentStep, setCurrentStep) => {
   const handleNext = () => {
     try {
       if (currentStep === CREATION_STEPS.FORM) {
@@ -290,6 +315,10 @@ const useEventFormHandlers = (formData, setFormData, errors, setErrors, newTag, 
     }
   };
 
+  return { handleNext };
+};
+
+const useEventSubmission = (formData, setFormData, setErrors, setNewTag, setCurrentStep, submitEventForm) => {
   const createEvent = () => {
     try {
       const eventData = generateEventDataPayload(formData);
@@ -309,29 +338,7 @@ const useEventFormHandlers = (formData, setFormData, errors, setErrors, newTag, 
     setCurrentStep(CREATION_STEPS.FORM);
   };
 
-  const handleDurationChange = (isMultiDay) => {
-    setFormData((prev) => ({
-      ...prev,
-      isMultiDay,
-      date: "",
-      startDate: "",
-      endDate: "",
-      startTime: "",
-      endTime: "",
-    }));
-    setErrors({});
-  };
-
-  return {
-    handleInputChange,
-    handleImageUpload,
-    addTag,
-    removeTag,
-    handleNext,
-    createEvent,
-    resetForm,
-    handleDurationChange
-  };
+  return { createEvent, resetForm };
 };
 
 const useSubmitEventCreation = () => {
@@ -618,16 +625,11 @@ const EventCreation = () => {
 
   useUnsavedChanges(formData);
 
-  const {
-    handleInputChange,
-    handleImageUpload,
-    addTag,
-    removeTag,
-    handleNext,
-    createEvent,
-    resetForm,
-    handleDurationChange
-  } = useEventFormHandlers(formData, setFormData, errors, setErrors, newTag, setNewTag, currentStep, setCurrentStep, submitEventForm);
+  const { handleInputChange, handleDurationChange } = useEventInputHandlers(setFormData, errors, setErrors);
+  const { handleImageUpload } = useEventImageUpload(setFormData, errors, setErrors);
+  const { addTag, removeTag } = useEventTags(formData, setFormData, newTag, setNewTag);
+  const { handleNext } = useEventNavigation(formData, setErrors, currentStep, setCurrentStep);
+  const { createEvent, resetForm } = useEventSubmission(formData, setFormData, setErrors, setNewTag, setCurrentStep, submitEventForm);
 
 
 
