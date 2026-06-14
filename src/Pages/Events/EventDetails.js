@@ -66,7 +66,7 @@ const EventDetails = () => {
   const latestRequestIdRef = useRef(0);
   const abortControllerRef = useRef(null);
 
-const checkLatest = (reqId, ctrl, latestReqRef, abortRef) => {
+const checkLatest = ({ reqId, ctrl, latestReqRef, abortRef }) => {
   if (latestReqRef.current !== reqId) return false;
   if (abortRef.current !== ctrl) return false;
   if (ctrl.signal.aborted) return false;
@@ -79,7 +79,7 @@ const handleResData = (res) => {
   return res.data;
 };
 
-const processSuccess = (res, setEvent) => {
+const processSuccess = ({ res, setEvent }) => {
   if (!res.ok) return false;
   const raw = handleResData(res);
   if (!raw) return false;
@@ -87,7 +87,7 @@ const processSuccess = (res, setEvent) => {
   return true;
 };
 
-const processErrorFallback = (eventId, setEvent, setFetchError) => {
+const processErrorFallback = ({ eventId, setEvent, setFetchError }) => {
   const fallback = mockEvents.find((item) => String(item.id) === eventId);
   if (fallback) {
     setEvent({ ...fallback, status: getEventStatus(fallback) });
@@ -96,14 +96,14 @@ const processErrorFallback = (eventId, setEvent, setFetchError) => {
   }
 };
 
-const handleCatchError = (error, reqId, ctrl, latestRef, abortRef, eventId, setEvent, setFetchError) => {
-  if (!checkLatest(reqId, ctrl, latestRef, abortRef)) return;
+const handleCatchError = ({ error, reqId, ctrl, latestRef, abortRef, eventId, setEvent, setFetchError }) => {
+  if (!checkLatest({ reqId, ctrl, latestReqRef: latestRef, abortRef })) return;
   if (isRequestCanceled(error, ctrl.signal)) return;
-  processErrorFallback(eventId, setEvent, setFetchError);
+  processErrorFallback({ eventId, setEvent, setFetchError });
 };
 
-const finishLoading = (reqId, ctrl, latestRef, abortRef, setFetchLoading) => {
-  const shouldFinish = checkLatest(reqId, ctrl, latestRef, abortRef);
+const finishLoading = ({ reqId, ctrl, latestRef, abortRef, setFetchLoading }) => {
+  const shouldFinish = checkLatest({ reqId, ctrl, latestReqRef: latestRef, abortRef });
   if (abortRef.current === ctrl) {
     abortRef.current = null;
   }
@@ -124,17 +124,23 @@ const finishLoading = (reqId, ctrl, latestRef, abortRef, setFetchLoading) => {
 
     try {
       const res = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId), { signal: controller.signal });
-      if (!checkLatest(requestId, controller, latestRequestIdRef, abortControllerRef)) return;
+      if (!checkLatest({ reqId: requestId, ctrl: controller, latestReqRef: latestRequestIdRef, abortRef: abortControllerRef })) return;
       
-      const success = processSuccess(res, setEvent);
+      const success = processSuccess({ res, setEvent });
       if (!success) {
         const msg = res.data && res.data.message ? res.data.message : `Event not found (${res.status})`;
         throw new Error(msg);
       }
     } catch (error) {
-      handleCatchError(error, requestId, controller, latestRequestIdRef, abortControllerRef, eventId, setEvent, setFetchError);
+      handleCatchError({
+        error, reqId: requestId, ctrl: controller, latestRef: latestRequestIdRef,
+        abortRef: abortControllerRef, eventId, setEvent, setFetchError
+      });
     } finally {
-      finishLoading(requestId, controller, latestRequestIdRef, abortControllerRef, setFetchLoading);
+      finishLoading({
+        reqId: requestId, ctrl: controller, latestRef: latestRequestIdRef,
+        abortRef: abortControllerRef, setFetchLoading
+      });
     }
   }, [eventId, setEvent, setFetchLoading, setFetchError]);
 
