@@ -156,3 +156,16 @@ export const createDuplicateDraft = (sourceEvent) => {
     bannerPreview: getDraftBanner(sourceEvent),
   };
 };
+
+export const formatDraftAge = (savedAt) => {
+  if (!savedAt) return "";
+  const dMs = Date.now() - new Date(savedAt).getTime();
+  if (Number.isNaN(dMs)) return "";
+  const dMins = Math.floor(dMs / 60000);
+  if (dMins < 1) return "just now";
+  if (dMins < 60) return `${dMins} min ago`;
+  const dHrs = Math.floor(dMins / 60);
+  if (dHrs < 24) return `${dHrs} hr ago`;
+  const dDays = Math.floor(dHrs / 24);
+  return `${dDays} day(s) ago`;
+};

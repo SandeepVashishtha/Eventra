@@ -1,9 +1,7 @@
 import { defineConfig, loadEnv, transformWithOxc } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
-import dotenv from "dotenv";
 
-dotenv.config();
 
 // Quick regex to detect JSX syntax — lets us skip transformWithOxc
 // on plain .js files that have no JSX (the common case).
