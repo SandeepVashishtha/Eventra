@@ -346,7 +346,8 @@ async function handleRequest(request) {
       "/api/events",
       "/api/hackathons",
       "/api/projects",
-      "/api/validate"
+      "/api/validate",
+      "/api/health"
     ];
 
     const isPublicPath = PUBLIC_PATHS.some(path => url.pathname.startsWith(path) && (request.method === "GET" || url.pathname.includes("/auth/") || url.pathname.includes("/validate/")));
