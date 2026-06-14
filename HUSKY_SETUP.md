@@ -1,6 +1,6 @@
 # Pre-commit Hooks: Husky + lint-staged
 
-This project uses [Husky](https://typicode.github.io/husky/) and [lint-staged](https://github.com/lint-staged/lint-staged/) to automatically lint and format code before every commit.
+This project uses `husky` and `lint-staged` to automatically lint and format code before every commit.
 
 ## How it works
 
@@ -23,13 +23,10 @@ After cloning and running `npm install`, Husky is automatically configured via t
 
 ```bash
 npm install   # husky is set up automatically
-```
-
-## Manual trigger
-
+Manual trigger
 You can manually run the checks at any time:
 
-```bash
+Bash
 # Lint all files
 npm run lint
 
@@ -38,14 +35,9 @@ npm run lint:fix
 
 # Format all files
 npm run format
-```
-
-## Bypass (not recommended)
-
+Bypass (not recommended)
 In rare cases where you need to skip the hook:
 
-```bash
+Bash
 git commit --no-verify -m "your message"
-```
-
-> ⚠️ Use `--no-verify` only when absolutely necessary. It bypasses all pre-commit checks.
+⚠️ Use --no-verify only when absolutely necessary. It bypasses all pre-commit checks.
