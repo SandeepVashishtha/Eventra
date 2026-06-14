@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { getJwtSecret, JWT_EXPIRES_IN, JWT_COOKIE_MAX_AGE_SECONDS } from "./jwt-config.js";
-import { createRateLimiter } from "../lib/rateLimiter.js";
+import { signupRateLimiter } from "../lib/rateLimiter.js";
 import { buildCorsHeaders, corsResponse } from "./cors.js";
 import { assertPersistentStorageConfigured } from "./storage-config.js";
 import { createUser, getUserByEmail, isStorageHealthy } from "./user-storage.js";
@@ -22,10 +22,9 @@ assertPersistentStorageConfigured();
 const JWT_SECRET = getJwtSecret();
 
 // ---------------------------------------------------------------------------
-// Rate Limiting (IP-based, 3 signups per minute)
+// Rate Limiting (IP-based, 5 signups per minute)
 // ---------------------------------------------------------------------------
-
-const signupRateLimiter = createRateLimiter(60_000, 5);
+// signupRateLimiter is imported from ../lib/rateLimiter.js
 
 // ---------------------------------------------------------------------------
 // Validation Helpers
@@ -46,19 +45,18 @@ const validateName = (name) => {
 
 const validatePassword = (password) => {
   if (!password) return { valid: false, message: "Password is required" };
-  if (password.length < 8)
-    return { valid: false, message: "Password must be at least 8 characters long" };
+  if (password.length < 8) return { valid: false, message: "Password must be at least 8 characters long" };
 
   // Check password strength (must meet all 5 criteria)
   const criteria = [
-    { test: /.{8,}/, name: "8+ characters" },
-    { test: /[A-Z]/, name: "uppercase letter" },
-    { test: /[a-z]/, name: "lowercase letter" },
-    { test: /\d/, name: "number" },
-    { test: /[!@#$%^&*(),.?":{}|<>]/, name: "special character" },
+    /.{8,}/,
+    /[A-Z]/,
+    /[a-z]/,
+    /\d/,
+    /[!@#$%^&*(),.?":{}|<>]/,
   ];
 
-  const metCriteria = criteria.filter((c) => c.test.test(password));
+  const metCriteria = criteria.filter((c) => c.test(password));
   if (metCriteria.length < 5) {
     return {
       valid: false,
@@ -83,6 +81,77 @@ const validatePassword = (password) => {
 // serverless instances cold-starting within the same millisecond both
 // produced `user_<timestamp>_1`. See google.js for the full rationale.
 const generateUserId = () => crypto.randomUUID();
+
+function setCookie(res, token) {
+  const isProd = process.env.NODE_ENV === "production";
+  const cookieValue = `token=${token}; HttpOnly; Path=/; Max-Age=${JWT_COOKIE_MAX_AGE_SECONDS}; SameSite=Strict${isProd ? '; Secure' : ''}`;
+  try {
+    if (typeof res.setHeader === 'function') {
+      res.setHeader('Set-Cookie', cookieValue);
+    } else if (typeof res.set === 'function') {
+      res.set({ 'Set-Cookie': cookieValue });
+    } else if (res.headers && typeof res.headers === 'object') {
+      res.headers['Set-Cookie'] = cookieValue;
+    }
+  } catch (e) {
+  }
+}
+
+function getClientIp(req) {
+  const forwarded = req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim();
+  if (forwarded) return forwarded;
+  const realIp = req.headers?.["x-real-ip"];
+  if (realIp) return realIp;
+  const socketIp = req.socket?.remoteAddress;
+  if (socketIp) return socketIp;
+  return "unknown";
+}
+
+function validateNameField(name, fieldName) {
+  const validation = validateName(name);
+  if (!validation.valid) return `${fieldName}: ${validation.message}`;
+  return null;
+}
+
+function validateEmailField(email) {
+  if (!email || !email.trim()) return "Email is required";
+  return null;
+}
+
+function validatePasswordField(password) {
+  if (!password) return "Password is required";
+  const validation = validatePassword(password);
+  if (!validation.valid) return validation.message;
+  return null;
+}
+
+function validateConfirmPassword(password, confirmPassword) {
+  if (!confirmPassword) return "Please confirm your password";
+  if (password !== confirmPassword) return "Passwords do not match";
+  return null;
+}
+
+function validateSignupInput(body) {
+  const { firstName, lastName, email, password, confirmPassword } = body;
+  const errors = [];
+  
+  const firstNameError = validateNameField(firstName, "First name");
+  if (firstNameError) errors.push(firstNameError);
+  
+  const lastNameError = validateNameField(lastName, "Last name");
+  if (lastNameError) errors.push(lastNameError);
+  
+  const emailError = validateEmailField(email);
+  if (emailError) errors.push(emailError);
+  
+  const passwordError = validatePasswordField(password);
+  if (passwordError) errors.push(passwordError);
+  
+  const confirmPasswordError = validateConfirmPassword(password, confirmPassword);
+  if (confirmPasswordError) errors.push(confirmPasswordError);
+  
+  return errors;
+}
 
 // ---------------------------------------------------------------------------
 // Default Roles and Permissions
@@ -129,44 +198,14 @@ async function handler(req, res) {
     }
 
     const { firstName, lastName, email, password, confirmPassword } = req.body;
-
-    // -----------------------------------------------------------------------
-    // Input Validation
-    // -----------------------------------------------------------------------
-
-    // Validate firstName
-    const firstNameValidation = validateName(firstName);
-    if (!firstNameValidation.valid) {
-      return corsResponse(req, res, 400, { error: `First name: ${firstNameValidation.message}` });
+    const validationErrors = validateSignupInput(req.body);
+    if (validationErrors.length > 0) {
+      return corsResponse(req, res, 400, { error: validationErrors[0] });
     }
 
-    // Validate lastName
-    const lastNameValidation = validateName(lastName);
-    if (!lastNameValidation.valid) {
-      return corsResponse(req, res, 400, { error: `Last name: ${lastNameValidation.message}` });
-    }
-
-    // Validate email
-    if (!email || !email.trim()) {
-      return corsResponse(req, res, 400, { error: "Email is required" });
-    }
     const normalizedEmail = email.trim().toLowerCase();
     if (!validateEmail(normalizedEmail)) {
       return corsResponse(req, res, 400, { error: "Invalid email format" });
-    }
-
-    // Validate password
-    const passwordValidation = validatePassword(password);
-    if (!passwordValidation.valid) {
-      return corsResponse(req, res, 400, { error: passwordValidation.message });
-    }
-
-    // Validate confirmPassword matches password
-    if (!confirmPassword) {
-      return corsResponse(req, res, 400, { error: "Please confirm your password" });
-    }
-    if (password !== confirmPassword) {
-      return corsResponse(req, res, 400, { error: "Passwords do not match" });
     }
 
     // -----------------------------------------------------------------------
@@ -185,11 +224,21 @@ async function handler(req, res) {
 
     const clientIp = getClientIp(req);
 
-    const rateLimitResult = await signupRateLimiter.check(clientIp);
-    if (!rateLimitResult.allowed) {
-      return corsResponse(req, res, 429, {
-        error: "Too many signup attempts. Please try again later.",
-        retryAfter: 60,
+    try {
+      const rateLimitResult = signupRateLimiter.checkAsync
+        ? await signupRateLimiter.checkAsync(clientIp)
+        : signupRateLimiter.check(clientIp);
+      
+      if (!rateLimitResult.allowed) {
+        return corsResponse(req, res, 429, {
+          error: "Too many signup attempts. Please try again later.",
+          retryAfter: 60,
+        });
+      }
+    } catch (rateLimitError) {
+      console.error('[signup] Rate limit check failed:', rateLimitError.message);
+      return corsResponse(req, res, 500, {
+        error: "Rate limiting service unavailable. Please try again later.",
       });
     }
 
@@ -252,20 +301,7 @@ async function handler(req, res) {
       createdAt: newUser.createdAt,
     };
 
-    const isProd = process.env.NODE_ENV === "production";
-    const cookieValue = `token=${token}; HttpOnly; Path=/; Max-Age=${JWT_COOKIE_MAX_AGE_SECONDS}; SameSite=Strict${isProd ? "; Secure" : ""}`;
-    // Set cookie compatibly across test mocks (which may provide `set` instead of `setHeader`)
-    try {
-      if (typeof res.setHeader === "function") {
-        res.setHeader("Set-Cookie", cookieValue);
-      } else if (typeof res.set === "function") {
-        res.set({ "Set-Cookie": cookieValue });
-      } else if (res.headers && typeof res.headers === "object") {
-        res.headers["Set-Cookie"] = cookieValue;
-      }
-    } catch (e) {
-      // Ignore write errors on test response objects
-    }
+    setCookie(res, token);
 
     return corsResponse(req, res, 201, {
       message: "Account created successfully",
