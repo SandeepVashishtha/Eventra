@@ -537,8 +537,6 @@ const useOfflineSync = () => {
         clearTimeout(timeoutId);
       }
     };
-   
-  }, [token, user?.id]);
   }, [token, user?.id, isAuthenticated, loading]);
 };
 

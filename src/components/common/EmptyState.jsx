@@ -82,10 +82,6 @@ const EmptyState = ({
     return <IconComponent size={compact ? 32 : 48} className="text-gray-400 dark:text-gray-500" />;
   };
 
-  const defaultConfig = getDefaultConfig();
-  const displayTitle = title || defaultConfig.title;
-  const displayDescription = description || message || defaultConfig.message;
-  const rawIcon = icon || defaultConfig.icon;
 
   // Resolve primary action
   const handleAction = onAction || onClearFilters || onBrowseAll;

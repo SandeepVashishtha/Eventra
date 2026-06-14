@@ -22,9 +22,12 @@ export const canAttempt = (
   return true;
 };
 
-export const getBackoffDelay = (failures) => {
+export const getBackoffDelay = (keyOrFailures) => {
+  const count = typeof keyOrFailures === 'string'
+    ? getFailureCount(keyOrFailures)
+    : keyOrFailures;
   return Math.min(
-    1000 * Math.pow(2, failures),
+    1000 * Math.pow(2, count),
     30_000
   );
 };
@@ -46,13 +49,4 @@ export const resetFailures = (key) => {
 
 export const getFailureCount = (key) => {
   return failures.get(key) || 0;
-};
-
-export const getBackoffDelay = (key) => {
-  const failures = getFailureCount(key);
-
-  return Math.min(
-    1000 * Math.pow(2, failures),
-    30000
-  );
 };
