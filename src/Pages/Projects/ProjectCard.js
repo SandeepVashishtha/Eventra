@@ -205,24 +205,41 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
     }
   };
 
-  const handleIncrementFork = (e) => {
+  const handleIncrementFork = async (e) => {
     e.preventDefault();
     e.stopPropagation();
     
-    const repoDetails = getGitHubRepoDetails(project.githubUrl);
-    const key = repoDetails ? `${repoDetails.owner}/${repoDetails.repo}` : `mock-${project.id}`;
-    
-    setMetrics(prev => {
-      const updated = { ...prev, forks: (prev?.forks || 0) + 1 };
-      try {
-        let cache = {};
-        const saved = localStorage.getItem(CACHE_KEY);
-        cache = saved ? safeJsonParse(saved, {}) : {};
-        cache[key] = { data: updated, timestamp: Date.now() };
-        localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
-      } catch {}
-      return updated;
-    });
+    if (!isAuthenticated()) {
+      toast.error("You must be logged in to fork a project.");
+      return;
+    }
+
+    try {
+      await projectService.forkProject(project.id, {
+        headers: {
+          Authorization: token
+        }
+      });
+
+      const repoDetails = getGitHubRepoDetails(project.githubUrl);
+      const key = repoDetails ? `${repoDetails.owner}/${repoDetails.repo}` : `mock-${project.id}`;
+      
+      setMetrics(prev => {
+        const updated = { ...prev, forks: (prev?.forks || 0) + 1 };
+        try {
+          let cache = {};
+          const saved = localStorage.getItem(CACHE_KEY);
+          cache = saved ? safeJsonParse(saved, {}) : {};
+          cache[key] = { data: updated, timestamp: Date.now() };
+          localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+        } catch {}
+        return updated;
+      });
+      toast.success("Project forked successfully!");
+    } catch (err) {
+      const message = err?.data?.message || err?.message || "Failed to fork project.";
+      toast.error(message);
+    }
   };
 
   // GitHub metrics loading with LocalStorage caching system
