@@ -88,7 +88,7 @@ const getResultIcon = (type) => {
 const fadeUp = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.6 } } };
 const Hero = () => {
   const { t, i18n } = useTranslation();
-  const controls = useAnimation();
+  const heroControls = useAnimation();
   const prefersReducedMotion = useReducedMotion();
 
   useDocumentTitle("Eventra | Home");
@@ -126,8 +126,8 @@ const Hero = () => {
   }, []);
 
   useEffect(() => {
-    controls.start("show");
-  }, [controls]);
+    heroControls.start("show");
+  }, [heroControls]);
 
   useEffect(() => {
     const timer = setTimeout(() => setStatsReady(true), 100);
