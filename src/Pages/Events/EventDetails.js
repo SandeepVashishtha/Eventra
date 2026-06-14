@@ -39,175 +39,87 @@ const isRequestCanceled = (error, signal) =>
   error?.name === "CanceledError" ||
   error?.code === "ERR_CANCELED";
 
-const EventDetails = () => {
-  const { eventId } = useParams();
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const { addRecentlyViewed } = useRecentlyViewed();
-
-  const isOrganizer = user?.roles?.includes(ROLES.ORGANIZER) || user?.roles?.includes(ROLES.ADMIN);
-
-  const [showExportDropdown, setShowExportDropdown] = useState(false);
-  const [exportingRegistrants, setExportingRegistrants] = useState(false);
-  const [showShareModal, setShowShareModal] = useState(false);
-  const [isPrinting, setIsPrinting] = useState(false);
-  const [event, setEvent] = useState(null);
-  const [fetchLoading, setFetchLoading] = useState(true);
-  const [fetchError, setFetchError] = useState(null);
-  const [showCancelModal, setShowCancelModal] = useState(false);
-
-  const { isRegistered } = useMyEvents();
-  const [linkCopied, setLinkCopied] = useState(false);
-  const latestRequestIdRef = useRef(0);
-  const abortControllerRef = useRef(null);
-
-  const loadEvent = useCallback(async () => {
-    abortControllerRef.current?.abort();
-
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-    const requestId = ++latestRequestIdRef.current;
-    const isLatestRequest = () =>
-      latestRequestIdRef.current === requestId &&
-      abortControllerRef.current === controller &&
-      !controller.signal.aborted;
-
-    setFetchLoading(true);
-    setFetchError(null);
-
-    try {
-      const res = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId), {
-        signal: controller.signal,
-      });
-      if (!isLatestRequest()) return;
-      if (res.ok && res.data) {
-        const raw = res.data?.data ?? res.data;
-        setEvent({ ...raw, status: getEventStatus(raw) });
-      } else {
-        throw new Error(res.data?.message || `Event not found (${res.status})`);
-      }
-    } catch (error) {
-      if (!isLatestRequest()) return;
-      if (isRequestCanceled(error, controller.signal)) return;
-
-      // Fall back to bundled mock data when the API is unreachable
-      const fallback = mockEvents.find((item) => String(item.id) === eventId);
-      if (fallback) {
-        setEvent({ ...fallback, status: getEventStatus(fallback) });
-      } else {
-        setFetchError("Event not found.");
-      }
-    } finally {
-      const shouldFinishLoading = isLatestRequest();
-      if (abortControllerRef.current === controller) {
-        abortControllerRef.current = null;
-      }
-      if (shouldFinishLoading) {
-        setFetchLoading(false);
-      }
-    }
-  }, [eventId]);
-
-  useEffect(() => {
-    loadEvent();
-    return () => {
-      abortControllerRef.current?.abort();
-    };
-  }, [loadEvent]);
-
-  // Safely handle localStorage cache updates via hook
-  useEffect(() => {
-    if (!event) return;
-    addRecentlyViewed(event);
-  }, [event, addRecentlyViewed]);
-
-  const handlePrint = () => {
-    setIsPrinting(true);
-    setTimeout(() => {
-      window.print();
-      setIsPrinting(false);
-    }, 500);
+const createDuplicateDraft = (sourceEvent) => {
+  const parseISODate = (dateValue) => {
+    if (!dateValue) return "";
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toISOString().slice(0, 10);
   };
 
-  const createDuplicateDraft = (sourceEvent) => {
-    const parseISODate = (dateValue) => {
-      if (!dateValue) return "";
-      const date = new Date(dateValue);
-      if (Number.isNaN(date.getTime())) return "";
-      return date.toISOString().slice(0, 10);
-    };
+  const formatTime = (dateValue) => {
+    if (!dateValue) return "";
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) return "";
+    return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+  };
 
-    const formatTime = (dateValue) => {
-      if (!dateValue) return "";
-      const date = new Date(dateValue);
-      if (Number.isNaN(date.getTime())) return "";
-      return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
-    };
+  const startDate = sourceEvent.startDate || sourceEvent.date;
+  const endDate = sourceEvent.endDate || sourceEvent.date || sourceEvent.startDate;
+  const parsedStartDate = parseISODate(startDate);
+  const parsedEndDate = parseISODate(endDate);
+  const isMultiDay = parsedStartDate && parsedEndDate && parsedStartDate !== parsedEndDate;
 
-    const startDate = sourceEvent.startDate || sourceEvent.date;
-    const endDate = sourceEvent.endDate || sourceEvent.date || sourceEvent.startDate;
-    const parsedStartDate = parseISODate(startDate);
-    const parsedEndDate = parseISODate(endDate);
-    const isMultiDay = parsedStartDate && parsedEndDate && parsedStartDate !== parsedEndDate;
+  const locationData = sourceEvent.location || {};
 
-    const locationData = sourceEvent.location || {};
-
-    return {
-      title: sourceEvent.title ? `Copy of ${sourceEvent.title}` : "",
-      description: sourceEvent.description || "",
-      category: sourceEvent.category || "",
-      isMultiDay,
-      date: isMultiDay ? "" : parsedStartDate,
-      startDate: isMultiDay ? parsedStartDate : "",
-      endDate: isMultiDay ? parsedEndDate : "",
-      startTime: formatTime(startDate),
-      endTime: formatTime(endDate),
-      timezone: sourceEvent.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
-      location: {
-        name: typeof locationData === "string" ? locationData : locationData.name || "",
-        address: typeof locationData === "string" ? "" : locationData.address || "",
-        coordinates: {
-          latitude:
-            typeof locationData === "string"
-              ? ""
-              : locationData.coordinates?.latitude ?? "",
-          longitude:
-            typeof locationData === "string"
-              ? ""
-              : locationData.coordinates?.longitude ?? "",
-        },
+  return {
+    title: sourceEvent.title ? `Copy of ${sourceEvent.title}` : "",
+    description: sourceEvent.description || "",
+    category: sourceEvent.category || "",
+    isMultiDay,
+    date: isMultiDay ? "" : parsedStartDate,
+    startDate: isMultiDay ? parsedStartDate : "",
+    endDate: isMultiDay ? parsedEndDate : "",
+    startTime: formatTime(startDate),
+    endTime: formatTime(endDate),
+    timezone: sourceEvent.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+    location: {
+      name: typeof locationData === "string" ? locationData : locationData.name || "",
+      address: typeof locationData === "string" ? "" : locationData.address || "",
+      coordinates: {
+        latitude:
+          typeof locationData === "string"
+            ? ""
+            : locationData.coordinates?.latitude ?? "",
+        longitude:
+          typeof locationData === "string"
+            ? ""
+            : locationData.coordinates?.longitude ?? "",
       },
-      isVirtual: Boolean(sourceEvent.virtualLink),
-      virtualLink: sourceEvent.virtualLink || "",
-      capacity: sourceEvent.capacity != null ? sourceEvent.capacity : "",
-      isPublic: sourceEvent.isPublic ?? true,
-      requiresApproval: sourceEvent.requiresApproval ?? false,
-      registrationStart: sourceEvent.registrationStart
-        ? parseISODate(sourceEvent.registrationStart)
-        : "",
-      registrationEnd: sourceEvent.registrationEnd
-        ? parseISODate(sourceEvent.registrationEnd)
-        : "",
-      tags: Array.isArray(sourceEvent.tags) ? sourceEvent.tags : [],
-      ticketTiers: Array.isArray(sourceEvent.ticketTiers)
-        ? sourceEvent.ticketTiers.map((tier) => ({
-          name: tier.name || "",
-          price: tier.price ?? 0,
-          capacity: tier.capacity ?? "",
-          description: tier.description || "",
-        }))
-        : [
-          {
-            name: "General Admission",
-            price: 0,
-            capacity: "",
-            description: "Standard event access",
-          },
-        ],
-      banner: null,
-      bannerPreview: sourceEvent.image || sourceEvent.banner || "",
-    };
+    },
+    isVirtual: Boolean(sourceEvent.virtualLink),
+    virtualLink: sourceEvent.virtualLink || "",
+    capacity: sourceEvent.capacity != null ? sourceEvent.capacity : "",
+    isPublic: sourceEvent.isPublic ?? true,
+    requiresApproval: sourceEvent.requiresApproval ?? false,
+    registrationStart: sourceEvent.registrationStart
+      ? parseISODate(sourceEvent.registrationStart)
+      : "",
+    registrationEnd: sourceEvent.registrationEnd
+      ? parseISODate(sourceEvent.registrationEnd)
+      : "",
+    tags: Array.isArray(sourceEvent.tags) ? sourceEvent.tags : [],
+    ticketTiers: Array.isArray(sourceEvent.ticketTiers)
+      ? sourceEvent.ticketTiers.map((tier) => ({
+        name: tier.name || "",
+        price: tier.price ?? 0,
+        capacity: tier.capacity ?? "",
+        description: tier.description || "",
+      }))
+      : [
+        {
+          name: "General Admission",
+          price: 0,
+          capacity: "",
+          description: "Standard event access",
+        },
+      ],
+    banner: null,
+    bannerPreview: sourceEvent.image || sourceEvent.banner || "",
   };
+};
+
+const EventDetails = () => {
 
   const handleDuplicateEvent = async () => {
     if (!event) {
