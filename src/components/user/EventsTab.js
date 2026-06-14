@@ -12,6 +12,7 @@ import {
   Ticket,
   Trash2,
   Activity,
+  Share2,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useMyEvents } from "../../context/MyEventsContext";
@@ -102,6 +103,18 @@ const EventCard = memo(({ event, index, onRemoveRegistration, showCancel, onView
       month: "short",
     })
     : "—";
+
+    const handleCopyLink = async () => {
+  try {
+    const eventLink = `${window.location.origin}/events/${event.id || event.eventId}`;
+
+    await navigator.clipboard.writeText(eventLink);
+
+    toast.success("Link copied successfully");
+  } catch (error) {
+    toast.error("Failed to copy link");
+  }
+};
 
   return (
     <motion.div
@@ -218,6 +231,16 @@ const EventCard = memo(({ event, index, onRemoveRegistration, showCancel, onView
             </div>
           </Link>
         )}
+
+        <button
+  onClick={handleCopyLink}
+  className="group/btn flex-1"
+>
+  <div className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-indigo-300 dark:border-indigo-600 text-indigo-700 dark:text-indigo-300 px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-all duration-300 w-full cursor-pointer">
+    <Share2 size={13} className="relative" />
+    <span className="relative">Share</span>
+  </div>
+</button>
         <Link to={`/events/${event?.id}`} className="group/btn flex-1">
           <div className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all duration-300 w-full">
             <span>{showCancel ? "View Details" : "Open Event"}</span>
@@ -621,31 +644,6 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   )}
 />
             
-
-          <VirtualizedGrid
-  items={waitlistEvents}
-  columnCount={columnCount}
-  rowHeight={360}
-  renderItem={(event, index) => (
-    <WaitlistCard
-      key={event.id}
-      event={event}
-      index={index}
-      onLeaveWaitlist={async (id) => {
-        if (window.confirm(`Are you sure you want to leave the waitlist for "${event.title}"?`)) {
-          try {
-            const { leaveWaitlist } = await import("../../utils/waitlistUtils.js");
-            await leaveWaitlist(id, user.id || user.email);
-            toast.success("Left the waitlist successfully.");
-            triggerWaitlistUpdate();
-          } catch (err) {
-            toast.error(err.message || "Failed to leave waitlist.");
-          }
-        }
-      }}
-    />
-  )}
-/>
               
               </motion.div>
             </section>
