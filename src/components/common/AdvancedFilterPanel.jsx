@@ -5,6 +5,7 @@ import ModeFilter from "./ModeFilter";
 import StatusFilter from "./StatusFilter";
 import PriceRangeSlider from "./PriceRangeSlider";
 import DateRangeFilter from "./DateRangeFilter";
+import { SlidersHorizontal } from "lucide-react";
 import {
   EVENT_CATEGORIES,
   EVENT_MODES,
@@ -116,16 +117,41 @@ const AdvancedFilterPanel = ({
   const initPriceMax = filters.priceRange?.max ?? (priceStats.max || 1500);
 
   return (
-    <div className="w-full bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+    <div className="
+   w-full
+bg-white dark:bg-gray-800
+rounded-3xl
+border border-gray-200 dark:border-gray-700
+shadow-xl
+backdrop-blur-sm
+overflow-hidden
+  ">
       {/* Header */}
       <button
         onClick={onToggleOpen}
-        className="w-full px-4 py-3 sm:px-6 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-       aria-label="button">
-        <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+        className="
+        w-full
+        px-8 py-6
+        flex items-center justify-between
+        bg-gradient-to-r
+        from-indigo-50
+        to-white
+        dark:from-gray-800
+        dark:to-gray-800
+        hover:from-indigo-100
+        transition-all duration-300
+        "       aria-label="button">
+        <h2 className="
+text-2xl md:text-3xl
+font-bold
+tracking-tight
+text-gray-900 dark:text-white
+flex items-center gap-3
+">
+        <SlidersHorizontal className="w-6 h-6 text-indigo-600" />
           Advanced Filters
           {hasFilters && (
-            <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-indigo-600 rounded-full">
+            <span className="inline-flex items-center justify-center w-7 h-7 text-xs font-bold text-white bg-indigo-600 rounded-full">
               {
                 Object.values(filters).filter(
                   (v) =>
@@ -157,7 +183,7 @@ const AdvancedFilterPanel = ({
 
       {/* Filters Panel */}
       {isOpen && (
-        <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-4 sm:px-6 space-y-4">
+        <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-4 sm:px-6 space-y-8">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">
               Presets
@@ -168,8 +194,20 @@ const AdvancedFilterPanel = ({
                   key={preset.id}
                   type="button"
                   onClick={() => handlePresetApply(preset.filters)}
-                  className="px-3 py-1.5 text-xs font-medium rounded-full border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors"
-                >
+                  className="
+                  px-4 py-2
+                  text-sm font-medium
+                  rounded-full
+                  border border-indigo-200
+                  dark:border-indigo-700
+                  bg-indigo-50
+                  dark:bg-indigo-900/20
+                  text-indigo-700
+                  dark:text-indigo-300
+                  hover:scale-105
+                  hover:shadow-md
+                  transition-all duration-200
+                  "                >
                   {preset.label}
                 </button>
               ))}
@@ -177,11 +215,32 @@ const AdvancedFilterPanel = ({
           </div>
 
           {/* Category Filter Section */}
-          <div>
-            <button
+          <div
+className="
+p-5
+rounded-2xl
+bg-gray-50
+dark:bg-gray-700/20
+border border-gray-200
+dark:border-gray-700
+shadow-sm
+hover:shadow-md
+transition-all duration-300
+"
+>            <button
               onClick={() => toggleSection("category")}
-              className="w-full flex items-center justify-between py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
-            >
+              className="
+              w-full
+              flex items-center justify-between
+              py-1
+              text-lg
+              font-bold
+              tracking-wide
+              text-gray-800 dark:text-gray-200
+              hover:text-indigo-600
+              dark:hover:text-indigo-400
+              transition-colors
+              "            >
               <span className="flex items-center gap-2">
                 <span>Categories</span>
                 {isSectionActive("category") && (
@@ -190,7 +249,7 @@ const AdvancedFilterPanel = ({
               </span>
               <ChevronDown
                 size={16}
-                className={`transition-transform ${
+                className={`transition-transform duration-300 ${
                   expandedSections.category ? "rotate-180" : ""
                 }`}
               />
@@ -207,11 +266,32 @@ const AdvancedFilterPanel = ({
           </div>
 
           {/* Mode Filter Section */}
-          <div>
-            <button
+          <div
+className="
+p-5
+rounded-2xl
+bg-gray-50
+dark:bg-gray-700/20
+border border-gray-200
+dark:border-gray-700
+shadow-sm
+hover:shadow-md
+transition-all duration-300
+"
+>            <button
               onClick={() => toggleSection("mode")}
-              className="w-full flex items-center justify-between py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
-            >
+              className="
+              w-full
+              flex items-center justify-between
+              py-1
+              text-lg
+              font-bold
+              tracking-wide
+              text-gray-800 dark:text-gray-200
+              hover:text-indigo-600
+              dark:hover:text-indigo-400
+              transition-colors
+              "            >
               <span className="flex items-center gap-2">
                 <span>Event Mode</span>
                 {isSectionActive("mode") && (
@@ -237,11 +317,33 @@ const AdvancedFilterPanel = ({
           </div>
 
           {/* Status Filter Section */}
-          <div>
+          <div
+className="
+p-5
+rounded-2xl
+bg-gray-50
+dark:bg-gray-700/20
+border border-gray-200
+dark:border-gray-700
+shadow-sm
+hover:shadow-md
+transition-all duration-300
+"
+>
             <button
               onClick={() => toggleSection("status")}
-              className="w-full flex items-center justify-between py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
-            >
+              className="
+              w-full
+              flex items-center justify-between
+              py-1
+              text-lg
+              font-bold
+              tracking-wide
+              text-gray-800 dark:text-gray-200
+              hover:text-indigo-600
+              dark:hover:text-indigo-400
+              transition-colors
+              "            >
               <span className="flex items-center gap-2">
                 <span>Event Status</span>
                 {isSectionActive("status") && (
@@ -267,11 +369,33 @@ const AdvancedFilterPanel = ({
           </div>
 
           {/* Location Filter Section */}
-          <div>
+          <div
+className="
+p-5
+rounded-2xl
+bg-gray-50
+dark:bg-gray-700/20
+border border-gray-200
+dark:border-gray-700
+shadow-sm
+hover:shadow-md
+transition-all duration-300
+"
+>
             <button
               onClick={() => toggleSection("location")}
-              className="w-full flex items-center justify-between py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
-            >
+              className="
+              w-full
+              flex items-center justify-between
+              py-1
+              text-lg
+              font-bold
+              tracking-wide
+              text-gray-800 dark:text-gray-200
+              hover:text-indigo-600
+              dark:hover:text-indigo-400
+              transition-colors
+              "            >
               <span className="flex items-center gap-2">
                 <span>Location</span>
                 {isSectionActive("location") && (
@@ -298,19 +422,53 @@ const AdvancedFilterPanel = ({
                     value={filters.location || ""}
                     onChange={handleLocationChange}
                     placeholder="City, venue, or region"
-                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400"
-                  />
+                    className="
+                    w-full
+                    pl-10 pr-4 py-3
+                    rounded-xl
+                    border border-gray-300
+                    dark:border-gray-600
+                    bg-white dark:bg-gray-700
+                    text-gray-900 dark:text-white
+                    shadow-sm
+                    focus:ring-2
+                    focus:ring-indigo-500
+                    focus:border-indigo-500
+                    transition-all
+                    "                  />
                 </div>
               </div>
             )}
           </div>
 
           {/* Price Range Section */}
-          <div>
+          <div
+className="
+p-5
+rounded-2xl
+bg-gray-50
+dark:bg-gray-700/20
+border border-gray-200
+dark:border-gray-700
+shadow-sm
+hover:shadow-md
+transition-all duration-300
+"
+>
             <button
               onClick={() => toggleSection("price")}
-              className="w-full flex items-center justify-between py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
-            >
+              className="
+              w-full
+              flex items-center justify-between
+              py-1
+              text-lg
+              font-bold
+              tracking-wide
+              text-gray-800 dark:text-gray-200
+              hover:text-indigo-600
+              dark:hover:text-indigo-400
+              transition-colors
+              "            >
               <span className="flex items-center gap-2">
                 <span>Price Range</span>
                 {isSectionActive("price") && (
@@ -325,7 +483,15 @@ const AdvancedFilterPanel = ({
               />
             </button>
             {expandedSections.price && (
-              <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <div className="
+              mt-4
+              p-4
+              rounded-xl
+              bg-white
+              dark:bg-gray-700/40
+              border border-gray-200
+              dark:border-gray-600
+              ">
                 <PriceRangeSlider
                   minPrice={initPriceMin}
                   maxPrice={initPriceMax}
@@ -338,11 +504,33 @@ const AdvancedFilterPanel = ({
           </div>
 
           {/* Date Range Section */}
-          <div>
+          <div
+className="
+p-5
+rounded-2xl
+bg-gray-50
+dark:bg-gray-700/20
+border border-gray-200
+dark:border-gray-700
+shadow-sm
+hover:shadow-md
+transition-all duration-300
+"
+>
             <button
               onClick={() => toggleSection("date")}
-              className="w-full flex items-center justify-between py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
-            >
+              className="
+              w-full
+              flex items-center justify-between
+              py-1
+              text-lg
+              font-bold
+              tracking-wide
+              text-gray-800 dark:text-gray-200
+              hover:text-indigo-600
+              dark:hover:text-indigo-400
+              transition-colors
+              "            >
               <span className="flex items-center gap-2">
                 <span>Date Range</span>
                 {isSectionActive("date") && (
@@ -373,8 +561,24 @@ const AdvancedFilterPanel = ({
           {hasFilters && (
             <button
               onClick={handleClearAll}
-              className="w-full mt-4 px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
-             aria-label="button">
+              className="
+              w-full
+              mt-6
+              px-5 py-3
+              font-semibold
+              rounded-xl
+              border border-red-200
+              dark:border-red-800
+              bg-red-50
+              dark:bg-red-900/20
+              text-red-600
+              dark:text-red-400
+              hover:bg-red-100
+              dark:hover:bg-red-900/40
+              hover:shadow-md
+              transition-all duration-300
+              "
+                           aria-label="button">
               Clear All Filters
             </button>
           )}
