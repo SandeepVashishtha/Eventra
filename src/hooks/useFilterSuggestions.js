@@ -52,8 +52,7 @@ export const useFilterSuggestions = ({
       writeSuggestionHistory(next, storage, storageKey);
       return next;
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterSignature, storage, storageKey]);
+  }, [filterSignature, storage, storageKey, recordFilterActivity, writeSuggestionHistory]);
 
   useEffect(() => {
     if (!Array.isArray(visibleEvents) || visibleEvents.length === 0) return;
@@ -63,8 +62,7 @@ export const useFilterSuggestions = ({
       writeSuggestionHistory(next, storage, storageKey);
       return next;
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visibleEventSignature, storage, storageKey]);
+  }, [visibleEventSignature, storage, storageKey, recordVisibleEventSignals, writeSuggestionHistory]);
 
   const suggestions = useMemo(
     () =>

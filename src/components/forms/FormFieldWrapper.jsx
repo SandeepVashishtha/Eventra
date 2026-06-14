@@ -146,7 +146,10 @@ const FormFieldWrapper = ({
           (validationState === "success" || validationState === "valid") && "border-green-500 focus:border-green-500 focus:ring-green-500/20 dark:border-green-400",
           loading && "border-blue-500 dark:border-blue-400",
           prefix && "pl-10",
-          (showStatusIcon || suffix) && "pr-20",
+          // Reserve right padding to match the icons actually rendered: 80px for
+          // both the status icon and a suffix, 40px for just one, none otherwise.
+          showStatusIcon && suffix && "pr-20",
+          (showStatusIcon || suffix) && !(showStatusIcon && suffix) && "pr-10",
           child.props.className,
         ),
       })

@@ -202,6 +202,14 @@ if (themeColors) {
       } else {
         const styleEl = document.createElement("style");
         styleEl.id = styleId;
+        styleEl.textContent = `
+          *, *::before, *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+            scroll-behavior: auto !important;
+          }
+        `;
         styleEl.innerHTML = css;
         document.head.appendChild(styleEl);
       }

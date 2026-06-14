@@ -1,7 +1,17 @@
 /**
+ * @typedef {Object} CalendarEvent
+ * @property {string} title - The title of the event.
+ * @property {string} [description] - A short description of the event.
+ * @property {string|Date} date - The start date/time of the event.
+ * @property {string|Date} [endDate] - The end date/time of the event.
+ * @property {string} [location] - The location or URL of the event.
+ * @property {string|number} [id] - A unique identifier for the event.
+ * @property {string} [joiningLink] - A URL to join the event.
+ */
+
+/**
  * Calendar Exporter Utility (RFC 5545 Compliant)
- * 
- * Provides robust mechanisms to generate downloadable standard .ics files
+ * * Provides robust mechanisms to generate downloadable standard .ics files
  * and external calendar subscription URLs (Google Calendar, Outlook Web).
  */
 
@@ -14,8 +24,6 @@ const formatToICSDate = (dateStr) => {
 };
 
 // Helper to safely escape special characters in ICS strings (RFC 5545 compliant).
-// Carriage returns (\r) are stripped before newlines are escaped so that
-// user-supplied text cannot inject extra ICS content lines via CRLF sequences.
 const escapeICSText = (text = "") => {
   return text
     .replace(/\\/g, "\\\\")
@@ -27,6 +35,7 @@ const escapeICSText = (text = "") => {
 
 /**
  * Downloads a standard .ics iCalendar file for the given event.
+ * @param {CalendarEvent} event - The event object to export.
  */
 export const downloadICSFile = (event) => {
   const { title, description, date, endDate, location, id } = event;
@@ -94,6 +103,8 @@ export const downloadICSFile = (event) => {
 
 /**
  * Generates an external Google Calendar addition link.
+ * @param {CalendarEvent} event
+ * @returns {string|null} The Google Calendar URL.
  */
 export const generateGoogleCalendarLink = (event) => {
   const { title, description, date, endDate, location } = event;
@@ -118,6 +129,8 @@ export const generateGoogleCalendarLink = (event) => {
 
 /**
  * Generates an external Outlook Web addition link.
+ * @param {CalendarEvent} event
+ * @returns {string|null} The Outlook Calendar URL.
  */
 export const generateOutlookLink = (event) => {
   const { title, description, date, endDate, location } = event;
@@ -142,12 +155,8 @@ export const generateOutlookLink = (event) => {
 
 /**
  * Generates an external Yahoo Calendar addition link.
- *
- * Yahoo Calendar deep-link format:
- *   https://calendar.yahoo.com/?v=60&title=...&st=YYYYMMDDTHHMMSSZ&et=YYYYMMDDTHHMMSSZ&desc=...&in_loc=...
- *
- * @param {Object} event - Event object with title, description, date, endDate, location
- * @returns {string|null} Yahoo Calendar URL or null if the event date is invalid
+ * @param {CalendarEvent} event
+ * @returns {string|null} Yahoo Calendar URL or null if the event date is invalid.
  */
 export const generateYahooCalendarLink = (event) => {
   const { title, description, date, endDate, location } = event;
@@ -172,9 +181,8 @@ export const generateYahooCalendarLink = (event) => {
 
 /**
  * Downloads a single .ics file containing multiple events.
- * Supports both flat event objects and nested registration objects.
- * @param {Array} events - List of event/registration objects to export
- * @param {string} filename - Custom filename for the downloaded file
+ * @param {Array<CalendarEvent>} events - List of event objects to export.
+ * @param {string} [filename="registered-events"] - Custom filename for the downloaded file.
  */
 export const downloadBulkICSFile = (events, filename = "registered-events") => {
   if (!Array.isArray(events) || events.length === 0) return;
@@ -194,7 +202,7 @@ export const downloadBulkICSFile = (events, filename = "registered-events") => {
     const { title, description, date, endDate, location, id } = eventObj;
     
     const formattedStart = formatToICSDate(date);
-    if (!formattedStart) return; // Skip invalid event
+    if (!formattedStart) return;
     
     const formattedEnd = endDate ? formatToICSDate(endDate) : formatToICSDate(new Date(new Date(date).getTime() + 2 * 60 * 60 * 1000));
 
@@ -240,4 +248,3 @@ export const downloadBulkICSFile = (events, filename = "registered-events") => {
     }, 200);
   }
 };
-

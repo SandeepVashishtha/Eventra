@@ -10,7 +10,7 @@ import HackathonCTA from "./HackathonCTA";
 import Fuse from "fuse.js";
 import { createPortal } from "react-dom";
 import BackToTopButton from "../../components/common/BackToTopButton";
-import VirtualizedHackathonGrid from "../../components/common/VirtualizedHackathonGrid";
+// import VirtualizedHackathonGrid from "../../components/common/VirtualizedHackathonGrid";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { filterHackathons } from "./hackathonFilterUtils.mjs";
 import { HackathonCardSkeleton } from "../../components/common/SkeletonLoaders";
@@ -137,7 +137,7 @@ const CustomDropdown = ({ label, value, options, onChange, placeholder = "Select
         >
           {displayText}
         </span>
-        <ChevronDown className={`text-slate-400 dark:text-slate-500 flex-shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={`text-slate-400 dark:text-slate-500 shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open &&
@@ -152,7 +152,7 @@ const CustomDropdown = ({ label, value, options, onChange, placeholder = "Select
               border border-border
               rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.6)]
               overflow-hidden
-              min-w-[180px]
+              min-w-45
               max-h-60
               overflow-y-auto
             "
@@ -472,7 +472,7 @@ const HackathonHub = () => {
       >
         <Link
           to="/host-hackathon"
-          className="flex items-center justify-center w-14 h-14 bg-gradient-to-br from-primary to-secondary text-white rounded-xl shadow-glow-md hover:shadow-glow-lg border border-primary/30 transition-all"
+          className="flex items-center justify-center w-14 h-14 bg-linear-to-br from-primary to-secondary text-white rounded-xl shadow-glow-md hover:shadow-glow-lg border border-primary/30 transition-all"
           title="Host a Hackathon"
           aria-label="Host a Hackathon"
         >
@@ -510,7 +510,7 @@ const HackathonHub = () => {
                 </p>
                 <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
                   Featured{" "}
-                  <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                  <span className="bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent">
                     Hackathons
                   </span>
                 </h2>
@@ -548,7 +548,7 @@ const HackathonHub = () => {
               </p>
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
                 All{" "}
-                <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                <span className="bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent">
                   Hackathons
                 </span>
               </h2>
@@ -698,7 +698,7 @@ const HackathonHub = () => {
                 type="button"
                 onClick={() => setActiveTab(tab.key)}
                 className={`px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-300 border ${activeTab === tab.key
-                  ? "bg-gradient-to-r from-primary via-primary to-secondary text-white border-primary/50 shadow-glow-sm scale-105"
+                  ? "bg-linear-to-r from-primary via-primary to-secondary text-white border-primary/50 shadow-glow-sm scale-105"
                   : "bg-white dark:bg-white/5 text-text-light border-border hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/30 hover:text-primary shadow-sm dark:shadow-none"
                   }`}
               >

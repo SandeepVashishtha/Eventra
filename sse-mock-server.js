@@ -111,11 +111,11 @@ const MOCK_EVENTS = [
   { id: "event-3", title: "Web Dev Workshop" }
 ];
 
-const JWT_SECRET =
-  process.env.JWT_SECRET ||
-  (process.env.NODE_ENV !== "production" ? "eventra-dev-jwt-secret" : null);
-if (!JWT_SECRET) {
-  console.error("FATAL: JWT_SECRET environment variable is required.");
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET || !JWT_SECRET.trim()) {
+  console.error("FATAL: JWT_SECRET environment variable is required and must not be empty or whitespace-only.");
+  console.error("Generate a secure secret using: openssl rand -base64 32");
   process.exit(1);
 }
 

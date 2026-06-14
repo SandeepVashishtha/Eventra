@@ -1,25 +1,44 @@
-/**
- * @file registrationLocks.js
- * @module utils/registrationLocks
- *
- * @description
- * Module-level `Map` singleton used as a double-submit guard for event
- * registration.  Because this Map lives at module scope it is shared across
- * **all** component instances and hook invocations, which means that even
- * two separate browser tabs registering for the same event will share the
- * same lock.
- *
- * Usage:
- * ```js
- * import registrationLocks from "../../utils/registrationLocks";
- *
- * registrationLocks.set(eventId, true);
- * // … async work …
- * registrationLocks.delete(eventId);
- * ```
- *
- * @type {Map<string|number, boolean>}
- */
-const registrationLocks = new Map();
+const LOCK_EXPIRY_MS = 600000; // 10 minutes lease time
+
+export function acquireRegistrationLock(eventId) {
+  try {
+    const now = Date.now();
+    const lockKey = `reg_lock_${eventId}`;
+    const existing = localStorage.getItem(lockKey);
+    
+    if (existing) {
+      const lockTime = Number(existing);
+      if (now - lockTime < LOCK_EXPIRY_MS) {
+        return false; // Lock active
+      }
+    }
+    
+    localStorage.setItem(lockKey, String(now));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function releaseRegistrationLock(eventId) {
+  try {
+    localStorage.removeItem(`reg_lock_${eventId}`);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+const activeLocks = new Set();
+
+const registrationLocks = {
+  has: (eventId) => activeLocks.has(eventId),
+  set: (eventId, value) => {
+    activeLocks.add(eventId);
+  },
+  delete: (eventId) => {
+    activeLocks.delete(eventId);
+  }
+};
 
 export default registrationLocks;

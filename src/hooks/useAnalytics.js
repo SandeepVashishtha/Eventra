@@ -8,11 +8,12 @@ const useAnalytics = () => {
 
   useEffect(() => {
     if (!token) { setLoading(false); return; }
+    const controller = new AbortController();
     const fetchAnalytics = async () => {
       try {
         const res = await fetch(
-          `${process.env.REACT_APP_API_URL}/analytics/summary`,
-          { headers: { Authorization: `Bearer ${token}` } }
+          (process.env.REACT_APP_API_URL || "") + "/analytics/summary",
+          { headers: { Authorization: `Bearer ${token}` }, signal: controller.signal }
         );
         if (!res.ok) throw new Error("API unavailable");
         const data = await res.json();
@@ -24,6 +25,7 @@ const useAnalytics = () => {
       }
     };
     fetchAnalytics();
+    return () => controller.abort();
   }, [token]);
 
   return { analytics, loading };

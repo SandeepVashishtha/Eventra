@@ -1,60 +1,26 @@
 import axios from "axios";
-import { ENV } from "./env.js";
 import { logger } from "../utils/logger.js";
-import { ApiError, RateLimitError } from "./api/errors.js";
+import { ApiError, RateLimitError, normalizeApiError } from "./api/errors.js";
 import { setupRequestInterceptor, setupResponseInterceptor } from "./api/interceptors.js";
+import { API_BASE_URL, validateBackendConfig } from "./backendConfig.js";
 
 // ---------------------------------------------------------------------------
 // Base API URL
 // ---------------------------------------------------------------------------
 
-const normalizeApiBaseUrl = (value = "") => {
-  if (!value) {
-    return "";
-  }
-
-  const trimmed = value.replace(/\/+$/, "").replace(/\/api$/, "");
-
-  try {
-    const parsed = new URL(trimmed);
-    return `${parsed.origin}${parsed.pathname === "/" ? "" : parsed.pathname}`;
-  } catch {
-    return trimmed;
-  }
-};
-
 const isDev = process.env.NODE_ENV === "development";
 
-const resolveEnvApiBaseUrl = () => {
-  const envUrl = ENV.API_URL;
-  if (envUrl) {
-    return normalizeApiBaseUrl(envUrl);
-  }
-  if (!isDev) {
-    logger.warn(`VITE_API_URL environment variable is missing in ${process.env.NODE_ENV}. Defaulting to relative API requests.`);
-    return "";
-  }
-  logger.warn("VITE_API_URL not set in development. Defaulting to localhost.");
-  return "";
-};
-
-export const API_BASE_URL = resolveEnvApiBaseUrl();
+// Validate backend configuration on module load
+const configValidation = validateBackendConfig();
+if (!configValidation.isValid && isDev) {
+  console.warn(`[API Config] ${configValidation.error}`);
+}
 
 const buildApiUrl = (path = "") => {
-  if (!path) {
-    return "";
-  }
-
-  if (/^https?:\/\//i.test(path)) {
-    return path;
-  }
-
+  if (!path) return "";
+  if (/^https?:\/\//i.test(path)) return path;
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-
-  if (!API_BASE_URL) {
-    return normalizedPath;
-  }
-
+  if (!API_BASE_URL) return normalizedPath;
   return `${API_BASE_URL}${normalizedPath}`;
 };
 
@@ -74,8 +40,12 @@ const API = axios.create({
 let onUnauthorized = null;
 let _authToken = null;
 
-export const setOnUnauthorizedHandler = (handler) => { onUnauthorized = handler; };
-export const setAuthToken = (token) => { _authToken = token; };
+export const setOnUnauthorizedHandler = (handler) => {
+  onUnauthorized = handler;
+};
+export const setAuthToken = (token) => {
+  _authToken = token;
+};
 
 const getAuthToken = () => _authToken;
 const getOnUnauthorized = () => onUnauthorized;
@@ -89,87 +59,88 @@ setupResponseInterceptor(API, { isDev, timeoutMs: REQUEST_TIMEOUT_MS, getOnUnaut
 
 export const API_ENDPOINTS = {
   AUTH: {
-    LOGIN: buildApiUrl("/api/auth/login"),
-    REGISTER: buildApiUrl("/api/auth/signup"),
-    SIGNUP: buildApiUrl("/api/auth/signup"),
-    LOGOUT: buildApiUrl("/api/auth/logout"),
-    RESET_PASSWORD: buildApiUrl("/api/auth/reset-password"),
+    LOGIN: buildApiUrl("/auth/login"),
+    REGISTER: buildApiUrl("/auth/signup"),
+    SIGNUP: buildApiUrl("/auth/signup"),
+    LOGOUT: buildApiUrl("/auth/logout"),
+    RESET_PASSWORD: buildApiUrl("/auth/reset-password"),
+    REFRESH: buildApiUrl("/auth/refresh"),
   },
   EVENTS: {
-    CREATE: buildApiUrl("/api/events/create"),
-    ALL: buildApiUrl("/api/events"),
-    LIST: buildApiUrl("/api/events"),
-    DETAIL: (id) => buildApiUrl(`/api/events/${id}`),
-    SCHEDULE: (id) => buildApiUrl(`/api/events/${id}/schedule`),
-    REGISTER: (id) => buildApiUrl(`/api/events/${id}/register`),
-    AVAILABILITY: (id) => buildApiUrl(`/api/events/${id}/availability`),
-    CANCEL: (id) => buildApiUrl(`/api/events/${id}/cancel`),  
-    REGISTRANTS: (id) => buildApiUrl(`/api/events/${id}/registrants`),
+    CREATE: buildApiUrl("/events/create"),
+    ALL: buildApiUrl("/events"),
+    LIST: buildApiUrl("/events"),
+    DETAIL: (id) => buildApiUrl(`/events/${id}`),
+    SCHEDULE: (id) => buildApiUrl(`/events/${id}/schedule`),
+    REGISTER: (id) => buildApiUrl(`/events/${id}/register`),
+    AVAILABILITY: (id) => buildApiUrl(`/events/${id}/availability`),
+    CANCEL: (id) => buildApiUrl(`/events/${id}/cancel`),
+    REGISTRANTS: (id) => buildApiUrl(`/events/${id}/registrants`),
     // Convenience helper — appends ?page=&size= for callers that build the
     // URL manually rather than going through eventFetchUtils.buildPaginatedUrl.
-    PAGINATED: (page, size) => buildApiUrl(`/api/events?page=${page}&size=${size}`),
+    PAGINATED: (page, size) => buildApiUrl(`/events?page=${page}&size=${size}`),
   },
   PROJECTS: {
-    ALL: buildApiUrl("/api/projects"),
-    LIST: buildApiUrl("/api/projects"),
-    DETAIL: (id) => buildApiUrl(`/api/projects/${id}`),
-    CATEGORIES: buildApiUrl("/api/projects/categories"),
-    SUBMIT: buildApiUrl("/api/projects"),
+    ALL: buildApiUrl("/projects"),
+    LIST: buildApiUrl("/projects"),
+    DETAIL: (id) => buildApiUrl(`/projects/${id}`),
+    CATEGORIES: buildApiUrl("/projects/categories"),
+    SUBMIT: buildApiUrl("/projects"),
+    UPVOTE: (id) => buildApiUrl(`/projects/${id}/upvote`),
   },
   HACKATHONS: {
-    LIST: buildApiUrl("/api/hackathons"),
-    DETAIL: (id) => buildApiUrl(`/api/hackathons/${id}`),
-    HOST: buildApiUrl("/api/hackathons"),
+    LIST: buildApiUrl("/hackathons"),
+    DETAIL: (id) => buildApiUrl(`/hackathons/${id}`),
+    HOST: buildApiUrl("/hackathons"),
   },
   NOTIFICATIONS: {
-    BASE: buildApiUrl("/api/notifications"),
-    ALL: buildApiUrl("/api/notifications"),
-    READ: (id) => (id ? buildApiUrl(`/api/notifications/${id}/read`) : ""),
-    DELETE: (id) => (id ? buildApiUrl(`/api/notifications/${id}`) : ""),
-    READ_ALL: buildApiUrl("/api/notifications/read-all"),
-    PREFERENCES: buildApiUrl("/api/notifications/preferences"),
-    PUSH_SUBSCRIBE: buildApiUrl("/api/notifications/push-subscriptions"),
-    PUSH_UNSUBSCRIBE: buildApiUrl("/api/notifications/push-subscriptions/unsubscribe"),
+    BASE: buildApiUrl("/notifications"),
+    ALL: buildApiUrl("/notifications"),
+    READ: (id) => (id ? buildApiUrl(`/notifications/${id}/read`) : ""),
+    DELETE: (id) => (id ? buildApiUrl(`/notifications/${id}`) : ""),
+    READ_ALL: buildApiUrl("/notifications/read-all"),
+    PREFERENCES: buildApiUrl("/notifications/preferences"),
+    PUSH_SUBSCRIBE: buildApiUrl("/notifications/push-subscriptions"),
+    PUSH_UNSUBSCRIBE: buildApiUrl("/notifications/push-subscriptions/unsubscribe"),
   },
   USERS: {
-    PROFILE: buildApiUrl("/api/users/profile"),
-    ACHIEVEMENTS: buildApiUrl("/api/users/achievements"),
+    PROFILE: buildApiUrl("/users/profile"),
+    ACHIEVEMENTS: buildApiUrl("/users/achievements"),
   },
   SESSION_RECOVERY: {
-    BASE: buildApiUrl("/api/session-recovery"),
+    BASE: buildApiUrl("/session-recovery"),
     SESSION: (sessionId) =>
-      buildApiUrl(`/api/session-recovery/${encodeURIComponent(sessionId)}`),
+      buildApiUrl(`/session-recovery/${encodeURIComponent(sessionId)}`),
     RESTORE: (sessionId) =>
-      buildApiUrl(`/api/session-recovery/${encodeURIComponent(sessionId)}/restore`),
-    CLEANUP_EXPIRED: buildApiUrl("/api/session-recovery/expired"),
+      buildApiUrl(`/session-recovery/${encodeURIComponent(sessionId)}/restore`),
+    CLEANUP_EXPIRED: buildApiUrl("/session-recovery/expired"),
   },
   TICKETS: {
-    VALIDATE: buildApiUrl("/api/tickets/validate"),
-    CHECK_IN: buildApiUrl("/api/tickets/checkin"),
-    HISTORY: buildApiUrl("/api/tickets/checkins"),
+    VALIDATE: buildApiUrl("/tickets/validate"),
+    CHECK_IN: buildApiUrl("/tickets/checkin"),
+    HISTORY: buildApiUrl("/tickets/checkins"),
   },
   FEEDBACK: {
-    BASE: buildApiUrl("/api/feedback"),
+    BASE: buildApiUrl("/feedback"),
     BY_EVENT: (eventId) => {
       const params = new URLSearchParams({ eventId: String(eventId) });
-      return buildApiUrl(`/api/feedback?${params.toString()}`);
+      return buildApiUrl(`/feedback?${params.toString()}`);
     },
   },
   ADMIN: {
-    USERS: buildApiUrl("/api/admin/users"),
-    USER: (id) => buildApiUrl(`/api/admin/users/${id}`),
-    EVENTS: buildApiUrl("/api/admin/events"),
-    EVENT: (id) => buildApiUrl(`/api/admin/events/${id}`),
-    STATS: buildApiUrl("/api/admin/stats"),
+    USERS: buildApiUrl("/admin/users"),
+    USER: (id) => buildApiUrl(`/admin/users/${id}`),
+    EVENTS: buildApiUrl("/admin/events"),
+    EVENT: (id) => buildApiUrl(`/admin/events/${id}`),
+    STATS: buildApiUrl("/admin/stats"),
   },
   VALIDATION: {
-    EMAIL: (email) => buildApiUrl(`/api/validate/email/${encodeURIComponent(email)}`),
-    USERNAME: (username) => buildApiUrl(`/api/validate/username/${encodeURIComponent(username)}`),
-    PHONE: buildApiUrl("/api/validate/phone"),
-    CONTACT: buildApiUrl("/api/contact"),
+    EMAIL: (email) => buildApiUrl(`/validate/email/${encodeURIComponent(email)}`),
+    USERNAME: (username) => buildApiUrl(`/validate/username/${encodeURIComponent(username)}`),
+    PHONE: buildApiUrl("/validate/phone"),
+    CONTACT: buildApiUrl("/contact"),
   },
 };
-
 
 const normalizeRequestConfig = (configOrToken = {}) => {
   const config = typeof configOrToken === "string" ? {} : { ...configOrToken };
@@ -195,49 +166,6 @@ const wrapAxiosResponse = (response) => {
   };
 };
 
-const normalizeApiError = (error) => {
-  const config = error.config || {};
-  const status = error?.response?.status;
-
-  if (
-    error.code === "ECONNABORTED" ||
-    error.name === "AbortError" ||
-    error.message?.includes("timeout")
-  ) {
-    return new ApiError(
-      `Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s: ${config.method?.toUpperCase()} ${config.url}`,
-      { status, isTimeout: true },
-    );
-  }
-
-  if (!error.response) {
-    return new ApiError(
-      error.message || `Network error: ${config.method?.toUpperCase()} ${config.url}`,
-      { status, isNetworkError: true },
-    );
-  }
-
-  if (status === 429) {
-    return new RateLimitError(
-      error.response?.data?.message || "Too many requests, please try again later.",
-      { status, data: error.response?.data || null },
-    );
-  }
-
-  return new ApiError(
-    error.response?.data?.message || error.message || `Request failed with status ${status}`,
-    { status, data: error.response?.data || null },
-  );
-};
-
-const buildAxiosConfig = (url, options = {}) => {
-  const { signal, headers, ...rest } = options;
-  const config = normalizeRequestConfig(rest);
-  if (signal) config.signal = signal;
-  if (headers) config.headers = { ...config.headers, ...headers };
-  return { url, config };
-};
-
 export const apiUtils = {
   get: (url, config = {}) =>
     API.get(url, normalizeRequestConfig(config)).then(wrapAxiosResponse),
@@ -249,7 +177,6 @@ export const apiUtils = {
     API.patch(url, data, normalizeRequestConfig(config)).then(wrapAxiosResponse),
   delete: (url, config = {}) =>
     API.delete(url, normalizeRequestConfig(config)).then(wrapAxiosResponse),
-
   request: async (method, url, data = null, options = {}) => {
     const config = normalizeRequestConfig(options);
     if (options.signal) config.signal = options.signal;
@@ -270,20 +197,17 @@ export const apiUtils = {
 
 export default API;
 
-export { normalizeApiError };
+export { ApiError, RateLimitError, normalizeApiError };
 
 // Centralized configuration cache store for fallback endpoints
 export const apiConfigCache = {
   store: new Map(),
-
   get(key) {
     return this.store.get(key);
   },
-
   set(key, val) {
     this.store.set(key, val);
   },
-
   clear() {
     this.store.clear();
   },

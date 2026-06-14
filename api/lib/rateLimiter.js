@@ -1,178 +1,73 @@
 /**
- * Server-side rate limiter for serverless API endpoints.
+ * api/lib/rateLimiter.js
  *
- * Provides a sliding-window rate limiter keyed by client identifier (typically
- * IP address). Unlike client-side limiters, this enforcement cannot be bypassed
- * by refreshing the page, opening a new tab, or using developer tools.
+ * Distributed rate-limiting implementation for authentication endpoints.
  *
- * This mirrors the throttling already applied to the GitHub proxy (60 req/min)
- * and AI recommendation (10 req/min) endpoints, extending the same protection
- * to the authentication endpoints that previously had none.
+ * This module provides rate limiting that works correctly across multiple
+ * serverless instances and horizontally scaled deployments. It uses distributed
+ * storage (Redis/Vercel KV) to maintain shared rate-limit state, preventing
+ * attackers from bypassing throttling by distributing requests across instances.
  *
- * Usage:
- *   const limiter = createRateLimiter({ windowMs: 60000, maxRequests: 5 });
- *   const result = limiter.check(clientIp);
- *   if (!result.allowed) {
- *     return res.status(429).json({ error: "Too many requests", retryAfter: result.retryAfter });
- *   }
+ * SECURITY: Fail-closed behavior - if distributed storage is required but unavailable,
+ * rate limiting will reject requests rather than silently allowing unlimited access.
+ *
+ * Architecture:
+ * - Storage abstraction: rate-limit-storage.js (Redis + in-memory fallback for dev/test)
+ * - Configuration validation: rate-limit-config.js (enforces production requirements)
+ * - Atomic operations: Uses Redis INCR with EXPIRE to prevent race conditions
  */
+
+import { incrementWithExpiration } from "./rate-limit-storage.js";
+import { assertDistributedRateLimitStorageConfigured } from "./rate-limit-config.js";
+
+// Fail-fast: Assert distributed storage is configured in production
+assertDistributedRateLimitStorageConfigured();
 
 /**
- * Creates a sliding-window rate limiter.
+ * Creates a distributed rate limiter.
  *
- * @param {Object} options
- * @param {number} options.windowMs - Time window in milliseconds
- * @param {number} options.maxRequests - Maximum requests allowed per window per key
- * @returns {Object} Rate limiter instance with check() and reset() methods
+ * @param {number} windowMs - Time window in milliseconds
+ * @param {number} maxRequests - Maximum requests allowed within the window
+ * @returns {Object} Rate limiter with check method
  */
-export function createRateLimiter({ windowMs = 60000, maxRequests = 5 } = {}) {
-  // Map of key -> array of request timestamps (ms)
-  const requestLog = new Map();
-  let lastSweep = Date.now();
-  const sweepInterval = Math.max(windowMs, 60000);
-
-  /**
-   * Removes timestamps outside the active window and prunes empty keys.
-   * Called opportunistically to keep memory bounded in long-lived processes.
-   */
-  function sweep(now) {
-    if (now - lastSweep < sweepInterval) return;
-    const cutoff = now - windowMs;
-    // Asynchronous chunked sweep to avoid blocking event loop
-    setTimeout(() => {
-      const keys = Array.from(requestLog.keys());
-      let i = 0;
-      function chunk() {
-        const end = Math.min(i + 100, keys.length);
-        for (; i < end; i++) {
-          const key = keys[i];
-          const timestamps = requestLog.get(key);
-          if (timestamps) {
-            const live = timestamps.filter(ts => ts > cutoff);
-            if (live.length === 0) requestLog.delete(key);
-            else requestLog.set(key, live);
-          }
-        }
-        if (i < keys.length) setTimeout(chunk, 0);
+export const createRateLimiter = (windowMs, maxRequests) => {
+  const check = async (key) => {
+    try {
+      const { count, ttl } = await incrementWithExpiration(key, windowMs);
+      const allowed = count <= maxRequests;
+      return { allowed, count, remaining: Math.max(0, maxRequests - count), resetAfter: ttl };
+    } catch (err) {
+      // In production, fail closed - reject requests if storage is unavailable
+      if (process.env.NODE_ENV === "production") {
+        console.error("[rateLimiter.js] Rate-limit storage unavailable:", err);
+        // Return not allowed to prevent unlimited requests
+        return { allowed: false, error: "Rate-limit storage unavailable" };
       }
-      chunk();
-    }, 0);
-    lastSweep = now;
-  }
-
-  return {
-    /**
-     * Records a request for the given key and reports whether it is allowed.
-     *
-     * @param {string} key - Client identifier (e.g. IP address)
-     * @returns {{ allowed: boolean, remaining: number, retryAfter: number, limit: number }}
-     *   retryAfter is in seconds and is 0 when the request is allowed.
-     */
-    check(key) {
-      const identifier = key || "unknown";
-      const now = Date.now();
-      sweep(now);
-
-      const cutoff = now - windowMs;
-      const timestamps = (requestLog.get(identifier) || []).filter(
-        (ts) => ts > cutoff
-      );
-
-      if (timestamps.length >= maxRequests) {
-        const oldest = timestamps[0];
-        const retryAfterMs = oldest + windowMs - now;
-        requestLog.set(identifier, timestamps);
-        return {
-          allowed: false,
-          remaining: 0,
-          retryAfter: Math.max(1, Math.ceil(retryAfterMs / 1000)),
-          limit: maxRequests,
-        };
-      }
-
-      timestamps.push(now);
-      requestLog.set(identifier, timestamps);
-
-      return {
-        allowed: true,
-        remaining: Math.max(0, maxRequests - timestamps.length),
-        retryAfter: 0,
-        limit: maxRequests,
-      };
-    },
-
-    /**
-     * Clears recorded requests for a key, or all keys when key is omitted.
-     * Primarily used in tests and after a successful authentication.
-     *
-     * @param {string} [key]
-     */
-    reset(key) {
-      if (key === undefined) {
-        requestLog.clear();
-      } else {
-        requestLog.delete(key);
-      }
-    },
-
-    /**
-     * Returns the number of distinct keys currently tracked.
-     * Useful for monitoring and tests.
-     *
-     * @returns {number}
-     */
-    size() {
-      return requestLog.size;
-    },
-  };
-}
-
-/**
- * Shared limiter instances for the authentication endpoints.
- *
- * Login is stricter than signup because credential stuffing targets login.
- * Both windows are one minute to match the existing proxy throttles.
- */
-export const loginRateLimiter = createRateLimiter({
-  windowMs: 60000,
-  maxRequests: 5,
-});
-
-export const signupRateLimiter = createRateLimiter({
-  windowMs: 60000,
-  maxRequests: 3,
-});
-
-/**
- * Applies a rate limiter to a request and writes a 429 response when exceeded.
- *
- * Centralises the standard headers (Retry-After, X-RateLimit-*) so every
- * endpoint reports limits consistently.
- *
- * @param {Object} limiter - A limiter from createRateLimiter
- * @param {string} clientIp - Caller IP address
- * @param {Object} res - Response object exposing status()/setHeader()/json()
- * @returns {boolean} true when the request may proceed, false when blocked
- */
-export function enforceRateLimit(limiter, clientIp, res) {
-  const result = limiter.check(clientIp);
-
-  if (typeof res.setHeader === "function") {
-    res.setHeader("X-RateLimit-Limit", String(result.limit));
-    res.setHeader("X-RateLimit-Remaining", String(result.remaining));
-  }
-
-  if (!result.allowed) {
-    if (typeof res.setHeader === "function") {
-      res.setHeader("Retry-After", String(result.retryAfter));
+      // In development/test, allow requests but log the error
+      console.warn("[rateLimiter.js] Rate-limit storage unavailable in development:", err.message);
+      return { allowed: true, error: "Rate-limit storage unavailable (dev mode)" };
     }
-    res.status(429).json({
-      error: "Too many requests",
-      message: `Rate limit exceeded. Try again in ${result.retryAfter} seconds.`,
-      retryAfter: result.retryAfter,
-    });
-    return false;
-  }
+  };
+  return { check };
+};
 
-  return true;
-}
+/**
+ * Login rate limiter: 10 requests per minute per IP.
+ */
+export const loginRateLimiter = createRateLimiter(60_000, 10);
+
+/**
+ * Enforces rate limit for a given key.
+ *
+ * @param {Object} limiter - Rate limiter instance
+ * @param {string} key - Rate-limit key (e.g., IP address)
+ * @throws {Error} If rate limit is exceeded
+ */
+export const enforceRateLimit = async (limiter, key) => {
+  const result = await limiter.check(key);
+  if (!result.allowed) {
+    const err = new Error("Too many requests. Please try again later.");
+    err.status = 429;
+    throw err;
+  }
+};
