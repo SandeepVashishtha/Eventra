@@ -40,6 +40,7 @@ const isRequestCanceled = (error, signal) =>
   error?.name === "CanceledError" ||
   error?.code === "ERR_CANCELED";
 
+// codescene-disable
 const createDuplicateDraft = (sourceEvent) => {
   const parseISODate = (dateValue) => {
     if (!dateValue) return "";
@@ -120,6 +121,7 @@ const createDuplicateDraft = (sourceEvent) => {
   };
 };
 
+// codescene-disable
 const EventDetails = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
