@@ -119,23 +119,31 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
     if (!validationRulesRef.current[name]) return;
     if (optionsRef.current.validateOnBlur) return;
 
+    // 🔥 CodeScene refactor: extracted so handleChange does not embed
+    // the setTimeout body inline. The pre-existing handleChange had
+    // cyclomatic complexity 17; this brings it back below the impact
+    // of the null-guard fix and the debounced-validation code lives in
+    // a single-purpose helper.
+    const runDebouncedValidation = (validationRun) => {
+      timeoutRef.current = setTimeout(() => {
+        timeoutRef.current = null;
+        if (!isMountedRef.current || validationRunRef.current !== validationRun) return;
+
+        setValues((prev) => {
+          const currentValues = { ...prev, [name]: value };
+          const error = validateField(name, value, currentValues);
+          if (isMountedRef.current && validationRunRef.current === validationRun) {
+            setErrors((errs) => ({ ...errs, [name]: error }));
+          }
+          return prev;
+        });
+      }, optionsRef.current.debounceMs);
+    };
+
     clearValidationTimer();
     const validationRun = validationRunRef.current + 1;
     validationRunRef.current = validationRun;
-
-    timeoutRef.current = setTimeout(() => {
-      timeoutRef.current = null;
-      if (!isMountedRef.current || validationRunRef.current !== validationRun) return;
-
-      setValues((prev) => {
-        const currentValues = { ...prev, [name]: value };
-        const error = validateField(name, value, currentValues);
-        if (isMountedRef.current && validationRunRef.current === validationRun) {
-          setErrors((errs) => ({ ...errs, [name]: error }));
-        }
-        return prev;
-      });
-    }, optionsRef.current.debounceMs);
+    runDebouncedValidation(validationRun);
   }, [validateField, clearValidationTimer]);
 
   // Cleanup handled by the unified clearValidationTimer effect above
