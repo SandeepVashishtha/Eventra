@@ -15,8 +15,15 @@
  *  5. Handles `CAPACITY_FULL` thrown by concurrent race losers.
  */
 
+import { z } from "zod";
 import { checkCapacity } from "../_lib/capacityValidator.js";
 import { withLock } from "../_lib/distributed-lock.js";
+
+const MAX_REGISTER_BODY_SIZE = 10240; // 10KB
+
+const registerSchema = z.object({
+  eventId: z.string().min(1, "Event id is required"),
+}).strip();
 
 /**
  * Registration handler.
@@ -53,11 +60,26 @@ export default async function registerForEvent(req, res, deps = {}) {
     return;
   }
 
+  // ── Payload size enforcement ──────────────────────────────────────────────
+  const contentLength = parseInt(req.headers?.["content-length"] || "0", 10);
+  if (contentLength > MAX_REGISTER_BODY_SIZE) {
+    res.status(413).json({ error: "Request body too large" });
+    return;
+  }
+
   // ── Input validation ──────────────────────────────────────────────────────
   const eventId = getEventId(req);
   if (!eventId) {
     res.status(400).json({ error: "Event id is required" });
     return;
+  }
+
+  if (req.body && typeof req.body === "object") {
+    const bodyResult = registerSchema.safeParse(req.body);
+    if (!bodyResult.success) {
+      res.status(400).json({ error: bodyResult.error.errors[0]?.message || "Invalid request body" });
+      return;
+    }
   }
 
   // ── Dependency check ──────────────────────────────────────────────────────
@@ -70,9 +92,6 @@ export default async function registerForEvent(req, res, deps = {}) {
     return;
   }
   
-  const counter = rsvpLockCounters.get(eventId) || 0;
-  rsvpLockCounters.set(eventId, counter + 1);
-
   await withLock(`register:${eventId}`, async () => {
     // ── Event existence ───────────────────────────────────────────────────
     const event = await getEventById(eventId);
