@@ -5,6 +5,7 @@ import { signupRateLimiter } from "../lib/rateLimiter.js";
 import { buildCorsHeaders, corsResponse } from "./cors.js";
 import { assertPersistentStorageConfigured } from "./storage-config.js";
 import { createUser, getUserByEmail, isStorageHealthy } from "./user-storage.js";
+import { getClientIp } from "../lib/getClientIp.js";
 
 // ---------------------------------------------------------------------------
 // In-memory user storage
