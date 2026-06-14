@@ -67,8 +67,10 @@ const ModernSearchInput = ({
             ref={searchInputRef}
             type="text"
             placeholder={tags && tags.length > 0 ? "" : placeholder}
-            className="flex-1 bg-transparent border-none outline-none text-gray-900 dark:text-gray-100 min-w-[120px] placeholder-gray-400 dark:placeholder-gray-500"
-            style={{ color: "inherit" }}
+            // UPDATED CLASSNAME BELOW: Added text-black and dark:text-white explicitly to the input field
+            className="flex-1 bg-transparent border-none outline-none text-black dark:text-white min-w-[120px] placeholder-gray-400 dark:placeholder-gray-500"
+            // UPDATED PROPERTY BELOW: Added spellCheck="false" to prevent the full-height red spellcheck lines
+            spellCheck="false"
             value={value}
             onChange={onChange}
             onFocus={handleFocus}
