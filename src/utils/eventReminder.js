@@ -137,6 +137,37 @@ export const sendNotification = (title, options = {}) => {
 };
 
 /**
+ * Internal helper to validate inputs and check notification permissions.
+ *
+ * @param {string} title
+ * @param {number} delay
+ * @returns {boolean} True if validation passes and permissions are granted.
+ */
+const validateAndVerifyPermissions = (title, delay) => {
+  if (!title || typeof title !== "string") {
+    console.error("scheduleReminder: Invalid title provided.");
+    return false;
+  }
+
+  if (typeof delay !== "number" || delay < 0) {
+    console.error("scheduleReminder: Invalid delay provided. Must be a non-negative number.");
+    return false;
+  }
+
+  if (!isNotificationSupported()) {
+    console.warn("Cannot schedule reminder: Notifications not supported.");
+    return false;
+  }
+
+  if (Notification.permission !== "granted") {
+    console.warn("Cannot schedule reminder: Permission not granted.");
+    return false;
+  }
+
+  return true;
+};
+
+/**
  * Schedules a reminder notification after a specified delay
  * Returns a reminder ID that can be used to cancel the reminder
  * 
@@ -148,25 +179,8 @@ export const sendNotification = (title, options = {}) => {
  * @returns {string|null} Reminder ID for cancellation, or null if scheduling failed
  */
 export const scheduleReminder = (title, delay, options = {}) => {
-  // Validate inputs
-  if (!title || typeof title !== "string") {
-    console.error("scheduleReminder: Invalid title provided.");
-    return null;
-  }
-
-  if (typeof delay !== "number" || delay < 0) {
-    console.error("scheduleReminder: Invalid delay provided. Must be a non-negative number.");
-    return null;
-  }
-
-  // Check permission before scheduling
-  if (!isNotificationSupported()) {
-    console.warn("Cannot schedule reminder: Notifications not supported.");
-    return null;
-  }
-
-  if (Notification.permission !== "granted") {
-    console.warn("Cannot schedule reminder: Permission not granted.");
+  // Validate and check permissions
+  if (!validateAndVerifyPermissions(title, delay)) {
     return null;
   }
 
