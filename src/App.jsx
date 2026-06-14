@@ -302,8 +302,6 @@ function App() {
                     </Suspense>
                 </ErrorBoundary>
                 )}
-
-                {import.meta.env.DEV && <ErrorButton />}
               </div>
               <Analytics />
             </SessionRecoveryProvider>
@@ -313,56 +311,4 @@ function App() {
     </ErrorBoundary>
   );
 }
-
-function ErrorButton() {
-  const [onboardingHeight, setOnboardingHeight] = useState(0);
-
-  useEffect(() => {
-    const handleStateChange = (e) => {
-      if (e.detail && typeof e.detail.height === "number") {
-        setOnboardingHeight(e.detail.height);
-      }
-    };
-    window.addEventListener("eventraOnboardingStateChange", handleStateChange);
-
-    // Initial check
-    const checklist = document.querySelector('[data-onboarding-checklist]');
-    if (checklist) {
-      const rect = checklist.getBoundingClientRect();
-      setOnboardingHeight(window.innerHeight - rect.top);
-    }
-
-    return () => {
-      window.removeEventListener("eventraOnboardingStateChange", handleStateChange);
-    };
-  }, []);
-
-  const bottomOffset = onboardingHeight > 0 ? onboardingHeight + 16 : 24;
-
-  return (
-    <button
-      onClick={() => {
-        throw new Error('This is your first error!');
-      }}
-      style={{
-        position: "fixed",
-        bottom: `${bottomOffset}px`,
-        left: "26px",
-        zIndex: 9999,
-        padding: "10px 15px",
-        backgroundColor: "#e11d48",
-        color: "white",
-        border: "none",
-        borderRadius: "5px",
-        cursor: "pointer",
-        fontWeight: "bold",
-        boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-        transition: "bottom 0.3s ease-out",
-      }}
-    >
-      Break the world
-    </button>
-  );
-}
-
 export default App;
