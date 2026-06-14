@@ -1,3 +1,4 @@
+import { pushToNotificationQueue, syncNotificationQueue } from "../utils/notificationQueue.js";
 import { useState, useCallback, useRef, useEffect } from "react";
 import { apiUtils, API_ENDPOINTS } from "../config/api";
 import { useAuth } from "../context/AuthContext";
@@ -8,7 +9,16 @@ import { getNotificationMessage } from "../utils/notificationPreferences";
 
 const POLLING_INTERVAL_MS = 60_000;
 const MAX_SEEN_IDS = 500;
-const STORAGE_KEY = "eventra_notification_inbox";
+const getStorageKey = () => {
+  try {
+    const userStr = window.localStorage.getItem('user');
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      if (user && user.id) return 'eventra_notification_inbox_' + user.id;
+    }
+  } catch (e) {}
+  return 'eventra_notification_inbox_guest';
+};
 
 const normalize = (n = {}) => ({
   ...n,
@@ -17,12 +27,12 @@ const normalize = (n = {}) => ({
 });
 
 const persist = (items) => {
-  try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); } catch {}
+  try { window.localStorage.setItem(getStorageKey(), JSON.stringify(items)); } catch {}
 };
 
 const loadPersisted = () => {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(getStorageKey());
     if (!raw) return null;
     const parsed = safeJsonParse(raw, []);
     return Array.isArray(parsed) ? parsed.map(normalize) : null;
@@ -80,11 +90,12 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
       if (!endpoint) return;
       try {
         if (!options.isBackground && isMounted.current && tokenRef.current === t) setLoading(true);
+        await syncNotificationQueue(apiUtils);
         const res = await apiUtils.get(endpoint);
         if (!isMounted.current || tokenRef.current !== t) return;
         const data = res.data;
         applyList(Array.isArray(data) ? data : data?.content || [], { deliverNew: true });
-      } catch (err) {
+      } catch {
         if (isMounted.current && tokenRef.current === t) {
           const persisted = loadPersisted();
           const fallback = persisted?.length ? persisted : seedNotifications.map(normalize);
@@ -146,6 +157,7 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
         setUnreadCount((p) => Math.max(0, p - 1));
       } catch (err) {
         if (isMounted.current && tokenRef.current === t) console.error("[useNotificationPoller] markAsRead:", err);
+        pushToNotificationQueue("read", { endpoint });
       }
     },
     [token],
@@ -195,6 +207,7 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
       if (!endpoint) return;
       try { await apiUtils.delete(endpoint); }
       catch (err) {
+        pushToNotificationQueue("delete", { endpoint });
         if (isMounted.current && tokenRef.current === t) {
           console.error("[useNotificationPoller] delete:", err);
           refetchRef.current({ isBackground: true });
@@ -206,6 +219,80 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
 
   const markAsReadRef = useRef(markAsRead);
   useEffect(() => { markAsReadRef.current = markAsRead; }, [markAsRead]);
+
+  // Same-tab sync listener
+  useEffect(() => {
+    const handleUpdate = () => {
+      const persisted = loadPersisted();
+      if (persisted) {
+        setNotifications(persisted);
+        setUnreadCount(persisted.filter((n) => !n.isRead).length);
+        persisted.forEach((n) => {
+          if (n.id) seenIds.current.add(n.id);
+        });
+      }
+    };
+    window.addEventListener("eventra-notifications-updated", handleUpdate);
+    return () => window.removeEventListener("eventra-notifications-updated", handleUpdate);
+  }, []);
+
+  // Legacy IndexedDB eventra_notifications migration
+  useEffect(() => {
+    const migrateLegacy = async () => {
+      try {
+        const { get: idbGet, del: idbDel } = await import("idb-keyval");
+        const raw = await idbGet("eventra_notifications");
+        if (raw) {
+          const legacy = safeJsonParse(raw, []);
+          if (Array.isArray(legacy) && legacy.length > 0) {
+            const currentPersisted = loadPersisted() || [];
+            const merged = [...currentPersisted];
+
+            legacy.forEach((ln) => {
+              if (!ln) return;
+              const id = ln.id ? String(ln.id) : `legacy-${Date.now()}-${Math.random()}`;
+              const isRead = ln.isRead ?? ln.read ?? false;
+              const title = ln.title ?? "";
+              const message = ln.message ?? "";
+              const category = ln.category ?? "system";
+              const timestamp = ln.createdAt || ln.timestamp || new Date().toISOString();
+
+              const exists = merged.some(
+                (cn) =>
+                  String(cn.id) === id ||
+                  (cn.title === title && cn.message === message)
+              );
+
+              if (!exists) {
+                merged.push({
+                  id,
+                  isRead,
+                  title,
+                  message,
+                  category,
+                  timestamp,
+                });
+              }
+            });
+
+            // Sort newest first
+            merged.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            persist(merged);
+            setNotifications(merged);
+            setUnreadCount(merged.filter((n) => !n.isRead).length);
+            merged.forEach((n) => {
+              if (n.id) seenIds.current.add(n.id);
+            });
+          }
+          await idbDel("eventra_notifications");
+        }
+      } catch {
+        // fail silently in environments without IndexedDB support
+      }
+    };
+
+    migrateLegacy();
+  }, []);
 
   return {
     notifications, unreadCount, loading,

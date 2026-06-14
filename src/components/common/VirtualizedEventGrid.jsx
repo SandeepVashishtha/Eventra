@@ -19,6 +19,7 @@ const Cell = memo(({ columnIndex, rowIndex, style, data }) => {
     </div>
   );
 });
+Cell.displayName = "Cell";
 
 Cell.displayName = "Cell";
 

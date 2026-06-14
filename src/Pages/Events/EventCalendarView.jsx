@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import enUS from 'date-fns/locale/en-US';
@@ -23,7 +23,7 @@ const EventPopover = ({ event, onClose }) => {
   if (!event) return null;
 
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-1000 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" onClick={onClose}>
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -40,7 +40,7 @@ const EventPopover = ({ event, onClose }) => {
 
         <div className="relative h-48 w-full">
           <img src={event.resource.image} alt={event.title} className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-t from-black/80 to-transparent" />
           <div className="absolute bottom-4 left-4 right-4">
             <h3 className="text-xl font-bold text-white line-clamp-2">{event.title}</h3>
           </div>
@@ -124,7 +124,7 @@ const EventCalendarView = ({ events }) => {
     setSelectedEvent(event);
   };
 
-  const eventPropGetter = (event) => {
+  const eventPropGetter = () => {
     return {
       className: 'bg-indigo-600 border-none rounded-md text-xs font-semibold px-2 py-0.5 shadow-sm text-white !overflow-hidden !whitespace-nowrap !text-ellipsis',
     };

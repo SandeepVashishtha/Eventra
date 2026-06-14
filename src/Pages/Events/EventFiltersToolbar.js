@@ -40,7 +40,7 @@ const EventFiltersToolbar = ({
   currentFilterConfig,
   onApplyPreset,
   visibleEvents = [],
-  totalElements = 0,
+  // totalElements = 0,
 }) => {
   const [localQuery, setLocalQuery] = useState(searchQuery || "");
   const [presetName, setPresetName] = useState("");
@@ -232,14 +232,16 @@ const EventFiltersToolbar = ({
       </div>
 
       {/* Advanced Filter Panel */}
-      <AdvancedFilterPanel
-        filters={advancedFilters}
-        onFiltersChange={onAdvancedFiltersChange}
-        priceStats={priceStats}
-        dateRange={dateRangeStats}
-        isOpen={isAdvancedFiltersOpen}
-        onToggleOpen={() => onToggleAdvancedFilters?.((isOpen) => !isOpen)}
-      />
+<div className="relative z-20">
+  <AdvancedFilterPanel
+    filters={advancedFilters}
+    onFiltersChange={onAdvancedFiltersChange}
+    priceStats={priceStats}
+    dateRange={dateRangeStats}
+    isOpen={isAdvancedFiltersOpen}
+    onToggleOpen={() => onToggleAdvancedFilters?.((isOpen) => !isOpen)}
+  />
+</div>
 
       {/* 2. Command Center: Search, Sort, View Modes */}
       <div className="flex flex-col lg:flex-row gap-3">

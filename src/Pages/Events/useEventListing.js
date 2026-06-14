@@ -7,7 +7,7 @@ import { useStableFilters } from "../../hooks/useStableFilters";
 import {
   applyAdvancedFilters,
   getDateRange,
-  getDefaultFilters,
+  // getDefaultFilters,
   getPriceStats,
   normalizeAdvancedFilters,
 } from "../../utils/advancedFilterUtils";

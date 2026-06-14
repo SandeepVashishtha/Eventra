@@ -140,33 +140,30 @@ const SearchFilter = () => {
     const matchesLocation =
       selectedLocation === "all" || normalizedLocation === selectedLocation;
     const matchesPrice = priceFilter === "all" || event.price === priceFilter;
-
-    const matchesLocation = selectedLocation === 'all' || (normalizedLocation === selectedLocation);
-    const matchesPrice = priceFilter === 'all' || event.price === priceFilter;
     const today = new Date();
-const eventDate = new Date(event.date);
+    const eventDate = new Date(event.date);
 
-let matchesDate = true;
+    let matchesDate = true;
 
-if (dateFilter === "today") {
-  matchesDate =
-    eventDate.toDateString() === today.toDateString();
-}
+    if (dateFilter === "today") {
+      matchesDate =
+        eventDate.toDateString() === today.toDateString();
+    }
 
-if (dateFilter === "weekend") {
-  const day = eventDate.getDay();
-  matchesDate = day === 0 || day === 6;
-}
+    if (dateFilter === "weekend") {
+      const day = eventDate.getDay();
+      matchesDate = day === 0 || day === 6;
+    }
 
-if (dateFilter === "nextMonth") {
-  const nextMonth = new Date();
-  nextMonth.setMonth(today.getMonth() + 1);
+    if (dateFilter === "nextMonth") {
+      const nextMonth = new Date();
+      nextMonth.setMonth(today.getMonth() + 1);
 
-  matchesDate =
-    eventDate.getMonth() === nextMonth.getMonth() &&
-    eventDate.getFullYear() === nextMonth.getFullYear();
-}
-    return matchesSearch && matchesCategory && matchesLocation && matchesPrice;
+      matchesDate =
+        eventDate.getMonth() === nextMonth.getMonth() &&
+        eventDate.getFullYear() === nextMonth.getFullYear();
+    }
+    return matchesSearch && matchesCategory && matchesLocation && matchesPrice && matchesDate;
   });
 
   const handleResetFilters = () => {

@@ -19,6 +19,7 @@ import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
 import ErrorBoundary from "../../components/common/ErrorBoundary";
 import ErrorMessage from "../../components/common/ErrorMessage";
 import { EventTimeline } from "../../components/EventTimeline";
+import TrendingEvents from "../../components/TrendingEvents/TrendingEvents";
 import { safeJsonParse } from "../../utils/safeJsonParse";
 import {
   decodeAdvancedFilters,
@@ -47,7 +48,7 @@ const renderCardSection = (
   searchQuery,
   onClearSearch,
   filteredEvents,
-  hasFilters
+  // hasFilters
 ) => {
   if (isLoading) {
     return <ExploreEventsSkeleton />;
@@ -326,7 +327,7 @@ const EventsPage = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 text-slate-900 dark:text-gray-100 overflow-x-hidden">
+    <div className="flex flex-col min-h-screen bg-linear-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 text-slate-900 dark:text-gray-100 overflow-x-hidden">
       <EventHero
         searchQuery={localSearchInput}
         setSearchQuery={setLocalSearchInput}
@@ -334,6 +335,10 @@ const EventsPage = () => {
         handleSearch={handleSearch}
         scrollToCard={scrollToCard}
       />
+
+      <div className="mt-6 sm:mt-8">
+        <TrendingEvents title="Trending Events" limit={6} fetchSize={24} />
+      </div>
 
       <div
         ref={cardSectionRef}
