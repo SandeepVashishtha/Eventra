@@ -1,11 +1,16 @@
 import assert from "node:assert/strict";
 
+process.env.REACT_APP_API_URL = "https://api.example.test";
+
 // Mock environment and globals before importing sseMultiplexer
 
 const store = {};
 globalThis.window = {
   addEventListener() {},
   removeEventListener() {},
+  location: {
+    origin: "https://api.example.test",
+  },
   localStorage: {
     getItem(key) {
       return store[key] || null;
@@ -18,6 +23,7 @@ globalThis.window = {
     },
   },
 };
+globalThis.localStorage = globalThis.window.localStorage;
 
 // Mock BroadcastChannel for tab coordination
 const channels = new Set();
@@ -84,12 +90,59 @@ class MockEventSource {
 }
 globalThis.EventSource = MockEventSource;
 
-// Now import the multiplexer
-import { sseMultiplexer } from "../src/utils/sseMultiplexer.js";
+// Now import the multiplexer dynamically to ensure environment variable is set first
+const { sseMultiplexer } = await import("../src/utils/sseMultiplexer.js");
 
 // Force mock sseMultiplexer state to be the leader for initial tests
 sseMultiplexer.isLeader = true;
 sseMultiplexer.reconcileConnections();
+
+const testStatusSyncOnSubscribe = async () => {
+  // Test 7: Leader broadcasts current path status immediately upon receiving a SUBSCRIBE or SUBSCRIBERS_RESPONSE request from a follower tab
+  sseMultiplexer.isLeader = true;
+  sseMultiplexer.channel = new globalThis.BroadcastChannel("eventra_sse_multiplexer");
+  sseMultiplexer.channel.onmessage = (e) => sseMultiplexer.handleBroadcastMessage(e.data);
+  sseMultiplexer.updatePathStatus("/stream/status_sync", "connected");
+
+  let receivedStatusMsg = null;
+  const statusTestChannel = new globalThis.BroadcastChannel("eventra_sse_multiplexer");
+  statusTestChannel.onmessage = (e) => {
+    if (e.data && e.data.type === "SSE_STATUS" && e.data.path === "/stream/status_sync") {
+      receivedStatusMsg = e.data;
+    }
+  };
+
+  // Simulate follower tab subscribing to "/stream/status_sync"
+  sseMultiplexer.handleBroadcastMessage({
+    type: "SUBSCRIBE",
+    tabId: "tab_b",
+    path: "/stream/status_sync",
+  });
+
+  // Wait for the async connection open simulated by MockEventSource (5ms)
+  await new Promise((resolve) => setTimeout(resolve, 15));
+
+  assert.ok(receivedStatusMsg !== null, "Follower should receive current connection status on SUBSCRIBE");
+  assert.equal(receivedStatusMsg.status, "connected");
+  assert.equal(receivedStatusMsg.tabId, sseMultiplexer.tabId, "Broadcast message should contain leader's tabId");
+
+  // Verify same for SUBSCRIBERS_RESPONSE
+  receivedStatusMsg = null;
+  sseMultiplexer.handleBroadcastMessage({
+    type: "SUBSCRIBERS_RESPONSE",
+    tabId: "tab_b",
+    paths: ["/stream/status_sync"],
+  });
+
+  // Wait for any status update to complete
+  await new Promise((resolve) => setTimeout(resolve, 15));
+
+  assert.ok(receivedStatusMsg !== null, "Follower responding with active path should receive current connection status");
+  assert.equal(receivedStatusMsg.status, "connected");
+  assert.equal(receivedStatusMsg.tabId, sseMultiplexer.tabId, "Broadcast message should contain leader's tabId");
+
+  statusTestChannel.close();
+};
 
 const runTests = async () => {
   process.env.REACT_APP_API_URL = "https://api.example.test";
@@ -167,7 +220,10 @@ const runTests = async () => {
   assert.equal(analyticsSource.closed, true);
 
   // Test 5: Heartbeat mechanisms (PING/PONG and pruning)
-  // Override sseMultiplexer.channel to use MockBroadcastChannel because of ES Module import hoisting
+  // Replace the import-time channel so the test controls every active mock channel.
+  // Leaving the old channel open lets status broadcasts loop back into the same
+  // singleton through a stale listener, which creates recursive warning noise.
+  sseMultiplexer.channel?.close();
   sseMultiplexer.channel = new globalThis.BroadcastChannel("eventra_sse_multiplexer");
   sseMultiplexer.channel.onmessage = (e) => sseMultiplexer.handleBroadcastMessage(e.data);
 
@@ -220,6 +276,66 @@ const runTests = async () => {
 
   // Stop heartbeat checks
   sseMultiplexer.stopHeartbeatChecks();
+  if (sseMultiplexer.heartbeatInterval) {
+    clearInterval(sseMultiplexer.heartbeatInterval);
+    sseMultiplexer.heartbeatInterval = null;
+  }
+
+  // Test 6: localStorage fallback verifies ownership before accepting leadership
+  delete store.eventra_sse_leader_heartbeat;
+  sseMultiplexer.isLeader = false;
+  sseMultiplexer.localStorageLeadershipToken = null;
+  if (sseMultiplexer.localStorageClaimTimeout) {
+    clearTimeout(sseMultiplexer.localStorageClaimTimeout);
+    sseMultiplexer.localStorageClaimTimeout = null;
+  }
+
+  const originalRandom = Math.random;
+  Math.random = () => 0;
+  try {
+    sseMultiplexer.claimLocalStorageLeadership(0);
+    const firstClaim = JSON.parse(store.eventra_sse_leader_heartbeat);
+    assert.equal(firstClaim.tabId, sseMultiplexer.tabId);
+
+    store.eventra_sse_leader_heartbeat = JSON.stringify({
+      tabId: "competing_tab",
+      token: "competing-token",
+      timestamp: Date.now(),
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 35));
+    assert.equal(
+      sseMultiplexer.isLeader,
+      false,
+      "A tab must not become leader after another tab overwrites its claim"
+    );
+
+    delete store.eventra_sse_leader_heartbeat;
+    sseMultiplexer.claimLocalStorageLeadership(0);
+    await new Promise((resolve) => setTimeout(resolve, 35));
+    assert.equal(
+      sseMultiplexer.isLeader,
+      true,
+      "A tab should become leader when its claim token survives confirmation"
+    );
+  } finally {
+    Math.random = originalRandom;
+    sseMultiplexer.stopHeartbeatChecks();
+    sseMultiplexer.channel?.close();
+    followerChannel?.close();
+    channels.clear();
+    if (sseMultiplexer.heartbeatInterval) {
+      clearInterval(sseMultiplexer.heartbeatInterval);
+      sseMultiplexer.heartbeatInterval = null;
+    }
+    if (sseMultiplexer.localStorageClaimTimeout) {
+      clearTimeout(sseMultiplexer.localStorageClaimTimeout);
+      sseMultiplexer.localStorageClaimTimeout = null;
+    }
+    delete store.eventra_sse_leader_heartbeat;
+  }
+
+  await testStatusSyncOnSubscribe();
 
   console.log("🟢 All SSE Multiplexer unit tests completed successfully!");
 };

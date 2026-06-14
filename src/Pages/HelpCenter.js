@@ -640,7 +640,7 @@ const HelpCenter = () => {
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link
                 to="/contact"
-                className="inline-flex items-center justify-center gap-2 bg-white text-black font-semibold px-8 py-4 rounded-full shadow-lg hover:bg-gray-100 transition-transform duration-300"
+                className="inline-flex items-center justify-center gap-2 bg-white text-black dark:bg-slate-900 dark:text-white" font-semibold px-8 py-4 rounded-full shadow-lg hover:bg-gray-100 transition-transform duration-300 
               >
                 <Mail size={20} /> {t("helpCenter.ctaContactUs")}
               </Link>

@@ -7,10 +7,9 @@ import { useTranslation } from "react-i18next";
 const MotionLink = motion(Link);
 
 // ✅ MAINTAINABILITY: Extracted repeated classes
-const CARD_BASE_CLASSES = "group bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 flex flex-col items-center gap-4 shadow-md hover:shadow-lg transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0C0C1F]";
+const CARD_BASE_CLASSES =
+  "group bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 flex flex-col items-center gap-4 shadow-md hover:shadow-lg transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0C0C1F]";
 const ICON_CLASSES = "w-10 h-10";
-
-
 
 export default function FAQCTA() {
   const { t } = useTranslation();
@@ -44,11 +43,8 @@ export default function FAQCTA() {
   const shouldReduceMotion = useReducedMotion();
 
   return (
-    <section
-      className="relative bg-gradient-to-tr from-[#0C0C1F] via-[#1A1F36] to-[#0B1E2E] py-16 px-8 sm:px-12 lg:px-20 overflow-hidden m-8 rounded-3xl"
-      aria-labelledby="faq-cta-heading"
-    >
-      <div className="relative max-w-6xl mx-auto text-center m-4">
+    <section className="relative z-10 bg-gradient-to-tr from-[#0C0C1F] via-[#1A1F36] to-[#0B1E2E] py-16 px-6 sm:px-8 lg:px-12 overflow-visible mt-16 mb-12 mx-auto max-w-5xl rounded-3xl">
+      <div className="relative max-w-4xl mx-auto text-center">
         {/* Tag */}
         <motion.div
           className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-6 py-1 mb-8 justify-center mx-auto border border-white/20"
@@ -65,7 +61,7 @@ export default function FAQCTA() {
         {/* Main heading */}
         <motion.h2
           id="faq-cta-heading"
-          className="text-4xl sm:text-5xl font-extrabold text-white mb-12 tracking-tight"
+          className="text-4xl sm:text-5xl font-extrabold text-white mb-10 tracking-tight"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
@@ -75,7 +71,7 @@ export default function FAQCTA() {
 
         {/* Glass cards */}
         <motion.div
-          className="grid grid-cols-1 sm:grid-cols-3 gap-8 mt-10"
+          className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-8"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
@@ -93,10 +89,8 @@ export default function FAQCTA() {
               aria-label={`${card.title}: ${card.description}`}
             >
               {card.icon}
-              <h3 className="text-white font-semibold text-lg text-center">
-                {card.title}
-              </h3>
-              <p className="text-white/70 text-sm text-center">
+              <h3 className="text-white font-semibold text-lg text-center">{card.title}</h3>
+              <p className="text-white/70 text-sm text-center leading-relaxed">
                 {card.description}
               </p>
             </MotionLink>
@@ -106,21 +100,3 @@ export default function FAQCTA() {
     </section>
   );
 }
-
-/*
- * ============================================================================
- * ACCESSIBILITY & QUALITY CHECKLIST - FAQCTA Component
- * ============================================================================
- * ✅ All decorative icons: aria-hidden="true" (prevents screen reader noise)
- * ✅ Section: aria-labelledby="faq-cta-heading" (links section to heading)
- * ✅ Heading: id="faq-cta-heading" (unique, descriptive identifier)
- * ✅ Grid container: role="list" (semantic structure for assistive tech)
- * ✅ Cards: role="listitem" + aria-label (clear context for navigation)
- * ✅ Interactive: focus-visible ring preserved, hover/tap respects reduced-motion
- * 
- * 🔄 Testing:
- * 1. VoiceOver/ChromeVox → Icons skipped, heading announced properly
- * 2. Keyboard Tab → Focus rings visible, Enter triggers navigation/scroll
- * 3. DevTools → Set `prefers-reduced-motion: reduce` → Animations disabled
- * ============================================================================
- */
