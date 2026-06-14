@@ -105,6 +105,11 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
   // then schedules a debounced validation run. Uses optionsRef so this callback
   // is never recreated when debounceMs or validateOnBlur changes.
   const handleChange = useCallback((e) => {
+    // 🔥 FIX: guard against null / non-DOM events. Custom inputs that emit
+    // synthetic events without a .target field would otherwise throw a
+    // TypeError on the destructuring below.
+    if (!e || !e.target) return;
+
     const { name, value } = e.target;
 
     setValues((prev) => ({ ...prev, [name]: value }));
