@@ -93,6 +93,7 @@ Set at least one backend URL before starting the app. `VITE_API_URL` is preferre
 | `KV_REST_API_URL` | Production (one of) | Upstash Redis REST API URL for distributed rate limiting |
 | `KV_REST_API_TOKEN` | Production (with KV) | Upstash Redis REST API token |
 | `RATE_LIMIT_MODE` | No | Override rate limiting mode: "distributed" (default in prod) or "memory" (dev/test only) |
+| `DATABASE_URL` | Yes (server-side, production) | Database connection URL for persistent authentication storage |
 | `BLOCKED_COUNTRIES` | No (server-side) | Comma-separated ISO 3166-1 alpha-2 country codes to block |
 | `ALLOWED_ORIGINS` | No (server-side) | Comma-separated list of allowed CORS origins for API access |
 
@@ -175,6 +176,7 @@ REACT_APP_API_URL=https://api-tertiary.example.com
 | `RATE_LIMIT_REDIS_URL` | Production (one of) | Redis connection URL for distributed rate limiting. Use for self-hosted Redis or Upstash Redis. |
 | `KV_REST_API_URL` | Production (one of) | Upstash Redis REST API URL for distributed rate limiting. Use for Vercel deployments. |
 | `KV_REST_API_TOKEN` | Production (with KV) | Upstash Redis REST API token. Required when using KV_REST_API_URL. |
+| `DATABASE_URL` | **Yes (production)** | Database connection URL for persistent authentication storage. Required in production to prevent data loss on serverless cold starts. |
 
 Examples:
 
@@ -215,6 +217,7 @@ RATE_LIMIT_REDIS_URL=rediss://user:password@host:port
 ## Security Notes
 
 - **JWT_SECRET is mandatory**: The application enforces fail-closed security. Missing JWT_SECRET will cause the application to reject all requests with a 500 error. Never deploy without setting this variable.
+- **DATABASE_URL or KV_REST_API_URL is mandatory in production**: The application enforces fail-closed security for authentication storage. Without persistent storage, all user accounts are lost on server restart. Never deploy production without setting one of these variables.
 - Generate JWT_SECRET using: `openssl rand -base64 32`
 - **Distributed rate limiting is required in production**: Without `RATE_LIMIT_REDIS_URL` or `KV_REST_API_URL`/`KV_REST_API_TOKEN`, the build will FAIL and the application will reject requests with a 500 error in production. This prevents silent security bypasses.
 - **RATE_LIMIT_MODE=memory is not allowed in production**: Build validation will fail if this is set in production. Use distributed storage only.

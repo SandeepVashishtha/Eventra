@@ -210,6 +210,9 @@ function createFailClosedLimiter(message) {
     check(key) {
       throw new Error(message);
     },
+    async checkAsync(key) {
+      throw new Error(message);
+    },
   };
 }
 

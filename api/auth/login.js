@@ -21,8 +21,7 @@ import { getClientIp } from "../lib/getClientIp.js";
 import { loginRateLimiter, enforceRateLimit } from "../lib/rateLimiter.js";
 import { getJwtSecret, JWT_EXPIRES_IN, JWT_COOKIE_MAX_AGE_SECONDS } from "./jwt-config.js";
 import { buildCorsHeaders, corsResponse } from "./cors.js";
-import { isPersistentStorageConfigured } from "./storage-config.js";
-import { users, usersByUsername } from "./signup.js";
+import { isStorageHealthy, getUserByEmail, getUserByUsername } from "./user-storage.js";
 
 /**
  * Validates the login request body.
@@ -145,15 +144,38 @@ export default async function login(req, res, deps = {}) {
     return corsResponse(req, res, 400, { error: validation.message });
   }
 
-  if (!users || !usersByUsername) {
-    console.error("[login.js] Authentication service unavailable: storage not initialized");
+  // Runtime protection: Reject requests if storage is unavailable
+  const storageHealthy = await isStorageHealthy();
+  if (!storageHealthy) {
+    console.error("[login.js] Authentication service unavailable: storage not healthy");
     return corsResponse(req, res, 500, { error: "Authentication service unavailable" });
   }
 
   const usernameOrEmail = req.body.usernameOrEmail || req.body.email;
   const { password } = req.body;
 
-  const mergedDeps = { ...createDefaultDeps(), ...deps };
+  const {
+    findUserByEmail = async (ident) => {
+      const normalized = ident.trim().toLowerCase();
+      const userByEmail = await getUserByEmail(normalized);
+      if (userByEmail) return userByEmail;
+      return await getUserByUsername(normalized);
+    },
+    comparePassword = async (plain, hash) => {
+      return bcrypt.compare(plain, hash);
+    },
+    issueToken = (user) => {
+      const jwtPayload = {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        roles: user.roles || ["USER"],
+      };
+      return jwt.sign(jwtPayload, getJwtSecret(), { expiresIn: JWT_EXPIRES_IN });
+    },
+  } = deps;
+
+  const mergedDeps = { findUserByEmail, comparePassword, issueToken, ...deps };
 
   try {
     const user = await mergedDeps.findUserByEmail(usernameOrEmail);
@@ -179,4 +201,3 @@ export default async function login(req, res, deps = {}) {
     return corsResponse(req, res, 500, { error: "Internal server error" });
   }
 }
-export { users };

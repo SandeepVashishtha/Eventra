@@ -3,38 +3,16 @@ import jwt from "jsonwebtoken";
 import { getJwtSecret, JWT_EXPIRES_IN, JWT_COOKIE_MAX_AGE_SECONDS } from "./jwt-config.js";
 import { signupRateLimiter } from "../lib/rateLimiter.js";
 import { buildCorsHeaders, corsResponse } from "./cors.js";
-import { assertPersistentStorageConfigured, isInMemoryStorageAllowed } from "./storage-config.js";
-
+import { assertPersistentStorageConfigured } from "./storage-config.js";
+import { createUser, getUserByEmail, isStorageHealthy } from "./user-storage.js";
 
 // ---------------------------------------------------------------------------
 // In-memory user storage
 // ---------------------------------------------------------------------------
-// WARNING: This Map is module-level and resets to empty on every serverless
-// cold start (Vercel, AWS Lambda, etc.). All registered accounts are lost
-// on restart, causing previously valid credentials to return 401.
-//
-// This store is suitable for local development only. For any deployed
-// environment, replace this Map with a durable database (Supabase, MongoDB,
-// PlanetScale, etc.) and update login.js and google.js accordingly.
-//
-// See GitHub issue #4195 for full details on the production impact.
+// Storage Configuration
 // ---------------------------------------------------------------------------
-
 // Fail-fast: Prevent production startup without persistent storage
 assertPersistentStorageConfigured();
-
-// Only create in-memory Maps if allowed (development/testing)
-let users, usersById, usersByUsername;
-if (isInMemoryStorageAllowed()) {
-  users = new Map();
-  usersById = new Map();
-  usersByUsername = new Map();
-} else {
-  // Production: Maps remain undefined - must use persistent storage
-  users = null;
-  usersById = null;
-  usersByUsername = null;
-}
 
 // ---------------------------------------------------------------------------
 // JWT Configuration
@@ -67,7 +45,8 @@ const validateName = (name) => {
 const validatePassword = (password) => {
   if (!password) return { valid: false, message: "Password is required" };
   if (password.length < 8) return { valid: false, message: "Password must be at least 8 characters long" };
-  
+
+  // Check password strength (must meet all 5 criteria)
   const criteria = [
     /.{8,}/,
     /[A-Z]/,
@@ -75,15 +54,16 @@ const validatePassword = (password) => {
     /\d/,
     /[!@#$%^&*(),.?":{}|<>]/,
   ];
-  
-  const metCriteria = criteria.filter(c => c.test(password));
+
+  const metCriteria = criteria.filter((c) => c.test(password));
   if (metCriteria.length < 5) {
     return {
       valid: false,
-      message: "Password must meet all 5 security criteria: 8+ characters, uppercase, lowercase, number, and special character"
+      message:
+        "Password must meet all 5 security criteria: 8+ characters, uppercase, lowercase, number, and special character",
     };
   }
-  
+
   return { valid: true };
 };
 
@@ -205,8 +185,10 @@ async function handler(req, res) {
   }
 
   try {
-    if (!users || !usersById || !usersByUsername) {
-      console.error("[signup.js] Authentication service unavailable: storage not initialized");
+    // Runtime protection: Reject requests if storage is unavailable
+    const storageHealthy = await isStorageHealthy();
+    if (!storageHealthy) {
+      console.error("[signup.js] Authentication service unavailable: storage not healthy");
       return corsResponse(req, res, 500, { error: "Authentication service unavailable" });
     }
 
@@ -229,7 +211,8 @@ async function handler(req, res) {
     // Check for duplicate email
     // -----------------------------------------------------------------------
 
-    if (users.has(normalizedEmail)) {
+    const existingUser = await getUserByEmail(normalizedEmail);
+    if (existingUser) {
       return corsResponse(req, res, 409, { error: "An account with this email already exists" });
     }
 
@@ -287,16 +270,8 @@ async function handler(req, res) {
       isActive: true,
     };
 
-    // Store user (in production, save to database)
-    if (!users || !usersById || !usersByUsername) {
-      console.error("[signup.js] Authentication service unavailable: storage not initialized");
-      return corsResponse(req, res, 500, { error: "Authentication service unavailable" });
-    }
-    users.set(normalizedEmail, newUser);
-    usersById.set(userId, newUser);
-    if (newUser.username) {
-      usersByUsername.set(newUser.username.toLowerCase(), newUser);
-    }
+    // Store user using storage abstraction layer
+    await createUser(newUser);
 
     // -----------------------------------------------------------------------
     // Generate JWT token
@@ -331,17 +306,11 @@ async function handler(req, res) {
       message: "Account created successfully",
       ...userResponse,
     });
-
   } catch (error) {
     console.error("Signup Error:", error);
     return corsResponse(req, res, 500, { error: "Internal server error. Please try again later." });
   }
 }
-
-// ---------------------------------------------------------------------------
-// Export users map for sharing with login.js (development purposes)
-// In production, replace with actual database
-// ---------------------------------------------------------------------------
 
 export default handler;
 export { users, usersById, usersByUsername };

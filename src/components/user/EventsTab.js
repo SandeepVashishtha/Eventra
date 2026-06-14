@@ -202,7 +202,7 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
       </span>
     </motion.div>
   );
-};
+});
 
 const WaitlistCard = memo(({ event, index, onLeaveWaitlist }) => {
   const prefersReducedMotion = useReducedMotion();
@@ -281,6 +281,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const [waitlistEvents, setWaitlistEvents] = useState([]);
   const [recentEvents, setRecentEvents] = useState([]);
   useEffect(() => {
+    setIsLoading(true);
     if (user) {
       import("../../utils/waitlistUtils.js").then(({ getGlobalWaitlist }) => {
         const records = getGlobalWaitlist();
@@ -308,8 +309,15 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
             };
           });
           setWaitlistEvents(resolved);
-        }).catch(() => setWaitlistEvents([]));
-      }).catch(() => setWaitlistEvents([]));
+          setIsLoading(false);
+      }).catch(() => {
+  setWaitlistEvents([]);
+  setIsLoading(false);
+});
+     }).catch(() => {
+  setWaitlistEvents([]);
+  setIsLoading(false);
+});
     } else {
       setWaitlistEvents([]);
     }
