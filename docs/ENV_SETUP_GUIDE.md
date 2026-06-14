@@ -168,6 +168,9 @@ REACT_APP_API_URL=https://api-tertiary.example.com
 | Variable | Required | Purpose |
 | --- | --- | --- |
 | `JWT_SECRET` | **Yes** | JWT signing secret for authentication. This is MANDATORY - the application will NOT start or handle requests without it. There is NO fallback secret. |
+| `DATABASE_URL` | **Yes (production)** | Redis connection string for persistent authentication storage. Required in production to prevent user account loss on restart. |
+| `KV_REST_API_URL` | **Yes (production)** | Alternative to DATABASE_URL for Vercel KV Redis storage. Required in production if DATABASE_URL is not set. |
+| `KV_REST_API_TOKEN` | **Yes (production with KV)** | Authentication token for Vercel KV REST API. Required when using KV_REST_API_URL. |
 
 Examples:
 
@@ -184,6 +187,7 @@ BACKEND_URL=https://api.example.com
 ## Security Notes
 
 - **JWT_SECRET is mandatory**: The application enforces fail-closed security. Missing JWT_SECRET will cause the application to reject all requests with a 500 error. Never deploy without setting this variable.
+- **DATABASE_URL or KV_REST_API_URL is mandatory in production**: The application enforces fail-closed security for authentication storage. Without persistent storage, all user accounts are lost on server restart. Never deploy production without setting one of these variables.
 - Generate JWT_SECRET using: `openssl rand -base64 32`
 - Never place private secrets in `REACT_APP_*` or `VITE_*` variables.
 - Values prefixed with `REACT_APP_` or `VITE_` are exposed in the browser bundle.
