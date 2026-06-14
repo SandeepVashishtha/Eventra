@@ -68,6 +68,23 @@ const SessionGroup = ({ date, sessions, bookmarkedSessions, toggleBookmark }) =>
     </div>
   </div>
 );
+const groupSessionsByDate = (sessions) => {
+  return sessions.reduce((acc, session) => {
+    const date = session.date || 'To be announced';
+    if (!acc[date]) acc[date] = [];
+    acc[date].push(session);
+    return acc;
+  }, {});
+};
+
+const getSortedDates = (groupedSessions) => {
+  return Object.keys(groupedSessions).sort((a, b) => {
+    if (a === 'To be announced') return 1;
+    if (b === 'To be announced') return -1;
+    return a.localeCompare(b);
+  });
+};
+
 export default function EventAgenda({ sessions = [] }) {
   const [bookmarkedSessions, setBookmarkedSessions] = useState(() => {
     try {
@@ -97,22 +114,8 @@ export default function EventAgenda({ sessions = [] }) {
     return null;
   }
 
-  // Group sessions by date
-  const groupedSessions = sessions.reduce((acc, session) => {
-    const date = session.date || 'To be announced';
-    if (!acc[date]) {
-      acc[date] = [];
-    }
-    acc[date].push(session);
-    return acc;
-  }, {});
-
-  // Sort dates
-  const sortedDates = Object.keys(groupedSessions).sort((a, b) => {
-    if (a === 'To be announced') return 1;
-    if (b === 'To be announced') return -1;
-    return a.localeCompare(b);
-  });
+  const groupedSessions = groupSessionsByDate(sessions);
+  const sortedDates = getSortedDates(groupedSessions);
 
   return (
     <div className="mt-8">
