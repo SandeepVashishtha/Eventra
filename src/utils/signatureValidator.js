@@ -22,7 +22,7 @@ export function validateSignature(
 
   const age = now - Number(timestamp);
 
-  if (age > MAX_REQUEST_AGE_MS) {
+  if (Math.abs(age) > MAX_REQUEST_AGE_MS) {
     return {
       valid: false,
       error: "Expired request",
