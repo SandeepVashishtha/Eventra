@@ -17,11 +17,18 @@ import { apiUtils } from "../config/api.js";
 export const createAsyncValidator = (asyncValidatorFn, debounceMs = 300) => {
   let timeoutId;
 
-  return async function asyncValidator(value, ...args) {
-    return new Promise((resolve) => {
+  const cancel = () => {
+    if (timeoutId) {
       clearTimeout(timeoutId);
+      timeoutId = null;
+    }
+  };
 
+  const asyncValidator = async function asyncValidator(value, ...args) {
+    return new Promise((resolve) => {
+      cancel();
       timeoutId = setTimeout(async () => {
+        timeoutId = null;
         try {
           const result = await asyncValidatorFn(value, ...args);
           resolve(result);
@@ -31,6 +38,13 @@ export const createAsyncValidator = (asyncValidatorFn, debounceMs = 300) => {
       }, debounceMs);
     });
   };
+
+  // 🔥 FIX: expose .cancel() so consumers can clear pending timeouts on
+  // unmount. Without this, a field that is removed from the form leaves a
+  // pending timeout that resolves into a stale validator call.
+  asyncValidator.cancel = cancel;
+
+  return asyncValidator;
 };
 
 /**
@@ -43,8 +57,17 @@ export const createAsyncValidator = (asyncValidatorFn, debounceMs = 300) => {
  * @returns {Function} Retry-enabled async validator
  */
 export const withRetry = (validatorFn, maxRetries = 3, initialDelay = 1000) => {
+  // 🔥 FIX: refuse to run with maxRetries <= 0. Previously a 0-retry call
+  // would skip the for-loop body, leave `lastError` undefined, and
+  // `throw lastError` would throw `undefined` (a silent failure).
+  if (!Number.isFinite(maxRetries) || maxRetries < 1) {
+    throw new TypeError(
+      `withRetry requires maxRetries >= 1 (got ${maxRetries})`
+    );
+  }
+
   return async function retryValidator(value, ...args) {
-    let lastError;
+    let lastError = new Error("withRetry: no attempts executed");
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
