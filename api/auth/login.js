@@ -19,6 +19,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { getClientIp } from "../_lib/getClientIp.js";
 import { loginRateLimiter, enforceRateLimit } from "../_lib/rateLimiter.js";
+import { enforceBodySize } from "../_lib/bodySize.js";
 import { getJwtSecret, JWT_EXPIRES_IN, JWT_COOKIE_MAX_AGE_SECONDS } from "./_jwt-config.js";
 import { buildCorsHeaders, corsResponse } from "./_cors.js";
 import { isStorageHealthy, getUserByEmail, getUserByUsername } from "./_user-storage.js";
@@ -118,6 +119,8 @@ export default async function login(req, res, deps = {}) {
   if (req.method && req.method !== "POST") {
     return corsResponse(req, res, 405, { error: "Method not allowed" });
   }
+
+  if (enforceBodySize(req, res)) return;
 
   const clientIp = getClientIp(req);
   try {

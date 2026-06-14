@@ -17,6 +17,11 @@
 
 import { checkCapacity } from "../_lib/capacityValidator.js";
 import { withLock } from "../_lib/distributed-lock.js";
+import { enforceBodySize } from "../_lib/bodySize.js";
+
+// Concurrency lock for RSVP
+const rsvpLocks = new Map();
+const rsvpLockCounters = new Map();
 
 /**
  * Registration handler.
@@ -37,6 +42,8 @@ export default async function registerForEvent(req, res, deps = {}) {
     res.status(405).json({ error: "Method not allowed" });
     return;
   }
+
+  if (enforceBodySize(req, res)) return;
 
   const {
     getEventById,
