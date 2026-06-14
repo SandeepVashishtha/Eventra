@@ -110,6 +110,21 @@ const getErrorMessage = (error) => {
   return `Failed to create event. ${error.message || "Please try again."}`;
 };
 
+const getDraftMessage = (saved, isDuplicateDraft) => {
+  if (isDuplicateDraft) {
+    return "A duplicated event draft is ready. Would you like to restore it and continue editing?";
+  }
+  try {
+    const parsed = safeJsonParse(saved, {});
+    if (parsed?.savedAt) {
+      return `A previously saved event draft was found (saved ${formatDraftAge(parsed.savedAt)}). Would you like to restore it?`;
+    }
+  } catch {
+    // Keep default message
+  }
+  return "A previously saved event draft was found. Would you like to restore it?";
+};
+
 const useDraftManager = (formData, setFormData) => {
   const location = useLocation();
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
@@ -121,25 +136,9 @@ const useDraftManager = (formData, setFormData) => {
 
   useEffect(() => {
     const saved = localStorage.getItem(DRAFT_KEY);
-    const isDuplicateDraft = location.state?.duplicateDraft;
-
     if (saved) {
       setShowRestoreModal(true);
-      if (isDuplicateDraft) {
-        setRestoreDraftMessage(
-          "A duplicated event draft is ready. Would you like to restore it and continue editing?"
-        );
-      } else {
-        try {
-          const parsed = safeJsonParse(saved, {});
-          const savedAt = parsed?.savedAt;
-          setRestoreDraftMessage(
-            `A previously saved event draft was found${savedAt ? ` (saved ${formatDraftAge(savedAt)})` : ""}. Would you like to restore it?`
-          );
-        } catch {
-          // keep default message
-        }
-      }
+      setRestoreDraftMessage(getDraftMessage(saved, location.state?.duplicateDraft));
     }
     setIsDraftLoaded(true);
   }, [location.state]);
@@ -410,81 +409,7 @@ const EventCreation = () => {
         onDiscard={handleDiscardDraft}
         message={restoreDraftMessage}
       />
-      {showRestoreModal && (
-        <div
-          className="
-      fixed inset-0 z-50
-      flex items-center justify-center
-      bg-black/50
-      px-4
-    "
-        >
-          <div
-            className="
-        w-full max-w-md
-        bg-white dark:bg-gray-900
-        rounded-3xl
-        p-8
-        shadow-2xl
-        border border-gray-200
-        dark:border-gray-700
-      "
-          >
-            <h2
-              className="
-          text-2xl font-bold
-          text-gray-900 dark:text-white
-          mb-3
-        "
-            >
-              Restore Draft?
-            </h2>
 
-            <p
-              className="
-          text-gray-600 dark:text-gray-400
-          mb-6
-        "
-            >
-              A previously saved event draft was found. Would you like to restore it?
-            </p>
-
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={handleDiscardDraft}
-                className="
-            px-4 py-2
-            rounded-xl
-            border border-gray-300
-            dark:border-gray-700
-            hover:bg-gray-100
-            dark:hover:bg-gray-800
-            transition
-          "
-                aria-label="button"
-              >
-                Discard
-              </button>
-
-              <button
-                onClick={handleRestoreDraft}
-                className="
-            px-5 py-2
-            rounded-xl
-            bg-indigo-600
-            hover:bg-indigo-700
-            text-white
-            font-medium
-            transition
-          "
-                aria-label="button"
-              >
-                Restore Draft
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {currentStep === CREATION_STEPS.FORM ? (
         <>
@@ -675,72 +600,7 @@ const EventCreation = () => {
                 onAdd={addTag}
                 onRemove={removeTag}
               />
-              {/* Tags Section */}
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 1.0 }}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <TagIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Tags
-                  </label>
-                </div>
-                <div className="flex gap-2 mb-3">
-                  <input
-                    type="text"
-                    value={newTag}
-                    onChange={(e) => setNewTag(e.target.value)}
-                    placeholder="Add a tag"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        addTag();
-                      }
-                    }}
-                    className="flex-1 text-sm border border-gray-300 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={addTag}
-                    className="
-        flex items-center justify-center gap-2
-        px-4 py-2
-        rounded-3xl font-semibold
-        text-white
-        bg-black
-        shadow-md hover:shadow-lg
-        hover:bg-zinc-800
-        transform hover:scale-[1.03] active:scale-[0.97]
-        transition-all duration-300
-        focus:ring-2 focus:ring-offset-2 focus:ring-indigo-400 text-sm
-      "
-                    aria-label="button"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {formData.tags.map((tag, index) => (
-                    <span
-                      key={index}
-                      className="inline-flex items-center gap-1 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full text-sm font-medium"
-                    >
-                      #{tag}
-                      <button
-                        type="button"
-                        onClick={() => removeTag(tag)}
-                        className="ml-1 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 font-bold"
-                      >
-                        ├ù
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              </motion.div>
+
 
               <motion.button
                 type="button"
