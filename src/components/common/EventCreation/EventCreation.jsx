@@ -318,7 +318,7 @@ const useEventNavigation = (formData, setErrors, currentStep, setCurrentStep) =>
   return { handleNext };
 };
 
-const useEventSubmission = (formData, setFormData, setErrors, setNewTag, setCurrentStep, submitEventForm) => {
+const useEventSubmission = ({ formData, setFormData, setErrors, setNewTag, setCurrentStep, submitEventForm }) => {
   const createEvent = () => {
     try {
       const eventData = generateEventDataPayload(formData);
@@ -629,7 +629,7 @@ const EventCreation = () => {
   const { handleImageUpload } = useEventImageUpload(setFormData, errors, setErrors);
   const { addTag, removeTag } = useEventTags(formData, setFormData, newTag, setNewTag);
   const { handleNext } = useEventNavigation(formData, setErrors, currentStep, setCurrentStep);
-  const { createEvent, resetForm } = useEventSubmission(formData, setFormData, setErrors, setNewTag, setCurrentStep, submitEventForm);
+  const { createEvent, resetForm } = useEventSubmission({ formData, setFormData, setErrors, setNewTag, setCurrentStep, submitEventForm });
 
 
 
