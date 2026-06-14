@@ -243,8 +243,13 @@ const TICKET_ROLES = new Set([
   "EVENT_MANAGER",
 ]);
 
+const MAX_COOKIE_SIZE = 4096; // 4KB
+
 const parseTokenFromCookie = (request) => {
   const cookieHeader = request.headers.get("cookie") || "";
+  if (cookieHeader.length > MAX_COOKIE_SIZE) {
+    return null;
+  }
   const tokenMatch = cookieHeader.match(/(?:^|;\s*)token\s*=\s*([^;]*)/);
   return tokenMatch ? tokenMatch[1] : null;
 };
