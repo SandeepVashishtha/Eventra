@@ -145,18 +145,78 @@ function EventDetailModal({ event, onClose }) {
   );
 }
 
+function YearSection({ year, events, onSelect }) {
+  if (!events.length) return null;
+
+  return (
+    <div>
+      <div className="flex items-center gap-3 mb-4">
+        <Calendar className="w-5 h-5 text-indigo-500" />
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+          {year}
+        </h2>
+        <span className="text-sm text-gray-400">
+          {events.length} event{events.length !== 1 ? 's' : ''}
+        </span>
+        <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {events.map(event => (
+          <ArchiveCard
+            key={event.id}
+            event={event}
+            onClick={onSelect}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function filterEvents(events, selectedYear, selectedCategory, search) {
+  return events.filter(event => {
+    if (
+      selectedYear !== 'All' &&
+      event.year !== Number(selectedYear)
+    ) {
+      return false;
+    }
+
+    if (
+      selectedCategory !== 'All' &&
+      event.category !== selectedCategory
+    ) {
+      return false;
+    }
+
+    if (
+      search &&
+      !event.title.toLowerCase().includes(search.toLowerCase())
+    ) {
+      return false;
+    }
+
+    return true;
+  });
+}
+
 export default function EventArchivePage() {
   const [selectedYear, setSelectedYear] = useState('All');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [search, setSearch] = useState('');
   const [selectedEvent, setSelectedEvent] = useState(null);
 
-  const filtered = useMemo(() => ARCHIVED_EVENTS.filter(e => {
-    if (selectedYear !== 'All' && e.year !== Number(selectedYear)) return false;
-    if (selectedCategory !== 'All' && e.category !== selectedCategory) return false;
-    if (search && !e.title.toLowerCase().includes(search.toLowerCase())) return false;
-    return true;
-  }), [selectedYear, selectedCategory, search]);
+  const filtered = useMemo(
+  () =>
+    filterEvents(
+      ARCHIVED_EVENTS,
+      selectedYear,
+      selectedCategory,
+      search
+    ),
+  [selectedYear, selectedCategory, search]
+);
 
   const totalStats = useMemo(() => ({
     events: ARCHIVED_EVENTS.length,
@@ -213,23 +273,18 @@ export default function EventArchivePage() {
         </div>
 
         {/* Year Groups */}
-        {YEARS.filter(y => selectedYear === 'All' || y === Number(selectedYear)).map(year => {
-          const yearEvents = filtered.filter(e => e.year === year);
-          if (!yearEvents.length) return null;
-          return (
-            <div key={year}>
-              <div className="flex items-center gap-3 mb-4">
-                <Calendar className="w-5 h-5 text-indigo-500" />
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">{year}</h2>
-                <span className="text-sm text-gray-400">{yearEvents.length} event{yearEvents.length !== 1 ? 's' : ''}</span>
-                <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                {yearEvents.map(event => <ArchiveCard key={event.id} event={event} onClick={setSelectedEvent} />)}
-              </div>
-            </div>
-          );
-        })}
+        {YEARS.filter(
+  year =>
+    selectedYear === 'All' ||
+    year === Number(selectedYear)
+).map(year => (
+  <YearSection
+    key={year}
+    year={year}
+    events={filtered.filter(event => event.year === year)}
+    onSelect={setSelectedEvent}
+  />
+))}
 
         {filtered.length === 0 && (
           <div className="text-center py-16 text-gray-400">
