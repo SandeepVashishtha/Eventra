@@ -1,10 +1,13 @@
 import { useState, useEffect, lazy, Suspense } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import * as Sentry from "@sentry/react";
+import { Analytics } from "@vercel/analytics/react";
 import "./App.css";
 import "./styles/reduced-motion.css";
 import "./styles/print.css";
 import { toast } from "react-toastify";
+import EnvironmentSecurityDashboard from "./components/dev/EnvironmentSecurityDashboard";
 
 // Critical path - loaded eagerly (needed before first paint)
 import Navbar from "./components/navbar/Navbar";
@@ -40,7 +43,7 @@ const SavedEventsPage = lazy(() => import("./Pages/SavedEventsPage"));
 const EventRecommendation = lazy(() => import("./Pages/EventRecommendation/EventRecommendation"));
 const MatchmakingHub = lazy(() => import("./Pages/Networking/MatchmakingHub"));
 const EventDetails = lazy(() => import("./Pages/Events/EventDetails"));
-const ExploreEvents = lazy(() => import("./Pages/Events/EventsPage"));
+// const ExploreEvents = lazy(() => import("./Pages/Events/EventsPage"));
 const EventsPage = lazy(() => import("./Pages/Events/EventsPage"));
 
 // Non-critical UI - deferred after first paint
@@ -48,11 +51,11 @@ const FluidCursor = lazy(() => import("./components/visual/FluidCursor"));
 const KeyboardShortcutsModal = lazy(() => import("./components/common/KeyboardShortcutsModal"));
 const OnboardingChecklist = lazy(() => import("./components/user/OnboardingChecklist"));
 const FeedbackButton = lazy(() => import("./components/FeedbackButton"));
-const ScrollToTopButton = lazy(() => import("./components/ScrollToTopButton"));
 const BackToTop = lazy(() => import("./components/common/BackToTop"));
 const ReminderChecker = lazy(() => import("./components/reminders/ReminderChecker"));
 const SessionRecovery = lazy(() => import("./components/SessionRecovery"));
-const ComparativeAnalytics = lazy(() => import("./components/Analytics/ComparativeAnalyticsDashboard"));
+const ThemeCustomizer = lazy(() => import("./components/Layout/ThemeCustomizer"));
+// const ComparativeAnalytics = lazy(() => import("./components/Analytics/ComparativeAnalyticsDashboard"));
 
 
 const OfflineSyncManager = () => {
@@ -280,14 +283,13 @@ function App() {
                 </ErrorBoundary>
 
                 <Suspense fallback={null}>
-                  <ScrollToTopButton />
-                </Suspense>
-                {/* Enhanced back-to-top with progress ring - appears at 400px */}
-                <Suspense fallback={null}>
                   <BackToTop />
                 </Suspense>
                 <Suspense fallback={null}>
                   <FeedbackButton />
+                </Suspense>
+                <Suspense fallback={null}>
+                  <ThemeCustomizer />
                 </Suspense>
                 <Suspense fallback={null}>
                   <SessionRecovery />
@@ -300,7 +302,10 @@ function App() {
                     </Suspense>
                 </ErrorBoundary>
                 )}
+
+                {import.meta.env.DEV && <ErrorButton />}
               </div>
+              <Analytics />
             </SessionRecoveryProvider>
           </MyEventsProvider>
         </NotificationProvider>
@@ -308,4 +313,56 @@ function App() {
     </ErrorBoundary>
   );
 }
+
+function ErrorButton() {
+  const [onboardingHeight, setOnboardingHeight] = useState(0);
+
+  useEffect(() => {
+    const handleStateChange = (e) => {
+      if (e.detail && typeof e.detail.height === "number") {
+        setOnboardingHeight(e.detail.height);
+      }
+    };
+    window.addEventListener("eventraOnboardingStateChange", handleStateChange);
+
+    // Initial check
+    const checklist = document.querySelector('[data-onboarding-checklist]');
+    if (checklist) {
+      const rect = checklist.getBoundingClientRect();
+      setOnboardingHeight(window.innerHeight - rect.top);
+    }
+
+    return () => {
+      window.removeEventListener("eventraOnboardingStateChange", handleStateChange);
+    };
+  }, []);
+
+  const bottomOffset = onboardingHeight > 0 ? onboardingHeight + 16 : 24;
+
+  return (
+    <button
+      onClick={() => {
+        throw new Error('This is your first error!');
+      }}
+      style={{
+        position: "fixed",
+        bottom: `${bottomOffset}px`,
+        left: "26px",
+        zIndex: 9999,
+        padding: "10px 15px",
+        backgroundColor: "#e11d48",
+        color: "white",
+        border: "none",
+        borderRadius: "5px",
+        cursor: "pointer",
+        fontWeight: "bold",
+        boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+        transition: "bottom 0.3s ease-out",
+      }}
+    >
+      Break the world
+    </button>
+  );
+}
+
 export default App;

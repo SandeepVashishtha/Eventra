@@ -70,19 +70,19 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
     };
   }, [vertical]);
 
-  const getNavLinkClasses = (active, isSecondary = false, isDropdown = false) => {
+  const getNavLinkClasses = (active, isDropdown = false) => {
     return vertical
       ? `mobile-drawer-link flex min-h-[44px] gap-2 items-center text-sm font-medium transition-all duration-200 w-full py-2 px-3 border-l-2 rounded-lg focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 ${
           active
             ? "text-text border-primary font-semibold bg-bg-secondary"
             : "text-slate-600 dark:text-slate-300 hover:text-text border-transparent hover:bg-bg"
         }`
-      : `flex gap-1.5 items-center text-[12px] lg:text-[13px] font-normal uppercase tracking-[0.03em] transition-all duration-200 px-3 py-2 border-b-2 rounded-t-md whitespace-nowrap focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:rounded-lg ${
+      : `flex gap-0.5 items-center text-[12px] lg:text-[13px] font-normal uppercase tracking-[0.03em] transition-all duration-200 px-1 py-0.5 border-b-2 rounded-t-md whitespace-nowrap focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:rounded-lg ${
           active
-            ? "text-slate-900 dark:text-white border-primary"
+            ? "text-text border-primary"
             : isDropdown
-            ? "text-slate-500 dark:text-slate-400 hover:text-text border-transparent hover:border-border"
-            : "text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white border-transparent hover:border-border"
+            ? "text-text-secondary hover:text-text border-transparent hover:border-border"
+            : "text-text-secondary hover:text-text border-transparent hover:border-border"
         }`;
   };
 
@@ -92,7 +92,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
       className={`flex ${
         vertical
           ? "flex-col items-start w-full gap-2"
-          : "items-center justify-start gap-2 min-w-max flex-nowrap overflow-visible"
+          : "items-center justify-center gap-1 overflow-visible"
       }`}
       aria-label={vertical ? t("nav.mobilePrimaryLinks") : t("nav.primaryLinks")}
     >
@@ -185,7 +185,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                       `mobile-drawer-link flex min-h-11 items-center gap-2 rounded-lg p-2 text-sm font-medium transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:ring-offset-bg ${
                         isActive
                           ? "bg-bg-secondary text-text font-semibold"
-                          : "text-slate-600 dark:text-slate-300 hover:text-text hover:bg-bg"
+                          : "text-muted-foreground hover:text-text hover:bg-bg"
                       }`
                     }
                   >

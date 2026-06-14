@@ -11,6 +11,16 @@ let isIndexedDbFunctional = true;
  * @returns {Promise<void>}
  */
 export const saveToOfflineCache = async (key, val) => {
+  if (typeof navigator !== "undefined" && navigator.storage && navigator.storage.estimate) {
+    try {
+      const estimate = await navigator.storage.estimate();
+      const usage = estimate.usage || 0;
+      const quota = estimate.quota || 0;
+      if (quota > 0 && usage / quota > 0.95) {
+        console.warn("[IndexedDB] Storage quota is running extremely low (over 95% full).");
+      }
+    } catch {}
+  }
   if (isIndexedDbFunctional) {
     try {
       await set(key, val);

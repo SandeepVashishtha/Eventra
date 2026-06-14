@@ -496,7 +496,6 @@ export default function CollaborationNetworkMap() {
                 {/* Interactive SVG City Nodes mapping */}
                 {filteredHubs.map((hub) => {
                   const isActive = activeHub?.id === hub.id || pinnedHub?.id === hub.id;
-                  const isPinned = pinnedHub?.id === hub.id;
                   const config = ACTIVITY_LEVELS[hub.activity];
                   const hubSize = getHubSize(hub.devs);
 

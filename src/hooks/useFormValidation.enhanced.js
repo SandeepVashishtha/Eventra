@@ -236,7 +236,7 @@ export const useFormValidation = (
         }, debounceMs);
       }
     },
-    [validationRules, values, validateField, debounceMs, clearFieldTimeout],
+    [validationRules, validateField, debounceMs, clearFieldTimeout],
   );
 
   /**

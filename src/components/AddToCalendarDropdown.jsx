@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { getGoogleCalendarUrl, generateRawICSContent } from '../utils/calendarLinks';
 
 const AddToCalendarDropdown = ({ event }) => {
