@@ -1,0 +1,102 @@
+name: "♿ Accessibility Issue"
+description: "Report an accessibility barrier such as missing ARIA, poor keyboard navigation, or low color contrast."
+title: "[A11y]: "
+labels: ["accessibility", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## ♿ Accessibility Issue Report
+        Eventra aims to meet **WCAG 2.1 Level AA**. Thank you for helping us get there!
+
+  - type: dropdown
+    id: wcag-category
+    attributes:
+      label: "WCAG Principle"
+      description: "Which WCAG principle does this violate?"
+      options:
+        - "Perceivable (images, captions, contrast)"
+        - "Operable (keyboard, focus, timing)"
+        - "Understandable (labels, errors, language)"
+        - "Robust (AT compatibility, ARIA)"
+        - "Not sure"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: "Affected Component / Page"
+      options:
+        - "Navigation / Navbar"
+        - "Home page"
+        - "Events list"
+        - "Event details"
+        - "Registration form"
+        - "Dashboard"
+        - "Auth (Login / Signup)"
+        - "Modals / Dialogs"
+        - "Carousel / Slider"
+        - "Other"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: "Describe the Barrier"
+      description: "What accessibility issue did you encounter?"
+      placeholder: |
+        The 'Register Now' button on EventDetails has no visible focus ring when tabbed to,
+        making it impossible to use without a mouse.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: "Steps to Reproduce"
+      placeholder: |
+        1. Go to /events/1
+        2. Press Tab several times until focus reaches the Register Now button
+        3. No visible focus indicator appears
+    validations:
+      required: true
+
+  - type: dropdown
+    id: at
+    attributes:
+      label: "Assistive Technology Used (if any)"
+      options:
+        - "Screen reader — NVDA"
+        - "Screen reader — JAWS"
+        - "Screen reader — VoiceOver (macOS)"
+        - "Screen reader — VoiceOver (iOS)"
+        - "Screen reader — TalkBack (Android)"
+        - "Keyboard only"
+        - "High contrast mode"
+        - "Zoom / magnification"
+        - "Voice control (Dragon, Voice Access)"
+        - "None / visual inspection only"
+    validations:
+      required: false
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: "Expected Behaviour"
+      placeholder: "A clearly visible focus ring should appear around the button when focused via keyboard."
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: "Pre-submission Checklist"
+      options:
+        - label: "I searched existing issues and this hasn't been reported before."
+          required: true
+        - label: "I referenced the relevant WCAG success criterion (if known)."
+          required: false
