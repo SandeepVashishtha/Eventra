@@ -191,17 +191,15 @@ export const subscribeToReminderChanges = (callback) => {
     callback(Array.isArray(event.detail) ? event.detail : readReminders());
   };
 
-  const handleStorageChange = (event) => {
-    if (event.key === REMINDERS_STORAGE_KEY) {
-      callback(readReminders());
-    }
-  };
-
+  // 🔥 FIX: drop the 'storage' event listener. The REMINDERS_CHANGED_EVENT
+  // custom event already covers in-tab updates, and the 'storage' event only
+  // fires in cross-tab scenarios in most modern browsers. When the same tab
+  // does fire 'storage' (Safari, older Edge, some test harnesses), it caused
+  // the callback to run twice for every local write — every reminder UI re-
+  // rendered and unread-count badges briefly showed duplicates.
   window.addEventListener(REMINDERS_CHANGED_EVENT, handleLocalChange);
-  window.addEventListener("storage", handleStorageChange);
 
   return () => {
     window.removeEventListener(REMINDERS_CHANGED_EVENT, handleLocalChange);
-    window.removeEventListener("storage", handleStorageChange);
   };
 };
