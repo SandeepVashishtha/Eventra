@@ -1,6 +1,6 @@
 # Pre-commit Hooks: Husky + lint-staged
 
-This project uses [Husky](https://typicode.github.io/husky) and [lint-staged](https://github.com/lint-staged/lint-staged) to automatically lint and format code before every commit.
+This project uses [Husky](https://typicode.github.io/husky/) and [lint-staged](https://github.com/lint-staged/lint-staged/) to automatically lint and format code before every commit.
 
 ## How it works
 
