@@ -1,6 +1,6 @@
 
 import { safeJsonParse } from "./safeJsonParse.js";
-import { apiUtils, API_ENDPOINTS } from "../config/api";
+import { apiUtils, API_ENDPOINTS } from "../config/api.js";
 import { logger } from "./logger.js";
 import { getOrMigrateKey } from "./storageKeyManager.js";
 
@@ -286,6 +286,7 @@ export const leaveWaitlist = async (eventId, userId) => {
 
 // Promote a specific record to a confirmed registration
 export const promoteRecord = async (record, event) => {
+  let isOfflineMode = false;
   try {
     const response = await apiUtils.post(`${API_ENDPOINTS.EVENTS.ALL}/${event.id}/waitlist/promote`, {
       userId: record.userId,
@@ -305,8 +306,13 @@ export const promoteRecord = async (record, event) => {
       await addLocalNotification("Waitlist Promotion", `Good news! You have been promoted from the waitlist to a confirmed attendee for: ${event.title || "your event"}.`);
       return true;
     }
-  } catch {
-    // Fall through to localStorage-only path
+    // Explicit server rejection
+    return false;
+  } catch (error) {
+    isOfflineMode = error?.isNetworkError || error?.isTimeout || (typeof navigator !== "undefined" && !navigator.onLine);
+    if (!isOfflineMode) {
+      return false;
+    }
   }
 
   const records = getGlobalWaitlist();
