@@ -1,3 +1,7 @@
-// import React from 'react';
-const Dashboard = () => <div className="p-6"><h1 className="text-2xl font-bold">Dashboard</h1></div>;
+import React from "react";
+import DashboardComponent from "../../components/Dashboard";
+
+const Dashboard = () => {
+  return <DashboardComponent />;
+};
 export default Dashboard;
