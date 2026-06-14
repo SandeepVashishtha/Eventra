@@ -5,6 +5,7 @@ import { createRateLimiter } from "../lib/rateLimiter.js";
 import { buildCorsHeaders, corsResponse } from "./cors.js";
 import { assertPersistentStorageConfigured } from "./storage-config.js";
 import { createUser, getUserByEmail, isStorageHealthy } from "./user-storage.js";
+import { getClientIp } from "../lib/getClientIp.js";
 
 // ---------------------------------------------------------------------------
 // In-memory user storage
@@ -182,11 +183,7 @@ async function handler(req, res) {
     // Run after input validation so malformed requests don't burn the budget.
     // -----------------------------------------------------------------------
 
-    const clientIp =
-      req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim() ||
-      req.headers?.["x-real-ip"] ||
-      req.socket?.remoteAddress ||
-      "unknown";
+    const clientIp = getClientIp(req);
 
     const rateLimitResult = await signupRateLimiter.check(clientIp);
     if (!rateLimitResult.allowed) {
