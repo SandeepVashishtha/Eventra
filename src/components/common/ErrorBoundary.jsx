@@ -204,23 +204,23 @@ class ErrorBoundary extends React.Component {
   };
 
   handleCopyReport = async () => {
-    const { error, errorInfo } = this.state;
-
-    const safeError =
-      error?.toString()?.trim() || "Unknown error";
-
-    const safeStack =
-      error?.stack?.trim() || "No stack";
-
-    const safeComponentStack =
-      errorInfo?.componentStack?.trim() || "Unavailable";
-
-    let safeLocalStorage = "{}";
+    const { error, errorInfo, errorId } = this.state;
+    const report = buildDiagnosticReport(errorId, error, errorInfo);
 
     try {
-      safeLocalStorage = JSON.stringify(localStorage, null, 2) || "{}";
+      await navigator.clipboard.writeText(report);
+      this.setState({ copied: true });
+      setTimeout(() => this.setState({ copied: false }), 2000);
     } catch (err) {
-      safeLocalStorage = "Unable to read localStorage";
+      console.error("Clipboard copy failed, using fallback:", err);
+      try {
+        const blob = new Blob([report], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        window.open(url, "_blank", "noopener,noreferrer");
+      } catch (_) {}
+    }
+  };
+
   handleTryAgain = () => {
     const { retryCount } = this.state;
     if (retryCount >= 3) {
