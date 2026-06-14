@@ -284,6 +284,26 @@ export const leaveWaitlist = async (eventId, userId) => {
   return true;
 };
 
+// Helper to perform local waitlist status promotion and updates
+const performLocalPromotion = async (record, event) => {
+  const records = getGlobalWaitlist();
+  const match = records.find(
+    (r) => r.userId === record.userId && r.eventId === record.eventId && r.status === "waiting"
+  );
+  if (match) {
+    match.status = "promoted";
+    match.promotedAt = new Date().toISOString();
+    saveGlobalWaitlist(records);
+  }
+  addRegistrationToUserStorage(record.userId, event);
+  incrementEventAttendees(event.id);
+  await addLocalNotification(
+    "Waitlist Promotion",
+    `Good news! You have been promoted from the waitlist to a confirmed attendee for: ${event.title || "your event"}.`
+  );
+  return !!match;
+};
+
 // Promote a specific record to a confirmed registration
 export const promoteRecord = async (record, event) => {
   let isOfflineMode = false;
@@ -292,18 +312,7 @@ export const promoteRecord = async (record, event) => {
       userId: record.userId,
     });
     if (response.ok) {
-      const records = getGlobalWaitlist();
-      const match = records.find(
-        (r) => r.userId === record.userId && r.eventId === record.eventId && r.status === "waiting"
-      );
-      if (match) {
-        match.status = "promoted";
-        match.promotedAt = new Date().toISOString();
-        saveGlobalWaitlist(records);
-      }
-      addRegistrationToUserStorage(record.userId, event);
-      incrementEventAttendees(event.id);
-      await addLocalNotification("Waitlist Promotion", `Good news! You have been promoted from the waitlist to a confirmed attendee for: ${event.title || "your event"}.`);
+      await performLocalPromotion(record, event);
       return true;
     }
     // Explicit server rejection
@@ -315,30 +324,7 @@ export const promoteRecord = async (record, event) => {
     }
   }
 
-  const records = getGlobalWaitlist();
-  const match = records.find(
-    (r) =>
-      r.userId === record.userId &&
-      r.eventId === record.eventId &&
-      r.status === "waiting"
-  );
-
-  if (match) {
-    match.status = "promoted";
-    match.promotedAt = new Date().toISOString();
-    saveGlobalWaitlist(records);
-
-    addRegistrationToUserStorage(record.userId, event);
-    incrementEventAttendees(event.id);
-
-    await addLocalNotification(
-      "Waitlist Promotion",
-      `Good news! You have been promoted from the waitlist to a confirmed attendee for: ${event.title || "your event"
-      }.`
-    );
-    return true;
-  }
-  return false;
+  return performLocalPromotion(record, event);
 };
 
 // Promote the next user in queue when a spot opens up
