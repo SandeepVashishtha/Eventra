@@ -1,6 +1,7 @@
 export const isDndActive = () => {
+  if (typeof window === "undefined" || !window.localStorage) return false;
   try {
-    const prefs = JSON.parse(localStorage.getItem('eventra_notification_prefs') || '{}');
+    const prefs = JSON.parse(window.localStorage.getItem('eventra_notification_prefs') || '{}');
     if (!prefs.dndEnabled) return false;
     const now = new Date();
     const currentHour = now.getHours();
