@@ -4,7 +4,7 @@ This project uses [Husky](https://typicode.github.io/husky) and [lint-staged](ht
 
 ## How it works
 
-When you run `git commit`, Husky triggers the `pre-commit` hook. This script intercepts the process and automatically runs code formatting (Prettier) and linting checks on your staged files before allowing the commit to be finalized. 
+When you run `git commit`, Husky triggers the `pre-commit` hook. This script intercepts the process and automatically runs code formatting (Prettier) and linting checks on your staged files before allowing the commit to be finalized.
 
 Only **staged files** (the ones you added via `git add`) are checked, keeping the process fast.
 
@@ -32,9 +32,11 @@ npm install   # Husky setup runs automatically during installation
 ```
 
 ## Manual Trigger
+
 You can manually run the formatting and linting scripts at any time to verify your changes before committing:
 
 # Lint all files
+
 npm run lint
 
 # Auto-fix lint issues
@@ -44,6 +46,7 @@ npm run lint:fix
 npm run format
 
 ## Bypass (Not Recommended)
+
 In rare cases where you absolutely must skip the automated verification checks:
 
 git commit --no-verify -m "your message"
