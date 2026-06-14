@@ -51,7 +51,20 @@
     "hasAccount": "पहले से खाता है?",
     "sessionExpired": "सत्र समाप्त। कृपया फिर से लॉग इन करें।",
     "loginSuccess": "वापसी पर स्वागत है!",
-    "signupSuccess": "खाता सफलतापूर्वक बनाया गया!"
+    "signupSuccess": "खाता सफलतापूर्वक बनाया गया!",
+    "welcomeBack": "वापसी पर स्वागत है",
+    "signInSubtitle": "अपने Eventra खाते में साइन इन करें",
+    "usernameOrEmail": "ईमेल या उपयोगकर्ता नाम",
+    "signIn": "साइन इन",
+    "signingIn": "साइन इन हो रहा है...",
+    "createAccount": "यहाँ खाता बनाएं",
+    "usernamePlaceholder": "john@example.com / yourname@email.com / eventra.team@gmail.com",
+    "passwordPlaceholder": "सुरक्षित पासवर्ड दर्ज करें / कम से कम 8 अक्षर / मजबूत पासवर्ड उपयोग करें",
+    "showPassword": "पासवर्ड दिखाएं",
+    "hidePassword": "पासवर्ड छिपाएं",
+    "lockedOut": "बहुत अधिक विफल प्रयास। {{seconds}} सेकंड बाद पुनः प्रयास करें।",
+    "attemptsRemaining": "अस्थायी लॉकआउट से पहले {{count}} प्रयास शेष।",
+    "lockedWait": "लॉक — {{seconds}} सेकंड प्रतीक्षा करें"
   },
   "validation": {
     "required": "This field is required",
