@@ -19,30 +19,19 @@ const CONNECTIONS = [
   { from: "blr", to: "syd" },
 ];
 
+const getTooltipTransform = (city) => {
+    if (!city) return "translate(-50%, -90%)";
+
+    if (city.x < 350) return "translate(-10%, 10%)";
+    if (city.y < 180) return "translate(-50%, 10%)";
+    if (city.x > 800) return "translate(-100%, -120%)";
+
+    return "translate(-50%, -90%)";
+  };  
+
 export default function CollaborationMap() {
   const [hoveredCity, setHoveredCity] = useState(null);
   const mapRef = useRef(null);
-
-  const getTooltipTransform = () => {
-    if (!hoveredCity) return "translate(-50%, -120%)";
-    // Left edge
-    if (hoveredCity.x < 350) {
-      return "translate(-10%, 10%)";
-    } 
-      
-    // Top edge
-    if (hoveredCity.y < 180) {
-      return "translate(-50%, 10%)";
-    }
-
-    // Right edge
-    if (hoveredCity.x > 800) {
-      return "translate(-100%, -120%)";
-    }
-
-    return "translate(-50%, -90%)";
-  };
-
 
   // 🔥 FIX: Added click-outside listener to support mobile touch dismissals
   useEffect(() => {
@@ -220,7 +209,7 @@ export default function CollaborationMap() {
                 style={{
                   left: `${(hoveredCity.x / 1000) * 100}%`,
                   top: `${(hoveredCity.y / 500) * 100}%`,
-                  transform: getTooltipTransform(),
+                  transform: getTooltipTransform(hoveredCity),
                   minWidth: "210px",
                   borderRadius: "14px",
                   boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
