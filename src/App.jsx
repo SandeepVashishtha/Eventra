@@ -313,6 +313,30 @@ function App() {
 }
 
 function ErrorButton() {
+  const [onboardingHeight, setOnboardingHeight] = useState(0);
+
+  useEffect(() => {
+    const handleStateChange = (e) => {
+      if (e.detail && typeof e.detail.height === "number") {
+        setOnboardingHeight(e.detail.height);
+      }
+    };
+    window.addEventListener("eventraOnboardingStateChange", handleStateChange);
+
+    // Initial check
+    const checklist = document.querySelector('[data-onboarding-checklist]');
+    if (checklist) {
+      const rect = checklist.getBoundingClientRect();
+      setOnboardingHeight(window.innerHeight - rect.top);
+    }
+
+    return () => {
+      window.removeEventListener("eventraOnboardingStateChange", handleStateChange);
+    };
+  }, []);
+
+  const bottomOffset = onboardingHeight > 0 ? onboardingHeight + 16 : 24;
+
   return (
     <button
       onClick={() => {
@@ -320,8 +344,8 @@ function ErrorButton() {
       }}
       style={{
         position: "fixed",
-        bottom: "20px",
-        left: "20px",
+        bottom: `${bottomOffset}px`,
+        left: "26px",
         zIndex: 9999,
         padding: "10px 15px",
         backgroundColor: "#e11d48",
@@ -331,6 +355,7 @@ function ErrorButton() {
         cursor: "pointer",
         fontWeight: "bold",
         boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+        transition: "bottom 0.3s ease-out",
       }}
     >
       Break the world
