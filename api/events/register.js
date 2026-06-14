@@ -75,13 +75,16 @@ export default async function registerForEvent(req, res, deps = {}) {
   if (!rsvpLocks.has(eventId)) {
     rsvpLocks.set(eventId, Promise.resolve());
   }
-  
+
   const release = await new Promise(resolve => {
     const previous = rsvpLocks.get(eventId);
     let releaseFn;
-    const next = previous.then(() => new Promise(r => { releaseFn = r; }));
+    const next = Promise.resolve(previous).then(
+      () => new Promise(r => { releaseFn = r; }),
+      () => { releaseFn = () => {}; }
+    );
     rsvpLocks.set(eventId, next);
-    previous.then(() => resolve(releaseFn));
+    Promise.resolve(previous).then(() => resolve(releaseFn), () => resolve(() => {}));
   });
 
   try {
