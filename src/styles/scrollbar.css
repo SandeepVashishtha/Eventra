@@ -1,0 +1,17 @@
+/* High Contrast scrollbar styling for accessibility */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 5px;
+}
+::-webkit-scrollbar-thumb {
+  background: #6366f1;
+  border: 2px solid #f1f1f1;
+  border-radius: 5px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #4f46e5;
+}
