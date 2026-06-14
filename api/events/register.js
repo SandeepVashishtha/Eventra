@@ -20,6 +20,20 @@ import { checkCapacity } from "../lib/capacityValidator.js";
 // Concurrency lock for RSVP
 const rsvpLocks = new Map();
 
+async function acquireLock(eventId) {
+  if (!rsvpLocks.has(eventId)) {
+    rsvpLocks.set(eventId, Promise.resolve());
+  }
+  
+  return new Promise(resolve => {
+    const previous = rsvpLocks.get(eventId);
+    let releaseFn;
+    const next = previous.then(() => new Promise(r => { releaseFn = r; }));
+    rsvpLocks.set(eventId, next);
+    previous.then(() => resolve(releaseFn));
+  });
+}
+
 /**
  * Registration handler.
  *
@@ -72,17 +86,7 @@ export default async function registerForEvent(req, res, deps = {}) {
     return;
   }
   
-  if (!rsvpLocks.has(eventId)) {
-    rsvpLocks.set(eventId, Promise.resolve());
-  }
-  
-  const release = await new Promise(resolve => {
-    const previous = rsvpLocks.get(eventId);
-    let releaseFn;
-    const next = previous.then(() => new Promise(r => { releaseFn = r; }));
-    rsvpLocks.set(eventId, next);
-    previous.then(() => resolve(releaseFn));
-  });
+  const release = await acquireLock(eventId);
 
   try {
     // ── Event existence ───────────────────────────────────────────────────
