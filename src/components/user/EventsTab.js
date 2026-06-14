@@ -26,15 +26,6 @@ import EmptyState from "../common/EmptyState";
 import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
 import { useOfflineStatus } from "../../hooks/useOfflineStatus";
 import LazyImage from "../common/LazyImage";
-import { SEARCH_ROUTES } from "../../constants/routes";
-import { SEARCH_ROUTES } from "../Hero";
-
-const SEARCH_ROUTES = {
-  events: "/events",
-  hackathons: "/hackathons",
-  projects: "/projects",
-  networking: "/networking"
-};
 
 const fadeUp = (prefersReducedMotion) => ({
   hidden: { opacity: 0, y: 20 },
