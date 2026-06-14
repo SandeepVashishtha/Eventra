@@ -11,6 +11,7 @@ import FieldError from '../common/FieldError';
 import useLoginRateLimit from '../../hooks/useLoginRateLimit';
 import { MAX_LOGIN_ATTEMPTS, parseRetryAfterMs } from '../../utils/rateLimitUtils';
 import '../../styles/auth.css';
+import { emailPattern } from '../../validation';
 import {
   canAttempt,
   clearAttempts,
@@ -54,7 +55,7 @@ const Login = () => {
       newErrors.usernameOrEmail = "Email or username is required";
     } else if (
       formData.usernameOrEmail.includes("@") &&
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.usernameOrEmail)
+      !emailPattern.test(formData.usernameOrEmail)
     ) {
       newErrors.usernameOrEmail = "Invalid email format";
     }
