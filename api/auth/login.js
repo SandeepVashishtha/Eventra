@@ -120,19 +120,19 @@ export default async function login(req, res, deps = {}) {
   }
 
   const clientIp = getClientIp(req);
+
   try {
-    const rateLimitResult = loginRateLimiter.checkAsync 
-      ? await loginRateLimiter.checkAsync(clientIp)
-      : loginRateLimiter.check(clientIp);
-    
-    if (!rateLimitResult.allowed) {
+    await enforceRateLimit(loginRateLimiter, clientIp);
+  } catch (error) {
+    if (error.status === 429) {
       return corsResponse(req, res, 429, {
         success: false,
         message: "Too many authentication attempts. Please try again later.",
       });
     }
-  } catch (rateLimitError) {
-    console.error('[login] Rate limit check failed:', rateLimitError.message);
+
+    console.error("[login] Rate limit check failed:", error);
+
     return corsResponse(req, res, 500, {
       success: false,
       message: "Rate limiting service unavailable. Please try again later.",
