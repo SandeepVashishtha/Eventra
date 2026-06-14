@@ -1,11 +1,11 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { getJwtSecret, JWT_EXPIRES_IN, JWT_COOKIE_MAX_AGE_SECONDS } from "./jwt-config.js";
-import { signupRateLimiter } from "../lib/rateLimiter.js";
-import { buildCorsHeaders, corsResponse } from "./cors.js";
-import { assertPersistentStorageConfigured } from "./storage-config.js";
-import { createUser, getUserByEmail, isStorageHealthy } from "./user-storage.js";
-import { getClientIp } from "../lib/getClientIp.js";
+import { getJwtSecret, JWT_EXPIRES_IN, JWT_COOKIE_MAX_AGE_SECONDS } from "./_jwt-config.js";
+import { signupRateLimiter } from "../_lib/rateLimiter.js";
+import { buildCorsHeaders, corsResponse } from "./_cors.js";
+import { assertPersistentStorageConfigured } from "./_storage-config.js";
+import { createUser, getUserByEmail, isStorageHealthy } from "./_user-storage.js";
+import { getClientIp } from "../_lib/getClientIp.js";
 
 // ---------------------------------------------------------------------------
 // In-memory user storage
