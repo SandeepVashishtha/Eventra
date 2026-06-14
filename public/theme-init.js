@@ -2,7 +2,7 @@
   try {
     document.documentElement.classList.add("no-transition");
 
-    const saved = localStorage.getItem("theme");
+    const saved = localStorage.getItem("eventra_theme")
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     const isDark = saved === "dark" || (!saved && prefersDark);
 
