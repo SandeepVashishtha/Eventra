@@ -5,7 +5,7 @@ import { signupRateLimiter } from "../_lib/rateLimiter.js";
 import { buildCorsHeaders, corsResponse } from "./_cors.js";
 import { assertPersistentStorageConfigured } from "./_storage-config.js";
 import { createUser, getUserByEmail, isStorageHealthy } from "./_user-storage.js";
-
+import { createLogger } from "../_lib/logger.js";
 
 // ---------------------------------------------------------------------------
 // In-memory user storage
@@ -177,6 +177,10 @@ const DEFAULT_PERMISSIONS = [
 // ---------------------------------------------------------------------------
 
 async function handler(req, res) {
+  const logger = createLogger();
+
+  logger.info("Signup request received", { method: req.method, path: req.url });
+
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return res.status(200).set(buildCorsHeaders(req)).end();
@@ -191,7 +195,7 @@ async function handler(req, res) {
     // Runtime protection: Reject requests if storage is unavailable
     const storageHealthy = await isStorageHealthy();
     if (!storageHealthy) {
-      console.error("[signup.js] Authentication service unavailable: storage not healthy");
+      logger.error("Authentication service unavailable: storage not healthy");
       return corsResponse(req, res, 500, { error: "Authentication service unavailable" });
     }
 
@@ -204,6 +208,8 @@ async function handler(req, res) {
       return corsResponse(req, res, 400, { error: "Request body is required" });
     }
 
+    const clientIp = getClientIp(req);
+
     const { firstName, lastName, email, password, confirmPassword } = req.body;
     const validationErrors = validateSignupInput(req.body);
     if (validationErrors.length > 0) {
@@ -212,6 +218,7 @@ async function handler(req, res) {
 
     const normalizedEmail = email.trim().toLowerCase();
     if (!validateEmail(normalizedEmail)) {
+      logger.warn("Invalid email format", { clientIp });
       return corsResponse(req, res, 400, { error: "Invalid email format" });
     }
 
@@ -221,6 +228,7 @@ async function handler(req, res) {
 
     const existingUser = await getUserByEmail(normalizedEmail);
     if (existingUser) {
+      logger.info("Duplicate registration attempt", { email: normalizedEmail, clientIp });
       return corsResponse(req, res, 409, { error: "An account with this email already exists" });
     }
 
@@ -228,8 +236,6 @@ async function handler(req, res) {
     // Rate Limiting (signup spam protection)
     // Run after input validation so malformed requests don't burn the budget.
     // -----------------------------------------------------------------------
-
-    const clientIp = getClientIp(req);
 
     try {
       const rateLimitResult = signupRateLimiter.checkAsync
@@ -243,7 +249,7 @@ async function handler(req, res) {
         });
       }
     } catch (rateLimitError) {
-      console.error('[signup] Rate limit check failed:', rateLimitError.message);
+      logger.error("Rate limit check failed", { error: rateLimitError.message });
       return corsResponse(req, res, 500, {
         error: "Rate limiting service unavailable. Please try again later.",
       });
@@ -263,6 +269,8 @@ async function handler(req, res) {
     const userId = generateUserId();
     const createdAt = new Date().toISOString();
 
+    logger.info("Creating user", { userId, email: normalizedEmail });
+
     const newUser = {
       id: userId,
       firstName: validateName(firstName).value,
@@ -280,6 +288,7 @@ async function handler(req, res) {
 
     // Store user using storage abstraction layer
     await createUser(newUser);
+    logger.info("User created successfully", { userId, email: normalizedEmail });
 
     // -----------------------------------------------------------------------
     // Generate JWT token
@@ -315,7 +324,7 @@ async function handler(req, res) {
       ...userResponse,
     });
   } catch (error) {
-    console.error("Signup Error:", error);
+    logger.error("Signup failed", { error: error.message });
     return corsResponse(req, res, 500, { error: "Internal server error. Please try again later." });
   }
 }

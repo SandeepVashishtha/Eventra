@@ -17,6 +17,7 @@
 
 import { checkCapacity } from "../_lib/capacityValidator.js";
 import { withLock } from "../_lib/distributed-lock.js";
+import { createLogger } from "../_lib/logger.js";
 
 /**
  * Registration handler.
@@ -33,6 +34,9 @@ import { withLock } from "../_lib/distributed-lock.js";
  * @param {Function} [deps.getEventId]            - (req) => string
  */
 export default async function registerForEvent(req, res, deps = {}) {
+  const logger = createLogger();
+  logger.info("Registration request received", { method: req.method, path: req.url });
+
   if (req.method && req.method !== "POST") {
     res.status(405).json({ error: "Method not allowed" });
     return;
@@ -70,13 +74,11 @@ export default async function registerForEvent(req, res, deps = {}) {
     return;
   }
   
-  const counter = rsvpLockCounters.get(eventId) || 0;
-  rsvpLockCounters.set(eventId, counter + 1);
-
   await withLock(`register:${eventId}`, async () => {
     // ── Event existence ───────────────────────────────────────────────────
     const event = await getEventById(eventId);
     if (!event) {
+      logger.warn("Event not found", { eventId });
       res.status(404).json({ error: "Event not found" });
       return;
     }
@@ -106,6 +108,7 @@ export default async function registerForEvent(req, res, deps = {}) {
 
     // ── Atomic insert ────────────────────────────────────────────────────
     const registration = await registerAttendee(eventId, user.id);
+    logger.info("Registration successful", { eventId, userId: user.id });
 
     res.status(201).json({
       message: "Registration successful",
@@ -116,15 +119,18 @@ export default async function registerForEvent(req, res, deps = {}) {
   }, 30000).catch((err) => {
     // ── Race condition loser ───────────────────────────────────────────────
     if (err?.code === "CAPACITY_FULL") {
+      logger.warn("Capacity full", { eventId });
       res.status(409).json({ error: "Event is at full capacity" });
       return;
     }
 
     if (err?.code === "DUPLICATE_REGISTRATION" || err?.code === "23505") {
+      logger.warn("Duplicate registration", { eventId, userId: user.id });
       res.status(409).json({ error: "You are already registered for this event" });
       return;
     }
 
+    logger.error("Registration error", { error: err.message, eventId });
     res.status(500).json({ error: "Internal server error" });
   });
 }
