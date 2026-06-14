@@ -51,6 +51,7 @@
     "react-virtualized-auto-sizer": "^2.0.3",
     "react-window": "^1.8.10",
     "recharts": "^3.8.1",
+    "zod": "^4.4.3",
     "zustand": "^5.0.14"
   },
   "scripts": {

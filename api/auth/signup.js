@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { z } from "zod";
 import { getJwtSecret, JWT_EXPIRES_IN, JWT_COOKIE_MAX_AGE_SECONDS } from "./_jwt-config.js";
 import { signupRateLimiter } from "../_lib/rateLimiter.js";
 import { buildCorsHeaders, corsResponse } from "./_cors.js";
@@ -37,38 +38,32 @@ const validateEmail = (email) => {
   return EMAIL_REGEX.test(email);
 };
 
-const validateName = (name) => {
-  const trimmed = name?.trim();
-  if (!trimmed) return { valid: false, message: "This field is required" };
-  if (trimmed.length < 2) return { valid: false, message: "Must be at least 2 characters" };
-  if (trimmed.length > 50) return { valid: false, message: "Must be less than 50 characters" };
-  return { valid: true, value: trimmed };
-};
-
-const validatePassword = (password) => {
-  if (!password) return { valid: false, message: "Password is required" };
-  if (password.length < 8) return { valid: false, message: "Password must be at least 8 characters long" };
-
-  // Check password strength (must meet all 5 criteria)
-  const criteria = [
-    /.{8,}/,
-    /[A-Z]/,
-    /[a-z]/,
-    /\d/,
-    /[!@#$%^&*(),.?":{}|<>]/,
-  ];
-
-  const metCriteria = criteria.filter((c) => c.test(password));
-  if (metCriteria.length < 5) {
-    return {
-      valid: false,
-      message:
-        "Password must meet all 5 security criteria: 8+ characters, uppercase, lowercase, number, and special character",
-    };
-  }
-
-  return { valid: true };
-};
+const signupSchema = z.object({
+  firstName: z
+    .string()
+    .trim()
+    .min(2, "First name must be at least 2 characters")
+    .max(50, "First name must be less than 50 characters"),
+  lastName: z
+    .string()
+    .trim()
+    .min(2, "Last name must be at least 2 characters")
+    .max(50, "Last name must be less than 50 characters"),
+  email: z
+    .string()
+    .email("Invalid email format"),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters long")
+    .regex(/[A-Z]/, "Password must contain an uppercase letter")
+    .regex(/[a-z]/, "Password must contain a lowercase letter")
+    .regex(/\d/, "Password must contain a number")
+    .regex(/[!@#$%^&*(),.?":{}|<>]/, "Password must contain a special character"),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+}).strip();
 
 // ---------------------------------------------------------------------------
 // CORS Headers (delegated to shared cors.js)
@@ -109,50 +104,13 @@ function getClientIp(req) {
   return "unknown";
 }
 
-function validateNameField(name, fieldName) {
-  const validation = validateName(name);
-  if (!validation.valid) return `${fieldName}: ${validation.message}`;
-  return null;
-}
-
-function validateEmailField(email) {
-  if (!email || !email.trim()) return "Email is required";
-  return null;
-}
-
-function validatePasswordField(password) {
-  if (!password) return "Password is required";
-  const validation = validatePassword(password);
-  if (!validation.valid) return validation.message;
-  return null;
-}
-
-function validateConfirmPassword(password, confirmPassword) {
-  if (!confirmPassword) return "Please confirm your password";
-  if (password !== confirmPassword) return "Passwords do not match";
-  return null;
-}
-
 function validateSignupInput(body) {
-  const { firstName, lastName, email, password, confirmPassword } = body;
-  const errors = [];
-  
-  const firstNameError = validateNameField(firstName, "First name");
-  if (firstNameError) errors.push(firstNameError);
-  
-  const lastNameError = validateNameField(lastName, "Last name");
-  if (lastNameError) errors.push(lastNameError);
-  
-  const emailError = validateEmailField(email);
-  if (emailError) errors.push(emailError);
-  
-  const passwordError = validatePasswordField(password);
-  if (passwordError) errors.push(passwordError);
-  
-  const confirmPasswordError = validateConfirmPassword(password, confirmPassword);
-  if (confirmPasswordError) errors.push(confirmPasswordError);
-  
-  return errors;
+  const result = signupSchema.safeParse(body);
+  if (result.success) {
+    return { valid: true, data: result.data };
+  }
+  const firstError = result.error.errors[0];
+  return { valid: false, error: firstError.message };
 }
 
 // ---------------------------------------------------------------------------
@@ -204,16 +162,13 @@ async function handler(req, res) {
       return corsResponse(req, res, 400, { error: "Request body is required" });
     }
 
-    const { firstName, lastName, email, password, confirmPassword } = req.body;
-    const validationErrors = validateSignupInput(req.body);
-    if (validationErrors.length > 0) {
-      return corsResponse(req, res, 400, { error: validationErrors[0] });
+    const validation = validateSignupInput(req.body);
+    if (!validation.valid) {
+      return corsResponse(req, res, 400, { error: validation.error });
     }
 
-    const normalizedEmail = email.trim().toLowerCase();
-    if (!validateEmail(normalizedEmail)) {
-      return corsResponse(req, res, 400, { error: "Invalid email format" });
-    }
+    const { firstName, lastName, email, password } = validation.data;
+    const normalizedEmail = email.toLowerCase();
 
     // -----------------------------------------------------------------------
     // Check for duplicate email
@@ -265,8 +220,13 @@ async function handler(req, res) {
 
     const newUser = {
       id: userId,
+<<<<<<< HEAD
       firstName: validateName(firstName).value,
       lastName: validateName(lastName).value,
+=======
+      firstName: firstName,
+      lastName: lastName,
+>>>>>>> 9c4e90d1 (fix(#8864): add Zod schema validation to reject unexpected fields in signup)
       email: normalizedEmail,
       username: normalizedEmail, // Use email as username
       password: hashedPassword,
