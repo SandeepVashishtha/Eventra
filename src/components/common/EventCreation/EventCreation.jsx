@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
@@ -35,6 +35,80 @@ import { useFormSubmit } from "../../../hooks/useFormSubmit";
 import { validateCoordinates } from "../../../utils/eventCreationUtils";
 import { validateForm } from "../../../utils/eventFormValidation";
 import { safeJsonParse } from "../../../utils/safeJsonParse";
+
+const extractCoordinates = (locationObj) => {
+  if (!locationObj) return null;
+  if (!locationObj.coordinates) return null;
+  if (locationObj.coordinates.latitude && locationObj.coordinates.longitude) {
+    return validateCoordinates(locationObj.coordinates.latitude, locationObj.coordinates.longitude);
+  }
+  return null;
+};
+
+const parseEventDates = (formData) => {
+  const dateVal = formData.isMultiDay ? formData.startDate : formData.date;
+  const endVal = formData.isMultiDay ? formData.endDate : formData.date;
+  const eventStartDate = new Date(`${dateVal}T${formData.startTime}`);
+  const eventEndDate = new Date(`${endVal}T${formData.endTime}`);
+
+  if (isNaN(eventStartDate.getTime()) || isNaN(eventEndDate.getTime())) {
+    throw new Error("Invalid date or time format");
+  }
+
+  return { eventStartDate, eventEndDate };
+};
+
+const formatLocation = (formData, coordinates) => {
+  if (formData.isVirtual) return null;
+  return {
+    name: formData.location.name.trim(),
+    address: formData.location.address?.trim() || "",
+    coordinates: coordinates,
+  };
+};
+
+const formatTicketTiers = (tiers) => {
+  if (!tiers) return [];
+  return tiers
+    .filter((tier) => tier.name.trim())
+    .map((tier) => ({
+      name: tier.name.trim(),
+      price: Number(tier.price) || 0,
+      capacity: tier.capacity ? Number(tier.capacity) : null,
+      description: tier.description?.trim() || "",
+    }));
+};
+
+const generateEventDataPayload = (formData) => {
+  const coordinates = extractCoordinates(formData.location);
+  const { eventStartDate, eventEndDate } = parseEventDates(formData);
+
+  return {
+    title: formData.title.trim(),
+    description: formData.description.trim(),
+    startDate: eventStartDate.toISOString(),
+    endDate: eventEndDate.toISOString(),
+    timezone: formData.timezone,
+    location: formatLocation(formData, coordinates),
+    isVirtual: formData.isVirtual,
+    virtualLink: formData.isVirtual ? formData.virtualLink.trim() : null,
+    capacity: formData.capacity ? Number(formData.capacity) : null,
+    isPublic: formData.isPublic,
+    requiresApproval: formData.requiresApproval,
+    registrationStart: formData.registrationStart ? new Date(formData.registrationStart).toISOString() : null,
+    registrationEnd: formData.registrationEnd ? new Date(formData.registrationEnd).toISOString() : null,
+    category: formData.category,
+    tags: Array.isArray(formData.tags) ? formData.tags.filter((t) => t.trim()) : [],
+    ticketTiers: formatTicketTiers(formData.ticketTiers),
+  };
+};
+
+const getErrorMessage = (error) => {
+  const backendMessage = error.response?.data?.message || error.response?.data?.error;
+  if (backendMessage) return `Failed to create event. ${backendMessage}`;
+  if (error.message && error.message.includes("Invalid date")) return "Failed to create event. Please check your date and time values.";
+  return `Failed to create event. ${error.message || "Please try again."}`;
+};
 
 const EventCreation = () => {
   const prefersReducedMotion = useReducedMotion();
@@ -216,74 +290,11 @@ const EventCreation = () => {
 
   const createEvent = () => {
     try {
-      let coordinates = null;
-      if (formData.location?.coordinates?.latitude && formData.location?.coordinates?.longitude) {
-        coordinates = validateCoordinates(
-          formData.location?.coordinates?.latitude,
-          formData.location?.coordinates?.longitude
-        );
-      }
-
-      const eventStartDate = new Date(
-        `${formData.isMultiDay ? formData.startDate : formData.date}T${formData.startTime}`
-      );
-      const eventEndDate = new Date(
-        `${formData.isMultiDay ? formData.endDate : formData.date}T${formData.endTime}`
-      );
-
-      if (isNaN(eventStartDate.getTime()) || isNaN(eventEndDate.getTime())) {
-        throw new Error("Invalid date or time format");
-      }
-
-      const eventData = {
-        title: formData.title.trim(),
-        description: formData.description.trim(),
-        startDate: eventStartDate.toISOString(),
-        endDate: eventEndDate.toISOString(),
-        timezone: formData.timezone,
-        location: formData.isVirtual
-          ? null
-          : {
-              name: formData.location.name.trim(),
-              address: formData.location.address?.trim() || "",
-              coordinates: coordinates,
-            },
-        isVirtual: formData.isVirtual,
-        virtualLink: formData.isVirtual ? formData.virtualLink.trim() : null,
-        capacity: formData.capacity ? Number(formData.capacity) : null,
-        isPublic: formData.isPublic,
-        requiresApproval: formData.requiresApproval,
-        registrationStart: formData.registrationStart
-          ? new Date(formData.registrationStart).toISOString()
-          : null,
-        registrationEnd: formData.registrationEnd
-          ? new Date(formData.registrationEnd).toISOString()
-          : null,
-        category: formData.category,
-        tags: formData.tags.filter((tag) => tag.trim()),
-        ticketTiers: formData.ticketTiers
-          .filter((tier) => tier.name.trim())
-          .map((tier) => ({
-            name: tier.name.trim(),
-            price: Number(tier.price) || 0,
-            capacity: tier.capacity ? Number(tier.capacity) : null,
-            description: tier.description?.trim() || "",
-          })),
-      };
-
+      const eventData = generateEventDataPayload(formData);
       submitEventForm(eventData);
     } catch (error) {
       logger.error("Error creating event:", error);
-      const backendMessage = error.response?.data?.message || error.response?.data?.error;
-      let errorMessage = "Failed to create event. ";
-      if (backendMessage) {
-        errorMessage += backendMessage;
-      } else if (error.message.includes("Invalid date")) {
-        errorMessage += "Please check your date and time values.";
-      } else {
-        errorMessage += error.message || "Please try again.";
-      }
-      toast.error(errorMessage);
+      toast.error(getErrorMessage(error));
       setCurrentStep(CREATION_STEPS.FORM);
     }
   };
