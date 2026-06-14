@@ -36,51 +36,50 @@ const QUICK_ACTIONS = [
   { label: "Settings", icon: <Settings size={22} />, to: "/settings", color: "#f59e0b" },
 ];
 
+const processEvent = (d, counters, lists) => {
+  counters.eventsTotal++;
+  if (d.participationType === "Hosted") counters.eventsCreated++;
+  if (d.participationType === "Registered") counters.eventsJoined++;
+  if (d.status === "Upcoming") lists.upcomingEvents.push(d);
+};
+
+const processHackathon = (d, counters, lists) => {
+  counters.hackathonsTotal++;
+  if (d.participationType === "Hosted") counters.hackathonsHosted++;
+  if (d.participationType === "Registered") counters.hackathonsJoined++;
+  if (d.status === "Upcoming") lists.upcomingHackathons.push(d);
+};
+
+const processProject = (d, counters, lists) => {
+  counters.projectsTotal++;
+  if (d.projectStatus !== "Done") {
+    counters.projectsActive++;
+    lists.activeProjects.push(d);
+  } else {
+    counters.projectsDone++;
+  }
+};
+
 export const getDerivedData = (data) => {
-  let eventsTotal = 0;
-  let eventsCreated = 0;
-  let eventsJoined = 0;
-  let hackathonsTotal = 0;
-  let hackathonsHosted = 0;
-  let hackathonsJoined = 0;
-  let projectsTotal = 0;
-  let projectsDone = 0;
-  let projectsActive = 0;
-  const upcomingEvents = [];
-  const upcomingHackathons = [];
-  const activeProjects = [];
+  const counters = {
+    eventsTotal: 0, eventsCreated: 0, eventsJoined: 0,
+    hackathonsTotal: 0, hackathonsHosted: 0, hackathonsJoined: 0,
+    projectsTotal: 0, projectsDone: 0, projectsActive: 0,
+  };
+  const lists = { upcomingEvents: [], upcomingHackathons: [], activeProjects: [] };
 
   for (const d of data) {
-    if (d && d.type === "Event") {
-      eventsTotal++;
-      if (d.participationType === "Hosted") eventsCreated++;
-      if (d.participationType === "Registered") eventsJoined++;
-      if (d.status === "Upcoming") upcomingEvents.push(d);
-    } else if (d && d.type === "Hackathon") {
-      hackathonsTotal++;
-      if (d.participationType === "Hosted") hackathonsHosted++;
-      if (d.participationType === "Registered") hackathonsJoined++;
-      if (d.status === "Upcoming") upcomingHackathons.push(d);
-    } else if (d && d.type === "Project") {
-      projectsTotal++;
-      if (d.projectStatus !== "Done") {
-        projectsActive++;
-        activeProjects.push(d);
-      } else {
-        projectsDone++;
-      }
-    }
+    if (!d) continue;
+    if (d.type === "Event") processEvent(d, counters, lists);
+    else if (d.type === "Hackathon") processHackathon(d, counters, lists);
+    else if (d.type === "Project") processProject(d, counters, lists);
   }
 
   return {
-    stats: {
-      eventsTotal, eventsCreated, eventsJoined,
-      hackathonsTotal, hackathonsHosted, hackathonsJoined,
-      projectsTotal, projectsDone, projectsActive,
-    },
-    upcomingEvents,
-    upcomingHackathons,
-    activeProjects,
+    stats: counters,
+    upcomingEvents: lists.upcomingEvents,
+    upcomingHackathons: lists.upcomingHackathons,
+    activeProjects: lists.activeProjects,
   };
 };
 

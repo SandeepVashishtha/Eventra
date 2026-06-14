@@ -40,6 +40,15 @@ const isRequestCanceled = (error, signal) =>
   error?.name === "CanceledError" ||
   error?.code === "ERR_CANCELED";
 
+const DEFAULT_SESSIONS = (eventDate) => [
+  { id: 's1', title: 'Registration & Welcome Breakfast', time: '08:00', date: eventDate, track: 'Main Hall', speaker: '' },
+  { id: 's2', title: 'Opening Keynote', time: '09:30', date: eventDate, track: 'Main Stage', speaker: 'Sarah Connor' },
+  { id: 's3', title: 'Panel: Future of Technology', time: '11:00', date: eventDate, track: 'Room A', speaker: 'Dr. Smith, John Doe' },
+  { id: 's4', title: 'Networking Lunch', time: '12:30', date: eventDate, track: 'Cafeteria', speaker: '' },
+  { id: 's5', title: 'Workshop: React Advanced Patterns', time: '14:00', date: eventDate, track: 'Workshop Room 1', speaker: 'Jane Developer' },
+  { id: 's6', title: 'Closing Remarks', time: '16:30', date: eventDate, track: 'Main Stage', speaker: 'Sarah Connor' }
+];
+
 // codescene-disable
 const createDuplicateDraft = (sourceEvent) => {
   const parseISODate = (dateValue) => {
@@ -619,14 +628,7 @@ const EventDetails = () => {
 
               {/* Event Agenda Section */}
               <EventAgenda 
-                sessions={event.sessions || [
-                  { id: 's1', title: 'Registration & Welcome Breakfast', time: '08:00', date: event.date, track: 'Main Hall', speaker: '' },
-                  { id: 's2', title: 'Opening Keynote', time: '09:30', date: event.date, track: 'Main Stage', speaker: 'Sarah Connor' },
-                  { id: 's3', title: 'Panel: Future of Technology', time: '11:00', date: event.date, track: 'Room A', speaker: 'Dr. Smith, John Doe' },
-                  { id: 's4', title: 'Networking Lunch', time: '12:30', date: event.date, track: 'Cafeteria', speaker: '' },
-                  { id: 's5', title: 'Workshop: React Advanced Patterns', time: '14:00', date: event.date, track: 'Workshop Room 1', speaker: 'Jane Developer' },
-                  { id: 's6', title: 'Closing Remarks', time: '16:30', date: event.date, track: 'Main Stage', speaker: 'Sarah Connor' }
-                ]} 
+                sessions={event.sessions || DEFAULT_SESSIONS(event.date)} 
               />
 
             </div>
