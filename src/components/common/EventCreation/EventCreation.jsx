@@ -347,6 +347,116 @@ const useSubmitEventCreation = () => {
     }
   });
 };
+const EventFormVirtualAndCapacity = ({ formData, handleInputChange, errors, prefersReducedMotion }) => (
+  <>
+    <motion.div
+      initial={{ opacity: 0, x: -20 }}
+      whileInView={{ opacity: 1, x: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.5, delay: 0.5 }}
+    >
+      <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+        <input
+          type="checkbox"
+          name="isVirtual"
+          checked={formData.isVirtual}
+          onChange={handleInputChange}
+          className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+        />
+        <Globe className="w-5 h-5 text-indigo-500 inline-block" />
+        This is a virtual event
+      </label>
+    </motion.div>
+
+    {formData.isVirtual ? (
+      <motion.div
+        initial={{ opacity: 0, x: -20 }}
+        whileInView={{ opacity: 1, x: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.5 }}
+      >
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <Link2 className="w-5 h-5 text-indigo-500 inline-block mr-2" />
+          Virtual Event Link <span className="text-red-600">*</span>
+        </label>
+        <input
+          type="url"
+          name="virtualLink"
+          value={formData.virtualLink}
+          onChange={handleInputChange}
+          placeholder="https://zoom.us/j/..."
+          className={`w-full border ${
+            errors.virtualLink ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+          } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
+        />
+        {errors.virtualLink && (
+          <span className="text-red-500 text-sm mt-1">{errors.virtualLink}</span>
+        )}
+      </motion.div>
+    ) : (
+      <LocationFields
+        formData={formData}
+        handleInputChange={handleInputChange}
+        errors={errors}
+        prefersReducedMotion={prefersReducedMotion}
+      />
+    )}
+
+    <motion.div
+      initial={{ opacity: 0, x: -20 }}
+      whileInView={{ opacity: 1, x: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.5, delay: 0.6 }}
+    >
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        Maximum Attendees
+      </label>
+      <input
+        type="number"
+        name="capacity"
+        value={formData.capacity}
+        onChange={handleInputChange}
+        placeholder="Leave empty for unlimited (max: 100,000)"
+        min="1"
+        max="100000"
+        className={`w-full border ${errors.capacity ? "border-red-500" : "border-gray-300 dark:border-gray-600"} rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
+      />
+      {errors.capacity && <span className="text-red-500 text-sm mt-1">{errors.capacity}</span>}
+    </motion.div>
+  </>
+);
+
+const EventFormToggles = ({ formData, handleInputChange }) => (
+  <motion.div
+    className="space-y-3"
+    initial={{ opacity: 0, x: -20 }}
+    whileInView={{ opacity: 1, x: 0 }}
+    viewport={{ once: true }}
+    transition={{ duration: 0.5, delay: 0.8 }}
+  >
+    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+      <input
+        type="checkbox"
+        name="isPublic"
+        checked={formData.isPublic}
+        onChange={handleInputChange}
+        className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+      />
+      Make this event public
+    </label>
+    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+      <input
+        type="checkbox"
+        name="requiresApproval"
+        checked={formData.requiresApproval}
+        onChange={handleInputChange}
+        className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+      />
+      Require approval for registration
+    </label>
+  </motion.div>
+);
+
 
 const EventFormContent = ({
   formData,
@@ -424,80 +534,12 @@ const EventFormContent = ({
           todayString={todayString}
         />
 
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.5 }}
-        >
-          <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-            <input
-              type="checkbox"
-              name="isVirtual"
-              checked={formData.isVirtual}
-              onChange={handleInputChange}
-              className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-            />
-            <Globe className="w-5 h-5 text-indigo-500 inline-block" />
-            This is a virtual event
-          </label>
-        </motion.div>
-
-        {formData.isVirtual ? (
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-          >
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              <Link2 className="w-5 h-5 text-indigo-500 inline-block mr-2" />
-              Virtual Event Link <span className="text-red-600">*</span>
-            </label>
-            <input
-              type="url"
-              name="virtualLink"
-              value={formData.virtualLink}
-              onChange={handleInputChange}
-              placeholder="https://zoom.us/j/..."
-              className={`w-full border ${
-                errors.virtualLink ? "border-red-500" : "border-gray-300 dark:border-gray-600"
-              } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
-            />
-            {errors.virtualLink && (
-              <span className="text-red-500 text-sm mt-1">{errors.virtualLink}</span>
-            )}
-          </motion.div>
-        ) : (
-          <LocationFields
-            formData={formData}
-            handleInputChange={handleInputChange}
-            errors={errors}
-            prefersReducedMotion={prefersReducedMotion}
-          />
-        )}
-
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.6 }}
-        >
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Maximum Attendees
-          </label>
-          <input
-            type="number"
-            name="capacity"
-            value={formData.capacity}
-            onChange={handleInputChange}
-            placeholder="Leave empty for unlimited (max: 100,000)"
-            min="1"
-            max="100000"
-            className={`w-full border ${errors.capacity ? "border-red-500" : "border-gray-300 dark:border-gray-600"} rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
-          />
-          {errors.capacity && <span className="text-red-500 text-sm mt-1">{errors.capacity}</span>}
-        </motion.div>
+        <EventFormVirtualAndCapacity
+          formData={formData}
+          handleInputChange={handleInputChange}
+          errors={errors}
+          prefersReducedMotion={prefersReducedMotion}
+        />
 
         <RegistrationDatesFields
           formData={formData}
@@ -505,34 +547,10 @@ const EventFormContent = ({
           errors={errors}
         />
 
-        <motion.div
-          className="space-y-3"
-          initial={{ opacity: 0, x: -20 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.8 }}
-        >
-          <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-            <input
-              type="checkbox"
-              name="isPublic"
-              checked={formData.isPublic}
-              onChange={handleInputChange}
-              className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-            />
-            Make this event public
-          </label>
-          <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-            <input
-              type="checkbox"
-              name="requiresApproval"
-              checked={formData.requiresApproval}
-              onChange={handleInputChange}
-              className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-            />
-            Require approval for registration
-          </label>
-        </motion.div>
+        <EventFormToggles
+          formData={formData}
+          handleInputChange={handleInputChange}
+        />
 
         <TicketsStep
           formData={formData}
