@@ -10,6 +10,7 @@ import EventMediaSection from "./common/EventCreation/EventMediaSection";
 import EventLocationSection from "./common/EventCreation/EventLocationSection";
 import EventTicketSection from "./common/EventCreation/EventTicketSection";
 import DraftRestoreModal from "./common/EventCreation/DraftRestoreModal";
+import EventAgendaBuilder from "./events/EventAgendaBuilder";
 import { LoadingButton } from "./ui/LoadingButton";
 import { categories } from "../constants/eventDefaults";
 import { formatDate, formatTime } from "../utils/eventCreationUtils";
@@ -167,6 +168,19 @@ const EventCreation = () => {
                 <section>
                   <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
                     <span className="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 text-sm">4</span>
+                    Event Agenda
+                  </h2>
+                  <EventAgendaBuilder
+                    initialSessions={formData.sessions || []}
+                    onChange={(sessions) => setFormData(prev => ({ ...prev, sessions }))}
+                  />
+                </section>
+
+                <hr className="border-gray-100 dark:border-gray-700" />
+
+                <section>
+                  <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
+                    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 text-sm">5</span>
                     Tickets
                   </h2>
                   <EventTicketSection

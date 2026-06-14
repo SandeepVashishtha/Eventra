@@ -4,7 +4,7 @@ import { getSmartDateLabel } from "../../utils/relativeTime";
 import {
   Calendar, Trophy, FolderOpen, Users, Settings,
   Clock, Zap, Activity, Bell, ChevronRight,
-  LogOut, User, Plus, Search, X
+  LogOut, User, Plus, Search, X, Bookmark
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
@@ -30,6 +30,7 @@ import EventTicket from "./EventTicket";
 import EmptyState from "../common/EmptyState";
 import DashboardEmptyState from "./DashboardEmptyState";
 import OfflineIndicator from "../common/OfflineIndicator";
+import MyItinerary from "./MyItinerary";
 
 const fadeUp = (prefersReducedMotion) => ({
   hidden: { opacity: 0, y: 24 },
@@ -190,6 +191,7 @@ export default function UserDashboard() {
           {[
             { id: "overview", icon: <Activity size={18} />, label: "Overview" },
             { id: "events", icon: <Calendar size={18} />, label: "Events" },
+            { id: "itinerary", icon: <Bookmark size={18} />, label: "My Itinerary" },
             { id: "hackathons", icon: <Trophy size={18} />, label: "Hackathons" },
             { id: "projects", icon: <FolderOpen size={18} />, label: "Projects" },
             { id: "registrations", icon: <Users size={18} />, label: "Registrations" },
@@ -465,6 +467,15 @@ export default function UserDashboard() {
                   hostedEvents={MOCK_DATA.filter(d => d.type === "Event" && d.participationType)}
                   onViewTicket={setSelectedTicketEvent}
                 />
+              </ErrorBoundary>
+            </motion.div>
+          )}
+
+          {/* My Itinerary tab */}
+          {activeTab === "itinerary" && (
+            <motion.div key="itinerary" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="ud-content">
+              <ErrorBoundary level="feature">
+                <MyItinerary />
               </ErrorBoundary>
             </motion.div>
           )}

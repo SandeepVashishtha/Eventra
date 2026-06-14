@@ -19,6 +19,7 @@ import EventCancellationModal from "../../components/events/EventCancellationMod
 import SimilarEvents from "../../components/events/SimilarEvents";
 import { EventDetailSkeleton } from "../../components/common/SkeletonLoaders";
 import LazyImage from "../../components/common/LazyImage";
+import EventAgenda from "../../components/events/EventAgenda";
 import { useAuth } from "../../context/AuthContext";
 import { exportToCSV, exportToJSON } from "../../utils/exportUtils";
 import { ROLES } from "../../config/roles";
@@ -612,6 +613,19 @@ const EventDetails = () => {
                   dangerouslySetInnerHTML={{ __html: sanitizeMarkdown(event.description, marked.parse) }}
                 />
               </div>
+
+              {/* Event Agenda Section */}
+              <EventAgenda 
+                sessions={event.sessions || [
+                  { id: 's1', title: 'Registration & Welcome Breakfast', time: '08:00', date: event.date, track: 'Main Hall', speaker: '' },
+                  { id: 's2', title: 'Opening Keynote', time: '09:30', date: event.date, track: 'Main Stage', speaker: 'Sarah Connor' },
+                  { id: 's3', title: 'Panel: Future of Technology', time: '11:00', date: event.date, track: 'Room A', speaker: 'Dr. Smith, John Doe' },
+                  { id: 's4', title: 'Networking Lunch', time: '12:30', date: event.date, track: 'Cafeteria', speaker: '' },
+                  { id: 's5', title: 'Workshop: React Advanced Patterns', time: '14:00', date: event.date, track: 'Workshop Room 1', speaker: 'Jane Developer' },
+                  { id: 's6', title: 'Closing Remarks', time: '16:30', date: event.date, track: 'Main Stage', speaker: 'Sarah Connor' }
+                ]} 
+              />
+
             </div>
           </div>
 
