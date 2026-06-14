@@ -547,10 +547,7 @@ const EventDetails = () => {
 
                 {/* Event Countdown */}
                 <div className="sm:col-span-2">
-                  <CountdownTimer
-                    date={event.date}
-                    time={event.time}
-                  />
+                  <CountdownTimer eventDate={event.date} />
                 </div>
               </div>
 
