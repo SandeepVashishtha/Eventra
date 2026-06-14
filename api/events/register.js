@@ -15,10 +15,11 @@
  *  5. Handles `CAPACITY_FULL` thrown by concurrent race losers.
  */
 
-import { checkCapacity } from "../lib/capacityValidator.js";
+import { checkCapacity } from "../_lib/capacityValidator.js";
 
 // Concurrency lock for RSVP
 const rsvpLocks = new Map();
+const rsvpLockCounters = new Map();
 
 /**
  * Registration handler.
@@ -72,16 +73,22 @@ export default async function registerForEvent(req, res, deps = {}) {
     return;
   }
   
+  const counter = rsvpLockCounters.get(eventId) || 0;
+  rsvpLockCounters.set(eventId, counter + 1);
+
   if (!rsvpLocks.has(eventId)) {
     rsvpLocks.set(eventId, Promise.resolve());
   }
-  
+
   const release = await new Promise(resolve => {
     const previous = rsvpLocks.get(eventId);
     let releaseFn;
-    const next = previous.then(() => new Promise(r => { releaseFn = r; }));
+    const next = Promise.resolve(previous).then(
+      () => new Promise(r => { releaseFn = r; }),
+      () => { releaseFn = () => {}; }
+    );
     rsvpLocks.set(eventId, next);
-    previous.then(() => resolve(releaseFn));
+    Promise.resolve(previous).then(() => resolve(releaseFn), () => resolve(() => {}));
   });
 
   try {
@@ -149,5 +156,12 @@ export default async function registerForEvent(req, res, deps = {}) {
     res.status(500).json({ error: "Internal server error" });
   } finally {
     release();
+    const remaining = rsvpLockCounters.get(eventId) - 1;
+    if (remaining <= 0) {
+      rsvpLocks.delete(eventId);
+      rsvpLockCounters.delete(eventId);
+    } else {
+      rsvpLockCounters.set(eventId, remaining);
+    }
   }
 }

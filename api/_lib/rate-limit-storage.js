@@ -27,6 +27,26 @@ let redisClient = null;
 // In-memory fallback storage (only for development/testing)
 const inMemoryStore = new Map();
 
+// Register cleanup hook to close Redis connection on process exit
+let cleanupRegistered = false;
+function registerCleanupHook() {
+  if (cleanupRegistered) return;
+  cleanupRegistered = true;
+  const cleanup = async () => {
+    if (redisClient) {
+      try {
+        await redisClient.quit();
+      } catch {
+        // Ignore cleanup errors
+      }
+      redisClient = null;
+    }
+  };
+  process.on("exit", cleanup);
+  process.on("SIGINT", cleanup);
+  process.on("SIGTERM", cleanup);
+}
+
 /**
  * Gets or creates the Redis client.
  *
@@ -37,6 +57,8 @@ function getRedisClient() {
   if (redisClient !== null) {
     return redisClient;
   }
+
+  registerCleanupHook();
 
   if (!isDistributedRateLimitStorageConfigured()) {
     return null;

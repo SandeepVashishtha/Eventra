@@ -22,6 +22,10 @@
 const API_RATE_LIMIT = 60;
 const API_RATE_WINDOW_S = 60;
 
+// Concurrency limiter for validation pipeline
+import { createConcurrencyLimiter } from "./api/_lib/concurrency.js";
+const validationLimiter = createConcurrencyLimiter(5);
+
 // ---------------------------------------------------------------------------
 // CSP Backend Origin Configuration
 // Reads backend origins from environment variables and validates them
@@ -295,6 +299,10 @@ const createGeoBlockedResponse = () =>
   );
 
 export default async function middleware(request) {
+  return validationLimiter.run(() => handleRequest(request));
+}
+
+async function handleRequest(request) {
   const country = request.geo?.country;
   
   if (isCountryBlocked(country)) {

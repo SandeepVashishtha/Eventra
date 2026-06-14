@@ -2,6 +2,7 @@ import { useState, useEffect, lazy, Suspense } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import * as Sentry from "@sentry/react";
+import { Analytics } from "@vercel/analytics/react";
 import "./App.css";
 import "./styles/reduced-motion.css";
 import "./styles/print.css";
@@ -301,9 +302,8 @@ function App() {
                     </Suspense>
                 </ErrorBoundary>
                 )}
-
-                {import.meta.env.DEV && <ErrorButton />}
               </div>
+              <Analytics />
             </SessionRecoveryProvider>
           </MyEventsProvider>
         </NotificationProvider>
@@ -311,31 +311,4 @@ function App() {
     </ErrorBoundary>
   );
 }
-
-function ErrorButton() {
-  return (
-    <button
-      onClick={() => {
-        throw new Error('This is your first error!');
-      }}
-      style={{
-        position: "fixed",
-        bottom: "20px",
-        left: "20px",
-        zIndex: 9999,
-        padding: "10px 15px",
-        backgroundColor: "#e11d48",
-        color: "white",
-        border: "none",
-        borderRadius: "5px",
-        cursor: "pointer",
-        fontWeight: "bold",
-        boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-      }}
-    >
-      Break the world
-    </button>
-  );
-}
-
 export default App;

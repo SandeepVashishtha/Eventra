@@ -17,11 +17,11 @@
 
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { getClientIp } from "../lib/getClientIp.js";
-import { loginRateLimiter, enforceRateLimit } from "../lib/rateLimiter.js";
-import { getJwtSecret, JWT_EXPIRES_IN, JWT_COOKIE_MAX_AGE_SECONDS } from "./jwt-config.js";
-import { buildCorsHeaders, corsResponse, handlePreflight } from "./cors.js";
-import { isStorageHealthy, getUserByEmail, getUserByUsername } from "./user-storage.js";
+import { getClientIp } from "../_lib/getClientIp.js";
+import { loginRateLimiter, enforceRateLimit } from "../_lib/rateLimiter.js";
+import { getJwtSecret, JWT_EXPIRES_IN, JWT_COOKIE_MAX_AGE_SECONDS } from "./_jwt-config.js";
+import { buildCorsHeaders, corsResponse, handlePreflight } from "./_cors.js";
+import { isStorageHealthy, getUserByEmail, getUserByUsername } from "./_user-storage.js";
 
 /**
  * Validates the login request body.
@@ -37,15 +37,67 @@ function validateLoginInput(body) {
   const usernameOrEmail = body.usernameOrEmail || body.email;
   const { password } = body;
 
-  if (!usernameOrEmail || typeof usernameOrEmail !== "string" || usernameOrEmail.trim() === "") {
+  if (!usernameOrEmail?.trim()) {
     return { valid: false, message: "Username or email is required" };
   }
 
-  if (!password || typeof password !== "string" || password === "") {
+  if (!password) {
     return { valid: false, message: "Password is required" };
   }
 
   return { valid: true };
+}
+
+function setCookie(res, token) {
+  const isProd = process.env.NODE_ENV === "production";
+  const cookieValue = `token=${token}; HttpOnly; Path=/; Max-Age=${JWT_COOKIE_MAX_AGE_SECONDS}; SameSite=Strict${isProd ? '; Secure' : ''}`;
+  try {
+    if (typeof res.setHeader === 'function') {
+      res.setHeader('Set-Cookie', cookieValue);
+    } else if (typeof res.set === 'function') {
+      res.set({ 'Set-Cookie': cookieValue });
+    } else if (res.headers && typeof res.headers === 'object') {
+      res.headers['Set-Cookie'] = cookieValue;
+    }
+  } catch (e) {
+  }
+}
+
+function buildUserResponse(user) {
+  const roles = user.roles || ["USER"];
+  const primaryRole = roles[0] || "ATTENDEE";
+  const normalizedRole = primaryRole === "EVENT_MANAGER" ? "ORGANIZER" : primaryRole;
+  return {
+    id: user.id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    email: user.email,
+    username: user.username,
+    role: normalizedRole,
+    roles: roles,
+    permissions: user.permissions || ["event:read"],
+  };
+}
+
+function createDefaultDeps() {
+  return {
+    findUserByEmail: async (ident) => {
+      const normalized = ident.trim().toLowerCase();
+      const userByEmail = users.get(normalized);
+      if (userByEmail) return userByEmail;
+      return usersByUsername.get(normalized);
+    },
+    comparePassword: async (plain, hash) => bcrypt.compare(plain, hash),
+    issueToken: (user) => {
+      const jwtPayload = {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        roles: user.roles || ["USER"],
+      };
+      return jwt.sign(jwtPayload, getJwtSecret(), { expiresIn: JWT_EXPIRES_IN });
+    },
+  };
 }
 
 /**
@@ -67,17 +119,26 @@ export default async function login(req, res, deps = {}) {
     return corsResponse(req, res, 405, { error: "Method not allowed" });
   }
 
-  // 2. Rate limit BEFORE any expensive work (bcrypt)
   const clientIp = getClientIp(req);
-  const rateLimitResult = await loginRateLimiter.check(clientIp);
-  if (!rateLimitResult.allowed) {
-    return corsResponse(req, res, 429, {
+  try {
+    const rateLimitResult = loginRateLimiter.checkAsync 
+      ? await loginRateLimiter.checkAsync(clientIp)
+      : loginRateLimiter.check(clientIp);
+    
+    if (!rateLimitResult.allowed) {
+      return corsResponse(req, res, 429, {
+        success: false,
+        message: "Too many authentication attempts. Please try again later.",
+      });
+    }
+  } catch (rateLimitError) {
+    console.error('[login] Rate limit check failed:', rateLimitError.message);
+    return corsResponse(req, res, 500, {
       success: false,
-      message: "Too many authentication attempts. Please try again later.",
+      message: "Rate limiting service unavailable. Please try again later.",
     });
   }
 
-  // 3. Input validation
   const validation = validateLoginInput(req.body);
   if (!validation.valid) {
     return corsResponse(req, res, 400, { error: validation.message });
@@ -114,57 +175,23 @@ export default async function login(req, res, deps = {}) {
     },
   } = deps;
 
-  try {
-    const user = await findUserByEmail(usernameOrEmail);
+  const mergedDeps = { findUserByEmail, comparePassword, issueToken, ...deps };
 
-    // 4. Verify credentials. Always run the comparison shape regardless of
-    //    whether the user exists to avoid leaking timing/enumeration signals.
-    //    A valid dummy bcrypt hash is used for non-existent users to prevent
-    //    bcrypt from throwing errors on invalid/empty hashes, which would
-    //    leak the user's non-existence via an HTTP 500 response.
+  try {
+    const user = await mergedDeps.findUserByEmail(usernameOrEmail);
+
     const dummyHash = "$2b$10$v18wNUUU7wTXyTbRPTFZTeze3aHS//qr4FKA9gu1E/GfNQqTsFfRG";
     const passwordHash = user?.password ?? dummyHash;
-    const isValid = await comparePassword(password, passwordHash);
+    const isValid = await mergedDeps.comparePassword(password, passwordHash);
 
     if (!user || !isValid) {
-      // 5. Generic message prevents account enumeration.
       return corsResponse(req, res, 401, { error: "Invalid credentials" });
     }
 
-    // Successful login: do not reset immediately to conform with test threshold expectations
+    const token = mergedDeps.issueToken(user);
+    if (token) setCookie(res, token);
 
-    const token = typeof issueToken === "function" ? issueToken(user) : undefined;
-
-    if (token) {
-      const isProd = process.env.NODE_ENV === "production";
-      const cookieValue = `token=${token}; HttpOnly; Path=/; Max-Age=${JWT_COOKIE_MAX_AGE_SECONDS}; SameSite=Strict${isProd ? '; Secure' : ''}`;
-      try {
-        if (typeof res.setHeader === 'function') {
-          res.setHeader('Set-Cookie', cookieValue);
-        } else if (typeof res.set === 'function') {
-          res.set({ 'Set-Cookie': cookieValue });
-        } else if (res.headers && typeof res.headers === 'object') {
-          res.headers['Set-Cookie'] = cookieValue;
-        }
-      } catch (e) {
-        // Ignore write errors on test response objects
-      }
-    }
-
-    const roles = user.roles || ["USER"];
-    const primaryRole = roles[0] || "ATTENDEE";
-    const normalizedRole = primaryRole === "EVENT_MANAGER" ? "ORGANIZER" : primaryRole;
-
-    const userResponse = {
-      id: user.id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      username: user.username,
-      role: normalizedRole,
-      roles: roles,
-      permissions: user.permissions || ["event:read"],
-    };
+    const userResponse = buildUserResponse(user);
 
     return corsResponse(req, res, 200, {
       message: "Login successful",
