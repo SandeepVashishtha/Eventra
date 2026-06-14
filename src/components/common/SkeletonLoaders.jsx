@@ -383,9 +383,9 @@ export const ProjectCardSkeleton = () => (
 );
 
 export const DashboardStatCardSkeleton = () => (
-  <div aria-hidden="true" className="ud-stat-card">
-    <SkeletonBlock className="ud-stat-icon h-11 w-11 rounded-xl" />
-    <div className="ud-stat-info flex-1">
+  <div aria-hidden="true" className="flex items-center p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 animate-pulse">
+    <SkeletonBlock className="h-14 w-14 rounded-xl flex-shrink-0" />
+    <div className="flex-1 ml-4">
       <SkeletonBlock className="h-3 w-20 mb-2" />
       <SkeletonBlock className="h-8 w-14 mb-2" />
       <SkeletonBlock className="h-3 w-32" />
@@ -606,6 +606,66 @@ export const ExploreEventsSkeleton = () => (
         <SkeletonEventCard key={i} />
       ))}
     </div>
+  </div>
+);
+
+/**
+ * WaitlistSkeleton
+ * Displayed in place of the waitlist join form while the event capacity
+ * check / waitlist state is being fetched from the server.
+ */
+export const WaitlistSkeleton = () => (
+  <div
+    role="status"
+    aria-live="polite"
+    aria-label="Loading waitlist information…"
+    className="animate-pulse rounded-2xl border border-amber-100 dark:border-amber-900/40 bg-amber-50/60 dark:bg-amber-950/20 p-6 space-y-4 w-full max-w-md"
+  >
+    {/* Header row — icon + title */}
+    <div className="flex items-center gap-3">
+      <SkeletonBlock className="h-10 w-10 rounded-xl flex-shrink-0 bg-amber-200/70 dark:bg-amber-800/40" />
+      <div className="flex-1 space-y-2">
+        <SkeletonBlock className="h-5 w-40 bg-amber-200/70 dark:bg-amber-800/40" />
+        <SkeletonBlock className="h-3 w-28 bg-amber-200/50 dark:bg-amber-800/30" />
+      </div>
+    </div>
+
+    {/* Capacity bar */}
+    <div className="space-y-1">
+      <div className="flex justify-between">
+        <SkeletonBlock className="h-3 w-24 bg-amber-200/60 dark:bg-amber-800/30" />
+        <SkeletonBlock className="h-3 w-12 bg-amber-200/60 dark:bg-amber-800/30" />
+      </div>
+      <SkeletonBlock className="h-2 w-full rounded-full bg-amber-200/70 dark:bg-amber-800/40" />
+    </div>
+
+    {/* Queue position badge */}
+    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-100/60 dark:bg-amber-900/20">
+      <SkeletonBlock className="h-6 w-6 rounded-full bg-amber-300/50 dark:bg-amber-700/40 flex-shrink-0" />
+      <SkeletonBlock className="h-4 w-48 bg-amber-200/60 dark:bg-amber-800/30" />
+    </div>
+
+    {/* CTA button */}
+    <SkeletonBlock className="h-12 w-full rounded-xl bg-amber-300/40 dark:bg-amber-700/30" />
+
+    {/* Fine-print note */}
+    <SkeletonBlock className="h-3 w-3/4 mx-auto bg-amber-200/50 dark:bg-amber-800/20" />
+  </div>
+);
+
+/**
+ * WaitlistPositionSkeleton
+ * A compact inline skeleton for the "You are #N in the queue" badge that
+ * appears after a user has joined the waitlist, while the position data is
+ * still resolving.
+ */
+export const WaitlistPositionSkeleton = () => (
+  <div
+    aria-hidden="true"
+    className="animate-pulse inline-flex items-center gap-2 px-4 py-2 rounded-full border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30"
+  >
+    <SkeletonBlock className="h-4 w-4 rounded-full bg-amber-300/60 dark:bg-amber-700/40" />
+    <SkeletonBlock className="h-4 w-36 bg-amber-200/70 dark:bg-amber-800/40" />
   </div>
 );
 

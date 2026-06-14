@@ -20,6 +20,8 @@ import { useFocusTrap } from '../hooks/useFocusTrap';
  * @param {Function} props.onSelectAlternative - Callback when user selects an alternative event
  * @param {boolean} props.strictMode - If true, blocks registration (no proceed option)
  */
+import ErrorBoundary from "./common/ErrorBoundary";
+
 const EventConflictModal = ({
   isOpen,
   newEvent,
@@ -63,23 +65,21 @@ const EventConflictModal = ({
     };
   }, [isOpen]);
 
+  const onCancelRef = useRef(onCancel);
+  onCancelRef.current = onCancel;
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
-        onCancel();
+        onCancelRef.current();
       }
     };
-    if (isOpen) {
-      window.addEventListener('keydown', handleKeyDown);
-    }
+    window.addEventListener('keydown', handleKeyDown);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, onCancel]);
-
-  // Focus trapping is now handled by useFocusTrap above.
-  // The hook handles Tab wrapping and Escape key automatically.
   }, [isOpen]);
+
 
   // 🔥 FIX: Safe date formatter to prevent RangeError crashes if event data is malformed
   const safeFormatDate = (dateStr) => {
@@ -273,4 +273,10 @@ const EventConflictModal = ({
   );
 };
 
-export default EventConflictModal;
+export default function SafeEventConflictModal(props) {
+  return (
+    <ErrorBoundary level="feature" label="Event Conflict Modal">
+      <EventConflictModal {...props} />
+    </ErrorBoundary>
+  );
+}
