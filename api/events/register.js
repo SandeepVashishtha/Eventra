@@ -149,5 +149,6 @@ export default async function registerForEvent(req, res, deps = {}) {
     res.status(500).json({ error: "Internal server error" });
   } finally {
     release();
+    rsvpLocks.delete(eventId);
   }
 }
