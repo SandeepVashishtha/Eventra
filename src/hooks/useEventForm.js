@@ -283,6 +283,12 @@ export const useEventForm = () => {
     formDataRef.current = formData;
   }, [formData]);
 
+  const resetForm = useCallback(() => {
+    setFormData(initialFormData);
+    setErrors({});
+    localStorage.removeItem(scopedDraftKey);
+  }, [scopedDraftKey]);
+
   // 🎯 Form Submission Hook
   const {
     handleSubmit: submitEventForm,
@@ -307,6 +313,7 @@ export const useEventForm = () => {
       throw new Error(errorMessage);
     }
 
+    resetForm();
     return result;
   });
 
@@ -547,12 +554,6 @@ export const useEventForm = () => {
     const { name, value } = e.target;
     if (name) validateField(name, value);
   }, [validateField]);
-
-  const resetForm = useCallback(() => {
-    setFormData(initialFormData);
-    setErrors({});
-    localStorage.removeItem(scopedDraftKey);
-  }, [scopedDraftKey]);
 
   const handleInputChange = useCallback((e) => {
     const { name, value, type, checked } = e.target;
