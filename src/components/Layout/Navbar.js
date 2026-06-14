@@ -76,7 +76,7 @@ const NAV_ITEMS = [
 const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
   const location = useLocation();
   return (
-    <div className="hidden lg:flex items-center justify-center flex-1 min-w-0 pl-6">
+    <div className="hidden lg:flex items-center justify-start flex-1 min-w-0 pl-4 gap-2">
       {NAV_ITEMS.map((item) => {
         const isActive = item.href
           ? (item.href === "/" ? location.pathname === "/" : location.pathname.startsWith(item.href))
@@ -287,8 +287,9 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           {/* Centered Desktop Nav Links */}
           <DesktopNavLinks openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} />
 
+          <div className="hidden lg:block w-px h-6 bg-zinc-300 dark:bg-zinc-600 mx-2 shrink-0" />
           {/* Right Controls */}
-          <div className="hidden lg:flex items-center gap-2 shrink-0 pl-2">
+          <div className="hidden lg:flex items-center gap-2 shrink-0 pl-4">
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
