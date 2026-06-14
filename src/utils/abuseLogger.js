@@ -11,9 +11,18 @@ export const logAbuseAttempt = (type, details = {}) => {
       existing = [];
     }
 
+    const now = Date.now();
+    // Sliding window throttling: limit to 10 abuse logs per minute
+    const oneMinuteAgo = now - 60000;
+    const recentLogs = existing.filter(log => log.timestamp > oneMinuteAgo);
+    if (recentLogs.length >= 10) {
+      console.warn("[ABUSE LOGGER] Throttling active. Log attempt rejected.");
+      return;
+    }
+
     existing.push({
       type,
-      timestamp: Date.now(),
+      timestamp: now,
       details,
     });
 

@@ -1,6 +1,15 @@
-import { motion, useAnimation, AnimatePresence, MotionConfig, useScroll, useTransform } from "framer-motion";
-import { useEffect, useState, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import {
+  motion,
+  useAnimation,
+  AnimatePresence,
+  MotionConfig,
+  useScroll,
+  useTransform
+} from "framer-motion";
+
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import Fuse from "fuse.js";
 import { Calendar, Code, ExternalLink, Handshake, Search, Trophy, Users } from "lucide-react";
 import CountUpLib from "react-countup";
@@ -14,9 +23,9 @@ import useReducedMotion from "../../../hooks/useReducedMotion.js";
 import eventsData from "../../Events/eventsMockData.json";
 import hackathonsData from "../../Hackathons/hackathonMockData.json";
 import projectsData from "../../Projects/mockProjectsData.json";
-
 const CountUp = CountUpLib.default || CountUpLib;
 
+<<<<<<< HEAD
 // ─── STATIC CONFIGURATIONS ───────────────────────────────────────────────────
 const SEARCH_ROUTES = {
   event: "/events",
@@ -83,6 +92,10 @@ const fadeUp = {
   hidden: { opacity: 0, y: 20 }, 
   show: { opacity: 1, y: 0, transition: { duration: 0.6 } } 
 };
+=======
+// ─── MOTION LINK SUB-COMPONENT ──────────────────────────────────────────────
+const MotionLink = motion(Link);
+>>>>>>> upstream/master
 
 // ─── STATIC SEARCH INDEX CONFIGURATION ───────────────────────────────────────
 const createSearchItem = (item, type, searchType) => ({
@@ -102,6 +115,31 @@ const allSearchItems = [
   ...projectsData.map((item) => createSearchItem(item, "project", "Projects")),
 ];
 
+<<<<<<< HEAD
+=======
+const HEADLINE_PHRASES = [
+  "Amazing Tech Events",
+  "Exciting Hackathons Today",
+  "Innovative Dev Workshops",
+  "Cutting-Edge Tech Meetups",
+];
+const TAGLINE_TEXTS = ["Discover & Join"];
+const SEARCH_RESULT_LIMIT = 5;
+
+
+const SEARCH_ROUTES = {
+  event: "/events",
+  hackathon: "/hackathons",
+  project: "/projects",
+};
+
+const SEARCH_ICONS = {
+  event: Calendar,
+  hackathon: Trophy,
+  project: Code,
+};
+
+>>>>>>> upstream/master
 const searchIndex = new Fuse(allSearchItems, {
   keys: ["title", "description", "location", "tags", "techStack", "category", "author", "organizer", "type"],
   threshold: 0.3,
@@ -124,21 +162,31 @@ const MotionLink = motion(Link);
 
 // ─── COMPONENT INTERFACE ─────────────────────────────────────────────────────
 const Hero = () => {
+<<<<<<< HEAD
   const prefersReducedMotion = useReducedMotion();
   const controls = useAnimation();
+=======
+  const { t, i18n } = useTranslation();
+  const heroControls = useAnimation();
+  const prefersReducedMotion = useReducedMotion();
+
+  useDocumentTitle("Eventra | Home");
+
+>>>>>>> upstream/master
   const containerRef = useRef(null);
 
   useDocumentTitle("Eventra | Home");
 
   const [isTouch, setIsTouch] = useState(false);
-  const [isDark, setIsDark] = useState(false);
-  const [isMobileView, setIsMobileView] = useState(false);
   const [statsReady, setStatsReady] = useState(false);
   const [phraseIndex, setPhraseIndex] = useState(0);
   const [showResults, setShowResults] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
 
+<<<<<<< HEAD
   // FIXED: Destructured missing search hook properties correctly
+=======
+>>>>>>> upstream/master
   const { searchTerm, debouncedTerm, setSearchTerm, clear: clearSearchTerm } = useDebouncedSearch("", 300);
 
   // FIXED: Added missing useScroll initialization to define scrollYProgress
@@ -153,6 +201,7 @@ const Hero = () => {
 
   useEffect(() => {
     setIsTouch(window.matchMedia("(pointer: coarse)").matches);
+<<<<<<< HEAD
     setIsDark(document.documentElement.classList.contains("dark"));
     setIsMobileView(window.innerWidth <= 420);
 
@@ -170,6 +219,8 @@ const Hero = () => {
       observer.disconnect();
       window.removeEventListener("resize", onResize);
     };
+=======
+>>>>>>> upstream/master
   }, []);
 
   useEffect(() => {
@@ -181,8 +232,13 @@ const Hero = () => {
   }, []);
 
   useEffect(() => {
+<<<<<<< HEAD
     controls.start("show");
   }, [controls]);
+=======
+    heroControls.start("show");
+  }, [heroControls]);
+>>>>>>> upstream/master
 
   useEffect(() => {
     const timer = setTimeout(() => setStatsReady(true), 100);
@@ -207,6 +263,7 @@ const Hero = () => {
     clearSearchTerm();
   }, [clearSearchTerm]);
 
+<<<<<<< HEAD
   const floatShape = (i) => ({
     y: [0, -15 - i * 4, 0],
     x: [0, 12 + i * 3, 0],
@@ -218,16 +275,49 @@ const Hero = () => {
       delay: i * 0.2,
     },
   });
+=======
+
+
+  const HERO_STATS = useMemo(
+    () => [
+      {
+        value: 1500,
+        label: t("landing.hero.stats.developers"),
+        suffix: "+",
+        icon: Users,
+      },
+      {
+        value: 75,
+        label: t("landing.hero.stats.events"),
+        suffix: "+",
+        icon: Calendar,
+      },
+      {
+        value: 30,
+        label: t("landing.hero.stats.partners"),
+        suffix: "+",
+        icon: Handshake,
+      },
+    ],
+    [t]
+  );
+>>>>>>> upstream/master
 
   return (
     <section
       ref={containerRef}
       aria-label="Hero section"
-      className="relative overflow-hidden border-b border-gray-100 pb-16 text-slate-900 dark:bg-black dark:text-white sm:pb-20 md:pb-24"
+      className="relative overflow-hidden border-b border-gray-100 dark:border-slate-800 pb-16 text-slate-900 dark:text-white sm:pb-20 md:pb-24"
+      /* MODIFIED: Implemented premium brand-violet background gradient tokens */
+      style={{ background: "linear-gradient(180deg, rgba(109, 40, 217, 0.06) 0%, rgba(109, 40, 217, 0.02) 20%, var(--bg-color) 100%)" }}
     >
       {/* Decorative Blur Spheres */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
+<<<<<<< HEAD
         <div 
+=======
+        <div
+>>>>>>> upstream/master
           style={{
             position: "absolute",
             top: 12,
@@ -235,7 +325,7 @@ const Hero = () => {
             width: 260,
             height: 160,
             borderRadius: "50%",
-            background: "#E6F0F7",
+            background: "rgba(109, 40, 217, 0.08)",
             filter: "blur(36px)",
             opacity: 0.8,
           }}
@@ -248,22 +338,9 @@ const Hero = () => {
             width: 180,
             height: 120,
             borderRadius: "50%",
-            background: "#EFF6FB",
+            background: "rgba(109, 40, 217, 0.04)",
             filter: "blur(28px)",
             opacity: 0.7,
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            bottom: 20,
-            left: "12%",
-            width: 220,
-            height: 90,
-            borderRadius: "50%",
-            background: "#F7FAFC",
-            filter: "blur(20px)",
-            opacity: 0.85,
           }}
         />
       </div>
@@ -288,6 +365,12 @@ const Hero = () => {
       </div>
 
       <motion.div
+        initial="hidden"
+        animate="show"
+        variants={{
+          hidden: {},
+          show: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
+        }}
         className="relative z-10 px-4 pt-20 sm:px-6 sm:pt-24 md:pt-28 lg:px-8"
         style={{
           y: isTouch || prefersReducedMotion ? 0 : yText,
@@ -301,14 +384,14 @@ const Hero = () => {
               className="flex flex-col items-center gap-3 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl md:text-4xl lg:text-5xl"
               style={{ fontFamily: "\"Inter\", system-ui, sans-serif" }}
             >
-              <motion.span className="block text-sm font-medium text-gray-500">
+              <motion.span className="block text-sm font-medium text-gray-500 dark:text-gray-400">
                 <RespawningText texts={TAGLINE_TEXTS} />
               </motion.span>
               <div className="relative flex min-h-20 w-full items-center justify-center overflow-hidden sm:min-h-24 md:min-h-24">
                 <AnimatePresence mode="wait">
                   <motion.span
                     key={phraseIndex}
-                    className="block text-2xl font-extrabold text-gray-900 sm:text-3xl md:text-4xl lg:text-5xl dark:text-white"
+                    className="block text-2xl font-extrabold text-gray-900 dark:text-white sm:text-3xl md:text-4xl lg:text-5xl"
                     exit={{
                       opacity: 0,
                       y: -16,
@@ -331,16 +414,24 @@ const Hero = () => {
           </motion.p>
           <motion.div variants={fadeUp} className="mx-auto mb-10 w-full max-w-2xl">
             <div className="relative">
+<<<<<<< HEAD
               <div className="relative rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm">
+=======
+              <div className="relative rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm focus-within:border-brand-violet/50 transition-colors">
+>>>>>>> upstream/master
                 <ModernSearchInput
                   value={searchTerm}
                   onChange={(e) => handleSearch(e.target.value)}
                   placeholder="Search events, hackathons, projects..."
                   onFocus={() => searchTerm && setShowResults(true)}
                   onBlur={() => setTimeout(() => setShowResults(false), 200)}
+<<<<<<< HEAD
                   spellCheck = "false"
                   // Added "text-black dark:text-white" explicitly to force contrast
                   className="border-0 bg-transparent text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-0 w-full"
+=======
+                  inputClassName="border-0 bg-transparent text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-0"
+>>>>>>> upstream/master
                 >
                   <AnimatePresence>
                     {showResults && (
@@ -372,12 +463,16 @@ const Hero = () => {
                                     role="option"
                                     aria-label={`Open ${result.item.title}`}
                                   >
+<<<<<<< HEAD
                                     <div className="shrink-0 rounded-lg bg-gray-100 dark:bg-slate-800 p-2 text-gray-700 dark:text-gray-300 transition-transform group-hover:scale-105">
+=======
+                                    <div className="shrink-0 rounded-lg bg-gray-100 dark:bg-slate-800 p-2 text-gray-700 dark:text-gray-300 transition-transform group-hover:scale-105 group-hover:bg-brand-violet/10 group-hover:text-brand-violet">
+>>>>>>> upstream/master
                                       {getResultIcon(result.item.type)}
                                     </div>
                                     <div className="min-w-0 flex-1">
                                       <div className="mb-0.5 flex items-center gap-2">
-                                        <h4 className="truncate text-sm font-semibold text-gray-900 dark:text-white">
+                                        <h4 className="truncate text-sm font-semibold text-gray-900 dark:text-white group-hover:text-brand-violet transition-colors">
                                           {result.item.title}
                                         </h4>
                                         <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600 dark:bg-slate-800 dark:text-gray-300">
@@ -391,7 +486,7 @@ const Hero = () => {
                                       </p>
                                     </div>
                                     <ExternalLink
-                                      className="h-4 w-4 shrink-0 text-gray-400 transition-colors group-hover:text-indigo-500"
+                                      className="h-4 w-4 shrink-0 text-gray-400 transition-colors group-hover:text-brand-violet"
                                       aria-hidden="true"
                                     />
                                   </MotionLink>
@@ -432,6 +527,7 @@ const Hero = () => {
                   <motion.div
                     key={stat.label}
                     variants={fadeUp}
+<<<<<<< HEAD
                     whileHover={{ y: -2, transition: { duration: 0.15 } }}
                     className="flex flex-col items-center justify-center rounded-md border border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm transition-shadow sm:p-5"
                   >
@@ -439,10 +535,20 @@ const Hero = () => {
                       <stat.icon className="h-5 w-5" aria-hidden="true" />
                     </div>
                     <div className="mb-1 text-2xl font-semibold tabular-nums text-gray-900 dark:text-white sm:text-3xl">
+=======
+                    whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                    /* MODIFIED: Added premium hover state with brand-violet border, deep shadows, and theme colors */
+                    className="flex flex-col items-center justify-center rounded-xl border border-brand-violet/50 bg-white dark:bg-slate-900 p-5 shadow-sm hover:shadow-xl hover:border-brand-violet transition-all duration-300"
+                  >
+                    {/* MODIFIED: Icon wraps now subtly highlight into your brand colors on card hover */}
+                    <div className="mb-2 rounded-full bg-gray-100 dark:bg-slate-800 p-2 text-gray-700 dark:text-gray-300 border border-transparent transition-colors">
+                      <stat.icon className="h-5 w-5" aria-hidden="true" />
+                    </div>
+                    <p className="mb-1 text-2xl font-bold tabular-nums text-gray-900 dark:text-white sm:text-3xl">
+>>>>>>> upstream/master
                       {statsReady ? (
                         <CountUp
-                          start={0}
-                          end={Number.isFinite(stat.value) ? stat.value : 0}
+                          end={stat.value}
                           duration={2.2}
                           suffix={stat.suffix || ""}
                         />
@@ -452,8 +558,13 @@ const Hero = () => {
                           {stat.suffix || ""}
                         </>
                       )}
+<<<<<<< HEAD
                     </div>
                     <p className="text-center text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-400 sm:text-sm">
+=======
+                    </p>
+                    <p className="text-center text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 sm:text-sm">
+>>>>>>> upstream/master
                       {stat.label}
                     </p>
                   </motion.div>
@@ -469,7 +580,7 @@ const Hero = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.2 }}
-        className="absolute bottom-6 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-2 text-gray-500 dark:text-gray-400 md:flex"
+        className="absolute bottom-6 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-2 text-gray-400 dark:text-gray-500 md:flex"
         aria-hidden="true"
       >
         <span className="text-xs font-medium">Scroll to explore</span>

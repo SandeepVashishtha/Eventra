@@ -453,7 +453,6 @@ const SpatialSeatSelector = ({
           {/* Render Room elements */}
           {elements.map((el) => {
             const isVIP = el.tier && el.tier.toLowerCase().includes("vip");
-  const isAccessible = el.tier && (el.tier.toLowerCase().includes("accessible") || el.tier.toLowerCase().includes("wheelchair") || el.tier.toLowerCase().includes("accessibility"));
             const projOffset = 10;
 
             return (

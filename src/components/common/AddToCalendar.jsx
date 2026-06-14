@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Calendar, ChevronDown, X } from 'lucide-react';
-import { getGoogleCalendarUrl, getOutlookCalendarUrl } from '../../utils/calendarUrlUtils';
+import { getGoogleCalendarUrl, getOutlookCalendarUrl, getWebcalSubscriptionUrl } from '../../utils/calendarUrlUtils';
 
 const generateICalContent = (event) => {
   const formatICalDate = (dateStr, timeStr) => {
@@ -47,7 +47,7 @@ const downloadIcal = (event) => {
   URL.revokeObjectURL(url);
 };
 
-export default function AddToCalendar({ event, className = '' }) {
+export default function AddToCalendar({ event, className = '', iconOnly = false }) {
   const [open, setOpen] = useState(false);
   const [added, setAdded] = useState('');
 
@@ -66,8 +66,14 @@ export default function AddToCalendar({ event, className = '' }) {
   };
 
   const handleIcal = () => {
-    downloadIcal(event);
-    setAdded('iCal');
+    if (event.id) {
+      const webcalUrl = getWebcalSubscriptionUrl(event.id);
+      window.location.href = webcalUrl;
+    } else {
+      // Fallback to static download when event has no ID
+      downloadIcal(event);
+    }
+    setAdded('Apple / ICS');
     setTimeout(() => setOpen(false), 800);
   };
 
@@ -75,13 +81,20 @@ export default function AddToCalendar({ event, className = '' }) {
     <div className={`relative inline-block ${className}`}>
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+        className={iconOnly 
+          ? "rounded-full border border-gray-200 bg-white/90 p-2 shadow backdrop-blur-sm hover:border-indigo-200 dark:border-gray-700 dark:bg-gray-800/90 dark:hover:border-indigo-500 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer"
+          : "flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"}
         aria-haspopup="true"
         aria-expanded={open}
+        title="Add to Calendar"
       >
-        <Calendar className="w-4 h-4" />
-        Add to Calendar
-        <ChevronDown className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`} />
+        <Calendar className={iconOnly ? "w-3.5 h-3.5 text-gray-600 dark:text-gray-300" : "w-4 h-4"} />
+        {!iconOnly && (
+          <>
+            Add to Calendar
+            <ChevronDown className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`} />
+          </>
+        )}
       </button>
 
       {open && (
@@ -102,7 +115,7 @@ export default function AddToCalendar({ event, className = '' }) {
           </button>
           <button onClick={handleIcal} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left border-t border-gray-100 dark:border-gray-800">
             <Calendar className="w-4 h-4 text-gray-400" />
-            Download iCal (.ics)
+            Subscribe (Apple / ICS)
           </button>
           {added && (
             <div className="px-4 py-2 bg-green-50 dark:bg-green-900/20 border-t border-green-100 dark:border-green-800">

@@ -59,7 +59,7 @@ export const NAV_ITEMS = [
   },
   {
     nameKey: "nav.saved",
-    href: "/saved-events",
+    href: "/bookmarks",
     icon: <Bookmark className="w-5 h-5" />,
   },
   {

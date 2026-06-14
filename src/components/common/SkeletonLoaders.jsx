@@ -383,9 +383,9 @@ export const ProjectCardSkeleton = () => (
 );
 
 export const DashboardStatCardSkeleton = () => (
-  <div aria-hidden="true" className="ud-stat-card">
-    <SkeletonBlock className="ud-stat-icon h-11 w-11 rounded-xl" />
-    <div className="ud-stat-info flex-1">
+  <div aria-hidden="true" className="flex items-center p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 animate-pulse">
+    <SkeletonBlock className="h-14 w-14 rounded-xl flex-shrink-0" />
+    <div className="flex-1 ml-4">
       <SkeletonBlock className="h-3 w-20 mb-2" />
       <SkeletonBlock className="h-8 w-14 mb-2" />
       <SkeletonBlock className="h-3 w-32" />
@@ -616,7 +616,8 @@ export const ExploreEventsSkeleton = () => (
  */
 export const WaitlistSkeleton = () => (
   <div
-    aria-hidden="true"
+    role="status"
+    aria-live="polite"
     aria-label="Loading waitlist information…"
     className="animate-pulse rounded-2xl border border-amber-100 dark:border-amber-900/40 bg-amber-50/60 dark:bg-amber-950/20 p-6 space-y-4 w-full max-w-md"
   >

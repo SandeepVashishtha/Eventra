@@ -1,6 +1,7 @@
 import { memo, useRef, useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 import DesktopNavbar from "./DesktopNavbar";
 import MobileNavbar from "./MobileNavbar";
 import CursorToggle from "./CursorToggle";
@@ -12,20 +13,12 @@ import ProfileMenu from "./ProfileMenu";
 import NotificationBell from "../notifications/NotificationBell";
 import useBodyScrollLock from "./hooks/useBodyScrollLock";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
-
 const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [scrolled, setScrolled] = useState(false);
   const navRef = useRef(null);
-  const [isDarkMode, setIsDarkMode] = useState(
-  document.documentElement.classList.contains("dark")
-);
-
-const toggleTheme = () => {
-  document.documentElement.classList.toggle("dark");
-  setIsDarkMode(document.documentElement.classList.contains("dark"));
-};
+  const { isDarkMode, toggleTheme, setIsCustomizerOpen } = useTheme();
 
   const { user, isAuthenticated, logout } = useAuth();
   const authenticated = isAuthenticated();
@@ -88,6 +81,13 @@ const toggleTheme = () => {
 
   return (
     <>
+      {/* Skip link — visually hidden until keyboard-focused; satisfies WCAG 2.4.1 Bypass Blocks */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-indigo-600 focus:text-white focus:rounded"
+      >
+        Skip to main content
+      </a>
       <nav
         ref={navRef}
         aria-label="Primary navigation"
@@ -97,7 +97,7 @@ const toggleTheme = () => {
             : "bg-transparent border-b border-transparent"
         }`}
       >
-        <div className="relative px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="relative px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-3">
           {/* Logo - Left Section */}
           <Link to="/" aria-label="Eventra home logo template" className="relative z-10 flex items-center shrink-0">
             <div className="flex items-center gap-2 sm:gap-2.5">
@@ -117,13 +117,13 @@ const toggleTheme = () => {
           </Link>
 
           {/* Desktop Links - Wrapping instead of absolute positioning */}
-          <div className="hidden lg:flex items-center justify-center flex-1 overflow-x-auto">
+          <div className="hidden lg:flex items-center justify-center flex-1 ">
             <DesktopNavbar />
           </div>
 
           {/* Right Controls Container */}
-          <div className="relative z-10 flex items-center gap-2 sm:gap-2.5 shrink-0">
-            <div className="hidden lg:flex items-center gap-2.5">
+          <div className="relative z-10 flex items-center gap-1 sm:gap-2.5 shrink-0">
+            <div className="hidden lg:flex items-center gap-1.5">
               <LanguageSelector compact />
               {authenticated ? (
                 <>
@@ -138,8 +138,9 @@ const toggleTheme = () => {
             </div>
             <ThemeToggleButton 
               isDarkMode={isDarkMode}
-  toggleTheme={toggleTheme}
-  isMobile={false}
+              toggleTheme={toggleTheme}
+              isMobile={false}
+              setIsCustomizerOpen={setIsCustomizerOpen}
             />
 
             <div className="flex items-center gap-1 lg:hidden">

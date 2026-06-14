@@ -5,10 +5,12 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { safeJsonParse } from "../../utils/safeJsonParse";
+import { useAuth } from "../../context/AuthContext";
 
 import ErrorBoundary from "../common/ErrorBoundary";
 
 const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
+  const { user } = useAuth();
   const [showChat, setShowChat] = useState(false);
   const [chatMessage, setChatMessage] = useState("");
   const [chatHistory, setChatHistory] = useState([]);
@@ -22,9 +24,9 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
       const existingLeads = existingLeadsStr ? safeJsonParse(existingLeadsStr, []) : [];
       
       const newLead = {
-        name: "Test Attendee",
+        name: user?.name || user?.email || "Guest",
         action: action,
-        contact: "attendee@example.com",
+        contact: user?.email || "unknown",
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       

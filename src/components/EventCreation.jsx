@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
 import { ArrowRight, Pencil, CheckCircle, AlertCircle, Calendar, MapPin, Ticket as TicketIcon } from "lucide-react";
@@ -29,8 +29,10 @@ const EventCreation = () => {
     isSubmitting,
     submitError,
     submitSuccess,
-    submitEventForm,
+    // submitEventForm,
     validateForm,
+    handleFieldBlur,
+    isFormValid,
     handleInputChange,
     handleNestedChange,
     addTag,
@@ -120,6 +122,7 @@ const EventCreation = () => {
                   <EventBasicInfo
                     formData={formData}
                     handleInputChange={handleInputChange}
+                    handleFieldBlur={handleFieldBlur}
                     errors={errors}
                   />
                 </section>
@@ -154,6 +157,7 @@ const EventCreation = () => {
                     formData={formData}
                     handleInputChange={handleInputChange}
                     handleNestedChange={handleNestedChange}
+                    handleFieldBlur={handleFieldBlur}
                     errors={errors}
                   />
                 </section>
@@ -177,11 +181,24 @@ const EventCreation = () => {
                 <div className="pt-6">
                   <button
                     type="submit"
-                    className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 dark:shadow-none transition-all flex items-center justify-center gap-2 group"
+                    disabled={!isFormValid}
+                    aria-disabled={!isFormValid}
+                    className={`w-full py-4 font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 group
+                      ${
+                        isFormValid
+                          ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200 dark:shadow-none cursor-pointer"
+                          : "bg-indigo-300 dark:bg-indigo-900/50 text-white/70 cursor-not-allowed shadow-none"
+                      }`}
                   >
                     Preview Event
                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </button>
+                  {!isFormValid && (
+                    <p className="text-center text-xs text-amber-600 dark:text-amber-400 mt-2 flex items-center justify-center gap-1">
+                      <span role="img" aria-label="info">ℹ️</span>
+                      Fill in all required fields to continue
+                    </p>
+                  )}
                   <p
                     className="text-center text-sm text-gray-500 mt-4 italic"
                     aria-live="polite"
@@ -228,7 +245,7 @@ const EventCreation = () => {
 
                 <div className="p-8 space-y-8">
                   <div className="space-y-4">
-                    <h2 className="text-3xl font-bold text-gray-900 dark:text-white break-words">
+                    <h2 className="text-3xl font-bold text-gray-900 dark:text-white wrap-break-word">
                       {formData.title}
                     </h2>
                     <div className="flex flex-wrap gap-2">
