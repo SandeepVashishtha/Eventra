@@ -44,8 +44,9 @@ const sanitizeTemplateData = (formData) => {
  * @returns {Array} Array of template objects
  */
 export const getTemplates = () => {
+  if (typeof window === "undefined" || !window.localStorage) return [];
   try {
-    const stored = localStorage.getItem(TEMPLATES_KEY);
+    const stored = window.localStorage.getItem(TEMPLATES_KEY);
     if (!stored) return [];
 
     const templates = safeJsonParse(stored, []);
@@ -80,6 +81,8 @@ export const saveTemplate = (templateName, formData) => {
     return null;
   }
 
+  if (typeof window === "undefined" || !window.localStorage) return null;
+
   try {
     const templates = getTemplates();
 
@@ -91,7 +94,7 @@ export const saveTemplate = (templateName, formData) => {
     };
 
     templates.push(newTemplate);
-    localStorage.setItem(TEMPLATES_KEY, JSON.stringify(templates));
+    window.localStorage.setItem(TEMPLATES_KEY, JSON.stringify(templates));
 
     return newTemplate;
   } catch (error) {
@@ -128,6 +131,7 @@ export const loadTemplate = (templateId) => {
  * @returns {Boolean} True if deleted, false otherwise
  */
 export const deleteTemplate = (templateId) => {
+  if (typeof window === "undefined" || !window.localStorage) return false;
   try {
     const templates = getTemplates();
     const filteredTemplates = templates.filter((t) => t.id !== templateId);
@@ -137,7 +141,7 @@ export const deleteTemplate = (templateId) => {
       return false;
     }
 
-    localStorage.setItem(TEMPLATES_KEY, JSON.stringify(filteredTemplates));
+    window.localStorage.setItem(TEMPLATES_KEY, JSON.stringify(filteredTemplates));
     return true;
   } catch (error) {
     console.error("[EventTemplates] Error deleting template:", error);
@@ -150,8 +154,9 @@ export const deleteTemplate = (templateId) => {
  * @returns {Boolean} True if cleared
  */
 export const clearAllTemplates = () => {
+  if (typeof window === "undefined" || !window.localStorage) return false;
   try {
-    localStorage.removeItem(TEMPLATES_KEY);
+    window.localStorage.removeItem(TEMPLATES_KEY);
     return true;
   } catch (error) {
     console.error("[EventTemplates] Error clearing templates:", error);
@@ -168,7 +173,7 @@ export const templateNameExists = (templateName) => {
   try {
     const templates = getTemplates();
     return templates.some(
-      (t) => t.name.toLowerCase() === templateName.toLowerCase()
+      (t) => (t.name || "").toLowerCase() === (templateName || "").toLowerCase()
     );
   } catch (error) {
     console.error("[EventTemplates] Error checking template name:", error);
