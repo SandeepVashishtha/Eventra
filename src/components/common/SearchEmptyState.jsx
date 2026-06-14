@@ -15,33 +15,75 @@ const SEARCH_LINKS = [
 
 const SearchEmptyState = ({
   query,
-  itemLabel,
-  browseLabel,
-  browsePath,
+  itemLabel = "items",
+  browseLabel = "Browse",
+  browsePath = "/",
   onClear,
-  suggestions = DEFAULT_SUGGESTIONS,
-  popularTags = [],
+  variant = "search",
+  title,
+  description,
+  actionLabel,
+  actionPath,
 }) => {
   const hasQuery = Boolean(query?.trim());
+  const suggestions = DEFAULT_SUGGESTIONS;
+  const popularTags = [
+  "Technology",
+  "Hackathons",
+  "Workshops",
+  "AI",
+  "Networking",
+  "Open Source",
+];
 
+
+
+  const emptyStateConfig = {
+  search: {
+    icon: "🔍",
+    defaultTitle: `No ${itemLabel} found`,
+    defaultDescription: `Try adjusting your search or filters to find matching ${itemLabel}.`,
+  },
+
+  registered: {
+    icon: "🎟️",
+    defaultTitle: "No registered events yet",
+    defaultDescription: "Explore upcoming events and register to start building your event journey.",
+  },
+
+  hosted: {
+    icon: "📅",
+    defaultTitle: "No hosted events yet",
+    defaultDescription: "Create your first event and start engaging with your audience.",
+  },
+
+  waitlist: {
+    icon: "⏳",
+    defaultTitle: "No waitlisted events",
+    defaultDescription: "You are not currently on any waitlists.",
+  },
+};
+
+const currentConfig = emptyStateConfig[variant] || emptyStateConfig.search;
   return (
   <div className="relative z-10 mx-auto max-w-2xl text-center px-4">
     
     {/* Icon */}
     <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-100 text-blue-600 dark:bg-blue-950/40 dark:text-blue-300 shadow-sm">
-      <Search size={30} />
+    <span className="text-5xl">
+  {currentConfig.icon}
+</span>
     </div>
 
     {/* Heading */}
     <h3 className="mt-6 text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
-      {hasQuery
-        ? `No results found for "${query}"`
-        : `No ${itemLabel} found`}
+    
+      {title || currentConfig.defaultTitle}
     </h3>
 
     {/* Subtitle */}
     <p className="mt-3 text-sm sm:text-base leading-6 text-slate-600 dark:text-slate-300">
-      Try one of these suggestions or explore other sections on Eventra.
+    {description || currentConfig.defaultDescription}
     </p>
 
     {/* Suggestions */}
@@ -122,6 +164,26 @@ const SearchEmptyState = ({
       >
         {browseLabel}
       </Link>
+      {actionLabel && actionPath && (
+  <Link
+    to={actionPath}
+    className="
+      inline-flex items-center justify-center
+      rounded-xl
+      bg-indigo-600
+      px-5 py-3
+      text-sm font-semibold
+      text-white
+      transition-all duration-200
+      hover:bg-indigo-700
+      shadow-sm
+    "
+  >
+    {actionLabel}
+  </Link>
+)}
+
+
     </div>
 
     {/* Footer Links */}

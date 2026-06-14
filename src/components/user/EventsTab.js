@@ -596,7 +596,17 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   ))}
 </div>
     ) : registeredCount + hostedCount === 0 ? (
-  <EmptyState />
+<SearchEmptyState
+  variant="registered"
+  itemLabel="events"
+  browseLabel="Explore Events"
+  browsePath="/events"
+  title="No events yet"
+  description="You have not registered for or hosted any events yet. Explore upcoming events to get started."
+  actionLabel="Explore Events"
+  actionPath="/events"
+  
+/>
 ) : filteredEvents.length === 0 ? (
         <motion.div
           initial={{ opacity: 0 }}
@@ -604,6 +614,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
           className="w-full mt-4"
         >
           <SearchEmptyState
+          variant="search"
             query={searchQuery}
             itemLabel="events"
             browseLabel="Browse Events"
@@ -650,6 +661,71 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
           )}
         </>
       )}
+
+      {waitlistEvents.length === 0 && registeredCount + hostedCount > 0 && (
+  <SearchEmptyState
+    variant="waitlist"
+    title="No waitlisted events"
+    description="You are not currently on any event waitlists."
+    actionLabel="Browse Events"
+    actionPath="/events"
+  />
+)}
+
+{waitlistEvents.length > 0 && (
+  <section className="space-y-4 mt-6">
+    <div className="ud-tab-header">
+      <h3 className="ud-page-title flex items-center gap-2">
+        <Clock size={18} className="text-amber-500" />
+        Waitlisted Events
+      </h3>
+
+      <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
+        {waitlistEvents.length} event
+        {waitlistEvents.length === 1 ? "" : "s"}
+      </span>
+    </div>
+
+    <motion.div
+      className="ud-items-grid"
+      variants={staggerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      <VirtualizedGrid
+        items={waitlistEvents}
+        columnCount={columnCount}
+        rowHeight={360}
+        renderItem={(event, index) => (
+          <WaitlistCard
+            key={event.id}
+            event={event}
+            index={index}
+            onLeaveWaitlist={async (id) => {
+              if (
+                window.confirm(
+                  `Are you sure you want to leave the waitlist for "${event.title}"?`
+                )
+              ) {
+                try {
+                  const { leaveWaitlist } = await import("../../utils/waitlistUtils.js");
+
+                  await leaveWaitlist(id, user.id || user.email);
+
+                  toast.success("Left the waitlist successfully.");
+
+                  triggerWaitlistUpdate();
+                } catch (err) {
+                  toast.error(err.message || "Failed to leave waitlist.");
+                }
+              }
+            }}
+          />
+        )}
+      />
+    </motion.div>
+  </section>
+)}
 
       {/* 🔥 FIX 1: Portaled the modal out of the Framer Motion stacking context trap */}
       <AnimatePresence>
