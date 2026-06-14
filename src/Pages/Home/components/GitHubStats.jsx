@@ -16,14 +16,13 @@ import {
 } from "lucide-react";
 
 import { safeJsonParse } from "../../../utils/safeJsonParse";
+import { ENV } from "../../../config/env";
 import {
   fetchRepository,
 
   // fetchContributors,
   // fetchPullRequests,
 } from "../../../utils/githubApiClient";
-
-import { safeJsonParse } from "../../../utils/safeJsonParse";
 
 const fetchStat = fetchRepository;
 
