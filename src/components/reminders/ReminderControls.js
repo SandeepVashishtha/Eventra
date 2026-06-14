@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { Bell, BellOff, Check } from "lucide-react";
 import { toast } from "react-toastify";
 import {
@@ -25,6 +25,18 @@ const requestBrowserNotificationPermission = async () => {
 const ReminderControls = ({ event, canSetReminder, compact = false }) => {
   const [eventReminders, setEventReminders] = useState(() => getEventReminders(event.id));
   const eventHasPassed = useMemo(() => isPastEvent(event), [event]);
+  
+  // 🔥 FIX: Track processing state to prevent spam-clicks during async browser prompts
+  const [processingTiming, setProcessingTiming] = useState(null);
+  
+  // 🔥 FIX: Track mounted state to prevent unmount memory leaks
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     // Initial sync
@@ -49,23 +61,26 @@ const ReminderControls = ({ event, canSetReminder, compact = false }) => {
   );
 
   const handleReminderToggle = async (timing) => {
+    if (eventHasPassed) {
+      toast.warning("Reminders are not available for past events.", {
+        toastId: `reminder-past-${event.id}`,
+        className: "custom-toast",
+      });
+      return;
+    }
+
+    if (!canSetReminder) {
+      toast.info("Bookmark or register for this event before setting a reminder.", {
+        toastId: `reminder-locked-${event.id}`,
+        className: "custom-toast",
+      });
+      return;
+    }
+
+    // 🔥 FIX: Lock the button to prevent spam clicks
+    setProcessingTiming(timing);
+
     try {
-      if (eventHasPassed) {
-        toast.warning("Reminders are not available for past events.", {
-          toastId: `reminder-past-${event.id}`,
-          className: "custom-toast",
-        });
-        return;
-      }
-
-      if (!canSetReminder) {
-        toast.info("Bookmark or register for this event before setting a reminder.", {
-          toastId: `reminder-locked-${event.id}`,
-          className: "custom-toast",
-        });
-        return;
-      }
-
       if (activeTimingSet.has(timing)) {
         removeReminder(event.id, timing);
         toast.info("Reminder removed.", {
@@ -94,6 +109,10 @@ const ReminderControls = ({ event, canSetReminder, compact = false }) => {
       }
 
       const permission = await requestBrowserNotificationPermission().catch(() => "denied");
+
+      // 🔥 FIX: Check if component unmounted while waiting for user to click "Allow"
+      if (!isMounted.current) return;
+
       if (permission === "denied") {
         toast.info("Reminder saved. Browser notifications are blocked in your settings.", {
           toastId: `reminder-browser-denied-${event.id}`,
@@ -109,10 +128,17 @@ const ReminderControls = ({ event, canSetReminder, compact = false }) => {
       }
     } catch (error) {
       console.error("Failed to toggle reminder:", error);
-      toast.error("An unexpected error occurred while saving the reminder.", {
-        toastId: `reminder-error-${event.id}`,
-        className: "custom-toast",
-      });
+      if (isMounted.current) {
+        toast.error("An unexpected error occurred while saving the reminder.", {
+          toastId: `reminder-error-${event.id}`,
+          className: "custom-toast",
+        });
+      }
+    } finally {
+      // 🔥 FIX: Safely unlock the button
+      if (isMounted.current) {
+        setProcessingTiming(null);
+      }
     }
   };
 
@@ -134,7 +160,8 @@ const ReminderControls = ({ event, canSetReminder, compact = false }) => {
       <div className="flex flex-wrap gap-2">
         {REMINDER_TIMINGS.map((timing) => {
           const isActive = activeTimingSet.has(timing.value);
-          const isDisabled = eventHasPassed;
+          // 🔥 FIX: Disable if event passed OR if this specific button is currently processing
+          const isDisabled = eventHasPassed || processingTiming === timing.value;
 
           return (
             <button
@@ -143,7 +170,8 @@ const ReminderControls = ({ event, canSetReminder, compact = false }) => {
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                handleReminderToggle(timing.value);
+                // Prevent click if another button is processing
+                if (!processingTiming) handleReminderToggle(timing.value);
               }}
               disabled={isDisabled}
               aria-pressed={isActive}

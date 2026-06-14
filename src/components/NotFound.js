@@ -1,9 +1,12 @@
 import { motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 import { Link } from "react-router-dom";
+// 🔥 FIX: Imported the missing hook to protect users with vestibular disorders
+import { useReducedMotion } from "../hooks/useReducedMotion";
 
 const NotFoundPage = () => {
   const [ref, inView] = useInView({ triggerOnce: true, threshold: 0.1 });
+  const prefersReducedMotion = useReducedMotion();
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -19,10 +22,11 @@ const NotFoundPage = () => {
   };
 
   const floatingVariants = {
+    // 🔥 FIX: Safely disabled infinite coordinates if reduced motion is preferred
     float: (i) => ({
-      y: [0, -20 - i * 3, 0],
-      x: [0, 20 + i * 5, 0],
-      transition: { duration: 6 + i, repeat: Infinity, ease: "easeInOut" },
+      y: prefersReducedMotion ? 0 : [0, -20 - i * 3, 0],
+      x: prefersReducedMotion ? 0 : [0, 20 + i * 5, 0],
+      transition: prefersReducedMotion ? {} : { duration: 6 + i, repeat: Infinity, ease: "easeInOut" },
     }),
   };
 
@@ -47,7 +51,8 @@ const NotFoundPage = () => {
   ];
 
   return (
-    <section
+    // 🔥 FIX: Upgraded from <section> to <main> for proper ARIA page landmarking
+    <main
       ref={ref}
       // UPDATED: Added a light mode background and made the dark theme conditional
       className="relative min-h-screen flex flex-col justify-center items-center overflow-hidden bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-indigo-900 dark:via-blue-900 dark:to-black p-6"
@@ -59,6 +64,8 @@ const NotFoundPage = () => {
           custom={i}
           variants={floatingVariants}
           animate="float"
+          // 🔥 FIX: Added aria-hidden="true" so screen readers ignore these decorative shapes
+          aria-hidden="true"
           // UPDATED: Bubble colors for both themes
           className="absolute rounded-full bg-indigo-500/10 dark:bg-white/10"
           style={{
@@ -146,7 +153,7 @@ const NotFoundPage = () => {
               >
                 {/* UPDATED: Text colors */}
                 <div className="text-sm text-gray-500 dark:text-white/70">{event.category}</div>
-                <h4 className="font-semibold text-lg mt-1">{event.name}</h4>
+                <h4 title={event.name} className="font-semibold text-lg mt-1 break-words">{event.name}</h4>
                 <Link
                   to="/events"
                   // UPDATED: Link color
@@ -159,7 +166,7 @@ const NotFoundPage = () => {
           </div>
         </motion.div>
       </motion.div>
-    </section>
+    </main>
   );
 };
 

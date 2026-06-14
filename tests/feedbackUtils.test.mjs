@@ -1,26 +1,28 @@
-import { describe, it, beforeEach } from 'node:test';
-import assert from 'node:assert';
+import assert from 'node:assert/strict';
+import { beforeEach, describe, it } from 'node:test';
+import { JSDOM } from 'jsdom';
 
-// Mock localStorage globally
-const store = {};
+const storage = new Map();
+const dom = new JSDOM('');
+
+globalThis.window = dom.window;
+globalThis.document = dom.window.document;
 globalThis.localStorage = {
   getItem(key) {
-    return store[key] || null;
+    return storage.has(key) ? storage.get(key) : null;
   },
   setItem(key, value) {
-    store[key] = String(value);
+    storage.set(key, String(value));
   },
   removeItem(key) {
-    delete store[key];
+    storage.delete(key);
   },
   clear() {
-    for (const key in store) {
-      delete store[key];
-    }
-  }
+    storage.clear();
+  },
 };
 
-import {
+const {
   saveFeedback,
   getEventFeedback,
   getAverageRating,
@@ -31,16 +33,29 @@ import {
   deleteFeedback,
   exportFeedbackAsCSV,
   clearAllFeedback,
-} from '../src/utils/feedbackUtils.js';
+} = await import('../src/utils/feedbackUtils.js');
 
 const expect = (actual) => ({
-  toBe: (expected) => assert.strictEqual(actual, expected),
-  toHaveLength: (expected) => assert.strictEqual(actual.length, expected),
-  toContain: (expected) => assert.ok(actual.includes(expected)),
-  toBeNull: () => assert.strictEqual(actual, null),
+  toBe(expected) {
+    assert.strictEqual(actual, expected);
+  },
+  toContain(expected) {
+    assert.ok(actual.includes(expected));
+  },
+  toHaveLength(expected) {
+    assert.strictEqual(actual.length, expected);
+  },
+  toBeNull() {
+    assert.strictEqual(actual, null);
+  },
   not: {
-    toBeNull: () => assert.notStrictEqual(actual, null)
-  }
+    toBeNull() {
+      assert.notStrictEqual(actual, null);
+    },
+    toContain(expected) {
+      assert.ok(!actual.includes(expected));
+    },
+  },
 });
 
 describe('Feedback Utils', () => {
@@ -105,6 +120,21 @@ describe('Feedback Utils', () => {
 
       const saved = getEventFeedback(testEventId);
       expect(saved).toHaveLength(2);
+    });
+
+    it('should sanitize feedback comments when retrieved', () => {
+      saveFeedback(testEventId, {
+        rating: 5,
+        comment: '<p onclick="steal()">Great <script>alert("xss")</script><strong>event</strong></p>',
+        userId: testUserId,
+      });
+
+      const saved = getEventFeedback(testEventId);
+
+      expect(saved).toHaveLength(1);
+      expect(saved[0].comment).toBe('<p>Great <strong>event</strong></p>');
+      expect(saved[0].comment).not.toContain('onclick');
+      expect(saved[0].comment).not.toContain('<script>');
     });
   });
 

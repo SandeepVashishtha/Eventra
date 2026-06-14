@@ -1,5 +1,6 @@
 // src/pages/CommunityEventsPage.jsx
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import {
@@ -94,23 +95,35 @@ const CommunityEvent = () => {
   const prefersReducedMotion = useReducedMotion();
   const [selectedEvent, setSelectedEvent] = useState(null);
   
-      useEffect(() => {
-        if (selectedEvent) {
-          document.body.style.overflow = "hidden";
-        } else {
-           document.body.style.overflow = "auto";
-        }
+  // 🔥 FIX: Safe scroll locking that caches and restores the original CSS value
+  useEffect(() => {
+    if (selectedEvent) {
+      const originalStyle = window.getComputedStyle(document.body).overflow;
+      document.body.style.overflow = "hidden";
+      
+      return () => {
+        document.body.style.overflow = originalStyle;
+      };
+    }
+  }, [selectedEvent]);
 
-        return () => {
-          document.body.style.overflow = "unset";
-        };
-      }, [selectedEvent]);
+  // 🔥 FIX: Added Escape key listener to satisfy A11y dialog closing requirements
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape" && selectedEvent) {
+        setSelectedEvent(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedEvent]);
 
   return (
     <div
       className={`
         relative overflow-hidden
-        bg-linear-to-b from-blue-50 via-indigo-50/30 to-white 
+        /* 🔥 FIX: Changed bg-linear-to-b to bg-gradient-to-b for correct Tailwind execution */
+        bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white 
         dark:from-slate-950 dark:via-slate-900 dark:to-black
         ${darkTheme.textPrimary}
         min-h-[80vh]
@@ -265,7 +278,7 @@ const CommunityEvent = () => {
         </div>
       </div>
 
-      {selectedEvent && (
+      {selectedEvent && createPortal(
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
           role="dialog"
@@ -351,7 +364,8 @@ const CommunityEvent = () => {
               </p>
             </div>
           </motion.div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

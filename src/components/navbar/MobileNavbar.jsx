@@ -1,13 +1,21 @@
 import { Menu } from "lucide-react";
 import MobileDrawer from "./MobileDrawer";
 
-const MobileNavbar = ({ isOpen, setIsOpen, isAuthenticated, user, logout }) => {
+const MobileNavbar = ({
+  isOpen,
+  setIsOpen,
+  isAuthenticated,
+  user,
+  logout,
+  cursorEnabled,
+  toggleCursor,
+}) => {
   return (
     <>
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="mobile-menu-button xl:hidden inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl p-3 text-text-light transition-colors hover:bg-bg-secondary hover:text-text"
+        className="mobile-menu-button lg:hidden inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl p-3 text-text-light transition-colors hover:bg-bg-secondary hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         aria-label={isOpen ? "Close navigation menu" : "Open navigation menu"}
         aria-expanded={isOpen}
         aria-haspopup="dialog"
@@ -26,6 +34,8 @@ const MobileNavbar = ({ isOpen, setIsOpen, isAuthenticated, user, logout }) => {
         isAuthenticated={isAuthenticated}
         user={user}
         logout={logout}
+        cursorEnabled={cursorEnabled}
+        toggleCursor={toggleCursor}
       />
     </>
   );
