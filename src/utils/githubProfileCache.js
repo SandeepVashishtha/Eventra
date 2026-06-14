@@ -25,6 +25,7 @@
 
 const PROFILE_CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
 const FETCH_TIMEOUT_MS = 10000; // 🔥 10 seconds timeout limit
+const PROFILE_CACHE_MAX_ENTRIES = 200; // 🔥 FIX: hard cap to prevent unbounded growth across long sessions
 
 /** @type {Map<string, { data: object, fetchedAt: number }>} */
 const profileCache = new Map();
@@ -56,6 +57,19 @@ export function getCachedProfile(username) {
  */
 export function setCachedProfile(username, data) {
   profileCache.set(username, { data, fetchedAt: Date.now() });
+  // 🔥 FIX: enforce a hard cap. The TTL eviction only triggered on access;
+  // 1000 unique usernames fetched over a long session would all stay in
+  // memory. Drop the oldest entries (insertion-order) when the cap is
+  // exceeded.
+  if (profileCache.size > PROFILE_CACHE_MAX_ENTRIES) {
+    const overflow = profileCache.size - PROFILE_CACHE_MAX_ENTRIES;
+    let dropped = 0;
+    for (const key of profileCache.keys()) {
+      if (dropped >= overflow) break;
+      profileCache.delete(key);
+      dropped++;
+    }
+  }
 }
 
 /**
