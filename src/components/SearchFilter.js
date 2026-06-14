@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import useDebounce from "../hooks/useDebounce";
+import EmptyState from "./common/EmptyState";
 import "./styles/components.css";
 
 const SearchFilter = () => {
@@ -9,6 +10,11 @@ const SearchFilter = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedLocation, setSelectedLocation] = useState("all");
   const [priceFilter, setPriceFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState("all");
+  const [favorites, setFavorites] = useState(() => {
+    const saved = localStorage.getItem("favoriteEvents");
+    return saved ? JSON.parse(saved) : [];
+  });
 
   const categories = [
     { value: "all", label: "All Categories" },
@@ -29,6 +35,10 @@ const SearchFilter = () => {
     { value: "berlin", label: "Berlin" },
     { value: "tokyo", label: "Tokyo" },
   ];
+
+  useEffect(() => {
+    localStorage.setItem("favoriteEvents", JSON.stringify(favorites));
+  }, [favorites]);
 
   const mockEvents = [
     {
@@ -105,34 +115,63 @@ const SearchFilter = () => {
     },
   ];
 
-  // 🔥 FIX: Safe date formatter to prevent RangeError crashes if event data is malformed
   const safeFormatDate = (dateStr) => {
     if (!dateStr) return "TBD";
     const d = new Date(dateStr);
     return isNaN(d.getTime()) ? "TBD" : d.toLocaleDateString();
   };
 
-  const filteredEvents = mockEvents.filter(event => {
+  const filteredEvents = mockEvents.filter((event) => {
     const safeSearchTerm = (debouncedSearchTerm || "").toLowerCase();
-    
-    // 🔥 FIX: Added fallback empty strings to prevent TypeError crashes if event data is incomplete
-    const matchesSearch = 
+
+    const matchesSearch =
       (event.title || "").toLowerCase().includes(safeSearchTerm) ||
       (event.description || "").toLowerCase().includes(safeSearchTerm);
-      
-    const matchesCategory = selectedCategory === 'all' || event.category === selectedCategory;
-    
+
+    const matchesCategory =
+      selectedCategory === "all" || event.category === selectedCategory;
+
     const normalizedLocation = event.location
       ?.toString()
       .toLowerCase()
       .trim()
-      .replace(/\s+/g, '-');
+      .replace(/\s+/g, "-");
 
-    const matchesLocation = selectedLocation === 'all' || (normalizedLocation === selectedLocation);
-    const matchesPrice = priceFilter === 'all' || event.price === priceFilter;
-    
-    return matchesSearch && matchesCategory && matchesLocation && matchesPrice;
+    const matchesLocation =
+      selectedLocation === "all" || normalizedLocation === selectedLocation;
+    const matchesPrice = priceFilter === "all" || event.price === priceFilter;
+    const today = new Date();
+    const eventDate = new Date(event.date);
+
+    let matchesDate = true;
+
+    if (dateFilter === "today") {
+      matchesDate =
+        eventDate.toDateString() === today.toDateString();
+    }
+
+    if (dateFilter === "weekend") {
+      const day = eventDate.getDay();
+      matchesDate = day === 0 || day === 6;
+    }
+
+    if (dateFilter === "nextMonth") {
+      const nextMonth = new Date();
+      nextMonth.setMonth(today.getMonth() + 1);
+
+      matchesDate =
+        eventDate.getMonth() === nextMonth.getMonth() &&
+        eventDate.getFullYear() === nextMonth.getFullYear();
+    }
+    return matchesSearch && matchesCategory && matchesLocation && matchesPrice && matchesDate;
   });
+
+  const handleResetFilters = () => {
+    setSearchTerm("");
+    setSelectedCategory("all");
+    setSelectedLocation("all");
+    setPriceFilter("all");
+  };
 
   return (
     <div className="search-filter-container bg-gray-50 dark:bg-black">
@@ -153,14 +192,22 @@ const SearchFilter = () => {
 
       {/* Search Bar */}
       <motion.div
+        whileHover={{
+          scale: 1.03,
+          y: -5,
+        }}
+        whileTap={{
+          scale: 0.98,
+        }}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.6 }}
         className="search-bar"
       >
         <div className="search-input-wrapper">
-          {/* 🔥 FIX: Added aria-hidden to prevent screen reader noise */}
-          <span className="search-icon" aria-hidden="true">🔍</span>
+          <span className="search-icon" aria-hidden="true">
+            🔍
+          </span>
           <input
             id="search-events"
             type="text"
@@ -231,70 +278,116 @@ const SearchFilter = () => {
       <div className="results-count" role="status" aria-live="polite">
         <span>{filteredEvents.length} events found</span>
       </div>
+      <div className="filter-group">
+  <label htmlFor="filter-date">Date</label>
+  <select
+    id="filter-date"
+    value={dateFilter}
+    onChange={(e) => setDateFilter(e.target.value)}
+    className="filter-select"
+  >
+    <option value="all">All Dates</option>
+    <option value="today">Today</option>
+    <option value="weekend">This Weekend</option>
+    <option value="nextMonth">Next Month</option>
+  </select>
+</div>
+<button
+  className="btn-outline"
+  onClick={() => {
+    setSearchTerm("");
+    setSelectedCategory("all");
+    setSelectedLocation("all");
+    setPriceFilter("all");
+    setDateFilter("all");
+  }}
+>
+  Reset Filters
+</button>
 
-      {/* Events Grid */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.6, duration: 0.6 }}
-        className="events-grid"
-      >
-        {filteredEvents.map((event, index) => (
-          <motion.div
-            key={event.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1, duration: 0.6 }}
-            className="event-card-search"
-          >
-            <div className="event-image-large">
-              {/* 🔥 FIX: Added aria-hidden to decorative emoji */}
-              <div className="event-emoji" aria-hidden="true">{event.image}</div>
-              <div className="event-badges">
-                <span className={`price-badge ${event.price}`}>
-                  {event.price === "free" ? "FREE" : "PAID"}
-                </span>
-              </div>
-            </div>
-            <div className="event-content">
-              <h3 className="event-title">{event.title}</h3>
-              <p className="event-description">{event.description}</p>
-              <div className="event-meta" aria-label="Event details">
-                <span className="event-date">
-                  <span role="img" aria-hidden="true" className="mr-1">📅</span> 
-                  {/* 🔥 FIX: Safely parse date */}
-                  {safeFormatDate(event.date)}
-                </span>
-                <span className="event-location">
-                  <span role="img" aria-hidden="true" className="mr-1">📍</span> {event.location}
-                </span>
-                <span className="event-attendees">
-                  <span role="img" aria-hidden="true" className="mr-1">👥</span> {event.attendees}
-                </span>
-              </div>
-              <div className="event-rating" aria-label={`Rating: ${event.rating} out of 5 stars`}>
-                <span className="stars" aria-hidden="true">⭐⭐⭐⭐⭐</span>
-                <span className="rating-value">{event.rating}</span>
-              </div>
-              <div className="event-actions">
-                <button className="btn-primary" aria-label={`Register for ${event.title}`}>Register Now</button>
-                <button className="btn-outline" aria-label={`Learn more about ${event.title}`}>Learn More</button>
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </motion.div>
-
-      {filteredEvents.length === 0 && (
+      {/* FULL CORRECTED EMPTY STATE & GRID LOGIC SWITCH */}
+      {filteredEvents.length === 0 ? (
+        <EmptyState
+          type={searchTerm ? "search" : "filters"}
+          title={searchTerm ? "No events match your search criteria" : "No events match your filters"}
+          description="Try adjusting your keywords, altering parameters, or clearing active filters entirely to reset your search layout."
+          actionLabel="Clear Filters"
+          onAction={handleResetFilters}
+        />
+      ) : (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="no-results"
+          transition={{ delay: 0.6, duration: 0.6 }}
+          className="events-grid"
         >
-          {/* 🔥 FIX: Added aria-hidden to decorative emoji */}
-          <div className="no-results-icon" aria-hidden="true">😞</div>
-          <h3>No events found</h3>
-          <p>Try adjusting your search criteria</p>
+          {filteredEvents.map((event, index) => (
+            <motion.div
+              key={event.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1, duration: 0.6 }}
+              className="event-card-search"
+            >
+              <div className="event-image-large">
+                <div className="event-emoji" aria-hidden="true">
+                  {event.image}
+                </div>
+                <div className="event-badges">
+                  <span className={`price-badge ${event.price}`}>
+                    {event.price === "free" ? "FREE" : "PAID"}
+                  </span>
+                </div>
+              </div>
+              <div className="event-content">
+                <h3 className="event-title">{event.title}</h3>
+                <p className="event-description">{event.description}</p>
+                <div className="event-meta" aria-label="Event details">
+                  <span className="event-date">
+                    <span role="img" aria-hidden="true" className="mr-1">
+                      📅
+                    </span>
+                    {safeFormatDate(event.date)}
+                  </span>
+                  <span className="event-location">
+                    <span role="img" aria-hidden="true" className="mr-1">
+                      📍
+                    </span>{" "}
+                    {event.location}
+                  </span>
+                  <span className="event-attendees">
+                    <span role="img" aria-hidden="true" className="mr-1">
+                      👥
+                    </span>{" "}
+                    {event.attendees}
+                  </span>
+                </div>
+                <div
+                  className="event-rating"
+                  aria-label={`Rating: ${event.rating} out of 5 stars`}
+                >
+                  <span className="stars" aria-hidden="true">
+                    ⭐⭐⭐⭐⭐
+                  </span>
+                  <span className="rating-value">{event.rating}</span>
+                </div>
+                <div className="event-actions">
+                  <button
+                    className="btn-primary"
+                    aria-label={`Register for ${event.title}`}
+                  >
+                    Register Now
+                  </button>
+                  <button
+                    className="btn-outline"
+                    aria-label={`Learn more about ${event.title}`}
+                  >
+                    Learn More
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          ))}
         </motion.div>
       )}
     </div>

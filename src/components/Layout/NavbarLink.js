@@ -19,7 +19,7 @@ const NavbarLink = ({ navItems = [] }) => { // 🔥 FIX: Default prop to prevent
             // 🔥 FIX: Added a11y attribute for screen readers
             aria-current={isActive ? "page" : undefined}
             // UPDATED: Text and hover colors
-            className={`relative px-4 py-2.5 text-lg font-medium transition-all duration-300 rounded-lg group
+            className={`relative px-2 py-2.5 text-lg font-medium transition-all duration-300 rounded-lg group
               ${isActive ? "text-indigo-600 dark:text-indigo-400" : "text-gray-700 dark:text-gray-300"} 
               hover:text-indigo-600 dark:hover:text-indigo-400`}
           >

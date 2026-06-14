@@ -48,6 +48,8 @@ export const useFormValidation = (
   const timeoutRefs = useRef({});
   const validationCacheRef = useRef({});
   const isMountedRef = useRef(true);
+  const valuesRef = useRef(values);
+  useEffect(() => { valuesRef.current = values; }, [values]);
 
   /**
    * Clear debounce timeout for a field
@@ -223,8 +225,9 @@ export const useFormValidation = (
         }
 
         timeoutRefs.current[name] = setTimeout(async () => {
+          const currentValues = valuesRef.current;
           const error = await validateField(name, fieldValue, {
-            ...values,
+            ...currentValues,
             [name]: fieldValue,
           });
           if (isMountedRef.current) {
@@ -233,7 +236,7 @@ export const useFormValidation = (
         }, debounceMs);
       }
     },
-    [validationRules, values, validateField, debounceMs, clearFieldTimeout],
+    [validationRules, validateField, debounceMs, clearFieldTimeout],
   );
 
   /**
@@ -245,13 +248,13 @@ export const useFormValidation = (
       setTouched((prev) => ({ ...prev, [name]: true }));
 
       if (validationRules[name] && validateOnBlur) {
-        const error = await validateField(name, value, values);
+        const error = await validateField(name, value, valuesRef.current);
         if (isMountedRef.current) {
           setErrors((prev) => ({ ...prev, [name]: error }));
         }
       }
     },
-    [validationRules, values, validateField, validateOnBlur],
+    [validationRules, validateField, validateOnBlur],
   );
 
   /**

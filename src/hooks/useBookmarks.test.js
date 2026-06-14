@@ -1,5 +1,6 @@
 import { renderHook, act } from "@testing-library/react";
 import useBookmarks from "./useBookmarks";
+import { safeJsonParse } from "../utils/safeJsonParse";
 
 const makeEvent = (id, title = `Event ${id}`) => ({ id, title, date: "2025-10-01" });
 
@@ -130,7 +131,7 @@ describe("useBookmarks", () => {
       result.current.toggleBookmark(makeEvent(55));
     });
 
-    const stored = JSON.parse(localStorage.getItem("bookmarks_user-10"));
+    const stored = safeJsonParse(localStorage.getItem("bookmarks_user-10"), []);
     expect(stored).toHaveLength(1);
     expect(stored[0].id).toBe(55);
   });

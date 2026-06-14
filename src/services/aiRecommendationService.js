@@ -22,16 +22,15 @@ Explain in 3 concise bullet points why this event matches the user.
 
     // Make request to our secure backend proxy instead of exposing the API key to the frontend
     // 🔥 FIX 2: Replaced raw fetch with apiUtils to ensure JWT Auth tokens and interceptors are applied
-    const response = await apiUtils.post("/api/ai-recommendations", { prompt });
+  const response = await apiUtils.post("/api/ai-recommendations", { prompt });
+  const data = response.data;
 
-    const data = await response.json();
-
-    return (
-      data.choices?.[0]?.message?.content ||
-      "No AI response generated."
-    );
-  } catch (error) {
-    console.error("[aiRecommendationService] Request failed:", error);
-    return "Unable to generate AI insights. The service is currently unavailable.";
-  }
+  return (
+    data.choices?.[0]?.message?.content ||
+    "No AI response generated."
+  );
+} catch (error) {
+  console.error("[aiRecommendationService] Request failed:", error);
+  return "Unable to generate AI insights. The service is currently unavailable.";
+}
 };
