@@ -13,27 +13,47 @@ import path from "path";
 
 try {
   const envPath = path.resolve(process.cwd(), ".env");
+
   if (fs.existsSync(envPath)) {
     const envContent = fs.readFileSync(envPath, "utf-8");
     const lines = envContent.split(/\r?\n/);
+
     for (const line of lines) {
       const trimmed = line.trim();
-      if (trimmed && !trimmed.startsWith("#") && trimmed.includes("=")) {
-        const eqIdx = trimmed.indexOf("=");
-        const key = trimmed.substring(0, eqIdx).trim();
-        let val = trimmed.substring(eqIdx + 1).trim();
-        if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
-          val = val.substring(1, val.length - 1);
-        }
-        if (key && !process.env[key]) {
-          process.env[key] = val;
-        }
+
+      const isValidLine =
+        trimmed &&
+        !trimmed.startsWith("#") &&
+        trimmed.includes("=");
+
+      if (!isValidLine) {
+        continue;
+      }
+
+      const eqIdx = trimmed.indexOf("=");
+      const key = trimmed.substring(0, eqIdx).trim();
+
+      let val = trimmed.substring(eqIdx + 1).trim();
+
+      const hasDoubleQuotes =
+        val.startsWith('"') && val.endsWith('"');
+
+      const hasSingleQuotes =
+        val.startsWith("'") && val.endsWith("'");
+
+      if (hasDoubleQuotes || hasSingleQuotes) {
+        val = val.substring(1, val.length - 1);
+      }
+
+      if (key && !process.env[key]) {
+        process.env[key] = val;
       }
     }
   }
-} catch (e) {
-  // Ignore
+} catch (error) {
+  // Ignore missing or malformed .env files
 }
+
 
 const SENSITIVE_KEY_PATTERNS = [
   /private[_\-]?key/i,

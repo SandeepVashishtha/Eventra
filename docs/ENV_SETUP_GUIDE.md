@@ -227,6 +227,9 @@ Current rate limits:
 - **Production**: Requires distributed storage. If unavailable, authentication requests are rejected with a 429 error.
 - **Development/Test**: Uses in-memory storage for convenience. Distributed storage is optional.
 - **Fail-Closed**: Never silently allows unlimited requests in production.
+| `DATABASE_URL` | **Yes (production)** | Redis connection string for persistent authentication storage. Required in production to prevent user account loss on restart. |
+| `KV_REST_API_URL` | **Yes (production)** | Alternative to DATABASE_URL for Vercel KV Redis storage. Required in production if DATABASE_URL is not set. |
+| `KV_REST_API_TOKEN` | **Yes (production with KV)** | Authentication token for Vercel KV REST API. Required when using KV_REST_API_URL. |
 
 Examples:
 
@@ -243,6 +246,7 @@ BACKEND_URL=https://api.example.com
 ## Security Notes
 
 - **JWT_SECRET is mandatory**: The application enforces fail-closed security. Missing JWT_SECRET will cause the application to reject all requests with a 500 error. Never deploy without setting this variable.
+- **DATABASE_URL or KV_REST_API_URL is mandatory in production**: The application enforces fail-closed security for authentication storage. Without persistent storage, all user accounts are lost on server restart. Never deploy production without setting one of these variables.
 - Generate JWT_SECRET using: `openssl rand -base64 32`
 - Never place private secrets in `REACT_APP_*` or `VITE_*` variables.
 - Values prefixed with `REACT_APP_` or `VITE_` are exposed in the browser bundle.

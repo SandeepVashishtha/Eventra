@@ -3,38 +3,14 @@ import jwt from "jsonwebtoken";
 import { getJwtSecret, JWT_EXPIRES_IN, JWT_COOKIE_MAX_AGE_SECONDS } from "./jwt-config.js";
 import { createRateLimiter } from "../lib/rateLimiter.js";
 import { buildCorsHeaders, corsResponse } from "./cors.js";
-import { assertPersistentStorageConfigured, isInMemoryStorageAllowed } from "./storage-config.js";
-
+import { assertPersistentStorageConfigured } from "./storage-config.js";
+import { createUser, getUserByEmail, isStorageHealthy } from "./user-storage.js";
 
 // ---------------------------------------------------------------------------
-// In-memory user storage
+// Storage Configuration
 // ---------------------------------------------------------------------------
-// WARNING: This Map is module-level and resets to empty on every serverless
-// cold start (Vercel, AWS Lambda, etc.). All registered accounts are lost
-// on restart, causing previously valid credentials to return 401.
-//
-// This store is suitable for local development only. For any deployed
-// environment, replace this Map with a durable database (Supabase, MongoDB,
-// PlanetScale, etc.) and update login.js and google.js accordingly.
-//
-// See GitHub issue #4195 for full details on the production impact.
-// ---------------------------------------------------------------------------
-
 // Fail-fast: Prevent production startup without persistent storage
 assertPersistentStorageConfigured();
-
-// Only create in-memory Maps if allowed (development/testing)
-let users, usersById, usersByUsername;
-if (isInMemoryStorageAllowed()) {
-  users = new Map();
-  usersById = new Map();
-  usersByUsername = new Map();
-} else {
-  // Production: Maps remain undefined - must use persistent storage
-  users = null;
-  usersById = null;
-  usersByUsername = null;
-}
 
 // ---------------------------------------------------------------------------
 // JWT Configuration
@@ -137,9 +113,9 @@ async function handler(req, res) {
 
   try {
     // Runtime protection: Reject requests if storage is unavailable
-    // In development, in-memory storage is allowed. In production, persistent storage is required.
-    if (!users || !usersById || !usersByUsername) {
-      console.error("[signup.js] Authentication service unavailable: storage not initialized");
+    const storageHealthy = await isStorageHealthy();
+    if (!storageHealthy) {
+      console.error("[signup.js] Authentication service unavailable: storage not healthy");
       return corsResponse(req, res, 500, { error: "Authentication service unavailable" });
     }
 
@@ -192,7 +168,8 @@ async function handler(req, res) {
     // Check for duplicate email
     // -----------------------------------------------------------------------
 
-    if (users.has(normalizedEmail)) {
+    const existingUser = await getUserByEmail(normalizedEmail);
+    if (existingUser) {
       return corsResponse(req, res, 409, { error: "An account with this email already exists" });
     }
 
@@ -243,16 +220,8 @@ async function handler(req, res) {
       isActive: true,
     };
 
-    // Store user (in production, save to database)
-    if (!users || !usersById || !usersByUsername) {
-      console.error("[signup.js] Authentication service unavailable: storage not initialized");
-      return corsResponse(req, res, 500, { error: "Authentication service unavailable" });
-    }
-    users.set(normalizedEmail, newUser);
-    usersById.set(userId, newUser);
-    if (newUser.username) {
-      usersByUsername.set(newUser.username.toLowerCase(), newUser);
-    }
+    // Store user using storage abstraction layer
+    await createUser(newUser);
 
     // -----------------------------------------------------------------------
     // Generate JWT token
@@ -307,11 +276,5 @@ async function handler(req, res) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Export users map for sharing with login.js (development purposes)
-// In production, replace with actual database
-// ---------------------------------------------------------------------------
-
 export default handler;
-export { users, usersById, usersByUsername };
 
