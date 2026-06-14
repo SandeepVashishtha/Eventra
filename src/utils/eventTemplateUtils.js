@@ -39,21 +39,56 @@ const sanitizeTemplateData = (formData) => {
   return sanitized;
 };
 
+// 🔥 CodeScene refactor: shared SSR guard. Extracted so each accessor is a
+// single-purpose function with a single conditional.
+const isStorageAvailable = () =>
+  typeof window !== "undefined" && Boolean(window.localStorage);
+
+// 🔥 CodeScene refactor: shared read/parse pipeline. Extracted from
+// getTemplates to drop its cyclomatic complexity and to make the safe-parse
+// path unit-testable in isolation.
+const parseTemplates = (raw) => {
+  if (!raw) return [];
+  const parsed = safeJsonParse(raw, []);
+  return Array.isArray(parsed) ? parsed : [];
+};
+
 /**
  * Get all templates from localStorage
  * @returns {Array} Array of template objects
  */
 export const getTemplates = () => {
-  if (typeof window === "undefined" || !window.localStorage) return [];
+  if (!isStorageAvailable()) return [];
   try {
-    const stored = window.localStorage.getItem(TEMPLATES_KEY);
-    if (!stored) return [];
-
-    const templates = safeJsonParse(stored, []);
-    return Array.isArray(templates) ? templates : [];
+    return parseTemplates(window.localStorage.getItem(TEMPLATES_KEY));
   } catch (error) {
     console.error("[EventTemplates] Error retrieving templates:", error);
     return [];
+  }
+};
+
+// 🔥 CodeScene refactor: extracted saveTemplate validation guards so the
+// public saveTemplate is a single-purpose composer.
+const validateTemplateName = (templateName) => {
+  if (!templateName || !templateName.trim()) {
+    console.warn("[EventTemplates] Template name is required");
+    return { ok: false, trimmed: "" };
+  }
+  return { ok: true, trimmed: templateName.trim() };
+};
+
+// 🔥 CodeScene refactor: extracted so saveTemplate does not have to do the
+// "load → push → write" dance inline.
+const persistNewTemplate = (newTemplate) => {
+  if (!isStorageAvailable()) return false;
+  try {
+    const templates = getTemplates();
+    templates.push(newTemplate);
+    window.localStorage.setItem(TEMPLATES_KEY, JSON.stringify(templates));
+    return true;
+  } catch (error) {
+    console.error("[EventTemplates] Error saving template:", error);
+    return false;
   }
 };
 
@@ -64,43 +99,27 @@ export const getTemplates = () => {
  * @returns {Object|null} The created template object or null on error
  */
 export const saveTemplate = (templateName, formData) => {
-  if (!templateName || !templateName.trim()) {
-    console.warn("[EventTemplates] Template name is required");
-    return null;
-  }
-
-  const trimmedName = templateName.trim();
+  const { ok, trimmed } = validateTemplateName(templateName);
+  if (!ok) return null;
 
   // Guard against duplicate template names before persisting. Without this
   // check two templates with identical names can be created, making it
   // impossible for the user to distinguish them in the UI.
-  if (templateNameExists(trimmedName)) {
+  if (templateNameExists(trimmed)) {
     console.warn(
-      `[EventTemplates] A template named "${trimmedName}" already exists. Use a unique name.`
+      `[EventTemplates] A template named "${trimmed}" already exists. Use a unique name.`
     );
     return null;
   }
 
-  if (typeof window === "undefined" || !window.localStorage) return null;
+  const newTemplate = {
+    id: generateTemplateId(),
+    name: trimmed,
+    createdAt: new Date().toISOString(),
+    data: sanitizeTemplateData(formData),
+  };
 
-  try {
-    const templates = getTemplates();
-
-    const newTemplate = {
-      id: generateTemplateId(),
-      name: trimmedName,
-      createdAt: new Date().toISOString(),
-      data: sanitizeTemplateData(formData),
-    };
-
-    templates.push(newTemplate);
-    window.localStorage.setItem(TEMPLATES_KEY, JSON.stringify(templates));
-
-    return newTemplate;
-  } catch (error) {
-    console.error("[EventTemplates] Error saving template:", error);
-    return null;
-  }
+  return persistNewTemplate(newTemplate) ? newTemplate : null;
 };
 
 /**
@@ -110,14 +129,11 @@ export const saveTemplate = (templateName, formData) => {
  */
 export const loadTemplate = (templateId) => {
   try {
-    const templates = getTemplates();
-    const template = templates.find((t) => t.id === templateId);
-
+    const template = getTemplates().find((t) => t.id === templateId);
     if (!template) {
       console.warn(`[EventTemplates] Template ${templateId} not found`);
       return null;
     }
-
     return template.data || null;
   } catch (error) {
     console.error("[EventTemplates] Error loading template:", error);
@@ -131,7 +147,7 @@ export const loadTemplate = (templateId) => {
  * @returns {Boolean} True if deleted, false otherwise
  */
 export const deleteTemplate = (templateId) => {
-  if (typeof window === "undefined" || !window.localStorage) return false;
+  if (!isStorageAvailable()) return false;
   try {
     const templates = getTemplates();
     const filteredTemplates = templates.filter((t) => t.id !== templateId);
@@ -154,7 +170,7 @@ export const deleteTemplate = (templateId) => {
  * @returns {Boolean} True if cleared
  */
 export const clearAllTemplates = () => {
-  if (typeof window === "undefined" || !window.localStorage) return false;
+  if (!isStorageAvailable()) return false;
   try {
     window.localStorage.removeItem(TEMPLATES_KEY);
     return true;
@@ -171,8 +187,7 @@ export const clearAllTemplates = () => {
  */
 export const templateNameExists = (templateName) => {
   try {
-    const templates = getTemplates();
-    return templates.some(
+    return getTemplates().some(
       (t) => (t.name || "").toLowerCase() === (templateName || "").toLowerCase()
     );
   } catch (error) {
