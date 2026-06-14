@@ -500,95 +500,141 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
         </motion.div>
       )}
 
-      {registeredCount + hostedCount > 0 && (
-        <div className="my-events-toolbar">
-          <div className="ud-search-wrap my-events-search">
-            <Search size={14} className="ud-search-icon" />
-            <input
-              className="ud-search"
-              placeholder="Search your events…"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            {searchQuery && (
-              <button className="ud-search-clear" onClick={() => setSearchQuery("")} aria-label="Clear search query">
-                <X size={13} />
-              </button>
-            )}
-            {isDebouncing && (
-              <span
-                className="ud-search-spinner"
-                aria-label="Searching…"
-                style={{
-                  position: "absolute",
-                  right: searchQuery ? 32 : 10,
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  width: 14,
-                  height: 14,
-                  border: "2px solid #6366f1",
-                  borderTopColor: "transparent",
-                  borderRadius: "50%",
-                  animation: "spin 0.6s linear infinite",
-                }}
-              />
-            )}
-          </div>
-          
-          {/* 🔥 FIX 2: Relocated Rogue "Clear History" button to its proper logical location */}
-          {recentSearches.length > 0 && (
-            <button
-              onClick={() => {
-                localStorage.removeItem(
-                  "recentSearches"
-                );
+     {registeredCount + hostedCount > 0 && (
+  <div
+    className="
+      my-events-toolbar
+      sticky
+      top-4
+      z-40
+      backdrop-blur-xl
+      bg-white/80 dark:bg-slate-900/80
+      supports-[backdrop-filter]:bg-white/70
+      dark:supports-[backdrop-filter]:bg-slate-900/70
+      border border-slate-200 dark:border-slate-700
+      rounded-3xl
+      shadow-lg
+      px-4 py-4
+      transition-all duration-300
+      mb-6
+    "
+  >
+    <div className="flex flex-col xl:flex-row gap-4 xl:items-center xl:justify-between">
 
-                setRecentSearches([]);
-              }}
-              className="text-sm text-red-500 hover:underline mt-2"
-            >
-              Clear History
-            </button>
-          )}
+      <div className="ud-search-wrap my-events-search flex-1 min-w-0 relative">
+        <Search size={14} className="ud-search-icon" />
 
-          <StyledDropdown
-            label=""
-            value={filterStatus === "All" ? "" : filterStatus}
-            placeholder="All Statuses"
-            options={["Upcoming", "Today", "Completed"]}
-            onChange={(val) => setFilterStatus(val || "All")}
-          />
+        <input
+          className="ud-search"
+          placeholder="Search your events…"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
 
-          {availableTypes.length > 1 && (
-            <StyledDropdown
-              label=""
-              value={filterType === "All" ? "" : filterType}
-              placeholder="All Types"
-              options={availableTypes}
-              onChange={(val) => setFilterType(val || "All")}
-            />
-          )}
+        {searchQuery && (
+          <button
+            className="ud-search-clear"
+            onClick={() => setSearchQuery("")}
+            aria-label="Clear search query"
+          >
+            <X size={13} />
+          </button>
+        )}
 
-          <StyledDropdown
-            label=""
-            value={
-              sortBy === "soonest"
-                ? "Soonest First"
-                : sortBy === "registered"
-                ? "Registration Date"
-                : "Event Name"
-            }
-            placeholder="Sort by"
-            options={["Soonest First", "Registration Date", "Event Name"]}
-            onChange={(val) => {
-              if (val === "Soonest First" || !val) setSortBy("soonest");
-              else if (val === "Registration Date") setSortBy("registered");
-              else if (val === "Event Name") setSortBy("name");
+        {isDebouncing && (
+          <span
+            className="ud-search-spinner"
+            aria-label="Searching…"
+            style={{
+              position: "absolute",
+              right: searchQuery ? 32 : 10,
+              top: "50%",
+              transform: "translateY(-50%)",
+              width: 14,
+              height: 14,
+              border: "2px solid #6366f1",
+              borderTopColor: "transparent",
+              borderRadius: "50%",
+              animation: "spin 0.6s linear infinite",
             }}
           />
-        </div>
-      )}
+        )}
+      </div>
 
+      <div className="flex flex-wrap gap-3">
+
+        <StyledDropdown
+          className="min-w-[180px]"
+          label=""
+          value={filterStatus === "All" ? "" : filterStatus}
+          placeholder="All Statuses"
+          options={["Upcoming", "Today", "Completed"]}
+          onChange={(val) => setFilterStatus(val || "All")}
+        />
+
+        {availableTypes.length > 1 && (
+          <StyledDropdown
+            className="min-w-[180px]"
+            label=""
+            value={filterType === "All" ? "" : filterType}
+            placeholder="All Types"
+            options={availableTypes}
+            onChange={(val) => setFilterType(val || "All")}
+          />
+        )}
+
+        <StyledDropdown
+          className="min-w-[180px]"
+          label=""
+          value={
+            sortBy === "soonest"
+              ? "Soonest First"
+              : sortBy === "registered"
+              ? "Registration Date"
+              : "Event Name"
+          }
+          placeholder="Sort by"
+          options={["Soonest First", "Registration Date", "Event Name"]}
+          onChange={(val) => {
+            if (val === "Soonest First" || !val) setSortBy("soonest");
+            else if (val === "Registration Date") setSortBy("registered");
+            else if (val === "Event Name") setSortBy("name");
+          }}
+        />
+
+        <button
+          onClick={() => {
+            setSearchQuery("");
+            setFilterStatus("All");
+            setFilterType("All");
+            setSortBy("soonest");
+          }}
+          className="
+            px-4 py-2 rounded-xl
+            border border-slate-300 dark:border-slate-700
+            text-sm font-semibold
+            hover:bg-slate-100 dark:hover:bg-slate-800
+            transition-all duration-200
+          "
+        >
+          Reset Filters
+        </button>
+      </div>
+    </div>
+
+    {recentSearches.length > 0 && (
+      <button
+        onClick={() => {
+          localStorage.removeItem("recentSearches");
+          setRecentSearches([]);
+        }}
+        className="text-sm text-red-500 hover:underline mt-3"
+      >
+        Clear History
+      </button>
+    )}
+  </div>
+)}
     {isLoading ? (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mt-6">
   {Array.from({ length: 6 }).map((_, index) => (

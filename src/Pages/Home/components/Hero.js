@@ -1,15 +1,15 @@
-import { motion, useAnimation, AnimatePresence, MotionConfig, useScroll, useTransform } from "framer-motion";
-import { useEffect, useState, useRef } from "react";
-import { Link } from "react-router-dom";
-import Fuse from "fuse.js";
 import {
-  AnimatePresence,
-  MotionConfig,
   motion,
   useAnimation,
+  AnimatePresence,
+  MotionConfig,
   useScroll,
   useTransform,
 } from "framer-motion";
+import { useEffect, useState, useRef } from "react";
+import { Link } from "react-router-dom";
+import Fuse from "fuse.js";
+
 import { Calendar, Code, ExternalLink, Handshake, Search, Trophy, Users } from "lucide-react";
 import CountUpLib from "react-countup";
 import { useCallback, useEffect, useRef, useState } from "react";
