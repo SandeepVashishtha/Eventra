@@ -314,10 +314,14 @@ export class P2PFileTransferCoordinator {
         case "P2P_ICE":
           // Received ICE candidate
           if (msg.to === peerId && this.pc) {
-            try {
-              await this.pc.addIceCandidate(new RTCIceCandidate(msg.candidate));
-            } catch (err) {
-              logger.error("Error adding ICE candidate:", err);
+            if (this.pc.remoteDescription) {
+              try {
+                await this.pc.addIceCandidate(new RTCIceCandidate(msg.candidate));
+              } catch (err) {
+                logger.error("Error adding ICE candidate:", err);
+              }
+            } else {
+              this.queuedRemoteCandidates.push(msg.candidate);
             }
           }
           break;
