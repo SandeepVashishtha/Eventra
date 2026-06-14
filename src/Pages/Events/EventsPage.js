@@ -19,6 +19,7 @@ import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
 import ErrorBoundary from "../../components/common/ErrorBoundary";
 import ErrorMessage from "../../components/common/ErrorMessage";
 import { EventTimeline } from "../../components/EventTimeline";
+import TrendingEvents from "../../components/TrendingEvents/TrendingEvents";
 import { safeJsonParse } from "../../utils/safeJsonParse";
 import {
   decodeAdvancedFilters,
@@ -334,6 +335,10 @@ const EventsPage = () => {
         handleSearch={handleSearch}
         scrollToCard={scrollToCard}
       />
+
+      <div className="mt-6 sm:mt-8">
+        <TrendingEvents title="Trending Events" limit={6} fetchSize={24} />
+      </div>
 
       <div
         ref={cardSectionRef}
