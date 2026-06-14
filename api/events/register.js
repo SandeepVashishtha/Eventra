@@ -15,7 +15,7 @@
  *  5. Handles `CAPACITY_FULL` thrown by concurrent race losers.
  */
 
-import { checkCapacity } from "../lib/capacityValidator.js";
+import { checkCapacity } from "../_lib/capacityValidator.js";
 
 // Concurrency lock for RSVP
 const rsvpLocks = new Map();

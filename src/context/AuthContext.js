@@ -301,54 +301,58 @@ export const AuthProvider = ({ children }) => {
     return true;
   }, []);
 
-  /**
-   * Explicitly sets the auth session manually (used post-registration or sign-up workflows).
-   */
-  const setAuthSession = useCallback((t, u) => persistSession(t, u), [persistSession]);
+  const setAuthSession = useCallback(
+    (sessionToken, sessionUser) => {
+      return persistSession(sessionToken, sessionUser);
+    },
+    [persistSession]
+  );
 
-  /**
-   * Normalizes error payload responses to user-friendly messages.
-   */
-  const getAuthErrorMessage = (error, fallbackMessage) =>
-    error?.response?.data?.message ||
-    error?.response?.data?.error ||
-    error?.message ||
-    fallbackMessage;
+  const getAuthErrorMessage = (error, fallbackMessage) => {
+    return (
+      error?.response?.data?.message ||
+      error?.response?.data?.error ||
+      error?.message ||
+      fallbackMessage
+    );
+  };
 
-  /**
-   * Initiates authentication login sequence.
-   * 
-   * @param {string} usernameOrEmail - Input credential.
-   * @param {string} password - User password.
-   * @returns {boolean} True if login resolves, false otherwise.
-   */
-  const login = useCallback(async (usernameOrEmail, password) => {
-    if (!isMountedRef.current) return false;
-    setAuthRequest({ loading: true, error: null });
-    
-    try {
-      const res = await authService.login({ usernameOrEmail, password });
-      const data = res.data;
-      
-      if (res.status !== 200) {
-        throw new Error(data?.message || data?.error || "Invalid credentials");
+  const login = useCallback(
+    async (usernameOrEmail, password) => {
+      setAuthRequest({ loading: true, error: null });
+
+      try {
+        const res = await authService.login({
+          usernameOrEmail,
+          password,
+        });
+
+        const data = res.data;
+
+        if (res.status !== 200) {
+          throw new Error(data?.message || data?.error || "Invalid credentials");
+        }
+
+        const { sessionUser } = extractSession(data, usernameOrEmail);
+
+        const persisted = await persistSession("cookie-managed", sessionUser);
+        if (!persisted) return false;
+
+        setAuthRequest({ loading: false, error: null });
+        return true;
+      } catch (error) {
+        if (!isMountedRef.current) return false;
+        // Fix (Issue #8646):
+        document.cookie = "token=; Max-Age=0; path=/; Secure; SameSite=Strict";
+        setAuthRequest({
+          loading: false,
+          error: getAuthErrorMessage(error, "Login failed. Please try again."),
+        });
+        return false;
       }
-      
-      const { sessionUser } = extractSession(data, usernameOrEmail);
-      const persisted = await persistSession("cookie-managed", sessionUser);
-      if (!persisted) return false;
-      
-      setAuthRequest({ loading: false, error: null });
-      return true;
-    } catch (error) {
-      if (!isMountedRef.current) return false;
-      setAuthRequest({
-        loading: false,
-        error: getAuthErrorMessage(error, "Login failed. Please try again.")
-      });
-      return false;
-    }
-  }, [persistSession]);
+    },
+    [persistSession]
+  );
 
   /**
    * Logs out the user.
