@@ -8,6 +8,53 @@
 
 "use strict";
 
+import fs from "fs";
+import path from "path";
+
+try {
+  const envPath = path.resolve(process.cwd(), ".env");
+
+  if (fs.existsSync(envPath)) {
+    const envContent = fs.readFileSync(envPath, "utf-8");
+    const lines = envContent.split(/\r?\n/);
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+
+      const isValidLine =
+        trimmed &&
+        !trimmed.startsWith("#") &&
+        trimmed.includes("=");
+
+      if (!isValidLine) {
+        continue;
+      }
+
+      const eqIdx = trimmed.indexOf("=");
+      const key = trimmed.substring(0, eqIdx).trim();
+
+      let val = trimmed.substring(eqIdx + 1).trim();
+
+      const hasDoubleQuotes =
+        val.startsWith('"') && val.endsWith('"');
+
+      const hasSingleQuotes =
+        val.startsWith("'") && val.endsWith("'");
+
+      if (hasDoubleQuotes || hasSingleQuotes) {
+        val = val.substring(1, val.length - 1);
+      }
+
+      if (key && !process.env[key]) {
+        process.env[key] = val;
+      }
+    }
+  }
+} catch (error) {
+  // Ignore missing or malformed .env files
+}
+
+
 const SENSITIVE_KEY_PATTERNS = [
   /private[_\-]?key/i,
   /secret[_\-]?key/i,
@@ -66,12 +113,25 @@ const ALLOWED_EXCEPTIONS = new Set([
   "REACT_APP_CSP_REPORT_URI",
 ]);
 
-const REQUIRED_VARS = ["VITE_API_URL"];
+const BACKEND_URL_VARS = ["BACKEND_URL", "VITE_API_URL", "REACT_APP_API_URL"];
+const REQUIRED_VARS = ["JWT_SECRET"];
+const PRODUCTION_REQUIRED_VARS = ["DATABASE_URL"];
+
+// Rate limiting configuration validation
+const RATE_LIMIT_VARS = ["RATE_LIMIT_REDIS_URL", "KV_REST_API_URL", "KV_REST_API_TOKEN"];
 
 const FORMAT_VALIDATED_VARS = {
+  BACKEND_URL: {
+    pattern: /^https?:\/\/.+/,
+    message: "BACKEND_URL must be a valid HTTP/HTTPS URL (for example: https://api.example.com)",
+  },
   VITE_API_URL: {
     pattern: /^https?:\/\/.+/,
     message: "VITE_API_URL must be a valid HTTP/HTTPS URL (for example: https://api.example.com)",
+  },
+  REACT_APP_API_URL: {
+    pattern: /^https?:\/\/.+/,
+    message: "REACT_APP_API_URL must be a valid HTTP/HTTPS URL (for example: https://api.example.com)",
   },
 };
 
@@ -83,13 +143,40 @@ const warnings = [];
 
 console.log("\n[validate-env] Scanning environment variables for security issues...\n");
 
-console.log("Required variables:");
+console.log("Required backend configuration:");
+const configuredBackendVars = BACKEND_URL_VARS.filter(
+  (varName) => process.env[varName] && process.env[varName].trim()
+);
+if (configuredBackendVars.length === 0) {
+  const msg =
+    "Backend URL is not configured. Set BACKEND_URL, VITE_API_URL, or REACT_APP_API_URL before starting the application.";
+  errors.push(`[CONFIG ERROR] ${msg}`);
+  hasErrors = true;
+} else {
+  console.log(`  OK: ${configuredBackendVars.join(" or ")} = [set]`);
+}
+
+console.log("\nRequired server variables:");
 for (const varName of REQUIRED_VARS) {
   if (!process.env[varName]) {
-    console.warn(`  WARNING: missing ${varName} (app may fail to connect to backend)`);
-    warnings.push(`Required variable ${varName} is not set`);
+    const isJwtSecret = varName === "JWT_SECRET";
+    const errorMsg = isJwtSecret
+      ? `[CRITICAL SECURITY ERROR] ${varName} is missing. This is a critical security vulnerability that allows unauthorized access. Generate a secure secret using: openssl rand -base64 32`
+      : `Required variable ${varName} is not set`;
+    
+    console.error(`  ERROR: ${errorMsg}`);
+    errors.push(errorMsg);
+    hasErrors = true;
   } else {
-    console.log(`  OK: ${varName} = [set]`);
+    // Additional validation for JWT_SECRET to ensure it's not empty or whitespace
+    if (varName === "JWT_SECRET" && !process.env[varName].trim()) {
+      const errorMsg = `[CRITICAL SECURITY ERROR] JWT_SECRET is empty or whitespace-only. This is a critical security vulnerability. Generate a secure secret using: openssl rand -base64 32`;
+      console.error(`  ERROR: ${errorMsg}`);
+      errors.push(errorMsg);
+      hasErrors = true;
+    } else {
+      console.log(`  OK: ${varName} = [set]`);
+    }
   }
 }
 
@@ -113,7 +200,80 @@ if (OPTIONAL_VARS.length === 0) {
   }
 }
 
+console.log("\nRate limiting configuration:");
+const hasRateLimitConfig = RATE_LIMIT_VARS.some(v => process.env[v]);
+if (process.env.NODE_ENV === "production") {
+  if (!hasRateLimitConfig) {
+    const msg =
+      "[CRITICAL SECURITY ERROR] Production requires distributed rate limiting. " +
+      "Set RATE_LIMIT_REDIS_URL or KV_REST_API_URL/KV_REST_API_TOKEN. " +
+      "RATE_LIMIT_MODE=memory is not allowed in production.";
+    console.error(`  ERROR: ${msg}`);
+    errors.push(msg);
+    hasErrors = true;
+  } else if (hasRateLimitConfig) {
+    const configured = RATE_LIMIT_VARS.filter(v => process.env[v]).join(", ");
+    console.log(`  OK: Distributed rate limiting configured (${configured})`);
+  }
+  
+  // CRITICAL: Reject RATE_LIMIT_MODE=memory in production
+  if (process.env.RATE_LIMIT_MODE === "memory") {
+    const msg = "RATE_LIMIT_MODE=memory is not allowed in production. Remove this setting.";
+    console.error(`  ERROR: ${msg}`);
+    errors.push(msg);
+    hasErrors = true;
+  }
+} else {
+  if (hasRateLimitConfig) {
+    const configured = RATE_LIMIT_VARS.filter(v => process.env[v]).join(", ");
+    console.log(`  OK: Distributed rate limiting configured (${configured})`);
+  } else {
+    console.log(`  - Using in-memory fallback (development mode)`);
+  }
+}
+
+// Validate KV configuration consistency
+if (process.env.KV_REST_API_URL && !process.env.KV_REST_API_TOKEN) {
+  const msg = "KV_REST_API_URL is set but KV_REST_API_TOKEN is missing. KV rate limiting will not work.";
+  console.error(`  ERROR: ${msg}`);
+  errors.push(msg);
+  hasErrors = true;
+}
+if (process.env.KV_REST_API_TOKEN && !process.env.KV_REST_API_URL) {
+  const msg = "KV_REST_API_TOKEN is set but KV_REST_API_URL is missing. KV rate limiting will not work.";
+  console.error(`  ERROR: ${msg}`);
+  errors.push(msg);
+  hasErrors = true;
+}
+
 console.log("\nValidating variable formats...");
+  if (process.env.NODE_ENV === "production" && process.env.VITE_API_URL && !process.env.VITE_API_URL.startsWith("https://")) {
+    const msg = "[CRITICAL SECURITY WARNING] VITE_API_URL must use HTTPS in production";
+    errors.push(msg);
+    hasErrors = true;
+    console.error(`  ERROR: ${msg}`);
+  }
+
+console.log("\nValidating production-specific requirements...");
+if (process.env.NODE_ENV === "production") {
+  for (const varName of PRODUCTION_REQUIRED_VARS) {
+    if (!process.env[varName]) {
+      const errorMsg = `[CRITICAL ERROR] ${varName} is required in production. Authentication data must not be stored in memory.`;
+      console.error(`  ERROR: ${errorMsg}`);
+      errors.push(errorMsg);
+      hasErrors = true;
+    } else if (!process.env[varName].trim()) {
+      const errorMsg = `[CRITICAL ERROR] ${varName} is empty or whitespace-only in production. Authentication data must not be stored in memory.`;
+      console.error(`  ERROR: ${errorMsg}`);
+      errors.push(errorMsg);
+      hasErrors = true;
+    } else {
+      console.log(`  OK: ${varName} = [set]`);
+    }
+  }
+} else {
+  console.log(`  (skipping production-specific checks: NODE_ENV=${process.env.NODE_ENV || "undefined"})`);
+}
 for (const [varName, config] of Object.entries(FORMAT_VALIDATED_VARS)) {
   const value = process.env[varName];
   if (!value) continue;
@@ -128,10 +288,13 @@ for (const [varName, config] of Object.entries(FORMAT_VALIDATED_VARS)) {
   }
 }
 
-console.log("\nScanning VITE_* variables for credential leaks...");
-const viteVars = Object.keys(process.env).filter((k) => k.startsWith("VITE_"));
+console.log("\nScanning client variables for credential leaks...");
+// Security Fix: Scan BOTH Vite and React App prefixes to prevent bypass leaks
+const clientVars = Object.keys(process.env).filter(
+  (k) => k.startsWith("VITE_") || k.startsWith("REACT_APP_")
+);
 
-for (const key of viteVars) {
+for (const key of clientVars) {
   if (ALLOWED_EXCEPTIONS.has(key)) continue;
 
   const value = process.env[key] || "";
@@ -170,7 +333,11 @@ if (errors.length > 0) {
 }
 
 const criticalErrors = errors.filter(
-  (e) => e.includes("[SECURITY LEAK]") || e.includes("[FORMAT ERROR]")
+  (e) =>
+    e.includes("[SECURITY LEAK]") ||
+    e.includes("[FORMAT ERROR]") ||
+    e.includes("[CRITICAL ERROR]") ||
+    e.includes("[CONFIG ERROR]")
 );
 if (criticalErrors.length > 0 || hasErrors) {
   console.error(
@@ -180,6 +347,6 @@ if (criticalErrors.length > 0 || hasErrors) {
 }
 
 console.log(
-  `\n[validate-env] Environment check passed. Scanned ${viteVars.length} VITE_* variable(s).\n`
+  `\n[validate-env] Environment check passed. Scanned ${clientVars.length} client variable(s).\n`
 );
 process.exit(0);

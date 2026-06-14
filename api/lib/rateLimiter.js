@@ -1,169 +1,330 @@
 /**
- * Server-side rate limiter for serverless API endpoints.
- *
- * Provides a sliding-window rate limiter keyed by client identifier (typically
- * IP address). Unlike client-side limiters, this enforcement cannot be bypassed
- * by refreshing the page, opening a new tab, or using developer tools.
- *
- * This mirrors the throttling already applied to the GitHub proxy (60 req/min)
- * and AI recommendation (10 req/min) endpoints, extending the same protection
- * to the authentication endpoints that previously had none.
- *
- * Usage:
- *   const limiter = createRateLimiter({ windowMs: 60000, maxRequests: 5 });
- *   const result = limiter.check(clientIp);
- *   if (!result.allowed) {
- *     return res.status(429).json({ error: "Too many requests", retryAfter: result.retryAfter });
- *   }
+ * Distributed Rate Limiter
+ * 
+ * Provides production-ready rate limiting using distributed storage (Redis/KV)
+ * with fallback to in-memory storage for development/testing.
+ * 
+ * Security: Fail-closed in production - rejects requests if distributed storage
+ * is required but unavailable.
+ * 
+ * Supported backends:
+ * - Vercel KV (REST API)
+ * - Upstash Redis (ioredis)
+ * - Standard Redis (ioredis)
+ * - In-memory (development/test only)
  */
+
+// Environment detection
+const NODE_ENV = process.env.NODE_ENV || 'development';
+const RATE_LIMIT_MODE = process.env.RATE_LIMIT_MODE || (NODE_ENV === 'production' ? 'distributed' : 'memory');
+
+// Redis/KV configuration
+const REDIS_URL = process.env.RATE_LIMIT_REDIS_URL;
+const KV_REST_API_URL = process.env.KV_REST_API_URL;
+const KV_REST_API_TOKEN = process.env.KV_REST_API_TOKEN;
+
+// Backend selection flags
+const USE_KV_REST = KV_REST_API_URL && KV_REST_API_TOKEN;
+const USE_REDIS = REDIS_URL && !USE_KV_REST;
+const USE_MEMORY = (RATE_LIMIT_MODE === 'memory' || NODE_ENV === 'test') && NODE_ENV !== 'production';
+
+// Redis client (lazy initialization)
+let redisClient = null;
 
 /**
- * Creates a sliding-window rate limiter.
- *
- * @param {Object} options
- * @param {number} options.windowMs - Time window in milliseconds
- * @param {number} options.maxRequests - Maximum requests allowed per window per key
- * @returns {Object} Rate limiter instance with check() and reset() methods
+ * Initialize Redis connection if needed
  */
-export function createRateLimiter({ windowMs = 60000, maxRequests = 5 } = {}) {
-  // Map of key -> array of request timestamps (ms)
-  const requestLog = new Map();
-  let lastSweep = Date.now();
-  const sweepInterval = Math.max(windowMs, 60000);
-
-  /**
-   * Removes timestamps outside the active window and prunes empty keys.
-   * Called opportunistically to keep memory bounded in long-lived processes.
-   */
-  function sweep(now) {
-    if (now - lastSweep < sweepInterval) {
-      return;
-    }
-    const cutoff = now - windowMs;
-    for (const [key, timestamps] of requestLog.entries()) {
-      const live = timestamps.filter((ts) => ts > cutoff);
-      if (live.length === 0) {
-        requestLog.delete(key);
-      } else {
-        requestLog.set(key, live);
-      }
-    }
-    lastSweep = now;
+async function getRedisClient() {
+  if (redisClient) return redisClient;
+  
+  if (!USE_REDIS) {
+    throw new Error('Redis is not configured');
   }
 
+  try {
+    const Redis = await import('ioredis');
+    redisClient = new Redis(REDIS_URL, {
+      maxRetriesPerRequest: 3,
+      retryStrategy: (times) => {
+        if (times > 3) return null;
+        return Math.min(times * 50, 200);
+      },
+    });
+
+    await redisClient.ping();
+    return redisClient;
+  } catch (error) {
+    console.error('[rateLimiter] Redis connection failed:', error.message);
+    throw new Error(`Redis connection failed: ${error.message}`);
+  }
+}
+
+/**
+ * In-memory rate limiter for development/testing
+ * WARNING: Not suitable for production - resets on restart
+ */
+class InMemoryRateLimiter {
+  constructor(windowMs, maxRequests) {
+    this.windowMs = windowMs;
+    this.maxRequests = maxRequests;
+    this.store = new Map();
+  }
+
+  check(key) {
+    const now = Date.now();
+    const record = this.store.get(key);
+    
+    if (!record || now - record.start > this.windowMs) {
+      this.store.set(key, { start: now, count: 1 });
+      return { allowed: true, remaining: this.maxRequests - 1, resetAt: now + this.windowMs };
+    }
+    
+    record.count++;
+    const allowed = record.count <= this.maxRequests;
+    return {
+      allowed,
+      remaining: Math.max(0, this.maxRequests - record.count),
+      resetAt: record.start + this.windowMs,
+    };
+  }
+
+  async checkAsync(key) {
+    return this.check(key);
+  }
+}
+
+/**
+ * Upstash Redis REST API rate limiter
+ * Uses fetch-based REST API for edge compatibility
+ */
+class KvRateLimiter {
+  constructor(windowMs, maxRequests) {
+    this.windowMs = windowMs;
+    this.maxRequests = maxRequests;
+    this.kvUrl = KV_REST_API_URL;
+    this.kvToken = KV_REST_API_TOKEN;
+  }
+
+  async check(key) {
+    const windowStart = Math.floor(Date.now() / this.windowMs) * this.windowMs;
+    const redisKey = `ratelimit:${key}:${windowStart}`;
+    const headers = { Authorization: `Bearer ${this.kvToken}` };
+
+    try {
+      const incrRes = await fetch(`${this.kvUrl}/incr/${encodeURIComponent(redisKey)}`, {
+        method: 'POST',
+        headers,
+      });
+
+      if (!incrRes.ok) {
+        throw new Error(`KV INCR failed: ${incrRes.status}`);
+      }
+
+      const { result: count } = await incrRes.json();
+
+      if (count === 1) {
+        const expirySeconds = Math.floor(this.windowMs / 1000);
+        fetch(`${this.kvUrl}/expire/${encodeURIComponent(redisKey)}/${expirySeconds}`, {
+          method: 'POST',
+          headers,
+        }).catch((err) => {
+          console.warn('[rateLimiter] Failed to set expiry:', err.message);
+        });
+      }
+
+      return this.buildResult(count, windowStart);
+    } catch (error) {
+      console.error('[rateLimiter] KV check failed:', error.message);
+      throw new Error(`KV rate limit check failed: ${error.message}`);
+    }
+  }
+
+  check(key) {
+    throw new Error('Synchronous check not supported for distributed rate limiter. Use await check(key) instead.');
+  }
+
+  buildResult(count, windowStart) {
+    return {
+      allowed: count <= this.maxRequests,
+      remaining: Math.max(0, this.maxRequests - count),
+      resetAt: windowStart + this.windowMs,
+    };
+  }
+}
+
+/**
+ * Redis (ioredis) rate limiter
+ * Uses atomic INCR with Lua script for atomic increment + expiry
+ */
+class RedisRateLimiter {
+  constructor(windowMs, maxRequests) {
+    this.windowMs = windowMs;
+    this.maxRequests = maxRequests;
+    this.redisUrl = REDIS_URL;
+  }
+
+  async check(key) {
+    const windowStart = Math.floor(Date.now() / this.windowMs) * this.windowMs;
+    const redisKey = `ratelimit:${key}:${windowStart}`;
+    const expirySeconds = Math.floor(this.windowMs / 1000);
+
+    try {
+      const client = await getRedisClient();
+      const luaScript = `
+        local current = redis.call('INCR', KEYS[1])
+        if current == 1 then
+          redis.call('EXPIRE', KEYS[1], ARGV[1])
+        end
+        return current
+      `;
+      const count = await client.eval(luaScript, 1, redisKey, expirySeconds);
+      return this.buildResult(count, windowStart);
+    } catch (error) {
+      console.error('[rateLimiter] Redis check failed:', error.message);
+      throw new Error(`Redis rate limit check failed: ${error.message}`);
+    }
+  }
+
+  check(key) {
+    throw new Error('Synchronous check not supported for distributed rate limiter. Use await check(key) instead.');
+  }
+
+  buildResult(count, windowStart) {
+    return {
+      allowed: count <= this.maxRequests,
+      remaining: Math.max(0, this.maxRequests - count),
+      resetAt: windowStart + this.windowMs,
+    };
+  }
+}
+
+/**
+ * Create a rate limiter instance
+ * 
+ * @param {number} windowMs - Time window in milliseconds
+ * @param {number} maxRequests - Maximum requests per window
+ * @returns {Object} Rate limiter with check() method (sync for memory, async for distributed)
+ */
+function createFailClosedLimiter(message) {
   return {
-    /**
-     * Records a request for the given key and reports whether it is allowed.
-     *
-     * @param {string} key - Client identifier (e.g. IP address)
-     * @returns {{ allowed: boolean, remaining: number, retryAfter: number, limit: number }}
-     *   retryAfter is in seconds and is 0 when the request is allowed.
-     */
     check(key) {
-      const identifier = key || "unknown";
-      const now = Date.now();
-      sweep(now);
-
-      const cutoff = now - windowMs;
-      const timestamps = (requestLog.get(identifier) || []).filter(
-        (ts) => ts > cutoff
-      );
-
-      if (timestamps.length >= maxRequests) {
-        const oldest = timestamps[0];
-        const retryAfterMs = oldest + windowMs - now;
-        requestLog.set(identifier, timestamps);
-        return {
-          allowed: false,
-          remaining: 0,
-          retryAfter: Math.max(1, Math.ceil(retryAfterMs / 1000)),
-          limit: maxRequests,
-        };
-      }
-
-      timestamps.push(now);
-      requestLog.set(identifier, timestamps);
-
-      return {
-        allowed: true,
-        remaining: Math.max(0, maxRequests - timestamps.length),
-        retryAfter: 0,
-        limit: maxRequests,
-      };
+      throw new Error(message);
     },
-
-    /**
-     * Clears recorded requests for a key, or all keys when key is omitted.
-     * Primarily used in tests and after a successful authentication.
-     *
-     * @param {string} [key]
-     */
-    reset(key) {
-      if (key === undefined) {
-        requestLog.clear();
-      } else {
-        requestLog.delete(key);
-      }
-    },
-
-    /**
-     * Returns the number of distinct keys currently tracked.
-     * Useful for monitoring and tests.
-     *
-     * @returns {number}
-     */
-    size() {
-      return requestLog.size;
+    async checkAsync(key) {
+      throw new Error(message);
     },
   };
 }
 
-/**
- * Shared limiter instances for the authentication endpoints.
- *
- * Login is stricter than signup because credential stuffing targets login.
- * Both windows are one minute to match the existing proxy throttles.
- */
-export const loginRateLimiter = createRateLimiter({
-  windowMs: 60000,
-  maxRequests: 5,
-});
+function logProductionWarning() {
+  console.error(
+    '[rateLimiter] CRITICAL: Production requires distributed storage. ' +
+    'Set RATE_LIMIT_REDIS_URL or KV_REST_API_URL/KV_REST_API_TOKEN.'
+  );
+}
 
-export const signupRateLimiter = createRateLimiter({
-  windowMs: 60000,
-  maxRequests: 3,
-});
+function createMemoryLimiter(windowMs, maxRequests) {
+  if (NODE_ENV === 'production') {
+    console.error('[rateLimiter] ERROR: RATE_LIMIT_MODE=memory is not allowed in production');
+    return createFailClosedLimiter('Rate limiting is not configured for production. Set RATE_LIMIT_REDIS_URL or KV_REST_API_URL/KV_REST_API_TOKEN.');
+  }
+  console.warn('[rateLimiter] Using in-memory storage (not suitable for production)');
+  return new InMemoryRateLimiter(windowMs, maxRequests);
+}
 
-/**
- * Applies a rate limiter to a request and writes a 429 response when exceeded.
- *
- * Centralises the standard headers (Retry-After, X-RateLimit-*) so every
- * endpoint reports limits consistently.
- *
- * @param {Object} limiter - A limiter from createRateLimiter
- * @param {string} clientIp - Caller IP address
- * @param {Object} res - Response object exposing status()/setHeader()/json()
- * @returns {boolean} true when the request may proceed, false when blocked
- */
-export function enforceRateLimit(limiter, clientIp, res) {
-  const result = limiter.check(clientIp);
+function createDistributedLimiter(windowMs, maxRequests) {
+  if (USE_KV_REST) {
+    return new KvRateLimiter(windowMs, maxRequests);
+  }
+  if (USE_REDIS) {
+    return new RedisRateLimiter(windowMs, maxRequests);
+  }
+  return null;
+}
 
-  if (typeof res.setHeader === "function") {
-    res.setHeader("X-RateLimit-Limit", String(result.limit));
-    res.setHeader("X-RateLimit-Remaining", String(result.remaining));
+export const createRateLimiter = (windowMs, maxRequests) => {
+  if (NODE_ENV === 'production' && !USE_KV_REST && !USE_REDIS) {
+    logProductionWarning();
   }
 
+  if (USE_MEMORY) {
+    return createMemoryLimiter(windowMs, maxRequests);
+  }
+
+  const distributedLimiter = createDistributedLimiter(windowMs, maxRequests);
+  if (distributedLimiter) {
+    return distributedLimiter;
+  }
+
+  if (NODE_ENV === 'development') {
+    console.warn('[rateLimiter] No distributed storage configured, using in-memory fallback');
+    return new InMemoryRateLimiter(windowMs, maxRequests);
+  }
+
+  return createFailClosedLimiter(
+    'Rate limiting is not configured. ' +
+    'Set RATE_LIMIT_REDIS_URL or KV_REST_API_URL/KV_REST_API_TOKEN in production.'
+  );
+};
+
+// Pre-configured limiters
+export const loginRateLimiter = createRateLimiter(60_000, 10);
+export const signupRateLimiter = createRateLimiter(60_000, 5);
+
+/**
+ * Enforce rate limit and throw error if exceeded
+ * 
+ * @param {Object} limiter - Rate limiter instance
+ * @param {string} key - Identifier (typically IP address)
+ * @throws {Error} With status 429 if rate limit exceeded
+ */
+export const enforceRateLimit = async (limiter, key) => {
+  const result = await limiter.check(key);
   if (!result.allowed) {
-    if (typeof res.setHeader === "function") {
-      res.setHeader("Retry-After", String(result.retryAfter));
-    }
-    res.status(429).json({
-      error: "Too many requests",
-      message: `Rate limit exceeded. Try again in ${result.retryAfter} seconds.`,
-      retryAfter: result.retryAfter,
-    });
-    return false;
+    const err = new Error("Too many requests. Please try again later.");
+    err.status = 429;
+    err.remaining = result.remaining;
+    err.resetAt = result.resetAt;
+    throw err;
+  }
+  return result;
+};
+
+/**
+ * Validate rate limiting configuration at startup
+ * Call this during application initialization to fail fast if misconfigured
+ */
+export function validateRateLimitConfig() {
+  if (NODE_ENV !== 'production') return true;
+
+  const errors = [];
+
+  if (!USE_KV_REST && !USE_REDIS) {
+    errors.push(
+      'Production requires distributed rate limiting. ' +
+      'Set RATE_LIMIT_REDIS_URL or KV_REST_API_URL/KV_REST_API_TOKEN. ' +
+      'RATE_LIMIT_MODE=memory is not allowed in production.'
+    );
   }
 
+  if (USE_KV_REST && !KV_REST_API_TOKEN) {
+    errors.push('KV_REST_API_URL is set but KV_REST_API_TOKEN is missing.');
+  }
+
+  if (USE_REDIS && !REDIS_URL) {
+    errors.push('RATE_LIMIT_MODE implies Redis but RATE_LIMIT_REDIS_URL is not set.');
+  }
+
+  if (RATE_LIMIT_MODE === 'memory') {
+    errors.push('RATE_LIMIT_MODE=memory is not allowed in production. Remove this setting or use distributed storage.');
+  }
+
+  if (errors.length > 0) {
+    console.error('[rateLimiter] Configuration errors:');
+    errors.forEach((err) => console.error(`  - ${err}`));
+    throw new Error(`Rate limiting configuration error: ${errors.join('; ')}`);
+  }
+
+  console.log('[rateLimiter] Configuration validated successfully');
   return true;
 }

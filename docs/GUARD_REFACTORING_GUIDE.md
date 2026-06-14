@@ -11,6 +11,7 @@ This guide provides concrete examples of how to refactor existing Eventra compon
 **File:** `src/components/Dashboard.js`
 
 **Current Implementation (Lines 12-27):**
+
 ```jsx
 const Dashboard = () => {
   // 🔥 FIX: Added safe destructuring with a fallback to prevent crashes if context is missing
@@ -38,6 +39,7 @@ const Dashboard = () => {
 ```
 
 **Refactored (Using Guard):**
+
 ```jsx
 import Guard from '../auth/Guard';
 
@@ -64,6 +66,7 @@ const Dashboard = () => {
 ```
 
 **Benefits:**
+
 - ✅ Removes unsafe `?.()` optional chaining
 - ✅ Clearer intent: "show admin if ADMIN, else user"
 - ✅ Eliminates manual role extraction
@@ -76,6 +79,7 @@ const Dashboard = () => {
 **File:** `src/components/admin/AdminDashboard.js`
 
 **Current Implementation (Lines 94-106):**
+
 ```jsx
 const AdminDashboard = () => {
   const { user, logout, hasPermission } = useAuth();
@@ -96,6 +100,7 @@ const AdminDashboard = () => {
 ```
 
 **Refactored (Using ProtectedRoute + Guard):**
+
 ```jsx
 // Option 1: Wrap the entire component with Guard
 export const AdminDashboardUnsafe = () => {
@@ -118,6 +123,7 @@ export const AdminDashboard = () => (
 ```
 
 **Or Option 2: Use at route level (ProtectedRoute in ProtectedRoutes.js):**
+
 ```jsx
 <Route
   key="/admin"
@@ -134,6 +140,7 @@ export const AdminDashboard = () => (
 ```
 
 **Benefits:**
+
 - ✅ Eliminates manual `includes()` checks
 - ✅ Cleaner component logic
 - ✅ Reusable component export with built-in protection
@@ -146,6 +153,7 @@ export const AdminDashboard = () => (
 **File:** `src/components/events/EventCard.jsx` (hypothetical)
 
 **Before:**
+
 ```jsx
 function EventCard({ event }) {
   const { hasRole, hasPermission } = useAuth();
@@ -176,6 +184,7 @@ function EventCard({ event }) {
 ```
 
 **Refactored (Using Guard):**
+
 ```jsx
 import Guard from '../auth/Guard';
 
@@ -202,6 +211,7 @@ function EventCard({ event }) {
 ```
 
 **Benefits:**
+
 - ✅ Each action is visually associated with its permission
 - ✅ No intermediate state variables
 - ✅ Custom fallback for each action
@@ -214,6 +224,7 @@ function EventCard({ event }) {
 **File:** `src/components/EventCreation.jsx`
 
 **Before:**
+
 ```jsx
 const EventCreation = () => {
   const { hasPermission, hasRole } = useAuth();
@@ -238,6 +249,7 @@ const EventCreation = () => {
 ```
 
 **Refactored (Using Guard):**
+
 ```jsx
 import Guard from '../auth/Guard';
 import { PERMISSIONS, ROLES } from '../../config/roles';
@@ -264,6 +276,7 @@ const EventCreation = () => {
 ```
 
 **Benefits:**
+
 - ✅ Clear authorization requirements
 - ✅ Centralized access logic
 - ✅ Custom error UI
@@ -276,6 +289,7 @@ const EventCreation = () => {
 **File:** `src/components/admin/UserManagement.jsx` (hypothetical)
 
 **Before:**
+
 ```jsx
 const UserManagement = () => {
   const { user, hasRole } = useAuth();
@@ -290,6 +304,7 @@ const UserManagement = () => {
 ```
 
 **Refactored:**
+
 ```jsx
 import Guard from '../auth/Guard';
 
@@ -304,6 +319,7 @@ const UserManagement = () => (
 ```
 
 **Benefits:**
+
 - ✅ 3 lines of authorization logic → 1 component
 - ✅ Consistent with other protected components
 - ✅ Easier to maintain
@@ -315,6 +331,7 @@ const UserManagement = () => (
 **File:** `src/components/analytics/AnalyticsDashboard.jsx` (hypothetical)
 
 **Before:**
+
 ```jsx
 const AnalyticsDashboard = () => {
   const { hasRole, hasPermission } = useAuth();
@@ -347,6 +364,7 @@ const AnalyticsDashboard = () => {
 ```
 
 **Refactored (Using Nested Guards):**
+
 ```jsx
 import Guard from '../auth/Guard';
 
@@ -374,6 +392,7 @@ const AnalyticsDashboard = () => (
 ```
 
 **Benefits:**
+
 - ✅ Clearer hierarchy of permissions
 - ✅ Each section visually protected
 - ✅ Easier to extend/add new sections
@@ -386,6 +405,7 @@ const AnalyticsDashboard = () => (
 **File:** `src/components/admin/AdminToolbar.jsx` (hypothetical)
 
 **Before:**
+
 ```jsx
 const AdminToolbar = () => {
   const { hasRole, hasPermission } = useAuth();
@@ -413,6 +433,7 @@ const AdminToolbar = () => {
 ```
 
 **Refactored:**
+
 ```jsx
 import Guard from '../auth/Guard';
 
@@ -442,6 +463,7 @@ const AdminToolbar = () => (
 ```
 
 **Benefits:**
+
 - ✅ Each button's authorization is self-contained
 - ✅ Easy to add/remove buttons
 - ✅ Reduced cognitive load

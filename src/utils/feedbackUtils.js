@@ -6,8 +6,24 @@
 
 import { safeJsonParse } from './safeJsonParse';
 import { sanitizeHtml } from './sanitizeHtml';
+import { API_ENDPOINTS, apiUtils } from '../config/api';
 
 const FEEDBACK_STORAGE_KEY = 'eventra_feedback';
+
+export const fetchEventFeedback = async (eventId) => {
+  const response = await apiUtils.get(API_ENDPOINTS.FEEDBACK.BY_EVENT(eventId));
+  return response.json();
+};
+
+export const submitEventFeedback = async ({ eventId, rating, comment, tags = [] }) => {
+  const response = await apiUtils.post(API_ENDPOINTS.FEEDBACK.BASE, {
+    eventId,
+    rating,
+    comment,
+    tags,
+  });
+  return response.json();
+};
 
 /**
  * Get all feedback for an event
@@ -179,11 +195,15 @@ export const getTopFeedbackTags = (eventId, limit = 5) => {
 export const getRecommendationStats = (eventId) => {
   try {
     const feedback = getEventFeedback(eventId);
-    const recommendations = feedback.map((f) => f.recommend).filter((r) => r !== undefined);
-
-    const recommendCount = recommendations.filter((r) => r === true).length;
-    const notRecommendCount = recommendations.filter((r) => r === false).length;
-    const total = recommendations.length;
+    const { recommendCount, notRecommendCount, total } = feedback.reduce(
+      (acc, f) => {
+        if (f.recommend === true) acc.recommendCount++;
+        else if (f.recommend === false) acc.notRecommendCount++;
+        if (f.recommend !== undefined) acc.total++;
+        return acc;
+      },
+      { recommendCount: 0, notRecommendCount: 0, total: 0 }
+    );
 
     const percentage = total > 0 ? Math.round((recommendCount / total) * 100) : 0;
 

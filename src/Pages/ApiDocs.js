@@ -87,7 +87,7 @@ const ApiDocs = () => {
     status: "all",
     hackathonId: "1",
     sortBy: "recent",
-    authHeader: "Bearer evt_dev_test_token",
+    authHeader: "Bearer [redacted]",
     role: "all",
     page: "1",
   });

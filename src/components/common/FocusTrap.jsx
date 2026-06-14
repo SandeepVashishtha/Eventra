@@ -1,6 +1,4 @@
-
 import React, { useCallback } from 'react';
-
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 /**
@@ -86,6 +84,3 @@ const FocusTrap = ({
 };
 
 FocusTrap.displayName = 'FocusTrap';
-
-export default FocusTrap;
-// Optimized for lazy loading

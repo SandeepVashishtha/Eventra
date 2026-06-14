@@ -4,7 +4,7 @@
  * Can be composed with sync validators in useFormValidation
  */
 
-import { apiUtils } from "../config/api";
+import { apiUtils } from "../config/api.js";
 
 /**
  * Generic async validator factory
@@ -155,8 +155,8 @@ export const validatePasswordStrength = async (password) => {
       minLength: password.length >= 8,
       hasUppercase: /[A-Z]/.test(password),
       hasLowercase: /[a-z]/.test(password),
-      hasNumber: /[0-9]/.test(password),
-      hasSpecial: /[!@#$%^&*]/.test(password),
+      hasNumber: /\d/.test(password),
+      hasSpecial: /[!@#$%^&*(),.?":{}|<>]/.test(password),
     };
 
     const allMet = Object.values(requirements).every(Boolean);

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { ImageIcon } from 'lucide-react';
+// import { ImageIcon } from 'lucide-react';
 import '../../styles/lazy-image.css';
 
 /**
@@ -30,7 +30,7 @@ const LazyImage = ({
   ...props
 }) => {
   const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState(false);
+  const [, setError] = useState(false);
   const imgRef = useRef(null);
 
   useEffect(() => {

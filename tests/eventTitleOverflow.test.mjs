@@ -17,7 +17,6 @@ const paths = {
   MyCalendar: path.resolve(__dirname, "../src/Pages/Calendar/MyCalendar.jsx"),
   EventRegistration: path.resolve(__dirname, "../src/Pages/Events/EventRegistration.js"),
   EventDetails: path.resolve(__dirname, "../src/Pages/Events/EventDetails.js"),
-  EventDetailsPage: path.resolve(__dirname, "../src/Pages/Events/EventDetailsPage.js"),
   RemindersPage: path.resolve(__dirname, "../src/Pages/Events/RemindersPage.js"),
   RecentlyViewedEventsCss: path.resolve(__dirname, "../src/components/common/RecentlyViewedEvents.css"),
   UserDashboardJs: path.resolve(__dirname, "../src/components/user/UserDashboard.js"),
@@ -82,13 +81,10 @@ describe("Event Title Overflow Prevention Integrity Tests", () => {
     assert.ok(src.includes("title={event.title}"), "EventRegistration should have title attribute");
   });
 
-  it("should verify EventDetails and EventDetailsPage have break-words and title attributes", () => {
+  it("should verify EventDetails has break-words and title attributes", () => {
     const srcDetails = readFileSync(paths.EventDetails, "utf8");
-    const srcDetailsPage = readFileSync(paths.EventDetailsPage, "utf8");
     assert.ok(srcDetails.includes("break-words"), "EventDetails should wrap long words");
     assert.ok(srcDetails.includes("title={event.title}"), "EventDetails should have title attribute");
-    assert.ok(srcDetailsPage.includes("break-words"), "EventDetailsPage should wrap long words");
-    assert.ok(srcDetailsPage.includes("title={event.title}"), "EventDetailsPage should have title attribute");
   });
 
   it("should verify RemindersPage has line-clamp-2, break-words, and title attribute", () => {

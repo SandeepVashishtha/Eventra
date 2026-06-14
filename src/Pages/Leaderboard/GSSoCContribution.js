@@ -855,7 +855,7 @@ const timeLeft = useCountdown(
           <motion.button
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => window.open("https://discord.gg/eventra", "_blank", "noopener,noreferrer")}
+            onClick={() => window.open("https://discord.gg/6MQ9r5nHT", "_blank", "noopener,noreferrer")}
             className="px-6 sm:px-8 py-3 rounded-full font-semibold text-white bg-[#5865F2] hover:bg-[#4752C4] shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-[#5865F2] focus:ring-offset-2 dark:focus:ring-offset-black"
           >
             <MessageCircle className="w-4 h-4" aria-hidden="true" />
