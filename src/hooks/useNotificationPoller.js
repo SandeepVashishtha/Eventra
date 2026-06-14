@@ -9,7 +9,16 @@ import { getNotificationMessage } from "../utils/notificationPreferences";
 
 const POLLING_INTERVAL_MS = 60_000;
 const MAX_SEEN_IDS = 500;
-const STORAGE_KEY = "eventra_notification_inbox";
+const getStorageKey = () => {
+  try {
+    const userStr = window.localStorage.getItem('user');
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      if (user && user.id) return 'eventra_notification_inbox_' + user.id;
+    }
+  } catch (e) {}
+  return 'eventra_notification_inbox_guest';
+};
 
 const normalize = (n = {}) => ({
   ...n,
@@ -18,12 +27,12 @@ const normalize = (n = {}) => ({
 });
 
 const persist = (items) => {
-  try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); } catch {}
+  try { window.localStorage.setItem(getStorageKey(), JSON.stringify(items)); } catch {}
 };
 
 const loadPersisted = () => {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(getStorageKey());
     if (!raw) return null;
     const parsed = safeJsonParse(raw, []);
     return Array.isArray(parsed) ? parsed.map(normalize) : null;
