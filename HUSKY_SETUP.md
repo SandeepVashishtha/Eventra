@@ -6,6 +6,8 @@ This project uses [Husky](https://typicode.github.io/husky) and [lint-staged](ht
 
 When you run `git commit`, Husky triggers the `pre-commit` hook which runs `lint-staged`. Only **staged files** are checked, keeping the process fast.
 
+* **Pre-commit Hooks:** Automatically runs `npm run lint` and `prettier` on changed files before allowing a commit to be finalized.
+
 ### What runs on commit
 
 | File type | Actions |
