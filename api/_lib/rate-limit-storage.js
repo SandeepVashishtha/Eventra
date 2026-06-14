@@ -65,15 +65,26 @@ function getRedisClient() {
   }
 
   try {
-    const client = new Redis(process.env.KV_REST_API_URL, {
+    const redisUrl = process.env.RATE_LIMIT_REDIS_URL || process.env.KV_REST_API_URL;
+    if (!redisUrl) {
+      console.error("[rate-limit-storage.js] No Redis URL configured. Set RATE_LIMIT_REDIS_URL or KV_REST_API_URL.");
+      return null;
+    }
+
+    if (redisUrl.startsWith("https://") || redisUrl.startsWith("http://")) {
+      console.error("[rate-limit-storage.js] KV_REST_API_URL is an HTTP REST endpoint, not a Redis connection URL. Set RATE_LIMIT_REDIS_URL for direct Redis connections.");
+      return null;
+    }
+
+    const client = new Redis(redisUrl, {
       password: process.env.KV_REST_API_TOKEN,
-      tls: process.env.KV_REST_API_URL?.startsWith("rediss://") ? {} : undefined,
+      tls: redisUrl.startsWith("rediss://") ? {} : undefined,
       maxRetriesPerRequest: 3,
       retryStrategy: (times) => {
         if (times > 3) {
-          return null; // Stop retrying after 3 attempts
+          return null;
         }
-        return Math.min(times * 100, 500); // Exponential backoff
+        return Math.min(times * 100, 500);
       },
     });
 
