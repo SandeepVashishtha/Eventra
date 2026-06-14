@@ -334,9 +334,239 @@ const useEventFormHandlers = (formData, setFormData, errors, setErrors, newTag, 
   };
 };
 
+const useSubmitEventCreation = () => {
+  return useFormSubmit(async (eventData) => {
+    if (!API_ENDPOINTS.EVENTS.CREATE) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      return;
+    }
+    const response = await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, eventData);
+    const result = response.data;
+    if (!(response.status === 200 && result.success)) {
+      throw new Error(result.message || result.error || `Server error: ${response.status}`);
+    }
+  });
+};
+
+const EventFormContent = ({
+  formData,
+  setFormData,
+  errors,
+  setErrors,
+  handleInputChange,
+  handleImageUpload,
+  prefersReducedMotion,
+  handleDurationChange,
+  newTag,
+  setNewTag,
+  addTag,
+  removeTag,
+  handleNext,
+}) => (
+  <>
+    <div className="w-full max-w-4xl flex justify-end mb-6">
+      <button
+        onClick={() => {
+          exportAttendeesToCSV(mockAttendees, "event-attendees.csv");
+          toast.success("CSV exported successfully!");
+        }}
+        className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-300"
+      >
+        <Download size={18} />
+        Download CSV
+      </button>
+    </div>
+
+    <motion.div
+      initial={{ opacity: 0, y: -30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: prefersReducedMotion ? 0 : 0.7 }}
+      className="text-center mb-10"
+    >
+      <h1 className="text-4xl sm:text-5xl font-extrabold text-indigo-800 dark:text-indigo-300 mb-4">
+        Create Your Event
+      </h1>
+      <p className="text-xs sm:text-base text-gray-600 dark:text-gray-400">
+        Fill in the details below and bring your event to life!
+      </p>
+    </motion.div>
+
+    <GuidelinesSection prefersReducedMotion={prefersReducedMotion} />
+
+    <motion.div
+      initial={{ opacity: 0, y: 50 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
+      className="w-full max-w-4xl bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-8 border border-indigo-300 dark:border-gray-700"
+    >
+      <div className="space-y-6">
+        <GeneralInfoStep
+          formData={formData}
+          setFormData={setFormData}
+          errors={errors}
+          setErrors={setErrors}
+          handleInputChange={handleInputChange}
+          handleImageUpload={handleImageUpload}
+          prefersReducedMotion={prefersReducedMotion}
+          categories={categories}
+        />
+
+        <EventDurationSelector
+          isMultiDay={formData.isMultiDay}
+          onChange={handleDurationChange}
+        />
+
+        <DateTimeFields
+          formData={formData}
+          handleInputChange={handleInputChange}
+          errors={errors}
+          prefersReducedMotion={prefersReducedMotion}
+          todayString={todayString}
+        />
+
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.5 }}
+        >
+          <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+            <input
+              type="checkbox"
+              name="isVirtual"
+              checked={formData.isVirtual}
+              onChange={handleInputChange}
+              className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+            />
+            <Globe className="w-5 h-5 text-indigo-500 inline-block" />
+            This is a virtual event
+          </label>
+        </motion.div>
+
+        {formData.isVirtual ? (
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+          >
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <Link2 className="w-5 h-5 text-indigo-500 inline-block mr-2" />
+              Virtual Event Link <span className="text-red-600">*</span>
+            </label>
+            <input
+              type="url"
+              name="virtualLink"
+              value={formData.virtualLink}
+              onChange={handleInputChange}
+              placeholder="https://zoom.us/j/..."
+              className={`w-full border ${
+                errors.virtualLink ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+              } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
+            />
+            {errors.virtualLink && (
+              <span className="text-red-500 text-sm mt-1">{errors.virtualLink}</span>
+            )}
+          </motion.div>
+        ) : (
+          <LocationFields
+            formData={formData}
+            handleInputChange={handleInputChange}
+            errors={errors}
+            prefersReducedMotion={prefersReducedMotion}
+          />
+        )}
+
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.6 }}
+        >
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Maximum Attendees
+          </label>
+          <input
+            type="number"
+            name="capacity"
+            value={formData.capacity}
+            onChange={handleInputChange}
+            placeholder="Leave empty for unlimited (max: 100,000)"
+            min="1"
+            max="100000"
+            className={`w-full border ${errors.capacity ? "border-red-500" : "border-gray-300 dark:border-gray-600"} rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
+          />
+          {errors.capacity && <span className="text-red-500 text-sm mt-1">{errors.capacity}</span>}
+        </motion.div>
+
+        <RegistrationDatesFields
+          formData={formData}
+          handleInputChange={handleInputChange}
+          errors={errors}
+        />
+
+        <motion.div
+          className="space-y-3"
+          initial={{ opacity: 0, x: -20 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.8 }}
+        >
+          <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+            <input
+              type="checkbox"
+              name="isPublic"
+              checked={formData.isPublic}
+              onChange={handleInputChange}
+              className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+            />
+            Make this event public
+          </label>
+          <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+            <input
+              type="checkbox"
+              name="requiresApproval"
+              checked={formData.requiresApproval}
+              onChange={handleInputChange}
+              className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+            />
+            Require approval for registration
+          </label>
+        </motion.div>
+
+        <TicketsStep
+          formData={formData}
+          setFormData={setFormData}
+          errors={errors}
+          setErrors={setErrors}
+        />
+
+        <TagsInput
+          tags={formData.tags}
+          newTag={newTag}
+          onNewTagChange={setNewTag}
+          onAdd={addTag}
+          onRemove={removeTag}
+        />
+
+        <motion.button
+          type="button"
+          onClick={handleNext}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className="w-full flex items-center justify-center gap-2 bg-black text-white font-semibold p-4 rounded-xl shadow-lg hover:bg-zinc-800 transition-all duration-300"
+        >
+          Preview Event
+        </motion.button>
+      </div>
+    </motion.div>
+
+    <StatsSection />
+  </>
+);
+
 const EventCreation = () => {
   const prefersReducedMotion = useReducedMotion();
-
   const [currentStep, setCurrentStep] = useState(CREATION_STEPS.FORM);
 
   const {
@@ -344,25 +574,7 @@ const EventCreation = () => {
     isSubmitting,
     error: submitError,
     success: submitSuccess,
-  } = useFormSubmit(async (eventData) => {
-    // Auth is handled by the HttpOnly session cookie ΓÇö apiUtils sends it
-    // automatically via withCredentials. Never read tokens from sessionStorage;
-    // setToken was removed as part of the HttpOnly cookie migration.
-
-    if (!API_ENDPOINTS.EVENTS.CREATE) {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      return;
-    }
-
-    const response = await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, eventData);
-    const result = response.data;
-
-    if (!(response.status === 200 && result.success)) {
-      const errorMessage =
-        result.message || result.error || `Server error: ${response.status}`;
-      throw new Error(errorMessage);
-    }
-  });
+  } = useSubmitEventCreation();
 
   useEffect(() => {
     if (submitSuccess) {
@@ -412,210 +624,21 @@ const EventCreation = () => {
 
 
       {currentStep === CREATION_STEPS.FORM ? (
-        <>
-          <div className="w-full max-w-4xl flex justify-end mb-6">
-            <button
-              onClick={() => {
-                exportAttendeesToCSV(mockAttendees, "event-attendees.csv");
-                toast.success("CSV exported successfully!");
-              }}
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-300"
-            >
-              <Download size={18} />
-              Download CSV
-            </button>
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0, y: -30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: prefersReducedMotion ? 0 : 0.7 }}
-            className="text-center mb-10"
-          >
-            <h1 className="text-4xl sm:text-5xl font-extrabold text-indigo-800 dark:text-indigo-300 mb-4">
-              Create Your Event
-            </h1>
-            <p className="text-xs sm:text-base text-gray-600 dark:text-gray-400">
-              Fill in the details below and bring your event to life!
-            </p>
-          </motion.div>
-
-          <GuidelinesSection prefersReducedMotion={prefersReducedMotion} />
-
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
-            className="w-full max-w-4xl bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-8 border border-indigo-300 dark:border-gray-700"
-          >
-            <div className="space-y-6">
-              <GeneralInfoStep
-                formData={formData}
-                setFormData={setFormData}
-                errors={errors}
-                setErrors={setErrors}
-                handleInputChange={handleInputChange}
-                handleImageUpload={handleImageUpload}
-                prefersReducedMotion={prefersReducedMotion}
-                categories={categories}
-              />
-
-              <EventDurationSelector
-                isMultiDay={formData.isMultiDay}
-                onChange={handleDurationChange}
-              />
-
-              <DateTimeFields
-                formData={formData}
-                handleInputChange={handleInputChange}
-                errors={errors}
-                prefersReducedMotion={prefersReducedMotion}
-                todayString={todayString}
-              />
-
-
-              {/* Virtual Event Checkbox */}
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.5 }}
-              >
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                  <input
-                    type="checkbox"
-                    name="isVirtual"
-                    checked={formData.isVirtual}
-                    onChange={handleInputChange}
-                    className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                  />
-                  <Globe className="w-5 h-5 text-indigo-500 inline-block" />
-                  This is a virtual event
-                </label>
-              </motion.div>
-
-              {/* Virtual Link or Location */}
-              {formData.isVirtual ? (
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    <Link2 className="w-5 h-5 text-indigo-500 inline-block mr-2" />
-                    Virtual Event Link <span className="text-red-600">*</span>
-                  </label>
-                  <input
-                    type="url"
-                    name="virtualLink"
-                    value={formData.virtualLink}
-                    onChange={handleInputChange}
-                    placeholder="https://zoom.us/j/..."
-                    className={`w-full border ${
-                      errors.virtualLink ? "border-red-500" : "border-gray-300 dark:border-gray-600"
-                    } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
-                  />
-                  {errors.virtualLink && (
-                    <span className="text-red-500 text-sm mt-1">{errors.virtualLink}</span>
-                  )}
-                </motion.div>
-              ) : (
-                <LocationFields
-                  formData={formData}
-                  handleInputChange={handleInputChange}
-                  errors={errors}
-                  prefersReducedMotion={prefersReducedMotion}
-                />
-              )}
-
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.6 }}
-              >
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Maximum Attendees
-                </label>
-                <input
-                  type="number"
-                  name="capacity"
-                  value={formData.capacity}
-                  onChange={handleInputChange}
-                  placeholder="Leave empty for unlimited (max: 100,000)"
-                  min="1"
-                  max="100000"
-                  className={`w-full border ${errors.capacity ? "border-red-500" : "border-gray-300 dark:border-gray-600"} rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
-                />
-                {errors.capacity && <span className="text-red-500 text-sm mt-1">{errors.capacity}</span>}
-              </motion.div>
-
-              <RegistrationDatesFields
-                formData={formData}
-                handleInputChange={handleInputChange}
-                errors={errors}
-              />
-
-              <motion.div
-                className="space-y-3"
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.8 }}
-              >
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                  <input
-                    type="checkbox"
-                    name="isPublic"
-                    checked={formData.isPublic}
-                    onChange={handleInputChange}
-                    className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                  />
-                  Make this event public
-                </label>
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                  <input
-                    type="checkbox"
-                    name="requiresApproval"
-                    checked={formData.requiresApproval}
-                    onChange={handleInputChange}
-                    className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                  />
-                  Require approval for registration
-                </label>
-              </motion.div>
-
-              <TicketsStep
-                formData={formData}
-                setFormData={setFormData}
-                errors={errors}
-                setErrors={setErrors}
-              />
-
-              <TagsInput
-                tags={formData.tags}
-                newTag={newTag}
-                onNewTagChange={setNewTag}
-                onAdd={addTag}
-                onRemove={removeTag}
-              />
-
-
-              <motion.button
-                type="button"
-                onClick={handleNext}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full flex items-center justify-center gap-2 bg-black text-white font-semibold p-4 rounded-xl shadow-lg hover:bg-zinc-800 transition-all duration-300"
-              >
-                Preview Event
-              </motion.button>
-            </div>
-          </motion.div>
-
-          <StatsSection />
-        </>
+        <EventFormContent
+          formData={formData}
+          setFormData={setFormData}
+          errors={errors}
+          setErrors={setErrors}
+          handleInputChange={handleInputChange}
+          handleImageUpload={handleImageUpload}
+          prefersReducedMotion={prefersReducedMotion}
+          handleDurationChange={handleDurationChange}
+          newTag={newTag}
+          setNewTag={setNewTag}
+          addTag={addTag}
+          removeTag={removeTag}
+          handleNext={handleNext}
+        />
       ) : (
         <PreviewStep
           formData={formData}
