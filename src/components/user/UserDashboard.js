@@ -4,12 +4,15 @@ import { getSmartDateLabel } from "../../utils/relativeTime";
 import {
   Calendar, Trophy, FolderOpen, Users, Settings,
   Clock, Zap, Activity, Bell, ChevronRight,
-  LogOut, User, Plus, Search, X
+  LogOut, User, Plus, Search, X, CheckCircle2
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
 import ErrorBoundary from "../common/ErrorBoundary";
 import { useAuth } from "../../context/AuthContext";
+import { useMyEvents } from "../../context/MyEventsContext";
+import useBookmarks from "../../hooks/useBookmarks";
+import { getEventStatus } from "../../utils/eventUtils";
 import StatusBadge from "../common/StatusBadge";
 import { requestNotificationPermission, disableNotifications } from "../../utils/NotificationManager";
 import { readNotificationPreferences } from "../../utils/notificationPreferences";
@@ -78,6 +81,46 @@ export default function UserDashboard() {
   const [selectedTicketEvent, setSelectedTicketEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [pushEnabled, setPushEnabled] = useState(() => readNotificationPreferences().push);
+  const { myEvents, loading: myEventsLoading } = useMyEvents();
+  const { bookmarks } = useBookmarks(user?.id || user?.email || "guest");
+
+  const journeyStats = useMemo(() => {
+    const records = Array.isArray(myEvents) ? myEvents : [];
+    const registeredItems = records
+      .map((registration) => registration?.event || registration?.eventSummary || null)
+      .filter(Boolean);
+
+    const isHackathon = (item) => {
+      const type = String(item?.type || "").toLowerCase();
+      const category = String(item?.category || "").toLowerCase();
+      const title = String(item?.title || "").toLowerCase();
+      return type === "hackathon" || category.includes("hackathon") || title.includes("hackathon");
+    };
+
+    const eventRegistrations = registeredItems.filter((item) => !isHackathon(item));
+    const hackathonRegistrations = registeredItems.filter(isHackathon);
+
+    const eventsAttended = eventRegistrations.filter((event) => {
+      const status = getEventStatus(event);
+      return status === "past" || status === "ended";
+    }).length;
+
+    const upcomingEvents = registeredItems.filter((event) => {
+      const status = getEventStatus(event);
+      return status === "upcoming" || status === "live";
+    }).length;
+
+    const savedEvents = Array.isArray(bookmarks) ? bookmarks.length : 0;
+
+    return {
+      eventsRegistered: eventRegistrations.length,
+      eventsAttended,
+      hackathonsJoined: hackathonRegistrations.length,
+      upcomingEvents,
+      savedEvents,
+      totalRegistrations: registeredItems.length,
+    };
+  }, [myEvents, bookmarks]);
 
   const togglePushNotifications = async () => {
     if (pushEnabled) {
@@ -99,9 +142,14 @@ export default function UserDashboard() {
   }, []);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setLoading(false), 700);
+    if (myEventsLoading) {
+      setLoading(true);
+      return undefined;
+    }
+
+    const timer = window.setTimeout(() => setLoading(false), 350);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [myEventsLoading]);
 
   const derivedData = useMemo(() => {
     let eventsTotal = 0;
@@ -151,7 +199,7 @@ export default function UserDashboard() {
     };
   }, []);
 
-  const { stats, upcomingEvents, upcomingHackathons, activeProjects } = derivedData;
+  const { upcomingEvents, upcomingHackathons, activeProjects } = derivedData;
 
   const filteredData = useMemo(() =>
     MOCK_DATA.filter(item => {
@@ -298,7 +346,7 @@ export default function UserDashboard() {
               {loading ? (
                 <>
                   <div className="ud-stats-grid">
-                    {[...Array(4)].map((_, i) => (
+                    {[...Array(5)].map((_, i) => (
                       <DashboardStatCardSkeleton key={i} />
                     ))}
                   </div>
@@ -320,21 +368,25 @@ export default function UserDashboard() {
                 </>
               ) : (
                 <>
-                  {/* Full-page premium empty state (#7453):
-                      shown when the user has no events, hackathons, or projects at all.
-                      Provides a direct CTA to browse events or create one. */}
-                  {stats.eventsTotal === 0 &&
-                    stats.hackathonsTotal === 0 &&
-                    stats.projectsTotal === 0 ? (
+                  {journeyStats.totalRegistrations === 0 &&
+                    journeyStats.savedEvents === 0 ? (
                     <DashboardEmptyState />
                   ) : (
                   <>
+                  <motion.section className="ud-journey-header" custom={0} variants={fadeUp(prefersReducedMotion)}>
+                    <div>
+                      <p className="ud-journey-label">My Event Journey</p>
+                      <p className="ud-journey-description">A centralized view of your event participation, attendance, saved events, hackathons joined, and upcoming schedule.</p>
+                    </div>
+                  </motion.section>
+
                   <motion.div variants={stagger(prefersReducedMotion)} className="ud-stats-grid">
                     {[
-                      { label: "Events", value: stats.eventsTotal, sub: `${stats.eventsCreated} hosted · ${stats.eventsJoined} joined`, icon: <Calendar size={20} />, accent: "#6366f1" },
-                      { label: "Hackathons", value: stats.hackathonsTotal, sub: `${stats.hackathonsHosted} hosted · ${stats.hackathonsJoined} joined`, icon: <Trophy size={20} />, accent: "#ec4899" },
-                      { label: "Projects", value: stats.projectsTotal, sub: `${stats.projectsDone} done · ${stats.projectsActive} active`, icon: <FolderOpen size={20} />, accent: "#8b5cf6" },
-                      { label: "Upcoming", value: upcomingEvents.length + upcomingHackathons.length, sub: `${upcomingEvents.length} events · ${upcomingHackathons.length} hackathons`, icon: <Clock size={20} />, accent: "#10b981" },
+                      { label: "Events Registered", value: journeyStats.eventsRegistered, sub: `${Math.max(journeyStats.eventsRegistered - journeyStats.eventsAttended, 0)} upcoming / registered`, icon: <Calendar size={20} />, accent: "#6366f1" },
+                      { label: "Events Attended", value: journeyStats.eventsAttended, sub: "Completed event participation", icon: <CheckCircle2 size={20} />, accent: "#10b981" },
+                      { label: "Hackathons Joined", value: journeyStats.hackathonsJoined, sub: "Hackathon registrations", icon: <Trophy size={20} />, accent: "#ec4899" },
+                      { label: "Saved Events", value: journeyStats.savedEvents, sub: "Events bookmarked to review", icon: <FolderOpen size={20} />, accent: "#f59e0b" },
+                      { label: "Upcoming Events", value: journeyStats.upcomingEvents, sub: "Next events on your schedule", icon: <Clock size={20} />, accent: "#0ea5e9" },
                     ].map((s, i) => (
                       <motion.div key={s.label} custom={i} variants={fadeUp(prefersReducedMotion)} className="ud-stat-card">
                         <div className="ud-stat-icon" style={{ background: s.accent + "18", color: s.accent }}>{s.icon}</div>

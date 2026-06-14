@@ -1,9 +1,25 @@
 /**
  * Determines if the current environment is for development.
+ * Safe in both browser (Vite via import.meta.env) and Node-like environments
+ * (e.g. SSR, tests) where neither is available. Without the typeof guard,
+ * `process` is undefined in the browser and the module crashes on load.
  */
-const isDevelopment = typeof import.meta.env !== "undefined" 
-  ? import.meta.env.DEV 
-  : process.env.NODE_ENV !== "production";
+const isDevelopment = (() => {
+  if (typeof import.meta !== "undefined" && import.meta.env) {
+    if (import.meta.env.DEV === true) return true;
+    if (import.meta.env.PROD === true) return false;
+  }
+  if (
+    typeof process !== "undefined" &&
+    process &&
+    process.env &&
+    process.env.NODE_ENV
+  ) {
+    return process.env.NODE_ENV !== "production";
+  }
+  // In any other environment (SSR, edge runtime) default to true so logs surface.
+  return true;
+})();
 
 /**
  * Formats a log message with the specified level.
