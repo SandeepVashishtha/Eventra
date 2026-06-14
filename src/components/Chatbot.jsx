@@ -294,6 +294,7 @@ export default function Chatbot() {
           {/* Minimized strip — only on desktop when minimized */}
           {isOpen && isMinimized && (
             <div
+              data-chatbot-launcher
               className="
                 fixed bottom-6 right-6 z-100
                 hidden sm:flex              /* hide strip on mobile, show FAB instead */
@@ -334,6 +335,7 @@ export default function Chatbot() {
           )}
 
           <motion.button
+            data-chatbot-launcher
             onClick={handleOpen}
             whileHover={{ scale: 1.1, rotate: 5 }}
             className={`

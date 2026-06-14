@@ -19,12 +19,12 @@ const UserProfileDropdown = ({
 }) => (
   <div className="relative profile-container">
     <button
-      onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+      onClick={() => setShowProfileDropdown((prev) => !prev)}
       type="button"
       aria-label="Open user menu"
       aria-expanded={showProfileDropdown}
       aria-haspopup="menu"
-      aria-controls="user-profile-menu"
+      aria-controls={showProfileDropdown ? "user-profile-menu" : undefined}
       className="flex items-center gap-2 text-sm font-medium text-black/90 dark:text-white/90 hover:text-black dark:hover:text-white transition-colors"
     >
       {user?.profilePicture ? (

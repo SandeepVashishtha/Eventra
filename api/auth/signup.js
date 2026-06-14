@@ -3,38 +3,16 @@ import jwt from "jsonwebtoken";
 import { getJwtSecret, JWT_EXPIRES_IN, JWT_COOKIE_MAX_AGE_SECONDS } from "./jwt-config.js";
 import { createRateLimiter } from "../lib/rateLimiter.js";
 import { buildCorsHeaders, corsResponse } from "./cors.js";
-import { assertPersistentStorageConfigured, isInMemoryStorageAllowed } from "./storage-config.js";
-
+import { assertPersistentStorageConfigured } from "./storage-config.js";
+import { createUser, getUserByEmail, isStorageHealthy } from "./user-storage.js";
 
 // ---------------------------------------------------------------------------
 // In-memory user storage
 // ---------------------------------------------------------------------------
-// WARNING: This Map is module-level and resets to empty on every serverless
-// cold start (Vercel, AWS Lambda, etc.). All registered accounts are lost
-// on restart, causing previously valid credentials to return 401.
-//
-// This store is suitable for local development only. For any deployed
-// environment, replace this Map with a durable database (Supabase, MongoDB,
-// PlanetScale, etc.) and update login.js and google.js accordingly.
-//
-// See GitHub issue #4195 for full details on the production impact.
+// Storage Configuration
 // ---------------------------------------------------------------------------
-
 // Fail-fast: Prevent production startup without persistent storage
 assertPersistentStorageConfigured();
-
-// Only create in-memory Maps if allowed (development/testing)
-let users, usersById, usersByUsername;
-if (isInMemoryStorageAllowed()) {
-  users = new Map();
-  usersById = new Map();
-  usersByUsername = new Map();
-} else {
-  // Production: Maps remain undefined - must use persistent storage
-  users = null;
-  usersById = null;
-  usersByUsername = null;
-}
 
 // ---------------------------------------------------------------------------
 // JWT Configuration
@@ -67,8 +45,9 @@ const validateName = (name) => {
 
 const validatePassword = (password) => {
   if (!password) return { valid: false, message: "Password is required" };
-  if (password.length < 8) return { valid: false, message: "Password must be at least 8 characters long" };
-  
+  if (password.length < 8)
+    return { valid: false, message: "Password must be at least 8 characters long" };
+
   // Check password strength (must meet all 5 criteria)
   const criteria = [
     { test: /.{8,}/, name: "8+ characters" },
@@ -77,15 +56,16 @@ const validatePassword = (password) => {
     { test: /\d/, name: "number" },
     { test: /[!@#$%^&*(),.?":{}|<>]/, name: "special character" },
   ];
-  
-  const metCriteria = criteria.filter(c => c.test.test(password));
+
+  const metCriteria = criteria.filter((c) => c.test.test(password));
   if (metCriteria.length < 5) {
     return {
       valid: false,
-      message: "Password must meet all 5 security criteria: 8+ characters, uppercase, lowercase, number, and special character"
+      message:
+        "Password must meet all 5 security criteria: 8+ characters, uppercase, lowercase, number, and special character",
     };
   }
-  
+
   return { valid: true };
 };
 
@@ -137,9 +117,9 @@ async function handler(req, res) {
 
   try {
     // Runtime protection: Reject requests if storage is unavailable
-    // In development, in-memory storage is allowed. In production, persistent storage is required.
-    if (!users || !usersById || !usersByUsername) {
-      console.error("[signup.js] Authentication service unavailable: storage not initialized");
+    const storageHealthy = await isStorageHealthy();
+    if (!storageHealthy) {
+      console.error("[signup.js] Authentication service unavailable: storage not healthy");
       return corsResponse(req, res, 500, { error: "Authentication service unavailable" });
     }
 
@@ -192,7 +172,8 @@ async function handler(req, res) {
     // Check for duplicate email
     // -----------------------------------------------------------------------
 
-    if (users.has(normalizedEmail)) {
+    const existingUser = await getUserByEmail(normalizedEmail);
+    if (existingUser) {
       return corsResponse(req, res, 409, { error: "An account with this email already exists" });
     }
 
@@ -201,12 +182,14 @@ async function handler(req, res) {
     // Run after input validation so malformed requests don't burn the budget.
     // -----------------------------------------------------------------------
 
-    const clientIp = req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim()
-      || req.headers?.["x-real-ip"]
-      || req.socket?.remoteAddress
-      || "unknown";
+    const clientIp =
+      req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim() ||
+      req.headers?.["x-real-ip"] ||
+      req.socket?.remoteAddress ||
+      "unknown";
 
-    if (!signupRateLimiter.check(clientIp).allowed) {
+    const rateLimitResult = await signupRateLimiter.check(clientIp);
+    if (!rateLimitResult.allowed) {
       return corsResponse(req, res, 429, {
         error: "Too many signup attempts. Please try again later.",
         retryAfter: 60,
@@ -242,16 +225,8 @@ async function handler(req, res) {
       isActive: true,
     };
 
-    // Store user (in production, save to database)
-    if (!users || !usersById || !usersByUsername) {
-      console.error("[signup.js] Authentication service unavailable: storage not initialized");
-      return corsResponse(req, res, 500, { error: "Authentication service unavailable" });
-    }
-    users.set(normalizedEmail, newUser);
-    usersById.set(userId, newUser);
-    if (newUser.username) {
-      usersByUsername.set(newUser.username.toLowerCase(), newUser);
-    }
+    // Store user using storage abstraction layer
+    await createUser(newUser);
 
     // -----------------------------------------------------------------------
     // Generate JWT token
@@ -281,15 +256,15 @@ async function handler(req, res) {
     };
 
     const isProd = process.env.NODE_ENV === "production";
-    const cookieValue = `token=${token}; HttpOnly; Path=/; Max-Age=${JWT_COOKIE_MAX_AGE_SECONDS}; SameSite=Strict${isProd ? '; Secure' : ''}`;
+    const cookieValue = `token=${token}; HttpOnly; Path=/; Max-Age=${JWT_COOKIE_MAX_AGE_SECONDS}; SameSite=Strict${isProd ? "; Secure" : ""}`;
     // Set cookie compatibly across test mocks (which may provide `set` instead of `setHeader`)
     try {
-      if (typeof res.setHeader === 'function') {
-        res.setHeader('Set-Cookie', cookieValue);
-      } else if (typeof res.set === 'function') {
-        res.set({ 'Set-Cookie': cookieValue });
-      } else if (res.headers && typeof res.headers === 'object') {
-        res.headers['Set-Cookie'] = cookieValue;
+      if (typeof res.setHeader === "function") {
+        res.setHeader("Set-Cookie", cookieValue);
+      } else if (typeof res.set === "function") {
+        res.set({ "Set-Cookie": cookieValue });
+      } else if (res.headers && typeof res.headers === "object") {
+        res.headers["Set-Cookie"] = cookieValue;
       }
     } catch (e) {
       // Ignore write errors on test response objects
@@ -299,17 +274,11 @@ async function handler(req, res) {
       message: "Account created successfully",
       ...userResponse,
     });
-
   } catch (error) {
     console.error("Signup Error:", error);
     return corsResponse(req, res, 500, { error: "Internal server error. Please try again later." });
   }
 }
-
-// ---------------------------------------------------------------------------
-// Export users map for sharing with login.js (development purposes)
-// In production, replace with actual database
-// ---------------------------------------------------------------------------
 
 export default handler;
 export { users, usersById, usersByUsername };

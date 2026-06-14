@@ -89,6 +89,9 @@ Set at least one backend URL before starting the app. `VITE_API_URL` is preferre
 | `REACT_APP_CSP_REPORT_URI` | No | CSP report endpoint |
 | `REACT_APP_SENTRY_DSN` | No | Sentry browser error reporting DSN; only used in production builds |
 | `JWT_SECRET` | Yes (server-side) | JWT signing secret for Edge Middleware auth verification |
+| `DATABASE_URL` | Yes (server-side, production) | Database connection URL for persistent authentication storage |
+| `KV_REST_API_URL` | Yes (server-side, production) | Vercel KV/Redis REST API URL for distributed rate limiting |
+| `KV_REST_API_TOKEN` | Yes (server-side, production) | Vercel KV/Redis REST API token for distributed rate limiting |
 | `BLOCKED_COUNTRIES` | No (server-side) | Comma-separated ISO 3166-1 alpha-2 country codes to block |
 | `ALLOWED_ORIGINS` | No (server-side) | Comma-separated list of allowed CORS origins for API access |
 
@@ -168,6 +171,65 @@ REACT_APP_API_URL=https://api-tertiary.example.com
 | Variable | Required | Purpose |
 | --- | --- | --- |
 | `JWT_SECRET` | **Yes** | JWT signing secret for authentication. This is MANDATORY - the application will NOT start or handle requests without it. There is NO fallback secret. |
+| `DATABASE_URL` | **Yes (production)** | Database connection URL for persistent authentication storage. Required in production to prevent data loss on serverless cold starts. |
+| `KV_REST_API_URL` | **Yes (production)** | Vercel KV/Redis REST API URL for distributed rate limiting. Required in production to prevent rate-limit bypass across multiple instances. |
+| `KV_REST_API_TOKEN` | **Yes (production)** | Vercel KV/Redis REST API token for distributed rate limiting. Required in production to prevent rate-limit bypass across multiple instances. |
+
+## Distributed Rate Limiting
+
+Eventra uses distributed rate limiting to prevent brute-force attacks and credential stuffing across multiple serverless instances. The rate limiter uses Redis/Vercel KV for shared state, ensuring that attackers cannot bypass throttling by distributing requests across different instances.
+
+### Architecture
+
+- **Storage Layer**: `api/lib/rate-limit-storage.js` provides a unified interface for rate-limit storage
+- **Configuration**: `api/lib/rate-limit-config.js` enforces fail-closed security for distributed storage
+- **Rate Limiter**: `api/lib/rateLimiter.js` implements distributed rate limiting with atomic operations
+- **Fail-Closed**: In production, if distributed storage is unavailable, rate limiting rejects requests rather than allowing unlimited access
+
+### Environment Variables
+
+For production deployments, configure the following environment variables:
+
+```env
+# Vercel KV or Redis configuration
+KV_REST_API_URL=https://your-kv-store.redis.com
+KV_REST_API_TOKEN=your-secure-token
+```
+
+### Provisioning Vercel KV
+
+If deploying to Vercel, provision a KV store:
+
+```bash
+vercel kv create eventra-rate-limit
+```
+
+Then add the environment variables to your Vercel project:
+
+```bash
+vercel env add KV_REST_API_URL
+vercel env add KV_REST_API_TOKEN
+```
+
+### Local Development
+
+In development and test environments, the rate limiter automatically falls back to in-memory storage. No additional configuration is required for local development.
+
+### Rate Limits
+
+Current rate limits:
+
+- **Login**: 10 requests per minute per IP address
+- **Signup**: 5 requests per minute per IP address
+
+### Security Behavior
+
+- **Production**: Requires distributed storage. If unavailable, authentication requests are rejected with a 429 error.
+- **Development/Test**: Uses in-memory storage for convenience. Distributed storage is optional.
+- **Fail-Closed**: Never silently allows unlimited requests in production.
+| `DATABASE_URL` | **Yes (production)** | Redis connection string for persistent authentication storage. Required in production to prevent user account loss on restart. |
+| `KV_REST_API_URL` | **Yes (production)** | Alternative to DATABASE_URL for Vercel KV Redis storage. Required in production if DATABASE_URL is not set. |
+| `KV_REST_API_TOKEN` | **Yes (production with KV)** | Authentication token for Vercel KV REST API. Required when using KV_REST_API_URL. |
 
 Examples:
 
@@ -184,6 +246,7 @@ BACKEND_URL=https://api.example.com
 ## Security Notes
 
 - **JWT_SECRET is mandatory**: The application enforces fail-closed security. Missing JWT_SECRET will cause the application to reject all requests with a 500 error. Never deploy without setting this variable.
+- **DATABASE_URL or KV_REST_API_URL is mandatory in production**: The application enforces fail-closed security for authentication storage. Without persistent storage, all user accounts are lost on server restart. Never deploy production without setting one of these variables.
 - Generate JWT_SECRET using: `openssl rand -base64 32`
 - Never place private secrets in `REACT_APP_*` or `VITE_*` variables.
 - Values prefixed with `REACT_APP_` or `VITE_` are exposed in the browser bundle.

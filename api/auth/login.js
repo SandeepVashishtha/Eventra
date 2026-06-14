@@ -21,8 +21,7 @@ import { getClientIp } from "../lib/getClientIp.js";
 import { loginRateLimiter, enforceRateLimit } from "../lib/rateLimiter.js";
 import { getJwtSecret, JWT_EXPIRES_IN, JWT_COOKIE_MAX_AGE_SECONDS } from "./jwt-config.js";
 import { buildCorsHeaders, corsResponse } from "./cors.js";
-import { isPersistentStorageConfigured } from "./storage-config.js";
-import { users, usersByUsername } from "./signup.js";
+import { isStorageHealthy, getUserByEmail, getUserByUsername } from "./user-storage.js";
 
 /**
  * Validates the login request body.
@@ -70,7 +69,8 @@ export default async function login(req, res, deps = {}) {
 
   // 2. Rate limit BEFORE any expensive work (bcrypt)
   const clientIp = getClientIp(req);
-  if (!loginRateLimiter.check(clientIp).allowed) {
+  const rateLimitResult = await loginRateLimiter.check(clientIp);
+  if (!rateLimitResult.allowed) {
     return corsResponse(req, res, 429, {
       success: false,
       message: "Too many authentication attempts. Please try again later.",
@@ -84,9 +84,9 @@ export default async function login(req, res, deps = {}) {
   }
 
   // Runtime protection: Reject requests if storage is unavailable
-  // In development, in-memory storage is allowed. In production, persistent storage is required.
-  if (!users || !usersByUsername) {
-    console.error("[login.js] Authentication service unavailable: storage not initialized");
+  const storageHealthy = await isStorageHealthy();
+  if (!storageHealthy) {
+    console.error("[login.js] Authentication service unavailable: storage not healthy");
     return corsResponse(req, res, 500, { error: "Authentication service unavailable" });
   }
 
@@ -96,9 +96,9 @@ export default async function login(req, res, deps = {}) {
   const {
     findUserByEmail = async (ident) => {
       const normalized = ident.trim().toLowerCase();
-      const userByEmail = users.get(normalized);
+      const userByEmail = await getUserByEmail(normalized);
       if (userByEmail) return userByEmail;
-      return usersByUsername.get(normalized);
+      return await getUserByUsername(normalized);
     },
     comparePassword = async (plain, hash) => {
       return bcrypt.compare(plain, hash);
@@ -174,4 +174,3 @@ export default async function login(req, res, deps = {}) {
     return corsResponse(req, res, 500, { error: "Internal server error" });
   }
 }
-export { users };

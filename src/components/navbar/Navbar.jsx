@@ -118,13 +118,13 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           </Link>
 
           {/* Desktop Links - Wrapping instead of absolute positioning */}
-          <div className="hidden lg:flex items-center justify-center flex-1 overflow-x-auto">
+          <div className="hidden lg:flex items-center justify-center flex-1 ">
             <DesktopNavbar />
           </div>
 
           {/* Right Controls Container */}
-          <div className="relative z-10 flex items-center gap-2 sm:gap-2.5 shrink-0">
-            <div className="hidden lg:flex items-center gap-2.5">
+          <div className="relative z-10 flex items-center gap-1 sm:gap-2.5 shrink-0">
+            <div className="hidden lg:flex items-center gap-1.5">
               <LanguageSelector compact />
               {authenticated ? (
                 <>
