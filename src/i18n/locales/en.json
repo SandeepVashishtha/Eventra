@@ -20,7 +20,25 @@
     "signUp": "Sign Up",
     "signOut": "Sign Out",
     "profile": "Profile",
-    "settings": "Settings"
+    "settings": "Settings",
+    "projects": "Projects",
+    "networking": "Networking",
+    "saved": "Saved",
+    "community": "Community",
+    "more": "More",
+    "exploreEvents": "Explore Events",
+    "eventCalendar": "Event Calendar",
+    "scheduler": "Scheduler",
+    "communityEvents": "Community Events",
+    "contributorsGuide": "Contributors Guide",
+    "faq": "FAQ",
+    "getStarted": "Get Started",
+    "viewProfile": "View Profile",
+    "faqFull": "Frequently Asked Questions",
+    "expandSubmenu": "Expand {{name}} submenu",
+    "collapseSubmenu": "Collapse {{name}} submenu",
+    "mobilePrimaryLinks": "Mobile primary links",
+    "primaryLinks": "Primary links"
   },
   "auth": {
     "email": "Email",
@@ -160,12 +178,74 @@
     "rights": "All rights reserved.",
     "privacy": "Privacy Policy",
     "terms": "Terms of Service",
-    "contact": "Contact Us"
+    "contact": "Contact Us",
+    "tagline": "Open-source event management for communities worldwide.",
+    "sections": {
+      "quickLinks": "Quick Links",
+      "community": "Community",
+      "support": "Support"
+    },
+    "links": {
+      "home": "Home",
+      "events": "Events",
+      "hackathons": "Hackathons",
+      "projects": "Projects",
+      "about": "About",
+      "createEvent": "Create Event",
+      "communityEvents": "Community Events",
+      "documentation": "Documentation",
+      "contributors": "Contributors",
+      "contributorsGuide": "Contributors Guide",
+      "leaderboard": "Leaderboard",
+      "helpCenter": "Help Center",
+      "faq": "FAQ",
+      "contactUs": "Contact Us",
+      "feedback": "Feedback",
+      "apiDocs": "API Docs"
+    },
+    "newsletter": {
+      "heading": "Subscribe to our newsletter",
+      "description": "Get the latest updates, event tips, and community news.",
+      "placeholder": "Enter your email",
+      "subscribe": "Subscribe",
+      "subscribing": "Subscribing...",
+      "privacy": "We respect your privacy. Unsubscribe at any time.",
+      "emailRequired": "Please enter your email address.",
+      "emailInvalid": "Please enter a valid email address.",
+      "success": "Thanks for subscribing!",
+      "error": "Something went wrong. Please try again."
+    },
+    "followUs": "Follow Us"
   },
   "landing": {
     "hero": {
       "title": "Discover & Join Amazing Events",
-      "subtitle": "The ultimate platform for event discovery, registration, and management."
+      "subtitle": "The ultimate platform for event discovery, registration, and management.",
+      "description": "Connect with developers, learn new skills, and grow your network at curated tech events, hackathons, and workshops.",
+      "searchPlaceholder": "Search events, hackathons, projects...",
+      "searchResults": "Search results",
+      "resultsCount": "Results ({{count}})",
+      "noDescription": "No description available",
+      "noResults": "No results for",
+      "scrollToExplore": "Scroll to explore",
+      "platformStats": "Platform statistics",
+      "taglines": ["Build", "Learn", "Connect", "Grow"],
+      "phrases": [
+        "Amazing Tech Events",
+        "Exciting Hackathons Today",
+        "Innovative Dev Workshops",
+        "Cutting-Edge Tech Meetups"
+      ],
+      "stats": {
+        "developers": "Developers Joined",
+        "events": "Events Organized",
+        "partners": "Partners & Sponsors"
+      },
+      "searchTypes": {
+        "Events": "Events",
+        "Hackathons": "Hackathons",
+        "Projects": "Projects"
+      }
     },
     "stats": {
       "events": "Events Hosted",
@@ -176,7 +256,56 @@
   "language": {
     "switch": "Language",
     "en": "English",
+    "hi": "Hindi",
+    "te": "Telugu",
     "es": "Espa\u00f1ol"
+  },
+  "chatbot": {
+    "title": "Eventra Assist",
+    "subtitle": "Your event assistant",
+    "placeholder": "Ask about events, registration, hosting...",
+    "send": "Send message",
+    "open": "Open Eventra assistant",
+    "close": "Close assistant",
+    "expand": "Expand assistant",
+    "minimize": "Minimize assistant",
+    "clearHistory": "Clear conversation history?",
+    "clearWarning": "This action cannot be undone.",
+    "clearConfirm": "Yes, Clear",
+    "clearSuccess": "Conversation cleared!",
+    "typing": "Eventra Assist is typing...",
+    "quickPromptsLabel": "Quick prompts",
+    "prompts": {
+      "register": "How do I register for an event?",
+      "suggest": "Suggest an event for beginners",
+      "host": "How can I host a workshop?",
+      "help": "Where can I get platform help?"
+    },
+    "knowledge": {
+      "register": {
+        "answer": "To register, open the Events or Hackathons page, choose a card, and use the registration action. If the event requires an account, sign in first so Eventra can save your registration and check-in details.",
+        "browseEvents": "Browse events"
+      },
+      "suggest": {
+        "answer": "A good starting point is a workshop or beginner-friendly hackathon. Search by topic on the Events page, then compare format, date, tags, and location before registering."
+      },
+      "host": {
+        "answer": "Organizers can create events from the dashboard after signing in. Add the event title, format, schedule, capacity, location or meeting details, then publish when the listing is ready."
+      },
+      "help": {
+        "answer": "For platform questions, start with the FAQ. For account, registration, or technical problems, use Contact so the team has enough context to help."
+      },
+      "default": "I can help with event registration, recommendations, hosting guidance, and platform support. Try asking about the event you want to attend or what kind of workshop you are looking for.",
+      "exploreEvents": "Explore events"
+    },
+    "actions": {
+      "events": "Events",
+      "hackathons": "Hackathons",
+      "dashboard": "Dashboard",
+      "faq": "FAQ",
+      "contact": "Contact"
+    },
+    "welcome": "Hi, I am Eventra Assist. Ask me about events, workshops, registration, hosting, or platform help."
   },
   "faq": {
     "pageTitle": "FAQ",

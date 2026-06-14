@@ -1,6 +1,31 @@
 import { useEffect, useState, useMemo } from "react";
 import { Clock } from "lucide-react";
 import { getServerTime } from "../../utils/timeSync";
+import { resolveEventInstant } from "../../utils/timezoneUtils";
+
+/**
+ * Resolves the countdown deadline anchored to the event's own timezone so the
+ * countdown is identical regardless of the viewer's location. Falls back to
+ * naive parsing only when the timezone-aware resolver cannot parse the inputs,
+ * preserving behaviour for malformed legacy data.
+ *
+ * @param {string} date - Event date
+ * @param {string} time - Event time
+ * @param {string} [timezone] - IANA timezone the event time is expressed in
+ * @returns {Date} Deadline instant
+ */
+const resolveDeadline = (date, time, timezone) => {
+  const resolved = resolveEventInstant(date, time, timezone);
+  if (resolved) return resolved;
+
+  // Fallback: only attempt naive ISO construction for 24-hour "HH:MM" format.
+  // 12-hour strings like "10:00 AM" are not valid ISO 8601 and produce Invalid Date.
+  if (time && /^\d{1,2}:\d{2}$/.test(time.trim())) {
+    return new Date(`${date}T${time}`);
+  }
+
+  return null;
+};
 
 const calculateTimeLeft = (deadline) => {
   const diff = new Date(deadline) - getServerTime();
@@ -16,17 +41,25 @@ const calculateTimeLeft = (deadline) => {
 const pad = (n) => String(n).padStart(2, "0");
 
 // Compact version for EventCard
-export const CountdownBadge = ({ date, time }) => {
-  const deadline = useMemo(() => new Date(`${date}T${time}`), [date, time]);
+export const CountdownBadge = ({ date, time, timezone }) => {
+  const deadline = useMemo(
+    () => resolveDeadline(date, time, timezone),
+    [date, time, timezone]
+  );
   const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft(deadline));
 
   useEffect(() => {
-    const timer = setInterval(() => {
+    let timerId = null;
+    timerId = setInterval(() => {
       const remaining = calculateTimeLeft(deadline);
       setTimeLeft(remaining);
-      if (!remaining) clearInterval(timer);
+      if (!remaining && timerId !== null) {
+        clearInterval(timerId);
+      }
     }, 1000);
-    return () => clearInterval(timer);
+    return () => {
+      if (timerId !== null) clearInterval(timerId);
+    };
   }, [deadline]);
 
   if (!timeLeft) {
@@ -45,18 +78,34 @@ export const CountdownBadge = ({ date, time }) => {
   );
 };
 
-// Large version for EventDetailsPage
-const CountdownTimer = ({ date, time }) => {
-  const deadline = useMemo(() => new Date(`${date}T${time}`), [date, time]);
+// Large version for EventDetails
+const CountdownTimer = ({ date, time, timezone }) => {
+  const deadline = useMemo(
+    () => resolveDeadline(date, time, timezone),
+    [date, time, timezone]
+  );
   const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft(deadline));
+  // Announce time remaining every 60 seconds (not every second) to avoid spamming screen readers
+  const [announceTime, setAnnounceTime] = useState(0);
 
   useEffect(() => {
-    const timer = setInterval(() => {
+    let timerId = null;
+    let announceCounter = 0;
+    timerId = setInterval(() => {
       const remaining = calculateTimeLeft(deadline);
       setTimeLeft(remaining);
-      if (!remaining) clearInterval(timer);
+      announceCounter += 1;
+      // Update live region every 60 ticks (60 seconds)
+      if (announceCounter % 60 === 0) {
+        setAnnounceTime(announceCounter);
+      }
+      if (!remaining && timerId !== null) {
+        clearInterval(timerId);
+      }
     }, 1000);
-    return () => clearInterval(timer);
+    return () => {
+      if (timerId !== null) clearInterval(timerId);
+    };
   }, [deadline]);
 
   if (!timeLeft) {
@@ -77,14 +126,28 @@ const CountdownTimer = ({ date, time }) => {
   ];
 
   return (
-    <div className="rounded-2xl bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/40 dark:to-gray-800 border border-indigo-200 dark:border-indigo-700 p-5">
+    <div
+      className="rounded-2xl bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/40 dark:to-gray-800 border border-indigo-200 dark:border-indigo-700 p-5"
+      aria-label={`Event countdown timer: ${timeLeft.days} days, ${timeLeft.hours} hours, ${timeLeft.minutes} minutes, ${timeLeft.seconds} seconds remaining`}
+    >
+      {/* sr-only live region: announced every 60 seconds to avoid screen reader spam */}
+      <div
+        role="timer"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+        aria-label="Countdown timer"
+      >
+        {announceTime > 0 &&
+          `Registration closes in ${timeLeft.days} days, ${timeLeft.hours} hours, ${timeLeft.minutes} minutes.`}
+      </div>
       <div className="flex items-center gap-2 mb-4">
-        <Clock size={16} className="text-indigo-500" />
+        <Clock size={16} className="text-indigo-500" aria-hidden="true" />
         <span className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wide">
           Registration Closes In
         </span>
       </div>
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-4 gap-2" aria-hidden="true">
         {units.map(({ label, value }) => (
           <div
             key={label}

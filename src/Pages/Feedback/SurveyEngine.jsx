@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import SurveyAnalytics from "../../components/admin/SurveyAnalytics";
 import { validate } from "../../validation";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 const SurveyEngine = () => {
   useDocumentTitle("Eventra | Dynamic Survey Engine");
@@ -57,7 +58,7 @@ const SurveyEngine = () => {
     const draft = localStorage.getItem("eventra_survey_builder_draft");
     if (draft) {
       try {
-        const parsed = JSON.parse(draft);
+        const parsed = safeJsonParse(draft, {});
         if (parsed.questions?.length > 0 || parsed.title || parsed.description) {
           setCachedDraft(parsed);
           setDraftDetected(true);

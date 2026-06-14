@@ -74,11 +74,22 @@ export function calculatePrPoints(labels) {
 }
 
 /**
- * Applies volume-based achievement bonuses to a contributor's running point
- * total. Mutates the `contributor` object in-place (intended for use during
- * the initial data-building pass where mutation is safe).
+ * Returns a new contributor object with the highest applicable volume-based
+ * achievement bonus added to the point total.
  *
- * @param {{ prs: number, points: number }} contributor
+ * The function is intentionally immutable: it always returns a new object so
+ * that callers can safely use the return value without worrying about aliasing
+ * bugs, and so that React state comparisons based on object identity work
+ * correctly.
+ *
+ * Previous JSDoc incorrectly stated "mutates in-place" while the implementation
+ * already returned a spread copy for the bonus case and the original reference
+ * for the no-bonus case. The inconsistent return type caused callers who
+ * discarded the return value to silently lose achievement bonuses.
+ *
+ * @param {{ prs: number, points: number, username: string }} contributor
+ * @returns {{ prs: number, points: number, username: string }} New contributor
+ *   object with bonus applied (or unchanged copy if no bonus threshold is met).
  */
 export function applyAchievementBonus(contributor) {
   for (const { minPrs, bonus } of ACHIEVEMENT_THRESHOLDS) {
@@ -86,7 +97,11 @@ export function applyAchievementBonus(contributor) {
       return { ...contributor, points: contributor.points + bonus };
     }
   }
-  return contributor;
+  // Always return a new object for consistent reference semantics regardless
+  // of whether a bonus was applied. This prevents callers from relying on
+  // identity equality to detect "no bonus" while accidentally holding a stale
+  // reference to the original object.
+  return { ...contributor };
 }
 
 // ─── Filtering ────────────────────────────────────────────────────────────────

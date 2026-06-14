@@ -22,7 +22,9 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { syncSecureStorage } from "../../utils/secureStorage";
+import LazyImage from "../common/LazyImage";
 import "./UserProfile.css";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 // 🔥 FIX 1: Safe URL Sanitizer to prevent Stored XSS via malicious URI schemes
 const sanitizeUrl = (url) => {
@@ -72,7 +74,7 @@ export default function UserProfile() {
           new Promise((resolve) => setTimeout(resolve, 600))
         ]);
         if (saved && active) {
-          merged = { ...user, ...JSON.parse(saved) };
+          merged = { ...user, ...safeJsonParse(saved, {}) };
         }
       } catch (error) {
         console.error('Error parsing user profile from localStorage:', error);
@@ -132,10 +134,19 @@ export default function UserProfile() {
             {/* Avatar */}
             <div className="upv-avatar-wrap">
               {profile?.avatarBase64 || profile?.profilePicture ? (
-                <img
-                  src={profile.avatarBase64 || profile.profilePicture}
-                  alt={displayName}
-                  className="upv-avatar-img" loading="lazy"/>
+               <LazyImage
+  src={profile.avatarBase64 || profile.profilePicture}
+  alt={displayName}
+  aspectRatio="1/1"
+  className="upv-avatar-img"
+  loading="lazy"
+  onError={(e) => {
+    e.target.onerror = null;
+    e.target.src =
+      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%239ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>';
+    e.target.style.backgroundColor = "#f3f4f6";
+  }}
+/>
               ) : (
                 <div className="upv-avatar-placeholder">
                   <span className="upv-avatar-initials">{initials}</span>
