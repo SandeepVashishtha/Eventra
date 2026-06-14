@@ -198,7 +198,10 @@ const SignupForm = () => {
           setErrors((prev) => ({ ...prev, email: "" }));
           setFieldState("email", "success");
         } else {
-          setErrors((prev) => ({ ...prev, email: result?.message || "Email is already registered" }));
+          setErrors((prev) => ({
+            ...prev,
+            email: result?.message || "Email is already registered",
+          }));
           setFieldState("email", "error");
         }
       } catch {
@@ -247,9 +250,13 @@ const SignupForm = () => {
         } else if (status === 429) {
           message = "Too many signup attempts. Please try again later.";
         } else if (status === 400) {
-          message = response.data?.message || response.data?.error || "Please check your input and try again.";
+          message =
+            response.data?.message ||
+            response.data?.error ||
+            "Please check your input and try again.";
         } else {
-          message = response.data?.message || response.data?.error || AUTH_ERRORS.registrationFailed;
+          message =
+            response.data?.message || response.data?.error || AUTH_ERRORS.registrationFailed;
         }
         setSubmitError(message);
         toast.error(message);
