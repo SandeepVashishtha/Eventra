@@ -85,12 +85,20 @@ const CountdownTimer = ({ date, time, timezone }) => {
     [date, time, timezone]
   );
   const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft(deadline));
+  // Announce time remaining every 60 seconds (not every second) to avoid spamming screen readers
+  const [announceTime, setAnnounceTime] = useState(0);
 
   useEffect(() => {
     let timerId = null;
+    let announceCounter = 0;
     timerId = setInterval(() => {
       const remaining = calculateTimeLeft(deadline);
       setTimeLeft(remaining);
+      announceCounter += 1;
+      // Update live region every 60 ticks (60 seconds)
+      if (announceCounter % 60 === 0) {
+        setAnnounceTime(announceCounter);
+      }
       if (!remaining && timerId !== null) {
         clearInterval(timerId);
       }
@@ -118,14 +126,28 @@ const CountdownTimer = ({ date, time, timezone }) => {
   ];
 
   return (
-    <div className="rounded-2xl bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/40 dark:to-gray-800 border border-indigo-200 dark:border-indigo-700 p-5">
+    <div
+      className="rounded-2xl bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/40 dark:to-gray-800 border border-indigo-200 dark:border-indigo-700 p-5"
+      aria-label={`Event countdown timer: ${timeLeft.days} days, ${timeLeft.hours} hours, ${timeLeft.minutes} minutes, ${timeLeft.seconds} seconds remaining`}
+    >
+      {/* sr-only live region: announced every 60 seconds to avoid screen reader spam */}
+      <div
+        role="timer"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+        aria-label="Countdown timer"
+      >
+        {announceTime > 0 &&
+          `Registration closes in ${timeLeft.days} days, ${timeLeft.hours} hours, ${timeLeft.minutes} minutes.`}
+      </div>
       <div className="flex items-center gap-2 mb-4">
-        <Clock size={16} className="text-indigo-500" />
+        <Clock size={16} className="text-indigo-500" aria-hidden="true" />
         <span className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wide">
           Registration Closes In
         </span>
       </div>
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-4 gap-2" aria-hidden="true">
         {units.map(({ label, value }) => (
           <div
             key={label}
