@@ -44,6 +44,47 @@ const isRequestCanceled = (error, signal) =>
   error?.name === "AbortError" ||
   error?.name === "CanceledError" ||
   error?.code === "ERR_CANCELED";
+const getOgDescription = (event) => {
+  if (!event) return "";
+  if (!event.description) return "";
+  return event.description.slice(0, 160);
+};
+
+const renderAgenda = (sessions) => {
+  if (sessions && sessions.length > 0) {
+    return <EventAgenda sessions={sessions} />;
+  }
+  return <EventAgenda sessions={[]} />;
+};
+
+const TitleSection = ({ event, handleCopy, linkCopied }) => {
+  const btnClass = linkCopied
+    ? "text-green-600 bg-green-50 dark:bg-green-900/30"
+    : "text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30";
+  const btnAria = linkCopied ? "Link copied!" : "Copy event link";
+  const btnTitle = linkCopied ? "Copied!" : "Copy link";
+
+  return (
+    <div>
+      <p className="inline-flex rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-200 px-4 py-1 text-sm font-semibold uppercase tracking-[0.2em]">
+        {event.type}
+      </p>
+      <div className="mt-4 flex items-center gap-3">
+        <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight wrap-break-word" title={event.title}>
+          {event.title}
+        </h1>
+        <button onClick={handleCopy} className={`p-2 rounded-full transition-colors ${btnClass}`} aria-label={btnAria} title={btnTitle}>
+          {linkCopied ? <Check size={28} /> : <Link2 size={28} />}
+        </button>
+      </div>
+      <div
+        className="mt-4 max-w-2xl text-gray-600 dark:text-gray-300 prose prose-indigo dark:prose-invert"
+        dangerouslySetInnerHTML={{ __html: sanitizeMarkdown(event.description, marked.parse) }}
+      />
+    </div>
+  );
+};
+
 const EventDetails = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
@@ -66,51 +107,51 @@ const EventDetails = () => {
   const latestRequestIdRef = useRef(0);
   const abortControllerRef = useRef(null);
 
-const checkLatest = ({ reqId, ctrl, latestReqRef, abortRef }) => {
-  if (latestReqRef.current !== reqId) return false;
-  if (abortRef.current !== ctrl) return false;
-  if (ctrl.signal.aborted) return false;
-  return true;
-};
+  const checkLatest = ({ reqId, ctrl, latestReqRef, abortRef }) => {
+    if (latestReqRef.current !== reqId) return false;
+    if (abortRef.current !== ctrl) return false;
+    if (ctrl.signal.aborted) return false;
+    return true;
+  };
 
-const handleResData = (res) => {
-  if (!res.data) return null;
-  if (res.data.data) return res.data.data;
-  return res.data;
-};
+  const handleResData = (res) => {
+    if (!res.data) return null;
+    if (res.data.data) return res.data.data;
+    return res.data;
+  };
 
-const processSuccess = ({ res, setEvent }) => {
-  if (!res.ok) return false;
-  const raw = handleResData(res);
-  if (!raw) return false;
-  setEvent({ ...raw, status: getEventStatus(raw) });
-  return true;
-};
+  const processSuccess = ({ res, setEvent }) => {
+    if (!res.ok) return false;
+    const raw = handleResData(res);
+    if (!raw) return false;
+    setEvent({ ...raw, status: getEventStatus(raw) });
+    return true;
+  };
 
-const processErrorFallback = ({ eventId, setEvent, setFetchError }) => {
-  const fallback = mockEvents.find((item) => String(item.id) === eventId);
-  if (fallback) {
-    setEvent({ ...fallback, status: getEventStatus(fallback) });
-  } else {
-    setFetchError("Event not found.");
-  }
-};
+  const processErrorFallback = ({ eventId, setEvent, setFetchError }) => {
+    const fallback = mockEvents.find((item) => String(item.id) === eventId);
+    if (fallback) {
+      setEvent({ ...fallback, status: getEventStatus(fallback) });
+    } else {
+      setFetchError("Event not found.");
+    }
+  };
 
-const handleCatchError = ({ error, reqId, ctrl, latestRef, abortRef, eventId, setEvent, setFetchError }) => {
-  if (!checkLatest({ reqId, ctrl, latestReqRef: latestRef, abortRef })) return;
-  if (isRequestCanceled(error, ctrl.signal)) return;
-  processErrorFallback({ eventId, setEvent, setFetchError });
-};
+  const handleCatchError = ({ error, reqId, ctrl, latestRef, abortRef, eventId, setEvent, setFetchError }) => {
+    if (!checkLatest({ reqId, ctrl, latestReqRef: latestRef, abortRef })) return;
+    if (isRequestCanceled(error, ctrl.signal)) return;
+    processErrorFallback({ eventId, setEvent, setFetchError });
+  };
 
-const finishLoading = ({ reqId, ctrl, latestRef, abortRef, setFetchLoading }) => {
-  const shouldFinish = checkLatest({ reqId, ctrl, latestReqRef: latestRef, abortRef });
-  if (abortRef.current === ctrl) {
-    abortRef.current = null;
-  }
-  if (shouldFinish) {
-    setFetchLoading(false);
-  }
-};
+  const finishLoading = ({ reqId, ctrl, latestRef, abortRef, setFetchLoading }) => {
+    const shouldFinish = checkLatest({ reqId, ctrl, latestReqRef: latestRef, abortRef });
+    if (abortRef.current === ctrl) {
+      abortRef.current = null;
+    }
+    if (shouldFinish) {
+      setFetchLoading(false);
+    }
+  };
 
   const loadEvent = useCallback(async () => {
     if (abortControllerRef.current) abortControllerRef.current.abort();
@@ -151,7 +192,6 @@ const finishLoading = ({ reqId, ctrl, latestRef, abortRef, setFetchLoading }) =>
     };
   }, [loadEvent]);
 
-  // Safely handle localStorage cache updates via hook
   useEffect(() => {
     if (!event) return;
     addRecentlyViewed(event);
@@ -164,8 +204,6 @@ const finishLoading = ({ reqId, ctrl, latestRef, abortRef, setFetchLoading }) =>
       setIsPrinting(false);
     }, 500);
   };
-
-
 
   const handleExport = async (format) => {
     try {
@@ -219,24 +257,21 @@ const finishLoading = ({ reqId, ctrl, latestRef, abortRef, setFetchLoading }) =>
           textArea.remove();
         }
       }
-           toast.success("Event link copied to clipboard!");   
-           setLinkCopied(true);                                
-           setTimeout(() => setLinkCopied(false), 2000);
+      toast.success("Event link copied to clipboard!");   
+      setLinkCopied(true);                                
+      setTimeout(() => setLinkCopied(false), 2000);
     } catch (err) {
        toast.error("Failed to copy link. Please copy the URL from your browser's address bar.");
     }
   };
 
-  // For test compatibility with older spec expecting animate-spin spinner:
-  // {fetchLoading && <div className="animate-spin" style={{ display: 'none' }} />}
-
-  // Keyboard shortcuts for Event Detail page
   useKeyboardShortcuts({
     r: () => { if (event && !isEventRegistrationClosed(event)) navigate(`/events/${event.id}/register`); },
     c: handleCopy,
     s: () => setShowShareModal(true),
     p: handlePrint,
   });
+
   if (fetchLoading) return <EventDetailSkeleton />;
 
   if (fetchError || !event) {
@@ -271,7 +306,7 @@ const finishLoading = ({ reqId, ctrl, latestRef, abortRef, setFetchLoading }) =>
       <Helmet>
         <title>{event.title} | Eventra</title>
         <meta property="og:title" content={event.title} />
-        <meta property="og:description" content={event.description?.slice(0, 160) || ""} />
+        <meta property="og:description" content={getOgDescription(event)} />
         <meta property="og:image" content={event.image} />
         <meta property="og:url" content={window.location.href} />
         <meta name="twitter:card" content="summary_large_image" />
@@ -282,29 +317,7 @@ const finishLoading = ({ reqId, ctrl, latestRef, abortRef, setFetchLoading }) =>
 
           {/* Header */}
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="inline-flex rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-200 px-4 py-1 text-sm font-semibold uppercase tracking-[0.2em]">
-                {event.type}
-              </p>
-              <div className="mt-4 flex items-center gap-3">
-                <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight wrap-break-word" title={event.title}>{event.title}</h1>
-                <button
-                  onClick={handleCopy}
-                  className={`p-2 rounded-full transition-colors ${linkCopied 
-                    ? "text-green-600 bg-green-50 dark:bg-green-900/30" 
-                    : "text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
-                  }`}
-               aria-label={linkCopied ? "Link copied!" : "Copy event link"}
-              title={linkCopied ? "Copied!" : "Copy link"}
-             >
-                {linkCopied ? <Check size={28} /> : <Link2 size={28} />}
-                </button>
-              </div>
-              <div
-                className="mt-4 max-w-2xl text-gray-600 dark:text-gray-300 prose prose-indigo dark:prose-invert"
-                dangerouslySetInnerHTML={{ __html: sanitizeMarkdown(event.description, marked.parse) }}
-              />
-            </div>
+            <TitleSection event={event} handleCopy={handleCopy} linkCopied={linkCopied} />
 
             <EventHeaderActions
               event={event}
@@ -357,11 +370,7 @@ const finishLoading = ({ reqId, ctrl, latestRef, abortRef, setFetchLoading }) =>
               </div>
 
               {/* Event Agenda Section */}
-              {event.sessions && event.sessions.length > 0 ? (
-                <EventAgenda sessions={event.sessions} />
-              ) : (
-                <EventAgenda sessions={[]} />
-              )}
+              {renderAgenda(event.sessions)}
             </div>
           </div>
 
