@@ -12,6 +12,23 @@ import { projectService } from "../../services/projectService.js";
 const CACHE_KEY = "eventra_github_metrics_cache";
 const CACHE_TTL = 1 * 60 * 60 * 1000; // 1 hour expiration
 
+const saveMetricsCache = (cache) => {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+  } catch (err) {
+    if (err.name === "QuotaExceededError" || err.name === "NS_ERROR_DOM_QUOTA_REACHED") {
+      const entries = Object.entries(cache).sort((a, b) => a[1].timestamp - b[1].timestamp);
+      const keepCount = Math.max(1, Math.floor(entries.length * 0.75));
+      const newCache = Object.fromEntries(entries.slice(-keepCount));
+      try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify(newCache));
+      } catch (e) {
+        localStorage.removeItem(CACHE_KEY);
+      }
+    }
+  }
+};
+
 // Status Badge Styling Helper
 const getStatusColor = (status) => {
   if (!status) return "bg-slate-100 text-white dark:bg-slate-900/50 dark:text-white";
@@ -194,7 +211,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
           const saved = localStorage.getItem(CACHE_KEY);
           cache = saved ? safeJsonParse(saved, {}) : {};
           cache[key] = { data: updated, timestamp: Date.now() };
-          localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+          saveMetricsCache(cache);
         } catch {}
         return updated;
       });
@@ -231,7 +248,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
           const saved = localStorage.getItem(CACHE_KEY);
           cache = saved ? safeJsonParse(saved, {}) : {};
           cache[key] = { data: updated, timestamp: Date.now() };
-          localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+          saveMetricsCache(cache);
         } catch {}
         return updated;
       });
@@ -291,7 +308,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
           data: freshMetrics,
           timestamp: Date.now(),
         };
-        localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+        saveMetricsCache(cache);
 
         setMetrics(freshMetrics);
         setMetricsLoading(false);
