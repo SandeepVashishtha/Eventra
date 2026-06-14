@@ -15,6 +15,7 @@ const DEFAULT_NOTIFICATION_OPTIONS = {
 
 // Store active reminders for management (Map<reminderId, timeoutId>)
 const activeReminders = new Map();
+const MAX_TIMEOUT_DELAY = 2147483647; // 2^31 - 1
 
 // Counter for generating unique reminder IDs
 let reminderIdCounter = 0;
@@ -175,25 +176,36 @@ export const scheduleReminder = (title, delay, options = {}) => {
   // Default body text
   const body = options.body || `${title} starts soon!`;
 
-  // Schedule the notification
-  const timeoutId = setTimeout(() => {
-    sendNotification("⏰ Event Reminder", {
-      body,
-      tag: `eventra-${reminderId}`, // Unique tag for each reminder
-      ...options,
-    });
-
-    // Remove from active reminders after firing
-    activeReminders.delete(reminderId);
-  }, delay);
-
-  // Store the timeout ID for potential cancellation
-  activeReminders.set(reminderId, {
-    timeoutId,
+  // Store the record structure first (with a placeholder/null timeoutId)
+  const record = {
+    timeoutId: null,
     title,
     scheduledAt: Date.now(),
     firesAt: Date.now() + delay,
-  });
+  };
+  activeReminders.set(reminderId, record);
+
+  // Schedule the notification recursively to handle values > 32-bit signed integer limit
+  const scheduleTimeout = (remainingDelay) => {
+    const currentDelay = Math.min(remainingDelay, MAX_TIMEOUT_DELAY);
+    const timeoutId = setTimeout(() => {
+      if (remainingDelay > MAX_TIMEOUT_DELAY) {
+        scheduleTimeout(remainingDelay - MAX_TIMEOUT_DELAY);
+      } else {
+        sendNotification("⏰ Event Reminder", {
+          body,
+          tag: `eventra-${reminderId}`,
+          ...options,
+        });
+        activeReminders.delete(reminderId);
+      }
+    }, currentDelay);
+
+    record.timeoutId = timeoutId;
+    return timeoutId;
+  };
+
+  scheduleTimeout(delay);
 
   return reminderId;
 };
