@@ -8,6 +8,23 @@ let lastQuotaCheck = 0;
 const MAX_MEM_CACHE_SIZE = 500;
 const QUOTA_CHECK_INTERVAL_MS = 10000; // Check storage quota at most once every 10s
 
+const TRANSIENT_ERROR_NAMES = new Set([
+  "AbortError",
+  "TransactionInactiveError",
+  "UnknownError",
+  "ConstraintError"
+]);
+
+/**
+ * Checks if the thrown error is transient (e.g. database locks or transaction aborts).
+ */
+const isTransientError = (err) => {
+  if (!err) return false;
+  if (TRANSIENT_ERROR_NAMES.has(err.name)) return true;
+  const msg = String(err.message || "").toLowerCase();
+  return msg.includes("transient") || msg.includes("lock");
+};
+
 /**
  * Periodically estimates storage quota to avoid synchronous I/O overhead on every write.
  */
@@ -37,14 +54,7 @@ const executeWithRetry = async (operation, retries = 2, delayMs = 50) => {
     try {
       return await operation();
     } catch (err) {
-      const isTransient = err.name === "AbortError" ||
-                          err.name === "TransactionInactiveError" ||
-                          err.name === "UnknownError" ||
-                          err.name === "ConstraintError" ||
-                          err.message?.toLowerCase().includes("transient") ||
-                          err.message?.toLowerCase().includes("lock");
-
-      if (isTransient && attempt < retries) {
+      if (isTransientError(err) && attempt < retries) {
         console.warn(`[IndexedDB] Transient error "${err.name}". Retrying in ${delayMs}ms (attempt ${attempt + 1}/${retries})...`);
         await new Promise(resolve => setTimeout(resolve, delayMs));
         delayMs *= 3; // exponential backoff
@@ -67,6 +77,20 @@ const pruneMemoryCache = () => {
 };
 
 /**
+ * Generic runner that attempts an IndexedDB operation first and falls back to memory on failure.
+ */
+const runCacheOperation = async (idbOp, memoryOp, warningMsg) => {
+  if (isIndexedDbFunctional) {
+    try {
+      return await executeWithRetry(idbOp);
+    } catch (err) {
+      console.warn(warningMsg, err);
+    }
+  }
+  return memoryOp();
+};
+
+/**
  * Saves a serializable payload to IndexedDB securely, falling back to in-memory store if disabled.
  * @param {string} key 
  * @param {any} val 
@@ -74,17 +98,14 @@ const pruneMemoryCache = () => {
  */
 export const saveToOfflineCache = async (key, val) => {
   await checkStorageQuota();
-
-  if (isIndexedDbFunctional) {
-    try {
-      await executeWithRetry(() => set(key, val));
-      return;
-    } catch (err) {
-      console.warn(`[IndexedDB] Blocked or failed to save key "${key}". Falling back to memory:`, err);
-    }
-  }
-  memoryCache.set(key, val);
-  pruneMemoryCache();
+  await runCacheOperation(
+    () => set(key, val),
+    () => {
+      memoryCache.set(key, val);
+      pruneMemoryCache();
+    },
+    `[IndexedDB] Blocked or failed to save key "${key}". Falling back to memory:`
+  );
 };
 
 /**
@@ -94,16 +115,17 @@ export const saveToOfflineCache = async (key, val) => {
  * @returns {Promise<any>}
  */
 export const getFromOfflineCache = async (key, fallback = null) => {
-  if (isIndexedDbFunctional) {
-    try {
-      const val = await executeWithRetry(() => get(key));
+  return runCacheOperation(
+    async () => {
+      const val = await get(key);
       return val !== undefined ? val : fallback;
-    } catch (err) {
-      console.warn(`[IndexedDB] Blocked or failed to read key "${key}". Falling back to memory:`, err);
-    }
-  }
-  const memVal = memoryCache.get(key);
-  return memVal !== undefined ? memVal : fallback;
+    },
+    () => {
+      const memVal = memoryCache.get(key);
+      return memVal !== undefined ? memVal : fallback;
+    },
+    `[IndexedDB] Blocked or failed to read key "${key}". Falling back to memory:`
+  );
 };
 
 /**
@@ -112,15 +134,11 @@ export const getFromOfflineCache = async (key, fallback = null) => {
  * @returns {Promise<void>}
  */
 export const removeFromOfflineCache = async (key) => {
-  if (isIndexedDbFunctional) {
-    try {
-      await executeWithRetry(() => del(key));
-      return;
-    } catch (err) {
-      console.warn(`[IndexedDB] Blocked or failed to delete key "${key}". Falling back to memory:`, err);
-    }
-  }
-  memoryCache.delete(key);
+  await runCacheOperation(
+    () => del(key),
+    () => memoryCache.delete(key),
+    `[IndexedDB] Blocked or failed to delete key "${key}". Falling back to memory:`
+  );
 };
 
 /**
@@ -129,13 +147,9 @@ export const removeFromOfflineCache = async (key) => {
  * @returns {Promise<void>}
  */
 export const clearOfflineCache = async () => {
-  if (isIndexedDbFunctional) {
-    try {
-      await executeWithRetry(() => clear());
-      return;
-    } catch (err) {
-      console.warn(`[IndexedDB] Blocked or failed to clear cache. Falling back to memory:`, err);
-    }
-  }
-  memoryCache.clear();
+  await runCacheOperation(
+    () => clear(),
+    () => memoryCache.clear(),
+    `[IndexedDB] Blocked or failed to clear cache. Falling back to memory:`
+  );
 };
