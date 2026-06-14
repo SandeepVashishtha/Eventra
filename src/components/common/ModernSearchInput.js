@@ -45,7 +45,7 @@ const ModernSearchInput = ({
         className="relative group"
       >
         <div
-          className={`absolute inset-y-0 left-0 pl-4 flex items-center z-20 pointer-events-none transition-colors duration-300 ${
+          className={`absolute left-4 top-1/2 -translate-y-1/2 flex items-center z-20 pointer-events-none ${
             isFocused ? "text-indigo-500" : "text-gray-400 dark:text-gray-500"
           }`}
         >
@@ -53,7 +53,7 @@ const ModernSearchInput = ({
         </div>
 
         <div
-          className={`flex flex-wrap items-center gap-2 w-full pl-12 pr-12 py-3.5 sm:py-4 text-base text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-900 border  rounded-2xl transition-all duration-300 shadow-lg ${inputClassName}`}
+          className={`flex items-center gap-2 w-full  h-14 sm:h-16 px-4  pl-12 pr-4  text-base text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-900 border  rounded-2xl transition-all duration-300 shadow-lg ${inputClassName}`}
           style={{
             borderColor: isFocused ? "#6366f1" : "",
             borderWidth: isFocused ? "2px" : "1px",
@@ -64,23 +64,23 @@ const ModernSearchInput = ({
         >
           {tags}
           <input
-            ref={searchInputRef}
-            type="text"
-            placeholder={tags && tags.length > 0 ? "" : placeholder}
-            className="flex-1 bg-transparent border-none outline-none text-gray-900 dark:text-white dark:caret-white min-w-[120px] placeholder-gray-400 dark:placeholder-gray-500/70"
-            style={{
-              backgroundColor: "transparent",
-              border: "none",
-              outline: "none",
-              boxShadow: "none",
-            }}
-            value={value}
-            onChange={onChange}
-            onFocus={handleFocus}
-            autoFocus={autoFocus}
-            onBlur={handleBlur}
-            onKeyDown={onKeyDown}
-          />
+  ref={searchInputRef}
+  type="text"
+  placeholder={tags && tags.length > 0 ? "" : placeholder}
+  className="flex-1 bg-transparent border-none outline-none focus:outline-none focus:ring-0 shadow-none"
+  style={{
+    border: "none",
+    boxShadow: "none",
+    outline: "none",
+    background: "transparent",
+  }}
+  value={value}
+  onChange={onChange}
+  onFocus={handleFocus}
+  autoFocus={autoFocus}
+  onBlur={handleBlur}
+  onKeyDown={onKeyDown}
+/>
         </div>
 
         {showClearButton && value && (

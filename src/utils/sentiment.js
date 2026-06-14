@@ -52,7 +52,7 @@ export const getSentimentDisplay = (score) => {
       color: "text-green-500 dark:text-green-400 animate-bounce"
     };
   }
-  if (score > 0.2) {
+  if (score >= 0.2) {
     return {
       emoji: "🙂",
       label: "Happy / Positive",
@@ -66,7 +66,7 @@ export const getSentimentDisplay = (score) => {
       color: "text-red-500 dark:text-red-400 animate-pulse"
     };
   }
-  if (score < -0.2) {
+  if (score <= -0.2) {
     return {
       emoji: "🙁",
       label: "Muted / Negative",

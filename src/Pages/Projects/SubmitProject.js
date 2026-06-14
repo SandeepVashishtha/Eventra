@@ -1,34 +1,13 @@
+import { ArrowRightIcon, LightBulbIcon, FolderOpenIcon, CodeBracketIcon, CheckCircleIcon, ArrowUpTrayIcon, ClipboardDocumentCheckIcon, // Icons for form fields
+  UserGroupIcon, EnvelopeIcon, LinkIcon, RectangleGroupIcon, CpuChipIcon, BookmarkIcon, UsersIcon, ClockIcon, UserPlusIcon, PhotoIcon, ArchiveBoxIcon, DocumentTextIcon, PencilSquareIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { API_ENDPOINTS, apiUtils } from "../../config/api";
+
+import { projectService } from "../../services/projectService";
 import { sanitizeInputText } from "../../utils/inputSanitization";
-import {
-  ArrowRightIcon,
-  LightBulbIcon,
-  FolderOpenIcon,
-  CodeBracketIcon,
-  CheckCircleIcon,
-  ArrowUpTrayIcon,
-  ClipboardDocumentCheckIcon,
-  // Icons for form fields
-  UserGroupIcon,
-  EnvelopeIcon,
-  LinkIcon,
-  RectangleGroupIcon,
-  CpuChipIcon,
-  BookmarkIcon,
-  UsersIcon,
-  ClockIcon,
-  UserPlusIcon,
-  PhotoIcon,
-  ArchiveBoxIcon,
-  DocumentTextIcon,
-  PencilSquareIcon,
-  XMarkIcon,
-} from "@heroicons/react/24/solid";
 
 const SubmitProject = () => {
   const navigate = useNavigate();
@@ -226,24 +205,24 @@ const handleSubmit = async (e) => {
 
     setIsSubmitting(true);
     try {
-      // Sanitize text fields before sending
+      // Sanitize and map text fields before sending
       const sanitizedData = {
         ...formData,
+        title: sanitizeInputText(formData.projectName),
+        category: formData.projectCategory || formData.projectType || "Other",
+        thumbnailUrl: formData.projectImage || "",
+        githubUrl: formData.githubLink || "",
         projectName: sanitizeInputText(formData.projectName),
         teamName: sanitizeInputText(formData.teamName),
         description: sanitizeInputText(formData.description),
         additionalNotes: sanitizeInputText(formData.additionalNotes),
         submittedBy: user?.id,
       };
-      await apiUtils.post(
-        API_ENDPOINTS.PROJECTS.SUBMIT,
-        sanitizedData,
-        {
-          headers: {
-            Authorization: token
-          }
+      await projectService.submitProject(sanitizedData, {
+        headers: {
+          Authorization: token
         }
-      );
+      });
 
       toast.success("Project submitted successfully!");
       setFormData({

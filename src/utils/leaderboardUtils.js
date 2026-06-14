@@ -1,3 +1,5 @@
+import { Trophy, Award, Star, Zap } from "lucide-react";
+
 /**
  * Pure utility functions for leaderboard data processing.
  *
@@ -16,7 +18,6 @@
  * test without mounting a React component.
  */
 
-import { FaTrophy, FaAward, FaStar, FaCode } from "react-icons/fa";
 
 // ─── Scoring constants ────────────────────────────────────────────────────────
 
@@ -61,6 +62,9 @@ export function normalizeLabel(label = "") {
  * @returns {number}
  */
 export function calculatePrPoints(labels) {
+  // 🔥 FIX: Prevent fatal TypeError crash if API omits the labels array
+  if (!Array.isArray(labels)) return DEFAULT_MERGED_PR_POINTS;
+
   const levelPoints = labels.reduce((total, label) => {
     const normalized = normalizeLabel(label);
     return total + (LABEL_POINTS[normalized] || 0);
@@ -70,11 +74,22 @@ export function calculatePrPoints(labels) {
 }
 
 /**
- * Applies volume-based achievement bonuses to a contributor's running point
- * total. Mutates the `contributor` object in-place (intended for use during
- * the initial data-building pass where mutation is safe).
+ * Returns a new contributor object with the highest applicable volume-based
+ * achievement bonus added to the point total.
  *
- * @param {{ prs: number, points: number }} contributor
+ * The function is intentionally immutable: it always returns a new object so
+ * that callers can safely use the return value without worrying about aliasing
+ * bugs, and so that React state comparisons based on object identity work
+ * correctly.
+ *
+ * Previous JSDoc incorrectly stated "mutates in-place" while the implementation
+ * already returned a spread copy for the bonus case and the original reference
+ * for the no-bonus case. The inconsistent return type caused callers who
+ * discarded the return value to silently lose achievement bonuses.
+ *
+ * @param {{ prs: number, points: number, username: string }} contributor
+ * @returns {{ prs: number, points: number, username: string }} New contributor
+ *   object with bonus applied (or unchanged copy if no bonus threshold is met).
  */
 export function applyAchievementBonus(contributor) {
   for (const { minPrs, bonus } of ACHIEVEMENT_THRESHOLDS) {
@@ -82,7 +97,11 @@ export function applyAchievementBonus(contributor) {
       return { ...contributor, points: contributor.points + bonus };
     }
   }
-  return contributor;
+  // Always return a new object for consistent reference semantics regardless
+  // of whether a bonus was applied. This prevents callers from relying on
+  // identity equality to detect "no bonus" while accidentally holding a stale
+  // reference to the original object.
+  return { ...contributor };
 }
 
 // ─── Filtering ────────────────────────────────────────────────────────────────
@@ -97,7 +116,16 @@ export function applyAchievementBonus(contributor) {
  * @returns {Array}
  */
 export function filterContributors(contributors, search, activeCategory) {
-  const q = search.trim().toLowerCase();
+  // 🔥 FIX: Prevent fatal TypeError crash if search is null/undefined
+  const q = (search || "").trim().toLowerCase();
+
+  // 🔥 FIX: Hoisted the threshold calculation OUTSIDE the filter loop.
+  // Previously, this math was executing on every single iteration of the filter, 
+  // causing a massive O(N) performance bottleneck on large contributor datasets.
+  let monthlyThreshold = 0;
+  if (activeCategory === "monthly" && contributors.length > 0) {
+    monthlyThreshold = contributors[Math.floor(contributors.length * 0.4)]?.points || 0;
+  }
 
   return contributors.filter((c) => {
     const matchSearch =
@@ -108,11 +136,7 @@ export function filterContributors(contributors, search, activeCategory) {
     if (!matchSearch) return false;
 
     if (activeCategory === "monthly") {
-      const threshold =
-        contributors.length > 0
-          ? contributors[Math.floor(contributors.length * 0.4)]?.points || 0
-          : 0;
-      return c.points >= threshold;
+      return c.points >= monthlyThreshold;
     }
 
     if (activeCategory === "mentors") {
@@ -198,45 +222,54 @@ export function computeLeaderboardStats(contributors) {
   let totalPoints = 0;
 
   for (const c of contributors) {
-    totalPRs    += c.prs;
-    totalPoints += c.points;
+    totalPRs    += (c.prs || 0);
+    totalPoints += (c.points || 0);
   }
 
   return {
     totalContributors: contributors.length,
-    flooredTotalPRs:    totalPRs,
-    flooredTotalPoints: totalPoints,
+    flooredTotalPRs: Math.floor(totalPRs),
+    flooredTotalPoints: Math.floor(totalPoints),
   };
 }
+
 export const getAchievementBadge = (rank) => {
   if (rank === 1) {
     return {
       label: "Diamond Tier",
       color: "from-sky-300 via-indigo-400 to-pink-300 text-indigo-950 border-indigo-300/40 shadow-[0_0_12px_rgba(99,102,241,0.4)]",
-      icon: FaTrophy
+      icon: Trophy,
+      description: "Rank 1 - Top contributor"
     };
   }
   if (rank === 2 || rank === 3) {
     return {
       label: "Platinum Tier",
       color: "from-teal-300 via-emerald-400 to-cyan-300 text-emerald-950 border-teal-300/40 shadow-[0_0_12px_rgba(20,184,166,0.3)]",
-      icon: FaAward
+      icon: Award,
+      description: "Rank 2-3 - Elite contributor"
     };
   }
   if (rank >= 4 && rank <= 10) {
     return {
       label: "Gold Tier",
       color: "from-yellow-300 via-amber-400 to-yellow-500 text-amber-950 border-yellow-300/40 shadow-[0_0_8px_rgba(234,179,8,0.25)]",
-      icon: FaStar
+      icon: Star,
+      description: "Rank 4-10 - Gold contributor"
+    };
+  }
+  if (rank >= 11 && rank <= 100) {
+    return {
+      label: "Silver Tier",
+      color: "from-slate-300 via-slate-400 to-slate-500 text-slate-950 border-slate-300/40 shadow-[0_0_8px_rgba(148,163,184,0.25)]",
+      icon: Zap,
+      description: "Rank 11-100 - Silver contributor"
     };
   }
   return {
-    label: "Silver Tier",
-    color: "from-slate-100 via-zinc-200 to-slate-200 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 text-slate-800 dark:text-slate-200 border-slate-200/50 dark:border-slate-700/20",
-    icon: FaCode
+    label: "Bronze Tier",
+    color: "from-orange-200 via-orange-300 to-red-400 text-orange-950 border-orange-300/40 shadow-[0_0_6px_rgba(217,119,6,0.2)]",
+    icon: Zap,
+    description: "Rank 101+ - Contributor"
   };
-};
-
-export const calculatePointsMultiplier = (points, rate) => {
-  return points * (rate > 0 ? rate : 1.0);
 };

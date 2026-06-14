@@ -19,13 +19,14 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import { addEventToGoogleCalendar } from "../../utils/calendarUtils";
 import LazyImage from "../../components/common/LazyImage";
 import ShareModal from "../../components/common/ShareModal";
 import StatusBadge from "../../components/common/StatusBadge";
 import { getEventStatus } from "../../utils/eventUtils";
 import { useMyEvents } from "../../context/MyEventsContext";
 import ReminderControls from "../../components/reminders/ReminderControls";
+import AddToCalendar from "../../components/common/AddToCalendar";
+import SocialShareButtons from "../../components/common/SocialShareButtons";
 import {
   addBookmarkedEvent,
   isEventBookmarked,
@@ -108,40 +109,43 @@ const EventCard = ({ event }) => {
     });
   }, [event.id]);
 
-  const handleBookmarkToggle = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleBookmarkToggle = useCallback(
+    (e) => {
+      e.preventDefault();
+      e.stopPropagation();
 
-    if (isBookmarked) {
-      removeBookmarkedEvent(event.id);
-      toast.info("Removed from bookmarked events.", {
+      if (isBookmarked) {
+        removeBookmarkedEvent(event.id);
+        toast.info("Removed from bookmarked events.", {
+          toastId: `bookmark-${event.id}`,
+          autoClose: 1800,
+          className: "custom-toast",
+        });
+        return;
+      }
+
+      addBookmarkedEvent({
+        ...event,
+        status: computedStatus,
+      });
+      toast.success("Event bookmarked.", {
         toastId: `bookmark-${event.id}`,
         autoClose: 1800,
         className: "custom-toast",
       });
-      return;
-    }
-
-    addBookmarkedEvent({
-      ...event,
-      status: computedStatus,
-    });
-    toast.success("Event bookmarked.", {
-      toastId: `bookmark-${event.id}`,
-      autoClose: 1800,
-      className: "custom-toast",
-   });
-}, [computedStatus, event, isBookmarked]);
+    },
+    [isBookmarked, event, computedStatus]
+  );
 
   return (
     <article
       data-aos="zoom-in"
       data-aos-duration="800"
       aria-labelledby={titleId}
-      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-lg backdrop-blur-sm transition-all duration-300 flex flex-col z-10 hover:z-50 hover:shadow-2xl hover:-translate-y-2 overflow-hidden border border-gray-100 dark:border-gray-800 hover:border-indigo-300 dark:hover:border-indigo-700"
+      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-lg backdrop-blur-sm transition-all duration-300 flex flex-col z-10 event-card-hoverable overflow-hidden border border-gray-100 dark:border-gray-800"
     >
       {/* Action buttons */}
-      <div className="absolute top-22 right-3 z-200 flex space-x-1.5 items-center">
+      <div className="absolute top-3 right-3 z-200 flex space-x-1.5 items-center">
         <div className="relative flex items-center">
           <motion.button
             whileHover={{ scale: 1.12 }}
@@ -236,17 +240,7 @@ const EventCard = ({ event }) => {
           </svg>
         </button>
 
-        <a
-          href={addEventToGoogleCalendar(event)}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={(e) => e.stopPropagation()}
-          title="Add to Google Calendar"
-          aria-label={`Add ${event.title} to Google Calendar`}
-          className="rounded-full border border-gray-200 bg-white/90 p-2 shadow backdrop-blur-sm hover:border-indigo-200 dark:border-gray-700 dark:bg-gray-800/90 dark:hover:border-indigo-500 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-indigo-500"
-        >
-          <Calendar size={14} className="text-gray-600 dark:text-gray-300" aria-hidden="true" />
-        </a>
+        <AddToCalendar event={event} iconOnly={true} />
       </div>
 
       {/* Header */}
@@ -255,32 +249,28 @@ const EventCard = ({ event }) => {
           {randomIcon}
         </div>
 
-        <h3 id={titleId} className="text-gray-900 dark:text-white font-bold text-lg tracking-tight truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-300 flex-1">
+        <h3 id={titleId} title={event.title} className="text-gray-900 dark:text-white font-bold text-lg tracking-tight line-clamp-2 break-words group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-300 flex-1 min-w-0">
           {event.title}
         </h3>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-1.5 shrink-0">
           {/* Conflict Indicator */}
           {hasConflict && !isUserRegistered && (
             <div
-              className="flex items-center gap-1 px-2 py-1 bg-amber-100 dark:bg-amber-900/30 rounded-full border border-amber-300 dark:border-amber-700"
+              className="inline-flex items-center gap-[5px] py-1 px-[10px] bg-amber-100 dark:bg-amber-900/30 rounded-[6px] border border-amber-300 dark:border-amber-700 shrink-0 text-[12px] font-medium leading-none text-amber-700 dark:text-amber-300"
               title="This event conflicts with your registered events"
             >
-              <AlertTriangle size={12} className="text-amber-600 dark:text-amber-400" />
-              <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">
-                Conflict
-              </span>
+              <AlertTriangle size={12} className="text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" />
+              <span>Conflict</span>
             </div>
           )}
           {/* Registered Indicator */}
           {isUserRegistered && (
             <div
-              className="flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 rounded-full border border-green-300 dark:border-green-700"
+              className="inline-flex items-center gap-[5px] py-1 px-[10px] bg-green-100 dark:bg-green-900/30 rounded-[6px] border border-green-300 dark:border-green-700 shrink-0 text-[12px] font-medium leading-none text-green-700 dark:text-green-300"
               title="You are registered for this event"
             >
-              <BookmarkCheck size={12} className="text-green-600 dark:text-green-400" />
-              <span className="text-xs font-semibold text-green-700 dark:text-green-300">
-                Registered
-              </span>
+              <BookmarkCheck size={12} className="text-green-600 dark:text-green-400 shrink-0" aria-hidden="true" />
+              <span>Registered</span>
             </div>
           )}
           <StatusBadge status={computedStatus} />
@@ -292,9 +282,9 @@ const EventCard = ({ event }) => {
         <LazyImage
           src={event.image}
           alt={event.imageAlt || `${event.title} event thumbnail`}
-          width={800}
-          height={160}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          aspectRatio="5/1"
+          className="w-full h-full"
+          imgClassName="object-cover transition-transform duration-500 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent" />
       </div>
@@ -309,7 +299,7 @@ const EventCard = ({ event }) => {
       {/* Info Grid */}
       <div className="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4 text-gray-600 dark:text-gray-400 text-sm bg-gray-50/50 dark:bg-gray-800/30">
         {/* Location */}
-        <div className="flex items-start gap-2">
+        <div className="flex items-start gap-2 sm:col-span-2">
           <MapPin size={14} className="text-pink-500 shrink-0" />
           <div className="flex flex-col min-w-0">
             <span className="truncate">{event.location}</span>
@@ -390,6 +380,11 @@ const EventCard = ({ event }) => {
         );
       })()}
 
+      {/* Social Sharing */}
+      <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 flex justify-center">
+        <SocialShareButtons event={event} layout="inline" />
+      </div>
+
       {/* CTA */}
       <div className="px-5 py-4 flex gap-3 mt-auto">
         {isPastEvent ? (
@@ -404,7 +399,7 @@ const EventCard = ({ event }) => {
           </Link>
         )}
 
-        <Link to={`/events/${event.id}`} className="flex-1 inline-flex items-center justify-center rounded-2xl bg-white/80 dark:bg-gray-800 border border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 px-4 py-3 text-sm font-semibold shadow-md hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-800 dark:hover:text-white hover:scale-[1.03] hover:shadow-lg transition-all duration-300">
+        <Link to={`/events/${event.id}`} className="flex-1 inline-flex items-center justify-center rounded-2xl bg-slate-50/80 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 px-4 py-3 text-sm font-semibold shadow-md hover:bg-slate-100 dark:hover:bg-slate-700/80 hover:scale-[1.03] hover:shadow-lg transition-all duration-300">
           <span>
             View Details
           </span>

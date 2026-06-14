@@ -1,3 +1,4 @@
+import React from "react";
 import "./StatusBadge.css";
 
 const STATUS_CONFIG = {
@@ -65,7 +66,7 @@ const STATUS_CONFIG = {
   },
 };
 
-export default function StatusBadge({ status }) {
+const StatusBadge = ({ status }) => {
   if (status === null || status === undefined) return null;
   const normalized = String(status).trim();
   if (!normalized) return null;
@@ -81,4 +82,6 @@ export default function StatusBadge({ status }) {
       {config.label}
     </span>
   );
-}
+};
+
+export default React.memo(StatusBadge);

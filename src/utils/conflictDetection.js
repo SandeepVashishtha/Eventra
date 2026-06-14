@@ -22,7 +22,7 @@ import {
   parseEventToUTC,
   parseTimeString,
   normalizeDateString,
-} from './timezoneUtils.js';
+} from "./timezoneUtils.js";
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -38,7 +38,7 @@ import {
  */
 const getEffectiveDuration = (event, fallbackMinutes = 60) => {
   const d = event?.durationMinutes;
-  return typeof d === 'number' && d > 0 ? d : fallbackMinutes;
+  return typeof d === "number" && d > 0 ? d : fallbackMinutes;
 };
 
 /**
@@ -110,12 +110,7 @@ export const getEventTimeRange = (event, durationMinutes = 60) => {
  * @param {string} [timezone]       - IANA tz; defaults to browser tz
  * @returns {boolean}
  */
-export const doEventsOverlap = (
-  event1,
-  event2,
-  fallbackDuration = 60,
-  timezone
-) => {
+export const doEventsOverlap = (event1, event2, fallbackDuration = 60, timezone) => {
   const tz = timezone || getUserTimezone();
   const range1 = getEventUTCRange(event1, fallbackDuration, tz);
   const range2 = getEventUTCRange(event2, fallbackDuration, tz);
@@ -142,6 +137,12 @@ export const doEventsOverlap = (
 /**
  * Find all events in registeredEvents that conflict with newEvent.
  *
+ * Null/undefined entries in registeredEvents are silently skipped. They can
+ * appear when localStorage is partially written (page closed mid-save), when
+ * a registration object has an explicitly null .event field, or when test
+ * fixtures pass sparse arrays. Without the filter(Boolean) guards the .map()
+ * call throws TypeError accessing .event on null.
+ *
  * @param {object} newEvent
  * @param {Array}  registeredEvents
  * @param {number} fallbackDuration
@@ -159,7 +160,10 @@ export const findConflictingEvents = (
   const tz = timezone || getUserTimezone();
 
   return registeredEvents
+    .filter(Boolean)                           // drop null/undefined registration entries
     .map((reg) => reg.event || reg)
+    .filter(Boolean)                           // drop registrations whose .event is also null
+    .filter((event) => !newEvent.id || !event.id || event.id !== newEvent.id)
     .filter((event) => doEventsOverlap(newEvent, event, fallbackDuration, tz));
 };
 
@@ -178,17 +182,16 @@ export const checkRegistrationConflict = (
   fallbackDuration = 60,
   timezone
 ) => {
-  const conflicts = findConflictingEvents(
-    newEvent,
-    registeredEvents,
-    fallbackDuration,
-    timezone
-  );
+  const conflicts = findConflictingEvents(newEvent, registeredEvents, fallbackDuration, timezone);
   return { hasConflict: conflicts.length > 0, conflicts };
 };
 
 /**
  * Suggest alternative events that don't conflict with the user's registered events.
+ *
+ * Null/undefined entries in registeredEvents are filtered out before building
+ * the registeredIds set to prevent TypeError on .event?.id access when entries
+ * are null (same root cause as the findConflictingEvents fix).
  *
  * @param {object} targetEvent
  * @param {Array}  allEvents
@@ -210,20 +213,19 @@ export const suggestAlternativeEvents = (
 
   const tz = timezone || getUserTimezone();
 
-  // Exclude the target event and already-registered events
+  // Exclude the target event and already-registered events.
+  // filter(Boolean) drops null/undefined entries before accessing .event?.id.
+  const safeRegistered = (registeredEvents || []).filter(Boolean);
+  const registeredIds = new Set(safeRegistered.map((reg) => reg.event?.id || reg.id));
   const availableEvents = allEvents.filter((event) => {
-    const isTargetEvent = event.id === targetEvent.id;
-    const isRegistered = registeredEvents.some(
-      (reg) => (reg.event?.id || reg.id) === event.id
-    );
-    return !isTargetEvent && !isRegistered;
+    return event && event.id !== targetEvent.id && !registeredIds.has(event.id);
   });
 
   // Keep only events that don't conflict with existing registrations
   const nonConflictingEvents = availableEvents.filter((event) => {
     const { hasConflict } = checkRegistrationConflict(
       event,
-      registeredEvents,
+      safeRegistered,
       fallbackDuration,
       tz
     );
@@ -231,20 +233,21 @@ export const suggestAlternativeEvents = (
   });
 
   // Prioritise events of the same category / type / tags as the target
+  const targetTagSet = new Set(targetEvent.tags || []);
+
   const sameCategoryEvents = nonConflictingEvents.filter(
     (event) =>
       event.category === targetEvent.category ||
       event.type === targetEvent.type ||
-      event.tags?.some((tag) => targetEvent.tags?.includes(tag))
+      event.tags?.some((tag) => targetTagSet.has(tag))
   );
 
   if (sameCategoryEvents.length >= maxSuggestions) {
     return sameCategoryEvents.slice(0, maxSuggestions);
   }
 
-  const otherEvents = nonConflictingEvents.filter(
-    (event) => !sameCategoryEvents.includes(event)
-  );
+  const sameCategorySet = new Set(sameCategoryEvents);
+  const otherEvents = nonConflictingEvents.filter((event) => !sameCategorySet.has(event));
 
   return [...sameCategoryEvents, ...otherEvents].slice(0, maxSuggestions);
 };
@@ -262,12 +265,7 @@ export const suggestAlternativeEvents = (
  * @param {string} [timezone]    - IANA tz; defaults to browser tz
  * @returns {string}  e.g. "10:00 AM – 11:30 AM"
  */
-export const formatTimeRange = (
-  timeStr,
-  durationMinutes = 60,
-  dateStr,
-  timezone
-) => {
+export const formatTimeRange = (timeStr, durationMinutes = 60, dateStr, timezone) => {
   const tz = timezone || getUserTimezone();
 
   // Timezone-aware path: requires a date string
@@ -276,10 +274,10 @@ export const formatTimeRange = (
     if (startMs !== null) {
       const endMs = startMs + durationMinutes * 60 * 1000;
 
-      const fmt = new Intl.DateTimeFormat('en-US', {
+      const fmt = new Intl.DateTimeFormat("en-US", {
         timeZone: tz,
-        hour: 'numeric',
-        minute: '2-digit',
+        hour: "numeric",
+        minute: "2-digit",
         hour12: true,
       });
 
@@ -294,9 +292,9 @@ export const formatTimeRange = (
   const formatMinutes = (mins) => {
     const h = Math.floor(mins / 60) % 24;
     const m = mins % 60;
-    const period = h >= 12 ? 'PM' : 'AM';
+    const period = h >= 12 ? "PM" : "AM";
     const displayH = h > 12 ? h - 12 : h === 0 ? 12 : h;
-    return `${displayH}:${String(m).padStart(2, '0')} ${period}`;
+    return `${displayH}:${String(m).padStart(2, "0")} ${period}`;
   };
 
   return `${formatMinutes(startMinutes)} – ${formatMinutes(endMinutes)}`;
