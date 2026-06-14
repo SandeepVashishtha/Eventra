@@ -17,11 +17,11 @@
 
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { getClientIp } from "../lib/getClientIp.js";
-import { loginRateLimiter, enforceRateLimit } from "../lib/rateLimiter.js";
-import { getJwtSecret, JWT_EXPIRES_IN, JWT_COOKIE_MAX_AGE_SECONDS } from "./jwt-config.js";
-import { buildCorsHeaders, corsResponse } from "./cors.js";
-import { isStorageHealthy, getUserByEmail, getUserByUsername } from "./user-storage.js";
+import { getClientIp } from "../_lib/getClientIp.js";
+import { loginRateLimiter, enforceRateLimit } from "../_lib/rateLimiter.js";
+import { getJwtSecret, JWT_EXPIRES_IN, JWT_COOKIE_MAX_AGE_SECONDS } from "./_jwt-config.js";
+import { buildCorsHeaders, corsResponse } from "./_cors.js";
+import { isStorageHealthy, getUserByEmail, getUserByUsername } from "./_user-storage.js";
 
 /**
  * Validates the login request body.

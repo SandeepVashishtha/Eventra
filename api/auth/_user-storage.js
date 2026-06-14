@@ -14,7 +14,7 @@
  */
 
 import Redis from "ioredis";
-import { isPersistentStorageConfigured, isInMemoryStorageAllowed } from "./storage-config.js";
+import { isPersistentStorageConfigured, isInMemoryStorageAllowed } from "./_storage-config.js";
 
 // ---------------------------------------------------------------------------
 // Storage Backend Interface

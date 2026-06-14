@@ -36,7 +36,7 @@ function restoreEnv() {
 }
 
 async function createLimiter(windowMs = 1000, maxRequests = 5) {
-  const { createRateLimiter } = await import('../api/lib/rateLimiter.js');
+  const { createRateLimiter } = await import('../api/_lib/rateLimiter.js');
   return createRateLimiter(windowMs, maxRequests);
 }
 
@@ -118,7 +118,7 @@ describe('Distributed Rate Limiter', () => {
     });
 
     it('should work with enforceRateLimit helper', async () => {
-      const { createRateLimiter, enforceRateLimit } = await import('../api/lib/rateLimiter.js');
+      const { createRateLimiter, enforceRateLimit } = await import('../api/_lib/rateLimiter.js');
       const limiter = createRateLimiter(1000, 2);
       await enforceRateLimit(limiter, '127.0.0.1');
       await enforceRateLimit(limiter, '127.0.0.1');
@@ -157,7 +157,7 @@ describe('Distributed Rate Limiter', () => {
 
     it('should fail validation without distributed storage in production', async () => {
       setTestEnv({ NODE_ENV: 'production' });
-      const { validateRateLimitConfig } = await import('../api/lib/rateLimiter.js');
+      const { validateRateLimitConfig } = await import('../api/_lib/rateLimiter.js');
       try {
         validateRateLimitConfig();
         assert.fail('Should have thrown an error');
@@ -168,7 +168,7 @@ describe('Distributed Rate Limiter', () => {
 
     it('should fail validation with RATE_LIMIT_MODE=memory in production', async () => {
       setTestEnv({ NODE_ENV: 'production', RATE_LIMIT_MODE: 'memory' });
-      const { validateRateLimitConfig } = await import('../api/lib/rateLimiter.js');
+      const { validateRateLimitConfig } = await import('../api/_lib/rateLimiter.js');
       try {
         validateRateLimitConfig();
         assert.fail('Should have thrown an error');
@@ -179,14 +179,14 @@ describe('Distributed Rate Limiter', () => {
 
     it('should pass validation with Redis configured', async () => {
       setTestEnv({ NODE_ENV: 'production', RATE_LIMIT_REDIS_URL: 'redis://localhost:6379' });
-      const { validateRateLimitConfig } = await import('../api/lib/rateLimiter.js');
+      const { validateRateLimitConfig } = await import('../api/_lib/rateLimiter.js');
       const result = validateRateLimitConfig();
       assert.strictEqual(result, true);
     });
 
     it('should pass validation with KV configured', async () => {
       setTestEnv({ NODE_ENV: 'production', KV_REST_API_URL: 'https://api.vercel-storage.com', KV_REST_API_TOKEN: 'test-token' });
-      const { validateRateLimitConfig } = await import('../api/lib/rateLimiter.js');
+      const { validateRateLimitConfig } = await import('../api/_lib/rateLimiter.js');
       const result = validateRateLimitConfig();
       assert.strictEqual(result, true);
     });
@@ -205,7 +205,7 @@ describe('Distributed Rate Limiter', () => {
     });
 
     it('should export loginRateLimiter with correct limits', async () => {
-      const { loginRateLimiter } = await import('../api/lib/rateLimiter.js');
+      const { loginRateLimiter } = await import('../api/_lib/rateLimiter.js');
       for (let i = 0; i < 10; i++) {
         const result = await loginRateLimiter.check('127.0.0.1');
         assert.strictEqual(result.allowed, true);
@@ -214,7 +214,7 @@ describe('Distributed Rate Limiter', () => {
     });
 
     it('should export signupRateLimiter with correct limits', async () => {
-      const { signupRateLimiter } = await import('../api/lib/rateLimiter.js');
+      const { signupRateLimiter } = await import('../api/_lib/rateLimiter.js');
       for (let i = 0; i < 5; i++) {
         const result = await signupRateLimiter.check('127.0.0.1');
         assert.strictEqual(result.allowed, true);
@@ -225,7 +225,7 @@ describe('Distributed Rate Limiter', () => {
 
   describe('Redis Backend', () => {
     it('should export RedisRateLimiter class', async () => {
-      const module = await import('../api/lib/rateLimiter.js');
+      const module = await import('../api/_lib/rateLimiter.js');
       assert.strictEqual(typeof module.createRateLimiter, 'function');
     });
 
@@ -242,7 +242,7 @@ describe('Distributed Rate Limiter', () => {
 
   describe('KV REST API Backend', () => {
     it('should support KV REST API backend', async () => {
-      const module = await import('../api/lib/rateLimiter.js');
+      const module = await import('../api/_lib/rateLimiter.js');
       assert.strictEqual(typeof module.createRateLimiter, 'function');
     });
 

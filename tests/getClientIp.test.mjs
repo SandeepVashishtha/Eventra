@@ -6,7 +6,7 @@
  */
 
 import assert from "node:assert/strict";
-import { getClientIp } from "../api/lib/getClientIp.js";
+import { getClientIp } from "../api/_lib/getClientIp.js";
 
 // Valid X-Forwarded-For
 assert.strictEqual(
