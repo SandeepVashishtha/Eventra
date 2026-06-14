@@ -1,0 +1,176 @@
+/*
+ * EventDetails.print.css
+ *
+ * Print-specific styles for the Event Details page.
+ *
+ * Without these styles, printing /events/:id produces:
+ *   - Dark mode backgrounds printing as solid black blocks
+ *   - Navigation bar, sidebar, share buttons, CTAs cluttering the output
+ *   - Countdown timer showing meaningless numbers
+ *   - Fixed/sticky elements overlapping content
+ *
+ * These rules are scoped to @media print so they have zero impact on the
+ * normal (screen) rendering of the page.
+ */
+
+@media print {
+  /* ── Reset dark-mode backgrounds ─────────────────────────────────────────── */
+  *,
+  *::before,
+  *::after {
+    background: white !important;
+    background-color: white !important;
+    color: black !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* ── Hide non-content UI ──────────────────────────────────────────────────── */
+
+  /* Navigation bar */
+  nav,
+  header,
+  [role="banner"],
+  .navbar,
+  .nav {
+    display: none !important;
+  }
+
+  /* Footer */
+  footer,
+  [role="contentinfo"] {
+    display: none !important;
+  }
+
+  /* Floating / fixed elements: back-to-top, chatbot, feedback, scroll progress */
+  .fixed,
+  .sticky,
+  [class*="back-to-top"],
+  [class*="scroll-to-top"],
+  [class*="chatbot"],
+  [class*="feedback"],
+  [aria-label="Back to top"],
+  [data-chatbot] {
+    display: none !important;
+  }
+
+  /* Share / social buttons */
+  [class*="share"],
+  [aria-label*="share"],
+  [aria-label*="Share"],
+  [class*="social"] {
+    display: none !important;
+  }
+
+  /* Register / CTA buttons */
+  [class*="register"],
+  [class*="cta"],
+  button:not([aria-label*="print"]) {
+    display: none !important;
+  }
+
+  /* Countdown timer (meaningless when printed) */
+  [class*="countdown"],
+  [class*="timer"] {
+    display: none !important;
+  }
+
+  /* Sidebar / sticky info panel */
+  aside,
+  [role="complementary"] {
+    display: none !important;
+  }
+
+  /* ── Typography & layout ─────────────────────────────────────────────────── */
+
+  body {
+    font-size: 12pt;
+    line-height: 1.5;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Event title */
+  h1 {
+    font-size: 22pt;
+    font-weight: 700;
+    margin-bottom: 6pt;
+    page-break-after: avoid;
+  }
+
+  h2 {
+    font-size: 16pt;
+    font-weight: 600;
+    margin-top: 14pt;
+    margin-bottom: 4pt;
+    page-break-after: avoid;
+  }
+
+  h3 {
+    font-size: 13pt;
+    font-weight: 600;
+    page-break-after: avoid;
+  }
+
+  p {
+    orphans: 3;
+    widows: 3;
+  }
+
+  /* ── Event banner image ──────────────────────────────────────────────────── */
+  .event-banner img,
+  img[alt*="event banner"],
+  img[alt*="banner"] {
+    max-width: 100% !important;
+    height: auto !important;
+    page-break-inside: avoid;
+  }
+
+  /* ── Links: show full URL in parentheses ─────────────────────────────────── */
+  a[href]::after {
+    content: " (" attr(href) ")";
+    font-size: 9pt;
+    color: #555 !important;
+  }
+
+  /* Suppress URL expansion for icon/button links that have no readable text */
+  a[href^="#"]::after,
+  a[aria-hidden="true"]::after {
+    content: "" !important;
+  }
+
+  /* ── Page margins ────────────────────────────────────────────────────────── */
+  @page {
+    margin: 20mm 15mm;
+    size: A4 portrait;
+  }
+
+  /* ── Main content area ───────────────────────────────────────────────────── */
+  main,
+  [id="main-content"],
+  .event-details-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Grid reflow: collapse multi-column layout to single column */
+  .grid,
+  [class*="grid-cols"] {
+    display: block !important;
+  }
+
+  /* ── Event metadata chips ────────────────────────────────────────────────── */
+  [class*="badge"],
+  [class*="tag"],
+  [class*="chip"] {
+    border: 1px solid #ccc !important;
+    background: transparent !important;
+    color: black !important;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+}

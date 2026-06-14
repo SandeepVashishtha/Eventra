@@ -1,7 +1,7 @@
-import React from "react";
 import { Link, useLocation } from "react-router-dom";
 
 const mockResponses = {
+  // 🔥 FIX: Changed dictionary keys from "/mock-api/..." to "/api/..." to match actual router paths
   "/api/hackathons": {
     status: 200,
     source: "mock",
@@ -54,7 +54,11 @@ const mockResponses = {
 
 const MockApiResponse = () => {
   const location = useLocation();
-  const response = mockResponses[location.pathname] || {
+  
+  // 🔥 FIX: Normalize the path by removing any trailing slashes to prevent 404s on exact matches
+  const normalizedPath = location.pathname.replace(/\/$/, "");
+  
+  const response = mockResponses[normalizedPath] || {
     status: 404,
     source: "mock",
     error: "Endpoint not found",
@@ -78,7 +82,7 @@ const MockApiResponse = () => {
             <h1 className="mt-2 text-3xl font-bold">{payload.endpoint}</h1>
           </div>
           <Link
-            to="/apiDocs"
+            to="/api-docs"
             className="inline-flex items-center justify-center rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:bg-slate-800"
           >
             Back to API Docs
