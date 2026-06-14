@@ -110,6 +110,231 @@ const getErrorMessage = (error) => {
   return `Failed to create event. ${error.message || "Please try again."}`;
 };
 
+const useDraftManager = (formData, setFormData) => {
+  const location = useLocation();
+  const [isDraftLoaded, setIsDraftLoaded] = useState(false);
+  const [showRestoreModal, setShowRestoreModal] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState(null);
+  const [restoreDraftMessage, setRestoreDraftMessage] = useState(
+    "A previously saved event draft was found. Would you like to restore it?"
+  );
+
+  useEffect(() => {
+    const saved = localStorage.getItem(DRAFT_KEY);
+    const isDuplicateDraft = location.state?.duplicateDraft;
+
+    if (saved) {
+      setShowRestoreModal(true);
+      if (isDuplicateDraft) {
+        setRestoreDraftMessage(
+          "A duplicated event draft is ready. Would you like to restore it and continue editing?"
+        );
+      } else {
+        try {
+          const parsed = safeJsonParse(saved, {});
+          const savedAt = parsed?.savedAt;
+          setRestoreDraftMessage(
+            `A previously saved event draft was found${savedAt ? ` (saved ${formatDraftAge(savedAt)})` : ""}. Would you like to restore it?`
+          );
+        } catch {
+          // keep default message
+        }
+      }
+    }
+    setIsDraftLoaded(true);
+  }, [location.state]);
+
+  const handleRestoreDraft = () => {
+    try {
+      const saved = localStorage.getItem(DRAFT_KEY);
+      if (saved) {
+        const parsed = safeJsonParse(saved, {});
+        const restoredData = parsed?.data || parsed;
+        setFormData((prev) => ({
+          ...prev,
+          ...restoredData,
+          banner: null,
+          bannerPreview: null,
+        }));
+        toast.success("Draft restored successfully!");
+      }
+    } catch (error) {
+      logger.error(error);
+    }
+    setShowRestoreModal(false);
+  };
+
+  const handleDiscardDraft = () => {
+    localStorage.removeItem(DRAFT_KEY);
+    setShowRestoreModal(false);
+    toast.info("Saved draft discarded.");
+  };
+
+  useEffect(() => {
+    if (!isDraftLoaded) return;
+    const timer = setTimeout(() => {
+      const saveable = { ...formData };
+      delete saveable.banner;
+      delete saveable.bannerPreview;
+      localStorage.setItem(
+        DRAFT_KEY,
+        JSON.stringify({ data: saveable, savedAt: new Date().toISOString() })
+      );
+      setLastSavedAt(new Date().toISOString());
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [formData, isDraftLoaded]);
+
+  return { showRestoreModal, restoreDraftMessage, handleRestoreDraft, handleDiscardDraft };
+};
+
+const useUnsavedChanges = (formData) => {
+  useEffect(() => {
+    const hasUnsavedChanges = Object.entries(formData).some(([key, value]) => {
+      if (key === "banner" || key === "bannerPreview") return false;
+      if (typeof value === "string") return value.trim() !== "";
+      if (Array.isArray(value)) return value.length > 0;
+      if (typeof value === "object" && value !== null) return JSON.stringify(value) !== "{}";
+      return Boolean(value);
+    });
+
+    const handleBeforeUnload = (e) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [formData]);
+};
+
+const useEventFormHandlers = (formData, setFormData, errors, setErrors, newTag, setNewTag, currentStep, setCurrentStep, submitEventForm) => {
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    if (name.startsWith("location.coordinates.")) {
+      const coordField = name.split(".")[2];
+      setFormData((prev) => ({
+        ...prev,
+        location: { ...prev.location, coordinates: { ...prev.location.coordinates, [coordField]: value } },
+      }));
+    } else if (name.startsWith("location.")) {
+      const locationField = name.split(".")[1];
+      setFormData((prev) => ({
+        ...prev,
+        location: { ...prev.location, [locationField]: value },
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: type === "checkbox" ? checked : value,
+      }));
+    }
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+  };
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
+    if (!allowedTypes.includes(file.type)) {
+      setErrors((prev) => ({ ...prev, banner: "Please upload a valid image file (JPG, PNG, GIF, or WebP)" }));
+      e.target.value = "";
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors((prev) => ({ ...prev, banner: "Image size should be less than 5MB" }));
+      e.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setFormData((prev) => ({ ...prev, banner: file, bannerPreview: event.target.result }));
+      if (errors.banner) {
+        setErrors((prev) => ({ ...prev, banner: "" }));
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const addTag = () => {
+    const trimmed = newTag.trim();
+    if (trimmed && !formData.tags.some((tag) => tag.toLowerCase() === trimmed.toLowerCase())) {
+      setFormData((prev) => ({ ...prev, tags: [...prev.tags, trimmed] }));
+      setNewTag("");
+    }
+  };
+
+  const removeTag = (tagToRemove) => {
+    setFormData((prev) => ({ ...prev, tags: prev.tags.filter((tag) => tag !== tagToRemove) }));
+  };
+
+  const handleNext = () => {
+    try {
+      if (currentStep === CREATION_STEPS.FORM) {
+        const newErrors = validateForm(formData);
+        setErrors(newErrors);
+        if (Object.keys(newErrors).length > 0) {
+          toast.error("Please fix the form errors before continuing.");
+          return;
+        }
+        setCurrentStep(CREATION_STEPS.PREVIEW);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    } catch (error) {
+      logger.error("Error progressing to next step:", error);
+      toast.error("Unable to continue to the next step.");
+    }
+  };
+
+  const createEvent = () => {
+    try {
+      const eventData = generateEventDataPayload(formData);
+      submitEventForm(eventData);
+    } catch (error) {
+      logger.error("Error creating event:", error);
+      toast.error(getErrorMessage(error));
+      setCurrentStep(CREATION_STEPS.FORM);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData(initialFormData);
+    setErrors({});
+    localStorage.removeItem(DRAFT_KEY);
+    setNewTag("");
+    setCurrentStep(CREATION_STEPS.FORM);
+  };
+
+  const handleDurationChange = (isMultiDay) => {
+    setFormData((prev) => ({
+      ...prev,
+      isMultiDay,
+      date: "",
+      startDate: "",
+      endDate: "",
+      startTime: "",
+      endTime: "",
+    }));
+    setErrors({});
+  };
+
+  return {
+    handleInputChange,
+    handleImageUpload,
+    addTag,
+    removeTag,
+    handleNext,
+    createEvent,
+    resetForm,
+    handleDurationChange
+  };
+};
+
 const EventCreation = () => {
   const prefersReducedMotion = useReducedMotion();
 
@@ -155,281 +380,27 @@ const EventCreation = () => {
   const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
   const [newTag, setNewTag] = useState("");
-  const [isDraftLoaded, setIsDraftLoaded] = useState(false);
-  const [showRestoreModal, setShowRestoreModal] = useState(false);
-  const [lastSavedAt, setLastSavedAt] = useState(null);
-  const [restoreDraftMessage, setRestoreDraftMessage] = useState(
-    "A previously saved event draft was found. Would you like to restore it?"
-  );
-  const location = useLocation();
+  const {
+    showRestoreModal,
+    restoreDraftMessage,
+    handleRestoreDraft,
+    handleDiscardDraft
+  } = useDraftManager(formData, setFormData);
 
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    if (name.startsWith("location.coordinates.")) {
-      const coordField = name.split(".")[2];
-      setFormData((prev) => ({
-        ...prev,
-        location: {
-          ...prev.location,
-          coordinates: {
-            ...prev.location.coordinates,
-            [coordField]: value,
-          },
-        },
-      }));
-    } else if (name.startsWith("location.")) {
-      const locationField = name.split(".")[1];
-      setFormData((prev) => ({
-        ...prev,
-        location: {
-          ...prev.location,
-          [locationField]: value,
-        },
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: type === "checkbox" ? checked : value,
-      }));
-    }
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
-  };
+  useUnsavedChanges(formData);
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files?.[0];
+  const {
+    handleInputChange,
+    handleImageUpload,
+    addTag,
+    removeTag,
+    handleNext,
+    createEvent,
+    resetForm,
+    handleDurationChange
+  } = useEventFormHandlers(formData, setFormData, errors, setErrors, newTag, setNewTag, currentStep, setCurrentStep, submitEventForm);
 
-    if (!file) return;
 
-    const allowedTypes = [
-      "image/jpeg",
-      "image/jpg",
-      "image/png",
-      "image/webp",
-      "image/gif",
-    ];
-
-    if (!allowedTypes.includes(file.type)) {
-      setErrors((prev) => ({
-        ...prev,
-        banner: "Please upload a valid image file (JPG, PNG, GIF, or WebP)",
-      }));
-      e.target.value = "";
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      setErrors((prev) => ({
-        ...prev,
-        banner: "Image size should be less than 5MB",
-      }));
-      e.target.value = "";
-      return;
-    }
-
-    const reader = new FileReader();
-
-    reader.onload = (event) => {
-      setFormData((prev) => ({
-        ...prev,
-        banner: file,
-        bannerPreview: event.target.result,
-      }));
-
-      if (errors.banner) {
-        setErrors((prev) => ({ ...prev, banner: "" }));
-      }
-    };
-
-    reader.readAsDataURL(file);
-  };
-
-  const addTag = () => {
-    const trimmed = newTag.trim();
-    if (trimmed && !formData.tags.some((tag) => tag.toLowerCase() === trimmed.toLowerCase())) {
-      setFormData((prev) => ({
-        ...prev,
-        tags: [...prev.tags, trimmed],
-      }));
-      setNewTag("");
-    }
-  };
-
-  const removeTag = (tagToRemove) => {
-    setFormData((prev) => ({
-      ...prev,
-      tags: prev.tags.filter((tag) => tag !== tagToRemove),
-    }));
-  };
-
-  const handleNext = () => {
-    try {
-      if (currentStep === CREATION_STEPS.FORM) {
-        const newErrors = validateForm(formData);
-        setErrors(newErrors);
-
-        if (Object.keys(newErrors).length > 0) {
-          toast.error("Please fix the form errors before continuing.");
-          return;
-        }
-
-        setCurrentStep(CREATION_STEPS.PREVIEW);
-
-        window.scrollTo({
-          top: 0,
-          behavior: "smooth",
-        });
-      }
-    } catch (error) {
-      logger.error("Error progressing to next step:", error);
-
-      toast.error("Unable to continue to the next step.");
-    }
-  };
-
-  const createEvent = () => {
-    try {
-      const eventData = generateEventDataPayload(formData);
-      submitEventForm(eventData);
-    } catch (error) {
-      logger.error("Error creating event:", error);
-      toast.error(getErrorMessage(error));
-      setCurrentStep(CREATION_STEPS.FORM);
-    }
-  };
-
-  useEffect(() => {
-    const saved = localStorage.getItem(DRAFT_KEY);
-    const isDuplicateDraft = location.state?.duplicateDraft;
-
-    if (saved) {
-      setShowRestoreModal(true);
-      if (isDuplicateDraft) {
-        setRestoreDraftMessage(
-          "A duplicated event draft is ready. Would you like to restore it and continue editing?"
-        );
-      } else {
-        try {
-          const parsed = safeJsonParse(saved, {});
-          const savedAt = parsed?.savedAt;
-          setRestoreDraftMessage(
-            `A previously saved event draft was found${savedAt ? ` (saved ${formatDraftAge(savedAt)})` : ""}. Would you like to restore it?`
-          );
-        } catch {
-          // keep default message
-        }
-      }
-    }
-
-    setIsDraftLoaded(true);
-  }, [location.state]);
-
-  const handleRestoreDraft = () => {
-    try {
-      const saved = localStorage.getItem(DRAFT_KEY);
-
-      if (saved) {
-        const parsed = safeJsonParse(saved, {});
-        // Draft is stored as { data: formFields, savedAt: "..." }
-        // Spread parsed.data; fall back to parsed itself for legacy plain-object drafts
-        const restoredData = parsed?.data || parsed;
-
-        setFormData((prev) => ({
-          ...prev,
-          ...restoredData,
-          banner: null,
-          bannerPreview: null,
-        }));
-
-        toast.success("Draft restored successfully!");
-      }
-    } catch (error) {
-      logger.error(error);
-    }
-
-    setShowRestoreModal(false);
-  };
-
-  const handleDiscardDraft = () => {
-    localStorage.removeItem(DRAFT_KEY);
-    setShowRestoreModal(false);
-    toast.info("Saved draft discarded.");
-  };
-
-  useEffect(() => {
-    if (!isDraftLoaded) return;
-
-    const timer = setTimeout(() => {
-      const saveable = { ...formData };
-      delete saveable.banner;
-      delete saveable.bannerPreview;
-
-      localStorage.setItem(
-        DRAFT_KEY,
-        JSON.stringify({ data: saveable, savedAt: new Date().toISOString() })
-      );
-      setLastSavedAt(new Date().toISOString());
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [formData, isDraftLoaded]);
-
-  useEffect(() => {
-    const hasUnsavedChanges = Object.entries(formData).some(([key, value]) => {
-      if (key === "banner" || key === "bannerPreview") {
-        return false;
-      }
-
-      if (typeof value === "string") {
-        return value.trim() !== "";
-      }
-
-      if (Array.isArray(value)) {
-        return value.length > 0;
-      }
-
-      if (typeof value === "object" && value !== null) {
-        return JSON.stringify(value) !== "{}";
-      }
-
-      return Boolean(value);
-    });
-
-    const handleBeforeUnload = (e) => {
-      if (hasUnsavedChanges) {
-        e.preventDefault();
-        e.returnValue = "";
-      }
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
-  }, [formData]);
-
-  const resetForm = () => {
-    setFormData(initialFormData);
-    setErrors({});
-    localStorage.removeItem(DRAFT_KEY);
-    setNewTag("");
-    setCurrentStep(CREATION_STEPS.FORM);
-  };
-
-  const handleDurationChange = (isMultiDay) => {
-    setFormData((prev) => ({
-      ...prev,
-      isMultiDay,
-      date: "",
-      startDate: "",
-      endDate: "",
-      startTime: "",
-      endTime: "",
-    }));
-    setErrors({});
-  };
 
   return (
     <div className="min-h-screen bg-linear-to-r from-indigo-100 to-white dark:from-gray-900 dark:to-black flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
