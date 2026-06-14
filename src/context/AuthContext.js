@@ -317,6 +317,8 @@ export const AuthProvider = ({ children }) => {
         return true;
       } catch (error) {
         if (!isMountedRef.current) return false;
+         // Fix (Issue #8646):
+        document.cookie = "token=; Max-Age=0; path=/; Secure; SameSite=Strict";
         setAuthRequestState({ loading: false, error: getAuthErrorMessage(error, "Login failed. Please try again.") });
         return false;
       }
