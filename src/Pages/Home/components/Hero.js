@@ -23,7 +23,12 @@ import useReducedMotion from "../../../hooks/useReducedMotion.js";
 import eventsData from "../../Events/eventsMockData.json";
 import hackathonsData from "../../Hackathons/hackathonMockData.json";
 import projectsData from "../../Projects/mockProjectsData.json";
-
+import React, {
+  useEffect,
+  useState,
+  useRef,
+  useCallback
+} from "react";
 const CountUp = CountUpLib.default || CountUpLib;
 
 // ─── MOTION LINK SUB-COMPONENT ──────────────────────────────────────────────

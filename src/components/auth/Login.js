@@ -7,6 +7,17 @@ import { toast } from "react-toastify";
 import { showAuthToast } from "../../utils/toast";
 import { getPublicErrorMessage, AUTH_ERRORS } from "../../utils/errorMessages";
 import useReducedMotion from "../../hooks/useReducedMotion";
+import FieldError from '../common/FieldError';
+import useLoginRateLimit from '../../hooks/useLoginRateLimit';
+import { MAX_LOGIN_ATTEMPTS, parseRetryAfterMs } from '../../utils/rateLimitUtils';
+import '../../styles/auth.css';
+import {
+  canAttempt,
+  clearAttempts,
+  incrementFailures,
+  resetFailures,
+  getBackoffDelay,
+} from "../../utils/authRateLimiter";
 import FieldError from "../common/FieldError";
 import useLoginRateLimit from "../../hooks/useLoginRateLimit";
 import { MAX_LOGIN_ATTEMPTS, parseRetryAfterMs } from "../../utils/rateLimitUtils";
@@ -70,17 +81,36 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (authRequest.loading) return;
+  if (authRequest.loading) return;
     if (isLockedOut()) return;
     if (!validate()) return;
 
     try {
       const sanitizedUsernameOrEmail = formData.usernameOrEmail.trim();
+      if (!canAttempt("login")) {
+        toast.error(
+          "Too many login attempts. Please wait 30 seconds before trying again."
+        );
+        return;
+      }
       const ok = await login(sanitizedUsernameOrEmail, formData.password);
       if (ok) {
-        resetAttempts();
-        showAuthToast("Login successful! Redirecting to dashboard...", () =>
-          navigate("/dashboard", { replace: true })
+        clearAttempts("login");
+        resetFailures("login");
+
+        showAuthToast(
+          "Login successful! Redirecting to dashboard...",
+          () => navigate("/dashboard", { replace: true })
+        );
+      } 
+      else {
+        incrementFailures("login");
+
+        const delay =
+          getBackoffDelay("login") / 1000;
+
+        toast.info(
+          `Security cooldown: Please wait ${delay} seconds before trying again.`
         );
       }
     } catch (err) {
