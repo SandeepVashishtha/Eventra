@@ -140,9 +140,6 @@ const SearchFilter = () => {
     const matchesLocation =
       selectedLocation === "all" || normalizedLocation === selectedLocation;
     const matchesPrice = priceFilter === "all" || event.price === priceFilter;
-
-    const matchesLocation = selectedLocation === 'all' || (normalizedLocation === selectedLocation);
-    const matchesPrice = priceFilter === 'all' || event.price === priceFilter;
     const today = new Date();
 const eventDate = new Date(event.date);
 
