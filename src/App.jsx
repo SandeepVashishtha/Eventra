@@ -301,7 +301,7 @@ function App() {
                 </ErrorBoundary>
                 )}
 
-                <ErrorButton />
+                {import.meta.env.DEV && <ErrorButton />}
               </div>
             </SessionRecoveryProvider>
           </MyEventsProvider>
