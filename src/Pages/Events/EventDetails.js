@@ -1,4 +1,11 @@
 import "./EventDetails.print.css";
+import { fetchRegistrantsForExport } from "../../utils/registrantUtils";
+import { createDuplicateDraft } from "../../utils/eventDraftUtils";
+import EventHeaderActions from "../../components/events/EventHeaderActions";
+import EventShareSidebar from "../../components/events/EventShareSidebar";
+import EventDetailsGrid from "../../components/events/EventDetailsGrid";
+import EventInfoSection from "../../components/events/EventInfoSection";
+import EventAgenda from "../../components/events/EventAgenda";
 import CountdownTimer from "../../components/common/CountdownTimer";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Helmet } from "react-helmet-async";
@@ -37,14 +44,6 @@ const isRequestCanceled = (error, signal) =>
   error?.name === "AbortError" ||
   error?.name === "CanceledError" ||
   error?.code === "ERR_CANCELED";
-
-import { fetchRegistrantsForExport } from "../../utils/registrantUtils";
-import { createDuplicateDraft } from "../../utils/eventDraftUtils";
-import EventHeaderActions from "../../components/events/EventHeaderActions";
-import EventShareSidebar from "../../components/events/EventShareSidebar";
-import EventDetailsGrid from "../../components/events/EventDetailsGrid";
-import EventInfoSection from "../../components/events/EventInfoSection";
-
 const EventDetails = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
