@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { ChevronDown, ChevronUp, RotateCcw } from "lucide-react";
+import { useState } from "react";
+import { ChevronDown, ChevronUp, MapPin, RotateCcw } from "lucide-react";
 import CategoryFilter from "./CategoryFilter";
 import ModeFilter from "./ModeFilter";
 import StatusFilter from "./StatusFilter";
@@ -9,8 +9,12 @@ import {
   EVENT_CATEGORIES,
   EVENT_MODES,
   EVENT_STATUS_OPTIONS,
+  EVENT_SKILL_LEVELS,
+  EVENT_TAGS,
+  FILTER_PRESETS,
   hasActiveFilters,
   getDefaultFilters,
+  normalizeAdvancedFilters,
 } from "../../utils/advancedFilterUtils";
 
 /**
@@ -29,6 +33,9 @@ const AdvancedFilterPanel = ({
     category: true,
     mode: true,
     status: true,
+    skillLevel: true,
+    tags: false,
+    location: false,
     price: false,
     date: false,
   });
@@ -52,6 +59,18 @@ const AdvancedFilterPanel = ({
     onFiltersChange({ ...filters, statuses });
   };
 
+  const handleSkillLevelChange = (skillLevels) => {
+    onFiltersChange({ ...filters, skillLevels });
+  };
+
+  const handleTagsChange = (tags) => {
+    onFiltersChange({ ...filters, tags });
+  };
+
+  const handleLocationChange = (event) => {
+    onFiltersChange({ ...filters, location: event.target.value });
+  };
+
   const handlePriceChange = (priceRange) => {
     onFiltersChange({
       ...filters,
@@ -72,6 +91,34 @@ const AdvancedFilterPanel = ({
 
   const handleClearAll = () => {
     onFiltersChange(getDefaultFilters());
+  };
+
+  const handlePresetApply = (presetFilters) => {
+    onFiltersChange(
+      normalizeAdvancedFilters({
+        ...filters,
+        ...presetFilters,
+      }),
+    );
+  };
+
+  const isSectionActive = (section) => {
+    switch (section) {
+      case "category":
+        return Array.isArray(filters.categories) && filters.categories.length > 0;
+      case "mode":
+        return Array.isArray(filters.modes) && filters.modes.length > 0;
+      case "status":
+        return Array.isArray(filters.statuses) && filters.statuses.length > 0;
+      case "location":
+        return typeof filters.location === "string" && filters.location.trim() !== "";
+      case "price":
+        return filters.priceRange !== null;
+      case "date":
+        return filters.dateRange !== null;
+      default:
+        return false;
+    }
   };
 
   const hasFilters = hasActiveFilters(filters);
@@ -123,13 +170,36 @@ const AdvancedFilterPanel = ({
       {/* Filters Panel */}
       {isOpen && (
         <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-4 sm:px-6 space-y-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">
+              Presets
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {FILTER_PRESETS.map((preset) => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  onClick={() => handlePresetApply(preset.filters)}
+                  className="px-3 py-1.5 text-xs font-medium rounded-full border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors"
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Category Filter Section */}
           <div>
             <button
               onClick={() => toggleSection("category")}
               className="w-full flex items-center justify-between py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
             >
-              <span>Categories</span>
+              <span className="flex items-center gap-2">
+                <span>Categories</span>
+                {isSectionActive("category") && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50 animate-pulse" aria-hidden="true" />
+                )}
+              </span>
               <ChevronDown
                 size={16}
                 className={`transition-transform ${
@@ -154,7 +224,12 @@ const AdvancedFilterPanel = ({
               onClick={() => toggleSection("mode")}
               className="w-full flex items-center justify-between py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
             >
-              <span>Event Mode</span>
+              <span className="flex items-center gap-2">
+                <span>Event Mode</span>
+                {isSectionActive("mode") && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50 animate-pulse" aria-hidden="true" />
+                )}
+              </span>
               <ChevronDown
                 size={16}
                 className={`transition-transform ${
@@ -179,7 +254,12 @@ const AdvancedFilterPanel = ({
               onClick={() => toggleSection("status")}
               className="w-full flex items-center justify-between py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
             >
-              <span>Event Status</span>
+              <span className="flex items-center gap-2">
+                <span>Event Status</span>
+                {isSectionActive("status") && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50 animate-pulse" aria-hidden="true" />
+                )}
+              </span>
               <ChevronDown
                 size={16}
                 className={`transition-transform ${
@@ -198,13 +278,103 @@ const AdvancedFilterPanel = ({
             )}
           </div>
 
+          {/* Skill Level Filter Section */}
+          <div>
+            <button
+              onClick={() => toggleSection("skillLevel")}
+              className="w-full flex items-center justify-between py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
+            >
+              <span>Skill Level</span>
+              <ChevronDown
+                size={16}
+                className={`transition-transform ${expandedSections.skillLevel ? "rotate-180" : ""}`}
+              />
+            </button>
+            {expandedSections.skillLevel && (
+              <div className="mt-3">
+                <CategoryFilter
+                  categories={EVENT_SKILL_LEVELS}
+                  selectedCategories={filters.skillLevels || []}
+                  onCategoryChange={handleSkillLevelChange}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Tags Filter Section */}
+          <div>
+            <button
+              onClick={() => toggleSection("tags")}
+              className="w-full flex items-center justify-between py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
+            >
+              <span>Tags</span>
+              <ChevronDown
+                size={16}
+                className={`transition-transform ${expandedSections.tags ? "rotate-180" : ""}`}
+              />
+            </button>
+            {expandedSections.tags && (
+              <div className="mt-3">
+                <CategoryFilter
+                  categories={EVENT_TAGS.map(t => ({ id: t, label: t }))}
+                  selectedCategories={filters.tags || []}
+                  onCategoryChange={handleTagsChange}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Location Filter Section */}
+          <div>
+            <button
+              onClick={() => toggleSection("location")}
+              className="w-full flex items-center justify-between py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
+            >
+              <span className="flex items-center gap-2">
+                <span>Location</span>
+                {isSectionActive("location") && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50 animate-pulse" aria-hidden="true" />
+                )}
+              </span>
+              <ChevronDown
+                size={16}
+                className={`transition-transform ${
+                  expandedSections.location ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+            {expandedSections.location && (
+              <div className="mt-3">
+                <label htmlFor="event-location-filter" className="sr-only">
+                  Filter by location
+                </label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  <input
+                    id="event-location-filter"
+                    type="text"
+                    value={filters.location || ""}
+                    onChange={handleLocationChange}
+                    placeholder="City, venue, or region"
+                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Price Range Section */}
           <div>
             <button
               onClick={() => toggleSection("price")}
               className="w-full flex items-center justify-between py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
             >
-              <span>Price Range</span>
+              <span className="flex items-center gap-2">
+                <span>Price Range</span>
+                {isSectionActive("price") && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50 animate-pulse" aria-hidden="true" />
+                )}
+              </span>
               <ChevronDown
                 size={16}
                 className={`transition-transform ${
@@ -231,7 +401,12 @@ const AdvancedFilterPanel = ({
               onClick={() => toggleSection("date")}
               className="w-full flex items-center justify-between py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
             >
-              <span>Date Range</span>
+              <span className="flex items-center gap-2">
+                <span>Date Range</span>
+                {isSectionActive("date") && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50 animate-pulse" aria-hidden="true" />
+                )}
+              </span>
               <ChevronDown
                 size={16}
                 className={`transition-transform ${

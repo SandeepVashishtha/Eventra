@@ -1,4 +1,4 @@
-import { sanitizeSessionState, sanitizeSessionValue } from "./sessionSanitization";
+import { sanitizeSessionState } from "./sessionSanitization";
 
 describe("sanitizeSessionState", () => {
   it("redacts all known sensitive keys regardless of camelCase or snake_case", () => {

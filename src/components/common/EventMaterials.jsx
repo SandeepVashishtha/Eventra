@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Download, Loader2, CheckCircle, Server, Zap, Sparkles, HelpCircle } from "lucide-react";
 import { isFileCached, getCachedFile, simulateServerDownload, P2PFileTransferCoordinator } from "../../utils/p2pFileTransfer";

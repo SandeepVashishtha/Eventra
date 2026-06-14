@@ -1,13 +1,28 @@
 import { defineConfig, loadEnv, transformWithOxc } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 // Quick regex to detect JSX syntax — lets us skip transformWithOxc
 // on plain .js files that have no JSX (the common case).
 const JSX_HINT_RE = /<[A-Za-z][A-Za-z0-9.]*[\s\n\r/>]|<>/;
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), "");
+  
+
+const env = loadEnv(mode, process.cwd(), "");
+  const backendTarget =
+    env.BACKEND_URL ||
+    env.VITE_API_URL?.replace(/\/api\/?$/, "") ||
+    env.REACT_APP_API_URL?.replace(/\/api\/?$/, "");
+
+  if (!backendTarget) {
+    throw new Error(
+      "Backend URL is not configured. Set BACKEND_URL, VITE_API_URL, or REACT_APP_API_URL before starting the application."
+    );
+  }
 
   return {
     plugins: [
@@ -42,26 +57,29 @@ export default defineConfig(({ mode }) => {
       },
     },
 
-    envPrefix: ["VITE_", "REACT_APP_"],
-    define: {
-      "process.env.NODE_ENV": JSON.stringify(mode),
-      "process.env.PUBLIC_URL": JSON.stringify(""),
-      ...Object.keys(env)
-        .filter((key) => key.startsWith("REACT_APP_") || key.startsWith("VITE_"))
-        .reduce((prev, key) => {
-          prev[`process.env.${key}`] = JSON.stringify(env[key]);
-          return prev;
-        }, {}),
-    },
-
     server: {
       port: 3000,
       open: false,
       hmr: { overlay: true },
+      proxy: {
+        "/api": {
+          target: backendTarget,
+          changeOrigin: true,
+        },
+        "/stream": {
+          target: backendTarget,
+          changeOrigin: true,
+        },
+      },
     },
 
     // Pre-bundle heavy deps once → node_modules/.vite/deps
     optimizeDeps: {
+      rolldownOptions: {
+        moduleTypes: {
+          ".js": "jsx",
+        },
+      },
       include: [
         "react",
         "react-dom",
@@ -85,21 +103,15 @@ export default defineConfig(({ mode }) => {
         "idb-keyval",
         "aos",
       ],
-      // The dep scanner uses esbuild under the hood and needs to know .js files
-      // may contain JSX. esbuildOptions is deprecated in Vite 8 but rolldownOptions
-      // has no equivalent `loader` key yet — this suppresses the scan PARSE_ERROR.
-      esbuildOptions: {
-        loader: { ".js": "jsx" },
-      },
     },
 
     build: {
       outDir: "build",
       sourcemap: false,
       minify: "esbuild",
-      // Disable CSS minification — lightningcss (Vite 8 default) cannot parse
-      // the custom Tailwind `short` screen: (max-height: 520px) media query.
-      cssMinify: false,
+      // Use esbuild for CSS minification instead of the default lightningcss,
+      // which cannot parse the custom Tailwind `short` screen media query.
+      cssMinify: "esbuild",
       chunkSizeWarningLimit: 1500,
       rollupOptions: {
         output: {

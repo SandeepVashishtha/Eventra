@@ -1,7 +1,9 @@
-import React from "react";
-import { X } from "lucide-react";
 import FilterBadge from "../../components/common/FilterBadge";
-import { getCategoryLabel } from "../../utils/advancedFilterUtils";
+import {
+  getCategoryLabel,
+  getDefaultFilters,
+  hasActiveFilters,
+} from "../../utils/advancedFilterUtils";
 
 const FILTER_LABELS = {
   all: "All",
@@ -11,24 +13,14 @@ const FILTER_LABELS = {
   workshop: "Workshops",
 };
 
-const Badge = ({ children, onClear }) => (
-  <span className="inline-flex items-center gap-2 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 px-3 py-1 rounded-full text-sm shadow-sm border border-gray-200 dark:border-gray-700">
-    <span className="truncate max-w-[12rem]">{children}</span>
-    <button
-      onClick={onClear}
-      aria-label="Remove filter"
-      className="opacity-70 hover:opacity-100 ml-1 -mr-1 p-1 rounded-full transition"
-    >
-      <X size={14} />
-    </button>
-  </span>
-);
 
 const ActiveFilters = ({
   searchQuery,
   setSearchQuery,
   filterType,
   setFilterType,
+  categoryFilter,
+  setCategoryFilter,
   sortType,
   setSortType,
   viewMode,
@@ -38,28 +30,21 @@ const ActiveFilters = ({
 }) => {
   const hasSearch = searchQuery && searchQuery.trim() !== "";
   const hasType = filterType && filterType !== "all";
+  const hasCategory = categoryFilter && categoryFilter !== "all";
   const hasSort = sortType && sortType !== "Newest";
   const hasView = viewMode && viewMode !== "grid";
-  const hasAdvancedFilters =
-    (advancedFilters.categories && advancedFilters.categories.length > 0) ||
-    (advancedFilters.modes && advancedFilters.modes.length > 0) ||
-    (advancedFilters.statuses && advancedFilters.statuses.length > 0) ||
-    (advancedFilters.priceRange &&
-      (advancedFilters.priceRange.min > 0 ||
-        advancedFilters.priceRange.max < Infinity)) ||
-    (advancedFilters.dateRange &&
-      (advancedFilters.dateRange.startDate ||
-        advancedFilters.dateRange.endDate));
+  const hasAdvancedFilters = hasActiveFilters(advancedFilters);
 
   const anyActive =
-    hasSearch || hasType || hasSort || hasView || hasAdvancedFilters;
+    hasSearch || hasType || hasCategory || hasSort || hasView || hasAdvancedFilters;
 
   const clearAll = () => {
-    setSearchQuery && setSearchQuery("");
-    setFilterType && setFilterType("all");
-    setSortType && setSortType("Newest");
-    setViewMode && setViewMode("grid");
-    onAdvancedFiltersChange && onAdvancedFiltersChange({});
+    if (typeof setSearchQuery === "function") setSearchQuery("");
+    if (typeof setFilterType === "function") setFilterType("all");
+    if (typeof setCategoryFilter === "function") setCategoryFilter("all");
+    if (typeof setSortType === "function") setSortType("Newest");
+    if (typeof setViewMode === "function") setViewMode("grid");
+    if (typeof onAdvancedFiltersChange === "function") onAdvancedFiltersChange(getDefaultFilters());
   };
 
   const removeCategory = (category) => {
@@ -104,6 +89,13 @@ const ActiveFilters = ({
     });
   };
 
+  const clearLocation = () => {
+    onAdvancedFiltersChange({
+      ...advancedFilters,
+      location: "",
+    });
+  };
+
   if (!anyActive) return null;
 
   return (
@@ -122,6 +114,14 @@ const ActiveFilters = ({
             label={`Type: ${FILTER_LABELS[filterType] || filterType}`}
             onRemove={() => setFilterType("all")}
             variant="primary"
+          />
+        )}
+
+        {hasCategory && (
+          <FilterBadge
+            label={`Category: ${categoryFilter.split("-").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ")}`}
+            onRemove={() => setCategoryFilter("all")}
+            variant="success"
           />
         )}
 
@@ -170,6 +170,14 @@ const ActiveFilters = ({
               variant="warning"
             />
           ))}
+
+        {advancedFilters.location && (
+          <FilterBadge
+            label={`Location: ${advancedFilters.location}`}
+            onRemove={clearLocation}
+            variant="success"
+          />
+        )}
 
         {advancedFilters.priceRange && (
           <FilterBadge

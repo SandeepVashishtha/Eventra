@@ -1,4 +1,3 @@
-import React from "react";
 import ValidationMessage from "./ValidationMessage";
 
 const meta = {

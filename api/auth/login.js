@@ -1,330 +1,203 @@
+/**
+ * Authentication login endpoint with server-side rate limiting.
+ *
+ * Previously the login handler ran bcrypt.compare on every request with no
+ * throttling, allowing unlimited credential-stuffing and brute-force attempts
+ * from a single IP. This handler applies the same per-IP rate limiting already
+ * used by the GitHub proxy and AI recommendation endpoints before any password
+ * comparison is performed.
+ *
+ * Defence layers, in order:
+ *   1. Method guard (POST only)
+ *   2. Per-IP rate limit (5 attempts per minute) enforced before bcrypt
+ *   3. Input validation
+ *   4. Constant-time-ish credential verification via bcrypt
+ *   5. Generic error messages to prevent account enumeration
+ */
+
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { users } from "./signup.js";
-import { getJwtSecret, JWT_EXPIRES_IN } from "./jwt-config.js";
+import { getClientIp } from "../_lib/getClientIp.js";
+import { loginRateLimiter, enforceRateLimit } from "../_lib/rateLimiter.js";
+import { getJwtSecret, JWT_EXPIRES_IN, JWT_COOKIE_MAX_AGE_SECONDS } from "./_jwt-config.js";
+import { buildCorsHeaders, corsResponse } from "./_cors.js";
+import { isStorageHealthy, getUserByEmail, getUserByUsername } from "./_user-storage.js";
 
-// Pre-compute a dummy bcrypt hash at module load time (same cost factor used in signup.js).
-// When a login attempt references a username or email that does not exist, we still run
-// bcrypt.compare against this hash so the response time is indistinguishable from a real
-// failed-password attempt. Without this, an attacker can enumerate valid account identifiers
-// purely from response timing (user-not-found path: <5 ms vs valid-user path: ~100 ms).
-const DUMMY_HASH_PROMISE = bcrypt.hash("__eventra_dummy_constant__", 12);
-
-// ---------------------------------------------------------------------------
-// JWT Configuration
-// ---------------------------------------------------------------------------
-
-const JWT_SECRET = getJwtSecret();
-
-// ---------------------------------------------------------------------------
-// Validation Helpers
-// ---------------------------------------------------------------------------
-
-const validateLoginInput = (usernameOrEmail, password) => {
-  const errors = [];
-  
-  if (!usernameOrEmail || !usernameOrEmail.trim()) {
-    errors.push("Username or email is required");
+/**
+ * Validates the login request body.
+ *
+ * @param {Object} body
+ * @returns {{ valid: boolean, message?: string }}
+ */
+function validateLoginInput(body) {
+  if (!body || typeof body !== "object") {
+    return { valid: false, message: "Request body is required" };
   }
-  
+
+  const usernameOrEmail = body.usernameOrEmail || body.email;
+  const { password } = body;
+
+  if (!usernameOrEmail?.trim()) {
+    return { valid: false, message: "Username or email is required" };
+  }
+
   if (!password) {
-    errors.push("Password is required");
-  }
-  
-  return errors;
-};
-
-// ---------------------------------------------------------------------------
-// CORS Headers
-// ---------------------------------------------------------------------------
-
-const corsHeaders = (req) => {
-  const allowedOrigin = process.env.ALLOWED_ORIGIN;
-  const requestOrigin = req.headers?.origin;
-
-  const corsOrigin = allowedOrigin || "*";
-  if (allowedOrigin && requestOrigin !== allowedOrigin) {
-    console.warn(`[CORS] Origin mismatch - Request: ${requestOrigin}, Allowed: ${allowedOrigin}`);
+    return { valid: false, message: "Password is required" };
   }
 
-  // Access-Control-Allow-Credentials must not be sent with a wildcard origin.
-  // Per the CORS spec, browsers reject credentialed responses when the reflected
-  // origin is "*". Only set the header when a specific origin is configured.
-  const isSpecificOrigin = corsOrigin !== "*";
+  return { valid: true };
+}
 
-  return {
-    "Access-Control-Allow-Origin": corsOrigin,
-    ...(isSpecificOrigin && { "Access-Control-Allow-Credentials": "true" }),
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  };
-};
-
-const corsResponse = (res, status, data, req) => {
-  return res.status(status).set(corsHeaders(req)).json(data);
-};
-
-// ---------------------------------------------------------------------------
-// Default Permissions based on roles
-// ---------------------------------------------------------------------------
-
-const ROLE_PERMISSIONS = {
-  SUPER_ADMIN: [
-    "events:view",
-    "events:create",
-    "events:edit",
-    "events:delete",
-    "events:register",
-    "hackathons:view",
-    "hackathons:host",
-    "hackathons:participate",
-    "projects:view",
-    "projects:submit",
-    "projects:upvote",
-    "users:view",
-    "users:edit",
-    "users:delete",
-    "analytics:view",
-    "content:moderate",
-    "profile:edit",
-    "profile:view",
-    "notifications:manage",
-    "admin:access",
-  ],
-  ADMIN: [
-    "events:view",
-    "events:create",
-    "events:edit",
-    "events:delete",
-    "events:register",
-    "hackathons:view",
-    "hackathons:host",
-    "hackathons:participate",
-    "projects:view",
-    "projects:submit",
-    "projects:upvote",
-    "users:view",
-    "analytics:view",
-    "content:moderate",
-    "profile:edit",
-    "profile:view",
-    "notifications:manage",
-    "admin:access",
-  ],
-  ORGANIZER: [
-    "events:view",
-    "events:create",
-    "events:edit",
-    "events:register",
-    "hackathons:view",
-    "hackathons:host",
-    "hackathons:participate",
-    "projects:view",
-    "projects:submit",
-    "projects:upvote",
-    "analytics:view",
-    "profile:edit",
-    "profile:view",
-  ],
-  VOLUNTEER: [
-    "events:view",
-    "events:register",
-    "hackathons:view",
-    "hackathons:participate",
-    "projects:view",
-    "projects:submit",
-    "projects:upvote",
-    "content:moderate",
-    "profile:edit",
-    "profile:view",
-  ],
-  ATTENDEE: [
-    "events:view",
-    "events:register",
-    "hackathons:view",
-    "hackathons:participate",
-    "projects:view",
-    "projects:submit",
-    "projects:upvote",
-    "profile:edit",
-    "profile:view",
-  ],
-  USER: [
-    "events:view",
-    "events:register",
-    "projects:view",
-    "projects:submit",
-    "hackathons:view",
-    "hackathons:participate",
-    "profile:edit",
-    "profile:view",
-  ],
-};
-
-const getPermissionsForRoles = (roles) => {
-  const permissionsSet = new Set();
-  roles.forEach((role) => {
-    const normalizedRole = role.toUpperCase();
-    const perms = ROLE_PERMISSIONS[normalizedRole] || ROLE_PERMISSIONS.USER;
-    perms.forEach((perm) => permissionsSet.add(perm));
-  });
-  return Array.from(permissionsSet);
-};
-
-// ---------------------------------------------------------------------------
-// Find user by username or email
-// ---------------------------------------------------------------------------
-
-const findUserByUsernameOrEmail = (usernameOrEmail) => {
-  const normalizedInput = usernameOrEmail.trim().toLowerCase();
-  
-  // Search through all users
-  for (const [key, user] of users.entries()) {
-    if (
-      user.email === normalizedInput ||
-      user.username === normalizedInput ||
-      user.email === usernameOrEmail.trim() ||
-      user.username === usernameOrEmail.trim()
-    ) {
-      return user;
-    }
-  }
-  return null;
-};
-
-// ---------------------------------------------------------------------------
-// Login Handler
-// ---------------------------------------------------------------------------
-
-export default async function handler(req, res) {
-  // Handle CORS preflight
-  if (req.method === "OPTIONS") {
-    return res.status(200).set(corsHeaders(req)).end();
-  }
-
-  // Only allow POST requests
-  if (req.method !== "POST") {
-    return corsResponse(res, 405, { error: "Method not allowed" }, req);
-  }
-
+function setCookie(res, token) {
+  const isProd = process.env.NODE_ENV === "production";
+  const cookieValue = `token=${token}; HttpOnly; Path=/; Max-Age=${JWT_COOKIE_MAX_AGE_SECONDS}; SameSite=Strict${isProd ? '; Secure' : ''}`;
   try {
-    const { usernameOrEmail, password } = req.body;
-
-    // -----------------------------------------------------------------------
-    // Input Validation
-    // -----------------------------------------------------------------------
-
-    const validationErrors = validateLoginInput(usernameOrEmail, password);
-    if (validationErrors.length > 0) {
-      return corsResponse(res, 400, { 
-        error: validationErrors.join(", ") 
-      }, req);
+    if (typeof res.setHeader === 'function') {
+      res.setHeader('Set-Cookie', cookieValue);
+    } else if (typeof res.set === 'function') {
+      res.set({ 'Set-Cookie': cookieValue });
+    } else if (res.headers && typeof res.headers === 'object') {
+      res.headers['Set-Cookie'] = cookieValue;
     }
-
-    // -----------------------------------------------------------------------
-    // Find user by username or email
-    // -----------------------------------------------------------------------
-
-    const user = findUserByUsernameOrEmail(usernameOrEmail);
-
-    // -----------------------------------------------------------------------
-    // Verify password using BCrypt
-    // Always run bcrypt.compare regardless of whether the user exists so that
-    // response time is uniform across all failure modes. This eliminates the
-    // timing side-channel that would otherwise reveal valid account identifiers.
-    // -----------------------------------------------------------------------
-
-    const hashToCompare = user ? user.password : await DUMMY_HASH_PROMISE;
-    const isPasswordValid = await bcrypt.compare(password, hashToCompare);
-
-    if (!user || !isPasswordValid) {
-      return corsResponse(res, 401, {
-        error: "Invalid credentials"
-      }, req);
-    }
-
-    // Check if user is active after confirming identity to keep timing uniform
-    if (user.isActive === false) {
-      return corsResponse(res, 401, {
-        error: "Invalid credentials"
-      }, req);
-    }
-
-    // -----------------------------------------------------------------------
-    // Get permissions based on roles
-    // -----------------------------------------------------------------------
-
-    const roles = user.roles || ["USER"];
-    const permissions = getPermissionsForRoles(roles);
-
-    // -----------------------------------------------------------------------
-    // Generate JWT token
-    // -----------------------------------------------------------------------
-
-    const jwtPayload = {
-      id: user.id,
-      email: user.email,
-      username: user.username,
-      roles: roles,
-      permissions: permissions,
-    };
-
-    const token = jwt.sign(jwtPayload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
-
-    // -----------------------------------------------------------------------
-    // Prepare response (exclude sensitive data)
-    // -----------------------------------------------------------------------
-
-    // Normalize role for response (use first role as primary)
-    const primaryRole = roles[0] || "ATTENDEE";
-    
-    // Normalize EVENT_MANAGER to ORGANIZER for frontend compatibility
-    const normalizedRole = primaryRole === "EVENT_MANAGER" ? "ORGANIZER" : primaryRole;
-
-    const userResponse = {
-      id: user.id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      username: user.username,
-      role: normalizedRole,
-      roles: roles,
-      permissions: permissions,
-    };
-
-    const isProd = process.env.NODE_ENV === "production";
-    const cookieValue = `token=${token}; HttpOnly; Path=/; Max-Age=86400; SameSite=Strict${isProd ? '; Secure' : ''}`;
-    // Set cookie compatibly across test mocks (which may provide `set` instead of `setHeader`)
-    try {
-      if (typeof res.setHeader === 'function') {
-        res.setHeader('Set-Cookie', cookieValue);
-      } else if (typeof res.set === 'function') {
-        res.set({ 'Set-Cookie': cookieValue });
-      } else if (res.headers && typeof res.headers === 'object') {
-        res.headers['Set-Cookie'] = cookieValue;
-      }
-    } catch (e) {
-      // Ignore write errors on test response objects
-    }
-
-    return corsResponse(res, 200, {
-      message: "Login successful",
-      token,
-      tokenType: "Bearer",
-      ...userResponse,
-    }, req);
-
-  } catch (error) {
-    console.error("Login Error:", error);
-    return corsResponse(res, 500, { 
-      error: "Internal server error. Please try again later." 
-    }, req);
+  } catch (e) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Export users map for sharing with signup.js (development purposes)
-// In production, replace with actual database
-// ---------------------------------------------------------------------------
+function buildUserResponse(user) {
+  const roles = user.roles || ["USER"];
+  const primaryRole = roles[0] || "ATTENDEE";
+  const normalizedRole = primaryRole === "EVENT_MANAGER" ? "ORGANIZER" : primaryRole;
+  return {
+    id: user.id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    email: user.email,
+    username: user.username,
+    role: normalizedRole,
+    roles: roles,
+    permissions: user.permissions || ["event:read"],
+  };
+}
 
-export { users };
+function createDefaultDeps() {
+  return {
+    findUserByEmail: async (ident) => {
+      const normalized = ident.trim().toLowerCase();
+      const userByEmail = users.get(normalized);
+      if (userByEmail) return userByEmail;
+      return usersByUsername.get(normalized);
+    },
+    comparePassword: async (plain, hash) => bcrypt.compare(plain, hash),
+    issueToken: (user) => {
+      const jwtPayload = {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        roles: user.roles || ["USER"],
+      };
+      return jwt.sign(jwtPayload, getJwtSecret(), { expiresIn: JWT_EXPIRES_IN });
+    },
+  };
+}
+
+/**
+ * Login handler.
+ *
+ * @param {Object} req - Request with method, body and headers
+ * @param {Object} res - Response exposing status()/setHeader()/json()
+ * @param {Object} [deps] - Injected dependencies for testability
+ * @param {Function} [deps.findUserByEmail] - async (email) => user | null
+ * @param {Function} [deps.comparePassword] - async (plain, hash) => boolean
+ * @param {Function} [deps.issueToken] - (user) => string
+ */
+export default async function login(req, res, deps = {}) {
+  // 1. Method guard
+  if (req.method === "OPTIONS") {
+    return corsResponse(req, res, 200);
+  }
+  if (req.method && req.method !== "POST") {
+    return corsResponse(req, res, 405, { error: "Method not allowed" });
+  }
+
+  const clientIp = getClientIp(req);
+  try {
+    const rateLimitResult = loginRateLimiter.checkAsync 
+      ? await loginRateLimiter.checkAsync(clientIp)
+      : loginRateLimiter.check(clientIp);
+    
+    if (!rateLimitResult.allowed) {
+      return corsResponse(req, res, 429, {
+        success: false,
+        message: "Too many authentication attempts. Please try again later.",
+      });
+    }
+  } catch (rateLimitError) {
+    console.error('[login] Rate limit check failed:', rateLimitError.message);
+    return corsResponse(req, res, 500, {
+      success: false,
+      message: "Rate limiting service unavailable. Please try again later.",
+    });
+  }
+
+  const validation = validateLoginInput(req.body);
+  if (!validation.valid) {
+    return corsResponse(req, res, 400, { error: validation.message });
+  }
+
+  // Runtime protection: Reject requests if storage is unavailable
+  const storageHealthy = await isStorageHealthy();
+  if (!storageHealthy) {
+    console.error("[login.js] Authentication service unavailable: storage not healthy");
+    return corsResponse(req, res, 500, { error: "Authentication service unavailable" });
+  }
+
+  const usernameOrEmail = req.body.usernameOrEmail || req.body.email;
+  const { password } = req.body;
+
+  const {
+    findUserByEmail = async (ident) => {
+      const normalized = ident.trim().toLowerCase();
+      const userByEmail = await getUserByEmail(normalized);
+      if (userByEmail) return userByEmail;
+      return await getUserByUsername(normalized);
+    },
+    comparePassword = async (plain, hash) => {
+      return bcrypt.compare(plain, hash);
+    },
+    issueToken = (user) => {
+      const jwtPayload = {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        roles: user.roles || ["USER"],
+      };
+      return jwt.sign(jwtPayload, getJwtSecret(), { expiresIn: JWT_EXPIRES_IN });
+    },
+  } = deps;
+
+  const mergedDeps = { findUserByEmail, comparePassword, issueToken, ...deps };
+
+  try {
+    const user = await mergedDeps.findUserByEmail(usernameOrEmail);
+
+    const dummyHash = "$2b$10$v18wNUUU7wTXyTbRPTFZTeze3aHS//qr4FKA9gu1E/GfNQqTsFfRG";
+    const passwordHash = user?.password ?? dummyHash;
+    const isValid = await mergedDeps.comparePassword(password, passwordHash);
+
+    if (!user || !isValid) {
+      return corsResponse(req, res, 401, { error: "Invalid credentials" });
+    }
+
+    const token = mergedDeps.issueToken(user);
+    if (token) setCookie(res, token);
+
+    const userResponse = buildUserResponse(user);
+
+    return corsResponse(req, res, 200, {
+      message: "Login successful",
+      ...userResponse,
+    });
+  } catch (err) {
+    return corsResponse(req, res, 500, { error: "Internal server error" });
+  }
+}

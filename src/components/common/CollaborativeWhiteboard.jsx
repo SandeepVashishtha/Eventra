@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Pencil, 
@@ -9,8 +9,7 @@ import {
   Trash2, 
   Download, 
   Users, 
-  Sparkles, 
-  Share2 
+  Sparkles
 } from "lucide-react";
 import { toast } from "react-toastify";
 
@@ -182,6 +181,8 @@ export default function CollaborativeWhiteboard() {
     // 1. Open Database & Load history
     initDB().then((db) => {
       loadHistory(db);
+    }).catch(() => {
+      console.warn("[Whiteboard] IndexedDB unavailable, starting with empty history");
     });
 
     // 2. Connect BroadcastChannel for real-time signaling P2P
@@ -213,6 +214,20 @@ export default function CollaborativeWhiteboard() {
             ...prev,
             [msg.id]: msg.stroke,
           }));
+          break;
+
+        case "WHITEBOARD_SHAPE_PREVIEW":
+          setRemoteActiveStrokes((prev) => {
+            const active = prev[msg.id];
+            if (!active) return prev;
+            return {
+              ...prev,
+              [msg.id]: {
+                ...active,
+                end: msg.end,
+              },
+            };
+          });
           break;
 
         case "WHITEBOARD_STROKE_DRAW":
@@ -251,6 +266,13 @@ export default function CollaborativeWhiteboard() {
             saveHistory(updated);
             return updated;
           });
+          if (msg.id) {
+            setRemoteActiveStrokes((prev) => {
+              const copy = { ...prev };
+              delete copy[msg.id];
+              return copy;
+            });
+          }
           break;
 
         case "WHITEBOARD_CLEAR":
@@ -322,6 +344,25 @@ export default function CollaborativeWhiteboard() {
     } else {
       // Shape tools (line, rect, circle)
       currentPointsRef.current = [coords.x, coords.y]; // Store starting coordinate anchor
+      const newStroke = {
+        tool,
+        color,
+        lineWidth,
+        start: [coords.x, coords.y],
+        end: [coords.x, coords.y],
+      };
+
+      bcRef.current.postMessage({
+        type: "WHITEBOARD_STROKE_START",
+        id: currentStrokeIdRef.current,
+        stroke: newStroke,
+        from: peerId.current,
+      });
+
+      setRemoteActiveStrokes((prev) => ({
+        ...prev,
+        [currentStrokeIdRef.current]: newStroke,
+      }));
     }
   };
 
@@ -363,6 +404,13 @@ export default function CollaborativeWhiteboard() {
         end: [coords.x, coords.y]
       };
 
+      bcRef.current.postMessage({
+        type: "WHITEBOARD_SHAPE_PREVIEW",
+        id: currentStrokeIdRef.current,
+        end: [coords.x, coords.y],
+        from: peerId.current,
+      });
+
       setRemoteActiveStrokes(prev => ({
         ...prev,
         [currentStrokeIdRef.current]: previewStroke
@@ -401,6 +449,7 @@ export default function CollaborativeWhiteboard() {
         if (finished) {
           bcRef.current.postMessage({
             type: "WHITEBOARD_COMPLETE_STROKE",
+            id: currentStrokeIdRef.current,
             stroke: finished,
             from: peerId.current
           });
@@ -623,7 +672,7 @@ export default function CollaborativeWhiteboard() {
                   </button>
                   <button
                     type="submit"
-                    className="px-2.5 py-1.5 rounded-lg bg-indigo-650 hover:bg-indigo-700 text-[10px] font-bold text-white shadow-sm"
+                    className="px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-[10px] font-bold text-white shadow-sm"
                   >
                     Place
                   </button>

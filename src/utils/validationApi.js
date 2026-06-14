@@ -1,9 +1,8 @@
-import { apiUtils } from "../config/api";
+import { apiUtils } from "../config/api.js";
 
 const DEFAULT_TIMEOUT_MS = 8000;
 const DEFAULT_RETRIES = 1;
-const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504];
-const defaultFetch = typeof fetch === "function" ? fetch : undefined;
+// const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504];
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -98,7 +97,6 @@ export const normalizeValidationApiResponse = (
  * @param {number} [options.timeoutMs=8000] - Abort timeout in milliseconds.
  * @param {number} [options.retries=1] - Number of retry attempts for retryable failures.
  * @param {number} [options.retryDelayMs=300] - Base retry delay in milliseconds.
- * @param {Function} [options.fetchImpl=fetch] - Fetch implementation, useful for tests.
  * @param {string} [options.invalidMessage="Validation failed"] - Fallback invalid message.
  * @param {string} [options.networkMessage] - Fallback network error message.
  * @param {string} [options.validMessage=""] - Message used for valid responses.
@@ -113,7 +111,6 @@ export const requestValidation = async (endpoint, options = {}) => {
     timeoutMs = DEFAULT_TIMEOUT_MS,
     retries = DEFAULT_RETRIES,
     retryDelayMs = 300,
-    fetchImpl = defaultFetch || ((typeof window !== "undefined" && window.fetch) ? window.fetch : undefined),
     invalidMessage = "Validation failed",
     networkMessage = "Unable to validate right now. Please try again.",
     validMessage = "",
@@ -121,6 +118,18 @@ export const requestValidation = async (endpoint, options = {}) => {
   } = options;
 
   let lastError = null;
+
+  let sanitizedBody = body;
+  if (body && typeof body === "object") {
+    try {
+      sanitizedBody = JSON.parse(JSON.stringify(body), (key, value) => {
+        if (typeof value === "string") {
+          return value.replace(/<[^>]*>/g, ""); // Strip raw HTML tags
+        }
+        return value;
+      });
+    } catch {}
+  }
 
   for (let attempt = 0; attempt <= retries; attempt += 1) {
     const controller = new AbortController();
@@ -134,11 +143,11 @@ export const requestValidation = async (endpoint, options = {}) => {
       if (uppercaseMethod === "GET") {
         response = await apiUtils.get(endpoint, config);
       } else if (uppercaseMethod === "POST") {
-        response = await apiUtils.post(endpoint, body, config);
+        response = await apiUtils.post(endpoint, sanitizedBody, config);
       } else if (uppercaseMethod === "PUT") {
-        response = await apiUtils.put(endpoint, body, config);
+        response = await apiUtils.put(endpoint, sanitizedBody, config);
       } else if (uppercaseMethod === "PATCH") {
-        response = await apiUtils.patch(endpoint, body, config);
+        response = await apiUtils.patch(endpoint, sanitizedBody, config);
       } else if (uppercaseMethod === "DELETE") {
         response = await apiUtils.delete(endpoint, config);
       } else {
@@ -166,12 +175,20 @@ export const requestValidation = async (endpoint, options = {}) => {
       const status = error.status;
       const data = error.data;
 
-      // If the API explicitly returned a validation failure (like 400, 409)
-      if (status && !RETRYABLE_STATUS_CODES.includes(status) && status < 500) {
+      // If the API explicitly returned an authentication or validation failure.
+      if (status === 409) {
         return createValidationResponse(
           false,
-          data?.message || invalidMessage,
-          { status, data },
+          invalidMessage,
+          { status, data }
+        );
+      }
+
+      if (status === 401 || status === 403) {
+        return createValidationResponse(
+          false,
+          networkMessage,
+          { status, data }
         );
       }
 

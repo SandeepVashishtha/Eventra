@@ -1,503 +1,105 @@
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { apiUtils, API_ENDPOINTS } from "../config/api";
+import { createContext, useContext, useCallback, useMemo, useEffect, useRef, useState } from "react";
 import { useAuth } from "./AuthContext";
-import {
-  DEFAULT_NOTIFICATION_PREFERENCES,
-  PUSH_SUBSCRIPTION_KEY,
-  getNotificationCategory,
-  getNotificationMessage,
-  getNotificationTitle,
-  normalizeNotificationPreferences,
-  playNotificationSound,
-  readNotificationPreferences,
-  shouldDeliverNotification,
-  urlBase64ToUint8Array,
-  writeNotificationPreferences,
-} from "../utils/notificationPreferences";
+import useRealTimeConnection, { SSE_STATUS } from "../hooks/useRealTimeConnection";
+import { getNotificationCategory, getNotificationMessage, getNotificationTitle } from "../utils/notificationPreferences";
+import { useNotificationPreferences } from "../hooks/useNotificationPreferences";
+import { usePushSubscription } from "../hooks/usePushSubscription";
+import { useNotificationDelivery } from "../hooks/useNotificationDelivery";
+import { useNotificationPoller } from "../hooks/useNotificationPoller";
+import { useAchievements } from "../hooks/useAchievements";
 
 const NotificationContext = createContext();
 
-const POLLING_INTERVAL_MS = 60_000;
-const VAPID_PUBLIC_KEY =
-  process.env.REACT_APP_VAPID_PUBLIC_KEY || process.env.VITE_VAPID_PUBLIC_KEY || "";
-
-const isValidEndpoint = (endpoint) =>
-  endpoint && typeof endpoint === "string" && !endpoint.includes("undefined");
-
-const ensureServiceWorkerRegistration = async () => {
-  if (!("serviceWorker" in navigator)) return null;
-
-  const existingRegistration = await navigator.serviceWorker.getRegistration();
-  if (existingRegistration) return existingRegistration;
-
-  try {
-    return await navigator.serviceWorker.register("/service-worker.js");
-  } catch {
-    return null;
-  }
-};
-
-const getExistingServiceWorkerRegistration = async () => {
-  if (!("serviceWorker" in navigator)) return null;
-  return navigator.serviceWorker.getRegistration();
-};
-
-const normalizeNotification = (notification = {}) => ({
-  ...notification,
-  id:
-    notification.id ||
-    notification._id ||
-    `${notification.timestamp || notification.createdAt || Date.now()}-${getNotificationMessage(notification)}`,
-  title: getNotificationTitle(notification),
-  message: getNotificationMessage(notification),
-  category: getNotificationCategory(notification),
-  timestamp:
-    notification.timestamp ||
-    notification.createdAt ||
-    notification.updatedAt ||
-    new Date().toISOString(),
+const normalizeNotification = (n = {}) => ({
+  ...n,
+  id: n.id || n._id || `${n.timestamp || n.createdAt || Date.now()}-${getNotificationMessage(n)}`,
+  title: getNotificationTitle(n),
+  message: getNotificationMessage(n),
+  category: getNotificationCategory(n),
+  timestamp: n.timestamp || n.createdAt || n.updatedAt || new Date().toISOString(),
 });
+
+// 🟢 This helper function handles your assigned interval cleanup task
+const useBackgroundInterval = (realtimeStatus, fetchNotifications) => {
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      if (realtimeStatus === "IDLE") {
+        fetchNotifications?.();
+      }
+    }, 30000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [realtimeStatus, fetchNotifications]);
+};
 
 export const NotificationProvider = ({ children }) => {
   const { token } = useAuth();
-  const [notifications, setNotifications] = useState([]);
-  const [achievements, setAchievements] = useState({
-    totalEvents: 0,
-    currentStreak: 0,
-    badges: [],
-  });
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [preferences, setPreferences] = useState(() => readNotificationPreferences());
-  const [pushStatus, setPushStatus] = useState({
-    supported: false,
-    permission: typeof Notification !== "undefined" ? Notification.permission : "unsupported",
-    subscribed: false,
-    error: "",
-  });
-
-  const isMounted = useRef(true);
-  const activeTokenRef = useRef(token);
-  const seenNotificationIds = useRef(new Set());
   const hasCompletedInitialFetch = useRef(false);
 
-  const groupedNotifications = useMemo(() => {
-    return notifications.reduce((groups, notification) => {
-      const category = getNotificationCategory(notification);
-      if (!groups[category]) groups[category] = [];
-      groups[category].push(notification);
+  const { preferences, defaultPreferences, updatePreferences, savePreferences } =
+    useNotificationPreferences();
+  const { pushStatus, requestPushPermission, subscribeToPush, unsubscribeFromPush } =
+    usePushSubscription(updatePreferences);
+  const { showBrowserNotification, deliverNew, markAsReadRef } =
+    useNotificationDelivery(preferences);
+  const {
+    notifications, unreadCount, loading,
+    fetchNotifications, markAsRead, markAllAsRead, deleteNotification,
+    applyList, seenIds,
+  } = useNotificationPoller(deliverNew, hasCompletedInitialFetch);
+  const { achievements, fetchAchievements } = useAchievements();
+
+  const ingestRealtime = useCallback(
+    (payload) => {
+      if (!payload || typeof payload !== "object") return;
+      const n = normalizeNotification(payload);
+      const isNewUnread = !n.isRead && !seenIds.current.has(n.id);
+      applyList([n], { deliverNew: false });
+      if (isNewUnread) {
+        deliverNew([n]);
+      }
+    },
+    [applyList, deliverNew, seenIds],
+  );
+
+  const handleRealtimeMessage = useCallback(
+    (data) => {
+      if (Array.isArray(data)) { data.forEach(ingestRealtime); return; }
+      ingestRealtime(data?.notification || data);
+    },
+    [ingestRealtime],
+  );
+
+  const { status: sseStatus } = useRealTimeConnection("/stream/notifications", {
+    onMessage: handleRealtimeMessage,
+    enabled: Boolean(token),
+  });
+
+  // 🟢 FIXED: Removed the old 'realtimeStatus' state variable & its redundant useEffect entirely.
+  // 🟢 Added your required background interval function call here instead.
+  useBackgroundInterval(sseStatus, fetchNotifications);
+
+  useEffect(() => {
+    if (!markAsReadRef) return;
+    markAsReadRef.current = markAsRead;
+  }, [markAsRead, markAsReadRef]);
+
+  const groupedNotifications = useMemo(
+    () => notifications.reduce((groups, n) => {
+      const cat = getNotificationCategory(n);
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(n);
       return groups;
-    }, {});
-  }, [notifications]);
-
-  useEffect(() => {
-    activeTokenRef.current = token;
-  }, [token]);
-
-  useEffect(() => {
-    isMounted.current = true;
-    return () => {
-      isMounted.current = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    const handlePreferenceUpdate = (event) => {
-      setPreferences(
-        normalizeNotificationPreferences(event.detail || readNotificationPreferences())
-      );
-    };
-
-    window.addEventListener("eventra-notification-preferences", handlePreferenceUpdate);
-    window.addEventListener("storage", handlePreferenceUpdate);
-    return () => {
-      window.removeEventListener("eventra-notification-preferences", handlePreferenceUpdate);
-      window.removeEventListener("storage", handlePreferenceUpdate);
-    };
-  }, []);
-
-  const updatePreferences = useCallback((nextPreferences) => {
-    setPreferences((current) => {
-      const updated =
-        typeof nextPreferences === "function" ? nextPreferences(current) : nextPreferences;
-      return writeNotificationPreferences(updated);
-    });
-  }, []);
-
-  const updatePushStatus = useCallback(async () => {
-    if (
-      typeof window === "undefined" ||
-      !("Notification" in window) ||
-      !("serviceWorker" in navigator) ||
-      !("PushManager" in window)
-    ) {
-      setPushStatus({
-        supported: false,
-        permission: "unsupported",
-        subscribed: false,
-        error: "Browser push notifications are not supported here.",
-      });
-      return null;
-    }
-
-    try {
-      const registration = await getExistingServiceWorkerRegistration();
-      const subscription = registration
-        ? await registration.pushManager.getSubscription()
-        : null;
-      setPushStatus({
-        supported: true,
-        permission: Notification.permission,
-        subscribed: Boolean(subscription),
-        error: "",
-      });
-      return subscription;
-    } catch (error) {
-      setPushStatus({
-        supported: true,
-        permission: Notification.permission,
-        subscribed: false,
-        error: error.message || "Unable to read push subscription.",
-      });
-      return null;
-    }
-  }, []);
-
-  useEffect(() => {
-    updatePushStatus();
-  }, [updatePushStatus]);
-
-  const savePreferences = useCallback(
-    async (nextPreferences = preferences) => {
-      const normalized = writeNotificationPreferences(nextPreferences);
-      setPreferences(normalized);
-
-      const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.PREFERENCES;
-      if (!token || !isValidEndpoint(endpoint)) {
-        return { savedRemotely: false, preferences: normalized };
-      }
-
-      try {
-        await apiUtils.put(endpoint, normalized);
-        return { savedRemotely: true, preferences: normalized };
-      } catch (error) {
-        console.error("[NotificationContext] Error saving notification preferences:", error);
-        return { savedRemotely: false, preferences: normalized, error };
-      }
-    },
-    [preferences, token]
+    }, {}),
+    [notifications],
   );
 
-  const requestPushPermission = useCallback(async () => {
-    if (typeof window === "undefined" || !("Notification" in window)) {
-      setPushStatus((current) => ({ ...current, permission: "unsupported" }));
-      return "unsupported";
-    }
 
-    const permission =
-      Notification.permission === "default"
-        ? await Notification.requestPermission()
-        : Notification.permission;
 
-    setPushStatus((current) => ({ ...current, permission }));
-    return permission;
-  }, []);
 
-  const showBrowserNotification = useCallback(
-    async (notification) => {
-      if (!shouldDeliverNotification(notification, preferences, "push")) return false;
-      if (typeof window === "undefined" || !("Notification" in window)) return false;
-      if (Notification.permission !== "granted") return false;
 
-      try {
-        const registration =
-          "serviceWorker" in navigator ? await getExistingServiceWorkerRegistration() : null;
-        const title = getNotificationTitle(notification);
-        const options = {
-          body: getNotificationMessage(notification),
-          icon: "/favicon.png",
-          badge: "/favicon.png",
-          tag: notification.id || getNotificationCategory(notification),
-          data: { url: "/settings/notifications", notificationId: notification.id },
-        };
-
-        if (registration?.showNotification) {
-          await registration.showNotification(title, options);
-        } else {
-          new Notification(title, options);
-        }
-        return true;
-      } catch (error) {
-        console.error("[NotificationContext] Error showing browser notification:", error);
-        return false;
-      }
-    },
-    [preferences]
-  );
-
-  const deliverNewNotifications = useCallback(
-    (incomingNotifications) => {
-      incomingNotifications.forEach((notification) => {
-        if (shouldDeliverNotification(notification, preferences, "push")) {
-          showBrowserNotification(notification);
-        }
-        if (shouldDeliverNotification(notification, preferences, "inApp")) {
-          playNotificationSound(preferences.sound);
-        }
-      });
-    },
-    [preferences, showBrowserNotification]
-  );
-
-  const fetchNotifications = useCallback(
-    async (options = { isBackground: false }) => {
-      const { isBackground } = options;
-      if (!token) return;
-      const requestToken = token;
-
-      const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.ALL || API_ENDPOINTS?.NOTIFICATIONS?.BASE;
-      if (!isValidEndpoint(endpoint)) {
-        console.warn("[NotificationContext] Fetch endpoint is undefined. Skipping.");
-        return;
-      }
-
-      try {
-        if (!isBackground && isMounted.current && activeTokenRef.current === requestToken) {
-          setLoading(true);
-        }
-
-        const response = await apiUtils.get(endpoint);
-
-        if (!isMounted.current || activeTokenRef.current !== requestToken) return;
-
-        const data = response.data;
-        const normalizedData = (Array.isArray(data) ? data : []).map(normalizeNotification);
-        const incomingUnread = normalizedData.filter((notification) => {
-          const isNew = !seenNotificationIds.current.has(notification.id);
-          return isNew && !notification.isRead;
-        });
-
-        normalizedData.forEach((notification) => seenNotificationIds.current.add(notification.id));
-        setNotifications(normalizedData);
-        setUnreadCount(normalizedData.filter((n) => !n.isRead).length);
-
-        if (hasCompletedInitialFetch.current && incomingUnread.length > 0) {
-          deliverNewNotifications(incomingUnread);
-        }
-        hasCompletedInitialFetch.current = true;
-      } catch (error) {
-        if (isMounted.current && activeTokenRef.current === requestToken) {
-          console.error("Error fetching notifications:", error);
-        }
-      } finally {
-        if (!isBackground && isMounted.current && activeTokenRef.current === requestToken) {
-          setLoading(false);
-        }
-      }
-    },
-    [token, deliverNewNotifications]
-  );
-
-  const fetchAchievements = useCallback(async () => {
-    if (!token) return;
-    const requestToken = token;
-
-    const endpoint = API_ENDPOINTS?.USERS?.ACHIEVEMENTS;
-    if (!isValidEndpoint(endpoint)) {
-      console.warn("[NotificationContext] Achievements endpoint undefined. Skipping.");
-      return;
-    }
-
-    try {
-      const response = await apiUtils.get(endpoint);
-      if (!isMounted.current || activeTokenRef.current !== requestToken) return;
-      setAchievements(response.data);
-    } catch (error) {
-      if (isMounted.current && activeTokenRef.current === requestToken) {
-        console.error("Error fetching achievements:", error);
-      }
-    }
-  }, [token]);
-
-  const markAsRead = useCallback(
-    async (notificationId) => {
-      if (!token || !notificationId) return;
-      const requestToken = token;
-
-      const endpointGetter = API_ENDPOINTS?.NOTIFICATIONS?.READ;
-      if (typeof endpointGetter !== "function") return;
-
-      const endpoint = endpointGetter(notificationId);
-      if (!isValidEndpoint(endpoint)) return;
-
-      try {
-        await apiUtils.put(endpoint, {});
-        if (!isMounted.current || activeTokenRef.current !== requestToken) return;
-        setNotifications((prev) =>
-          prev.map((n) => (n.id === notificationId ? { ...n, isRead: true } : n))
-        );
-        setUnreadCount((prev) => Math.max(0, prev - 1));
-      } catch (error) {
-        if (isMounted.current && activeTokenRef.current === requestToken) {
-          console.error("Error marking notification as read:", error);
-        }
-      }
-    },
-    [token]
-  );
-
-  const markAllAsRead = useCallback(async () => {
-    if (!token) return;
-    const requestToken = token;
-
-    if (!isMounted.current) return;
-
-    const unread = notifications.filter((n) => !n.isRead);
-    if (unread.length === 0) return;
-
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-
-    const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.READ_ALL;
-    if (!isValidEndpoint(endpoint)) return;
-
-    setUnreadCount(0);
-
-    try {
-      await apiUtils.put(endpoint, {});
-    } catch (error) {
-      if (isMounted.current && activeTokenRef.current === requestToken) {
-        console.error("[NotificationContext] Error marking all as read:", error);
-        fetchNotifications();
-      }
-    }
-  }, [token, fetchNotifications, notifications]);
-
-  const subscribeToPush = useCallback(async () => {
-    const permission = await requestPushPermission();
-    if (permission !== "granted") {
-      updatePreferences((current) => ({ ...current, push: false }));
-      return { subscribed: false, reason: permission };
-    }
-
-    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-      setPushStatus((current) => ({
-        ...current,
-        supported: false,
-        error: "This browser does not support Web Push subscriptions.",
-      }));
-      return { subscribed: false, reason: "unsupported" };
-    }
-
-    if (!VAPID_PUBLIC_KEY) {
-      updatePreferences((current) => ({ ...current, push: true }));
-      setPushStatus((current) => ({
-        ...current,
-        supported: true,
-        permission,
-        subscribed: false,
-        error: "Browser notifications are enabled. Add a VAPID key for server push delivery.",
-      }));
-      return { subscribed: false, reason: "missing-vapid-key" };
-    }
-
-    try {
-      const registration = await ensureServiceWorkerRegistration();
-      if (!registration) {
-        throw new Error("Service worker registration is unavailable.");
-      }
-      const subscription =
-        (await registration.pushManager.getSubscription()) ||
-        (await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-        }));
-
-      window.localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(subscription));
-
-      const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.PUSH_SUBSCRIBE;
-      if (token && isValidEndpoint(endpoint)) {
-        await apiUtils.post(endpoint, subscription);
-      }
-
-      updatePreferences((current) => ({ ...current, push: true }));
-      await updatePushStatus();
-      return { subscribed: true, subscription };
-    } catch (error) {
-      setPushStatus((current) => ({
-        ...current,
-        error: error.message || "Push subscription failed.",
-      }));
-      return { subscribed: false, error };
-    }
-  }, [requestPushPermission, token, updatePreferences, updatePushStatus]);
-
-  const unsubscribeFromPush = useCallback(async () => {
-    try {
-      const subscription = await updatePushStatus();
-      if (subscription) {
-        await subscription.unsubscribe();
-      }
-
-      window.localStorage.removeItem(PUSH_SUBSCRIPTION_KEY);
-      const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.PUSH_UNSUBSCRIBE;
-      if (token && isValidEndpoint(endpoint)) {
-        await apiUtils.post(endpoint, {});
-      }
-
-      updatePreferences((current) => ({ ...current, push: false }));
-      await updatePushStatus();
-      return { unsubscribed: true };
-    } catch (error) {
-      setPushStatus((current) => ({
-        ...current,
-        error: error.message || "Push unsubscribe failed.",
-      }));
-      return { unsubscribed: false, error };
-    }
-  }, [token, updatePreferences, updatePushStatus]);
-
-  useEffect(() => {
-    if (!token) {
-      setNotifications([]);
-      setUnreadCount(0);
-      setAchievements({ totalEvents: 0, currentStreak: 0, badges: [] });
-      seenNotificationIds.current = new Set();
-      hasCompletedInitialFetch.current = false;
-      return;
-    }
-
-    const requestToken = token;
-    const initData = async () => {
-      if (!isMounted.current) return;
-      if (isMounted.current && activeTokenRef.current === requestToken) {
-        setLoading(true);
-      }
-      await Promise.allSettled([
-        fetchNotifications({ isBackground: true }),
-        fetchAchievements(),
-      ]);
-      if (!isMounted.current || activeTokenRef.current !== requestToken) return;
-      setLoading(false);
-    };
-
-    initData();
-
-    const intervalId = setInterval(() => {
-      if (isMounted.current && activeTokenRef.current === requestToken) {
-        fetchNotifications({ isBackground: true });
-      }
-    }, POLLING_INTERVAL_MS);
-
-    return () => clearInterval(intervalId);
-  }, [token, fetchNotifications, fetchAchievements]);
 
   return (
     <NotificationContext.Provider
@@ -507,13 +109,15 @@ export const NotificationProvider = ({ children }) => {
         achievements,
         unreadCount,
         loading,
+        realtimeStatus: sseStatus, // Passing sseStatus directly simplifies the logic!
         preferences,
         pushStatus,
-        defaultPreferences: DEFAULT_NOTIFICATION_PREFERENCES,
+        defaultPreferences,
         fetchNotifications,
         fetchAchievements,
         markAsRead,
         markAllAsRead,
+        deleteNotification,
         updatePreferences,
         savePreferences,
         requestPushPermission,

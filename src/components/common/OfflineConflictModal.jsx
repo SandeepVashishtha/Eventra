@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
-import { AlertTriangle, Server, ArrowRight, Save, X, Edit3 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { AlertTriangle, Server, X, Edit3 } from "lucide-react";
 import "./OfflineConflictModal.css";
 import { useFocusTrap } from "../../hooks/useFocusTrap";
 
@@ -42,7 +43,7 @@ export default function OfflineConflictModal() {
     setConflictData(null);
   };
 
-  return (
+  return createPortal(
     <div className="ocm-modal-overlay">
       <div
         ref={trapRef}
@@ -131,6 +132,7 @@ export default function OfflineConflictModal() {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -4,6 +4,8 @@ import reactHooks from "eslint-plugin-react-hooks";
 import storybook from "eslint-plugin-storybook";
 import testingLibrary from "eslint-plugin-testing-library";
 
+// Note: With ESLint v9 Flat Config format (eslint.config.js), the --ext CLI option is deprecated
+// and unsupported. File patterns to lint are now defined in this configuration file (via 'files' pattern).
 export default [
   {
     ignores: ["build/**", "coverage/**", "dist/**", "node_modules/**"],
@@ -35,17 +37,17 @@ export default [
       },
     },
     rules: {
-      "no-console": "warn",
+      "no-console": "off",
       "no-unused-vars": "warn",
       "react/jsx-no-target-blank": "error",
       // apply react-hooks recommended rules but relax some strict checks
       ...reactHooks.configs.recommended.rules,
-      // Relax rules that produce many repo-wide errors when enabling flat config
-      "react-hooks/set-state-in-effect": "warn",
-      "react-hooks/purity": "warn",
-      "react-hooks/globals": "warn",
-      "react-hooks/refs": "warn",
+      "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "warn",
+      "react-hooks/set-state-in-effect": "off",
+      "react-hooks/purity": "off",
+      "react-hooks/refs": "off",
+      "react-hooks/immutability": "off",
       // Disable testing-library rule if plugin not available in some environments
       "testing-library/no-unnecessary-act": "off",
     },

@@ -1,4 +1,3 @@
-import React from "react";
 import ValidationStatusIcon from "./ValidationStatusIcon";
 
 const meta = {

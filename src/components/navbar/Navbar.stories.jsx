@@ -1,4 +1,3 @@
-import React from "react";
 import { MemoryRouter } from "react-router-dom";
 import { AuthProvider } from "../../context/AuthContext";
 import { ThemeProvider } from "../../context/ThemeContext";

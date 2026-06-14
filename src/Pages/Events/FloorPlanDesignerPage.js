@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Calendar, MapPin, Users, Info } from "lucide-react";
 import FloorPlanDesigner from "../../components/events/FloorPlanDesigner";

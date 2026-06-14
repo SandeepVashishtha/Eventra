@@ -1,4 +1,5 @@
 import { Link, useParams } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
 import { Calendar, MapPin, Award, Users, Trophy, Tag, ArrowLeft } from "lucide-react";
 
@@ -22,17 +23,17 @@ const HackathonDetailsPage = () => {
 
   if (!foundHackathon) {
     return (
-      <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center px-4 py-24">
-        <div className="max-w-xl w-full rounded-3xl bg-white dark:bg-gray-900 shadow-xl border border-gray-200 dark:border-gray-800 p-10 text-center">
-          <h1 className="text-4xl font-extrabold text-gray-900 dark:text-gray-100">
+      <div className="min-h-screen bg-bg text-text flex items-center justify-center px-4 py-24">
+        <div className="max-w-xl w-full rounded-3xl bg-card-bg shadow-xl border border-border p-10 text-center">
+          <h1 className="text-4xl font-extrabold text-text">
             Hackathon Not Found
           </h1>
-          <p className="mt-4 text-gray-600 dark:text-gray-300">
+          <p className="mt-4 text-text-light">
             The hackathon you selected could not be found.
           </p>
           <Link
             to="/hackathons"
-            className="mt-8 inline-flex items-center justify-center rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-slate-800 transition"
+            className="mt-8 inline-flex items-center justify-center rounded-full bg-primary hover:opacity-90 px-6 py-3 text-sm font-semibold text-white shadow transition"
           >
             Back to Hackathons
           </Link>
@@ -44,7 +45,7 @@ const HackathonDetailsPage = () => {
   const status = getHackathonStatus(foundHackathon);
   const statusStyles = {
     live: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-200",
-    upcoming: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-200",
+    upcoming: "bg-primary/10 text-primary",
     completed: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200",
   };
 
@@ -52,12 +53,22 @@ const HackathonDetailsPage = () => {
   const isFeatured = Number.isFinite(prizeValue) && prizeValue >= 30000;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-white dark:from-slate-950 dark:via-slate-950 dark:to-black text-gray-900 dark:text-gray-100">
-      <div className="sticky top-0 z-30 border-b border-gray-200/80 dark:border-gray-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur">
+    <>
+      <Helmet>
+        <title>{foundHackathon.title} | Eventra</title>
+        <meta name="description" content={foundHackathon.description.slice(0, 160)} />
+        <meta property="og:title" content={foundHackathon.title} />
+        <meta property="og:description" content={`${foundHackathon.title}${foundHackathon.prize ? ` — Prize: ${foundHackathon.prize}. ` : '. '}${foundHackathon.startDate} - ${foundHackathon.endDate} | ${foundHackathon.location}`} />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={window.location.href} />
+        <meta name="twitter:card" content="summary_large_image" />
+      </Helmet>
+      <div className="min-h-screen bg-bg text-text">
+        <div className="sticky top-0 z-30 border-b border-border bg-navbar/80 backdrop-blur">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-4">
           <Link
             to="/hackathons"
-            className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 font-semibold hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+            className="inline-flex items-center gap-2 text-primary font-semibold hover:opacity-85 transition-colors"
           >
             <ArrowLeft size={18} />
             Back to Hackathons
@@ -73,14 +84,14 @@ const HackathonDetailsPage = () => {
           className="grid gap-8 lg:grid-cols-[1.3fr_0.7fr]"
         >
           <section className="space-y-6">
-            <div className="rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xl p-6 sm:p-8">
+            <div className="rounded-3xl border border-border bg-card-bg shadow-xl p-6 sm:p-8">
               <div className="flex flex-wrap items-center gap-3">
                 <span
                   className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] ${statusStyles[status]}`}
                 >
                   {status}
                 </span>
-                <span className="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200">
+                <span className="inline-flex items-center rounded-full bg-bg px-3 py-1 text-xs font-semibold text-text-light">
                   {foundHackathon.difficulty}
                 </span>
                 {isFeatured && (
@@ -93,7 +104,7 @@ const HackathonDetailsPage = () => {
               <h1 className="mt-5 text-4xl sm:text-5xl font-extrabold tracking-tight">
                 {foundHackathon.title}
               </h1>
-              <p className="mt-4 max-w-3xl text-base sm:text-lg text-gray-600 dark:text-gray-300 leading-7">
+              <p className="mt-4 max-w-3xl text-base sm:text-lg text-text-light leading-7">
                 {foundHackathon.description}
               </p>
 
@@ -101,14 +112,13 @@ const HackathonDetailsPage = () => {
                 <a
                   href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(foundHackathon.title)}&dates=${foundHackathon.startDate.replaceAll("-", "")}/${foundHackathon.endDate.replaceAll("-", "")}&details=${encodeURIComponent(foundHackathon.description)}&location=${encodeURIComponent(foundHackathon.location)}`}
                   target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-slate-800 transition"
-                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center rounded-full bg-primary hover:opacity-90 px-6 py-3 text-sm font-semibold text-white shadow transition"
                 >
                   Add Reminder
                 </a>
                 <Link
                   to="/hackathons"
-                  className="inline-flex items-center justify-center rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
+                  className="inline-flex items-center justify-center rounded-full border border-border bg-bg px-6 py-3 text-sm font-semibold text-text shadow-sm hover:bg-card-bg transition"
                 >
                   Browse Hackathons
                 </Link>
@@ -116,10 +126,10 @@ const HackathonDetailsPage = () => {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5 shadow-sm flex items-start gap-3">
-                <Calendar className="h-5 w-5 text-blue-600 mt-0.5" />
+              <div className="rounded-3xl bg-bg border border-border p-5 shadow-sm flex items-start gap-3">
+                <Calendar className="h-5 w-5 text-primary mt-0.5" />
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Dates</p>
+                  <p className="text-sm text-text-light">Dates</p>
                   <p className="font-semibold">
                     {new Date(foundHackathon.startDate).toLocaleDateString("en-US", {
                       month: "long",
@@ -136,26 +146,26 @@ const HackathonDetailsPage = () => {
                 </div>
               </div>
 
-              <div className="rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5 shadow-sm flex items-start gap-3">
-                <MapPin className="h-5 w-5 text-emerald-600 mt-0.5" />
+              <div className="rounded-3xl bg-bg border border-border p-5 shadow-sm flex items-start gap-3">
+                <MapPin className="h-5 w-5 text-secondary mt-0.5" />
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Location</p>
+                  <p className="text-sm text-text-light">Location</p>
                   <p className="font-semibold">{foundHackathon.location}</p>
                 </div>
               </div>
 
-              <div className="rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5 shadow-sm flex items-start gap-3">
-                <Award className="h-5 w-5 text-amber-600 mt-0.5" />
+              <div className="rounded-3xl bg-bg border border-border p-5 shadow-sm flex items-start gap-3">
+                <Award className="h-5 w-5 text-secondary mt-0.5" />
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Prize Pool</p>
+                  <p className="text-sm text-text-light">Prize Pool</p>
                   <p className="font-semibold">{foundHackathon.prize}</p>
                 </div>
               </div>
 
-              <div className="rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5 shadow-sm flex items-start gap-3">
-                <Users className="h-5 w-5 text-indigo-600 mt-0.5" />
+              <div className="rounded-3xl bg-bg border border-border p-5 shadow-sm flex items-start gap-3">
+                <Users className="h-5 w-5 text-primary mt-0.5" />
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Participants</p>
+                  <p className="text-sm text-text-light">Participants</p>
                   <p className="font-semibold">{foundHackathon.participants}</p>
                 </div>
               </div>
@@ -163,40 +173,40 @@ const HackathonDetailsPage = () => {
           </section>
 
           <aside className="space-y-6">
-            <div className="rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xl p-6 sm:p-8">
+            <div className="rounded-3xl border border-border bg-card-bg shadow-xl p-6 sm:p-8">
               <h2 className="text-xl font-bold">Overview</h2>
-              <div className="mt-4 space-y-4 text-sm text-gray-600 dark:text-gray-300 leading-6">
+              <div className="mt-4 space-y-4 text-sm text-text-light leading-6">
                 <p>
-                  <span className="font-semibold text-gray-900 dark:text-gray-100">Organizer:</span>{" "}
+                  <span className="font-semibold text-text">Organizer:</span>{" "}
                   {foundHackathon.organizer}
                 </p>
                 <p>
-                  <span className="font-semibold text-gray-900 dark:text-gray-100">Teams:</span>{" "}
+                  <span className="font-semibold text-text">Teams:</span>{" "}
                   {foundHackathon.teams}
                 </p>
                 <p>
-                  <span className="font-semibold text-gray-900 dark:text-gray-100">
+                  <span className="font-semibold text-text">
                     Submissions:
                   </span>{" "}
                   {foundHackathon.submissions}
                 </p>
                 <p>
-                  <span className="font-semibold text-gray-900 dark:text-gray-100">Status:</span>{" "}
+                  <span className="font-semibold text-text">Status:</span>{" "}
                   {status.charAt(0).toUpperCase() + status.slice(1)}
                 </p>
               </div>
             </div>
 
-            <div className="rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xl p-6 sm:p-8">
+            <div className="rounded-3xl border border-border bg-card-bg shadow-xl p-6 sm:p-8">
               <h2 className="text-xl font-bold flex items-center gap-2">
-                <Tag className="h-5 w-5 text-blue-600" />
+                <Tag className="h-5 w-5 text-primary" />
                 Tech Stack
               </h2>
               <div className="mt-4 flex flex-wrap gap-2">
                 {(foundHackathon.techStack || []).map((tech) => (
                   <span
                     key={tech}
-                    className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-200"
+                    className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-sm font-medium text-primary"
                   >
                     {tech}
                   </span>
@@ -204,12 +214,12 @@ const HackathonDetailsPage = () => {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xl p-6 sm:p-8">
+            <div className="rounded-3xl border border-border bg-card-bg shadow-xl p-6 sm:p-8">
               <h2 className="text-xl font-bold flex items-center gap-2">
-                <Trophy className="h-5 w-5 text-amber-600" />
+                <Trophy className="h-5 w-5 text-secondary" />
                 Rules
               </h2>
-              <ul className="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-300 list-disc list-inside">
+              <ul className="mt-4 space-y-2 text-sm text-text-light list-disc list-inside">
                 {(foundHackathon.rules || []).map((rule) => (
                   <li key={rule}>{rule}</li>
                 ))}
@@ -218,7 +228,8 @@ const HackathonDetailsPage = () => {
           </aside>
         </motion.div>
       </main>
-    </div>
+      </div>
+    </>
   );
 };
 
