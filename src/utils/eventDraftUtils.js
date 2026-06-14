@@ -1,20 +1,47 @@
+const getObjValue = (obj, key) => {
+  if (!obj) return "";
+  if (obj[key] !== undefined) return obj[key];
+  return "";
+};
+
+const getCoordValue = (loc, key) => {
+  if (!loc) return "";
+  if (!loc.coordinates) return "";
+  if (loc.coordinates[key] !== undefined) return loc.coordinates[key];
+  return "";
+};
+
 export const getDraftLocation = (loc) => {
   if (!loc) return { name: "", address: "", coordinates: { latitude: "", longitude: "" } };
   if (typeof loc === "string") return { name: loc, address: "", coordinates: { latitude: "", longitude: "" } };
   
-  const lat = loc.coordinates && loc.coordinates.latitude !== undefined ? loc.coordinates.latitude : "";
-  const lng = loc.coordinates && loc.coordinates.longitude !== undefined ? loc.coordinates.longitude : "";
-  
   return {
-    name: loc.name ? loc.name : "",
-    address: loc.address ? loc.address : "",
-    coordinates: { latitude: lat, longitude: lng },
+    name: getObjValue(loc, "name"),
+    address: getObjValue(loc, "address"),
+    coordinates: {
+      latitude: getCoordValue(loc, "latitude"),
+      longitude: getCoordValue(loc, "longitude"),
+    },
   };
 };
 
+const createDefaultTier = () => ({
+  name: "General Admission",
+  price: 0,
+  capacity: "",
+  description: "Standard event access"
+});
+
+const parseTier = (t) => ({
+  name: getObjValue(t, "name"),
+  price: t.price ?? 0,
+  capacity: t.capacity ?? "",
+  description: getObjValue(t, "description")
+});
+
 export const getDraftTiers = (tiers) => {
-  if (!Array.isArray(tiers)) return [{ name: "General Admission", price: 0, capacity: "", description: "Standard event access" }];
-  return tiers.map(t => ({ name: t.name || "", price: t.price ?? 0, capacity: t.capacity ?? "", description: t.description || "" }));
+  if (!Array.isArray(tiers)) return [createDefaultTier()];
+  return tiers.map(parseTier);
 };
 
 const parseDateString = (dateValue) => {
@@ -58,11 +85,15 @@ export const getDraftDates = (evt) => {
     }
   }
 
+  const isMultiVal = isMulti ? "" : pStart;
+  const sDateVal = isMulti ? pStart : "";
+  const eDateVal = isMulti ? pEnd : "";
+
   return {
     isMultiDay: isMulti,
-    date: isMulti ? "" : pStart,
-    startDate: isMulti ? pStart : "",
-    endDate: isMulti ? pEnd : "",
+    date: isMultiVal,
+    startDate: sDateVal,
+    endDate: eDateVal,
     startTime: parseTimeString(startD),
     endTime: parseTimeString(endD),
     registrationStart: parseDateString(evt.registrationStart),
@@ -70,28 +101,58 @@ export const getDraftDates = (evt) => {
   };
 };
 
+const getDraftTitle = (src) => {
+  if (src.title) return `Copy of ${src.title}`;
+  return "";
+};
+
+const getDraftTimezone = (src) => {
+  if (src.timezone) return src.timezone;
+  return Intl.DateTimeFormat().resolvedOptions().timeZone;
+};
+
+const getDraftBoolean = (src, key, fallback) => {
+  if (src[key] !== undefined) return src[key];
+  return fallback;
+};
+
+const getDraftBanner = (src) => {
+  if (src.image) return src.image;
+  if (src.banner) return src.banner;
+  return "";
+};
+
+const getDraftString = (src, key) => {
+  if (src[key]) return src[key];
+  return "";
+};
+
+const getDraftCapacity = (src) => {
+  if (src.capacity != null) return src.capacity;
+  return "";
+};
+
+const getDraftTags = (src) => {
+  if (Array.isArray(src.tags)) return src.tags;
+  return [];
+};
+
 export const createDuplicateDraft = (sourceEvent) => {
-  const title = sourceEvent.title ? `Copy of ${sourceEvent.title}` : "";
-  const timezone = sourceEvent.timezone ? sourceEvent.timezone : Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const isPublic = sourceEvent.isPublic !== undefined ? sourceEvent.isPublic : true;
-  const requiresApproval = sourceEvent.requiresApproval !== undefined ? sourceEvent.requiresApproval : false;
-  const bannerPreview = sourceEvent.image ? sourceEvent.image : (sourceEvent.banner ? sourceEvent.banner : "");
-  
   return {
-    title,
-    description: sourceEvent.description ? sourceEvent.description : "",
-    category: sourceEvent.category ? sourceEvent.category : "",
+    title: getDraftTitle(sourceEvent),
+    description: getDraftString(sourceEvent, "description"),
+    category: getDraftString(sourceEvent, "category"),
     ...getDraftDates(sourceEvent),
-    timezone,
+    timezone: getDraftTimezone(sourceEvent),
     location: getDraftLocation(sourceEvent.location),
     isVirtual: Boolean(sourceEvent.virtualLink),
-    virtualLink: sourceEvent.virtualLink ? sourceEvent.virtualLink : "",
-    capacity: sourceEvent.capacity != null ? sourceEvent.capacity : "",
-    isPublic,
-    requiresApproval,
-    tags: Array.isArray(sourceEvent.tags) ? sourceEvent.tags : [],
+    virtualLink: getDraftString(sourceEvent, "virtualLink"),
+    capacity: getDraftCapacity(sourceEvent),
+    isPublic: getDraftBoolean(sourceEvent, "isPublic", true),
+    requiresApproval: getDraftBoolean(sourceEvent, "requiresApproval", false),
+    tags: getDraftTags(sourceEvent),
     ticketTiers: getDraftTiers(sourceEvent.ticketTiers),
     banner: null,
-    bannerPreview,
+    bannerPreview: getDraftBanner(sourceEvent),
   };
 };
