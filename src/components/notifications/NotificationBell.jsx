@@ -34,7 +34,7 @@ const NotificationBell = () => {
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="relative rounded-lg p-2 text-gray-600 transition-colors hover:bg-gray-100 hover:text-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-indigo-400"
+        className="relative rounded-lg p-1 text-gray-600 transition-colors hover:bg-gray-100 hover:text-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-indigo-400"
         aria-label="View notifications"
         aria-expanded={isOpen}
         aria-haspopup="dialog"
