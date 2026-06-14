@@ -18,7 +18,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
-  ExternalLink,
+  // ExternalLink,
   MapPin,
   RefreshCw,
 } from "lucide-react";
@@ -319,7 +319,7 @@ const CalendarPage = () => {
 
           <div className="mt-8 grid gap-6 grid-cols-1 lg:grid-cols-2 items-start">
           <div className="eventra-calendar rounded-3xl bg-white/80 p-4 shadow-lg backdrop-blur-sm dark:bg-slate-950/80">
-            <div className="h-[450px] lg:h-[620px]">
+            <div className="h-112.5 lg:h-155">
               <Calendar
                 localizer={localizer}
                 events={calendarEvents}
@@ -386,7 +386,7 @@ const CalendarPage = () => {
                     >
                       <div className="flex items-center justify-between">
                         {event.type ? (
-                          <span className="inline-flex rounded-[6px] bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-slate-500 dark:text-slate-400">
+                          <span className="inline-flex rounded-md bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
                             {event.type}
                           </span>
                         ) : (
@@ -395,7 +395,7 @@ const CalendarPage = () => {
                         <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 transition-transform group-hover:translate-x-0.5" />
                       </div>
 
-                      <h4 className="mt-2 text-[15px] font-bold text-slate-900 dark:text-white line-clamp-2 break-words leading-snug">
+                      <h4 className="mt-2 text-[15px] font-bold text-slate-900 dark:text-white line-clamp-2 wrap-break-word leading-snug">
                         {event.title}
                       </h4>
 
@@ -406,7 +406,7 @@ const CalendarPage = () => {
                         </span>
                         <span className="inline-flex items-center gap-1 min-w-0">
                           <MapPin className="h-3.5 w-3.5 text-sky-500 shrink-0" />
-                          <span className="truncate max-w-[200px]" title={event.location || "Location TBD"}>
+                          <span className="truncate max-w-50" title={event.location || "Location TBD"}>
                             {event.location || "Location TBD"}
                           </span>
                         </span>

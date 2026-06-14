@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Clock } from 'lucide-react';
 
 const WaitlistPromotionBanner = ({ eventName, expirationTime, onClaim, onDecline }) => {
@@ -28,7 +28,7 @@ const WaitlistPromotionBanner = ({ eventName, expirationTime, onClaim, onDecline
   if (timeLeft === "EXPIRED") return null;
 
   return (
-    <div className="bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-lg p-4 shadow-lg flex flex-col md:flex-row items-center justify-between">
+    <div className="bg-linear-to-r from-orange-500 to-amber-500 text-white rounded-lg p-4 shadow-lg flex flex-col md:flex-row items-center justify-between">
       <div className="flex items-center gap-3 mb-3 md:mb-0">
         <div className="bg-white/20 p-2 rounded-full">
           <Clock size={24} />

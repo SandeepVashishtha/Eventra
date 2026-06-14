@@ -274,3 +274,21 @@ export const generateIcsFileBlobUrl = (event, timezone) => {
     return null;
   }
 };
+
+/**
+ * Generate a webcal:// subscription URL for dynamic calendar feeds.
+ * When users subscribe via this link, Apple/Google Calendar will poll
+ * the feed automatically and reflect any event updates.
+ *
+ * @param {string|number} eventId - The event ID
+ * @param {string} [baseUrl] - Override base URL (defaults to window.location.origin)
+ * @returns {string} A webcal:// URL pointing to the event's .ics feed
+ */
+export const getWebcalSubscriptionUrl = (eventId, baseUrl) => {
+  if (!eventId) return '';
+  const origin = baseUrl || (typeof window !== 'undefined' ? window.location.origin : '');
+  // Strip the protocol and replace with webcal:// so Apple/Google Calendar
+  // recognise it as a subscribable feed rather than a one-time download.
+  const httpUrl = `${origin}/api/events/${eventId}/feed.ics`;
+  return httpUrl.replace(/^https?:\/\//, 'webcal://');
+};
