@@ -30,9 +30,11 @@ const JWT_SECRET = getJwtSecret();
 // Validation Helpers
 // ---------------------------------------------------------------------------
 
+const EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/;
+const MAX_SIGNUP_BODY_SIZE = 5120; // 5KB
+
 const validateEmail = (email) => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
+  return EMAIL_REGEX.test(email);
 };
 
 const validateName = (name) => {
@@ -191,6 +193,11 @@ async function handler(req, res) {
     if (!storageHealthy) {
       console.error("[signup.js] Authentication service unavailable: storage not healthy");
       return corsResponse(req, res, 500, { error: "Authentication service unavailable" });
+    }
+
+    const contentLength = parseInt(req.headers?.["content-length"] || "0", 10);
+    if (contentLength > MAX_SIGNUP_BODY_SIZE) {
+      return corsResponse(req, res, 413, { error: "Request body too large" });
     }
 
     if (!req.body || typeof req.body !== "object") {
