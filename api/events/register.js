@@ -17,6 +17,12 @@
 
 import { checkCapacity } from "../_lib/capacityValidator.js";
 import { withLock } from "../_lib/distributed-lock.js";
+import { getClientIp } from "../_lib/getClientIp.js";
+import { registerRateLimiter } from "../_lib/rateLimiter.js";
+
+// Concurrency lock for RSVP
+const rsvpLocks = new Map();
+const rsvpLockCounters = new Map();
 
 /**
  * Registration handler.
@@ -45,6 +51,26 @@ export default async function registerForEvent(req, res, deps = {}) {
     registerAttendee,
     getEventId = (request) => request.params?.id ?? request.body?.eventId,
   } = deps;
+
+  // ── Rate limiting ───────────────────────────────────────────────────────────
+  try {
+    const rateLimitResult = registerRateLimiter.checkAsync
+      ? await registerRateLimiter.checkAsync(getClientIp(req))
+      : registerRateLimiter.check(getClientIp(req));
+    if (!rateLimitResult.allowed) {
+      res.status(429).json({
+        error: "Too many registration attempts. Please try again later.",
+        retryAfter: 60,
+      });
+      return;
+    }
+  } catch (rateLimitError) {
+    console.error("[register] Rate limit check failed:", rateLimitError.message);
+    res.status(500).json({
+      error: "Rate limiting service unavailable. Please try again later.",
+    });
+    return;
+  }
 
   // ── Auth check ────────────────────────────────────────────────────────────
   const user = req.user;
