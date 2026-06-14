@@ -183,7 +183,8 @@ async function handler(req, res) {
       || req.socket?.remoteAddress
       || "unknown";
 
-    if (!signupRateLimiter.check(clientIp).allowed) {
+    const rateLimitResult = await signupRateLimiter.check(clientIp);
+    if (!rateLimitResult.allowed) {
       return corsResponse(req, res, 429, {
         error: "Too many signup attempts. Please try again later.",
         retryAfter: 60,

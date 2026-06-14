@@ -69,7 +69,8 @@ export default async function login(req, res, deps = {}) {
 
   // 2. Rate limit BEFORE any expensive work (bcrypt)
   const clientIp = getClientIp(req);
-  if (!loginRateLimiter.check(clientIp).allowed) {
+  const rateLimitResult = await loginRateLimiter.check(clientIp);
+  if (!rateLimitResult.allowed) {
     return corsResponse(req, res, 429, {
       success: false,
       message: "Too many authentication attempts. Please try again later.",
