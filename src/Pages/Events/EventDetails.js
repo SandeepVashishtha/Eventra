@@ -38,6 +38,94 @@ const isRequestCanceled = (error, signal) =>
   error?.name === "CanceledError" ||
   error?.code === "ERR_CANCELED";
 
+const fetchRegistrantsForExport = async (eventId) => {
+  let allRegistrants = [];
+  let page = 1;
+  const limit = 500;
+  let hasMore = true;
+
+  while (hasMore) {
+    const url = `${API_ENDPOINTS.EVENTS.REGISTRANTS(eventId)}?page=${page}&limit=${limit}`;
+    const response = await apiUtils.get(url);
+    const data = response.data?.data || response.data || [];
+    const totalPages = response.data?.totalPages || 1;
+
+    if (Array.isArray(data)) {
+      allRegistrants = allRegistrants.concat(data);
+    }
+
+    if (page >= totalPages || data.length < limit) {
+      hasMore = false;
+    } else {
+      page++;
+    }
+  }
+  return allRegistrants;
+};
+
+const createDuplicateDraft = (sourceEvent) => {
+  const parseISODate = (dateValue) => {
+    if (!dateValue) return "";
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toISOString().slice(0, 10);
+  };
+
+  const formatTime = (dateValue) => {
+    if (!dateValue) return "";
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) return "";
+    return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+  };
+
+  const startDate = sourceEvent.startDate || sourceEvent.date;
+  const endDate = sourceEvent.endDate || sourceEvent.date || sourceEvent.startDate;
+  const parsedStartDate = parseISODate(startDate);
+  const parsedEndDate = parseISODate(endDate);
+  const isMultiDay = parsedStartDate && parsedEndDate && parsedStartDate !== parsedEndDate;
+
+  const locationData = sourceEvent.location || {};
+
+  return {
+    title: sourceEvent.title ? `Copy of ${sourceEvent.title}` : "",
+    description: sourceEvent.description || "",
+    category: sourceEvent.category || "",
+    isMultiDay,
+    date: isMultiDay ? "" : parsedStartDate,
+    startDate: isMultiDay ? parsedStartDate : "",
+    endDate: isMultiDay ? parsedEndDate : "",
+    startTime: formatTime(startDate),
+    endTime: formatTime(endDate),
+    timezone: sourceEvent.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+    location: {
+      name: typeof locationData === "string" ? locationData : locationData.name || "",
+      address: typeof locationData === "string" ? "" : locationData.address || "",
+      coordinates: {
+        latitude: typeof locationData === "string" ? "" : locationData.coordinates?.latitude ?? "",
+        longitude: typeof locationData === "string" ? "" : locationData.coordinates?.longitude ?? "",
+      },
+    },
+    isVirtual: Boolean(sourceEvent.virtualLink),
+    virtualLink: sourceEvent.virtualLink || "",
+    capacity: sourceEvent.capacity != null ? sourceEvent.capacity : "",
+    isPublic: sourceEvent.isPublic ?? true,
+    requiresApproval: sourceEvent.requiresApproval ?? false,
+    registrationStart: sourceEvent.registrationStart ? parseISODate(sourceEvent.registrationStart) : "",
+    registrationEnd: sourceEvent.registrationEnd ? parseISODate(sourceEvent.registrationEnd) : "",
+    tags: Array.isArray(sourceEvent.tags) ? sourceEvent.tags : [],
+    ticketTiers: Array.isArray(sourceEvent.ticketTiers)
+      ? sourceEvent.ticketTiers.map((tier) => ({
+        name: tier.name || "",
+        price: tier.price ?? 0,
+        capacity: tier.capacity ?? "",
+        description: tier.description || "",
+      }))
+      : [{ name: "General Admission", price: 0, capacity: "", description: "Standard event access" }],
+    banner: null,
+    bannerPreview: sourceEvent.image || sourceEvent.banner || "",
+  };
+};
+
 const EventDetails = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
@@ -128,84 +216,23 @@ const EventDetails = () => {
     }, 500);
   };
 
-  const createDuplicateDraft = (sourceEvent) => {
-    const parseISODate = (dateValue) => {
-      if (!dateValue) return "";
-      const date = new Date(dateValue);
-      if (Number.isNaN(date.getTime())) return "";
-      return date.toISOString().slice(0, 10);
-    };
 
-    const formatTime = (dateValue) => {
-      if (!dateValue) return "";
-      const date = new Date(dateValue);
-      if (Number.isNaN(date.getTime())) return "";
-      return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
-    };
 
-    const startDate = sourceEvent.startDate || sourceEvent.date;
-    const endDate = sourceEvent.endDate || sourceEvent.date || sourceEvent.startDate;
-    const parsedStartDate = parseISODate(startDate);
-    const parsedEndDate = parseISODate(endDate);
-    const isMultiDay = parsedStartDate && parsedEndDate && parsedStartDate !== parsedEndDate;
-
-    const locationData = sourceEvent.location || {};
-
-    return {
-      title: sourceEvent.title ? `Copy of ${sourceEvent.title}` : "",
-      description: sourceEvent.description || "",
-      category: sourceEvent.category || "",
-      isMultiDay,
-      date: isMultiDay ? "" : parsedStartDate,
-      startDate: isMultiDay ? parsedStartDate : "",
-      endDate: isMultiDay ? parsedEndDate : "",
-      startTime: formatTime(startDate),
-      endTime: formatTime(endDate),
-      timezone: sourceEvent.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
-      location: {
-        name: typeof locationData === "string" ? locationData : locationData.name || "",
-        address: typeof locationData === "string" ? "" : locationData.address || "",
-        coordinates: {
-          latitude:
-            typeof locationData === "string"
-              ? ""
-              : locationData.coordinates?.latitude ?? "",
-          longitude:
-            typeof locationData === "string"
-              ? ""
-              : locationData.coordinates?.longitude ?? "",
-        },
-      },
-      isVirtual: Boolean(sourceEvent.virtualLink),
-      virtualLink: sourceEvent.virtualLink || "",
-      capacity: sourceEvent.capacity != null ? sourceEvent.capacity : "",
-      isPublic: sourceEvent.isPublic ?? true,
-      requiresApproval: sourceEvent.requiresApproval ?? false,
-      registrationStart: sourceEvent.registrationStart
-        ? parseISODate(sourceEvent.registrationStart)
-        : "",
-      registrationEnd: sourceEvent.registrationEnd
-        ? parseISODate(sourceEvent.registrationEnd)
-        : "",
-      tags: Array.isArray(sourceEvent.tags) ? sourceEvent.tags : [],
-      ticketTiers: Array.isArray(sourceEvent.ticketTiers)
-        ? sourceEvent.ticketTiers.map((tier) => ({
-          name: tier.name || "",
-          price: tier.price ?? 0,
-          capacity: tier.capacity ?? "",
-          description: tier.description || "",
-        }))
-        : [
-          {
-            name: "General Admission",
-            price: 0,
-            capacity: "",
-            description: "Standard event access",
-          },
-        ],
-      banner: null,
-      bannerPreview: sourceEvent.image || sourceEvent.banner || "",
-    };
+  const handleExport = async (format) => {
+    try {
+      setExportingRegistrants(true);
+      const allRegistrants = await fetchRegistrantsForExport(eventId);
+      if (format === 'csv') {
+        exportToCSV(allRegistrants, `${event.title}_registrants`);
+      } else {
+        exportToJSON(allRegistrants, `${event.title}_registrants`);
+      }
+    } catch (error) {
+      toast.error("Failed to fetch registrants");
+    } finally {
+      setExportingRegistrants(false);
+      setShowExportDropdown(false);
+    }
   };
 
   const handleDuplicateEvent = async () => {
@@ -353,7 +380,7 @@ const EventDetails = () => {
                 Share Event
               </button>
 
-              {(isAdmin() || isOrganizer()) && event.status !== "cancelled" && (
+              {isOrganizer && event.status !== "cancelled" && (
                 <button
                   onClick={() => setShowCancelModal(true)}
                   className="inline-flex items-center justify-center rounded-full border border-red-500 px-6 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
@@ -400,76 +427,14 @@ const EventDetails = () => {
                         <div className="fixed inset-0 z-10" onClick={() => setShowExportDropdown(false)} />
                         <div className="absolute right-0 mt-2 w-40 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-lg py-1.5 z-20 animate-fadeIn text-left">
                           <button
-                            onClick={async () => {
-                              try {
-                                setExportingRegistrants(true);
-                                let allRegistrants = [];
-                                let page = 1;
-                                const limit = 500;
-                                let hasMore = true;
-
-                                while (hasMore) {
-                                  const url = `${API_ENDPOINTS.EVENTS.REGISTRANTS(eventId)}?page=${page}&limit=${limit}`;
-                                  const response = await apiUtils.get(url);
-                                  const data = response.data?.data || response.data || [];
-                                  const totalPages = response.data?.totalPages || 1;
-
-                                  if (Array.isArray(data)) {
-                                    allRegistrants = allRegistrants.concat(data);
-                                  }
-
-                                  if (page >= totalPages || data.length < limit) {
-                                    hasMore = false;
-                                  } else {
-                                    page++;
-                                  }
-                                }
-                                exportToCSV(allRegistrants, `${event.title}_registrants`);
-                              } catch (error) {
-                                toast.error("Failed to fetch registrants");
-                              } finally {
-                                setExportingRegistrants(false);
-                                setShowExportDropdown(false);
-                              }
-                            }}
+                            onClick={() => handleExport('csv')}
                             disabled={exportingRegistrants}
                             className="w-full text-left px-4 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition disabled:opacity-50"
                           >
                             Export as CSV
                           </button>
                           <button
-                            onClick={async () => {
-                              try {
-                                setExportingRegistrants(true);
-                                let allRegistrants = [];
-                                let page = 1;
-                                const limit = 500;
-                                let hasMore = true;
-
-                                while (hasMore) {
-                                  const url = `${API_ENDPOINTS.EVENTS.REGISTRANTS(eventId)}?page=${page}&limit=${limit}`;
-                                  const response = await apiUtils.get(url);
-                                  const data = response.data?.data || response.data || [];
-                                  const totalPages = response.data?.totalPages || 1;
-
-                                  if (Array.isArray(data)) {
-                                    allRegistrants = allRegistrants.concat(data);
-                                  }
-
-                                  if (page >= totalPages || data.length < limit) {
-                                    hasMore = false;
-                                  } else {
-                                    page++;
-                                  }
-                                }
-                                exportToJSON(allRegistrants, `${event.title}_registrants`);
-                              } catch (error) {
-                                toast.error("Failed to fetch registrants");
-                              } finally {
-                                setExportingRegistrants(false);
-                                setShowExportDropdown(false);
-                              }
-                            }}
+                            onClick={() => handleExport('json')}
                             disabled={exportingRegistrants}
                             className="w-full text-left px-4 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition disabled:opacity-50"
                           >
