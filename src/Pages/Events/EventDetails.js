@@ -66,50 +66,75 @@ const EventDetails = () => {
   const latestRequestIdRef = useRef(0);
   const abortControllerRef = useRef(null);
 
+const checkLatest = (reqId, ctrl, latestReqRef, abortRef) => {
+  if (latestReqRef.current !== reqId) return false;
+  if (abortRef.current !== ctrl) return false;
+  if (ctrl.signal.aborted) return false;
+  return true;
+};
+
+const handleResData = (res) => {
+  if (!res.data) return null;
+  if (res.data.data) return res.data.data;
+  return res.data;
+};
+
+const processSuccess = (res, setEvent) => {
+  if (!res.ok) return false;
+  const raw = handleResData(res);
+  if (!raw) return false;
+  setEvent({ ...raw, status: getEventStatus(raw) });
+  return true;
+};
+
+const processErrorFallback = (eventId, setEvent, setFetchError) => {
+  const fallback = mockEvents.find((item) => String(item.id) === eventId);
+  if (fallback) {
+    setEvent({ ...fallback, status: getEventStatus(fallback) });
+  } else {
+    setFetchError("Event not found.");
+  }
+};
+
+const handleCatchError = (error, reqId, ctrl, latestRef, abortRef, eventId, setEvent, setFetchError) => {
+  if (!checkLatest(reqId, ctrl, latestRef, abortRef)) return;
+  if (isRequestCanceled(error, ctrl.signal)) return;
+  processErrorFallback(eventId, setEvent, setFetchError);
+};
+
+const finishLoading = (reqId, ctrl, latestRef, abortRef, setFetchLoading) => {
+  const shouldFinish = checkLatest(reqId, ctrl, latestRef, abortRef);
+  if (abortRef.current === ctrl) {
+    abortRef.current = null;
+  }
+  if (shouldFinish) {
+    setFetchLoading(false);
+  }
+};
+
   const loadEvent = useCallback(async () => {
-    abortControllerRef.current?.abort();
+    if (abortControllerRef.current) abortControllerRef.current.abort();
 
     const controller = new AbortController();
     abortControllerRef.current = controller;
     const requestId = ++latestRequestIdRef.current;
-    const isLatestRequest = () =>
-      latestRequestIdRef.current === requestId &&
-      abortControllerRef.current === controller &&
-      !controller.signal.aborted;
-
+    
     setFetchLoading(true);
     setFetchError(null);
 
     try {
-      const res = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId), {
-        signal: controller.signal,
-      });
-      if (!isLatestRequest()) return;
-      if (res.ok && res.data) {
-        const raw = res.data?.data ?? res.data;
-        setEvent({ ...raw, status: getEventStatus(raw) });
-      } else {
-        throw new Error(res.data?.message || `Event not found (${res.status})`);
+      const res = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId), { signal: controller.signal });
+      if (!checkLatest(requestId, controller, latestRequestIdRef, abortControllerRef)) return;
+      
+      const success = processSuccess(res, setEvent);
+      if (!success) {
+        const msg = res.data && res.data.message ? res.data.message : `Event not found (${res.status})`;
+        throw new Error(msg);
       }
     } catch (error) {
-      if (!isLatestRequest()) return;
-      if (isRequestCanceled(error, controller.signal)) return;
-
-      // Fall back to bundled mock data when the API is unreachable
-      const fallback = mockEvents.find((item) => String(item.id) === eventId);
-      if (fallback) {
-        setEvent({ ...fallback, status: getEventStatus(fallback) });
-      } else {
-        setFetchError("Event not found.");
-      }
+      handleCatchError(error, requestId, controller, latestRequestIdRef, abortControllerRef, eventId, setEvent, setFetchError);
     } finally {
-      const shouldFinishLoading = isLatestRequest();
-      if (abortControllerRef.current === controller) {
-        abortControllerRef.current = null;
-      }
-      if (shouldFinishLoading) {
-        setFetchLoading(false);
-      }
+      finishLoading(requestId, controller, latestRequestIdRef, abortControllerRef, setFetchLoading);
     }
   }, [eventId, setEvent, setFetchLoading, setFetchError]);
 
