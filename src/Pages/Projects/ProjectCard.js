@@ -12,6 +12,23 @@ import { projectService } from "../../services/projectService.js";
 const CACHE_KEY = "eventra_github_metrics_cache";
 const CACHE_TTL = 1 * 60 * 60 * 1000; // 1 hour expiration
 
+const saveMetricsCache = (cache) => {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+  } catch (err) {
+    if (err.name === "QuotaExceededError" || err.name === "NS_ERROR_DOM_QUOTA_REACHED") {
+      const entries = Object.entries(cache).sort((a, b) => a[1].timestamp - b[1].timestamp);
+      const keepCount = Math.max(1, Math.floor(entries.length * 0.75));
+      const newCache = Object.fromEntries(entries.slice(-keepCount));
+      try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify(newCache));
+      } catch (e) {
+        localStorage.removeItem(CACHE_KEY);
+      }
+    }
+  }
+};
+
 // Status Badge Styling Helper
 const getStatusColor = (status) => {
   if (!status) return "bg-slate-100 text-white dark:bg-slate-900/50 dark:text-white";
@@ -194,7 +211,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
           const saved = localStorage.getItem(CACHE_KEY);
           cache = saved ? safeJsonParse(saved, {}) : {};
           cache[key] = { data: updated, timestamp: Date.now() };
-          localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+          saveMetricsCache(cache);
         } catch {}
         return updated;
       });
@@ -209,6 +226,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
     e.preventDefault();
     e.stopPropagation();
     
+<<<<<<< HEAD
     const repoDetails = getGitHubRepoDetails(project.githubUrl);
     const key = repoDetails ? `${repoDetails.owner}/${repoDetails.repo}` : `mock-${project.id}`;
     
@@ -223,6 +241,39 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
       } catch {}
       return updated;
     });
+=======
+    if (!isAuthenticated()) {
+      toast.error("You must be logged in to fork a project.");
+      return;
+    }
+
+    try {
+      await projectService.forkProject(project.id, {
+        headers: {
+          Authorization: token
+        }
+      });
+
+      const repoDetails = getGitHubRepoDetails(project.githubUrl);
+      const key = repoDetails ? `${repoDetails.owner}/${repoDetails.repo}` : `mock-${project.id}`;
+      
+      setMetrics(prev => {
+        const updated = { ...prev, forks: (prev?.forks || 0) + 1 };
+        try {
+          let cache = {};
+          const saved = localStorage.getItem(CACHE_KEY);
+          cache = saved ? safeJsonParse(saved, {}) : {};
+          cache[key] = { data: updated, timestamp: Date.now() };
+          saveMetricsCache(cache);
+        } catch {}
+        return updated;
+      });
+      toast.success("Project forked successfully!");
+    } catch (err) {
+      const message = err?.data?.message || err?.message || "Failed to fork project.";
+      toast.error(message);
+    }
+>>>>>>> ac6ca0ad (fix(projects): handle QuotaExceededError via LRU cache eviction)
   };
 
   // GitHub metrics loading with LocalStorage caching system
@@ -274,7 +325,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
           data: freshMetrics,
           timestamp: Date.now(),
         };
-        localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+        saveMetricsCache(cache);
 
         setMetrics(freshMetrics);
         setMetricsLoading(false);
