@@ -18,10 +18,6 @@ import {
   resetFailures,
   getBackoffDelay,
 } from "../../utils/authRateLimiter";
-import FieldError from "../common/FieldError";
-import useLoginRateLimit from "../../hooks/useLoginRateLimit";
-import { MAX_LOGIN_ATTEMPTS, parseRetryAfterMs } from "../../utils/rateLimitUtils";
-import "../../styles/auth.css";
 
 const Login = () => {
   useDocumentTitle("Login | Eventra");

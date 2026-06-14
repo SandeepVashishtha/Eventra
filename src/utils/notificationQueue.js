@@ -3,10 +3,6 @@ const MAX_QUEUE_SIZE = 500;
 const safeGetQueue = () => {
   if (typeof window === "undefined" || !window.localStorage) return [];
   try {
-    const queue = JSON.parse(localStorage.getItem('eventra_notif_queue') || '[]');
-    queue.push({ action, payload, timestamp: Date.now() });
-    localStorage.setItem('eventra_notif_queue', JSON.stringify(queue));
-  } catch {}
     const raw = window.localStorage.getItem('eventra_notif_queue');
     if (!raw) return [];
     const parsed = JSON.parse(raw);
