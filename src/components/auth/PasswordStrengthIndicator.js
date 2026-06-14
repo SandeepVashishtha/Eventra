@@ -19,6 +19,9 @@ const assessStrength = (password) => {
   if (criteriaMet === 5) {
     score = 3;
     feedback = 'Excellent! Your password is secure and meets all criteria.';
+  } else if (criteriaMet === 4) {
+    score = 2;
+    feedback = 'Almost there! Add a special character for full strength.';
   } else if (criteriaMet >= 3) {
     score = 2;
     feedback = 'Moderate strength. Add special characters or letters for better security.';

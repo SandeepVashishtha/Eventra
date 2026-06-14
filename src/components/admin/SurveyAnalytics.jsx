@@ -1,12 +1,5 @@
+import { Users, Activity, Smile, Play, Star, Download } from "lucide-react";
 import { useState, useMemo } from "react";
-import {
-  FiUsers,
-  FiActivity,
-  FiSmile,
-  FiPlay,
-  FiStar,
-  FiDownload,
-} from "react-icons/fi";
 import { exportSurveyToCSV } from "../../utils/exportCsv";
 import {
   ResponsiveContainer,
@@ -174,7 +167,7 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
             onClick={handleExportCSV}
             className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-semibold hover:border-indigo-500 dark:hover:border-indigo-400 text-xs text-slate-700 dark:text-slate-350 hover:text-indigo-650 dark:hover:text-indigo-400 hover:shadow-md transition active:scale-95 cursor-pointer"
            aria-label="button">
-            <FiDownload className="w-4 h-4 text-indigo-500" />
+            <Download className="w-4 h-4 text-indigo-500" />
             Export Results to CSV
           </button>
           
@@ -182,7 +175,7 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
             onClick={handleSimulateSubmission}
             className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-xs font-bold text-white shadow-lg shadow-indigo-600/15 transition self-start sm:self-auto cursor-pointer"
            aria-label="button">
-            <FiPlay className="w-4 h-4 fill-white" />
+            <Play className="w-4 h-4 fill-white" />
             Inject Survey Response
           </button>
         </div>
@@ -195,14 +188,14 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
             label: "Total Submissions",
             value: totalSubmissions,
             sub: "+12 submissions today",
-            icon: <FiUsers className="w-5 h-5" />,
+            icon: <Users className="w-5 h-5" />,
             color: "text-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 border-indigo-100/50 dark:border-indigo-900/30",
           },
           {
             label: "Completion Rate",
             value: `${completionRate}%`,
             sub: "Average time: 2m 45s",
-            icon: <FiActivity className="w-5 h-5" />,
+            icon: <Activity className="w-5 h-5" />,
             color: "text-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-100/50 dark:border-emerald-900/30",
           },
           {
@@ -221,7 +214,7 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
             label: "Attendee Satisfaction",
             value: "4.4 / 5.0",
             sub: "Highly positive feedback",
-            icon: <FiSmile className="w-5 h-5" />,
+            icon: <Smile className="w-5 h-5" />,
             color: "text-rose-500 bg-rose-50 dark:bg-rose-950/40 border-rose-100/50 dark:border-rose-900/30",
           },
         ].map((stat, i) => (
@@ -246,7 +239,7 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
       {/* DYNAMIC ANALYTICS CONTROLLER */}
       {questions.length === 0 ? (
         <div className="p-12 text-center border-2 border-dashed border-slate-200 dark:border-slate-850 bg-white dark:bg-slate-900 rounded-3xl">
-          <FiSmile className="w-12 h-12 text-slate-355 dark:text-slate-600 mx-auto mb-4" />
+          <Smile className="w-12 h-12 text-slate-355 dark:text-slate-600 mx-auto mb-4" />
           <p className="text-lg font-medium text-slate-400 dark:text-slate-500">
             No active questions found in your survey.
           </p>
@@ -320,7 +313,7 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
                           return (
                             <div key={star} className="flex items-center gap-3 text-xs">
                               <span className="w-10 font-bold text-slate-400 shrink-0 flex items-center gap-0.5">
-                                {star} <FiStar className="w-3 h-3 fill-slate-300 dark:fill-slate-650" />
+                                {star} <Star className="w-3 h-3 fill-slate-300 dark:fill-slate-650" />
                               </span>
                               <div className="flex-1 h-2.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                                 <div

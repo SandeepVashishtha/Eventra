@@ -1,20 +1,12 @@
+import { GitBranch, ChevronLeft, ChevronRight } from "lucide-react";
+import { FaMedal, FaCodeBranch, FaUserFriends, FaBuilding, FaMapMarkerAlt, FaGithub, FaExternalLinkAlt } from "react-icons/fa";
 import { useState, useEffect, useCallback, useRef } from "react";
 import useReducedMotion from "../../../hooks/useReducedMotion.js";
-import {
-  FaGithub,
-  FaExternalLinkAlt,
-  FaCodeBranch,
-  FaMapMarkerAlt,
-  FaBuilding,
-  FaUserFriends,
-  FaMedal,
-  FaChevronLeft,
-  FaChevronRight,
-} from "react-icons/fa";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { throttleProfileFetch } from "../../../components/Contributors";
 import { fetchWithTimeout } from "../../../utils/fetchWithTimeout";
+import { ContributorCardSkeleton } from "../../../components/common/SkeletonLoaders";
+import { safeJsonParse } from "../../../utils/safeJsonParse";
 
 // GitHub repo
 const GITHUB_REPO = "sandeepvashishtha/Eventra";
@@ -32,6 +24,9 @@ const BATCH_DELAY_MS = 200;
 // keeping per-batch concurrency well within rate-limit budgets.
 const PROFILE_BATCH_SIZE = 10;
 
+
+
+
 /**
  * Fetches items in parallel batches, inserting a short delay between batches
  * to stay within GitHub's unauthenticated rate limit.
@@ -45,12 +40,12 @@ const fetchInBatches = async (items, asyncFn, batchSize = PROFILE_BATCH_SIZE) =>
   const results = [];
   for (let i = 0; i < items.length; i += batchSize) {
     const batch = items.slice(i, i + batchSize);
-    // eslint-disable-next-line no-await-in-loop
+     
     const batchResults = await Promise.allSettled(batch.map(asyncFn));
     results.push(...batchResults);
     // Insert a delay between batches (but not after the last one)
     if (i + batchSize < items.length) {
-      // eslint-disable-next-line no-await-in-loop
+       
       await new Promise((resolve) => setTimeout(resolve, BATCH_DELAY_MS));
     }
   }
@@ -73,7 +68,7 @@ const getCachedContributors = () => {
   try {
     const cachedData = localStorage.getItem(STORAGE_KEY);
     if (!cachedData) return { data: null, isStale: false };
-    const { data, timestamp } = JSON.parse(cachedData);
+    const { data, timestamp } = safeJsonParse(cachedData, {});
     const age = Date.now() - timestamp;
     if (age <= CACHE_DURATION) return { data, isStale: false };
     if (age <= CACHE_DURATION + STALE_REVALIDATE_WINDOW) {
@@ -90,7 +85,7 @@ const cacheContributors = (data) => {
       STORAGE_KEY,
       JSON.stringify({ data, timestamp: Date.now() })
     );
-  } catch {}
+  } catch { }
 };
 
 const Contributors = () => {
@@ -140,7 +135,6 @@ const Contributors = () => {
 
   // Fetches a single GitHub user profile via the backend proxy.
   const fetchGitHubProfile = useCallback(async (username) => {
-    await throttleProfileFetch();
     try {
       const proxyUrl = `/api/github-proxy?path=${encodeURIComponent(
         `/users/${username}`
@@ -213,7 +207,8 @@ const Contributors = () => {
       // load fall back to the default values from fetchGitHubProfile's catch.
       const settledProfiles = await fetchInBatches(
         allContributors,
-        async (c) => {
+        async (c, idx) => {
+          await new Promise((resolve) => setTimeout(resolve, idx * (BATCH_DELAY_MS / PROFILE_BATCH_SIZE)));
           const profile = await fetchGitHubProfile(c.login);
           return {
             ...c,
@@ -273,34 +268,31 @@ const Contributors = () => {
   }, [contributors.length, itemsPerView, currentIndex, nextSlide]);
 
   // UPDATED: Loading text color
-  if (loading)
-    return (
-      <p className="text-center py-20 text-gray-600 dark:text-gray-400">
-        Loading contributors...
-      </p>
-    );
-
-  const visibleContributors = contributors.slice(
-    currentIndex,
-    currentIndex + itemsPerView
-  );
-  const totalSlides = Math.ceil(contributors.length / itemsPerView);
-  const currentSlide = Math.floor(currentIndex / itemsPerView);
+  const visibleContributors = loading
+    ? Array.from({ length: itemsPerView }, (_, i) => ({ id: `skeleton-${i}`, isSkeleton: true }))
+    : contributors.slice(currentIndex, currentIndex + itemsPerView);
+  const totalSlides = loading ? 1 : Math.ceil(contributors.length / itemsPerView);
+  const currentSlide = loading ? 0 : Math.floor(currentIndex / itemsPerView);
 
   return (
     <section
       ref={sectionRef}
       // UPDATED: Section background
-      className="py-20 bg-gradient-to-b from-indigo-50 via-indigo-100 to-white dark:from-gray-900 dark:via-indigo-900/20 dark:to-black "
+      className="py-20 bg-linear-to-b from-indigo-50 via-indigo-100 to-white dark:from-gray-900 dark:via-indigo-900/20 dark:to-black "
       // AOS Implementation
       data-aos="slide-up"
       data-aos-duration="1000"
       data-aos-offset="200"
     >
+      {loading && (
+        <div className="sr-only" role="status" aria-live="polite">
+          Loading contributors...
+        </div>
+      )}
       <div className="max-w-7xl mx-auto px-6">
         <motion.h2
-          // UPDATED: Title text
-          className="text-5xl font-extrabold text-center mb-16 text-gray-800 dark:text-gray-100 tracking-tight"
+          // UPDATED: Title text (responsive text and mb-12 spacing)
+          className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-center mb-12 text-gray-800 dark:text-gray-100 tracking-tight"
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: prefersReducedMotion ? 0 : 0.6, ease: "easeOut" }}
@@ -320,21 +312,21 @@ const Contributors = () => {
             onClick={prevSlide}
             // UPDATED: Arrow button styles
             className="absolute left-0 top-[35%] -translate-y-1/2 -translate-x-4 z-10 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 transition-all duration-300 border border-gray-200 dark:border-gray-700"
-            disabled={currentIndex === 0}
-           aria-label="Previous slide">
+            disabled={loading || currentIndex === 0}
+            aria-label="Previous slide">
             {/* UPDATED: Arrow icon color */}
-            <FaChevronLeft className="text-gray-900 dark:text-white text-xl" />
+            <ChevronLeft className="text-gray-900 dark:text-white text-xl" />
           </button>
 
           <button
             onClick={nextSlide}
             // UPDATED: Arrow button styles
             className="absolute right-0 top-[35%] -translate-y-1/2 translate-x-4 z-10 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 transition-all duration-300 border border-gray-200 dark:border-gray-700"
-            disabled={currentIndex + itemsPerView >= contributors.length}
+            disabled={loading || currentIndex + itemsPerView >= contributors.length}
             aria-label="Next slide"
           >
             {/* UPDATED: Arrow icon color */}
-            <FaChevronRight className="text-gray-900 dark:text-white text-xl" />
+            <ChevronRight className="text-gray-900 dark:text-white text-xl" />
           </button>
 
           {/* Carousel Content */}
@@ -344,130 +336,144 @@ const Contributors = () => {
               animate={{ x: 0 }}
               transition={{ duration: prefersReducedMotion ? 0 : 0.5, ease: "easeInOut" }}
             >
-              {visibleContributors.map((c, i) => (
-                <motion.div
-                  key={c.id}
-                  className="relative bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl p-4 pt-10 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 flex flex-col items-center text-center mb-6 transition-all duration-300 ease-out flex-shrink-0"
-                  style={{
-                    flex: `0 0 calc((100% - ${
-                      itemsPerView - 1
-                    } * 1.5rem) / ${itemsPerView})`,
-                  }}
-                  initial={{ opacity: 0, y: 40 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.1 }}
-                  whileHover={{
-                    scale: 1.02,
-                    y: -4,
-                    boxShadow: "0px 6px 18px rgba(99,102,241,0.25)",
-                  }}
-                  data-aos="zoom-in-up"
-                  data-aos-delay={i * 100}
-                >
-                  {/* Avatar */}
-                  <div className="absolute top-3 mt-3 left-1/2 -translate-x-1/2">
-                    <div className="relative">
-                      <img loading="lazy" decoding="async" width="65" height="65"
-  src={c.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name || c.login || "Anon")}&background=random`}
-  alt={`${c.name || c.login || "Contributor"}'s GitHub profile`}
-  className="w-[65px] h-[65px] rounded-full border-4 border-gray-900 dark:border-gray-300 shadow-md relative z-10"
-/>
-                      <div className="absolute inset-0 rounded-full animate-pulse bg-black/10 blur-sm -z-10"></div>
+              {visibleContributors.map((c, i) => {
+                if (c.isSkeleton) {
+                  return (
+                    <ContributorCardSkeleton
+                      key={c.id}
+                      style={{
+                        flex: `0 0 calc((100% - ${itemsPerView - 1
+                          } * 1.5rem) / ${itemsPerView})`,
+                      }}
+                      className="shrink-0 mb-6"
+                    />
+                  );
+                }
+
+                return (
+                  <motion.div
+                    key={c.id}
+                    className="relative bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl p-4 pt-10 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 flex flex-col items-center text-center mb-6 transition-all duration-300 ease-out shrink-0"
+                    style={{
+                      flex: `0 0 calc((100% - ${itemsPerView - 1
+                        } * 1.5rem) / ${itemsPerView})`,
+                    }}
+                    initial={{ opacity: 0, y: 40 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.1 }}
+                    whileHover={{
+                      scale: 1.02,
+                      y: -4,
+                      boxShadow: "0px 6px 18px rgba(99,102,241,0.25)",
+                    }}
+                    data-aos="zoom-in-up"
+                    data-aos-delay={i * 100}
+                  >
+                    {/* Avatar */}
+                    <div className="absolute top-3 mt-3 left-1/2 -translate-x-1/2">
+                      <div className="relative">
+                        <img loading="lazy" decoding="async" width="65" height="65"
+                          src={c.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name || c.login || "Anon")}&background=random`}
+                          alt={`${c.name || c.login || "Contributor"}'s GitHub profile`}
+                          className="w-16.25 h-16.25 rounded-full border-4 border-gray-900 dark:border-gray-300 shadow-md relative z-10"
+                        />
+                        <div className="absolute inset-0 rounded-full animate-pulse bg-black/10 blur-sm -z-10"></div>
+                      </div>
                     </div>
-                  </div>
-                  {/* Name + Role + Badge */}
-                  <div className="mt-16">
-                    {/* UPDATED: Name and role text */}
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                      {c.name ? c.name : c.login || "Unknown Contributor"}
-                    </h3>
-                    <p className="text-gray-700 dark:text-gray-300 text-sm font-medium mb-3 flex items-center justify-center gap-1">
-                      <FaMedal className="text-yellow-500" />{" "}
-                      {c.role}
-                    </p>
+                    {/* Name + Role + Badge */}
+                    <div className="mt-16">
+                      {/* UPDATED: Name and role text */}
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                        {c.name ? c.name : c.login || "Unknown Contributor"}
+                      </h3>
+                      <p className="text-gray-700 dark:text-gray-300 text-sm font-medium mb-3 flex items-center justify-center gap-1">
+                        <FaMedal className="text-yellow-500" />{" "}
+                        {c.role}
+                      </p>
 
-                    {/* UPDATED: Contribution Badges */}
-                    {currentIndex + i === 0 && (
-                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 dark:bg-yellow-900/40 text-gray-900 dark:text-yellow-300">
-                        🥇･ Top Contributor
-                      </span>
-                    )}
-                    {currentIndex + i === 1 && (
-                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-200">
-                        🥈･ Silver Contributor
-                      </span>
-                    )}
-                    {currentIndex + i === 2 && (
-                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 dark:bg-orange-900/40 text-gray-900 dark:text-orange-300">
-                        🥉･ Bronze Contributor
-                      </span>
-                    )}
-                  </div>
-
-                  {/* UPDATED: Stat text colors */}
-                  <div className="grid grid-cols-3 gap-3 text-sm text-gray-900 dark:text-white my-3 w-full">
-                    {/* UPDATED: Stat box background and icon colors */}
-                    <div className="flex flex-col items-center bg-white/60 dark:bg-gray-700/60 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                      <FaCodeBranch className="text-gray-900 dark:text-indigo-400 mb-1" />
-                      <span className="font-semibold">{c.public_repos}</span>
-                      <span className="text-xs text-gray-600 dark:text-gray-400">
-                        Repos
-                      </span>
+                      {/* UPDATED: Contribution Badges */}
+                      {currentIndex + i === 0 && (
+                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 dark:bg-yellow-900/40 text-gray-900 dark:text-yellow-300">
+                          🥇･ Top Contributor
+                        </span>
+                      )}
+                      {currentIndex + i === 1 && (
+                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-200">
+                          🥈･ Silver Contributor
+                        </span>
+                      )}
+                      {currentIndex + i === 2 && (
+                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 dark:bg-orange-900/40 text-gray-900 dark:text-orange-300">
+                          🥉･ Bronze Contributor
+                        </span>
+                      )}
                     </div>
-                    <div className="flex flex-col items-center bg-white/60 dark:bg-gray-700/60 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                      <FaUserFriends className="text-gray-900 dark:text-indigo-400 mb-1" />
-                      <span className="font-semibold">{c.followers}</span>
-                      <span className="text-xs text-gray-600 dark:text-gray-400">
-                        Followers
-                      </span>
+
+                    {/* UPDATED: Stat text colors */}
+                    <div className="grid grid-cols-3 gap-3 text-sm text-gray-900 dark:text-white my-3 w-full">
+                      {/* UPDATED: Stat box background and icon colors */}
+                      <div className="flex flex-col items-center bg-white/60 dark:bg-gray-700/60 backdrop-blur-md p-2 rounded-lg shadow-sm">
+                        <FaCodeBranch className="text-gray-900 dark:text-indigo-400 mb-1" />
+                        <span className="font-semibold">{c.public_repos}</span>
+                        <span className="text-xs text-gray-600 dark:text-gray-400">
+                          Repos
+                        </span>
+                      </div>
+                      <div className="flex flex-col items-center bg-white/60 dark:bg-gray-700/60 backdrop-blur-md p-2 rounded-lg shadow-sm">
+                        <FaUserFriends className="text-gray-900 dark:text-indigo-400 mb-1" />
+                        <span className="font-semibold">{c.followers}</span>
+                        <span className="text-xs text-gray-600 dark:text-gray-400">
+                          Followers
+                        </span>
+                      </div>
+                      <div className="flex flex-col items-center bg-white/60 dark:bg-gray-700/60 backdrop-blur-md p-2 rounded-lg shadow-sm">
+                        <GitBranch className="text-gray-900 dark:text-indigo-400 mb-1 w-4 h-4" />
+                        <span className="font-semibold">{c.contributions}</span>
+                        <span className="text-xs text-gray-600 dark:text-gray-400">
+                          Contribs
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex flex-col items-center bg-white/60 dark:bg-gray-700/60 backdrop-blur-md p-2 rounded-lg shadow-sm">
-                      <FaCodeBranch className="text-gray-900 dark:text-indigo-400 mb-1" />
-                      <span className="font-semibold">{c.contributions}</span>
-                      <span className="text-xs text-gray-600 dark:text-gray-400">
-                        Contribs
-                      </span>
+
+                    {/* Contribution Progress Bar */}
+                    {/* UPDATED: Progress bar background */}
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 h-2 rounded-full overflow-hidden mb-4">
+                      <div className="h-2 bg-gray-900 dark:bg-indigo-400" />
                     </div>
-                  </div>
 
-                  {/* Contribution Progress Bar */}
-                  {/* UPDATED: Progress bar background */}
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 h-2 rounded-full overflow-hidden mb-4">
-                    <div className="h-2 bg-gray-900 dark:bg-indigo-400" />
-                  </div>
+                    {/* Extra Info */}
+                    {/* UPDATED: Text color */}
+                    <div className="flex flex-col gap-1 text-xs text-gray-700 dark:text-gray-300 mb-4">
+                      {c.company && (
+                        <span className="flex items-center gap-1 justify-center">
+                          <FaBuilding /> {c.company}
+                        </span>
+                      )}
+                      {c.location && (
+                        <span className="flex items-center gap-1 justify-center">
+                          <FaMapMarkerAlt /> {c.location}
+                        </span>
+                      )}
+                    </div>
 
-                  {/* Extra Info */}
-                  {/* UPDATED: Text color */}
-                  <div className="flex flex-col gap-1 text-xs text-gray-700 dark:text-gray-300 mb-4">
-                    {c.company && (
-                      <span className="flex items-center gap-1 justify-center">
-                        <FaBuilding /> {c.company}
-                      </span>
-                    )}
-                    {c.location && (
-                      <span className="flex items-center gap-1 justify-center">
-                        <FaMapMarkerAlt /> {c.location}
-                      </span>
-                    )}
-                  </div>
+                    {/* Profile Button */}
+                    <div className="mt-auto w-full">
+                      <a
+                        href={c.html_url}
+                        target="_blank" rel="noopener noreferrer"
+                        className="group inline-flex items-center justify-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-4 py-2 rounded-full text-sm font-semibold shadow hover:bg-zinc-800 dark:hover:bg-gray-200 hover:scale-105 transition-all duration-300 ease-out transform relative overflow-hidden"
+                      >
+                        {/* GitHub Icon with animation */}
+                        <FaGithub className="text-lg transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110 group-hover:text-gray-200" />
 
-                  {/* Profile Button */}
-                  <div className="mt-auto w-full">
-                    <a
-                      href={c.html_url}
-                      target="_blank" rel="noopener noreferrer"
-                      className="group inline-flex items-center justify-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-4 py-2 rounded-full text-sm font-semibold shadow hover:bg-zinc-800 dark:hover:bg-gray-200 hover:scale-105 transition-all duration-300 ease-out transform relative overflow-hidden"
-                    >
-                      {/* GitHub Icon with animation */}
-                      <FaGithub className="text-lg transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110 group-hover:text-gray-200" />
+                        <span>Profile</span>
 
-                      <span>Profile</span>
-
-                      <FaExternalLinkAlt className="text-sm opacity-80 transition-transform duration-300 group-hover:translate-x-1" />
-                    </a>
-                  </div>
-                </motion.div>
-              ))}
+                        <FaExternalLinkAlt className="text-sm opacity-80 transition-transform duration-300 group-hover:translate-x-1" />
+                      </a>
+                    </div>
+                  </motion.div>
+                );
+              })}
             </motion.div>
           </div>
 
@@ -476,22 +482,21 @@ const Contributors = () => {
             {Array.from({ length: totalSlides }).map((_, index) => (
               <button
                 key={index}
-                onClick={() => setCurrentIndex(index * itemsPerView)}
+                onClick={() => !loading && setCurrentIndex(index * itemsPerView)}
                 // UPDATED: Dot colors
-                className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                  index === currentSlide
+                className={`w-3 h-3 rounded-full transition-all duration-300 ${index === currentSlide
                     ? "bg-gray-900 dark:bg-white scale-125"
                     : "bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500"
-                }`}
+                  }`}
               />
             ))}
           </div>
 
-          <div className="flex justify-center mt-8">
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6 mt-8 w-full max-w-md mx-auto sm:max-w-none">
             <Link
               to="/contributors"
               onClick={() => window.scrollTo(0, 0)}
-              className="inline-flex items-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-8 py-3 rounded-full font-semibold shadow-lg hover:bg-zinc-800 dark:hover:bg-gray-200 hover:scale-105 transition-all duration-300 ease-out"
+              className="inline-flex items-center justify-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-8 py-3 w-full sm:w-auto rounded-full font-semibold shadow-lg hover:bg-zinc-800 dark:hover:bg-gray-200 hover:scale-105 transition-all duration-300 ease-out"
             >
               <span>View All Contributors</span>
               <FaExternalLinkAlt className="text-sm" />
@@ -499,7 +504,7 @@ const Contributors = () => {
             <Link
               to="/ContributorGuide"
               onClick={() => window.scrollTo(0, 0)}
-              className="inline-flex items-center gap-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-8 py-3 rounded-full font-semibold shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-105 transition-all duration-300 ease-out ml-10"
+              className="inline-flex items-center justify-center gap-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-8 py-3 w-full sm:w-auto rounded-full font-semibold shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-105 transition-all duration-300 ease-out"
             >
               <span>Guide</span>
               <FaExternalLinkAlt className="text-sm" />

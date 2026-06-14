@@ -2,13 +2,32 @@ import { useState, useMemo, useEffect, useCallback, memo, useRef } from "react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 import {
-  Lightbulb, Code2, GitBranch, BookOpen, Users, CheckCircle,
-  Trophy, Clock, Star, ArrowRight, Search, ExternalLink,
-  Calendar, Award, MessageCircle, Zap, Target, Globe,
-  Copy, Bell, WifiOff
+  Lightbulb,
+  Code2,
+  GitBranch,
+  BookOpen,
+  Users,
+  CheckCircle,
+  Trophy,
+  Clock,
+  Star,
+  ArrowRight,
+  Search,
+  ExternalLink,
+  Calendar,
+  Award,
+  MessageCircle,
+  Zap,
+  Target,
+  Globe,
+  Copy,
+  Bell,
+  WifiOff,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import useDebounce from "../../hooks/useDebounce.js";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 // ============ CONSTANTS ============
 const GSSOC_TIMELINE = [
@@ -204,7 +223,7 @@ const AchievementBadge = memo(({ achievement, onUnlock }) => {
       whileTap={{ scale: 0.95 }}
       onClick={() => !isUnlocked && onUnlock?.(achievement)}
       disabled={isUnlocked}
-      className={`p-3 rounded-xl border-2 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 ${
+      className={`relative p-3 rounded-xl border-2 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 ${
         isUnlocked 
           ? 'bg-white dark:bg-gray-700 border-yellow-300 dark:border-yellow-600 shadow-md cursor-default' 
           : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 opacity-60 hover:opacity-100 hover:border-blue-300 dark:hover:border-blue-700'
@@ -370,10 +389,11 @@ const GSSoCContribution = () => {
   
   // State with localStorage persistence
   const [searchQuery, setSearchQuery] = useState(() => localStorage.getItem("gssoc.search") || "");
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [selectedDifficulty, setSelectedDifficulty] = useState(() => localStorage.getItem("gssoc.difficulty") || "all");
   const [userStats] = useState(() => {
     const saved = localStorage.getItem("gssoc.userStats");
-    return saved ? JSON.parse(saved) : {
+    return saved ? safeJsonParse(saved, {}) : {
       issuesClaimed: 3,
       prsMerged: 2,
       points: 450,
@@ -384,9 +404,14 @@ const GSSoCContribution = () => {
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   
   // Countdown
-  const timeLeft = useCountdown("2024-06-15T23:59:59", () => {
-    addToast("🎉 GSSoC program has ended! Check final rankings soon.", "success");
-  });
+  const GSSOC_END_DATE = "2026-08-15T23:59:59";
+
+const timeLeft = useCountdown(
+  GSSOC_END_DATE,
+  () => {
+    addToast("🎉 GSSoC program has ended!", "success");
+  }
+);
   
   // Persist state changes
   useEffect(() => { localStorage.setItem("gssoc.search", searchQuery); }, [searchQuery]);
@@ -421,17 +446,17 @@ const GSSoCContribution = () => {
   // Filtered resources with difficulty filter
   const filteredResources = useMemo(() => {
     let result = RESOURCES;
-    if (searchQuery) {
+    if (debouncedSearchQuery) {
       result = result.filter(r => 
-        r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        r.type.toLowerCase().includes(searchQuery.toLowerCase())
+        r.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        r.type.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
       );
     }
     if (selectedDifficulty !== "all") {
       result = result.filter(r => r.difficulty === selectedDifficulty);
     }
     return result;
-  }, [searchQuery, selectedDifficulty]);
+  }, [debouncedSearchQuery, selectedDifficulty]);
   
   // Handlers
   const handleMentorConnect = useCallback((mentor) => {
@@ -830,7 +855,7 @@ const GSSoCContribution = () => {
           <motion.button
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => window.open("https://discord.gg/eventra", "_blank", "noopener,noreferrer")}
+            onClick={() => window.open("https://discord.gg/6MQ9r5nHT", "_blank", "noopener,noreferrer")}
             className="px-6 sm:px-8 py-3 rounded-full font-semibold text-white bg-[#5865F2] hover:bg-[#4752C4] shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-[#5865F2] focus:ring-offset-2 dark:focus:ring-offset-black"
           >
             <MessageCircle className="w-4 h-4" aria-hidden="true" />

@@ -1,3 +1,4 @@
+import { ArrowRightIcon, ChartBarIcon, UserGroupIcon, StarIcon, ClipboardDocumentListIcon, BuildingOffice2Icon, EnvelopeIcon, MapPinIcon, TrophyIcon, LinkIcon, CalendarDaysIcon, DocumentTextIcon, ComputerDesktopIcon } from "@heroicons/react/24/outline";
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
@@ -5,23 +6,9 @@ import { useNavigate } from "react-router-dom";
 
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 import { useAuth } from "../../context/AuthContext";
-import { API_ENDPOINTS, apiUtils } from "../../config/api";
+
+import { hostHackathon } from "../../services/hackathonService";
 import { sanitizeInputText } from "../../utils/inputSanitization";
-import {
-  ArrowRightIcon,
-  ChartBarIcon,
-  UserGroupIcon,
-  StarIcon,
-  ClipboardDocumentListIcon,
-  BuildingOffice2Icon,
-  EnvelopeIcon,
-  MapPinIcon,
-  TrophyIcon,
-  LinkIcon,
-  CalendarDaysIcon,
-  DocumentTextIcon,
-  ComputerDesktopIcon,
-} from "@heroicons/react/24/solid";
 
 const HostHackathon = () => {
   const prefersReducedMotion = useReducedMotion();
@@ -50,22 +37,33 @@ const HostHackathon = () => {
   });
   const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
 
+  const hackathonNameRef = useRef(null);
+  const organizerNameRef = useRef(null);
+  const emailRef = useRef(null);
+  const locationRef = useRef(null);
+  const startDateRef = useRef(null);
+  const endDateRef = useRef(null);
+  const descriptionRef = useRef(null);
+  const participantLimitRef = useRef(null);
+  const prizeDetailsRef = useRef(null);
+  const websiteRef = useRef(null);
+
   const inputRefs = {
-    hackathonName: useRef(null),
-    organizerName: useRef(null),
-    email: useRef(null),
-    location: useRef(null),
-    startDate: useRef(null),
-    endDate: useRef(null),
-    description: useRef(null),
-    participantLimit: useRef(null),
-    prizeDetails: useRef(null),
-    website: useRef(null),
+    hackathonName: hackathonNameRef,
+    organizerName: organizerNameRef,
+    email: emailRef,
+    location: locationRef,
+    startDate: startDateRef,
+    endDate: endDateRef,
+    description: descriptionRef,
+    participantLimit: participantLimitRef,
+    prizeDetails: prizeDetailsRef,
+    website: websiteRef,
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData((prev) => ({ ...prev, [name]: value }));
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
@@ -121,7 +119,6 @@ const HostHackathon = () => {
     }
 
     // Date validations
-    const today = new Date().toISOString().split("T")[0];
     if (data.startDate && data.startDate < today) {
       newErrors.startDate = "Start date cannot be in the past!";
     }
@@ -175,8 +172,7 @@ const HostHackathon = () => {
 
     setIsSubmitting(true);
     try {
-      await apiUtils.post(
-        API_ENDPOINTS.HACKATHONS.HOST,
+      await hostHackathon(
         {
           ...formData,
           // Sanitize description and other text inputs
@@ -189,7 +185,7 @@ const HostHackathon = () => {
         },
         {
           headers: {
-            Authorization: token
+            Authorization: `Bearer ${token}`
           }
         }
       );
@@ -471,7 +467,8 @@ const HostHackathon = () => {
             type="submit"
             disabled={isSubmitting}
             className="w-full flex items-center justify-center gap-2 bg-primary text-white font-semibold p-3 rounded-xl shadow-lg hover:opacity-90 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
-           aria-label="button">
+            aria-label={isSubmitting ? "Submitting hackathon" : "Submit hackathon"}
+          >
             {isSubmitting ? "Submitting..." : "Submit Hackathon"}
             {!isSubmitting && <ArrowRightIcon className="w-5 h-5" />}
           </button>

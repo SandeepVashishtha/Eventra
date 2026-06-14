@@ -19,6 +19,8 @@ const ActiveFilters = ({
   setSearchQuery,
   filterType,
   setFilterType,
+  categoryFilter,
+  setCategoryFilter,
   sortType,
   setSortType,
   viewMode,
@@ -28,16 +30,18 @@ const ActiveFilters = ({
 }) => {
   const hasSearch = searchQuery && searchQuery.trim() !== "";
   const hasType = filterType && filterType !== "all";
+  const hasCategory = categoryFilter && categoryFilter !== "all";
   const hasSort = sortType && sortType !== "Newest";
   const hasView = viewMode && viewMode !== "grid";
   const hasAdvancedFilters = hasActiveFilters(advancedFilters);
 
   const anyActive =
-    hasSearch || hasType || hasSort || hasView || hasAdvancedFilters;
+    hasSearch || hasType || hasCategory || hasSort || hasView || hasAdvancedFilters;
 
   const clearAll = () => {
     if (typeof setSearchQuery === "function") setSearchQuery("");
     if (typeof setFilterType === "function") setFilterType("all");
+    if (typeof setCategoryFilter === "function") setCategoryFilter("all");
     if (typeof setSortType === "function") setSortType("Newest");
     if (typeof setViewMode === "function") setViewMode("grid");
     if (typeof onAdvancedFiltersChange === "function") onAdvancedFiltersChange(getDefaultFilters());
@@ -110,6 +114,14 @@ const ActiveFilters = ({
             label={`Type: ${FILTER_LABELS[filterType] || filterType}`}
             onRemove={() => setFilterType("all")}
             variant="primary"
+          />
+        )}
+
+        {hasCategory && (
+          <FilterBadge
+            label={`Category: ${categoryFilter.split("-").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ")}`}
+            onRemove={() => setCategoryFilter("all")}
+            variant="success"
           />
         )}
 
