@@ -1,133 +1,157 @@
 import axios from "axios";
+import { logger } from "../utils/logger.js";
+import { ApiError, RateLimitError, normalizeApiError } from "./api/errors.js";
+import { setupRequestInterceptor, setupResponseInterceptor } from "./api/interceptors.js";
+import { API_BASE_URL, validateBackendConfig } from "./backendConfig.js";
 
 // ---------------------------------------------------------------------------
 // Base API URL
 // ---------------------------------------------------------------------------
 
-const normalizeApiBaseUrl = (value = "") => {
-  if (!value) {
-    return "";
-  }
+const isDev = process.env.NODE_ENV === "development";
 
-  const trimmed = value.replace(/\/+$/, "").replace(/\/api$/, "");
-
-  try {
-    const parsed = new URL(trimmed);
-    const hostname = parsed.hostname.toLowerCase();
-
-    if (
-      hostname === "localhost" ||
-      hostname === "127.0.0.1" ||
-      hostname === "0.0.0.0" ||
-      hostname === "::1"
-    ) {
-      return "";
-    }
-
-    return `${parsed.origin}${parsed.pathname === "/" ? "" : parsed.pathname}`;
-  } catch {
-    return /localhost|127\.0\.0\.1|0\.0\.0\.0|::1/i.test(trimmed) ? "" : trimmed;
-  }
-};
-
-const isDevelopment = process.env.NODE_ENV === "development";
-
-const resolveEnvApiBaseUrl = () =>
-  isDevelopment
-    ? ""
-    : normalizeApiBaseUrl(
-        process.env.REACT_APP_API_URL || process.env.VITE_API_URL || "",
-      );
-
-export const API_BASE_URL = resolveEnvApiBaseUrl();
+// Validate backend configuration on module load
+const configValidation = validateBackendConfig();
+if (!configValidation.isValid && isDev) {
+  console.warn(`[API Config] ${configValidation.error}`);
+}
 
 const buildApiUrl = (path = "") => {
-  if (!path) {
-    return "";
-  }
-
-  if (/^https?:\/\//i.test(path)) {
-    return path;
-  }
-
+  if (!path) return "";
+  if (/^https?:\/\//i.test(path)) return path;
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-
-  if (!API_BASE_URL) {
-    return normalizedPath;
-  }
-
+  if (!API_BASE_URL) return normalizedPath;
   return `${API_BASE_URL}${normalizedPath}`;
 };
-
-// ---------------------------------------------------------------------------
-// Network Resilience Configuration
-// ---------------------------------------------------------------------------
-
-const REQUEST_TIMEOUT_MS = 15_000;
-const RETRYABLE_STATUS_CODES = [502, 503, 504];
-const MAX_RETRIES = 1;
-const RETRY_DELAY_MS = 1_000;
-const isDev = isDevelopment;
-
-// ---------------------------------------------------------------------------
-// Normalized API Error
-// ---------------------------------------------------------------------------
-
-export class ApiError extends Error {
-  constructor(message, { status = null, data = null, isTimeout = false, isNetworkError = false } = {}) {
-    super(message);
-    this.name = "ApiError";
-    this.status = status;
-    this.data = data;
-    this.isTimeout = isTimeout;
-    this.isNetworkError = isNetworkError;
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Axios Instance
 // ---------------------------------------------------------------------------
 
+const REQUEST_TIMEOUT_MS = 15_000;
+
 const API = axios.create({
   baseURL: API_BASE_URL || undefined,
   timeout: REQUEST_TIMEOUT_MS,
-  headers: {
-    "Content-Type": "application/json",
-  },
+  headers: { "Content-Type": "application/json" },
   withCredentials: true,
 });
 
 let onUnauthorized = null;
+let _authToken = null;
 
 export const setOnUnauthorizedHandler = (handler) => {
   onUnauthorized = handler;
 };
+export const setAuthToken = (token) => {
+  _authToken = token;
+};
 
-const normalizeRequestConfig = (configOrToken = {}, maybeToken) => {
+const getAuthToken = () => _authToken;
+const getOnUnauthorized = () => onUnauthorized;
+
+setupRequestInterceptor(API, { isDev, buildApiUrl, getAuthToken, getOnUnauthorized });
+setupResponseInterceptor(API, { isDev, timeoutMs: REQUEST_TIMEOUT_MS, getOnUnauthorized });
+
+// ---------------------------------------------------------------------------
+// API Endpoints
+// ---------------------------------------------------------------------------
+
+export const API_ENDPOINTS = {
+  AUTH: {
+    LOGIN: buildApiUrl("/auth/login"),
+    REGISTER: buildApiUrl("/auth/signup"),
+    SIGNUP: buildApiUrl("/auth/signup"),
+    LOGOUT: buildApiUrl("/auth/logout"),
+    RESET_PASSWORD: buildApiUrl("/auth/reset-password"),
+    REFRESH: buildApiUrl("/auth/refresh"),
+  },
+  EVENTS: {
+    CREATE: buildApiUrl("/events/create"),
+    ALL: buildApiUrl("/events"),
+    LIST: buildApiUrl("/events"),
+    DETAIL: (id) => buildApiUrl(`/events/${id}`),
+    SCHEDULE: (id) => buildApiUrl(`/events/${id}/schedule`),
+    REGISTER: (id) => buildApiUrl(`/events/${id}/register`),
+    AVAILABILITY: (id) => buildApiUrl(`/events/${id}/availability`),
+    CANCEL: (id) => buildApiUrl(`/events/${id}/cancel`),
+    REGISTRANTS: (id) => buildApiUrl(`/events/${id}/registrants`),
+    // Convenience helper — appends ?page=&size= for callers that build the
+    // URL manually rather than going through eventFetchUtils.buildPaginatedUrl.
+    PAGINATED: (page, size) => buildApiUrl(`/events?page=${page}&size=${size}`),
+  },
+  PROJECTS: {
+    ALL: buildApiUrl("/projects"),
+    LIST: buildApiUrl("/projects"),
+    DETAIL: (id) => buildApiUrl(`/projects/${id}`),
+    CATEGORIES: buildApiUrl("/projects/categories"),
+    SUBMIT: buildApiUrl("/projects"),
+    UPVOTE: (id) => buildApiUrl(`/projects/${id}/upvote`),
+  },
+  HACKATHONS: {
+    LIST: buildApiUrl("/hackathons"),
+    DETAIL: (id) => buildApiUrl(`/hackathons/${id}`),
+    HOST: buildApiUrl("/hackathons"),
+  },
+  NOTIFICATIONS: {
+    BASE: buildApiUrl("/notifications"),
+    ALL: buildApiUrl("/notifications"),
+    READ: (id) => (id ? buildApiUrl(`/notifications/${id}/read`) : ""),
+    DELETE: (id) => (id ? buildApiUrl(`/notifications/${id}`) : ""),
+    READ_ALL: buildApiUrl("/notifications/read-all"),
+    PREFERENCES: buildApiUrl("/notifications/preferences"),
+    PUSH_SUBSCRIBE: buildApiUrl("/notifications/push-subscriptions"),
+    PUSH_UNSUBSCRIBE: buildApiUrl("/notifications/push-subscriptions/unsubscribe"),
+  },
+  USERS: {
+    PROFILE: buildApiUrl("/users/profile"),
+    ACHIEVEMENTS: buildApiUrl("/users/achievements"),
+  },
+  SESSION_RECOVERY: {
+    BASE: buildApiUrl("/session-recovery"),
+    SESSION: (sessionId) =>
+      buildApiUrl(`/session-recovery/${encodeURIComponent(sessionId)}`),
+    RESTORE: (sessionId) =>
+      buildApiUrl(`/session-recovery/${encodeURIComponent(sessionId)}/restore`),
+    CLEANUP_EXPIRED: buildApiUrl("/session-recovery/expired"),
+  },
+  TICKETS: {
+    VALIDATE: buildApiUrl("/tickets/validate"),
+    CHECK_IN: buildApiUrl("/tickets/checkin"),
+    HISTORY: buildApiUrl("/tickets/checkins"),
+  },
+  FEEDBACK: {
+    BASE: buildApiUrl("/feedback"),
+    BY_EVENT: (eventId) => {
+      const params = new URLSearchParams({ eventId: String(eventId) });
+      return buildApiUrl(`/feedback?${params.toString()}`);
+    },
+  },
+  ADMIN: {
+    USERS: buildApiUrl("/admin/users"),
+    USER: (id) => buildApiUrl(`/admin/users/${id}`),
+    EVENTS: buildApiUrl("/admin/events"),
+    EVENT: (id) => buildApiUrl(`/admin/events/${id}`),
+    STATS: buildApiUrl("/admin/stats"),
+  },
+  VALIDATION: {
+    EMAIL: (email) => buildApiUrl(`/validate/email/${encodeURIComponent(email)}`),
+    USERNAME: (username) => buildApiUrl(`/validate/username/${encodeURIComponent(username)}`),
+    PHONE: buildApiUrl("/validate/phone"),
+    CONTACT: buildApiUrl("/contact"),
+  },
+};
+
+const normalizeRequestConfig = (configOrToken = {}) => {
   const config = typeof configOrToken === "string" ? {} : { ...configOrToken };
-  const token =
-    typeof configOrToken === "string"
-      ? configOrToken
-      : typeof maybeToken === "string"
-        ? maybeToken
-        : localStorage.getItem("token") || "";
-
-  if (token) {
-    config.headers = {
-      ...(config.headers || {}),
-      Authorization: `Bearer ${token}`,
-    };
-  }
-
+  if ("skipAuth" in config) delete config.skipAuth;
   return config;
 };
 
 const wrapHeaders = (headers) => {
   if (!headers) return { get: () => null };
   if (typeof headers.get === "function") return headers;
-  return {
-    get: (key) => headers[key] || headers[key.toLowerCase()] || null,
-  };
+  return { get: (key) => headers[key] || headers[key.toLowerCase()] || null };
 };
 
 const wrapAxiosResponse = (response) => {
@@ -138,128 +162,53 @@ const wrapAxiosResponse = (response) => {
     ok: response.status >= 200 && response.status < 300,
     json: async () => response.data,
     text: async () =>
-      typeof response.data === "string"
-        ? response.data
-        : JSON.stringify(response.data),
+      typeof response.data === "string" ? response.data : JSON.stringify(response.data),
   };
 };
 
-API.interceptors.request.use((config) => {
-  if (!config.signal) {
-    const controller = new AbortController();
-    config.signal = controller.signal;
-    config._abortController = controller;
-  }
-
-  if (isDev) {
-    console.debug(`[API ${config.method?.toUpperCase()}]`, buildApiUrl(config.url || ""));
-  }
-
-  return config;
-});
-
-API.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const config = error.config || {};
-    const status = error?.response?.status;
-
-    if (status === 401 && onUnauthorized) {
-      onUnauthorized();
-    }
-
-    const retryCount = config._retryCount || 0;
-    if (RETRYABLE_STATUS_CODES.includes(status) && retryCount < MAX_RETRIES) {
-      config._retryCount = retryCount + 1;
-
-      if (isDev) {
-        console.debug(
-          `[API ${config.method?.toUpperCase()}] ${config.url} returned ${status}, retrying in ${RETRY_DELAY_MS}ms (attempt ${config._retryCount})...`,
-        );
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
-      return API(config);
-    }
-
-    if (
-      error.code === "ECONNABORTED" ||
-      error.name === "AbortError" ||
-      error.message?.includes("timeout")
-    ) {
-      throw new ApiError(
-        `Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s: ${config.method?.toUpperCase()} ${config.url}`,
-        { isTimeout: true },
-      );
-    }
-
-    if (!error.response) {
-      throw new ApiError(
-        error.message || `Network error: ${config.method?.toUpperCase()} ${config.url}`,
-        { isNetworkError: true },
-      );
-    }
-
-    throw new ApiError(
-      error.response?.data?.message || error.message || `Request failed with status ${status}`,
-      {
-        status: error.response.status,
-        data: error.response.data,
-      },
-    );
-  },
-);
-
-// ---------------------------------------------------------------------------
-// API Endpoints
-// ---------------------------------------------------------------------------
-
-export const API_ENDPOINTS = {
-  AUTH: {
-    LOGIN: buildApiUrl("/api/auth/login"),
-    GOOGLE: buildApiUrl("/api/auth/google"),
-    REGISTER: buildApiUrl("/api/auth/signup"),
-    SIGNUP: buildApiUrl("/api/auth/signup"),
-    LOGOUT: buildApiUrl("/api/auth/logout"),
-    RESET_PASSWORD: buildApiUrl("/api/auth/reset-password"),
-  },
-  EVENTS: {
-    CREATE: buildApiUrl("/api/events/create"),
-    ALL: buildApiUrl("/api/events"),
-    LIST: buildApiUrl("/api/events"),
-    DETAIL: (id) => buildApiUrl(`/api/events/${id}`),
-    REGISTER: (id) => buildApiUrl(`/api/events/${id}/register`),
-  },
-  PROJECTS: {
-    ALL: buildApiUrl("/api/projects"),
-    LIST: buildApiUrl("/api/projects"),
-    DETAIL: (id) => buildApiUrl(`/api/projects/${id}`),
-    CATEGORIES: buildApiUrl("/api/projects/categories"),
-    SUBMIT: buildApiUrl("/api/projects"),
-  },
-  NOTIFICATIONS: {
-    ALL: buildApiUrl("/api/notifications"),
-    BASE: buildApiUrl("/api/notifications"),
-    READ: (id) => id ? buildApiUrl(`/api/notifications/${id}/read`) : "",
-    READ_ALL: buildApiUrl("/api/notifications/read-all"),
-  },
-  USERS: {
-    PROFILE: buildApiUrl("/api/users/profile"),
-    ACHIEVEMENTS: buildApiUrl("/api/users/achievements"),
-  },
-};
-
 export const apiUtils = {
-  get: (url, configOrToken = {}, maybeToken) =>
-    API.get(url, normalizeRequestConfig(configOrToken, maybeToken)).then(wrapAxiosResponse),
-  post: (url, data = {}, configOrToken = {}, maybeToken) =>
-    API.post(url, data, normalizeRequestConfig(configOrToken, maybeToken)).then(wrapAxiosResponse),
-  put: (url, data = {}, configOrToken = {}, maybeToken) =>
-    API.put(url, data, normalizeRequestConfig(configOrToken, maybeToken)).then(wrapAxiosResponse),
-  patch: (url, data = {}, configOrToken = {}, maybeToken) =>
-    API.patch(url, data, normalizeRequestConfig(configOrToken, maybeToken)).then(wrapAxiosResponse),
-  delete: (url, configOrToken = {}, maybeToken) =>
-    API.delete(url, normalizeRequestConfig(configOrToken, maybeToken)).then(wrapAxiosResponse),
+  get: (url, config = {}) =>
+    API.get(url, normalizeRequestConfig(config)).then(wrapAxiosResponse),
+  post: (url, data = {}, config = {}) =>
+    API.post(url, data, normalizeRequestConfig(config)).then(wrapAxiosResponse),
+  put: (url, data = {}, config = {}) =>
+    API.put(url, data, normalizeRequestConfig(config)).then(wrapAxiosResponse),
+  patch: (url, data = {}, config = {}) =>
+    API.patch(url, data, normalizeRequestConfig(config)).then(wrapAxiosResponse),
+  delete: (url, config = {}) =>
+    API.delete(url, normalizeRequestConfig(config)).then(wrapAxiosResponse),
+  request: async (method, url, data = null, options = {}) => {
+    const config = normalizeRequestConfig(options);
+    if (options.signal) config.signal = options.signal;
+    if (options.headers) config.headers = { ...config.headers, ...options.headers };
+    config.method = method.toLowerCase();
+    const axiosResponse = await API.request({ url, method: config.method, data, ...config });
+    const wrappedHeaders = wrapHeaders(axiosResponse.headers);
+    return {
+      response: {
+        status: axiosResponse.status,
+        ok: axiosResponse.status >= 200 && axiosResponse.status < 300,
+        headers: wrappedHeaders,
+      },
+      data: axiosResponse.data,
+    };
+  },
 };
 
 export default API;
+
+export { ApiError, RateLimitError, normalizeApiError };
+
+// Centralized configuration cache store for fallback endpoints
+export const apiConfigCache = {
+  store: new Map(),
+  get(key) {
+    return this.store.get(key);
+  },
+  set(key, val) {
+    this.store.set(key, val);
+  },
+  clear() {
+    this.store.clear();
+  },
+};

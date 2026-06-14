@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useRecentlyViewed from '../../hooks/useRecentlyViewed';
+import LazyImage from './LazyImage';
 import './RecentlyViewedEvents.css';
 
 /**
@@ -81,7 +82,7 @@ const RecentlyViewedEvents = ({ maxVisible = 6, onEventClick }) => {
             className={`rv-btn ${confirmClear ? 'rv-btn--danger' : 'rv-btn--ghost'}`}
             onClick={handleClear}
             title="Clear viewing history"
-          >
+           aria-label="button">
             {confirmClear ? '✕ Confirm Clear' : 'Clear History'}
           </button>
         </div>
@@ -115,23 +116,21 @@ const RecentlyViewedEvents = ({ maxVisible = 6, onEventClick }) => {
             {/* Thumbnail */}
             <div className="rv-card__thumb">
               {event.image ? (
-                <img
+                <LazyImage
                   src={event.image}
                   alt={event.title}
-                  loading="lazy"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                    e.target.nextSibling.style.display = 'flex';
-                  }}
+                  aspectRatio="3/2"
+                  className="w-full h-full"
+                  imgClassName="object-cover"
                 />
-              ) : null}
-              <div
-                className="rv-card__thumb-fallback"
-                style={{ display: event.image ? 'none' : 'flex' }}
-                aria-hidden="true"
-              >
-                🎉
-              </div>
+              ) : (
+                <div
+                  className="rv-card__thumb-fallback"
+                  aria-hidden="true"
+                >
+                  🎉
+                </div>
+              )}
 
               {/* Category badge */}
               {event.category && (

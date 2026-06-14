@@ -8,9 +8,10 @@ import Alert from "./Alert";
 const ErrorMessage = ({ title = "Error", message }) => {
   if (!message) return null;
 
-  const displayMessage = message.includes("Google")
-    ? "Google Sign-In failed. Please try again."
-    : message;
+  const displayMessage =
+    typeof message === "string" && message.includes("Google")
+      ? "Google Sign-In failed. Please try again."
+      : message;
 
   return <Alert variant="error" title={title} message={displayMessage} />;
 };
