@@ -60,7 +60,10 @@ export const getGlobalWaitlist = () => {
   try {
     const raw = localStorage.getItem(GLOBAL_WAITLIST_KEY);
     return raw ? safeJsonParse(raw, []) : [];
-  } catch {
+  } catch (err) {
+    if (err.response && err.response.status >= 400 && err.response.status < 500) {
+      throw err;
+    }
     return [];
   }
 };
