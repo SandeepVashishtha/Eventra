@@ -68,6 +68,54 @@ const QUICK_ACTIONS = [
   { label: "Settings", icon: <Settings size={22} />, to: "/settings", color: "#f59e0b" },
 ];
 
+const getDerivedData = (data) => {
+  let eventsTotal = 0;
+  let eventsCreated = 0;
+  let eventsJoined = 0;
+  let hackathonsTotal = 0;
+  let hackathonsHosted = 0;
+  let hackathonsJoined = 0;
+  let projectsTotal = 0;
+  let projectsDone = 0;
+  let projectsActive = 0;
+  const upcomingEvents = [];
+  const upcomingHackathons = [];
+  const activeProjects = [];
+
+  for (const d of data) {
+    if (d && d.type === "Event") {
+      eventsTotal++;
+      if (d.participationType === "Hosted") eventsCreated++;
+      if (d.participationType === "Registered") eventsJoined++;
+      if (d.status === "Upcoming") upcomingEvents.push(d);
+    } else if (d && d.type === "Hackathon") {
+      hackathonsTotal++;
+      if (d.participationType === "Hosted") hackathonsHosted++;
+      if (d.participationType === "Registered") hackathonsJoined++;
+      if (d.status === "Upcoming") upcomingHackathons.push(d);
+    } else if (d && d.type === "Project") {
+      projectsTotal++;
+      if (d.projectStatus !== "Done") {
+        projectsActive++;
+        activeProjects.push(d);
+      } else {
+        projectsDone++;
+      }
+    }
+  }
+
+  return {
+    stats: {
+      eventsTotal, eventsCreated, eventsJoined,
+      hackathonsTotal, hackathonsHosted, hackathonsJoined,
+      projectsTotal, projectsDone, projectsActive,
+    },
+    upcomingEvents,
+    upcomingHackathons,
+    activeProjects,
+  };
+};
+
 export default function UserDashboard() {
   const prefersReducedMotion = useReducedMotion();
   const { user, logout } = useAuth();
@@ -152,53 +200,7 @@ export default function UserDashboard() {
     return () => window.clearTimeout(timer);
   }, [myEventsLoading]);
 
-  const derivedData = useMemo(() => {
-    let eventsTotal = 0;
-    let eventsCreated = 0;
-    let eventsJoined = 0;
-    let hackathonsTotal = 0;
-    let hackathonsHosted = 0;
-    let hackathonsJoined = 0;
-    let projectsTotal = 0;
-    let projectsDone = 0;
-    let projectsActive = 0;
-    const upcomingEvents = [];
-    const upcomingHackathons = [];
-    const activeProjects = [];
-
-    for (const d of MOCK_DATA) {
-      if (d && d.type === "Event") {
-        eventsTotal++;
-        if (d.participationType === "Hosted") eventsCreated++;
-        if (d.participationType === "Registered") eventsJoined++;
-        if (d.status === "Upcoming") upcomingEvents.push(d);
-      } else if (d && d.type === "Hackathon") {
-        hackathonsTotal++;
-        if (d.participationType === "Hosted") hackathonsHosted++;
-        if (d.participationType === "Registered") hackathonsJoined++;
-        if (d.status === "Upcoming") upcomingHackathons.push(d);
-      } else if (d && d.type === "Project") {
-        projectsTotal++;
-        if (d.projectStatus !== "Done") {
-          projectsActive++;
-          activeProjects.push(d);
-        } else {
-          projectsDone++;
-        }
-      }
-    }
-
-    return {
-      stats: {
-        eventsTotal, eventsCreated, eventsJoined,
-        hackathonsTotal, hackathonsHosted, hackathonsJoined,
-        projectsTotal, projectsDone, projectsActive,
-      },
-      upcomingEvents,
-      upcomingHackathons,
-      activeProjects,
-    };
-  }, []);
+  const derivedData = useMemo(() => getDerivedData(MOCK_DATA), []);
 
   const { upcomingEvents, upcomingHackathons, activeProjects } = derivedData;
 
