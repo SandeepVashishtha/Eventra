@@ -133,6 +133,48 @@ npm run dev
 
 App runs at `http://localhost:3000` (configured in `vite.config.js`).
 
+
+## Common Setup Issues
+
+### Dependency Installation Warnings
+
+Some users may see peer dependency or engine warnings during `npm install`. In most cases, the installation still completes successfully.
+
+If installation fails, try:
+
+```bash
+npm install --legacy-peer-deps
+```
+
+### Port Already in Use
+
+If port `3000` is already occupied, stop the existing process or run:
+
+```bash
+npx kill-port 3000
+```
+
+### Vite Cache Issues
+
+If the frontend shows unexpected build or parsing errors, clear the Vite cache and restart the server:
+
+```bash
+rm -rf node_modules/.vite
+npm run dev
+```
+
+For Windows PowerShell:
+
+```powershell
+Remove-Item -Recurse -Force node_modules/.vite
+npm run dev
+```
+
+### Environment Variable Issues
+
+Make sure `.env` is created correctly from `.env.example` before starting the development server.
+
+
 ## Docker Development
 
 You can run Eventra fully containerized using Docker Compose to ensure a consistent environment:
@@ -176,6 +218,9 @@ Use `.env.example` as the source of truth. See [docs/ENV_SETUP_GUIDE.md](docs/EN
 | `REACT_APP_CSP_REPORT_URI` | No | CSP report endpoint |
 | `REACT_APP_SENTRY_DSN` | No | Sentry browser error reporting DSN, used only in production |
 | `JWT_SECRET` | Yes (server-side) | JWT signing secret for Edge Middleware auth verification |
+| `DATABASE_URL` | Yes (server-side, production) | Database connection URL for persistent authentication storage |
+| `KV_REST_API_URL` | Yes (server-side, production) | Vercel KV/Redis REST API URL for distributed rate limiting |
+| `KV_REST_API_TOKEN` | Yes (server-side, production) | Vercel KV/Redis REST API token for distributed rate limiting |
 | `BLOCKED_COUNTRIES` | No (server-side) | Comma-separated ISO 3166-1 alpha-2 country codes to block |
 
 Examples:

@@ -114,6 +114,17 @@ export const ThemeProvider = ({ children }) => {
 
     // Apply active skin theme colors — pick the variant that matches the resolved mode
     const activeTheme = THEMES[activeThemeId] || THEMES.default;
+
+const themeColors =
+  resolvedTheme === "dark"
+    ? activeTheme.colors?.dark
+    : activeTheme.colors?.light;
+
+if (themeColors) {
+  Object.entries(themeColors).forEach(([variable, val]) => {
+    root.style.setProperty(variable, val);
+  });
+}
     const themeColors =
       resolvedTheme === "dark"
         ? (activeTheme.colors.dark || activeTheme.colors.light)
