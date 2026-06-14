@@ -304,9 +304,19 @@ const performLocalPromotion = async (record, event) => {
   return !!match;
 };
 
+// Helper to detect if a throw/exception is caused by a offline/network/timeout condition
+const checkIfOffline = (error) => {
+  if (error?.isNetworkError || error?.isTimeout) {
+    return true;
+  }
+  if (typeof navigator !== "undefined" && !navigator.onLine) {
+    return true;
+  }
+  return false;
+};
+
 // Promote a specific record to a confirmed registration
 export const promoteRecord = async (record, event) => {
-  let isOfflineMode = false;
   try {
     const response = await apiUtils.post(`${API_ENDPOINTS.EVENTS.ALL}/${event.id}/waitlist/promote`, {
       userId: record.userId,
@@ -318,8 +328,7 @@ export const promoteRecord = async (record, event) => {
     // Explicit server rejection
     return false;
   } catch (error) {
-    isOfflineMode = error?.isNetworkError || error?.isTimeout || (typeof navigator !== "undefined" && !navigator.onLine);
-    if (!isOfflineMode) {
+    if (!checkIfOffline(error)) {
       return false;
     }
   }
