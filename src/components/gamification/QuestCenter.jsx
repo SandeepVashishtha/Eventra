@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
+import { safeJsonParse } from "../../utils/safeJsonParse";
 import {
   Zap, CheckCircle, Gift, Target,
   Flame, Star, Trophy, Sparkles, Timer,
@@ -13,7 +14,7 @@ function loadQuestState() {
   try {
     const raw = localStorage.getItem(QUEST_STORAGE_KEY);
     if (!raw) return null;
-    return JSON.parse(raw);
+    return safeJsonParse(raw, {});
   } catch { return null; }
 }
 
@@ -144,8 +145,9 @@ const playClaimSound = () => {
 };
 
 // ─── Main QuestCenter component ────────────────────────────────────────────────
-export default function QuestCenter({ totalEvents = 0, currentStreak = 0 }) {
+export default function QuestCenter({ totalEvents = 0, currentStreak = 0, gssocEvents = 0 }) {
   const confettiRef = useRef(null);
+  const claimedGuardRef = useRef({});
   const [activeTab, setActiveTab] = useState('daily');
 
   // Initialise quest progress from localStorage or fresh defaults
@@ -189,6 +191,9 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0 }) {
   useEffect(() => { saveQuestState(state); }, [state]);
 
   // Derive demo progress from props (totalEvents, currentStreak)
+  // 🔥 FIX 2: Added state.dailyResetAt and state.weeklyResetAt to dependency array.
+  // This ensures that when the clock rolls over and the quests are wiped clean, 
+  // this effect re-runs to correctly repopulate progress from the active props!
   useEffect(() => {
     setState(prev => {
       const dp = { ...prev.dailyProgress };
@@ -197,12 +202,12 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0 }) {
       if (totalEvents >= 1) dp['dq-1'] = Math.min(1, totalEvents);
       dp['dq-2'] = 1; // visiting profile = auto-complete demo
       dp['dq-3'] = 1; // exploring events = auto-complete demo
-      wp['wq-1'] = Math.min(2, totalEvents);
+      wp['wq-1'] = Math.min(2, gssocEvents);
       wp['wq-2'] = Math.min(3, currentStreak);
       wp['wq-4'] = Math.min(5, totalEvents);
       return { ...prev, dailyProgress: dp, weeklyProgress: wp };
     });
-  }, [totalEvents, currentStreak]);
+  }, [totalEvents, currentStreak, gssocEvents, state.dailyResetAt, state.weeklyResetAt]);
 
   // Countdown timer
   useEffect(() => {
@@ -224,13 +229,22 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0 }) {
   // ─── Claim handler ───────────────────────────────────────────────────────────
   const claimXP = (questId, xp, isWeekly) => {
     const claimedKey = isWeekly ? 'weeklyClaimed' : 'dailyClaimed';
-    if (state[claimedKey][questId]) return; // already claimed
+    const guardKey = `${claimedKey}:${questId}`;
 
-    setState(prev => ({
-      ...prev,
-      [claimedKey]: { ...prev[claimedKey], [questId]: true },
-      lifetimeXP: prev.lifetimeXP + xp,
-    }));
+    // Synchronous guard — blocks side effects on rapid double-click
+    // before React has had a chance to re-render with updated claimed state
+    if (claimedGuardRef.current[guardKey]) return;
+    claimedGuardRef.current[guardKey] = true;
+
+    setState(prev => {
+      if (prev[claimedKey][questId]) return prev;
+
+      return {
+        ...prev,
+        [claimedKey]: { ...prev[claimedKey], [questId]: true },
+        lifetimeXP: prev.lifetimeXP + xp,
+      };
+    });
 
     setClaimFlash(questId);
     fireConfetti(confettiRef);

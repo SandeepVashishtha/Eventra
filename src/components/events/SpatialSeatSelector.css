@@ -67,12 +67,15 @@
 }
 
 .ssp-interactive-seat circle {
-  transition: r 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), 
-              filter 0.2s ease, 
-              stroke-width 0.2s ease;
+  transition:
+    r 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+    filter 0.2s ease,
+    stroke-width 0.2s ease;
 }
 
-.ssp-interactive-seat:hover circle {
+.ssp-interactive-seat:hover circle,
+.ssp-interactive-seat:focus circle,
+.ssp-interactive-seat:focus-visible circle {
   r: 13.5px;
   filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.65));
 }
@@ -159,7 +162,9 @@
   transform: translate(-50%, -100%);
   background: rgba(18, 18, 28, 0.95);
   border: 1px solid rgba(99, 102, 241, 0.25);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px rgba(99, 102, 241, 0.1);
+  box-shadow:
+    0 10px 25px -5px rgba(0, 0, 0, 0.5),
+    0 0 15px rgba(99, 102, 241, 0.1);
   border-radius: 10px;
   padding: 10px 14px;
   width: 150px;

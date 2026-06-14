@@ -95,6 +95,20 @@ const ToastProvider = () => {
 
   return (
     <>
+      <style>{`
+        .eventra-toast-close-btn {
+          outline: none;
+          transition: color 0.15s ease, transform 0.15s ease;
+        }
+        .eventra-toast-close-btn:focus-visible {
+          outline: 2px solid #2563eb !important;
+          outline-offset: 1px;
+          border-radius: 4px;
+        }
+        .eventra-toast-close-btn:hover {
+          transform: scale(1.15);
+        }
+      `}</style>
       {/* Visually hidden screen reader live region */}
       <div
         aria-live="polite"
@@ -137,6 +151,11 @@ const ToastProvider = () => {
             key={item.id}
             role={item.type === "error" ? "alert" : "status"}
             aria-live={item.type === "error" ? "assertive" : "polite"}
+            aria-label={
+              item.type === "error"
+                ? `Security alert: ${item.message}`
+                : item.message
+            }
             style={{
               width: "min(360px, calc(100vw - 2rem))",
               background: palette.bg,
@@ -160,6 +179,7 @@ const ToastProvider = () => {
             <button
               type="button"
               aria-label="Close notification"
+              className="eventra-toast-close-btn"
               onClick={() => dismissToast(item.id)}
               style={{
                 border: "none",
