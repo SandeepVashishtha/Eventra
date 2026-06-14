@@ -1,26 +1,26 @@
-import React from "react";
 import { MousePointer } from "lucide-react";
+import Tooltip from "../common/Tooltip";
 
 const CursorToggle = ({ cursorEnabled, toggleCursor }) => {
   return (
-    <button
-      type="button"
-      onClick={toggleCursor}
-      aria-pressed={cursorEnabled}
-      aria-label="Toggle background cursor effects"
-      title={
-        cursorEnabled
-          ? "Turn off background cursor effects"
-          : "Turn on background cursor effects"
-      }
-      className={`rounded-lg border px-1 py-1 transition-colors flex items-center justify-center ${
-        cursorEnabled
-          ? "border-indigo-500 bg-indigo-600 text-white shadow-sm"
-          : "border-gray-300 bg-gray-100 text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
-      }`}
+    <Tooltip
+      content={cursorEnabled ? "Turn off cursor effects" : "Turn on cursor effects"}
+      position="bottom"
     >
-      <MousePointer aria-hidden="true" />
-    </button>
+      <button
+        type="button"
+        onClick={toggleCursor}
+        aria-pressed={cursorEnabled}
+        aria-label="Toggle background cursor effects"
+        className={`h-9 w-9 rounded-full border transition-colors flex items-center justify-center shadow-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+          cursorEnabled
+            ? "border-primary/40 bg-primary/10 text-primary"
+            : "border-border bg-card-bg text-text-light hover:bg-bg-secondary"
+        }`}
+      >
+        <MousePointer className="h-4 w-4" aria-hidden="true" />
+      </button>
+    </Tooltip>
   );
 };
 

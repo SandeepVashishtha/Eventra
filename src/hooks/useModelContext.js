@@ -1,6 +1,33 @@
+/**
+ * @fileoverview useModelContext - Browser AI Model Context integration hook
+ * @module hooks/useModelContext
+ */
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
+/**
+ * A custom React hook that registers Eventra's tools with the browser's
+ * experimental Model Context API (navigator.modelContext), enabling
+ * AI assistants and browser agents to interact with the application.
+ *
+ * Registers two tools on mount:
+ * - `search_events`: Navigates to event search results for a given query
+ * - `get_api_docs`: Navigates to the Eventra API documentation page
+ *
+ * Only activates when `navigator.modelContext` is available in the browser.
+ * Gracefully does nothing in unsupported environments.
+ *
+ * @returns {void}
+ *
+ * @example
+ * function App() {
+ *   useModelContext();
+ *   return <div>...</div>;
+ * }
+ */
 export const useModelContext = () => {
+  const navigate = useNavigate();
+
   useEffect(() => {
     if (typeof window !== "undefined" && navigator.modelContext) {
       navigator.modelContext.provideContext({
@@ -15,7 +42,7 @@ export const useModelContext = () => {
               }
             },
             execute: async ({ query }) => {
-              window.location.href = `/events?search=${encodeURIComponent(query)}`;
+              navigate(`/events?search=${encodeURIComponent(query)}`);
               return { success: true, message: `Searching for ${query}` };
             }
           },
@@ -24,12 +51,12 @@ export const useModelContext = () => {
             description: "Get information about Eventra APIs",
             inputSchema: { type: "object", properties: {} },
             execute: async () => {
-              window.location.href = "/apiDocs";
+              navigate("/api-docs");
               return { success: true, message: "Navigating to API documentation" };
             }
           }
         ]
       });
     }
-  }, []);
+  }, [navigate]);
 };

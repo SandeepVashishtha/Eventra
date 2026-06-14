@@ -1,6 +1,8 @@
 // src/pages/CommunityEventsPage.jsx
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
+import { useReducedMotion } from '../hooks/useReducedMotion';
 import {
   CalendarDays,
   Users,
@@ -90,12 +92,37 @@ const events = [
 ];
 
 const CommunityEvent = () => {
+  const prefersReducedMotion = useReducedMotion();
   const [selectedEvent, setSelectedEvent] = useState(null);
+  
+  // 🔥 FIX: Safe scroll locking that caches and restores the original CSS value
+  useEffect(() => {
+    if (selectedEvent) {
+      const originalStyle = window.getComputedStyle(document.body).overflow;
+      document.body.style.overflow = "hidden";
+      
+      return () => {
+        document.body.style.overflow = originalStyle;
+      };
+    }
+  }, [selectedEvent]);
+
+  // 🔥 FIX: Added Escape key listener to satisfy A11y dialog closing requirements
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape" && selectedEvent) {
+        setSelectedEvent(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedEvent]);
 
   return (
     <div
       className={`
         relative overflow-hidden
+        /* 🔥 FIX: Changed bg-linear-to-b to bg-gradient-to-b for correct Tailwind execution */
         bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white 
         dark:from-slate-950 dark:via-slate-900 dark:to-black
         ${darkTheme.textPrimary}
@@ -109,7 +136,7 @@ const CommunityEvent = () => {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
           className="text-center mb-14"
         >
           <div className="flex justify-center mb-6">
@@ -128,7 +155,7 @@ const CommunityEvent = () => {
           <motion.h1
             initial={{ opacity: 0, y: -30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.7 }}
             className={`
               text-4xl sm:text-6xl lg:text-7xl
               font-extrabold
@@ -145,7 +172,7 @@ const CommunityEvent = () => {
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.7 }}
+            transition={{ delay: prefersReducedMotion ? 0 : 0.2, duration: prefersReducedMotion ? 0 : 0.7 }}
             className={`
               text-base sm:text-lg
               max-w-2xl
@@ -251,14 +278,16 @@ const CommunityEvent = () => {
         </div>
       </div>
 
-      {selectedEvent && (
+      {selectedEvent && createPortal(
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="community-event-modal-title"
           onClick={() => setSelectedEvent(null)}
-        >
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+  >
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -335,7 +364,8 @@ const CommunityEvent = () => {
               </p>
             </div>
           </motion.div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
