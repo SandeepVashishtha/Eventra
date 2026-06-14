@@ -19,8 +19,21 @@ export const normalizeEventAvailability = (event = {}) => {
     event.spotsLeft ?? event.spotsRemaining ?? event.remainingSpots
   );
 
-  const spotsLeft =
-    capacity === null ? explicitSpotsLeft : Math.max(0, capacity - registeredCount);
+  // 🔥 FIX: when the API reports an explicit spotsLeft, prefer it over the
+  // local capacity - registeredCount calculation. The server may have a more
+  // accurate count (e.g. accounting for waitlist holds, soft-holds, or
+  // pending cancellations). Clamp to [0, capacity] for sanity.
+  // Precedence: explicit spotsLeft > computed capacity - registeredCount > null.
+  let spotsLeft;
+  if (explicitSpotsLeft !== null) {
+    spotsLeft = capacity === null
+      ? explicitSpotsLeft
+      : Math.max(0, Math.min(explicitSpotsLeft, capacity));
+  } else if (capacity !== null) {
+    spotsLeft = Math.max(0, capacity - registeredCount);
+  } else {
+    spotsLeft = null;
+  }
 
   let isFull = false;
 
