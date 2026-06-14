@@ -19,6 +19,7 @@ import { checkCapacity } from "../_lib/capacityValidator.js";
 
 // Concurrency lock for RSVP
 const rsvpLocks = new Map();
+const rsvpLockCounters = new Map();
 
 /**
  * Registration handler.
@@ -72,6 +73,9 @@ export default async function registerForEvent(req, res, deps = {}) {
     return;
   }
   
+  const counter = rsvpLockCounters.get(eventId) || 0;
+  rsvpLockCounters.set(eventId, counter + 1);
+
   if (!rsvpLocks.has(eventId)) {
     rsvpLocks.set(eventId, Promise.resolve());
   }
@@ -149,5 +153,12 @@ export default async function registerForEvent(req, res, deps = {}) {
     res.status(500).json({ error: "Internal server error" });
   } finally {
     release();
+    const remaining = rsvpLockCounters.get(eventId) - 1;
+    if (remaining <= 0) {
+      rsvpLocks.delete(eventId);
+      rsvpLockCounters.delete(eventId);
+    } else {
+      rsvpLockCounters.set(eventId, remaining);
+    }
   }
 }
