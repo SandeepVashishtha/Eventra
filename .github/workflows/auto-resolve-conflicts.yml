@@ -1,4 +1,4 @@
-﻿name: Auto-Resolve Merge Conflicts
+name: Auto-Resolve Merge Conflicts
 on:
   workflow_dispatch:
   schedule:
@@ -13,6 +13,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           token: ${{ secrets.GH_TOKEN }}
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
       - name: Auto resolve all open PRs
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
@@ -23,12 +28,6 @@ jobs:
             gh pr checkout $num
             if git merge origin/master --no-commit --no-ff 2>&1 | grep -q "CONFLICT"; then
               for file in $(git diff --name-only --diff-filter=U); do
-                python3 -c "import re;c=open('$file').read();open('$file','w').write(re.sub(r'<<<<<<< .*?\n(.*?)=======\n(.*?)>>>>>>> .*?\n',r'\1\2',c,flags=re.DOTALL))"
-                git add $file
-              done
-              git commit -m "auto-resolve PR #$num"
-              git push origin $branch
-            else
-              git merge --abort 2>/dev/null || true
-            fi
-          done
+                # Auto resolve by keeping current branch version
+                git checkout --ours "$file"
+                git add "$file"

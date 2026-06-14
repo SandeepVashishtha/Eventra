@@ -1,7 +1,7 @@
-import { Facebook, Linkedin, MessageCircle, Send } from "lucide-react";
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Share2, Copy, Mail, Check } from 'lucide-react';
+// Consolidated lucide-react imports for code cleanliness
+import { Facebook, Linkedin, MessageCircle, Send, Share2, Copy, Mail, Check } from 'lucide-react';
 import { generateSharingUrl, copyToClipboard } from '../../../utils/shareUtils';
 import { toast } from 'react-toastify';
 import './ShareMenu.css';
@@ -29,6 +29,7 @@ const ShareMenu = ({
   const [calculatedPosition, setCalculatedPosition] = useState('bottom');
   const menuRef = useRef(null);
   const buttonRef = useRef(null);
+  const timeoutRef = useRef(null); // Ref to track timeouts and prevent memory leaks
 
   const toggleMenu = () => {
     if (!isOpen && buttonRef.current) {
@@ -80,8 +81,11 @@ const ShareMenu = ({
     copyToClipboard(url);
     setCopied(true);
     
-    // Reset copied status after 2 seconds
-    setTimeout(() => {
+    // Clear any existing timeouts to prevent memory leaks
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    
+    // Reset copied status after 2 seconds safely
+    timeoutRef.current = setTimeout(() => {
       setCopied(false);
     }, 2000);
   };
@@ -99,15 +103,20 @@ const ShareMenu = ({
       })
       .then(()=>setIsOpen(false))
       .catch((err) => {
-        console.error('Error sharing:', err);
-        toast.error("Failed to share event", { autoClose: 2000 });
+        // Ignore AbortError caused by users intentionally closing the native share dialog
+        if (err.name !== 'AbortError') {
+          console.error('Error sharing:', err);
+          toast.error("Failed to share event", { autoClose: 2000 });
+        }
       });
       return;
     }
     if (platform === 'copy') {
       copyToClipboard(url);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => setCopied(false), 2000);
       return;
     }
 
@@ -120,6 +129,13 @@ const ShareMenu = ({
     setIsOpen(false);
   };
   
+  // Handle component unmount memory leak cleanup
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
+
   // Handle click outside to close menu
   useEffect(() => {
     const handleClickOutside = (event) => {

@@ -7,6 +7,9 @@ export const fetchHackathons = async () => {
   if (Array.isArray(data) && data.length > 0) {
     return data;
   }
-
   throw new Error("Hackathons API returned no data");
+};
+
+export const hostHackathon = async (hackathonData, config) => {
+  return apiUtils.post(API_ENDPOINTS.HACKATHONS.HOST, hackathonData, config);
 };
