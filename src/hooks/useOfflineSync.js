@@ -220,7 +220,7 @@ const useOfflineSync = () => {
       // when useOfflineSync called isTokenValid("cookie-managed") directly.
       if (!currentIsAuthenticated()) {
         toast.warning(
-          "Offline actions are pending but your session has expired. Please log in again to sync them.",
+          "Security notice: Offline actions are pending, but your session has expired. Please log in again to synchronize them.",
           { autoClose: 6000 }
         );
         return;
@@ -537,6 +537,8 @@ const useOfflineSync = () => {
         clearTimeout(timeoutId);
       }
     };
+   
+  }, [token, user?.id]);
   }, [token, user?.id, isAuthenticated, loading]);
 };
 

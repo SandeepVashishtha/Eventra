@@ -190,8 +190,24 @@ export function setupResponseInterceptor(api, { isDev, timeoutMs, getOnUnauthori
       const status = error?.response?.status;
 
       const onUnauthorized = getOnUnauthorized();
-      if (status === 401 && onUnauthorized) {
-        onUnauthorized();
+      if (status === 401) {
+        if (!config._retry && !config.url?.includes("/api/auth/refresh")) {
+          config._retry = true;
+          try {
+            if (isDev) logger.info(`[API] Attempting OAuth token refresh...`);
+            await api.post("/api/auth/refresh");
+            return api(config);
+          } catch (refreshError) {
+            logger.error("OAuth token refresh failed. Locking user out.", refreshError);
+            if (onUnauthorized) {
+              onUnauthorized();
+            }
+            throw normalizeApiErrorWithTimeout(refreshError, timeoutMs);
+          }
+        }
+        if (onUnauthorized) {
+          onUnauthorized();
+        }
       }
 
       const retryCount = config._retryCount || 0;

@@ -18,10 +18,12 @@ import {
 import { safeJsonParse } from "../../../utils/safeJsonParse";
 import {
   fetchRepository,
+
   // fetchContributors,
   // fetchPullRequests,
 } from "../../../utils/githubApiClient";
-import { ENV } from "../../../config/env";
+
+import { safeJsonParse } from "../../../utils/safeJsonParse";
 
 const fetchStat = fetchRepository;
 

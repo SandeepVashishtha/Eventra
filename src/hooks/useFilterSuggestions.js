@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState , useRef  } from "react";
 import {
   FILTER_SUGGESTIONS_STORAGE_KEY,
   generateFilterSuggestions,

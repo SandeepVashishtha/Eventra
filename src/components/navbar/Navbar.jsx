@@ -13,11 +13,13 @@ import ProfileMenu from "./ProfileMenu";
 import NotificationBell from "../notifications/NotificationBell";
 import useBodyScrollLock from "./hooks/useBodyScrollLock";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
+import { useTheme } from "../../context/ThemeContext";
 
 const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [scrolled, setScrolled] = useState(false);
+  const { isDarkMode, toggleTheme } = useTheme();
   const navRef = useRef(null);
   const { isDarkMode, toggleTheme, setIsCustomizerOpen } = useTheme();
 
@@ -118,13 +120,13 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           </Link>
 
           {/* Desktop Links - Wrapping instead of absolute positioning */}
-          <div className="hidden lg:flex items-center justify-center flex-1 overflow-x-auto">
+          <div className="hidden lg:flex items-center justify-center flex-1 ">
             <DesktopNavbar />
           </div>
 
           {/* Right Controls Container */}
-          <div className="relative z-10 flex items-center gap-2 sm:gap-2.5 shrink-0">
-            <div className="hidden lg:flex items-center gap-2.5">
+          <div className="relative z-10 flex items-center gap-1 sm:gap-2.5 shrink-0">
+            <div className="hidden lg:flex items-center gap-1.5">
               <LanguageSelector compact />
               {authenticated ? (
                 <>

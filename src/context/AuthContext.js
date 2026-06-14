@@ -8,7 +8,7 @@ import { useTokenExpiry } from "../hooks/useTokenExpiry.js";
 import { isTokenValid } from "../utils/tokenUtils.js";
 import { toast } from "react-toastify";
 import { ROLES, ROLE_PERMISSIONS } from "../config/roles.js";
-import { getSessionChannel, closeSessionChannel, SESSION_TERMINATED } from "../utils/sessionBroadcast.js";
+import { getSessionChannel, closeSessionChannel, SESSION_TERMINATED, broadcastSessionTerminated } from "../utils/sessionBroadcast.js";
 
 // Create context for Authentication
 const AuthContext = createContext();
@@ -169,6 +169,13 @@ export const AuthProvider = ({ children }) => {
     
     if (!hadPreviousSession || expiryToastShownRef.current) return;
     expiryToastShownRef.current = true;
+    toast.info(
+      "Security notice: Your session has expired. Please log in again to continue securely.",
+      {
+        toastId: "session-expired",
+        autoClose: 5000,
+      }
+    );
     
     toast.info("Session expired. Please log in again.", {
       toastId: "session-expired",
@@ -294,37 +301,56 @@ export const AuthProvider = ({ children }) => {
     return true;
   }, []);
 
-  /**
-   * Explicitly sets the auth session manually (used post-registration or sign-up workflows).
-   */
-  const setAuthSession = useCallback((t, u) => persistSession(t, u), [persistSession]);
+  const setAuthSession = useCallback(
+    (sessionToken, sessionUser) => {
+      return persistSession(sessionToken, sessionUser);
+    },
+    [persistSession]
+  );
 
-  /**
-   * Normalizes error payload responses to user-friendly messages.
-   */
-  const getAuthErrorMessage = (error, fallbackMessage) =>
-    error?.response?.data?.message ||
-    error?.response?.data?.error ||
-    error?.message ||
-    fallbackMessage;
+  const getAuthErrorMessage = (error, fallbackMessage) => {
+    return (
+      error?.response?.data?.message ||
+      error?.response?.data?.error ||
+      error?.message ||
+      fallbackMessage
+    );
+  };
 
-  /**
-   * Initiates authentication login sequence.
-   * 
-   * @param {string} usernameOrEmail - Input credential.
-   * @param {string} password - User password.
-   * @returns {boolean} True if login resolves, false otherwise.
-   */
-  const login = useCallback(async (usernameOrEmail, password) => {
-    if (!isMountedRef.current) return false;
-    setAuthRequest({ loading: true, error: null });
-    
-    try {
-      const res = await authService.login({ usernameOrEmail, password });
-      const data = res.data;
-      
-      if (res.status !== 200) {
-        throw new Error(data?.message || data?.error || "Invalid credentials");
+  const login = useCallback(
+    async (usernameOrEmail, password) => {
+      if (!setAuthRequestState({ loading: true, error: null })) {
+        return false;
+      }
+
+      try {
+        const res = await apiUtils.post(API_ENDPOINTS.AUTH.LOGIN, {
+          usernameOrEmail,
+          password,
+        });
+
+        const data = res.data;
+
+        if (res.status !== 200) {
+          throw new Error(data?.message || data?.error || "Invalid credentials");
+        }
+
+        // extractSession now returns "cookie-managed" instead of null when the
+        // server uses HttpOnly cookies and omits the token from the response
+        // body. There is no longer a missing-token failure path here.
+        const { sessionToken, sessionUser } = extractSession(res, data, usernameOrEmail);
+
+        const persisted = persistSession(sessionToken, sessionUser);
+        if (!persisted) return false;
+
+        setAuthRequestState({ loading: false, error: null });
+        return true;
+      } catch (error) {
+        if (!isMountedRef.current) return false;
+         // Fix (Issue #8646):
+        document.cookie = "token=; Max-Age=0; path=/; Secure; SameSite=Strict";
+        setAuthRequestState({ loading: false, error: getAuthErrorMessage(error, "Login failed. Please try again.") });
+        return false;
       }
       
       const { sessionUser } = extractSession(data, usernameOrEmail);
@@ -353,6 +379,7 @@ export const AuthProvider = ({ children }) => {
       console.warn("[AuthContext] Backend logout request failed (best-effort error):", error);
     }
     clearSession();
+    broadcastSessionTerminated();
     setAuthRequest({ loading: false, error: null });
   }, [clearSession]);
 
