@@ -221,6 +221,9 @@ const WaitlistCard = memo(({ event, index, onLeaveWaitlist }) => {
       .catch(() => setQueuePos(-1));
   }, [event.id, user]);
 
+
+
+ 
   return (
     <motion.div
       className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl backdrop-blur-sm transition-all duration-500 hover:scale-[1.02] flex flex-col z-10 overflow-hidden"
@@ -445,6 +448,47 @@ const normalizedSearch = debouncedTerm.trim().toLowerCase();
     removeRegistration(cancelTarget.id);
     setCancelTarget(null);
   }, [cancelTarget, removeRegistration]);
+
+  const saveCurrentPreset = () => {
+  const preset = {
+    id: Date.now(),
+    searchQuery,
+    filterStatus,
+    filterType,
+    sortBy,
+  };
+
+  const updated = [
+    preset,
+    ...recentPresets.filter(
+      (p) =>
+        !(
+          p.searchQuery === preset.searchQuery &&
+          p.filterStatus === preset.filterStatus &&
+          p.filterType === preset.filterType &&
+          p.sortBy === preset.sortBy
+        )
+    ),
+  ].slice(0, 5);
+
+  setRecentPresets(updated);
+
+  localStorage.setItem(
+    "recentEventPresets",
+    JSON.stringify(updated)
+  );
+
+  toast.success("Filter preset saved");
+};
+
+const applyPreset = (preset) => {
+  setSearchQuery(preset.searchQuery);
+  setFilterStatus(preset.filterStatus);
+  setFilterType(preset.filterType);
+  setSortBy(preset.sortBy);
+
+  toast.success("Preset applied");
+};
 
   return (
     <motion.div className="ud-content">
