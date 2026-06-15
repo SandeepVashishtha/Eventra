@@ -31,7 +31,7 @@ const OnboardingConfetti = () => {
   }));
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden">
+    <div className="fixed inset-0 pointer-events-none z-top overflow-hidden">
       {pieces.map((p) => (
         <motion.div
           key={p.id}
@@ -310,7 +310,7 @@ export default function OnboardingChecklist() {
             exit={{ opacity: 0, scale: 0.9, y: 100 }}
             transition={{ duration: prefersReducedMotion ? 0 : 0.25, ease: "easeOut" }}
             data-onboarding-checklist="panel"
-            className="fixed bottom-6 left-6 z-[110] w-full max-w-sm bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden"
+            className="fixed bottom-6 left-6 z-fixed w-full max-w-sm bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden"
           >
             {/* Header */}
             <div className="p-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
