@@ -239,7 +239,7 @@ console.log("Running Waitlist System unit tests...");
   assert.equal(list.length, 0);
 
   const all = getGlobalWaitlist();
-  assert.equal(all[0].status, "removed");
+  assert.equal(all[0].status, "removed_by_organizer");
   console.log("✓ Test 8: Organizer Manual User Removal");
 }
 

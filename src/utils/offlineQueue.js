@@ -3,7 +3,8 @@
 // ---------------------------------------------------------------------------
 import { safeJsonParse } from "./safeJsonParse.js";
 import { logger } from "./logger.js";
-import offlineSyncConfig from "../config/offlineSyncConfig.json";
+import { ensureSessionSnapshot } from "./sessionSnapshot.js";
+import offlineSyncConfig from "../config/offlineSyncConfig.json" with { type: "json" };
 
 const QUEUE_KEY = "eventra_offline_queue";
 const DB_NAME = "eventra_offline_db";
@@ -126,79 +127,25 @@ const openDB = () => {
       }
 
       // ── Schema upgrade path (oldVersion >= 1) ──────────────────────────────
-      // Step 1: Rescue whatever is currently in the store BEFORE touching it.
-      //         We also merge with the localStorage mirror to maximise recovery.
-      let rescuedItems = [];
-      const lsMirror = _rescueFromLocalStorage();
-
+      // Step 1: Synchronously delete and recreate store during upgrade transaction
       if (db.objectStoreNames.contains(STORE_NAME)) {
-        // Read all existing records synchronously inside the upgrade transaction
-        const oldStore = transaction.objectStore(STORE_NAME);
-        const getAllReq = oldStore.getAll();
-
-        getAllReq.onsuccess = () => {
-          const dbItems = getAllReq.result || [];
-
-          // Merge DB items with localStorage mirror — deduplicate by item id
-          const seen = new Set();
-          rescuedItems = [...dbItems, ...lsMirror].filter((item) => {
-            if (!item || !item.id || seen.has(item.id)) return false;
-            seen.add(item.id);
-            return true;
-          });
-
-          // Step 2: Delete old store so we can recreate with updated schema
-          db.deleteObjectStore(STORE_NAME);
-
-          // Step 3: Create new store with updated schema
-          db.createObjectStore(STORE_NAME, { keyPath: "id" });
-
-          // Step 4: Re-insert rescued items into the new store
-          // We must use the same upgrade transaction — it stays open until
-          // the upgrade completes, so we can reuse it here.
-          const newStore = transaction.objectStore(STORE_NAME);
-          rescuedItems.forEach((item) => {
-            newStore.put(item);
-          });
-
-          // Step 5: Update localStorage mirror to reflect rescued items
-          try {
-            if (rescuedItems.length > 0) {
-              localStorage.setItem(QUEUE_KEY, JSON.stringify(rescuedItems));
-            } else {
-              localStorage.removeItem(QUEUE_KEY);
-            }
-          } catch {
-            // localStorage might be full — non-fatal
-          }
-
-          // Step 6: Notify UI
-          _dispatchUpgradeEvent(rescuedItems.length);
-        };
-
-        getAllReq.onerror = () => {
-          // Couldn't read old store — fall back to localStorage mirror only
-          db.deleteObjectStore(STORE_NAME);
-          const newStore = db.createObjectStore(STORE_NAME, { keyPath: "id" });
-
-          lsMirror.forEach((item) => {
-            newStore.put(item);
-          });
-
-          try {
-            if (lsMirror.length > 0) {
-              localStorage.setItem(QUEUE_KEY, JSON.stringify(lsMirror));
-            }
-          } catch {
-            // non-fatal
-          }
-
-          _dispatchUpgradeEvent(lsMirror.length);
-        };
-      } else {
-        // Store didn't exist yet — just create it
-        db.createObjectStore(STORE_NAME, { keyPath: "id" });
+        db.deleteObjectStore(STORE_NAME);
       }
+      db.createObjectStore(STORE_NAME, { keyPath: "id" });
+
+      // Step 2: Rescue queued actions synchronously from the localStorage mirror
+      const rescuedItems = _rescueFromLocalStorage();
+
+      // Step 3: Put rescued items back into the newly created store synchronously
+      if (rescuedItems.length > 0) {
+        const store = transaction.objectStore(STORE_NAME);
+        rescuedItems.forEach((item) => {
+          store.put(item);
+        });
+      }
+
+      // Step 4: Dispatch upgrade event
+      _dispatchUpgradeEvent(rescuedItems.length);
     };
 
     request.onsuccess = (e) => resolve(e.target.result);
@@ -338,15 +285,13 @@ export const pushToQueue = async (item, userId = null) => {
     eventId: item.eventId || null,
     payload: item.payload || {},
     endpoint: item.endpoint || null,
+    idempotencyKey: item.idempotencyKey || null,
     conflictStrategy:
       item.conflictStrategy ||
       offlineSyncConfig.defaultConflictStrategy,
     // SECURITY: Attach user ID to validate ownership on replay
     userId: userId || null,
-    sessionId:
-      typeof sessionStorage !== "undefined"
-        ? sessionStorage.getItem("session_id") || null
-        : null,
+    sessionId: ensureSessionSnapshot(userId),
   };
 
   // Guard against oversized payloads before they reach localStorage.
@@ -372,16 +317,29 @@ export const pushToQueue = async (item, userId = null) => {
   const queue = getQueue();
   if (queue.length >= offlineSyncConfig.maxQueueSize) {
     logger.warn("Offline queue limit reached. Dropping item to prevent local overflow.");
-    if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
-      window.dispatchEvent(
-        new CustomEvent("eventra-offline-queue-full", {
-          detail: { eventId: item.eventId, limit: offlineSyncConfig.maxQueueSize },
-        })
-      );
-    }
     return false;
   }
-  queue.push(actionItem);
+  const isDuplicate = queue.some((existing) => {
+  if (actionItem.idempotencyKey && existing.idempotencyKey) {
+    return existing.idempotencyKey === actionItem.idempotencyKey;
+  }
+
+  return (
+    existing.eventId === actionItem.eventId &&
+    existing.userId === actionItem.userId &&
+    existing.actionType === actionItem.actionType
+  );
+});
+
+if (isDuplicate) {
+  logger.warn(
+    `[OfflineQueue] Duplicate action detected for event ${actionItem.eventId} ` +
+      `(user ${actionItem.userId}, type ${actionItem.actionType}). Skipping enqueue.`
+  );
+  return true;
+}
+
+queue.push(actionItem);
 
   let localStorageSuccess = false;
   try {
@@ -540,7 +498,8 @@ export const filterQueueByOwnership = (queue, currentUserId) => {
  *  1. filterQueueByOwnership — userId must match the current authenticated user.
  *  2. validateQueueSession   — sessionId must match the current session.
  *
- * Items with a null/missing sessionId are dropped to be safe (no session = unknown origin).
+ * Legacy items with a null/missing sessionId are migrated to the current
+ * session after ownership validation has already confirmed the user match.
  *
  * @param {Array}  queue          - Ownership-filtered offline queue
  * @param {string} currentSession - Current session ID from sessionStorage
@@ -554,13 +513,14 @@ export const validateQueueSession = (queue, currentSession) => {
     return [];
   }
 
-  return queue.filter((item) => {
+  return queue.reduce((validatedItems, item) => {
     if (!item.sessionId) {
       logger.warn(
-        `[Security] Dropping queued action ${item.id}: no sessionId stored. ` +
-          "Cannot verify session ownership."
+        `[OfflineQueue] Migrating queued action ${item.id}: no sessionId stored. ` +
+          "Binding legacy item to the current verified session."
       );
-      return false;
+      validatedItems.push({ ...item, sessionId: currentSession });
+      return validatedItems;
     }
     if (item.sessionId !== currentSession) {
       logger.warn(
@@ -568,10 +528,11 @@ export const validateQueueSession = (queue, currentSession) => {
           `stored sessionId does not match current session. ` +
           "This prevents stale-session cross-user action replay."
       );
-      return false;
+      return validatedItems;
     }
-    return true;
-  });
+    validatedItems.push(item);
+    return validatedItems;
+  }, []);
 };
 
 // ---------------------------------------------------------------------------
@@ -724,10 +685,7 @@ export const processQueue = async (currentUserId, fetchFn, options = {}) => {
 
   // SECURITY (Issue #5727): Re-validate session ID so actions queued under a
   // previous session cannot replay under a new session, even if the userId matches.
-  const currentSession =
-    typeof sessionStorage !== "undefined"
-      ? sessionStorage.getItem("session_id") || null
-      : null;
+  const currentSession = ensureSessionSnapshot(currentUserId);
   const sessionValidated = validateQueueSession(validated, currentSession);
   if (sessionValidated.length === 0) {
     await clearQueue();

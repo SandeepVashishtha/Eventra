@@ -38,7 +38,8 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "./AuthContext";
 
-import { saveToOfflineCache, getFromOfflineCache } from "../utils/indexedDB";
+import { saveToOfflineCache, getFromOfflineCache, removeFromOfflineCache } from "../utils/indexedDB";
+import { getOrMigrateKey } from "../utils/storageKeyManager";
 import { safeJsonParse } from "../utils/safeJsonParse";
 
 const MyEventsContext = createContext(null);
@@ -68,7 +69,10 @@ export const reconcileRegistrations = (listA, listB) => {
 
 // Use a hashed or opaque key so the localStorage key itself does not expose
 // the userId (which is often the user's email address).
-const storageKey = (userId) => `my_events_${userId}`;
+const storageKey = (userId) => {
+  const legacyKey = `my_events_${userId}`;
+  return getOrMigrateKey("my_events", userId, legacyKey);
+};
 
 // ---------------------------------------------------------------------------
 // Minimal event summary — only non-PII fields needed to show the registered
@@ -103,27 +107,66 @@ const toPersistedRecord = (eventId, registeredAt, event, registrationId, qrToken
 export const loadFromIDB = async (userId) => {
   if (!userId) return [];
   const key = storageKey(userId);
-  const idbData = await getFromOfflineCache(key, []);
-  
+  const legacyKey = `my_events_${userId}`;
+  // 1. Get current IndexedDB data for both key and legacyKey
+  let idbData = await getFromOfflineCache(key, null);
+  let hasLegacyIDB = false;
+
+  if (idbData === null) {
+    // If no primary data, check legacy IDB
+    if (key !== legacyKey) {
+      const legacyVal = await getFromOfflineCache(legacyKey, null);
+      if (legacyVal !== null) {
+        idbData = Array.isArray(legacyVal) ? legacyVal : [];
+        hasLegacyIDB = true;
+      } else {
+        idbData = [];
+      }
+    } else {
+      idbData = [];
+    }
+  } else if (!Array.isArray(idbData)) {
+    idbData = [];
+  }
+
+  // 2. Fetch localStorage data under both key and legacyKey to be reconciled
   let lsData = [];
+  let foundKeyInLS = null;
+
   try {
-    const raw = localStorage.getItem(key);
-    if (raw) {
-      lsData = safeJsonParse(raw, []);
+    const rawNew = localStorage.getItem(key);
+    if (rawNew) {
+      lsData = safeJsonParse(rawNew, []);
+      foundKeyInLS = key;
+    } else if (key !== legacyKey) {
+      const rawLegacy = localStorage.getItem(legacyKey);
+      if (rawLegacy) {
+        lsData = safeJsonParse(rawLegacy, []);
+        foundKeyInLS = legacyKey;
+      }
     }
   } catch {
     // ignore
   }
 
+  // 3. Reconcile IndexedDB and localStorage
   const reconciled = reconcileRegistrations(idbData, lsData);
-  
-  if (lsData.length > 0) {
+
+  // 4. Save the reconciled results back to IndexedDB (key)
+  if (lsData.length > 0 || hasLegacyIDB || key !== legacyKey) {
     await saveToOfflineCache(key, reconciled);
+  }
+
+  // 5. Clean up old/legacy storages
+  if (foundKeyInLS) {
     try {
-      localStorage.removeItem(key);
+      localStorage.removeItem(foundKeyInLS);
     } catch {
       // ignore
     }
+  }
+  if (hasLegacyIDB) {
+    await removeFromOfflineCache(legacyKey);
   }
 
   return reconciled;
@@ -197,13 +240,19 @@ export const MyEventsProvider = ({ children }) => {
    */
   const addRegistration = useCallback((event, formData = {}, registrationId = null, qrToken = null) => {
     setMyEvents((prev) => {
-      if (prev.some((r) => r.eventId === event.id)) return prev;
+      const alreadyExists = prev.some(
+        (r) =>
+          r.eventId === event.id ||
+        (registrationId && r.registrationId && r.registrationId === registrationId)
+      );
+
+      if (alreadyExists) return prev;
       return [
         ...prev,
         {
           eventId: event.id,
           registeredAt: new Date().toISOString(),
-          registrationId: registrationId || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `reg-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`),
+          registrationId: registrationId || null,
           qrToken: qrToken || "",
           // formData and event are kept in memory for this session so the
           // success screen can display them, but they are NOT written to
@@ -221,10 +270,6 @@ export const MyEventsProvider = ({ children }) => {
    */
   const removeRegistration = useCallback((eventId) => {
     setMyEvents((prev) => prev.filter((r) => r.eventId !== eventId));
-    // Trigger automatic promotion from the waitlist
-    import("../utils/waitlistUtils.js").then(({ promoteNextUser }) => {
-      return promoteNextUser(eventId);
-    }).catch(() => {});
   }, []);
 
   /**

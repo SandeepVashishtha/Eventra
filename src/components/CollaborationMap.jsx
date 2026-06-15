@@ -19,6 +19,16 @@ const CONNECTIONS = [
   { from: "blr", to: "syd" },
 ];
 
+const getTooltipTransform = (city) => {
+    if (!city) return "translate(-50%, -90%)";
+
+    if (city.x < 350) return "translate(-10%, 10%)";
+    if (city.y < 180) return "translate(-50%, 10%)";
+    if (city.x > 800) return "translate(-100%, -120%)";
+
+    return "translate(-50%, -90%)";
+  };  
+
 export default function CollaborationMap() {
   const [hoveredCity, setHoveredCity] = useState(null);
   const mapRef = useRef(null);
@@ -39,7 +49,7 @@ export default function CollaborationMap() {
   }, []);
 
   return (
-    <section className="py-20 bg-slate-950 text-white relative overflow-hidden">
+    <section className="py-20 dark:bg-slate-950 dark:text-white bg-white text-slate-900 relative overflow-hidden">
       <style>{`
         /* 🔥 FIX: Namespace prefixed to prevent global CSS pollution */
         @keyframes eventra-map-dash {
@@ -65,7 +75,7 @@ export default function CollaborationMap() {
           <span className="inline-block text-xs uppercase tracking-[0.25em] text-indigo-400 font-bold bg-indigo-500/10 px-3.5 py-1.5 rounded-full border border-indigo-500/20">
             Global Network
           </span>
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-white via-slate-100 to-indigo-200 bg-clip-text text-transparent">
+          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-gray-500 dark:bg-gradient-to-r from-white via-slate-100 to-indigo-200 bg-clip-text">
             Collaboration Hubs
           </h2>
           <p className="max-w-xl mx-auto text-sm sm:text-base text-slate-400">
@@ -74,7 +84,7 @@ export default function CollaborationMap() {
         </div>
 
         {/* Glassmorphic Map Container */}
-        <div ref={mapRef} className="relative bg-slate-900/40 backdrop-blur-xl border border-white/10 dark:border-slate-800/50 shadow-2xl rounded-3xl p-6 md:p-8 overflow-hidden">
+        <div ref={mapRef} className="relative bg-slate-900/40 backdrop-blur-xl border border-white/10 dark:border-slate-800/50 shadow-2xl rounded-3xl p-6 md:p-8 overflow-visible">
           
           {/* Legend/Status */}
           <div className="absolute top-6 left-6 z-10 hidden sm:flex items-center gap-4 bg-slate-950/60 backdrop-blur border border-white/5 rounded-2xl px-4 py-2.5 text-xs text-slate-300">
@@ -199,7 +209,7 @@ export default function CollaborationMap() {
                 style={{
                   left: `${(hoveredCity.x / 1000) * 100}%`,
                   top: `${(hoveredCity.y / 500) * 100}%`,
-                  transform: "translate(-50%, -120%)",
+                  transform: getTooltipTransform(hoveredCity),
                   minWidth: "210px",
                   borderRadius: "14px",
                   boxShadow: "0 8px 32px rgba(0,0,0,0.18)",

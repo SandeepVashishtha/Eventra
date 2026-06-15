@@ -1,4 +1,4 @@
-import { safeJsonParse } from "../utils/safeJsonParse";
+import { safeJsonParse } from "./safeJsonParse.js";
 // 🔥 FIX: In-memory queue and lock to prevent localStorage race conditions
 let isUpdating = false;
 let interestQueue = [];
