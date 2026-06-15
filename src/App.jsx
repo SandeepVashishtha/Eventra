@@ -14,7 +14,6 @@ import Navbar from "./components/navbar/Navbar";
 import SkipToContent from "./components/accessibility/SkipToContent";
 import OfflineBanner from "./components/common/OfflineBanner";
 import OfflineConflictModal from "./components/common/OfflineConflictModal";
-import ScrollToTop from "./components/ScrollToTop";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import NotificationToastContainer from "./components/common/NotificationProvider";
@@ -267,7 +266,7 @@ function App() {
                   </PageTransition>
                 </main>
 
-                <ScrollToTop />
+                
                 {showChatbot && (
                   <ErrorBoundary level="section" label="Chatbot Assist" silent>
                     <Suspense fallback={null}>
