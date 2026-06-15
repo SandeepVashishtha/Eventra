@@ -31,6 +31,7 @@ export const MAX_BOOKMARKS = 200;
 const cache = new Map(); // Map<storageKey, BookmarkEntry[]>
 
 const readStorage = (key) => {
+  if (typeof window === "undefined") return [];
   try {
     const stored = localStorage.getItem(key);
     if (!stored) return [];
@@ -42,6 +43,7 @@ const readStorage = (key) => {
 };
 
 const writeStorage = (key, value) => {
+  if (typeof window === "undefined") return;
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch {
