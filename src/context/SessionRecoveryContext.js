@@ -6,117 +6,50 @@ import { getDeviceFingerprint } from "../utils/deviceFingerprint";
 import { useAuth } from "./AuthContext";
 import useCloudSessionRecovery from "../hooks/useCloudSessionRecovery";
 import useMultiSessionRecovery from "../hooks/useMultiSessionRecovery";
+import { deriveKey, encryptWithKey, decryptWithKey } from "../utils/secureStorage.js";
 
 // ---------------------------------------------------------------------------
-// CryptoJS has been removed from this module.
+// Encryption: delegates to src/utils/secureStorage.js — the single
+// PBKDF2 + AES-256-GCM implementation used by all client-side storage.
 //
-// The previous implementation used CryptoJS.AES.encrypt with a plain string
-// password, which internally applies OpenSSL EVP_BytesToKey (MD5, 1 iteration)
-// to derive the AES key. That is a legacy, cryptographically weak scheme:
-// MD5 is broken for security-sensitive use, and a single iteration provides
-// almost no resistance to offline brute-force attacks.
-//
-// This module now uses the same PBKDF2 (SHA-256, 100 000 iterations) +
-// AES-256-GCM encryption path as src/utils/secureStorage.js so both
-// localStorage encryption layers in the application use an equivalent
-// security level.
-//
-// The key material still comes from sessionStorage (cleared on tab close)
-// so the threat model is unchanged — the improvement is in how the key
-// is derived from that material.
+// SessionRecoveryContext (unlike syncSecureStorage) uses a session-scoped
+// password stored in sessionStorage so that encrypted blobs are bound to
+// the browser tab and cannot be decrypted after the tab is closed.
 // ---------------------------------------------------------------------------
 
 const SessionRecoveryContext = createContext();
 
 const SESSION_KEY = "eventra_session_state";
 const SESSION_TIMEOUT = 30 * 60 * 1000;
-
-// ---------------------------------------------------------------------------
-// Web Crypto helpers — PBKDF2 + AES-256-GCM
-// ---------------------------------------------------------------------------
-
-const CRYPTO_ALGORITHM = "AES-GCM";
-const KEY_LENGTH = 256;
-const IV_LENGTH = 12;
-const PBKDF2_ITERATIONS = 100_000;
 const PBKDF2_SALT_LENGTH = 32;
 const SESSION_SALT_KEY = "eventra_session_recovery_salt";
 
-/** Retrieve or generate the per-browser PBKDF2 salt for session recovery. */
 const getOrCreateRecoverySalt = () => {
   try {
     const stored = localStorage.getItem(SESSION_SALT_KEY);
-    if (stored) {
-      return Uint8Array.from(atob(stored), (c) => c.charCodeAt(0));
-    }
-  } catch {
-    // localStorage unavailable — fall through
-  }
+    if (stored) return Uint8Array.from(atob(stored), (c) => c.charCodeAt(0));
+  } catch {}
   const salt = crypto.getRandomValues(new Uint8Array(PBKDF2_SALT_LENGTH));
   try {
     localStorage.setItem(SESSION_SALT_KEY, btoa(String.fromCharCode(...salt)));
-  } catch {
-    // Non-fatal; salt will be regenerated next load
-  }
+  } catch {}
   return salt;
 };
 
 const RECOVERY_SALT = getOrCreateRecoverySalt();
 
-/**
- * Derive an AES-256-GCM key from the session-bound hex password stored in
- * sessionStorage. Uses PBKDF2 with SHA-256 and 100 000 iterations.
- */
-const deriveKey = async (password) => {
-  const encoder = new TextEncoder();
-  const keyMaterial = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(password),
-    "PBKDF2",
-    false,
-    ["deriveKey"],
-  );
-  return crypto.subtle.deriveKey(
-    {
-      name: "PBKDF2",
-      salt: RECOVERY_SALT,
-      iterations: PBKDF2_ITERATIONS,
-      hash: "SHA-256",
-    },
-    keyMaterial,
-    { name: CRYPTO_ALGORITHM, length: KEY_LENGTH },
-    false,
-    ["encrypt", "decrypt"],
-  );
-};
+const getSessionKey = (password) => deriveKey(password, RECOVERY_SALT);
 
-/** Encrypt plaintext with PBKDF2-derived AES-256-GCM key. Returns base64 string. */
 const encryptSession = async (plaintext, password) => {
-  const key = await deriveKey(password);
-  const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH));
-  const encoder = new TextEncoder();
-  const encrypted = await crypto.subtle.encrypt(
-    { name: CRYPTO_ALGORITHM, iv },
-    key,
-    encoder.encode(plaintext),
-  );
-  const ivB64 = btoa(String.fromCharCode(...iv));
-  const ctB64 = btoa(String.fromCharCode(...new Uint8Array(encrypted)));
-  return `${ivB64}:${ctB64}`;
+  const key = await getSessionKey(password);
+  return encryptWithKey(key, plaintext);
 };
 
-/** Decrypt a base64 ciphertext produced by encryptSession. Returns plaintext string. */
 const decryptSession = async (stored, password) => {
-  const colonIdx = stored.indexOf(":");
-  if (colonIdx === -1) throw new Error("Invalid session ciphertext format");
-  const iv = Uint8Array.from(atob(stored.slice(0, colonIdx)), (c) => c.charCodeAt(0));
-  const ciphertext = Uint8Array.from(atob(stored.slice(colonIdx + 1)), (c) => c.charCodeAt(0));
-  const key = await deriveKey(password);
-  const decrypted = await crypto.subtle.decrypt({ name: CRYPTO_ALGORITHM, iv }, key, ciphertext);
-  return new TextDecoder().decode(decrypted);
+  const key = await getSessionKey(password);
+  return decryptWithKey(key, stored);
 };
 
-/** Returns true when the Web Crypto API is available in the current context. */
 const isCryptoAvailable = () =>
   typeof window !== "undefined" &&
   typeof crypto !== "undefined" &&

@@ -1,59 +1,137 @@
-import { describe, it } from "node:test";
+/**
+ * getClientIp Security Tests
+ *
+ * Test suite for secure client IP extraction using Node's built-in net.isIP()
+ * to prevent IP spoofing attacks by validating all IP addresses.
+ */
+
 import assert from "node:assert/strict";
-import { getClientIp } from "../api/lib/getClientIp.js";
+import { getClientIp } from "../api/_lib/getClientIp.js";
 
-describe("getClientIp", () => {
-  it("should return public IP from x-forwarded-for if present", () => {
-    const req = {
-      headers: {
-        "x-forwarded-for": "203.0.113.195, 70.41.3.18",
-      },
-    };
-    assert.equal(getClientIp(req), "203.0.113.195");
-  });
+// Valid X-Forwarded-For
+assert.strictEqual(
+  getClientIp({
+    headers: { "x-forwarded-for": "1.2.3.4" },
+    socket: { remoteAddress: "10.0.0.1" }
+  }),
+  "1.2.3.4",
+  "should accept valid X-Forwarded-For"
+);
 
-  it("should return public IP from x-real-ip if x-forwarded-for is missing/private", () => {
-    const req = {
-      headers: {
-        "x-forwarded-for": "127.0.0.1",
-        "x-real-ip": "203.0.113.196",
-      },
-    };
-    assert.equal(getClientIp(req), "203.0.113.196");
-  });
+// Invalid X-Forwarded-For falls back
+assert.strictEqual(
+  getClientIp({
+    headers: { "x-forwarded-for": "not-an-ip" },
+    socket: { remoteAddress: "10.0.0.1" }
+  }),
+  "10.0.0.1",
+  "should fall back to socket.remoteAddress for invalid X-Forwarded-For"
+);
 
-  it("should return public IP from remoteAddress if headers are missing/private", () => {
-    const req = {
-      headers: {
-        "x-real-ip": "10.0.0.1",
-      },
-      socket: {
-        remoteAddress: "203.0.113.197",
-      },
-    };
-    assert.equal(getClientIp(req), "203.0.113.197");
-  });
+// Valid X-Real-IP
+assert.strictEqual(
+  getClientIp({
+    headers: { "x-real-ip": "5.6.7.8" },
+    socket: { remoteAddress: "10.0.0.1" }
+  }),
+  "5.6.7.8",
+  "should accept valid X-Real-IP"
+);
 
-  it("should fall back to private IP from x-forwarded-for if only private/loopback is available", () => {
-    const req = {
-      headers: {
-        "x-forwarded-for": "127.0.0.1",
-      },
-    };
-    assert.equal(getClientIp(req), "127.0.0.1");
-  });
+// Invalid X-Real-IP
+assert.strictEqual(
+  getClientIp({
+    headers: { "x-real-ip": "fake-ip" },
+    socket: { remoteAddress: "10.0.0.1" }
+  }),
+  "10.0.0.1",
+  "should fall back to socket.remoteAddress for invalid X-Real-IP"
+);
 
-  it("should fall back to private IP from socket if no headers are present", () => {
-    const req = {
-      socket: {
-        remoteAddress: "::1",
-      },
-    };
-    assert.equal(getClientIp(req), "::1");
-  });
+// IPv6 support
+assert.strictEqual(
+  getClientIp({
+    headers: { "x-forwarded-for": "2001:db8::1" },
+    socket: { remoteAddress: "10.0.0.1" }
+  }),
+  "2001:db8::1",
+  "should accept valid IPv6 in X-Forwarded-For"
+);
 
-  it("should return 'unknown' if no request details or IP can be resolved", () => {
-    assert.equal(getClientIp(null), "unknown");
-    assert.equal(getClientIp({}), "unknown");
-  });
-});
+// Unknown fallback
+assert.strictEqual(
+  getClientIp({}),
+  "unknown",
+  "should return unknown when no valid IP found"
+);
+
+// X-Forwarded-For with multiple IPs (leftmost is original client)
+assert.strictEqual(
+  getClientIp({
+    headers: { "x-forwarded-for": "1.2.3.4, 10.0.0.1, 172.16.0.1" },
+    socket: { remoteAddress: "10.0.0.1" }
+  }),
+  "1.2.3.4",
+  "should extract leftmost IP from X-Forwarded-For chain"
+);
+
+// X-Forwarded-For takes precedence over X-Real-IP
+assert.strictEqual(
+  getClientIp({
+    headers: {
+      "x-forwarded-for": "1.2.3.4",
+      "x-real-ip": "5.6.7.8"
+    },
+    socket: { remoteAddress: "10.0.0.1" }
+  }),
+  "1.2.3.4",
+  "should prefer X-Forwarded-For over X-Real-IP"
+);
+
+// Both headers invalid, fall back to socket
+assert.strictEqual(
+  getClientIp({
+    headers: {
+      "x-forwarded-for": "invalid",
+      "x-real-ip": "also-invalid"
+    },
+    socket: { remoteAddress: "10.0.0.1" }
+  }),
+  "10.0.0.1",
+  "should fall back to socket.remoteAddress when both headers are invalid"
+);
+
+// Empty headers, use socket
+assert.strictEqual(
+  getClientIp({
+    headers: {},
+    socket: { remoteAddress: "10.0.0.1" }
+  }),
+  "10.0.0.1",
+  "should use socket.remoteAddress when headers are missing"
+);
+
+// Null request
+assert.strictEqual(
+  getClientIp(null),
+  "unknown",
+  "should return unknown for null request"
+);
+
+// Undefined request
+assert.strictEqual(
+  getClientIp(undefined),
+  "unknown",
+  "should return unknown for undefined request"
+);
+
+// Missing socket
+assert.strictEqual(
+  getClientIp({
+    headers: { "x-forwarded-for": "invalid" }
+  }),
+  "unknown",
+  "should return unknown when socket is missing"
+);
+
+console.log("✓ All getClientIp validation tests passed");

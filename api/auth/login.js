@@ -1,0 +1,203 @@
+/**
+ * Authentication login endpoint with server-side rate limiting.
+ *
+ * Previously the login handler ran bcrypt.compare on every request with no
+ * throttling, allowing unlimited credential-stuffing and brute-force attempts
+ * from a single IP. This handler applies the same per-IP rate limiting already
+ * used by the GitHub proxy and AI recommendation endpoints before any password
+ * comparison is performed.
+ *
+ * Defence layers, in order:
+ *   1. Method guard (POST only)
+ *   2. Per-IP rate limit (5 attempts per minute) enforced before bcrypt
+ *   3. Input validation
+ *   4. Constant-time-ish credential verification via bcrypt
+ *   5. Generic error messages to prevent account enumeration
+ */
+
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { getClientIp } from "../_lib/getClientIp.js";
+import { loginRateLimiter, enforceRateLimit } from "../_lib/rateLimiter.js";
+import { getJwtSecret, JWT_EXPIRES_IN, JWT_COOKIE_MAX_AGE_SECONDS } from "./_jwt-config.js";
+import { buildCorsHeaders, corsResponse } from "./_cors.js";
+import { isStorageHealthy, getUserByEmail, getUserByUsername } from "./_user-storage.js";
+
+/**
+ * Validates the login request body.
+ *
+ * @param {Object} body
+ * @returns {{ valid: boolean, message?: string }}
+ */
+function validateLoginInput(body) {
+  if (!body || typeof body !== "object") {
+    return { valid: false, message: "Request body is required" };
+  }
+
+  const usernameOrEmail = body.usernameOrEmail || body.email;
+  const { password } = body;
+
+  if (!usernameOrEmail?.trim()) {
+    return { valid: false, message: "Username or email is required" };
+  }
+
+  if (!password) {
+    return { valid: false, message: "Password is required" };
+  }
+
+  return { valid: true };
+}
+
+function setCookie(res, token) {
+  const isProd = process.env.NODE_ENV === "production";
+  const cookieValue = `token=${token}; HttpOnly; Path=/; Max-Age=${JWT_COOKIE_MAX_AGE_SECONDS}; SameSite=Strict${isProd ? '; Secure' : ''}`;
+  try {
+    if (typeof res.setHeader === 'function') {
+      res.setHeader('Set-Cookie', cookieValue);
+    } else if (typeof res.set === 'function') {
+      res.set({ 'Set-Cookie': cookieValue });
+    } else if (res.headers && typeof res.headers === 'object') {
+      res.headers['Set-Cookie'] = cookieValue;
+    }
+  } catch (e) {
+  }
+}
+
+function buildUserResponse(user) {
+  const roles = user.roles || ["USER"];
+  const primaryRole = roles[0] || "ATTENDEE";
+  const normalizedRole = primaryRole === "EVENT_MANAGER" ? "ORGANIZER" : primaryRole;
+  return {
+    id: user.id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    email: user.email,
+    username: user.username,
+    role: normalizedRole,
+    roles: roles,
+    permissions: user.permissions || ["event:read"],
+  };
+}
+
+function createDefaultDeps() {
+  return {
+    findUserByEmail: async (ident) => {
+      const normalized = ident.trim().toLowerCase();
+      const userByEmail = users.get(normalized);
+      if (userByEmail) return userByEmail;
+      return usersByUsername.get(normalized);
+    },
+    comparePassword: async (plain, hash) => bcrypt.compare(plain, hash),
+    issueToken: (user) => {
+      const jwtPayload = {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        roles: user.roles || ["USER"],
+      };
+      return jwt.sign(jwtPayload, getJwtSecret(), { expiresIn: JWT_EXPIRES_IN });
+    },
+  };
+}
+
+/**
+ * Login handler.
+ *
+ * @param {Object} req - Request with method, body and headers
+ * @param {Object} res - Response exposing status()/setHeader()/json()
+ * @param {Object} [deps] - Injected dependencies for testability
+ * @param {Function} [deps.findUserByEmail] - async (email) => user | null
+ * @param {Function} [deps.comparePassword] - async (plain, hash) => boolean
+ * @param {Function} [deps.issueToken] - (user) => string
+ */
+export default async function login(req, res, deps = {}) {
+  // 1. Method guard
+  if (req.method === "OPTIONS") {
+    return corsResponse(req, res, 200);
+  }
+  if (req.method && req.method !== "POST") {
+    return corsResponse(req, res, 405, { error: "Method not allowed" });
+  }
+
+  const clientIp = getClientIp(req);
+  try {
+    const rateLimitResult = loginRateLimiter.checkAsync 
+      ? await loginRateLimiter.checkAsync(clientIp)
+      : loginRateLimiter.check(clientIp);
+    
+    if (!rateLimitResult.allowed) {
+      return corsResponse(req, res, 429, {
+        success: false,
+        message: "Too many authentication attempts. Please try again later.",
+      });
+    }
+  } catch (rateLimitError) {
+    console.error('[login] Rate limit check failed:', rateLimitError.message);
+    return corsResponse(req, res, 500, {
+      success: false,
+      message: "Rate limiting service unavailable. Please try again later.",
+    });
+  }
+
+  const validation = validateLoginInput(req.body);
+  if (!validation.valid) {
+    return corsResponse(req, res, 400, { error: validation.message });
+  }
+
+  // Runtime protection: Reject requests if storage is unavailable
+  const storageHealthy = await isStorageHealthy();
+  if (!storageHealthy) {
+    console.error("[login.js] Authentication service unavailable: storage not healthy");
+    return corsResponse(req, res, 500, { error: "Authentication service unavailable" });
+  }
+
+  const usernameOrEmail = req.body.usernameOrEmail || req.body.email;
+  const { password } = req.body;
+
+  const {
+    findUserByEmail = async (ident) => {
+      const normalized = ident.trim().toLowerCase();
+      const userByEmail = await getUserByEmail(normalized);
+      if (userByEmail) return userByEmail;
+      return await getUserByUsername(normalized);
+    },
+    comparePassword = async (plain, hash) => {
+      return bcrypt.compare(plain, hash);
+    },
+    issueToken = (user) => {
+      const jwtPayload = {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        roles: user.roles || ["USER"],
+      };
+      return jwt.sign(jwtPayload, getJwtSecret(), { expiresIn: JWT_EXPIRES_IN });
+    },
+  } = deps;
+
+  const mergedDeps = { findUserByEmail, comparePassword, issueToken, ...deps };
+
+  try {
+    const user = await mergedDeps.findUserByEmail(usernameOrEmail);
+
+    const dummyHash = "$2b$10$v18wNUUU7wTXyTbRPTFZTeze3aHS//qr4FKA9gu1E/GfNQqTsFfRG";
+    const passwordHash = user?.password ?? dummyHash;
+    const isValid = await mergedDeps.comparePassword(password, passwordHash);
+
+    if (!user || !isValid) {
+      return corsResponse(req, res, 401, { error: "Invalid credentials" });
+    }
+
+    const token = mergedDeps.issueToken(user);
+    if (token) setCookie(res, token);
+
+    const userResponse = buildUserResponse(user);
+
+    return corsResponse(req, res, 200, {
+      message: "Login successful",
+      ...userResponse,
+    });
+  } catch (err) {
+    return corsResponse(req, res, 500, { error: "Internal server error" });
+  }
+}

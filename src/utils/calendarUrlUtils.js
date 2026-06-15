@@ -1,37 +1,15 @@
 /**
- * calendarUrlUtils.js
+ * @fileoverview calendarUrlUtils.js
+ * @module utils/calendarUrlUtils
  *
- * Timezone-aware, duration-aware helpers for generating "Add to Calendar"
- * URLs for Google Calendar and Outlook.
+ * Centralized utility functions for generating calendar-specific redirection links
+ * (Google Calendar, Outlook Live, Yahoo Calendar) and generic iCalendar (.ics) files.
  *
- * Problems fixed (see issue #XXXX):
- *
- *  1. TIMEZONE BLINDNESS — The previous formatDateForGoogle() treated event
- *     local times as if they were already UTC (appended a `Z` suffix without
- *     any conversion). A user in IST (UTC+5:30) registering a 10:00 AM event
- *     would get a Google Calendar entry at 10:00 AM UTC — 5 h 30 min later
- *     than the actual event time.
- *
- *     Fix: Convert the local event time to a true UTC timestamp using
- *     parseEventToUTC() from timezoneUtils.js (the same helper already used
- *     by conflictDetection.js), then format with Intl.DateTimeFormat so DST
- *     transitions are handled correctly.
- *
- *  2. HARDCODED 1-HOUR DURATION — Both calendar URL builders computed the end
- *     time as `(startHour + 1) % 24`, completely ignoring event.durationMinutes.
- *     A 3-hour workshop would be shown as a 1-hour event in the calendar.
- *
- *     Fix: Read event.durationMinutes; fall back to 60 min only when absent.
- *
- *  3. CODE DUPLICATION — The same substring-based formatting logic was copied
- *     verbatim into both getGoogleCalendarUrl() and getOutlookCalendarUrl().
- *
- *     Fix: Extract into a single formatUTCtoCalendarString() helper used by
- *     both builders, with separate `compact` (Google) and `iso` (Outlook)
- *     output modes.
+ * All generation methods correctly calculate DST offsets and timezones using
+ * timezoneUtils.js to ensure time correctness.
  */
 
-import { parseEventToUTC, getUserTimezone } from './timezoneUtils';
+import { parseEventToUTC, getUserTimezone } from './timezoneUtils.js';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -44,7 +22,7 @@ import { parseEventToUTC, getUserTimezone } from './timezoneUtils';
  * @param {'compact'|'iso'} mode
  *   - 'compact' → "YYYYMMDDTHHmmssZ"  (Google Calendar `dates` param)
  *   - 'iso'     → "YYYY-MM-DDTHH:mm:ss" (Outlook startdt/enddt param)
- * @returns {string}
+ * @returns {string} Formatted date-time string.
  */
 const formatUTCtoCalendarString = (utcMs, mode = 'compact') => {
   const d = new Date(utcMs);
@@ -82,17 +60,34 @@ const formatUTCtoCalendarString = (utcMs, mode = 'compact') => {
  *   Returns null when date/time are unparseable.
  */
 const getEventUTCRange = (event, timezone) => {
-  if (!event?.date || !event?.time) return null;
+  if (!event || typeof event !== 'object') {
+    console.error("[getEventUTCRange] Invalid event argument: must be an object.");
+    return null;
+  }
+  
+  if (!event.date || !event.time) {
+    console.warn("[getEventUTCRange] Missing required event fields: 'date' and 'time' are mandatory.");
+    return null;
+  }
 
+  // Fallback to detected browser timezone if none provided
   const tz = timezone || getUserTimezone();
 
   // parseEventToUTC handles all date formats (ISO, YYYY-MM-DD, Month DD YYYY)
   // and 12h/24h time strings, with DST-correct conversion via Intl.DateTimeFormat.
   const startMs = parseEventToUTC(event.date, event.time, tz);
-  if (startMs === null) return null;
+  if (startMs === null || isNaN(startMs)) {
+    console.warn(`[getEventUTCRange] Date '${event.date}' or time '${event.time}' could not be parsed.`);
+    return null;
+  }
 
-  // Use the event's own durationMinutes when present; default to 60 min.
-  const durationMs = (event.durationMinutes > 0 ? event.durationMinutes : 60) * 60 * 1000;
+  // Defensive validation of durationMinutes: fallback to 60 if missing, negative, or invalid
+  let durationMinutes = parseInt(event.durationMinutes, 10);
+  if (isNaN(durationMinutes) || durationMinutes <= 0) {
+    durationMinutes = 60;
+  }
+
+  const durationMs = durationMinutes * 60 * 1000;
 
   return { startMs, endMs: startMs + durationMs };
 };
@@ -119,7 +114,7 @@ export const getGoogleCalendarUrl = (event, timezone) => {
 
   // Fall back to a best-effort date-only URL when time parsing fails
   if (!range) {
-    const dateFallback = (event.date || '').replace(/-/g, '');
+    const dateFallback = String(event.date || '').replace(/-/g, '');
     return [
       'https://calendar.google.com/calendar/render?action=TEMPLATE',
       `&text=${encodeURIComponent(event.title || '')}`,
@@ -154,7 +149,7 @@ export const getOutlookCalendarUrl = (event, timezone) => {
   const range = getEventUTCRange(event, timezone);
 
   if (!range) {
-    const dateFallback = (event.date || '').replace(/-/g, '');
+    const dateFallback = String(event.date || '').replace(/-/g, '');
     return [
       'https://outlook.live.com/calendar/0/deeplink/compose',
       '?path=/calendar/action/compose&rru=addevent',
@@ -205,7 +200,7 @@ export const getYahooCalendarUrl = (event, timezone) => {
   const range = getEventUTCRange(event, timezone);
 
   if (!range) {
-    const dateFallback = (event.date || '').replace(/-/g, '');
+    const dateFallback = String(event.date || '').replace(/-/g, '');
     return [
       'https://calendar.yahoo.com/?v=60',
       `&TITLE=${encodeURIComponent(event.title || '')}`,
@@ -243,7 +238,7 @@ export const generateIcsFileBlobUrl = (event, timezone) => {
   let start, end;
 
   if (!range) {
-    const dateFallback = (event.date || '').replace(/-/g, '');
+    const dateFallback = String(event.date || '').replace(/-/g, '');
     start = `${dateFallback}T000000Z`;
     end = `${dateFallback}T010000Z`;
   } else {
@@ -269,13 +264,31 @@ export const generateIcsFileBlobUrl = (event, timezone) => {
     `LOCATION:${(event.location || '').replace(/,/g, '\\,')}`,
     'END:VEVENT',
     'END:VCALENDAR'
-  ].join('\\r\\n');
+  ].join('\r\n');
 
   try {
     const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
     return URL.createObjectURL(blob);
   } catch (error) {
-    console.error("Failed to generate ICS file blob URL", error);
+    console.error("[calendarUrlUtils] Failed to generate ICS file blob URL", error);
     return null;
   }
+};
+
+/**
+ * Generate a webcal:// subscription URL for dynamic calendar feeds.
+ * When users subscribe via this link, Apple/Google Calendar will poll
+ * the feed automatically and reflect any event updates.
+ *
+ * @param {string|number} eventId - The event ID
+ * @param {string} [baseUrl] - Override base URL (defaults to window.location.origin)
+ * @returns {string} A webcal:// URL pointing to the event's .ics feed
+ */
+export const getWebcalSubscriptionUrl = (eventId, baseUrl) => {
+  if (!eventId) return '';
+  const origin = baseUrl || (typeof window !== 'undefined' ? window.location.origin : '');
+  // Strip the protocol and replace with webcal:// so Apple/Google Calendar
+  // recognise it as a subscribable feed rather than a one-time download.
+  const httpUrl = `${origin}/api/events/${eventId}/feed.ics`;
+  return httpUrl.replace(/^https?:\/\//, 'webcal://');
 };

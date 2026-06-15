@@ -17,13 +17,7 @@ const REQUEST_TIMEOUT = 10000;
 const MAX_CONTRIBUTOR_PAGES = 10;
 const PROFILE_FETCH_DELAY_MS = 100; // Throttle profile API calls to avoid rate limiting
 
-let profileFetchCounter = 0;
-export const throttleProfileFetch = async () => {
-  profileFetchCounter++;
-  if (profileFetchCounter % 5 === 0) {
-    await new Promise(resolve => setTimeout(resolve, PROFILE_FETCH_DELAY_MS));
-  }
-};
+const buildDirectGitHubUrl = (url) => url;
 
 const fetchJsonWithTimeout = async (url) => {
   const proxyUrl = url.startsWith("https://api.github.com")
@@ -32,13 +26,25 @@ const fetchJsonWithTimeout = async (url) => {
       )}`
     : url;
 
-  const { data } = await fetchWithTimeout(
-    proxyUrl,
-    {},
-    REQUEST_TIMEOUT
-  );
+  try {
+    const { data } = await fetchWithTimeout(proxyUrl, {}, REQUEST_TIMEOUT);
+    return data;
+  } catch (error) {
+    if (url.startsWith("https://api.github.com") && (error?.status === 401 || error?.status === 403)) {
+      const { data } = await fetchWithTimeout(
+        buildDirectGitHubUrl(url),
+        {
+          headers: {
+            Accept: "application/vnd.github+json",
+          },
+        },
+        REQUEST_TIMEOUT,
+      );
+      return data;
+    }
 
-  return data;
+    throw error;
+  }
 };
 
 // Role assignment
@@ -91,7 +97,6 @@ const ContributorsInner = () => {
 
   // Fetch GitHub profile details
   const fetchGitHubProfile = useCallback(async (username) => {
-    await throttleProfileFetch();
     if (!username) {
       return {
         followers: 0,

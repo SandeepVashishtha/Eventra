@@ -1,5 +1,6 @@
 import { logger } from "./logger.js";
-import { API_BASE_URL } from "../config/api.js";
+
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
 const MULTIPLEX_CHANNEL_NAME = "eventra_sse_multiplexer";
 const LOCK_NAME = "eventra_sse_leader_lock";
@@ -423,9 +424,7 @@ class SseMultiplexer {
   }
 
   openEventSource(path) {
-    const sseBaseUrl =
-      API_BASE_URL ||
-      (typeof window !== "undefined" ? window.location.origin : "http://localhost:8080");
+    const sseBaseUrl = BASE_URL;
 
     logger.log(`[SSE Multiplexer] Leader tab opening physical EventSource: ${sseBaseUrl}${path}`);
     this.updatePathStatus(path, "connecting");

@@ -156,7 +156,7 @@ export const validatePasswordStrength = async (password) => {
       hasUppercase: /[A-Z]/.test(password),
       hasLowercase: /[a-z]/.test(password),
       hasNumber: /\d/.test(password),
-      hasSpecial: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+      hasSpecial: /[^A-Za-z0-9]/.test(password),
     };
 
     const allMet = Object.values(requirements).every(Boolean);

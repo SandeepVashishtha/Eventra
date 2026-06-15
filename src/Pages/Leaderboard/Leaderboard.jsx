@@ -292,6 +292,41 @@ export default function LeaderBoard() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Listen for background updates from the service worker
+  useEffect(() => {
+    const handleServiceWorkerMessage = (event) => {
+      if (event.data && event.data.type === "LEADERBOARD_UPDATED") {
+        const newData = event.data.data;
+        if (Array.isArray(newData)) {
+          logger.log("[Leaderboard] Received updated rankings from service worker.");
+          const preparedData = prepareLeaderboardEntries(newData);
+          const sorted = [...preparedData].sort((a, b) => b.points - a.points);
+          setContributors(sorted);
+          setLastUpdated(t("leaderboard.statusUpdated", { time: formatLastUpdated(Date.now(), t) }));
+
+          try {
+            storageManager.set(STORAGE_KEYS.LEADERBOARD_CACHE, {
+              data: sorted,
+              timestamp: Date.now(),
+            });
+          } catch (err) {
+            logger.warn("Failed to update leaderboard cache on SW message:", err);
+          }
+        }
+      }
+    };
+
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.addEventListener("message", handleServiceWorkerMessage);
+    }
+
+    return () => {
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.removeEventListener("message", handleServiceWorkerMessage);
+      }
+    };
+  }, [t]);
+
   const handleSearchChange = useCallback((e) => {
     const query = e.target.value;
     setSearch(query);

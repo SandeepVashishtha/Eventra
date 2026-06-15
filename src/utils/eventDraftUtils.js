@@ -12,6 +12,10 @@ const isStorageAvailable = () => {
 
 export const saveDraft = (formData) => {
   if (!isStorageAvailable()) return false;
+  if (!formData) {
+    clearDraft();
+    return true;
+  }
   try {
     const payload = {
       data: formData,
@@ -33,7 +37,10 @@ export const getDraft = () => {
     const parsed = safeJsonParse(raw, null);
     if (!parsed) return null;
     // Support both old format (plain object) and new format (with savedAt)
-    if (parsed.data && parsed.savedAt) return parsed;
+    if (parsed && typeof parsed === "object" && "data" in parsed && "savedAt" in parsed) {
+      if (parsed.data === null) return null;
+      return parsed;
+    }
     // Legacy: wrap old format
     return { data: parsed, savedAt: null };
   } catch (error) {

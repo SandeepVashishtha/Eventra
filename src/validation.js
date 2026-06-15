@@ -52,7 +52,7 @@ export const validate = {
     const hasUpper = /[A-Z]/.test(val);
     const hasLower = /[a-z]/.test(val);
     const hasNumber = /\d/.test(val);
-    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(val);
+    const hasSpecial = /[^A-Za-z0-9]/.test(val);
     if (!hasUpper || !hasLower || !hasNumber || !hasSpecial) {
       return "Password must meet all 5 security criteria: 8+ characters, uppercase, lowercase, number, and special character";
     }
