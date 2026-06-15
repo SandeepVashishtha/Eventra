@@ -133,7 +133,6 @@ npm run dev
 
 App runs at `http://localhost:3000` (configured in `vite.config.js`).
 
-
 ## Common Setup Issues
 
 ### Dependency Installation Warnings
@@ -173,7 +172,6 @@ npm run dev
 ### Environment Variable Issues
 
 Make sure `.env` is created correctly from `.env.example` before starting the development server.
-
 
 ## Docker Development
 
