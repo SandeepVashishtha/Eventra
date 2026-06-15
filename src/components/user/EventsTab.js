@@ -339,6 +339,23 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const [filterStatus, setFilterStatus] = useState("All");
   const [filterType, setFilterType] = useState("All");
   const [sortBy, setSortBy] = useState("soonest");
+  const [collapsedSections, setCollapsedSections] = useState(() => {
+  try {
+    return JSON.parse(
+      localStorage.getItem("eventSectionVisibility")
+    ) || {
+      registered: false,
+      hosted: false,
+      waitlist: false,
+    };
+  } catch {
+    return {
+      registered: false,
+      hosted: false,
+      waitlist: false,
+    };
+  }
+});
   const [cancelTarget, setCancelTarget] = useState(null);
 
   const [recentSearches, setRecentSearches] = useState([]);
