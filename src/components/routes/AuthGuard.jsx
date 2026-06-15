@@ -27,6 +27,9 @@ export const isProtectedPath = (pathname) => {
  * Otherwise, it redirects the user to the login page, passing the current
  * location in the state so the user can be redirected back after successful authentication.
  * 
+ * Note: Underneath, endpoints requested by authenticated routes utilize the
+ * in-memory distributed lock manager (e.g., event registration) to maintain session/action integrity.
+ * 
  * @param {Object} props - Component props
  * @param {React.ReactNode} props.children - Child components to render when authenticated
  * @returns {React.ReactNode} Rendered route or redirect navigation

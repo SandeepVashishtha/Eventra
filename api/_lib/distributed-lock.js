@@ -1,53 +1,72 @@
-const LOCKS = new Map();
-
-class Lock {
-  constructor() {
-    this.releaseFn = null;
-    this.promise = new Promise((resolve) => {
-      this.releaseFn = resolve;
-    });
-  }
-
-  release() {
-    if (this.releaseFn) {
-      this.releaseFn();
-      this.releaseFn = null;
-    }
-  }
-}
-
-class InMemoryLockManager {
+export class InMemoryLockManager {
   constructor() {
     this.locks = new Map();
   }
 
   async acquire(key, ttlMs = 30000) {
-    let lock = this.locks.get(key);
-    const prevLock = lock;
-
-    lock = new Lock();
-    this.locks.set(key, lock);
-
-    const timeout = setTimeout(() => {
-      if (this.locks.get(key) === lock) {
-        this.locks.delete(key);
-        lock.release();
-      }
-    }, ttlMs);
-
-    if (prevLock) {
-      await prevLock.promise;
+    if (!this.locks.has(key)) {
+      this.locks.set(key, []);
     }
 
-    clearTimeout(timeout);
+    const queue = this.locks.get(key);
 
-    let released = false;
+    let resolvePromise;
+    let rejectPromise;
+    const promise = new Promise((resolve, reject) => {
+      resolvePromise = resolve;
+      rejectPromise = reject;
+    });
+
+    const entry = {
+      resolve: resolvePromise,
+      reject: rejectPromise,
+      timeout: null,
+      released: false,
+    };
+
+    queue.push(entry);
+
+    if (queue.length === 1) {
+      // First in line gets the lock immediately, no waiting/timeout required
+    } else {
+      entry.timeout = setTimeout(() => {
+        const index = queue.indexOf(entry);
+        if (index !== -1) {
+          queue.splice(index, 1);
+          if (queue.length === 0) {
+            this.locks.delete(key);
+          }
+          rejectPromise(new Error("Lock acquisition timeout"));
+        }
+      }, ttlMs);
+    }
+
+    if (queue.length > 1) {
+      try {
+        await promise;
+      } catch (err) {
+        throw err;
+      }
+    }
+
     return () => {
-      if (released) return;
-      released = true;
-      lock.release();
-      if (this.locks.get(key) === lock) {
+      if (entry.released) return;
+      entry.released = true;
+
+      const index = queue.indexOf(entry);
+      if (index !== -1) {
+        queue.splice(index, 1);
+      }
+
+      if (queue.length === 0) {
         this.locks.delete(key);
+      } else {
+        const nextEntry = queue[0];
+        if (nextEntry.timeout) {
+          clearTimeout(nextEntry.timeout);
+          nextEntry.timeout = null;
+        }
+        nextEntry.resolve();
       }
     };
   }
@@ -71,3 +90,4 @@ export async function withLock(key, fn, ttlMs = 30000) {
     release();
   }
 }
+
