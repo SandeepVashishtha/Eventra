@@ -265,7 +265,6 @@ const InnerGallery = () => {
         setCategories(["all", ...uniqueCategories]);
       }
     } catch (err) {
-      console.error("Failed to fetch projects:", err);
       setError("Unable to load projects. Please try again later.");
       setProjects([]);
     } finally {
