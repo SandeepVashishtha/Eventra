@@ -551,6 +551,7 @@ export const decryptWithKey = async (key, stored) => {
   return new TextDecoder().decode(decrypted);
 };
 
+
 const PLAINTEXT_SUFFIX = ':plaintext';
 
 const cleanupPlaintextFallbacks = () => {
