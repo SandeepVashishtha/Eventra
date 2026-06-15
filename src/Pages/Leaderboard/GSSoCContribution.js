@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, memo, useRef } from "react";
-import { motion, AnimatePresence, useInView } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 import {
   Lightbulb,
@@ -19,7 +19,6 @@ import {
   MessageCircle,
   Zap,
   Target,
-  Globe,
   Copy,
   Bell,
   WifiOff,
@@ -328,19 +327,6 @@ const ResourceItem = memo(({ resource, onCopy }) => {
 });
 ResourceItem.displayName = "ResourceItem";
 
-const StatCard = memo(({ label, value, icon: Icon, color }) => (
-  <motion.div 
-    whileHover={{ y: -2 }}
-    className="p-3 text-center"
-    role="status"
-  >
-    <Icon className={`w-6 h-6 mx-auto mb-2 ${color}`} aria-hidden="true" />
-    <div className="text-xl font-bold text-gray-900 dark:text-white tabular-nums">{formatNumber(value)}</div>
-    <div className="text-xs text-gray-600 dark:text-gray-400">{label}</div>
-  </motion.div>
-));
-StatCard.displayName = "StatCard";
-
 // Skeleton Components
 const Skeleton = ({ className }) => (
   <div className={`animate-pulse bg-gray-200 dark:bg-gray-700 rounded ${className}`} aria-hidden="true" />
@@ -491,10 +477,6 @@ const timeLeft = useCountdown(
       } 
     }
   }), [prefersReducedMotion]);
-  
-  // Stats section visibility
-  const statsRef = useRef(null);
-  useInView(statsRef, { once: true, margin: "-100px" });
   
   if (isLoading) {
     return (
@@ -862,33 +844,6 @@ const timeLeft = useCountdown(
             Join Discord
           </motion.button>
         </motion.nav>
-
-        {/* 📊 Footer Stats */}
-        <motion.section
-          ref={statsRef}
-          variants={itemVariants}
-          className="p-4 sm:p-6 rounded-2xl bg-linear-to-r from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 border dark:border-gray-600"
-          aria-labelledby="stats-heading"
-        >
-          <h3 id="stats-heading" className="sr-only">Community Statistics</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 text-center">
-            {[
-              { label: "Active Contributors", value: 500, suffix: "+", icon: Users, color: "text-blue-500" },
-              { label: "Issues Solved", value: 1200, icon: CheckCircle, color: "text-green-500" },
-              { label: "PRs Merged", value: 850, suffix: "+", icon: GitBranch, color: "text-purple-500" },
-              { label: "Countries", value: 45, suffix: "+", icon: Globe, color: "text-orange-500" },
-            ].map(({ label, value, suffix, icon: Icon, color }) => (
-              <StatCard 
-                key={label} 
-                label={label} 
-                value={value} 
-                suffix={suffix}
-                icon={Icon} 
-                color={color} 
-              />
-            ))}
-          </div>
-        </motion.section>
       </motion.main>
       
       {/* Toast Notifications */}
