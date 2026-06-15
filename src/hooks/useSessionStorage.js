@@ -29,7 +29,7 @@ const useSessionStorage = (key, initialValue) => {
       const item = window.sessionStorage.getItem(key);
       return safeJsonParse(item, initialValue);
     } catch (error) {
-      console.warn(`useSessionStorage: error reading key "${key}":`, error);
+      logger.warn(`useSessionStorage: error reading key "${key}":`, error);
       return initialValue;
     }
   });
