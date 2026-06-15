@@ -534,6 +534,7 @@ const normalizedSearch = debouncedTerm.trim().toLowerCase();
             )}
 
             <StyledDropdown
+            aria-label="Event filter dropdown"
               label=""
               value={filterStatus === "All" ? "" : filterStatus}
               placeholder="All Statuses"
