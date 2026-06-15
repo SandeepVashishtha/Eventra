@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useCallback, useRef, useState } from "react";
-import { setOnUnauthorizedHandler, setAuthToken } from "../config/api.js";
+import { setOnUnauthorizedHandler, setRequiresReauthHandler, setAuthToken } from "../config/api.js";
 import { authService } from "../services/authService.js";
 import { userService } from "../services/userService.js";
 import { syncSecureStorage } from "../utils/secureStorage.js";
@@ -9,6 +9,7 @@ import { isTokenValid } from "../utils/tokenUtils.js";
 import { toast } from "react-toastify";
 import { ROLES, ROLE_PERMISSIONS } from "../config/roles.js";
 import { getSessionChannel, closeSessionChannel, SESSION_TERMINATED, broadcastSessionTerminated } from "../utils/sessionBroadcast.js";
+import ReAuthModal from "../components/auth/ReAuthModal";
 
 // Create context for Authentication
 const AuthContext = createContext();
@@ -85,6 +86,7 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
   const [authRequest, setAuthRequest] = useState({ loading: false, error: null });
+  const [requiresReauth, setRequiresReauth] = useState(false);
   
   // Ref to track mounting status and prevent setting state on unmounted components
   const isMountedRef = useRef(true);
@@ -244,7 +246,13 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     // Intercept 401 errors globally at Axios layer to auto-logout user
     setOnUnauthorizedHandler(() => clearExpiredSessionRef.current());
-    return () => setOnUnauthorizedHandler(null);
+    setRequiresReauthHandler(() => {
+      setRequiresReauth(true);
+    });
+    return () => {
+      setOnUnauthorizedHandler(null);
+      setRequiresReauthHandler(null);
+    };
   }, []);
 
   /**
@@ -402,6 +410,8 @@ export const AuthProvider = ({ children }) => {
     token,
     loading,
     authRequest,
+    requiresReauth,
+    setRequiresReauth,
     login,
     logout,
     setAuthSession,
@@ -413,6 +423,8 @@ export const AuthProvider = ({ children }) => {
     token,
     loading,
     authRequest,
+    requiresReauth,
+    setRequiresReauth,
     login,
     logout,
     setAuthSession,
@@ -421,5 +433,10 @@ export const AuthProvider = ({ children }) => {
     permissions
   ]);
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+      {requiresReauth && <ReAuthModal onSuccess={() => setRequiresReauth(false)} />}
+    </AuthContext.Provider>
+  );
 };

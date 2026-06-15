@@ -13,7 +13,7 @@ const decodeBase64UrlJson = (str) => {
   }
 };
 
-const verifyJwt = async (token, secret) => {
+export const verifyJwt = async (token, secret) => {
   if (typeof token !== "string") return null;
 
   const parts = token.split(".");
@@ -63,7 +63,7 @@ const TICKET_ROLES = new Set([
   "EVENT_MANAGER",
 ]);
 
-const parseTokenFromCookie = (request) => {
+export const parseTokenFromCookie = (request) => {
   const cookieHeader = request.headers.get("cookie") || "";
   if (cookieHeader.length > 4096) {
     return null;

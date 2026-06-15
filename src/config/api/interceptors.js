@@ -9,9 +9,11 @@ const MAX_RETRIES = 1;
 const RETRY_DELAY_MS = 1_000;
 
 let onUnauthorized = null;
+let onRequiresReauth = null;
 let _authToken = null;
 
 export const setOnUnauthorizedHandler = (handler) => { onUnauthorized = handler; };
+export const setOnRequiresReauthHandler = (handler) => { onRequiresReauth = handler; };
 export const setAuthToken = (token) => { _authToken = token; };
 
 export const createRequestInterceptor = (isDev) => (config) => {
@@ -176,7 +178,7 @@ export function setupRequestInterceptor(api, { isDev, buildApiUrl, getAuthToken,
   });
 }
 
-export function setupResponseInterceptor(api, { isDev, timeoutMs, getOnUnauthorized }) {
+export function setupResponseInterceptor(api, { isDev, timeoutMs, getOnUnauthorized, getOnRequiresReauth }) {
   api.interceptors.response.use(
     (response) => {
       const headerValue = response.headers?.["x-server-time"] || response.headers?.["date"] || (typeof response.headers?.get === 'function' ? (response.headers.get("x-server-time") || response.headers.get("date")) : null);
@@ -188,9 +190,17 @@ export function setupResponseInterceptor(api, { isDev, timeoutMs, getOnUnauthori
     async (error) => {
       const config = error.config || {};
       const status = error?.response?.status;
+      const errorCode = error?.response?.data?.code;
 
       const onUnauthorized = getOnUnauthorized();
+      const onRequiresReauth = getOnRequiresReauth ? getOnRequiresReauth() : null;
+      
       if (status === 401) {
+        if (errorCode === "REQUIRES_REAUTH") {
+          if (onRequiresReauth) onRequiresReauth();
+          throw normalizeApiErrorWithTimeout(error, timeoutMs);
+        }
+
         if (!config._retry && !config.url?.includes("/auth/refresh")) {
           config._retry = true;
           try {
