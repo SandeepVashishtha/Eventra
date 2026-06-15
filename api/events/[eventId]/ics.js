@@ -1,8 +1,12 @@
 import { createEvent } from 'ics';
+import { createLogger } from "../../_lib/logger.js";
 // Import your database utility/repository helper to fetch event details
 // e.g., import { getEventById } from '../../../lib/db'; 
 
 export default async function handler(req, res) {
+  const logger = createLogger();
+  logger.info("ICS request received", { method: req.method, path: req.url });
+
   if (req.method !== 'GET') {
     return res.status(405).json({ message: 'Method not allowed' });
   }
@@ -21,6 +25,7 @@ export default async function handler(req, res) {
     };
 
     if (!event) {
+      logger.warn("Event not found for ICS", { eventId });
       return res.status(404).json({ message: 'Event not found' });
     }
 
@@ -57,9 +62,11 @@ export default async function handler(req, res) {
     // 4. Generate the payload and serve it with text/calendar headers
     createEvent(calEvent, (error, value) => {
       if (error) {
+        logger.error("ICS generation failed", { error: error.message, eventId });
         return res.status(500).json({ error: 'Error generating calendar file' });
       }
 
+      logger.info("ICS file generated", { eventId });
       // Set headers for file download match standard RFC rules
       res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
       res.setHeader('Content-Disposition', `attachment; filename="event_${eventId}.ics"`);
@@ -68,6 +75,7 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
+    logger.error("ICS handler error", { error: error.message, eventId });
     return res.status(500).json({ message: 'Internal Server Error', error: error.message });
   }
 }

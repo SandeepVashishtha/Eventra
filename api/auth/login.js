@@ -22,6 +22,7 @@ import { loginRateLimiter, enforceRateLimit } from "../_lib/rateLimiter.js";
 import { getJwtSecret, JWT_EXPIRES_IN, JWT_COOKIE_MAX_AGE_SECONDS } from "./_jwt-config.js";
 import { buildCorsHeaders, corsResponse } from "./_cors.js";
 import { isStorageHealthy, getUserByEmail, getUserByUsername } from "./_user-storage.js";
+import { createLogger } from "../_lib/logger.js";
 
 /**
  * Validates the login request body.
@@ -111,6 +112,10 @@ function createDefaultDeps() {
  * @param {Function} [deps.issueToken] - (user) => string
  */
 export default async function login(req, res, deps = {}) {
+  const logger = createLogger();
+
+  logger.info("Login request received", { method: req.method, path: req.url });
+
   // 1. Method guard
   if (req.method === "OPTIONS") {
     return corsResponse(req, res, 200);
@@ -126,13 +131,14 @@ export default async function login(req, res, deps = {}) {
       : loginRateLimiter.check(clientIp);
     
     if (!rateLimitResult.allowed) {
+      logger.warn("Rate limit exceeded", { clientIp });
       return corsResponse(req, res, 429, {
         success: false,
         message: "Too many authentication attempts. Please try again later.",
       });
     }
   } catch (rateLimitError) {
-    console.error('[login] Rate limit check failed:', rateLimitError.message);
+    logger.error("Rate limit check failed", { error: rateLimitError.message });
     return corsResponse(req, res, 500, {
       success: false,
       message: "Rate limiting service unavailable. Please try again later.",
@@ -147,7 +153,7 @@ export default async function login(req, res, deps = {}) {
   // Runtime protection: Reject requests if storage is unavailable
   const storageHealthy = await isStorageHealthy();
   if (!storageHealthy) {
-    console.error("[login.js] Authentication service unavailable: storage not healthy");
+    logger.error("Authentication service unavailable: storage not healthy");
     return corsResponse(req, res, 500, { error: "Authentication service unavailable" });
   }
 
@@ -179,17 +185,22 @@ export default async function login(req, res, deps = {}) {
 
   try {
     const user = await mergedDeps.findUserByEmail(usernameOrEmail);
+    logger.info("User lookup completed", { found: !!user });
 
     const dummyHash = "$2b$10$v18wNUUU7wTXyTbRPTFZTeze3aHS//qr4FKA9gu1E/GfNQqTsFfRG";
     const passwordHash = user?.password ?? dummyHash;
     const isValid = await mergedDeps.comparePassword(password, passwordHash);
 
     if (!user || !isValid) {
+      logger.warn("Invalid login attempt", { clientIp });
       return corsResponse(req, res, 401, { error: "Invalid credentials" });
     }
 
     const token = mergedDeps.issueToken(user);
-    if (token) setCookie(res, token);
+    if (token) {
+      setCookie(res, token);
+      logger.info("Login successful", { userId: user.id });
+    }
 
     const userResponse = buildUserResponse(user);
 
