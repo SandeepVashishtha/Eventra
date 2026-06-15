@@ -11,6 +11,13 @@ const SavedEventsPage = () => {
   const { bookmarks, toggleBookmark } = useBookmarks();
   const [sortBy, setSortBy] = useState("savedAt");
   const [exporting, setExporting] = useState(false);
+  const exportTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (exportTimeoutRef.current) clearTimeout(exportTimeoutRef.current);
+    };
+  }, []);
 
   const sorted = useMemo(
     () => [...bookmarks].sort((a, b) =>
@@ -28,7 +35,7 @@ const SavedEventsPage = () => {
       toast.error("Failed to export saved events. Please try again.");
     } finally {
       // Brief visual feedback before resetting
-      setTimeout(() => setExporting(false), 800);
+      exportTimeoutRef.current = setTimeout(() => setExporting(false), 800);
     }
   };
 

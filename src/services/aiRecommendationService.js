@@ -1,4 +1,5 @@
 import { apiUtils } from "../config/api";
+import { logger } from "../utils/logger";
 
 export const generateAIInsights = async (event, profile) => {
   try {
@@ -30,7 +31,7 @@ Explain in 3 concise bullet points why this event matches the user.
     "No AI response generated."
   );
 } catch (error) {
-  console.error("[aiRecommendationService] Request failed:", error);
+  logger.error("[aiRecommendationService] Request failed:", error);
   return "Unable to generate AI insights. The service is currently unavailable.";
 }
 };

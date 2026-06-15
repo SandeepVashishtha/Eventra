@@ -128,19 +128,26 @@ const EventDetails = () => {
     return true;
   };
 
-  const processErrorFallback = ({ eventId, setEvent, setFetchError }) => {
+  const processErrorFallback = ({ error, eventId, setEvent, setFetchError }) => {
     const fallback = mockEvents.find((item) => String(item.id) === eventId);
     if (fallback) {
       setEvent({ ...fallback, status: getEventStatus(fallback) });
     } else {
-      setFetchError("Event not found.");
+      const status = error?.status || error?.response?.status;
+      if (status >= 500) {
+        setFetchError("Something went wrong on our end. Please try again later.");
+      } else if (status === 404) {
+        setFetchError("Event not found.");
+      } else {
+        setFetchError("Could not load event details. Please try again.");
+      }
     }
   };
 
   const handleCatchError = ({ error, reqId, ctrl, latestRef, abortRef, eventId, setEvent, setFetchError }) => {
     if (!checkLatest({ reqId, ctrl, latestReqRef: latestRef, abortRef })) return;
     if (isRequestCanceled(error, ctrl.signal)) return;
-    processErrorFallback({ eventId, setEvent, setFetchError });
+    processErrorFallback({ error, eventId, setEvent, setFetchError });
   };
 
   const finishLoading = ({ reqId, ctrl, latestRef, abortRef, setFetchLoading }) => {

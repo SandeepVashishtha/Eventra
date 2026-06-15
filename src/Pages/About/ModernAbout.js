@@ -143,7 +143,7 @@ export default function ModernAbout() {
               className="text-5xl md:text-7xl font-bold text-white mb-8 leading-tight"
             >
               Building Better Events
-              <span className="block bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
+              <span className="block bg-linear-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
                 Together
               </span>
             </motion.h1>

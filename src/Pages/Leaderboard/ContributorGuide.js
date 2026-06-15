@@ -147,7 +147,7 @@ const ContributorGuide = () => {
   const duration = prefersReducedMotion ? 0 : 0.5;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-50 via-white to-blue-50/30 dark:from-zinc-950 dark:via-zinc-900 dark:to-blue-950/20 pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-linear-to-br from-zinc-50 via-white to-blue-50/30 dark:from-zinc-950 dark:via-zinc-900 dark:to-blue-950/20 pt-24 pb-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto space-y-16">
         
         {/* HERO SECTION */}
@@ -163,7 +163,7 @@ const ContributorGuide = () => {
           </div>
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-zinc-900 dark:text-white">
             Welcome to{" "}
-            <span className="bg-gradient-to-r from-blue-600 via-violet-600 to-indigo-600 bg-clip-text text-transparent">
+            <span className="bg-linear-to-r from-blue-600 via-violet-600 to-indigo-600 bg-clip-text text-transparent">
               Eventra
             </span>
           </h1>
@@ -179,7 +179,7 @@ const ContributorGuide = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration }}
-          className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-600 via-indigo-600 to-blue-600 p-[1px]"
+          className="relative overflow-hidden rounded-3xl bg-linear-to-br from-violet-600 via-indigo-600 to-blue-600 p-[1px]"
         >
           <div className="relative bg-zinc-950 rounded-3xl p-6 md:p-10 overflow-hidden">
             {/* Decorative glow */}
@@ -248,7 +248,7 @@ const ContributorGuide = () => {
                     ].map((badge, i) => (
                       <div
                         key={i}
-                        className={`p-4 rounded-xl bg-gradient-to-br ${badge.gradient} border text-center hover:scale-105 transition-transform`}
+                        className={`p-4 rounded-xl bg-linear-to-br ${badge.gradient} border text-center hover:scale-105 transition-transform`}
                       >
                         <div className="text-2xl mb-1">{badge.emoji}</div>
                         <div className="text-sm font-bold text-white">{badge.title}</div>
@@ -284,7 +284,7 @@ const ContributorGuide = () => {
                   transition={{ duration, delay: index * 0.05 }}
                   className="group relative bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-xl hover:shadow-zinc-200/50 dark:hover:shadow-zinc-950/50 transition-all"
                 >
-                  <div className={`inline-flex p-3 rounded-xl bg-gradient-to-br ${type.gradient} mb-4 shadow-lg`}>
+                  <div className={`inline-flex p-3 rounded-xl bg-linear-to-br ${type.gradient} mb-4 shadow-lg`}>
                     <Icon className="text-white" size={22} />
                   </div>
                   <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">
@@ -365,7 +365,7 @@ const ContributorGuide = () => {
 
           <div className="relative">
             {/* Vertical connecting line */}
-            <div className="absolute left-6 md:left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-sky-500/50 via-violet-500/50 to-rose-500/50 -translate-x-1/2 hidden sm:block"></div>
+            <div className="absolute left-6 md:left-1/2 top-0 bottom-0 w-px bg-linear-to-b from-sky-500/50 via-violet-500/50 to-rose-500/50 -translate-x-1/2 hidden sm:block"></div>
 
             <div className="space-y-8">
               {WORKFLOW_STEPS.map((item, idx) => {
@@ -382,7 +382,7 @@ const ContributorGuide = () => {
                   >
                     {/* Timeline dot */}
                     <div className="relative z-10 shrink-0">
-                      <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${item.color} flex items-center justify-center shadow-lg ring-4 ring-white dark:ring-zinc-950`}>
+                      <div className={`w-12 h-12 rounded-full bg-linear-to-br ${item.color} flex items-center justify-center shadow-lg ring-4 ring-white dark:ring-zinc-950`}>
                         <span className="text-white font-bold text-lg">{item.step}</span>
                       </div>
                     </div>
@@ -390,7 +390,7 @@ const ContributorGuide = () => {
                     {/* Content card */}
                     <div className="flex-1 bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all">
                       <div className="flex items-center gap-3 mb-2">
-                        <div className={`p-2 rounded-lg bg-gradient-to-br ${item.color}`}>
+                        <div className={`p-2 rounded-lg bg-linear-to-br ${item.color}`}>
                           <Icon className="text-white" size={16} />
                         </div>
                         <h3 className="text-lg font-bold text-zinc-900 dark:text-white">
@@ -539,7 +539,7 @@ Closes #<issue_number>`}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration }}
-          className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-zinc-900 via-zinc-900 to-indigo-950 p-10 md:p-14 text-center"
+          className="relative overflow-hidden rounded-3xl bg-linear-to-br from-zinc-900 via-zinc-900 to-indigo-950 p-10 md:p-14 text-center"
         >
           {/* Decorative elements */}
           <div className="absolute top-0 left-1/4 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl"></div>
