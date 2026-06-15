@@ -85,7 +85,8 @@ export const syncWaitlistFromServer = async (eventId) => {
     const response = await apiUtils.get(`${API_ENDPOINTS.EVENTS.ALL}/${eventId}/waitlist`);
     if (response.ok && response.data) {
       const serverData = Array.isArray(response.data) ? response.data : response.data.entries || [];
-      saveGlobalWaitlist(serverData);
+      const existing = getGlobalWaitlist().filter(r => r.eventId !== eventId);
+      saveGlobalWaitlist([...existing, ...serverData]);
       return serverData;
     }
   } catch {
