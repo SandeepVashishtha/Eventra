@@ -31,7 +31,7 @@ import useRecentlyViewed from "../../hooks/useRecentlyViewed";
 import { apiUtils, API_ENDPOINTS } from "../../config/api";
 import mockEvents from "./eventsMockData.json";
 import CopyButton from '../../components/ui/CopyButton';
-
+import { Share2 } from "lucide-react";
 const isRequestCanceled = (error, signal) =>
   signal?.aborted ||
   error?.name === "AbortError" ||
@@ -233,7 +233,15 @@ const EventDetails = () => {
   };
 
   const handleCopy = async () => {
-    const link = window.location.href;
+   const link = `
+🎉 Check out this event!
+
+Event: ${event.title}
+Date: ${new Date(event.date).toLocaleDateString()}
+Location: ${event.location}
+
+${window.location.href}
+`;
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(link);
