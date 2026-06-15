@@ -20,6 +20,8 @@
  * silently breaking the UI.
  */
 
+import { logger } from "./logger";
+
 const runtimeEnv =
   typeof import.meta !== "undefined" && import.meta.env
     ? import.meta.env
@@ -39,16 +41,16 @@ const reportUri = runtimeEnv.VITE_CSP_REPORT_URI || runtimeEnv.REACT_APP_CSP_REP
  */
 function buildReport(event) {
   return {
-    'csp-report': {
-      'document-uri': event.documentURI,
-      'violated-directive': event.violatedDirective,
-      'effective-directive': event.effectiveDirective,
-      'original-policy': event.originalPolicy,
-      'blocked-uri': event.blockedURI,
-      'source-file': event.sourceFile,
-      'line-number': event.lineNumber,
-      'column-number': event.columnNumber,
-      'status-code': event.statusCode,
+    "csp-report": {
+      "document-uri": event.documentURI,
+      "violated-directive": event.violatedDirective,
+      "effective-directive": event.effectiveDirective,
+      "original-policy": event.originalPolicy,
+      "blocked-uri": event.blockedURI,
+      "source-file": event.sourceFile,
+      "line-number": event.lineNumber,
+      "column-number": event.columnNumber,
+      "status-code": event.statusCode,
     },
   };
 }
@@ -63,7 +65,7 @@ function sendReport(report) {
   if (!reportUri) return;
 
   const blob = new Blob([JSON.stringify(report)], {
-    type: 'application/csp-report',
+    type: "application/csp-report",
   });
 
   try {
@@ -71,9 +73,9 @@ function sendReport(report) {
   } catch {
     // Beacon API unavailable — fall back to a best-effort fetch.
     fetch(reportUri, {
-      method: 'POST',
+      method: "POST",
       body: JSON.stringify(report),
-      headers: { 'Content-Type': 'application/csp-report' },
+      headers: { "Content-Type": "application/csp-report" },
       keepalive: true,
     }).catch(() => {
       // Swallow — reporting is best-effort and must never crash the app.
@@ -99,7 +101,7 @@ let _cspHandler = null;
  * DOM is ready. Calling it again while already active is a no-op.
  */
 export function initCspReporting() {
-  if (typeof document === 'undefined') return;
+  if (typeof document === "undefined") return;
   // Guard against double registration
   if (_cspHandler) return;
 
@@ -109,10 +111,10 @@ export function initCspReporting() {
     if (isDev) {
       // Surfaced as a warning so it is visible in DevTools without
       // being confused with an application error.
-      console.warn(
-        '[CSP Violation]',
+      logger.warn(
+        "[CSP Violation]",
         `Directive: ${event.effectiveDirective}`,
-        `Blocked: ${event.blockedURI || '(inline)'}`,
+        `Blocked: ${event.blockedURI || "(inline)"}`,
         `Source: ${event.sourceFile}:${event.lineNumber}`,
         report
       );
@@ -121,7 +123,7 @@ export function initCspReporting() {
     sendReport(report);
   };
 
-  document.addEventListener('securitypolicyviolation', _cspHandler);
+  document.addEventListener("securitypolicyviolation", _cspHandler);
 }
 
 /**
@@ -133,9 +135,9 @@ export function initCspReporting() {
  * silently did nothing and caused a memory leak on every test teardown.
  */
 export function teardownCspReporting() {
-  if (typeof document === 'undefined') return;
+  if (typeof document === "undefined") return;
   if (!_cspHandler) return;
 
-  document.removeEventListener('securitypolicyviolation', _cspHandler);
+  document.removeEventListener("securitypolicyviolation", _cspHandler);
   _cspHandler = null;
 }
