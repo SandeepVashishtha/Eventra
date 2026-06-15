@@ -31,7 +31,7 @@ const JWT_SECRET = getJwtSecret();
 // ---------------------------------------------------------------------------
 
 const EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/;
-const MAX_SIGNUP_BODY_SIZE = 5120; // 5KB
+const MAX_SIGNUP_BODY_SIZE = 10240; // [V2-PR4] 10KB // 5KB
 
 const validateEmail = (email) => {
   return EMAIL_REGEX.test(email);
