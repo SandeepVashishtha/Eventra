@@ -16,10 +16,7 @@
  */
 
 import { checkCapacity } from "../_lib/capacityValidator.js";
-
-// Concurrency lock for RSVP
-const rsvpLocks = new Map();
-const rsvpLockCounters = new Map();
+import { withLock } from "../_lib/distributed-lock.js";
 
 /**
  * Registration handler.
@@ -76,22 +73,7 @@ export default async function registerForEvent(req, res, deps = {}) {
   const counter = rsvpLockCounters.get(eventId) || 0;
   rsvpLockCounters.set(eventId, counter + 1);
 
-  if (!rsvpLocks.has(eventId)) {
-    rsvpLocks.set(eventId, Promise.resolve());
-  }
-
-  const release = await new Promise(resolve => {
-    const previous = rsvpLocks.get(eventId);
-    let releaseFn;
-    const next = Promise.resolve(previous).then(
-      () => new Promise(r => { releaseFn = r; }),
-      () => { releaseFn = () => {}; }
-    );
-    rsvpLocks.set(eventId, next);
-    Promise.resolve(previous).then(() => resolve(releaseFn), () => resolve(() => {}));
-  });
-
-  try {
+  await withLock(`register:${eventId}`, async () => {
     // ── Event existence ───────────────────────────────────────────────────
     const event = await getEventById(eventId);
     if (!event) {
@@ -109,8 +91,6 @@ export default async function registerForEvent(req, res, deps = {}) {
     }
 
     // ── Pre-flight capacity check (non-atomic, fast path) ─────────────────
-    // This rejects clearly full events early to avoid unnecessary DB writes.
-    // It is NOT the concurrency guard — that lives inside registerAttendee.
     const currentCount = await getRegistrationCount(eventId);
     const capacity = checkCapacity({ event, currentCount, requestedSeats: 1 });
 
@@ -124,44 +104,27 @@ export default async function registerForEvent(req, res, deps = {}) {
       return;
     }
 
-    // ── Atomic insert (the actual concurrency guard) ───────────────────────
-    // registerAttendee MUST re-verify capacity inside a DB transaction and
-    // throw { code: "CAPACITY_FULL" } if the seat was taken by a concurrent
-    // request between the count read above and this insert.
-    //
+    // ── Atomic insert ────────────────────────────────────────────────────
     const registration = await registerAttendee(eventId, user.id);
 
     res.status(201).json({
       message: "Registration successful",
       registration,
-      remaining: capacity.remaining - 1, // account for the seat just taken
+      remaining: capacity.remaining - 1,
     });
 
-  } catch (err) {
+  }, 30000).catch((err) => {
     // ── Race condition loser ───────────────────────────────────────────────
-    // A concurrent request filled the last seat between our count read and
-    // the insert. Return 409 so the client can show a "sold out" message.
     if (err?.code === "CAPACITY_FULL") {
       res.status(409).json({ error: "Event is at full capacity" });
       return;
     }
 
-    // ── Duplicate key from DB unique constraint ───────────────────────────
-    // Safety net in case isAlreadyRegistered check was skipped or raced.
     if (err?.code === "DUPLICATE_REGISTRATION" || err?.code === "23505") {
       res.status(409).json({ error: "You are already registered for this event" });
       return;
     }
 
     res.status(500).json({ error: "Internal server error" });
-  } finally {
-    release();
-    const remaining = rsvpLockCounters.get(eventId) - 1;
-    if (remaining <= 0) {
-      rsvpLocks.delete(eventId);
-      rsvpLockCounters.delete(eventId);
-    } else {
-      rsvpLockCounters.set(eventId, remaining);
-    }
-  }
+  });
 }
