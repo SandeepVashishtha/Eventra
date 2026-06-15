@@ -23,6 +23,9 @@ import { getJwtSecret, JWT_EXPIRES_IN, JWT_COOKIE_MAX_AGE_SECONDS } from "./_jwt
 import { buildCorsHeaders, corsResponse } from "./_cors.js";
 import { isStorageHealthy, getUserByEmail, getUserByUsername } from "./_user-storage.js";
 
+const DUMMY_BCRYPT_HASH =
+  "$2b$10$v18wNUUU7wTXyTbRPTFZTeze3aHS//qr4FKA9gu1E/GfNQqTsFfRG";
+
 /**
  * Validates the login request body.
  *
@@ -180,8 +183,7 @@ export default async function login(req, res, deps = {}) {
   try {
     const user = await mergedDeps.findUserByEmail(usernameOrEmail);
 
-    const dummyHash = "$2b$10$v18wNUUU7wTXyTbRPTFZTeze3aHS//qr4FKA9gu1E/GfNQqTsFfRG";
-    const passwordHash = user?.password ?? dummyHash;
+    const passwordHash = user?.password ?? DUMMY_BCRYPT_HASH;
     const isValid = await mergedDeps.comparePassword(password, passwordHash);
 
     if (!user || !isValid) {
