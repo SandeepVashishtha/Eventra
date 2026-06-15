@@ -349,16 +349,16 @@ const SignupForm = () => {
                 placeholder="Enter your first name"
                 className="
               w-full pl-10 pr-4 py-3.5
-              rounded-2xl
+              rounded-xl
               border border-slate-300/20
               bg-white/5
               backdrop-blur-sm
               text-text
               placeholder:text-slate-400
               focus:ring-2
-              focus:ring-indigo-500/30
-              focus:border-indigo-500
-              transition-all duration-300
+              focus:ring-blue-500/20
+              focus:border-blue-500
+              transition-all duration-200
               hover:border-indigo-400/50
               "
                 disabled={loading}
@@ -379,16 +379,16 @@ const SignupForm = () => {
                 placeholder="Enter your last name"
                 className="
               w-full pl-10 pr-4 py-3.5
-              rounded-2xl
+              rounded-xl
               border border-slate-300/20
               bg-white/5
               backdrop-blur-sm
               text-text
               placeholder:text-slate-400
               focus:ring-2
-              focus:ring-indigo-500/30
-              focus:border-indigo-500
-              transition-all duration-300
+              focus:ring-blue-500/20
+              focus:border-blue-500
+              transition-all duration-200
               hover:border-indigo-400/50
               "
                 disabled={loading}

@@ -30,7 +30,7 @@ const FloatingField = ({
   return (
     <div className="space-y-1">
       <div
-        className={`relative rounded-2xl border bg-white/80 dark:bg-slate-900/70 backdrop-blur-sm transition-all duration-300 ${error
+        className={`relative rounded-xl border bg-white/80 dark:bg-slate-900/70 backdrop-blur-sm transition-all duration-200 ${error
             ? "border-red-400 bg-red-50/40 dark:border-red-500 dark:bg-red-950/20"
             : hasValue && !isFocused
               ? "border-green-400 dark:border-green-500"
