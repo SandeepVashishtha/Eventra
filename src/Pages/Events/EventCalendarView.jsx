@@ -132,7 +132,8 @@ const EventCalendarView = ({ events }) => {
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-800 p-4 sm:p-6 mb-8 overflow-hidden calendar-container">
-      <style dangerouslySetInnerHTML={{__html: `
+      <style>
+        {`
         .calendar-container .rbc-calendar {
           font-family: inherit;
           min-height: 700px;
@@ -218,7 +219,8 @@ const EventCalendarView = ({ events }) => {
         .dark .calendar-container .rbc-timeslot-group {
             border-bottom-color: #334155;
         }
-      `}} />
+        `}
+      </style>
       <Calendar
         localizer={localizer}
         events={calendarEvents}
