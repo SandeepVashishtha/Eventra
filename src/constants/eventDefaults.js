@@ -68,6 +68,7 @@ export const initialFormData = {
       description: "Standard event access",
     },
   ],
+  venueMap: [],
   banner: null,
   bannerPreview: null,
 };

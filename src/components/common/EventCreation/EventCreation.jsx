@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
@@ -17,6 +17,7 @@ import LocationFields from "./components/LocationFields";
 import RegistrationDatesFields from "./components/RegistrationDatesFields";
 import TagsInput from "./components/TagsInput";
 import StatsSection from "./components/StatsSection";
+import VirtualVenueEditor from "../../events/VirtualVenueEditor";
 // import { useAutoSaveDraft } from "../../../hooks/useAutoSaveDraft";
 import { formatDraftAge } from "../../../utils/eventDraftUtils";
 import {
@@ -269,6 +270,7 @@ const EventCreation = () => {
             capacity: tier.capacity ? Number(tier.capacity) : null,
             description: tier.description?.trim() || "",
           })),
+        venueMap: formData.venueMap || [],
       };
 
       submitEventForm(eventData);
@@ -831,6 +833,13 @@ const EventCreation = () => {
                   {errors.virtualLink && (
                     <span className="text-red-500 text-sm mt-1">{errors.virtualLink}</span>
                   )}
+                  
+                  <div className="mt-8">
+                    <VirtualVenueEditor
+                      venueMap={formData.venueMap}
+                      onChange={(newMap) => setFormData(prev => ({ ...prev, venueMap: newMap }))}
+                    />
+                  </div>
                 </motion.div>
               ) : (
                 <LocationFields
