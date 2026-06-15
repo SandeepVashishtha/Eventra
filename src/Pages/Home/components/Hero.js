@@ -56,19 +56,30 @@ const HeroStats = ({ stats, statsReady }) => (
   <motion.div className="grid grid-cols-3 gap-4 mt-10">
     {stats.map((s) => {
       const IconComponent = s.icon;
+
+      // 🔥 safety check
+      if (!IconComponent || typeof IconComponent !== "function") {
+        return null;
+      }
+
       return (
         <motion.div key={s.label} className="p-4 border rounded-xl">
           <IconComponent className="w-6 h-6 mb-2" />
+
           <div>
-            {statsReady ? <CountUp end={s.value} suffix={s.suffix} /> : <span>{`${s.value}${s.suffix}`}</span>}
+            {statsReady ? (
+              <CountUp end={s.value} suffix={s.suffix} />
+            ) : (
+              <span>{`${s.value}${s.suffix}`}</span>
+            )}
           </div>
+
           <div>{s.label}</div>
         </motion.div>
       );
     })}
   </motion.div>
 );
-
 // =========================================================================
 // MAIN HERO COMPONENT (~50 Lines - Will comfortably pass the 70-line limit)
 // =========================================================================
