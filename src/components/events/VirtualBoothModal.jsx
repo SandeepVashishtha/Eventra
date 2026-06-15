@@ -4,8 +4,13 @@ import {
   Send, User, MessageSquare, ArrowLeft
 } from "lucide-react";
 import { toast } from "react-toastify";
+import { safeJsonParse } from "../../utils/safeJsonParse";
+import { useAuth } from "../../context/AuthContext";
+
+import ErrorBoundary from "../common/ErrorBoundary";
 
 const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
+  const { user } = useAuth();
   const [showChat, setShowChat] = useState(false);
   const [chatMessage, setChatMessage] = useState("");
   const [chatHistory, setChatHistory] = useState([]);
@@ -16,12 +21,12 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
   const captureLead = (action) => {
     try {
       const existingLeadsStr = localStorage.getItem("eventra_sponsor_leads");
-      const existingLeads = existingLeadsStr ? JSON.parse(existingLeadsStr) : [];
+      const existingLeads = existingLeadsStr ? safeJsonParse(existingLeadsStr, []) : [];
       
       const newLead = {
-        name: "Test Attendee",
+        name: user?.name || user?.email || "Guest",
         action: action,
-        contact: "attendee@example.com",
+        contact: user?.email || "unknown",
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       
@@ -234,44 +239,51 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
 
                 {/* Social Links */}
                 <div className="flex items-center gap-3 pt-2">
-                  <a
-                    href="https://example.com"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="p-2.5 text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg border border-white/5 hover:border-indigo-500/20 transition-all"
-                    title="Website"
-                  >
-                    <Globe size={16} />
-                  </a>
-                  <a
-                    href="https://linkedin.com"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="p-2.5 text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg border border-white/5 hover:border-indigo-500/20 transition-all"
-                    title="LinkedIn"
-                  >
-                    <Linkedin size={16} />
-                  </a>
-                  <a
-                    href="https://twitter.com"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="p-2.5 text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg border border-white/5 hover:border-indigo-500/20 transition-all"
-                    title="Twitter"
-                  >
-                    <Twitter size={16} />
-                  </a>
-                  <a
-                    href="https://github.com"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="p-2.5 text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg border border-white/5 hover:border-indigo-500/20 transition-all"
-                    title="GitHub"
-                  >
-                    <Github size={16} />
-                  </a>
+                  {booth?.sponsorWebsite && (
+                    <a
+                      href={booth.sponsorWebsite}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2.5 text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg border border-white/5 hover:border-indigo-500/20 transition-all"
+                      title="Website"
+                    >
+                      <Globe size={16} />
+                    </a>
+                  )}
+                  {booth?.sponsorLinkedin && (
+                    <a
+                      href={booth.sponsorLinkedin}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2.5 text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg border border-white/5 hover:border-indigo-500/20 transition-all"
+                      title="LinkedIn"
+                    >
+                      <Linkedin size={16} />
+                    </a>
+                  )}
+                  {booth?.sponsorTwitter && (
+                    <a
+                      href={booth.sponsorTwitter}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2.5 text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg border border-white/5 hover:border-indigo-500/20 transition-all"
+                      title="Twitter"
+                    >
+                      <Twitter size={16} />
+                    </a>
+                  )}
+                  {booth?.sponsorGithub && (
+                    <a
+                      href={booth.sponsorGithub}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2.5 text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg border border-white/5 hover:border-indigo-500/20 transition-all"
+                      title="GitHub"
+                    >
+                      <Github size={16} />
+                    </a>
+                  )}
                 </div>
-              </div>
 
               {/* Right Column: Jobs & Representatives */}
               <div className="w-full md:w-64 space-y-4">
@@ -403,4 +415,10 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
   );
 };
 
-export default VirtualBoothModal;
+export default function SafeVirtualBoothModal(props) {
+  return (
+    <ErrorBoundary level="feature" label="Virtual Booth Modal">
+      <VirtualBoothModal {...props} />
+    </ErrorBoundary>
+  );
+}

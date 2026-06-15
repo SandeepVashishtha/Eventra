@@ -83,6 +83,10 @@ export const generateSharingUrl = (shareData, platform) => {
       return `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
 
     case "messenger":
+      // Messenger sharing requires a Facebook App ID (app_id parameter) which
+      // is not available in this client-side configuration.
+      // Callers should hide or disable the Messenger share button.
+      console.warn("[shareUtils] Messenger sharing is not supported — no Facebook App ID configured.");
       return "";
 
     case "linkedin":
@@ -109,21 +113,36 @@ export const generateSharingUrl = (shareData, platform) => {
  * @returns {Object} Sharing data object
  */
 export const generateEventSharingData = (event, baseUrl = null) => {
-  const publicUrl = ENV.PUBLIC_URL;
+  if (!event?.id) {
+    console.warn("[shareUtils] generateEventSharingData called with missing event.id — share URL cannot be constructed.");
+    return {
+      title: "",
+      description: "",
+      url: "",
+      hashtags: "eventra,event,tech",
+      image: "",
+    };
+  }
+
+  // Determine the correct base URL for sharing
+  const rawPublicUrl = ENV.PUBLIC_URL || "eventra.sandeepvashishtha.in";
+  const deployedOrigin = rawPublicUrl.startsWith("http")
+    ? rawPublicUrl.replace(/\/$/, "")
+    : `https://${rawPublicUrl}`;
 
   // If baseUrl is provided, use it, otherwise detect
   if (!baseUrl) {
     if (typeof window !== "undefined") {
       const currentUrl = window.location.href;
-      // Use the configured public URL if it matches the current domain
-      if (publicUrl && currentUrl.includes(publicUrl)) {
-        baseUrl = publicUrl;
+      // Check if we're on the deployed site
+      if (currentUrl.includes(rawPublicUrl)) {
+        baseUrl = deployedOrigin;
       } else {
         // Use the current origin (localhost or other development environment)
         baseUrl = window.location.origin;
       }
     } else {
-      baseUrl = publicUrl; // Fallback for SSR/Node
+      baseUrl = deployedOrigin; // Fallback for SSR/Node
     }
   }
 
@@ -173,7 +192,7 @@ export const copyToClipboard = async (text) => {
       return successful;
     }
   } catch (err) {
-    // eslint-disable-next-line no-console
+     
     console.error("Failed to copy text: ", err);
     return false;
   }

@@ -77,6 +77,12 @@ export class Component {
 
 export const Fragment = Symbol.for("react.fragment");
 export const forwardRef = (fn) => fn;
+export const useSyncExternalStore = (subscribe, getSnapshot, getServerSnapshot) => {
+  if (globalThis.React?.useSyncExternalStore) {
+    return globalThis.React.useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  }
+  return getSnapshot();
+};
 
 export default {
   useState,
@@ -95,4 +101,5 @@ export default {
   Component,
   Fragment,
   forwardRef,
+  useSyncExternalStore,
 };
