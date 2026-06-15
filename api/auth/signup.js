@@ -5,7 +5,7 @@ import { signupRateLimiter } from "../_lib/rateLimiter.js";
 import { buildCorsHeaders, corsResponse } from "./_cors.js";
 import { assertPersistentStorageConfigured } from "./_storage-config.js";
 import { createUser, getUserByEmail, isStorageHealthy } from "./_user-storage.js";
-
+import { enforceBodySize } from "../_lib/bodySize.js";
 
 // ---------------------------------------------------------------------------
 // In-memory user storage
@@ -186,6 +186,8 @@ async function handler(req, res) {
   if (req.method !== "POST") {
     return corsResponse(req, res, 405, { error: "Method not allowed" });
   }
+
+  if (enforceBodySize(req, res)) return;
 
   try {
     // Runtime protection: Reject requests if storage is unavailable
