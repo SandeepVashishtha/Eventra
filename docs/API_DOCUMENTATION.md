@@ -1614,7 +1614,6 @@ Authorization: Bearer YOUR_JWT_TOKEN
 
 ---
 
-
 # Contributor API Integration Guide
 
 ## Frontend ↔ Backend Communication Flow
@@ -1667,10 +1666,10 @@ Authorization: Bearer YOUR_JWT_TOKEN
 
 Frontend applications should:
 
-* Store JWT tokens securely
-* Attach tokens to protected requests
-* Handle token expiration gracefully
-* Redirect users to login when authentication fails
+- Store JWT tokens securely
+- Attach tokens to protected requests
+- Handle token expiration gracefully
+- Redirect users to login when authentication fails
 
 ---
 
@@ -1703,15 +1702,15 @@ Recommended workflow:
 
 Frontend implementations should:
 
-* Display user-friendly error messages.
-* Handle network failures gracefully.
-* Handle `401 Unauthorized` responses.
-* Handle `403 Forbidden` responses.
-* Log unexpected errors during development.
+- Display user-friendly error messages.
+- Handle network failures gracefully.
+- Handle `401 Unauthorized` responses.
+- Handle `403 Forbidden` responses.
+- Log unexpected errors during development.
 
 Example:
 
-* `401 Unauthorized` → Redirect to Login
-* `403 Forbidden` → Show Permission Error
-* `404 Not Found` → Show Resource Not Found Message
-* `500 Server Error` → Show Generic Error Message
+- `401 Unauthorized` → Redirect to Login
+- `403 Forbidden` → Show Permission Error
+- `404 Not Found` → Show Resource Not Found Message
+- `500 Server Error` → Show Generic Error Message

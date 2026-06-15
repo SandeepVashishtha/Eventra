@@ -17,6 +17,7 @@
 
 import { checkCapacity } from "../_lib/capacityValidator.js";
 import { withLock } from "../_lib/distributed-lock.js";
+import { rsvpLockManager } from "../_lib/rsvpLockManager.js";
 
 /**
  * Registration handler.
@@ -70,61 +71,63 @@ export default async function registerForEvent(req, res, deps = {}) {
     return;
   }
   
-  const counter = rsvpLockCounters.get(eventId) || 0;
-  rsvpLockCounters.set(eventId, counter + 1);
+  rsvpLockManager.increment(eventId);
+  try {
+    await withLock(`register:${eventId}`, async () => {
+      // ── Event existence ───────────────────────────────────────────────────
+      const event = await getEventById(eventId);
+      if (!event) {
+        res.status(404).json({ error: "Event not found" });
+        return;
+      }
 
-  await withLock(`register:${eventId}`, async () => {
-    // ── Event existence ───────────────────────────────────────────────────
-    const event = await getEventById(eventId);
-    if (!event) {
-      res.status(404).json({ error: "Event not found" });
-      return;
-    }
+      // ── Duplicate registration check ──────────────────────────────────────
+      if (typeof isAlreadyRegistered === "function") {
+        const already = await isAlreadyRegistered(eventId, user.id);
+        if (already) {
+          res.status(409).json({ error: "You are already registered for this event" });
+          return;
+        }
+      }
 
-    // ── Duplicate registration check ──────────────────────────────────────
-    if (typeof isAlreadyRegistered === "function") {
-      const already = await isAlreadyRegistered(eventId, user.id);
-      if (already) {
+      // ── Pre-flight capacity check (non-atomic, fast path) ─────────────────
+      const currentCount = await getRegistrationCount(eventId);
+      const capacity = checkCapacity({ event, currentCount, requestedSeats: 1 });
+
+      if (!capacity.allowed) {
+        res.status(409).json({
+          error: capacity.reason || "Event is at full capacity",
+          capacity: capacity.capacity,
+          currentCount: capacity.currentCount,
+          remaining: capacity.remaining,
+        });
+        return;
+      }
+
+      // ── Atomic insert ────────────────────────────────────────────────────
+      const registration = await registerAttendee(eventId, user.id);
+
+      res.status(201).json({
+        message: "Registration successful",
+        registration,
+        remaining: capacity.remaining - 1,
+      });
+
+    }, 30000).catch((err) => {
+      // ── Race condition loser ───────────────────────────────────────────────
+      if (err?.code === "CAPACITY_FULL") {
+        res.status(409).json({ error: "Event is at full capacity" });
+        return;
+      }
+
+      if (err?.code === "DUPLICATE_REGISTRATION" || err?.code === "23505") {
         res.status(409).json({ error: "You are already registered for this event" });
         return;
       }
-    }
 
-    // ── Pre-flight capacity check (non-atomic, fast path) ─────────────────
-    const currentCount = await getRegistrationCount(eventId);
-    const capacity = checkCapacity({ event, currentCount, requestedSeats: 1 });
-
-    if (!capacity.allowed) {
-      res.status(409).json({
-        error: capacity.reason || "Event is at full capacity",
-        capacity: capacity.capacity,
-        currentCount: capacity.currentCount,
-        remaining: capacity.remaining,
-      });
-      return;
-    }
-
-    // ── Atomic insert ────────────────────────────────────────────────────
-    const registration = await registerAttendee(eventId, user.id);
-
-    res.status(201).json({
-      message: "Registration successful",
-      registration,
-      remaining: capacity.remaining - 1,
+      res.status(500).json({ error: "Internal server error" });
     });
-
-  }, 30000).catch((err) => {
-    // ── Race condition loser ───────────────────────────────────────────────
-    if (err?.code === "CAPACITY_FULL") {
-      res.status(409).json({ error: "Event is at full capacity" });
-      return;
-    }
-
-    if (err?.code === "DUPLICATE_REGISTRATION" || err?.code === "23505") {
-      res.status(409).json({ error: "You are already registered for this event" });
-      return;
-    }
-
-    res.status(500).json({ error: "Internal server error" });
-  });
+  } finally {
+    rsvpLockManager.decrement(eventId);
+  }
 }

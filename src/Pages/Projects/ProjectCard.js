@@ -197,7 +197,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
           const saved = localStorage.getItem(CACHE_KEY);
           cache = saved ? safeJsonParse(saved, {}) : {};
           cache[key] = { data: updated, timestamp: Date.now() };
-          localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+          saveMetricsCache(cache);
         } catch {}
         return updated;
       });
@@ -243,6 +243,9 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
       const message = err?.data?.message || err?.message || "Failed to fork project.";
       toast.error(message);
     }
+
+ac6ca0ad (fix(projects): handle QuotaExceededError via LRU cache eviction)
+
   };
 
   // GitHub metrics loading with LocalStorage caching system
@@ -294,7 +297,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
           data: freshMetrics,
           timestamp: Date.now(),
         };
-        localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+        saveMetricsCache(cache);
 
         setMetrics(freshMetrics);
         setMetricsLoading(false);

@@ -149,7 +149,13 @@
     "viewMode": "View Mode",
     "timeline": "Timeline",
     "recommendations": "Recommendations for you",
-    "saved": "Saved Events"
+    "saved": "Saved Events",
+    "noEventsScheduled": "No events scheduled",
+    "noUpcomingEvents": "No upcoming events scheduled for this day.",
+    "noEventsMatch": "No events match your filters",
+    "noBookmarked": "No bookmarked events",
+    "noBookmarkedDesc": "Start exploring and bookmark events you're interested in!",
+    "noEventsMatchDesc": "Try adjusting your filters or clearing them to see all available events."
   },
   "hackathon": {
     "title": "Hackathons",
