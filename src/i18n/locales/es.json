@@ -60,7 +60,8 @@
     "retry": "Reintentar",
     "loading": "Cargando...",
     "search": "Buscar",
-    "closeModal": "Cerrar modal"
+    "closeModal": "Cerrar modal",
+    "noResults": "No se encontraron resultados"
   },
   "footer": {
     "rights": "Todos los derechos reservados.",
@@ -71,5 +72,13 @@
     "switch": "Idioma",
     "en": "English",
     "es": "Español"
+  },
+  "event": {
+    "noEventsScheduled": "No hay eventos programados",
+    "noUpcomingEvents": "No hay eventos próximos programados para este día.",
+    "noEventsMatch": "Ningún evento coincide con tus filtros",
+    "noBookmarked": "No hay eventos guardados",
+    "noBookmarkedDesc": "¡Empieza a explorar y guarda los eventos que te interesen!",
+    "noEventsMatchDesc": "Intenta ajustar o limpiar tus filtros para ver todos los eventos disponibles."
   }
 }

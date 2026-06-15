@@ -1,5 +1,6 @@
 import { Search, FilterX, Inbox } from "lucide-react";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 
 const EmptyState = ({
   type = "search",
@@ -10,25 +11,26 @@ const EmptyState = ({
   icon,
   compact = false,
 }) => {
+  const { t } = useTranslation();
   const getDefaultConfig = () => {
     switch (type) {
       case "search":
         return {
           icon: <Search size={48} className="text-gray-400" />,
-          title: "No results found",
+          title: t("common.noResults"),
           message: "Try adjusting your search terms or filters to find what you're looking for.",
         };
       case "filters":
         return {
           icon: <FilterX size={48} className="text-gray-400" />,
-          title: "No events match your filters",
-          message: "Try adjusting your filters or clearing them to see all available events.",
+          title: t("event.noEventsMatch"),
+        message: t("event.noEventsMatchDesc"),
         };
       case "bookmarks":
         return {
           icon: <Inbox size={48} className="text-gray-400" />,
-          title: "No bookmarked events",
-          message: "Start exploring and bookmark events you're interested in!",
+          title: t("event.noBookmarked"),
+        message: t("event.noBookmarkedDesc"),
         };
       default:
         return {
