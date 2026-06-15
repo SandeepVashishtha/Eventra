@@ -67,12 +67,6 @@ jobs:
           token: ${{ secrets.BOT_PAT || secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - name: Setup Node
-        if: steps.metadata.outputs.isDraft != 'true'
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
       - name: Sync branch with upstream master
         if: steps.metadata.outputs.isDraft != 'true'
         env:
@@ -84,37 +78,6 @@ jobs:
           git remote add upstream "https://github.com/${{ github.repository }}.git" || true
           git fetch upstream master
 
-          if git merge upstream/master --no-edit -m "chore: merge upstream master to sync branch"; then
-            echo "PR #$PR_NUM: clean merge, pushing..."
-            git push origin "HEAD:${{ steps.metadata.outputs.headRef }}"
-            exit 0
-          fi
-
-          CONFLICT_FILES=$(git diff --name-only --diff-filter=U)
-          echo "Conflicted files: $CONFLICT_FILES"
-
-          ONLY_MINIFIED=true
-          for file in $CONFLICT_FILES; do
-            if ! echo "$file" | grep -Eq "^dist/assets/.*\.(css|js)$"; then
-              ONLY_MINIFIED=false
-              break
-            fi
-          done
-
-          if [ "$ONLY_MINIFIED" = "true" ] && [ -n "$CONFLICT_FILES" ]; then
-            echo "PR #$PR_NUM: conflicts only in minified bundles, auto-resolving..."
-            for file in $CONFLICT_FILES; do
-              git checkout --ours -- "$file"
-              git add "$file"
-            done
-            npm ci
-            npm run build
-            git add dist/
-            git commit -m "chore: resolve minified bundle conflicts and rebuild"
-            git push origin "HEAD:${{ steps.metadata.outputs.headRef }}"
-            echo "PR #$PR_NUM: auto-resolved and pushed"
-          else
-            echo "::warning::PR #$PR_NUM: source conflicts detected, manual resolution needed"
-            echo "Conflicted files: $CONFLICT_FILES"
-            git merge --abort
-          fi
+          git merge upstream/master --no-edit -X theirs -m "chore: merge upstream master to sync branch"
+          git push origin "HEAD:${{ steps.metadata.outputs.headRef }}"
+          echo "PR #$PR_NUM: synced with upstream master"
