@@ -4,7 +4,103 @@
  * Then set REACT_APP_API_URL=http://localhost:8080 in .env.local and restart the dev server.
  */
 import http from "http";
+import crypto from "crypto";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import jwt from "jsonwebtoken";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+const jsonCache = new Map();
+
+const loadJson = async (relativePath) => {
+  if (jsonCache.has(relativePath)) {
+    return jsonCache.get(relativePath);
+  }
+  try {
+    const content = await fs.promises.readFile(path.join(__dirname, relativePath), "utf8");
+    const data = JSON.parse(content);
+    jsonCache.set(relativePath, data);
+    return data;
+  } catch {
+    return [];
+  }
+};
+
+let MOCK_EVENT_CATALOG = [];
+let MOCK_PROJECT_CATALOG = [];
+let MOCK_NOTIFICATION_SEED = [];
+let dataInitialized = false;
+
+async function initializeMockData() {
+  if (dataInitialized) return;
+  MOCK_EVENT_CATALOG = await loadJson("src/Pages/Events/eventsMockData.json");
+  MOCK_PROJECT_CATALOG = await loadJson("src/Pages/Projects/mockProjectsData.json");
+  MOCK_NOTIFICATION_SEED = await loadJson("src/data/mockNotifications.json");
+  dataInitialized = true;
+}
+
+let notificationStore = [];
+const notificationSseClients = new Set();
+
+const LIVE_NOTIFICATION_TEMPLATES = [
+  {
+    title: "New Registration",
+    message: "Someone just registered for React Conference 2026.",
+    category: "registrations",
+    type: "registration",
+    link: "/events/1",
+  },
+  {
+    title: "Team Invite",
+    message: "You have a new team invitation for Global AI Hackathon.",
+    category: "social",
+    type: "team_invitation",
+    link: "/hackathons/2",
+  },
+  {
+    title: "Organizer Announcement",
+    message: "Venue details updated for DevOps Summit 2026.",
+    category: "announcements",
+    type: "announcement",
+    link: "/events/3",
+  },
+  {
+    title: "Event Reminder",
+    message: "Your workshop starts in 1 hour.",
+    category: "reminders",
+    type: "reminder",
+    link: "/events/2",
+  },
+];
+
+const broadcastNotification = (notification) => {
+  const payload = JSON.stringify({ notification });
+  for (const client of notificationSseClients) {
+    try {
+      client.write(`data: ${payload}\n\n`);
+    } catch {
+      notificationSseClients.delete(client);
+    }
+  }
+};
+
+const pushLiveNotification = () => {
+  const template =
+    LIVE_NOTIFICATION_TEMPLATES[
+      Math.floor(Math.random() * LIVE_NOTIFICATION_TEMPLATES.length)
+    ];
+  const notification = {
+    ...template,
+    id: `notif-live-${Date.now()}`,
+    isRead: false,
+    createdAt: new Date().toISOString(),
+  };
+  notificationStore = [notification, ...notificationStore];
+  broadcastNotification(notification);
+  return notification;
+};
 
 // Updated default fallback port to 8080 to match your api.js default config
 const PORT = parseInt(process.env.SSE_MOCK_PORT || process.env.PORT || "8080", 10);
@@ -19,7 +115,9 @@ const log = (...args) => {
   }
 };
 
-const MOCK_CONTRIBUTORS = [
+let notificationStore = [];
+
+const LIVE_NOTIFICATION_TEMPLATES = [
   { username: "alice", name: "Alice Dev", avatar: "https://avatars.githubusercontent.com/u/1?v=4", profile: "https://github.com/alice", points: 42, prs: 6 },
   { username: "bob", name: "Bob Coder", avatar: "https://avatars.githubusercontent.com/u/2?v=4", profile: "https://github.com/bob", points: 35, prs: 5 },
   { username: "carol", name: "Carol Builder", avatar: "https://avatars.githubusercontent.com/u/3?v=4", profile: "https://github.com/carol", points: 28, prs: 4 },
@@ -32,7 +130,13 @@ const MOCK_EVENTS = [
   { id: "event-3", title: "Web Dev Workshop" }
 ];
 
-const JWT_SECRET = process.env.JWT_SECRET || "mock-secret-key-123456";
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET || !JWT_SECRET.trim()) {
+  console.error("FATAL: JWT_SECRET environment variable is required and must not be empty or whitespace-only.");
+  console.error("Generate a secure secret using: openssl rand -base64 32");
+  process.exit(1);
+}
 
 // Mock registration store for ticket check-in testing
 const mockRegistrations = new Map([
@@ -60,10 +164,21 @@ const decodeJwtPayload = (token) => {
   return null;
 };
 
-const getRequestBody = (req) => {
-  return new Promise((resolve, reject) => {
+const MAX_BODY_SIZE = 100 * 1024; // 100KB
+
+const getRequestBody = (req, res) => {
+  return new Promise((resolve) => {
     let body = "";
+    let size = 0;
     req.on("data", (chunk) => {
+      size += chunk.length;
+      if (size > MAX_BODY_SIZE) {
+        req.destroy();
+        if (res && !res.headersSent) {
+          jsonResponse(res, 413, { error: "Request body too large. Maximum size is 100KB." });
+        }
+        return;
+      }
       body += chunk;
     });
     req.on("end", () => {
@@ -73,8 +188,8 @@ const getRequestBody = (req) => {
         resolve({});
       }
     });
-    req.on("error", (err) => {
-      reject(err);
+    req.on("error", () => {
+      resolve({});
     });
   });
 };
@@ -107,7 +222,7 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "OPTIONS") {
     res.writeHead(204, {
       "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Authorization",
       "Access-Control-Allow-Credentials": "true",
     });
@@ -133,9 +248,36 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // Get all events
+  // Get all events (paginated Spring-style response)
   if ((pathname === "/api/events" || pathname === "/events") && req.method === "GET") {
-    return jsonResponse(res, 200, MOCK_EVENTS);
+    const page = Math.max(0, parseInt(searchParams.get("page") || "0", 10));
+    const size = Math.max(1, parseInt(searchParams.get("size") || "12", 10));
+    const start = page * size;
+    const content = MOCK_EVENT_CATALOG.slice(start, start + size);
+    const totalElements = MOCK_EVENT_CATALOG.length;
+    const totalPages = Math.max(1, Math.ceil(totalElements / size));
+
+    return jsonResponse(res, 200, {
+      content,
+      totalElements,
+      totalPages,
+      size,
+      number: page,
+      first: page === 0,
+      last: page >= totalPages - 1,
+    });
+  }
+
+  // Projects list for local development
+  if ((pathname === "/api/projects" || pathname === "/projects") && req.method === "GET") {
+    return jsonResponse(res, 200, MOCK_PROJECT_CATALOG);
+  }
+
+  if (pathname === "/api/projects/categories" && req.method === "GET") {
+    const categories = [
+      ...new Set(MOCK_PROJECT_CATALOG.map((project) => project.category).filter(Boolean)),
+    ];
+    return jsonResponse(res, 200, categories);
   }
 
   // Get statistics
@@ -182,7 +324,7 @@ const server = http.createServer(async (req, res) => {
 
   // Token generation
   if (pathname === "/api/tickets/token" && req.method === "POST") {
-    const body = await getRequestBody(req);
+    const body = await getRequestBody(req, res);
     const { registrationId, eventId } = body;
     if (!registrationId || !eventId) {
       return jsonResponse(res, 400, { error: "Missing required fields: registrationId and eventId" });
@@ -216,7 +358,7 @@ const server = http.createServer(async (req, res) => {
 
   // Validate ticket code / JWT token
   if (pathname === "/api/tickets/validate" && req.method === "POST") {
-    const body = await getRequestBody(req);
+    const body = await getRequestBody(req, res);
     const { ticketId, eventId } = body;
     if (!ticketId || !eventId) {
       return jsonResponse(res, 400, { error: "Missing ticketId or eventId" });
@@ -304,7 +446,7 @@ const server = http.createServer(async (req, res) => {
 
   // Record check-in
   if (pathname === "/api/tickets/checkin" && req.method === "POST") {
-    const body = await getRequestBody(req);
+    const body = await getRequestBody(req, res);
     const { ticketId, eventId } = body;
     if (!ticketId || !eventId) {
       return jsonResponse(res, 400, { error: "Missing ticketId or eventId" });
@@ -371,6 +513,61 @@ const server = http.createServer(async (req, res) => {
     });
   }
 
+  // Notifications REST API
+  if (pathname === "/api/notifications" && req.method === "GET") {
+    return jsonResponse(res, 200, notificationStore);
+  }
+
+  const readMatch = pathname.match(/^\/api\/notifications\/([^/]+)\/read$/);
+  if (readMatch && (req.method === "PUT" || req.method === "PATCH")) {
+    const id = decodeURIComponent(readMatch[1]);
+    notificationStore = notificationStore.map((item) =>
+      item.id === id ? { ...item, isRead: true } : item
+    );
+    return jsonResponse(res, 200, {
+      message: "Notification marked as read",
+      notificationId: id,
+    });
+  }
+
+  if (pathname === "/api/notifications/read-all" && (req.method === "PUT" || req.method === "PATCH")) {
+    notificationStore = notificationStore.map((item) => ({ ...item, isRead: true }));
+    return jsonResponse(res, 200, { message: "All notifications marked as read" });
+  }
+
+  const deleteMatch = pathname.match(/^\/api\/notifications\/([^/]+)$/);
+  if (deleteMatch && req.method === "DELETE") {
+    const id = decodeURIComponent(deleteMatch[1]);
+    notificationStore = notificationStore.filter((item) => item.id !== id);
+    return jsonResponse(res, 200, { message: "Notification deleted", notificationId: id });
+  }
+
+  if (pathname === "/stream/notifications" || pathname === "/api/stream/notifications") {
+    sseHeaders(res);
+    log("[SSE] notifications client connected");
+
+    notificationSseClients.add(res);
+
+    // Send current unread snapshot
+    const unread = notificationStore.filter((item) => !item.isRead).slice(0, 5);
+    if (unread.length > 0) {
+      send(res, { notifications: unread });
+    }
+
+    const interval = setInterval(() => {
+      const notification = pushLiveNotification();
+      send(res, { notification });
+      log(`[SSE] notification pushed: ${notification.title}`);
+    }, 20000);
+
+    req.on("close", () => {
+      clearInterval(interval);
+      notificationSseClients.delete(res);
+      log("[SSE] notifications client disconnected");
+    });
+    return;
+  }
+
   if (pathname === "/stream/leaderboard" || pathname === "/api/stream/leaderboard") {
     sseHeaders(res);
     log("[SSE] leaderboard client connected");
@@ -427,10 +624,17 @@ const server = http.createServer(async (req, res) => {
   res.end(JSON.stringify({ error: `Route ${req.url} not found on local mock server.` }));
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
+  await initializeMockData();
+  notificationStore = MOCK_NOTIFICATION_SEED.map((item) => ({ ...item }));
   console.log(`\n[Dev Only] SSE mock server running on port ${PORT}`);
   console.log(`Allowed Origin: ${ALLOWED_ORIGIN}`);
   console.log("Streams and Endpoints available:");
+  console.log(`  GET http://localhost:${PORT}/api/notifications`);
+  console.log(`  PUT http://localhost:${PORT}/api/notifications/:id/read`);
+  console.log(`  PUT http://localhost:${PORT}/api/notifications/read-all`);
+  console.log(`  DELETE http://localhost:${PORT}/api/notifications/:id`);
+  console.log(`  GET http://localhost:${PORT}/api/stream/notifications`);
   console.log(`  GET http://localhost:${PORT}/api/users/profile`);
   console.log(`  GET http://localhost:${PORT}/api/stream/leaderboard`);
   console.log(`  GET http://localhost:${PORT}/api/stream/analytics`);

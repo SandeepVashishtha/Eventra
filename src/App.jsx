@@ -1,15 +1,19 @@
 import { useState, useEffect, lazy, Suspense } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import * as Sentry from "@sentry/react";
+import { Analytics } from "@vercel/analytics/react";
 import "./App.css";
 import "./styles/reduced-motion.css";
 import "./styles/print.css";
 import { toast } from "react-toastify";
+import EnvironmentSecurityDashboard from "./components/dev/EnvironmentSecurityDashboard";
 
 // Critical path - loaded eagerly (needed before first paint)
 import Navbar from "./components/navbar/Navbar";
+import SkipToContent from "./components/accessibility/SkipToContent";
 import OfflineBanner from "./components/common/OfflineBanner";
 import OfflineConflictModal from "./components/common/OfflineConflictModal";
-import ScrollToTop from "./components/ScrollToTop";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import NotificationToastContainer from "./components/common/NotificationProvider";
@@ -36,18 +40,21 @@ const AppRoutes = lazy(() => import("./components/AppRoutes"));
 const EventRegistration = lazy(() => import("./Pages/Events/EventRegistration"));
 const SavedEventsPage = lazy(() => import("./Pages/SavedEventsPage"));
 const EventRecommendation = lazy(() => import("./Pages/EventRecommendation/EventRecommendation"));
+const MatchmakingHub = lazy(() => import("./Pages/Networking/MatchmakingHub"));
 const EventDetails = lazy(() => import("./Pages/Events/EventDetails"));
-const ExploreEvents = lazy(() => import("./Pages/Events/EventsPage"));
+// const ExploreEvents = lazy(() => import("./Pages/Events/EventsPage"));
+const EventsPage = lazy(() => import("./Pages/Events/EventsPage"));
 
 // Non-critical UI - deferred after first paint
 const FluidCursor = lazy(() => import("./components/visual/FluidCursor"));
 const KeyboardShortcutsModal = lazy(() => import("./components/common/KeyboardShortcutsModal"));
 const OnboardingChecklist = lazy(() => import("./components/user/OnboardingChecklist"));
 const FeedbackButton = lazy(() => import("./components/FeedbackButton"));
-const ScrollToTopButton = lazy(() => import("./components/ScrollToTopButton"));
 const BackToTop = lazy(() => import("./components/common/BackToTop"));
 const ReminderChecker = lazy(() => import("./components/reminders/ReminderChecker"));
 const SessionRecovery = lazy(() => import("./components/SessionRecovery"));
+const ThemeCustomizer = lazy(() => import("./components/Layout/ThemeCustomizer"));
+// const ComparativeAnalytics = lazy(() => import("./components/Analytics/ComparativeAnalyticsDashboard"));
 
 
 const OfflineSyncManager = () => {
@@ -56,12 +63,13 @@ const OfflineSyncManager = () => {
 };
 
 function App() {
+  const { t } = useTranslation();
   const location = useLocation();
   const isDashboardOrAdmin =
     location?.pathname === "/dashboard" || location?.pathname === "/admin";
   const pageLoader = (
     <div className="flex items-center justify-center min-h-screen text-gray-500">
-      Loading page...
+      {t("app.loading")}
     </div>
   );
   const [cursorEnabled, setCursorEnabled] = useState(() => {
@@ -129,13 +137,13 @@ function App() {
 
   useEffect(() => {
     const handleOnline = () => {
-      toast.success("Back online! Your connections have been restored and sync is complete.", {
+      toast.success(t("app.backOnline"), {
         position: "bottom-right",
         autoClose: 4000,
       });
     };
     const handleOffline = () => {
-      toast.warning("You are currently offline. Running in secure local offline caching mode.", {
+      toast.warning(t("app.offline"), {
         position: "bottom-right",
         autoClose: 5000,
       });
@@ -151,7 +159,7 @@ function App() {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
-  }, []);
+  }, [t]);
 
   return (
     <ErrorBoundary>
@@ -166,6 +174,7 @@ function App() {
               <OfflineSyncManager />
 
               <div className="App">
+                <SkipToContent />
                 <ErrorBoundary level="section" label="Navigation Bar">
                   <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
                 </ErrorBoundary>
@@ -207,7 +216,7 @@ function App() {
                           path="/explore"
                           element={
                             <Suspense fallback={<ExploreEventsSkeleton />}>
-                              <ExploreEvents />
+                              <EventsPage />
                             </Suspense>
                           }
                         />
@@ -236,6 +245,14 @@ function App() {
                           element={<Suspense fallback={null}><SavedEventsPage /></Suspense>}
                         />
                         <Route
+                          path="/matchmaking"
+                          element={
+                            <ProtectedRoute>
+                              <Suspense fallback={null}><MatchmakingHub /></Suspense>
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
                           path="*"
                           element={
                             <Suspense fallback={pageLoader}>
@@ -243,12 +260,13 @@ function App() {
                             </Suspense>
                           }
                         />
+
                       </Routes>
                     </ErrorBoundary>
                   </PageTransition>
                 </main>
 
-                <ScrollToTop />
+                
                 {showChatbot && (
                   <ErrorBoundary level="section" label="Chatbot Assist" silent>
                     <Suspense fallback={null}>
@@ -264,14 +282,13 @@ function App() {
                 </ErrorBoundary>
 
                 <Suspense fallback={null}>
-                  <ScrollToTopButton />
-                </Suspense>
-                {/* Enhanced back-to-top with progress ring - appears at 400px */}
-                <Suspense fallback={null}>
                   <BackToTop />
                 </Suspense>
                 <Suspense fallback={null}>
                   <FeedbackButton />
+                </Suspense>
+                <Suspense fallback={null}>
+                  <ThemeCustomizer />
                 </Suspense>
                 <Suspense fallback={null}>
                   <SessionRecovery />
@@ -285,6 +302,7 @@ function App() {
                 </ErrorBoundary>
                 )}
               </div>
+              <Analytics />
             </SessionRecoveryProvider>
           </MyEventsProvider>
         </NotificationProvider>

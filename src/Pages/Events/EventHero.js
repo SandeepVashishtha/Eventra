@@ -27,6 +27,30 @@ const TRENDING_SEARCHES = [
   "Web Development",
 ];
 
+const StatCounter = ({ stat, shouldAnimate }) => {
+  const prefix = stat.prefix || "";
+  const suffix = stat.suffix || "";
+
+  if (!shouldAnimate) {
+    return (
+      <>
+        {prefix}0{suffix}
+      </>
+    );
+  }
+
+  return (
+    <CountUp
+      start={0}
+      end={stat.value}
+      duration={2.5}
+      prefix={prefix}
+      suffix={suffix}
+      startOnMount
+    />
+  );
+};
+
 export default function EventHero({
   searchQuery,
   handleSearch,
@@ -38,12 +62,17 @@ export default function EventHero({
 
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [searchHistory, setSearchHistory] = useState([]);
+  const [hasMounted, setHasMounted] = useState(false);
   const searchContainerRef = useRef(null);
   const dropdownRef = useRef(null);
   const statsRef = useRef(null);
 
   // Trigger stats animation only when visible
   const isStatsInView = useInView(statsRef, { once: true, margin: "-100px" });
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   useEffect(() => {
     setSearchHistory(getStoredSearchHistory());
@@ -149,7 +178,7 @@ export default function EventHero({
           .
         </p>
   
-        <div className="w-full max-w-3xl mx-auto mt-8 sm:mt-12 px-4 sm:px-0">
+        <div className="w-full max-w-3xl mx-auto mt-8 sm:mt-12 px-4 sm:px-0 relative z-50">
           <ModernSearchInput
             value={searchQuery}
             onChange={(e) => handleSearch(e.target.value)}
@@ -297,27 +326,22 @@ export default function EventHero({
               { label: "Total Prizes", value: 1, prefix: "$", suffix: "M+", icon: Award },
             ].map((stat, i) => (
               <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 20 }}
-                animate={isStatsInView ? { opacity: 1, y: 0 } : {}}
-                transition={{ duration: 0.4, delay: i * 0.1, ease: "easeOut" }}
-                whileHover={{ y: -6 }}
-                className={`${darkTheme.card} rounded-3xl shadow-xl p-4 sm:p-6 flex flex-col items-center text-center transition-all duration-300`}
-              >
+  key={stat.label}
+  initial={{ opacity: 0, y: 20 }}
+  animate={isStatsInView ? { opacity: 1, y: 0 } : {}}
+  transition={{ duration: 0.4, delay: i * 0.1, ease: "easeOut" }}
+  whileHover={{
+    y: -6,
+    scale: 1.02,
+    transition: { duration: 0.2 }
+  }}
+  className={`${darkTheme.card} rounded-3xl shadow-xl p-4 sm:p-6 flex flex-col items-center text-center transition-all duration-200`}
+>
                 <div className="mb-3 sm:mb-4 flex items-center justify-center h-10 w-10 sm:h-12 sm:w-12 rounded-2xl bg-blue-50 dark:bg-slate-800 border border-blue-100 dark:border-slate-700/50">
                   <stat.icon className={`h-5 w-5 sm:h-6 sm:w-6 ${darkTheme.textSecondary}`} />
                 </div>
                 <p className={`text-xl sm:text-2xl md:text-3xl font-bold tracking-tight ${darkTheme.textPrimary}`}>
-                  <CountUp
-                    key={isStatsInView ? "start" : "reset"}
-                    start={0}
-                    end={stat.value}
-                    duration={2.5}
-                    prefix={stat.prefix}
-                    suffix={stat.suffix}
-                    enableScrollSpy
-                    scrollSpyDelay={200}
-                  />
+                  <StatCounter stat={stat} shouldAnimate={hasMounted && isStatsInView} />
                 </p>
                 <p className={`mt-1 text-xs sm:text-sm font-medium ${darkTheme.textSecondary}`}>
                   {stat.label}

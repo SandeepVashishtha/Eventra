@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import InteractiveWhiteboard from "./InteractiveWhiteboard";
+import PomodoroTimer from "./PomodoroTimer";
+import { logger } from "../../utils/logger";
 
 // Initial constants removed to support real-time sync database values
 
@@ -48,55 +50,11 @@ const TeamWorkspace = () => {
   useEffect(() => {
     let sseSource = null;
     let fallbackInterval = null;
+    let idleTimeout = null;
 
     setConnectionStatus("connecting");
     const logPrefix = "[TeamSync]";
 
-    // 1. Attempt Server-Sent Events (EventSource) connection
-    try {
-      console.log(`${logPrefix} Establishing real-time Server-Sent Events stream...`);
-      sseSource = new EventSource("/api/hackathons/team/sync");
-
-      sseSource.onopen = () => {
-        setConnectionStatus("sse");
-        console.log(`${logPrefix} Connection opened. Realtime SSE stream active.`);
-      };
-
-      sseSource.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.type === "init") {
-            setTasks(data.tasks || []);
-            setPins(data.pins || []);
-            setChatHistory(data.chat || []);
-          } else if (data.type === "tasks") {
-            setTasks(data.tasks || []);
-          } else if (data.type === "pins") {
-            setPins(data.pins || []);
-          } else if (data.type === "chat") {
-            setChatHistory(data.chat || []);
-          }
-        } catch (e) {
-          console.error("Failed to parse SSE payload", e);
-        }
-      };
-
-      sseSource.onerror = () => {
-        // SSE error! Initiate immediate polling fallback.
-        console.warn(
-          `${logPrefix} Server-Sent Events stream interrupted. Fallback to short-polling activated.`
-        );
-        setConnectionStatus("polling_fallback");
-        sseSource.close();
-        triggerPollingFallback();
-      };
-    } catch (e) {
-      console.error(`${logPrefix} SSE not supported by browser. Falling back to HTTP polling.`, e);
-      setConnectionStatus("polling_fallback");
-      triggerPollingFallback();
-    }
-
-    // 2. HTTP Short Polling Fallback Mechanism
     function triggerPollingFallback() {
       setPollingLogs((prev) => [
         ...prev,
@@ -124,23 +82,99 @@ const TeamWorkspace = () => {
             ]);
           }
         } catch (err) {
-          setPollingLogs((prev) => [
-            ...prev,
-            `[HTTP-Poll] Fetch network error: ${err.message}`,
-          ]);
+          setPollingLogs((prev) => [...prev, `[HTTP-Poll] Fetch network error: ${err.message}`]);
         }
       };
 
-      // Fetch immediately
       fetchState();
-
-      // Poll every 4 seconds
       fallbackInterval = setInterval(fetchState, 4000);
     }
 
+    const connectStream = () => {
+      setConnectionStatus("connecting");
+      try {
+        logger.info(`${logPrefix} Establishing real-time Server-Sent Events stream...`);
+        sseSource = new EventSource("/api/hackathons/team/sync");
+
+        sseSource.onopen = () => {
+          setConnectionStatus("sse");
+          logger.info(`${logPrefix} Connection opened. Realtime SSE stream active.`);
+        };
+
+        sseSource.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === "init") {
+              setTasks(data.tasks || []);
+              setPins(data.pins || []);
+              setChatHistory(data.chat || []);
+            } else if (data.type === "tasks") {
+              setTasks(data.tasks || []);
+            } else if (data.type === "pins") {
+              setPins(data.pins || []);
+            } else if (data.type === "chat") {
+              setChatHistory(data.chat || []);
+            }
+          } catch (e) {
+            logger.error("Failed to parse SSE payload", e);
+          }
+        };
+
+        sseSource.onerror = () => {
+          logger.warn(
+            `${logPrefix} Server-Sent Events stream interrupted. Fallback to short-polling activated.`
+          );
+          setConnectionStatus("polling_fallback");
+          if (sseSource) sseSource.close();
+          triggerPollingFallback();
+        };
+      } catch (e) {
+        logger.error(`${logPrefix} SSE not supported by browser. Falling back to HTTP polling.`, e);
+        setConnectionStatus("polling_fallback");
+        triggerPollingFallback();
+      }
+    };
+
+    const disconnectStream = () => {
+      if (sseSource) {
+        sseSource.close();
+        sseSource = null;
+      }
+      if (fallbackInterval) {
+        clearInterval(fallbackInterval);
+        fallbackInterval = null;
+      }
+      setConnectionStatus("idle");
+    };
+
+    connectStream();
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Close connections after 60 seconds of inactivity
+        idleTimeout = setTimeout(() => {
+          logger.info(`${logPrefix} Tab idle. Closing real-time connections.`);
+          disconnectStream();
+        }, 60000);
+      } else {
+        if (idleTimeout) {
+          clearTimeout(idleTimeout);
+          idleTimeout = null;
+        }
+        // Reconnect if it was closed
+        if (!sseSource && !fallbackInterval) {
+          logger.info(`${logPrefix} Tab active. Reconnecting real-time stream.`);
+          connectStream();
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
-      if (sseSource) sseSource.close();
-      if (fallbackInterval) clearInterval(fallbackInterval);
+      disconnectStream();
+      if (idleTimeout) clearTimeout(idleTimeout);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
 
@@ -464,6 +498,9 @@ const TeamWorkspace = () => {
 
             {/* Right Column: Pinned Announcements & Team info */}
             <div className="space-y-6">
+              {/* Pomodoro Timer */}
+              <PomodoroTimer />
+
               {/* Pins announcements list */}
               <div className="bg-slate-900/40 border border-slate-800/60 rounded-3xl p-5 md:p-6 shadow-sm">
                 <h3 className="text-sm font-extrabold text-gray-300 uppercase tracking-widest flex items-center gap-2 mb-4">

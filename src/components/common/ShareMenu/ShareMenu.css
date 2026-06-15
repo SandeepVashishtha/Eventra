@@ -20,6 +20,7 @@
 
 .animate-pulse {
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  will-change: opacity; /* Performance: GPU hardware acceleration hint */
 }
 
 /* Animation for pop-out effect */
@@ -36,6 +37,7 @@
 
 .share-button-pop {
   animation: pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  will-change: transform, opacity; /* Performance: GPU hardware acceleration hint */
 }
 
 /* Floating effect for share button */
@@ -50,6 +52,7 @@
 
 .share-button-float {
   animation: float 3s ease-in-out infinite;
+  will-change: transform; /* Performance: GPU hardware acceleration hint */
 }
 
 /* Ensure share menu doesn't get clipped */
@@ -84,4 +87,15 @@
 /* Content sections that need controlled overflow */
 .card-content-overflow {
   overflow: hidden;
+}
+
+/* Accessibility (WCAG): Respect user operating system motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse,
+  .share-button-pop,
+  .share-button-float {
+    animation: none !important;
+    transform: none !important;
+    transition: none !important;
+  }
 }
