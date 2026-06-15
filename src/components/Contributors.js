@@ -92,6 +92,7 @@ const ContributorsInner = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [recentSearches, setRecentSearches] = useState([]);
   const fetchControllerRef = useRef(null);
   const isFetchingRef = useRef(false);
 
@@ -226,7 +227,12 @@ const ContributorsInner = () => {
   useEffect(() => {
     fetchContributors();
   }, [fetchContributors]);
+useEffect(() => {
+  const saved =
+    JSON.parse(localStorage.getItem("contributorSearchHistory")) || [];
 
+  setRecentSearches(saved);
+}, []);
   // Filter contributors based on search term
   const filteredContributors = contributors.filter(
     (c) =>
@@ -285,7 +291,14 @@ const ContributorsInner = () => {
               type="text"
             placeholder="Search contributors by name, username, role, location, or company..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+         onChange={(e) => {
+  setSearchTerm(e.target.value);
+
+  localStorage.setItem(
+    "lastSearch",
+    e.target.value
+  );
+}}
             aria-label="Search contributors"
             className="px-4 py-2 rounded-lg w-full max-w-2xl border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-black text-gray-900 dark:text-white bg-white dark:bg-gray-800"
           />
