@@ -99,7 +99,10 @@ const SignupForm = () => {
       } else {
         const emailAvailability = await validateEmailAvailability(emailValue);
         if (!emailAvailability?.isValid) {
-          nextErrors.email = getResultMessage(emailAvailability, "Email is already registered");
+          nextErrors.email = getResultMessage(
+            emailAvailability,
+            "This email is already registered. Please log in."
+          );
           setFieldState("email", "error");
         } else {
           setFieldState("email", "success");
@@ -193,14 +196,20 @@ const SignupForm = () => {
 
     const timer = setTimeout(async () => {
       try {
-        const result = await validateEmailAvailability(email);
+        const result = await validateEmailAvailability(email, {
+          messages: {
+            unavailable: "This email is already registered. Please log in.",
+          },
+        });
         if (result?.isValid) {
           setErrors((prev) => ({ ...prev, email: "" }));
           setFieldState("email", "success");
         } else {
           setErrors((prev) => ({
             ...prev,
-            email: result?.message || "Email is already registered",
+            email:
+              result?.message ||
+              "This email is already registered. Please log in.",
           }));
           setFieldState("email", "error");
         }

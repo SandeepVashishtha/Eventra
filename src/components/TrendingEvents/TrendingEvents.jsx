@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { eventService } from "../../services/eventService";
 import EventCard from "../../Pages/Events/EventCard";
 import { Calendar, TrendingUp, Users, Bookmark, Eye } from "lucide-react";
+import mockEvents from "../../Pages/Events/eventsMockData.json";
 
 const toNumber = (value) => {
   const n = typeof value === "number" ? value : Number(value);
@@ -71,8 +72,9 @@ const TrendingEvents = ({ title = "Trending Events", limit = 6, fetchSize = 24 }
         setEvents(normalized);
       } catch {
         if (!active) return;
-        setError("Failed to load trending events.");
-        setEvents([]);
+        // Backend unavailable — surface local mock data so the section stays useful.
+        const fallback = Array.isArray(mockEvents) ? mockEvents : [];
+        setEvents(fallback.slice(0, fetchSize));
       } finally {
         if (!active) return;
         setIsLoading(false);

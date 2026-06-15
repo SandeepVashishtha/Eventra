@@ -208,6 +208,24 @@ class ErrorBoundary extends React.Component {
     setTimeout(() => window.location.reload(), 300);
   };
 
+  handleCopyReport = async () => {
+    const { error, errorInfo, errorId } = this.state;
+    const report = buildDiagnosticReport(errorId, error, errorInfo);
+
+    try {
+      await navigator.clipboard.writeText(report);
+      this.setState({ copied: true });
+      setTimeout(() => this.setState({ copied: false }), 2000);
+    } catch (err) {
+      console.error("Clipboard copy failed, using fallback:", err);
+      try {
+        const blob = new Blob([report], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        window.open(url, "_blank", "noopener,noreferrer");
+      } catch (_) {}
+    }
+  };
+
   handleTryAgain = () => {
     const { retryCount } = this.state;
     if (retryCount >= 3) {
@@ -250,25 +268,6 @@ class ErrorBoundary extends React.Component {
       localStorage.clear();
     }
     setTimeout(() => window.location.reload(), 300);
-  };
-
-  handleCopyReport = () => {
-    const { error, errorInfo, errorId } = this.state;
-    const report = buildDiagnosticReport(errorId, error, errorInfo);
-
-    navigator.clipboard
-      .writeText(report)
-      .then(() => {
-        this.setState({ copied: true });
-        setTimeout(() => this.setState({ copied: false }), 2000);
-      })
-      .catch(() => {
-        try {
-          const blob = new Blob([report], { type: "text/plain" });
-          const url = URL.createObjectURL(blob);
-          window.open(url, "_blank", "noopener,noreferrer");
-        } catch {}
-      });
   };
 
   toggleDiagnostics = () => {

@@ -3,9 +3,18 @@ import { motion } from "framer-motion";
 import useDebounce from "../hooks/useDebounce";
 import EmptyState from "./common/EmptyState";
 import "./styles/components.css";
+import { set } from "idb-keyval";
 
 const SearchFilter = () => {
-  const [searchTerm, setSearchTerm] = useState("");
+  // Helper function to read the search param cleanly from the URL on component load
+  const getInitialSearchParam = () => {
+    if(typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("search") || "";
+    }
+    return "";
+  };
+  const [searchTerm, setSearchTerm] = useState(getInitialSearchParam);
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedLocation, setSelectedLocation] = useState("all");
@@ -14,7 +23,11 @@ const SearchFilter = () => {
   const [favorites, setFavorites] = useState(() => {
     const saved = localStorage.getItem("favoriteEvents");
     return saved ? JSON.parse(saved) : [];
+<<<<<<< HEAD
+});
+=======
   });
+>>>>>>> upstream/master
 
   const categories = [
     { value: "all", label: "All Categories" },
@@ -36,10 +49,44 @@ const SearchFilter = () => {
     { value: "tokyo", label: "Tokyo" },
   ];
 
+  // Sync debounced inputs cleanly back to the URL parameters without causing structural render locks
   useEffect(() => {
+<<<<<<< HEAD
+    if(typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+
+      if(debouncedSearchTerm) {
+        params.set("search", debouncedSearchTerm);
+      } else {
+        params.delete("search");
+      }
+      const newRelativePathQuery = window.location.pathname + (params.toString() ? "?" + params.toString() : "");
+      window.history.replaceState(null, "", newRelativePathQuery);
+    }
+  }, [debouncedSearchTerm]);
+
+  // keep the input text field responsive to native browser back and forward navigation buttons
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      setSearchTerm(params.get("search") || "");
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+  useEffect(() => {
+    localStorage.setItem(
+    "favoriteEvents",
+    JSON.stringify(favorites)
+    );
+  }, [favorites]);
+  
+=======
     localStorage.setItem("favoriteEvents", JSON.stringify(favorites));
   }, [favorites]);
 
+>>>>>>> upstream/master
   const mockEvents = [
     {
       id: 1,
@@ -165,6 +212,8 @@ const SearchFilter = () => {
     }
     return matchesSearch && matchesCategory && matchesLocation && matchesPrice && matchesDate;
   });
+<<<<<<< HEAD
+=======
 
   const handleResetFilters = () => {
     setSearchTerm("");
@@ -172,6 +221,7 @@ const SearchFilter = () => {
     setSelectedLocation("all");
     setPriceFilter("all");
   };
+>>>>>>> upstream/master
 
   return (
     <div className="search-filter-container bg-gray-50 dark:bg-black">
@@ -192,6 +242,10 @@ const SearchFilter = () => {
 
       {/* Search Bar */}
       <motion.div
+<<<<<<< HEAD
+        whileHover={{scale: 1.03, y: -5}}
+        whileTap={{scale: 0.98}}
+=======
         whileHover={{
           scale: 1.03,
           y: -5,
@@ -199,6 +253,7 @@ const SearchFilter = () => {
         whileTap={{
           scale: 0.98,
         }}
+>>>>>>> upstream/master
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.6 }}

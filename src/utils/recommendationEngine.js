@@ -52,12 +52,6 @@ const createLocationMatcher = (preferredLocation) => {
     eventLocation && parts.some((part) => eventLocation.includes(part));
 };
 
-const buildLocationIndex = (preferredLocation) => {
-  const parts = getLocationParts(preferredLocation);
-  if (parts.length === 0) return null;
-  return { parts, test: (loc) => parts.some((part) => loc.includes(part)) };
-};
-
 const getPopularityScore = (event) => {
   const attendees = Number(event?.attendees) || 0;
   const capacity = Number(event?.maxAttendees) || 0;
