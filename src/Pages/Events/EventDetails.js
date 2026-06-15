@@ -85,11 +85,65 @@ const TitleSection = ({ event, handleCopy, linkCopied }) => {
   );
 };
 
-const EventDetails = () => {
-  const { eventId } = useParams();
+// Moved these pure functions outside the component to reduce cyclomatic complexity
+const checkLatest = ({ reqId, ctrl, latestReqRef, abortRef }) => {
+  if (latestReqRef.current !== reqId) return false;
+  if (abortRef.current !== ctrl) return false;
+  if (ctrl.signal.aborted) return false;
+  return true;
+};
+
+const handleResData = (res) => {
+  if (!res.data) return null;
+  if (res.data.data) return res.data.data;
+  return res.data;
+};
+
+const processSuccess = ({ res, setEvent }) => {
+  if (!res.ok) return false;
+  const raw = handleResData(res);
+  if (!raw) return false;
+  setEvent({ ...raw, status: getEventStatus(raw) });
+  return true;
+};
+
+const processErrorFallback = ({ error, eventId, setEvent, setFetchError }) => {
+  const fallback = mockEvents.find((item) => String(item.id) === eventId);
+  if (fallback) {
+    setEvent({ ...fallback, status: getEventStatus(fallback) });
+  } else {
+    const status = error?.status || error?.response?.status;
+    if (status >= 500) {
+      setFetchError("Something went wrong on our end. Please try again later.");
+    } else if (status === 404) {
+      setFetchError("Event not found.");
+    } else {
+      setFetchError("Could not load event details. Please try again.");
+    }
+  }
+};
+
+const handleCatchError = ({ error, reqId, ctrl, latestRef, abortRef, eventId, setEvent, setFetchError }) => {
+  if (!checkLatest({ reqId, ctrl, latestReqRef: latestRef, abortRef })) return;
+  if (isRequestCanceled(error, ctrl.signal)) return;
+  processErrorFallback({ error, eventId, setEvent, setFetchError });
+};
+
+const finishLoading = ({ reqId, ctrl, latestRef, abortRef, setFetchLoading }) => {
+  const shouldFinish = checkLatest({ reqId, ctrl, latestReqRef: latestRef, abortRef });
+  if (abortRef.current === ctrl) {
+    abortRef.current = null;
+  }
+  if (shouldFinish) {
+    setFetchLoading(false);
+  }
+};
+
+const useEventDetailsLogic = (eventId) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { addRecentlyViewed } = useRecentlyViewed();
+  const { isRegistered } = useMyEvents();
 
   const isOrganizer = user?.roles?.includes(ROLES.ORGANIZER) || user?.roles?.includes(ROLES.ADMIN);
 
@@ -101,64 +155,10 @@ const EventDetails = () => {
   const [fetchLoading, setFetchLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
-
-  const { isRegistered } = useMyEvents();
   const [linkCopied, setLinkCopied] = useState(false);
+
   const latestRequestIdRef = useRef(0);
   const abortControllerRef = useRef(null);
-
-  const checkLatest = ({ reqId, ctrl, latestReqRef, abortRef }) => {
-    if (latestReqRef.current !== reqId) return false;
-    if (abortRef.current !== ctrl) return false;
-    if (ctrl.signal.aborted) return false;
-    return true;
-  };
-
-  const handleResData = (res) => {
-    if (!res.data) return null;
-    if (res.data.data) return res.data.data;
-    return res.data;
-  };
-
-  const processSuccess = ({ res, setEvent }) => {
-    if (!res.ok) return false;
-    const raw = handleResData(res);
-    if (!raw) return false;
-    setEvent({ ...raw, status: getEventStatus(raw) });
-    return true;
-  };
-
-  const processErrorFallback = ({ error, eventId, setEvent, setFetchError }) => {
-    const fallback = mockEvents.find((item) => String(item.id) === eventId);
-    if (fallback) {
-      setEvent({ ...fallback, status: getEventStatus(fallback) });
-    } else {
-      const status = error?.status || error?.response?.status;
-      if (status >= 500) {
-        setFetchError("Something went wrong on our end. Please try again later.");
-      } else if (status === 404) {
-        setFetchError("Event not found.");
-      } else {
-        setFetchError("Could not load event details. Please try again.");
-      }
-    }
-  };
-
-  const handleCatchError = ({ error, reqId, ctrl, latestRef, abortRef, eventId, setEvent, setFetchError }) => {
-    if (!checkLatest({ reqId, ctrl, latestReqRef: latestRef, abortRef })) return;
-    if (isRequestCanceled(error, ctrl.signal)) return;
-    processErrorFallback({ error, eventId, setEvent, setFetchError });
-  };
-
-  const finishLoading = ({ reqId, ctrl, latestRef, abortRef, setFetchLoading }) => {
-    const shouldFinish = checkLatest({ reqId, ctrl, latestReqRef: latestRef, abortRef });
-    if (abortRef.current === ctrl) {
-      abortRef.current = null;
-    }
-    if (shouldFinish) {
-      setFetchLoading(false);
-    }
-  };
 
   const loadEvent = useCallback(async () => {
     if (abortControllerRef.current) abortControllerRef.current.abort();
@@ -278,6 +278,36 @@ const EventDetails = () => {
     s: () => setShowShareModal(true),
     p: handlePrint,
   });
+
+  return {
+    event, setEvent,
+    fetchLoading, fetchError, loadEvent,
+    isOrganizer, isRegistered,
+    showExportDropdown, setShowExportDropdown,
+    exportingRegistrants,
+    showShareModal, setShowShareModal,
+    isPrinting, handlePrint,
+    showCancelModal, setShowCancelModal,
+    linkCopied, handleCopy,
+    handleExport, handleDuplicateEvent
+  };
+};
+
+const EventDetails = () => {
+  const { eventId } = useParams();
+  
+  const {
+    event, setEvent,
+    fetchLoading, fetchError, loadEvent,
+    isOrganizer, isRegistered,
+    showExportDropdown, setShowExportDropdown,
+    exportingRegistrants,
+    showShareModal, setShowShareModal,
+    isPrinting, handlePrint,
+    showCancelModal, setShowCancelModal,
+    linkCopied, handleCopy,
+    handleExport, handleDuplicateEvent
+  } = useEventDetailsLogic(eventId);
 
   if (fetchLoading) return <EventDetailSkeleton />;
 
