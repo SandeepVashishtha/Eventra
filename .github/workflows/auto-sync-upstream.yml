@@ -24,31 +24,14 @@ jobs:
       - name: List open PRs
         id: list-prs
         env:
-          BOT_PAT: ${{ secrets.BOT_PAT }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.BOT_PAT || secrets.GITHUB_TOKEN }}
         run: |
-          # Set token robustly
-          if [ -n "$BOT_PAT" ]; then
-            export GH_TOKEN="$BOT_PAT"
-          else
-            export GH_TOKEN="$GITHUB_TOKEN"
-          fi
-
           event_name="${{ github.event_name }}"
 
           if [ "$event_name" = "pull_request_target" ]; then
             PR_LIST="[${{ github.event.pull_request.number }}]"
           else
-            if ! PR_LIST=$(gh pr list --state open --limit 1000 --repo ${{ github.repository }} --base master --json number --jq '[.[].number]'); then
-              echo "Failed listing PRs with current token. Falling back to GITHUB_TOKEN..."
-              export GH_TOKEN="$GITHUB_TOKEN"
-              PR_LIST=$(gh pr list --state open --limit 1000 --repo ${{ github.repository }} --base master --json number --jq '[.[].number]')
-            fi
-          fi
-
-          # Ensure PR_LIST is at least a valid empty JSON array
-          if [ -z "$PR_LIST" ] || [ "$PR_LIST" = "null" ]; then
-            PR_LIST="[]"
+            PR_LIST=$(gh pr list --state open --limit 1000 --repo ${{ github.repository }} --base master --json number --jq '[.[].number]')
           fi
 
           echo "PRs to process: $PR_LIST"
@@ -67,24 +50,10 @@ jobs:
       - name: Resolve PR metadata
         id: metadata
         env:
-          BOT_PAT: ${{ secrets.BOT_PAT }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.BOT_PAT || secrets.GITHUB_TOKEN }}
         run: |
           PR_NUM=${{ matrix.pr }}
-          
-          # Set token robustly
-          if [ -n "$BOT_PAT" ]; then
-            export GH_TOKEN="$BOT_PAT"
-          else
-            export GH_TOKEN="$GITHUB_TOKEN"
-          fi
-
-          if ! data=$(gh pr view $PR_NUM --repo ${{ github.repository }} --json isDraft,headRepository,headRefName); then
-            echo "Failed resolving PR metadata with current token. Falling back to GITHUB_TOKEN..."
-            export GH_TOKEN="$GITHUB_TOKEN"
-            data=$(gh pr view $PR_NUM --repo ${{ github.repository }} --json isDraft,headRepository,headRefName)
-          fi
-
+          data=$(gh pr view $PR_NUM --repo ${{ github.repository }} --json isDraft,headRepository,headRefName)
           echo "isDraft=$(echo "$data" | jq -r '.isDraft')" >> $GITHUB_OUTPUT
           echo "headRepo=$(echo "$data" | jq -r '.headRepository.nameWithOwner')" >> $GITHUB_OUTPUT
           echo "headRef=$(echo "$data" | jq -r '.headRefName')" >> $GITHUB_OUTPUT
@@ -102,7 +71,6 @@ jobs:
         if: steps.metadata.outputs.isDraft != 'true'
         env:
           PR_NUM: ${{ matrix.pr }}
-          BOT_PAT: ${{ secrets.BOT_PAT }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -110,33 +78,6 @@ jobs:
           git remote add upstream "https://github.com/${{ github.repository }}.git" || true
           git fetch upstream master
 
-          # Merge upstream master without committing automatically
-          git merge upstream/master --no-commit --no-ff -X theirs || true
-          
-          # Restore the workflows directory to the exact state before merge to avoid permission errors
-          git reset HEAD .github/workflows/ || true
-          git checkout HEAD -- .github/workflows/ || true
-          git clean -fd .github/workflows/ || true
-          
-          # Commit the merge
-          git commit -m "chore: merge upstream master to sync branch" || true
-          
-          # Try pushing with BOT_PAT first if available
-          if [ -n "$BOT_PAT" ]; then
-            echo "Attempting push with BOT_PAT..."
-            git remote set-url origin "https://x-access-token:${BOT_PAT}@github.com/${{ steps.metadata.outputs.headRepo }}.git"
-            if git push origin "HEAD:${{ steps.metadata.outputs.headRef }}"; then
-              echo "Push succeeded with BOT_PAT"
-              exit 0
-            fi
-            echo "Push failed with BOT_PAT, falling back to default/GITHUB_TOKEN..."
-            git remote set-url origin "https://github.com/${{ steps.metadata.outputs.headRepo }}.git"
-          fi
-
-          echo "Attempting push with default/GITHUB_TOKEN..."
-          if git push origin "HEAD:${{ steps.metadata.outputs.headRef }}"; then
-            echo "Push succeeded"
-          else
-            echo "::warning::Failed to push synced changes back to the branch. This is expected if the PR is from a fork and maintainer write access is not available."
-            exit 0
-          fi
+          git merge upstream/master --no-edit -X theirs -m "chore: merge upstream master to sync branch"
+          git push origin "HEAD:${{ steps.metadata.outputs.headRef }}"
+          echo "PR #$PR_NUM: synced with upstream master"
