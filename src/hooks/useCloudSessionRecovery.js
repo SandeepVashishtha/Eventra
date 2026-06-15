@@ -89,20 +89,24 @@ export const useCloudSessionRecovery = ({
 
   useEffect(() => {
     if (!isAuthenticated || !userId) return;
-    refreshCloudSessions();
-    syncPending();
-  }, [isAuthenticated, refreshCloudSessions, syncPending, userId]);
+    let isMounted = true;
+    (async () => {
+      await refreshCloudSessions();
+      if (isMounted) await syncPending();
+    })();
+    return () => { isMounted = false; };
+  }, [isAuthenticated, userId]);
 
   useEffect(() => {
-    const handleOnline = () => {
-      syncPending();
-      refreshCloudSessions();
+    const handleOnline = async () => {
+      await syncPending();
+      await refreshCloudSessions();
     };
 
     if (typeof window === "undefined") return undefined;
     window.addEventListener?.("online", handleOnline);
     return () => window.removeEventListener?.("online", handleOnline);
-  }, [refreshCloudSessions, syncPending]);
+  }, []);
 
   const saveCloudSession = useCallback(
     async (state, options = {}) => {
