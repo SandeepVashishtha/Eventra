@@ -322,10 +322,10 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0, gssocE
               transition={{ duration: 0.8, ease: 'easeOut' }}
               className={`h-full rounded-full ${
                 isClaimed
-                  ? 'bg-gradient-to-r from-emerald-400 to-teal-500'
+                  ? 'bg-linear-to-r from-emerald-400 to-teal-500'
                   : isComplete
-                    ? 'bg-gradient-to-r from-amber-400 to-orange-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]'
-                    : 'bg-gradient-to-r from-indigo-500 to-violet-500'
+                    ? 'bg-linear-to-r from-amber-400 to-orange-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]'
+                    : 'bg-linear-to-r from-indigo-500 to-violet-500'
               }`}
             />
           </div>
@@ -339,7 +339,7 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0, gssocE
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.96 }}
             onClick={() => claimXP(quest.id, quest.rewardXP, isWeekly)}
-            className="mt-4 w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-black uppercase tracking-wider shadow-md hover:shadow-lg transition-shadow flex items-center justify-center gap-2"
+            className="mt-4 w-full py-2.5 rounded-xl bg-linear-to-r from-amber-500 to-orange-500 text-white text-xs font-black uppercase tracking-wider shadow-md hover:shadow-lg transition-shadow flex items-center justify-center gap-2"
           >
             <Gift className="w-3.5 h-3.5" />
             Claim {quest.rewardXP} XP
@@ -353,7 +353,7 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0, gssocE
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-gradient-to-br from-emerald-400/20 to-teal-400/10 rounded-2xl pointer-events-none"
+              className="absolute inset-0 bg-linear-to-br from-emerald-400/20 to-teal-400/10 rounded-2xl pointer-events-none"
             />
           )}
         </AnimatePresence>
@@ -445,7 +445,7 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0, gssocE
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: totalAvailableXP > 0 ? `${(claimedXP / totalAvailableXP) * 100}%` : '0%' }}
-            className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500"
+            className="h-full rounded-full bg-linear-to-r from-violet-500 to-fuchsia-500"
           />
         </div>
       </div>

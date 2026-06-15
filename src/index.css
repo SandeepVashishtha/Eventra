@@ -551,6 +551,14 @@ html {
 /* Lenis smooth scrolling styles */
 html.lenis {
   height: auto;
+  overflow-x: hidden !important; /* Forces horizontal cutoff on html */
+}
+
+/* Overrides the dynamic inline body overflow: auto rules */
+body[style] {
+  overflow-x: hidden !important;
+  position: relative !important;
+  max-width: 100vw !important;
 }
 
 .lenis.lenis-smooth {

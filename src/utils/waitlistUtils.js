@@ -38,7 +38,9 @@ export const addLocalNotification = async (title, message) => {
     const raw = localStorage.getItem(canonicalKey);
     const notifications = raw ? safeJsonParse(raw, []) : [];
     const newNotification = {
-      id: `local-${Date.now()}-${Math.floor(Math.random() * 1e9)}`,
+      id: typeof crypto !== "undefined" && crypto.randomUUID
+        ? `local-${crypto.randomUUID()}`
+        : `local-${Date.now()}-${Math.floor(Math.random() * 1e9)}`,
       isRead: false,
       createdAt: new Date().toISOString(),
       timestamp: new Date().toISOString(),

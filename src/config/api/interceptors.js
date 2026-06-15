@@ -3,7 +3,7 @@ import { getCSRFToken, requiresCSRF } from "../../utils/csrfToken.js";
 import { logger } from "../../utils/logger.js";
 import { ApiError, RateLimitError, CSRFError } from "./errors.js";
 
-const RETRYABLE_STATUS_CODES = [502, 503, 504];
+const RETRYABLE_STATUS_CODES = [500, 502, 503, 504];
 const RETRYABLE_METHODS = new Set(["GET", "HEAD", "OPTIONS", "TRACE"]);
 const MAX_RETRIES = 1;
 const RETRY_DELAY_MS = 1_000;

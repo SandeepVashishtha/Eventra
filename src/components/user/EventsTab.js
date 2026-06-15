@@ -464,6 +464,27 @@ const normalizedSearch = debouncedTerm.trim().toLowerCase();
     [section]: !prev[section],
   }));
 };
+
+const togglePinnedEvent = (event) => {
+  const exists = pinnedEvents.some(
+    (item) => item.id === event.id
+  );
+
+  if (exists) {
+    setPinnedEvents((prev) =>
+      prev.filter((item) => item.id !== event.id)
+    );
+
+    toast.info("Event unpinned");
+  } else {
+    setPinnedEvents((prev) => [
+      event,
+      ...prev,
+    ]);
+
+    toast.success("Event pinned");
+  }
+};
   const handleCancelClick = (id, title) => setCancelTarget({ id, title });
   const handleCancelDismiss = () => setCancelTarget(null);
   const handleCancelConfirm = useCallback(() => {
@@ -679,7 +700,7 @@ const applyPreset = (preset) => {
               {filteredRegisteredEvents.length > 0 && (
                 <section className="space-y-4">
                   <div className="ud-tab-header">
-                    <h3 className="ud-page-title bg-gradient-to-r from-indigo-600 to-pink-600 bg-clip-text text-transparent font-extrabold">
+                    <h3 className="ud-page-title bg-linear-to-r from-indigo-600 to-pink-600 bg-clip-text text-transparent font-extrabold">
                       <Ticket size={18} /> Registered Events
                     </h3>
                     <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">

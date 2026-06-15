@@ -156,7 +156,7 @@ export default function EventHero({
         className="absolute inset-0 bg-[url('/assets/eventbg.png')] bg-cover bg-center bg-no-repeat"
         aria-hidden="true"
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-blue-50/80 via-indigo-50/40 to-white dark:from-slate-950/90 dark:via-slate-900/70 dark:to-slate-950/95" />
+      <div className="absolute inset-0 bg-linear-to-b from-blue-50/80 via-indigo-50/40 to-white dark:from-slate-950/90 dark:via-slate-900/70 dark:to-slate-950/95" />
 
       <div className="relative z-10 flex flex-col items-center justify-center px-4 py-16 sm:py-20 md:py-24">
         <h1
@@ -164,7 +164,7 @@ export default function EventHero({
           style={{ fontFamily: '"Big Shoulders Display", sans-serif' }}
         >
           Discover{" "}
-          <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+          <span className="bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
             Events
           </span>
         </h1>

@@ -458,7 +458,7 @@ export default function LeaderBoard() {
         badgeClass: "bg-yellow-400 text-yellow-950 shadow-[0_2px_10px_rgba(234,179,8,0.3)]",
         size: "h-22 w-22",
         pointsClass: "text-amber-500",
-        medalClass: "bg-gradient-to-r from-yellow-400 to-amber-500 text-amber-950",
+        medalClass: "bg-linear-to-r from-yellow-400 to-amber-500 text-amber-950",
       },
       isFirst: true,
     },

@@ -11,7 +11,9 @@ const getSalt = () => {
   try {
     let salt = localStorage.getItem("eventra:storage-key-salt");
     if (!salt) {
-      salt = Math.random().toString(36).substring(2) + Date.now().toString(36);
+      salt = typeof crypto !== "undefined" && crypto.randomUUID 
+        ? crypto.randomUUID() 
+        : Math.random().toString(36).substring(2) + Date.now().toString(36);
       localStorage.setItem("eventra:storage-key-salt", salt);
     }
     return salt;
