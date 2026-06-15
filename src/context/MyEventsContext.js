@@ -40,8 +40,32 @@ import { useAuth } from "./AuthContext";
 
 import { saveToOfflineCache, getFromOfflineCache, removeFromOfflineCache } from "../utils/indexedDB";
 import { getOrMigrateKey } from "../utils/storageKeyManager";
+import { safeJsonParse } from "../utils/safeJsonParse";
 
 const MyEventsContext = createContext(null);
+
+export const reconcileRegistrations = (listA, listB) => {
+  const merged = new Map();
+  const processList = (list) => {
+    if (!Array.isArray(list)) return;
+    for (const item of list) {
+      if (!item || typeof item.eventId === "undefined") continue;
+      const existing = merged.get(item.eventId);
+      if (!existing) {
+        merged.set(item.eventId, item);
+      } else {
+        const timeExisting = new Date(existing.registeredAt || 0).getTime();
+        const timeNew = new Date(item.registeredAt || 0).getTime();
+        if (timeNew > timeExisting) {
+          merged.set(item.eventId, item);
+        }
+      }
+    }
+  };
+  processList(listA);
+  processList(listB);
+  return Array.from(merged.values());
+};
 
 // Use a hashed or opaque key so the localStorage key itself does not expose
 // the userId (which is often the user's email address).
@@ -80,23 +104,72 @@ const toPersistedRecord = (eventId, registeredAt, event, registrationId, qrToken
 // IndexedDB helpers
 // ---------------------------------------------------------------------------
 
-const loadFromIDB = async (userId) => {
+export const loadFromIDB = async (userId) => {
   if (!userId) return [];
   const key = storageKey(userId);
-  const data = await getFromOfflineCache(key, null);
-  if (data !== null) {
-    return Array.isArray(data) ? data : [];
-  }
   const legacyKey = `my_events_${userId}`;
-  if (key !== legacyKey) {
-    const legacyData = await getFromOfflineCache(legacyKey, null);
-    if (legacyData !== null) {
-      await saveToOfflineCache(key, legacyData);
-      await removeFromOfflineCache(legacyKey);
-      return Array.isArray(legacyData) ? legacyData : [];
+  // 1. Get current IndexedDB data for both key and legacyKey
+  let idbData = await getFromOfflineCache(key, null);
+  let hasLegacyIDB = false;
+
+  if (idbData === null) {
+    // If no primary data, check legacy IDB
+    if (key !== legacyKey) {
+      const legacyVal = await getFromOfflineCache(legacyKey, null);
+      if (legacyVal !== null) {
+        idbData = Array.isArray(legacyVal) ? legacyVal : [];
+        hasLegacyIDB = true;
+      } else {
+        idbData = [];
+      }
+    } else {
+      idbData = [];
+    }
+  } else if (!Array.isArray(idbData)) {
+    idbData = [];
+  }
+
+  // 2. Fetch localStorage data under both key and legacyKey to be reconciled
+  let lsData = [];
+  let foundKeyInLS = null;
+
+  try {
+    const rawNew = localStorage.getItem(key);
+    if (rawNew) {
+      lsData = safeJsonParse(rawNew, []);
+      foundKeyInLS = key;
+    } else if (key !== legacyKey) {
+      const rawLegacy = localStorage.getItem(legacyKey);
+      if (rawLegacy) {
+        lsData = safeJsonParse(rawLegacy, []);
+        foundKeyInLS = legacyKey;
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  // 3. Reconcile IndexedDB and localStorage
+  const reconciled = reconcileRegistrations(idbData, lsData);
+
+  // 4. Save the reconciled results back to IndexedDB (key)
+  if (lsData.length > 0 || hasLegacyIDB || key !== legacyKey) {
+    await saveToOfflineCache(key, reconciled);
+  }
+
+  // 5. Clean up old/legacy storages
+  if (foundKeyInLS) {
+    try {
+      localStorage.removeItem(foundKeyInLS);
+    } catch {
+      // ignore
     }
   }
-  return [];
+  if (hasLegacyIDB) {
+    await removeFromOfflineCache(legacyKey);
+  }
+
+  return reconciled;
 };
 
 const saveToIDB = async (userId, records) => {
