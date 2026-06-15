@@ -33,6 +33,7 @@ import EventTicket from "./EventTicket";
 import EmptyState from "../common/EmptyState";
 import DashboardEmptyState from "./DashboardEmptyState";
 import OfflineIndicator from "../common/OfflineIndicator";
+import RecentlyViewedEvents from "../common/RecentlyViewedEvents";
 
 const fadeUp = (prefersReducedMotion) => ({
   hidden: { opacity: 0, y: 24 },
@@ -415,6 +416,10 @@ export default function UserDashboard() {
                         <ChevronRight size={14} className="ud-quick-arrow" />
                       </Link>
                     </div>
+                  </motion.section>
+
+                  <motion.section custom={1.5} variants={fadeUp(prefersReducedMotion)}>
+                    <RecentlyViewedEvents />
                   </motion.section>
 
                   <div className="ud-three-col">

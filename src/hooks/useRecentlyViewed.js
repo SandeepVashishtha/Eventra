@@ -11,13 +11,13 @@ import { logger } from "../utils/logger";
  * The key used to persist recently viewed events in localStorage.
  * @type {string}
  */
-const STORAGE_KEY = 'eventra_recently_viewed';
+const STORAGE_KEY = 'recentlyViewedEvents';
 
 /**
  * The maximum number of recently viewed items to retain.
  * @type {number}
  */
-const MAX_ITEMS = 10;
+const MAX_ITEMS = 5;
 
 /**
  * Time-to-live (TTL) duration for recently viewed entries (7 days in milliseconds).
@@ -45,15 +45,18 @@ export const RECENTLY_VIEWED_TTL_MS = 7 * 24 * 60 * 60 * 1000;
  * @param {Object} event - The full event object.
  * @returns {RecentlyViewedEntry} A lightweight representation of the event for display cards.
  */
-const toRecentlyViewedEntry = (event) => ({
-  id: event?.id,
-  title: event?.title ?? "",
-  date: event?.date ?? "",
-  location: event?.location ?? "",
-  image: event?.image ?? event?.imageUrl ?? "",
-  category: event?.category ?? event?.type ?? "",
-  viewedAt: Date.now(),
-});
+const toRecentlyViewedEntry = (event) => {
+  const eventId = event?.id ?? event?._id ?? event?.eventId ?? event?.slug ?? "";
+  return {
+    id: eventId,
+    title: event?.title ?? event?.name ?? "",
+    date: event?.date ?? "",
+    location: event?.location ?? "",
+    image: event?.image ?? event?.imageUrl ?? "",
+    category: event?.category ?? event?.type ?? "",
+    viewedAt: Date.now(),
+  };
+};
 
 /**
  * Checks if a recently viewed entry is still within the allowable TTL window (fresh).
@@ -72,7 +75,7 @@ const isEntryFresh = (entry) => {
  *
  * ### Hook Overview
  * This hook maintains a user's local navigation history of events. It optimizes storage by
- * pruning unused properties, limits retention to a max of 10 items, and evicts entries older than
+ * pruning unused properties, limits retention to a max of 5 items, and evicts entries older than
  * 7 days. Additionally, it implements cross-tab synchronization so changes in one browser window
  * immediately reflect in others.
  *
@@ -105,20 +108,7 @@ const isEntryFresh = (entry) => {
  *   // To track a new event
  *   // addRecentlyViewed(currentEvent);
  *
- *   return (
- *     <div>
- *       <h2>Recently Viewed Events</h2>
- *       <button onClick={clearHistory}>Clear All</button>
- *       <ul>
- *         {recentlyViewed.map(event => (
- *           <li key={event.id}>
- *             {event.title}
- *             <button onClick={() => removeRecentlyViewed(event.id)}>Remove</button>
- *           </li>
- *         ))}
- *       </ul>
- *     </div>
- *   );
+ *   // ...
  * };
  */
 const useRecentlyViewed = () => {
@@ -174,10 +164,11 @@ const useRecentlyViewed = () => {
    * @param {Object} event - Event object to track.
    */
   const addRecentlyViewed = useCallback((event) => {
-    if (!event || !event.id) return;
+    const eventId = event?.id ?? event?._id ?? event?.eventId ?? event?.slug;
+    if (!event || !eventId) return;
 
     setRecentlyViewed((prev) => {
-      const filtered = prev.filter((e) => e.id !== event.id);
+      const filtered = prev.filter((e) => String(e.id) !== String(eventId));
       const entry = toRecentlyViewedEntry(event);
       return [entry, ...filtered].slice(0, MAX_ITEMS);
     });
@@ -188,7 +179,7 @@ const useRecentlyViewed = () => {
    * @param {string|number} eventId
    */
   const removeRecentlyViewed = useCallback((eventId) => {
-    setRecentlyViewed((prev) => prev.filter((e) => e.id !== eventId));
+    setRecentlyViewed((prev) => prev.filter((e) => String(e.id) !== String(eventId)));
   }, []);
 
   /**

@@ -155,6 +155,10 @@ const RecentlyViewedEvents = ({ maxVisible = 6, onEventClick }) => {
                   <span aria-hidden="true">📍</span> {event.location}
                 </p>
               )}
+
+              <div className="mt-auto pt-2 text-indigo-600 dark:text-indigo-400 font-semibold text-xs flex items-center gap-1 hover:underline">
+                Open Event <span aria-hidden="true">→</span>
+              </div>
             </div>
           </article>
         ))}

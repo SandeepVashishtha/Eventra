@@ -39,7 +39,8 @@ const isRequestCanceled = (error, signal) =>
   error?.code === "ERR_CANCELED";
 
 const EventDetails = () => {
-  const { eventId } = useParams();
+  const { eventId: routeEventId, id: routeId } = useParams();
+  const eventId = routeEventId || routeId;
   const navigate = useNavigate();
   const { user } = useAuth();
   const { addRecentlyViewed } = useRecentlyViewed();
