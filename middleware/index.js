@@ -1,10 +1,38 @@
 import { createConcurrencyLimiter } from "../api/_lib/concurrency.js";
 import { checkGeoBlock } from "./geo.js";
 import { checkRateLimit } from "./rate-limit.js";
-import { verifyTicketAccess } from "./jwt.js";
+import { verifyTicketAccess, verifyJwt, parseTokenFromCookie } from "./jwt.js";
 import { addSecurityHeaders, validateBackendOrigin, getBackendOrigins, createSecurityHeaders } from "./csp.js";
 
 const validationLimiter = createConcurrencyLimiter(5);
+
+const getSessionRiskState = async (sessionId) => {
+  const kvUrl = process.env.KV_REST_API_URL;
+  const kvToken = process.env.KV_REST_API_TOKEN;
+  if (!kvUrl || !kvToken) return "active";
+
+  try {
+    const res = await fetch(`${kvUrl}/get/session:${sessionId}`, {
+      headers: { Authorization: `Bearer ${kvToken}` }
+    });
+    if (!res.ok) return "active";
+    const data = await res.json();
+    if (!data || !data.result) return "invalidated";
+    
+    let sessionData = data.result;
+    if (typeof sessionData === 'string') {
+       sessionData = JSON.parse(sessionData);
+    }
+    
+    // Check inactivity (2 hours)
+    if (Date.now() - sessionData.lastActive > 2 * 60 * 60 * 1000 && sessionData.status === "active") {
+       return "requires_reauth";
+    }
+    return sessionData.status || "active";
+  } catch(e) {
+    return "active";
+  }
+};
 
 export const config = {
   matcher: "/api/:path*",
@@ -43,6 +71,7 @@ async function handleRequest(request) {
       "/api/auth/login",
       "/api/auth/signup",
       "/api/auth/reset-password",
+      "/api/auth/reauth",
       "/api/events",
       "/api/hackathons",
       "/api/projects",
@@ -58,13 +87,25 @@ async function handleRequest(request) {
     );
 
     if (!isPublicPath) {
-      const cookieHeader = request.headers.get("cookie") || "";
-      const tokenMatch = cookieHeader.match(/(?:^|;\s*)token\s*=\s*([^;]*)/);
-      if (!tokenMatch || !tokenMatch[1]) {
+      const token = parseTokenFromCookie(request);
+      if (!token) {
         return new Response(
           JSON.stringify({ error: "Unauthorized: Missing active user session" }),
           { status: 401, headers: { "Content-Type": "application/json" } }
         );
+      }
+
+      const jwtSecret = process.env.JWT_SECRET;
+      if (jwtSecret) {
+        const payload = await verifyJwt(token, jwtSecret);
+        if (payload && payload.sessionId) {
+          const status = await getSessionRiskState(payload.sessionId);
+          if (status === "invalidated") {
+             return new Response(JSON.stringify({ error: "Session invalidated" }), { status: 401, headers: { "Content-Type": "application/json" }});
+          } else if (status === "requires_reauth") {
+             return new Response(JSON.stringify({ error: "Re-authentication required", code: "REQUIRES_REAUTH" }), { status: 401, headers: { "Content-Type": "application/json" }});
+          }
+        }
       }
     }
   }
