@@ -802,13 +802,13 @@ const HackathonHub = () => {
                   </motion.div>
 
                   <h3 className="mt-6 text-2xl font-bold text-slate-900 dark:text-gray-100">
-                    No Hackathons Found
+                    No hackathons available right now
                   </h3>
 
                   <p className="mt-3 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
                     {debouncedSearchQuery || filters.difficulty || filters.prize || filters.location || selectedTags.length > 0
-                      ? "No hackathons match your current filters. Try adjusting your search or filters."
-                      : "Check back later for exciting new hackathons!"}
+                      ? "No hackathons match your current filters. Try adjusting your search or filters, or check back later."
+                      : "Be the first to host one or check back later for upcoming opportunities."}
                   </p>
 
                   <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
