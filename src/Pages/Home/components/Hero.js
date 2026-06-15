@@ -263,7 +263,7 @@ const Hero = () => {
     [t]
   );
 
-  return (
+return (
     <section ref={containerRef} className="relative overflow-hidden pb-16">
       <motion.div style={{ y: isTouch ? 0 : yText, opacity: opacityHero }}>
         <motion.h1 className="text-4xl font-bold text-center">
@@ -283,19 +283,27 @@ const Hero = () => {
 
         {!searchTerm && (
           <motion.div className="grid grid-cols-3 gap-4 mt-10">
-            {stats.map((s) => (
-              <motion.div key={s.label} className="p-4 border rounded-xl">
-                <s.icon />
-                <div>
-                  {statsReady ? (
-                    <CountUp end={s.value} suffix={s.suffix} />
-                  ) : (
-                    `${s.value}${s.suffix}`
-                  )}
-                </div>
-                <div>{s.label}</div>
-              </motion.div>
-            ))}
+            {stats.map((s) => {
+              // 1. Assign to a Capitalized variable so React recognizes it as a component
+              const IconComponent = s.icon; 
+              
+              return (
+                <motion.div key={s.label} className="p-4 border rounded-xl">
+                  {/* Render the capitalized component variable */}
+                  <IconComponent className="w-6 h-6 mb-2" /> 
+                  
+                  <div>
+                    {statsReady ? (
+                      <CountUp end={s.value} suffix={s.suffix} />
+                    ) : (
+                      // 2. Wrapped the template literal inside JSX evaluation braces
+                      <span>{`${s.value}${s.suffix}`}</span>
+                    )}
+                  </div>
+                  <div>{s.label}</div>
+                </motion.div>
+              );
+            })}
           </motion.div>
         )}
       </motion.div>
