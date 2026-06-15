@@ -1,3 +1,5 @@
+import { safeJsonParse } from "./safeJsonParse.js";
+import { logger } from "./logger.js";
 // 🔥 FIX: In-memory queue and lock to prevent localStorage race conditions
 let isUpdating = false;
 let interestQueue = [];
@@ -15,7 +17,7 @@ const isStorageAvailable = () => {
       localStorage.removeItem(testKey);
     }
     return true;
-  } catch (e) {
+  } catch {
     return false;
   }
 };
@@ -34,10 +36,10 @@ const processInterestQueue = () => {
     try {
       const raw = localStorage.getItem("eventra_user_profile");
       if (raw) {
-        existing = JSON.parse(raw) || {};
+        existing = safeJsonParse(raw, {}) || {};
       }
     } catch (parseError) {
-      console.warn("Failed to parse user profile JSON, resetting it:", parseError);
+      logger.warn("Failed to parse user profile JSON, resetting it:", parseError);
     }
 
     let interests = existing.interests || [];
@@ -64,7 +66,7 @@ const processInterestQueue = () => {
       );
     }
   } catch (error) {
-    console.error("Failed to update user interests:", error);
+    logger.error("Failed to update user interests:", error);
     interestQueue = []; // Clear the queue on persistent error to avoid infinite recursion
   } finally {
     isUpdating = false;
@@ -90,6 +92,6 @@ export const clearActivityHistory = () => {
       localStorage.removeItem("eventra_user_profile");
     }
   } catch (error) {
-    console.error("Failed to clear activity history:", error);
+    logger.error("Failed to clear activity history:", error);
   }
 };
