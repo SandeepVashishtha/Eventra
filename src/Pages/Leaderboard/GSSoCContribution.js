@@ -125,12 +125,6 @@ const useToast = () => {
 };
 
 // ============ UTILITY FUNCTIONS ============
-const getStatusColor = (status) => ({
-  completed: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800",
-  current: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800 animate-pulse",
-  upcoming: "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 border-gray-200 dark:border-gray-600"
-}[status]);
-
 const formatNumber = (num) => num >= 1000 ? `${(num/1000).toFixed(1)}k` : num;
 
 // ============ REUSABLE COMPONENTS (Memoized) ============
@@ -255,28 +249,39 @@ AchievementBadge.displayName = "AchievementBadge";
 
 const TimelineItem = memo(({ item, isLast }) => {
   const Icon = item.icon;
-  const statusColors = getStatusColor(item.status);
-  
+  const isCompleted = item.status === "completed";
+  const isCurrent = item.status === "current";
+
   return (
-    <div className="flex gap-4" role="listitem">
-      <div className="flex flex-col items-center">
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${statusColors}`}
-          aria-label={`${item.phase}: ${item.status}`}
-        >
-          <Icon className="w-5 h-5" aria-hidden="true" />
-        </motion.div>
-        {!isLast && (
-          <div className={`w-0.5 flex-1 my-2 ${item.status === 'completed' ? 'bg-green-400' : 'bg-gray-300 dark:bg-gray-600'}`} aria-hidden="true" />
-        )}
-      </div>
-      <div className="pb-6">
-        <h4 className="font-medium text-gray-900 dark:text-white">{item.phase}</h4>
-        <p className="text-sm text-gray-500 dark:text-gray-400">{item.date}</p>
-        {item.status === 'current' && (
-          <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded-full">
+    <div className="flex flex-col items-center flex-1 relative" role="listitem">
+      {!isLast && (
+        <div className={`absolute top-5 left-[calc(50%+1.25rem)] w-[calc(100%-2.5rem)] h-0.5 ${
+          isCompleted ? "bg-green-400" : "bg-gray-200 dark:bg-gray-600"
+        }`} aria-hidden="true" />
+      )}
+      <motion.div
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors ${
+          isCompleted
+            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-green-400 dark:border-green-600"
+            : isCurrent
+            ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-500 dark:border-blue-400 ring-4 ring-blue-200 dark:ring-blue-900/40"
+            : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400 border-gray-300 dark:border-gray-600"
+        }`}
+        aria-label={`${item.phase}: ${item.status}`}
+      >
+        <Icon className="w-5 h-5" aria-hidden="true" />
+      </motion.div>
+      <div className="mt-2 text-center">
+        <p className={`text-xs sm:text-sm font-medium ${
+          isCurrent ? "text-blue-700 dark:text-blue-400" : isCompleted ? "text-green-700 dark:text-green-400" : "text-gray-500 dark:text-gray-400"
+        }`}>
+          {item.phase}
+        </p>
+        <p className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500">{item.date}</p>
+        {isCurrent && (
+          <span className="inline-block mt-1 px-2 py-0.5 text-[10px] font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded-full whitespace-nowrap">
             In Progress
           </span>
         )}
@@ -764,12 +769,15 @@ const timeLeft = useCountdown(
 
         {/* 📅 Timeline */}
         <motion.section variants={itemVariants} className="p-4 sm:p-6 rounded-2xl bg-card-bg border border-gray-200 dark:border-gray-700 mb-6 sm:mb-8">
-          <div className="flex items-center gap-2 mb-4 sm:mb-6">
+          <div className="flex items-center gap-2 mb-6">
             <Calendar className="w-5 h-5 text-purple-500" aria-hidden="true" />
             <h3 className="font-semibold text-gray-900 dark:text-white">Program Timeline</h3>
+            <span className="ml-auto text-xs text-gray-400">
+              {Math.round(GSSOC_TIMELINE.filter(s => s.status === 'completed' || s.status === 'current').length / GSSOC_TIMELINE.length * 100)}% Complete
+            </span>
           </div>
           
-          <div className="relative pl-2" role="list" aria-label="Program timeline">
+          <div className="relative flex items-start justify-between gap-0" role="list" aria-label="Program timeline">
             {GSSOC_TIMELINE.map((item, idx) => (
               <TimelineItem key={item.phase} item={item} isLast={idx === GSSOC_TIMELINE.length - 1} />
             ))}
