@@ -83,6 +83,18 @@ const EventCard = ({
       })
     : "—";
 
+    const handleCopyLink = async () => {
+  try {
+    const eventLink = `${window.location.origin}/events/${event.id || event.eventId}`;
+
+    await navigator.clipboard.writeText(eventLink);
+
+    toast.success("Link copied successfully");
+  } catch (error) {
+    toast.error("Failed to copy link");
+  }
+};
+
   return (
     <motion.div
       className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl flex flex-col overflow-hidden"
