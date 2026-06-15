@@ -24,6 +24,9 @@ import { buildCorsHeaders, corsResponse } from "./_cors.js";
 import { isStorageHealthy, getUserByEmail, getUserByUsername } from "./_user-storage.js";
 import { trackFailedLogin, clearFailedLogin, registerSession } from "../_lib/sessionRisk.js";
 
+const DUMMY_BCRYPT_HASH =
+  "$2b$10$v18wNUUU7wTXyTbRPTFZTeze3aHS//qr4FKA9gu1E/GfNQqTsFfRG";
+
 /**
  * Validates the login request body.
  *
@@ -122,19 +125,19 @@ export default async function login(req, res, deps = {}) {
   }
 
   const clientIp = getClientIp(req);
+
   try {
-    const rateLimitResult = loginRateLimiter.checkAsync 
-      ? await loginRateLimiter.checkAsync(clientIp)
-      : loginRateLimiter.check(clientIp);
-    
-    if (!rateLimitResult.allowed) {
+    await enforceRateLimit(loginRateLimiter, clientIp);
+  } catch (error) {
+    if (error.status === 429) {
       return corsResponse(req, res, 429, {
         success: false,
         message: "Too many authentication attempts. Please try again later.",
       });
     }
-  } catch (rateLimitError) {
-    console.error('[login] Rate limit check failed:', rateLimitError.message);
+
+    console.error("[login] Rate limit check failed:", error);
+
     return corsResponse(req, res, 500, {
       success: false,
       message: "Rate limiting service unavailable. Please try again later.",
@@ -183,8 +186,7 @@ export default async function login(req, res, deps = {}) {
   try {
     const user = await mergedDeps.findUserByEmail(usernameOrEmail);
 
-    const dummyHash = "$2b$10$v18wNUUU7wTXyTbRPTFZTeze3aHS//qr4FKA9gu1E/GfNQqTsFfRG";
-    const passwordHash = user?.password ?? dummyHash;
+    const passwordHash = user?.password ?? DUMMY_BCRYPT_HASH;
     const isValid = await mergedDeps.comparePassword(password, passwordHash);
 
     if (!user || !isValid) {
