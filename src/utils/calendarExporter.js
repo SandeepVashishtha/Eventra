@@ -136,9 +136,15 @@ export const generateOutlookLink = (event) => {
   const { title, description, date, endDate, location } = event;
   const startDate = new Date(date);
   if (isNaN(startDate.getTime())) return null;
-  
+
   const start = startDate.toISOString();
-  const end = endDate ? new Date(endDate).toISOString() : new Date(startDate.getTime() + 2 * 60 * 60 * 1000).toISOString();
+  const fallbackEnd = new Date(startDate.getTime() + 2 * 60 * 60 * 1000).toISOString();
+  // Use formatToICSDate for safe validation — matches the pattern used by
+  // generateGoogleCalendarLink and generateYahooCalendarLink. Falls back to
+  // the 2-hour default if endDate is absent or an invalid date string.
+  const end = endDate
+    ? (formatToICSDate(endDate) ? new Date(endDate).toISOString() : fallbackEnd)
+    : fallbackEnd;
 
   const baseUrl = "https://outlook.live.com/calendar/0/deeplink/compose";
   const params = new URLSearchParams({
