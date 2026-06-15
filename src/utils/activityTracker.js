@@ -61,9 +61,20 @@ const processInterestQueue = async () => {
     }
 
     if (modified) {
+      // Deep Fix: Fetch absolute latest profile right before writing to prevent Read-Modify-Write clobbering
+      let freshExisting = existing;
+      try {
+        const freshRaw = await syncSecureStorage.getItemAsync("eventra_user_profile");
+        if (freshRaw) {
+          freshExisting = safeJsonParse(freshRaw, {}) || {};
+        }
+      } catch (e) {
+        logger.warn("Failed to fetch fresh profile during merge", e);
+      }
+
       await syncSecureStorage.setItem(
         "eventra_user_profile",
-        JSON.stringify({ ...existing, interests })
+        JSON.stringify({ ...freshExisting, interests })
       );
     }
   } catch (error) {
