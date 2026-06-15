@@ -23,11 +23,7 @@ const SearchFilter = () => {
   const [favorites, setFavorites] = useState(() => {
     const saved = localStorage.getItem("favoriteEvents");
     return saved ? JSON.parse(saved) : [];
-<<<<<<< HEAD
 });
-=======
-  });
->>>>>>> upstream/master
 
   const categories = [
     { value: "all", label: "All Categories" },
@@ -51,7 +47,6 @@ const SearchFilter = () => {
 
   // Sync debounced inputs cleanly back to the URL parameters without causing structural render locks
   useEffect(() => {
-<<<<<<< HEAD
     if(typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
 
@@ -82,11 +77,6 @@ const SearchFilter = () => {
     );
   }, [favorites]);
   
-=======
-    localStorage.setItem("favoriteEvents", JSON.stringify(favorites));
-  }, [favorites]);
-
->>>>>>> upstream/master
   const mockEvents = [
     {
       id: 1,
@@ -212,16 +202,6 @@ const SearchFilter = () => {
     }
     return matchesSearch && matchesCategory && matchesLocation && matchesPrice && matchesDate;
   });
-<<<<<<< HEAD
-=======
-
-  const handleResetFilters = () => {
-    setSearchTerm("");
-    setSelectedCategory("all");
-    setSelectedLocation("all");
-    setPriceFilter("all");
-  };
->>>>>>> upstream/master
 
   return (
     <div className="search-filter-container bg-gray-50 dark:bg-black">
@@ -242,18 +222,8 @@ const SearchFilter = () => {
 
       {/* Search Bar */}
       <motion.div
-<<<<<<< HEAD
         whileHover={{scale: 1.03, y: -5}}
         whileTap={{scale: 0.98}}
-=======
-        whileHover={{
-          scale: 1.03,
-          y: -5,
-        }}
-        whileTap={{
-          scale: 0.98,
-        }}
->>>>>>> upstream/master
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.6 }}
