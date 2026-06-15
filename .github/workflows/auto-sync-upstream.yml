@@ -14,6 +14,9 @@ permissions:
   contents: write
   pull-requests: write
 
+env:
+  UPSTREAM_REPO: ${{ github.repository }}
+
 jobs:
   gather-prs:
     name: Gather PRs to Sync
@@ -53,10 +56,32 @@ jobs:
           GH_TOKEN: ${{ secrets.BOT_PAT || secrets.GITHUB_TOKEN }}
         run: |
           PR_NUM=${{ matrix.pr }}
-          data=$(gh pr view $PR_NUM --repo ${{ github.repository }} --json isDraft,headRepository,headRefName)
+          data=$(gh pr view $PR_NUM --repo ${{ github.repository }} --json isDraft,headRepository,headRefName,headRepositoryOwner)
           echo "isDraft=$(echo "$data" | jq -r '.isDraft')" >> $GITHUB_OUTPUT
           echo "headRepo=$(echo "$data" | jq -r '.headRepository.nameWithOwner')" >> $GITHUB_OUTPUT
           echo "headRef=$(echo "$data" | jq -r '.headRefName')" >> $GITHUB_OUTPUT
+          echo "headOwner=$(echo "$data" | jq -r '.headRepositoryOwner.login')" >> $GITHUB_OUTPUT
+          echo "isFork=$(echo "$data" | jq -r '.headRepository.nameWithOwner != "${{ github.repository }}"')" >> $GITHUB_OUTPUT
+
+      - name: Determine push token for fork PRs
+        id: token
+        env:
+          GH_TOKEN: ${{ secrets.BOT_PAT || secrets.GITHUB_TOKEN }}
+        run: |
+          IS_FORK="${{ steps.metadata.outputs.isFork }}"
+          if [ "$IS_FORK" = "true" ]; then
+            if [ -n "${{ secrets.BOT_PAT }}" ]; then
+              echo "push_token=${{ secrets.BOT_PAT }}" >> $GITHUB_OUTPUT
+              echo "pushable=true" >> $GITHUB_OUTPUT
+            else
+              echo "::warning::Fork PR detected but BOT_PAT secret is not set — cannot auto-push."
+              echo "push_token=" >> $GITHUB_OUTPUT
+              echo "pushable=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "push_token=${{ secrets.GITHUB_TOKEN }}" >> $GITHUB_OUTPUT
+            echo "pushable=true" >> $GITHUB_OUTPUT
+          fi
 
       - name: Checkout PR branch
         if: steps.metadata.outputs.isDraft != 'true'
@@ -64,7 +89,7 @@ jobs:
         with:
           repository: ${{ steps.metadata.outputs.headRepo }}
           ref: ${{ steps.metadata.outputs.headRef }}
-          token: ${{ secrets.BOT_PAT || secrets.GITHUB_TOKEN }}
+          token: ${{ steps.token.outputs.pushable == 'true' && steps.token.outputs.push_token || secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
       - name: Setup Node
@@ -77,6 +102,8 @@ jobs:
         if: steps.metadata.outputs.isDraft != 'true'
         env:
           PR_NUM: ${{ matrix.pr }}
+          PUSH_TOKEN: ${{ steps.token.outputs.push_token }}
+          PUSHABLE: ${{ steps.token.outputs.pushable }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -84,18 +111,36 @@ jobs:
           git remote add upstream "https://github.com/${{ github.repository }}.git" || true
           git fetch upstream master
 
+          # Try clean merge first
           if git merge upstream/master --no-edit -m "chore: merge upstream master to sync branch"; then
-            echo "PR #$PR_NUM: clean merge, pushing..."
-            git push origin "HEAD:${{ steps.metadata.outputs.headRef }}"
+            if [ "$PUSHABLE" = "true" ]; then
+              git remote set-url origin "https://x-access-token:${PUSH_TOKEN}@github.com/${{ steps.metadata.outputs.headRepo }}.git"
+              git push origin "HEAD:${{ steps.metadata.outputs.headRef }}"
+              echo "PR #$PR_NUM: clean merge synced and pushed"
+            else
+              echo "::warning::PR #$PR_NUM: clean merge succeeded but cannot push to fork (set BOT_PAT secret)"
+              gh pr comment $PR_NUM --repo ${{ github.repository }} --body-file - <<'BODY'
+🔄 Upstream master was merged cleanly into this branch, but auto-push to your fork requires the `BOT_PAT` secret.
+
+To sync manually:
+```bash
+git remote add upstream https://github.com/${{ github.repository }}.git
+git fetch upstream
+git merge upstream/master
+git push origin ${{ steps.metadata.outputs.headRef }}
+```
+BODY
+            fi
             exit 0
           fi
 
+          # Handle conflicts
           CONFLICT_FILES=$(git diff --name-only --diff-filter=U)
           echo "Conflicted files: $CONFLICT_FILES"
 
           ONLY_MINIFIED=true
           for file in $CONFLICT_FILES; do
-            if ! echo "$file" | grep -Eq "^dist/assets/.*\.(css|js)$"; then
+            if ! echo "$file" | grep -Eq "^(build/|dist/assets/.*\.(css|js))$"; then
               ONLY_MINIFIED=false
               break
             fi
@@ -108,13 +153,39 @@ jobs:
               git add "$file"
             done
             npm ci
-            npm run build
-            git add dist/
-            git commit -m "chore: resolve minified bundle conflicts and rebuild"
-            git push origin "HEAD:${{ steps.metadata.outputs.headRef }}"
-            echo "PR #$PR_NUM: auto-resolved and pushed"
+            npm run build 2>/dev/null || true
+            git add build/ dist/ 2>/dev/null || true
+            git commit -m "chore: resolve minified bundle conflicts and rebuild" || true
+            if [ "$PUSHABLE" = "true" ]; then
+              git remote set-url origin "https://x-access-token:${PUSH_TOKEN}@github.com/${{ steps.metadata.outputs.headRepo }}.git"
+              git push origin "HEAD:${{ steps.metadata.outputs.headRef }}"
+              echo "PR #$PR_NUM: auto-resolved and pushed"
+            else
+              echo "::warning::PR #$PR_NUM: auto-resolved but cannot push to fork (set BOT_PAT secret)"
+              gh pr comment $PR_NUM --repo ${{ github.repository }} --body-file - <<'BODY'
+🔄 Minified bundle conflicts were auto-resolved, but auto-push to your fork requires the `BOT_PAT` secret.
+
+To push the resolved branch:
+```bash
+git remote add upstream https://github.com/${{ github.repository }}.git
+git fetch upstream
+git merge upstream/master
+git push origin ${{ steps.metadata.outputs.headRef }}
+```
+BODY
+            fi
           else
             echo "::warning::PR #$PR_NUM: source conflicts detected, manual resolution needed"
             echo "Conflicted files: $CONFLICT_FILES"
             git merge --abort
+            gh pr comment $PR_NUM --repo ${{ github.repository }} --body-file - <<BODY
+⚠️ This PR has merge conflicts with upstream master that could not be auto-resolved.
+
+Files with conflicts:
+```
+$CONFLICT_FILES
+```
+
+Please rebase or merge master manually.
+BODY
           fi
