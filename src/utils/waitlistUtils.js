@@ -1,6 +1,6 @@
 
 import { safeJsonParse } from "./safeJsonParse.js";
-import { apiUtils, API_ENDPOINTS } from "../config/api";
+import { apiUtils, API_ENDPOINTS } from "../config/api.js";
 import { logger } from "./logger.js";
 import { getOrMigrateKey } from "./storageKeyManager.js";
 
@@ -287,6 +287,37 @@ export const leaveWaitlist = async (eventId, userId) => {
   return true;
 };
 
+// Helper to perform local waitlist status promotion and updates
+const performLocalPromotion = async (record, event) => {
+  const records = getGlobalWaitlist();
+  const match = records.find(
+    (r) => r.userId === record.userId && r.eventId === record.eventId && r.status === "waiting"
+  );
+  if (match) {
+    match.status = "promoted";
+    match.promotedAt = new Date().toISOString();
+    saveGlobalWaitlist(records);
+  }
+  addRegistrationToUserStorage(record.userId, event);
+  incrementEventAttendees(event.id);
+  await addLocalNotification(
+    "Waitlist Promotion",
+    `Good news! You have been promoted from the waitlist to a confirmed attendee for: ${event.title || "your event"}.`
+  );
+  return !!match;
+};
+
+// Helper to detect if a throw/exception is caused by a offline/network/timeout condition
+const checkIfOffline = (error) => {
+  if (error?.isNetworkError || error?.isTimeout) {
+    return true;
+  }
+  if (typeof navigator !== "undefined" && !navigator.onLine) {
+    return true;
+  }
+  return false;
+};
+
 // Promote a specific record to a confirmed registration
 export const promoteRecord = async (record, event) => {
   try {
@@ -294,48 +325,18 @@ export const promoteRecord = async (record, event) => {
       userId: record.userId,
     });
     if (response.ok) {
-      const records = getGlobalWaitlist();
-      const match = records.find(
-        (r) => r.userId === record.userId && r.eventId === record.eventId && r.status === "waiting"
-      );
-      if (match) {
-        match.status = "promoted";
-        match.promotedAt = new Date().toISOString();
-        saveGlobalWaitlist(records);
-      }
-      addRegistrationToUserStorage(record.userId, event);
-      incrementEventAttendees(event.id);
-      await addLocalNotification("Waitlist Promotion", `Good news! You have been promoted from the waitlist to a confirmed attendee for: ${event.title || "your event"}.`);
+      await performLocalPromotion(record, event);
       return true;
     }
-  } catch {
-    // Fall through to localStorage-only path
+    // Explicit server rejection
+    return false;
+  } catch (error) {
+    if (!checkIfOffline(error)) {
+      return false;
+    }
   }
 
-  const records = getGlobalWaitlist();
-  const match = records.find(
-    (r) =>
-      r.userId === record.userId &&
-      r.eventId === record.eventId &&
-      r.status === "waiting"
-  );
-
-  if (match) {
-    match.status = "promoted";
-    match.promotedAt = new Date().toISOString();
-    saveGlobalWaitlist(records);
-
-    addRegistrationToUserStorage(record.userId, event);
-    incrementEventAttendees(event.id);
-
-    await addLocalNotification(
-      "Waitlist Promotion",
-      `Good news! You have been promoted from the waitlist to a confirmed attendee for: ${event.title || "your event"
-      }.`
-    );
-    return true;
-  }
-  return false;
+  return performLocalPromotion(record, event);
 };
 
 // Promote the next user in queue when a spot opens up
