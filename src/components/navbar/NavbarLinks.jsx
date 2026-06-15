@@ -77,7 +77,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
             ? "text-text border-primary font-semibold bg-bg-secondary"
             : "text-slate-600 dark:text-slate-300 hover:text-text border-transparent hover:bg-bg"
         }`
-      : `flex gap-1.5 items-center text-[12px] lg:text-[13px] font-normal uppercase tracking-[0.03em] transition-all duration-200 px-3 py-2 border-b-2 rounded-t-md whitespace-nowrap focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:rounded-lg ${
+      : 'flex gap-4 xl:gap-6 items-center text-[12px] lg:text-[13px] font-normal uppercase tracking-[0.03em] transition-all duration-200 px-3 py-2 border-b-2 rounded'{
           active
             ? "text-slate-900 dark:text-white border-primary"
             : isDropdown
