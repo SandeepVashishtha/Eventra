@@ -64,7 +64,6 @@ const ModernSearchInput = ({
         >
           {tags}
           <input
-<<<<<<< HEAD
             ref={searchInputRef}
             type="text"
             placeholder={tags && tags.length > 0 ? "" : placeholder}
@@ -79,25 +78,6 @@ const ModernSearchInput = ({
             onBlur={handleBlur}
             onKeyDown={onKeyDown}
           />
-=======
-  ref={searchInputRef}
-  type="text"
-  placeholder={tags && tags.length > 0 ? "" : placeholder}
-  className="flex-1 bg-transparent border-none outline-none focus:outline-none focus:ring-0 shadow-none"
-  style={{
-    border: "none",
-    boxShadow: "none",
-    outline: "none",
-    background: "transparent",
-  }}
-  value={value}
-  onChange={onChange}
-  onFocus={handleFocus}
-  autoFocus={autoFocus}
-  onBlur={handleBlur}
-  onKeyDown={onKeyDown}
-/>
->>>>>>> upstream/master
         </div>
 
         {showClearButton && value && (
