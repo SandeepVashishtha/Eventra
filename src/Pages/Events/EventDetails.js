@@ -353,7 +353,7 @@ const EventDetails = () => {
                 Share Event
               </button>
 
-              {(isAdmin() || isOrganizer()) && event.status !== "cancelled" && (
+              {isOrganizer && event.status !== "cancelled" && (
                 <button
                   onClick={() => setShowCancelModal(true)}
                   className="inline-flex items-center justify-center rounded-full border border-red-500 px-6 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
