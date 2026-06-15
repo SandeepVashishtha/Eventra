@@ -66,7 +66,7 @@ export default function LoginForm() {
     <div className="login-form-container">
       <form onSubmit={handleSubmit} className="auth-form">
 
-        <h1 className="text-4xl font-extrabold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent text-center">
+        <h1 className="text-4xl font-extrabold bg-linear-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent text-center">
           Welcome Back
         </h1>
 
@@ -173,7 +173,7 @@ export default function LoginForm() {
             rounded-2xl
             font-semibold
             text-white
-            bg-gradient-to-r
+            bg-linear-to-r
             from-indigo-600
             via-purple-600
             to-pink-600

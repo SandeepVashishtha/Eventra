@@ -339,6 +339,7 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
                       src={ghUser.avatar_url}
                       alt={ghUser.login}
                       className="w-9 h-9 rounded-full border-2 border-emerald-200 dark:border-emerald-800"
+                       loading="lazy"
                     />
                     <div>
                       <p className="text-xs font-bold text-emerald-800 dark:text-emerald-300">

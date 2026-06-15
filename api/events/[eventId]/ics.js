@@ -37,7 +37,7 @@ export default async function handler(req, res) {
     ];
 
     const end = [
-      endDate.getUTFullYear(),
+      endDate.getUTCFullYear(),
       endDate.getUTCMonth() + 1,
       endDate.getUTCDate(),
       endDate.getUTCHours(),

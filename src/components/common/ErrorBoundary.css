@@ -432,12 +432,12 @@
   box-shadow: 0 4px 16px rgba(59, 130, 246, 0.18);
 }
 .eb-btn-copy-report--copied {
-  background: rgba(16, 185, 129, 0.1) !important;
-  color: #059669 !important;
-  border-color: rgba(16, 185, 129, 0.25) !important;
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+  border-color: rgba(16, 185, 129, 0.25);
 }
 .dark .eb-btn-copy-report--copied {
-  color: #34d399 !important;
+  color: #34d399;
 }
 
 /* ── Diagnostics toggle ─────────────────────────────────────── */

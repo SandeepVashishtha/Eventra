@@ -94,7 +94,6 @@ const env = loadEnv(mode, process.cwd(), "");
         "date-fns",
         "recharts",
         "react-toastify",
-        "react-hot-toast",
         "dompurify",
         "fuse.js",
         "react-helmet-async",
@@ -139,7 +138,6 @@ const env = loadEnv(mode, process.cwd(), "");
             }
             if (
               id.includes("node_modules/react-toastify/") ||
-              id.includes("node_modules/react-hot-toast/") ||
               id.includes("node_modules/aos/")
             ) {
               return "vendor-ui";
