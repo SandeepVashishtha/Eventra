@@ -15,7 +15,7 @@ const readRegistrations = () => {
     }
     return migrated;
   } catch (error) {
-    // eslint-disable-next-line no-console
+     
     console.warn("[RegisterUtils] Failed to read registrations:", error);
     return {};
   }

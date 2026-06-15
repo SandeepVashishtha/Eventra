@@ -17,6 +17,12 @@ const NEGATIVE_KEYWORDS = new Set([
   "crashed", "slowly", "laggy", "painful", "horrible", "defect", "failure"
 ]);
 
+const NEGATION_WORDS = new Set([
+  "not", "no", "never", "dont", "cannot", "doesnt", "didnt",
+  "isnt", "wasnt", "arent", "neither", "none", "without", "lack", "lacks",
+  "havent", "hadnt", "hasnt", "wont", "wouldnt", "couldnt", "shouldnt"
+]);
+
 export const analyzeSentiment = (text) => {
   if (!text || typeof text !== "string") {
     return 0; // Neutral default
@@ -28,12 +34,36 @@ export const analyzeSentiment = (text) => {
   const words = normalized.match(/[a-z]+/g) || [];
   
   let score = 0;
+  let negateNext = false;
+  let negateWindow = 0;
   
   words.forEach(word => {
+    if (NEGATION_WORDS.has(word)) {
+      negateNext = true;
+      negateWindow = 3; // Negation applies to any of the next 3 words
+      return;
+    }
+    
+    let value = 0;
     if (POSITIVE_KEYWORDS.has(word)) {
-      score += 1.5;
+      value = 1.5;
     } else if (NEGATIVE_KEYWORDS.has(word)) {
-      score -= 1.5;
+      value = -1.5;
+    }
+    
+    if (value !== 0) {
+      if (negateNext && negateWindow > 0) {
+        score -= value; // Invert the sentiment score change
+        negateNext = false;
+        negateWindow = 0;
+      } else {
+        score += value;
+      }
+    } else if (negateNext) {
+      negateWindow -= 1;
+      if (negateWindow <= 0) {
+        negateNext = false;
+      }
     }
   });
 
@@ -45,32 +75,28 @@ export const analyzeSentiment = (text) => {
  * Gets a descriptive label and an emoji representation based on the sentiment score
  */
 export const getSentimentDisplay = (score) => {
-  // Ensure score is a valid, parsed float number
-  const parsedScore = typeof score === 'number' && isFinite(score) ? score : parseFloat(score);
-  const validatedScore = isNaN(parsedScore) ? 0 : parsedScore;
-
-  if (validatedScore >= 1.5) {
+  if (score > 1.5) {
     return {
       emoji: "🌟",
       label: "Excited / Highly Positive",
       color: "text-green-500 dark:text-green-400 animate-bounce"
     };
   }
-  if (validatedScore > 0.2) {
+  if (score >= 0.2) {
     return {
       emoji: "🙂",
       label: "Happy / Positive",
       color: "text-emerald-500 dark:text-emerald-400"
     };
   }
-  if (validatedScore < -1.5) {
+  if (score < -1.5) {
     return {
       emoji: "😢",
       label: "Frustrated / Highly Negative",
       color: "text-red-500 dark:text-red-400 animate-pulse"
     };
   }
-  if (validatedScore < -0.2) {
+  if (score <= -0.2) {
     return {
       emoji: "🙁",
       label: "Muted / Negative",

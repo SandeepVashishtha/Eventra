@@ -1,0 +1,8 @@
+exclude = [
+  "^https://linkedin.com/",
+  "^https://www.linkedin.com/",
+  "^https://eventra.sandeepvashishtha.in/",
+  "^https://eventra-backend-springboot",
+  "^https://github.com/studio-freight/lenis",
+  "^https://owasp.org/www-community/Sensitive_Data_Exposure"
+]

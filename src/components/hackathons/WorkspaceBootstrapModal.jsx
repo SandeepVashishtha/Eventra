@@ -46,7 +46,7 @@ const PhaseRow = ({ phase, currentPhase, donePhases }) => {
     }`}>
       <div className="w-5 h-5 shrink-0 flex items-center justify-center">
         {isDone
-          ? <Check size={14} className="text-emerald-500 stroke-[3]" />
+          ? <Check size={14} className="text-emerald-500 stroke-3" />
           : isActive
           ? <Loader2 size={14} className="text-blue-500 animate-spin" />
           : <div className="w-2 h-2 rounded-full bg-slate-200 dark:bg-slate-700" />
@@ -196,7 +196,7 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <div
-      className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+      className="fixed inset-0 z-500 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       role="dialog"
       aria-modal="true"
@@ -212,7 +212,7 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
         {/* ── Header ── */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-violet-600 shadow-md">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-linear-to-br from-blue-500 to-violet-600 shadow-md">
               <Rocket size={15} className="text-white" />
             </div>
             <div>
@@ -241,13 +241,13 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
             const Icon = s.icon;
             return (
               <div key={s.id} className="flex items-center flex-1 min-w-0">
-                <div className={`flex items-center gap-1.5 min-w-0 ${isActive ? "flex-shrink-0" : ""}`}>
+                <div className={`flex items-center gap-1.5 min-w-0 ${isActive ? "shrink-0" : ""}`}>
                   <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[10px] font-black transition-all ${
                     isComplete ? "bg-emerald-500 text-white" :
                     isActive   ? "bg-blue-600 text-white shadow-md shadow-blue-500/30" :
                                  "bg-slate-200 dark:bg-slate-800 text-slate-400"
                   }`}>
-                    {isComplete ? <Check size={11} className="stroke-[3]" /> : <Icon size={11} />}
+                    {isComplete ? <Check size={11} className="stroke-3" /> : <Icon size={11} />}
                   </div>
                   {isActive && (
                     <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300 truncate">
@@ -503,7 +503,7 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
                 {/* Summary card */}
                 {!result && !launching && (
                   <div className="space-y-3">
-                    <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-50 to-violet-50 dark:from-blue-900/20 dark:to-violet-900/20 border border-blue-100 dark:border-blue-800/40 space-y-2.5">
+                    <div className="p-4 rounded-2xl bg-linear-to-br from-blue-50 to-violet-50 dark:from-blue-900/20 dark:to-violet-900/20 border border-blue-100 dark:border-blue-800/40 space-y-2.5">
                       <h3 className="text-xs font-black text-slate-800 dark:text-white">Ready to bootstrap! 🚀</h3>
                       <div className="space-y-1.5">
                         <div className="flex items-center gap-2 text-[11px] text-slate-600 dark:text-slate-400">
@@ -533,7 +533,7 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
 
                     <button
                       onClick={handleLaunch}
-                      className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 text-white text-sm font-black transition shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
+                      className="w-full py-3.5 rounded-2xl bg-linear-to-r from-blue-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 text-white text-sm font-black transition shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
                       aria-label="Create workspace on GitHub"
                     >
                       <Rocket size={16} />
@@ -564,8 +564,8 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
                     className="space-y-4"
                   >
                     <div className="text-center py-4">
-                      <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 shadow-lg shadow-emerald-500/30">
-                        <Check size={24} className="text-white stroke-[3]" />
+                      <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-linear-to-br from-emerald-400 to-teal-500 shadow-lg shadow-emerald-500/30">
+                        <Check size={24} className="text-white stroke-3" />
                       </div>
                       <h3 className="text-base font-black text-slate-900 dark:text-white">
                         Workspace Created! 🎉

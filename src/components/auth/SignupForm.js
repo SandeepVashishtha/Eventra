@@ -1,42 +1,41 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { API_ENDPOINTS, apiUtils } from "../../config/api";
+import { toast } from "react-toastify";
+import { authService } from "../../services/authService";
+
+import { ROLES } from "../../config/roles";
 import { useAuth } from "../../context/AuthContext";
 import { FormFieldWrapper, ValidationMessage } from "../forms";
 import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
-import { User, AtSign, Lock, Eye, EyeOff, Zap } from "lucide-react";
+import { User, AtSign, Lock, Eye, EyeOff, Zap, LoaderCircle } from "lucide-react";
 import { validate, validateEmailAvailability, validatePasswordStrength } from "../../validation";
+import { getPublicErrorMessage, AUTH_ERRORS } from "../../utils/errorMessages";
 
 const getResultMessage = (result, fallback) => (result?.isValid ? "" : result?.message || fallback);
 
-const parseSignupResponse = async (response) => {
-  if (typeof response?.text === "function") {
-    const responseText = await response.text();
-    let data = null;
-    try {
-      data = responseText ? JSON.parse(responseText) : null;
-    } catch {
-      data = null;
-    }
+export const normalizeSignupRoles = (data) => {
+  const responseRoles = Array.isArray(data?.roles)
+    ? data.roles.filter((role) => typeof role === "string" && role.trim())
+    : [];
 
-    return {
-      ok: response.ok,
-      status: response.status,
-      data,
-    };
+  if (responseRoles.length > 0) {
+    return responseRoles;
   }
 
-  return {
-    ok: response?.status >= 200 && response?.status < 300,
-    status: response?.status,
-    data: response?.data || null,
-  };
+  if (typeof data?.role === "string" && data.role.trim()) {
+    return [data.role];
+  }
+
+  return [ROLES.ATTENDEE];
 };
 
 const SignupForm = () => {
   const navigate = useNavigate();
   const { setAuthSession } = useAuth();
+  // useRef-based guard prevents double-click submissions even when
+  // the loading state update hasn't propagated yet (setState is async).
+  const isSubmittingRef = useRef(false);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -100,7 +99,10 @@ const SignupForm = () => {
       } else {
         const emailAvailability = await validateEmailAvailability(emailValue);
         if (!emailAvailability?.isValid) {
-          nextErrors.email = getResultMessage(emailAvailability, "Email is already registered");
+          nextErrors.email = getResultMessage(
+            emailAvailability,
+            "This email is already registered. Please log in."
+          );
           setFieldState("email", "error");
         } else {
           setFieldState("email", "success");
@@ -194,15 +196,24 @@ const SignupForm = () => {
 
     const timer = setTimeout(async () => {
       try {
-        const result = await validateEmailAvailability(email);
+        const result = await validateEmailAvailability(email, {
+          messages: {
+            unavailable: "This email is already registered. Please log in.",
+          },
+        });
         if (result?.isValid) {
           setErrors((prev) => ({ ...prev, email: "" }));
           setFieldState("email", "success");
         } else {
-          setErrors((prev) => ({ ...prev, email: result?.message || "Email is already registered" }));
+          setErrors((prev) => ({
+            ...prev,
+            email:
+              result?.message ||
+              "This email is already registered. Please log in.",
+          }));
           setFieldState("email", "error");
         }
-      } catch (err) {
+      } catch {
         setErrors((prev) => ({ ...prev, email: "Validation failed" }));
         setFieldState("email", "error");
       }
@@ -214,20 +225,25 @@ const SignupForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (loading) return;
+    // Dual-layer double-submit prevention:
+    // 1. isSubmittingRef — synchronous, blocks re-entry immediately.
+    // 2. loading state — keeps the button disabled in the UI.
+    if (isSubmittingRef.current || loading) return;
+    isSubmittingRef.current = true;
 
     setSubmitError("");
     setSuccess("");
     setLoading(true);
 
-    const valid = await runValidation();
-    if (!valid) {
-      setLoading(false);
-      return;
-    }
     try {
-      const signupEndpoint = API_ENDPOINTS.AUTH.REGISTER || API_ENDPOINTS.AUTH.SIGNUP;
-      const response = await apiUtils.post(signupEndpoint, {
+      const valid = await runValidation();
+      if (!valid) {
+        setLoading(false);
+        isSubmittingRef.current = false;
+        return;
+      }
+
+      const response = await authService.register({
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         email: formData.email.trim(),
@@ -235,210 +251,327 @@ const SignupForm = () => {
         confirmPassword: formData.confirmPassword,
       });
 
-      const { ok, status, data } = await parseSignupResponse(response);
-
-      if (!ok) {
-        const backendMessage = data?.message || data?.error || "Registration failed";
-        setSubmitError(`${backendMessage} (${status})`);
+      if (!response.ok) {
+        const status = response.status;
+        let message;
+        if (status === 409) {
+          message = "An account with this email already exists.";
+        } else if (status === 429) {
+          message = "Too many signup attempts. Please try again later.";
+        } else if (status === 400) {
+          message =
+            response.data?.message ||
+            response.data?.error ||
+            "Please check your input and try again.";
+        } else {
+          message =
+            response.data?.message || response.data?.error || AUTH_ERRORS.registrationFailed;
+        }
+        setSubmitError(message);
+        toast.error(message);
         setLoading(false);
+        isSubmittingRef.current = false;
         return;
       }
 
-      const sessionToken = data?.token;
-      if (!sessionToken) {
-        setSubmitError("Signup completed but no token was returned.");
-        setLoading(false);
-        return;
-      }
+      const responseData = response.data || {};
+      const sessionToken = responseData.token || "cookie-managed";
+      // Under the HttpOnly-cookie auth model the server sets the session
+      // cookie on the signup response. The client never sees a raw JWT.
 
+      const sessionRoles = normalizeSignupRoles(responseData);
       const sessionUser = {
-        id: data?.id,
-        firstName: data?.firstName ?? formData.firstName.trim(),
-        lastName: data?.lastName ?? formData.lastName.trim(),
-        email: data?.email ?? formData.email.trim(),
-        username: data?.username ?? formData.email.trim(),
-        role: data?.role ?? "USER",
-        roles: data?.role ? [data.role] : ["USER"],
-        permissions: data?.permissions ?? [],
+        id: responseData?.id,
+        firstName: responseData?.firstName ?? formData.firstName.trim(),
+        lastName: responseData?.lastName ?? formData.lastName.trim(),
+        email: responseData?.email ?? formData.email.trim(),
+        username: responseData?.username ?? formData.email.trim(),
+        role: sessionRoles[0],
+        roles: sessionRoles,
+        permissions: responseData?.permissions ?? [],
       };
 
       setAuthSession(sessionToken, sessionUser);
       setLoading(false);
       setSuccess("Account created successfully. Redirecting to dashboard...");
+      toast.success("Account created successfully!");
       setTimeout(() => navigate("/dashboard", { replace: true }), 1000);
     } catch (err) {
-      setSubmitError(err?.message || "Network error. Please try again.");
+      const networkMessage = "Unable to connect to the server. Please try again.";
+      const message = err?.isNetworkError
+        ? networkMessage
+        : getPublicErrorMessage(err, AUTH_ERRORS.registrationFailed);
+      setSubmitError(message);
+      toast.error(message);
       setLoading(false);
+      isSubmittingRef.current = false;
     }
   };
 
   return (
     <div className="w-full">
-      <div className="text-center space-y-3 mb-6">
-        <motion.div className="mx-auto w-14 h-14 bg-bg-secondary border border-border rounded-2xl flex items-center justify-center">
-          <Zap className="w-7 h-7 text-primary" />
+      <div className="text-center space-y-4 mb-8">
+        <motion.div
+          className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg"
+        >
+          <Zap className="w-8 h-8 text-white" />
         </motion.div>
-        <h1 className="text-2xl font-bold text-text">Create Your Account</h1>
+
+        <h1 className="text-4xl font-extrabold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+          Create Your Account
+        </h1>
+
+        <p className="text-base text-text-light max-w-md mx-auto leading-relaxed">
+          Join thousands of developers discovering hackathons, workshops,
+          networking events and career opportunities.
+        </p>
       </div>
+      <div className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-2xl p-8">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-4"
+          noValidate
+          aria-describedby="signup-form-error signup-form-success"
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FormFieldWrapper
+              id="firstName"
+              label="First name"
+              message={errors.firstName}
+              validationState={fieldValidationState.firstName}
+              prefix={<User className="w-4 h-4 text-text-light" />}
+            >
+              <input
+                name="firstName"
+                type="text"
+                value={formData.firstName}
+                onChange={handleChange}
+                placeholder="Enter your first name"
+                className="
+              w-full pl-10 pr-4 py-3.5
+              rounded-2xl
+              border border-slate-300/20
+              bg-white/5
+              backdrop-blur-sm
+              text-text
+              placeholder:text-slate-400
+              focus:ring-2
+              focus:ring-indigo-500/30
+              focus:border-indigo-500
+              transition-all duration-300
+              hover:border-indigo-400/50
+              "
+                disabled={loading}
+              />
+            </FormFieldWrapper>
+            <FormFieldWrapper
+              id="lastName"
+              label="Last name"
+              message={errors.lastName}
+              validationState={fieldValidationState.lastName}
+              prefix={<User className="w-4 h-4 text-text-light" />}
+            >
+              <input
+                name="lastName"
+                type="text"
+                value={formData.lastName}
+                onChange={handleChange}
+                placeholder="Enter your last name"
+                className="
+              w-full pl-10 pr-4 py-3.5
+              rounded-2xl
+              border border-slate-300/20
+              bg-white/5
+              backdrop-blur-sm
+              text-text
+              placeholder:text-slate-400
+              focus:ring-2
+              focus:ring-indigo-500/30
+              focus:border-indigo-500
+              transition-all duration-300
+              hover:border-indigo-400/50
+              "
+                disabled={loading}
+              />
+            </FormFieldWrapper>
+          </div>
 
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-4"
-        noValidate
-        aria-describedby="signup-form-error signup-form-success"
-      >
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormFieldWrapper
-            id="firstName"
-            label="First name"
-            message={errors.firstName}
-            validationState={fieldValidationState.firstName}
-            prefix={<User className="w-4 h-4 text-text-light" />}
+            id="email"
+            label="Email"
+            message={errors.email}
+            validationState={fieldValidationState.email}
+            prefix={<AtSign className="w-4 h-4 text-text-light" />}
           >
             <input
-              name="firstName"
-              type="text"
-              value={formData.firstName}
+              name="email"
+              type="email"
+              value={formData.email}
               onChange={handleChange}
-              placeholder="Enter your first name"
-              className="w-full pl-9 pr-3 py-2.5 bg-bg border border-border rounded-lg text-sm text-text placeholder:text-text-light"
-              required
+              placeholder="Enter your email address"
+              className="
+            w-full pl-10 pr-4 py-3.5
+            rounded-2xl
+            border border-slate-300/20
+            bg-white/5
+            backdrop-blur-sm
+            text-text
+            placeholder:text-slate-400
+            focus:ring-2
+            focus:ring-indigo-500/30
+            focus:border-indigo-500
+            transition-all duration-300
+            hover:border-indigo-400/50
+            "
               disabled={loading}
             />
           </FormFieldWrapper>
+
           <FormFieldWrapper
-            id="lastName"
-            label="Last name"
-            message={errors.lastName}
-            validationState={fieldValidationState.lastName}
-            prefix={<User className="w-4 h-4 text-text-light" />}
+            id="password"
+            label="Password"
+            message={errors.password}
+            validationState={fieldValidationState.password}
+            prefix={<Lock className="w-4 h-4 text-text-light" />}
+            suffix={
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="flex items-center justify-center text-text-light hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded p-1"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-controls="password"
+                aria-pressed={showPassword ? "true" : "false"}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            }
           >
             <input
-              name="lastName"
-              type="text"
-              value={formData.lastName}
+              name="password"
+              type={showPassword ? "text" : "password"}
+              value={formData.password}
               onChange={handleChange}
-              placeholder="Enter your last name"
-              className="w-full pl-9 pr-3 py-2.5 bg-bg border border-border rounded-lg text-sm text-text placeholder:text-text-light"
-              required
+              placeholder="Create a strong password"
+              className="
+            w-full pl-10 pr-4 py-3.5
+            rounded-2xl
+            border border-slate-300/20
+            bg-white/5
+            backdrop-blur-sm
+            text-text
+            placeholder:text-slate-400
+            focus:ring-2
+            focus:ring-indigo-500/30
+            focus:border-indigo-500
+            transition-all duration-300
+            hover:border-indigo-400/50
+            "
               disabled={loading}
             />
           </FormFieldWrapper>
-        </div>
 
-        <FormFieldWrapper
-          id="email"
-          label="Email"
-          message={errors.email}
-          validationState={fieldValidationState.email}
-          prefix={<AtSign className="w-4 h-4 text-text-light" />}
-        >
-          <input
-            name="email"
-            type="email"
-            value={formData.email}
-            onChange={handleChange}
-            placeholder="Enter your email address"
-            className="w-full pl-9 pr-3 py-2.5 bg-bg border border-border rounded-lg text-sm text-text placeholder:text-text-light"
-            required
-            disabled={loading}
-          />
-        </FormFieldWrapper>
+          {formData.password && <PasswordStrengthIndicator password={formData.password} />}
 
-        <FormFieldWrapper
-          id="password"
-          label="Password"
-          message={errors.password}
-          validationState={fieldValidationState.password}
-          prefix={<Lock className="w-4 h-4 text-text-light" />}
-          suffix={
-            <button
-              type="button"
-              onClick={() => setShowPassword((prev) => !prev)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-text-light hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded p-1"
-              aria-label={showPassword ? "Hide password" : "Show password"}
-              aria-controls="password"
-              aria-pressed={showPassword ? "true" : "false"}
-            >
-              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
-          }
-        >
-          <input
-            name="password"
-            type={showPassword ? "text" : "password"}
-            value={formData.password}
-            onChange={handleChange}
-            placeholder="Create a strong password"
-            className="w-full pl-9 pr-9 py-2.5 bg-bg border border-border rounded-lg text-sm text-text placeholder:text-text-light"
-            required
-            disabled={loading}
-          />
-        </FormFieldWrapper>
+          <FormFieldWrapper
+            id="confirmPassword"
+            label="Confirm Password"
+            message={errors.confirmPassword || passwordMatchMessage}
+            validationState={fieldValidationState.confirmPassword}
+            prefix={<Lock className="w-4 h-4 text-text-light" />}
+            suffix={
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword((prev) => !prev)}
+                className="flex items-center justify-center text-text-light hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded p-1"
+                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                aria-controls="confirmPassword"
+                aria-pressed={showConfirmPassword ? "true" : "false"}
+              >
+                {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            }
+          >
+            <input
+              name="confirmPassword"
+              type={showConfirmPassword ? "text" : "password"}
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              placeholder="Re-enter your password"
+              className="
+            w-full pl-10 pr-4 py-3.5
+            rounded-2xl
+            border border-slate-300/20
+            bg-white/5
+            backdrop-blur-sm
+            text-text
+            placeholder:text-slate-400
+            focus:ring-2
+            focus:ring-indigo-500/30
+            focus:border-indigo-500
+            transition-all duration-300
+            "
+              disabled={loading}
+            />
+          </FormFieldWrapper>
 
-        {formData.password && <PasswordStrengthIndicator password={formData.password} />}
-
-        <FormFieldWrapper
-          id="confirmPassword"
-          label="Confirm Password"
-          message={errors.confirmPassword || passwordMatchMessage}
-          validationState={fieldValidationState.confirmPassword}
-          prefix={<Lock className="w-4 h-4 text-text-light" />}
-          suffix={
-            <button
-              type="button"
-              onClick={() => setShowConfirmPassword((prev) => !prev)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-text-light hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded p-1"
-              aria-label={showConfirmPassword ? "Hide password" : "Show password"}
-              aria-controls="confirmPassword"
-              aria-pressed={showConfirmPassword ? "true" : "false"}
-            >
-              {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
-          }
-        >
-          <input
-            name="confirmPassword"
-            type={showConfirmPassword ? "text" : "password"}
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            placeholder="Re-enter your password"
-            className="w-full pl-9 pr-9 py-2.5 bg-bg border border-border rounded-lg text-sm text-text placeholder:text-text-light"
-            required
-            disabled={loading}
-          />
-        </FormFieldWrapper>
-
-        <ValidationMessage
-          id="signup-form-error"
-          message={submitError}
-          state="error"
-          className="text-xs text-red-700 bg-red-50 border border-red-200 p-2 rounded-lg"
-        />
-        {success && (
           <ValidationMessage
-            id="signup-form-success"
-            message={success}
-            state="success"
-            className="text-xs text-green-700 bg-green-50 border border-green-200 p-2 rounded-lg"
+            id="signup-form-error"
+            message={submitError}
+            state="error"
+            className="text-xs text-red-700 bg-red-50 border border-red-200 p-2 rounded-lg"
           />
-        )}
+          {success && (
+            <ValidationMessage
+              id="signup-form-success"
+              message={success}
+              state="success"
+              className="text-xs text-green-700 bg-green-50 border border-green-200 p-2 rounded-lg"
+            />
+          )}
+          <p className="text-xs text-center text-text-light">
+            By creating an account, you agree to our
+            <span className="text-primary cursor-pointer"> Terms of Service </span>
+            and
+            <span className="text-primary cursor-pointer"> Privacy Policy</span>.
+          </p>
+          <motion.button
+            type="submit"
+            disabled={loading}
+            className="
+          w-full py-4
+          rounded-2xl
+          font-semibold
+          bg-gradient-to-r
+          from-indigo-600
+          via-purple-600
+          to-pink-600
+          hover:scale-[1.02]
+          shadow-xl
+          transition-all
+          duration-300
+          "
+          >
+            {loading ? (
+              <>
+                <LoaderCircle className="h-4 w-4 animate-spin" />
+                Creating account...
+              </>
+            ) : (
+              "Create Account"
+            )}
+          </motion.button>
+        </form>
 
-        <motion.button
-          type="submit"
-          disabled={loading}
-          className="w-full py-3 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-hover disabled:opacity-50"
-        >
-          {loading ? "Creating account..." : "Create Account"}
-        </motion.button>
-      </form>
-
-      <p className="text-center text-sm text-text-light mt-4">
-        Already have an account?{" "}
-        <Link to="/login" className="text-primary hover:text-primary-hover">
-          Sign in
-        </Link>
-      </p>
+        <p className="text-center text-sm text-text-light mt-6">
+          Already have an account?
+          <Link
+            to="/login"
+            className="ml-1 font-semibold text-indigo-600 hover:text-purple-600 transition-colors"
+          >
+            Sign In
+          </Link>
+        </p>
+      </div>
     </div>
   );
 };
