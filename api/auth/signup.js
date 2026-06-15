@@ -5,7 +5,7 @@ import { signupRateLimiter } from "../_lib/rateLimiter.js";
 import { buildCorsHeaders, corsResponse } from "./_cors.js";
 import { assertPersistentStorageConfigured } from "./_storage-config.js";
 import { createUser, getUserByEmail, isStorageHealthy } from "./_user-storage.js";
-import { getClientIp } from "../_lib/getClientIp.js";
+
 
 // ---------------------------------------------------------------------------
 // In-memory user storage
@@ -258,8 +258,8 @@ async function handler(req, res) {
 
     const newUser = {
       id: userId,
-      firstName: firstNameValidation.value,
-      lastName: lastNameValidation.value,
+      firstName: validateName(firstName).value,
+      lastName: validateName(lastName).value,
       email: normalizedEmail,
       username: normalizedEmail, // Use email as username
       password: hashedPassword,
@@ -314,5 +314,4 @@ async function handler(req, res) {
 }
 
 export default handler;
-export { users, usersById, usersByUsername };
 
