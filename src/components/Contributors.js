@@ -17,6 +17,8 @@ const REQUEST_TIMEOUT = 10000;
 const MAX_CONTRIBUTOR_PAGES = 10;
 const PROFILE_FETCH_DELAY_MS = 100; // Throttle profile API calls to avoid rate limiting
 
+const buildDirectGitHubUrl = (url) => url;
+
 const fetchJsonWithTimeout = async (url) => {
   const proxyUrl = url.startsWith("https://api.github.com")
     ? `/api/github-proxy?path=${encodeURIComponent(
@@ -24,13 +26,25 @@ const fetchJsonWithTimeout = async (url) => {
       )}`
     : url;
 
-  const { data } = await fetchWithTimeout(
-    proxyUrl,
-    {},
-    REQUEST_TIMEOUT
-  );
+  try {
+    const { data } = await fetchWithTimeout(proxyUrl, {}, REQUEST_TIMEOUT);
+    return data;
+  } catch (error) {
+    if (url.startsWith("https://api.github.com") && (error?.status === 401 || error?.status === 403)) {
+      const { data } = await fetchWithTimeout(
+        buildDirectGitHubUrl(url),
+        {
+          headers: {
+            Accept: "application/vnd.github+json",
+          },
+        },
+        REQUEST_TIMEOUT,
+      );
+      return data;
+    }
 
-  return data;
+    throw error;
+  }
 };
 
 // Role assignment
