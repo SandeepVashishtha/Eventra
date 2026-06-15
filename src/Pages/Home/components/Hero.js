@@ -121,14 +121,14 @@ const Hero = () => {
   ], [t]);
 
   return (
-    <section ref={containerRef} className="relative overflow-hidden pb-16">
+    <section ref={containerRef} className="relative overflow-hidden py-16 sm:py-20 md:py-24">
       <motion.div style={{ y: isTouch ? 0 : yText, opacity: opacityHero }}>
         <motion.h1 className="text-4xl font-bold text-center">
           <RespawningText texts={TAGLINE_TEXTS} />
           <div>{HEADLINE_PHRASES[phraseIndex]}</div>
         </motion.h1>
 
-        <motion.div className="mt-10 max-w-2xl mx-auto">
+        <motion.div className="mt-8 sm:mt-10 max-w-2xl mx-auto">
           <ModernSearchInput
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
