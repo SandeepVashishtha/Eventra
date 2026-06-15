@@ -3,6 +3,7 @@ import mockEvents from "../Events/eventsMockData.json";
 
 import { eventService } from "../../services/eventService";
 import { getEventStatus } from "../../utils/eventUtils";
+import { logger } from "../../utils/logger";
 
 const normalizeEvents = (events = []) =>
   events.map((event) => ({
@@ -25,7 +26,7 @@ const useCalendarEvents = () => {
       setEvents(normalizeEvents(apiEvents));
     } catch (error) {
       if (process.env.NODE_ENV === "development") {
-        console.warn("Failed to fetch events. Falling back to mock data.", error);
+        logger.warn("Failed to fetch events. Falling back to mock data.", error);
         setLoadError(error?.message || "Failed to load events.");
         setEvents(normalizeEvents(mockEvents));
       } else {
