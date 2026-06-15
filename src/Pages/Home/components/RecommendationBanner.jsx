@@ -1,6 +1,6 @@
 const RecommendationBanner = () => {
   return (
-    <section 
+    <section
       className="relative overflow-hidden px-4 md:px-8 py-16 text-slate-900 dark:text-white border-t border-slate-200/60 dark:border-slate-800/60 transition-colors duration-300"
       /* MODIFIED: Re-applied the identical matching background gradient flow from the events carousel */
       style={{
@@ -72,7 +72,16 @@ const RecommendationBanner = () => {
             <div className="flex flex-wrap gap-4 mt-8">
               <a
                 href="/event-recommendation"
-                className="px-6 py-3 rounded-full bg-brand-violet hover:bg-brand-violet/90 text-white text-sm font-semibold transition-all shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-violet/50"
+                className="
+    px-6 py-3
+    rounded-full
+    bg-violet-600
+    hover:bg-violet-700
+    text-white
+    font-semibold
+    shadow-md
+    transition-all
+  "
               >
                 Try Recommendation Assistant
               </a>
