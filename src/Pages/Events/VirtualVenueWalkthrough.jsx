@@ -400,6 +400,7 @@ const VirtualVenueWalkthrough = () => {
                                 e.target.onerror = null;
                                 e.target.src = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=40";
                               }}
+                               loading="lazy"
                             />
                           ) : (
                             booth.label?.substring(0, 2).toUpperCase() || "SP"

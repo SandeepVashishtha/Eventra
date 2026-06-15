@@ -116,7 +116,7 @@ const EventMediaSection = ({
         <div className="relative group cursor-pointer">
           {formData.bannerPreview ? (
             <div className="relative aspect-video rounded-xl overflow-hidden border-2 border-indigo-500">
-              <img src={formData.bannerPreview} alt="Preview" className="w-full h-full object-cover" />
+              <img src={formData.bannerPreview} alt="Preview" className="w-full h-full object-cover"  loading="lazy" />
               <button
                 type="button"
                 onClick={() => {

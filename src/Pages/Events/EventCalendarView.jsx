@@ -39,7 +39,7 @@ const EventPopover = ({ event, onClose }) => {
         </button>
 
         <div className="relative h-48 w-full">
-          <img src={event.resource.image} alt={event.title} className="w-full h-full object-cover" />
+          <img src={event.resource.image} alt={event.title} className="w-full h-full object-cover"   loading="lazy"/>
           <div className="absolute inset-0 bg-linear-to-t from-black/80 to-transparent" />
           <div className="absolute bottom-4 left-4 right-4">
             <h3 className="text-xl font-bold text-white line-clamp-2">{event.title}</h3>
