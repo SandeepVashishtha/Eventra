@@ -25,6 +25,11 @@ export const validateBackendConfig = () => {
     };
   }
 
+  // Relative paths (e.g. "/api") are valid for Vercel proxy mode
+  if (backendUrl.startsWith("/")) {
+    return { isValid: true, error: null };
+  }
+
   if (!isValidUrl(backendUrl)) {
     return {
       isValid: false,

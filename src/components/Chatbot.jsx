@@ -371,7 +371,7 @@ export default function Chatbot() {
             className="
               fixed bottom-6 right-6 z-100
               flex flex-col                        /* KEY FIX: flex column layout */
-              w-[calc(100vw-2rem)] max-w-sm sm:max-w-sm
+              w-[calc(100%-2rem)] max-w-sm sm:max-w-sm
               rounded-2xl
               border border-slate-200 dark:border-slate-700
               bg-white dark:bg-slate-900

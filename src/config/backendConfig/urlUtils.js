@@ -16,6 +16,12 @@ export const normalizeBackendUrl = (value = "") => {
     return "";
   }
 
+  // Relative path (e.g. "/api") — use as-is (Vercel proxy mode).
+  // Don't try to parse with URL() or strip the /api suffix.
+  if (value.startsWith("/")) {
+    return value.replace(/\/+$/, "");
+  }
+
   const trimmed = value.replace(/\/+$/, "").replace(/\/api$/, "");
 
   try {

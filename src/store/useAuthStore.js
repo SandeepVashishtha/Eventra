@@ -47,7 +47,7 @@ export const useAuthStore = create((set) => ({
   logout: () => {
     // Clear the in-memory token immediately.
     inMemoryTokenStore.clearToken();
-    set({ user: null, isAuthenticated: false });
+    set({ user: null, isAuthenticated: false, error: null, isLoading: false });
     logger.info("User logged out");
   },
 
@@ -65,6 +65,14 @@ export const useAuthStore = create((set) => ({
    */
   setToken: (token) => {
     inMemoryTokenStore.setToken(token);
-    set({ isAuthenticated: !!token });
+    // When token is falsy (null, undefined, "") treat it as a session
+    // invalidation — clear user and error alongside isAuthenticated so
+    // the store is never left in the inconsistent { isAuthenticated: false,
+    // user: <stale> } state.
+    if (!token) {
+      set({ isAuthenticated: false, user: null, error: null });
+    } else {
+      set({ isAuthenticated: true });
+    }
   },
 }));
