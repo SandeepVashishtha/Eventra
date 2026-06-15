@@ -70,21 +70,21 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
     };
   }, [vertical]);
 
-const getNavLinkClasses = (active) => {
-  const stateClasses = active
-    ? "text-text border-primary"
-    : "text-text-secondary hover:text-text border-transparent hover:border-border";
-
-  if (vertical) {
-    return `mobile-drawer-link flex min-h-[44px] gap-2 items-center text-sm font-medium transition-all duration-200 w-full py-2 px-3 border-l-2 rounded-lg ${stateClasses}`;
-  }
-
-  if (master) {
-    return `flex gap-4 xl:gap-6 items-center text-[12px] lg:text-[13px] font-normal uppercase tracking-[0.03em] transition-all duration-200 px-3 py-2 border-b-2 rounded ${stateClasses}`;
-  }
-
-  return `flex gap-0.5 items-center text-[12px] lg:text-[13px] font-normal uppercase tracking-[0.03em] transition-all duration-200 px-1 py-0.5 border-b-2 rounded-t-md whitespace-nowrap focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:rounded-lg ${stateClasses}`;
-};
+  const getNavLinkClasses = (active, isDropdown = false) => {
+    return vertical
+      ? `mobile-drawer-link flex min-h-[44px] gap-2 items-center text-sm font-medium transition-all duration-200 w-full py-2 px-3 border-l-2 rounded-lg focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 ${
+          active
+            ? "text-text border-primary font-semibold bg-bg-secondary"
+            : "text-slate-600 dark:text-slate-300 hover:text-text border-transparent hover:bg-bg"
+        }`
+      : `flex gap-0.5 items-center text-[12px] lg:text-[13px] font-normal uppercase tracking-[0.03em] transition-all duration-200 px-1 py-0.5 border-b-2 rounded-t-md whitespace-nowrap focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:rounded-lg ${
+          active
+            ? "text-text border-primary"
+            : isDropdown
+            ? "text-text-secondary hover:text-text border-transparent hover:border-border"
+            : "text-text-secondary hover:text-text border-transparent hover:border-border"
+        }`;
+  };
 
   return (
     <nav
