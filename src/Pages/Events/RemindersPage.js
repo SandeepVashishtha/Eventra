@@ -65,7 +65,7 @@ const RemindersPage = () => {
     backgroundPosition: "center",
     backgroundRepeat: "no-repeat",
     minHeight: "100vh",
-    width:"100vw"
+    width:"100%"
   }}>
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
