@@ -46,14 +46,14 @@ export const RECENTLY_VIEWED_TTL_MS = 7 * 24 * 60 * 60 * 1000;
  * @returns {RecentlyViewedEntry} A lightweight representation of the event for display cards.
  */
 const toRecentlyViewedEntry = (event) => {
-  const eventId = event?.id ?? event?._id ?? event?.eventId ?? event?.slug ?? "";
+  const eventId = event?.id;
   return {
     id: eventId,
-    title: event?.title ?? event?.name ?? "",
+    title: event.title,
     date: event?.date ?? "",
     location: event?.location ?? "",
-    image: event?.image ?? event?.imageUrl ?? "",
-    category: event?.category ?? event?.type ?? "",
+    image: event.image,
+    category: event.category,
     viewedAt: Date.now(),
   };
 };
@@ -164,7 +164,7 @@ const useRecentlyViewed = () => {
    * @param {Object} event - Event object to track.
    */
   const addRecentlyViewed = useCallback((event) => {
-    const eventId = event?.id ?? event?._id ?? event?.eventId ?? event?.slug;
+    const eventId = event?.id;
     if (!event || !eventId) return;
 
     setRecentlyViewed((prev) => {
