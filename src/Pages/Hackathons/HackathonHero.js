@@ -130,7 +130,7 @@ export default function HackathonHero({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={onSearchKeyDown}
-              placeholder="Search hackathons by name, location, or tags..."
+              placeholder="Search hackathons by name, technology, prize pool, or organizer..."
               tags={
                 <AnimatePresence>
                   {selectedTags.map((tag) => (
