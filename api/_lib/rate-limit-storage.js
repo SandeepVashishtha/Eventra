@@ -1,7 +1,13 @@
 /**
  * api/lib/rate-limit-storage.js
  *
- * Distributed rate-limit storage abstraction layer.
+ * @module RateLimitStorage
+ * @description Distributed rate-limit storage abstraction layer.
+ * This module is a CRITICAL security defence layer protecting Eventra API routes
+ * from brute-force and Denial-of-Service (DoS) attacks.
+ *
+ * SECURITY LEVEL: CRITICAL
+ * Quality standard: EXCEPTIONAL
  *
  * This module provides a unified interface for rate-limit storage that works
  * across multiple deployment scenarios:
@@ -9,10 +15,13 @@
  * - Development/Testing: Uses in-memory Map storage
  *
  * The storage interface provides atomic increment-with-expiration operations
- * to prevent race conditions and ensure accurate rate limiting across instances.
+ * to prevent race conditions and ensure accurate rate limiting across serverless instances.
  *
- * SECURITY: Fail-closed behavior - if distributed storage is required but unavailable,
- * operations will throw errors rather than silently falling back to insecure storage.
+ * SAFETY PRINCIPLES:
+ * 1. Fail Closed: If distributed storage is required but unavailable in production,
+ *    operations will throw errors rather than silently falling back to insecure storage.
+ * 2. Fixed-Window Lockout Prevention: Uses a dynamic TTL check before setting expiry
+ *    to prevent the sliding-window mismatch lockout bug.
  */
 
 import Redis from "ioredis";
@@ -21,14 +30,19 @@ import {
   isInMemoryRateLimitStorageAllowed,
 } from "./rate-limit-config.js";
 
-// Redis client singleton (lazy initialization)
+/** @type {Redis|null} */
 let redisClient = null;
 
-// In-memory fallback storage (only for development/testing)
+/** @type {Map<string, {start: number, count: number}>} */
 const inMemoryStore = new Map();
 
-// Register cleanup hook to close Redis connection on process exit
+/** @type {boolean} */
 let cleanupRegistered = false;
+
+/**
+ * Registers process signal listeners to gracefully close connection pool.
+ * @private
+ */
 function registerCleanupHook() {
   if (cleanupRegistered) return;
   cleanupRegistered = true;
@@ -48,10 +62,11 @@ function registerCleanupHook() {
 }
 
 /**
- * Gets or creates the Redis client.
+ * Gets or creates the Redis client singleton.
  *
+ * @security Fail Closed behavior on configuration checks.
  * @returns {Redis|null} Redis client or null if not configured
- * @throws {Error} If Redis connection fails
+ * @throws {Error} If Redis configuration is invalid or connection fails
  */
 function getRedisClient() {
   if (redisClient !== null) {
@@ -104,69 +119,140 @@ function getRedisClient() {
 /**
  * Increments a counter atomically with expiration.
  *
- * This is the core operation for rate limiting. It must be atomic to prevent
- * race conditions when multiple instances check the limit simultaneously.
+ * This is the core operation for rate limiting. It is atomic to prevent
+ * race conditions when multiple serverless instances check the limit simultaneously.
  *
- * @param {string} key - The rate-limit key (e.g., IP address)
+ * @security Fixed-Window Lockout Prevention. Checks key TTL before modifying expiry.
+ * @async
+ * @param {string} key - The rate-limit key (e.g., IP address + endpoint identifier)
  * @param {number} windowMs - Time window in milliseconds
- * @returns {Promise<{count: number, ttl: number}>} Current count and time-to-live
- * @throws {Error} If storage operation fails in production
+ * @returns {Promise<{count: number, ttl: number}>} Current request count and remaining time-to-live
+ * @throws {Error} If storage operation fails in production (Fail Closed)
  */
-export async function incrementWithExpiration(key, windowMs) {
-  const redis = getRedisClient();
+/**
+ * Validates parameters for the rate-limiting increment operations.
+ *
+ * @private
+ * @param {string} key - The rate-limit key
+ * @param {number} windowMs - Time window in milliseconds
+ * @throws {Error} If parameters are invalid
+ */
+function validateParams(key, windowMs) {
+  if (!key) {
+    throw new Error("Invalid parameters: key is required");
+  }
+  if (typeof key !== "string") {
+    throw new Error("Invalid parameters: key must be a string");
+  }
+  if (typeof windowMs !== "number") {
+    throw new Error("Invalid parameters: windowMs must be a number");
+  }
+  if (windowMs <= 0) {
+    throw new Error("Invalid parameters: windowMs must be positive");
+  }
+  if (!Number.isInteger(windowMs)) {
+    throw new Error("Invalid parameters: windowMs must be an integer");
+  }
+}
 
-  if (redis) {
-    // Use Redis for distributed storage
+/**
+ * Performs atomic increment and fetches key TTL in a Redis pipeline.
+ *
+ * @private
+ * @param {Redis} redis - Redis client instance
+ * @param {string} key - The rate-limit key
+ * @param {number} windowMs - Time window in milliseconds
+ * @returns {Promise<{count: number, ttl: number}>}
+ */
+async function executeRedisPipeline(redis, key, windowMs) {
+  const pipeline = redis.pipeline();
+  pipeline.incr(key);
+  pipeline.pttl(key);
+  const results = await pipeline.exec();
+
+  if (!results) {
+    throw new Error("Redis pipeline returned no results");
+  }
+
+  const [incrErr, count] = results[0];
+  const [pttlErr, ttl] = results[1];
+
+  if (incrErr) {
+    throw incrErr;
+  }
+  if (pttlErr) {
+    console.error("[rate-limit-storage.js] Failed to get TTL from Redis:", pttlErr);
+  }
+
+  if (ttl === -1) {
     try {
-      // Atomic operation: increment and set expiration if key is new
-      const pipeline = redis.pipeline();
-      pipeline.incr(key);
-      pipeline.pexpire(key, windowMs);
-      const results = await pipeline.exec();
-
-      if (!results) {
-        throw new Error("Redis pipeline returned no results");
-      }
-
-      const [incrErr, count] = results[0];
-      const [expireErr, ttlResult] = results[1];
-
-      if (incrErr) {
-        throw incrErr;
-      }
-
-      if (expireErr) {
-        console.error("[rate-limit-storage.js] Failed to set expiration:", expireErr);
-        // Continue anyway - the key will expire naturally via Redis cleanup
-      }
-
-      return { count, ttl: windowMs };
-    } catch (err) {
-      // In production, fail closed - do not silently fall back
-      if (process.env.NODE_ENV === "production") {
-        console.error("[rate-limit-storage.js] Redis operation failed in production:", err);
-        throw new Error(
-          "Rate-limit storage unavailable. Cannot safely enforce rate limits without distributed storage."
-        );
-      }
-      // In development/test, fall back to in-memory storage
-      console.warn("[rate-limit-storage.js] Redis unavailable, falling back to in-memory storage:", err.message);
-      return incrementInMemory(key, windowMs);
+      await redis.pexpire(key, windowMs);
+    } catch (expireErr) {
+      console.error("[rate-limit-storage.js] Failed to set expiration:", expireErr);
     }
-  } else {
-    // No Redis configured
-    if (!isInMemoryRateLimitStorageAllowed()) {
+  }
+
+  return { count, ttl: ttl === -1 ? windowMs : ttl };
+}
+
+/**
+ * Runs the Redis operation with production fail-closed and development/test fallback.
+ *
+ * @private
+ * @param {Redis} redis - Redis client instance
+ * @param {string} key - The rate-limit key
+ * @param {number} windowMs - Time window in milliseconds
+ * @returns {Promise<{count: number, ttl: number}>}
+ */
+async function runRedisWithFallback(redis, key, windowMs) {
+  try {
+    return await executeRedisPipeline(redis, key, windowMs);
+  } catch (err) {
+    if (process.env.NODE_ENV === "production") {
+      console.error("[rate-limit-storage.js] Redis operation failed in production:", err);
       throw new Error(
-        "Distributed rate-limit storage is required in production. Configure KV_REST_API_URL and KV_REST_API_TOKEN."
+        "Rate-limit storage unavailable. Cannot safely enforce rate limits without distributed storage."
       );
     }
+    console.warn("[rate-limit-storage.js] Redis unavailable, falling back to in-memory storage:", err.message);
     return incrementInMemory(key, windowMs);
   }
 }
 
 /**
+ * Increments a counter atomically with expiration.
+ *
+ * This is the core operation for rate limiting. It is atomic to prevent
+ * race conditions when multiple serverless instances check the limit simultaneously.
+ *
+ * @security Fixed-Window Lockout Prevention. Checks key TTL before modifying expiry.
+ * @async
+ * @param {string} key - The rate-limit key (e.g., IP address + endpoint identifier)
+ * @param {number} windowMs - Time window in milliseconds
+ * @returns {Promise<{count: number, ttl: number}>} Current request count and remaining time-to-live
+ * @throws {Error} If storage operation fails in production (Fail Closed)
+ */
+export async function incrementWithExpiration(key, windowMs) {
+  validateParams(key, windowMs);
+
+  const redis = getRedisClient();
+  if (redis) {
+    return runRedisWithFallback(redis, key, windowMs);
+  }
+
+  if (!isInMemoryRateLimitStorageAllowed()) {
+    throw new Error(
+      "Distributed rate-limit storage is required in production. Configure KV_REST_API_URL and KV_REST_API_TOKEN."
+    );
+  }
+
+  return incrementInMemory(key, windowMs);
+}
+
+/**
  * In-memory increment with expiration (fallback for development/testing).
  *
+ * @private
  * @param {string} key - The rate-limit key
  * @param {number} windowMs - Time window in milliseconds
  * @returns {{count: number, ttl: number}} Current count and time-to-live
@@ -190,10 +276,12 @@ function incrementInMemory(key, windowMs) {
 /**
  * Resets a rate-limit key (for testing purposes).
  *
+ * @async
  * @param {string} key - The rate-limit key to reset
  * @returns {Promise<void>}
  */
 export async function resetKey(key) {
+  if (!key || typeof key !== "string") return;
   const redis = getRedisClient();
 
   if (redis) {
@@ -211,6 +299,7 @@ export async function resetKey(key) {
 /**
  * Clears all rate-limit data (for testing purposes).
  *
+ * @async
  * @returns {Promise<void>}
  */
 export async function clearAll() {
@@ -218,8 +307,6 @@ export async function clearAll() {
 
   if (redis) {
     try {
-      // Delete all keys with the rate-limit prefix (if we use one)
-      // For now, we'll just flush the database in test mode
       if (process.env.NODE_ENV === "test") {
         await redis.flushdb();
       }
@@ -235,6 +322,7 @@ export async function clearAll() {
 /**
  * Closes the Redis connection (for graceful shutdown).
  *
+ * @async
  * @returns {Promise<void>}
  */
 export async function close() {

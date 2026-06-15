@@ -13,8 +13,9 @@
  * - Error handling
  */
 
-import { describe, it, before, after, mock } from 'node:test';
+import { describe, it, before, after, beforeEach, afterEach, mock } from 'node:test';
 import assert from 'node:assert';
+import Redis from 'ioredis';
 
 // Mock environment variables before importing the module
 const originalEnv = { ...process.env };
@@ -224,6 +225,75 @@ describe('Distributed Rate Limiter', () => {
   });
 
   describe('Redis Backend', () => {
+    let mockConnect;
+    let mockPipeline;
+    let mockPexpire;
+    let mockDel;
+    let mockFlushdb;
+    const db = new Map();
+
+    before(() => {
+      // Stub Redis prototype to prevent real connection attempts and mock functionality
+      mockConnect = mock.method(Redis.prototype, 'connect', () => Promise.resolve());
+      
+      mockPipeline = mock.method(Redis.prototype, 'pipeline', function() {
+        const commands = [];
+        return {
+          incr(key) {
+            commands.push({ cmd: 'incr', key });
+            return this;
+          },
+          pttl(key) {
+            commands.push({ cmd: 'pttl', key });
+            return this;
+          },
+          async exec() {
+            const results = [];
+            for (const { cmd, key } of commands) {
+              if (cmd === 'incr') {
+                const val = (db.get(key)?.value || 0) + 1;
+                const ttl = db.get(key)?.ttl || -1;
+                db.set(key, { value: val, ttl });
+                results.push([null, val]);
+              } else if (cmd === 'pttl') {
+                const entry = db.get(key);
+                const ttl = entry ? entry.ttl : -1;
+                results.push([null, ttl]);
+              }
+            }
+            return results;
+          }
+        };
+      });
+
+      mockPexpire = mock.method(Redis.prototype, 'pexpire', async (key, ms) => {
+        const entry = db.get(key);
+        if (entry) {
+          entry.ttl = ms;
+        }
+        return 1;
+      });
+
+      mockDel = mock.method(Redis.prototype, 'del', async (key) => {
+        db.delete(key);
+        return 1;
+      });
+
+      mockFlushdb = mock.method(Redis.prototype, 'flushdb', async () => {
+        db.clear();
+        return 'OK';
+      });
+    });
+
+    after(() => {
+      mock.restoreAll();
+      restoreEnv();
+    });
+
+    beforeEach(() => {
+      db.clear();
+    });
+
     it('should export RedisRateLimiter class', async () => {
       const module = await import('../api/_lib/rateLimiter.js');
       assert.strictEqual(typeof module.createRateLimiter, 'function');
@@ -235,8 +305,75 @@ describe('Distributed Rate Limiter', () => {
       await assertThrowsSyncCheck(limiter, '127.0.0.1');
     });
 
-    after(() => {
-      restoreEnv();
+    it('should increment counter and set expiration for a new key in Redis', async () => {
+      setTestEnv({
+        NODE_ENV: 'production',
+        RATE_LIMIT_REDIS_URL: 'redis://localhost:6379',
+        KV_REST_API_URL: 'redis://localhost:6379',
+        KV_REST_API_TOKEN: 'test-token',
+      });
+      const { incrementWithExpiration } = await import('../api/_lib/rate-limit-storage.js');
+      
+      const key = 'test-redis-key';
+      const res = await incrementWithExpiration(key, 60000);
+      assert.strictEqual(res.count, 1);
+      assert.strictEqual(res.ttl, 60000);
+      assert.strictEqual(db.get(key).ttl, 60000);
+    });
+
+    it('should reuse existing expiration and not reset TTL (fixed-window lockout prevention)', async () => {
+      setTestEnv({
+        NODE_ENV: 'production',
+        RATE_LIMIT_REDIS_URL: 'redis://localhost:6379',
+        KV_REST_API_URL: 'redis://localhost:6379',
+        KV_REST_API_TOKEN: 'test-token',
+      });
+      const { incrementWithExpiration } = await import('../api/_lib/rate-limit-storage.js');
+
+      const key = 'fixed-window-key';
+      
+      // First check: should set TTL to 60000
+      const res1 = await incrementWithExpiration(key, 60000);
+      assert.strictEqual(res1.count, 1);
+      assert.strictEqual(res1.ttl, 60000);
+
+      // Simulate elapsed time on the key's TTL in the mock database
+      db.get(key).ttl = 45000;
+
+      // Second check: should NOT call pexpire (TTL remains 45000)
+      const res2 = await incrementWithExpiration(key, 60000);
+      assert.strictEqual(res2.count, 2);
+      assert.strictEqual(res2.ttl, 45000);
+      assert.strictEqual(db.get(key).ttl, 45000);
+    });
+
+    it('should fail closed in production if Redis pipeline fails', async () => {
+      setTestEnv({
+        NODE_ENV: 'production',
+        RATE_LIMIT_REDIS_URL: 'redis://localhost:6379',
+        KV_REST_API_URL: 'redis://localhost:6379',
+        KV_REST_API_TOKEN: 'test-token',
+      });
+      const { incrementWithExpiration } = await import('../api/_lib/rate-limit-storage.js');
+
+      // Temporarily override exec on the next pipeline call to throw an error
+      const originalPipeline = Redis.prototype.pipeline;
+      mock.method(Redis.prototype, 'pipeline', function() {
+        return {
+          incr() { return this; },
+          pttl() { return this; },
+          exec() { return Promise.reject(new Error('Redis Connection Lost')); }
+        };
+      });
+
+      try {
+        await assert.rejects(
+          incrementWithExpiration('fail-closed-key', 60000),
+          /Rate-limit storage unavailable. Cannot safely enforce rate limits without distributed storage/
+        );
+      } finally {
+        Redis.prototype.pipeline = originalPipeline;
+      }
     });
   });
 
