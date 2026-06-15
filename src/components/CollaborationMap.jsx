@@ -205,7 +205,7 @@ export default function CollaborationMap() {
             {/* Structured Hub Card Popup */}
             {hoveredCity && (
               <div
-                className="absolute z-30 pointer-events-none"
+                className="absolute z-30"
                 style={{
                   left: `${(hoveredCity.x / 1000) * 100}%`,
                   top: `${(hoveredCity.y / 500) * 100}%`,
