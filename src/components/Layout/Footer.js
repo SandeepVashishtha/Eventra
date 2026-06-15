@@ -239,11 +239,7 @@ const Newsletter = () => {
         {feedback.message ? (
           <p
             id={feedbackId}
-            className={`text-xs font-medium ${
-              feedback.type === "success"
-                ? "text-emerald-600 dark:text-emerald-400"
-                : "text-red-600 dark:text-red-400"
-            }`}
+            className={`text-xs font-medium ${feedbackColor}`}
           >
             {feedback.message}
           </p>
