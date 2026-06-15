@@ -293,6 +293,59 @@ const useEventDetailsLogic = (eventId) => {
   };
 };
 
+const EventErrorState = ({ fetchError, loadEvent }) => (
+  <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100">
+    <div className="text-center">
+      <h1 className="text-4xl font-bold">Event Not Found</h1>
+      <p className="mt-4 text-gray-600 dark:text-gray-300">
+        {fetchError || "We could not find the event you were looking for."}
+      </p>
+      <div className="mt-6 flex items-center justify-center gap-3">
+        <button
+          onClick={loadEvent}
+          className="inline-flex rounded-full bg-indigo-600 px-6 py-3 text-white font-semibold hover:bg-indigo-700 transition"
+        >
+          Try Again
+        </button>
+        <Link to="/events" className="inline-flex rounded-full border border-gray-300 px-6 py-3 font-semibold hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800 transition">
+          Browse Events
+        </Link>
+      </div>
+    </div>
+  </div>
+);
+
+const EventSummary = ({ description }) => (
+  <div className="rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
+    <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Summary</h3>
+    <div
+      className="mt-3 text-gray-700 dark:text-gray-300 text-sm leading-6 prose prose-indigo dark:prose-invert"
+      dangerouslySetInnerHTML={{ __html: sanitizeMarkdown(description, marked.parse) }}
+    />
+  </div>
+);
+
+const EventMainGrid = ({ event }) => (
+  <div className="grid gap-8 lg:grid-cols-[1.25fr_0.75fr] items-start">
+    <div className="space-y-6 rounded-3xl bg-white p-8 shadow-xl dark:bg-gray-900">
+      <LazyImage
+        src={event.image}
+        alt={event.title}
+        width={1200}
+        height={384}
+        loading="eager"
+        useWebP
+        className="w-full rounded-3xl object-cover shadow-lg h-96"
+      />
+      <EventDetailsGrid event={event} />
+      <EventInfoSection event={event} />
+      <EventShareSidebar event={event} />
+      <EventSummary description={event.description} />
+      {renderAgenda(event.sessions)}
+    </div>
+  </div>
+);
+
 const EventDetails = () => {
   const { eventId } = useParams();
   
@@ -312,27 +365,7 @@ const EventDetails = () => {
   if (fetchLoading) return <EventDetailSkeleton />;
 
   if (fetchError || !event) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold">Event Not Found</h1>
-          <p className="mt-4 text-gray-600 dark:text-gray-300">
-            {fetchError || "We could not find the event you were looking for."}
-          </p>
-          <div className="mt-6 flex items-center justify-center gap-3">
-            <button
-              onClick={loadEvent}
-              className="inline-flex rounded-full bg-indigo-600 px-6 py-3 text-white font-semibold hover:bg-indigo-700 transition"
-            >
-              Try Again
-            </button>
-            <Link to="/events" className="inline-flex rounded-full border border-gray-300 px-6 py-3 font-semibold hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800 transition">
-              Browse Events
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
+    return <EventErrorState fetchError={fetchError} loadEvent={loadEvent} />;
   }
 
   const canSetReminder = isEventBookmarked(event.id) || isRegistered(event.id);
@@ -351,8 +384,6 @@ const EventDetails = () => {
 
       <div className="min-h-screen bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100 py-16 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl space-y-8">
-
-          {/* Header */}
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <TitleSection event={event} handleCopy={handleCopy} linkCopied={linkCopied} />
 
@@ -378,46 +409,12 @@ const EventDetails = () => {
             <ReminderControls event={event} canSetReminder={canSetReminder} />
           </section>
 
-          {/* Main Grid */}
-          <div className="grid gap-8 lg:grid-cols-[1.25fr_0.75fr] items-start">
-            {/* Left Column */}
-            <div className="space-y-6 rounded-3xl bg-white p-8 shadow-xl dark:bg-gray-900">
-              <LazyImage
-                src={event.image}
-                alt={event.title}
-                width={1200}
-                height={384}
-                loading="eager"
-                useWebP
-                className="w-full rounded-3xl object-cover shadow-lg h-96"
-              />
-
-              <EventDetailsGrid event={event} />
-              <EventInfoSection event={event} />
-
-              {/* Share & Add to Calendar */}
-              <EventShareSidebar event={event} />
-
-              <div className="rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
-                <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Summary</h3>
-                <div
-                  className="mt-3 text-gray-700 dark:text-gray-300 text-sm leading-6 prose prose-indigo dark:prose-invert"
-                  dangerouslySetInnerHTML={{ __html: sanitizeMarkdown(event.description, marked.parse) }}
-                />
-              </div>
-
-              {/* Event Agenda Section */}
-              {renderAgenda(event.sessions)}
-            </div>
-          </div>
+          <EventMainGrid event={event} />
 
           <div className="mt-12">
             <EventRecommendations currentEventId={event.id} currentCategory={event.category} />
           </div>
 
-          {/* Similar Events — multi-signal recommendation section (#7754)
-              Scores candidates by category, shared tags, type, mode, and difficulty
-              so the user is surfaced events that genuinely match what they viewed. */}
           <div className="mt-4">
             <SimilarEvents currentEvent={event} />
           </div>

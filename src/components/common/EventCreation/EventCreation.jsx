@@ -465,21 +465,7 @@ const EventFormToggles = ({ formData, handleInputChange }) => (
 );
 
 
-const EventFormContent = ({
-  formData,
-  setFormData,
-  errors,
-  setErrors,
-  handleInputChange,
-  handleImageUpload,
-  prefersReducedMotion,
-  handleDurationChange,
-  newTag,
-  setNewTag,
-  addTag,
-  removeTag,
-  handleNext,
-}) => (
+const EventFormHeader = ({ prefersReducedMotion }) => (
   <>
     <div className="w-full max-w-4xl flex justify-end mb-6">
       <button
@@ -509,83 +495,105 @@ const EventFormContent = ({
     </motion.div>
 
     <GuidelinesSection prefersReducedMotion={prefersReducedMotion} />
+  </>
+);
 
-    <motion.div
-      initial={{ opacity: 0, y: 50 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
-      className="w-full max-w-4xl bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-8 border border-indigo-300 dark:border-gray-700"
-    >
-      <div className="space-y-6">
-        <GeneralInfoStep
-          formData={formData}
-          setFormData={setFormData}
-          errors={errors}
-          setErrors={setErrors}
-          handleInputChange={handleInputChange}
-          handleImageUpload={handleImageUpload}
-          prefersReducedMotion={prefersReducedMotion}
-          categories={categories}
-        />
+const EventFormBody = ({
+  formData,
+  setFormData,
+  errors,
+  setErrors,
+  handleInputChange,
+  handleImageUpload,
+  prefersReducedMotion,
+  handleDurationChange,
+  newTag,
+  setNewTag,
+  addTag,
+  removeTag,
+  handleNext,
+}) => (
+  <motion.div
+    initial={{ opacity: 0, y: 50 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
+    className="w-full max-w-4xl bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-8 border border-indigo-300 dark:border-gray-700"
+  >
+    <div className="space-y-6">
+      <GeneralInfoStep
+        formData={formData}
+        setFormData={setFormData}
+        errors={errors}
+        setErrors={setErrors}
+        handleInputChange={handleInputChange}
+        handleImageUpload={handleImageUpload}
+        prefersReducedMotion={prefersReducedMotion}
+        categories={categories}
+      />
 
-        <EventDurationSelector
-          isMultiDay={formData.isMultiDay}
-          onChange={handleDurationChange}
-        />
+      <EventDurationSelector
+        isMultiDay={formData.isMultiDay}
+        onChange={handleDurationChange}
+      />
 
-        <DateTimeFields
-          formData={formData}
-          handleInputChange={handleInputChange}
-          errors={errors}
-          prefersReducedMotion={prefersReducedMotion}
-          todayString={todayString}
-        />
+      <DateTimeFields
+        formData={formData}
+        handleInputChange={handleInputChange}
+        errors={errors}
+        prefersReducedMotion={prefersReducedMotion}
+        todayString={todayString}
+      />
 
-        <EventFormVirtualAndCapacity
-          formData={formData}
-          handleInputChange={handleInputChange}
-          errors={errors}
-          prefersReducedMotion={prefersReducedMotion}
-        />
+      <EventFormVirtualAndCapacity
+        formData={formData}
+        handleInputChange={handleInputChange}
+        errors={errors}
+        prefersReducedMotion={prefersReducedMotion}
+      />
 
-        <RegistrationDatesFields
-          formData={formData}
-          handleInputChange={handleInputChange}
-          errors={errors}
-        />
+      <RegistrationDatesFields
+        formData={formData}
+        handleInputChange={handleInputChange}
+        errors={errors}
+      />
 
-        <EventFormToggles
-          formData={formData}
-          handleInputChange={handleInputChange}
-        />
+      <EventFormToggles
+        formData={formData}
+        handleInputChange={handleInputChange}
+      />
 
-        <TicketsStep
-          formData={formData}
-          setFormData={setFormData}
-          errors={errors}
-          setErrors={setErrors}
-        />
+      <TicketsStep
+        formData={formData}
+        setFormData={setFormData}
+        errors={errors}
+        setErrors={setErrors}
+      />
 
-        <TagsInput
-          tags={formData.tags}
-          newTag={newTag}
-          onNewTagChange={setNewTag}
-          onAdd={addTag}
-          onRemove={removeTag}
-        />
+      <TagsInput
+        tags={formData.tags}
+        newTag={newTag}
+        onNewTagChange={setNewTag}
+        onAdd={addTag}
+        onRemove={removeTag}
+      />
 
-        <motion.button
-          type="button"
-          onClick={handleNext}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="w-full flex items-center justify-center gap-2 bg-black text-white font-semibold p-4 rounded-xl shadow-lg hover:bg-zinc-800 transition-all duration-300"
-        >
-          Preview Event
-        </motion.button>
-      </div>
-    </motion.div>
+      <motion.button
+        type="button"
+        onClick={handleNext}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        className="w-full flex items-center justify-center gap-2 bg-black text-white font-semibold p-4 rounded-xl shadow-lg hover:bg-zinc-800 transition-all duration-300"
+      >
+        Preview Event
+      </motion.button>
+    </div>
+  </motion.div>
+);
 
+const EventFormContent = (props) => (
+  <>
+    <EventFormHeader prefersReducedMotion={props.prefersReducedMotion} />
+    <EventFormBody {...props} />
     <StatsSection />
   </>
 );
