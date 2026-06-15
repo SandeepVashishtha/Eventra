@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNotification } from '../context/NotificationContext';
 import useDocumentTitle from '../hooks/useDocumentTitle';
@@ -46,7 +46,7 @@ export default function UserAchievements() {
   }, [activeShareBadge]);
 
   // Fallback / Normalized list of milestone achievements with progress metrics
-  const fallbackBadges = [
+  const fallbackBadges = useMemo(() => [
     {
       id: 'first-step',
       name: 'First Step',
@@ -88,9 +88,9 @@ export default function UserAchievements() {
       name: 'GSSoC Contributor',
       description: 'Register for GSSoC specialized repository hackathons.',
       icon: '💻',
-      currentProgress: Math.min(achievements.totalEvents || 0, 2),
+      currentProgress: Math.min(achievements.gssocEvents || 0, 2),
       targetProgress: 2,
-      earned: (achievements.totalEvents || 0) >= 2,
+      earned: (achievements.gssocEvents || 0) >= 2,
       rewardXP: 200,
       details: 'Collaborate with global open-source developers and sync your GSSoC progress boards.',
       log: ['+200 XP awarded', 'GSSoC Specialist badge enabled'],
@@ -107,7 +107,7 @@ export default function UserAchievements() {
       details: 'Dive deep into AI integrations, blockchain, and next-generation Web3 protocols.',
       log: ['+400 XP awarded', 'AI Specialist badge enabled'],
     },
-  ];
+  ], [achievements.totalEvents, achievements.currentStreak, achievements.gssocEvents]);
 
   const operationalBadges = achievements.badges && achievements.badges.length > 0
     ? achievements.badges.map((b, idx) => ({
@@ -178,8 +178,8 @@ export default function UserAchievements() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    // Free browser memory after download triggers (100ms ensures download starts first)
-    setTimeout(() => URL.revokeObjectURL(url), 100);
+    // Free browser memory immediately to prevent SPA memory leaks
+    URL.revokeObjectURL(url);
     toast.success(t("userAchievements.toastCertificateDownloaded"));
   };
 
@@ -569,6 +569,7 @@ export default function UserAchievements() {
         <QuestCenter
           totalEvents={achievements.totalEvents}
           currentStreak={achievements.currentStreak}
+          gssocEvents={achievements.gssocEvents}
         />
 
       </div>

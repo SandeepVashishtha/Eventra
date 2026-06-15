@@ -30,11 +30,14 @@ const useCountdown = (targetDate) => {
   useEffect(() => {
     setTimeLeft(calculateTimeLeft());
 
-    const timer = setInterval(() => {
+    let timerId = null;
+    timerId = setInterval(() => {
       setTimeLeft(calculateTimeLeft());
     }, 1000);
 
-    return () => clearInterval(timer);
+    return () => {
+      if (timerId !== null) clearInterval(timerId);
+    };
   }, [calculateTimeLeft]);
 
   return timeLeft;

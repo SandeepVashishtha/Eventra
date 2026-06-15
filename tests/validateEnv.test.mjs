@@ -9,6 +9,7 @@
 import { strict as assert } from "node:assert";
 import { describe, it } from "node:test";
 import { readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
@@ -62,6 +63,21 @@ const SENSITIVE_VALUE_PATTERNS = extractValuePatterns(scriptSource);
 
 const valueMatchesAny = (value) =>
   SENSITIVE_VALUE_PATTERNS.some(({ pattern }) => pattern.test(value));
+
+const baseEnv = () => {
+  const env = { ...process.env, NODE_ENV: "development" };
+  delete env.BACKEND_URL;
+  delete env.VITE_API_URL;
+  delete env.REACT_APP_API_URL;
+  return env;
+};
+
+const runValidateEnv = (envOverrides = {}) =>
+  spawnSync(process.execPath, [scriptPath], {
+    cwd: path.resolve(__dirname, ".."),
+    env: { ...baseEnv(), ...envOverrides },
+    encoding: "utf8",
+  });
 
 // ---------------------------------------------------------------------------
 // Tests: dangerous key names that MUST be caught
@@ -171,6 +187,40 @@ describe("SENSITIVE_VALUE_PATTERNS — token value detection", () => {
   it("does not flag a Google OAuth client ID", () => {
     const clientId = "123456789-abcdefg.apps.googleusercontent.com";
     assert.ok(!valueMatchesAny(clientId), "Expected Google Client ID to be safe");
+  });
+});
+
+describe("backend environment validation", () => {
+  it("passes when VITE_API_URL is configured", () => {
+    const result = runValidateEnv({ VITE_API_URL: "https://api.example.com" });
+
+    assert.strictEqual(result.status, 0, result.stderr || result.stdout);
+    assert.match(result.stdout, /Environment check passed/);
+  });
+
+  it("passes when BACKEND_URL is configured", () => {
+    const result = runValidateEnv({ BACKEND_URL: "https://api.example.com" });
+
+    assert.strictEqual(result.status, 0, result.stderr || result.stdout);
+    assert.match(result.stdout, /Environment check passed/);
+  });
+
+  it("passes when REACT_APP_API_URL is configured", () => {
+    const result = runValidateEnv({ REACT_APP_API_URL: "https://api.example.com/api" });
+
+    assert.strictEqual(result.status, 0, result.stderr || result.stdout);
+    assert.match(result.stdout, /Environment check passed/);
+  });
+
+  it("fails clearly when no backend URL is configured", () => {
+    const result = runValidateEnv();
+    const output = `${result.stdout}\n${result.stderr}`;
+
+    assert.notStrictEqual(result.status, 0);
+    assert.match(
+      output,
+      /Backend URL is not configured\. Set BACKEND_URL, VITE_API_URL, or REACT_APP_API_URL/
+    );
   });
 });
 
