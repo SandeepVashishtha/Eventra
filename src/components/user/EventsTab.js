@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ReactDOM from "react-dom"; // 🔥 FIX: Required for Portal
 import { motion, AnimatePresence } from "framer-motion";
 import { useReducedMotion } from '../../hooks/useReducedMotion';
@@ -340,6 +340,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
 
   const [recentSearches,
     setRecentSearches] = useState([]);
+    const searchInputRef = useRef(null);
   const registeredEvents = useMemo(
     () =>
       myEvents.map((registration) => ({
@@ -402,6 +403,53 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
 
   const handleCancelClick = (id, title) => setCancelTarget({ id, title });
   const handleCancelDismiss = () => setCancelTarget(null);
+  useEffect(() => {
+  const handleKeyboardShortcuts = (e) => {
+    const activeTag = document.activeElement?.tagName?.toLowerCase();
+
+    // Prevent shortcuts while typing in inputs
+    if (
+      activeTag === "input" ||
+      activeTag === "textarea"
+    ) {
+      if (e.key === "Escape") {
+        setSearchQuery("");
+      }
+      return;
+    }
+
+    // Focus search with "/"
+    if (e.key === "/") {
+      e.preventDefault();
+      searchInputRef.current?.focus();
+    }
+
+    // Reset filters
+    if (
+      (e.ctrlKey || e.metaKey) &&
+      e.shiftKey &&
+      e.key.toLowerCase() === "r"
+    ) {
+      e.preventDefault();
+      
+      setSearchQuery("");
+      setFilterStatus("All");
+      setFilterType("All");
+      setSortBy("soonest");
+
+      toast.success("Filters reset");
+    }
+  };
+
+  window.addEventListener("keydown", handleKeyboardShortcuts);
+
+  return () => {
+    window.removeEventListener(
+      "keydown",
+      handleKeyboardShortcuts
+    );
+  };
+}, []);
   const handleCancelConfirm = () => {
     if (!cancelTarget) return;
     removeRegistration(cancelTarget.id);
@@ -467,8 +515,11 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
           <div className="ud-search-wrap my-events-search">
             <Search size={14} className="ud-search-icon" />
             <input
+            ref={searchInputRef}
               className="ud-search"
               placeholder="Search your events…"
+              aria-label="Search events"
+              title="Press / to focus search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -514,6 +565,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
           )}
 
           <StyledDropdown
+          aria-label="Event filter dropdown"
             label=""
             value={filterStatus === "All" ? "" : filterStatus}
             placeholder="All Statuses"
@@ -523,6 +575,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
 
           {availableTypes.length > 1 && (
             <StyledDropdown
+            aria-label="Event filter dropdown"
               label=""
               value={filterType === "All" ? "" : filterType}
               placeholder="All Types"
@@ -532,6 +585,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
           )}
 
           <StyledDropdown
+          aria-label="Event filter dropdown"
             label=""
             value={
               sortBy === "soonest"
@@ -548,6 +602,26 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
               else if (val === "Event Name") setSortBy("name");
             }}
           />
+          <button
+  title="Ctrl/Cmd + Shift + R"
+  onClick={() => {
+    setSearchQuery("");
+    setFilterStatus("All");
+    setFilterType("All");
+    setSortBy("soonest");
+
+    toast.success("Filters reset");
+  }}
+  className="
+    px-4 py-2 rounded-xl
+    border border-slate-300 dark:border-slate-700
+    text-sm font-semibold
+    hover:bg-slate-100 dark:hover:bg-slate-800
+    transition-all duration-200
+  "
+>
+  Reset Filters
+</button>
         </div>
       )}
 
