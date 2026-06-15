@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Check, Monitor, Sun, Moon } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
@@ -35,7 +35,7 @@ const ThemeCustomizer = () => {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-200 flex items-center justify-center p-4">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -110,7 +110,7 @@ const ThemeCustomizer = () => {
                       }`}
                     >
                       <div
-                        className={`w-8 h-8 rounded-full bg-gradient-to-br ${themeOption.accent} flex items-center justify-center shadow-sm shrink-0`}
+                        className={`w-8 h-8 rounded-full bg-linear-to-br ${themeOption.accent} flex items-center justify-center shadow-sm shrink-0`}
                       >
                         {isActive && <Check className="w-4 h-4 text-white" />}
                       </div>

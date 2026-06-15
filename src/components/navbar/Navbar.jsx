@@ -13,7 +13,6 @@ import ProfileMenu from "./ProfileMenu";
 import NotificationBell from "../notifications/NotificationBell";
 import useBodyScrollLock from "./hooks/useBodyScrollLock";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
-
 const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -82,16 +81,23 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
 
   return (
     <>
+      {/* Skip link — visually hidden until keyboard-focused; satisfies WCAG 2.4.1 Bypass Blocks */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-indigo-600 focus:text-white focus:rounded"
+      >
+        Skip to main content
+      </a>
       <nav
         ref={navRef}
         aria-label="Primary navigation"
-        className={`sticky top-0 left-0 w-full z-[200] transition-all duration-300 ${
+        className={`sticky top-0 left-0 w-full z-sticky transition-all duration-300 ${
           scrolled
             ? "backdrop-blur-md bg-navbar/95 border-b border-border shadow-sm"
             : "bg-transparent border-b border-transparent"
         }`}
       >
-        <div className="relative px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="relative px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-3">
           {/* Logo - Left Section */}
           <Link to="/" aria-label="Eventra home logo template" className="relative z-10 flex items-center shrink-0">
             <div className="flex items-center gap-2 sm:gap-2.5">
@@ -111,13 +117,13 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           </Link>
 
           {/* Desktop Links - Wrapping instead of absolute positioning */}
-          <div className="hidden lg:flex items-center justify-center flex-1 overflow-x-auto">
+          <div className="hidden lg:flex items-center justify-center flex-1 ">
             <DesktopNavbar />
           </div>
 
           {/* Right Controls Container */}
-          <div className="relative z-10 flex items-center gap-2 sm:gap-2.5 shrink-0">
-            <div className="hidden lg:flex items-center gap-2.5">
+          <div className="relative z-10 flex items-center gap-1 sm:gap-2.5 shrink-0">
+            <div className="hidden lg:flex items-center gap-1.5">
               <LanguageSelector compact />
               {authenticated ? (
                 <>
@@ -127,7 +133,6 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
               ) : (
                 <AuthButtons />
               )}
-              <InstallAppButton />
               <CursorToggle cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
             </div>
             <ThemeToggleButton 

@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 // Calendar URL helpers — import from the timezone-aware utility instead of
 // using the old inline implementations (which were UTC-blind and hardcoded
 // a 1-hour event duration — fixed in issue #2015).
-import { getGoogleCalendarUrl, getOutlookCalendarUrl, getYahooCalendarUrl, generateIcsFileBlobUrl } from "../../utils/calendarUrlUtils";
+import { getGoogleCalendarUrl, getOutlookCalendarUrl, getYahooCalendarUrl, generateIcsFileBlobUrl, getWebcalSubscriptionUrl } from "../../utils/calendarUrlUtils";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import hackathonsData from "../Hackathons/hackathonMockData.json";
 import { motion } from "framer-motion";
@@ -45,6 +45,24 @@ import { pushToQueue } from "../../utils/offlineQueue";
 import registrationLocks from "../../utils/registrationLocks";
 
 const MAX_NOTES_CHARS = 500;
+
+const isRequestCanceled = (error, signal) =>
+  signal?.aborted ||
+  error?.name === "AbortError" ||
+  error?.name === "CanceledError" ||
+  error?.code === "ERR_CANCELED";
+
+const generateSecureUUID = () => {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+    return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+      (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+    );
+  }
+  throw new Error("Secure random number generation is not supported in this browser.");
+};
 
 const getRegistrationFailureMessage = (error) => {
   const message = error?.data?.message || error?.data?.error || error?.message || "";
@@ -343,10 +361,7 @@ const EventRegistration = () => {
         // should honour it for duplicate detection) and is also passed to
         // pushToQueue so the queue can deduplicate by eventId+userId before
         // writing to IndexedDB / localStorage.
-        const idempotencyKey =
-        typeof crypto !== "undefined" && crypto.randomUUID
-        ? crypto.randomUUID()
-        : `idem-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+        const idempotencyKey = generateSecureUUID();
 
     try {
       const response = await apiUtils.post(
@@ -361,7 +376,7 @@ const EventRegistration = () => {
       );
 
       const regData = response.data || {};
-      const registrationId = regData.registrationId || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `reg-${Date.now()}`);
+      const registrationId = regData.registrationId || generateSecureUUID();
       const qrToken = regData.qrToken || "";
 
       setRegistered(true);
@@ -483,7 +498,7 @@ const EventRegistration = () => {
     // guards above rather than being allowed to start a parallel flow.
     isSubmittingRef.current = true;
     registrationLocks.set(eventId, true);
-
+    setSubmitting(true);  
     let conflictDetected = false;
     try {
       const isFull = await checkEventCapacity(eventId, event);
@@ -512,6 +527,7 @@ const EventRegistration = () => {
       // without blocking future attempts. handleConflictProceed re-acquires.
       isSubmittingRef.current = false;
       registrationLocks.delete(eventId);
+      setSubmitting(false);             // ← ADD THIS LINE
       return;
     }
 
@@ -552,7 +568,7 @@ const EventRegistration = () => {
 
   const isEventFull = event ? event.attendees >= event.maxAttendees : false;
   const status = getEventStatus(event);
-  const isPastEvent = status === "past" || status === "ended";
+  // const isPastEvent = status === "past" || status === "ended";
   const isCancelledEvent = status === "cancelled";
   const isRegistrationBlocked = isEventRegistrationClosed(event);
 
@@ -622,7 +638,7 @@ const EventRegistration = () => {
     const googleCalendarUrl = getGoogleCalendarUrl(event);
     const outlookCalendarUrl = getOutlookCalendarUrl(event);
     const yahooCalendarUrl = getYahooCalendarUrl(event);
-    const icsBlobUrl = generateIcsFileBlobUrl(event);
+    const webcalUrl = event.id ? getWebcalSubscriptionUrl(event.id) : generateIcsFileBlobUrl(event);
     const shareText = `I'm attending ${event.title} on Eventra! Join me there!`;
     const shareUrl = `${window.location.origin}/events/${event.id}`;
 
@@ -686,7 +702,7 @@ const EventRegistration = () => {
           </p>
 
           <div className="bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200/40 dark:border-slate-800/50 rounded-3xl p-5 mb-8 text-left">
-            <h3 title={event.title} className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-3 line-clamp-2 break-words min-w-0">
+            <h3 title={event.title} className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-3 line-clamp-2 wrap-break-word min-w-0">
               {event.title}
             </h3>
 
@@ -724,7 +740,7 @@ const EventRegistration = () => {
                 href={googleCalendarUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
+                className="flex-1 min-w-30 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
               >
                 <svg className="w-4 h-4 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z" />
@@ -735,7 +751,7 @@ const EventRegistration = () => {
                 href={outlookCalendarUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
+                className="flex-1 min-w-30 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
               >
                 <svg className="w-4 h-4 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
@@ -746,7 +762,7 @@ const EventRegistration = () => {
                 href={yahooCalendarUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
+                className="flex-1 min-w-30 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
               >
                 <svg className="w-4 h-4 text-purple-600" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
@@ -754,8 +770,11 @@ const EventRegistration = () => {
                 Yahoo
               </a>
               <a
-                href={icsBlobUrl || '#'}
-                download={event.title ? `${event.title}.ics` : 'event.ics'}
+                href={webcalUrl || '#'}
+                {...(event.id
+                  ? {}
+                  : { download: event.title ? `${event.title}.ics` : 'event.ics' }
+                )}
                 className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
               >
                 <svg className="w-4 h-4 text-slate-600 dark:text-slate-400" viewBox="0 0 24 24" fill="currentColor">
@@ -853,7 +872,7 @@ const EventRegistration = () => {
             />
             <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent"></div>
             <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-              <h1 title={event.title} className="text-3xl font-bold mb-2 break-words">{event.title}</h1>
+              <h1 title={event.title} className="text-3xl font-bold mb-2 wrap-break-word">{event.title}</h1>
               <div className="flex flex-wrap gap-4 text-sm">
                 <span className="flex items-center gap-1">
                   <Calendar className="w-4 h-4" />

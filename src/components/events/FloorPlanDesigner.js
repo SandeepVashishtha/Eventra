@@ -142,20 +142,31 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
     const currentSelectedId = selectedIdRef.current;
     commitElementsChange((currentElements) => currentElements.map(el => {
       const nextAssignments = { ...el.assignedAttendees };
-      Object.keys(nextAssignments).forEach(k => {
-        if (nextAssignments[k] === attendeeName) {
-          delete nextAssignments[k];
-        }
-      });
       if (el.id === currentSelectedId) {
         if (attendeeName !== "") {
+          Object.keys(nextAssignments).forEach(k => {
+            if (nextAssignments[k] === attendeeName) {
+              delete nextAssignments[k];
+            }
+          });
           nextAssignments[seatIndex] = attendeeName;
         } else {
           delete nextAssignments[seatIndex];
         }
         return { ...el, assignedAttendees: nextAssignments };
       }
-      return { ...el, assignedAttendees: nextAssignments };
+      
+      // Clear duplicate attendee assignments from other tables
+      let changed = false;
+      if (attendeeName !== "") {
+        Object.keys(nextAssignments).forEach(k => {
+          if (nextAssignments[k] === attendeeName) {
+            delete nextAssignments[k];
+            changed = true;
+          }
+        });
+      }
+      return changed ? { ...el, assignedAttendees: nextAssignments } : el;
     }));
   };
 

@@ -1,9 +1,12 @@
+import { parseTimeString } from "./timezoneUtils";
+
 export const parseTimeToMinutes = (timeStr) => {
   if (!timeStr) return 0;
 
-  const [hours, minutes] = timeStr.split(":").map(Number);
+  const parsed = parseTimeString(timeStr);
+  if (!parsed) return 0;
 
-  return (hours || 0) * 60 + (minutes || 0);
+  return parsed.hours * 60 + parsed.minutes;
 };
 
 export const formatDate = (dateString) => {

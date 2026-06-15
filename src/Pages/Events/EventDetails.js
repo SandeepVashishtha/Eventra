@@ -6,7 +6,7 @@ import { sanitizeMarkdown } from "../../utils/sanitizeHtml";
 import { toast } from "react-toastify";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
-import { Calendar, MapPin, Clock, Tag, Share2, CalendarPlus, Link2, Check } from "lucide-react";
+import { Calendar, MapPin, Clock, Tag, CalendarPlus, Link2, Check } from "lucide-react";
 import { getEventStatus, isEventRegistrationClosed } from "../../utils/eventUtils";
 import { isEventBookmarked } from "../../utils/bookmarkUtils";
 import { DRAFT_KEY } from "../../constants/eventDefaults";
@@ -23,13 +23,20 @@ import { useAuth } from "../../context/AuthContext";
 import { exportToCSV, exportToJSON } from "../../utils/exportUtils";
 import { ROLES } from "../../config/roles";
 import { marked } from "marked";
-import ShareMenu from "../../components/common/ShareMenu";
 import ShareModal from "../../components/common/ShareModal";
-import { generateEventSharingData } from "../../utils/shareUtils";
+import SocialShareButtons from "../../components/common/SocialShareButtons";
+// import { generateEventSharingData } from "../../utils/shareUtils";
 import { downloadICSFile, generateGoogleCalendarLink, generateOutlookLink } from "../../utils/calendarExporter";
 import useRecentlyViewed from "../../hooks/useRecentlyViewed";
 import { apiUtils, API_ENDPOINTS } from "../../config/api";
 import mockEvents from "./eventsMockData.json";
+import CopyButton from '../../components/ui/CopyButton';
+import { Share2 } from "lucide-react";
+const isRequestCanceled = (error, signal) =>
+  signal?.aborted ||
+  error?.name === "AbortError" ||
+  error?.name === "CanceledError" ||
+  error?.code === "ERR_CANCELED";
 
 const EventDetails = () => {
   const { eventId } = useParams();
@@ -51,16 +58,26 @@ const EventDetails = () => {
   const { isRegistered } = useMyEvents();
   const [linkCopied, setLinkCopied] = useState(false);
   const latestRequestIdRef = useRef(0);
+  const abortControllerRef = useRef(null);
 
   const loadEvent = useCallback(async () => {
+    abortControllerRef.current?.abort();
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
     const requestId = ++latestRequestIdRef.current;
-    const isLatestRequest = () => latestRequestIdRef.current === requestId;
+    const isLatestRequest = () =>
+      latestRequestIdRef.current === requestId &&
+      abortControllerRef.current === controller &&
+      !controller.signal.aborted;
 
     setFetchLoading(true);
     setFetchError(null);
 
     try {
-      const res = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId));
+      const res = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId), {
+        signal: controller.signal,
+      });
       if (!isLatestRequest()) return;
       if (res.ok && res.data) {
         const raw = res.data?.data ?? res.data;
@@ -68,17 +85,30 @@ const EventDetails = () => {
       } else {
         throw new Error(res.data?.message || `Event not found (${res.status})`);
       }
-    } catch {
+    } catch (error) {
       if (!isLatestRequest()) return;
+      if (isRequestCanceled(error, controller.signal)) return;
+
       // Fall back to bundled mock data when the API is unreachable
       const fallback = mockEvents.find((item) => String(item.id) === eventId);
       if (fallback) {
         setEvent({ ...fallback, status: getEventStatus(fallback) });
       } else {
-        setFetchError("Event not found.");
+        const status = error?.status || error?.response?.status;
+        if (status >= 500) {
+          setFetchError("Something went wrong on our end. Please try again later.");
+        } else if (status === 404) {
+          setFetchError("Event not found.");
+        } else {
+          setFetchError("Could not load event details. Please try again.");
+        }
       }
     } finally {
-      if (isLatestRequest()) {
+      const shouldFinishLoading = isLatestRequest();
+      if (abortControllerRef.current === controller) {
+        abortControllerRef.current = null;
+      }
+      if (shouldFinishLoading) {
         setFetchLoading(false);
       }
     }
@@ -86,6 +116,9 @@ const EventDetails = () => {
 
   useEffect(() => {
     loadEvent();
+    return () => {
+      abortControllerRef.current?.abort();
+    };
   }, [loadEvent]);
 
   // Safely handle localStorage cache updates via hook
@@ -200,7 +233,15 @@ const EventDetails = () => {
   };
 
   const handleCopy = async () => {
-    const link = window.location.href;
+   const link = `
+🎉 Check out this event!
+
+Event: ${event.title}
+Date: ${new Date(event.date).toLocaleDateString()}
+Location: ${event.location}
+
+${window.location.href}
+`;
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(link);
@@ -285,7 +326,7 @@ const EventDetails = () => {
                 {event.type}
               </p>
               <div className="mt-4 flex items-center gap-3">
-                <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight break-words" title={event.title}>{event.title}</h1>
+                <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight wrap-break-word" title={event.title}>{event.title}</h1>
                 <button
                   onClick={handleCopy}
                   className={`p-2 rounded-full transition-colors ${linkCopied 
@@ -327,7 +368,7 @@ const EventDetails = () => {
                 Share Event
               </button>
 
-              {(isAdmin() || isOrganizer()) && event.status !== "cancelled" && (
+              {isOrganizer && event.status !== "cancelled" && (
                 <button
                   onClick={() => setShowCancelModal(true)}
                   className="inline-flex items-center justify-center rounded-full border border-red-500 px-6 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
@@ -522,10 +563,7 @@ const EventDetails = () => {
 
                 {/* Event Countdown */}
                 <div className="sm:col-span-2">
-                  <CountdownTimer
-                    date={event.date}
-                    time={event.time}
-                  />
+                  <CountdownTimer eventDate={event.date} />
                 </div>
               </div>
 
@@ -551,11 +589,10 @@ const EventDetails = () => {
               {/* Share & Add to Calendar */}
               <div className="rounded-3xl bg-slate-50 p-5 dark:bg-gray-800 space-y-4">
                 <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Share & Add to Calendar</h3>
-                <ShareMenu shareData={generateEventSharingData({ ...event, title: event.title, description: event.description, date: event.date, id: event.id })} position="top-left">
-                  <button className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100 shadow-sm hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:border-indigo-300 dark:hover:border-indigo-600 transition-all duration-200" aria-label="Share this event">
-                    <Share2 size={15} className="text-indigo-500" /> Share Event
-                  </button>
-                </ShareMenu>
+                <SocialShareButtons event={event} layout="grid" />
+                <div className="mt-4">
+                  <CopyButton textToCopy={window.location.href} />
+                </div>
 
                 <div className="flex flex-col gap-2">
                   <button onClick={() => { downloadICSFile(event); toast.success("Calendar invite downloaded!"); }} className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100 shadow-sm hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-300 dark:hover:border-green-700 transition-all duration-200" aria-label="Download .ics calendar invite">

@@ -125,7 +125,7 @@ export const generateEventSharingData = (event, baseUrl = null) => {
   }
 
   // Determine the correct base URL for sharing
-  const rawPublicUrl = ENV.PUBLIC_URL || "eventra.sandeepvashishtha.tech";
+  const rawPublicUrl = ENV.PUBLIC_URL || "eventra.sandeepvashishtha.in";
   const deployedOrigin = rawPublicUrl.startsWith("http")
     ? rawPublicUrl.replace(/\/$/, "")
     : `https://${rawPublicUrl}`;

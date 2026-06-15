@@ -1,5 +1,20 @@
 import { useLocation } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useEffect, useState } from "react";
+
+// Connection speed detection utility
+const checkSlowConnection = () => {
+  if (typeof window === "undefined" || typeof navigator === "undefined") return false;
+  const connection =
+    navigator.connection ||
+    navigator.mozConnection ||
+    navigator.webkitConnection;
+  if (!connection) return false;
+  return (
+    connection.saveData ||
+    ["slow-2g", "2g", "3g"].includes(connection.effectiveType)
+  );
+};
 
 // Route-type based transition picker
 const getVariants = (pathname) => {
@@ -51,17 +66,23 @@ const getTransition = (pathname) => {
 const PageTransition = ({ children }) => {
   const location = useLocation();
   const prefersReducedMotion = useReducedMotion();
+  const [isSlow, setIsSlow] = useState(false);
 
-  const variants = prefersReducedMotion
-    ? reducedMotionVariants
-    : getVariants(location.pathname);
+  useEffect(() => {
+    setIsSlow(checkSlowConnection());
+  }, []);
 
-  const transition = prefersReducedMotion
-    ? { duration: 0.15 }
-    : getTransition(location.pathname);
+  const skipAnimation = prefersReducedMotion || isSlow;
+
+  if (skipAnimation) {
+    return <>{children}</>;
+  }
+
+  const variants = getVariants(location.pathname);
+  const transition = getTransition(location.pathname);
 
   return (
-    <AnimatePresence mode="wait" initial={false}>
+    <AnimatePresence mode="popLayout" initial={false}>
       <motion.div
         key={location.pathname}
         variants={variants}

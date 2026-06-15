@@ -201,6 +201,8 @@ clearErrorLog();
 
 ### Testing Error Boundary
 
+The application includes a development-only ErrorButton component (visible in development mode) that allows you to test error boundary behavior by intentionally triggering an error. This button is automatically excluded from production builds.
+
 ```javascript
 // Temporarily add error in component
 useEffect(() => {
@@ -212,6 +214,8 @@ function ErrorTest() {
   throw new Error("Deliberate error for testing");
 }
 ```
+
+**Note**: The ErrorButton component is wrapped with `import.meta.env.DEV` check and will not be rendered in production builds.
 
 ### Viewing Error Logs
 

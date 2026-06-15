@@ -2,7 +2,7 @@ import { apiUtils } from "../config/api.js";
 
 const DEFAULT_TIMEOUT_MS = 8000;
 const DEFAULT_RETRIES = 1;
-const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504];
+// const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504];
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -119,6 +119,18 @@ export const requestValidation = async (endpoint, options = {}) => {
 
   let lastError = null;
 
+  let sanitizedBody = body;
+  if (body && typeof body === "object") {
+    try {
+      sanitizedBody = JSON.parse(JSON.stringify(body), (key, value) => {
+        if (typeof value === "string") {
+          return value.replace(/<[^>]*>/g, ""); // Strip raw HTML tags
+        }
+        return value;
+      });
+    } catch {}
+  }
+
   for (let attempt = 0; attempt <= retries; attempt += 1) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -131,11 +143,11 @@ export const requestValidation = async (endpoint, options = {}) => {
       if (uppercaseMethod === "GET") {
         response = await apiUtils.get(endpoint, config);
       } else if (uppercaseMethod === "POST") {
-        response = await apiUtils.post(endpoint, body, config);
+        response = await apiUtils.post(endpoint, sanitizedBody, config);
       } else if (uppercaseMethod === "PUT") {
-        response = await apiUtils.put(endpoint, body, config);
+        response = await apiUtils.put(endpoint, sanitizedBody, config);
       } else if (uppercaseMethod === "PATCH") {
-        response = await apiUtils.patch(endpoint, body, config);
+        response = await apiUtils.patch(endpoint, sanitizedBody, config);
       } else if (uppercaseMethod === "DELETE") {
         response = await apiUtils.delete(endpoint, config);
       } else {
@@ -163,7 +175,15 @@ export const requestValidation = async (endpoint, options = {}) => {
       const status = error.status;
       const data = error.data;
 
-      // If the API explicitly returned a validation failure (like 400, 409)
+      // If the API explicitly returned an authentication or validation failure.
+      if (status === 409) {
+        return createValidationResponse(
+          false,
+          invalidMessage,
+          { status, data }
+        );
+      }
+
       if (status === 401 || status === 403) {
         return createValidationResponse(
           false,

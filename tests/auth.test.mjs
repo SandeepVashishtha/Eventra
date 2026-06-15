@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { decodeJwtPayload, isTokenExpired, isTokenValid, getTokenTTL } from "../src/utils/auth.js";
+import { trackFailedLogin, clearFailedLogin, registerSession, getSessionState, updateSessionActivity, setSessionStatus } from "../api/_lib/sessionRisk.js";
 
 import crypto from "node:crypto";
 
@@ -60,3 +61,50 @@ assert.ok(validTTL > 0 && validTTL <= 120, `Expected TTL to be between 1 and 120
 
 // Fix flakiness: Change strict '< 0' to '<= 0' to handle the threshold millisecond edge case
 assert.ok(getTokenTTL(expiredToken) <= 0);
+
+// Clock skew buffer — a token expiring in 10s should NOT be treated as still valid
+// since the 30-second CLOCK_SKEW_BUFFER means we treat it as expired early
+const nearExpiry = Math.floor(Date.now() / 1000) + 10;
+const nearExpiryToken = makeToken({ exp: nearExpiry });
+assert.equal(isTokenExpired(nearExpiryToken), true, "token expiring in 10s should be considered expired with 30s skew buffer");
+assert.ok(getTokenTTL(nearExpiryToken) <= 0, `TTL should be <= 0 with skew buffer, got ${getTokenTTL(nearExpiryToken)}`);
+
+// --- Session Risk Tests ---
+
+async function runSessionRiskTests() {
+  const username = "testuser";
+  
+  // Clean start
+  await clearFailedLogin(username);
+  
+  // Failed logins
+  assert.equal(await trackFailedLogin(username), false);
+  assert.equal(await trackFailedLogin(username), false);
+  assert.equal(await trackFailedLogin(username), false);
+  assert.equal(await trackFailedLogin(username), false);
+  assert.equal(await trackFailedLogin(username), true, "5th failed login should return true");
+  
+  await clearFailedLogin(username);
+  assert.equal(await trackFailedLogin(username), false, "Should be reset");
+
+  // Session registration
+  const sessionId = "test-session-id";
+  const userId = "user-123";
+  await registerSession(sessionId, userId, "127.0.0.1");
+  
+  let state = await getSessionState(sessionId);
+  assert.equal(state.status, "active");
+  assert.equal(state.userId, userId);
+  
+  // Set session status
+  await setSessionStatus(sessionId, "requires_reauth");
+  state = await getSessionState(sessionId);
+  assert.equal(state.status, "requires_reauth");
+  
+  console.log("All tests passed!");
+}
+
+runSessionRiskTests().catch(err => {
+  console.error(err);
+  process.exit(1);
+});
