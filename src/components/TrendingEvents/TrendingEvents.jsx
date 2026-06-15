@@ -4,6 +4,24 @@ import { eventService } from "../../services/eventService";
 import EventCard from "../../Pages/Events/EventCard";
 import { Calendar, TrendingUp, Users, Bookmark, Eye } from "lucide-react";
 import mockEvents from "../../Pages/Events/eventsMockData.json";
+import { normalizeEvents } from "../../utils/eventFetchUtils";
+
+const EVENT_LIST_KEYS = ["content", "events", "items", "results", "data"];
+
+const extractEventList = (payload) => {
+  if (Array.isArray(payload)) return payload;
+
+  if (!payload || typeof payload !== "object") return [];
+
+  for (const key of EVENT_LIST_KEYS) {
+    const value = payload[key];
+    if (Array.isArray(value)) return value;
+    const nestedEvents = extractEventList(value);
+    if (nestedEvents.length > 0) return nestedEvents;
+  }
+
+  return [];
+};
 
 const toNumber = (value) => {
   const n = typeof value === "number" ? value : Number(value);
@@ -65,16 +83,20 @@ const TrendingEvents = ({ title = "Trending Events", limit = 6, fetchSize = 24 }
       try {
         // eventService uses 0-based page index in backend pagination (consistent with existing hooks)
         const res = await eventService.getAllEvents(0, fetchSize);
-        const content = res?.data?.content ?? res?.data ?? [];
+        const content = extractEventList(res?.data);
         if (!active) return;
 
-        const normalized = Array.isArray(content) ? content : [];
-        setEvents(normalized);
-      } catch {
+        const normalizedEvents = normalizeEvents(content);
+        setEvents(normalizedEvents);
+      } catch (err) {
         if (!active) return;
-        // Backend unavailable — surface local mock data so the section stays useful.
+        // Backend unavailable - keep the section useful in local/dev builds.
         const fallback = Array.isArray(mockEvents) ? mockEvents : [];
-        setEvents(fallback.slice(0, fetchSize));
+        const fallbackEvents = normalizeEvents(fallback.slice(0, fetchSize));
+        setEvents(fallbackEvents);
+        if (fallbackEvents.length === 0) {
+          setError(err?.message || "Failed to load trending events.");
+        }
       } finally {
         if (!active) return;
         setIsLoading(false);
@@ -90,7 +112,10 @@ const TrendingEvents = ({ title = "Trending Events", limit = 6, fetchSize = 24 }
   const trending = useMemo(() => {
     const withScore = events
       .map((e) => ({ event: e, ...(getTrendingScore(e)) }))
-      .sort((a, b) => b.score - a.score);
+      .sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return String(a.event?.title || "").localeCompare(String(b.event?.title || ""));
+      });
 
     return withScore.slice(0, limit);
   }, [events, limit]);
@@ -130,7 +155,25 @@ const TrendingEvents = ({ title = "Trending Events", limit = 6, fetchSize = 24 }
     );
   }
 
-  if (trending.length === 0) return null;
+  if (trending.length === 0) {
+    return (
+      <section aria-label="Trending events" className="my-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="rounded-3xl border border-slate-200 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/70 p-6 sm:p-8 shadow-sm">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-900/30">
+                <TrendingUp className="w-5 h-5 text-indigo-600 dark:text-indigo-300" />
+              </div>
+              <h2 className="text-lg sm:text-xl font-bold">{title}</h2>
+            </div>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+              No trending events are available yet.
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section aria-label="Trending events" className="my-10">
@@ -157,8 +200,8 @@ const TrendingEvents = ({ title = "Trending Events", limit = 6, fetchSize = 24 }
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-{trending.map(({ event, registrations, pageViews, bookmarks, engagement }) => (
-            <div key={event.id} className="rounded-3xl overflow-hidden">
+          {trending.map(({ event, registrations, pageViews, bookmarks, engagement }) => (
+            <div key={event.id ?? event.title} className="rounded-3xl overflow-hidden">
               <EventCard
                 event={{
                   ...event,
@@ -197,4 +240,3 @@ const TrendingEvents = ({ title = "Trending Events", limit = 6, fetchSize = 24 }
 };
 
 export default TrendingEvents;
-
