@@ -319,12 +319,10 @@ export const AuthProvider = ({ children }) => {
 
   const login = useCallback(
     async (usernameOrEmail, password) => {
-      if (!setAuthRequestState({ loading: true, error: null })) {
-        return false;
-      }
+      setAuthRequest({ loading: true, error: null });
 
       try {
-        const res = await apiUtils.post(API_ENDPOINTS.AUTH.LOGIN, {
+        const res = await authService.login({
           usernameOrEmail,
           password,
         });
@@ -335,39 +333,26 @@ export const AuthProvider = ({ children }) => {
           throw new Error(data?.message || data?.error || "Invalid credentials");
         }
 
-        // extractSession now returns "cookie-managed" instead of null when the
-        // server uses HttpOnly cookies and omits the token from the response
-        // body. There is no longer a missing-token failure path here.
-        const { sessionToken, sessionUser } = extractSession(res, data, usernameOrEmail);
+        const { sessionUser } = extractSession(data, usernameOrEmail);
 
-        const persisted = persistSession(sessionToken, sessionUser);
+        const persisted = await persistSession("cookie-managed", sessionUser);
         if (!persisted) return false;
 
-        setAuthRequestState({ loading: false, error: null });
+        setAuthRequest({ loading: false, error: null });
         return true;
       } catch (error) {
         if (!isMountedRef.current) return false;
-         // Fix (Issue #8646):
+        // Fix (Issue #8646):
         document.cookie = "token=; Max-Age=0; path=/; Secure; SameSite=Strict";
-        setAuthRequestState({ loading: false, error: getAuthErrorMessage(error, "Login failed. Please try again.") });
+        setAuthRequest({
+          loading: false,
+          error: getAuthErrorMessage(error, "Login failed. Please try again."),
+        });
         return false;
       }
-      
-      const { sessionUser } = extractSession(data, usernameOrEmail);
-      const persisted = await persistSession("cookie-managed", sessionUser);
-      if (!persisted) return false;
-      
-      setAuthRequest({ loading: false, error: null });
-      return true;
-    } catch (error) {
-      if (!isMountedRef.current) return false;
-      setAuthRequest({
-        loading: false,
-        error: getAuthErrorMessage(error, "Login failed. Please try again.")
-      });
-      return false;
-    }
-  }, [persistSession]);
+    },
+    [persistSession]
+  );
 
   /**
    * Logs out the user.

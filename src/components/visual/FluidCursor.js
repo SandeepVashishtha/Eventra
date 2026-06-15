@@ -1098,7 +1098,7 @@ const FluidCursor = ({ enabled = true }) => {
           1.0 / height,
         );
       gl.uniform1i(displayMaterial.uniforms.uTexture, dye.read.attach(0));
-      blit(target);
+      blit(target, true);
     }
 
     function splatPointer(pointer) {

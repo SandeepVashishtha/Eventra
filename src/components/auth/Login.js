@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../../context/AuthContext";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { toast } from "react-toastify";
@@ -11,6 +12,7 @@ import FieldError from '../common/FieldError';
 import useLoginRateLimit from '../../hooks/useLoginRateLimit';
 import { MAX_LOGIN_ATTEMPTS, parseRetryAfterMs } from '../../utils/rateLimitUtils';
 import '../../styles/auth.css';
+import { emailPattern } from '../../validation';
 import {
   canAttempt,
   clearAttempts,
@@ -18,13 +20,10 @@ import {
   resetFailures,
   getBackoffDelay,
 } from "../../utils/authRateLimiter";
-import FieldError from "../common/FieldError";
-import useLoginRateLimit from "../../hooks/useLoginRateLimit";
-import { MAX_LOGIN_ATTEMPTS, parseRetryAfterMs } from "../../utils/rateLimitUtils";
-import "../../styles/auth.css";
 
 const Login = () => {
   useDocumentTitle("Login | Eventra");
+  const { t } = useTranslation();
   const prefersReducedMotion = useReducedMotion();
   const [formData, setFormData] = useState({ usernameOrEmail: "", password: "" });
   const [error, setError] = useState({});
@@ -58,7 +57,7 @@ const Login = () => {
       newErrors.usernameOrEmail = "Email or username is required";
     } else if (
       formData.usernameOrEmail.includes("@") &&
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.usernameOrEmail)
+      !emailPattern.test(formData.usernameOrEmail)
     ) {
       newErrors.usernameOrEmail = "Invalid email format";
     }
@@ -167,7 +166,7 @@ const Login = () => {
                 role="alert"
                 aria-live="polite"
               >
-                ⚠️ Your session has expired. Please log in again.
+                ⚠️ {t('auth.sessionExpired')}
               </motion.div>
             )}
 
@@ -181,7 +180,7 @@ const Login = () => {
                 role="alert"
                 aria-live="assertive"
               >
-                Too many failed attempts. Try again in {lockedOutSeconds}s.
+                {t('auth.lockedOut', { seconds: lockedOutSeconds })}
               </motion.div>
             )}
 
@@ -196,17 +195,16 @@ const Login = () => {
                   role="status"
                   aria-live="polite"
                 >
-                  {remainingAttempts} attempt{remainingAttempts !== 1 ? "s" : ""} remaining before
-                  temporary lockout.
+                  {t('auth.attemptsRemaining', { count: remainingAttempts })}
                 </motion.div>
               )}
 
             {/* Logo / Title */}
             <motion.div className="text-center space-y-4">
               <motion.div className="mx-auto w-16 h-16...">{/* SVG Icon */}</motion.div>
-              <h1 className="text-2xl font-bold mt-2">Welcome Back</h1>
+              <h1 className="text-2xl font-bold mt-2">{t('auth.welcomeBack')}</h1>
               <p className="text-md" style={{ color: "var(--text-color-light)" }}>
-                Sign in to your Eventra account
+                {t('auth.signInSubtitle')}
               </p>
             </motion.div>
 
@@ -219,7 +217,7 @@ const Login = () => {
                   className="block text-sm font-semibold"
                   style={{ color: "var(--text-color)" }}
                 >
-                  Email or username <sup className="ml-1 text-sm text-red-500">*</sup>
+                  {t('auth.usernameOrEmail')} <sup className="ml-1 text-sm text-red-500">*</sup>
                 </label>
                 <div className="relative group">
                   <input
@@ -230,7 +228,7 @@ const Login = () => {
                     onChange={handleChange}
                     required
                     disabled={isSubmitDisabled}
-                    placeholder="john@example.com / yourname@email.com / eventra.team@gmail.com"
+                    placeholder={t('auth.usernamePlaceholder')}
                     aria-invalid={!!error.usernameOrEmail}
                     aria-describedby={error.usernameOrEmail ? "usernameOrEmail-error" : undefined}
                     className={`w-full pl-3 pr-4 py-3 bg-white dark:bg-gray-800 border ${
@@ -250,7 +248,7 @@ const Login = () => {
                   className="block text-sm font-semibold"
                   style={{ color: "var(--text-color)" }}
                 >
-                  Password <sup className="ml-1 text-sm text-red-500">*</sup>
+                  {t('auth.password')} <sup className="ml-1 text-sm text-red-500">*</sup>
                 </label>
                 <div className="relative group">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -276,7 +274,7 @@ const Login = () => {
                     onChange={handleChange}
                     required
                     disabled={isSubmitDisabled}
-                    placeholder="Enter secure password / Minimum 8 characters / Use strong password"
+                    placeholder={t('auth.passwordPlaceholder')}
                     aria-invalid={!!error.password}
                     aria-describedby={error.password ? "password-error" : undefined}
                     className={`w-full pl-10 pr-4 py-3 bg-white dark:bg-gray-800 border ${
@@ -288,7 +286,7 @@ const Login = () => {
                   <button
                     type="button"
                     onClick={() => setShowPassword((s) => !s)}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
                   >
                     {showPassword ? (
@@ -331,7 +329,7 @@ const Login = () => {
                 <FieldError id="password-error" message={error.password} />
                 <div className="flex justify-end">
                   <Link to="/password-reset" className="text-blue-600 hover:underline text-sm">
-                    Forgot Password?
+                    {t('auth.forgotPassword')}
                   </Link>
                 </div>
               </div>
@@ -356,14 +354,14 @@ const Login = () => {
                 className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-75 transition-all duration-300"
               >
                 {isLockedOut() ? (
-                  `Locked — wait ${lockedOutSeconds}s`
+                  t('auth.lockedWait', { seconds: lockedOutSeconds })
                 ) : authRequest.loading ? (
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Signing In...
+                    {t('auth.signingIn')}
                   </div>
                 ) : (
-                  "Sign In"
+                  t('auth.signIn')
                 )}
               </motion.button>
             </motion.form>
@@ -371,9 +369,9 @@ const Login = () => {
             {/* Sign up link */}
             <div className="text-center">
               <p style={{ color: "var(--text-color-light)" }}>
-                Don&apos;t have an account?{" "}
+                {t('auth.noAccount')} {" "}
                 <Link to="/signup" className="text-blue-600 hover:underline font-semibold">
-                  Create one here
+                  {t('auth.createAccount')}
                 </Link>
               </p>
             </div>

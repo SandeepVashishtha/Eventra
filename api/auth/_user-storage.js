@@ -14,7 +14,7 @@
  */
 
 import Redis from "ioredis";
-import { isPersistentStorageConfigured, isInMemoryStorageAllowed } from "./storage-config.js";
+import { isPersistentStorageConfigured, isInMemoryStorageAllowed } from "./_storage-config.js";
 
 // ---------------------------------------------------------------------------
 // Storage Backend Interface
@@ -432,6 +432,21 @@ class RedisStorageBackend extends StorageBackend {
 // ---------------------------------------------------------------------------
 
 let storageBackend = null;
+let cleanupRegistered = false;
+
+function registerCleanupHook() {
+  if (cleanupRegistered) return;
+  cleanupRegistered = true;
+  const cleanup = async () => {
+    if (storageBackend) {
+      await storageBackend.close().catch(() => {});
+      storageBackend = null;
+    }
+  };
+  process.on("exit", cleanup);
+  process.on("SIGINT", cleanup);
+  process.on("SIGTERM", cleanup);
+}
 
 /**
  * Get the appropriate storage backend based on environment.
@@ -442,6 +457,8 @@ export async function getStorageBackend() {
   if (storageBackend) {
     return storageBackend;
   }
+
+  registerCleanupHook();
 
   // Development/Testing: Use in-memory Maps
   if (isInMemoryStorageAllowed()) {

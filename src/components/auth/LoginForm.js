@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { authService } from '../../services/authService';
 import './Auth.css';
@@ -10,9 +10,37 @@ export default function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  const validateEmailOrUsername = (value) => {
+    if (!value.trim()) {
+      return "Username or Email is required.";
+    }
+    // Allow letters, numbers, @, ., _, - only
+    const validChars = /^[a-zA-Z0-9@._-]+$/;
+    if (!validChars.test(value)) {
+      return "Only letters, numbers, @, ., _, - are allowed.";
+    }
+    return "";
+  };
+
+  const handleEmailOrUsernameChange = (e) => {
+    const value = e.target.value;
+    setEmailOrUsername(value);
+    const errorMsg = validateEmailOrUsername(value);
+    setErrors((prev) => ({ ...prev, emailOrUsername: errorMsg }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const emailError = validateEmailOrUsername(emailOrUsername);
+    if (emailError) {
+      setErrors({ emailOrUsername: emailError });
+      return;
+    }
+
+    setErrors({});
     setLoading(true);
     setError('');
 
@@ -27,7 +55,7 @@ export default function LoginForm() {
     } catch (err) {
       setError(
         err.response?.data?.message ||
-          'Login failed. Please check your credentials.'
+        'Login failed. Please check your credentials.'
       );
     } finally {
       setLoading(false);
@@ -62,31 +90,34 @@ export default function LoginForm() {
             id="login-email"
             type="text"
             value={emailOrUsername}
-            onChange={(e) => setEmailOrUsername(e.target.value)}
+            onChange={handleEmailOrUsernameChange}
             disabled={loading}
-            required
             placeholder="Enter your username or email"
-            className="
+            className={`
               w-full
               px-4
               py-3.5
               rounded-2xl
               border
-              border-slate-300/20
+              ${errors.emailOrUsername ? 'border-red-500' : 'border-slate-300/20'}
               bg-white/5
               backdrop-blur-sm
               focus:ring-2
-              focus:ring-indigo-500/30
+              ${errors.emailOrUsername ? 'focus:ring-red-500/30' : 'focus:ring-indigo-500/30'}
               focus:border-indigo-500
               transition-all
               duration-300
-            "
+            `}
           />
+          {errors.emailOrUsername && (
+            <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+              ⚠ {errors.emailOrUsername}
+            </p>
+          )}
         </div>
 
         <div className="form-group">
           <label htmlFor="login-password">Password</label>
-
           <div className="relative">
             <input
               id="login-password"
@@ -113,7 +144,6 @@ export default function LoginForm() {
                 duration-300
               "
             />
-
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
@@ -157,7 +187,7 @@ export default function LoginForm() {
         </button>
 
         <p className="text-center text-sm text-gray-500 mt-6">
-          Don't have an account?
+          Don&apos;t have an account?
           <Link
             to="/signup"
             className="ml-1 font-semibold text-indigo-600 hover:text-indigo-500"
