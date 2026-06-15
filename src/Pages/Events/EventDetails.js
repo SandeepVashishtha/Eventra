@@ -94,7 +94,14 @@ const EventDetails = () => {
       if (fallback) {
         setEvent({ ...fallback, status: getEventStatus(fallback) });
       } else {
-        setFetchError("Event not found.");
+        const status = error?.status || error?.response?.status;
+        if (status >= 500) {
+          setFetchError("Something went wrong on our end. Please try again later.");
+        } else if (status === 404) {
+          setFetchError("Event not found.");
+        } else {
+          setFetchError("Could not load event details. Please try again.");
+        }
       }
     } finally {
       const shouldFinishLoading = isLatestRequest();
