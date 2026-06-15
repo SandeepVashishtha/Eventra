@@ -170,7 +170,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                     ? "mt-1 block w-full space-y-1 rounded-lg bg-bg p-2"
                     : `${
                         isOpen ? "block" : "hidden group-hover/nav:block"
-                      } absolute top-full left-0 bg-navbar shadow-premium-md rounded-md p-2 min-w-55 z-50 border border-border mt-1 animate-in fade-in slide-in-from-top-1 duration-200`
+                      } absolute top-full left-0 bg-navbar shadow-premium-md rounded-md p-2 min-w-55 z-dropdown border border-border mt-4 before:content-[''] before:absolute before:-top-4 before:left-0 before:w-full before:h-4 animate-in fade-in slide-in-from-top-1 duration-200`
                 }
                 role={!vertical ? "menu" : undefined}
                 aria-label={`${itemLabel} submenu`}
