@@ -6,17 +6,23 @@
 
 const REGISTRY_KEY = "eventra_registrations";
 
+// 🔥 FIX: single SSR guard, reused by getRegistry / saveRegistry.
+const isStorageAvailable = () =>
+  typeof window !== "undefined" && Boolean(window.localStorage);
+
 const getRegistry = () => {
+  if (!isStorageAvailable()) return {};
   try {
-    return JSON.parse(localStorage.getItem(REGISTRY_KEY) || "{}");
+    return JSON.parse(window.localStorage.getItem(REGISTRY_KEY) || "{}");
   } catch {
     return {};
   }
 };
 
 const saveRegistry = (registry) => {
+  if (!isStorageAvailable()) return false;
   try {
-    localStorage.setItem(REGISTRY_KEY, JSON.stringify(registry));
+    window.localStorage.setItem(REGISTRY_KEY, JSON.stringify(registry));
     return true;
   } catch {
     return false;

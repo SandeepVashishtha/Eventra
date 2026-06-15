@@ -54,7 +54,7 @@ docker build -t eventra-frontend .
 docker run --rm -p 3000:3000 --env-file .env eventra-frontend
 ```
 
-The app will be available at **http://localhost:3000**.
+The app will be available at **`http://localhost:3000`**.
 
 ---
 

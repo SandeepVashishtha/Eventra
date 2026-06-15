@@ -144,7 +144,7 @@ const CountdownTimer = memo(({ timeLeft }) => {
           key={unit}
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl p-2 sm:p-3 text-white shadow-lg"
+          className="bg-linear-to-br from-indigo-500 to-purple-600 rounded-xl p-2 sm:p-3 text-white shadow-lg"
         >
           <div className="text-lg sm:text-2xl font-bold tabular-nums">{String(value).padStart(2, '0')}</div>
           <div className="text-[10px] sm:text-xs opacity-90 capitalize">{unit}</div>
@@ -499,7 +499,7 @@ const timeLeft = useCountdown(
   if (isLoading) {
     return (
       <div className="w-[95%] mx-auto my-10 min-h-screen pb-12">
-        <div className="p-8 rounded-3xl bg-gradient-to-br from-indigo-600 to-purple-600 mb-8">
+        <div className="p-8 rounded-3xl bg-linear-to-br from-indigo-600 to-purple-600 mb-8">
           <Skeleton className="h-8 w-64 mb-4" />
           <Skeleton className="h-4 w-96 mb-6" />
           <div className="grid grid-cols-4 gap-3">
@@ -544,7 +544,7 @@ const timeLeft = useCountdown(
         {/* 🎯 HERO SECTION */}
         <motion.section
           variants={itemVariants}
-          className="p-6 sm:p-8 rounded-3xl shadow-lg bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 text-white mb-6 sm:mb-8 relative overflow-hidden"
+          className="p-6 sm:p-8 rounded-3xl shadow-lg bg-linear-to-br from-indigo-600 via-purple-600 to-pink-500 text-white mb-6 sm:mb-8 relative overflow-hidden"
           aria-labelledby="hero-heading"
         >
           {/* Decorative background */}
@@ -779,7 +779,7 @@ const timeLeft = useCountdown(
         {/* Getting Started & Best Practices */}
         <motion.section className="grid md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8" variants={itemVariants}>
           {/* Getting Started */}
-          <article className="p-4 sm:p-6 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-800 border dark:border-gray-700">
+          <article className="p-4 sm:p-6 rounded-2xl bg-linear-to-br from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-800 border dark:border-gray-700">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
                 <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" aria-hidden="true" />
@@ -845,7 +845,7 @@ const timeLeft = useCountdown(
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => window.open("https://github.com/SandeepVashishtha/Eventra", "_blank", "noopener,noreferrer")}
-            className="px-6 sm:px-8 py-3 rounded-full font-semibold text-white bg-gradient-to-r from-pink-500 to-orange-500 hover:from-pink-600 hover:to-orange-600 shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 dark:focus:ring-offset-black"
+            className="px-6 sm:px-8 py-3 rounded-full font-semibold text-white bg-linear-to-r from-pink-500 to-orange-500 hover:from-pink-600 hover:to-orange-600 shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 dark:focus:ring-offset-black"
           >
             <GitBranch className="w-4 h-4" aria-hidden="true" />
             Start Contributing
@@ -867,7 +867,7 @@ const timeLeft = useCountdown(
         <motion.section
           ref={statsRef}
           variants={itemVariants}
-          className="p-4 sm:p-6 rounded-2xl bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 border dark:border-gray-600"
+          className="p-4 sm:p-6 rounded-2xl bg-linear-to-r from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 border dark:border-gray-600"
           aria-labelledby="stats-heading"
         >
           <h3 id="stats-heading" className="sr-only">Community Statistics</h3>

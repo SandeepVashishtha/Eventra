@@ -679,7 +679,6 @@ export const processQueue = async (currentUserId, fetchFn, options = {}) => {
 
   const validated = filterQueueByOwnership(queue, currentUserId);
   if (validated.length === 0) {
-    await clearQueue();
     return { processed: 0, succeeded: 0, dropped: 0, remaining: 0 };
   }
 
@@ -688,7 +687,9 @@ export const processQueue = async (currentUserId, fetchFn, options = {}) => {
   const currentSession = ensureSessionSnapshot(currentUserId);
   const sessionValidated = validateQueueSession(validated, currentSession);
   if (sessionValidated.length === 0) {
-    await clearQueue();
+    const validatedIds = new Set(validated.map(item => item.id));
+    const otherUsersQueue = queue.filter(item => !validatedIds.has(item.id));
+    await setQueue(otherUsersQueue);
     return { processed: 0, succeeded: 0, dropped: 0, remaining: 0 };
   }
 
@@ -720,11 +721,10 @@ export const processQueue = async (currentUserId, fetchFn, options = {}) => {
     }
   }
 
-  if (failed.length > 0) {
-    await setQueue(failed);
-  } else {
-    await clearQueue();
-  }
+  const validatedIds = new Set(validated.map(item => item.id));
+  const otherUsersQueue = queue.filter(item => !validatedIds.has(item.id));
+  const finalQueue = [...otherUsersQueue, ...failed];
+  await setQueue(finalQueue);
 
   const remaining = failed.length;
 

@@ -172,7 +172,7 @@ export default function EventHero({
           style={{fontFamily: '"Big Shoulders Display", sans-serif'}}
         >
           Discover{" "}
-          <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+          <span className="bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
             Events
           </span>
         </h1>

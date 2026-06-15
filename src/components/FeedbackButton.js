@@ -54,7 +54,7 @@ const FeedbackButton = () => {
       layout
       transition={prefersReducedMotion ? {} : { type: "spring", stiffness: 300, damping: 30 }}
       // 🔥 FIX: Removed bottom-6 and transition-opacity, replaced with style={{ bottom }} and transition-all
-      className={"fixed left-[1.625rem] z-[100] fixed-floating-widget transition-all duration-300"}
+      className={"fixed left-[1.625rem] z-fixed fixed-floating-widget transition-all duration-300"}
       style={{ bottom: `${bottomOffset}px` }}
       initial={{ opacity: 0, scale: 0 }}
       animate={{ opacity: 1, scale: 1 }}

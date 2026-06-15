@@ -369,23 +369,32 @@ export class P2PFileTransferCoordinator {
 
     // We wait 2.5 seconds to discover nearby peers. If none answer, we fail and trigger fallback.
     return new Promise((resolve) => {
-      const searchTimeout = setTimeout(() => {
+      let searchTimeout;
+      let connectionSafetyTimeout;
+      let checkInterval;
+
+      const clearAllTimers = () => {
+        clearTimeout(searchTimeout);
+        clearTimeout(connectionSafetyTimeout);
+        clearInterval(checkInterval);
+      };
+
+      searchTimeout = setTimeout(() => {
         if (!this.pc || this.currentState === "searching") {
           this.cleanup();
+          clearAllTimers();
           resolve(false); // No peers found, trigger server fallback
         }
       }, 2500);
 
-      let checkInterval;
-
       // Add a secondary connection safety timer of 5 seconds total
-      const connectionSafetyTimeout = setTimeout(() => {
+      connectionSafetyTimeout = setTimeout(() => {
         if (this.currentState === "connecting" || this.currentState === "searching") {
           this.cleanup();
-          clearInterval(checkInterval);
+          clearAllTimers();
           resolve(false); // WebRTC connection handshakes timed out, fallback to server
         } else if (this.currentState === "completed" || this.currentState === "transferring") {
-          clearInterval(checkInterval);
+          clearAllTimers();
           resolve(true);
         }
       }, 5000);
@@ -393,14 +402,10 @@ export class P2PFileTransferCoordinator {
       // Attach state listener check to resolve immediately if completed
       checkInterval = setInterval(() => {
         if (this.currentState === "completed") {
-          clearTimeout(searchTimeout);
-          clearTimeout(connectionSafetyTimeout);
-          clearInterval(checkInterval);
+          clearAllTimers();
           resolve(true);
         } else if (this.currentState === "failed") {
-          clearTimeout(searchTimeout);
-          clearTimeout(connectionSafetyTimeout);
-          clearInterval(checkInterval);
+          clearAllTimers();
           resolve(false);
         }
       }, 200);

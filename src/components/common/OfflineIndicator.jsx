@@ -54,7 +54,7 @@ const OfflineIndicator = () => {
             transform: "translateX(-50%)",
             zIndex: 9999,
             width: "max-content",
-            maxWidth: "calc(100vw - 2rem)",
+            maxWidth: "calc(100% - 2rem)",
           }}
         >
           <div

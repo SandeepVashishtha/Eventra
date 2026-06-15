@@ -41,7 +41,7 @@ beforeEach(() => {
   req = {
     method: "POST",
     url: "/api/auth/signup",
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", "content-length": "200" },
     body: {
       firstName: "John",
       lastName: "Doe",
@@ -60,6 +60,12 @@ beforeEach(() => {
 });
 
 describe("signup handler", () => {
+  test("returns 405 for non-POST methods", async () => {
+    req.method = "GET";
+    await handler(req, res);
+    expect(res.status).toHaveBeenCalledWith(405);
+  });
+
   test("returns 400 when body is missing", async () => {
     req.body = null;
     await handler(req, res);
@@ -71,6 +77,18 @@ describe("signup handler", () => {
     req.body = "string";
     await handler(req, res);
     expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  test("returns 400 for empty body object", async () => {
+    req.body = {};
+    await handler(req, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  test("returns 413 for too large payload", async () => {
+    req.headers["content-length"] = "99999";
+    await handler(req, res);
+    expect(res.status).toHaveBeenCalledWith(413);
   });
 
   test("returns 400 with validation error when email is missing", async () => {

@@ -239,11 +239,7 @@ const Newsletter = () => {
         {feedback.message ? (
           <p
             id={feedbackId}
-            className={`text-xs font-medium ${
-              feedback.type === "success"
-                ? "text-emerald-600 dark:text-emerald-400"
-                : "text-red-600 dark:text-red-400"
-            }`}
+            className={`text-xs font-medium ${feedbackColor}`}
           >
             {feedback.message}
           </p>
@@ -388,7 +384,7 @@ return (
               </h4>
               <ul className="space-y-0.05 sm:space-y-2.5">
                 {col.links.map((link) => (
-                  <li>
+                  <li key={link.nameKey || link.href}>
                     <Link
                       to={link.href}
                       className="group inline-flex items-center gap-2 text-xs sm:text-sm text-gray-500  dark:text-gray-400 hover:!text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
