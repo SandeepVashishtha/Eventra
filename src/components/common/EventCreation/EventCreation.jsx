@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+ï»¿import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
@@ -47,7 +47,7 @@ const EventCreation = () => {
     error: submitError,
     success: submitSuccess,
   } = useFormSubmit(async (eventData) => {
-    // Auth is handled by the HttpOnly session cookie GÇö apiUtils sends it
+    // Auth is handled by the HttpOnly session cookie GÃ‡Ã¶ apiUtils sends it
     // automatically via withCredentials. Never read tokens from sessionStorage;
     // setToken was removed as part of the HttpOnly cookie migration.
 
@@ -625,7 +625,7 @@ const EventCreation = () => {
 
               {/* Date and Time Fields */}
               {formData.isMultiDay ? (
-                // =ƒö¦ Multi-day Event
+                // =Æ’Ã¶Â¦ Multi-day Event
                 <motion.div
                   className="grid grid-cols-1 sm:grid-cols-4 gap-4"
                   initial={{ opacity: 0, x: -20 }}
@@ -715,7 +715,7 @@ const EventCreation = () => {
                   </div>
                 </motion.div>
               ) : (
-                // =ƒö+ Single-day Event
+                // =Æ’Ã¶+ Single-day Event
                 <motion.div
                   className="grid grid-cols-1 sm:grid-cols-3 gap-4"
                   initial={{ opacity: 0, x: -20 }}
@@ -972,7 +972,7 @@ const EventCreation = () => {
                         onClick={() => removeTag(tag)}
                         className="ml-1 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 font-bold"
                       >
-                        +ù
+                        +Ã¹
                       </button>
                     </span>
                   ))}
@@ -1008,3 +1008,4 @@ const EventCreation = () => {
 };
 
 export default EventCreation;
+
