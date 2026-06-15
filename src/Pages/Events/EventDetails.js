@@ -139,24 +139,10 @@ const finishLoading = ({ reqId, ctrl, latestRef, abortRef, setFetchLoading }) =>
   }
 };
 
-const useEventDetailsLogic = (eventId) => {
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const { addRecentlyViewed } = useRecentlyViewed();
-  const { isRegistered } = useMyEvents();
-
-  const isOrganizer = user?.roles?.includes(ROLES.ORGANIZER) || user?.roles?.includes(ROLES.ADMIN);
-
-  const [showExportDropdown, setShowExportDropdown] = useState(false);
-  const [exportingRegistrants, setExportingRegistrants] = useState(false);
-  const [showShareModal, setShowShareModal] = useState(false);
-  const [isPrinting, setIsPrinting] = useState(false);
+const useEventFetchLogic = (eventId) => {
   const [event, setEvent] = useState(null);
   const [fetchLoading, setFetchLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
-  const [showCancelModal, setShowCancelModal] = useState(false);
-  const [linkCopied, setLinkCopied] = useState(false);
-
   const latestRequestIdRef = useRef(0);
   const abortControllerRef = useRef(null);
 
@@ -199,10 +185,15 @@ const useEventDetailsLogic = (eventId) => {
     };
   }, [loadEvent]);
 
-  useEffect(() => {
-    if (!event) return;
-    addRecentlyViewed(event);
-  }, [event, addRecentlyViewed]);
+  return { event, setEvent, fetchLoading, fetchError, loadEvent };
+};
+
+const useEventExportLogic = (eventId, event) => {
+  const navigate = useNavigate();
+  const [exportingRegistrants, setExportingRegistrants] = useState(false);
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
 
   const handlePrint = () => {
     setIsPrinting(true);
@@ -217,9 +208,9 @@ const useEventDetailsLogic = (eventId) => {
       setExportingRegistrants(true);
       const allRegistrants = await fetchRegistrantsForExport(eventId);
       if (format === 'csv') {
-        exportToCSV(allRegistrants, `${event.title}_registrants`);
+        exportToCSV(allRegistrants, `${event?.title}_registrants`);
       } else {
-        exportToJSON(allRegistrants, `${event.title}_registrants`);
+        exportToJSON(allRegistrants, `${event?.title}_registrants`);
       }
     } catch (error) {
       toast.error("Failed to fetch registrants");
@@ -271,6 +262,34 @@ const useEventDetailsLogic = (eventId) => {
        toast.error("Failed to copy link. Please copy the URL from your browser's address bar.");
     }
   };
+
+  return {
+    exportingRegistrants, isPrinting, linkCopied, showExportDropdown, setShowExportDropdown,
+    handlePrint, handleExport, handleDuplicateEvent, handleCopy, navigate
+  };
+};
+
+const useEventDetailsLogic = (eventId) => {
+  const { user } = useAuth();
+  const { addRecentlyViewed } = useRecentlyViewed();
+  const { isRegistered } = useMyEvents();
+
+  const isOrganizer = user?.roles?.includes(ROLES.ORGANIZER) || user?.roles?.includes(ROLES.ADMIN);
+
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+
+  const { event, setEvent, fetchLoading, fetchError, loadEvent } = useEventFetchLogic(eventId);
+
+  const {
+    exportingRegistrants, isPrinting, linkCopied, showExportDropdown, setShowExportDropdown,
+    handlePrint, handleExport, handleDuplicateEvent, handleCopy, navigate
+  } = useEventExportLogic(eventId, event);
+
+  useEffect(() => {
+    if (!event) return;
+    addRecentlyViewed(event);
+  }, [event, addRecentlyViewed]);
 
   useKeyboardShortcuts({
     r: () => { if (event && !isEventRegistrationClosed(event)) navigate(`/events/${event.id}/register`); },
