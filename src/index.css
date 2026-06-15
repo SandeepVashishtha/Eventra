@@ -1,4 +1,4 @@
-@import './styles/telemetryWidgets.css';
+@import "./styles/telemetryWidgets.css";
 @import "tailwindcss";
 @import url("https://fonts.googleapis.com/css2?family=Oxanium:wght@800&family=Inter:wght@300;400;500;600;700;800;900&display=swap");
 
@@ -1008,7 +1008,7 @@ input::-webkit-password-toggle {
     ),
     linear-gradient(
       to bottom,
-      color-mix(in srgb, var(--evt-skip-focus) 32%, transparent) 1px,
+      color-mix(in srgb, var(--evt-brand-primary) 32%, transparent) 1px,
       transparent 1px
     ),
     linear-gradient(
@@ -1018,7 +1018,7 @@ input::-webkit-password-toggle {
     ),
     linear-gradient(
       -45deg,
-      color-mix(in srgb, var(--evt-skip-focus) 10%, transparent) 1px,
+      color-mix(in srgb, var(--evt-brand-primary) 10%, transparent) 1px,
       transparent 1px
     );
   background-size:
