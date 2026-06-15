@@ -18,20 +18,24 @@ const OfflineBanner = () => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [showRestoredMsg, setShowRestoredMsg] = useState(false);
   const [liveMessage, setLiveMessage] = useState("");
-
+const [offlineSince, setOfflineSince] = useState(null);
+const [offlineDuration, setOfflineDuration] = useState("0s");
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
       setShowRestoredMsg(true);
       setLiveMessage("Connection restored. You are back online.");
       setTimeout(() => setShowRestoredMsg(false), 3000);
+      setOfflineSince(null);
+setOfflineDuration("0s");
     };
 
-    const handleOffline = () => {
-      setIsOnline(false);
-      setShowRestoredMsg(false);
-      setLiveMessage("Connection lost. You are offline. Some features may not work.");
-    };
+   const handleOffline = () => {
+  setIsOnline(false);
+  setShowRestoredMsg(false);
+  setOfflineSince(Date.now());
+  setLiveMessage("Connection lost. You are offline. Some features may not work.");
+};
 
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
@@ -41,7 +45,23 @@ const OfflineBanner = () => {
       window.removeEventListener("offline", handleOffline);
     };
   }, []);
+useEffect(() => {
+  if (!offlineSince) return;
 
+  const interval = setInterval(() => {
+    const seconds = Math.floor((Date.now() - offlineSince) / 1000);
+
+    if (seconds < 60) {
+      setOfflineDuration(`${seconds}s`);
+    } else {
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = seconds % 60;
+      setOfflineDuration(`${minutes}m ${remainingSeconds}s`);
+    }
+  }, 1000);
+
+  return () => clearInterval(interval);
+}, [offlineSince]);
   return (
     <>
       {/* Persistent sr-only live region — announced by screen readers
@@ -68,7 +88,12 @@ const OfflineBanner = () => {
         >
           <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-red-600 text-white shadow-lg text-sm font-semibold max-w-md w-full">
             <WifiOff size={16} className="shrink-0" aria-hidden="true" />
-            <span className="flex-1">You&apos;re offline. Some features may not work.</span>
+           <div className="flex-1">
+  <div>You're offline. Some features may not work.</div>
+  <div className="text-xs opacity-90">
+    Offline for: {offlineDuration}
+  </div>
+</div>
             <button
               onClick={() => window.location.reload()}
               className="px-3 py-1 rounded-lg bg-white/20 hover:bg-white/30 transition-colors text-xs font-bold"
