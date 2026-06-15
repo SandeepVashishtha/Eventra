@@ -38,7 +38,7 @@ export const addLocalNotification = async (title, message) => {
     const raw = localStorage.getItem(canonicalKey);
     const notifications = raw ? safeJsonParse(raw, []) : [];
     const newNotification = {
-      id: `local-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      id: `local-${Date.now()}-${Math.floor(Math.random() * 1e9)}`,
       isRead: false,
       createdAt: new Date().toISOString(),
       timestamp: new Date().toISOString(),
@@ -61,9 +61,9 @@ export const getGlobalWaitlist = () => {
     const raw = localStorage.getItem(GLOBAL_WAITLIST_KEY);
     return raw ? safeJsonParse(raw, []) : [];
   } catch (err) {
-    if (err.response && err.response.status >= 400 && err.response.status < 500) {
-      throw err;
-    }
+    // localStorage throws SecurityError or QuotaExceededError — never HTTP errors.
+    // Log and return empty array so the UI degrades gracefully.
+    logger.error("[WaitlistUtils] Failed to read global waitlist from storage:", err);
     return [];
   }
 };

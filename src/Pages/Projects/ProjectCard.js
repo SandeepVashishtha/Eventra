@@ -12,6 +12,9 @@ import { projectService } from "../../services/projectService.js";
 const CACHE_KEY = "eventra_github_metrics_cache";
 const CACHE_TTL = 1 * 60 * 60 * 1000; // 1 hour expiration
 
+const toStr = (val, fallback = "") =>
+  typeof val === "string" ? val : val?.name ?? val?.label ?? val?.text ?? fallback;
+
 // Status Badge Styling Helper
 const getStatusColor = (status) => {
   if (!status) return "bg-slate-100 text-white dark:bg-slate-900/50 dark:text-white";
@@ -150,13 +153,13 @@ const ConcentricTechRings = ({ techStack }) => {
 const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
   useReducedMotion();
   const { token, isAuthenticated } = useAuth();
-  const [setIsLoaded] = useState(false);
+  const [, setIsLoaded] = useState(false);
   const [metrics, setMetrics] = useState(null);
   const [metricsLoading, setMetricsLoading] = useState(true);
 
   // Mouse Tracking state for dynamic light glow bubble
   const cardRef = useRef(null);
-  const [setCoords] = useState({ x: 0, y: 0 });
+  const [, setCoords] = useState({ x: 0, y: 0 });
   
 
   const handleMouseMove = (e) => {
@@ -205,24 +208,41 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
     }
   };
 
-  const handleIncrementFork = (e) => {
+  const handleIncrementFork = async (e) => {
     e.preventDefault();
     e.stopPropagation();
     
-    const repoDetails = getGitHubRepoDetails(project.githubUrl);
-    const key = repoDetails ? `${repoDetails.owner}/${repoDetails.repo}` : `mock-${project.id}`;
-    
-    setMetrics(prev => {
-      const updated = { ...prev, forks: (prev?.forks || 0) + 1 };
-      try {
-        let cache = {};
-        const saved = localStorage.getItem(CACHE_KEY);
-        cache = saved ? safeJsonParse(saved, {}) : {};
-        cache[key] = { data: updated, timestamp: Date.now() };
-        localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
-      } catch {}
-      return updated;
-    });
+    if (!isAuthenticated()) {
+      toast.error("You must be logged in to fork a project.");
+      return;
+    }
+
+    try {
+      await projectService.forkProject(project.id, {
+        headers: {
+          Authorization: token
+        }
+      });
+
+      const repoDetails = getGitHubRepoDetails(project.githubUrl);
+      const key = repoDetails ? `${repoDetails.owner}/${repoDetails.repo}` : `mock-${project.id}`;
+      
+      setMetrics(prev => {
+        const updated = { ...prev, forks: (prev?.forks || 0) + 1 };
+        try {
+          let cache = {};
+          const saved = localStorage.getItem(CACHE_KEY);
+          cache = saved ? safeJsonParse(saved, {}) : {};
+          cache[key] = { data: updated, timestamp: Date.now() };
+          localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+        } catch {}
+        return updated;
+      });
+      toast.success("Project forked successfully!");
+    } catch (err) {
+      const message = err?.data?.message || err?.message || "Failed to fork project.";
+      toast.error(message);
+    }
   };
 
   // GitHub metrics loading with LocalStorage caching system
@@ -303,8 +323,18 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
     }
   };
 
-  const hasValidRepo = project.githubUrl && getGitHubRepoDetails(project.githubUrl);
-  const hasValidLiveDemo = project.liveDemo && isValidUrl(project.liveDemo);
+  const safeStatus = toStr(project.status, "Unknown");
+  const safeDifficulty = toStr(project.difficulty, "Unknown");
+  const safeAuthor = toStr(project.author, "Unknown");
+  const safeTitle = toStr(project.title, "Untitled Project");
+  const safeDescription = toStr(project.description);
+  const safeCategory = toStr(project.category, "Uncategorized");
+  const safeGithubUrl = toStr(project.githubUrl);
+  const safeLiveDemo = toStr(project.liveDemo);
+  const safeImage = toStr(project.image, "/Eventra.png");
+
+  const hasValidRepo = safeGithubUrl && getGitHubRepoDetails(safeGithubUrl);
+  const hasValidLiveDemo = safeLiveDemo && isValidUrl(safeLiveDemo);
 
   // Header decorative random codes
  const csIcons = [Code2, Cpu, GitPullRequest];
@@ -328,10 +358,10 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
           <RandomIcon size={18} />
         </div>
         <h3 className="flex-1 min-w-0 text-base font-extrabold text-white tracking-tight line-clamp-1">
-          {project.title || "Untitled Project"}
+          {safeTitle}
         </h3>
-        <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full whitespace-nowrap shadow-xs ${getStatusColor(project.status)}`}>
-          {project.status || "Unknown"}
+        <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full whitespace-nowrap shadow-xs ${getStatusColor(safeStatus)}`}>
+          {safeStatus}
         </span>
         <button
           onClick={(e) => {
@@ -354,8 +384,8 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
       <div className="relative h-44 overflow-hidden border-b border-slate-700 bg-slate-900 z-10">
 
         <img
-          src={project.image}
-          alt={project.title || "Project preview"}
+          src={safeImage}
+          alt={safeTitle || "Project preview"}
           loading="lazy"
           decoding="async"
           onLoad={() => setIsLoaded(true)}
@@ -368,16 +398,16 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
       <div className="relative z-10 flex flex-col flex-1 p-4 space-y-4 bg-slate-800">
         {/* Description */}
         <p className="text-xs sm:text-sm text-white leading-relaxed line-clamp-3">
-  {project.description}
+  {safeDescription}
 </p>
 
         {/* Categories & Level badge pills */}
         <div className="flex flex-wrap gap-2 pt-1">
           <span className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider bg-indigo-600/20 text-white rounded-lg border border-indigo-500/30">
-            {project.category || "Uncategorized"}
+            {safeCategory}
           </span>
-          <span className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-wider border rounded-lg ${getDifficultyColor(project.difficulty)}`}>
-            {project.difficulty || "Unknown"}
+          <span className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-wider border rounded-lg ${getDifficultyColor(safeDifficulty)}`}>
+            {safeDifficulty}
           </span>
         </div>
 
@@ -385,10 +415,10 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
         <div className="flex flex-wrap gap-2">
   {project.techStack?.slice(0, 5).map((tech) => (
     <span
-      key={tech}
+      key={toStr(tech)}
       className="px-3 py-1 rounded-full text-xs font-medium bg-indigo-900/40 text-white border border-indigo-500/20"
     >
-      {tech}
+      {toStr(tech)}
     </span>
   ))}
 </div>
@@ -397,14 +427,14 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
         <div className="flex items-center justify-between pt-1 border-t border-slate-100/80 dark:border-slate-800/30">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-8 h-8 rounded-lg bg-linear-to-br from-indigo-500 to-pink-500 text-white flex items-center justify-center text-xs font-black uppercase shrink-0 shadow-sm">
-              {project.author?.charAt(0) || "U"}
+              {safeAuthor.charAt(0) || "U"}
             </div>
             <div className="flex flex-col min-w-0">
               <span className="text-[10px] font-bold text-white uppercase tracking-widest leading-none">
                 Creator
               </span>
               <span className="text-sm font-semibold text-white truncate mt-1">
-                {project.author || "Unknown"}
+                {safeAuthor}
               </span>
             </div>
           </div>
@@ -471,7 +501,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
           <motion.a
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
-            href={project.githubUrl}
+            href={safeGithubUrl}
             target="_blank" rel="noopener noreferrer"
             className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800/80 text-white text-xs font-black shadow-md hover:shadow-lg transition-all duration-300 border-none cursor-pointer"
           >
@@ -488,7 +518,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
           <motion.a
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
-            href={project.liveDemo}
+            href={safeLiveDemo}
             target="_blank" rel="noopener noreferrer"
             className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl border border-indigo-200 hover:border-indigo-300 dark:border-indigo-800/50 dark:hover:border-indigo-700 bg-white/40 dark:bg-slate-900/20 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 text-xs font-black shadow-xs hover:shadow-sm transition-all duration-300 cursor-pointer"
           >

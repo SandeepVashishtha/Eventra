@@ -7,6 +7,12 @@ import { assertPersistentStorageConfigured } from "./storage-config.js";
 import { createUser, getUserByEmail, isStorageHealthy } from "./user-storage.js";
 import { getClientIp } from "../lib/getClientIp.js";
 import { Worker } from "node:worker_threads";
+import { getJwtSecret, JWT_EXPIRES_IN, JWT_COOKIE_MAX_AGE_SECONDS } from "./_jwt-config.js";
+import { signupRateLimiter } from "../_lib/rateLimiter.js";
+import { buildCorsHeaders, corsResponse } from "./_cors.js";
+import { assertPersistentStorageConfigured } from "./_storage-config.js";
+import { createUser, getUserByEmail, isStorageHealthy } from "./_user-storage.js";
+
 
 // ---------------------------------------------------------------------------
 // In-memory user storage
@@ -31,9 +37,11 @@ const JWT_SECRET = getJwtSecret();
 // Validation Helpers
 // ---------------------------------------------------------------------------
 
+const EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/;
+const MAX_SIGNUP_BODY_SIZE = 5120; // 5KB
+
 const validateEmail = (email) => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
+  return EMAIL_REGEX.test(email);
 };
 
 const validateName = (name) => {
@@ -223,6 +231,11 @@ async function handler(req, res) {
       return corsResponse(req, res, 500, { error: "Authentication service unavailable" });
     }
 
+    const contentLength = parseInt(req.headers?.["content-length"] || "0", 10);
+    if (contentLength > MAX_SIGNUP_BODY_SIZE) {
+      return corsResponse(req, res, 413, { error: "Request body too large" });
+    }
+
     if (!req.body || typeof req.body !== "object") {
       return corsResponse(req, res, 400, { error: "Request body is required" });
     }
@@ -288,8 +301,8 @@ async function handler(req, res) {
 
     const newUser = {
       id: userId,
-      firstName: firstNameValidation.value,
-      lastName: lastNameValidation.value,
+      firstName: validateName(firstName).value,
+      lastName: validateName(lastName).value,
       email: normalizedEmail,
       username: normalizedEmail, // Use email as username
       password: hashedPassword,

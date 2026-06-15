@@ -15,6 +15,7 @@
     "@sentry/react": "^10.57.0",
     "@studio-freight/lenis": "^1.0.42",
     "@tailwindcss/postcss": "4.3.0",
+    "@vercel/analytics": "^2.0.1",
     "aos": "^2.3.4",
     "axios": "^1.16.1",
     "bcryptjs": "3.0.3",
