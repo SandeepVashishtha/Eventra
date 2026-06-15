@@ -144,7 +144,7 @@ const CountdownTimer = memo(({ timeLeft }) => {
           key={unit}
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="bg-linear-to-br from-indigo-500 to-purple-600 rounded-xl p-2 sm:p-3 text-white shadow-lg"
+          className="bg-indigo-600 dark:bg-indigo-500 rounded-xl p-2 sm:p-3 text-white shadow-sm"
         >
           <div className="text-lg sm:text-2xl font-bold tabular-nums">{String(value).padStart(2, '0')}</div>
           <div className="text-[10px] sm:text-xs opacity-90 capitalize">{unit}</div>
@@ -544,34 +544,34 @@ const timeLeft = useCountdown(
         {/* 🎯 HERO SECTION */}
         <motion.section
           variants={itemVariants}
-          className="p-6 sm:p-8 rounded-3xl shadow-lg bg-linear-to-br from-indigo-600 via-purple-600 to-pink-500 text-white mb-6 sm:mb-8 relative overflow-hidden"
+          className="p-6 sm:p-8 rounded-3xl shadow-sm bg-white dark:bg-gray-800/90 border border-gray-200 dark:border-gray-700 mb-6 sm:mb-8 relative overflow-hidden"
           aria-labelledby="hero-heading"
         >
           {/* Decorative background */}
-          <div className="absolute inset-0 opacity-10 pointer-events-none" aria-hidden="true">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full blur-3xl" />
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-yellow-300 rounded-full blur-3xl" />
+          <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+            <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-50 dark:bg-indigo-900/20 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-50 dark:bg-blue-900/20 rounded-full blur-3xl" />
           </div>
           
           <div className="relative z-10 grid md:grid-cols-2 gap-6 sm:gap-8 items-center">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <Trophy className="w-6 h-6 text-yellow-300" aria-hidden="true" />
-                <span className="text-sm font-medium bg-white/20 px-3 py-1 rounded-full">
+                <Trophy className="w-6 h-6 text-indigo-500" aria-hidden="true" />
+                <span className="text-sm font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full">
                   GSSoC 2024
                 </span>
               </div>
-              <h1 id="hero-heading" className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 leading-tight">
+              <h1 id="hero-heading" className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 leading-tight text-gray-900 dark:text-white">
                 Contribute to Eventra & <br className="hidden sm:block"/>
-                <span className="text-yellow-300">Level Up Your Skills</span>
+                <span className="text-indigo-600 dark:text-indigo-400">Level Up Your Skills</span>
               </h1>
-              <p className="text-indigo-100 text-base sm:text-lg mb-4 sm:mb-6 leading-relaxed max-w-xl">
+              <p className="text-gray-600 dark:text-gray-300 text-base sm:text-lg mb-4 sm:mb-6 leading-relaxed max-w-xl">
                 Join 500+ contributors building real-world features. Earn points, 
                 badges, and recognition while making an impact.
               </p>
               
               {/* User Stats */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-4 sm:mb-6">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
                 {[
                   { label: "Issues", value: userStats.issuesClaimed, icon: Target },
                   { label: "PRs", value: userStats.prsMerged, icon: GitBranch },
@@ -580,12 +580,12 @@ const timeLeft = useCountdown(
                 ].map(({ label, value, icon: Icon }) => (
                   <motion.div 
                     key={label} 
-                    className="text-center p-2 sm:p-3 bg-white/10 rounded-xl backdrop-blur-sm"
-                    whileHover={{ scale: 1.03 }}
+                    className="text-center p-3 sm:p-4 bg-white dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600 shadow-sm"
+                    whileHover={{ scale: 1.03, y: -2 }}
                   >
-                    <Icon className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-yellow-300" aria-hidden="true" />
-                    <div className="text-lg sm:text-xl font-bold tabular-nums">{formatNumber(value)}</div>
-                    <div className="text-[10px] sm:text-xs opacity-90">{label}</div>
+                    <Icon className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1.5 text-indigo-500 dark:text-indigo-400" aria-hidden="true" />
+                    <div className="text-lg sm:text-xl font-bold tabular-nums text-gray-900 dark:text-white">{formatNumber(value)}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">{label}</div>
                   </motion.div>
                 ))}
               </div>
@@ -594,18 +594,20 @@ const timeLeft = useCountdown(
             {/* Countdown Card */}
             <motion.aside
               whileHover={{ scale: 1.02 }}
-              className="bg-white/10 backdrop-blur-md rounded-2xl p-4 sm:p-6 border border-white/20"
+              className="bg-gray-50 dark:bg-gray-700/50 rounded-2xl p-4 sm:p-6 border border-gray-200 dark:border-gray-600 shadow-sm"
               aria-labelledby="countdown-heading"
             >
               <div className="flex items-center gap-2 mb-3 sm:mb-4">
-                <Clock className="w-5 h-5" aria-hidden="true" />
-                <h3 id="countdown-heading" className="font-semibold">Program Ends In</h3>
+                <div className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center">
+                  <Clock className="w-4 h-4 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
+                </div>
+                <h3 id="countdown-heading" className="font-semibold text-gray-900 dark:text-white">Program Ends In</h3>
               </div>
               {timeLeft.ended ? (
                 <div className="text-center py-4">
-                  <Trophy className="w-12 h-12 mx-auto mb-3 text-yellow-300" aria-hidden="true" />
-                  <p className="font-medium">Program Completed! 🎉</p>
-                  <p className="text-sm opacity-90">Check final rankings soon</p>
+                  <Trophy className="w-12 h-12 mx-auto mb-3 text-indigo-400" aria-hidden="true" />
+                  <p className="font-medium text-gray-900 dark:text-white">Program Completed!</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Check final rankings soon</p>
                 </div>
               ) : (
                 <CountdownTimer timeLeft={timeLeft} />
@@ -614,7 +616,7 @@ const timeLeft = useCountdown(
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => window.open("https://gssoc.girlscript.tech", "_blank", "noopener,noreferrer")}
-                className="w-full mt-3 sm:mt-4 py-2.5 bg-white text-indigo-600 font-semibold rounded-xl flex items-center justify-center gap-2 hover:bg-indigo-50 transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-indigo-600"
+                className="w-full mt-3 sm:mt-4 py-2.5 bg-indigo-600 text-white font-semibold rounded-xl flex items-center justify-center gap-2 hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 shadow-sm"
                 aria-label="View GSSoC leaderboard (opens in new tab)"
               >
                 <span>View Leaderboard</span>
