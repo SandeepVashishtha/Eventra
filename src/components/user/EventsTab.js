@@ -441,6 +441,33 @@ const normalizedSearch = debouncedTerm.trim().toLowerCase();
   const upcomingCount = [...registeredEvents, ...hostedEvents].filter((event) => getEventStatus(event) === "Upcoming").length;
   const completedCount = [...registeredEvents, ...hostedEvents].filter((event) => getEventStatus(event) === "Completed").length;
 
+  const toggleSection = (section) => {
+  setCollapsedSections((prev) => ({
+    ...prev,
+    [section]: !prev[section],
+  }));
+};
+
+const togglePinnedEvent = (event) => {
+  const exists = pinnedEvents.some(
+    (item) => item.id === event.id
+  );
+
+  if (exists) {
+    setPinnedEvents((prev) =>
+      prev.filter((item) => item.id !== event.id)
+    );
+
+    toast.info("Event unpinned");
+  } else {
+    setPinnedEvents((prev) => [
+      event,
+      ...prev,
+    ]);
+
+    toast.success("Event pinned");
+  }
+};
   const handleCancelClick = (id, title) => setCancelTarget({ id, title });
   const handleCancelDismiss = () => setCancelTarget(null);
   const handleCancelConfirm = useCallback(() => {
