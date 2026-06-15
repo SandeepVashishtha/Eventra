@@ -1,4 +1,12 @@
 import { createContext, useContext, useEffect, useMemo, useCallback, useRef, useState } from "react";
+import { setOnUnauthorizedHandler, setAuthToken } from "../config/api";
+import { authService } from "../services/authService";
+import { userService } from "../services/userService";
+import { syncSecureStorage } from "../utils/secureStorage";
+import { usePermissions } from "../hooks/usePermissions";
+import { useTokenExpiry } from "../hooks/useTokenExpiry";
+import { isTokenValid } from "../utils/tokenUtils";
+import { ROLES, ROLE_PERMISSIONS } from "../config/roles";
 import { setOnUnauthorizedHandler, setRequiresReauthHandler, setAuthToken } from "../config/api.js";
 import { authService } from "../services/authService.js";
 import { userService } from "../services/userService.js";
@@ -90,6 +98,7 @@ export const AuthProvider = ({ children }) => {
   
   // Ref to track mounting status and prevent setting state on unmounted components
   const isMountedRef = useRef(true);
+
   
   // Ref to track whether session expired toast has already been displayed to prevent spamming
   const expiryToastShownRef = useRef(false);
@@ -139,6 +148,7 @@ export const AuthProvider = ({ children }) => {
         window.location.replace("/login");
       }
     };
+  }, [normalizeRoles]);
 
     channel.addEventListener("message", handleMessage);
 
@@ -200,9 +210,9 @@ export const AuthProvider = ({ children }) => {
         if (!isMountedRef.current) return;
         
         if (res.ok && res.data) {
-          const { sessionUser } = extractSession(res.data, null);
+          const { sessionToken, sessionUser } = extractSession(res, res.data, null);
           if (!isMountedRef.current) return;
-          setToken("cookie-managed");
+          setToken(sessionToken || "cookie-managed");
           setUser(sessionUser);
         } else {
           clearSession();
@@ -300,6 +310,10 @@ export const AuthProvider = ({ children }) => {
     setAuthToken(sessionToken);
     
     try {
+      const { roles, permissions: perms, scopes, ...display } = sessionUser;
+      await syncSecureStorage.setItem("user", JSON.stringify(display));
+    } catch (err) {
+      console.error("[AuthContext] Error persisting user:", err);
       // Security Contract: Strip authorization keys from display profile object stored in localStorage
       const { roles: _roles, permissions: _permissions, scopes: _scopes, ...displayProfile } = sessionUser;
       await syncSecureStorage.setItem("user", JSON.stringify(displayProfile));
@@ -309,6 +323,18 @@ export const AuthProvider = ({ children }) => {
     return true;
   }, []);
 
+  const setAuthSession = useCallback((t, u) => persistSession(t, u), [persistSession]);
+
+  const login = useCallback(async (usernameOrEmail, password) => {
+    if (!isMountedRef.current) return false;
+    setAuthRequest({ loading: true, error: null });
+    try {
+      const res = await authService.login({ usernameOrEmail, password });
+      if (res.status !== 200) throw new Error(res.data?.message || res.data?.error || "Invalid credentials");
+      const { sessionToken, sessionUser } = extractSession(res, res.data, usernameOrEmail);
+      if (!(await persistSession(sessionToken, sessionUser))) return false;
+      setAuthRequest({ loading: false, error: null });
+      return true;
   const setAuthSession = useCallback(
     (sessionToken, sessionUser) => {
       return persistSession(sessionToken, sessionUser);
@@ -418,6 +444,7 @@ export const AuthProvider = ({ children }) => {
     setUser,
     isAuthenticated,
     ...permissions,
+  }), [user, token, loading, authRequest, login, logout, setAuthSession, setUser, isAuthenticated, permissions]);
   }), [
     user,
     token,
