@@ -31,7 +31,18 @@ const JWT_SECRET = getJwtSecret();
 // ---------------------------------------------------------------------------
 // Rate Limiting (IP-based, 5 signups per minute)
 // ---------------------------------------------------------------------------
-// signupRateLimiter is imported from ../lib/rateLimiter.js
+// The signup endpoint is protected against automated account creation spam 
+// by enforcing a limit of 5 requests per minute per client IP.
+// 
+// This is implemented via the `DistributedRateLimiter` class (in api/_lib/rateLimiter.js),
+// which resolves to a distributed storage (Redis or Vercel KV) in production, 
+// and falls back to a local memory limiter during local testing and development.
+// 
+// When checking limits, it calls `limiter.checkAsync` (if available) to ensure 
+// non-blocking database I/O, falling back gracefully to `limiter.check` for in-memory stores.
+// If the rate limit storage becomes unavailable in production, the limiter fails closed 
+// to prevent attackers from bypassing the registration guard.
+// ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
 // Validation Helpers

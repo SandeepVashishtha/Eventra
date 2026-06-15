@@ -235,6 +235,18 @@ describe('Distributed Rate Limiter', () => {
       await assertThrowsSyncCheck(limiter, '127.0.0.1');
     });
 
+    it('should support async checkAsync for Redis backend without method overwrite', async () => {
+      setTestEnv({ NODE_ENV: 'production', RATE_LIMIT_REDIS_URL: 'redis://localhost:6379' });
+      const limiter = await createLimiter(1000, 5);
+      assert.strictEqual(typeof limiter.checkAsync, 'function');
+      try {
+        await limiter.checkAsync('127.0.0.1');
+        assert.fail('Should fail due to redis connection error');
+      } catch (error) {
+        assert.ok(error.message.includes('Redis') || error.message.includes('connect') || error.message.includes('Rate limit check failed'));
+      }
+    });
+
     after(() => {
       restoreEnv();
     });
@@ -250,6 +262,18 @@ describe('Distributed Rate Limiter', () => {
       setTestEnv({ NODE_ENV: 'production', KV_REST_API_URL: 'https://api.vercel-storage.com', KV_REST_API_TOKEN: 'test-token' });
       const limiter = await createLimiter(1000, 5);
       await assertThrowsSyncCheck(limiter, '127.0.0.1');
+    });
+
+    it('should support async checkAsync for KV backend without method overwrite', async () => {
+      setTestEnv({ NODE_ENV: 'production', KV_REST_API_URL: 'https://api.vercel-storage.com', KV_REST_API_TOKEN: 'test-token' });
+      const limiter = await createLimiter(1000, 5);
+      assert.strictEqual(typeof limiter.checkAsync, 'function');
+      try {
+        await limiter.checkAsync('127.0.0.1');
+        assert.fail('Should fail due to KV REST API fetch error');
+      } catch (error) {
+        assert.ok(error.message.includes('fetch') || error.message.includes('Rate limit check failed'));
+      }
     });
 
     after(() => {

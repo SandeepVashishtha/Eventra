@@ -7,9 +7,15 @@
  * used by the GitHub proxy and AI recommendation endpoints before any password
  * comparison is performed.
  *
+ * Rate Limiting Implementation:
+ * This endpoint integrates with the `DistributedRateLimiter` configured with a 1-minute window
+ * and a maximum of 10 login attempts. In production, rate limit counts are synchronized
+ * across all serverless instances using a distributed backend (Redis or Vercel KV).
+ * If the distributed storage is misconfigured or down, the system fails closed to protect the authentication endpoint.
+ *
  * Defence layers, in order:
  *   1. Method guard (POST only)
- *   2. Per-IP rate limit (5 attempts per minute) enforced before bcrypt
+ *   2. Per-IP rate limit (10 attempts per minute) enforced before bcrypt
  *   3. Input validation
  *   4. Constant-time-ish credential verification via bcrypt
  *   5. Generic error messages to prevent account enumeration
