@@ -9,7 +9,7 @@ import { storageManager } from "../utils/storage/storageManager";
 import { STORAGE_KEYS } from "../utils/storage/storageKeys";
 import { validators } from "../utils/storage/storageValidators";
 import { fetchWithTimeout } from "../utils/fetchWithTimeout";
-
+import EmptyState from "../common/EmptyState";
 // GitHub repo
 const GITHUB_REPO = "sandeepvashishtha/Eventra";
 const CACHE_DURATION = 60 * 60 * 1000; // 1 hr
@@ -320,11 +320,14 @@ useEffect(() => {
 
         {filteredContributors.length === 0 ? (
           <div className="text-center text-gray-600 dark:text-gray-400 text-lg">
-            <p>
-              {searchTerm
-                ? `No contributors found matching "${searchTerm}"`
-                : "No contributors are available yet."}
-            </p>
+          <EmptyState
+  title="No Contributors Found"
+  description={
+    searchTerm
+      ? `No contributors found matching "${searchTerm}"`
+      : "No contributors are available yet."
+  }
+/>
             {!searchTerm && (
               <button
                 type="button"
