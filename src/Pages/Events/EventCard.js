@@ -26,7 +26,7 @@ import { getEventStatus } from "../../utils/eventUtils";
 import { useMyEvents } from "../../context/MyEventsContext";
 import ReminderControls from "../../components/reminders/ReminderControls";
 import AddToCalendar from "../../components/common/AddToCalendar";
-import CountdownTimer from "./events/CountdownTimer";
+import CountdownTimer from "../../components/common/CountdownTimer";
 import SocialShareButtons from "../../components/common/SocialShareButtons";
 import {
   addBookmarkedEvent,
