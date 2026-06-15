@@ -51,7 +51,20 @@
     "hasAccount": "ఇప్పటికే ఖాతా ఉందా?",
     "sessionExpired": "సెషన్ గడువు ముగిసింది. దయచేసి మళ్లీ లాగిన్ అవ్వండి.",
     "loginSuccess": "తిరిగి స్వాగతం!",
-    "signupSuccess": "ఖాతా విజయవంతంగా సృష్టించబడింది!"
+    "signupSuccess": "ఖాతా విజయవంతంగా సృష్టించబడింది!",
+    "welcomeBack": "తిరిగి స్వాగతం",
+    "signInSubtitle": "మీ Eventra ఖాతాలోకి సైన్ ఇన్ చేయండి",
+    "usernameOrEmail": "ఇమెయిల్ లేదా వినియోగదారు పేరు",
+    "signIn": "సైన్ ఇన్",
+    "signingIn": "సైన్ ఇన్ అవుతోంది...",
+    "createAccount": "ఇక్కడ ఖాతా సృష్టించండి",
+    "usernamePlaceholder": "john@example.com / yourname@email.com / eventra.team@gmail.com",
+    "passwordPlaceholder": "సురక్షిత పాస్‌వర్డ్ నమోదు చేయండి / కనీసం 8 అక్షరాలు / బలమైన పాస్‌వర్డ్ ఉపయోగించండి",
+    "showPassword": "పాస్‌వర్డ్ చూపించు",
+    "hidePassword": "పాస్‌వర్డ్ దాచు",
+    "lockedOut": "చాలా విఫల ప్రయత్నాలు. {{seconds}} సెకన్ల తర్వాత మళ్లీ ప్రయత్నించండి.",
+    "attemptsRemaining": "తాత్కాలిక లాకవుట్ కు ముందు {{count}} ప్రయత్నం(లు) మిగిలి ఉన్నాయి.",
+    "lockedWait": "లాక్ అయింది — {{seconds}} సెకన్లు వేచి ఉండండి"
   },
   "validation": {
     "required": "This field is required",
