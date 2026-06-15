@@ -25,7 +25,6 @@ import hackathonsData from "../../Hackathons/hackathonMockData.json";
 import projectsData from "../../Projects/mockProjectsData.json";
 const CountUp = CountUpLib.default || CountUpLib;
 
-<<<<<<< HEAD
 // ─── STATIC CONFIGURATIONS ───────────────────────────────────────────────────
 const SEARCH_ROUTES = {
   event: "/events",
@@ -92,10 +91,9 @@ const fadeUp = {
   hidden: { opacity: 0, y: 20 }, 
   show: { opacity: 1, y: 0, transition: { duration: 0.6 } } 
 };
-=======
+
 // ─── MOTION LINK SUB-COMPONENT ──────────────────────────────────────────────
 const MotionLink = motion(Link);
->>>>>>> upstream/master
 
 // ─── STATIC SEARCH INDEX CONFIGURATION ───────────────────────────────────────
 const createSearchItem = (item, type, searchType) => ({
@@ -115,31 +113,6 @@ const allSearchItems = [
   ...projectsData.map((item) => createSearchItem(item, "project", "Projects")),
 ];
 
-<<<<<<< HEAD
-=======
-const HEADLINE_PHRASES = [
-  "Amazing Tech Events",
-  "Exciting Hackathons Today",
-  "Innovative Dev Workshops",
-  "Cutting-Edge Tech Meetups",
-];
-const TAGLINE_TEXTS = ["Discover & Join"];
-const SEARCH_RESULT_LIMIT = 5;
-
-
-const SEARCH_ROUTES = {
-  event: "/events",
-  hackathon: "/hackathons",
-  project: "/projects",
-};
-
-const SEARCH_ICONS = {
-  event: Calendar,
-  hackathon: Trophy,
-  project: Code,
-};
-
->>>>>>> upstream/master
 const searchIndex = new Fuse(allSearchItems, {
   keys: ["title", "description", "location", "tags", "techStack", "category", "author", "organizer", "type"],
   threshold: 0.3,
@@ -157,24 +130,21 @@ const getResultIcon = (type) => {
   return <Icon className="w-4 h-4 shrink-0" aria-hidden="true" />;
 };
 
-// Declared safely outside component scope to fix framer-motion reference breaking
-const MotionLink = motion(Link);
-
 // ─── COMPONENT INTERFACE ─────────────────────────────────────────────────────
 const Hero = () => {
-<<<<<<< HEAD
-  const prefersReducedMotion = useReducedMotion();
   const controls = useAnimation();
-=======
+
   const { t, i18n } = useTranslation();
   const heroControls = useAnimation();
   const prefersReducedMotion = useReducedMotion();
-
-  useDocumentTitle("Eventra | Home");
-
->>>>>>> upstream/master
   const containerRef = useRef(null);
+const [isDark, setIsDark] = useState(
+  document.documentElement.classList.contains("dark")
+);
 
+const [isMobileView, setIsMobileView] = useState(
+  window.innerWidth <= 420
+);
   useDocumentTitle("Eventra | Home");
 
   const [isTouch, setIsTouch] = useState(false);
@@ -183,10 +153,6 @@ const Hero = () => {
   const [showResults, setShowResults] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
 
-<<<<<<< HEAD
-  // FIXED: Destructured missing search hook properties correctly
-=======
->>>>>>> upstream/master
   const { searchTerm, debouncedTerm, setSearchTerm, clear: clearSearchTerm } = useDebouncedSearch("", 300);
 
   // FIXED: Added missing useScroll initialization to define scrollYProgress
@@ -201,7 +167,7 @@ const Hero = () => {
 
   useEffect(() => {
     setIsTouch(window.matchMedia("(pointer: coarse)").matches);
-<<<<<<< HEAD
+
     setIsDark(document.documentElement.classList.contains("dark"));
     setIsMobileView(window.innerWidth <= 420);
 
@@ -219,8 +185,6 @@ const Hero = () => {
       observer.disconnect();
       window.removeEventListener("resize", onResize);
     };
-=======
->>>>>>> upstream/master
   }, []);
 
   useEffect(() => {
@@ -232,13 +196,8 @@ const Hero = () => {
   }, []);
 
   useEffect(() => {
-<<<<<<< HEAD
     controls.start("show");
   }, [controls]);
-=======
-    heroControls.start("show");
-  }, [heroControls]);
->>>>>>> upstream/master
 
   useEffect(() => {
     const timer = setTimeout(() => setStatsReady(true), 100);
@@ -263,7 +222,6 @@ const Hero = () => {
     clearSearchTerm();
   }, [clearSearchTerm]);
 
-<<<<<<< HEAD
   const floatShape = (i) => ({
     y: [0, -15 - i * 4, 0],
     x: [0, 12 + i * 3, 0],
@@ -275,33 +233,6 @@ const Hero = () => {
       delay: i * 0.2,
     },
   });
-=======
-
-
-  const HERO_STATS = useMemo(
-    () => [
-      {
-        value: 1500,
-        label: t("landing.hero.stats.developers"),
-        suffix: "+",
-        icon: Users,
-      },
-      {
-        value: 75,
-        label: t("landing.hero.stats.events"),
-        suffix: "+",
-        icon: Calendar,
-      },
-      {
-        value: 30,
-        label: t("landing.hero.stats.partners"),
-        suffix: "+",
-        icon: Handshake,
-      },
-    ],
-    [t]
-  );
->>>>>>> upstream/master
 
   return (
     <section
@@ -313,11 +244,7 @@ const Hero = () => {
     >
       {/* Decorative Blur Spheres */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-<<<<<<< HEAD
         <div 
-=======
-        <div
->>>>>>> upstream/master
           style={{
             position: "absolute",
             top: 12,
@@ -414,24 +341,16 @@ const Hero = () => {
           </motion.p>
           <motion.div variants={fadeUp} className="mx-auto mb-10 w-full max-w-2xl">
             <div className="relative">
-<<<<<<< HEAD
               <div className="relative rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm">
-=======
-              <div className="relative rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm focus-within:border-brand-violet/50 transition-colors">
->>>>>>> upstream/master
                 <ModernSearchInput
                   value={searchTerm}
                   onChange={(e) => handleSearch(e.target.value)}
                   placeholder="Search events, hackathons, projects..."
                   onFocus={() => searchTerm && setShowResults(true)}
                   onBlur={() => setTimeout(() => setShowResults(false), 200)}
-<<<<<<< HEAD
                   spellCheck = "false"
                   // Added "text-black dark:text-white" explicitly to force contrast
                   className="border-0 bg-transparent text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-0 w-full"
-=======
-                  inputClassName="border-0 bg-transparent text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-0"
->>>>>>> upstream/master
                 >
                   <AnimatePresence>
                     {showResults && (
@@ -463,11 +382,7 @@ const Hero = () => {
                                     role="option"
                                     aria-label={`Open ${result.item.title}`}
                                   >
-<<<<<<< HEAD
                                     <div className="shrink-0 rounded-lg bg-gray-100 dark:bg-slate-800 p-2 text-gray-700 dark:text-gray-300 transition-transform group-hover:scale-105">
-=======
-                                    <div className="shrink-0 rounded-lg bg-gray-100 dark:bg-slate-800 p-2 text-gray-700 dark:text-gray-300 transition-transform group-hover:scale-105 group-hover:bg-brand-violet/10 group-hover:text-brand-violet">
->>>>>>> upstream/master
                                       {getResultIcon(result.item.type)}
                                     </div>
                                     <div className="min-w-0 flex-1">
@@ -527,7 +442,6 @@ const Hero = () => {
                   <motion.div
                     key={stat.label}
                     variants={fadeUp}
-<<<<<<< HEAD
                     whileHover={{ y: -2, transition: { duration: 0.15 } }}
                     className="flex flex-col items-center justify-center rounded-md border border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm transition-shadow sm:p-5"
                   >
@@ -535,17 +449,6 @@ const Hero = () => {
                       <stat.icon className="h-5 w-5" aria-hidden="true" />
                     </div>
                     <div className="mb-1 text-2xl font-semibold tabular-nums text-gray-900 dark:text-white sm:text-3xl">
-=======
-                    whileHover={{ y: -4, transition: { duration: 0.2 } }}
-                    /* MODIFIED: Added premium hover state with brand-violet border, deep shadows, and theme colors */
-                    className="flex flex-col items-center justify-center rounded-xl border border-brand-violet/50 bg-white dark:bg-slate-900 p-5 shadow-sm hover:shadow-xl hover:border-brand-violet transition-all duration-300"
-                  >
-                    {/* MODIFIED: Icon wraps now subtly highlight into your brand colors on card hover */}
-                    <div className="mb-2 rounded-full bg-gray-100 dark:bg-slate-800 p-2 text-gray-700 dark:text-gray-300 border border-transparent transition-colors">
-                      <stat.icon className="h-5 w-5" aria-hidden="true" />
-                    </div>
-                    <p className="mb-1 text-2xl font-bold tabular-nums text-gray-900 dark:text-white sm:text-3xl">
->>>>>>> upstream/master
                       {statsReady ? (
                         <CountUp
                           end={stat.value}
@@ -558,13 +461,8 @@ const Hero = () => {
                           {stat.suffix || ""}
                         </>
                       )}
-<<<<<<< HEAD
                     </div>
                     <p className="text-center text-xs font-medium uppercase tracking-wider text-gray-600 dark:text-gray-400 sm:text-sm">
-=======
-                    </p>
-                    <p className="text-center text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 sm:text-sm">
->>>>>>> upstream/master
                       {stat.label}
                     </p>
                   </motion.div>
