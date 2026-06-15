@@ -1,0 +1,120 @@
+name: Auto-Upstream Sync for PR Branches
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches:
+      - master
+  schedule:
+    - cron: "0 */3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  gather-prs:
+    name: Gather PRs to Sync
+    runs-on: ubuntu-latest
+    outputs:
+      prs: ${{ steps.list-prs.outputs.prs }}
+    steps:
+      - name: List open PRs
+        id: list-prs
+        env:
+          GH_TOKEN: ${{ secrets.BOT_PAT || secrets.GITHUB_TOKEN }}
+        run: |
+          event_name="${{ github.event_name }}"
+
+          if [ "$event_name" = "pull_request_target" ]; then
+            PR_LIST="[${{ github.event.pull_request.number }}]"
+          else
+            PR_LIST=$(gh pr list --state open --limit 1000 --repo ${{ github.repository }} --base master --json number --jq '[.[].number]')
+          fi
+
+          echo "PRs to process: $PR_LIST"
+          echo "prs=$PR_LIST" >> $GITHUB_OUTPUT
+
+  sync:
+    name: Sync PR #${{ matrix.pr }}
+    needs: gather-prs
+    runs-on: ubuntu-latest
+    if: needs.gather-prs.outputs.prs != '[]' && needs.gather-prs.outputs.prs != ''
+    strategy:
+      fail-fast: false
+      matrix:
+        pr: ${{ fromJSON(needs.gather-prs.outputs.prs) }}
+    steps:
+      - name: Resolve PR metadata
+        id: metadata
+        env:
+          GH_TOKEN: ${{ secrets.BOT_PAT || secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUM=${{ matrix.pr }}
+          data=$(gh pr view $PR_NUM --repo ${{ github.repository }} --json isDraft,headRepository,headRefName)
+          echo "isDraft=$(echo "$data" | jq -r '.isDraft')" >> $GITHUB_OUTPUT
+          echo "headRepo=$(echo "$data" | jq -r '.headRepository.nameWithOwner')" >> $GITHUB_OUTPUT
+          echo "headRef=$(echo "$data" | jq -r '.headRefName')" >> $GITHUB_OUTPUT
+
+      - name: Checkout PR branch
+        if: steps.metadata.outputs.isDraft != 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.metadata.outputs.headRepo }}
+          ref: ${{ steps.metadata.outputs.headRef }}
+          token: ${{ secrets.BOT_PAT || secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        if: steps.metadata.outputs.isDraft != 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Sync branch with upstream master
+        if: steps.metadata.outputs.isDraft != 'true'
+        env:
+          PR_NUM: ${{ matrix.pr }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git remote add upstream "https://github.com/${{ github.repository }}.git" || true
+          git fetch upstream master
+
+          if git merge upstream/master --no-edit -m "chore: merge upstream master to sync branch"; then
+            echo "PR #$PR_NUM: clean merge, pushing..."
+            git push origin "HEAD:${{ steps.metadata.outputs.headRef }}"
+            exit 0
+          fi
+
+          CONFLICT_FILES=$(git diff --name-only --diff-filter=U)
+          echo "Conflicted files: $CONFLICT_FILES"
+
+          ONLY_MINIFIED=true
+          for file in $CONFLICT_FILES; do
+            if ! echo "$file" | grep -Eq "^dist/assets/.*\.(css|js)$"; then
+              ONLY_MINIFIED=false
+              break
+            fi
+          done
+
+          if [ "$ONLY_MINIFIED" = "true" ] && [ -n "$CONFLICT_FILES" ]; then
+            echo "PR #$PR_NUM: conflicts only in minified bundles, auto-resolving..."
+            for file in $CONFLICT_FILES; do
+              git checkout --ours -- "$file"
+              git add "$file"
+            done
+            npm ci
+            npm run build
+            git add dist/
+            git commit -m "chore: resolve minified bundle conflicts and rebuild"
+            git push origin "HEAD:${{ steps.metadata.outputs.headRef }}"
+            echo "PR #$PR_NUM: auto-resolved and pushed"
+          else
+            echo "::warning::PR #$PR_NUM: source conflicts detected, manual resolution needed"
+            echo "Conflicted files: $CONFLICT_FILES"
+            git merge --abort
+          fi
