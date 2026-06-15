@@ -55,6 +55,30 @@ async function assertThrowsSyncCheck(limiter, key) {
   }
 }
 
+async function assertValidationFails(env) {
+  setTestEnv(env);
+  const { validateRateLimitConfig } = await import('../api/_lib/rateLimiter.js');
+  try {
+    validateRateLimitConfig();
+    assert.fail('Should have thrown an error');
+  } catch (error) {
+    assert.ok(error.message);
+  }
+}
+
+async function assertCheckAsyncFailsOnDistributed(env, expectedErrorSubstrings) {
+  setTestEnv(env);
+  const limiter = await createLimiter(1000, 5);
+  assert.strictEqual(typeof limiter.checkAsync, 'function');
+  try {
+    await limiter.checkAsync('127.0.0.1');
+    assert.fail('Should fail due to storage connection error');
+  } catch (error) {
+    const matched = expectedErrorSubstrings.some(str => error.message.includes(str));
+    assert.ok(matched, `Expected error message to contain one of: ${expectedErrorSubstrings.join(', ')}. Got: ${error.message}`);
+  }
+}
+
 describe('Distributed Rate Limiter', () => {
   describe('In-Memory Backend (Development/Test)', () => {
     before(() => {
@@ -155,40 +179,41 @@ describe('Distributed Rate Limiter', () => {
       restoreEnv();
     });
 
-    it('should fail validation without distributed storage in production', async () => {
-      setTestEnv({ NODE_ENV: 'production' });
-      const { validateRateLimitConfig } = await import('../api/_lib/rateLimiter.js');
-      try {
-        validateRateLimitConfig();
-        assert.fail('Should have thrown an error');
-      } catch (error) {
-        assert.ok(error.message);
+    const invalidConfigs = [
+      {
+        desc: 'should fail validation without distributed storage in production',
+        env: { NODE_ENV: 'production' }
+      },
+      {
+        desc: 'should fail validation with RATE_LIMIT_MODE=memory in production',
+        env: { NODE_ENV: 'production', RATE_LIMIT_MODE: 'memory' }
       }
+    ];
+
+    invalidConfigs.forEach(({ desc, env }) => {
+      it(desc, async () => {
+        await assertValidationFails(env);
+      });
     });
 
-    it('should fail validation with RATE_LIMIT_MODE=memory in production', async () => {
-      setTestEnv({ NODE_ENV: 'production', RATE_LIMIT_MODE: 'memory' });
-      const { validateRateLimitConfig } = await import('../api/_lib/rateLimiter.js');
-      try {
-        validateRateLimitConfig();
-        assert.fail('Should have thrown an error');
-      } catch (error) {
-        assert.ok(error.message);
+    const validConfigs = [
+      {
+        desc: 'should pass validation with Redis configured',
+        env: { NODE_ENV: 'production', RATE_LIMIT_REDIS_URL: 'redis://localhost:6379' }
+      },
+      {
+        desc: 'should pass validation with KV configured',
+        env: { NODE_ENV: 'production', KV_REST_API_URL: 'https://api.vercel-storage.com', KV_REST_API_TOKEN: 'test-token' }
       }
-    });
+    ];
 
-    it('should pass validation with Redis configured', async () => {
-      setTestEnv({ NODE_ENV: 'production', RATE_LIMIT_REDIS_URL: 'redis://localhost:6379' });
-      const { validateRateLimitConfig } = await import('../api/_lib/rateLimiter.js');
-      const result = validateRateLimitConfig();
-      assert.strictEqual(result, true);
-    });
-
-    it('should pass validation with KV configured', async () => {
-      setTestEnv({ NODE_ENV: 'production', KV_REST_API_URL: 'https://api.vercel-storage.com', KV_REST_API_TOKEN: 'test-token' });
-      const { validateRateLimitConfig } = await import('../api/_lib/rateLimiter.js');
-      const result = validateRateLimitConfig();
-      assert.strictEqual(result, true);
+    validConfigs.forEach(({ desc, env }) => {
+      it(desc, async () => {
+        setTestEnv(env);
+        const { validateRateLimitConfig } = await import('../api/_lib/rateLimiter.js');
+        const result = validateRateLimitConfig();
+        assert.strictEqual(result, true);
+      });
     });
   });
 
@@ -204,80 +229,57 @@ describe('Distributed Rate Limiter', () => {
       restoreEnv();
     });
 
-    it('should export loginRateLimiter with correct limits', async () => {
-      const { loginRateLimiter } = await import('../api/_lib/rateLimiter.js');
-      for (let i = 0; i < 10; i++) {
-        const result = await loginRateLimiter.check('127.0.0.1');
-        assert.strictEqual(result.allowed, true);
-      }
-      await assertRateLimitExceeded(loginRateLimiter, '127.0.0.1');
-    });
+    const preconfiguredLimiters = [
+      { name: 'loginRateLimiter', limit: 10 },
+      { name: 'signupRateLimiter', limit: 5 }
+    ];
 
-    it('should export signupRateLimiter with correct limits', async () => {
-      const { signupRateLimiter } = await import('../api/_lib/rateLimiter.js');
-      for (let i = 0; i < 5; i++) {
-        const result = await signupRateLimiter.check('127.0.0.1');
-        assert.strictEqual(result.allowed, true);
-      }
-      await assertRateLimitExceeded(signupRateLimiter, '127.0.0.1');
-    });
-  });
-
-  describe('Redis Backend', () => {
-    it('should export RedisRateLimiter class', async () => {
-      const module = await import('../api/_lib/rateLimiter.js');
-      assert.strictEqual(typeof module.createRateLimiter, 'function');
-    });
-
-    it('should throw on synchronous check for distributed backend', async () => {
-      setTestEnv({ NODE_ENV: 'production', RATE_LIMIT_REDIS_URL: 'redis://localhost:6379' });
-      const limiter = await createLimiter(1000, 5);
-      await assertThrowsSyncCheck(limiter, '127.0.0.1');
-    });
-
-    it('should support async checkAsync for Redis backend without method overwrite', async () => {
-      setTestEnv({ NODE_ENV: 'production', RATE_LIMIT_REDIS_URL: 'redis://localhost:6379' });
-      const limiter = await createLimiter(1000, 5);
-      assert.strictEqual(typeof limiter.checkAsync, 'function');
-      try {
-        await limiter.checkAsync('127.0.0.1');
-        assert.fail('Should fail due to redis connection error');
-      } catch (error) {
-        assert.ok(error.message.includes('Redis') || error.message.includes('connect') || error.message.includes('Rate limit check failed'));
-      }
-    });
-
-    after(() => {
-      restoreEnv();
+    preconfiguredLimiters.forEach(({ name, limit }) => {
+      it(`should export ${name} with correct limits`, async () => {
+        const limiters = await import('../api/_lib/rateLimiter.js');
+        const limiter = limiters[name];
+        for (let i = 0; i < limit; i++) {
+          const result = await limiter.check('127.0.0.1');
+          assert.strictEqual(result.allowed, true);
+        }
+        await assertRateLimitExceeded(limiter, '127.0.0.1');
+      });
     });
   });
 
-  describe('KV REST API Backend', () => {
-    it('should support KV REST API backend', async () => {
-      const module = await import('../api/_lib/rateLimiter.js');
-      assert.strictEqual(typeof module.createRateLimiter, 'function');
-    });
+  const backends = [
+    {
+      name: 'Redis',
+      env: { NODE_ENV: 'production', RATE_LIMIT_REDIS_URL: 'redis://localhost:6379' },
+      expectedErrors: ['Redis', 'connect', 'Rate limit check failed']
+    },
+    {
+      name: 'KV REST API',
+      env: { NODE_ENV: 'production', KV_REST_API_URL: 'https://api.vercel-storage.com', KV_REST_API_TOKEN: 'test-token' },
+      expectedErrors: ['fetch', 'Rate limit check failed']
+    }
+  ];
 
-    it('should throw on synchronous check for distributed backend', async () => {
-      setTestEnv({ NODE_ENV: 'production', KV_REST_API_URL: 'https://api.vercel-storage.com', KV_REST_API_TOKEN: 'test-token' });
-      const limiter = await createLimiter(1000, 5);
-      await assertThrowsSyncCheck(limiter, '127.0.0.1');
-    });
+  backends.forEach(({ name, env, expectedErrors }) => {
+    describe(`${name} Backend`, () => {
+      it(`should support ${name} backend`, async () => {
+        const module = await import('../api/_lib/rateLimiter.js');
+        assert.strictEqual(typeof module.createRateLimiter, 'function');
+      });
 
-    it('should support async checkAsync for KV backend without method overwrite', async () => {
-      setTestEnv({ NODE_ENV: 'production', KV_REST_API_URL: 'https://api.vercel-storage.com', KV_REST_API_TOKEN: 'test-token' });
-      const limiter = await createLimiter(1000, 5);
-      assert.strictEqual(typeof limiter.checkAsync, 'function');
-      try {
-        await limiter.checkAsync('127.0.0.1');
-        assert.fail('Should fail due to KV REST API fetch error');
-      } catch (error) {
-        assert.ok(error.message.includes('fetch') || error.message.includes('Rate limit check failed'));
-      }
-    });
+      it('should throw on synchronous check for distributed backend', async () => {
+        setTestEnv(env);
+        const limiter = await createLimiter(1000, 5);
+        await assertThrowsSyncCheck(limiter, '127.0.0.1');
+      });
 
-    after(() => {
-      restoreEnv();
+      it(`should support async checkAsync for ${name} backend without method overwrite`, async () => {
+        await assertCheckAsyncFailsOnDistributed(env, expectedErrors);
+      });
+
+      after(() => {
+        restoreEnv();
+      });
     });
   });
 

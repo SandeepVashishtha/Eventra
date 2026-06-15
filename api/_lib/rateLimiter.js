@@ -1,9 +1,8 @@
 import { incrementWithExpiration, close } from "./rate-limit-storage.js";
 import { isDistributedRateLimitStorageConfigured } from "./rate-limit-config.js";
 
-const NODE_ENV = process.env.NODE_ENV || 'development';
-
-const USE_MEMORY = NODE_ENV !== 'production' || process.env.RATE_LIMIT_MODE === 'memory';
+const getEnv = () => process.env.NODE_ENV || 'development';
+const useMemory = () => getEnv() !== 'production' || process.env.RATE_LIMIT_MODE === 'memory';
 
 class InMemoryRateLimiter {
   constructor(windowMs, maxRequests) {
@@ -70,7 +69,7 @@ function createFailClosedLimiter(message) {
 }
 
 export const createRateLimiter = (windowMs, maxRequests) => {
-  if (NODE_ENV === 'production') {
+  if (getEnv() === 'production') {
     if (isDistributedRateLimitStorageConfigured()) {
       return new DistributedRateLimiter(windowMs, maxRequests);
     }
@@ -78,7 +77,7 @@ export const createRateLimiter = (windowMs, maxRequests) => {
     return createFailClosedLimiter("Rate limiting is not configured for production.");
   }
 
-  if (USE_MEMORY || !isDistributedRateLimitStorageConfigured()) {
+  if (useMemory() || !isDistributedRateLimitStorageConfigured()) {
     console.warn("[rateLimiter] Using in-memory storage (not suitable for production)");
     return new InMemoryRateLimiter(windowMs, maxRequests);
   }
@@ -104,7 +103,7 @@ export const enforceRateLimit = async (limiter, key) => {
 };
 
 export function validateRateLimitConfig() {
-  if (NODE_ENV !== 'production') return true;
+  if (getEnv() !== 'production') return true;
 
   const errors = [];
   if (!isDistributedRateLimitStorageConfigured()) {

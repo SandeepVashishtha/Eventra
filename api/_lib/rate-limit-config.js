@@ -23,8 +23,8 @@
  */
 export const isDistributedRateLimitStorageConfigured = () => {
   return Boolean(
-    process.env.KV_REST_API_URL?.trim() &&
-    process.env.KV_REST_API_TOKEN?.trim()
+    process.env.RATE_LIMIT_REDIS_URL?.trim() ||
+    (process.env.KV_REST_API_URL?.trim() && process.env.KV_REST_API_TOKEN?.trim())
   );
 };
 
