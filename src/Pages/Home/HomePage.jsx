@@ -6,7 +6,6 @@ import HomeCTA from "./components/HomeCTA";
 import RecommendationBanner from "./components/RecommendationBanner";
 import TrendingEvents from "../../components/TrendingEvents/TrendingEvents";
 import CollaborationNetworkMap from "../../components/visual/CollaborationNetworkMap";
-import CollaborationMap from "../../components/CollaborationMap";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 // ─── CONSTANTS ──────────────────────────────────────────────────────────────
@@ -27,7 +26,10 @@ const HomePage = () => {
         {/* Primary Meta Tags */}
         <title>{SITE_TITLE}</title>
         <meta name="description" content={SITE_DESCRIPTION} />
-        <meta name="keywords" content="tech events, hackathons, workshops, developer community, open source" />
+        <meta
+          name="keywords"
+          content="tech events, hackathons, workshops, developer community, open source"
+        />
         <meta name="author" content="Eventra Team" />
         <link rel="canonical" href={SITE_URL} />
 
@@ -61,7 +63,6 @@ const HomePage = () => {
       <TrendingEvents title="Trending Events" limit={6} fetchSize={24} />
       <RecommendationBanner />
       <CollaborationNetworkMap />
-      <CollaborationMap />
       <HomeCTA />
     </main>
   );
