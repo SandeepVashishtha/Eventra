@@ -11,7 +11,8 @@ import {
   X,
   Ticket,
   Trash2,
-  Activity,
+Activity,
+ChevronDown,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useMyEvents } from "../../context/MyEventsContext";
@@ -336,10 +337,33 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const [filterStatus, setFilterStatus] = useState("All");
   const [filterType, setFilterType] = useState("All");
   const [sortBy, setSortBy] = useState("soonest");
+  const [collapsedSections, setCollapsedSections] = useState(() => {
+  try {
+    return JSON.parse(
+      localStorage.getItem("eventSectionVisibility")
+    ) || {
+      registered: false,
+      hosted: false,
+      waitlist: false,
+    };
+  } catch {
+    return {
+      registered: false,
+      hosted: false,
+      waitlist: false,
+    };
+  }
+});
   const [cancelTarget, setCancelTarget] = useState(null);
 
   const [recentSearches,
     setRecentSearches] = useState([]);
+    useEffect(() => {
+  localStorage.setItem(
+    "eventSectionVisibility",
+    JSON.stringify(collapsedSections)
+  );
+}, [collapsedSections]);
   const registeredEvents = useMemo(
     () =>
       myEvents.map((registration) => ({
@@ -400,6 +424,12 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const upcomingCount = [...registeredEvents, ...hostedEvents].filter((event) => getEventStatus(event) === "Upcoming").length;
   const completedCount = [...registeredEvents, ...hostedEvents].filter((event) => getEventStatus(event) === "Completed").length;
 
+  const toggleSection = (section) => {
+  setCollapsedSections((prev) => ({
+    ...prev,
+    [section]: !prev[section],
+  }));
+};
   const handleCancelClick = (id, title) => setCancelTarget({ id, title });
   const handleCancelDismiss = () => setCancelTarget(null);
   const handleCancelConfirm = () => {
@@ -416,7 +446,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
       exit={{ opacity: 0 }}
       className="ud-content"
     >
-      <div className="ud-tab-header">
+     <div className="ud-tab-header flex items-center justify-between">
         <h2 className="ud-page-title">
           <Calendar size={20} /> Events
         </h2>
@@ -577,82 +607,160 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
           {filteredRegisteredEvents.length > 0 && (
             <section className="space-y-4">
               <div className="ud-tab-header">
-                <h3 className="ud-page-title">
-                  <Ticket size={18} /> Registered Events
-                </h3>
+              <button
+  onClick={() => toggleSection("registered")}
+  className="ud-page-title flex items-center gap-2"
+>
+  <Ticket size={18} />
+  Registered Events
+
+  <ChevronDown
+    size={18}
+    className={`transition-transform duration-300 ${
+      collapsedSections.registered ? "-rotate-90" : ""
+    }`}
+  />
+</button>
                 <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
                   {filteredRegisteredEvents.length} event{filteredRegisteredEvents.length === 1 ? "" : "s"}
                 </span>
               </div>
-              <motion.div className="ud-items-grid" variants={staggerVariants} initial="hidden" animate="visible">
-                {filteredRegisteredEvents.map((event, index) => (
-                  <EventCard
-                    key={event.eventId || event.id}
-                    event={event}
-                    index={index}
-                    onRemoveRegistration={handleCancelClick}
-                    showCancel
-                    onViewTicket={onViewTicket}
-                  />
-                ))}
-              </motion.div>
+<AnimatePresence>
+  {!collapsedSections.registered && (
+    <motion.div
+      className="ud-items-grid"
+      variants={staggerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      {filteredRegisteredEvents.map((event, index) => (
+        <EventCard
+          key={event.eventId || event.id}
+          event={event}
+          index={index}
+          onRemoveRegistration={handleCancelClick}
+          showCancel
+          onViewTicket={onViewTicket}
+        />
+      ))}
+    </motion.div>
+  )}
+</AnimatePresence>
             </section>
           )}
 
           {filteredHostedEvents.length > 0 && (
             <section className="space-y-4">
               <div className="ud-tab-header">
-                <h3 className="ud-page-title">
-                  <Calendar size={18} /> Hosted Events
-                </h3>
+               <button
+  onClick={() => toggleSection("hosted")}
+  className="ud-page-title flex items-center gap-2"
+>
+  <Calendar size={18} />
+  Hosted Events
+
+  <ChevronDown
+    size={18}
+    className={`transition-transform duration-300 ${
+      collapsedSections.hosted ? "-rotate-90" : ""
+    }`}
+  />
+</button>
                 <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
                   {filteredHostedEvents.length} event{filteredHostedEvents.length === 1 ? "" : "s"}
                 </span>
               </div>
-              <motion.div className="ud-items-grid" variants={staggerVariants} initial="hidden" animate="visible">
-                {filteredHostedEvents.map((event, index) => (
-                  <EventCard
-                    key={event.id}
-                    event={event}
-                    index={index}
-                    showCancel={false}
-                  />
-                ))}
-              </motion.div>
+           <AnimatePresence>
+  {!collapsedSections.hosted && (
+    <motion.div
+      className="ud-items-grid"
+      variants={staggerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      {filteredHostedEvents.map((event, index) => (
+        <EventCard
+          key={event.id}
+          event={event}
+          index={index}
+          showCancel={false}
+        />
+      ))}
+    </motion.div>
+  )}
+</AnimatePresence>
             </section>
           )}
 
           {waitlistEvents.length > 0 && (
             <section className="space-y-4 mt-6">
               <div className="ud-tab-header">
-                <h3 className="ud-page-title flex items-center gap-2">
-                  <Clock size={18} className="text-amber-500" /> Waitlisted Events
-                </h3>
+<button
+  onClick={() => toggleSection("waitlist")}
+  className="ud-page-title flex items-center gap-2"
+>
+  <Clock size={18} className="text-amber-500" />
+  Waitlisted Events
+
+  <ChevronDown
+    size={18}
+    className={`transition-transform duration-300 ${
+      collapsedSections.waitlist ? "-rotate-90" : ""
+    }`}
+  />
+</button>
                 <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
                   {waitlistEvents.length} event{waitlistEvents.length === 1 ? "" : "s"}
                 </span>
               </div>
-              <motion.div className="ud-items-grid" variants={staggerVariants} initial="hidden" animate="visible">
-                {waitlistEvents.map((event, index) => (
-                  <WaitlistCard
-                    key={event.id}
-                    event={event}
-                    index={index}
-                    onLeaveWaitlist={async (id) => {
-                      if (window.confirm(`Are you sure you want to leave the waitlist for "${event.title}"?`)) {
-                        try {
-                          const { leaveWaitlist } = await import("../../utils/waitlistUtils.js");
-                          await leaveWaitlist(id, user.id || user.email);
-                          toast.success("Left the waitlist successfully.");
-                          triggerWaitlistUpdate();
-                        } catch (err) {
-                          toast.error(err.message || "Failed to leave waitlist.");
-                        }
-                      }
-                    }}
-                  />
-                ))}
-              </motion.div>
+              
+             <AnimatePresence>
+  {!collapsedSections.waitlist && (
+    <motion.div
+      className="ud-items-grid"
+      variants={staggerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      {waitlistEvents.map((event, index) => (
+        <WaitlistCard
+          key={event.id}
+          event={event}
+          index={index}
+          onLeaveWaitlist={async (id) => {
+            if (
+              window.confirm(
+                `Are you sure you want to leave the waitlist for "${event.title}"?`
+              )
+            ) {
+              try {
+                const { leaveWaitlist } = await import(
+                  "../../utils/waitlistUtils.js"
+                );
+
+                await leaveWaitlist(
+                  id,
+                  user.id || user.email
+                );
+
+                toast.success(
+                  "Left the waitlist successfully."
+                );
+
+                triggerWaitlistUpdate();
+              } catch (err) {
+                toast.error(
+                  err.message ||
+                    "Failed to leave waitlist."
+                );
+              }
+            }
+          }}
+        />
+      ))}
+    </motion.div>
+  )}
+</AnimatePresence>
             </section>
           )}
         </>
