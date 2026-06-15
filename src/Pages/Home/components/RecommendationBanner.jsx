@@ -8,7 +8,7 @@ const RecommendationBanner = () => {
       }}
     >
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-28 bg-gradient-to-b from-white/80 dark:from-slate-950/40 to-transparent" />
+        <div className="absolute top-0 left-0 right-0 h-28 bg-linear-to-b from-white/80 dark:from-slate-950/40 to-transparent" />
         <div className="absolute top-10 left-8 h-40 w-40 rounded-full bg-white/35 dark:bg-slate-800/10 blur-3xl" />
         <div className="absolute top-24 right-8 h-52 w-52 rounded-full bg-sky-100/35 dark:bg-brand-violet/5 blur-3xl" />
       </div>

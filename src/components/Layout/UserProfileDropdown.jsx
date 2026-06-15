@@ -71,7 +71,7 @@ const UserProfileDropdown = ({
                   }}
                 />
               ) : (
-                <div className="w-12 h-12 rounded-full bg-gradient-to-r from-indigo-800 to-indigo-950 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-full bg-linear-to-r from-indigo-800 to-indigo-950 flex items-center justify-center">
                   <UserIcon className="w-6 h-6 text-white" />
                 </div>
               )}

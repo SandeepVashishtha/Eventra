@@ -58,7 +58,7 @@ const BookmarkedEvents = () => {
 
           <Link
             to="/events"
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:from-indigo-500 hover:via-indigo-600 hover:to-slate-800 hover:shadow-xl"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-indigo-600 via-indigo-700 to-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:from-indigo-500 hover:via-indigo-600 hover:to-slate-800 hover:shadow-xl"
           >
             <CalendarDays size={18} />
             Explore Events

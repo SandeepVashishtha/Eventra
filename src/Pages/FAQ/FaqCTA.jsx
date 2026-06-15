@@ -78,7 +78,7 @@ export default function FAQCTA() {
       <div className="absolute inset-0 overflow-hidden rounded-3xl">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute inset-0 bg-gradient-to-tr from-[#0C0C1F] via-[#1A1F36] to-[#0B1E2E] rounded-3xl" />
+        <div className="absolute inset-0 bg-linear-to-tr from-[#0C0C1F] via-[#1A1F36] to-[#0B1E2E] rounded-3xl" />
       </div>
 
       {/* Decorative border */}
@@ -93,7 +93,7 @@ export default function FAQCTA() {
           transition={{ duration: 0.6 }}
         >
           <div className="relative inline-flex items-center gap-2 bg-white/5 backdrop-blur-md rounded-full px-6 py-2 border border-white/20 shadow-lg shadow-purple-500/10">
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-500/20 via-transparent to-teal-500/20 opacity-50" />
+            <div className="absolute inset-0 rounded-full bg-linear-to-r from-purple-500/20 via-transparent to-teal-500/20 opacity-50" />
             <HelpCircle className="relative w-5 h-5 text-white/90" aria-hidden="true" />
             <span className="relative text-white/90 text-sm tracking-wider font-medium">
               {t("faq.ctaBadge")}
@@ -109,7 +109,7 @@ export default function FAQCTA() {
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.8, ease: "easeOut" }}
         >
-          <span className="bg-gradient-to-r from-white via-purple-200 to-teal-200 bg-clip-text text-transparent">
+          <span className="bg-linear-to-r from-white via-purple-200 to-teal-200 bg-clip-text text-transparent">
             {t("faq.ctaHeading")}
           </span>
         </motion.h2>
@@ -146,7 +146,7 @@ export default function FAQCTA() {
             >
               {/* Animated gradient background on hover */}
               <div
-                className={`absolute inset-0 bg-gradient-to-br ${card.hoverGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
+                className={`absolute inset-0 bg-linear-to-br ${card.hoverGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
               />
 
               {/* Glowing border effect */}
@@ -155,7 +155,7 @@ export default function FAQCTA() {
               {/* Icon container with glow */}
               <div className="relative">
                 <div
-                  className={`absolute inset-0 bg-gradient-to-br ${card.accentColor} rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
+                  className={`absolute inset-0 bg-linear-to-br ${card.accentColor} rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
                 />
                 <div className="relative p-4 bg-white/5 rounded-2xl border border-white/10 group-hover:border-white/20 transition-all duration-300">
                   {card.icon}
