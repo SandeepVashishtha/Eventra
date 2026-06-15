@@ -22,6 +22,7 @@ import { loginRateLimiter, enforceRateLimit } from "../_lib/rateLimiter.js";
 import { getJwtSecret, JWT_EXPIRES_IN, JWT_COOKIE_MAX_AGE_SECONDS } from "./_jwt-config.js";
 import { buildCorsHeaders, corsResponse } from "./_cors.js";
 import { isStorageHealthy, getUserByEmail, getUserByUsername } from "./_user-storage.js";
+import { errorHandler } from "../_lib/errors.js";
 
 /**
  * Validates the login request body.
@@ -198,6 +199,6 @@ export default async function login(req, res, deps = {}) {
       ...userResponse,
     });
   } catch (err) {
-    return corsResponse(req, res, 500, { error: "Internal server error" });
+    return errorHandler(err, req, res);
   }
 }

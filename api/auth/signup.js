@@ -5,7 +5,7 @@ import { signupRateLimiter } from "../_lib/rateLimiter.js";
 import { buildCorsHeaders, corsResponse } from "./_cors.js";
 import { assertPersistentStorageConfigured } from "./_storage-config.js";
 import { createUser, getUserByEmail, isStorageHealthy } from "./_user-storage.js";
-
+import { wrapHandler } from "../_lib/errors.js";
 
 // ---------------------------------------------------------------------------
 // In-memory user storage
@@ -320,5 +320,5 @@ async function handler(req, res) {
   }
 }
 
-export default handler;
+export default wrapHandler(handler);
 

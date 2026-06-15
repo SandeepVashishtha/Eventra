@@ -17,6 +17,7 @@
 
 import { checkCapacity } from "../_lib/capacityValidator.js";
 import { withLock } from "../_lib/distributed-lock.js";
+import { errorHandler } from "../_lib/errors.js";
 
 /**
  * Registration handler.
@@ -114,17 +115,6 @@ export default async function registerForEvent(req, res, deps = {}) {
     });
 
   }, 30000).catch((err) => {
-    // ── Race condition loser ───────────────────────────────────────────────
-    if (err?.code === "CAPACITY_FULL") {
-      res.status(409).json({ error: "Event is at full capacity" });
-      return;
-    }
-
-    if (err?.code === "DUPLICATE_REGISTRATION" || err?.code === "23505") {
-      res.status(409).json({ error: "You are already registered for this event" });
-      return;
-    }
-
-    res.status(500).json({ error: "Internal server error" });
+    errorHandler(err, req, res);
   });
 }

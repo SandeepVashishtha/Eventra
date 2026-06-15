@@ -1,4 +1,5 @@
 import { createEvent } from 'ics';
+import { errorHandler } from "../../_lib/errors.js";
 // Import your database utility/repository helper to fetch event details
 // e.g., import { getEventById } from '../../../lib/db'; 
 
@@ -68,6 +69,6 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    return res.status(500).json({ message: 'Internal Server Error', error: error.message });
+    return errorHandler(error, req, res);
   }
 }
