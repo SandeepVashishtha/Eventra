@@ -97,7 +97,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             : "bg-transparent border-b border-transparent"
         }`}
       >
-        <div className="relative px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-3">
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-8 lg:px-12 py-3 flex items-center justify-between gap-4 sm:gap-6 lg:gap-8">
           {/* Logo - Left Section */}
           <Link to="/" aria-label="Eventra home logo template" className="relative z-10 flex items-center shrink-0">
             <div className="flex items-center gap-2 sm:gap-2.5">
@@ -122,8 +122,8 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           </div>
 
           {/* Right Controls Container */}
-          <div className="relative z-10 flex items-center gap-1 sm:gap-2.5 shrink-0">
-            <div className="hidden lg:flex items-center gap-1.5">
+          <div className="relative z-10 flex items-center gap-2 sm:gap-3 shrink-0">
+            <div className="hidden lg:flex items-center gap-2">
               <LanguageSelector compact />
               {authenticated ? (
                 <>
