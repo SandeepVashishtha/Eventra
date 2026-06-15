@@ -14,6 +14,7 @@ import { sanitizeHtml } from "../utils/sanitizeHtml";
 import { logger } from "../utils/logger";
 import { useAuth } from "../context/AuthContext";
 import { safeJsonParse } from "../utils/safeJsonParse";
+import { getOrMigrateKey } from "../utils/storageKeyManager";
 
 // 🎯 Constants for better maintainability
 const MAX_CAPACITY = 100000;
@@ -263,7 +264,8 @@ const DEBOUNCE_DELAY = 1000;
  */
 export const useEventForm = () => {
   const { user } = useAuth();
-  const scopedDraftKey = `${DRAFT_KEY}_${user?.id || "guest"}`;
+  const legacyKey = `${DRAFT_KEY}_${user?.id || "guest"}`;
+  const scopedDraftKey = getOrMigrateKey(DRAFT_KEY, user?.id, legacyKey);
   // 📊 State Management
   const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
@@ -280,6 +282,12 @@ export const useEventForm = () => {
   useEffect(() => {
     formDataRef.current = formData;
   }, [formData]);
+
+  const resetForm = useCallback(() => {
+    setFormData(initialFormData);
+    setErrors({});
+    localStorage.removeItem(scopedDraftKey);
+  }, [scopedDraftKey]);
 
   // 🎯 Form Submission Hook
   const {
@@ -305,6 +313,7 @@ export const useEventForm = () => {
       throw new Error(errorMessage);
     }
 
+    resetForm();
     return result;
   });
 
@@ -546,12 +555,6 @@ export const useEventForm = () => {
     if (name) validateField(name, value);
   }, [validateField]);
 
-  const resetForm = useCallback(() => {
-    setFormData(initialFormData);
-    setErrors({});
-    localStorage.removeItem(scopedDraftKey);
-  }, [scopedDraftKey]);
-
   const handleInputChange = useCallback((e) => {
     const { name, value, type, checked } = e.target;
     if (name.startsWith("location.coordinates.")) {
@@ -696,12 +699,14 @@ export const useEventForm = () => {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setFormData((prev) => ({ ...prev, banner: file, bannerPreview: event.target.result }));
-      setErrors((prev) => ({ ...prev, banner: "" }));
-    };
-    reader.readAsDataURL(file);
+    const objectUrl = URL.createObjectURL(file);
+    setFormData((prev) => {
+      if (prev.bannerPreview && prev.bannerPreview.startsWith("blob:")) {
+        URL.revokeObjectURL(prev.bannerPreview);
+      }
+      return { ...prev, banner: file, bannerPreview: objectUrl };
+    });
+    setErrors((prev) => ({ ...prev, banner: "" }));
   }, []);
 
   // Browser guard for unsaved changes
@@ -715,6 +720,16 @@ export const useEventForm = () => {
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [hasUnsavedChanges]);
+
+  // Cleanup ObjectURLs on unmount
+  useEffect(() => {
+    return () => {
+      const preview = formDataRef.current?.bannerPreview;
+      if (preview && preview.startsWith("blob:")) {
+        URL.revokeObjectURL(preview);
+      }
+    };
+  }, []);
 
   /**
    * isFormValid — true when the errors object is empty AND all required

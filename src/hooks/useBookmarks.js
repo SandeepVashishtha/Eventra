@@ -5,6 +5,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { safeJsonParse } from "../utils/safeJsonParse";
 import { useAuth } from "../context/AuthContext";
+import { getOrMigrateKey } from "../utils/storageKeyManager";
 
 // Simple synchronous hash to avoid exposing raw userId (email) in localStorage keys.
 const hashUserId = (userId) => {
@@ -88,7 +89,8 @@ const useBookmarks = (userId = "guest") => {
   }, [auth, userId]);
 
   const isAuthLoading = auth ? auth.loading : false;
-  const storageKey = `bookmarks_${hashUserId(resolvedUserId)}`;
+  const legacyKey = `bookmarks_${hashUserId(resolvedUserId)}`;
+  const storageKey = getOrMigrateKey("bookmarks", resolvedUserId, legacyKey);
 
   // Seed state from cache (avoids a second localStorage read when the cache
   // is already warm from another mounted instance or a previous render).
@@ -267,6 +269,9 @@ const useBookmarks = (userId = "guest") => {
   }, [bookmarks, isAuthLoading, loadedKey]);
 
   // Cross-tab sync: update state when another tab writes to the same key.
+  const bookmarksRef = useRef(bookmarks);
+  bookmarksRef.current = bookmarks;
+
   useEffect(() => {
     const handleStorageEvent = (e) => {
       if (e.key !== storageKeyRef.current) return;
@@ -277,7 +282,7 @@ const useBookmarks = (userId = "guest") => {
           const p = JSON.parse(e.newValue); 
           if (!Array.isArray(p)) return [];
           // Deep merge: combine existing local state with incoming storage state, keeping newest by savedAt
-          const merged = new Map([...bookmarks.map(b => [b.id, b]), ...p.map(b => [b.id, b])]);
+          const merged = new Map([...bookmarksRef.current.map(b => [b.id, b]), ...p.map(b => [b.id, b])]);
           return Array.from(merged.values()).sort((a, b) => (a.savedAt || 0) - (b.savedAt || 0));
         } catch { return []; }
       })() : [];

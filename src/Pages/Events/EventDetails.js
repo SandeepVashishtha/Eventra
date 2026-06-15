@@ -6,7 +6,7 @@ import { sanitizeMarkdown } from "../../utils/sanitizeHtml";
 import { toast } from "react-toastify";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
-import { Calendar, MapPin, Clock, Tag, Share2, CalendarPlus, Link2, Check } from "lucide-react";
+import { Calendar, MapPin, Clock, Tag, CalendarPlus, Link2, Check } from "lucide-react";
 import { getEventStatus, isEventRegistrationClosed } from "../../utils/eventUtils";
 import useBookmarks from "../../hooks/useBookmarks";
 import { DRAFT_KEY } from "../../constants/eventDefaults";
@@ -25,11 +25,12 @@ import { ROLES } from "../../config/roles";
 import { marked } from "marked";
 import ShareModal from "../../components/common/ShareModal";
 import SocialShareButtons from "../../components/common/SocialShareButtons";
-import { generateEventSharingData } from "../../utils/shareUtils";
+// import { generateEventSharingData } from "../../utils/shareUtils";
 import { downloadICSFile, generateGoogleCalendarLink, generateOutlookLink } from "../../utils/calendarExporter";
 import useRecentlyViewed from "../../hooks/useRecentlyViewed";
 import { apiUtils, API_ENDPOINTS } from "../../config/api";
 import mockEvents from "./eventsMockData.json";
+import CopyButton from '../../components/ui/CopyButton';
 
 const isRequestCanceled = (error, signal) =>
   signal?.aborted ||
@@ -311,7 +312,7 @@ const EventDetails = () => {
                 {event.type}
               </p>
               <div className="mt-4 flex items-center gap-3">
-                <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight break-words" title={event.title}>{event.title}</h1>
+                <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight wrap-break-word" title={event.title}>{event.title}</h1>
                 <button
                   onClick={handleCopy}
                   className={`p-2 rounded-full transition-colors ${linkCopied 
@@ -353,7 +354,7 @@ const EventDetails = () => {
                 Share Event
               </button>
 
-              {(isAdmin() || isOrganizer()) && event.status !== "cancelled" && (
+              {isOrganizer && event.status !== "cancelled" && (
                 <button
                   onClick={() => setShowCancelModal(true)}
                   className="inline-flex items-center justify-center rounded-full border border-red-500 px-6 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
@@ -548,10 +549,7 @@ const EventDetails = () => {
 
                 {/* Event Countdown */}
                 <div className="sm:col-span-2">
-                  <CountdownTimer
-                    date={event.date}
-                    time={event.time}
-                  />
+                  <CountdownTimer eventDate={event.date} />
                 </div>
               </div>
 
@@ -578,6 +576,9 @@ const EventDetails = () => {
               <div className="rounded-3xl bg-slate-50 p-5 dark:bg-gray-800 space-y-4">
                 <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Share & Add to Calendar</h3>
                 <SocialShareButtons event={event} layout="grid" />
+                <div className="mt-4">
+                  <CopyButton textToCopy={window.location.href} />
+                </div>
 
                 <div className="flex flex-col gap-2">
                   <button onClick={() => { downloadICSFile(event); toast.success("Calendar invite downloaded!"); }} className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100 shadow-sm hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-300 dark:hover:border-green-700 transition-all duration-200" aria-label="Download .ics calendar invite">

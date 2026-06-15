@@ -23,7 +23,7 @@ describe('EventConflictModal', () => {
   // Mock timezone utility
   vi.mock('../utils/timezoneUtils', () => ({
     getUserTimezone: () => 'America/New_York',
-    parseEventToUTC: vi.fn((date, time, tz) => {
+    parseEventToUTC: vi.fn((date, time) => {
       const d = new Date(`${date}T${time}`);
       return d.getTime();
     }),
@@ -31,7 +31,7 @@ describe('EventConflictModal', () => {
 
   // Mock conflict detection utilities
   vi.mock('../utils/conflictDetection', () => ({
-    formatTimeRange: (time, duration, date, tz) => `${time} - ${new Date(Date.parse(date) + duration * 60000).toLocaleTimeString()}`,
+    formatTimeRange: (time, duration, date) => `${time} - ${new Date(Date.parse(date) + duration * 60000).toLocaleTimeString()}`,
   }));
 
   const mockNewEvent = {
@@ -307,7 +307,7 @@ describe('EventConflictModal', () => {
 
     it('should manage focus correctly on open/close', async () => {
       const { rerender } = render(<EventConflictModal {...defaultProps} isOpen={false} />);
-      const focusedElement = document.activeElement;
+      // const focusedElement = document.activeElement;
 
       rerender(<EventConflictModal {...defaultProps} isOpen={true} />);
       // Modal should take focus

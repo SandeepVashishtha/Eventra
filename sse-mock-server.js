@@ -12,19 +12,36 @@ import jwt from "jsonwebtoken";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const loadJson = (relativePath) => {
+const jsonCache = new Map();
+
+const loadJson = async (relativePath) => {
+  if (jsonCache.has(relativePath)) {
+    return jsonCache.get(relativePath);
+  }
   try {
-    return JSON.parse(fs.readFileSync(path.join(__dirname, relativePath), "utf8"));
+    const content = await fs.promises.readFile(path.join(__dirname, relativePath), "utf8");
+    const data = JSON.parse(content);
+    jsonCache.set(relativePath, data);
+    return data;
   } catch {
     return [];
   }
 };
 
-const MOCK_EVENT_CATALOG = loadJson("src/Pages/Events/eventsMockData.json");
-const MOCK_PROJECT_CATALOG = loadJson("src/Pages/Projects/mockProjectsData.json");
-const MOCK_NOTIFICATION_SEED = loadJson("src/data/mockNotifications.json");
+let MOCK_EVENT_CATALOG = [];
+let MOCK_PROJECT_CATALOG = [];
+let MOCK_NOTIFICATION_SEED = [];
+let dataInitialized = false;
 
-let notificationStore = MOCK_NOTIFICATION_SEED.map((item) => ({ ...item }));
+async function initializeMockData() {
+  if (dataInitialized) return;
+  MOCK_EVENT_CATALOG = await loadJson("src/Pages/Events/eventsMockData.json");
+  MOCK_PROJECT_CATALOG = await loadJson("src/Pages/Projects/mockProjectsData.json");
+  MOCK_NOTIFICATION_SEED = await loadJson("src/data/mockNotifications.json");
+  dataInitialized = true;
+}
+
+let notificationStore = [];
 const notificationSseClients = new Set();
 
 const LIVE_NOTIFICATION_TEMPLATES = [
@@ -98,7 +115,9 @@ const log = (...args) => {
   }
 };
 
-const MOCK_CONTRIBUTORS = [
+let notificationStore = [];
+
+const LIVE_NOTIFICATION_TEMPLATES = [
   { username: "alice", name: "Alice Dev", avatar: "https://avatars.githubusercontent.com/u/1?v=4", profile: "https://github.com/alice", points: 42, prs: 6 },
   { username: "bob", name: "Bob Coder", avatar: "https://avatars.githubusercontent.com/u/2?v=4", profile: "https://github.com/bob", points: 35, prs: 5 },
   { username: "carol", name: "Carol Builder", avatar: "https://avatars.githubusercontent.com/u/3?v=4", profile: "https://github.com/carol", points: 28, prs: 4 },
@@ -111,11 +130,11 @@ const MOCK_EVENTS = [
   { id: "event-3", title: "Web Dev Workshop" }
 ];
 
-const JWT_SECRET =
-  process.env.JWT_SECRET ||
-  (process.env.NODE_ENV !== "production" ? "eventra-dev-jwt-secret" : null);
-if (!JWT_SECRET) {
-  console.error("FATAL: JWT_SECRET environment variable is required.");
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET || !JWT_SECRET.trim()) {
+  console.error("FATAL: JWT_SECRET environment variable is required and must not be empty or whitespace-only.");
+  console.error("Generate a secure secret using: openssl rand -base64 32");
   process.exit(1);
 }
 
@@ -605,7 +624,9 @@ const server = http.createServer(async (req, res) => {
   res.end(JSON.stringify({ error: `Route ${req.url} not found on local mock server.` }));
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
+  await initializeMockData();
+  notificationStore = MOCK_NOTIFICATION_SEED.map((item) => ({ ...item }));
   console.log(`\n[Dev Only] SSE mock server running on port ${PORT}`);
   console.log(`Allowed Origin: ${ALLOWED_ORIGIN}`);
   console.log("Streams and Endpoints available:");

@@ -17,16 +17,7 @@ globalThis.CustomEvent = dom.window.CustomEvent;
 globalThis.Event = dom.window.Event;
 
 // Simple synchronous hash identical to useBookmarks.js
-const hashUserId = (userId) => {
-  if (!userId || userId === "guest") return "guest";
-  let hash = 0;
-  for (let i = 0; i < userId.length; i++) {
-    const chr = userId.charCodeAt(i);
-    hash = (hash << 5) - hash + chr;
-    hash |= 0;
-  }
-  return Math.abs(hash).toString(36);
-};
+const { getOpaqueKey } = await import("../src/utils/storageKeyManager.js");
 
 // React mock implementation
 let _stateSlots = [];
@@ -227,7 +218,7 @@ const runAll = async () => {
     hookInstance1.toggleBookmark({ id: "event-bob", title: "Bob's Event" });
     renderHook1();
 
-    const bobKey = `bookmarks_${hashUserId("user-999")}`;
+    const bobKey = getOpaqueKey("bookmarks", "user-999");
     const storedBob = JSON.parse(localStorage.getItem(bobKey));
     assert.ok(storedBob, "Should persist to Bob's key");
     assert.equal(storedBob.length, 1);

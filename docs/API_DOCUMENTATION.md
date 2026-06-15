@@ -1611,3 +1611,107 @@ Authorization: Bearer YOUR_JWT_TOKEN
 - Centralized API reference
 - Easier debugging and maintenance
 - Improved development workflow
+
+---
+
+
+# Contributor API Integration Guide
+
+## Frontend ↔ Backend Communication Flow
+
+The Eventra frontend communicates with the Spring Boot backend through HTTP requests.
+
+```text
+Frontend Component
+↓
+API Service Layer
+↓
+Backend API
+↓
+Database
+↓
+Response
+↓
+Frontend UI Update
+```
+
+This flow should be followed when integrating new backend functionality into frontend features.
+
+---
+
+## Environment Configuration
+
+Before making API requests, ensure the frontend is configured with the correct backend URL.
+
+Common environment variables:
+
+```env
+BACKEND_URL=http://localhost:8080
+VITE_API_URL=http://localhost:8080
+REACT_APP_API_URL=http://localhost:8080
+```
+
+Refer to the Environment Setup Guide for complete configuration details.
+
+---
+
+## Authentication in Frontend
+
+Protected endpoints require a JWT token.
+
+Example Authorization header:
+
+```http
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+Frontend applications should:
+
+* Store JWT tokens securely
+* Attach tokens to protected requests
+* Handle token expiration gracefully
+* Redirect users to login when authentication fails
+
+---
+
+## API Integration Best Practices
+
+When adding new API integrations:
+
+1. Keep API logic separate from UI components.
+2. Reuse existing API utility functions whenever possible.
+3. Use environment variables instead of hardcoded URLs.
+4. Handle API errors consistently.
+5. Validate API responses before updating UI state.
+
+---
+
+## Adding New API Endpoints
+
+Recommended workflow:
+
+1. Verify backend endpoint availability.
+2. Test the endpoint using Swagger.
+3. Create frontend service/API functions.
+4. Connect the service to components or state management.
+5. Handle loading and error states.
+6. Verify end-to-end functionality.
+
+---
+
+## Error Handling Recommendations
+
+Frontend implementations should:
+
+* Display user-friendly error messages.
+* Handle network failures gracefully.
+* Handle `401 Unauthorized` responses.
+* Handle `403 Forbidden` responses.
+* Log unexpected errors during development.
+
+Example:
+
+* `401 Unauthorized` → Redirect to Login
+* `403 Forbidden` → Show Permission Error
+* `404 Not Found` → Show Resource Not Found Message
+* `500 Server Error` → Show Generic Error Message
