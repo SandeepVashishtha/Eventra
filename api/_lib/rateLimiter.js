@@ -87,8 +87,9 @@ export const createRateLimiter = (windowMs, maxRequests) => {
 };
 
 export const loginRateLimiter = createRateLimiter(60_000, 10);
+
 export const signupRateLimiter = createRateLimiter(60_000, 5);
-export const registerRateLimiter = createRateLimiter(60_000, 20);
+export const registerRateLimiter = createRateLimiter(60_000, 30);
 export const icsRateLimiter = createRateLimiter(60_000, 60);
 
 export const enforceRateLimit = async (limiter, key) => {

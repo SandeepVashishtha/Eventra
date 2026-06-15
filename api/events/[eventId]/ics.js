@@ -1,10 +1,24 @@
 import { createEvent } from 'ics';
+import { getClientIp } from "../../_lib/getClientIp.js";
+import { icsRateLimiter } from "../../_lib/rateLimiter.js";
 // Import your database utility/repository helper to fetch event details
 // e.g., import { getEventById } from '../../../lib/db'; 
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ message: 'Method not allowed' });
+  }
+
+  try {
+    const rateLimitResult = icsRateLimiter.checkAsync
+      ? await icsRateLimiter.checkAsync(getClientIp(req))
+      : icsRateLimiter.check(getClientIp(req));
+    if (!rateLimitResult.allowed) {
+      return res.status(429).json({ error: "Too many requests. Please try again later." });
+    }
+  } catch (rateLimitError) {
+    console.error("[ics] Rate limit check failed:", rateLimitError.message);
+    return res.status(500).json({ error: "Rate limiting service unavailable. Please try again later." });
   }
 
   const { eventId } = req.query;
