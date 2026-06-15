@@ -8,7 +8,7 @@ Under concurrent RSVP registration requests, rapid event registrations could tri
 
 ## Solution
 
-1. **RSVP Lock Manager**: Implemented a self-cleaning `RsvpLockManager` utility class in [rsvpLockManager.js](file:///c:/Users/Sandeep/Downloads/repo/Eventra/api/_lib/rsvpLockManager.js) to track and clean up lock counters safely.
-2. **Error Isolation**: Wrapped RSVP registration in a robust `try...finally` block in [register.js](file:///c:/Users/Sandeep/Downloads/repo/Eventra/api/events/register.js) to guarantee that event lock leases are always released and counters decremented even on capacity failures or database errors.
+1. **RSVP Lock Manager**: Implemented a self-cleaning `RsvpLockManager` utility class in [rsvpLockManager.js](../api/_lib/rsvpLockManager.js) to track and clean up lock counters safely.
+2. **Error Isolation**: Wrapped RSVP registration in a robust `try...finally` block in [register.js](../api/events/register.js) to guarantee that event lock leases are always released and counters decremented even on capacity failures or database errors.
 3. **Strict Type Safety**: Added full TypeScript definitions for both the manager and the register endpoint to ensure compile-time verification.
-4. **Automated Testing**: Created comprehensive unit tests in [rsvpLockManager.test.mjs](file:///c:/Users/Sandeep/Downloads/repo/Eventra/tests/rsvpLockManager.test.mjs) and integration tests in [registerEndpoint.test.mjs](file:///c:/Users/Sandeep/Downloads/repo/Eventra/tests/registerEndpoint.test.mjs) to prevent regressions.
+4. **Automated Testing**: Created comprehensive unit tests in [rsvpLockManager.test.mjs](../tests/rsvpLockManager.test.mjs) and integration tests in [registerEndpoint.test.mjs](../tests/registerEndpoint.test.mjs) to prevent regressions.
