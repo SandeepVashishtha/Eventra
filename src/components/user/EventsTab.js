@@ -13,6 +13,7 @@ import {
   Trash2,
 Activity,
 ChevronDown,
+Pin,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useMyEvents } from "../../context/MyEventsContext";
@@ -89,7 +90,15 @@ const EmptyState = () => {
   );
 };
 
-const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicket }) => {
+const EventCard = ({
+  event,
+  index,
+  onRemoveRegistration,
+  showCancel,
+  onViewTicket,
+  pinnedEvents,
+  togglePinnedEvent,
+}) => {
   const prefersReducedMotion = useReducedMotion();
   const isOffline = useOfflineStatus();
   const fadeUpVariants = fadeUp(prefersReducedMotion);
@@ -217,6 +226,20 @@ const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicke
             </div>
           </Link>
         )}
+
+        <button
+  onClick={() => togglePinnedEvent(event)}
+  className="group/btn flex-1"
+>
+  <div className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-yellow-300 dark:border-yellow-700 text-yellow-700 dark:text-yellow-400 px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold hover:bg-yellow-50 dark:hover:bg-yellow-950/20 transition-all duration-300 w-full">
+    <Pin size={13} />
+    <span>
+      {pinnedEvents.some((item) => item.id === event.id)
+        ? "Unpin"
+        : "Pin"}
+    </span>
+  </div>
+</button>
         <Link to={`/events/${event?.id}`} className="group/btn flex-1">
           <div className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all duration-300 w-full">
             <span>{showCancel ? "View Details" : "Open Event"}</span>
@@ -354,16 +377,32 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
     };
   }
 });
-  const [cancelTarget, setCancelTarget] = useState(null);
-
+ const [pinnedEvents, setPinnedEvents] = useState(() => {
+  try {
+    return JSON.parse(
+      localStorage.getItem("pinnedEvents")
+    ) || [];
+  } catch {
+    return [];
+  }
+});
   const [recentSearches,
     setRecentSearches] = useState([]);
     useEffect(() => {
   localStorage.setItem(
     "eventSectionVisibility",
+
+    
     JSON.stringify(collapsedSections)
   );
 }, [collapsedSections]);
+
+useEffect(() => {
+  localStorage.setItem(
+    "pinnedEvents",
+    JSON.stringify(pinnedEvents)
+  );
+}, [pinnedEvents]);
   const registeredEvents = useMemo(
     () =>
       myEvents.map((registration) => ({
@@ -429,6 +468,27 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
     ...prev,
     [section]: !prev[section],
   }));
+};
+
+const togglePinnedEvent = (event) => {
+  const exists = pinnedEvents.some(
+    (item) => item.id === event.id
+  );
+
+  if (exists) {
+    setPinnedEvents((prev) =>
+      prev.filter((item) => item.id !== event.id)
+    );
+
+    toast.info("Event unpinned");
+  } else {
+    setPinnedEvents((prev) => [
+      event,
+      ...prev,
+    ]);
+
+    toast.success("Event pinned");
+  }
 };
   const handleCancelClick = (id, title) => setCancelTarget({ id, title });
   const handleCancelDismiss = () => setCancelTarget(null);
@@ -604,6 +664,41 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
         </motion.div>
       ) : (
         <>
+
+        {pinnedEvents.length > 0 && (
+  <section className="space-y-4">
+    <div className="ud-tab-header">
+      <h3 className="ud-page-title flex items-center gap-2">
+        <Pin size={18} />
+        Pinned Events
+      </h3>
+
+      <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
+        {pinnedEvents.length} pinned
+      </span>
+    </div>
+
+    <motion.div
+      className="ud-items-grid"
+      variants={staggerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      {pinnedEvents.map((event, index) => (
+        <EventCard
+          key={`pinned-${event.id}`}
+          event={event}
+          index={index}
+          showCancel={!!event.registeredAt}
+          pinnedEvents={pinnedEvents}
+          togglePinnedEvent={togglePinnedEvent}
+          onRemoveRegistration={handleCancelClick}
+          onViewTicket={onViewTicket}
+        />
+      ))}
+    </motion.div>
+  </section>
+)}
           {filteredRegisteredEvents.length > 0 && (
             <section className="space-y-4">
               <div className="ud-tab-header">
