@@ -97,15 +97,19 @@ Rate-limiting logic with distributed storage:
 ### Production Security
 
 1. **Fail-Closed**: Authentication requests are rejected with 429 if distributed storage is unavailable
-2. **No Silent Fallback**: Never allows unlimited requests in production
-3. **Atomic Operations**: Redis pipeline prevents race conditions during concurrent requests
-4. **Shared State**: All instances share the same rate-limit state via Redis/KV
+2. **Middleware Rate Limiting**: Edge middleware (`middleware/rate-limit.js`) enforces fail-closed behavior - rejects all requests with 429 when KV is unavailable
+3. **Session State Validation**: Edge middleware session state checks fail closed - requires re-authentication when KV is unavailable
+4. **No Silent Fallback**: Never allows unlimited requests in production
+5. **Atomic Operations**: Redis pipeline prevents race conditions during concurrent requests
+6. **Shared State**: All instances share the same rate-limit state via Redis/KV
 
 ### Development/Testing Security
 
 1. **In-Memory Storage**: Allowed for convenience in non-production environments
-2. **Warning Logs**: Storage unavailability logged but requests allowed
-3. **Test Isolation**: ClearAll() function enables test cleanup
+2. **Middleware Fallback**: Edge middleware uses in-memory rate limiting when KV is unavailable in development/test
+3. **Session State Fallback**: Edge middleware assumes active session state when KV is unavailable in development/test
+4. **Warning Logs**: Storage unavailability logged but requests allowed
+5. **Test Isolation**: ClearAll() function enables test cleanup
 
 ### Attack Prevention
 
@@ -114,19 +118,25 @@ Rate-limiting logic with distributed storage:
 - **Instance Hopping**: Shared state prevents bypass across instances
 - **Race Conditions**: Atomic Redis operations prevent counter corruption
 - **Cold Start Bypass**: Persistent storage survives serverless restarts
+- **Middleware Fail-Open Bypass**: Edge middleware rejects requests when KV is unavailable, preventing attack vectors during storage outages
 
 ## Environment Configuration
 
 ### Required Production Variables
 
 ```env
-# Distributed rate limiting storage
+# Distributed rate limiting storage (REQUIRED for middleware rate limiting)
 KV_REST_API_URL=https://your-kv-store.redis.com
 KV_REST_API_TOKEN=your-secure-token
 
 # Persistent authentication storage
 DATABASE_URL=postgresql://user:password@host:5432/database
 ```
+
+**Critical Security Note**: In production, if `KV_REST_API_URL` or `KV_REST_API_TOKEN` are missing:
+- Edge middleware rate limiting will reject ALL requests with HTTP 429
+- Session state validation will require re-authentication for all requests
+- This is intentional fail-closed behavior to prevent security bypasses during configuration errors
 
 ### Development/Testing
 
