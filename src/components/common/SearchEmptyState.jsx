@@ -15,29 +15,31 @@ const SEARCH_LINKS = [
 ];
 
 const SearchEmptyState = ({
-  query,
+  query = "",
   itemLabel = "items",
   browseLabel = "Browse",
   browsePath = "/",
   onClear,
   variant = "search",
-  title,
-  description,
-  actionLabel,
-  actionPath,
+  title: customTitle,
+  description: customDescription,
 }) => {
   const hasQuery = Boolean(query?.trim());
-  const title = hasQuery ? `No results found for "${query}"` : `No ${itemLabel} found`;
-  const description = "Try one of these suggestions or explore other sections on Eventra.";
 
-  waitlist: {
-    icon: "⏳",
-    defaultTitle: "No waitlisted events",
-    defaultDescription: "You are not currently on any waitlists.",
-  },
-};
+  const title =
+    customTitle ||
+    (hasQuery
+      ? `No results found for "${query}"`
+      : `No ${itemLabel} found`);
 
-const currentConfig = emptyStateConfig[variant] || emptyStateConfig.search;
+  const description =
+    customDescription ||
+    "Try adjusting your search or explore other sections on Eventra.";
+
+  const suggestions = DEFAULT_SUGGESTIONS;
+
+  const popularTags = [];
+
   return (
     <EmptyState
       title={title}
@@ -49,33 +51,20 @@ const currentConfig = emptyStateConfig[variant] || emptyStateConfig.search;
         {suggestions.map((suggestion) => (
           <li
             key={suggestion}
-            className="
-              rounded-xl
-              border border-slate-200 dark:border-slate-700
-              bg-white dark:bg-slate-900
-              px-4 py-3
-              shadow-sm
-            "
+            className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 shadow-sm"
           >
             {suggestion}
           </li>
         ))}
       </ul>
 
-      {/* Tags */}
+      {/* Tags (optional safe block) */}
       {popularTags.length > 0 && (
         <div className="mt-6 flex flex-wrap justify-center gap-2">
-          {popularTags.slice(0, 6).map((tag) => (
+          {popularTags.map((tag) => (
             <span
               key={tag}
-              className="
-                rounded-full
-                border border-slate-200 dark:border-slate-700
-                bg-slate-100 dark:bg-slate-800
-                px-3 py-1
-                text-xs font-medium
-                text-slate-700 dark:text-slate-200
-              "
+              className="rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-3 py-1 text-xs font-medium text-slate-700 dark:text-slate-200"
             >
               {tag}
             </span>
@@ -88,37 +77,16 @@ const currentConfig = emptyStateConfig[variant] || emptyStateConfig.search;
         <button
           type="button"
           onClick={onClear}
-          className="
-            inline-flex items-center justify-center gap-2
-            rounded-xl
-            bg-blue-600
-            px-5 py-3
-            text-sm font-semibold
-            text-white
-            transition-all duration-200
-            hover:bg-blue-700
-            shadow-sm
-          "
-
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700"
         >
-          <X size={16} aria-hidden="true" />
+          <X size={16} />
           Clear Search
         </button>
 
         <Link
           to={browsePath}
           onClick={onClear}
-          className="
-            inline-flex items-center justify-center
-            rounded-xl
-            border border-slate-200 dark:border-slate-700
-            bg-white dark:bg-slate-900
-            px-5 py-3
-            text-sm font-semibold
-            text-slate-800 dark:text-white
-            transition-all duration-200
-            hover:bg-slate-50 dark:hover:bg-slate-800
-          "
+          className="inline-flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-5 py-3 text-sm font-semibold text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800"
         >
           {browseLabel}
         </Link>
@@ -127,6 +95,7 @@ const currentConfig = emptyStateConfig[variant] || emptyStateConfig.search;
       {/* Footer Links */}
       <div className="mt-7 flex flex-wrap items-center justify-center gap-2 text-sm text-slate-500 dark:text-slate-400">
         <span>Search across</span>
+
         {SEARCH_LINKS.map((link) => (
           <Link
             key={link.to}
@@ -135,13 +104,7 @@ const currentConfig = emptyStateConfig[variant] || emptyStateConfig.search;
                 ? `${link.to}?search=${encodeURIComponent(query)}`
                 : link.to
             }
-            className="
-              font-medium
-              text-blue-600
-              hover:text-blue-700
-              dark:text-blue-400
-              dark:hover:text-blue-300
-            "
+            className="font-medium text-blue-600 hover:text-blue-700"
           >
             {link.label}
           </Link>
