@@ -121,7 +121,7 @@ export async function incrementWithExpiration(key, windowMs) {
       // Atomic operation: increment and set expiration if key is new
       const pipeline = redis.pipeline();
       pipeline.incr(key);
-      pipeline.pexpire(key, windowMs);
+      pipeline.pttl(key);
       const results = await pipeline.exec();
 
       if (!results) {
@@ -129,18 +129,25 @@ export async function incrementWithExpiration(key, windowMs) {
       }
 
       const [incrErr, count] = results[0];
-      const [expireErr, ttlResult] = results[1];
+      const [pttlErr, ttl] = results[1];
 
       if (incrErr) {
         throw incrErr;
       }
 
-      if (expireErr) {
-        console.error("[rate-limit-storage.js] Failed to set expiration:", expireErr);
-        // Continue anyway - the key will expire naturally via Redis cleanup
+      if (pttlErr) {
+        console.error("[rate-limit-storage.js] Failed to get TTL from Redis:", pttlErr);
       }
 
-      return { count, ttl: windowMs };
+      if (ttl === -1) {
+        try {
+          await redis.pexpire(key, windowMs);
+        } catch (expireErr) {
+          console.error("[rate-limit-storage.js] Failed to set expiration:", expireErr);
+        }
+      }
+
+      return { count, ttl: ttl === -1 ? windowMs : ttl };
     } catch (err) {
       // In production, fail closed - do not silently fall back
       if (process.env.NODE_ENV === "production") {
