@@ -40,7 +40,7 @@ class DistributedRateLimiter {
     this.maxRequests = maxRequests;
   }
 
-  async check(key) {
+  async checkAsync(key) {
     const windowStart = Math.floor(Date.now() / this.windowMs) * this.windowMs;
     const storageKey = `ratelimit:${key}:${windowStart}`;
 
@@ -58,7 +58,7 @@ class DistributedRateLimiter {
   }
 
   check(key) {
-    throw new Error("Synchronous check not supported for distributed rate limiter. Use await check(key) instead.");
+    throw new Error("Synchronous check not supported for distributed rate limiter. Use await checkAsync(key) instead.");
   }
 }
 
@@ -92,7 +92,7 @@ export const registerRateLimiter = createRateLimiter(60_000, 20);
 export const icsRateLimiter = createRateLimiter(60_000, 60);
 
 export const enforceRateLimit = async (limiter, key) => {
-  const result = await limiter.check(key);
+  const result = await limiter.checkAsync(key);
   if (!result.allowed) {
     const err = new Error("Too many requests. Please try again later.");
     err.status = 429;
