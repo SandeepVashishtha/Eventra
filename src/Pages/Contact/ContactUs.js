@@ -213,7 +213,7 @@ const ContactUsInner = () => {
   };
 
   return (
-    <div className="pastel-grid-bg min-h-screen bg-white bg-gradient-to-r from-slate-900 to-black hover:from-black hover:to-slate-800 shadow-xl shadow-black/20 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+    <div className="pastel-grid-bg min-h-screen bg-white bg-linear-to-r from-slate-900 to-black hover:from-black hover:to-slate-800 shadow-xl shadow-black/20 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
       <div className="max-w-4xl w-full mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -228,7 +228,7 @@ const ContactUsInner = () => {
         >
           <div className="md:flex gap-0">
             <div
-              className="md:w-3/5 lg:w-2/5 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white p-12 flex flex-col justify-between rounded-3xl shadow-xl backdrop-blur-lg"
+              className="md:w-3/5 lg:w-2/5 bg-linear-to-r from-slate-950 via-slate-900 to-indigo-950 text-white p-12 flex flex-col justify-between rounded-3xl shadow-xl backdrop-blur-lg"
               data-aos="fade-right"
               data-aos-duration="1000"
               data-aos-anchor=".ContactUs"
@@ -389,7 +389,7 @@ const ContactUsInner = () => {
                     whileTap={{ scale: 0.98 }}
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full overflow-hidden rounded-xl border border-slate-300/25 bg-gradient-to-r from-slate-800 via-slate-900 to-indigo-900 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-slate-900/35 transition-all duration-300 hover:from-slate-700 hover:via-slate-800 hover:to-indigo-800 hover:shadow-slate-900/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-80 dark:border-slate-600/40 dark:focus-visible:ring-offset-gray-900"
+                    className="w-full overflow-hidden rounded-xl border border-slate-300/25 bg-linear-to-r from-slate-800 via-slate-900 to-indigo-900 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-slate-900/35 transition-all duration-300 hover:from-slate-700 hover:via-slate-800 hover:to-indigo-800 hover:shadow-slate-900/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-80 dark:border-slate-600/40 dark:focus-visible:ring-offset-gray-900"
                   >
                     {isSubmitting ? (
                       <svg

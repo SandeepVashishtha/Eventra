@@ -312,12 +312,12 @@ const SignupForm = () => {
     <div className="w-full">
       <div className="text-center space-y-4 mb-8">
         <motion.div
-          className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg"
+          className="mx-auto w-16 h-16 rounded-2xl bg-linear-to-r from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg"
         >
           <Zap className="w-8 h-8 text-white" />
         </motion.div>
 
-        <h1 className="text-4xl font-extrabold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+        <h1 className="text-4xl font-extrabold bg-linear-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
           Create Your Account
         </h1>
 
@@ -541,7 +541,7 @@ const SignupForm = () => {
           w-full py-4
           rounded-2xl
           font-semibold
-          bg-gradient-to-r
+          bg-linear-to-r
           from-indigo-600
           via-purple-600
           to-pink-600

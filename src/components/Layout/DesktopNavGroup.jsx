@@ -78,7 +78,7 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown }) 
             />
             <motion.span
               layoutId="activeBoxGlow"
-              className="absolute -bottom-0.5 left-3 right-3 h-[2px] bg-gradient-to-r from-indigo-500/0 via-indigo-500 to-indigo-500/0 dark:via-indigo-400 blur-[1.5px] -z-0"
+              className="absolute -bottom-0.5 left-3 right-3 h-[2px] bg-linear-to-r from-indigo-500/0 via-indigo-500 to-indigo-500/0 dark:via-indigo-400 blur-[1.5px] -z-0"
               transition={{ type: "spring", stiffness: 380, damping: 30 }}
             />
           </>
