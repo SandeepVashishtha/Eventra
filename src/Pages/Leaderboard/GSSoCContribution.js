@@ -627,10 +627,10 @@ const timeLeft = useCountdown(
         {/* 📋 GUIDELINES */}
         <motion.section
           variants={itemVariants}
-          className="p-6 sm:p-8 rounded-3xl shadow-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 mb-6 sm:mb-8"
+          className="p-4 sm:p-6 rounded-2xl shadow-sm bg-card-bg border border-gray-200 dark:border-gray-700 mb-6 sm:mb-8"
           aria-labelledby="guidelines-heading"
         >
-          <div className="text-center mb-6 sm:mb-8">
+          <div className="text-center mb-5 sm:mb-6">
             <h2 id="guidelines-heading" className="text-xl sm:text-2xl font-bold text-indigo-700 dark:text-indigo-400 mb-2">
               🌟 Contribution Guidelines
             </h2>
@@ -639,7 +639,7 @@ const timeLeft = useCountdown(
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {[
               { icon: Lightbulb, title: "Explore Issues", desc: "Start with beginner-friendly tasks", color: "text-yellow-500" },
               { icon: Code2, title: "Clean PRs", desc: "Tested, documented, well-structured", color: "text-green-500" },
@@ -648,8 +648,8 @@ const timeLeft = useCountdown(
             ].map(({ icon: Icon, title, desc, color }) => (
               <motion.article
                 key={title}
-                whileHover={{ y: -4, boxShadow: "0 10px 40px rgba(0,0,0,0.1)" }}
-                className="p-4 sm:p-5 bg-gray-50 dark:bg-gray-700/50 rounded-2xl border dark:border-gray-600 text-center transition-shadow"
+                whileHover={{ y: -3 }}
+                className="p-4 sm:p-5 rounded-2xl border border-gray-200 dark:border-gray-600 bg-card-bg text-center transition-shadow hover:shadow-sm"
               >
                 <Icon className={`w-8 h-8 sm:w-9 sm:h-9 mx-auto mb-2 sm:mb-3 ${color}`} aria-hidden="true" />
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-1">{title}</h3>
@@ -779,7 +779,7 @@ const timeLeft = useCountdown(
         {/* Getting Started & Best Practices */}
         <motion.section className="grid md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8" variants={itemVariants}>
           {/* Getting Started */}
-          <article className="p-4 sm:p-6 rounded-2xl bg-linear-to-br from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-800 border dark:border-gray-700">
+          <article className="p-4 sm:p-6 rounded-2xl bg-card-bg border border-gray-200 dark:border-gray-700">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
                 <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" aria-hidden="true" />
@@ -805,7 +805,7 @@ const timeLeft = useCountdown(
           </article>
 
           {/* Best Practices */}
-          <article className="p-4 sm:p-6 rounded-2xl bg-card-bg border dark:border-gray-700">
+          <article className="p-4 sm:p-6 rounded-2xl bg-card-bg border border-gray-200 dark:border-gray-700">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
                 <CheckCircle className="w-5 h-5 text-purple-600 dark:text-purple-400" aria-hidden="true" />
@@ -867,7 +867,7 @@ const timeLeft = useCountdown(
         <motion.section
           ref={statsRef}
           variants={itemVariants}
-          className="p-4 sm:p-6 rounded-2xl bg-linear-to-r from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 border dark:border-gray-600"
+          className="p-4 sm:p-6 rounded-2xl bg-card-bg border border-gray-200 dark:border-gray-700"
           aria-labelledby="stats-heading"
         >
           <h3 id="stats-heading" className="sr-only">Community Statistics</h3>
