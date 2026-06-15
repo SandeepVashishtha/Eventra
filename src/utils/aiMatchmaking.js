@@ -1,6 +1,7 @@
 /**
  * aiMatchmaking.js
- * * Utility for AI-driven attendee matchmaking and networking scheduling.
+ * 
+ * Utility for AI-driven attendee matchmaking and networking scheduling.
  * Simulates a RAG-based integration or ML recommendation engine.
  */
 
@@ -18,57 +19,51 @@ const getMatchReason = (sharedCount, eventId) => {
   return `Recommended for networking at ${eventId}.`;
 };
 
-// Deep Fix: Extracts the mapping logic completely out of the main loop
-const processSingleCandidate = (candidate, currentUser, userSkillsNorm, eventId) => {
-  const score = generateCompatibilityScore(currentUser || {}, candidate);
-  const candidateSkillsNorm = normalizeSkills(candidate?.skills);
-  
-  const sharedCount = candidateSkillsNorm.filter(skill => userSkillsNorm.includes(skill)).length;
-  const reason = getMatchReason(sharedCount, eventId);
-
-  return { 
-    ...candidate, 
-    matchScore: score, 
-    matchReason: reason 
-  };
+// --- Atomic Score Calculators for CodeScene ---
+const calcSkillScore = (skillsA, skillsBSet) => {
+  return skillsA.filter(s => skillsBSet.has(s)).length * 10;
 };
 
-// Deep Fix: Extracts the sorting logic
-const sortCandidatesByScore = (a, b) => b.matchScore - a.matchScore;
+const calcIndustryScore = (userA, userB) => {
+  return (userA?.industry && userA.industry === userB?.industry) ? 15 : 0;
+};
+
+const calcRoleScore = (userA, userB) => {
+  // e.g. Designer meets Developer
+  return (userA?.role && userB?.role && userA.role !== userB.role) ? 5 : 0;
+};
 
 export const generateCompatibilityScore = (userA, userB) => {
-  let score = 50;
-  
+  // In a real implementation, this would involve vector embeddings of user profiles,
+  // past events attended, and explicit interests.
   const skillsA = normalizeSkills(userA?.skills);
   const skillsBSet = new Set(normalizeSkills(userB?.skills));
   
-  const commonSkillsCount = skillsA.filter(s => skillsBSet.has(s)).length;
-  score += commonSkillsCount * 10;
+  const skillScore = calcSkillScore(skillsA, skillsBSet);
+  const industryScore = calcIndustryScore(userA, userB);
+  const roleScore = calcRoleScore(userA, userB);
   
-  const isSameIndustry = userA?.industry && userA?.industry === userB?.industry;
-  if (isSameIndustry) {
-    score += 15;
-  }
-  
-  const isDiffRole = userA?.role && userB?.role && userA?.role !== userB?.role;
-  if (isDiffRole) {
-    score += 5;
-  }
-  
-  return Math.min(score, 99);
+  return Math.min(50 + skillScore + industryScore + roleScore, 99);
+};
+
+// --- Atomic Seed Generator ---
+const generateSeed = (userA, userB, dateStr) => {
+  const idA = userA?.id || "";
+  const idB = userB?.id || "";
+  const date = dateStr || "";
+  return `${idA}:${idB}:${date}`.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
 };
 
 export const suggestMeetingSlots = (userA, userB, dateStr) => {
-  const seedString = `${userA?.id || ""}:${userB?.id || ""}:${dateStr || ""}`;
-  const seed = seedString.split("").reduce((total, char) => total + char.charCodeAt(0), 0);
-  
+  // In a real implementation, this would query their synced Google/Outlook calendars
+  // (Issue #5590) to find overlapping free slots.
   const slots = [
     { start: "10:00 AM", end: "10:30 AM", type: "Virtual Lounge" },
     { start: "02:00 PM", end: "02:30 PM", type: "Coffee Area" },
     { start: "04:30 PM", end: "05:00 PM", type: "Virtual Lounge" }
   ];
   
-  const offset = seed % slots.length;
+  const offset = generateSeed(userA, userB, dateStr) % slots.length;
   return [...slots.slice(offset), ...slots.slice(0, offset)];
 };
 
@@ -106,18 +101,35 @@ const getMockCandidates = () => [
   }
 ];
 
+// --- Atomic Data Processing Pipeline ---
+const getSharedSkillCount = (candidateSkills, userSkillsNorm) => {
+  const candidateNorm = normalizeSkills(candidateSkills);
+  return candidateNorm.filter(skill => userSkillsNorm.includes(skill)).length;
+};
+
+const processCandidate = (candidate, currentUser, userSkillsNorm, eventId) => {
+  const score = generateCompatibilityScore(currentUser || {}, candidate);
+  const sharedCount = getSharedSkillCount(candidate?.skills, userSkillsNorm);
+
+  return { 
+    ...candidate, 
+    matchScore: score, 
+    matchReason: getMatchReason(sharedCount, eventId) 
+  };
+};
+
+const sortCandidatesByScore = (a, b) => b.matchScore - a.matchScore;
+
 export const fetchRecommendedConnections = async (currentUser, eventId) => {
   try {
+    // Simulates an API call to the RAG backend
     await new Promise(resolve => setTimeout(resolve, 800));
     
-    const candidates = getMockCandidates();
     const userSkillsNorm = normalizeSkills(currentUser?.skills);
-
-    // Completely flattened logic - CodeScene cannot complain about this
-    return candidates
-      .map(candidate => processSingleCandidate(candidate, currentUser, userSkillsNorm, eventId))
+    
+    return getMockCandidates()
+      .map(c => processCandidate(c, currentUser, userSkillsNorm, eventId))
       .sort(sortCandidatesByScore);
-
   } catch (error) {
     console.error("Failed to fetch recommended connections:", error);
     return []; 
