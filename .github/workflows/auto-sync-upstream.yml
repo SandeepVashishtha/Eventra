@@ -110,7 +110,16 @@ jobs:
           git remote add upstream "https://github.com/${{ github.repository }}.git" || true
           git fetch upstream master
 
-          git merge upstream/master --no-edit -X theirs -m "chore: merge upstream master to sync branch"
+          # Merge upstream master without committing automatically
+          git merge upstream/master --no-commit --no-ff -X theirs || true
+          
+          # Restore the workflows directory to the exact state before merge to avoid permission errors
+          git reset HEAD .github/workflows/ || true
+          git checkout HEAD -- .github/workflows/ || true
+          git clean -fd .github/workflows/ || true
+          
+          # Commit the merge
+          git commit -m "chore: merge upstream master to sync branch" || true
           
           # Try pushing with BOT_PAT first if available
           if [ -n "$BOT_PAT" ]; then
