@@ -515,7 +515,7 @@ export default function LeaderBoard() {
             </span>
           </div>
 
-          <LeaderboardStatsCards stats={stats} loading={loading} />
+          <LeaderboardStatsCards stats={stats} loading={loading} error={!!error} />
 
           <LeaderboardTable
             loading={loading}

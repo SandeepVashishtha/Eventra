@@ -1,6 +1,10 @@
 import { Trophy } from "lucide-react";
 
-export default function LeaderboardHero({ stats, currentContributors }) {
+const BadgeSkeleton = () => (
+  <span className="inline-block w-28 h-7 rounded-full bg-slate-200 dark:bg-slate-700 animate-pulse" />
+);
+
+export default function LeaderboardHero({ stats, currentContributors, loading }) {
   return (
     <header className="mb-10 rounded-[32px] border border-slate-200/70 bg-white/85 px-6 py-8 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:px-8">
       <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-600">
@@ -20,9 +24,19 @@ export default function LeaderboardHero({ stats, currentContributors }) {
       </p>
 
       <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-xs font-semibold text-slate-500">
-        <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5">{stats.totalContributors} contributors</span>
-        <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5">{stats.flooredTotalPRs} merged PRs</span>
-        <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5">{currentContributors.length} shown on this page</span>
+        {loading ? (
+          <>
+            <BadgeSkeleton />
+            <BadgeSkeleton />
+            <BadgeSkeleton />
+          </>
+        ) : (
+          <>
+            <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5">{stats.totalContributors} contributors</span>
+            <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5">{stats.flooredTotalPRs} merged PRs</span>
+            <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5">{currentContributors.length} shown on this page</span>
+          </>
+        )}
       </div>
     </header>
   );
