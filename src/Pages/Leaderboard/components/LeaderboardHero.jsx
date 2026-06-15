@@ -10,7 +10,7 @@ export default function LeaderboardHero({ stats, currentContributors }) {
 
       <h1 id="leaderboard-heading" className="mt-5 text-4xl sm:text-6xl font-extrabold tracking-tight text-slate-950">
         Community{" "}
-        <span className="bg-gradient-to-r from-slate-700 via-slate-500 to-slate-300 bg-clip-text text-transparent">
+        <span className="bg-linear-to-r from-slate-700 via-slate-500 to-slate-300 bg-clip-text text-transparent">
           Leaderboard
         </span>
       </h1>

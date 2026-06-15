@@ -214,12 +214,44 @@ const InnerGallery = () => {
 
       const normalizedProjects = projectsList.map((p) => ({
         ...p,
+        id: p.id ?? p._id ?? null,
+        title:
+          typeof p.title === "string"
+            ? p.title
+            : p.title?.name ?? p.title?.title ?? "Untitled Project",
+        description:
+          typeof p.description === "string"
+            ? p.description
+            : p.description?.text ?? p.description?.summary ?? "",
         image: p.thumbnailUrl || p.image || "/Eventra.png",
-        stars: p.upvotes !== undefined ? p.upvotes : (p.stars || 0),
-        techStack: p.techStack || [],
-        author: p.author || "Anonymous",
-        status: p.status || "Active",
-        difficulty: p.difficulty || "Intermediate",
+        stars: p.upvotes !== undefined ? p.upvotes : p.stars || 0,
+        techStack: Array.isArray(p.techStack)
+          ? p.techStack.map((t) =>
+              typeof t === "string" ? t : t?.name ?? t?.label ?? String(t)
+            )
+          : [],
+        author:
+          typeof p.author === "string"
+            ? p.author
+            : p.author?.name ?? p.author?.username ?? "Anonymous",
+        status:
+          typeof p.status === "string"
+            ? p.status
+            : p.status?.name ?? "Active",
+        difficulty:
+          typeof p.difficulty === "string"
+            ? p.difficulty
+            : p.difficulty?.name ?? "Intermediate",
+        category:
+          typeof p.category === "string"
+            ? p.category
+            : p.category?.name ?? p.category?.label ?? "General",
+        githubUrl:
+          typeof p.githubUrl === "string"
+            ? p.githubUrl
+            : p.githubUrl?.url ?? p.repoUrl ?? "",
+        liveDemo:
+          typeof p.liveDemo === "string" ? p.liveDemo : p.liveDemo?.url ?? "",
       }));
 
       setProjects(normalizedProjects);
@@ -308,7 +340,7 @@ const InnerGallery = () => {
   const hasActiveFilters = searchQuery || filterCategory !== "all" || sortBy !== "recent";
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-zinc-50 via-white to-blue-50/30 dark:from-zinc-950 dark:via-zinc-900 dark:to-blue-950/20">
+    <div className="flex flex-col min-h-screen bg-linear-to-br from-zinc-50 via-white to-blue-50/30 dark:from-zinc-950 dark:via-zinc-900 dark:to-blue-950/20">
       {/* HERO */}
       <ProjectHero scrollToCard={scrollToCard} />
 

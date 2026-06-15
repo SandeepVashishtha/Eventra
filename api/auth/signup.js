@@ -1,11 +1,18 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { getJwtSecret, JWT_EXPIRES_IN, JWT_COOKIE_MAX_AGE_SECONDS } from "./jwt-config.js";
+import { signupRateLimiter } from "../lib/rateLimiter.js";
+import { buildCorsHeaders, corsResponse } from "./cors.js";
+import { assertPersistentStorageConfigured } from "./storage-config.js";
+import { createUser, getUserByEmail, isStorageHealthy } from "./user-storage.js";
+import { getClientIp } from "../lib/getClientIp.js";
+import { Worker } from "node:worker_threads";
 import { getJwtSecret, JWT_EXPIRES_IN, JWT_COOKIE_MAX_AGE_SECONDS } from "./_jwt-config.js";
 import { signupRateLimiter } from "../_lib/rateLimiter.js";
 import { buildCorsHeaders, corsResponse } from "./_cors.js";
 import { assertPersistentStorageConfigured } from "./_storage-config.js";
 import { createUser, getUserByEmail, isStorageHealthy } from "./_user-storage.js";
-import { getClientIp } from "../_lib/getClientIp.js";
+
 
 // ---------------------------------------------------------------------------
 // In-memory user storage
@@ -30,9 +37,11 @@ const JWT_SECRET = getJwtSecret();
 // Validation Helpers
 // ---------------------------------------------------------------------------
 
+const EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/;
+const MAX_SIGNUP_BODY_SIZE = 10240; // [V2-PR4] 10KB // 5KB
+
 const validateEmail = (email) => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
+  return EMAIL_REGEX.test(email);
 };
 
 const validateName = (name) => {
@@ -82,6 +91,44 @@ const validatePassword = (password) => {
 // produced `user_<timestamp>_1`. See google.js for the full rationale.
 const generateUserId = () => crypto.randomUUID();
 
+/**
+ * Offloads CPU-intensive password hashing to a separate worker thread.
+ * This prevents blocking the single-threaded Node.js event loop during signup.
+ */
+const hashPasswordWorker = (password, saltRounds) => {
+  return new Promise((resolve, reject) => {
+    const workerCode = `
+      import { parentPort, workerData } from "node:worker_threads";
+      import bcrypt from "bcryptjs";
+      
+      try {
+        const hash = bcrypt.hashSync(workerData.password, workerData.saltRounds);
+        parentPort.postMessage({ success: true, hash });
+      } catch (err) {
+        parentPort.postMessage({ success: false, error: err.message });
+      }
+    `;
+
+    const worker = new Worker(workerCode, {
+      eval: true,
+      type: "module",
+      workerData: { password, saltRounds }
+    });
+
+    worker.on("message", (msg) => {
+      if (msg.success) {
+        resolve(msg.hash);
+      } else {
+        reject(new Error(msg.error));
+      }
+    });
+    worker.on("error", reject);
+    worker.on("exit", (code) => {
+      if (code !== 0) reject(new Error(`Worker stopped with exit code ${code}`));
+    });
+  });
+};
+
 function setCookie(res, token) {
   const isProd = process.env.NODE_ENV === "production";
   const cookieValue = `token=${token}; HttpOnly; Path=/; Max-Age=${JWT_COOKIE_MAX_AGE_SECONDS}; SameSite=Strict${isProd ? '; Secure' : ''}`;
@@ -97,15 +144,6 @@ function setCookie(res, token) {
   }
 }
 
-function getClientIp(req) {
-  const forwarded = req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim();
-  if (forwarded) return forwarded;
-  const realIp = req.headers?.["x-real-ip"];
-  if (realIp) return realIp;
-  const socketIp = req.socket?.remoteAddress;
-  if (socketIp) return socketIp;
-  return "unknown";
-}
 
 function validateNameField(name, fieldName) {
   const validation = validateName(name);
@@ -193,6 +231,11 @@ async function handler(req, res) {
       return corsResponse(req, res, 500, { error: "Authentication service unavailable" });
     }
 
+    const contentLength = parseInt(req.headers?.["content-length"] || "0", 10);
+    if (contentLength > MAX_SIGNUP_BODY_SIZE) {
+      return corsResponse(req, res, 413, { error: "Request body too large" });
+    }
+
     if (!req.body || typeof req.body !== "object") {
       return corsResponse(req, res, 400, { error: "Request body is required" });
     }
@@ -246,8 +289,8 @@ async function handler(req, res) {
     // Hash password using BCrypt
     // -----------------------------------------------------------------------
 
-    const saltRounds = 12;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    const saltRounds = 10;
+    const hashedPassword = await hashPasswordWorker(password, saltRounds);
 
     // -----------------------------------------------------------------------
     // Create user object
@@ -258,8 +301,8 @@ async function handler(req, res) {
 
     const newUser = {
       id: userId,
-      firstName: firstNameValidation.value,
-      lastName: lastNameValidation.value,
+      firstName: validateName(firstName).value,
+      lastName: validateName(lastName).value,
       email: normalizedEmail,
       username: normalizedEmail, // Use email as username
       password: hashedPassword,
@@ -314,5 +357,4 @@ async function handler(req, res) {
 }
 
 export default handler;
-export { users, usersById, usersByUsername };
 

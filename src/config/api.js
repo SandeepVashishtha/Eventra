@@ -1,7 +1,7 @@
 import axios from "axios";
 import { logger } from "../utils/logger.js";
 import { ApiError, RateLimitError, normalizeApiError } from "./api/errors.js";
-import { setupRequestInterceptor, setupResponseInterceptor } from "./api/interceptors.js";
+import { setupRequestInterceptor, setupResponseInterceptor, setOnRequiresReauthHandler } from "./api/interceptors.js";
 import { API_BASE_URL, validateBackendConfig } from "./backendConfig.js";
 
 // ---------------------------------------------------------------------------
@@ -38,10 +38,15 @@ const API = axios.create({
 });
 
 let onUnauthorized = null;
+let onRequiresReauth = null;
 let _authToken = null;
 
 export const setOnUnauthorizedHandler = (handler) => {
   onUnauthorized = handler;
+};
+export const setRequiresReauthHandler = (handler) => {
+  onRequiresReauth = handler;
+  setOnRequiresReauthHandler(handler);
 };
 export const setAuthToken = (token) => {
   _authToken = token;
@@ -49,9 +54,10 @@ export const setAuthToken = (token) => {
 
 const getAuthToken = () => _authToken;
 const getOnUnauthorized = () => onUnauthorized;
+const getOnRequiresReauth = () => onRequiresReauth;
 
 setupRequestInterceptor(API, { isDev, buildApiUrl, getAuthToken, getOnUnauthorized });
-setupResponseInterceptor(API, { isDev, timeoutMs: REQUEST_TIMEOUT_MS, getOnUnauthorized });
+setupResponseInterceptor(API, { isDev, timeoutMs: REQUEST_TIMEOUT_MS, getOnUnauthorized, getOnRequiresReauth });
 
 // ---------------------------------------------------------------------------
 // API Endpoints
@@ -87,6 +93,7 @@ export const API_ENDPOINTS = {
     CATEGORIES: buildApiUrl("/projects/categories"),
     SUBMIT: buildApiUrl("/projects"),
     UPVOTE: (id) => buildApiUrl(`/projects/${id}/upvote`),
+    FORK: (id) => buildApiUrl(`/projects/${id}/fork`),
   },
   HACKATHONS: {
     LIST: buildApiUrl("/hackathons"),
@@ -160,7 +167,17 @@ const wrapAxiosResponse = (response) => {
     ...response,
     headers: wrappedHeaders,
     ok: response.status >= 200 && response.status < 300,
-    json: async () => response.data,
+    json: async () => {
+      // Guard against non-JSON responses (e.g. 502 HTML) evaluating incorrectly
+      if (typeof response.data === "string") {
+        try {
+          return JSON.parse(response.data);
+        } catch (e) {
+          throw new Error("Received non-JSON response from server");
+        }
+      }
+      return response.data || {};
+    },
     text: async () =>
       typeof response.data === "string" ? response.data : JSON.stringify(response.data),
   };

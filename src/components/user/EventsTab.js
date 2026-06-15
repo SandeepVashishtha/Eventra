@@ -83,6 +83,18 @@ const EventCard = ({
       })
     : "—";
 
+    const handleCopyLink = async () => {
+  try {
+    const eventLink = `${window.location.origin}/events/${event.id || event.eventId}`;
+
+    await navigator.clipboard.writeText(eventLink);
+
+    toast.success("Link copied successfully");
+  } catch (error) {
+    toast.error("Failed to copy link");
+  }
+};
+
   return (
     <motion.div
       className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl flex flex-col overflow-hidden"
@@ -209,6 +221,9 @@ const WaitlistCard = memo(({ event, index, onLeaveWaitlist }) => {
       .catch(() => setQueuePos(-1));
   }, [event.id, user]);
 
+
+
+ 
   return (
     <motion.div
       className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl backdrop-blur-sm transition-all duration-500 hover:scale-[1.02] flex flex-col z-10 overflow-hidden"
@@ -324,6 +339,23 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const [filterStatus, setFilterStatus] = useState("All");
   const [filterType, setFilterType] = useState("All");
   const [sortBy, setSortBy] = useState("soonest");
+  const [collapsedSections, setCollapsedSections] = useState(() => {
+  try {
+    return JSON.parse(
+      localStorage.getItem("eventSectionVisibility")
+    ) || {
+      registered: false,
+      hosted: false,
+      waitlist: false,
+    };
+  } catch {
+    return {
+      registered: false,
+      hosted: false,
+      waitlist: false,
+    };
+  }
+});
   const [cancelTarget, setCancelTarget] = useState(null);
 
   const [recentSearches, setRecentSearches] = useState([]);
@@ -426,6 +458,33 @@ const normalizedSearch = debouncedTerm.trim().toLowerCase();
   const upcomingCount = [...registeredEvents, ...hostedEvents].filter((event) => getEventStatus(event) === "Upcoming").length;
   const completedCount = [...registeredEvents, ...hostedEvents].filter((event) => getEventStatus(event) === "Completed").length;
 
+  const toggleSection = (section) => {
+  setCollapsedSections((prev) => ({
+    ...prev,
+    [section]: !prev[section],
+  }));
+};
+
+const togglePinnedEvent = (event) => {
+  const exists = pinnedEvents.some(
+    (item) => item.id === event.id
+  );
+
+  if (exists) {
+    setPinnedEvents((prev) =>
+      prev.filter((item) => item.id !== event.id)
+    );
+
+    toast.info("Event unpinned");
+  } else {
+    setPinnedEvents((prev) => [
+      event,
+      ...prev,
+    ]);
+
+    toast.success("Event pinned");
+  }
+};
   const handleCancelClick = (id, title) => setCancelTarget({ id, title });
   const handleCancelDismiss = () => setCancelTarget(null);
   const handleCancelConfirm = useCallback(() => {
@@ -433,6 +492,47 @@ const normalizedSearch = debouncedTerm.trim().toLowerCase();
     removeRegistration(cancelTarget.id);
     setCancelTarget(null);
   }, [cancelTarget, removeRegistration]);
+
+  const saveCurrentPreset = () => {
+  const preset = {
+    id: Date.now(),
+    searchQuery,
+    filterStatus,
+    filterType,
+    sortBy,
+  };
+
+  const updated = [
+    preset,
+    ...recentPresets.filter(
+      (p) =>
+        !(
+          p.searchQuery === preset.searchQuery &&
+          p.filterStatus === preset.filterStatus &&
+          p.filterType === preset.filterType &&
+          p.sortBy === preset.sortBy
+        )
+    ),
+  ].slice(0, 5);
+
+  setRecentPresets(updated);
+
+  localStorage.setItem(
+    "recentEventPresets",
+    JSON.stringify(updated)
+  );
+
+  toast.success("Filter preset saved");
+};
+
+const applyPreset = (preset) => {
+  setSearchQuery(preset.searchQuery);
+  setFilterStatus(preset.filterStatus);
+  setFilterType(preset.filterType);
+  setSortBy(preset.sortBy);
+
+  toast.success("Preset applied");
+};
 
   return (
     <motion.div className="ud-content">
@@ -522,6 +622,7 @@ const normalizedSearch = debouncedTerm.trim().toLowerCase();
             )}
 
             <StyledDropdown
+            aria-label="Event filter dropdown"
               label=""
               value={filterStatus === "All" ? "" : filterStatus}
               placeholder="All Statuses"
@@ -599,7 +700,7 @@ const normalizedSearch = debouncedTerm.trim().toLowerCase();
               {filteredRegisteredEvents.length > 0 && (
                 <section className="space-y-4">
                   <div className="ud-tab-header">
-                    <h3 className="ud-page-title bg-gradient-to-r from-indigo-600 to-pink-600 bg-clip-text text-transparent font-extrabold">
+                    <h3 className="ud-page-title bg-linear-to-r from-indigo-600 to-pink-600 bg-clip-text text-transparent font-extrabold">
                       <Ticket size={18} /> Registered Events
                     </h3>
                     <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">

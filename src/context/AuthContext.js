@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useCallback, useRef, useState } from "react";
-import { setOnUnauthorizedHandler, setAuthToken } from "../config/api.js";
+import { setOnUnauthorizedHandler, setRequiresReauthHandler, setAuthToken } from "../config/api.js";
 import { authService } from "../services/authService.js";
 import { userService } from "../services/userService.js";
 import { syncSecureStorage } from "../utils/secureStorage.js";
@@ -9,6 +9,7 @@ import { isTokenValid } from "../utils/tokenUtils.js";
 import { toast } from "react-toastify";
 import { ROLES, ROLE_PERMISSIONS } from "../config/roles.js";
 import { getSessionChannel, closeSessionChannel, SESSION_TERMINATED, broadcastSessionTerminated } from "../utils/sessionBroadcast.js";
+import ReAuthModal from "../components/auth/ReAuthModal";
 
 // Create context for Authentication
 const AuthContext = createContext();
@@ -85,6 +86,7 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
   const [authRequest, setAuthRequest] = useState({ loading: false, error: null });
+  const [requiresReauth, setRequiresReauth] = useState(false);
   
   // Ref to track mounting status and prevent setting state on unmounted components
   const isMountedRef = useRef(true);
@@ -244,7 +246,13 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     // Intercept 401 errors globally at Axios layer to auto-logout user
     setOnUnauthorizedHandler(() => clearExpiredSessionRef.current());
-    return () => setOnUnauthorizedHandler(null);
+    setRequiresReauthHandler(() => {
+      setRequiresReauth(true);
+    });
+    return () => {
+      setOnUnauthorizedHandler(null);
+      setRequiresReauthHandler(null);
+    };
   }, []);
 
   /**
@@ -309,6 +317,10 @@ export const AuthProvider = ({ children }) => {
   );
 
   const getAuthErrorMessage = (error, fallbackMessage) => {
+    const status = error?.status || error?.response?.status;
+    if (status >= 500) {
+      return "Something went wrong on our end. Please try again shortly.";
+    }
     return (
       error?.response?.data?.message ||
       error?.response?.data?.error ||
@@ -329,10 +341,6 @@ export const AuthProvider = ({ children }) => {
 
         const data = res.data;
 
-        if (res.status !== 200) {
-          throw new Error(data?.message || data?.error || "Invalid credentials");
-        }
-
         const { sessionUser } = extractSession(data, usernameOrEmail);
 
         const persisted = await persistSession("cookie-managed", sessionUser);
@@ -344,6 +352,14 @@ export const AuthProvider = ({ children }) => {
         if (!isMountedRef.current) return false;
         // Fix (Issue #8646):
         document.cookie = "token=; Max-Age=0; path=/; Secure; SameSite=Strict";
+
+        const status = error?.status || error?.response?.status;
+        // Re-throw server errors so Login.js catch can show the correct message
+        if (status >= 500) {
+          setAuthRequest({ loading: false, error: null });
+          throw error;
+        }
+
         setAuthRequest({
           loading: false,
           error: getAuthErrorMessage(error, "Login failed. Please try again."),
@@ -394,6 +410,8 @@ export const AuthProvider = ({ children }) => {
     token,
     loading,
     authRequest,
+    requiresReauth,
+    setRequiresReauth,
     login,
     logout,
     setAuthSession,
@@ -405,6 +423,8 @@ export const AuthProvider = ({ children }) => {
     token,
     loading,
     authRequest,
+    requiresReauth,
+    setRequiresReauth,
     login,
     logout,
     setAuthSession,
@@ -413,5 +433,10 @@ export const AuthProvider = ({ children }) => {
     permissions
   ]);
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+      {requiresReauth && <ReAuthModal onSuccess={() => setRequiresReauth(false)} />}
+    </AuthContext.Provider>
+  );
 };

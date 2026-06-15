@@ -17,6 +17,12 @@ const NEGATIVE_KEYWORDS = new Set([
   "crashed", "slowly", "laggy", "painful", "horrible", "defect", "failure"
 ]);
 
+const NEGATION_WORDS = new Set([
+  "not", "no", "never", "dont", "cannot", "doesnt", "didnt",
+  "isnt", "wasnt", "arent", "neither", "none", "without", "lack", "lacks",
+  "havent", "hadnt", "hasnt", "wont", "wouldnt", "couldnt", "shouldnt"
+]);
+
 export const analyzeSentiment = (text) => {
   if (!text || typeof text !== "string") {
     return 0; // Neutral default
@@ -28,12 +34,36 @@ export const analyzeSentiment = (text) => {
   const words = normalized.match(/[a-z]+/g) || [];
   
   let score = 0;
+  let negateNext = false;
+  let negateWindow = 0;
   
   words.forEach(word => {
+    if (NEGATION_WORDS.has(word)) {
+      negateNext = true;
+      negateWindow = 3; // Negation applies to any of the next 3 words
+      return;
+    }
+    
+    let value = 0;
     if (POSITIVE_KEYWORDS.has(word)) {
-      score += 1.5;
+      value = 1.5;
     } else if (NEGATIVE_KEYWORDS.has(word)) {
-      score -= 1.5;
+      value = -1.5;
+    }
+    
+    if (value !== 0) {
+      if (negateNext && negateWindow > 0) {
+        score -= value; // Invert the sentiment score change
+        negateNext = false;
+        negateWindow = 0;
+      } else {
+        score += value;
+      }
+    } else if (negateNext) {
+      negateWindow -= 1;
+      if (negateWindow <= 0) {
+        negateNext = false;
+      }
     }
   });
 
