@@ -240,6 +240,9 @@ const WaitlistCard = ({ event, index, onLeaveWaitlist }) => {
     }
   }, [event.id, user]);
 
+
+
+ 
   return (
     <motion.div
       className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl backdrop-blur-sm transition-all duration-500 flex flex-col z-10 overflow-hidden"
@@ -340,6 +343,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
 
   const [recentSearches,
     setRecentSearches] = useState([]);
+    const [recentPresets, setRecentPresets] = useState([]);
   const registeredEvents = useMemo(
     () =>
       myEvents.map((registration) => ({
@@ -354,6 +358,18 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
 
     setRecentSearches(saved);
   }, []);
+
+  useEffect(() => {
+  try {
+    const saved = JSON.parse(
+      localStorage.getItem("recentEventPresets") || "[]"
+    );
+
+    setRecentPresets(saved);
+  } catch {
+    setRecentPresets([]);
+  }
+}, []);
 
   const availableTypes = useMemo(() => {
     const types = [...new Set([...registeredEvents, ...hostedEvents].map((event) => event?.type).filter(Boolean))];
@@ -407,6 +423,47 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
     removeRegistration(cancelTarget.id);
     setCancelTarget(null);
   };
+
+  const saveCurrentPreset = () => {
+  const preset = {
+    id: Date.now(),
+    searchQuery,
+    filterStatus,
+    filterType,
+    sortBy,
+  };
+
+  const updated = [
+    preset,
+    ...recentPresets.filter(
+      (p) =>
+        !(
+          p.searchQuery === preset.searchQuery &&
+          p.filterStatus === preset.filterStatus &&
+          p.filterType === preset.filterType &&
+          p.sortBy === preset.sortBy
+        )
+    ),
+  ].slice(0, 5);
+
+  setRecentPresets(updated);
+
+  localStorage.setItem(
+    "recentEventPresets",
+    JSON.stringify(updated)
+  );
+
+  toast.success("Filter preset saved");
+};
+
+const applyPreset = (preset) => {
+  setSearchQuery(preset.searchQuery);
+  setFilterStatus(preset.filterStatus);
+  setFilterType(preset.filterType);
+  setSortBy(preset.sortBy);
+
+  toast.success("Preset applied");
+};
 
   return (
     <motion.div
@@ -521,6 +578,18 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
             onChange={(val) => setFilterStatus(val || "All")}
           />
 
+
+          <button
+  onClick={saveCurrentPreset}
+  className="
+    px-4 py-2 rounded-xl
+    bg-indigo-600 hover:bg-indigo-700
+    text-white text-sm font-semibold
+    transition-all duration-200
+  "
+>
+  Save Preset
+</button>
           {availableTypes.length > 1 && (
             <StyledDropdown
               label=""
@@ -548,6 +617,27 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
               else if (val === "Event Name") setSortBy("name");
             }}
           />
+
+          {recentPresets.length > 0 && (
+  <div className="mt-4 flex flex-wrap gap-2">
+    {recentPresets.map((preset) => (
+      <button
+        key={preset.id}
+        onClick={() => applyPreset(preset)}
+        className="
+          px-3 py-2 rounded-full
+          border border-slate-300 dark:border-slate-700
+          bg-white dark:bg-slate-900
+          text-xs font-medium
+          hover:bg-slate-100 dark:hover:bg-slate-800
+          transition-all duration-200
+        "
+      >
+        {preset.searchQuery || "Quick Filter"} • {preset.filterStatus}
+      </button>
+    ))}
+  </div>
+)}
         </div>
       )}
 
