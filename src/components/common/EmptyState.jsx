@@ -1,7 +1,7 @@
 import React from "react";
 import { Search, FilterX, Inbox } from "lucide-react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const EmptyState = ({
   type = "search",
@@ -20,45 +20,27 @@ const EmptyState = ({
   compact = false,
   children,
 }) => {
+  const { t } = useTranslation();
   const getDefaultConfig = () => {
     switch (type) {
       case "search":
         return {
-          icon: Search,
-          title: "No results found",
+          icon: <Search size={48} className="text-gray-400" />,
+          title: t("common.noResults"),
           message: "Try adjusting your search terms or filters to find what you're looking for.",
           actionLabel: "Clear search",
         };
       case "filters":
         return {
-          icon: FilterX,
-          title: "No events match your filters",
-          message: "Try adjusting your filters or clearing them to see all available events.",
-          actionLabel: "Clear all filters",
+          icon: <FilterX size={48} className="text-gray-400" />,
+          title: t("event.noEventsMatch"),
+        message: t("event.noEventsMatchDesc"),
         };
       case "bookmarks":
         return {
-          icon: Inbox,
-          title: "No bookmarked events yet",
-          message: "Save events you're interested in and they'll appear here for quick access.",
-          actionLabel: "Browse Events",
-          defaultActionPath: "/events",
-        };
-      case "events-empty":
-        return {
-          icon: Inbox,
-          title: "No events available right now",
-          message: "New events are added regularly. Come back soon, or browse hackathons in the meantime!",
-          actionLabel: "Browse Hackathons",
-          defaultActionPath: "/hackathons",
-        };
-      case "dashboard":
-        return {
-          icon: Inbox,
-          title: "Your dashboard is empty",
-          message: "Register for events or bookmark ones you like and they'll show up here.",
-          actionLabel: "Discover Events",
-          defaultActionPath: "/events",
+          icon: <Inbox size={48} className="text-gray-400" />,
+          title: t("event.noBookmarked"),
+        message: t("event.noBookmarkedDesc"),
         };
       default:
         return {

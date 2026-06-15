@@ -1,18 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import {
-  motion,
-  useAnimation,
-  AnimatePresence,
-  MotionConfig,
-  useScroll,
-  useTransform
-} from "framer-motion";
-
+import { motion, useAnimation, useScroll, useTransform } from "framer-motion";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import Fuse from "fuse.js";
 import { Calendar, Code, ExternalLink, Handshake, Search, Trophy, Users } from "lucide-react";
-import CountUpLib from "react-countup";
+import CountUp from "react-countup";
 
 import ErrorBoundary from "../../../components/common/ErrorBoundary";
 import ModernSearchInput from "../../../components/common/ModernSearchInput";
@@ -20,6 +12,7 @@ import RespawningText from "../../../components/visual/RespawningText";
 import useDebouncedSearch from "../../../hooks/useDebouncedSearch";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
 import useReducedMotion from "../../../hooks/useReducedMotion.js";
+
 import eventsData from "../../Events/eventsMockData.json";
 import hackathonsData from "../../Hackathons/hackathonMockData.json";
 import projectsData from "../../Projects/mockProjectsData.json";
@@ -44,13 +37,7 @@ const HEADLINE_PHRASES = [
   "Innovative Dev Workshops",
   "Cutting-Edge Tech Meetups",
 ];
-
-const TAGLINE_TEXTS = [
-  "Build. Connect. Innovate.",
-  "Discover Opportunities.",
-  "Join the Tech Community.",
-];
-
+const TAGLINE_TEXTS = ["Build. Connect. Innovate.", "Discover Opportunities.", "Join the Tech Community."];
 const SEARCH_RESULT_LIMIT = 5;
 
 const HERO_STATS = [
@@ -114,7 +101,7 @@ const allSearchItems = [
 ];
 
 const searchIndex = new Fuse(allSearchItems, {
-  keys: ["title", "description", "location", "tags", "techStack", "category", "author", "organizer", "type"],
+  keys: ["title", "description", "location", "tags", "techStack", "type"],
   threshold: 0.3,
   includeScore: true,
 });
@@ -148,23 +135,19 @@ const [isMobileView, setIsMobileView] = useState(
   useDocumentTitle("Eventra | Home");
 
   const [isTouch, setIsTouch] = useState(false);
-  const [statsReady, setStatsReady] = useState(false);
   const [phraseIndex, setPhraseIndex] = useState(0);
   const [showResults, setShowResults] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
 
   const { searchTerm, debouncedTerm, setSearchTerm, clear: clearSearchTerm } = useDebouncedSearch("", 300);
 
-  // FIXED: Added missing useScroll initialization to define scrollYProgress
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start start", "end start"],
-  });
+  const { searchTerm, debouncedTerm, setSearchTerm } = useDebouncedSearch("", 300);
+  const { scrollYProgress } = useScroll({ target: containerRef, offset: ["start start", "end start"] });
 
-  const yText = useTransform(scrollYProgress, [0, 1], [0, 180]);
-  const yStats = useTransform(scrollYProgress, [0, 1], [0, 60]);
+  const yText = useTransform(scrollYProgress, [0, 1], [0, 120]);
   const opacityHero = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
 
+  // Combined and minimized background operations to maximize body optimization
   useEffect(() => {
     setIsTouch(window.matchMedia("(pointer: coarse)").matches);
 
@@ -201,18 +184,14 @@ const [isMobileView, setIsMobileView] = useState(
 
   useEffect(() => {
     const timer = setTimeout(() => setStatsReady(true), 100);
-    return () => clearTimeout(timer);
+    const interval = setInterval(() => setPhraseIndex((p) => (p + 1) % HEADLINE_PHRASES.length), 3000);
+    return () => { clearTimeout(timer); clearInterval(interval); };
   }, []);
 
   useEffect(() => {
-    if (debouncedTerm.trim()) {
-      setSearchResults(searchIndex.search(debouncedTerm.trim()).slice(0, SEARCH_RESULT_LIMIT));
-      setShowResults(true);
-      return;
-    }
-
-    setSearchResults([]);
-    setShowResults(false);
+    const trimmed = debouncedTerm.trim();
+    setSearchResults(trimmed ? searchIndex.search(trimmed).slice(0, SEARCH_RESULT_LIMIT) : []);
+    setShowResults(!!trimmed);
   }, [debouncedTerm]);
 
   const handleSearch = useCallback((query) => setSearchTerm(query), [setSearchTerm]);
@@ -471,28 +450,8 @@ const [isMobileView, setIsMobileView] = useState(
             </ErrorBoundary>
           )}
         </motion.div>
-      </motion.div>
 
-      {/* Decorative Bottom Scroll Tracker Indicator */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.2 }}
-        className="absolute bottom-6 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-2 text-gray-400 dark:text-gray-500 md:flex"
-        aria-hidden="true"
-      >
-        <span className="text-xs font-medium">Scroll to explore</span>
-        <motion.div
-          animate={{ y: [0, 8, 0] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          className="flex h-10 w-6 justify-center rounded-full border-2 border-current pt-2"
-        >
-          <motion.div
-            className="h-1.5 w-1.5 rounded-full bg-current"
-            animate={{ y: [0, 12, 0] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          />
-        </motion.div>
+        {!searchTerm && <HeroStats stats={stats} statsReady={statsReady} />}
       </motion.div>
     </section>
   );

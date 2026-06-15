@@ -15,7 +15,7 @@ const SEARCH_LINKS = [
 ];
 
 const SearchEmptyState = ({
-  query,
+  query = "",
   itemLabel = "items",
   browseLabel = "Browse",
   browsePath = "/",
@@ -52,7 +52,7 @@ const SearchEmptyState = ({
 
       {popularTags.length > 0 && (
         <div className="mt-6 flex flex-wrap justify-center gap-2">
-          {popularTags.slice(0, 6).map((tag) => (
+          {popularTags.map((tag) => (
             <span
               key={tag}
               className="rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-3 py-1 text-xs font-medium text-slate-700 dark:text-slate-200"
