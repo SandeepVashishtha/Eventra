@@ -19,6 +19,16 @@ const CONNECTIONS = [
   { from: "blr", to: "syd" },
 ];
 
+const getTooltipTransform = (city) => {
+    if (!city) return "translate(-50%, -90%)";
+
+    if (city.x < 350) return "translate(-10%, 10%)";
+    if (city.y < 180) return "translate(-50%, 10%)";
+    if (city.x > 800) return "translate(-100%, -120%)";
+
+    return "translate(-50%, -90%)";
+  };  
+
 export default function CollaborationMap() {
   const [hoveredCity, setHoveredCity] = useState(null);
   const mapRef = useRef(null);
@@ -74,7 +84,7 @@ export default function CollaborationMap() {
         </div>
 
         {/* Glassmorphic Map Container */}
-        <div ref={mapRef} className="relative bg-slate-900/40 backdrop-blur-xl border border-white/10 dark:border-slate-800/50 shadow-2xl rounded-3xl p-6 md:p-8 overflow-hidden">
+        <div ref={mapRef} className="relative bg-slate-900/40 backdrop-blur-xl border border-white/10 dark:border-slate-800/50 shadow-2xl rounded-3xl p-6 md:p-8 overflow-visible">
           
           {/* Legend/Status */}
           <div className="absolute top-6 left-6 z-10 hidden sm:flex items-center gap-4 bg-slate-950/60 backdrop-blur border border-white/5 rounded-2xl px-4 py-2.5 text-xs text-slate-300">
@@ -199,7 +209,7 @@ export default function CollaborationMap() {
                 style={{
                   left: `${(hoveredCity.x / 1000) * 100}%`,
                   top: `${(hoveredCity.y / 500) * 100}%`,
-                  transform: "translate(-50%, -120%)",
+                  transform: getTooltipTransform(hoveredCity),
                   minWidth: "210px",
                   borderRadius: "14px",
                   boxShadow: "0 8px 32px rgba(0,0,0,0.18)",

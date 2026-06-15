@@ -64,6 +64,22 @@ const ModernSearchInput = ({
         >
           {tags}
           <input
+<<<<<<< HEAD
+            ref={searchInputRef}
+            type="text"
+            placeholder={tags && tags.length > 0 ? "" : placeholder}
+            // UPDATED CLASSNAME BELOW: Added text-black and dark:text-white explicitly to the input field
+            className="flex-1 bg-transparent border-none outline-none text-black dark:text-white min-w-[120px] placeholder-gray-400 dark:placeholder-gray-500"
+            // UPDATED PROPERTY BELOW: Added spellCheck="false" to prevent the full-height red spellcheck lines
+            spellCheck="false"
+            value={value}
+            onChange={onChange}
+            onFocus={handleFocus}
+            autoFocus={autoFocus}
+            onBlur={handleBlur}
+            onKeyDown={onKeyDown}
+          />
+=======
   ref={searchInputRef}
   type="text"
   placeholder={tags && tags.length > 0 ? "" : placeholder}
@@ -81,6 +97,7 @@ const ModernSearchInput = ({
   onBlur={handleBlur}
   onKeyDown={onKeyDown}
 />
+>>>>>>> upstream/master
         </div>
 
         {showClearButton && value && (

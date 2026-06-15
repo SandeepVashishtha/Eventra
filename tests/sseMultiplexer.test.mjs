@@ -106,42 +106,46 @@ const testStatusSyncOnSubscribe = async () => {
 
   let receivedStatusMsg = null;
   const statusTestChannel = new globalThis.BroadcastChannel("eventra_sse_multiplexer");
-  statusTestChannel.onmessage = (e) => {
-    if (e.data && e.data.type === "SSE_STATUS" && e.data.path === "/stream/status_sync") {
-      receivedStatusMsg = e.data;
-    }
-  };
+  try {
+    statusTestChannel.onmessage = (e) => {
+      if (e.data && e.data.type === "SSE_STATUS" && e.data.path === "/stream/status_sync") {
+        receivedStatusMsg = e.data;
+      }
+    };
 
-  // Simulate follower tab subscribing to "/stream/status_sync"
-  sseMultiplexer.handleBroadcastMessage({
-    type: "SUBSCRIBE",
-    tabId: "tab_b",
-    path: "/stream/status_sync",
-  });
+    // Simulate follower tab subscribing to "/stream/status_sync"
+    sseMultiplexer.handleBroadcastMessage({
+      type: "SUBSCRIBE",
+      tabId: "tab_b",
+      path: "/stream/status_sync",
+    });
 
-  // Wait for the async connection open simulated by MockEventSource (5ms)
-  await new Promise((resolve) => setTimeout(resolve, 15));
+    // Wait for the async connection open simulated by MockEventSource (5ms)
+    await new Promise((resolve) => setTimeout(resolve, 15));
 
-  assert.ok(receivedStatusMsg !== null, "Follower should receive current connection status on SUBSCRIBE");
-  assert.equal(receivedStatusMsg.status, "connected");
-  assert.equal(receivedStatusMsg.tabId, sseMultiplexer.tabId, "Broadcast message should contain leader's tabId");
+    assert.ok(receivedStatusMsg !== null, "Follower should receive current connection status on SUBSCRIBE");
+    assert.equal(receivedStatusMsg.status, "connected");
+    assert.equal(receivedStatusMsg.tabId, sseMultiplexer.tabId, "Broadcast message should contain leader's tabId");
 
-  // Verify same for SUBSCRIBERS_RESPONSE
-  receivedStatusMsg = null;
-  sseMultiplexer.handleBroadcastMessage({
-    type: "SUBSCRIBERS_RESPONSE",
-    tabId: "tab_b",
-    paths: ["/stream/status_sync"],
-  });
+    // Verify same for SUBSCRIBERS_RESPONSE
+    receivedStatusMsg = null;
+    sseMultiplexer.handleBroadcastMessage({
+      type: "SUBSCRIBERS_RESPONSE",
+      tabId: "tab_b",
+      paths: ["/stream/status_sync"],
+    });
 
-  // Wait for any status update to complete
-  await new Promise((resolve) => setTimeout(resolve, 15));
+    // Wait for any status update to complete
+    await new Promise((resolve) => setTimeout(resolve, 15));
 
-  assert.ok(receivedStatusMsg !== null, "Follower responding with active path should receive current connection status");
-  assert.equal(receivedStatusMsg.status, "connected");
-  assert.equal(receivedStatusMsg.tabId, sseMultiplexer.tabId, "Broadcast message should contain leader's tabId");
-
-  statusTestChannel.close();
+    assert.ok(receivedStatusMsg !== null, "Follower responding with active path should receive current connection status");
+    assert.equal(receivedStatusMsg.status, "connected");
+    assert.equal(receivedStatusMsg.tabId, sseMultiplexer.tabId, "Broadcast message should contain leader's tabId");
+  } finally {
+    statusTestChannel.close();
+    sseMultiplexer.channel?.close();
+    channels.clear();
+  }
 };
 
 const runTests = async () => {
