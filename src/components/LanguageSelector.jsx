@@ -55,10 +55,10 @@ export default function LanguageSelector({ className = "", compact = false }) {
           ${compact ? "px-0.5 py-0.5 text-xs" : "px-1 py-0.5 text-sm"}
         `}
       >
-        <Globe className={compact ? "h-1.5 w-1.5" : "h-2 w-2"} aria-hidden="true" />
+        <Globe className={compact ? "h-3.5 w-3.5" : "h-4 w-4"} aria-hidden="true" />
         <span className="font-medium">{currentLang.nativeLabel}</span>
         <ChevronDown
-          className={`h-1.5 w-1.5 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+          className={`${compact ? "h-3.5 w-3.5" : "h-4 w-4"} transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
           aria-hidden="true"
         />
       </button>
