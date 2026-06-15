@@ -111,6 +111,7 @@ const MobileDrawer = ({
                 alt=""
                 aria-hidden="true"
                 className="block h-full w-full object-contain"
+                 loading="lazy"
               />
             </div>
             <h2 className="truncate text-xl font-bold text-text xs:text-2xl">
