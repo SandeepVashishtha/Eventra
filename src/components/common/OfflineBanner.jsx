@@ -64,7 +64,7 @@ const OfflineBanner = () => {
           transition={{ duration: 0.3, ease: "easeOut" }}
           role="alert"
           aria-live="assertive"
-          className="fixed top-20 left-0 right-0 z-[999] flex justify-center px-4"
+          className="fixed top-20 left-0 right-0 z-toast flex justify-center px-4"
         >
           <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-red-600 text-white shadow-lg text-sm font-semibold max-w-md w-full">
             <WifiOff size={16} className="shrink-0" aria-hidden="true" />
@@ -88,7 +88,7 @@ const OfflineBanner = () => {
           transition={{ duration: 0.3, ease: "easeOut" }}
           role="status"
           aria-live="polite"
-          className="fixed top-20 left-0 right-0 z-[999] flex justify-center px-4"
+          className="fixed top-20 left-0 right-0 z-toast flex justify-center px-4"
         >
           <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-green-600 text-white shadow-lg text-sm font-semibold max-w-md w-full">
             <Wifi size={16} className="shrink-0" aria-hidden="true" />

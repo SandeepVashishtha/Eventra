@@ -30,10 +30,19 @@ const Settings = () => {
   const [backupKey, setBackupKey] = useLocalStorage("backupKey", null);
   const [showKey, setShowKey] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState('profile');
+  const saveTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    };
+  }, []);
 
   const generateBackupKey = () => {
     setIsGenerating(true);
-    setTimeout(() => {
+    saveTimeoutRef.current = setTimeout(() => {
       const words = [
         "alpha", "bravo", "charlie", "delta", "echo", "foxtrot", "golf", "hotel", "india", 
         "juliet", "kilo", "lima", "mike", "november", "oscar", "papa", "quebec", "romeo", 
