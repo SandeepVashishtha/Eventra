@@ -233,6 +233,9 @@ class SseMultiplexer {
     writeHeartbeat();
 
     // Heartbeat loop — keep the entry fresh while leadership is held
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+    }
     this.heartbeatInterval = setInterval(writeHeartbeat, 2000);
 
     this.startHeartbeatChecks();
