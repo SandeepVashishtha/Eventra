@@ -89,7 +89,7 @@ useEffect(() => {
           <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-red-600 text-white shadow-lg text-sm font-semibold max-w-md w-full">
             <WifiOff size={16} className="shrink-0" aria-hidden="true" />
            <div className="flex-1">
-  <div>You're offline. Some features may not work.</div>
+  <div>You&apos;re offline. Some features may not work.</div>
   <div className="text-xs opacity-90">
     Offline for: {offlineDuration}
   </div>
