@@ -133,7 +133,6 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
               ) : (
                 <AuthButtons />
               )}
-              <InstallAppButton />
               <CursorToggle cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
             </div>
             <ThemeToggleButton 
