@@ -244,7 +244,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
       toast.error(message);
     }
 
-ac6ca0ad (fix(projects): handle QuotaExceededError via LRU cache eviction)
+
 
   };
 
