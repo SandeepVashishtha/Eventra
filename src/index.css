@@ -1352,3 +1352,23 @@ html:not(.dark) ::placeholder {
   outline-offset: 2px;
   border-radius: 4px;
 }
+
+/* Fluid Cursor Styling & Glow Optimization */
+#fluid {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 40;
+  pointer-events: none;
+  opacity: 0.85; /* Optimal opacity for maximum premium visibility without distraction */
+  mix-blend-mode: screen; /* Standard blend mode for vibrant lighting overlays in both light and dark modes */
+  transition: opacity 0.3s ease;
+}
+
+/* Ensure smooth blending over dark and light sections */
+.dark #fluid {
+  mix-blend-mode: plus-lighter; /* Extra premium neon glow on dark backgrounds */
+}
+
