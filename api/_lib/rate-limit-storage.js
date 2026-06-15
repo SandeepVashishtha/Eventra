@@ -27,6 +27,26 @@ let redisClient = null;
 // In-memory fallback storage (only for development/testing)
 const inMemoryStore = new Map();
 
+// Register cleanup hook to close Redis connection on process exit
+let cleanupRegistered = false;
+function registerCleanupHook() {
+  if (cleanupRegistered) return;
+  cleanupRegistered = true;
+  const cleanup = async () => {
+    if (redisClient) {
+      try {
+        await redisClient.quit();
+      } catch {
+        // Ignore cleanup errors
+      }
+      redisClient = null;
+    }
+  };
+  process.on("exit", cleanup);
+  process.on("SIGINT", cleanup);
+  process.on("SIGTERM", cleanup);
+}
+
 /**
  * Gets or creates the Redis client.
  *
@@ -38,20 +58,33 @@ function getRedisClient() {
     return redisClient;
   }
 
+  registerCleanupHook();
+
   if (!isDistributedRateLimitStorageConfigured()) {
     return null;
   }
 
   try {
-    const client = new Redis(process.env.KV_REST_API_URL, {
+    const redisUrl = process.env.RATE_LIMIT_REDIS_URL || process.env.KV_REST_API_URL;
+    if (!redisUrl) {
+      console.error("[rate-limit-storage.js] No Redis URL configured. Set RATE_LIMIT_REDIS_URL or KV_REST_API_URL.");
+      return null;
+    }
+
+    if (redisUrl.startsWith("https://") || redisUrl.startsWith("http://")) {
+      console.error("[rate-limit-storage.js] KV_REST_API_URL is an HTTP REST endpoint, not a Redis connection URL. Set RATE_LIMIT_REDIS_URL for direct Redis connections.");
+      return null;
+    }
+
+    const client = new Redis(redisUrl, {
       password: process.env.KV_REST_API_TOKEN,
-      tls: process.env.KV_REST_API_URL?.startsWith("rediss://") ? {} : undefined,
+      tls: redisUrl.startsWith("rediss://") ? {} : undefined,
       maxRetriesPerRequest: 3,
       retryStrategy: (times) => {
         if (times > 3) {
-          return null; // Stop retrying after 3 attempts
+          return null;
         }
-        return Math.min(times * 100, 500); // Exponential backoff
+        return Math.min(times * 100, 500);
       },
     });
 

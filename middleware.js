@@ -22,6 +22,10 @@
 const API_RATE_LIMIT = 60;
 const API_RATE_WINDOW_S = 60;
 
+// Concurrency limiter for validation pipeline
+import { createConcurrencyLimiter } from "./api/_lib/concurrency.js";
+const validationLimiter = createConcurrencyLimiter(5);
+
 // ---------------------------------------------------------------------------
 // CSP Backend Origin Configuration
 // Reads backend origins from environment variables and validates them
@@ -243,8 +247,13 @@ const TICKET_ROLES = new Set([
   "EVENT_MANAGER",
 ]);
 
+const MAX_COOKIE_SIZE = 4096; // 4KB
+
 const parseTokenFromCookie = (request) => {
   const cookieHeader = request.headers.get("cookie") || "";
+  if (cookieHeader.length > MAX_COOKIE_SIZE) {
+    return null;
+  }
   const tokenMatch = cookieHeader.match(/(?:^|;\s*)token\s*=\s*([^;]*)/);
   return tokenMatch ? tokenMatch[1] : null;
 };
@@ -295,6 +304,10 @@ const createGeoBlockedResponse = () =>
   );
 
 export default async function middleware(request) {
+  return validationLimiter.run(() => handleRequest(request));
+}
+
+async function handleRequest(request) {
   const country = request.geo?.country;
   
   if (isCountryBlocked(country)) {
@@ -338,7 +351,8 @@ export default async function middleware(request) {
       "/api/events",
       "/api/hackathons",
       "/api/projects",
-      "/api/validate"
+      "/api/validate",
+      "/api/health"
     ];
 
     const isPublicPath = PUBLIC_PATHS.some(path => url.pathname.startsWith(path) && (request.method === "GET" || url.pathname.includes("/auth/") || url.pathname.includes("/validate/")));

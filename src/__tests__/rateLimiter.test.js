@@ -15,20 +15,20 @@ describe("Distributed Rate Limiter", () => {
   afterEach(async () => {
     process.env = originalEnv;
     process.env.NODE_ENV = originalNodeEnv;
-    const { clearAll } = await import("../../api/lib/rate-limit-storage.js");
+    const { clearAll } = await import("../../api/_lib/rate-limit-storage.js");
     await clearAll();
   });
 
   describe("createRateLimiter", () => {
     test("should create a rate limiter with check method", async () => {
-      const { createRateLimiter } = await import("../../api/lib/rateLimiter.js");
+      const { createRateLimiter } = await import("../../api/_lib/rateLimiter.js");
       const limiter = createRateLimiter(60000, 10);
       assert.ok(limiter.check);
       assert.strictEqual(typeof limiter.check, "function");
     });
 
     test("should allow requests under threshold", async () => {
-      const { createRateLimiter } = await import("../../api/lib/rateLimiter.js");
+      const { createRateLimiter } = await import("../../api/_lib/rateLimiter.js");
       const limiter = createRateLimiter(60000, 5);
       const result = await limiter.check("test-key");
       assert.strictEqual(result.allowed, true);
@@ -37,7 +37,7 @@ describe("Distributed Rate Limiter", () => {
     });
 
     test("should block requests over threshold", async () => {
-      const { createRateLimiter } = await import("../../api/lib/rateLimiter.js");
+      const { createRateLimiter } = await import("../../api/_lib/rateLimiter.js");
       const limiter = createRateLimiter(60000, 3);
       
       // Make 3 allowed requests
@@ -53,7 +53,7 @@ describe("Distributed Rate Limiter", () => {
     });
 
     test("should reset counter after window expires", async () => {
-      const { createRateLimiter } = await import("../../api/lib/rateLimiter.js");
+      const { createRateLimiter } = await import("../../api/_lib/rateLimiter.js");
       const limiter = createRateLimiter(100, 3); // 100ms window
       
       // Exhaust the limit
@@ -71,7 +71,7 @@ describe("Distributed Rate Limiter", () => {
     });
 
     test("should handle multiple keys independently", async () => {
-      const { createRateLimiter } = await import("../../api/lib/rateLimiter.js");
+      const { createRateLimiter } = await import("../../api/_lib/rateLimiter.js");
       const limiter = createRateLimiter(60000, 2);
       
       const result1 = await limiter.check("key1");
@@ -84,7 +84,7 @@ describe("Distributed Rate Limiter", () => {
     });
 
     test("should return remaining requests", async () => {
-      const { createRateLimiter } = await import("../../api/lib/rateLimiter.js");
+      const { createRateLimiter } = await import("../../api/_lib/rateLimiter.js");
       const limiter = createRateLimiter(60000, 5);
       
       const result1 = await limiter.check("test-key");
@@ -95,7 +95,7 @@ describe("Distributed Rate Limiter", () => {
     });
 
     test("should return resetAfter time", async () => {
-      const { createRateLimiter } = await import("../../api/lib/rateLimiter.js");
+      const { createRateLimiter } = await import("../../api/_lib/rateLimiter.js");
       const windowMs = 60000;
       const limiter = createRateLimiter(windowMs, 5);
       
@@ -107,14 +107,14 @@ describe("Distributed Rate Limiter", () => {
 
   describe("enforceRateLimit", () => {
     test("should not throw when under threshold", async () => {
-      const { createRateLimiter, enforceRateLimit } = await import("../../api/lib/rateLimiter.js");
+      const { createRateLimiter, enforceRateLimit } = await import("../../api/_lib/rateLimiter.js");
       const limiter = createRateLimiter(60000, 5);
       
       await assert.doesNotReject(enforceRateLimit(limiter, "test-key"));
     });
 
     test("should throw error when over threshold", async () => {
-      const { createRateLimiter, enforceRateLimit } = await import("../../api/lib/rateLimiter.js");
+      const { createRateLimiter, enforceRateLimit } = await import("../../api/_lib/rateLimiter.js");
       const limiter = createRateLimiter(60000, 2);
       
       await enforceRateLimit(limiter, "test-key");
@@ -127,7 +127,7 @@ describe("Distributed Rate Limiter", () => {
     });
 
     test("should throw error with status 429", async () => {
-      const { createRateLimiter, enforceRateLimit } = await import("../../api/lib/rateLimiter.js");
+      const { createRateLimiter, enforceRateLimit } = await import("../../api/_lib/rateLimiter.js");
       const limiter = createRateLimiter(60000, 1);
       
       await enforceRateLimit(limiter, "test-key");
@@ -143,7 +143,7 @@ describe("Distributed Rate Limiter", () => {
 
   describe("loginRateLimiter", () => {
     test("should be configured with correct limits", async () => {
-      const { loginRateLimiter } = await import("../../api/lib/rateLimiter.js");
+      const { loginRateLimiter } = await import("../../api/_lib/rateLimiter.js");
       assert.ok(loginRateLimiter.check);
       
       // Test that it allows 10 requests
@@ -160,7 +160,7 @@ describe("Distributed Rate Limiter", () => {
 
   describe("Concurrent requests", () => {
     test("should handle concurrent requests correctly", async () => {
-      const { createRateLimiter } = await import("../../api/lib/rateLimiter.js");
+      const { createRateLimiter } = await import("../../api/_lib/rateLimiter.js");
       const limiter = createRateLimiter(60000, 10);
       
       // Make 10 concurrent requests
@@ -184,7 +184,7 @@ describe("Distributed Rate Limiter", () => {
       delete process.env.KV_REST_API_URL;
       delete process.env.KV_REST_API_TOKEN;
       
-      const { createRateLimiter } = await import("../../api/lib/rateLimiter.js");
+      const { createRateLimiter } = await import("../../api/_lib/rateLimiter.js");
       const limiter = createRateLimiter(60000, 5);
       
       const result = await limiter.check("test-key");
@@ -197,7 +197,7 @@ describe("Distributed Rate Limiter", () => {
       delete process.env.KV_REST_API_URL;
       delete process.env.KV_REST_API_TOKEN;
       
-      const { createRateLimiter } = await import("../../api/lib/rateLimiter.js");
+      const { createRateLimiter } = await import("../../api/_lib/rateLimiter.js");
       const limiter = createRateLimiter(60000, 5);
       
       const result = await limiter.check("test-key");
@@ -209,7 +209,7 @@ describe("Distributed Rate Limiter", () => {
 
   describe("Window expiration edge cases", () => {
     test("should handle very short windows", async () => {
-      const { createRateLimiter } = await import("../../api/lib/rateLimiter.js");
+      const { createRateLimiter } = await import("../../api/_lib/rateLimiter.js");
       const limiter = createRateLimiter(50, 2); // 50ms window
       
       await limiter.check("test-key");
@@ -223,7 +223,7 @@ describe("Distributed Rate Limiter", () => {
     });
 
     test("should handle very long windows", async () => {
-      const { createRateLimiter } = await import("../../api/lib/rateLimiter.js");
+      const { createRateLimiter } = await import("../../api/_lib/rateLimiter.js");
       const limiter = createRateLimiter(3600000, 5); // 1 hour window
       
       const result = await limiter.check("test-key");
