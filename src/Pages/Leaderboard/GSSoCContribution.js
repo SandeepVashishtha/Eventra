@@ -38,13 +38,6 @@ const GSSOC_TIMELINE = [
   { phase: "Final Results", date: "Jun 15", status: "upcoming", icon: Award },
 ];
 
-const MENTORS = [
-  { name: "Priya Sharma", role: "Frontend Lead", expertise: ["React", "Tailwind"], avatar: "👩‍💻", available: true, bio: "10+ years in frontend architecture" },
-  { name: "Rahul Verma", role: "Backend Expert", expertise: ["Node.js", "MongoDB"], avatar: "👨‍💻", available: true, bio: "Scalable systems specialist" },
-  { name: "Anita Das", role: "DevOps Mentor", expertise: ["Docker", "CI/CD"], avatar: "👩‍🔧", available: false, bio: "Cloud infrastructure expert" },
-  { name: "Vikram Singh", role: "Full-Stack Guide", expertise: ["MERN", "GraphQL"], avatar: "👨‍🚀", available: true, bio: "End-to-end product builder" },
-];
-
 const ACHIEVEMENTS = [
   { id: "first-pr", label: "First PR", icon: Star, unlocked: true, color: "text-yellow-500", description: "Submitted your first pull request" },
   { id: "bug-hunter", label: "Bug Hunter", icon: Zap, unlocked: true, color: "text-red-500", description: "Found and fixed 5+ bugs" },
@@ -154,64 +147,6 @@ const CountdownTimer = memo(({ timeLeft }) => {
   );
 });
 CountdownTimer.displayName = "CountdownTimer";
-
-const MentorCard = memo(({ mentor, onConnect }) => {
-  const [isHovered, setIsHovered] = useState(false);
-  
-  return (
-    <motion.article
-      whileHover={{ y: -4 }}
-      onHoverStart={() => setIsHovered(true)}
-      onHoverEnd={() => setIsHovered(false)}
-      className="p-4 bg-white dark:bg-gray-700/50 rounded-xl border dark:border-gray-600 flex items-center gap-3 transition-shadow hover:shadow-lg"
-      role="article"
-      aria-label={`Mentor: ${mentor.name}`}
-    >
-      <div className="text-3xl" aria-hidden="true">{mentor.avatar}</div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <h4 className="font-medium text-gray-900 dark:text-white truncate">{mentor.name}</h4>
-          {mentor.available && (
-            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" title="Available for mentoring" aria-label="Available" />
-          )}
-        </div>
-        <p className="text-sm text-gray-500 dark:text-gray-400">{mentor.role}</p>
-        <div className="flex flex-wrap gap-1 mt-1">
-          {mentor.expertise.map(skill => (
-            <span key={skill} className="text-[10px] sm:text-xs px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full">
-              {skill}
-            </span>
-          ))}
-        </div>
-        {isHovered && mentor.bio && (
-          <motion.p 
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-xs text-gray-600 dark:text-gray-300 mt-2 line-clamp-2"
-          >
-            {mentor.bio}
-          </motion.p>
-        )}
-      </div>
-      {mentor.available ? (
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => onConnect?.(mentor)}
-          className="px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
-          aria-label={`Connect with ${mentor.name}`}
-        >
-          Connect
-        </motion.button>
-      ) : (
-        <span className="text-xs px-3 py-1.5 text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-lg">
-          Busy
-        </span>
-      )}
-    </motion.article>
-  );
-});
-MentorCard.displayName = "MentorCard";
 
 const AchievementBadge = memo(({ achievement, onUnlock }) => {
   const Icon = achievement.icon;
@@ -459,10 +394,6 @@ const timeLeft = useCountdown(
   }, [debouncedSearchQuery, selectedDifficulty]);
   
   // Handlers
-  const handleMentorConnect = useCallback((mentor) => {
-    addToast(`📬 Connection request sent to ${mentor.name}!`, "success");
-  }, [addToast]);
-  
   const handleAchievementUnlock = useCallback((achievement) => {
     addToast(`🔒 "${achievement.label}" is locked. Keep contributing to unlock!`, "info");
   }, [addToast]);
@@ -741,25 +672,6 @@ const timeLeft = useCountdown(
               )}
             </div>
           </article>
-        </motion.section>
-
-        {/* 👥 Mentors */}
-        <motion.section variants={itemVariants} className="p-4 sm:p-6 rounded-2xl bg-card-bg border border-gray-200 dark:border-gray-700 mb-6 sm:mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-indigo-500" aria-hidden="true" />
-              <h3 className="font-semibold text-gray-900 dark:text-white">Meet Your Mentors</h3>
-            </div>
-            <button className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded" aria-label="button">
-              View All <ArrowRight className="w-3 h-3" aria-hidden="true" />
-            </button>
-          </div>
-          
-          <div className="grid sm:grid-cols-2 gap-3">
-            {MENTORS.map(mentor => (
-              <MentorCard key={mentor.name} mentor={mentor} onConnect={handleMentorConnect} />
-            ))}
-          </div>
         </motion.section>
 
         {/* 📅 Timeline */}
