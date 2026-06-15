@@ -1,7 +1,7 @@
 import { safeJsonParse } from "./safeJsonParse.js";
 import { logger } from "./logger.js";
 import { syncSecureStorage } from "./secureStorage.js";
-// 🔥 FIX: In-memory queue and lock to prevent localStorage race conditions
+
 let isUpdating = false;
 let interestQueue = [];
 const MAX_QUEUE_SIZE = 100;
@@ -23,26 +23,28 @@ const isStorageAvailable = () => {
   }
 };
 
+// Deep Fix & Refactor: Extracted fetch logic to its own function to pass CodeScene Complexity limits
+const fetchUserProfile = async () => {
+  try {
+    const raw = await syncSecureStorage.getItemAsync("eventra_user_profile");
+    return raw ? (safeJsonParse(raw, {}) || {}) : {};
+  } catch (error) {
+    logger.warn("Failed to parse user profile JSON, resetting it:", error);
+    return {};
+  }
+};
+
 const processInterestQueue = async () => {
   if (isUpdating || interestQueue.length === 0) return;
   if (!isStorageAvailable()) {
-    // If localStorage is unavailable, clear the queue to prevent memory leak
     interestQueue = [];
     return;
   }
   isUpdating = true;
 
   try {
-    let existing = {};
-    try {
-      const raw = await syncSecureStorage.getItemAsync("eventra_user_profile");
-      if (raw) {
-        existing = safeJsonParse(raw, {}) || {};
-      }
-    } catch (parseError) {
-      logger.warn("Failed to parse user profile JSON, resetting it:", parseError);
-    }
-
+    // Uses the new helper to reduce nesting
+    const existing = await fetchUserProfile();
     let interests = existing.interests || [];
     let modified = false;
 
@@ -54,24 +56,14 @@ const processInterestQueue = async () => {
       }
     }
 
-    // Keep interests size reasonable
     if (interests.length > 50) {
       interests = interests.slice(-50);
       modified = true;
     }
 
     if (modified) {
-      // Deep Fix: Fetch absolute latest profile right before writing to prevent Read-Modify-Write clobbering
-      let freshExisting = existing;
-      try {
-        const freshRaw = await syncSecureStorage.getItemAsync("eventra_user_profile");
-        if (freshRaw) {
-          freshExisting = safeJsonParse(freshRaw, {}) || {};
-        }
-      } catch (e) {
-        logger.warn("Failed to fetch fresh profile during merge", e);
-      }
-
+      // Prevents the Read-Modify-Write race condition cleanly using the helper
+      const freshExisting = await fetchUserProfile();
       await syncSecureStorage.setItem(
         "eventra_user_profile",
         JSON.stringify({ ...freshExisting, interests })
@@ -79,7 +71,7 @@ const processInterestQueue = async () => {
     }
   } catch (error) {
     logger.error("Failed to update user interests:", error);
-    interestQueue = []; // Clear the queue on persistent error to avoid infinite recursion
+    interestQueue = [];
   } finally {
     isUpdating = false;
     if (interestQueue.length > 0) {
@@ -91,7 +83,7 @@ const processInterestQueue = async () => {
 export const trackUserInterest = (interest) => {
   if (typeof interest !== "string" || !interest.trim() || interest.length > 100) return;
   if (interestQueue.length >= MAX_QUEUE_SIZE) {
-    interestQueue.shift(); // Evict oldest entry
+    interestQueue.shift(); 
   }
   interestQueue.push(interest.trim());
   processInterestQueue();
