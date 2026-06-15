@@ -4,6 +4,8 @@
  * Clears all auth tokens, cached data, and redirects to login.
  */
 
+import { decodeJwtPayload } from "./auth.js";
+
 const SESSION_KEYS = [
   "token",
   "user",
@@ -93,6 +95,11 @@ export const invalidateSession = async () => {
 };
 
 export const isSessionValid = () => {
+  // 🔥 FIX: SSR guard. Previously the function unconditionally accessed
+  // localStorage and would throw ReferenceError in any Node.js-like env.
+  if (typeof window === "undefined" || !window.localStorage) {
+    return true; // No session to validate in a non-browser environment.
+  }
   try {
     const token =
       localStorage.getItem("token") ||
@@ -102,14 +109,17 @@ export const isSessionValid = () => {
 
     if (!token) return false;
 
-    // Basic JWT expiry check
-    const parts = token.split(".");
-    if (parts.length === 3) {
-      const payload = JSON.parse(atob(parts[1]));
-      if (payload.exp && Date.now() / 1000 > payload.exp) {
-        clearAuthStorage();
-        return false;
-      }
+    // 🔥 FIX: use the existing decodeJwtPayload helper from auth.js which
+    // already validates the base64 alphabet before calling atob and returns
+    // null cleanly on any decoding failure. Previously the inline
+    // 'JSON.parse(atob(parts[1]))' swallowed InvalidCharacterError and the
+    // outer try/catch returned false — a silent, hard-to-debug failure
+    // for users with edge-case JWTs.
+    const payload = decodeJwtPayload(token);
+    if (payload && typeof payload.exp === "number" &&
+        Date.now() / 1000 > payload.exp) {
+      clearAuthStorage();
+      return false;
     }
 
     return true;
