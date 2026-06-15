@@ -98,3 +98,4 @@ export const SENTRY_DSN = getEnvVar(
 );
 
 export const isSentryEnabled = Boolean(SENTRY_DSN && currentMode === "production");
+export { requiredEnvVars };

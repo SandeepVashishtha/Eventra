@@ -10,6 +10,7 @@
  */
 
 import { parseEventToUTC, getUserTimezone } from './timezoneUtils.js';
+import { logger } from './logger.js';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -61,12 +62,12 @@ const formatUTCtoCalendarString = (utcMs, mode = 'compact') => {
  */
 const getEventUTCRange = (event, timezone) => {
   if (!event || typeof event !== 'object') {
-    console.error("[getEventUTCRange] Invalid event argument: must be an object.");
+    logger.error("[getEventUTCRange] Invalid event argument: must be an object.");
     return null;
   }
   
   if (!event.date || !event.time) {
-    console.warn("[getEventUTCRange] Missing required event fields: 'date' and 'time' are mandatory.");
+    logger.warn("[getEventUTCRange] Missing required event fields: 'date' and 'time' are mandatory.");
     return null;
   }
 
@@ -77,7 +78,7 @@ const getEventUTCRange = (event, timezone) => {
   // and 12h/24h time strings, with DST-correct conversion via Intl.DateTimeFormat.
   const startMs = parseEventToUTC(event.date, event.time, tz);
   if (startMs === null || isNaN(startMs)) {
-    console.warn(`[getEventUTCRange] Date '${event.date}' or time '${event.time}' could not be parsed.`);
+    logger.warn(`[getEventUTCRange] Date '${event.date}' or time '${event.time}' could not be parsed.`);
     return null;
   }
 
@@ -268,9 +269,39 @@ export const generateIcsFileBlobUrl = (event, timezone) => {
 
   try {
     const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-    return URL.createObjectURL(blob);
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `${(event.title || 'event').toLowerCase().replace(/[^a-z0-9]/g, '-')}.ics`);
+    try {
+      document.body.appendChild(link);
+      link.click();
+    } finally {
+      if (document.body.contains(link)) document.body.removeChild(link);
+      // Revoke after a short delay to allow the browser to start the download
+      setTimeout(() => URL.revokeObjectURL(url), 200);
+    }
+    return true;
   } catch (error) {
-    console.error("[calendarUrlUtils] Failed to generate ICS file blob URL", error);
+    logger.error("[calendarUrlUtils] Failed to generate ICS file:", error);
     return null;
   }
+};
+
+/**
+ * Generate a webcal:// subscription URL for dynamic calendar feeds.
+ * When users subscribe via this link, Apple/Google Calendar will poll
+ * the feed automatically and reflect any event updates.
+ *
+ * @param {string|number} eventId - The event ID
+ * @param {string} [baseUrl] - Override base URL (defaults to window.location.origin)
+ * @returns {string} A webcal:// URL pointing to the event's .ics feed
+ */
+export const getWebcalSubscriptionUrl = (eventId, baseUrl) => {
+  if (!eventId) return '';
+  const origin = baseUrl || (typeof window !== 'undefined' ? window.location.origin : '');
+  // Strip the protocol and replace with webcal:// so Apple/Google Calendar
+  // recognise it as a subscribable feed rather than a one-time download.
+  const httpUrl = `${origin}/api/events/${eventId}/feed.ics`;
+  return httpUrl.replace(/^https?:\/\//, 'webcal://');
 };

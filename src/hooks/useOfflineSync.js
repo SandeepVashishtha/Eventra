@@ -201,108 +201,113 @@ const useOfflineSync = () => {
     const conflictController = conflictControllerRef.current;
 
     const executeSync = async (resetRetries = false) => {
+      const { token: currentToken, user: currentUser, isAuthenticated: currentIsAuthenticated, loading: currentLoading } = authRef.current;
+      let queue = await getQueueIndexedDB();
+      if (queue.length === 0) {
+        return;
+      }
+
+      if (resetRetries) {
+        queue = queue.map((item) => ({ ...item, retryCount: 0 }));
+        await setQueue(queue);
+      }
+
+      // Wait for AuthContext to finish initial session validation before
+      // attempting to sync. During loading, token and user are still null even
+      // for valid cookie-managed sessions, so any check here would be premature.
+      if (currentLoading) {
+        return;
+      }
+
+      // Use the same authentication check as the rest of the application.
+      // isAuthenticated() correctly handles both token-based and cookie-managed
+      // sessions, avoiding the false "session expired" failure that occurred
+      // when useOfflineSync called isTokenValid("cookie-managed") directly.
+      if (!currentIsAuthenticated()) {
+        toast.warning(
+          "Offline actions are pending but your session has expired. Please log in again to sync them.",
+          { autoClose: 6000 }
+        );
+        return;
+      }
+
+      // SECURITY: Validate queue ownership to prevent cross-user action replay.
+      const currentUserId = currentUser?.id;
+      if (!currentUserId) {
+        logger.error('[Security] Cannot sync queue: current user ID is missing');
+        toast.error(
+          "Unable to verify offline actions ownership. Please refresh the page.",
+          { autoClose: 6000 }
+        );
+        return;
+      }
+
+      // Filter queue to only include actions owned by current user
+      const validatedQueue = filterQueueByOwnership(queue, currentUserId);
+
+      // If all actions were filtered out due to ownership mismatch, clear the queue
+      if (validatedQueue.length === 0 && queue.length > 0) {
+        logger.warn(
+          '[Security] Clearing offline queue: all actions belong to different user(s). ' +
+          'This prevents cross-user action replay.'
+        );
+        await clearQueue();
+        toast.warning(
+          "Offline actions from a previous session have been cleared for security.",
+          { autoClose: 5000 }
+        );
+        return;
+      }
+
+      // If queue is now empty after validation, return early
+      if (validatedQueue.length === 0) {
+        return;
+      }
+
+      // SECURITY (Issue #5727): Re-validate session IDs — actions queued under a
+      // previous session must not replay under a new session even if the userId
+      // matches (e.g. same user, different device/tab login cycle).
+      const currentSession = ensureSessionSnapshot(currentUserId);
+      const sessionValidatedQueue = validateQueueSession(validatedQueue, currentSession);
+
+      if (sessionValidatedQueue.length === 0 && validatedQueue.length > 0) {
+        logger.warn(
+          "[Security] Clearing offline queue: all actions have stale session IDs. " +
+            "This prevents stale-session cross-user action replay."
+        );
+        await clearQueue();
+        toast.warning(
+          "Offline actions from a previous login session have been cleared for security.",
+          { autoClose: 5000 }
+        );
+        return;
+      }
+
+      if (sessionValidatedQueue.length === 0) {
+        return;
+      }
+
+      // Cookie-managed sessions authenticate via the HttpOnly session cookie
+      // sent automatically by the browser. Do not forward the "cookie-managed"
+      // sentinel string as a Bearer token value; pass null instead so the
+      // Authorization header is omitted and the session cookie is used.
+      const authToken = currentToken === "cookie-managed" ? null : currentToken;
+
+      isSyncing.current = true;
+
+      // 🔥 FIX: Hoist counters and the failure list ABOVE the try so the
+      // `finally` block can read them. Previously they were declared inside
+      // the try (block-scoped) and the dispatch in finally threw
+      // ReferenceError on every successful sync, leaving the OfflineManager
+      // spinner stuck permanently.
+      let successCount = 0;
+      let droppedCount = 0;
+      let failedQueue = [];
+
       try {
-        const { token: currentToken, user: currentUser, isAuthenticated: currentIsAuthenticated, loading: currentLoading } = authRef.current;
-        let queue = await getQueueIndexedDB();
-        if (queue.length === 0) {
-          return;
-        }
-
-        if (resetRetries) {
-          queue = queue.map(item => ({ ...item, retryCount: 0 }));
-          await setQueue(queue);
-        }
-
-        // Wait for AuthContext to finish initial session validation before
-        // attempting to sync. During loading, token and user are still null even
-        // for valid cookie-managed sessions, so any check here would be premature.
-        if (currentLoading) {
-          return;
-        }
-
-        // Use the same authentication check as the rest of the application.
-        // isAuthenticated() correctly handles both token-based and cookie-managed
-        // sessions, avoiding the false "session expired" failure that occurred
-        // when useOfflineSync called isTokenValid("cookie-managed") directly.
-        if (!currentIsAuthenticated()) {
-          toast.warning(
-            "Offline actions are pending but your session has expired. Please log in again to sync them.",
-            { autoClose: 6000 }
-          );
-          return;
-        }
-
-        // SECURITY: Validate queue ownership to prevent cross-user action replay.
-        const currentUserId = currentUser?.id;
-        if (!currentUserId) {
-          logger.error('[Security] Cannot sync queue: current user ID is missing');
-          toast.error(
-            "Unable to verify offline actions ownership. Please refresh the page.",
-            { autoClose: 6000 }
-          );
-          return;
-        }
-
-        // Filter queue to only include actions owned by current user
-        const validatedQueue = filterQueueByOwnership(queue, currentUserId);
-
-        // If all actions were filtered out due to ownership mismatch, clear the queue
-        if (validatedQueue.length === 0 && queue.length > 0) {
-          logger.warn(
-            '[Security] Clearing offline queue: all actions belong to different user(s). ' +
-            'This prevents cross-user action replay.'
-          );
-          await clearQueue();
-          toast.warning(
-            "Offline actions from a previous session have been cleared for security.",
-            { autoClose: 5000 }
-          );
-          return;
-        }
-
-        // If queue is now empty after validation, return early
-        if (validatedQueue.length === 0) {
-          return;
-        }
-
-        // SECURITY (Issue #5727): Re-validate session IDs — actions queued under a
-        // previous session must not replay under a new session even if the userId
-        // matches (e.g. same user, different device/tab login cycle).
-        const currentSession = ensureSessionSnapshot(currentUserId);
-        const sessionValidatedQueue = validateQueueSession(validatedQueue, currentSession);
-
-        if (sessionValidatedQueue.length === 0 && validatedQueue.length > 0) {
-          logger.warn(
-            "[Security] Clearing offline queue: all actions have stale session IDs. " +
-              "This prevents stale-session cross-user action replay."
-          );
-          await clearQueue();
-          toast.warning(
-            "Offline actions from a previous login session have been cleared for security.",
-            { autoClose: 5000 }
-          );
-          return;
-        }
-
-        if (sessionValidatedQueue.length === 0) {
-          return;
-        }
-
-        // Cookie-managed sessions authenticate via the HttpOnly session cookie
-        // sent automatically by the browser. Do not forward the "cookie-managed"
-        // sentinel string as a Bearer token value; pass null instead so the
-        // Authorization header is omitted and the session cookie is used.
-        const authToken = currentToken === "cookie-managed" ? null : currentToken;
-
-        isSyncing.current = true;
-
         toast.info(`Syncing ${sessionValidatedQueue.length} cached offline action(s)...`, {
           autoClose: 2000,
         });
-
-        const failedQueue = [];
-        let successCount = 0;
-        let droppedCount = 0;
 
         for (const item of sessionValidatedQueue) {
           // Halt the zombie loop immediately if the session changed or component unmounted.
@@ -404,8 +409,17 @@ const useOfflineSync = () => {
       const LOCK_KEY = "eventra_offline_sync_local_lock";
       const LOCK_TIMEOUT_MS = 30_000;
 
+      // 🔥 FIX: SSR guard. Previously the localStorage access below
+      // threw ReferenceError in any Node.js-like environment. On SSR
+      // there is no cross-tab concern, so we just return without
+      // acquiring a lock — the Web Locks API path (if available) still
+      // runs via handleOnline. Falls through to a no-op otherwise.
+      if (typeof window === "undefined" || !window.localStorage) {
+        return;
+      }
+
       const now = Date.now();
-      const lockVal = localStorage.getItem(LOCK_KEY);
+      const lockVal = window.localStorage.getItem(LOCK_KEY);
 
       if (lockVal) {
         try {
@@ -419,9 +433,9 @@ const useOfflineSync = () => {
 
       const currentTabId = Math.random().toString(36).slice(2, 9);
       const lockData = JSON.stringify({ timestamp: now, tabId: currentTabId });
-      
+
       try {
-        localStorage.setItem(LOCK_KEY, lockData);
+        window.localStorage.setItem(LOCK_KEY, lockData);
       } catch {
         // If localStorage fails (private mode etc.), run sync directly to avoid blocking
         await executeSync(resetRetries);
@@ -431,7 +445,7 @@ const useOfflineSync = () => {
       const heartbeatInterval = setInterval(() => {
         if (syncLockAborted.current) { clearInterval(heartbeatInterval); return; }
         try {
-          localStorage.setItem(LOCK_KEY, JSON.stringify({ timestamp: Date.now(), tabId: currentTabId }));
+          window.localStorage.setItem(LOCK_KEY, JSON.stringify({ timestamp: Date.now(), tabId: currentTabId }));
         } catch {}
       }, 10_000);
       heartbeatIntervalRef.current = heartbeatInterval;
@@ -441,11 +455,11 @@ const useOfflineSync = () => {
       } finally {
         clearInterval(heartbeatInterval);
         try {
-          const checkVal = localStorage.getItem(LOCK_KEY);
+          const checkVal = window.localStorage.getItem(LOCK_KEY);
           if (checkVal) {
             const parsed = safeJsonParse(checkVal, {});
             if (parsed && parsed.tabId === currentTabId) {
-              localStorage.removeItem(LOCK_KEY);
+              window.localStorage.removeItem(LOCK_KEY);
             }
           }
         } catch {}
@@ -541,8 +555,7 @@ const useOfflineSync = () => {
         clearTimeout(timeoutId);
       }
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, user?.id]);
+  }, [token, user?.id, isAuthenticated, loading]);
 };
 
 export default useOfflineSync;

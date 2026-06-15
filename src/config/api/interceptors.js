@@ -47,7 +47,7 @@ export const createRequestInterceptor = (isDev) => (config) => {
 
 export const createResponseInterceptor = (API) => {
   const fulfill = (response) => {
-    const headerValue = response.headers.get("x-server-time") || response.headers.get("date");
+    const headerValue = response.headers?.["x-server-time"] || response.headers?.["date"] || (typeof response.headers?.get === 'function' ? (response.headers.get("x-server-time") || response.headers.get("date")) : null);
     if (headerValue) syncServerTimeFromHeader(headerValue);
     return response;
   };
@@ -179,7 +179,7 @@ export function setupRequestInterceptor(api, { isDev, buildApiUrl, getAuthToken,
 export function setupResponseInterceptor(api, { isDev, timeoutMs, getOnUnauthorized }) {
   api.interceptors.response.use(
     (response) => {
-      const headerValue = response.headers.get("x-server-time") || response.headers.get("date");
+      const headerValue = response.headers?.["x-server-time"] || response.headers?.["date"] || (typeof response.headers?.get === 'function' ? (response.headers.get("x-server-time") || response.headers.get("date")) : null);
       if (headerValue) {
         syncServerTimeFromHeader(headerValue);
       }
@@ -190,8 +190,24 @@ export function setupResponseInterceptor(api, { isDev, timeoutMs, getOnUnauthori
       const status = error?.response?.status;
 
       const onUnauthorized = getOnUnauthorized();
-      if (status === 401 && onUnauthorized) {
-        onUnauthorized();
+      if (status === 401) {
+        if (!config._retry && !config.url?.includes("/auth/refresh")) {
+          config._retry = true;
+          try {
+            if (isDev) logger.info(`[API] Attempting OAuth token refresh...`);
+            await api.post("/auth/refresh");
+            return api(config);
+          } catch (refreshError) {
+            logger.error("OAuth token refresh failed. Locking user out.", refreshError);
+            if (onUnauthorized) {
+              onUnauthorized();
+            }
+            throw normalizeApiErrorWithTimeout(refreshError, timeoutMs);
+          }
+        }
+        if (onUnauthorized) {
+          onUnauthorized();
+        }
       }
 
       const retryCount = config._retryCount || 0;

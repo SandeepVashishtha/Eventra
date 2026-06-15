@@ -16,6 +16,7 @@ Eventra enforces cookie-based authentication using JSON Web Tokens (JWT) stored 
   - Build-time validation fails with a critical security error
   - Runtime token signing throws an error
   - Edge middleware returns HTTP 500 for protected routes
+  - SSE mock server fails to start with a fatal error
   - RBAC is NEVER bypassed
 
 This prevents unauthorized access when configuration is incomplete.
@@ -62,14 +63,55 @@ sequenceDiagram
 
 ## 3. Rate Limiting Strategy
 
-Eventra protects resource-intensive API paths (like authentication and LLM recommendation probes) using a dual-layer, sliding-window rate limiter keyed by client IP.
+Eventra protects resource-intensive API paths (like authentication and LLM recommendation probes) using a distributed rate limiter keyed by client IP.
 
-- **Sliding-Window Limiter**: Eliminates the boundary-burst vulnerability inherent to fixed-window systems by tracking exact request timestamps per IP and checking counts dynamically.
-- **Periodic sweeps**: The in-memory cache prunes stale IP buckets to ensure memory consumption remains bounded under long-running processes.
-- **Configurations**:
-  - **Login Route**: Limited to 5 requests per minute per IP.
-  - **Signup Route**: Limited to 3 requests per minute per IP.
-  - **General APIs**: Throttled using Edge Middleware / Vercel KV REST API at the routing boundary.
+### 3.1 Distributed Rate Limiting
+
+**CRITICAL**: Eventra enforces distributed rate limiting in production to prevent brute-force attacks and credential stuffing across multiple server instances.
+
+- **Fixed-Window Limiter**: Uses atomic Redis/KV operations to track request counts per IP within time windows. Prevents race conditions through atomic INCR operations.
+- **Distributed Storage**: Rate limit counters are shared across all instances using:
+  - **Vercel KV** (REST API) - for Vercel deployments
+  - **Upstash Redis** (ioredis) - for general Redis deployments
+  - **Standard Redis** (ioredis) - for self-hosted Redis
+  - **In-memory** (development/test only) - NOT suitable for production
+- **Fail-Closed Security**: In production, if distributed storage is required but unavailable, requests are rejected with a 500 error rather than silently bypassing rate limiting.
+- **Atomic Operations**: Uses Redis Lua scripts or KV REST API atomic operations to prevent race conditions during concurrent requests.
+
+### 3.2 Configuration
+
+Environment variables control rate limiting behavior:
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `RATE_LIMIT_REDIS_URL` | Production (one of) | Redis connection URL for distributed rate limiting |
+| `KV_REST_API_URL` | Production (one of) | Upstash Redis REST API URL (Vercel KV migrated to Upstash) |
+| `KV_REST_API_TOKEN` | Production (with KV) | Upstash Redis REST API token |
+| `RATE_LIMIT_MODE` | Optional | Override mode: "distributed" (default in prod) or "memory" (dev/test only) |
+
+**Production Setup**:
+- Set at least one of `RATE_LIMIT_REDIS_URL` or `KV_REST_API_URL`/`KV_REST_API_TOKEN`
+- Build-time validation FAILS if missing in production
+- Runtime rejects requests if misconfigured
+- `RATE_LIMIT_MODE=memory` is NOT allowed in production
+
+**Development Setup**:
+- Falls back to in-memory storage automatically
+- Can explicitly set `RATE_LIMIT_MODE=memory` for testing
+- No distributed storage required
+
+### 3.3 Rate Limit Configurations
+
+- **Login Route**: Limited to 10 requests per minute per IP.
+- **Signup Route**: Limited to 5 requests per minute per IP.
+- **General APIs**: Throttled using Edge Middleware / Vercel KV REST API at the routing boundary (60 requests per minute).
+
+### 3.4 Security Properties
+
+- **Shared State**: Counters persist across serverless cold starts and container restarts
+- **Multi-Instance Safety**: All instances enforce the same limits using shared storage
+- **Race Condition Prevention**: Atomic operations prevent concurrent request bypass
+- **Fail-Secure**: Production rejects requests when rate limiting is unavailable rather than disabling protection
 
 ---
 
@@ -168,13 +210,152 @@ When a request is blocked due to missing CSRF token (strict mode), a `CSRFError`
 
 ---
 
-## 7. Security Policy and Reporting
+## 7. Cross-Origin Resource Sharing (CORS) Policy
+
+Eventra enforces a strict allowlist-based CORS policy to prevent unauthorized cross-origin access to API endpoints.
+
+### 7.1 Allowlist-Based Origin Validation
+
+**CRITICAL**: Eventra does not use wildcard (`*`) CORS origins. All origins must be explicitly allowed through the `ALLOWED_ORIGINS` environment variable.
+
+- Origins are validated against a comma-separated allowlist
+- Only trusted origins receive `Access-Control-Allow-Origin` headers
+- Untrusted origins receive no CORS headers (fail closed)
+- Exact string matching is used (no regex patterns)
+- `Vary: Origin` is always returned to prevent caching issues
+
+### 7.2 Configuration
+
+Set allowed origins via the `ALLOWED_ORIGINS` environment variable:
+
+```env
+ALLOWED_ORIGINS=https://eventra.com,https://www.eventra.com,https://api.eventra.com
+```
+
+**Security Requirements:**
+- Never use wildcard (`*`) in production
+- Specify exact origins including protocol (http/https) and port if non-standard
+- Origins are case-sensitive and must match exactly
+- Whitespace around origins is automatically trimmed
+
+### 7.3 Development Support
+
+In non-production environments (`NODE_ENV !== "production"`), common localhost origins are automatically allowed for development convenience:
+
+- `http://localhost:3000`
+- `http://localhost:5173`
+- `http://127.0.0.1:3000`
+- `http://127.0.0.1:5173`
+
+**Security Note**: These development origins are **blocked** in production unless explicitly added to `ALLOWED_ORIGINS`.
+
+### 7.4 Fail-Closed Behavior
+
+When an origin is not in the allowlist:
+
+- No `Access-Control-Allow-Origin` header is returned
+- The browser blocks the cross-origin request
+- No error message is leaked to the client
+- This prevents information disclosure about allowed origins
+
+### 7.5 Implementation Details
+
+The CORS policy is implemented in `api/auth/cors.js`:
+
+- `getAllowedOrigins()`: Parses and validates the environment variable
+- `isAllowedOrigin(origin)`: Checks if an origin is trusted
+- `buildCorsHeaders(req)`: Generates CORS headers for requests
+
+All functions include comprehensive test coverage in `src/__tests__/corsProtection.test.js`.
+
+---
+
+## 8. Security Policy and Reporting
 
 For vulnerabilities, do not open public GitHub issues. Please refer to our responsible disclosure policy outlined in [SECURITY.md](../SECURITY.md) or email the maintenance team directly.
 
 ---
 
-## 8. Developer Security Checklist
+## 8. Persistent Authentication Storage Requirements
+
+**CRITICAL**: Eventra enforces fail-closed security for authentication storage. In-memory user storage is permitted ONLY in development environments.
+
+### 8.1 Storage Architecture
+
+Eventra uses a **storage abstraction layer** (`api/auth/user-storage.js`) that provides a unified interface for user storage operations. This layer supports multiple backends:
+
+- **Development/Testing**: In-memory Map backend (no database required)
+- **Production**: Redis backend (using `DATABASE_URL` or `KV_REST_API_URL`)
+
+The storage abstraction provides the following operations:
+- `createUser()` - Create a new user
+- `getUserByEmail()` - Retrieve user by email
+- `getUserByUsername()` - Retrieve user by username
+- `getUserById()` - Retrieve user by ID
+- `updateUser()` - Update user fields
+- `deleteUser()` - Delete a user
+- `isStorageHealthy()` - Check storage health status
+
+### 8.2 Production Storage Requirements
+
+- **DATABASE_URL or KV_REST_API_URL is mandatory in production**: The application will fail to start if neither is configured when `NODE_ENV=production`.
+- **Redis backend**: Production uses Redis for persistent storage via the `ioredis` client.
+- **No fallback to in-memory storage**: Production never falls back to Map-based storage. This prevents silent account loss after server restarts or serverless cold starts.
+- **Fail-fast initialization**: The storage backend validates configuration during initialization, rejecting startup before accepting any requests.
+- **Runtime protection**: Authentication endpoints return HTTP 500 with a generic "Authentication service unavailable" error if persistent storage is not healthy.
+
+### 8.3 Development Storage
+
+- In-memory Map storage is used when `NODE_ENV` is not `production` (development, test, etc.).
+- This preserves existing development and test workflows without requiring database setup.
+- The storage abstraction layer automatically selects the appropriate backend based on environment.
+
+### 8.4 Security Rationale
+
+- **Prevents account loss**: Without persistent storage, all user accounts vanish on server restart, causing 401 authentication failures for previously valid credentials.
+- **Serverless compatibility**: Serverless platforms (Vercel, AWS Lambda) have cold starts that reset in-memory state. Persistent storage is required for production deployments.
+- **Fail-closed design**: The application refuses to operate in an unsafe configuration rather than silently accepting data that will be lost.
+- **Storage abstraction**: By using a unified storage interface, authentication logic is decoupled from storage implementation, making it easier to swap backends or add new storage providers.
+
+### 8.5 Configuration
+
+Set `DATABASE_URL` or `KV_REST_API_URL` in your production environment:
+
+```bash
+# Required in production (Redis connection string)
+DATABASE_URL=redis://user:password@host:6379
+
+# OR use Vercel KV
+KV_REST_API_URL=https://your-kv-store.redis.com
+KV_REST_API_TOKEN=your-kv-token
+```
+
+The validation script (`scripts/validate-env.js`) enforces this requirement during build time in production.
+
+### 8.6 Storage Backend Implementation Details
+
+#### In-Memory Backend (Development)
+- Uses JavaScript `Map` objects for storage
+- Supports all CRUD operations
+- Data is lost on process restart (acceptable for development)
+- No external dependencies required
+
+#### Redis Backend (Production)
+- Uses `ioredis` client for Redis connections
+- Implements connection pooling and retry logic
+- Stores user data as JSON strings
+- Maintains indexes for email, username, and ID lookups
+- Supports automatic reconnection with exponential backoff
+- Data persists across restarts and deployments
+
+#### Storage Key Schema (Redis)
+- User data: `auth:user:{id}` → JSON user object
+- Email index: `auth:user:email:{email}` → user ID
+- Username index: `auth:user:username:{username}` → user ID
+
+---
+
+## 9. Developer Security Checklist
 
 Before submitting a Pull Request, ensure:
 
@@ -183,3 +364,4 @@ Before submitting a Pull Request, ensure:
 - [ ] Sensitive files or credentials are not checked into git.
 - [ ] All local imports under `src/` specify correct `.js` extensions.
 - [ ] State-changing endpoints are validated for both authentication and CSRF.
+- [ ] Authentication storage validation is tested for both production and development modes.

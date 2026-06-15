@@ -70,22 +70,17 @@ const ShareModal = ({ isOpen, onClose, event }) => {
     <AnimatePresence>
       {isOpen && shareData ? (
         <motion.div
-  ref={containerRef}
-  className="relative w-full max-w-md rounded-3xl border border-slate-100/10 bg-white p-6 shadow-2xl dark:border-slate-800/50 dark:bg-gray-900"
-  initial={{ opacity: 0, scale: 0.96, y: 12 }}
-  animate={{ opacity: 1, scale: 1, y: 0 }}
-  exit={{ opacity: 0, scale: 0.96, y: 12 }}
-  transition={{ duration: 0.2 }}
-  onClick={(e) => e.stopPropagation()}
->
-          <motion.div
-            className="relative w-full max-w-md rounded-3xl border border-slate-100/10 bg-white p-6 shadow-2xl dark:border-slate-800/50 dark:bg-gray-900"
-            initial={{ opacity: 0, scale: 0.96, y: 12 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: 12 }}
-            transition={{ duration: 0.2 }}
-            onClick={(e) => e.stopPropagation()}
-          >
+          ref={containerRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="share-modal-title"
+          className="relative w-full max-w-md rounded-3xl border border-slate-100/10 bg-white p-6 shadow-2xl dark:border-slate-800/50 dark:bg-gray-900"
+          initial={{ opacity: 0, scale: 0.96, y: 12 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.96, y: 12 }}
+          transition={{ duration: 0.2 }}
+          onClick={(e) => e.stopPropagation()}
+        >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800/40">
               <h2 id="share-modal-title" className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
                 Share Event
@@ -142,7 +137,6 @@ const ShareModal = ({ isOpen, onClose, event }) => {
                 <Copy size={16} /> Copy Link
               </button>
             </div>
-          </motion.div>
         </motion.div>
       ) : null}
     </AnimatePresence>
