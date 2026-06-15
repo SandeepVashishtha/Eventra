@@ -200,11 +200,16 @@ const useOfflineSync = () => {
     }
     const conflictController = conflictControllerRef.current;
 
-    const executeSync = async () => {
+    const executeSync = async (resetRetries = false) => {
       const { token: currentToken, user: currentUser, isAuthenticated: currentIsAuthenticated, loading: currentLoading } = authRef.current;
-      const queue = await getQueueIndexedDB();
+      let queue = await getQueueIndexedDB();
       if (queue.length === 0) {
         return;
+      }
+
+      if (resetRetries) {
+        queue = queue.map((item) => ({ ...item, retryCount: 0 }));
+        await setQueue(queue);
       }
 
       // Wait for AuthContext to finish initial session validation before
@@ -220,7 +225,7 @@ const useOfflineSync = () => {
       // when useOfflineSync called isTokenValid("cookie-managed") directly.
       if (!currentIsAuthenticated()) {
         toast.warning(
-          "Security notice: Offline actions are pending, but your session has expired. Please log in again to synchronize them.",
+          "Offline actions are pending but your session has expired. Please log in again to sync them.",
           { autoClose: 6000 }
         );
         return;
@@ -362,9 +367,15 @@ const useOfflineSync = () => {
         }
 
         if (failedQueue.length > 0) {
-          await setQueue(failedQueue);
+          // Self-healing: if at least one request succeeded, it implies our network is back up.
+          // In that case, we reset the retryCount of all remaining items to 0 so they can get retried.
+          const finalFailedQueue = successCount > 0
+            ? failedQueue.map(item => ({ ...item, retryCount: 0 }))
+            : failedQueue;
+
+          await setQueue(finalFailedQueue);
           toast.warning(
-            `Synced ${successCount} registration(s). ${failedQueue.length} remaining in local draft queue.`,
+            `Synced ${successCount} registration(s). ${finalFailedQueue.length} remaining in local draft queue.`,
           );
         } else {
           await clearQueue();
@@ -380,12 +391,6 @@ const useOfflineSync = () => {
         }
       } finally {
         isSyncing.current = false;
-
-        // Emit the unified completion event so UI components (e.g. OfflineManager)
-        // that listen for eventra-offline-queue-processed can reset their sync state.
-        // offlineQueue.processQueue() emits this event via notifyQueueProcessed(),
-        // but useOfflineSync runs its own replay loop independently and previously
-        // never emitted it, leaving the OfflineManager spinner stuck permanently.
         if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
           window.dispatchEvent(
             new CustomEvent("eventra-offline-queue-processed", {
@@ -400,7 +405,7 @@ const useOfflineSync = () => {
       }
     };
 
-    const executeSyncWithLocalLock = async () => {
+    const executeSyncWithLocalLock = async (resetRetries = false) => {
       const LOCK_KEY = "eventra_offline_sync_local_lock";
       const LOCK_TIMEOUT_MS = 30_000;
 
@@ -433,7 +438,7 @@ const useOfflineSync = () => {
         window.localStorage.setItem(LOCK_KEY, lockData);
       } catch {
         // If localStorage fails (private mode etc.), run sync directly to avoid blocking
-        await executeSync();
+        await executeSync(resetRetries);
         return;
       }
 
@@ -446,7 +451,7 @@ const useOfflineSync = () => {
       heartbeatIntervalRef.current = heartbeatInterval;
 
       try {
-        await executeSync();
+        await executeSync(resetRetries);
       } finally {
         clearInterval(heartbeatInterval);
         try {
@@ -461,7 +466,7 @@ const useOfflineSync = () => {
       }
     };
 
-    const handleOnline = async () => {
+    const handleOnline = async (resetRetries = false) => {
       // 🔥 FIX: Check both sync state and pending lock state to prevent multiple queuing
       if (isSyncing.current || isLockPending.current) {
         return;
@@ -477,14 +482,14 @@ const useOfflineSync = () => {
                 logger.log("[useOfflineSync] Sync lock is held by another tab via Web Locks. Skipping.");
                 return;
               }
-              await executeSync();
+              await executeSync(resetRetries);
             });
           } catch (err) {
             logger.warn("[useOfflineSync] Web Locks request failed, falling back to LocalStorage lock:", err);
-            await executeSyncWithLocalLock();
+            await executeSyncWithLocalLock(resetRetries);
           }
         } else {
-          await executeSyncWithLocalLock();
+          await executeSyncWithLocalLock(resetRetries);
         }
       } finally {
         isLockPending.current = false;
@@ -492,17 +497,21 @@ const useOfflineSync = () => {
     };
 
     // 🔥 FIX: Safely define the missing functions introduced by the master branch to prevent ReferenceErrors
-    const handleSyncRequested = () => void handleOnline();
+    const handleOnlineTrigger = () => void handleOnline(true);
+    const handleBackgroundSyncTrigger = () => void handleOnline(true);
+    const handleSessionRestoredTrigger = () => void handleOnline(true);
+    const handleQueueUpdatedTrigger = () => void handleOnline(false);
+
     const handleServiceWorkerMessage = (event) => {
       if (event?.data?.type === 'SYNC_REQUESTED') {
-        void handleOnline();
+        void handleOnline(false);
       }
     };
 
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("eventra-background-sync", handleSyncRequested);
-    window.addEventListener("eventra-offline-queue-updated", handleSyncRequested);
-    window.addEventListener("eventra-session-restored", handleSyncRequested);
+    window.addEventListener("online", handleOnlineTrigger);
+    window.addEventListener("eventra-background-sync", handleBackgroundSyncTrigger);
+    window.addEventListener("eventra-offline-queue-updated", handleQueueUpdatedTrigger);
+    window.addEventListener("eventra-session-restored", handleSessionRestoredTrigger);
     navigator.serviceWorker?.addEventListener?.("message", handleServiceWorkerMessage);
 
     let idleId = null;
@@ -511,20 +520,20 @@ const useOfflineSync = () => {
     if (navigator.onLine) {
       if (typeof window.requestIdleCallback === "function") {
         idleId = window.requestIdleCallback(() => {
-          void handleOnline();
+          void handleOnline(true);
         });
       } else {
         timeoutId = setTimeout(() => {
-          void handleOnline();
+          void handleOnline(true);
         }, 200);
       }
     }
 
     return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("eventra-background-sync", handleSyncRequested);
-      window.removeEventListener("eventra-offline-queue-updated", handleSyncRequested);
-      window.removeEventListener("eventra-session-restored", handleSyncRequested);
+      window.removeEventListener("online", handleOnlineTrigger);
+      window.removeEventListener("eventra-background-sync", handleBackgroundSyncTrigger);
+      window.removeEventListener("eventra-offline-queue-updated", handleQueueUpdatedTrigger);
+      window.removeEventListener("eventra-session-restored", handleSessionRestoredTrigger);
       navigator.serviceWorker?.removeEventListener?.("message", handleServiceWorkerMessage);
       
       // Abort any in-progress conflict resolution waiter so its event

@@ -1,21 +1,5 @@
-<<<<<<< HEAD
 import { Grid, List, Calendar, Search, X, RotateCcw, Sparkles, Filter, Save, Pencil, Trash2, Upload, RefreshCcw, Download } from "lucide-react";
 import { useState, useEffect, useRef, memo, useCallback } from "react";
-=======
-Your code got broken because this accidental line was inserted near the top:
-
-```jsx
-className={`w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2.5
-```
-
-Delete that completely.
-
-Now replace your whole component with this corrected responsive version. 
-
-```jsx
-import { Grid, List, Search, X, RotateCcw, Sparkles, Filter } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
->>>>>>> 9f1b967b (feat(events): improve responsive sticky filters toolbar)
 import StyledDropdown from "../../components/StyledDropdown";
 import AdvancedFilterPanel from "../../components/common/AdvancedFilterPanel";
 import useEventFilterPresets from "../../hooks/useEventFilterPresets";
@@ -92,19 +76,8 @@ const EventFiltersToolbar = ({
   const handleInput = (e) => {
     const value = e.target.value;
     setLocalQuery(value);
-<<<<<<< HEAD
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => onSearchChange?.(value), 300);
-=======
-
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-    }
-
-    debounceRef.current = setTimeout(() => {
-      onSearchChange?.(value);
-    }, 300);
->>>>>>> 9f1b967b (feat(events): improve responsive sticky filters toolbar)
   };
 
   const handleClear = () => {
@@ -424,4 +397,3 @@ const EventFiltersToolbar = ({
 };
 
 export default EventFiltersToolbar;
-```

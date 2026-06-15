@@ -232,7 +232,7 @@ const runAll = async () => {
   console.log("  pass  Latest queue synced successfully!");
 
   // Test 3: Retry behavior
-  console.log("Running Test 3: Retry count increment and retention");
+  console.log("Running Test 3: Retry behavior");
   resetReact();
   currentAuth = {
     token: "mock-token",
@@ -258,6 +258,69 @@ const runAll = async () => {
   console.log("Running Test 4: Interval cleanup on unmount");
   resetReact(); // Cleans up previous effects
   console.log("  pass  Interval cleanup is correct!");
+
+  // Test 5: eventra-offline-queue-processed event dispatching
+  console.log("Running Test 5: processed event is dispatched");
+  resetReact();
+  currentAuth = {
+    token: "mock-token",
+    user: { id: "u1" },
+    isAuthenticated: () => true,
+    loading: false,
+  };
+  currentQueue = [
+    { id: "item-1", userId: "u1", retryCount: 0, payload: { val: 1 } },
+  ];
+  globalThis.mockFetchWithTimeout = async () => {
+    return { response: { ok: true, status: 200 }, data: {} };
+  };
+  
+  let processedEventFired = false;
+  const listener = () => {
+    processedEventFired = true;
+  };
+  window.addEventListener("eventra-offline-queue-processed", listener);
+  
+  renderHook();
+  window.dispatchEvent(new window.Event("online"));
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  
+  assert.ok(processedEventFired, "eventra-offline-queue-processed event should have been dispatched");
+  window.removeEventListener("eventra-offline-queue-processed", listener);
+  console.log("  pass  Processed event verified!");
+
+  // Test 6: Self-healing behavior when successCount > 0
+  console.log("Running Test 6: Self-healing resets retry counts on successful sync of other items");
+  resetReact();
+  currentAuth = {
+    token: "mock-token",
+    user: { id: "u1" },
+    isAuthenticated: () => true,
+    loading: false,
+  };
+  // Queue contains one item that has reached max retries (will be skipped)
+  // and one new item that succeeds
+  currentQueue = [
+    { id: "zombie-item", userId: "u1", retryCount: 3, payload: { val: 1 } },
+    { id: "fresh-item", userId: "u1", retryCount: 0, payload: { val: 2 } },
+  ];
+  
+  globalThis.mockFetchWithTimeout = async (url, options) => {
+    // Fresh item succeeds, zombie item is skipped so it shouldn't hit fetch
+    return { response: { ok: true, status: 200 }, data: {} };
+  };
+  
+  renderHook();
+  window.dispatchEvent(new window.Event("eventra-offline-queue-updated")); // triggers executeSync(false)
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  
+  // After execution, fresh-item succeeded (so it is removed)
+  // zombie-item failed/was skipped, but since fresh-item succeeded,
+  // zombie-item's retryCount should be reset to 0 (self-healing)
+  assert.equal(currentQueue.length, 1, "Only zombie-item should remain in queue");
+  assert.equal(currentQueue[0].id, "zombie-item", "Remaining item is zombie-item");
+  assert.equal(currentQueue[0].retryCount, 0, "Zombie-item's retryCount should be reset to 0");
+  console.log("  pass  Self-healing behavior is correct!");
 
   console.log("All useOfflineSync tests passed successfully!");
 };
