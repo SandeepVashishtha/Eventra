@@ -5,6 +5,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { safeJsonParse } from "../utils/safeJsonParse";
 import { useAuth } from "../context/AuthContext";
+import { getOrMigrateKey } from "../utils/storageKeyManager";
 
 // Simple synchronous hash to avoid exposing raw userId (email) in localStorage keys.
 const hashUserId = (userId) => {
@@ -75,12 +76,7 @@ const toBookmarkEntry = (event) => ({
  * @param {string} [userId='guest'] - The user ID used as localStorage key
  */
 const useBookmarks = (userId = "guest") => {
-  let auth = null;
-  try {
-    auth = useAuth();
-  } catch {
-    // context not present, e.g. in standalone hook unit tests
-  }
+  const auth = useAuth();
 
   const resolvedUserId = useMemo(() => {
     if (auth) {
@@ -93,7 +89,8 @@ const useBookmarks = (userId = "guest") => {
   }, [auth, userId]);
 
   const isAuthLoading = auth ? auth.loading : false;
-  const storageKey = `bookmarks_${hashUserId(resolvedUserId)}`;
+  const legacyKey = `bookmarks_${hashUserId(resolvedUserId)}`;
+  const storageKey = getOrMigrateKey("bookmarks", resolvedUserId, legacyKey);
 
   // Seed state from cache (avoids a second localStorage read when the cache
   // is already warm from another mounted instance or a previous render).
@@ -126,11 +123,59 @@ const useBookmarks = (userId = "guest") => {
       const guestStored = localStorage.getItem(guestKey);
       const hasGuestData = guestStored && (safeJsonParse(guestStored, [])).length > 0;
 
-      if (loadedKey === storageKey && (resolvedUserId === "guest" || !hasGuestData)) {
-        return;
+      let loaded = getOrPopulateCache(storageKey);
+
+      // Migrate legacy key `eventra_bookmarked_events` if it exists
+      const legacyKey = "eventra_bookmarked_events";
+      const legacyStored = localStorage.getItem(legacyKey);
+      if (legacyStored) {
+        const legacyBookmarks = safeJsonParse(legacyStored, []);
+        if (legacyBookmarks.length > 0) {
+          const merged = [...loaded];
+          legacyBookmarks.forEach((lb) => {
+            if (!lb || !lb.id) return;
+            const existsIndex = merged.findIndex((ub) => String(ub.id) === String(lb.id));
+            const savedTime = lb.savedAt || (lb.bookmarkedAt ? new Date(lb.bookmarkedAt).getTime() : Date.now());
+            const entry = {
+              id: lb.id,
+              title: lb.title ?? "",
+              date: lb.date ?? "",
+              location: lb.location ?? "",
+              type: lb.type ?? lb.category ?? "",
+              image: lb.image ?? lb.imageUrl ?? "",
+              status: lb.status ?? "",
+              savedAt: savedTime,
+            };
+            if (existsIndex === -1) {
+              merged.push(entry);
+            } else {
+              const uSaved = merged[existsIndex].savedAt ?? 0;
+              if (savedTime > uSaved) {
+                merged[existsIndex] = entry;
+              }
+            }
+          });
+
+          // Enforce MAX_BOOKMARKS
+          let finalMerged = merged;
+          if (finalMerged.length > MAX_BOOKMARKS) {
+            finalMerged = [...finalMerged].sort((a, b) => (a.savedAt ?? 0) - (b.savedAt ?? 0));
+            while (finalMerged.length > MAX_BOOKMARKS) {
+              finalMerged.shift();
+            }
+          }
+          loaded = finalMerged;
+          cache.set(storageKey, loaded);
+          writeStorage(storageKey, loaded);
+        }
+        localStorage.removeItem(legacyKey);
       }
 
-      let loaded = getOrPopulateCache(storageKey);
+      if (loadedKey === storageKey && (resolvedUserId === "guest" || !hasGuestData)) {
+        prevBookmarksRef.current = loaded;
+        setBookmarks(loaded);
+        return;
+      }
 
       // If we just resolved a logged-in user, check if we need to migrate guest bookmarks
       if (resolvedUserId !== "guest" && hasGuestData) {
@@ -197,9 +242,36 @@ const useBookmarks = (userId = "guest") => {
 
     cache.set(storageKeyRef.current, bookmarks);
     writeStorage(storageKeyRef.current, bookmarks);
+    window.dispatchEvent(
+      new CustomEvent("eventraBookmarksChanged", {
+        detail: { key: storageKeyRef.current, value: bookmarks },
+      })
+    );
   }, [bookmarks, isAuthLoading, loadedKey, storageKey]);
 
+  // Same-tab sync: update state when another component in the same tab writes to the same key.
+  useEffect(() => {
+    const handleLocalEvent = (e) => {
+      const detail = e?.detail;
+      if (!detail || detail.key !== storageKeyRef.current) return;
+      if (isAuthLoading || loadedKey !== storageKeyRef.current) return;
+
+      const fresh = detail.value || [];
+      if (JSON.stringify(fresh) === JSON.stringify(bookmarks)) return;
+
+      cache.set(storageKeyRef.current, fresh);
+      prevBookmarksRef.current = fresh;
+      setBookmarks(fresh);
+    };
+
+    window.addEventListener("eventraBookmarksChanged", handleLocalEvent);
+    return () => window.removeEventListener("eventraBookmarksChanged", handleLocalEvent);
+  }, [bookmarks, isAuthLoading, loadedKey]);
+
   // Cross-tab sync: update state when another tab writes to the same key.
+  const bookmarksRef = useRef(bookmarks);
+  bookmarksRef.current = bookmarks;
+
   useEffect(() => {
     const handleStorageEvent = (e) => {
       if (e.key !== storageKeyRef.current) return;
@@ -210,7 +282,7 @@ const useBookmarks = (userId = "guest") => {
           const p = JSON.parse(e.newValue); 
           if (!Array.isArray(p)) return [];
           // Deep merge: combine existing local state with incoming storage state, keeping newest by savedAt
-          const merged = new Map([...bookmarks.map(b => [b.id, b]), ...p.map(b => [b.id, b])]);
+          const merged = new Map([...bookmarksRef.current.map(b => [b.id, b]), ...p.map(b => [b.id, b])]);
           return Array.from(merged.values()).sort((a, b) => (a.savedAt || 0) - (b.savedAt || 0));
         } catch { return []; }
       })() : [];
@@ -271,6 +343,11 @@ const useBookmarks = (userId = "guest") => {
     } catch {
       // ignore storage access blocks
     }
+    window.dispatchEvent(
+      new CustomEvent("eventraBookmarksChanged", {
+        detail: { key: storageKeyRef.current, value: [] },
+      })
+    );
   }, []);
 
   return {

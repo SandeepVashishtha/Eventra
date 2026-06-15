@@ -16,17 +16,28 @@ const SEARCH_LINKS = [
 
 const SearchEmptyState = ({
   query,
-  itemLabel,
-  browseLabel,
-  browsePath,
+  itemLabel = "items",
+  browseLabel = "Browse",
+  browsePath = "/",
   onClear,
-  suggestions = DEFAULT_SUGGESTIONS,
-  popularTags = [],
+  variant = "search",
+  title,
+  description,
+  actionLabel,
+  actionPath,
 }) => {
   const hasQuery = Boolean(query?.trim());
   const title = hasQuery ? `No results found for "${query}"` : `No ${itemLabel} found`;
   const description = "Try one of these suggestions or explore other sections on Eventra.";
 
+  waitlist: {
+    icon: "⏳",
+    defaultTitle: "No waitlisted events",
+    defaultDescription: "You are not currently on any waitlists.",
+  },
+};
+
+const currentConfig = emptyStateConfig[variant] || emptyStateConfig.search;
   return (
     <EmptyState
       title={title}
@@ -88,7 +99,7 @@ const SearchEmptyState = ({
             hover:bg-blue-700
             shadow-sm
           "
-          aria-label="button"
+
         >
           <X size={16} aria-hidden="true" />
           Clear Search

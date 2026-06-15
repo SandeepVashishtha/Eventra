@@ -478,9 +478,30 @@
 /* removed dark mode override (handled by CSS variables) */
 
 /* ── Stat Cards ── */
+.ud-journey-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.ud-journey-label {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-color);
+  margin: 0;
+}
+
+.ud-journey-description {
+  font-size: 0.9rem;
+  color: var(--text-color-light);
+  margin: 0;
+  max-width: 62ch;
+}
+
 .ud-stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: var(--ud-space-md);
 }
 

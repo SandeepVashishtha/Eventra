@@ -17,16 +17,7 @@ globalThis.CustomEvent = dom.window.CustomEvent;
 globalThis.Event = dom.window.Event;
 
 // Simple synchronous hash identical to useBookmarks.js
-const hashUserId = (userId) => {
-  if (!userId || userId === "guest") return "guest";
-  let hash = 0;
-  for (let i = 0; i < userId.length; i++) {
-    const chr = userId.charCodeAt(i);
-    hash = (hash << 5) - hash + chr;
-    hash |= 0;
-  }
-  return Math.abs(hash).toString(36);
-};
+const { getOpaqueKey } = await import("../src/utils/storageKeyManager.js");
 
 // React mock implementation
 let _stateSlots = [];
@@ -206,7 +197,7 @@ const runAll = async () => {
     };
 
     const userEvents = [{ id: "event-user", title: "User Event", savedAt: 200 }];
-    const userKey = `bookmarks_${hashUserId("user-123")}`;
+    const userKey = getOpaqueKey("bookmarks", "user-123");
     localStorage.setItem(userKey, JSON.stringify(userEvents));
 
     renderHook();
@@ -232,7 +223,7 @@ const runAll = async () => {
       { id: "event-common", title: "Common Event", savedAt: 300 }, // User event is newer
       { id: "event-user-only", title: "User Only Event", savedAt: 200 },
     ];
-    const userKey = `bookmarks_${hashUserId("user-456")}`;
+    const userKey = getOpaqueKey("bookmarks", "user-456");
     localStorage.setItem(userKey, JSON.stringify(userEvents));
 
     // Transition to logged-in user
@@ -269,7 +260,7 @@ const runAll = async () => {
     localStorage.clear();
 
     const userEvents = [{ id: "event-user", title: "User Event" }];
-    const userKey = `bookmarks_${hashUserId("user-789")}`;
+    const userKey = getOpaqueKey("bookmarks", "user-789");
     localStorage.setItem(userKey, JSON.stringify(userEvents));
 
     // Logged in (no guest bookmarks exist)

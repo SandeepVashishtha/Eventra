@@ -1,5 +1,6 @@
 import { logger } from "./logger.js";
-import { API_BASE_URL } from "../config/api.js";
+
+const BASE_URL = import.meta.env?.VITE_API_URL || process.env?.VITE_API_URL || process.env?.REACT_APP_API_URL || "http://localhost:8080";
 
 const MULTIPLEX_CHANNEL_NAME = "eventra_sse_multiplexer";
 const LOCK_NAME = "eventra_sse_leader_lock";
@@ -300,7 +301,18 @@ class SseMultiplexer {
     switch (msg.type) {
       case "SUBSCRIBE":
         this.addGlobalSubscriber(msg.path, msg.tabId);
-        if (this.isLeader) this.reconcileConnections();
+        if (this.isLeader) {
+          this.reconcileConnections();
+          const currentStatus = this.pathStatuses.get(msg.path);
+          if (currentStatus) {
+            this.broadcastMessage({
+              type: "SSE_STATUS",
+              tabId: this.tabId,
+              path: msg.path,
+              status: currentStatus,
+            });
+          }
+        }
         break;
 
       case "UNSUBSCRIBE":
@@ -327,7 +339,20 @@ class SseMultiplexer {
 
       case "SUBSCRIBERS_RESPONSE":
         if (msg.paths) {
-          msg.paths.forEach((p) => this.addGlobalSubscriber(p, msg.tabId));
+          msg.paths.forEach((p) => {
+            this.addGlobalSubscriber(p, msg.tabId);
+            if (this.isLeader) {
+              const currentStatus = this.pathStatuses.get(p);
+              if (currentStatus) {
+                this.broadcastMessage({
+                  type: "SSE_STATUS",
+                  tabId: this.tabId,
+                  path: p,
+                  status: currentStatus,
+                });
+              }
+            }
+          });
           if (this.isLeader) this.reconcileConnections();
         }
         break;
@@ -423,9 +448,7 @@ class SseMultiplexer {
   }
 
   openEventSource(path) {
-    const sseBaseUrl =
-      API_BASE_URL ||
-      (typeof window !== "undefined" ? window.location.origin : "http://localhost:8080");
+    const sseBaseUrl = BASE_URL;
 
     logger.log(`[SSE Multiplexer] Leader tab opening physical EventSource: ${sseBaseUrl}${path}`);
     this.updatePathStatus(path, "connecting");
@@ -476,9 +499,8 @@ class SseMultiplexer {
   updatePathStatus(path, status) {
     this.pathStatuses.set(path, status);
 
-    // Broadcast status to other tabs if we are the leader
     if (this.isLeader) {
-      this.broadcastMessage({ type: "SSE_STATUS", path, status });
+      this.broadcastMessage({ type: "SSE_STATUS", tabId: this.tabId, path, status });
     }
 
     // Trigger local status listeners
