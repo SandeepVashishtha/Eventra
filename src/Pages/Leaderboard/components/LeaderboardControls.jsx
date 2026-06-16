@@ -11,16 +11,16 @@ const sortOptions = [
 export default function LeaderboardControls({ search, onSearchChange, sortBy, onSortChange, onRefresh, onExport, isRefreshing, searchInputRef }) {
 
   return (
-    <div className="mb-8 flex flex-col gap-4 rounded-[28px] border border-slate-200/70 bg-white/80 p-4 shadow-[0_16px_50px_rgba(15,23,42,0.06)] backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between">
+    <div className="mb-8 flex flex-col gap-4 rounded-[28px] border border-slate-200/70 dark:border-slate-800/70 bg-white/80 dark:bg-slate-900/80 p-4 shadow-[0_16px_50px_rgba(15,23,42,0.06)] dark:shadow-[0_16px_50px_rgba(0,0,0,0.3)] backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between">
       <div className="relative w-full sm:max-w-xs">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" aria-hidden="true" />
         <input
           ref={searchInputRef}
           type="search"
           value={search}
           onChange={onSearchChange}
           placeholder="Search contributors... (Press / to focus)"
-          className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm text-slate-950 transition-all placeholder:text-slate-400 focus:border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#E0E9F2]"
+          className="w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 py-2.5 pl-10 pr-4 text-sm text-slate-950 dark:text-white transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-300 dark:focus:border-slate-600 focus:outline-none focus:ring-2 focus:ring-[#E0E9F2] dark:focus:ring-slate-700"
           aria-label="Search contributors by username"
         />
       </div>
@@ -42,7 +42,7 @@ export default function LeaderboardControls({ search, onSearchChange, sortBy, on
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           disabled={isRefreshing}
-          className="rounded-2xl border border-slate-200 bg-white/70 p-2.5 text-slate-600 transition-all hover:bg-slate-50 hover:text-slate-950 disabled:opacity-50"
+          className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-800/70 p-2.5 text-slate-600 dark:text-slate-300 transition-all hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-950 dark:hover:text-white disabled:opacity-50"
           aria-label="Refresh leaderboard data"
           title="Refresh data"
         >
@@ -53,7 +53,7 @@ export default function LeaderboardControls({ search, onSearchChange, sortBy, on
           onClick={onExport}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className="rounded-2xl border border-slate-200 bg-white/70 p-2.5 text-slate-600 transition-all hover:bg-slate-50 hover:text-slate-950"
+          className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-800/70 p-2.5 text-slate-600 dark:text-slate-300 transition-all hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-950 dark:hover:text-white"
           aria-label="Export leaderboard as CSV"
           title="Export as CSV"
         >

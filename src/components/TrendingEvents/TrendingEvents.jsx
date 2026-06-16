@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { eventService } from "../../services/eventService";
 import EventCard from "../../Pages/Events/EventCard";
 import { Calendar, TrendingUp, Users, Bookmark, Eye } from "lucide-react";
-import mockEvents from "../../Pages/Events/eventsMockData.json";
+// import mockEvents from "../../Pages/Events/eventsMockData.json";
 import { normalizeEvents } from "../../utils/eventFetchUtils";
 
 const EVENT_LIST_KEYS = ["content", "events", "items", "results", "data"];
