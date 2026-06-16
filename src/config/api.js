@@ -34,7 +34,7 @@ const API = axios.create({
   baseURL: API_BASE_URL || undefined,
   timeout: REQUEST_TIMEOUT_MS,
   headers: { "Content-Type": "application/json" },
-  withCredentials: true,
+  withCredentials: false,
 });
 
 let onUnauthorized = null;
