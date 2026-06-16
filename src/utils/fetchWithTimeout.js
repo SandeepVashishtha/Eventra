@@ -33,6 +33,7 @@ export const fetchWithTimeout = async (
   }
 
   const method = (options.method || "GET").toUpperCase();
+  let requestHeaders = options.headers;
   if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
     const headers = new Headers(options.headers || {});
     if (!headers.has("Idempotency-Key")) {
@@ -45,12 +46,13 @@ export const fetchWithTimeout = async (
           });
       headers.set("Idempotency-Key", idempotencyKey);
     }
-    options.headers = headers;
+    requestHeaders = headers;
   }
 
   try {
     const response = await fetch(url, {
       ...options,
+      headers: requestHeaders,
       signal: controller.signal,
     });
 
