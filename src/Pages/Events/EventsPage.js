@@ -116,6 +116,12 @@ const renderCardSection = (
   );
 };
 
+const RecentlyViewedSection = () => (
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+    <RecentlyViewedEvents />
+  </div>
+);
+
 const EventsPage = () => {
   useDocumentTitle("Eventra | Events");
 
@@ -341,9 +347,7 @@ const EventsPage = () => {
         <TrendingEvents title="Trending Events" limit={6} fetchSize={24} />
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
-        <RecentlyViewedEvents />
-      </div>
+      <RecentlyViewedSection />
 
       <div
         ref={cardSectionRef}

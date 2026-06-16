@@ -48,6 +48,12 @@ const stagger = (prefersReducedMotion) => ({
   visible: { transition: { staggerChildren: prefersReducedMotion ? 0 : 0.08 } }
 });
 
+const RecentlyViewedWrapper = ({ prefersReducedMotion }) => (
+  <motion.section custom={1.5} variants={fadeUp(prefersReducedMotion)}>
+    <RecentlyViewedEvents />
+  </motion.section>
+);
+
 const MOCK_DATA = [
   { id: 1, type: "Event", title: "Tech Talk: AI in 2025", date: "2025-06-15", location: "Mumbai", status: "Completed", projectStatus: "Done", lastUpdate: "-", participationType: "Registered" },
   { id: 2, type: "Event", title: "Web Dev Workshop", date: "2025-09-10", location: "Online", status: "Upcoming", projectStatus: "Upcoming", lastUpdate: "-", participationType: "Registered" },
@@ -418,9 +424,7 @@ export default function UserDashboard() {
                     </div>
                   </motion.section>
 
-                  <motion.section custom={1.5} variants={fadeUp(prefersReducedMotion)}>
-                    <RecentlyViewedEvents />
-                  </motion.section>
+                  <RecentlyViewedWrapper prefersReducedMotion={prefersReducedMotion} />
 
                   <div className="ud-three-col">
                     {/* Upcoming Events */}
