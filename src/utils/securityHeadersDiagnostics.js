@@ -1,4 +1,6 @@
 export const getSecurityHeadersDiagnostics = () => {
+  if (typeof document === "undefined") return [];
+
   const diagnostics = [];
 
   const cspMeta = document.querySelector(
