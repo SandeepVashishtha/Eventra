@@ -115,11 +115,20 @@ globalThis.mockAuth = () => currentAuth;
 
 let currentQueue = [];
 globalThis.mockGetQueueIndexedDB = async () => currentQueue;
-globalThis.mockSetQueue = async (q) => {
-  currentQueue = q;
+globalThis.mockSetQueue = async (q, userId = null) => {
+  if (userId) {
+    const otherUsers = currentQueue.filter(item => item.userId !== userId);
+    currentQueue = [...otherUsers, ...q];
+  } else {
+    currentQueue = q;
+  }
 };
-globalThis.mockClearQueue = async () => {
-  currentQueue = [];
+globalThis.mockClearQueue = async (userId = null) => {
+  if (userId) {
+    currentQueue = currentQueue.filter(item => item.userId !== userId);
+  } else {
+    currentQueue = [];
+  }
 };
 
 let fetchCalls = [];
@@ -253,6 +262,41 @@ const runAll = async () => {
   assert.equal(currentQueue.length, 1, "Failed item should be retained in the queue");
   assert.equal(currentQueue[0].retryCount, 1, "Retry count should be incremented to 1");
   console.log("  pass  Retry behavior is correct!");
+
+  // Test 5: Multi-user queue preservation
+  console.log("Running Test 5: Multi-user queue preservation");
+  resetReact();
+  currentAuth = {
+    token: "mock-token",
+    user: { id: "u2" },
+    isAuthenticated: () => true,
+    loading: false,
+  };
+  currentQueue = [
+    { id: "item-user1", userId: "u1", retryCount: 0, payload: { val: 10 } },
+    { id: "item-user2", userId: "u2", retryCount: 0, payload: { val: 20 } },
+  ];
+  fetchCalls = [];
+  globalThis.mockFetchWithTimeout = async (url, options) => {
+    fetchCalls.push({ url, options });
+    return {
+      response: { ok: true, status: 200 },
+      data: {},
+    };
+  };
+  renderHook();
+
+  // Trigger online sync
+  window.dispatchEvent(new window.Event("online"));
+  await new Promise((resolve) => setTimeout(resolve, 50));
+
+  assert.equal(fetchCalls.length, 1, "Only user 2's item should be synced");
+  assert.equal(fetchCalls[0].options.body, JSON.stringify({ val: 20 }), "Should sync correct user 2 payload");
+  
+  // Verify that User 1's queued action was preserved
+  assert.equal(currentQueue.length, 1, "Other user's queued action should be preserved in storage");
+  assert.equal(currentQueue[0].userId, "u1", "Preserved item must belong to u1");
+  console.log("  pass  Multi-user queue preservation verified!");
 
   // Test 4: Interval cleanup on unmount
   console.log("Running Test 4: Interval cleanup on unmount");

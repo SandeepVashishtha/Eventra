@@ -240,21 +240,7 @@ const useOfflineSync = () => {
       // Filter queue to only include actions owned by current user
       const validatedQueue = filterQueueByOwnership(queue, currentUserId);
 
-      // If all actions were filtered out due to ownership mismatch, clear the queue
-      if (validatedQueue.length === 0 && queue.length > 0) {
-        logger.warn(
-          '[Security] Clearing offline queue: all actions belong to different user(s). ' +
-          'This prevents cross-user action replay.'
-        );
-        await clearQueue();
-        toast.warning(
-          "Offline actions from a previous session have been cleared for security.",
-          { autoClose: 5000 }
-        );
-        return;
-      }
-
-      // If queue is now empty after validation, return early
+      // If all actions belong to different users, we return early without clearing other users' queues.
       if (validatedQueue.length === 0) {
         return;
       }
@@ -270,7 +256,7 @@ const useOfflineSync = () => {
           "[Security] Clearing offline queue: all actions have stale session IDs. " +
             "This prevents stale-session cross-user action replay."
         );
-        await clearQueue();
+        await clearQueue(currentUserId);
         toast.warning(
           "Offline actions from a previous login session have been cleared for security.",
           { autoClose: 5000 }
@@ -362,12 +348,12 @@ const useOfflineSync = () => {
         }
 
         if (failedQueue.length > 0) {
-          await setQueue(failedQueue);
+          await setQueue(failedQueue, currentUserId);
           toast.warning(
             `Synced ${successCount} registration(s). ${failedQueue.length} remaining in local draft queue.`,
           );
         } else {
-          await clearQueue();
+          await clearQueue(currentUserId);
           if (successCount > 0) {
             toast.success("All offline actions successfully synchronized!");
           }

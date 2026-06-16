@@ -378,14 +378,24 @@ queue.push(actionItem);
 
 /**
  * Overwrite the queue in both storages (Used after resolving conflicts or updates).
+ *
+ * @param {Array} newQueue - New array of offline queue items
+ * @param {string|null} userId - Scopes the change to only this user's items if provided
  */
-export const setQueue = async (newQueue) => {
+export const setQueue = async (newQueue, userId = null) => {
+  let finalQueue = newQueue;
+  if (userId) {
+    const currentQueue = await getQueueIndexedDB();
+    const otherUsersQueue = currentQueue.filter(item => item.userId !== userId);
+    finalQueue = [...otherUsersQueue, ...newQueue];
+  }
+
   // 1. Sync mirror updates immediately
   try {
-    if (newQueue.length === 0) {
+    if (finalQueue.length === 0) {
       localStorage.removeItem(QUEUE_KEY);
     } else {
-      localStorage.setItem(QUEUE_KEY, JSON.stringify(newQueue));
+      localStorage.setItem(QUEUE_KEY, JSON.stringify(finalQueue));
     }
   } catch (error) {
     logger.error("Error setting localStorage backup:", error);
@@ -400,12 +410,12 @@ export const setQueue = async (newQueue) => {
 
       const clearReq = store.clear();
       clearReq.onsuccess = () => {
-        if (newQueue.length === 0) {
+        if (finalQueue.length === 0) {
           resolve();
           return;
         }
 
-        newQueue.forEach((item) => store.put(item));
+        finalQueue.forEach((item) => store.put(item));
 
         tx.oncomplete = () => resolve();
         tx.onerror = (e) => reject(e.target?.error || new Error('IndexedDB transaction failed'));
@@ -421,30 +431,38 @@ export const setQueue = async (newQueue) => {
 
 /**
  * Clear all offline actions from database and localStorage.
+ *
+ * @param {string|null} userId - Scopes the clear to only this user's items if provided
  */
-export const clearQueue = async () => {
-  // 1. Sync mirror
-  try {
-    localStorage.removeItem(QUEUE_KEY);
-  } catch (error) {
-    logger.error("Error clearing localStorage backup:", error);
-  }
+export const clearQueue = async (userId = null) => {
+  if (userId) {
+    const currentQueue = await getQueueIndexedDB();
+    const otherUsersQueue = currentQueue.filter(item => item.userId !== userId);
+    await setQueue(otherUsersQueue);
+  } else {
+    // 1. Sync mirror
+    try {
+      localStorage.removeItem(QUEUE_KEY);
+    } catch (error) {
+      logger.error("Error clearing localStorage backup:", error);
+    }
 
-  // 2. Sync IndexedDB
-  try {
-    const db = await openDB();
-    await new Promise((resolve, reject) => {
-      const tx = db.transaction(STORE_NAME, "readwrite");
-      const store = tx.objectStore(STORE_NAME);
-      const request = store.clear();
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-    });
-  } catch (err) {
-    logger.error("IndexedDB clear failed:", err);
-  }
+    // 2. Sync IndexedDB
+    try {
+      const db = await openDB();
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, "readwrite");
+        const store = tx.objectStore(STORE_NAME);
+        const request = store.clear();
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
+    } catch (err) {
+      logger.error("IndexedDB clear failed:", err);
+    }
 
-  notifyQueueUpdated(null);
+    notifyQueueUpdated(null);
+  }
 };
 
 /**
