@@ -399,6 +399,49 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const hostedCount = hostedEvents.length;
   const upcomingCount = [...registeredEvents, ...hostedEvents].filter((event) => getEventStatus(event) === "Upcoming").length;
   const completedCount = [...registeredEvents, ...hostedEvents].filter((event) => getEventStatus(event) === "Completed").length;
+const recentActivities = useMemo(() => {
+  const activities = [];
+
+  registeredEvents.forEach((event) => {
+    activities.push({
+      id: `registered-${event.id}`,
+      type: "Registered",
+      title: event.title,
+      date: event.registeredAt || event.date,
+    });
+  });
+
+  hostedEvents.forEach((event) => {
+    activities.push({
+      id: `hosted-${event.id}`,
+      type: "Hosted",
+      title: event.title,
+      date: event.createdAt || event.date,
+    });
+  });
+
+  waitlistEvents.forEach((event) => {
+    activities.push({
+      id: `waitlist-${event.id}`,
+      type: "Waitlisted",
+      title: event.title,
+      date: event.waitlistJoinedAt || event.date,
+    });
+  });
+
+  return activities
+    .filter((activity) => activity.date)
+    .sort(
+      (a, b) =>
+        new Date(b.date) - new Date(a.date)
+    )
+    .slice(0, 8);
+}, [
+  registeredEvents,
+  hostedEvents,
+  waitlistEvents,
+]);
+
 
   const handleCancelClick = (id, title) => setCancelTarget({ id, title });
   const handleCancelDismiss = () => setCancelTarget(null);
@@ -441,6 +484,55 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
         </Link>
       </div>
 
+
+{recentActivities.length > 0 && (
+  <section className="space-y-4 mb-6">
+    <div className="ud-tab-header">
+      <h3 className="ud-page-title flex items-center gap-2">
+        <Activity size={18} />
+        Recent Activity
+      </h3>
+
+      <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
+        {recentActivities.length} updates
+      </span>
+    </div>
+
+    <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
+      <div className="space-y-4">
+        {recentActivities.map((activity) => (
+          <div
+            key={activity.id}
+            className="flex items-start gap-4 pb-4 border-b border-slate-100 dark:border-slate-800 last:border-0 last:pb-0"
+          >
+            <div className="mt-1 rounded-full bg-indigo-100 dark:bg-indigo-950/40 p-2">
+              <Activity
+                size={14}
+                className="text-indigo-600 dark:text-indigo-400"
+              />
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">
+                {activity.title}
+              </p>
+
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-xs px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                  {activity.type}
+                </span>
+
+                <span className="text-xs text-slate-500 dark:text-slate-400">
+                  {new Date(activity.date).toLocaleDateString()}
+                </span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+)}
       {registeredCount + hostedCount > 0 && (
         <motion.div className="my-events-summary" variants={staggerVariants} initial="hidden" animate="visible">
           {[
