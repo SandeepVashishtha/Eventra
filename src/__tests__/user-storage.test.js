@@ -8,7 +8,7 @@ describe("User Storage Abstraction Layer", () => {
     vi.resetModules();
     process.env = { ...originalEnv };
     // Reset storage backend before each test
-    const { resetStorageBackend } = await import("../../api/auth/user-storage.js");
+    const { resetStorageBackend } = await import("../../api/auth/_user-storage.js");
     await resetStorageBackend();
   });
 
@@ -17,7 +17,7 @@ describe("User Storage Abstraction Layer", () => {
     process.env.NODE_ENV = originalNodeEnv;
     // Reset storage backend after each test
     try {
-      const { resetStorageBackend } = await import("../../api/auth/user-storage.js");
+      const { resetStorageBackend } = await import("../../api/auth/_user-storage.js");
       await resetStorageBackend();
     } catch (e) {
       // Ignore if module not loaded
@@ -32,7 +32,7 @@ describe("User Storage Abstraction Layer", () => {
     });
 
     it("should initialize in-memory storage in development", async () => {
-      const { getStorageBackend, isStorageHealthy } = await import("../../api/auth/user-storage.js");
+      const { getStorageBackend, isStorageHealthy } = await import("../../api/auth/_user-storage.js");
       const storage = await getStorageBackend();
       expect(storage).toBeDefined();
       const healthy = await isStorageHealthy();
@@ -40,7 +40,7 @@ describe("User Storage Abstraction Layer", () => {
     });
 
     it("should create and retrieve user by email", async () => {
-      const { createUser, getUserByEmail } = await import("../../api/auth/user-storage.js");
+      const { createUser, getUserByEmail } = await import("../../api/auth/_user-storage.js");
       
       const testUser = {
         id: "user-123",
@@ -66,7 +66,7 @@ describe("User Storage Abstraction Layer", () => {
     });
 
     it("should create and retrieve user by username", async () => {
-      const { createUser, getUserByUsername } = await import("../../api/auth/user-storage.js");
+      const { createUser, getUserByUsername } = await import("../../api/auth/_user-storage.js");
       
       const testUser = {
         id: "user-456",
@@ -92,7 +92,7 @@ describe("User Storage Abstraction Layer", () => {
     });
 
     it("should create and retrieve user by ID", async () => {
-      const { createUser, getUserById } = await import("../../api/auth/user-storage.js");
+      const { createUser, getUserById } = await import("../../api/auth/_user-storage.js");
       
       const testUser = {
         id: "user-789",
@@ -117,7 +117,7 @@ describe("User Storage Abstraction Layer", () => {
     });
 
     it("should reject duplicate email addresses", async () => {
-      const { createUser } = await import("../../api/auth/user-storage.js");
+      const { createUser } = await import("../../api/auth/_user-storage.js");
       
       const user1 = {
         id: "user-1",
@@ -157,7 +157,7 @@ describe("User Storage Abstraction Layer", () => {
     });
 
     it("should reject duplicate usernames", async () => {
-      const { createUser } = await import("../../api/auth/user-storage.js");
+      const { createUser } = await import("../../api/auth/_user-storage.js");
       
       const user1 = {
         id: "user-1",
@@ -197,7 +197,7 @@ describe("User Storage Abstraction Layer", () => {
     });
 
     it("should update user", async () => {
-      const { createUser, updateUser, getUserById } = await import("../../api/auth/user-storage.js");
+      const { createUser, updateUser, getUserById } = await import("../../api/auth/_user-storage.js");
       
       const testUser = {
         id: "user-update",
@@ -229,7 +229,7 @@ describe("User Storage Abstraction Layer", () => {
     });
 
     it("should delete user", async () => {
-      const { createUser, deleteUser, getUserById } = await import("../../api/auth/user-storage.js");
+      const { createUser, deleteUser, getUserById } = await import("../../api/auth/_user-storage.js");
       
       const testUser = {
         id: "user-delete",
@@ -256,7 +256,7 @@ describe("User Storage Abstraction Layer", () => {
     });
 
     it("should return null for non-existent user", async () => {
-      const { getUserByEmail, getUserByUsername, getUserById } = await import("../../api/auth/user-storage.js");
+      const { getUserByEmail, getUserByUsername, getUserById } = await import("../../api/auth/_user-storage.js");
       
       expect(await getUserByEmail("nonexistent@example.com")).toBeNull();
       expect(await getUserByUsername("nonexistent")).toBeNull();
@@ -272,7 +272,7 @@ describe("User Storage Abstraction Layer", () => {
     });
 
     it("should survive storage reinitialization", async () => {
-      const { createUser, getUserByEmail, resetStorageBackend } = await import("../../api/auth/user-storage.js");
+      const { createUser, getUserByEmail, resetStorageBackend } = await import("../../api/auth/_user-storage.js");
       
       const testUser = {
         id: "user-persist-1",
@@ -306,7 +306,7 @@ describe("User Storage Abstraction Layer", () => {
     });
 
     it("should handle multiple operations correctly", async () => {
-      const { createUser, getUserByEmail, getUserById } = await import("../../api/auth/user-storage.js");
+      const { createUser, getUserByEmail, getUserById } = await import("../../api/auth/_user-storage.js");
       
       const users = [
         {
@@ -371,7 +371,7 @@ describe("User Storage Abstraction Layer", () => {
       delete process.env.DATABASE_URL;
       delete process.env.KV_REST_API_URL;
 
-      const { getStorageBackend } = await import("../../api/auth/user-storage.js");
+      const { getStorageBackend } = await import("../../api/auth/_user-storage.js");
       
       await expect(getStorageBackend()).rejects.toThrow(
         "Persistent storage is required in production"
@@ -383,7 +383,7 @@ describe("User Storage Abstraction Layer", () => {
       process.env.DATABASE_URL = "";
       delete process.env.KV_REST_API_URL;
 
-      const { getStorageBackend } = await import("../../api/auth/user-storage.js");
+      const { getStorageBackend } = await import("../../api/auth/_user-storage.js");
       
       await expect(getStorageBackend()).rejects.toThrow(
         "Persistent storage is required in production"
@@ -395,7 +395,7 @@ describe("User Storage Abstraction Layer", () => {
       delete process.env.DATABASE_URL;
       delete process.env.KV_REST_API_URL;
 
-      const { isStorageHealthy } = await import("../../api/auth/user-storage.js");
+      const { isStorageHealthy } = await import("../../api/auth/_user-storage.js");
       
       const healthy = await isStorageHealthy();
       expect(healthy).toBe(false);
@@ -406,7 +406,7 @@ describe("User Storage Abstraction Layer", () => {
       delete process.env.DATABASE_URL;
       delete process.env.KV_REST_API_URL;
 
-      const { createUser } = await import("../../api/auth/user-storage.js");
+      const { createUser } = await import("../../api/auth/_user-storage.js");
       
       const testUser = {
         id: "user-prod-test",
@@ -427,6 +427,25 @@ describe("User Storage Abstraction Layer", () => {
         "Persistent storage is required in production"
       );
     });
+
+    it("should not cache failed storage backend instance on initialization failure", async () => {
+      process.env.NODE_ENV = "production";
+      process.env.DATABASE_URL = "redis://invalid-host-that-causes-failure:6379";
+      
+      const { getStorageBackend } = await import("../../api/auth/_user-storage.js");
+      
+      // First attempt: should fail
+      await expect(getStorageBackend()).rejects.toThrow();
+
+      // Fix the env config to point to allowed in-memory storage (simulate environment correction / retry)
+      process.env.NODE_ENV = "development";
+      delete process.env.DATABASE_URL;
+      
+      // Second attempt: should succeed and return working backend if not cached
+      const storage = await getStorageBackend();
+      expect(storage).toBeDefined();
+      expect(storage.constructor.name).toBe("InMemoryStorageBackend");
+    });
   });
 
   describe("Authentication Regression Tests", () => {
@@ -437,7 +456,7 @@ describe("User Storage Abstraction Layer", () => {
     });
 
     it("should support signup workflow", async () => {
-      const { createUser, getUserByEmail } = await import("../../api/auth/user-storage.js");
+      const { createUser, getUserByEmail } = await import("../../api/auth/_user-storage.js");
       
       const newUser = {
         id: "user-signup",
@@ -464,7 +483,7 @@ describe("User Storage Abstraction Layer", () => {
     });
 
     it("should support login workflow", async () => {
-      const { createUser, getUserByEmail } = await import("../../api/auth/user-storage.js");
+      const { createUser, getUserByEmail } = await import("../../api/auth/_user-storage.js");
       
       const existingUser = {
         id: "user-login",
@@ -490,7 +509,7 @@ describe("User Storage Abstraction Layer", () => {
     });
 
     it("should support user lookup by email or username", async () => {
-      const { createUser, getUserByEmail, getUserByUsername } = await import("../../api/auth/user-storage.js");
+      const { createUser, getUserByEmail, getUserByUsername } = await import("../../api/auth/_user-storage.js");
       
       const user = {
         id: "user-lookup",
@@ -518,7 +537,7 @@ describe("User Storage Abstraction Layer", () => {
     });
 
     it("should handle case-insensitive email lookups", async () => {
-      const { createUser, getUserByEmail } = await import("../../api/auth/user-storage.js");
+      const { createUser, getUserByEmail } = await import("../../api/auth/_user-storage.js");
       
       const user = {
         id: "user-case",
@@ -549,7 +568,7 @@ describe("User Storage Abstraction Layer", () => {
     });
 
     it("should handle case-insensitive username lookups", async () => {
-      const { createUser, getUserByUsername } = await import("../../api/auth/user-storage.js");
+      const { createUser, getUserByUsername } = await import("../../api/auth/_user-storage.js");
       
       const user = {
         id: "user-username-case",
@@ -582,7 +601,7 @@ describe("User Storage Abstraction Layer", () => {
 
   describe("Storage Backend Classes", () => {
     it("should throw error for unimplemented methods in base class", async () => {
-      const { StorageBackend } = await import("../../api/auth/user-storage.js");
+      const { StorageBackend } = await import("../../api/auth/_user-storage.js");
       
       const backend = new StorageBackend();
       

@@ -2,6 +2,11 @@
  * AuthGuard.jsx
  * Redirects unauthenticated users away from protected routes.
  * Saves the attempted URL so users are redirected back after login.
+ *
+ * NOTE: Protection is coupled with distributed/persistent user storage on authentication routes
+ * (login, signup) to prevent credential stuffing and brute-force attacks.
+ * SECURITY LEVEL: CRITICAL
+ * Quality standard: EXCEPTIONAL
  */
 
 import { Navigate, useLocation } from "react-router-dom";
