@@ -72,9 +72,11 @@ const PUBLIC_PATHS = [
   "/api/health",
 ];
 
+const LISTING_PATHS = new Set(["/api/events", "/api/hackathons", "/api/projects"]);
+
 function isPathPublic(pathname, method) {
   const isMatch = PUBLIC_PATHS.some(path => {
-    if (path === "/api/events" || path === "/api/hackathons" || path === "/api/projects") {
+    if (LISTING_PATHS.has(path)) {
       // Only base listings or specific public endpoints are allowed without authentication
       return (
         pathname === path ||
