@@ -1,5 +1,6 @@
 import { safeJsonParse } from "./safeJsonParse.js";
 import { logger } from "./logger.js";
+import { syncSecureStorage } from "./secureStorage.js";
 // 🔥 FIX: In-memory queue and lock to prevent localStorage race conditions
 let isUpdating = false;
 let interestQueue = [];
@@ -22,7 +23,7 @@ const isStorageAvailable = () => {
   }
 };
 
-const processInterestQueue = () => {
+const processInterestQueue = async () => {
   if (isUpdating || interestQueue.length === 0) return;
   if (!isStorageAvailable()) {
     // If localStorage is unavailable, clear the queue to prevent memory leak
@@ -34,7 +35,7 @@ const processInterestQueue = () => {
   try {
     let existing = {};
     try {
-      const raw = localStorage.getItem("eventra_user_profile");
+      const raw = await syncSecureStorage.getItemAsync("eventra_user_profile");
       if (raw) {
         existing = safeJsonParse(raw, {}) || {};
       }
@@ -60,7 +61,7 @@ const processInterestQueue = () => {
     }
 
     if (modified) {
-      localStorage.setItem(
+      await syncSecureStorage.setItem(
         "eventra_user_profile",
         JSON.stringify({ ...existing, interests })
       );
@@ -89,7 +90,7 @@ export const clearActivityHistory = () => {
   try {
     interestQueue = [];
     if (isStorageAvailable()) {
-      localStorage.removeItem("eventra_user_profile");
+      syncSecureStorage.removeItem("eventra_user_profile");
     }
   } catch (error) {
     logger.error("Failed to clear activity history:", error);

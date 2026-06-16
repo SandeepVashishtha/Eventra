@@ -384,7 +384,7 @@ return (
               </h4>
               <ul className="space-y-0.05 sm:space-y-2.5">
                 {col.links.map((link) => (
-                  <li>
+                  <li key={link.nameKey || link.href}>
                     <Link
                       to={link.href}
                       className="group inline-flex items-center gap-2 text-xs sm:text-sm text-gray-500  dark:text-gray-400 hover:!text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"

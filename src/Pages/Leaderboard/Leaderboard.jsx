@@ -458,7 +458,7 @@ export default function LeaderBoard() {
         badgeClass: "bg-yellow-400 text-yellow-950 shadow-[0_2px_10px_rgba(234,179,8,0.3)]",
         size: "h-22 w-22",
         pointsClass: "text-amber-500",
-        medalClass: "bg-gradient-to-r from-yellow-400 to-amber-500 text-amber-950",
+        medalClass: "bg-linear-to-r from-yellow-400 to-amber-500 text-amber-950",
       },
       isFirst: true,
     },
@@ -481,7 +481,7 @@ export default function LeaderBoard() {
   return (
     <ErrorBoundary level="feature">
       <div
-        className="relative overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(224,233,242,0.52),_transparent_42%),linear-gradient(180deg,#f8fbfe_0%,#eef4fa_100%)] pt-20 md:pt-24 py-12 sm:py-16 transition-colors duration-300"
+        className="relative overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(224,233,242,0.52),_transparent_42%),linear-gradient(180deg,#f8fbfe_0%,#eef4fa_100%)] dark:bg-[radial-gradient(circle_at_top,_rgba(30,41,59,0.52),_transparent_42%),linear-gradient(180deg,#0f172a_0%,#1e293b_100%)] pt-20 md:pt-24 py-12 sm:py-16 transition-colors duration-300"
         role="main"
         aria-labelledby="leaderboard-heading"
       >

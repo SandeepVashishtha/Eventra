@@ -53,7 +53,7 @@ const MatchmakingHub = () => {
               <div key={conn.id} className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col h-full hover:shadow-xl transition-shadow">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-4">
-                    <img src={conn.avatar} alt={conn.name} className="w-14 h-14 rounded-full border-2 border-indigo-100 dark:border-indigo-900" />
+                    <img src={conn.avatar} alt={conn.name} className="w-14 h-14 rounded-full border-2 border-indigo-100 dark:border-indigo-900"  loading="lazy" />
                     <div>
                       <h3 className="font-bold text-lg dark:text-white">{conn.name}</h3>
                       <p className="text-sm text-gray-500">{conn.role}</p>

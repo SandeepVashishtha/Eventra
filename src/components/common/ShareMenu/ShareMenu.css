@@ -63,7 +63,7 @@
 
 .share-menu-dropdown {
   position: absolute;
-  z-index: 999 !important;
+  z-index: 999;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -81,7 +81,7 @@
 
 /* Card containers that need to allow overflow for floating elements */
 .card-with-floating-elements {
-  overflow: visible !important;
+  overflow: visible;
 }
 
 /* Content sections that need controlled overflow */
@@ -94,8 +94,8 @@
   .animate-pulse,
   .share-button-pop,
   .share-button-float {
-    animation: none !important;
-    transform: none !important;
-    transition: none !important;
+    animation: none;
+    transform: none;
+    transition: none;
   }
 }

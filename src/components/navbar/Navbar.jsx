@@ -91,7 +91,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
       <nav
         ref={navRef}
         aria-label="Primary navigation"
-        className={`sticky top-0 left-0 w-full z-[200] transition-all duration-300 ${
+        className={`sticky top-0 left-0 w-full z-sticky transition-all duration-300 ${
           scrolled
             ? "backdrop-blur-md bg-navbar/95 border-b border-border shadow-sm"
             : "bg-transparent border-b border-transparent"
@@ -133,7 +133,6 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
               ) : (
                 <AuthButtons />
               )}
-              <InstallAppButton />
               <CursorToggle cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
             </div>
             <ThemeToggleButton 

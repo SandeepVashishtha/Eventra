@@ -1,19 +1,7 @@
 import { logger } from "./logger.js";
+import { resolveBackendUrl } from "../config/backendConfig/envResolver.js";
 
-const getEnvVar = (name) => {
-  if (typeof process !== "undefined" && process.env) {
-    return process.env[name];
-  }
-  return undefined;
-};
-
-const getBaseUrl = () => {
-  if (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
-  }
-  return getEnvVar("VITE_API_URL") || getEnvVar("REACT_APP_API_URL") || getEnvVar("API_URL") || "http://localhost:8080";
-};
-const BASE_URL = getBaseUrl();
+const BASE_URL = resolveBackendUrl() || "";
 
 const MULTIPLEX_CHANNEL_NAME = "eventra_sse_multiplexer";
 const LOCK_NAME = "eventra_sse_leader_lock";
@@ -245,6 +233,9 @@ class SseMultiplexer {
     writeHeartbeat();
 
     // Heartbeat loop — keep the entry fresh while leadership is held
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+    }
     this.heartbeatInterval = setInterval(writeHeartbeat, 2000);
 
     this.startHeartbeatChecks();
