@@ -1,12 +1,16 @@
 import { motion } from "framer-motion";
-import { Globe, Users, CalendarDays, HeartHandshake, Sparkles, Code2, Rocket } from "lucide-react";
+import {
+  CalendarDays,
+  Code2,
+  HeartHandshake,
+  Network,
+  Trophy,
+  Users,
+} from "lucide-react";
 
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { useReducedMotion } from "../../hooks/useReducedMotion";
-import CountUpLib from "react-countup";
 import ErrorBoundary from "../../components/common/ErrorBoundary";
-
-const CountUp = CountUpLib.default || CountUpLib;
 
 const container = {
   hidden: { opacity: 0 },
@@ -31,44 +35,45 @@ const item = {
 
 const stats = [
   {
-    value: 100,
+    value: 75,
     suffix: "+",
-    label: "Events Hosted",
+    label: "Events and Hackathons",
     icon: CalendarDays,
   },
   {
-    value: 500,
+    value: 1500,
     suffix: "+",
-    label: "Community Members",
+    label: "Builders and Organizers",
     icon: Users,
   },
   {
-    value: "Global",
-    label: "Community Reach",
-    icon: Globe,
+    value: 30,
+    suffix: "+",
+    label: "Project and Community Partners",
+    icon: Network,
   },
 ];
 
 const values = [
   {
+    icon: CalendarDays,
+    title: "Event Management",
+    desc: "Plan, promote, discover, and join events with clear registration flows and organizer tools.",
+  },
+  {
+    icon: Trophy,
+    title: "Hackathon Growth",
+    desc: "Support builders from idea discovery to team formation, submissions, and showcase moments.",
+  },
+  {
     icon: Code2,
-    title: "Open Source",
-    desc: "Built transparently and freely available for communities worldwide.",
+    title: "Project Collaboration",
+    desc: "Help participants turn event momentum into shared projects, learning, and contribution.",
   },
   {
     icon: HeartHandshake,
-    title: "Community First",
-    desc: "Designed around collaboration, inclusion, and meaningful connections.",
-  },
-  {
-    icon: Rocket,
-    title: "Innovation",
-    desc: "Continuously evolving through community feedback and modern technology.",
-  },
-  {
-    icon: Sparkles,
-    title: "Accessibility",
-    desc: "Simple, intuitive, and accessible for organizers of every skill level.",
+    title: "Networking",
+    desc: "Create meaningful connections between students, developers, organizers, mentors, and communities.",
   },
 ];
 
@@ -135,16 +140,16 @@ export default function ModernAbout() {
               variants={item}
               className="text-sm uppercase tracking-[0.25em] text-blue-400 mb-6"
             >
-              Open Source • Community Driven • Free Forever
+              Events • Hackathons • Projects • Community
             </motion.p>
 
             <motion.h1
               variants={item}
               className="text-5xl md:text-7xl font-bold text-white mb-8 leading-tight"
             >
-              Building Better Events
+              About Eventra
               <span className="block bg-linear-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
-                Together
+                Built for Community
               </span>
             </motion.h1>
 
@@ -152,9 +157,10 @@ export default function ModernAbout() {
               variants={item}
               className="max-w-3xl mx-auto text-lg md:text-xl text-slate-400 leading-relaxed mb-16"
             >
-              Eventra empowers communities, colleges, organizations, and open-source teams to
-              create, manage, and grow impactful events through accessible, modern, and
-              collaborative event management tools.
+              Eventra is an open-source platform for discovering, hosting, and managing community
+              events. It brings event management, hackathons, networking, project collaboration,
+              and participant engagement into one accessible experience for organizers and new
+              users alike.
             </motion.p>
           </motion.div>
 
@@ -188,18 +194,8 @@ export default function ModernAbout() {
                     </div>
 
                     <h3 className="text-3xl font-bold text-white mb-2">
-                      {typeof stat.value === "number" ? (
-                        <CountUp
-                          start={0}
-                          end={stat.value}
-                          duration={3}
-                          suffix={stat.suffix}
-                          enableScrollSpy
-                          scrollSpyOnce
-                        />
-                      ) : (
-                        stat.value
-                      )}
+                      {stat.value}
+                      {stat.suffix}
                     </h3>
 
                     <p className="text-slate-400 text-sm">{stat.label}</p>
@@ -222,12 +218,12 @@ export default function ModernAbout() {
             className="text-center mb-16"
           >
             <motion.h2 variants={item} className="text-4xl md:text-5xl font-bold text-white mb-6">
-              What Drives Eventra
+              Why Eventra Exists
             </motion.h2>
 
             <motion.p variants={item} className="max-w-3xl mx-auto text-lg text-slate-400">
-              Our values guide every decision we make, ensuring Eventra remains accessible,
-              community-focused, and built for long-term impact.
+              Eventra helps communities reduce event friction, welcome first-time participants,
+              and keep learning, collaboration, and project momentum going after each event ends.
             </motion.p>
           </motion.div>
 
