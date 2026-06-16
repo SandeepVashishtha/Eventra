@@ -233,7 +233,7 @@ const EventDetails = () => {
   };
 
   const handleCopy = async () => {
-   const link = `
+    const link = `
 🎉 Check out this event!
 
 Event: ${event.title}
@@ -258,11 +258,11 @@ ${window.location.href}
           textArea.remove();
         }
       }
-           toast.success("Event link copied to clipboard!");   
-           setLinkCopied(true);                                
-           setTimeout(() => setLinkCopied(false), 2000);
+      toast.success("Event link copied to clipboard!");
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
     } catch (err) {
-       toast.error("Failed to copy link. Please copy the URL from your browser's address bar.");
+      toast.error("Failed to copy link. Please copy the URL from your browser's address bar.");
     }
   };
 
@@ -329,14 +329,14 @@ ${window.location.href}
                 <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight wrap-break-word" title={event.title}>{event.title}</h1>
                 <button
                   onClick={handleCopy}
-                  className={`p-2 rounded-full transition-colors ${linkCopied 
-                    ? "text-green-600 bg-green-50 dark:bg-green-900/30" 
+                  className={`p-2 rounded-full transition-colors ${linkCopied
+                    ? "text-green-600 bg-green-50 dark:bg-green-900/30"
                     : "text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
-                  }`}
-               aria-label={linkCopied ? "Link copied!" : "Copy event link"}
-              title={linkCopied ? "Copied!" : "Copy link"}
-             >
-                {linkCopied ? <Check size={28} /> : <Link2 size={28} />}
+                    }`}
+                  aria-label={linkCopied ? "Link copied!" : "Copy event link"}
+                  title={linkCopied ? "Copied!" : "Copy link"}
+                >
+                  {linkCopied ? <Check size={28} /> : <Link2 size={28} />}
                 </button>
               </div>
               <div
@@ -576,10 +576,10 @@ ${window.location.href}
                     {event.maxAttendees > 0 &&
                       event.attendees / event.maxAttendees >= 0.8 &&
                       event.attendees < event.maxAttendees && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-700 ring-1 ring-inset ring-red-600/20 dark:bg-red-900/40 dark:text-red-300 dark:ring-red-500/30">
-                        🔥 Almost Full!
-                      </span>
-                    )}
+                        <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-700 ring-1 ring-inset ring-red-600/20 dark:bg-red-900/40 dark:text-red-300 dark:ring-red-500/30">
+                          🔥 Almost Full!
+                        </span>
+                      )}
                   </div>
                   <p><span className="font-semibold">Type:</span> {event.type}</p>
                   <p><span className="font-semibold">Tags:</span> {(event.tags ?? []).join(", ")}</p>

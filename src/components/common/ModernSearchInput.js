@@ -59,9 +59,9 @@ const ModernSearchInput = ({
           className={`flex items-center w-full h-14 sm:h-16 px-4 pl-12 rounded-2xl bg-white dark:bg-slate-900 border transition-all duration-300 shadow-lg ${inputClassName}`}
           style={{
             borderColor: isFocused ? "#6366f1" : "#e5e7eb",
-            borderWidth: isFocused ? "2px" : "1px",
+            borderWidth: "1px",
             boxShadow: isFocused
-              ? "0 20px 25px -5px rgba(99, 102, 241, 0.25)"
+              ? "0 0 0 3px rgba(99, 102, 241, 0.35), 0 10px 15px -3px rgba(0,0,0,0.1)"
               : "0 10px 15px -3px rgba(0,0,0,0.1)",
           }}
         >
@@ -71,7 +71,14 @@ const ModernSearchInput = ({
             ref={searchInputRef}
             type="text"
             placeholder={tags ? "" : placeholder}
-            className="flex-1 bg-transparent border-none outline-none text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+            className="flex-1 h-full bg-transparent text-black dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+            style={{
+              border: "none",
+              outline: "none",
+              boxShadow: "none",
+              paddingTop: 0,
+              paddingBottom: 0,
+            }}
             spellCheck={false}
             value={value}
             onChange={onChange}

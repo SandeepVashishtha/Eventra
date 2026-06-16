@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import Fuse from "fuse.js";
 import { Calendar, Code, ExternalLink, Handshake, Search, Trophy, Users } from "lucide-react";
-import CountUp from "react-countup";
+import CountUpLib from "react-countup";
 
 import ErrorBoundary from "../../../components/common/ErrorBoundary";
 import ModernSearchInput from "../../../components/common/ModernSearchInput";
@@ -13,7 +13,8 @@ import useDebouncedSearch from "../../../hooks/useDebouncedSearch";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
 import useReducedMotion from "../../../hooks/useReducedMotion.js";
 
-import eventsData from "../../Events/eventsMockData.json";
+// Fetch events from backend API instead of static mock data
+import { eventService } from "../../../services/eventService";
 import hackathonsData from "../../Hackathons/hackathonMockData.json";
 import projectsData from "../../Projects/mockProjectsData.json";
 const CountUp = CountUpLib.default || CountUpLib;
@@ -192,7 +193,7 @@ const [isMobileView, setIsMobileView] = useState(
     const trimmed = debouncedTerm.trim();
     setSearchResults(trimmed ? searchIndex.search(trimmed).slice(0, SEARCH_RESULT_LIMIT) : []);
     setShowResults(!!trimmed);
-  }, [debouncedTerm]);
+  }, [debouncedTerm, searchIndex]);
 
   const handleSearch = useCallback((query) => setSearchTerm(query), [setSearchTerm]);
 
@@ -451,7 +452,23 @@ const [isMobileView, setIsMobileView] = useState(
           )}
         </motion.div>
 
-        {!searchTerm && <HeroStats stats={stats} statsReady={statsReady} />}
+        <div className="flex justify-center items-center gap-10">
+          <button onClick={()=>navigate("/events")} className="cursor-pointer bg-gradient-to-r from-purple-600 to-pink-500
+text-white
+px-8 py-3
+rounded-full
+font-semibold
+hover:scale-105">Explore Events</button>
+          <button onClick={()=>navigate("/community-event")} className="cursor-pointer border-2 border-purple-500
+text-purple-600
+bg-white
+px-8 py-3
+rounded-full
+font-semibold
+hover:bg-purple-50">Join Community</button>
+        </div>
+
+        {<HeroStats stats={stats} statsReady={statsReady} />}
       </motion.div>
     </section>
   );

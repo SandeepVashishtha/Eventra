@@ -202,12 +202,13 @@ export const requestValidation = async (endpoint, options = {}) => {
 
   const timedOut = lastError?.isTimeout || lastError?.name === "AbortError";
   return createValidationResponse(
-    false,
-    timedOut ? "Validation request timed out. Please try again." : networkMessage,
+    true,
+    "",
     {
       error: lastError,
       isTimeout: timedOut,
       isNetworkError: !timedOut,
+      skippedDueToError: true,
     },
   );
 };

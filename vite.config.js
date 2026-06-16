@@ -65,10 +65,12 @@ const env = loadEnv(mode, process.cwd(), "");
         "/api": {
           target: backendTarget,
           changeOrigin: true,
+          secure: false,
         },
         "/stream": {
           target: backendTarget,
           changeOrigin: true,
+          secure: false,
         },
       },
     },
