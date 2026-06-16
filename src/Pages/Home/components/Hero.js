@@ -13,7 +13,8 @@ import useDebouncedSearch from "../../../hooks/useDebouncedSearch";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
 import useReducedMotion from "../../../hooks/useReducedMotion.js";
 
-import eventsData from "../../Events/eventsMockData.json";
+// Fetch events from backend API instead of static mock data
+import { eventService } from "../../../services/eventService";
 import hackathonsData from "../../Hackathons/hackathonMockData.json";
 import projectsData from "../../Projects/mockProjectsData.json";
 
@@ -35,18 +36,6 @@ const createSearchItem = (item, type, searchType) => ({
   techStack: item.techStack,
   type,
   searchType,
-});
-
-const allSearchItems = [
-  ...eventsData.map((i) => createSearchItem(i, "event", "Events")),
-  ...hackathonsData.map((i) => createSearchItem(i, "hackathon", "Hackathons")),
-  ...projectsData.map((i) => createSearchItem(i, "project", "Projects")),
-];
-
-const searchIndex = new Fuse(allSearchItems, {
-  keys: ["title", "description", "location", "tags", "techStack", "type"],
-  threshold: 0.3,
-  includeScore: true,
 });
 
 // =========================================================================
@@ -93,6 +82,32 @@ const Hero = () => {
   const [statsReady, setStatsReady] = useState(false);
   const [, setShowResults] = useState(false);
   const [, setSearchResults] = useState([]);
+  const [eventsData, setEventsData] = useState([]);
+
+  // Fetch events from backend API
+  useEffect(() => {
+    let cancelled = false;
+    eventService.getAllEvents().then((res) => {
+      if (cancelled) return;
+      const raw = Array.isArray(res.data) ? res.data : res.data?.content ?? [];
+      setEventsData(raw);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
+  // Build search index from fetched events + static hackathons/projects
+  const searchIndex = useMemo(() => {
+    const allSearchItems = [
+      ...eventsData.map((i) => createSearchItem(i, "event", "Events")),
+      ...hackathonsData.map((i) => createSearchItem(i, "hackathon", "Hackathons")),
+      ...projectsData.map((i) => createSearchItem(i, "project", "Projects")),
+    ];
+    return new Fuse(allSearchItems, {
+      keys: ["title", "description", "location", "tags", "techStack", "type"],
+      threshold: 0.3,
+      includeScore: true,
+    });
+  }, [eventsData]);
 
   const { searchTerm, debouncedTerm, setSearchTerm } = useDebouncedSearch("", 300);
   const { scrollYProgress } = useScroll({ target: containerRef, offset: ["start start", "end start"] });
@@ -112,7 +127,7 @@ const Hero = () => {
     const trimmed = debouncedTerm.trim();
     setSearchResults(trimmed ? searchIndex.search(trimmed).slice(0, SEARCH_RESULT_LIMIT) : []);
     setShowResults(!!trimmed);
-  }, [debouncedTerm]);
+  }, [debouncedTerm, searchIndex]);
 
   const stats = useMemo(() => [
     { value: 1500, label: t("landing.hero.stats.developers"), suffix: "+", icon: Users },
