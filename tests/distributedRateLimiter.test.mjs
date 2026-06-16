@@ -117,6 +117,22 @@ describe('Distributed Rate Limiter', () => {
       assert.strictEqual(ip2Result.allowed, true);
     });
 
+    it('should prune expired keys from the in-memory store', async () => {
+      const limiter = await createLimiter(50, 2);
+      await limiter.check('192.168.1.1');
+      await limiter.check('192.168.1.2');
+      assert.strictEqual(limiter.store.size, 2);
+
+      await new Promise(resolve => setTimeout(resolve, 60));
+
+      await limiter.check('192.168.1.3');
+
+      assert.strictEqual(limiter.store.size, 1);
+      assert.ok(limiter.store.has('192.168.1.3'));
+      assert.ok(!limiter.store.has('192.168.1.1'));
+      assert.ok(!limiter.store.has('192.168.1.2'));
+    });
+
     it('should work with enforceRateLimit helper', async () => {
       const { createRateLimiter, enforceRateLimit } = await import('../api/_lib/rateLimiter.js');
       const limiter = createRateLimiter(1000, 2);

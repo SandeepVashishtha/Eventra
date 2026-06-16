@@ -10,10 +10,19 @@ class InMemoryRateLimiter {
     this.windowMs = windowMs;
     this.maxRequests = maxRequests;
     this.store = new Map();
+    this.lastCleanup = Date.now();
   }
 
   check(key) {
     const now = Date.now();
+    if (now - this.lastCleanup > this.windowMs) {
+      for (const [k, entry] of this.store.entries()) {
+        if (now - entry.start > this.windowMs) {
+          this.store.delete(k);
+        }
+      }
+      this.lastCleanup = now;
+    }
     const record = this.store.get(key);
 
     if (!record || now - record.start > this.windowMs) {
