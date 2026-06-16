@@ -98,7 +98,7 @@ const SignupForm = () => {
         setFieldState("email", "error");
       } else {
         const emailAvailability = await validateEmailAvailability(emailValue);
-        if (!emailAvailability?.isValid) {
+        if (!emailAvailability?.isValid && !emailAvailability?.skippedDueToError) {
           nextErrors.email = getResultMessage(
             emailAvailability,
             "This email is already registered. Please log in."
@@ -190,8 +190,6 @@ const SignupForm = () => {
       return;
     }
 
-    // Set validating/loading state immediately
-    setErrors((prev) => ({ ...prev, email: "Checking email availability..." }));
     setFieldState("email", "loading");
 
     const timer = setTimeout(async () => {
@@ -214,8 +212,8 @@ const SignupForm = () => {
           setFieldState("email", "error");
         }
       } catch {
-        setErrors((prev) => ({ ...prev, email: "Validation failed" }));
-        setFieldState("email", "error");
+        setErrors((prev) => ({ ...prev, email: "" }));
+        setFieldState("email", "idle");
       }
     }, 500);
 
@@ -312,12 +310,12 @@ const SignupForm = () => {
     <div className="w-full">
       <div className="text-center space-y-4 mb-8">
         <motion.div
-          className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg"
+          className="mx-auto w-16 h-16 rounded-2xl bg-linear-to-r from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg"
         >
           <Zap className="w-8 h-8 text-white" />
         </motion.div>
 
-        <h1 className="text-4xl font-extrabold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+        <h1 className="text-4xl font-extrabold bg-linear-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
           Create Your Account
         </h1>
 
@@ -349,16 +347,16 @@ const SignupForm = () => {
                 placeholder="Enter your first name"
                 className="
               w-full pl-10 pr-4 py-3.5
-              rounded-2xl
+              rounded-xl
               border border-slate-300/20
               bg-white/5
               backdrop-blur-sm
               text-text
               placeholder:text-slate-400
               focus:ring-2
-              focus:ring-indigo-500/30
-              focus:border-indigo-500
-              transition-all duration-300
+              focus:ring-blue-500/20
+              focus:border-blue-500
+              transition-all duration-200
               hover:border-indigo-400/50
               "
                 disabled={loading}
@@ -379,16 +377,16 @@ const SignupForm = () => {
                 placeholder="Enter your last name"
                 className="
               w-full pl-10 pr-4 py-3.5
-              rounded-2xl
+              rounded-xl
               border border-slate-300/20
               bg-white/5
               backdrop-blur-sm
               text-text
               placeholder:text-slate-400
               focus:ring-2
-              focus:ring-indigo-500/30
-              focus:border-indigo-500
-              transition-all duration-300
+              focus:ring-blue-500/20
+              focus:border-blue-500
+              transition-all duration-200
               hover:border-indigo-400/50
               "
                 disabled={loading}
@@ -541,7 +539,7 @@ const SignupForm = () => {
           w-full py-4
           rounded-2xl
           font-semibold
-          bg-gradient-to-r
+          bg-linear-to-r
           from-indigo-600
           via-purple-600
           to-pink-600

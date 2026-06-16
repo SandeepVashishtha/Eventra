@@ -1,10 +1,13 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { authService } from '../../services/authService';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import './Auth.css';
 import { Eye, EyeOff } from 'lucide-react';
 
 export default function LoginForm() {
+  const navigate = useNavigate();
+  const { login, authRequest } = useAuth();
+
   const [emailOrUsername, setEmailOrUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -44,14 +47,13 @@ export default function LoginForm() {
     setLoading(true);
     setError('');
 
-    const credentials = {
-      usernameOrEmail: emailOrUsername,
-      password,
-    };
-
     try {
-      await authService.login(credentials);
-      window.location.href = '/dashboard';
+      const success = await login(emailOrUsername.trim(), password);
+      if (success) {
+        navigate('/dashboard', { replace: true });
+      } else {
+        setError(authRequest.error || 'Login failed. Please check your credentials.');
+      }
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -62,11 +64,13 @@ export default function LoginForm() {
     }
   };
 
+  const isSubmitDisabled = loading || (authRequest?.loading || false);
+
   return (
     <div className="login-form-container">
       <form onSubmit={handleSubmit} className="auth-form">
 
-        <h1 className="text-4xl font-extrabold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent text-center">
+        <h1 className="text-4xl font-extrabold bg-linear-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent text-center">
           Welcome Back
         </h1>
 
@@ -74,13 +78,13 @@ export default function LoginForm() {
           Sign in to continue your Eventra journey
         </p>
 
-        {error && (
+        {(error || authRequest.error) && (
           <div
             className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-xl mb-4"
             role="alert"
             aria-live="polite"
           >
-            {error}
+            {error || authRequest.error}
           </div>
         )}
 
@@ -91,7 +95,7 @@ export default function LoginForm() {
             type="text"
             value={emailOrUsername}
             onChange={handleEmailOrUsernameChange}
-            disabled={loading}
+            disabled={isSubmitDisabled}
             placeholder="Enter your username or email"
             className={`
               w-full
@@ -124,7 +128,7 @@ export default function LoginForm() {
               type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              disabled={loading}
+              disabled={isSubmitDisabled}
               required
               placeholder="Enter your password"
               className="
@@ -165,7 +169,7 @@ export default function LoginForm() {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={isSubmitDisabled}
           className="
             w-full
             py-4
@@ -173,7 +177,7 @@ export default function LoginForm() {
             rounded-2xl
             font-semibold
             text-white
-            bg-gradient-to-r
+            bg-linear-to-r
             from-indigo-600
             via-purple-600
             to-pink-600
@@ -183,7 +187,7 @@ export default function LoginForm() {
             duration-300
           "
         >
-          {loading ? 'Authenticating...' : 'Login'}
+          {isSubmitDisabled ? 'Authenticating...' : 'Login'}
         </button>
 
         <p className="text-center text-sm text-gray-500 mt-6">

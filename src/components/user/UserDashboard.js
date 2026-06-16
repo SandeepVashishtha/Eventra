@@ -27,7 +27,9 @@ import {
   DashboardQuickActionSkeleton,
   DashboardSectionTitleSkeleton,
   DashboardStatCardSkeleton,
-  } from "../common/SkeletonLoaders";
+  DashboardTableSkeleton,
+} from "../common/SkeletonLoaders";
+import useDashboardFilters from "../../hooks/useDashboardFilters";
 import "./UserDashboard.css";
 import EventTicket from "./EventTicket";
 import EmptyState from "../common/EmptyState";
@@ -74,8 +76,6 @@ export default function UserDashboard() {
 
   const [activeTab, setActiveTab] = useState("overview");
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterType, setFilterType] = useState("All");
-  const [filterStatus, setFilterStatus] = useState("All");
   const [greeting, setGreeting] = useState("");
   const [notifOpen, setNotifOpen] = useState(false);
   const [selectedTicketEvent, setSelectedTicketEvent] = useState(null);
@@ -131,6 +131,9 @@ export default function UserDashboard() {
       setPushEnabled(granted);
     }
   };
+
+  // Debounced search + multi-select filters for Registrations tab
+  const dashboardFilters = useDashboardFilters(MOCK_DATA, { debounceMs: 300 });
 
   const firstName = user?.firstName || user?.username || "there";
 
@@ -201,21 +204,7 @@ export default function UserDashboard() {
 
   const { upcomingEvents, upcomingHackathons, activeProjects } = derivedData;
 
-  const filteredData = useMemo(() =>
-    MOCK_DATA.filter(item => {
-      const matchSearch = (item.title || "").toLowerCase().includes(searchQuery.toLowerCase());
-      const matchType = filterType === "All" || item.type === filterType;
-      const matchStatus = filterStatus === "All"
-        || item.status === filterStatus
-        || item.projectStatus === filterStatus;
-      return matchSearch && matchType && matchStatus;
-    }).sort((a, b) => {
-      if (!a.date && !b.date) return 0;
-      if (!a.date) return 1;
-      if (!b.date) return -1;
-      return new Date(b.date) - new Date(a.date);
-    }),
-  [searchQuery, filterType, filterStatus]);
+  // filteredData is now computed inside useDashboardFilters
 
   const notifications = [
     { id: 1, text: "React Conference 2025 registration opens soon", time: "2h ago", unread: true },
@@ -552,12 +541,17 @@ export default function UserDashboard() {
             <motion.div key="registrations" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <ErrorBoundary level="feature">
                 <RegistrationsTab
-                  filteredData={filteredData}
+                  filteredData={dashboardFilters.filteredData}
                   loading={loading}
-                  filterType={filterType}
-                  setFilterType={setFilterType}
-                  filterStatus={filterStatus}
-                  setFilterStatus={setFilterStatus}
+                  searchTerm={dashboardFilters.searchTerm}
+                  setSearchTerm={dashboardFilters.setSearchTerm}
+                  isDebouncing={dashboardFilters.isDebouncing}
+                  selectedTypes={dashboardFilters.selectedTypes}
+                  toggleType={dashboardFilters.toggleType}
+                  selectedStatuses={dashboardFilters.selectedStatuses}
+                  toggleStatus={dashboardFilters.toggleStatus}
+                  activeFilterCount={dashboardFilters.activeFilterCount}
+                  clearAll={dashboardFilters.clearAll}
                   setSelectedTicketEvent={setSelectedTicketEvent}
                 />
               </ErrorBoundary>

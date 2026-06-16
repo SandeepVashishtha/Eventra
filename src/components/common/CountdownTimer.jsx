@@ -127,7 +127,7 @@ const CountdownTimer = ({ date, time, timezone }) => {
 
   return (
     <div
-      className="rounded-2xl bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/40 dark:to-gray-800 border border-indigo-200 dark:border-indigo-700 p-5"
+      className="rounded-2xl bg-linear-to-br from-indigo-50 to-white dark:from-indigo-950/40 dark:to-gray-800 border border-indigo-200 dark:border-indigo-700 p-5"
       aria-label={`Event countdown timer: ${timeLeft.days} days, ${timeLeft.hours} hours, ${timeLeft.minutes} minutes, ${timeLeft.seconds} seconds remaining`}
     >
       {/* sr-only live region: announced every 60 seconds to avoid screen reader spam */}

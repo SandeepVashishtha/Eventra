@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { Award, Calendar, Code2, Sparkles, Users, X } from "lucide-react";
+import { Award, Calendar, Code2, Sparkles, Users, X, Rocket } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ModernSearchInput from "../../components/common/ModernSearchInput";
 import { useAuth } from "../../context/AuthContext";
@@ -43,7 +43,7 @@ export default function HackathonHero({
   const { user } = useAuth();
 
   return (
-    <div className="relative overflow-hidden bg-gradient-to-b from-slate-50 via-indigo-50/40 to-slate-50 dark:from-slate-950 dark:via-indigo-950/60 dark:to-slate-950 text-slate-900 dark:text-white py-16 sm:py-20 md:py-24 border-b border-slate-200 dark:border-indigo-900/40 transition-colors duration-300">
+    <div className="relative overflow-hidden bg-linear-to-b from-slate-50 via-indigo-50/40 to-slate-50 dark:from-slate-950 dark:via-indigo-950/60 dark:to-slate-950 text-slate-900 dark:text-white py-16 sm:py-20 md:py-24 border-b border-slate-200 dark:border-indigo-900/40 transition-colors duration-300">
 
       {/* ── Animated mesh background blobs ── */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -99,7 +99,7 @@ export default function HackathonHero({
             Discover{" "}
           </span>
           <span
-            className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 dark:from-blue-400 dark:via-indigo-400 dark:to-violet-400 bg-clip-text text-transparent"
+            className="bg-linear-to-r from-blue-600 via-indigo-600 to-violet-600 dark:from-blue-400 dark:via-indigo-400 dark:to-violet-400 bg-clip-text text-transparent"
             style={{ filter: "drop-shadow(0 0 24px rgba(99,102,241,0.3))" }}
           >
             Hackathons
@@ -130,7 +130,7 @@ export default function HackathonHero({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={onSearchKeyDown}
-              placeholder="Search hackathons by name, location, or tags..."
+              placeholder="Search hackathons by name, technology, prize pool, or organizer..."
               tags={
                 <AnimatePresence>
                   {selectedTags.map((tag) => (
@@ -165,9 +165,27 @@ export default function HackathonHero({
                 </motion.span>
               ))}
             </div>
-            <span className="text-sm text-indigo-700 dark:text-indigo-300 font-semibold">
-              {filteredCount}{" "}{filteredCount === 1 ? "hackathon" : "hackathons"} found
-            </span>
+            {filteredCount > 0 ? (
+              <span className="text-sm text-indigo-700 dark:text-indigo-300 font-semibold">
+                {filteredCount}{" "}{filteredCount === 1 ? "hackathon" : "hackathons"} found
+              </span>
+            ) : (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-4 flex flex-col items-center text-center p-6 bg-white/40 dark:bg-slate-900/40 rounded-2xl border border-indigo-100 dark:border-indigo-900/50 backdrop-blur-md w-full"
+              >
+                <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/50 rounded-full flex items-center justify-center mb-3">
+                  <Rocket className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                </div>
+                <p className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-1">
+                  No hackathons available right now 🚀
+                </p>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Be the first to host one or check back later for upcoming opportunities.
+                </p>
+              </motion.div>
+            )}
           </div>
         </motion.div>
 
@@ -181,11 +199,11 @@ export default function HackathonHero({
           <motion.button
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.97 }}
-            className="relative overflow-hidden px-7 py-3.5 rounded-xl font-semibold text-white shadow-lg dark:shadow-[0_0_24px_rgba(99,102,241,0.4)] bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 transition-all duration-200 flex items-center gap-2 border border-indigo-500/30"
+            className="relative overflow-hidden px-7 py-3.5 rounded-xl font-semibold text-white shadow-lg dark:shadow-[0_0_24px_rgba(99,102,241,0.4)] bg-linear-to-r from-blue-600 via-indigo-600 to-violet-600 transition-all duration-200 flex items-center gap-2 border border-indigo-500/30"
             onClick={scrollToCards}
           >
             {/* Shine effect */}
-            <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full hover:translate-x-full transition-transform duration-700" />
+            <span className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent -translate-x-full hover:translate-x-full transition-transform duration-700" />
             <Sparkles className="w-5 h-5" />
             Explore Hackathons
           </motion.button>
@@ -225,10 +243,10 @@ export default function HackathonHero({
               className="relative overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/5 p-6 flex flex-col items-center text-center backdrop-blur-md shadow-sm hover:shadow-md dark:shadow-[0_4px_24px_rgba(0,0,0,0.3)] transition-all duration-300 group"
             >
               {/* Gradient top border line */}
-              <div className={`absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r ${stat.color} opacity-80 group-hover:opacity-100 transition-opacity`} />
+              <div className={`absolute top-0 left-0 right-0 h-[3px] bg-linear-to-r ${stat.color} opacity-80 group-hover:opacity-100 transition-opacity`} />
 
               {/* Icon */}
-              <div className={`mb-4 flex items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br ${stat.color} shadow-sm dark:shadow-[0_0_20px_rgba(99,102,241,0.2)]`}>
+              <div className={`mb-4 flex items-center justify-center h-12 w-12 rounded-xl bg-linear-to-br ${stat.color} shadow-sm dark:shadow-[0_0_20px_rgba(99,102,241,0.2)]`}>
                 <stat.icon className="h-6 w-6 text-white" />
               </div>
 

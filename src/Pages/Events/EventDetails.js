@@ -31,7 +31,7 @@ import useRecentlyViewed from "../../hooks/useRecentlyViewed";
 import { apiUtils, API_ENDPOINTS } from "../../config/api";
 import mockEvents from "./eventsMockData.json";
 import CopyButton from '../../components/ui/CopyButton';
-
+import { Share2 } from "lucide-react";
 const isRequestCanceled = (error, signal) =>
   signal?.aborted ||
   error?.name === "AbortError" ||
@@ -94,7 +94,14 @@ const EventDetails = () => {
       if (fallback) {
         setEvent({ ...fallback, status: getEventStatus(fallback) });
       } else {
-        setFetchError("Event not found.");
+        const status = error?.status || error?.response?.status;
+        if (status >= 500) {
+          setFetchError("Something went wrong on our end. Please try again later.");
+        } else if (status === 404) {
+          setFetchError("Event not found.");
+        } else {
+          setFetchError("Could not load event details. Please try again.");
+        }
       }
     } finally {
       const shouldFinishLoading = isLatestRequest();
@@ -226,7 +233,15 @@ const EventDetails = () => {
   };
 
   const handleCopy = async () => {
-    const link = window.location.href;
+    const link = `
+🎉 Check out this event!
+
+Event: ${event.title}
+Date: ${new Date(event.date).toLocaleDateString()}
+Location: ${event.location}
+
+${window.location.href}
+`;
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(link);
@@ -243,11 +258,11 @@ const EventDetails = () => {
           textArea.remove();
         }
       }
-           toast.success("Event link copied to clipboard!");   
-           setLinkCopied(true);                                
-           setTimeout(() => setLinkCopied(false), 2000);
+      toast.success("Event link copied to clipboard!");
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
     } catch (err) {
-       toast.error("Failed to copy link. Please copy the URL from your browser's address bar.");
+      toast.error("Failed to copy link. Please copy the URL from your browser's address bar.");
     }
   };
 
@@ -314,14 +329,14 @@ const EventDetails = () => {
                 <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight wrap-break-word" title={event.title}>{event.title}</h1>
                 <button
                   onClick={handleCopy}
-                  className={`p-2 rounded-full transition-colors ${linkCopied 
-                    ? "text-green-600 bg-green-50 dark:bg-green-900/30" 
+                  className={`p-2 rounded-full transition-colors ${linkCopied
+                    ? "text-green-600 bg-green-50 dark:bg-green-900/30"
                     : "text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
-                  }`}
-               aria-label={linkCopied ? "Link copied!" : "Copy event link"}
-              title={linkCopied ? "Copied!" : "Copy link"}
-             >
-                {linkCopied ? <Check size={28} /> : <Link2 size={28} />}
+                    }`}
+                  aria-label={linkCopied ? "Link copied!" : "Copy event link"}
+                  title={linkCopied ? "Copied!" : "Copy link"}
+                >
+                  {linkCopied ? <Check size={28} /> : <Link2 size={28} />}
                 </button>
               </div>
               <div
@@ -561,10 +576,10 @@ const EventDetails = () => {
                     {event.maxAttendees > 0 &&
                       event.attendees / event.maxAttendees >= 0.8 &&
                       event.attendees < event.maxAttendees && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-700 ring-1 ring-inset ring-red-600/20 dark:bg-red-900/40 dark:text-red-300 dark:ring-red-500/30">
-                        🔥 Almost Full!
-                      </span>
-                    )}
+                        <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-700 ring-1 ring-inset ring-red-600/20 dark:bg-red-900/40 dark:text-red-300 dark:ring-red-500/30">
+                          🔥 Almost Full!
+                        </span>
+                      )}
                   </div>
                   <p><span className="font-semibold">Type:</span> {event.type}</p>
                   <p><span className="font-semibold">Tags:</span> {(event.tags ?? []).join(", ")}</p>
