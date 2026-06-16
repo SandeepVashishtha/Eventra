@@ -87,10 +87,10 @@ const forbiddenResponse = (url) =>
 
 export async function verifyTicketAccess(request) {
   const jwtSecret = process.env.JWT_SECRET;
-  if (!jwtSecret) {
+  if (!jwtSecret || !jwtSecret.trim()) {
     console.error("[middleware] JWT_SECRET is not configured. Rejecting ticket route request.");
     return new Response(
-      JSON.stringify({ error: "Server configuration error" }),
+      JSON.stringify({ error: "Server authentication misconfiguration" }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }

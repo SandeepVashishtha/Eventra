@@ -96,15 +96,34 @@ async function handleRequest(request) {
       }
 
       const jwtSecret = process.env.JWT_SECRET;
-      if (jwtSecret) {
-        const payload = await verifyJwt(token, jwtSecret);
-        if (payload && payload.sessionId) {
-          const status = await getSessionRiskState(payload.sessionId);
-          if (status === "invalidated") {
-             return new Response(JSON.stringify({ error: "Session invalidated" }), { status: 401, headers: { "Content-Type": "application/json" }});
-          } else if (status === "requires_reauth") {
-             return new Response(JSON.stringify({ error: "Re-authentication required", code: "REQUIRES_REAUTH" }), { status: 401, headers: { "Content-Type": "application/json" }});
+      if (!jwtSecret || !jwtSecret.trim()) {
+        return new Response(
+          JSON.stringify({
+            error: "Server authentication misconfiguration"
+          }),
+          {
+            status: 500,
+            headers: {
+              "Content-Type": "application/json"
+            }
           }
+        );
+      }
+
+      const payload = await verifyJwt(token, jwtSecret);
+      if (!payload) {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      if (payload.sessionId) {
+        const status = await getSessionRiskState(payload.sessionId);
+        if (status === "invalidated") {
+           return new Response(JSON.stringify({ error: "Session invalidated" }), { status: 401, headers: { "Content-Type": "application/json" }});
+        } else if (status === "requires_reauth") {
+           return new Response(JSON.stringify({ error: "Re-authentication required", code: "REQUIRES_REAUTH" }), { status: 401, headers: { "Content-Type": "application/json" }});
         }
       }
     }

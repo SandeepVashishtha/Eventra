@@ -115,7 +115,11 @@ const log = (...args) => {
   }
 };
 
-
+const MOCK_CONTRIBUTORS = [
+  { username: "alice", name: "Alice Dev", avatar: "https://avatars.githubusercontent.com/u/1?v=4", profile: "https://github.com/alice", points: 42, prs: 6 },
+  { username: "bob", name: "Bob Coder", avatar: "https://avatars.githubusercontent.com/u/2?v=4", profile: "https://github.com/bob", points: 35, prs: 5 },
+  { username: "carol", name: "Carol Builder", avatar: "https://avatars.githubusercontent.com/u/3?v=4", profile: "https://github.com/carol", points: 28, prs: 4 },
+];
 
 const MOCK_NAMES = ["Priya Sharma", "Arjun Mehta", "Sneha Nair", "Karan Patel", "Divya Rao"];
 const MOCK_EVENTS = [
