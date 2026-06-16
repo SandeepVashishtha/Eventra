@@ -3,6 +3,7 @@ import { checkGeoBlock } from "./geo.js";
 import { checkRateLimit } from "./rate-limit.js";
 import { verifyTicketAccess, verifyJwt, parseTokenFromCookie } from "./jwt.js";
 import { addSecurityHeaders, validateBackendOrigin, getBackendOrigins, createSecurityHeaders } from "./csp.js";
+import { isAllowedOrigin } from "../api/auth/cors.js";
 
 const validationLimiter = createConcurrencyLimiter(5);
 
@@ -53,10 +54,13 @@ async function handleRequest(request) {
     try {
       const originUrl = new URL(origin);
       if (originUrl.host !== host) {
-        return new Response(
-          JSON.stringify({ error: "Forbidden: Invalid origin" }),
-          { status: 403, headers: { "Content-Type": "application/json" } }
-        );
+        // Cross-origin request: validate if the origin is explicitly authorized
+        if (!isAllowedOrigin(origin)) {
+          return new Response(
+            JSON.stringify({ error: "Forbidden: Invalid origin" }),
+            { status: 403, headers: { "Content-Type": "application/json" } }
+          );
+        }
       }
     } catch (e) {
       return new Response(
@@ -155,10 +159,9 @@ async function handleRequest(request) {
   return;
 }
 
-export { validateBackendOrigin, getBackendOrigins } from "./csp.js";
+export { validateBackendOrigin, getBackendOrigins, createSecurityHeaders } from "./csp.js";
 
-const SECURITY_HEADERS_OBJ = createSecurityHeaders();
-export { SECURITY_HEADERS_OBJ as SECURITY_HEADERS };
+export const SECURITY_HEADERS = createSecurityHeaders();
 
 export default async function middleware(request) {
   return validationLimiter.run(() => handleRequest(request));

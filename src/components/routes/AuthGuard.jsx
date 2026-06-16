@@ -35,6 +35,11 @@ const AuthGuard = ({ children }) => {
   const { isAuthenticated } = useAuth();
   const location = useLocation();
 
+  // Defensive validation of props.children parameter
+  if (children === undefined || children === null) {
+    return null;
+  }
+
   if (!isAuthenticated()) {
     return (
       <Navigate

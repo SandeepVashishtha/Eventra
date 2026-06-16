@@ -75,6 +75,7 @@ and this project adheres to Semantic Versioning.
 - Fixed cross-event ticket validation via request body eventId override.
 - Fixed TicketScanner crash on valid JSON primitive QR code scans.
 - Fixed offline queue limit bypass via localStorage/IndexedDB desync.
+- Fixed Edge Middleware CORS blocking by validating requests against ALLOWED_ORIGINS instead of host comparison, and resolved test suite ESM caching.
 
 ### Phase Validation Checklist
 

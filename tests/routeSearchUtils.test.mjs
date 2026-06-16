@@ -3,7 +3,20 @@ import { createRequire } from "node:module";
 import { getRouteSearchResults } from "../src/utils/searchUtils.mjs";
 
 const require = createRequire(import.meta.url);
-const events = require("../src/Pages/Events/eventsMockData.json");
+const events = [
+  {
+    id: 7,
+    title: "Cloud Native Conference",
+    date: "2026-07-18",
+    time: "10:00 AM",
+    location: "Chicago, IL",
+    type: "conference",
+    category: "DevOps & Cloud",
+    status: "upcoming",
+    description: "Explore the future of cloud-native technologies and microservices architecture.",
+    tags: ["Cloud", "Kubernetes", "Docker"]
+  }
+];
 const hackathons = require("../src/Pages/Hackathons/hackathonMockData.json");
 
 const eventKeys = ["title", "description", "location", "tags", "type", "date", "status"];

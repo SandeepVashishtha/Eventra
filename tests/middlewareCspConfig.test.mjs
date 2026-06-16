@@ -432,6 +432,70 @@ describe("CSP Backend Origin Configuration", () => {
       assert.deepStrictEqual(result, ["https://api.example.com"]);
     });
   });
+
+  describe("Middleware CORS Origin Checking", () => {
+    it("allows same-origin requests (origin host matches host)", async () => {
+      const { default: middleware } = await importMiddleware();
+      
+      const req = {
+        url: "http://localhost:8080/api/events",
+        method: "GET",
+        headers: {
+          get(name) {
+            if (name === "origin") return "http://localhost:8080";
+            if (name === "host") return "localhost:8080";
+            return null;
+          }
+        }
+      };
+
+      const res = await middleware(req);
+      assert.strictEqual(res, undefined); // lets request pass through
+    });
+
+    it("blocks cross-origin requests from untrusted origins", async () => {
+      process.env.ALLOWED_ORIGINS = "https://eventra.com";
+      const { default: middleware } = await importMiddleware();
+      
+      const req = {
+        url: "http://localhost:8080/api/events",
+        method: "GET",
+        headers: {
+          get(name) {
+            if (name === "origin") return "https://evil.com";
+            if (name === "host") return "localhost:8080";
+            return null;
+          }
+        }
+      };
+
+      const res = await middleware(req);
+      assert.ok(res instanceof Response);
+      assert.strictEqual(res.status, 403);
+      const body = await res.json();
+      assert.strictEqual(body.error, "Forbidden: Invalid origin");
+    });
+
+    it("allows cross-origin requests from explicitly allowed origins", async () => {
+      process.env.ALLOWED_ORIGINS = "https://eventra.com";
+      const { default: middleware } = await importMiddleware();
+      
+      const req = {
+        url: "http://localhost:8080/api/events",
+        method: "GET",
+        headers: {
+          get(name) {
+            if (name === "origin") return "https://eventra.com";
+            if (name === "host") return "localhost:8080";
+            return null;
+          }
+        }
+      };
+
+      const res = await middleware(req);
+      assert.strictEqual(res, undefined); // lets request pass through
+    });
+  });
 });
 
 console.log("CSP Backend Origin Configuration tests passed ✓");
