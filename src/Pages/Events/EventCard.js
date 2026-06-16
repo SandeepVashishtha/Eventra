@@ -1,8 +1,7 @@
 import { memo, useCallback, useEffect, useId, useState } from "react";
 import { logger } from "../../utils/logger";
 import { getUserTimezone } from "../../utils/timezoneUtils";
-import { Link, useNavigate } from "react-router-dom";
-import useRecentlyViewed from "../../hooks/useRecentlyViewed";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { getSmartDateLabel } from "../../utils/relativeTime";
 import {
@@ -56,8 +55,6 @@ const getCapacityStyles = (ratio, isFull) => {
 };
 
 const EventCard = ({ event }) => {
-  const navigate = useNavigate();
-  const { addRecentlyViewed } = useRecentlyViewed();
   const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
   const titleId = useId();
   const { myEvents, isRegistered } = useMyEvents();
@@ -79,12 +76,6 @@ const EventCard = ({ event }) => {
   const conflictCheck = checkRegistrationConflict(event, myEvents);
   const hasConflict = conflictCheck.hasConflict;
   const isUserRegistered = isRegistered(event.id);
-
-  const handleViewDetailsClick = (e) => {
-    e.preventDefault();
-    addRecentlyViewed(event);
-    navigate(`/events/${event.id}`);
-  };
 
   const isPastEvent = getEventStatus(event) === "past" || getEventStatus(event) === "ended";
 
@@ -408,7 +399,7 @@ const EventCard = ({ event }) => {
           </Link>
         )}
 
-        <Link to={`/events/${event.id}`} onClick={handleViewDetailsClick} className="flex-1 inline-flex items-center justify-center rounded-2xl bg-slate-50/80 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 px-4 py-3 text-sm font-semibold shadow-md hover:bg-slate-100 dark:hover:bg-slate-700/80 hover:scale-[1.03] hover:shadow-lg transition-all duration-300">
+        <Link to={`/events/${event.id}`} className="flex-1 inline-flex items-center justify-center rounded-2xl bg-slate-50/80 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 px-4 py-3 text-sm font-semibold shadow-md hover:bg-slate-100 dark:hover:bg-slate-700/80 hover:scale-[1.03] hover:shadow-lg transition-all duration-300">
           <span>
             View Details
           </span>
