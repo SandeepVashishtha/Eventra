@@ -38,6 +38,103 @@ export const config = {
   matcher: "/api/:path*",
 };
 
+function checkOrigin(request) {
+  const origin = request.headers.get("origin");
+  const host = request.headers.get("host");
+  if (!origin) return null;
+
+  try {
+    const originUrl = new URL(origin);
+    if (originUrl.host !== host) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden: Invalid origin" }),
+        { status: 403, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  } catch (e) {
+    return new Response(
+      JSON.stringify({ error: "Forbidden: Malformed origin" }),
+      { status: 403, headers: { "Content-Type": "application/json" } }
+    );
+  }
+  return null;
+}
+
+const PUBLIC_PATHS = [
+  "/api/auth/login",
+  "/api/auth/signup",
+  "/api/auth/reset-password",
+  "/api/auth/reauth",
+  "/api/events",
+  "/api/hackathons",
+  "/api/projects",
+  "/api/validate",
+  "/api/health",
+];
+
+function isPathPublic(pathname, method) {
+  const isMatch = PUBLIC_PATHS.some(path => {
+    if (path === "/api/events" || path === "/api/hackathons" || path === "/api/projects") {
+      // Only base listings or specific public endpoints are allowed without authentication
+      return (
+        pathname === path ||
+        pathname === `${path}/` ||
+        (pathname.startsWith(`${path}/`) &&
+          !pathname.includes("/admin/") &&
+          !pathname.includes("/settings") &&
+          !pathname.includes("/export"))
+      );
+    }
+    return pathname.startsWith(path);
+  });
+
+  return isMatch && (method === "GET" || pathname.includes("/auth/") || pathname.includes("/validate/"));
+}
+
+async function authenticateRequest(request) {
+  const token = parseTokenFromCookie(request);
+  if (!token) {
+    return new Response(
+      JSON.stringify({ error: "Unauthorized: Missing active user session" }),
+      { status: 401, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  const jwtSecret = process.env.JWT_SECRET;
+  if (!jwtSecret || !jwtSecret.trim()) {
+    return new Response(
+      JSON.stringify({ error: "Server authentication misconfiguration" }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  const payload = await verifyJwt(token, jwtSecret);
+  if (!payload) {
+    return new Response(
+      JSON.stringify({ error: "Unauthorized" }),
+      { status: 401, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  if (payload.sessionId) {
+    const status = await getSessionRiskState(payload.sessionId);
+    if (status === "invalidated") {
+      return new Response(
+        JSON.stringify({ error: "Session invalidated" }),
+        { status: 401, headers: { "Content-Type": "application/json" } }
+      );
+    }
+    if (status === "requires_reauth") {
+      return new Response(
+        JSON.stringify({ error: "Re-authentication required", code: "REQUIRES_REAUTH" }),
+        { status: 401, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  }
+
+  return null;
+}
+
 async function handleRequest(request) {
   const geoResponse = checkGeoBlock(request);
   if (geoResponse) return geoResponse;
@@ -46,94 +143,13 @@ async function handleRequest(request) {
 
   if (request.method === "OPTIONS") return;
 
-  const origin = request.headers.get("origin");
-  const host = request.headers.get("host");
-
-  if (origin) {
-    try {
-      const originUrl = new URL(origin);
-      if (originUrl.host !== host) {
-        return new Response(
-          JSON.stringify({ error: "Forbidden: Invalid origin" }),
-          { status: 403, headers: { "Content-Type": "application/json" } }
-        );
-      }
-    } catch (e) {
-      return new Response(
-        JSON.stringify({ error: "Forbidden: Malformed origin" }),
-        { status: 403, headers: { "Content-Type": "application/json" } }
-      );
-    }
-  }
+  const originResponse = checkOrigin(request);
+  if (originResponse) return originResponse;
 
   if (url.pathname.startsWith("/api/")) {
-    const PUBLIC_PATHS = [
-      "/api/auth/login",
-      "/api/auth/signup",
-      "/api/auth/reset-password",
-      "/api/auth/reauth",
-      "/api/events",
-      "/api/hackathons",
-      "/api/projects",
-      "/api/validate",
-      "/api/health",
-    ];
-
-    const isPublicPath = PUBLIC_PATHS.some(path => {
-      if (path === "/api/events" || path === "/api/hackathons" || path === "/api/projects") {
-        // Only base listings or specific public endpoints are allowed without authentication
-        return (
-          url.pathname === path ||
-          url.pathname === `${path}/` ||
-          (url.pathname.startsWith(`${path}/`) &&
-            !url.pathname.includes("/admin/") &&
-            !url.pathname.includes("/settings") &&
-            !url.pathname.includes("/export"))
-        );
-      }
-      return url.pathname.startsWith(path);
-    }) && (request.method === "GET" || url.pathname.includes("/auth/") || url.pathname.includes("/validate/"));
-
-    if (!isPublicPath) {
-      const token = parseTokenFromCookie(request);
-      if (!token) {
-        return new Response(
-          JSON.stringify({ error: "Unauthorized: Missing active user session" }),
-          { status: 401, headers: { "Content-Type": "application/json" } }
-        );
-      }
-
-      const jwtSecret = process.env.JWT_SECRET;
-      if (!jwtSecret || !jwtSecret.trim()) {
-        return new Response(
-          JSON.stringify({
-            error: "Server authentication misconfiguration"
-          }),
-          {
-            status: 500,
-            headers: {
-              "Content-Type": "application/json"
-            }
-          }
-        );
-      }
-
-      const payload = await verifyJwt(token, jwtSecret);
-      if (!payload) {
-        return new Response(
-          JSON.stringify({ error: "Unauthorized" }),
-          { status: 401, headers: { "Content-Type": "application/json" } }
-        );
-      }
-
-      if (payload.sessionId) {
-        const status = await getSessionRiskState(payload.sessionId);
-        if (status === "invalidated") {
-           return new Response(JSON.stringify({ error: "Session invalidated" }), { status: 401, headers: { "Content-Type": "application/json" }});
-        } else if (status === "requires_reauth") {
-           return new Response(JSON.stringify({ error: "Re-authentication required", code: "REQUIRES_REAUTH" }), { status: 401, headers: { "Content-Type": "application/json" }});
-        }
-      }
+    if (!isPathPublic(url.pathname, request.method)) {
+      const authResponse = await authenticateRequest(request);
+      if (authResponse) return authResponse;
     }
   }
 
