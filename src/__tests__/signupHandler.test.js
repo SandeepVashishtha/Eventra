@@ -22,14 +22,17 @@ vi.mock("../../api/_lib/rateLimiter.js", () => ({
   },
 }));
 
-vi.mock("../../api/auth/_cors.js", () => ({
-  buildCorsHeaders: () => ({ "access-control-allow-origin": "*" }),
-  corsResponse: (req, res, status, data) => {
-    if (typeof res.set === "function") res.set(buildCorsHeaders());
-    res.status(status).json(data);
-    return res;
-  },
-}));
+vi.mock("../../api/auth/_cors.js", () => {
+  const buildCorsHeaders = () => ({ "access-control-allow-origin": "*" });
+  return {
+    buildCorsHeaders,
+    corsResponse: (req, res, status, data) => {
+      if (typeof res.set === "function") res.set(buildCorsHeaders());
+      res.status(status).json(data);
+      return res;
+    },
+  };
+});
 
 import handler from "../../api/auth/signup.js";
 import { createUser, getUserByEmail, isStorageHealthy } from "../../api/auth/_user-storage.js";
@@ -56,6 +59,10 @@ beforeEach(() => {
     set: vi.fn().mockReturnThis(),
     end: vi.fn().mockReturnThis(),
   };
+  createUser.mockReset().mockResolvedValue({});
+  getUserByEmail.mockReset().mockResolvedValue(null);
+  isStorageHealthy.mockReset().mockResolvedValue(true);
+  signupRateLimiter.checkAsync.mockReset().mockResolvedValue({ allowed: true, remaining: 4, resetAt: Date.now() + 60000 });
   vi.clearAllMocks();
 });
 
