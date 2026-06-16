@@ -26,6 +26,8 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import useDebounce from "../../hooks/useDebounce.js";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 // ============ CONSTANTS ============
 const GSSOC_TIMELINE = [
@@ -142,7 +144,7 @@ const CountdownTimer = memo(({ timeLeft }) => {
           key={unit}
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl p-2 sm:p-3 text-white shadow-lg"
+          className="bg-linear-to-br from-indigo-500 to-purple-600 rounded-xl p-2 sm:p-3 text-white shadow-lg"
         >
           <div className="text-lg sm:text-2xl font-bold tabular-nums">{String(value).padStart(2, '0')}</div>
           <div className="text-[10px] sm:text-xs opacity-90 capitalize">{unit}</div>
@@ -251,38 +253,111 @@ const AchievementBadge = memo(({ achievement, onUnlock }) => {
 });
 AchievementBadge.displayName = "AchievementBadge";
 
-const TimelineItem = memo(({ item, isLast }) => {
-  const Icon = item.icon;
-  const statusColors = getStatusColor(item.status);
+const HorizontalTimeline = memo(({ timeline, variants }) => {
+  const total = timeline.length - 1;
+  const currentIndex = timeline.findIndex(item => item.status === 'current');
+  const progressPercent = currentIndex >= 0 ? (currentIndex / total) * 100 : 100;
   
+  const currentItem = timeline[currentIndex];
+  const nextItem = timeline[currentIndex + 1];
+
   return (
-    <div className="flex gap-4" role="listitem">
-      <div className="flex flex-col items-center">
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${statusColors}`}
-          aria-label={`${item.phase}: ${item.status}`}
-        >
-          <Icon className="w-5 h-5" aria-hidden="true" />
-        </motion.div>
-        {!isLast && (
-          <div className={`w-0.5 flex-1 my-2 ${item.status === 'completed' ? 'bg-green-400' : 'bg-gray-300 dark:bg-gray-600'}`} aria-hidden="true" />
-        )}
+    <motion.section variants={variants} className="p-5 sm:p-8 rounded-3xl bg-white dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 shadow-lg shadow-slate-200/30 dark:shadow-none mb-6 sm:mb-8 backdrop-blur-xl">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-5 mb-10 border-b border-slate-100 dark:border-slate-700/50 pb-6">
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center border border-indigo-100 dark:border-indigo-500/20">
+              <Calendar className="w-5 h-5 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
+            </div>
+            <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Program Timeline</h3>
+          </div>
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 ml-[52px]">Track your milestones and upcoming deadlines</p>
+        </div>
+        
+        <div className="flex flex-col md:items-end bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-200/60 dark:border-slate-800/80 shadow-inner">
+          <div className="flex items-center gap-3 mb-1.5">
+            <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Program Progress</span>
+            <span className="text-xs font-black text-white bg-linear-to-r from-indigo-500 to-violet-600 px-2.5 py-1 rounded-full shadow-md shadow-indigo-500/20">{Math.round(progressPercent)}% Complete</span>
+          </div>
+          {currentItem && (
+            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1.5 font-medium">
+              Current Phase: <strong className="text-slate-900 dark:text-white font-bold">{currentItem.phase}</strong>
+            </p>
+          )}
+          {nextItem && (
+            <p className="text-xs text-slate-500 dark:text-slate-500 mt-1 font-medium">
+              Next Milestone: <span className="text-indigo-600 dark:text-indigo-400 font-semibold">{nextItem.phase} ({nextItem.date})</span>
+            </p>
+          )}
+        </div>
       </div>
-      <div className="pb-6">
-        <h4 className="font-medium text-gray-900 dark:text-white">{item.phase}</h4>
-        <p className="text-sm text-gray-500 dark:text-gray-400">{item.date}</p>
-        {item.status === 'current' && (
-          <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded-full">
-            In Progress
-          </span>
-        )}
+      
+      <div className="relative w-full py-4 overflow-x-auto hide-scrollbar">
+        <div className="min-w-[700px] flex items-start justify-between relative px-8 md:px-12 pb-8 pt-2">
+          {/* Progress Bar Background */}
+          <div className="absolute top-[34px] left-20 right-20 h-2 bg-slate-100 dark:bg-slate-800/80 rounded-full overflow-hidden border border-slate-200/50 dark:border-slate-700/50" aria-hidden="true">
+            {/* Active Progress Bar */}
+            <motion.div 
+              initial={{ width: 0 }}
+              animate={{ width: `${progressPercent}%` }}
+              transition={{ duration: 1.5, ease: "easeOut", delay: 0.2 }}
+              className="absolute top-0 left-0 h-full bg-linear-to-r from-blue-500 via-indigo-500 to-violet-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)]" 
+            />
+          </div>
+          
+          {timeline.map((item, idx) => {
+            const Icon = item.icon;
+            const isCompleted = item.status === 'completed';
+            const isCurrent = item.status === 'current';
+            
+            return (
+              <div key={item.phase} className="relative flex flex-col items-center w-32 shrink-0 z-10 group" role="listitem">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: idx * 0.1, type: "spring", stiffness: 200 }}
+                  className={`w-14 h-14 rounded-2xl flex items-center justify-center border-4 shadow-xl transition-all duration-300 ${
+                    isCompleted ? 'bg-linear-to-br from-indigo-500 to-violet-600 border-white dark:border-slate-900 text-white group-hover:scale-110 group-hover:-translate-y-1 shadow-indigo-500/20' : 
+                    isCurrent ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 border-indigo-500 shadow-indigo-500/30 scale-110 group-hover:scale-125 group-hover:-translate-y-1' : 
+                    'bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border-white dark:border-slate-900 shadow-slate-200/50 dark:shadow-none'
+                  } ${isCurrent ? 'rotate-3 group-hover:rotate-6' : '-rotate-3 group-hover:rotate-0'}`}
+                  aria-label={`${item.phase}: ${item.status}`}
+                >
+                  {isCompleted ? <CheckCircle className="w-6 h-6" /> : <Icon className={`w-6 h-6 ${isCurrent ? 'animate-pulse' : ''}`} aria-hidden="true" />}
+                </motion.div>
+                
+                <div className="mt-5 text-center">
+                  <h4 className={`text-sm font-extrabold mb-1.5 transition-colors ${
+                    isCurrent ? 'text-indigo-600 dark:text-indigo-400' : 
+                    isCompleted ? 'text-slate-900 dark:text-white' : 
+                    'text-slate-400 dark:text-slate-500'
+                  }`}>
+                    {item.phase}
+                  </h4>
+                  <p className={`text-xs ${isCurrent ? 'text-slate-700 dark:text-slate-300 font-bold' : 'text-slate-500 dark:text-slate-500 font-medium'}`}>
+                    {item.date}
+                  </p>
+                  <AnimatePresence>
+                    {isCurrent && (
+                      <motion.span 
+                        initial={{ opacity: 0, y: -10, scale: 0.8 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        className="absolute -bottom-10 left-1/2 -translate-x-1/2 whitespace-nowrap px-3 py-1.5 text-[10px] font-black uppercase tracking-widest bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300 rounded-xl border border-indigo-200 dark:border-indigo-500/30 shadow-sm"
+                      >
+                        Active Phase
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
-    </div>
+    </motion.section>
   );
 });
-TimelineItem.displayName = "TimelineItem";
+HorizontalTimeline.displayName = "HorizontalTimeline";
 
 const ResourceItem = memo(({ resource, onCopy }) => {
   const [copied, setCopied] = useState(false);
@@ -326,18 +401,6 @@ const ResourceItem = memo(({ resource, onCopy }) => {
 });
 ResourceItem.displayName = "ResourceItem";
 
-const StatCard = memo(({ label, value, icon: Icon, color }) => (
-  <motion.div 
-    whileHover={{ y: -2 }}
-    className="p-3 text-center"
-    role="status"
-  >
-    <Icon className={`w-6 h-6 mx-auto mb-2 ${color}`} aria-hidden="true" />
-    <div className="text-xl font-bold text-gray-900 dark:text-white tabular-nums">{formatNumber(value)}</div>
-    <div className="text-xs text-gray-600 dark:text-gray-400">{label}</div>
-  </motion.div>
-));
-StatCard.displayName = "StatCard";
 
 // Skeleton Components
 const Skeleton = ({ className }) => (
@@ -387,10 +450,11 @@ const GSSoCContribution = () => {
   
   // State with localStorage persistence
   const [searchQuery, setSearchQuery] = useState(() => localStorage.getItem("gssoc.search") || "");
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [selectedDifficulty, setSelectedDifficulty] = useState(() => localStorage.getItem("gssoc.difficulty") || "all");
   const [userStats] = useState(() => {
     const saved = localStorage.getItem("gssoc.userStats");
-    return saved ? JSON.parse(saved) : {
+    return saved ? safeJsonParse(saved, {}) : {
       issuesClaimed: 3,
       prsMerged: 2,
       points: 450,
@@ -443,17 +507,17 @@ const timeLeft = useCountdown(
   // Filtered resources with difficulty filter
   const filteredResources = useMemo(() => {
     let result = RESOURCES;
-    if (searchQuery) {
+    if (debouncedSearchQuery) {
       result = result.filter(r => 
-        r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        r.type.toLowerCase().includes(searchQuery.toLowerCase())
+        r.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        r.type.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
       );
     }
     if (selectedDifficulty !== "all") {
       result = result.filter(r => r.difficulty === selectedDifficulty);
     }
     return result;
-  }, [searchQuery, selectedDifficulty]);
+  }, [debouncedSearchQuery, selectedDifficulty]);
   
   // Handlers
   const handleMentorConnect = useCallback((mentor) => {
@@ -489,14 +553,11 @@ const timeLeft = useCountdown(
     }
   }), [prefersReducedMotion]);
   
-  // Stats section visibility
-  const statsRef = useRef(null);
-  useInView(statsRef, { once: true, margin: "-100px" });
   
   if (isLoading) {
     return (
       <div className="w-[95%] mx-auto my-10 min-h-screen pb-12">
-        <div className="p-8 rounded-3xl bg-gradient-to-br from-indigo-600 to-purple-600 mb-8">
+        <div className="p-8 rounded-3xl bg-linear-to-br from-indigo-600 to-purple-600 mb-8">
           <Skeleton className="h-8 w-64 mb-4" />
           <Skeleton className="h-4 w-96 mb-6" />
           <div className="grid grid-cols-4 gap-3">
@@ -541,7 +602,7 @@ const timeLeft = useCountdown(
         {/* 🎯 HERO SECTION */}
         <motion.section
           variants={itemVariants}
-          className="p-6 sm:p-8 rounded-3xl shadow-lg bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 text-white mb-6 sm:mb-8 relative overflow-hidden"
+          className="p-6 sm:p-8 rounded-3xl shadow-lg bg-linear-to-br from-indigo-600 via-purple-600 to-pink-500 text-white mb-6 sm:mb-8 relative overflow-hidden"
           aria-labelledby="hero-heading"
         >
           {/* Decorative background */}
@@ -759,24 +820,13 @@ const timeLeft = useCountdown(
           </div>
         </motion.section>
 
-        {/* 📅 Timeline */}
-        <motion.section variants={itemVariants} className="p-4 sm:p-6 rounded-2xl bg-card-bg border border-gray-200 dark:border-gray-700 mb-6 sm:mb-8">
-          <div className="flex items-center gap-2 mb-4 sm:mb-6">
-            <Calendar className="w-5 h-5 text-purple-500" aria-hidden="true" />
-            <h3 className="font-semibold text-gray-900 dark:text-white">Program Timeline</h3>
-          </div>
-          
-          <div className="relative pl-2" role="list" aria-label="Program timeline">
-            {GSSOC_TIMELINE.map((item, idx) => (
-              <TimelineItem key={item.phase} item={item} isLast={idx === GSSOC_TIMELINE.length - 1} />
-            ))}
-          </div>
-        </motion.section>
+        {/* 📅 Horizontal Timeline */}
+        <HorizontalTimeline timeline={GSSOC_TIMELINE} variants={itemVariants} />
 
         {/* Getting Started & Best Practices */}
         <motion.section className="grid md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8" variants={itemVariants}>
           {/* Getting Started */}
-          <article className="p-4 sm:p-6 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-800 border dark:border-gray-700">
+          <article className="p-4 sm:p-6 rounded-2xl bg-linear-to-br from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-800 border dark:border-gray-700">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
                 <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" aria-hidden="true" />
@@ -842,7 +892,7 @@ const timeLeft = useCountdown(
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => window.open("https://github.com/SandeepVashishtha/Eventra", "_blank", "noopener,noreferrer")}
-            className="px-6 sm:px-8 py-3 rounded-full font-semibold text-white bg-gradient-to-r from-pink-500 to-orange-500 hover:from-pink-600 hover:to-orange-600 shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 dark:focus:ring-offset-black"
+            className="px-6 sm:px-8 py-3 rounded-full font-semibold text-white bg-linear-to-r from-pink-500 to-orange-500 hover:from-pink-600 hover:to-orange-600 shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 dark:focus:ring-offset-black"
           >
             <GitBranch className="w-4 h-4" aria-hidden="true" />
             Start Contributing
@@ -852,7 +902,7 @@ const timeLeft = useCountdown(
           <motion.button
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => window.open("https://discord.gg/eventra", "_blank", "noopener,noreferrer")}
+            onClick={() => window.open("https://discord.gg/6MQ9r5nHT", "_blank", "noopener,noreferrer")}
             className="px-6 sm:px-8 py-3 rounded-full font-semibold text-white bg-[#5865F2] hover:bg-[#4752C4] shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-[#5865F2] focus:ring-offset-2 dark:focus:ring-offset-black"
           >
             <MessageCircle className="w-4 h-4" aria-hidden="true" />
@@ -860,32 +910,6 @@ const timeLeft = useCountdown(
           </motion.button>
         </motion.nav>
 
-        {/* 📊 Footer Stats */}
-        <motion.section
-          ref={statsRef}
-          variants={itemVariants}
-          className="p-4 sm:p-6 rounded-2xl bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 border dark:border-gray-600"
-          aria-labelledby="stats-heading"
-        >
-          <h3 id="stats-heading" className="sr-only">Community Statistics</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 text-center">
-            {[
-              { label: "Active Contributors", value: 500, suffix: "+", icon: Users, color: "text-blue-500" },
-              { label: "Issues Solved", value: 1200, icon: CheckCircle, color: "text-green-500" },
-              { label: "PRs Merged", value: 850, suffix: "+", icon: GitBranch, color: "text-purple-500" },
-              { label: "Countries", value: 45, suffix: "+", icon: Globe, color: "text-orange-500" },
-            ].map(({ label, value, suffix, icon: Icon, color }) => (
-              <StatCard 
-                key={label} 
-                label={label} 
-                value={value} 
-                suffix={suffix}
-                icon={Icon} 
-                color={color} 
-              />
-            ))}
-          </div>
-        </motion.section>
       </motion.main>
       
       {/* Toast Notifications */}

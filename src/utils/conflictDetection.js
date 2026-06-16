@@ -137,6 +137,12 @@ export const doEventsOverlap = (event1, event2, fallbackDuration = 60, timezone)
 /**
  * Find all events in registeredEvents that conflict with newEvent.
  *
+ * Null/undefined entries in registeredEvents are silently skipped. They can
+ * appear when localStorage is partially written (page closed mid-save), when
+ * a registration object has an explicitly null .event field, or when test
+ * fixtures pass sparse arrays. Without the filter(Boolean) guards the .map()
+ * call throws TypeError accessing .event on null.
+ *
  * @param {object} newEvent
  * @param {Array}  registeredEvents
  * @param {number} fallbackDuration
@@ -154,7 +160,9 @@ export const findConflictingEvents = (
   const tz = timezone || getUserTimezone();
 
   return registeredEvents
+    .filter(Boolean)                           // drop null/undefined registration entries
     .map((reg) => reg.event || reg)
+    .filter(Boolean)                           // drop registrations whose .event is also null
     .filter((event) => !newEvent.id || !event.id || event.id !== newEvent.id)
     .filter((event) => doEventsOverlap(newEvent, event, fallbackDuration, tz));
 };
@@ -181,6 +189,10 @@ export const checkRegistrationConflict = (
 /**
  * Suggest alternative events that don't conflict with the user's registered events.
  *
+ * Null/undefined entries in registeredEvents are filtered out before building
+ * the registeredIds set to prevent TypeError on .event?.id access when entries
+ * are null (same root cause as the findConflictingEvents fix).
+ *
  * @param {object} targetEvent
  * @param {Array}  allEvents
  * @param {Array}  registeredEvents
@@ -201,17 +213,19 @@ export const suggestAlternativeEvents = (
 
   const tz = timezone || getUserTimezone();
 
-  // Exclude the target event and already-registered events
-  const registeredIds = new Set(registeredEvents.map((reg) => reg.event?.id || reg.id));
+  // Exclude the target event and already-registered events.
+  // filter(Boolean) drops null/undefined entries before accessing .event?.id.
+  const safeRegistered = (registeredEvents || []).filter(Boolean);
+  const registeredIds = new Set(safeRegistered.map((reg) => reg.event?.id || reg.id));
   const availableEvents = allEvents.filter((event) => {
-    return event.id !== targetEvent.id && !registeredIds.has(event.id);
+    return event && event.id !== targetEvent.id && !registeredIds.has(event.id);
   });
 
   // Keep only events that don't conflict with existing registrations
   const nonConflictingEvents = availableEvents.filter((event) => {
     const { hasConflict } = checkRegistrationConflict(
       event,
-      registeredEvents,
+      safeRegistered,
       fallbackDuration,
       tz
     );

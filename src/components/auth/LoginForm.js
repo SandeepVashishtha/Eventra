@@ -1,258 +1,202 @@
-import { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { useAuth } from "../../context/AuthContext";
-import { toast } from "react-toastify";
-import { showAuthToast } from "../../utils/toast";
-import { ValidationMessage } from "../forms";
-import { LogIn, Mail, Lock, Eye, EyeOff } from "lucide-react";
-import { validate as fieldValidators } from "../../validation";
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { authService } from '../../services/authService';
+import './Auth.css';
+import { Eye, EyeOff } from 'lucide-react';
 
-const LoginForm = () => {
-  const [formData, setFormData] = useState({ usernameOrEmail: "", password: "" });
-  const [error, setError] = useState({});
-  const [, setValidationState] = useState({
-    usernameOrEmail: "idle",
-    password: "idle",
-  });
+export default function LoginForm() {
+  const [emailOrUsername, setEmailOrUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState({});
 
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { login, authRequest } = useAuth();
-  const from = location.state?.from;
-  const redirectPath =
-    typeof from === "string"
-      ? from
-      : from?.pathname
-        ? `${from.pathname}${from.search || ""}${from.hash || ""}`
-        : "/dashboard";
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    setError((prev) => ({ ...prev, [name]: "" }));
-    setValidationState((prev) => ({ ...prev, [name]: "idle" }));
+  const validateEmailOrUsername = (value) => {
+    if (!value.trim()) {
+      return "Username or Email is required.";
+    }
+    // Allow letters, numbers, @, ., _, - only
+    const validChars = /^[a-zA-Z0-9@._-]+$/;
+    if (!validChars.test(value)) {
+      return "Only letters, numbers, @, ., _, - are allowed.";
+    }
+    return "";
   };
 
-  const validateLoginForm = () => {
-    const newErrors = {};
-
-    if (!formData.usernameOrEmail.trim()) {
-      newErrors.usernameOrEmail = fieldValidators.usernameOrEmail(formData.usernameOrEmail);
-    } else if (
-      formData.usernameOrEmail.includes("@") &&
-      fieldValidators.email(formData.usernameOrEmail) !== true
-    ) {
-      newErrors.usernameOrEmail = fieldValidators.email(formData.usernameOrEmail);
-    }
-
-    if (!formData.password.trim()) {
-      newErrors.password = "Password is required";
-    } else if (fieldValidators.password(formData.password) !== true) {
-      newErrors.password = fieldValidators.password(formData.password);
-    }
-
-    setError(newErrors);
-    setValidationState({
-      usernameOrEmail: newErrors.usernameOrEmail ? "error" : "success",
-      password: newErrors.password ? "error" : "success",
-    });
-
-    return Object.keys(newErrors).length === 0;
+  const handleEmailOrUsernameChange = (e) => {
+    const value = e.target.value;
+    setEmailOrUsername(value);
+    const errorMsg = validateEmailOrUsername(value);
+    setErrors((prev) => ({ ...prev, emailOrUsername: errorMsg }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Validate form before submitting
-    if (!validateLoginForm()) return;
+
+    const emailError = validateEmailOrUsername(emailOrUsername);
+    if (emailError) {
+      setErrors({ emailOrUsername: emailError });
+      return;
+    }
+
+    setErrors({});
+    setLoading(true);
+    setError('');
+
+    const credentials = {
+      usernameOrEmail: emailOrUsername,
+      password,
+    };
 
     try {
-      const ok = await login(formData.usernameOrEmail, formData.password);
-      if (ok) {
-        showAuthToast("Login successful! Redirecting...", () =>
-          navigate(redirectPath, { replace: true })
-        );
-      }
+      await authService.login(credentials);
+      window.location.href = '/dashboard';
     } catch (err) {
-      const errorMsg = err.message || "Invalid email or password";
-      setError({ general: errorMsg });
-      toast.error(errorMsg);
+      setError(
+        err.response?.data?.message ||
+        'Login failed. Please check your credentials.'
+      );
+    } finally {
+      setLoading(false);
     }
-    // Note: loading state is now handled by authRequest.loading from context
   };
 
   return (
-    <div className="w-full">
-      <div className="text-center space-y-3 mb-6">
-        <motion.div
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.92 }}
-          className="mx-auto w-14 h-14 rounded-2xl flex items-center justify-center bg-bg-secondary border border-border transition-all duration-300"
-        >
-          <LogIn className="w-7 h-7 text-primary" />
-        </motion.div>
+    <div className="login-form-container">
+      <form onSubmit={handleSubmit} className="auth-form">
 
-        <motion.h1
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="text-3xl font-extrabold text-text tracking-tight"
-        >
+        <h1 className="text-4xl font-extrabold bg-linear-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent text-center">
           Welcome Back
-        </motion.h1>
+        </h1>
 
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="text-sm text-text-light"
-        >
-          Sign in to your <span className="text-primary font-semibold">Eventra</span> account
-        </motion.p>
-      </div>
+        <p className="text-center text-gray-500 mt-2">
+          Sign in to continue your Eventra journey
+        </p>
 
-      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
-        {/* Username/Email Field */}
-        <div className="space-y-1.5">
-          <label htmlFor="usernameOrEmail" className="block text-sm font-semibold text-text">
-            Email or Username <span className='ml-1 text-red-500'>*</span>
-          </label>
-          <div className="relative group">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-light group-focus-within:text-primary transition-all duration-300 pointer-events-none" />
-            <input
-              id="usernameOrEmail"
-              name="usernameOrEmail"
-              type="text"
-              value={formData.usernameOrEmail}
-              onChange={handleChange}
-              required
-              disabled={authRequest.loading}
-              placeholder="john@example.com / yourname@email.com / eventra.team@gmail.com"
-              aria-invalid={!!error.usernameOrEmail}
-              aria-describedby={error.usernameOrEmail ? "usernameOrEmail-error" : undefined}
-              className={`w-full pl-10 pr-4 py-3 bg-bg border ${
-                error.usernameOrEmail ? "border-red-500" : "border-border"
-              } rounded-xl placeholder:text-text-light focus:ring-2 focus:ring-primary/25 focus:border-primary hover:bg-card-bg transition-all duration-300 text-text text-sm`}
-            />
+        {error && (
+          <div
+            className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-xl mb-4"
+            role="alert"
+            aria-live="polite"
+          >
+            {error}
           </div>
-          {error.usernameOrEmail && (
-            <motion.p id="usernameOrEmail-error" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-red-600 text-xs mt-1 flex items-center gap-1" role="alert">
-              <span>⚠</span> {error.usernameOrEmail}
-            </motion.p>
+        )}
+
+        <div className="form-group">
+          <label htmlFor="login-email">Username or Email</label>
+          <input
+            id="login-email"
+            type="text"
+            value={emailOrUsername}
+            onChange={handleEmailOrUsernameChange}
+            disabled={loading}
+            placeholder="Enter your username or email"
+            className={`
+              w-full
+              px-4
+              py-3.5
+              rounded-2xl
+              border
+              ${errors.emailOrUsername ? 'border-red-500' : 'border-slate-300/20'}
+              bg-white/5
+              backdrop-blur-sm
+              focus:ring-2
+              ${errors.emailOrUsername ? 'focus:ring-red-500/30' : 'focus:ring-indigo-500/30'}
+              focus:border-indigo-500
+              transition-all
+              duration-300
+            `}
+          />
+          {errors.emailOrUsername && (
+            <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+              ⚠ {errors.emailOrUsername}
+            </p>
           )}
         </div>
 
-        {/* Password Field */}
-        <div className="space-y-1.5">
-          <label htmlFor="password" className="block text-sm font-semibold text-text">
-            Password <span className='ml-1 text-red-500'>*</span>
-          </label>
-          <div className="relative group">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-light group-focus-within:text-primary transition-all duration-300 pointer-events-none" />
+        <div className="form-group">
+          <label htmlFor="login-password">Password</label>
+          <div className="relative">
             <input
-              id="password"
-              name="password"
-              type={showPassword ? "text" : "password"}
-              value={formData.password}
-              onChange={handleChange}
+              id="login-password"
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={loading}
               required
-              disabled={authRequest.loading}
-              placeholder="••••••••"
-              aria-invalid={!!error.password}
-              aria-describedby={error.password ? "password-error" : undefined}
-              className={`w-full pl-10 pr-10 py-3 bg-bg border ${
-                error.password ? "border-red-500" : "border-border"
-              } rounded-xl placeholder:text-text-light focus:ring-2 focus:ring-primary/25 focus:border-primary hover:bg-card-bg transition-all duration-300 text-text text-sm`}
+              placeholder="Enter your password"
+              className="
+                w-full
+                px-4
+                pr-12
+                py-3.5
+                rounded-2xl
+                border
+                border-slate-300/20
+                bg-white/5
+                backdrop-blur-sm
+                focus:ring-2
+                focus:ring-indigo-500/30
+                focus:border-indigo-500
+                transition-all
+                duration-300
+              "
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-text-light hover:text-primary transition-all duration-200"
-              aria-label={showPassword ? "Hide password" : "Show password"}
-              tabIndex={-1}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-indigo-600"
             >
-              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
-          </div>
-          {error.password && (
-            <motion.p id="password-error" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-red-600 text-xs mt-1 flex items-center gap-1" role="alert">
-              <span>⚠</span> {error.password}
-            </motion.p>
-          )}
-          <div className="flex justify-end pt-1">
-            <Link
-              to="/password-reset"
-              className="text-xs text-primary hover:text-primary-hover transition-colors duration-200 hover:underline"
-            >
-              Forgot Password?
-            </Link>
           </div>
         </div>
 
-        {/* General Error Message */}
-        <ValidationMessage
-          message={error.general}
-          state="error"
-          className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm"
-        />
-        {authRequest.error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
-            {authRequest.error}
-          </div>
-        )}
+        <div className="text-right mt-2">
+          <Link
+            to="/password-reset"
+            className="text-sm text-indigo-600 hover:text-indigo-500"
+          >
+            Forgot Password?
+          </Link>
+        </div>
 
-        {/* Submit Button */}
-        <motion.button
-          whileHover={{ scale: 1.01 }}
-          whileTap={{ scale: 0.97 }}
+        <button
           type="submit"
-          disabled={authRequest.loading}
-          className="relative w-full overflow-hidden flex justify-center py-3.5 px-4 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-300 group"
+          disabled={loading}
+          className="
+            w-full
+            py-4
+            mt-4
+            rounded-2xl
+            font-semibold
+            text-white
+            bg-linear-to-r
+            from-indigo-600
+            via-purple-600
+            to-pink-600
+            hover:scale-[1.02]
+            shadow-xl
+            transition-all
+            duration-300
+          "
         >
-          <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/15 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out" />
-          {authRequest.loading ? (
-            <div className="flex items-center gap-2 relative z-10">
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              <span>Signing In...</span>
-            </div>
-          ) : (
-            <span className="relative z-10 flex items-center gap-2">
-              <LogIn className="w-4 h-4" />
-              Sign In
-            </span>
-          )}
-        </motion.button>
+          {loading ? 'Authenticating...' : 'Login'}
+        </button>
+
+        <p className="text-center text-sm text-gray-500 mt-6">
+          Don&apos;t have an account?
+          <Link
+            to="/signup"
+            className="ml-1 font-semibold text-indigo-600 hover:text-indigo-500"
+          >
+            Create Account
+          </Link>
+        </p>
+
       </form>
-
-      {/* Divider */}
-      <div className="flex items-center gap-3 my-5">
-        <div className="flex-1 h-px bg-border"></div>
-        <span className="text-xs text-text-light uppercase tracking-widest">or</span>
-        <div className="flex-1 h-px bg-border"></div>
-      </div>
-
-      {/* Signup Link */}
-      <p className="text-center text-sm text-text-light">
-        Don&apos;t have an account?{" "}
-        <Link
-          to="/signup"
-          className="font-semibold text-primary hover:text-primary-hover transition-all duration-300 hover:underline"
-        >
-          Create one here -&gt;
-        </Link>
-      </p>
-
-      {/* Terms & Privacy */}
-      <p className="text-[11px] text-center text-text-light mt-4 leading-relaxed">
-        By signing in, you agree to our{" "}
-        <Link to="/terms" className="text-primary hover:text-primary-hover underline transition-colors duration-200">Terms of Service</Link>{" "}
-        and{" "}
-        <Link to="/privacy" className="text-primary hover:text-primary-hover underline transition-colors duration-200">Privacy Policy</Link>
-      </p>
     </div>
   );
-};
-
-export default LoginForm;
+}

@@ -9,7 +9,7 @@ import { storageManager } from "../utils/storage/storageManager";
 import { STORAGE_KEYS } from "../utils/storage/storageKeys";
 import { validators } from "../utils/storage/storageValidators";
 import { fetchWithTimeout } from "../utils/fetchWithTimeout";
-
+import EmptyState from "../common/EmptyState";
 // GitHub repo
 const GITHUB_REPO = "sandeepvashishtha/Eventra";
 const CACHE_DURATION = 60 * 60 * 1000; // 1 hr
@@ -17,13 +17,7 @@ const REQUEST_TIMEOUT = 10000;
 const MAX_CONTRIBUTOR_PAGES = 10;
 const PROFILE_FETCH_DELAY_MS = 100; // Throttle profile API calls to avoid rate limiting
 
-let profileFetchCounter = 0;
-export const throttleProfileFetch = async () => {
-  profileFetchCounter++;
-  if (profileFetchCounter % 5 === 0) {
-    await new Promise(resolve => setTimeout(resolve, PROFILE_FETCH_DELAY_MS));
-  }
-};
+const buildDirectGitHubUrl = (url) => url;
 
 const fetchJsonWithTimeout = async (url) => {
   const proxyUrl = url.startsWith("https://api.github.com")
@@ -32,13 +26,25 @@ const fetchJsonWithTimeout = async (url) => {
       )}`
     : url;
 
-  const { data } = await fetchWithTimeout(
-    proxyUrl,
-    {},
-    REQUEST_TIMEOUT
-  );
+  try {
+    const { data } = await fetchWithTimeout(proxyUrl, {}, REQUEST_TIMEOUT);
+    return data;
+  } catch (error) {
+    if (url.startsWith("https://api.github.com") && (error?.status === 401 || error?.status === 403)) {
+      const { data } = await fetchWithTimeout(
+        buildDirectGitHubUrl(url),
+        {
+          headers: {
+            Accept: "application/vnd.github+json",
+          },
+        },
+        REQUEST_TIMEOUT,
+      );
+      return data;
+    }
 
-  return data;
+    throw error;
+  }
 };
 
 // Role assignment
@@ -86,12 +92,12 @@ const ContributorsInner = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [recentSearches, setRecentSearches] = useState([]);
   const fetchControllerRef = useRef(null);
   const isFetchingRef = useRef(false);
 
   // Fetch GitHub profile details
   const fetchGitHubProfile = useCallback(async (username) => {
-    await throttleProfileFetch();
     if (!username) {
       return {
         followers: 0,
@@ -221,7 +227,12 @@ const ContributorsInner = () => {
   useEffect(() => {
     fetchContributors();
   }, [fetchContributors]);
+useEffect(() => {
+  const saved =
+    JSON.parse(localStorage.getItem("contributorSearchHistory")) || [];
 
+  setRecentSearches(saved);
+}, []);
   // Filter contributors based on search term
   const filteredContributors = contributors.filter(
     (c) =>
@@ -236,7 +247,7 @@ const ContributorsInner = () => {
   if (loading) {
     return (
       <ErrorBoundary level="feature">
-        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-Linear-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
+        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-linear-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12 mt-16">
             {[...Array(8)].map((_, i) => (
@@ -252,7 +263,7 @@ const ContributorsInner = () => {
   if (error)
     return (
       <ErrorBoundary level="feature">
-        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-Linear-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
+        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-linear-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
         <div className="max-w-3xl mx-auto px-6 text-center">
           <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-4">
             Contributors are unavailable
@@ -272,7 +283,7 @@ const ContributorsInner = () => {
   return (
     // UPDATED: Section background
       <ErrorBoundary level="feature">
-        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-Linear-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
+        <section className="pastel-grid-bg pt-20 md:pt-24 py-20 bg-linear-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-black">
         <div className="max-w-7xl mx-auto px-6">
           {/* Added The Search Bar */}
           <div className="flex justify-center mb-8">
@@ -280,7 +291,14 @@ const ContributorsInner = () => {
               type="text"
             placeholder="Search contributors by name, username, role, location, or company..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+         onChange={(e) => {
+  setSearchTerm(e.target.value);
+
+  localStorage.setItem(
+    "lastSearch",
+    e.target.value
+  );
+}}
             aria-label="Search contributors"
             className="px-4 py-2 rounded-lg w-full max-w-2xl border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-black text-gray-900 dark:text-white bg-white dark:bg-gray-800"
           />
@@ -302,11 +320,14 @@ const ContributorsInner = () => {
 
         {filteredContributors.length === 0 ? (
           <div className="text-center text-gray-600 dark:text-gray-400 text-lg">
-            <p>
-              {searchTerm
-                ? `No contributors found matching "${searchTerm}"`
-                : "No contributors are available yet."}
-            </p>
+          <EmptyState
+  title="No Contributors Found"
+  description={
+    searchTerm
+      ? `No contributors found matching "${searchTerm}"`
+      : "No contributors are available yet."
+  }
+/>
             {!searchTerm && (
               <button
                 type="button"
