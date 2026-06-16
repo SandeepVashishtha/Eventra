@@ -252,6 +252,7 @@ export class P2PFileTransferCoordinator {
     this.onMessageListener = null;
     this.currentState = null;
     this.queuedRemoteCandidates = [];
+    this.isProcessingCandidates = false;
   }
 
   updateState(state, progress = 0, speed = "-", peer = null, count = 1) {
@@ -298,15 +299,10 @@ export class P2PFileTransferCoordinator {
   }
 
   async handleP2PIce(msg) {
-    if (msg.to !== peerId || !this.pc) return;
-    if (this.pc.remoteDescription) {
-      try {
-        await this.pc.addIceCandidate(new RTCIceCandidate(msg.candidate));
-      } catch (err) {
-        logger.error("Error adding ICE candidate:", err);
-      }
-    } else {
-      this.queuedRemoteCandidates.push(msg.candidate);
+    if (msg.to !== peerId) return;
+    this.queuedRemoteCandidates.push(msg.candidate);
+    if (this.pc && this.pc.remoteDescription) {
+      await this.processQueuedCandidates();
     }
   }
 
@@ -422,7 +418,6 @@ export class P2PFileTransferCoordinator {
     this.updateState("connecting", 0, "-", targetPeerId, 1);
     
     this.pc = new RTCPeerConnection();
-    this.queuedRemoteCandidates = [];
     
     // Create data channel
     this.channel = this.pc.createDataChannel("file-transfer");
@@ -462,7 +457,6 @@ export class P2PFileTransferCoordinator {
     this.updateState("connecting", 0, "-", senderId, 1);
 
     this.pc = new RTCPeerConnection();
-    this.queuedRemoteCandidates = [];
 
     this.pc.ondatachannel = (e) => {
       this.channel = e.channel;
@@ -505,14 +499,19 @@ export class P2PFileTransferCoordinator {
 
   // Process any ICE candidates that were queued before the remote description was applied
   async processQueuedCandidates() {
-    if (!this.pc || !this.pc.remoteDescription) return;
-    while (this.queuedRemoteCandidates.length > 0) {
-      const candidate = this.queuedRemoteCandidates.shift();
-      try {
-        await this.pc.addIceCandidate(new RTCIceCandidate(candidate));
-      } catch (err) {
-        console.error("Error adding queued ICE candidate:", err);
+    if (!this.pc || !this.pc.remoteDescription || this.isProcessingCandidates) return;
+    this.isProcessingCandidates = true;
+    try {
+      while (this.queuedRemoteCandidates.length > 0) {
+        const candidate = this.queuedRemoteCandidates.shift();
+        try {
+          await this.pc.addIceCandidate(new RTCIceCandidate(candidate));
+        } catch (err) {
+          logger.error("Error adding queued ICE candidate:", err);
+        }
       }
+    } finally {
+      this.isProcessingCandidates = false;
     }
   }
 
@@ -669,5 +668,7 @@ this.channel.onmessage = async (e) => {
       this.pc.close();
       this.pc = null;
     }
+    this.queuedRemoteCandidates = [];
+    this.isProcessingCandidates = false;
   }
 }

@@ -1,0 +1,22 @@
+[
+  {
+    "id": 1,
+    "title": "Cloud Native Conference",
+    "description": "A conference about Cloud Native technologies, Kubernetes, and containerization.",
+    "location": "San Francisco, CA",
+    "tags": ["Cloud", "Kubernetes", "DevOps"],
+    "type": "conference",
+    "date": "2026-07-15",
+    "status": "upcoming"
+  },
+  {
+    "id": 2,
+    "title": "React Advanced Workshop",
+    "description": "Deep dive into React 19, Server Components, and advanced patterns.",
+    "location": "Online",
+    "tags": ["React", "JavaScript", "Frontend"],
+    "type": "workshop",
+    "date": "2026-08-20",
+    "status": "upcoming"
+  }
+]

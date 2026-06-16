@@ -32,10 +32,21 @@ export const isProtectedPath = (pathname) => {
  * @returns {React.ReactNode} Rendered route or redirect navigation
  */
 const AuthGuard = ({ children }) => {
-  const { isAuthenticated } = useAuth();
+  const auth = useAuth();
   const location = useLocation();
 
-  if (!isAuthenticated()) {
+  // Defensive programming checks for critical routing safety
+  if (!auth || typeof auth.isAuthenticated !== "function") {
+    console.error("[AuthGuard] AuthContext is missing or isAuthenticated is not a function");
+    return null;
+  }
+
+  if (!children) {
+    console.warn("[AuthGuard] AuthGuard wrapper rendered without children");
+    return null;
+  }
+
+  if (!auth.isAuthenticated()) {
     return (
       <Navigate
         to="/login"

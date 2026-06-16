@@ -179,6 +179,53 @@ async function runTests() {
     coordinator.cleanup();
   }
 
+  // Test Case 3: ICE candidates should be queued even if RTCPeerConnection is null / not initialized yet
+  {
+    const coordinator = new P2PFileTransferCoordinator("test-file-3", "test.txt", () => {});
+    coordinator.setupSignaling();
+
+    let capturedPeerId = null;
+    coordinator.bc.postMessage = (msg) => {
+      if (msg.from) {
+        capturedPeerId = msg.from;
+      }
+    };
+    
+    await coordinator.connectToPeer("target-peer");
+    assert.ok(capturedPeerId, "Should capture peerId");
+
+    // Simulate pc being null (not initialized yet)
+    coordinator.pc = null;
+    coordinator.queuedRemoteCandidates = [];
+
+    const handler = coordinator.onMessageListener;
+    const testCandidate = { candidate: "candidate:11111 1 UDP 1234 192.168.1.3 12345 typ host" };
+
+    await handler({
+      data: {
+        fileId: "test-file-3",
+        type: "P2P_ICE",
+        from: "target-peer",
+        to: capturedPeerId,
+        candidate: testCandidate
+      }
+    });
+
+    assert.equal(coordinator.queuedRemoteCandidates.length, 1, "ICE Candidate should be queued even if PC is null");
+    assert.deepEqual(coordinator.queuedRemoteCandidates[0], testCandidate, "Queued candidate should match sent candidate");
+
+    // Initialize PC and remoteDescription, then process queue
+    coordinator.pc = new MockRTCPeerConnection();
+    await coordinator.pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: "" }));
+    await coordinator.processQueuedCandidates();
+
+    assert.equal(coordinator.queuedRemoteCandidates.length, 0, "Queue should be empty after processing");
+    assert.equal(coordinator.pc.addedCandidates.length, 1, "Candidate should be added to RTCPeerConnection");
+    assert.deepEqual(coordinator.pc.addedCandidates[0].candidate, testCandidate, "Added candidate should match queued candidate");
+
+    coordinator.cleanup();
+  }
+
   console.log("All P2PFileTransferCoordinator tests passed successfully! ✓");
 }
 
