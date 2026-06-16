@@ -28,7 +28,6 @@ import SocialShareButtons from "../../components/common/SocialShareButtons";
 // import { generateEventSharingData } from "../../utils/shareUtils";
 import { downloadICSFile, generateGoogleCalendarLink, generateOutlookLink } from "../../utils/calendarExporter";
 import { RecentlyViewedTracker } from "../../components/common/RecentlyViewedEvents";
-import { createDuplicateDraft } from "../../utils/eventDraftUtils";
 import { apiUtils, API_ENDPOINTS } from "../../config/api";
 import mockEvents from "./eventsMockData.json";
 import CopyButton from '../../components/ui/CopyButton';
@@ -121,6 +120,87 @@ const EventDetails = () => {
       setIsPrinting(false);
     }, 500);
   };
+
+  const createDuplicateDraft = (sourceEvent) => {
+    const parseISODate = (dateValue) => {
+      if (!dateValue) return "";
+      const date = new Date(dateValue);
+      if (Number.isNaN(date.getTime())) return "";
+      return date.toISOString().slice(0, 10);
+    };
+
+    const formatTime = (dateValue) => {
+      if (!dateValue) return "";
+      const date = new Date(dateValue);
+      if (Number.isNaN(date.getTime())) return "";
+      return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+    };
+
+    const startDate = sourceEvent.startDate || sourceEvent.date;
+    const endDate = sourceEvent.endDate || sourceEvent.date || sourceEvent.startDate;
+    const parsedStartDate = parseISODate(startDate);
+    const parsedEndDate = parseISODate(endDate);
+    const isMultiDay = parsedStartDate && parsedEndDate && parsedStartDate !== parsedEndDate;
+
+    const locationData = sourceEvent.location || {};
+
+    return {
+      title: sourceEvent.title ? `Copy of ${sourceEvent.title}` : "",
+      description: sourceEvent.description || "",
+      category: sourceEvent.category || "",
+      isMultiDay,
+      date: isMultiDay ? "" : parsedStartDate,
+      startDate: isMultiDay ? parsedStartDate : "",
+      endDate: isMultiDay ? parsedEndDate : "",
+      startTime: formatTime(startDate),
+      endTime: formatTime(endDate),
+      timezone: sourceEvent.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+      location: {
+        name: typeof locationData === "string" ? locationData : locationData.name || "",
+        address: typeof locationData === "string" ? "" : locationData.address || "",
+        coordinates: {
+          latitude:
+            typeof locationData === "string"
+              ? ""
+              : locationData.coordinates?.latitude ?? "",
+          longitude:
+            typeof locationData === "string"
+              ? ""
+              : locationData.coordinates?.longitude ?? "",
+        },
+      },
+      isVirtual: Boolean(sourceEvent.virtualLink),
+      virtualLink: sourceEvent.virtualLink || "",
+      capacity: sourceEvent.capacity != null ? sourceEvent.capacity : "",
+      isPublic: sourceEvent.isPublic ?? true,
+      requiresApproval: sourceEvent.requiresApproval ?? false,
+      registrationStart: sourceEvent.registrationStart
+        ? parseISODate(sourceEvent.registrationStart)
+        : "",
+      registrationEnd: sourceEvent.registrationEnd
+        ? parseISODate(sourceEvent.registrationEnd)
+        : "",
+      tags: Array.isArray(sourceEvent.tags) ? sourceEvent.tags : [],
+      ticketTiers: Array.isArray(sourceEvent.ticketTiers)
+        ? sourceEvent.ticketTiers.map((tier) => ({
+          name: tier.name || "",
+          price: tier.price ?? 0,
+          capacity: tier.capacity ?? "",
+          description: tier.description || "",
+        }))
+        : [
+          {
+            name: "General Admission",
+            price: 0,
+            capacity: "",
+            description: "Standard event access",
+          },
+        ],
+      banner: null,
+      bannerPreview: sourceEvent.image || sourceEvent.banner || "",
+    };
+  };
+
   const handleDuplicateEvent = async () => {
     if (!event) {
       toast.error("Unable to duplicate this event right now.");
