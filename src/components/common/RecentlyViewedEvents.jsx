@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useRecentlyViewed from '../../hooks/useRecentlyViewed';
 import LazyImage from './LazyImage';
@@ -155,11 +155,9 @@ export const RecentlyViewedTracker = ({ event }) => {
 };
 
 /**
- * RecentlyViewedEvents Component
- *
- * Displays a horizontal scrollable strip of recently viewed events.
+ * Custom hook encapsulating state and interaction logic for the RecentlyViewedEvents component.
  */
-const RecentlyViewedEvents = ({ maxVisible = 6, onEventClick }) => {
+const useRecentlyViewedEventsController = ({ maxVisible, onEventClick }) => {
   const { recentlyViewed, removeRecentlyViewed, clearHistory } = useRecentlyViewed();
   const navigate = useNavigate();
   const [showAll, setShowAll] = useState(false);
@@ -172,26 +170,59 @@ const RecentlyViewedEvents = ({ maxVisible = 6, onEventClick }) => {
     return () => clearTimeout(timer);
   }, [confirmClear]);
 
-  if (recentlyViewed.length === 0) return null;
-
   const visibleEvents = showAll ? recentlyViewed : recentlyViewed.slice(0, maxVisible);
 
-  const handleCardClick = (event) => {
+  const handleCardClick = useCallback((event) => {
     if (onEventClick) {
       onEventClick(event);
     } else {
       navigate(`/events/${event.id}`);
     }
-  };
+  }, [onEventClick, navigate]);
 
-  const handleClear = () => {
+  const handleClear = useCallback(() => {
     if (confirmClear) {
       clearHistory();
       setConfirmClear(false);
     } else {
       setConfirmClear(true);
     }
+  }, [confirmClear, clearHistory]);
+
+  const handleToggleShowAll = useCallback(() => {
+    setShowAll((v) => !v);
+  }, []);
+
+  return {
+    recentlyViewed,
+    visibleEvents,
+    showAll,
+    confirmClear,
+    handleCardClick,
+    handleClear,
+    handleToggleShowAll,
+    removeRecentlyViewed,
   };
+};
+
+/**
+ * RecentlyViewedEvents Component
+ *
+ * Displays a horizontal scrollable strip of recently viewed events.
+ */
+const RecentlyViewedEvents = ({ maxVisible = 6, onEventClick }) => {
+  const {
+    recentlyViewed,
+    visibleEvents,
+    showAll,
+    confirmClear,
+    handleCardClick,
+    handleClear,
+    handleToggleShowAll,
+    removeRecentlyViewed,
+  } = useRecentlyViewedEventsController({ maxVisible, onEventClick });
+
+  if (recentlyViewed.length === 0) return null;
 
   return (
     <section className="recently-viewed-section" aria-label="Recently Viewed Events">
@@ -199,7 +230,7 @@ const RecentlyViewedEvents = ({ maxVisible = 6, onEventClick }) => {
         count={recentlyViewed.length}
         maxVisible={maxVisible}
         showAll={showAll}
-        onToggleShowAll={() => setShowAll((v) => !v)}
+        onToggleShowAll={handleToggleShowAll}
         confirmClear={confirmClear}
         onClear={handleClear}
       />
