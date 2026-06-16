@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import Fuse from "fuse.js";
 import { Calendar, Code, ExternalLink, Handshake, Search, Trophy, Users } from "lucide-react";
-import CountUp from "react-countup";
+import CountUpLib from "react-countup";
 
 import ErrorBoundary from "../../../components/common/ErrorBoundary";
 import ModernSearchInput from "../../../components/common/ModernSearchInput";
@@ -17,6 +17,10 @@ import useReducedMotion from "../../../hooks/useReducedMotion.js";
 import { eventService } from "../../../services/eventService";
 import hackathonsData from "../../Hackathons/hackathonMockData.json";
 import projectsData from "../../Projects/mockProjectsData.json";
+import { useNavigate } from "react-router-dom";
+
+
+const CountUp = CountUpLib.default || CountUpLib;
 
 const HEADLINE_PHRASES = [
   "Amazing Tech Events",
@@ -45,9 +49,9 @@ const HeroStats = ({ stats, statsReady }) => (
   <motion.div className="grid grid-cols-3 gap-4 mt-10">
     {stats.map((s) => {
       const IconComponent = s.icon;
-
+      
       // 🔥 safety check
-      if (!IconComponent || typeof IconComponent !== "function") {
+      if (!IconComponent) {
         return null;
       }
 
@@ -69,6 +73,7 @@ const HeroStats = ({ stats, statsReady }) => (
     })}
   </motion.div>
 );
+
 // =========================================================================
 // MAIN HERO COMPONENT (~50 Lines - Will comfortably pass the 70-line limit)
 // =========================================================================
@@ -76,6 +81,7 @@ const Hero = () => {
   const { t } = useTranslation();
   useDocumentTitle("Eventra | Home");
   const containerRef = useRef(null);
+  const navigate = useNavigate();
 
   const [isTouch, setIsTouch] = useState(false);
   const [phraseIndex, setPhraseIndex] = useState(0);
@@ -136,14 +142,17 @@ const Hero = () => {
   ], [t]);
 
   return (
-    <section ref={containerRef} className="relative overflow-hidden pb-16">
-      <motion.div style={{ y: isTouch ? 0 : yText, opacity: opacityHero }}>
+    <section ref={containerRef} className="relative overflow-hidden py-16 sm:py-20 md:py-24 ">
+      <motion.div style={{ y: isTouch ? 0 : yText, opacity: opacityHero }} className="w-full max-w-4xl mx-auto px-4 flex flex-col gap-10">
         <motion.h1 className="text-4xl font-bold text-center">
           <RespawningText texts={TAGLINE_TEXTS} />
           <div>{HEADLINE_PHRASES[phraseIndex]}</div>
         </motion.h1>
+        
+        {/* Descriptive Subtitle */}
+          <div className="text-xl text-violet-700 text-center">Discover hackathons, workshops, projects, and networking opportunities designed to help you learn, build, and connect.</div>
 
-        <motion.div className="mt-10 max-w-2xl mx-auto">
+        <motion.div className="w-full max-w-2xl mx-auto">
           <ModernSearchInput
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -153,7 +162,23 @@ const Hero = () => {
           />
         </motion.div>
 
-        {!searchTerm && <HeroStats stats={stats} statsReady={statsReady} />}
+        <div className="flex justify-center items-center gap-10">
+          <button onClick={()=>navigate("/events")} className="cursor-pointer bg-gradient-to-r from-purple-600 to-pink-500
+text-white
+px-8 py-3
+rounded-full
+font-semibold
+hover:scale-105">Explore Events</button>
+          <button onClick={()=>navigate("/community-event")} className="cursor-pointer border-2 border-purple-500
+text-purple-600
+bg-white
+px-8 py-3
+rounded-full
+font-semibold
+hover:bg-purple-50">Join Community</button>
+        </div>
+
+        {<HeroStats stats={stats} statsReady={statsReady} />}
       </motion.div>
     </section>
   );
