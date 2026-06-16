@@ -842,6 +842,7 @@ const HackathonHub = () => {
       </div>
       
       <HackathonCTA />
+      <BackToTopButton positionClass={positionClass} />
     </div>
   );
 };

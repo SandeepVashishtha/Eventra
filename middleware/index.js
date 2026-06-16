@@ -138,8 +138,18 @@ async function handleRequest(request) {
 
 export { validateBackendOrigin, getBackendOrigins } from "./csp.js";
 
-const SECURITY_HEADERS_OBJ = createSecurityHeaders();
-export { SECURITY_HEADERS_OBJ as SECURITY_HEADERS };
+export const SECURITY_HEADERS = {
+  get "Strict-Transport-Security"() {
+    return "max-age=31536000; includeSubDomains; preload";
+  },
+  get "X-Frame-Options"() { return "DENY"; },
+  get "X-Content-Type-Options"() { return "nosniff"; },
+  get "Referrer-Policy"() { return "strict-origin-when-cross-origin"; },
+  get "Permissions-Policy"() { return "camera=(), microphone=(), geolocation=(), display-capture=()"; },
+  get "Content-Security-Policy"() {
+    return createSecurityHeaders()["Content-Security-Policy"];
+  }
+};
 
 export default async function middleware(request) {
   return validationLimiter.run(() => handleRequest(request));
