@@ -384,6 +384,25 @@ describe("Middleware Authentication Fail-Closed Security", () => {
         "/api/events",
         "/api/health"
       ];
+
+      const protectedSubpaths = [
+        "/api/events/admin/settings",
+        "/api/events/export",
+        "/api/events/all/settings",
+        "/api/events/export/csv"
+      ];
+
+      for (const protectedSubpath of protectedSubpaths) {
+        const mockRequest = {
+          url: `https://example.com${protectedSubpath}`,
+          method: "GET",
+          headers: new Headers()
+        };
+        
+        const response = await middleware(mockRequest);
+        assert.ok(response, `Expected protected subpath ${protectedSubpath} to be blocked`);
+        assert.strictEqual(response.status, 401, `Expected protected subpath ${protectedSubpath} to return 401`);
+      }
       
       for (const publicPath of publicPaths) {
         const mockRequest = {

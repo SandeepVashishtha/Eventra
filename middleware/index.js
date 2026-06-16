@@ -79,12 +79,20 @@ async function handleRequest(request) {
       "/api/health",
     ];
 
-    const isPublicPath = PUBLIC_PATHS.some(path =>
-      url.pathname.startsWith(path) &&
-      (request.method === "GET" ||
-        url.pathname.includes("/auth/") ||
-        url.pathname.includes("/validate/"))
-    );
+    const isPublicPath = PUBLIC_PATHS.some(path => {
+      if (path === "/api/events" || path === "/api/hackathons" || path === "/api/projects") {
+        // Only base listings or specific public endpoints are allowed without authentication
+        return (
+          url.pathname === path ||
+          url.pathname === `${path}/` ||
+          (url.pathname.startsWith(`${path}/`) &&
+            !url.pathname.includes("/admin/") &&
+            !url.pathname.includes("/settings") &&
+            !url.pathname.includes("/export"))
+        );
+      }
+      return url.pathname.startsWith(path);
+    }) && (request.method === "GET" || url.pathname.includes("/auth/") || url.pathname.includes("/validate/"));
 
     if (!isPublicPath) {
       const token = parseTokenFromCookie(request);
