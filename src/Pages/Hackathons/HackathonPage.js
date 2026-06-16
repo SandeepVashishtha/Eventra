@@ -1,4 +1,4 @@
-import { Code2, RefreshCw, Compass, ChevronDown, X } from "lucide-react";
+import { Code2, RefreshCw, Compass, ChevronDown, X, Rocket, PlusCircle } from "lucide-react";
 import TeamMatchmaking from "./components/TeamMatchmaking";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -796,43 +796,58 @@ const HackathonHub = () => {
                   <motion.div
                     animate={{ y: [0, -8, 0] }}
                     transition={{ duration: prefersReducedMotion ? 0 : 3, repeat: Infinity, ease: "easeInOut" }}
-                    className="flex justify-center items-center w-20 h-20 rounded-full bg-bg dark:bg-bg shadow-sm mx-auto border border-border"
+                    className="flex justify-center items-center w-24 h-24 rounded-full bg-indigo-50 dark:bg-indigo-950/30 shadow-sm mx-auto border border-indigo-100 dark:border-indigo-800/50"
                   >
-                    <Code2 className="h-10 w-10 text-primary" />
+                    <Rocket className="h-12 w-12 text-indigo-600 dark:text-indigo-400" />
                   </motion.div>
 
                   <h3 className="mt-6 text-2xl font-bold text-slate-900 dark:text-gray-100">
-                    No Hackathons Found
+                    No hackathons available right now 🚀
                   </h3>
 
-                  <p className="mt-3 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                  <p className="mt-3 text-sm text-gray-600 dark:text-gray-400 leading-relaxed max-w-sm mx-auto">
                     {debouncedSearchQuery || filters.difficulty || filters.prize || filters.location || selectedTags.length > 0
-                      ? "No hackathons match your current filters. Try adjusting your search or filters."
-                      : "Check back later for exciting new hackathons!"}
+                      ? "No hackathons match your current filters. Try adjusting your search or clearing your filters."
+                      : "Be the first to host one or check back later for upcoming opportunities."}
                   </p>
 
-                  <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-                    <motion.button
-                      type="button"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={resetFilters}
-                      className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium rounded-lg text-white bg-primary hover:opacity-90 shadow-lg transition-all"
-                    >
-                      <RefreshCw className="w-4 h-4" />
-                      Reset Filters
-                    </motion.button>
-
+                  <div className="mt-8 flex flex-col sm:flex-row flex-wrap gap-4 justify-center items-center">
                     <motion.button
                       type="button"
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={scrollToCards}
-                      className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium rounded-lg text-black dark:text-white border border-black/15 dark:border-gray-600 bg-bg hover:bg-card-bg shadow-md transition-all"
+                      className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium rounded-xl text-white bg-linear-to-r from-blue-600 via-indigo-600 to-violet-600 hover:opacity-90 shadow-lg transition-all"
                     >
-                      Explore Hackathons
                       <Compass className="w-4 h-4" />
+                      Explore Hackathons
                     </motion.button>
+
+                    <motion.div
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Link 
+                        to="/host-hackathon"
+                        className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium rounded-xl text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-gray-900 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 shadow-sm transition-all"
+                      >
+                        <PlusCircle className="w-4 h-4" />
+                        Host a Hackathon
+                      </Link>
+                    </motion.div>
+
+                    {(debouncedSearchQuery || filters.difficulty || filters.prize || filters.location || selectedTags.length > 0) && (
+                      <motion.button
+                        type="button"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={resetFilters}
+                        className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium rounded-xl text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-all w-full sm:w-auto"
+                      >
+                        <RefreshCw className="w-4 h-4" />
+                        Reset Filters
+                      </motion.button>
+                    )}
                   </div>
                 </div>
               </motion.div>

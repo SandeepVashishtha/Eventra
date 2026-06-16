@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { Award, Calendar, Code2, Sparkles, Users, X } from "lucide-react";
+import { Award, Calendar, Code2, Sparkles, Users, X, Rocket } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ModernSearchInput from "../../components/common/ModernSearchInput";
 import { useAuth } from "../../context/AuthContext";
@@ -130,7 +130,7 @@ export default function HackathonHero({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={onSearchKeyDown}
-              placeholder="Search hackathons by name, location, or tags..."
+              placeholder="Search hackathons by name, technology, prize pool, or organizer..."
               tags={
                 <AnimatePresence>
                   {selectedTags.map((tag) => (
@@ -165,9 +165,27 @@ export default function HackathonHero({
                 </motion.span>
               ))}
             </div>
-            <span className="text-sm text-indigo-700 dark:text-indigo-300 font-semibold">
-              {filteredCount}{" "}{filteredCount === 1 ? "hackathon" : "hackathons"} found
-            </span>
+            {filteredCount > 0 ? (
+              <span className="text-sm text-indigo-700 dark:text-indigo-300 font-semibold">
+                {filteredCount}{" "}{filteredCount === 1 ? "hackathon" : "hackathons"} found
+              </span>
+            ) : (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-4 flex flex-col items-center text-center p-6 bg-white/40 dark:bg-slate-900/40 rounded-2xl border border-indigo-100 dark:border-indigo-900/50 backdrop-blur-md w-full"
+              >
+                <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/50 rounded-full flex items-center justify-center mb-3">
+                  <Rocket className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                </div>
+                <p className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-1">
+                  No hackathons available right now 🚀
+                </p>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Be the first to host one or check back later for upcoming opportunities.
+                </p>
+              </motion.div>
+            )}
           </div>
         </motion.div>
 

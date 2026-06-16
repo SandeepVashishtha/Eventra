@@ -253,38 +253,111 @@ const AchievementBadge = memo(({ achievement, onUnlock }) => {
 });
 AchievementBadge.displayName = "AchievementBadge";
 
-const TimelineItem = memo(({ item, isLast }) => {
-  const Icon = item.icon;
-  const statusColors = getStatusColor(item.status);
+const HorizontalTimeline = memo(({ timeline, variants }) => {
+  const total = timeline.length - 1;
+  const currentIndex = timeline.findIndex(item => item.status === 'current');
+  const progressPercent = currentIndex >= 0 ? (currentIndex / total) * 100 : 100;
   
+  const currentItem = timeline[currentIndex];
+  const nextItem = timeline[currentIndex + 1];
+
   return (
-    <div className="flex gap-4" role="listitem">
-      <div className="flex flex-col items-center">
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${statusColors}`}
-          aria-label={`${item.phase}: ${item.status}`}
-        >
-          <Icon className="w-5 h-5" aria-hidden="true" />
-        </motion.div>
-        {!isLast && (
-          <div className={`w-0.5 flex-1 my-2 ${item.status === 'completed' ? 'bg-green-400' : 'bg-gray-300 dark:bg-gray-600'}`} aria-hidden="true" />
-        )}
+    <motion.section variants={variants} className="p-5 sm:p-8 rounded-3xl bg-white dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 shadow-lg shadow-slate-200/30 dark:shadow-none mb-6 sm:mb-8 backdrop-blur-xl">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-5 mb-10 border-b border-slate-100 dark:border-slate-700/50 pb-6">
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center border border-indigo-100 dark:border-indigo-500/20">
+              <Calendar className="w-5 h-5 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
+            </div>
+            <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Program Timeline</h3>
+          </div>
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 ml-[52px]">Track your milestones and upcoming deadlines</p>
+        </div>
+        
+        <div className="flex flex-col md:items-end bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-200/60 dark:border-slate-800/80 shadow-inner">
+          <div className="flex items-center gap-3 mb-1.5">
+            <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Program Progress</span>
+            <span className="text-xs font-black text-white bg-linear-to-r from-indigo-500 to-violet-600 px-2.5 py-1 rounded-full shadow-md shadow-indigo-500/20">{Math.round(progressPercent)}% Complete</span>
+          </div>
+          {currentItem && (
+            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1.5 font-medium">
+              Current Phase: <strong className="text-slate-900 dark:text-white font-bold">{currentItem.phase}</strong>
+            </p>
+          )}
+          {nextItem && (
+            <p className="text-xs text-slate-500 dark:text-slate-500 mt-1 font-medium">
+              Next Milestone: <span className="text-indigo-600 dark:text-indigo-400 font-semibold">{nextItem.phase} ({nextItem.date})</span>
+            </p>
+          )}
+        </div>
       </div>
-      <div className="pb-6">
-        <h4 className="font-medium text-gray-900 dark:text-white">{item.phase}</h4>
-        <p className="text-sm text-gray-500 dark:text-gray-400">{item.date}</p>
-        {item.status === 'current' && (
-          <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded-full">
-            In Progress
-          </span>
-        )}
+      
+      <div className="relative w-full py-4 overflow-x-auto hide-scrollbar">
+        <div className="min-w-[700px] flex items-start justify-between relative px-8 md:px-12 pb-8 pt-2">
+          {/* Progress Bar Background */}
+          <div className="absolute top-[34px] left-20 right-20 h-2 bg-slate-100 dark:bg-slate-800/80 rounded-full overflow-hidden border border-slate-200/50 dark:border-slate-700/50" aria-hidden="true">
+            {/* Active Progress Bar */}
+            <motion.div 
+              initial={{ width: 0 }}
+              animate={{ width: `${progressPercent}%` }}
+              transition={{ duration: 1.5, ease: "easeOut", delay: 0.2 }}
+              className="absolute top-0 left-0 h-full bg-linear-to-r from-blue-500 via-indigo-500 to-violet-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)]" 
+            />
+          </div>
+          
+          {timeline.map((item, idx) => {
+            const Icon = item.icon;
+            const isCompleted = item.status === 'completed';
+            const isCurrent = item.status === 'current';
+            
+            return (
+              <div key={item.phase} className="relative flex flex-col items-center w-32 shrink-0 z-10 group" role="listitem">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: idx * 0.1, type: "spring", stiffness: 200 }}
+                  className={`w-14 h-14 rounded-2xl flex items-center justify-center border-4 shadow-xl transition-all duration-300 ${
+                    isCompleted ? 'bg-linear-to-br from-indigo-500 to-violet-600 border-white dark:border-slate-900 text-white group-hover:scale-110 group-hover:-translate-y-1 shadow-indigo-500/20' : 
+                    isCurrent ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 border-indigo-500 shadow-indigo-500/30 scale-110 group-hover:scale-125 group-hover:-translate-y-1' : 
+                    'bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border-white dark:border-slate-900 shadow-slate-200/50 dark:shadow-none'
+                  } ${isCurrent ? 'rotate-3 group-hover:rotate-6' : '-rotate-3 group-hover:rotate-0'}`}
+                  aria-label={`${item.phase}: ${item.status}`}
+                >
+                  {isCompleted ? <CheckCircle className="w-6 h-6" /> : <Icon className={`w-6 h-6 ${isCurrent ? 'animate-pulse' : ''}`} aria-hidden="true" />}
+                </motion.div>
+                
+                <div className="mt-5 text-center">
+                  <h4 className={`text-sm font-extrabold mb-1.5 transition-colors ${
+                    isCurrent ? 'text-indigo-600 dark:text-indigo-400' : 
+                    isCompleted ? 'text-slate-900 dark:text-white' : 
+                    'text-slate-400 dark:text-slate-500'
+                  }`}>
+                    {item.phase}
+                  </h4>
+                  <p className={`text-xs ${isCurrent ? 'text-slate-700 dark:text-slate-300 font-bold' : 'text-slate-500 dark:text-slate-500 font-medium'}`}>
+                    {item.date}
+                  </p>
+                  <AnimatePresence>
+                    {isCurrent && (
+                      <motion.span 
+                        initial={{ opacity: 0, y: -10, scale: 0.8 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        className="absolute -bottom-10 left-1/2 -translate-x-1/2 whitespace-nowrap px-3 py-1.5 text-[10px] font-black uppercase tracking-widest bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300 rounded-xl border border-indigo-200 dark:border-indigo-500/30 shadow-sm"
+                      >
+                        Active Phase
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
-    </div>
+    </motion.section>
   );
 });
-TimelineItem.displayName = "TimelineItem";
+HorizontalTimeline.displayName = "HorizontalTimeline";
 
 const ResourceItem = memo(({ resource, onCopy }) => {
   const [copied, setCopied] = useState(false);
@@ -762,19 +835,8 @@ const timeLeft = useCountdown(
           </div>
         </motion.section>
 
-        {/* 📅 Timeline */}
-        <motion.section variants={itemVariants} className="p-4 sm:p-6 rounded-2xl bg-card-bg border border-gray-200 dark:border-gray-700 mb-6 sm:mb-8">
-          <div className="flex items-center gap-2 mb-4 sm:mb-6">
-            <Calendar className="w-5 h-5 text-purple-500" aria-hidden="true" />
-            <h3 className="font-semibold text-gray-900 dark:text-white">Program Timeline</h3>
-          </div>
-          
-          <div className="relative pl-2" role="list" aria-label="Program timeline">
-            {GSSOC_TIMELINE.map((item, idx) => (
-              <TimelineItem key={item.phase} item={item} isLast={idx === GSSOC_TIMELINE.length - 1} />
-            ))}
-          </div>
-        </motion.section>
+        {/* 📅 Horizontal Timeline */}
+        <HorizontalTimeline timeline={GSSOC_TIMELINE} variants={itemVariants} />
 
         {/* Getting Started & Best Practices */}
         <motion.section className="grid md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8" variants={itemVariants}>
