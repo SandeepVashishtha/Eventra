@@ -75,6 +75,7 @@ and this project adheres to Semantic Versioning.
 - Fixed cross-event ticket validation via request body eventId override.
 - Fixed TicketScanner crash on valid JSON primitive QR code scans.
 - Fixed offline queue limit bypass via localStorage/IndexedDB desync.
+- Fixed crash in ICS generator by correcting calendar URL utility return value to standard Blob URL string and adding defensive routing guards.
 
 ### Phase Validation Checklist
 

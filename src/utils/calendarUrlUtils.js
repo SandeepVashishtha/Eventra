@@ -228,12 +228,15 @@ export const getYahooCalendarUrl = (event, timezone) => {
 /**
  * Generate a standard .ics file Blob URL for Apple Calendar / generic clients.
  *
- * @param {object} event  - Event object
- * @param {string} [timezone]  - IANA tz string; defaults to browser timezone
- * @returns {string|null}  A Blob URL that can be used in an <a href> tag with download attribute. Returns null on error.
+ * @param {object} event  - Event object containing title, date, time, durationMinutes, etc.
+ * @param {string} [timezone]  - IANA timezone string; defaults to browser timezone
+ * @returns {string|null}  A Blob URL that can be used in an <a href> tag with download attribute. Returns null on error or invalid input.
  */
 export const generateIcsFileBlobUrl = (event, timezone) => {
-  if (!event) return null;
+  if (!event || typeof event !== 'object') {
+    logger.error("[generateIcsFileBlobUrl] Invalid event argument: must be an object.");
+    return null;
+  }
 
   const range = getEventUTCRange(event, timezone);
   let start, end;
@@ -270,18 +273,22 @@ export const generateIcsFileBlobUrl = (event, timezone) => {
   try {
     const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `${(event.title || 'event').toLowerCase().replace(/[^a-z0-9]/g, '-')}.ics`);
-    try {
-      document.body.appendChild(link);
-      link.click();
-    } finally {
-      if (document.body.contains(link)) document.body.removeChild(link);
-      // Revoke after a short delay to allow the browser to start the download
-      setTimeout(() => URL.revokeObjectURL(url), 200);
+    
+    if (typeof document !== 'undefined') {
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${(event.title || 'event').toLowerCase().replace(/[^a-z0-9]/g, '-')}.ics`);
+      try {
+        document.body.appendChild(link);
+        link.click();
+      } finally {
+        if (document.body.contains(link)) document.body.removeChild(link);
+        // Revoke after a short delay to allow the browser to start the download
+        setTimeout(() => URL.revokeObjectURL(url), 200);
+      }
     }
-    return true;
+    
+    return url;
   } catch (error) {
     logger.error("[calendarUrlUtils] Failed to generate ICS file:", error);
     return null;

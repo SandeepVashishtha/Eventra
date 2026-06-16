@@ -323,6 +323,12 @@ describe('generateIcsFileBlobUrl', () => {
   test('returns null on null event', () => {
     expect(generateIcsFileBlobUrl(null)).toBeNull();
   });
+
+  test('returns null on invalid non-object event parameter', () => {
+    expect(generateIcsFileBlobUrl('not-an-object')).toBeNull();
+    expect(generateIcsFileBlobUrl(123)).toBeNull();
+    expect(generateIcsFileBlobUrl(true)).toBeNull();
+  });
 });
 
 // ---------------------------------------------------------------------------
