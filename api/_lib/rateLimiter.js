@@ -12,7 +12,17 @@ class InMemoryRateLimiter {
     this.store = new Map();
   }
 
+  pruneExpired() {
+    const now = Date.now();
+    for (const [key, record] of this.store.entries()) {
+      if (now - record.start > this.windowMs) {
+        this.store.delete(key);
+      }
+    }
+  }
+
   check(key) {
+    this.pruneExpired();
     const now = Date.now();
     const record = this.store.get(key);
 
