@@ -107,6 +107,11 @@ const ApiDocs = () => {
   };
 
   const executeMockRequest = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+
     setIsLoading(true);
     setTerminalOutput("");
     
