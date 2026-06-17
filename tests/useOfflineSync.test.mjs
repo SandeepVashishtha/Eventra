@@ -160,12 +160,7 @@ function renderHook() {
   _effects = [];
 }
 
-const runAll = async () => {
-  console.log("Starting useOfflineSync tests...");
-
-  // Test 1: Stale closure prevention test
-  // Render with loading = true. Then transition to loading = false.
-  // Dispatch online event and verify if the latest queue gets processed.
+const test1StaleClosure = async () => {
   console.log("Running Test 1: Stale closure prevention");
   resetReact();
   currentQueue = [
@@ -201,8 +196,9 @@ const runAll = async () => {
   );
 
   console.log("  pass  Stale closure prevention verified!");
+};
 
-  // Test 2: Latest queue always synced
+const test2LatestQueue = async () => {
   console.log("Running Test 2: Latest queue is always synced");
   resetReact();
   currentAuth = {
@@ -230,8 +226,9 @@ const runAll = async () => {
   assert.equal(fetchCalls.length, 2, "Both items from the updated queue should be processed");
   assert.equal(currentQueue.length, 0, "Queue should be cleared after success");
   console.log("  pass  Latest queue synced successfully!");
+};
 
-  // Test 3: Retry behavior
+const test3RetryBehavior = async () => {
   console.log("Running Test 3: Retry behavior");
   resetReact();
   currentAuth = {
@@ -253,13 +250,15 @@ const runAll = async () => {
   assert.equal(currentQueue.length, 1, "Failed item should be retained in the queue");
   assert.equal(currentQueue[0].retryCount, 1, "Retry count should be incremented to 1");
   console.log("  pass  Retry behavior is correct!");
+};
 
-  // Test 4: Interval cleanup on unmount
+const test4IntervalCleanup = async () => {
   console.log("Running Test 4: Interval cleanup on unmount");
   resetReact(); // Cleans up previous effects
   console.log("  pass  Interval cleanup is correct!");
+};
 
-  // Test 5: eventra-offline-queue-processed event dispatching
+const test5ProcessedEvent = async () => {
   console.log("Running Test 5: processed event is dispatched");
   resetReact();
   currentAuth = {
@@ -288,8 +287,9 @@ const runAll = async () => {
   assert.ok(processedEventFired, "eventra-offline-queue-processed event should have been dispatched");
   window.removeEventListener("eventra-offline-queue-processed", listener);
   console.log("  pass  Processed event verified!");
+};
 
-  // Test 6: Self-healing behavior when successCount > 0
+const test6SelfHealing = async () => {
   console.log("Running Test 6: Self-healing resets retry counts on successful sync of other items");
   resetReact();
   currentAuth = {
@@ -321,7 +321,16 @@ const runAll = async () => {
   assert.equal(currentQueue[0].id, "zombie-item", "Remaining item is zombie-item");
   assert.equal(currentQueue[0].retryCount, 0, "Zombie-item's retryCount should be reset to 0");
   console.log("  pass  Self-healing behavior is correct!");
+};
 
+const runAll = async () => {
+  console.log("Starting useOfflineSync tests...");
+  await test1StaleClosure();
+  await test2LatestQueue();
+  await test3RetryBehavior();
+  await test4IntervalCleanup();
+  await test5ProcessedEvent();
+  await test6SelfHealing();
   console.log("All useOfflineSync tests passed successfully!");
 };
 
