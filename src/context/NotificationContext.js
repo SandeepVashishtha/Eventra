@@ -103,7 +103,7 @@ export const NotificationProvider = ({ children }) => {
 
   return (
     <NotificationContext.Provider
-      value={{
+      value={useMemo(() => ({
         notifications,
         groupedNotifications,
         achievements,
@@ -124,7 +124,28 @@ export const NotificationProvider = ({ children }) => {
         subscribeToPush,
         unsubscribeFromPush,
         showBrowserNotification,
-      }}
+      }), [
+        notifications,
+        groupedNotifications,
+        achievements,
+        unreadCount,
+        loading,
+        realtimeStatus,
+        preferences,
+        pushStatus,
+        defaultPreferences,
+        fetchNotifications,
+        fetchAchievements,
+        markAsRead,
+        markAllAsRead,
+        deleteNotification,
+        updatePreferences,
+        savePreferences,
+        requestPushPermission,
+        subscribeToPush,
+        unsubscribeFromPush,
+        showBrowserNotification,
+      ])}
     >
       {children}
     </NotificationContext.Provider>
