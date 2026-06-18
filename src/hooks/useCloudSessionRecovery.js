@@ -15,6 +15,12 @@ import {
 const isBrowserOnline = () =>
   typeof navigator === "undefined" ? true : navigator.onLine !== false;
 
+/** Bootstraps cloud sessions when the user first authenticates. */
+const _bootstrapSessions = async (refreshFn, syncFn) => {
+  await refreshFn();
+  await syncFn();
+};
+
 export const useCloudSessionRecovery = ({
   user = null,
   isAuthenticated = false,
@@ -30,9 +36,7 @@ export const useCloudSessionRecovery = ({
 
   useEffect(() => {
     mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-    };
+    return () => { mountedRef.current = false; };
   }, []);
 
   useEffect(() => {
@@ -40,9 +44,7 @@ export const useCloudSessionRecovery = ({
   }, [storage]);
 
   const refreshCloudSessions = useCallback(async () => {
-    if (!canSync) {
-      return readRecoverySessionsFromStorage(storage);
-    }
+    if (!canSync) return readRecoverySessionsFromStorage(storage);
 
     setIsSyncing(true);
     setSyncError("");
@@ -91,19 +93,18 @@ export const useCloudSessionRecovery = ({
     if (!isAuthenticated || !userId) return;
     let isMounted = true;
     (async () => {
-      await refreshCloudSessions();
-      if (isMounted) await syncPending();
+      await _bootstrapSessions(refreshCloudSessions, syncPending);
+      if (!isMounted) return;
     })();
     return () => { isMounted = false; };
   }, [isAuthenticated, userId]);
 
   useEffect(() => {
+    if (typeof window === "undefined") return undefined;
     const handleOnline = async () => {
       await syncPending();
       await refreshCloudSessions();
     };
-
-    if (typeof window === "undefined") return undefined;
     window.addEventListener?.("online", handleOnline);
     return () => window.removeEventListener?.("online", handleOnline);
   }, []);
@@ -121,7 +122,10 @@ export const useCloudSessionRecovery = ({
 
       if (!payload) return null;
 
-      const localSessions = mergeRecoverySessions([payload], readRecoverySessionsFromStorage(storage));
+      const localSessions = mergeRecoverySessions(
+        [payload],
+        readRecoverySessionsFromStorage(storage),
+      );
       writeRecoverySessionsToStorage(localSessions, storage);
       if (mountedRef.current) setCloudSessions(localSessions);
 
@@ -139,7 +143,9 @@ export const useCloudSessionRecovery = ({
       } catch (error) {
         queuePendingRecoverySession(payload, storage);
         if (mountedRef.current) {
-          setSyncError(error?.message || "Recovery session queued for later sync.");
+          setSyncError(
+            error?.message || "Recovery session queued for later sync.",
+          );
         }
         return payload;
       }
@@ -149,7 +155,9 @@ export const useCloudSessionRecovery = ({
 
   const restoreCloudSession = useCallback(
     async (sessionId) => {
-      const localSession = cloudSessions.find((session) => session.sessionId === sessionId);
+      const localSession = cloudSessions.find(
+        (session) => session.sessionId === sessionId,
+      );
       if (!canSync) return localSession || null;
 
       try {
@@ -164,7 +172,9 @@ export const useCloudSessionRecovery = ({
 
   const dismissCloudSession = useCallback(
     async (sessionId) => {
-      const remaining = cloudSessions.filter((session) => session.sessionId !== sessionId);
+      const remaining = cloudSessions.filter(
+        (session) => session.sessionId !== sessionId,
+      );
       writeRecoverySessionsToStorage(remaining, storage);
       setCloudSessions(remaining);
 
@@ -172,7 +182,7 @@ export const useCloudSessionRecovery = ({
         try {
           await deleteRecoverySession(sessionId);
         } catch {
-          // Local dismissal should still succeed; the next refresh may reconcile.
+          // Local dismissal should still succeed.
         }
       }
     },
