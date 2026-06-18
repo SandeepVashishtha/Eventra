@@ -229,14 +229,52 @@ function App() {
                             </Suspense>
                           }
                         />
-                        {/* TODO: Implement missing auth/dashboard routes
-                          Pages do not exist:
-                          - ./Pages/auth/Login
-                          - ./Pages/auth/Signup
-                          - ./Pages/dashboard/Dashboard
-                          - ./Pages/Admin/AdminPanel
-                          - ./Pages/user/Profile
-                        */}
+                        <Route
+                          path="/login"
+                          element={
+                            <Suspense fallback={pageLoader}>
+                              <Login />
+                            </Suspense>
+                          }
+                        />
+                        <Route
+                          path="/signup"
+                          element={
+                            <Suspense fallback={pageLoader}>
+                              <Signup />
+                            </Suspense>
+                          }
+                        />
+                        <Route
+                          path="/dashboard"
+                          element={
+                            <ProtectedRoute>
+                              <Suspense fallback={pageLoader}>
+                                <Dashboard />
+                              </Suspense>
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/admin"
+                          element={
+                            <ProtectedRoute>
+                              <Suspense fallback={pageLoader}>
+                                <AdminPanel />
+                              </Suspense>
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/profile"
+                          element={
+                            <ProtectedRoute>
+                              <Suspense fallback={pageLoader}>
+                                <Profile />
+                              </Suspense>
+                            </ProtectedRoute>
+                          }
+                        />
                         <Route
                           path="/event-recommendation"
                           element={<Suspense fallback={null}><EventRecommendation /></Suspense>}
