@@ -60,6 +60,8 @@ const EventDetails = () => {
   const latestRequestIdRef = useRef(0);
   const abortControllerRef = useRef(null);
 
+  const latestRequestIdRef = useRef(0);
+
   const loadEvent = useCallback(async () => {
     abortControllerRef.current?.abort();
 
