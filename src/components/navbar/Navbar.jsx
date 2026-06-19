@@ -1,4 +1,3 @@
-
 import { memo, useRef, useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 
@@ -27,11 +26,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const { user, isAuthenticated, logout } = useAuth();
   const authenticated = isAuthenticated();
 
-  const {
-    isDarkMode,
-    toggleTheme,
-    setIsCustomizerOpen,
-  } = useTheme();
+  const { isDarkMode, toggleTheme, setIsCustomizerOpen } = useTheme();
 
   useBodyScrollLock(isMobileMenuOpen);
 
@@ -40,9 +35,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   }, []);
 
   const handleSearchFocus = useCallback(() => {
-    const searchInput = navRef.current?.querySelector(
-      'input[type="text"], input[type="search"]'
-    );
+    const searchInput = navRef.current?.querySelector('input[type="text"], input[type="search"]');
 
     if (searchInput) {
       searchInput.focus();
@@ -76,14 +69,9 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
       window.requestAnimationFrame(() => {
         const scrollTop = window.scrollY;
 
-        const docHeight =
-          document.documentElement.scrollHeight -
-          window.innerHeight;
+        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
 
-        const progress =
-          docHeight > 0
-            ? (scrollTop / docHeight) * 100
-            : 0;
+        const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
 
         setScrollProgress(progress);
         setScrolled(scrollTop > 12);
@@ -121,13 +109,8 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid h-16 grid-cols-[auto_1fr_auto] items-center gap-6">
-
             {/* Logo */}
-            <Link
-              to="/"
-              aria-label="Eventra Home"
-              className="flex items-center shrink-0"
-            >
+            <Link to="/" aria-label="Eventra Home" className="flex items-center shrink-0">
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg bg-card-bg p-1 shadow-premium-sm ring-1 ring-border">
                   <img
@@ -152,27 +135,21 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
 
             {/* Right Controls */}
             <div className="flex items-center justify-end gap-3 lg:gap-4">
-
               <div className="hidden lg:flex items-center gap-4">
-                <LanguageSelector compact />
-
                 {authenticated ? (
                   <>
                     <NotificationBell />
-
-                    <ProfileMenu
-                      user={user}
-                      logout={logout}
-                    />
+                    <ProfileMenu user={user} logout={logout} />
+                    <LanguageSelector compact /> {/* Repositioned near Profile */}
                   </>
                 ) : (
-                  <AuthButtons />
+                  <>
+                    <LanguageSelector compact />
+                    <AuthButtons />
+                  </>
                 )}
 
-                <CursorToggle
-                  cursorEnabled={cursorEnabled}
-                  toggleCursor={toggleCursor}
-                />
+                <CursorToggle cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
               </div>
 
               <ThemeToggleButton
@@ -194,14 +171,10 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
                 />
               </div>
             </div>
-
           </div>
         </div>
 
-        <div
-          aria-hidden="true"
-          className="absolute bottom-0 left-0 h-[2px] w-full"
-        >
+        <div aria-hidden="true" className="absolute bottom-0 left-0 h-[2px] w-full">
           <div
             className="h-full bg-primary transition-all duration-100 ease-out"
             style={{
@@ -215,6 +188,3 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
 };
 
 export default memo(Navbar);
-
-
-
