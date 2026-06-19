@@ -36,7 +36,10 @@ export const mockAttendees = [
   },
 ];
 
-export const initialFormData = {
+// 🔥 FIX 1: Global State Mutation Bug
+// Exported a factory function to generate fresh default state.
+// Passing a static object with nested arrays (tags) to React state causes global mutation bugs.
+export const getDefaultFormData = () => ({
   title: "",
   description: "",
   category: "",
@@ -70,6 +73,21 @@ export const initialFormData = {
   ],
   banner: null,
   bannerPreview: null,
+});
+
+// Legacy fallback for backward compatibility
+export const initialFormData = getDefaultFormData();
+
+// 🔥 FIX 2: UTC Off-By-One-Day Bug & Stale Date Bug
+// toISOString() returns UTC time, which outputs yesterday's date in Asia/Oceania timezones.
+// Also converted to a function so the date evaluates fresh when called, not frozen at app load.
+export const getTodayString = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 };
 
-export const todayString = new Date().toISOString().split("T")[0];
+// Legacy fallback for backward compatibility
+export const todayString = getTodayString();
