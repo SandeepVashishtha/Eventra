@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 // ✅ OPTIMIZATION: Module-level definition prevents re-creation on every render
-const MotionLink = motion(Link);
+const MotionLink = motion.create(Link);
 
 // ✅ MAINTAINABILITY: Extracted repeated classes
 const CARD_BASE_CLASSES =

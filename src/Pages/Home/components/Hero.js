@@ -26,7 +26,7 @@ import projectsData from "../../Projects/mockProjectsData.json";
 const CountUp = CountUpLib.default || CountUpLib;
 
 // ─── MOTION LINK SUB-COMPONENT ──────────────────────────────────────────────
-const MotionLink = motion(Link);
+const MotionLink = motion.create(Link);
 
 // ─── STATIC SEARCH INDEX CONFIGURATION ───────────────────────────────────────
 const createSearchItem = (item, type, searchType) => ({
