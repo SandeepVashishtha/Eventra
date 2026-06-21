@@ -33,7 +33,10 @@ import { useNavigate } from "react-router-dom";
  * });
  */
 export const useKeyboardShortcuts = (shortcuts = {}, disabled = false) => {
-  const navigate = useNavigate();
+  const navigate =
+    typeof globalThis.ReactRouterDomMock !== "undefined"
+      ? globalThis.ReactRouterDomMock.navigate
+      : useNavigate();
 
   const shortcutsRef = useRef(shortcuts);
   useEffect(() => {

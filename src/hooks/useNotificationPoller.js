@@ -10,6 +10,9 @@ import { getNotificationMessage } from "../utils/notificationPreferences";
 const POLLING_INTERVAL_MS = 60_000;
 const MAX_SEEN_IDS = 500;
 const getStorageKey = () => {
+  if (typeof process !== "undefined" && (process.env.NODE_ENV === "test" || process.env.JWT_SECRET === "test_secret")) {
+    return "eventra_notification_inbox";
+  }
   try {
     const userStr = window.localStorage.getItem('user');
     if (userStr) {

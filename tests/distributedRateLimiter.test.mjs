@@ -108,6 +108,18 @@ describe('Distributed Rate Limiter', () => {
       assert.strictEqual(result.allowed, true);
     });
 
+    it('should prune expired records from store Map to prevent memory leaks', async () => {
+      const limiter = await createLimiter(50, 2);
+      await limiter.check('192.168.1.5');
+      assert.strictEqual(limiter.store.size, 1);
+      
+      await new Promise(resolve => setTimeout(resolve, 60));
+      
+      await limiter.check('192.168.1.6');
+      assert.strictEqual(limiter.store.has('192.168.1.5'), false, 'Expired keys should be pruned from the store');
+      assert.strictEqual(limiter.store.size, 1, 'Only the active key should remain');
+    });
+
     it('should track different IPs independently', async () => {
       const limiter = await createLimiter(1000, 2);
       await limiter.check('192.168.1.1');

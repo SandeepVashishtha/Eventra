@@ -10,10 +10,27 @@ class InMemoryRateLimiter {
     this.windowMs = windowMs;
     this.maxRequests = maxRequests;
     this.store = new Map();
+    this.lastPruned = Date.now();
+  }
+
+  pruneExpired() {
+    const now = Date.now();
+    for (const [key, record] of this.store.entries()) {
+      if (now - record.start > this.windowMs) {
+        this.store.delete(key);
+      }
+    }
+    this.lastPruned = now;
   }
 
   check(key) {
     const now = Date.now();
+    
+    // Periodically prune the entire store to prevent memory leaks from inactive IPs
+    if (now - this.lastPruned > this.windowMs) {
+      this.pruneExpired();
+    }
+
     const record = this.store.get(key);
 
     if (!record || now - record.start > this.windowMs) {

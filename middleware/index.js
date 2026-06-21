@@ -38,14 +38,7 @@ export const config = {
   matcher: "/api/:path*",
 };
 
-async function handleRequest(request) {
-  const geoResponse = checkGeoBlock(request);
-  if (geoResponse) return geoResponse;
-
-  const url = new URL(request.url);
-
-  if (request.method === "OPTIONS") return;
-
+function validateOrigin(request) {
   const origin = request.headers.get("origin");
   const host = request.headers.get("host");
 
@@ -65,68 +58,78 @@ async function handleRequest(request) {
       );
     }
   }
+}
 
-  if (url.pathname.startsWith("/api/")) {
-    const PUBLIC_PATHS = [
-      "/api/auth/login",
-      "/api/auth/signup",
-      "/api/auth/reset-password",
-      "/api/auth/reauth",
-      "/api/events",
-      "/api/hackathons",
-      "/api/projects",
-      "/api/validate",
-      "/api/health",
-    ];
+async function authorizeSession(request, url) {
+  const PUBLIC_PATHS = [
+    "/api/auth/login",
+    "/api/auth/signup",
+    "/api/auth/reset-password",
+    "/api/auth/reauth",
+    "/api/events",
+    "/api/hackathons",
+    "/api/projects",
+    "/api/validate",
+    "/api/health",
+  ];
 
-    const isPublicPath = PUBLIC_PATHS.some(path =>
-      url.pathname.startsWith(path) &&
-      (request.method === "GET" ||
-        url.pathname.includes("/auth/") ||
-        url.pathname.includes("/validate/"))
-    );
+  const isPublicPath = PUBLIC_PATHS.some(path =>
+    url.pathname.startsWith(path) &&
+    (request.method === "GET" ||
+      url.pathname.includes("/auth/") ||
+      url.pathname.includes("/validate/"))
+  );
 
-    if (!isPublicPath) {
-      const token = parseTokenFromCookie(request);
-      if (!token) {
-        return new Response(
-          JSON.stringify({ error: "Unauthorized: Missing active user session" }),
-          { status: 401, headers: { "Content-Type": "application/json" } }
-        );
-      }
+  if (!isPublicPath) {
+    const token = parseTokenFromCookie(request);
+    if (!token) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized: Missing active user session" }),
+        { status: 401, headers: { "Content-Type": "application/json" } }
+      );
+    }
 
-      const jwtSecret = process.env.JWT_SECRET;
-      if (!jwtSecret || !jwtSecret.trim()) {
-        return new Response(
-          JSON.stringify({
-            error: "Server authentication misconfiguration"
-          }),
-          {
-            status: 500,
-            headers: {
-              "Content-Type": "application/json"
-            }
-          }
-        );
-      }
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret || !jwtSecret.trim()) {
+      return new Response(
+        JSON.stringify({ error: "Server authentication misconfiguration" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
 
-      const payload = await verifyJwt(token, jwtSecret);
-      if (!payload) {
-        return new Response(
-          JSON.stringify({ error: "Unauthorized" }),
-          { status: 401, headers: { "Content-Type": "application/json" } }
-        );
-      }
+    const payload = await verifyJwt(token, jwtSecret);
+    if (!payload) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { "Content-Type": "application/json" } }
+      );
+    }
 
-      if (payload.sessionId) {
-        const status = await getSessionRiskState(payload.sessionId);
-        if (status === "invalidated") {
-           return new Response(JSON.stringify({ error: "Session invalidated" }), { status: 401, headers: { "Content-Type": "application/json" }});
-        } else if (status === "requires_reauth") {
-           return new Response(JSON.stringify({ error: "Re-authentication required", code: "REQUIRES_REAUTH" }), { status: 401, headers: { "Content-Type": "application/json" }});
-        }
+    if (payload.sessionId) {
+      const status = await getSessionRiskState(payload.sessionId);
+      if (status === "invalidated") {
+         return new Response(JSON.stringify({ error: "Session invalidated" }), { status: 401, headers: { "Content-Type": "application/json" }});
+      } else if (status === "requires_reauth") {
+         return new Response(JSON.stringify({ error: "Re-authentication required", code: "REQUIRES_REAUTH" }), { status: 401, headers: { "Content-Type": "application/json" }});
       }
     }
+  }
+}
+
+async function handleRequest(request) {
+  const geoResponse = checkGeoBlock(request);
+  if (geoResponse) return geoResponse;
+
+  const url = new URL(request.url);
+
+  if (request.method === "OPTIONS") return;
+
+  const originValidationResponse = validateOrigin(request);
+  if (originValidationResponse) return originValidationResponse;
+
+  if (url.pathname.startsWith("/api/")) {
+    const authResponse = await authorizeSession(request, url);
+    if (authResponse) return authResponse;
   }
 
   const { limited, window } = await checkRateLimit(request);
@@ -157,8 +160,18 @@ async function handleRequest(request) {
 
 export { validateBackendOrigin, getBackendOrigins } from "./csp.js";
 
-const SECURITY_HEADERS_OBJ = createSecurityHeaders();
-export { SECURITY_HEADERS_OBJ as SECURITY_HEADERS };
+export const SECURITY_HEADERS = {
+  get "Strict-Transport-Security"() {
+    return "max-age=31536000; includeSubDomains; preload";
+  },
+  get "X-Frame-Options"() { return "DENY"; },
+  get "X-Content-Type-Options"() { return "nosniff"; },
+  get "Referrer-Policy"() { return "strict-origin-when-cross-origin"; },
+  get "Permissions-Policy"() { return "camera=(), microphone=(), geolocation=(), display-capture=()"; },
+  get "Content-Security-Policy"() {
+    return createSecurityHeaders()["Content-Security-Policy"];
+  }
+};
 
 export default async function middleware(request) {
   return validationLimiter.run(() => handleRequest(request));
