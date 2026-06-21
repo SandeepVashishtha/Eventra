@@ -324,7 +324,7 @@ const Newsletter = () => {
 const Footer = () => {
   const { t } = useTranslation();
 return (
-    <footer className="relative z-50 bg-white dark:bg-gray-950 border-t border-gray-100 dark:border-gray-800 transition-colors duration-300">
+    <footer className="relative z-50 bg-white dark:bg-gray-950 border-t border-gray-100 dark:border-gray-800 transition-colors duration-300 hover:border-indigo-100 dark:hover:border-indigo-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
  
         {/* ── Main grid ── */}
