@@ -9,6 +9,7 @@ import App from "./App";
 import TranslationProvider from "./components/TranslationProvider";
 import { ThemeProvider } from "./context/ThemeContext";
 import GlobalErrorBoundary from "./components/common/ErrorBoundary";
+import ErrorRecoveryPage from "./components/common/ErrorRecoveryPage";
 import { initializeGlobalErrorHandling } from "./utils/globalErrorHandler";
 import { initCspReporting } from "./utils/cspReporting";
 import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
@@ -37,7 +38,8 @@ if (import.meta.env.PROD) {
 const router = createBrowserRouter([
   {
     path: "*",
-    element: <App />
+    element: <App />,
+    errorElement: <ErrorRecoveryPage />,
   }
 ]);
 
@@ -60,4 +62,3 @@ root.render(
 </GlobalErrorBoundary>
   </React.StrictMode>
 );
-
