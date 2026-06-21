@@ -49,9 +49,10 @@ jobs:
         id: targets
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            git fetch origin ${{ github.event.pull_request.base.ref }}
-            FILES=$(git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD \
-              | grep '\.md$' || true)
+            FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} 2>/dev/null || \
+                    git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD 2>/dev/null || \
+                    git diff --name-only HEAD~1 HEAD 2>/dev/null || true)
+            FILES=$(echo "$FILES" | grep '\.md$' || true)
           else
             FILES=$(find . -name '*.md' \
               -not -path './.git/*' \
