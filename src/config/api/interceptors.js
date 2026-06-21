@@ -1,5 +1,5 @@
 import { syncServerTimeFromHeader } from "../../utils/timeSync.js";
-import { getCSRFToken, requiresCSRF } from "../../utils/csrfToken.js";
+import { getCSRFToken, requiresCSRF, getCSRFEnforcementMode } from "../../utils/csrfToken.js";
 import { logger } from "../../utils/logger.js";
 import { ApiError, RateLimitError, CSRFError } from "./errors.js";
 
@@ -113,16 +113,6 @@ const normalizeApiErrorWithTimeout = (error, timeoutMs) => {
     error.response?.data?.message || error.message || `Request failed with status ${status}`,
     { status, data: error.response?.data || null },
   );
-};
-
-const getCSRFEnforcementMode = () => {
-  if (typeof import.meta.env !== "undefined" && import.meta.env.VITE_CSRF_ENFORCEMENT_MODE) {
-    return import.meta.env.VITE_CSRF_ENFORCEMENT_MODE;
-  }
-  if (typeof process !== "undefined" && process.env?.VITE_CSRF_ENFORCEMENT_MODE) {
-    return process.env.VITE_CSRF_ENFORCEMENT_MODE;
-  }
-  return "warning";
 };
 
 export function setupRequestInterceptor(api, { isDev, buildApiUrl, getAuthToken, getOnUnauthorized }) {
