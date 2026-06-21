@@ -240,6 +240,11 @@ const getSignalingChannel = () => {
  */
 export class P2PFileTransferCoordinator {
   constructor(fileId, fileName, onStateChange, expectedTotalChunks = null) {
+    // Guard against SSR environments where browser APIs are unavailable
+    if (typeof window === "undefined") {
+      throw new Error("P2PFileTransferCoordinator requires a browser environment");
+    }
+
     this.fileId = fileId;
     this.fileName = fileName;
     this.onStateChange = onStateChange;

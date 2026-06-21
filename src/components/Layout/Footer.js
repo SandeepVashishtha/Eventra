@@ -227,10 +227,10 @@ const Newsletter = () => {
         </div>
  
         <button
-          type="submit"
-          disabled={isSubmitting}
-          className="shrink-0 px-4 py-2 rounded-lg  bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white text-sm font-medium transition-colors"
-        >
+  type="submit"
+  disabled={isSubmitting}
+  className="shrink-0 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white text-sm font-medium transition-all duration-200 hover:scale-105 hover:shadow-md hover:shadow-indigo-500/30"
+>
           {isSubmitting ? t("footer.newsletter.subscribing") : t("footer.newsletter.subscribe")}
         </button>
       </form>
@@ -324,7 +324,7 @@ const Newsletter = () => {
 const Footer = () => {
   const { t } = useTranslation();
 return (
-    <footer className="relative z-50 bg-white dark:bg-gray-950 border-t border-gray-100 dark:border-gray-800 transition-colors duration-300">
+    <footer className="relative z-50 bg-white dark:bg-gray-950 border-t border-gray-100 dark:border-gray-800 transition-colors duration-300 hover:border-indigo-100 dark:hover:border-indigo-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
  
         {/* ── Main grid ── */}
@@ -338,18 +338,18 @@ return (
                 className="inline-flex items-center gap-2 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
               >
                 <span
-                  className="text-xl font-extrabold tracking-tight text-gray-900 dark:text-white group-hover:!text-indigo-600 dark:group-hover:text-indigo-400 transition-colors"
-                  style={{ fontFamily: "Anton, sans-serif", letterSpacing: "-0.01em" }}
-                >
-                  Eventra
-                </span>
+  className="text-xl font-extrabold tracking-tight text-gray-900 dark:text-white group-hover:!text-indigo-600 dark:group-hover:text-indigo-400 transition-all duration-300 group-hover:scale-105 inline-block"
+  style={{ fontFamily: "Anton, sans-serif", letterSpacing: "-0.01em" }}
+>
+  Eventra
+</span>
               </Link>
  
               {/* Open-source badge */}
-              <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800 align-middle">
-                <FaCode size={9} aria-hidden="true" />
-                Open Source
-              </span>
+              <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800 align-middle transition-all duration-200 hover:bg-indigo-100 dark:hover:bg-indigo-900 hover:scale-110 cursor-default">
+  <FaCode size={9} aria-hidden="true" />
+  Open Source
+</span>
  
               <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 leading-relaxed max-w-xs">
                 {t("footer.tagline")}
@@ -364,7 +364,7 @@ return (
                   href={s.href}
                   aria-label={s.label}
                   title={s.label}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-indigo-50 dark:hover:bg-indigo-950 hover:text-indigo-600 dark:hover:text-indigo-400 border border-gray-200 dark:border-gray-700 hover:border-indigo-200 dark:hover:border-indigo-800 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-indigo-50 dark:hover:bg-indigo-950 hover:text-indigo-600 dark:hover:text-indigo-400 border border-gray-200 dark:border-gray-700 hover:border-indigo-200 dark:hover:border-indigo-800 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                 >
                   {s.icon}
                   <span>{s.name}</span>
@@ -387,7 +387,7 @@ return (
                   <li key={link.nameKey || link.href}>
                     <Link
                       to={link.href}
-                      className="group inline-flex items-center gap-2 text-xs sm:text-sm text-gray-500  dark:text-gray-400 hover:!text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
+                      className="group relative inline-flex items-center gap-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400 hover:!text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded after:absolute after:left-6 after:-bottom-0.5 after:h-px after:w-0 after:bg-indigo-500 after:transition-all after:duration-300 group-hover:after:w-[calc(100%-1.5rem)]"
                     >
                       <span className="text-gray-400 dark:text-gray-500 group-hover:!text-indigo-500 dark:group-hover:text-indigo-400 transition-colors duration-200 shrink-0">
                         {link.icon}
@@ -403,32 +403,32 @@ return (
  
         {/* ── Bottom bar ── */}
         <div className="py-5 border-t border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-xs text-gray-400 dark:text-gray-500">
-            © {new Date().getFullYear()} Eventra.{" "}
-            <span>{t("footer.rights")}</span>
-          </p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 transition-colors duration-200 hover:text-gray-600 dark:hover:text-gray-300">
+  © {new Date().getFullYear()} Eventra.{" "}
+  <span>{t("footer.rights")}</span>
+</p>
  
           <div className="flex flex-wrap items-center justify-center sm:justify-end gap-x-3 gap-y-2 text-xs text-gray-400 dark:text-gray-500">
             <Link
-              to="/privacy"
-              className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
-            >
-              {t("footer.privacy")}
-            </Link>
-            <span className="text-gray-200 dark:text-gray-700" aria-hidden="true">|</span>
-            <Link
-              to="/terms"
-              className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
-            >
-              {t("footer.terms")}
-            </Link>
-            <span className="text-gray-200 dark:text-gray-700" aria-hidden="true">|</span>
-            <Link
-              to="/api-docs"
-              className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
-            >
-              {t("footer.links.apiDocs")}
-            </Link>
+  to="/privacy"
+  className="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
+>
+  {t("footer.privacy")}
+</Link>
+<span className="text-gray-200 dark:text-gray-700" aria-hidden="true">|</span>
+<Link
+  to="/terms"
+  className="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
+>
+  {t("footer.terms")}
+</Link>
+<span className="text-gray-200 dark:text-gray-700" aria-hidden="true">|</span>
+<Link
+  to="/api-docs"
+  className="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
+>
+  {t("footer.links.apiDocs")}
+</Link>
           </div>
         </div>
       </div>

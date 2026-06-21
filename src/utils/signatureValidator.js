@@ -59,7 +59,7 @@ export function validateSignature(
   };
 }
 
-setInterval(() => {
+const cleanupInterval = setInterval(() => {
   const now = Date.now();
 
   for (const [nonce, timestamp] of usedNonces) {
@@ -71,3 +71,7 @@ setInterval(() => {
     }
   }
 }, 60000);
+
+if (cleanupInterval && typeof cleanupInterval.unref === "function") {
+  cleanupInterval.unref();
+}

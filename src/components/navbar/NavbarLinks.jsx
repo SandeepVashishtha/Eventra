@@ -18,6 +18,18 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
   }, [location.pathname]);
 
   useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setOpenMenu(null);
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
+  useEffect(() => {
     if (vertical) return;
 
     const handleOutsideClick = (event) => {
@@ -161,6 +173,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                   <button
                     type="button"
                     aria-expanded={isOpen}
+                    aria-haspopup="menu"
                     aria-controls={menuId}
                     onClick={() =>
                       setOpenMenu(
@@ -169,6 +182,15 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                           : item.nameKey
                       )
                     }
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        setOpenMenu(
+                          isOpen
+                            ? null
+                            : item.nameKey
+                        );
+                      }
+                    }}
                     className="ml-1 rounded p-1 hover:bg-bg-secondary"
                   >
                     <ChevronDown

@@ -7,6 +7,9 @@ export function useTokenExpiry({ token, user, onExpired }) {
   const expiryToastShownRef = useRef(false);
 
   const clearExpiredSession = useCallback(() => {
+    // Guard: window is only available in browser environments.
+    if (typeof window === "undefined") return;
+
     let hadPreviousSession = false;
     try { hadPreviousSession = !!syncSecureStorage.getItem("user"); } catch {}
     console.warn("[useTokenExpiry] Session expired. Clearing state.");

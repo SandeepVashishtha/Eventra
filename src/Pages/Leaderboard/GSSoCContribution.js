@@ -1,30 +1,26 @@
 import { useState, useMemo, useEffect, useCallback, memo, useRef } from "react";
-import { motion, AnimatePresence, useInView } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 import {
   Lightbulb,
   Code2,
   GitBranch,
   BookOpen,
-  Users,
   CheckCircle,
   Trophy,
   Clock,
   Star,
   ArrowRight,
-  Search,
   ExternalLink,
   Calendar,
   Award,
   MessageCircle,
   Zap,
   Target,
-  Globe,
   Copy,
   Bell,
   WifiOff,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import useDebounce from "../../hooks/useDebounce.js";
 import { safeJsonParse } from "../../utils/safeJsonParse";
@@ -124,16 +120,9 @@ const useToast = () => {
   return { toasts, addToast, removeToast };
 };
 
-// ============ UTILITY FUNCTIONS ============
-const getStatusColor = (status) => ({
-  completed: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800",
-  current: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800 animate-pulse",
-  upcoming: "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 border-gray-200 dark:border-gray-600"
-}[status]);
-
 const formatNumber = (num) => num >= 1000 ? `${(num/1000).toFixed(1)}k` : num;
 
-// ============ REUSABLE COMPONENTS (Memoized) ============
+// ============ SUB-COMPONENTS (Improves Cyclomatic Complexity) ============
 const CountdownTimer = memo(({ timeLeft }) => {
   const units = Object.entries(timeLeft).filter(([key]) => key !== 'ended');
   
@@ -144,7 +133,7 @@ const CountdownTimer = memo(({ timeLeft }) => {
           key={unit}
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="bg-linear-to-br from-indigo-500 to-purple-600 rounded-xl p-2 sm:p-3 text-white shadow-lg"
+          className="bg-indigo-600 dark:bg-indigo-500 rounded-xl p-2 sm:p-3 text-white shadow-sm"
         >
           <div className="text-lg sm:text-2xl font-bold tabular-nums">{String(value).padStart(2, '0')}</div>
           <div className="text-[10px] sm:text-xs opacity-90 capitalize">{unit}</div>
@@ -155,103 +144,18 @@ const CountdownTimer = memo(({ timeLeft }) => {
 });
 CountdownTimer.displayName = "CountdownTimer";
 
-const MentorCard = memo(({ mentor, onConnect }) => {
-  const [isHovered, setIsHovered] = useState(false);
-  
-  return (
-    <motion.article
-      whileHover={{ y: -4 }}
-      onHoverStart={() => setIsHovered(true)}
-      onHoverEnd={() => setIsHovered(false)}
-      className="p-4 bg-white dark:bg-gray-700/50 rounded-xl border dark:border-gray-600 flex items-center gap-3 transition-shadow hover:shadow-lg"
-      role="article"
-      aria-label={`Mentor: ${mentor.name}`}
-    >
-      <div className="text-3xl" aria-hidden="true">{mentor.avatar}</div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <h4 className="font-medium text-gray-900 dark:text-white truncate">{mentor.name}</h4>
-          {mentor.available && (
-            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" title="Available for mentoring" aria-label="Available" />
-          )}
-        </div>
-        <p className="text-sm text-gray-500 dark:text-gray-400">{mentor.role}</p>
-        <div className="flex flex-wrap gap-1 mt-1">
-          {mentor.expertise.map(skill => (
-            <span key={skill} className="text-[10px] sm:text-xs px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full">
-              {skill}
-            </span>
-          ))}
-        </div>
-        {isHovered && mentor.bio && (
-          <motion.p 
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-xs text-gray-600 dark:text-gray-300 mt-2 line-clamp-2"
-          >
-            {mentor.bio}
-          </motion.p>
-        )}
-      </div>
-      {mentor.available ? (
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => onConnect?.(mentor)}
-          className="px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
-          aria-label={`Connect with ${mentor.name}`}
-        >
-          Connect
-        </motion.button>
-      ) : (
-        <span className="text-xs px-3 py-1.5 text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-lg">
-          Busy
-        </span>
-      )}
-    </motion.article>
-  );
-});
-MentorCard.displayName = "MentorCard";
-
-const AchievementBadge = memo(({ achievement, onUnlock }) => {
-  const Icon = achievement.icon;
-  const isUnlocked = achievement.unlocked;
-  
-  return (
-    <motion.button
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      onClick={() => !isUnlocked && onUnlock?.(achievement)}
-      disabled={isUnlocked}
-      className={`relative p-3 rounded-xl border-2 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 ${
-        isUnlocked 
-          ? 'bg-white dark:bg-gray-700 border-yellow-300 dark:border-yellow-600 shadow-md cursor-default' 
-          : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 opacity-60 hover:opacity-100 hover:border-blue-300 dark:hover:border-blue-700'
-      } ${!isUnlocked ? 'focus:ring-blue-500' : 'focus:ring-yellow-500'}`}
-      aria-label={`${achievement.label}: ${achievement.description}${isUnlocked ? ' (Unlocked)' : ' (Locked)'}`}
-      title={achievement.description}
-    >
-      <Icon className={`w-6 h-6 mx-auto mb-2 ${isUnlocked ? achievement.color : 'text-gray-400'}`} aria-hidden="true" />
-      <p className={`text-xs font-medium text-center ${isUnlocked ? 'text-gray-700 dark:text-gray-300' : 'text-gray-500'}`}>
-        {achievement.label}
-      </p>
-      {!isUnlocked && (
-        <p className="text-[10px] text-gray-400 text-center mt-1">Locked</p>
-      )}
-      {isUnlocked && (
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center"
-          aria-hidden="true"
-        >
-          <CheckCircle className="w-3 h-3 text-white" />
-        </motion.div>
-      )}
-    </motion.button>
-  );
-});
-AchievementBadge.displayName = "AchievementBadge";
+const HeroStatCard = memo(({ label, value, icon: Icon }) => (
+  <motion.div 
+    key={label} 
+    className="text-center p-3 sm:p-4 bg-white dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600 shadow-sm"
+    whileHover={{ scale: 1.03, y: -2 }}
+  >
+    <Icon className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1.5 text-indigo-500 dark:text-indigo-400" aria-hidden="true" />
+    <div className="text-lg sm:text-xl font-bold tabular-nums text-gray-900 dark:text-white">{formatNumber(value)}</div>
+    <div className="text-xs text-gray-500 dark:text-gray-400">{label}</div>
+  </motion.div>
+));
+HeroStatCard.displayName = "HeroStatCard";
 
 const HorizontalTimeline = memo(({ timeline, variants }) => {
   const total = timeline.length - 1;
@@ -277,7 +181,7 @@ const HorizontalTimeline = memo(({ timeline, variants }) => {
         <div className="flex flex-col md:items-end bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-200/60 dark:border-slate-800/80 shadow-inner">
           <div className="flex items-center gap-3 mb-1.5">
             <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Program Progress</span>
-            <span className="text-xs font-black text-white bg-linear-to-r from-indigo-500 to-violet-600 px-2.5 py-1 rounded-full shadow-md shadow-indigo-500/20">{Math.round(progressPercent)}% Complete</span>
+            <span className="text-xs font-black text-white bg-gradient-to-r from-indigo-500 to-violet-600 px-2.5 py-1 rounded-full shadow-md shadow-indigo-500/20">{Math.round(progressPercent)}% Complete</span>
           </div>
           {currentItem && (
             <p className="text-xs text-slate-600 dark:text-slate-400 mt-1.5 font-medium">
@@ -294,14 +198,12 @@ const HorizontalTimeline = memo(({ timeline, variants }) => {
       
       <div className="relative w-full py-4 overflow-x-auto hide-scrollbar">
         <div className="min-w-[700px] flex items-start justify-between relative px-8 md:px-12 pb-8 pt-2">
-          {/* Progress Bar Background */}
           <div className="absolute top-[34px] left-20 right-20 h-2 bg-slate-100 dark:bg-slate-800/80 rounded-full overflow-hidden border border-slate-200/50 dark:border-slate-700/50" aria-hidden="true">
-            {/* Active Progress Bar */}
             <motion.div 
               initial={{ width: 0 }}
               animate={{ width: `${progressPercent}%` }}
               transition={{ duration: 1.5, ease: "easeOut", delay: 0.2 }}
-              className="absolute top-0 left-0 h-full bg-linear-to-r from-blue-500 via-indigo-500 to-violet-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)]" 
+              className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)]" 
             />
           </div>
           
@@ -317,7 +219,7 @@ const HorizontalTimeline = memo(({ timeline, variants }) => {
                   animate={{ scale: 1 }}
                   transition={{ delay: idx * 0.1, type: "spring", stiffness: 200 }}
                   className={`w-14 h-14 rounded-2xl flex items-center justify-center border-4 shadow-xl transition-all duration-300 ${
-                    isCompleted ? 'bg-linear-to-br from-indigo-500 to-violet-600 border-white dark:border-slate-900 text-white group-hover:scale-110 group-hover:-translate-y-1 shadow-indigo-500/20' : 
+                    isCompleted ? 'bg-gradient-to-br from-indigo-500 to-violet-600 border-white dark:border-slate-900 text-white group-hover:scale-110 group-hover:-translate-y-1 shadow-indigo-500/20' : 
                     isCurrent ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 border-indigo-500 shadow-indigo-500/30 scale-110 group-hover:scale-125 group-hover:-translate-y-1' : 
                     'bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border-white dark:border-slate-900 shadow-slate-200/50 dark:shadow-none'
                   } ${isCurrent ? 'rotate-3 group-hover:rotate-6' : '-rotate-3 group-hover:rotate-0'}`}
@@ -337,17 +239,6 @@ const HorizontalTimeline = memo(({ timeline, variants }) => {
                   <p className={`text-xs ${isCurrent ? 'text-slate-700 dark:text-slate-300 font-bold' : 'text-slate-500 dark:text-slate-500 font-medium'}`}>
                     {item.date}
                   </p>
-                  <AnimatePresence>
-                    {isCurrent && (
-                      <motion.span 
-                        initial={{ opacity: 0, y: -10, scale: 0.8 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        className="absolute -bottom-10 left-1/2 -translate-x-1/2 whitespace-nowrap px-3 py-1.5 text-[10px] font-black uppercase tracking-widest bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300 rounded-xl border border-indigo-200 dark:border-indigo-500/30 shadow-sm"
-                      >
-                        Active Phase
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
                 </div>
               </div>
             );
@@ -359,55 +250,10 @@ const HorizontalTimeline = memo(({ timeline, variants }) => {
 });
 HorizontalTimeline.displayName = "HorizontalTimeline";
 
-const ResourceItem = memo(({ resource, onCopy }) => {
-  const [copied, setCopied] = useState(false);
-  
-  const handleCopy = async (e) => {
-    e.preventDefault();
-    try {
-      await navigator.clipboard.writeText(resource.link);
-      setCopied(true);
-      onCopy?.(resource.title);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {}
-  };
-  
-  return (
-    <motion.a
-      initial={{ opacity: 0, x: -10 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 10 }}
-      href={resource.link}
-      onClick={handleCopy}
-      className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors group focus:outline-none focus:ring-2 focus:ring-indigo-500"
-      role="listitem"
-    >
-      <div>
-        <p className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-          {resource.title}
-        </p>
-        <p className="text-xs text-gray-500">{resource.type} • {resource.duration} • <span className="capitalize">{resource.difficulty}</span></p>
-      </div>
-      <div className="flex items-center gap-2">
-        {copied ? (
-          <CheckCircle className="w-4 h-4 text-green-500" aria-label="Copied" />
-        ) : (
-          <Copy className="w-4 h-4 text-gray-400 group-hover:text-indigo-500 transition-colors" aria-hidden="true" />
-        )}
-        <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-indigo-500 transition-colors" aria-hidden="true" />
-      </div>
-    </motion.a>
-  );
-});
-ResourceItem.displayName = "ResourceItem";
-
-
-// Skeleton Components
 const Skeleton = ({ className }) => (
   <div className={`animate-pulse bg-gray-200 dark:bg-gray-700 rounded ${className}`} aria-hidden="true" />
 );
 
-// Toast Component
 const ToastContainer = ({ toasts, onClose }) => (
   <div className="fixed bottom-4 right-4 z-50 space-y-2" role="region" aria-live="polite" aria-label="Notifications">
     <AnimatePresence>
@@ -444,14 +290,13 @@ const ToastContainer = ({ toasts, onClose }) => (
 const GSSoCContribution = () => {
   const prefersReducedMotion = useReducedMotion();
   useDocumentTitle("Eventra | GSSoC Contribution");
-  const navigate = useNavigate();
   const searchInputRef = useRef(null);
   const { toasts, addToast, removeToast } = useToast();
   
-  // State with localStorage persistence
   const [searchQuery, setSearchQuery] = useState(() => localStorage.getItem("gssoc.search") || "");
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [selectedDifficulty, setSelectedDifficulty] = useState(() => localStorage.getItem("gssoc.difficulty") || "all");
+  
   const [userStats] = useState(() => {
     const saved = localStorage.getItem("gssoc.userStats");
     return saved ? safeJsonParse(saved, {}) : {
@@ -461,25 +306,19 @@ const GSSoCContribution = () => {
       rank: "Rising Star"
     };
   });
+  
   const [isLoading, setIsLoading] = useState(true);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   
-  // Countdown
   const GSSOC_END_DATE = "2026-08-15T23:59:59";
-
-const timeLeft = useCountdown(
-  GSSOC_END_DATE,
-  () => {
+  const timeLeft = useCountdown(GSSOC_END_DATE, () => {
     addToast("🎉 GSSoC program has ended!", "success");
-  }
-);
+  });
   
-  // Persist state changes
   useEffect(() => { localStorage.setItem("gssoc.search", searchQuery); }, [searchQuery]);
   useEffect(() => { localStorage.setItem("gssoc.difficulty", selectedDifficulty); }, [selectedDifficulty]);
   useEffect(() => { localStorage.setItem("gssoc.userStats", JSON.stringify(userStats)); }, [userStats]);
   
-  // Online/offline detection
   useEffect(() => {
     const handleOnline = () => { setIsOffline(false); addToast("🟢 You're back online!", "success"); };
     const handleOffline = () => { setIsOffline(true); addToast("🔴 You're offline. Some features may be limited.", "error"); };
@@ -492,53 +331,19 @@ const timeLeft = useCountdown(
     };
   }, [addToast]);
   
-  // Simulate initial loading
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 800);
     return () => clearTimeout(timer);
   }, []);
   
-  // Keyboard shortcut: "/" to focus search
   useKeyboardShortcut("/", () => {
     searchInputRef.current?.focus();
     addToast("🔍 Search focused. Start typing...", "info", 1500);
   }, [addToast]);
   
-  // Filtered resources with difficulty filter
-  const filteredResources = useMemo(() => {
-    let result = RESOURCES;
-    if (debouncedSearchQuery) {
-      result = result.filter(r => 
-        r.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-        r.type.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
-      );
-    }
-    if (selectedDifficulty !== "all") {
-      result = result.filter(r => r.difficulty === selectedDifficulty);
-    }
-    return result;
-  }, [debouncedSearchQuery, selectedDifficulty]);
-  
-  // Handlers
-  const handleMentorConnect = useCallback((mentor) => {
-    addToast(`📬 Connection request sent to ${mentor.name}!`, "success");
-  }, [addToast]);
-  
-  const handleAchievementUnlock = useCallback((achievement) => {
-    addToast(`🔒 "${achievement.label}" is locked. Keep contributing to unlock!`, "info");
-  }, [addToast]);
-  
-  const handleResourceCopy = useCallback((title) => {
-    addToast(`📋 Link copied for "${title}"`, "success");
-  }, [addToast]);
-  
-  // Animation variants
   const containerVariants = useMemo(() => ({
     hidden: { opacity: 0 },
-    visible: { 
-      opacity: 1, 
-      transition: { staggerChildren: 0.08, delayChildren: 0.1 } 
-    }
+    visible: { opacity: 1, transition: { staggerChildren: 0.08, delayChildren: 0.1 } }
   }), []);
   
   const itemVariants = useMemo(() => ({
@@ -546,27 +351,19 @@ const timeLeft = useCountdown(
     visible: { 
       y: 0, 
       opacity: 1, 
-      transition: { 
-        duration: prefersReducedMotion ? 0 : 0.4,
-        ease: [0.22, 1, 0.36, 1]
-      } 
+      transition: { duration: prefersReducedMotion ? 0 : 0.4, ease: [0.22, 1, 0.36, 1] } 
     }
   }), [prefersReducedMotion]);
-  
   
   if (isLoading) {
     return (
       <div className="w-[95%] mx-auto my-10 min-h-screen pb-12">
-        <div className="p-8 rounded-3xl bg-linear-to-br from-indigo-600 to-purple-600 mb-8">
+        <div className="p-8 rounded-3xl bg-gray-100 dark:bg-gray-800 mb-8 border border-gray-200 dark:border-gray-700">
           <Skeleton className="h-8 w-64 mb-4" />
           <Skeleton className="h-4 w-96 mb-6" />
           <div className="grid grid-cols-4 gap-3">
             {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-16 rounded-xl" />)}
           </div>
-        </div>
-        <div className="grid md:grid-cols-2 gap-6">
-          <Skeleton className="h-48 rounded-2xl" />
-          <Skeleton className="h-48 rounded-2xl" />
         </div>
       </div>
     );
@@ -574,7 +371,6 @@ const timeLeft = useCountdown(
   
   return (
     <>
-      {/* Offline Banner */}
       <AnimatePresence>
         {isOffline && (
           <motion.div
@@ -596,83 +392,76 @@ const timeLeft = useCountdown(
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="w-[95%] mx-auto my-10 bg-bg min-h-screen pb-12"
+        className="w-[95%] mx-auto my-10 min-h-screen pb-12"
         role="main"
       >
-        {/* 🎯 HERO SECTION */}
+        {/* 🎯 PROFESSIONAL HERO SECTION */}
         <motion.section
           variants={itemVariants}
-          className="p-6 sm:p-8 rounded-3xl shadow-lg bg-linear-to-br from-indigo-600 via-purple-600 to-pink-500 text-white mb-6 sm:mb-8 relative overflow-hidden"
+          className="p-6 sm:p-8 rounded-3xl shadow-sm bg-white dark:bg-gray-800/90 border border-gray-200 dark:border-gray-700 mb-6 sm:mb-8 relative overflow-hidden"
           aria-labelledby="hero-heading"
         >
-          {/* Decorative background */}
-          <div className="absolute inset-0 opacity-10 pointer-events-none" aria-hidden="true">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full blur-3xl" />
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-yellow-300 rounded-full blur-3xl" />
+          <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+            <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-50 dark:bg-indigo-900/20 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-50 dark:bg-blue-900/20 rounded-full blur-3xl" />
           </div>
           
           <div className="relative z-10 grid md:grid-cols-2 gap-6 sm:gap-8 items-center">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <Trophy className="w-6 h-6 text-yellow-300" aria-hidden="true" />
-                <span className="text-sm font-medium bg-white/20 px-3 py-1 rounded-full">
+                <Trophy className="w-6 h-6 text-indigo-500" aria-hidden="true" />
+                <span className="text-sm font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full">
                   GSSoC 2024
                 </span>
               </div>
-              <h1 id="hero-heading" className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 leading-tight">
+              
+              <h1 id="hero-heading" className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 tracking-tight leading-tight text-gray-900 dark:text-white">
                 Contribute to Eventra & <br className="hidden sm:block"/>
-                <span className="text-yellow-300">Level Up Your Skills</span>
+                <span className="text-indigo-600 dark:text-indigo-400">Level Up Your Skills</span>
               </h1>
-              <p className="text-indigo-100 text-base sm:text-lg mb-4 sm:mb-6 leading-relaxed max-w-xl">
+              
+              <p className="text-gray-600 dark:text-gray-300 text-base sm:text-lg mb-4 sm:mb-6 leading-relaxed max-w-xl">
                 Join 500+ contributors building real-world features. Earn points, 
                 badges, and recognition while making an impact.
               </p>
               
-              {/* User Stats */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-4 sm:mb-6">
-                {[
-                  { label: "Issues", value: userStats.issuesClaimed, icon: Target },
-                  { label: "PRs", value: userStats.prsMerged, icon: GitBranch },
-                  { label: "Points", value: userStats.points, icon: Star },
-                  { label: "Rank", value: userStats.rank.split(' ')[0], icon: Award },
-                ].map(({ label, value, icon: Icon }) => (
-                  <motion.div 
-                    key={label} 
-                    className="text-center p-2 sm:p-3 bg-white/10 rounded-xl backdrop-blur-sm"
-                    whileHover={{ scale: 1.03 }}
-                  >
-                    <Icon className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1 text-yellow-300" aria-hidden="true" />
-                    <div className="text-lg sm:text-xl font-bold tabular-nums">{formatNumber(value)}</div>
-                    <div className="text-[10px] sm:text-xs opacity-90">{label}</div>
-                  </motion.div>
-                ))}
+              {/* User Stats Layout */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                <HeroStatCard label="Issues" value={userStats.issuesClaimed} icon={Target} />
+                <HeroStatCard label="PRs" value={userStats.prsMerged} icon={GitBranch} />
+                <HeroStatCard label="Points" value={userStats.points} icon={Star} />
+                <HeroStatCard label="Rank" value={userStats.rank.split(' ')[0]} icon={Award} />
               </div>
             </div>
             
-            {/* Countdown Card */}
+            {/* Integrated Countdown Card */}
             <motion.aside
               whileHover={{ scale: 1.02 }}
-              className="bg-white/10 backdrop-blur-md rounded-2xl p-4 sm:p-6 border border-white/20"
+              className="bg-gray-50 dark:bg-gray-700/50 rounded-2xl p-4 sm:p-6 border border-gray-200 dark:border-gray-600 shadow-sm"
               aria-labelledby="countdown-heading"
             >
               <div className="flex items-center gap-2 mb-3 sm:mb-4">
-                <Clock className="w-5 h-5" aria-hidden="true" />
-                <h3 id="countdown-heading" className="font-semibold">Program Ends In</h3>
+                <div className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center">
+                  <Clock className="w-4 h-4 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
+                </div>
+                <h3 id="countdown-heading" className="font-semibold text-gray-900 dark:text-white">Program Ends In</h3>
               </div>
+              
               {timeLeft.ended ? (
                 <div className="text-center py-4">
-                  <Trophy className="w-12 h-12 mx-auto mb-3 text-yellow-300" aria-hidden="true" />
-                  <p className="font-medium">Program Completed! 🎉</p>
-                  <p className="text-sm opacity-90">Check final rankings soon</p>
+                  <Trophy className="w-12 h-12 mx-auto mb-3 text-indigo-400" aria-hidden="true" />
+                  <p className="font-medium text-gray-900 dark:text-white">Program Completed!</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Check final rankings soon</p>
                 </div>
               ) : (
                 <CountdownTimer timeLeft={timeLeft} />
               )}
+              
               <motion.button
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => window.open("https://gssoc.girlscript.tech", "_blank", "noopener,noreferrer")}
-                className="w-full mt-3 sm:mt-4 py-2.5 bg-white text-indigo-600 font-semibold rounded-xl flex items-center justify-center gap-2 hover:bg-indigo-50 transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-indigo-600"
+                className="w-full mt-3 sm:mt-4 py-2.5 bg-indigo-600 text-white font-semibold rounded-xl flex items-center justify-center gap-2 hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 shadow-sm text-sm"
                 aria-label="View GSSoC leaderboard (opens in new tab)"
               >
                 <span>View Leaderboard</span>
@@ -682,10 +471,13 @@ const timeLeft = useCountdown(
           </div>
         </motion.section>
 
+        {/* 📋 TIMELINE */}
+        <HorizontalTimeline timeline={GSSOC_TIMELINE} variants={itemVariants} />
+
         {/* 📋 GUIDELINES */}
         <motion.section
           variants={itemVariants}
-          className="p-6 sm:p-8 rounded-3xl shadow-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 mb-6 sm:mb-8"
+          className="p-6 sm:p-8 rounded-3xl shadow-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 mb-6 sm:mb-8"
           aria-labelledby="guidelines-heading"
         >
           <div className="text-center mb-6 sm:mb-8">
@@ -706,213 +498,18 @@ const timeLeft = useCountdown(
             ].map(({ icon: Icon, title, desc, color }) => (
               <motion.article
                 key={title}
-                whileHover={{ y: -4, boxShadow: "0 10px 40px rgba(0,0,0,0.1)" }}
-                className="p-4 sm:p-5 bg-gray-50 dark:bg-gray-700/50 rounded-2xl border dark:border-gray-600 text-center transition-shadow"
+                whileHover={{ y: -4 }}
+                className="p-5 rounded-2xl border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/20"
               >
-                <Icon className={`w-8 h-8 sm:w-9 sm:h-9 mx-auto mb-2 sm:mb-3 ${color}`} aria-hidden="true" />
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-1">{title}</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">{desc}</p>
+                <Icon className={`w-8 h-8 mb-3 ${color}`} />
+                <h3 className="font-bold text-gray-900 dark:text-white mb-1">{title}</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{desc}</p>
               </motion.article>
             ))}
           </div>
         </motion.section>
-
-        {/* 🎮 Achievements & Resources */}
-        <motion.section variants={itemVariants} className="grid md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          {/* Achievements */}
-          <article className="p-4 sm:p-6 rounded-2xl bg-card-bg border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center gap-2 mb-4">
-              <Award className="w-5 h-5 text-yellow-500" aria-hidden="true" />
-              <h3 className="font-semibold text-gray-900 dark:text-white">Your Achievements</h3>
-            </div>
-            <div className="grid grid-cols-4 gap-2 sm:gap-3">
-              {ACHIEVEMENTS.map(achievement => (
-                <AchievementBadge 
-                  key={achievement.id} 
-                  achievement={achievement} 
-                  onUnlock={handleAchievementUnlock} 
-                />
-              ))}
-            </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
-              {ACHIEVEMENTS.filter(a => a.unlocked).length}/{ACHIEVEMENTS.length} unlocked
-            </p>
-          </article>
-
-          {/* Resources with Search & Filter */}
-          <article className="p-4 sm:p-6 rounded-2xl bg-card-bg border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <div className="flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-blue-500" aria-hidden="true" />
-                <h3 className="font-semibold text-gray-900 dark:text-white">Quick Resources</h3>
-              </div>
-              <span className="text-xs px-2 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full">
-                {filteredResources.length} items
-              </span>
-            </div>
-            
-            {/* Search + Filter */}
-            <div className="space-y-3 mb-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" aria-hidden="true" />
-                <input
-                  ref={searchInputRef}
-                  type="search"
-                  placeholder="Search tutorials, guides... (Press / to focus)"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:text-white placeholder-gray-400"
-                  aria-label="Search resources"
-                />
-              </div>
-              <div className="flex gap-2">
-                {["all", "beginner", "intermediate", "advanced"].map(level => (
-                  <button
-                    key={level}
-                    onClick={() => setSelectedDifficulty(level)}
-                    className={`px-3 py-1 text-xs rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
-                      selectedDifficulty === level
-                        ? "bg-indigo-600 text-white"
-                        : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-                    }`}
-                    aria-pressed={selectedDifficulty === level}
-                  >
-                    {level.charAt(0).toUpperCase() + level.slice(1)}
-                  </button>
-                ))}
-              </div>
-            </div>
-            
-            {/* Resource List */}
-            <div className="space-y-2 max-h-48 overflow-y-auto pr-2" role="list" aria-label="Resource list">
-              <AnimatePresence mode="popLayout">
-                {filteredResources.map((resource) => (
-                  <ResourceItem 
-                    key={resource.title} 
-                    resource={resource} 
-                    onCopy={handleResourceCopy}
-                  />
-                ))}
-              </AnimatePresence>
-              {filteredResources.length === 0 && (
-                <p className="text-sm text-gray-500 text-center py-4" role="status">No resources found. Try different keywords.</p>
-              )}
-            </div>
-          </article>
-        </motion.section>
-
-        {/* 👥 Mentors */}
-        <motion.section variants={itemVariants} className="p-4 sm:p-6 rounded-2xl bg-card-bg border border-gray-200 dark:border-gray-700 mb-6 sm:mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-indigo-500" aria-hidden="true" />
-              <h3 className="font-semibold text-gray-900 dark:text-white">Meet Your Mentors</h3>
-            </div>
-            <button className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded" aria-label="button">
-              View All <ArrowRight className="w-3 h-3" aria-hidden="true" />
-            </button>
-          </div>
-          
-          <div className="grid sm:grid-cols-2 gap-3">
-            {MENTORS.map(mentor => (
-              <MentorCard key={mentor.name} mentor={mentor} onConnect={handleMentorConnect} />
-            ))}
-          </div>
-        </motion.section>
-
-        {/* 📅 Horizontal Timeline */}
-        <HorizontalTimeline timeline={GSSOC_TIMELINE} variants={itemVariants} />
-
-        {/* Getting Started & Best Practices */}
-        <motion.section className="grid md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8" variants={itemVariants}>
-          {/* Getting Started */}
-          <article className="p-4 sm:p-6 rounded-2xl bg-linear-to-br from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-800 border dark:border-gray-700">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
-                <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" aria-hidden="true" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Getting Started</h3>
-            </div>
-            <ol className="space-y-2 sm:space-y-3">
-              {[
-                "Sign up on GSSoC platform",
-                "Join Eventra's Discord community",
-                "Browse issues labeled 'good first issue'",
-                "Comment on an issue to claim it",
-                "Fork, code, and submit your PR!",
-              ].map((step, idx) => (
-                <li key={step} className="flex items-start gap-3">
-                  <span className="flex-shrink-0 w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
-                    {idx + 1}
-                  </span>
-                  <span className="text-gray-700 dark:text-gray-300 text-sm">{step}</span>
-                </li>
-              ))}
-            </ol>
-          </article>
-
-          {/* Best Practices */}
-          <article className="p-4 sm:p-6 rounded-2xl bg-card-bg border dark:border-gray-700">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
-                <CheckCircle className="w-5 h-5 text-purple-600 dark:text-purple-400" aria-hidden="true" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Best Practices</h3>
-            </div>
-            <ul className="space-y-2 sm:space-y-3">
-              {[
-                "Be respectful & inclusive in all discussions",
-                "Write clear PR titles and descriptions",
-                "Test your changes locally before pushing",
-                "Ask for help early if you're stuck",
-                "Review others' PRs to learn and give back",
-              ].map((tip) => (
-                <li key={tip} className="flex items-start gap-3">
-                  <CheckCircle className="flex-shrink-0 w-5 h-5 text-green-500 mt-0.5" aria-hidden="true" />
-                  <span className="text-gray-700 dark:text-gray-300 text-sm">{tip}</span>
-                </li>
-              ))}
-            </ul>
-          </article>
-        </motion.section>
-
-        {/* 🚀 Action Buttons */}
-        <motion.nav variants={itemVariants} className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mb-8 sm:mb-12" aria-label="Primary actions">
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => navigate("/contributorguide")}
-            className="px-6 sm:px-8 py-3 rounded-full font-semibold text-white bg-gray-900 hover:bg-gray-800 shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-black"
-          >
-            <BookOpen className="w-4 h-4" aria-hidden="true" />
-            Contributor&apos;s Guide
-          </motion.button>
-
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => window.open("https://github.com/SandeepVashishtha/Eventra", "_blank", "noopener,noreferrer")}
-            className="px-6 sm:px-8 py-3 rounded-full font-semibold text-white bg-linear-to-r from-pink-500 to-orange-500 hover:from-pink-600 hover:to-orange-600 shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 dark:focus:ring-offset-black"
-          >
-            <GitBranch className="w-4 h-4" aria-hidden="true" />
-            Start Contributing
-            <ExternalLink className="w-4 h-4" aria-hidden="true" />
-          </motion.button>
-
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => window.open("https://discord.gg/6MQ9r5nHT", "_blank", "noopener,noreferrer")}
-            className="px-6 sm:px-8 py-3 rounded-full font-semibold text-white bg-[#5865F2] hover:bg-[#4752C4] shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-[#5865F2] focus:ring-offset-2 dark:focus:ring-offset-black"
-          >
-            <MessageCircle className="w-4 h-4" aria-hidden="true" />
-            Join Discord
-          </motion.button>
-        </motion.nav>
-
       </motion.main>
       
-      {/* Toast Notifications */}
       <ToastContainer toasts={toasts} onClose={removeToast} />
     </>
   );
