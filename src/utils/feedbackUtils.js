@@ -10,6 +10,39 @@ import { API_ENDPOINTS, apiUtils } from '../config/api';
 
 const FEEDBACK_STORAGE_KEY = 'eventra_feedback';
 
+/**
+ * SSR guard — returns true only when localStorage is available.
+ * Prevents SSR crashes in Next.js and other server environments.
+ */
+const isStorageAvailable = () =>
+  typeof window !== 'undefined' && Boolean(window.localStorage);
+
+/**
+ * Read all feedback from localStorage, or {} if unavailable / parse error.
+ */
+const getAllFeedback = () => {
+  if (!isStorageAvailable()) return {};
+  try {
+    return safeJsonParse(localStorage.getItem(FEEDBACK_STORAGE_KEY), {});
+  } catch {
+    return {};
+  }
+};
+
+/**
+ * Persist feedback object to localStorage.
+ * @returns {boolean} true on success
+ */
+const persistAllFeedback = (allFeedback) => {
+  if (!isStorageAvailable()) return false;
+  try {
+    localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(allFeedback));
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 export const fetchEventFeedback = async (eventId) => {
   const response = await apiUtils.get(API_ENDPOINTS.FEEDBACK.BY_EVENT(eventId));
   return response.json();
@@ -32,7 +65,7 @@ export const submitEventFeedback = async ({ eventId, rating, comment, tags = [] 
  */
 export const getEventFeedback = (eventId) => {
   try {
-    const allFeedback = safeJsonParse(localStorage.getItem(FEEDBACK_STORAGE_KEY), {});
+    const allFeedback = getAllFeedback();
     const rawFeedback = allFeedback[eventId] || [];
     return rawFeedback.map(f => ({
       ...f,
@@ -52,7 +85,7 @@ export const getEventFeedback = (eventId) => {
  */
 export const saveFeedback = (eventId, feedback) => {
   try {
-    const allFeedback = safeJsonParse(localStorage.getItem(FEEDBACK_STORAGE_KEY), {});
+    const allFeedback = getAllFeedback();
     const rawList = allFeedback[eventId] || [];
 
     // Use a Map for O(1) userId lookups instead of O(N) findIndex
@@ -65,7 +98,7 @@ export const saveFeedback = (eventId, feedback) => {
 
     feedbackMap.set(feedback.userId, feedbackObject);
     allFeedback[eventId] = Array.from(feedbackMap.values());
-    localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(allFeedback));
+    persistAllFeedback(allFeedback);
     return true;
   } catch {
     //console.error('Error saving feedback:', error);
@@ -252,7 +285,7 @@ export const getTagStats = (eventId) => {
  */
 export const deleteFeedback = (eventId, userId = null) => {
   try {
-    const allFeedback = safeJsonParse(localStorage.getItem(FEEDBACK_STORAGE_KEY), {});
+    const allFeedback = getAllFeedback();
     const eventFeedback = allFeedback[eventId] || [];
 
     if (userId) {
@@ -261,7 +294,7 @@ export const deleteFeedback = (eventId, userId = null) => {
       delete allFeedback[eventId];
     }
 
-    localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(allFeedback));
+    persistAllFeedback(allFeedback);
     return true;
   } catch {
     //console.error('Error deleting feedback:', error);
@@ -304,7 +337,9 @@ export const exportFeedbackAsCSV = (eventId) => {
  */
 export const clearAllFeedback = () => {
   try {
-    localStorage.removeItem(FEEDBACK_STORAGE_KEY);
+    if (isStorageAvailable()) {
+      localStorage.removeItem(FEEDBACK_STORAGE_KEY);
+    }
     return true;
   } catch {
     //console.error('Error clearing feedback:', error);
