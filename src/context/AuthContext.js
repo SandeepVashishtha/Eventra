@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useCallback, useRef, useState } from "react";
-import { setOnUnauthorizedHandler, setAuthToken } from "../config/api.js";
+import { setOnUnauthorizedHandler, setAuthToken, apiUtils } from "../config/api.js";
 import { authService } from "../services/authService.js";
 import { userService } from "../services/userService.js";
 import { syncSecureStorage } from "../utils/secureStorage.js";
@@ -112,7 +112,7 @@ export const AuthProvider = ({ children }) => {
     setAuthToken(null);
     
     // Invalidate token cookie
-    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
+    document.cookie = "auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
     
     // Clear user metadata from secure/local storage manager
     syncSecureStorage.removeItem("user");
@@ -160,7 +160,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const validate = async () => {
       try {
-        const res = await userService.getProfile();
+        const res = await apiUtils.get("/api/auth/me");
         if (!isMountedRef.current) return;
         
         if (res.ok && res.data) {
