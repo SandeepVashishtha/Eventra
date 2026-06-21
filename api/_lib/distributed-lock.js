@@ -28,23 +28,27 @@ class InMemoryLockManager {
     lock = new Lock();
     this.locks.set(key, lock);
 
-    const timeout = setTimeout(() => {
-      if (this.locks.get(key) === lock) {
-        this.locks.delete(key);
-        lock.release();
-      }
-    }, ttlMs);
-
     if (prevLock) {
       await prevLock.promise;
     }
 
-    clearTimeout(timeout);
+    let timeout = null;
+    if (ttlMs > 0 && ttlMs !== Infinity) {
+      timeout = setTimeout(() => {
+        if (this.locks.get(key) === lock) {
+          this.locks.delete(key);
+        }
+        lock.release();
+      }, ttlMs);
+    }
 
     let released = false;
     return () => {
       if (released) return;
       released = true;
+      if (timeout) {
+        clearTimeout(timeout);
+      }
       lock.release();
       if (this.locks.get(key) === lock) {
         this.locks.delete(key);
