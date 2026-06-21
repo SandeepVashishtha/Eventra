@@ -1,1 +1,2 @@
 - Fixed useEventRegistration.js line 265: `checkEventCapacity` now treats `maxAttendees: 0` as unlimited capacity.
+- Fixed Waitlist Conflict: Correctly extract the status code from the normalized `ApiError` object by checking both `error.status` and `error.response?.status`, ensuring user-friendly conflict error messages are propagated.

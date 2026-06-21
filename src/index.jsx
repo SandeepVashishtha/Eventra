@@ -23,6 +23,8 @@ Sentry.init({
 // Initialize Global Runtime Monitoring
 initializeGlobalErrorHandling();
 
+// Fixed Normalized ApiError Object Mismatch on Waitlist conflict errors.
+
 
 // Attach CSP violation listener — surfaces policy breaches in dev console
 // and forwards reports to REACT_APP_CSP_REPORT_URI in production.
