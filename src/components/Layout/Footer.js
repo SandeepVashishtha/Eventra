@@ -227,10 +227,10 @@ const Newsletter = () => {
         </div>
  
         <button
-          type="submit"
-          disabled={isSubmitting}
-          className="shrink-0 px-4 py-2 rounded-lg  bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white text-sm font-medium transition-colors"
-        >
+  type="submit"
+  disabled={isSubmitting}
+  className="shrink-0 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white text-sm font-medium transition-all duration-200 hover:scale-105 hover:shadow-md hover:shadow-indigo-500/30"
+>
           {isSubmitting ? t("footer.newsletter.subscribing") : t("footer.newsletter.subscribe")}
         </button>
       </form>
