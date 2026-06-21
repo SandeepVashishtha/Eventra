@@ -158,29 +158,78 @@ export const incrementEventAttendees = (eventId) => {
   }
 };
 
+// Helper to extract a user name from the user object
+const getUserName = (user) => {
+  return (
+    user?.fullName ||
+    `${user?.firstName || ""} ${user?.lastName || ""}`.trim() ||
+    user?.username ||
+    "Anonymous"
+  );
+};
+
+// Helper for joinWaitlist offline fallback
+const joinWaitlistOffline = async (id, userId, user, registrationForm) => {
+  const legacyKey = `my_events_${userId}`;
+  const userRegKey = getOrMigrateKey("my_events", userId, legacyKey);
+  try {
+    const rawRegs = localStorage.getItem(userRegKey);
+    const regs = rawRegs ? safeJsonParse(rawRegs, []) : [];
+    if (regs.some((r) => r.eventId === id)) {
+      throw new Error("You are already registered for this event.");
+    }
+  } catch (e) {
+    if (e.message.includes("already registered")) throw e;
+  }
+
+  const records = getGlobalWaitlist();
+  const existing = records.find(
+    (r) => r.userId === userId && r.eventId === id && r.status === "waiting"
+  );
+  if (existing) {
+    throw new Error("You are already on the waitlist for this event.");
+  }
+
+  const newEntry = {
+    userId,
+    userName: getUserName(user),
+    userEmail: user?.email,
+    phone: registrationForm?.phone || "",
+    eventId: id,
+    joinedAt: new Date().toISOString(),
+    status: "waiting",
+  };
+
+  records.push(newEntry);
+  saveGlobalWaitlist(records);
+
+  await addLocalNotification(
+    "Waitlist Joined (Offline)",
+    `You have been added to the offline waitlist for ${registrationForm?.eventTitle || "the event"}. It will sync when you are back online.`
+  );
+
+  return newEntry;
+};
+
 // Join waitlist - tries server first, falls back to localStorage offline
 export const joinWaitlist = async (eventId, user, registrationForm = {}) => {
   const id = parseEventId(eventId);
-  const userId = user.id || user.email;
+  const userId = user?.id || user?.email;
   if (!userId) throw new Error("Authentication required to join waitlist.");
 
   try {
     const response = await apiUtils.post(`${API_ENDPOINTS.EVENTS.ALL}/${id}/waitlist`, {
       userId,
-      name: user.fullName || `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.username || "Anonymous",
-      email: user.email,
+      name: getUserName(user),
+      email: user?.email,
       phone: registrationForm.phone || "",
       eventTitle: registrationForm.eventTitle || "the event",
     });
     if (response.ok) {
       const newEntry = {
         userId,
-        userName:
-          user.fullName ||
-          `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
-          user.username ||
-          "Anonymous",
-        userEmail: user.email,
+        userName: getUserName(user),
+        userEmail: user?.email,
         phone: registrationForm.phone || "",
         eventId: id,
         joinedAt: new Date().toISOString(),
@@ -205,50 +254,7 @@ export const joinWaitlist = async (eventId, user, registrationForm = {}) => {
     }
   }
 
-  // Offline fallback: store locally
-  const legacyKey = `my_events_${userId}`;
-  const userRegKey = getOrMigrateKey("my_events", userId, legacyKey);
-  try {
-    const rawRegs = localStorage.getItem(userRegKey);
-    const regs = rawRegs ? safeJsonParse(rawRegs, []) : [];
-    if (regs.some((r) => r.eventId === id)) {
-      throw new Error("You are already registered for this event.");
-    }
-  } catch (e) {
-    if (e.message.includes("already registered")) throw e;
-  }
-
-  const records = getGlobalWaitlist();
-  const existing = records.find(
-    (r) => r.userId === userId && r.eventId === id && r.status === "waiting"
-  );
-  if (existing) {
-    throw new Error("You are already on the waitlist for this event.");
-  }
-
-  const newEntry = {
-    userId,
-    userName:
-      user.fullName ||
-      `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
-      user.username ||
-      "Anonymous",
-    userEmail: user.email,
-    phone: registrationForm.phone || "",
-    eventId: id,
-    joinedAt: new Date().toISOString(),
-    status: "waiting",
-  };
-
-  records.push(newEntry);
-  saveGlobalWaitlist(records);
-
-  await addLocalNotification(
-    "Waitlist Joined (Offline)",
-    `You have been added to the offline waitlist for ${registrationForm.eventTitle || "the event"}. It will sync when you are back online.`
-  );
-
-  return newEntry;
+  return joinWaitlistOffline(id, userId, user, registrationForm);
 };
 
 // Leave waitlist - tries server first, falls back to localStorage
