@@ -18,7 +18,7 @@ const getCSRFEnforcementMode = () => {
   if (typeof process !== "undefined" && process.env?.VITE_CSRF_ENFORCEMENT_MODE) {
     return process.env.VITE_CSRF_ENFORCEMENT_MODE;
   }
-  return "warning";
+  return "strict";
 };
 
 /**
