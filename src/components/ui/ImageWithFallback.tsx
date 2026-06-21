@@ -30,7 +30,7 @@ if (error || !src) {
     if (fallbackType === 'avatar') {
       return (
         <div
-          className={`flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-semibold select-none ${className}`}
+          className={`flex items-center justify-center bg-linear-to-br from-indigo-500 to-purple-600 text-white font-semibold select-none ${className}`}
           title={alt || name}
         >
           {getInitials(name)}
