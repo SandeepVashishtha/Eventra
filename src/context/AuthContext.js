@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useCallback, useRef, useState } from "react";
-import { setOnUnauthorizedHandler, setRequiresReauthHandler, setAuthToken } from "../config/api.js";
+import { setOnUnauthorizedHandler, setRequiresReauthHandler, setAuthToken, apiUtils } from "../config/api.js";
 import { authService } from "../services/authService.js";
 import { userService } from "../services/userService.js";
 import { syncSecureStorage } from "../utils/secureStorage.js";
@@ -115,7 +115,7 @@ export const AuthProvider = ({ children }) => {
     setAuthToken(null);
     
     // Invalidate token cookie
-    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
+    document.cookie = "auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
     
     // Clear user metadata from secure/local storage manager
     syncSecureStorage.removeItem("user");
@@ -196,13 +196,14 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const validate = async () => {
       try {
-        const res = await userService.getProfile();
+        const res = await apiUtils.get("/api/auth/me");
+        let activeToken = "cookie-managed";
         if (!isMountedRef.current) return;
         
         if (res.ok && res.data) {
           const { sessionUser } = extractSession(res.data, null);
           if (!isMountedRef.current) return;
-          setToken("cookie-managed");
+          setToken(activeToken);
           setUser(sessionUser);
         } else {
           clearSession();
@@ -219,7 +220,11 @@ export const AuthProvider = ({ children }) => {
             const cachedUser = await syncSecureStorage.getItemAsync("user");
             if (cachedUser) {
               setUser(JSON.parse(cachedUser));
-              setToken("cookie-managed");
+              const cookieToken = document.cookie
+                .split("; ")
+                .find((row) => row.startsWith("token="))
+                ?.split("=")[1];
+              setToken(cookieToken || "cookie-managed");
             } else {
               clearSession();
             }
@@ -300,6 +305,15 @@ export const AuthProvider = ({ children }) => {
     setAuthToken(sessionToken);
     
     try {
+      if (sessionToken && sessionToken !== "cookie-managed") {
+        const secureFlag = window.location.protocol === "https:" ? "Secure;" : "";
+        document.cookie = `token=${sessionToken}; path=/; ${secureFlag} SameSite=Strict`;
+      }
+    } catch (err) {
+      console.warn("[AuthContext] Failed to write cookie:", err);
+    }
+
+    try {
       // Security Contract: Strip authorization keys from display profile object stored in localStorage
       const { roles: _roles, permissions: _permissions, scopes: _scopes, ...displayProfile } = sessionUser;
       await syncSecureStorage.setItem("user", JSON.stringify(displayProfile));
@@ -343,7 +357,8 @@ export const AuthProvider = ({ children }) => {
 
         const { sessionUser } = extractSession(data, usernameOrEmail);
 
-        const persisted = await persistSession("cookie-managed", sessionUser);
+        const tokenValue = data?.token || data?.data?.token || "cookie-managed";
+        const persisted = await persistSession(tokenValue, sessionUser);
         if (!persisted) return false;
 
         setAuthRequest({ loading: false, error: null });
@@ -352,6 +367,7 @@ export const AuthProvider = ({ children }) => {
         if (!isMountedRef.current) return false;
         // Fix (Issue #8646):
         document.cookie = "token=; Max-Age=0; path=/; Secure; SameSite=Strict";
+        document.cookie = "token=; Max-Age=0; path=/; SameSite=Strict";
 
         const status = error?.status || error?.response?.status;
         // Re-throw server errors so Login.js catch can show the correct message

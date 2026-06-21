@@ -67,9 +67,16 @@ const PageTransition = ({ children }) => {
   const location = useLocation();
   const prefersReducedMotion = useReducedMotion();
   const [isSlow, setIsSlow] = useState(false);
+  // Track whether the component has mounted to skip initial page-load animation.
+  // This prevents the hero (and all pages) from starting at opacity:0 on first
+  // render, which was causing content to appear faded at 100% browser zoom when
+  // the 220ms animation didn't complete in time.
+  const [hasMounted, setHasMounted] = useState(false);
 
   useEffect(() => {
     setIsSlow(checkSlowConnection());
+    // Mark as mounted after first render so subsequent route changes animate normally
+    setHasMounted(true);
   }, []);
 
   const skipAnimation = prefersReducedMotion || isSlow;
@@ -86,7 +93,9 @@ const PageTransition = ({ children }) => {
       <motion.div
         key={location.pathname}
         variants={variants}
-        initial="initial"
+        // Skip the initial opacity:0 animation on first page load.
+        // Only animate in on route *changes* (hasMounted=true).
+        initial={hasMounted ? "initial" : false}
         animate="animate"
         exit="exit"
         transition={transition}

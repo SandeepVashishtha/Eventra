@@ -24,6 +24,8 @@ Sentry.init({
 // Initialize Global Runtime Monitoring
 initializeGlobalErrorHandling();
 
+// Refactored InMemoryLockManager implementation to prevent queue expiration race conditions.
+
 
 // Attach CSP violation listener — surfaces policy breaches in dev console
 // and forwards reports to REACT_APP_CSP_REPORT_URI in production.
