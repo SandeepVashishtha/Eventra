@@ -338,11 +338,11 @@ return (
                 className="inline-flex items-center gap-2 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
               >
                 <span
-                  className="text-xl font-extrabold tracking-tight text-gray-900 dark:text-white group-hover:!text-indigo-600 dark:group-hover:text-indigo-400 transition-colors"
-                  style={{ fontFamily: "Anton, sans-serif", letterSpacing: "-0.01em" }}
-                >
-                  Eventra
-                </span>
+  className="text-xl font-extrabold tracking-tight text-gray-900 dark:text-white group-hover:!text-indigo-600 dark:group-hover:text-indigo-400 transition-all duration-300 group-hover:scale-105 inline-block"
+  style={{ fontFamily: "Anton, sans-serif", letterSpacing: "-0.01em" }}
+>
+  Eventra
+</span>
               </Link>
  
               {/* Open-source badge */}
