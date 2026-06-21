@@ -9,16 +9,6 @@ import { getUserProfile } from "../utils/userProfileAnalyzer";
 const USER_PROFILE_KEY = "eventra_user_profile";
 const PROFILE_UPDATED_EVENT = "userProfileUpdated";
 
-const parseProfile = (raw) => {
-  if (!raw) return {};
-  try {
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
-  }
-};
-
 const useRecommendations = (events = []) => {
   const [profileKey, setProfileKey] = useState(() => {
     if (typeof window === "undefined") return null;
