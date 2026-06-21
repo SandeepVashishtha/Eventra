@@ -346,10 +346,10 @@ return (
               </Link>
  
               {/* Open-source badge */}
-              <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800 align-middle">
-                <FaCode size={9} aria-hidden="true" />
-                Open Source
-              </span>
+              <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800 align-middle transition-all duration-200 hover:bg-indigo-100 dark:hover:bg-indigo-900 hover:scale-110 cursor-default">
+  <FaCode size={9} aria-hidden="true" />
+  Open Source
+</span>
  
               <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 leading-relaxed max-w-xs">
                 {t("footer.tagline")}
