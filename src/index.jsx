@@ -21,6 +21,7 @@ Sentry.init({
 });
 
 // Initialize Global Runtime Monitoring
+// Support P2P Mesh transfer error correction and safety timeout fallbacks
 initializeGlobalErrorHandling();
 
 
