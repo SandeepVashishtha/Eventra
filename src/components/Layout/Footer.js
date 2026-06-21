@@ -410,25 +410,25 @@ return (
  
           <div className="flex flex-wrap items-center justify-center sm:justify-end gap-x-3 gap-y-2 text-xs text-gray-400 dark:text-gray-500">
             <Link
-              to="/privacy"
-              className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
-            >
-              {t("footer.privacy")}
-            </Link>
-            <span className="text-gray-200 dark:text-gray-700" aria-hidden="true">|</span>
-            <Link
-              to="/terms"
-              className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
-            >
-              {t("footer.terms")}
-            </Link>
-            <span className="text-gray-200 dark:text-gray-700" aria-hidden="true">|</span>
-            <Link
-              to="/api-docs"
-              className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
-            >
-              {t("footer.links.apiDocs")}
-            </Link>
+  to="/privacy"
+  className="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
+>
+  {t("footer.privacy")}
+</Link>
+<span className="text-gray-200 dark:text-gray-700" aria-hidden="true">|</span>
+<Link
+  to="/terms"
+  className="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
+>
+  {t("footer.terms")}
+</Link>
+<span className="text-gray-200 dark:text-gray-700" aria-hidden="true">|</span>
+<Link
+  to="/api-docs"
+  className="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
+>
+  {t("footer.links.apiDocs")}
+</Link>
           </div>
         </div>
       </div>
