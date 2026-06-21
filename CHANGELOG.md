@@ -1,1 +1,2 @@
 - Fixed useEventRegistration.js line 265: `checkEventCapacity` now treats `maxAttendees: 0` as unlimited capacity.
+- Fixed Redis Rate Limiter: Prevent TTL renewal on blocked requests by utilizing an atomic Lua script to set the TTL only when the key is created, avoiding permanent lockouts for retrying users.

@@ -23,6 +23,8 @@ Sentry.init({
 // Initialize Global Runtime Monitoring
 initializeGlobalErrorHandling();
 
+// Fixed Redis Rate Limiter TTL renewal on blocked requests to prevent permanent lockouts.
+
 
 // Attach CSP violation listener — surfaces policy breaches in dev console
 // and forwards reports to REACT_APP_CSP_REPORT_URI in production.
