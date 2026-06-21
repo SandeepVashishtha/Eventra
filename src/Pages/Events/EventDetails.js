@@ -27,7 +27,7 @@ import ShareModal from "../../components/common/ShareModal";
 import SocialShareButtons from "../../components/common/SocialShareButtons";
 // import { generateEventSharingData } from "../../utils/shareUtils";
 import { downloadICSFile, generateGoogleCalendarLink, generateOutlookLink } from "../../utils/calendarExporter";
-import useRecentlyViewed from "../../hooks/useRecentlyViewed";
+import { RecentlyViewedTracker } from "../../components/common/RecentlyViewedEvents";
 import { apiUtils, API_ENDPOINTS } from "../../config/api";
 import mockEvents from "./eventsMockData.json";
 import CopyButton from '../../components/ui/CopyButton';
@@ -42,7 +42,6 @@ const EventDetails = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { addRecentlyViewed } = useRecentlyViewed();
 
   const isOrganizer = user?.roles?.includes(ROLES.ORGANIZER) || user?.roles?.includes(ROLES.ADMIN);
 
@@ -120,12 +119,6 @@ const EventDetails = () => {
       abortControllerRef.current?.abort();
     };
   }, [loadEvent]);
-
-  // Safely handle localStorage cache updates via hook
-  useEffect(() => {
-    if (!event) return;
-    addRecentlyViewed(event);
-  }, [event, addRecentlyViewed]);
 
   const handlePrint = () => {
     setIsPrinting(true);
@@ -307,6 +300,7 @@ ${window.location.href}
 
   return (
     <>
+      <RecentlyViewedTracker event={event} />
       <Helmet>
         <title>{event.title} | Eventra</title>
         <meta property="og:title" content={event.title} />
