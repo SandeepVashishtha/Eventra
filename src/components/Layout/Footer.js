@@ -387,7 +387,7 @@ return (
                   <li key={link.nameKey || link.href}>
                     <Link
                       to={link.href}
-                      className="group inline-flex items-center gap-2 text-xs sm:text-sm text-gray-500  dark:text-gray-400 hover:!text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
+                      className="group relative inline-flex items-center gap-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400 hover:!text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded after:absolute after:left-6 after:-bottom-0.5 after:h-px after:w-0 after:bg-indigo-500 after:transition-all after:duration-300 group-hover:after:w-[calc(100%-1.5rem)]"
                     >
                       <span className="text-gray-400 dark:text-gray-500 group-hover:!text-indigo-500 dark:group-hover:text-indigo-400 transition-colors duration-200 shrink-0">
                         {link.icon}
