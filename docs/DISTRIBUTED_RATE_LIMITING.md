@@ -64,7 +64,7 @@ The original implementation used instance-local in-memory storage (`new Map()`) 
 
 Configuration validation and environment-aware storage selection:
 
-- `isDistributedRateLimitStorageConfigured()`: Checks if KV_REST_API_URL and KV_REST_API_TOKEN are set
+- `isDistributedRateLimitStorageConfigured()`: Checks if RATE_LIMIT_REDIS_URL is set
 - `assertDistributedRateLimitStorageConfigured()`: Fails fast in production if distributed storage is not configured
 - `isInMemoryRateLimitStorageAllowed()`: Returns true only in non-production environments
 
@@ -72,7 +72,7 @@ Configuration validation and environment-aware storage selection:
 
 Unified storage interface with automatic backend selection:
 
-- **Redis/Vercel KV**: Used when KV_REST_API_URL and KV_REST_API_TOKEN are configured
+- **Redis**: Used when RATE_LIMIT_REDIS_URL is configured (supports Redis, Upstash Redis, or Vercel KV with Redis protocol)
 - **In-Memory Fallback**: Used in development/test when distributed storage is unavailable
 - **Atomic Operations**: Uses Redis pipeline for INCR + PEXPIRE to prevent race conditions
 - **Error Handling**: Production requests rejected on storage failure; development requests allowed with warning
@@ -125,24 +125,24 @@ Rate-limiting logic with distributed storage:
 ### Required Production Variables
 
 ```env
-# Distributed rate limiting storage (REQUIRED for middleware rate limiting)
-KV_REST_API_URL=https://your-kv-store.redis.com
-KV_REST_API_TOKEN=your-secure-token
+# Distributed rate limiting storage (REQUIRED for all rate limiting)
+RATE_LIMIT_REDIS_URL=redis://user:password@host:port
+# or for TLS:
+RATE_LIMIT_REDIS_URL=rediss://user:password@host:port
 
 # Persistent authentication storage
 DATABASE_URL=postgresql://user:password@host:5432/database
 ```
 
-**Critical Security Note**: In production, if `KV_REST_API_URL` or `KV_REST_API_TOKEN` are missing:
-- Edge middleware rate limiting will reject ALL requests with HTTP 429
-- Session state validation will require re-authentication for all requests
+**Critical Security Note**: In production, if `RATE_LIMIT_REDIS_URL` is missing:
+- All rate limiting will reject requests with HTTP 429
 - This is intentional fail-closed behavior to prevent security bypasses during configuration errors
 
 ### Development/Testing
 
 No additional configuration required. The system automatically falls back to in-memory storage when:
 - `NODE_ENV` is not "production"
-- KV_REST_API_URL or KV_REST_API_TOKEN are not set
+- RATE_LIMIT_REDIS_URL is not set
 
 ### Vercel KV Provisioning
 
@@ -150,9 +150,8 @@ No additional configuration required. The system automatically falls back to in-
 # Create KV store
 vercel kv create eventra-rate-limit
 
-# Add environment variables
-vercel env add KV_REST_API_URL
-vercel env add KV_REST_API_TOKEN
+# Add environment variable (use the Redis connection URL from Vercel KV)
+vercel env add RATE_LIMIT_REDIS_URL
 ```
 
 ## Rate Limits
@@ -181,7 +180,7 @@ This prevents race conditions where multiple instances check the limit simultane
 ```javascript
 if (process.env.NODE_ENV === "production" && !isDistributedRateLimitStorageConfigured()) {
   throw new Error(
-    "KV_REST_API_URL and KV_REST_API_TOKEN are required in production for distributed rate limiting."
+    "RATE_LIMIT_REDIS_URL is required in production for distributed rate limiting."
   );
 }
 ```
@@ -232,7 +231,7 @@ if (!result.allowed) {
 The API surface is backward compatible. Existing code using `createRateLimiter` and `enforceRateLimit` requires minimal changes:
 
 1. **Make check() calls async**: Add `await` before `limiter.check(key)`
-2. **Configure environment variables**: Set KV_REST_API_URL and KV_REST_API_TOKEN in production
+2. **Configure environment variables**: Set RATE_LIMIT_REDIS_URL in production
 3. **Test locally**: Verify rate limiting works in development (uses in-memory storage)
 
 ### Example Migration
@@ -294,7 +293,7 @@ if (!rateLimitResult.allowed) {
 **Cause**: Distributed storage not configured or unavailable
 
 **Solution**:
-1. Verify KV_REST_API_URL and KV_REST_API_TOKEN are set
+1. Verify RATE_LIMIT_REDIS_URL is set
 2. Check Redis/KV store is accessible
 3. Review logs for connection errors
 
@@ -310,13 +309,13 @@ if (!rateLimitResult.allowed) {
 
 **Symptom**: Logs show Redis connection failures
 
-**Cause**: Network issues, invalid credentials, or KV store downtime
+**Cause**: Network issues, invalid credentials, or Redis store downtime
 
 **Solution**:
-1. Verify KV_REST_API_URL is correct
-2. Check KV_REST_API_TOKEN is valid
-3. Ensure network connectivity to Redis/KV store
-4. Review KV store status page
+1. Verify RATE_LIMIT_REDIS_URL is correct
+2. Ensure network connectivity to Redis/KV store
+3. Review Redis/KV store status page
+4. Check if credentials are embedded in the URL or need separate configuration
 
 ## Future Enhancements
 
