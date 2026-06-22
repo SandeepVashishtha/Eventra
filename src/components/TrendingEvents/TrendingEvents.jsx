@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { eventService } from "../../services/eventService";
 import EventCard from "../../Pages/Events/EventCard";
-import { Calendar, TrendingUp, Users, Bookmark, Eye } from "lucide-react";
-// import mockEvents from "../../Pages/Events/eventsMockData.json";
+import {Calendar,TrendingUp,Users,Bookmark,Eye,} from "lucide-react";
+
 import { normalizeEvents } from "../../utils/eventFetchUtils";
 
 const EVENT_LIST_KEYS = ["content", "events", "items", "results", "data"];
@@ -28,17 +28,15 @@ const toNumber = (value) => {
   return Number.isFinite(n) ? n : 0;
 };
 
-const firstNumber = (event, keys) => keys.reduce((acc, key) => {
-  if (acc) return acc;
-  const val = toNumber(event?.[key]);
-  return val ? val : 0;
-}, 0);
+const firstNumber = (event, keys) =>
+  keys.reduce((acc, key) => {
+    if (acc) return acc;
 
+    const val = toNumber(event?.[key]);
 
-/**
- * Derive a score for trending using whatever metrics are available on
- * event objects. Backends may differ; this keeps UI resilient.
- */
+    return val ? val : 0;
+  }, 0);
+
 /**
  * Map a 0-based position in the sorted trending list to a ranking badge.
  * Top 3 get medal emojis; the rest get a numbered "Trending" badge.
@@ -55,6 +53,10 @@ const getRankBadge = (index) => {
   };
 };
 
+/**
+ * Derive a score for trending using whatever metrics are available on
+ * event objects. Backends may differ; this keeps UI resilient.
+ */
 const getTrendingScore = (event) => {
   const registrations = firstNumber(event, [
     "registrations",
@@ -76,16 +78,32 @@ const getTrendingScore = (event) => {
     "saveCount",
   ]);
 
-  const engagement = firstNumber(event, ["engagement", "likes", "comments"]);
+  const engagement = firstNumber(event, [
+    "engagement",
+    "likes",
+    "comments",
+  ]);
 
   const score =
-    registrations * 4 + engagement * 3 + bookmarks * 2 + pageViews * 1;
+    registrations * 4 +
+    engagement * 3 +
+    bookmarks * 2 +
+    pageViews * 1;
 
-  return { score, registrations, pageViews, bookmarks, engagement };
+  return {
+    score,
+    registrations,
+    pageViews,
+    bookmarks,
+    engagement,
+  };
 };
 
-
-const TrendingEvents = ({ title = "Trending Events", limit = 6, fetchSize = 24 }) => {
+const TrendingEvents = ({
+  title = "Trending Events",
+  limit = 6,
+  fetchSize = 24,
+}) => {
   const [events, setEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -97,7 +115,7 @@ const TrendingEvents = ({ title = "Trending Events", limit = 6, fetchSize = 24 }
       setIsLoading(true);
       setError("");
       try {
-        // eventService uses 0-based page index in backend pagination (consistent with existing hooks)
+        // eventService uses 0-based page index in backend pagination
         const res = await eventService.getAllEvents(0, fetchSize);
         const content = extractEventList(res?.data);
         if (!active) return;
@@ -106,13 +124,11 @@ const TrendingEvents = ({ title = "Trending Events", limit = 6, fetchSize = 24 }
         setEvents(normalizedEvents);
       } catch (err) {
         if (!active) return;
-        // Backend unavailable - keep the section useful in local/dev builds.
-        const fallback = Array.isArray(mockEvents) ? mockEvents : [];
-        const fallbackEvents = normalizeEvents(fallback.slice(0, fetchSize));
-        setEvents(fallbackEvents);
-        if (fallbackEvents.length === 0) {
-          setError(err?.message || "Failed to load trending events.");
-        }
+
+        console.error("Failed to fetch trending events:", err);
+
+        setEvents([]);
+
       } finally {
         if (!active) return;
         setIsLoading(false);
@@ -127,10 +143,16 @@ const TrendingEvents = ({ title = "Trending Events", limit = 6, fetchSize = 24 }
 
   const trending = useMemo(() => {
     const withScore = events
-      .map((e) => ({ event: e, ...(getTrendingScore(e)) }))
+      .map((e) => ({
+        event: e,
+        ...(getTrendingScore(e)),
+      }))
       .sort((a, b) => {
         if (b.score !== a.score) return b.score - a.score;
-        return String(a.event?.title || "").localeCompare(String(b.event?.title || ""));
+
+        return String(a.event?.title || "").localeCompare(
+          String(b.event?.title || "")
+        );
       });
 
     return withScore
@@ -138,6 +160,7 @@ const TrendingEvents = ({ title = "Trending Events", limit = 6, fetchSize = 24 }
       .map((item, index) => ({ ...item, rank: getRankBadge(index) }));
   }, [events, limit]);
 
+  // Loading Skeleton UI
   if (isLoading) {
     return (
       <section aria-label="Trending events" className="my-10">
@@ -147,11 +170,32 @@ const TrendingEvents = ({ title = "Trending Events", limit = 6, fetchSize = 24 }
               <div className="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-900/30">
                 <TrendingUp className="w-5 h-5 text-indigo-600 dark:text-indigo-300" />
               </div>
-              <h2 className="text-lg sm:text-xl font-bold">{title}</h2>
+              <h2 className="text-lg sm:text-xl font-bold">
+                {title}
+              </h2>
             </div>
-            <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 animate-pulse">
+            <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {Array.from({ length: limit }).map((_, i) => (
-                <div key={i} className="h-[420px] rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950" />
+                <div
+                  key={i}
+                  className="rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 animate-pulse"
+                >
+                  {/* Image Skeleton */}
+                  <div className="h-48 bg-slate-200 dark:bg-slate-800" />
+
+                  {/* Content Skeleton */}
+                  <div className="p-5 space-y-4">
+                    <div className="h-6 rounded bg-slate-200 dark:bg-slate-800 w-3/4" />
+                    <div className="space-y-2">
+                      <div className="h-4 rounded bg-slate-200 dark:bg-slate-800 w-full" />
+                      <div className="h-4 rounded bg-slate-200 dark:bg-slate-800 w-5/6" />
+                    </div>
+                    <div className="flex gap-2 pt-2">
+                      <div className="h-8 w-20 rounded-full bg-slate-200 dark:bg-slate-800" />
+                      <div className="h-8 w-20 rounded-full bg-slate-200 dark:bg-slate-800" />
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
@@ -165,8 +209,12 @@ const TrendingEvents = ({ title = "Trending Events", limit = 6, fetchSize = 24 }
       <section aria-label="Trending events" className="my-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="rounded-3xl border border-slate-200 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/70 p-6 sm:p-8 shadow-sm">
-            <h2 className="text-lg sm:text-xl font-bold">{title}</h2>
-            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{error}</p>
+            <h2 className="text-lg sm:text-xl font-bold">
+              {title}
+            </h2>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+              {error}
+            </p>
           </div>
         </div>
       </section>
@@ -182,7 +230,10 @@ const TrendingEvents = ({ title = "Trending Events", limit = 6, fetchSize = 24 }
               <div className="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-900/30">
                 <TrendingUp className="w-5 h-5 text-indigo-600 dark:text-indigo-300" />
               </div>
-              <h2 className="text-lg sm:text-xl font-bold">{title}</h2>
+
+              <h2 className="text-lg sm:text-xl font-bold">
+                {title}
+              </h2>
             </div>
             <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
               No trending events are available yet.
@@ -202,10 +253,14 @@ const TrendingEvents = ({ title = "Trending Events", limit = 6, fetchSize = 24 }
               <div className="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-900/30">
                 <TrendingUp className="w-5 h-5 text-indigo-600 dark:text-indigo-300" />
               </div>
-              <h2 className="text-lg sm:text-xl font-bold">{title}</h2>
+
+              <h2 className="text-lg sm:text-xl font-bold">
+                {title}
+              </h2>
             </div>
             <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-              Based on registrations, page views, bookmarks, and engagement.
+              Based on registrations, page views, bookmarks,
+              and engagement.
             </p>
           </div>
 
@@ -218,51 +273,72 @@ const TrendingEvents = ({ title = "Trending Events", limit = 6, fetchSize = 24 }
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {trending.map(({ event, registrations, pageViews, bookmarks, engagement, rank }) => (
-            <div key={event.id ?? event.title} className="relative rounded-3xl overflow-hidden">
+          {trending.map(
+            ({
+              event,
+              registrations,
+              pageViews,
+              bookmarks,
+              engagement,
+              rank,
+            }) => (
               <div
-                className={`absolute top-3 left-3 z-10 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold shadow-md backdrop-blur-sm ${
-                  rank.isTop3
-                    ? "bg-amber-400/95 text-amber-950 ring-1 ring-amber-300"
-                    : "bg-slate-900/80 text-white ring-1 ring-slate-700"
-                }`}
-                title={`Ranked ${rank.label} by trending score`}
-                aria-label={`Ranked number ${rank.position}, trending`}
+                key={event.id ?? event.title}
+                className="relative rounded-3xl overflow-hidden"
               >
-                <span aria-hidden>{rank.icon}</span>
-                <span>{rank.label}</span>
-              </div>
-              <EventCard
-                event={{
-                  ...event,
-                  // Provide some fallback fields so EventCard doesn't break
-                  attendees: event.attendees ?? registrations ?? event.participants,
-                  participants: event.participants ?? event.attendees ?? registrations,
-                }}
-              />
+                <div
+                  className={`absolute top-3 left-3 z-10 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold shadow-md backdrop-blur-sm ${
+                    rank.isTop3
+                      ? "bg-amber-400/95 text-amber-950 ring-1 ring-amber-300"
+                      : "bg-slate-900/80 text-white ring-1 ring-slate-700"
+                  }`}
+                  title={`Ranked ${rank.label} by trending score`}
+                  aria-label={`Ranked number ${rank.position}, trending`}
+                >
+                  <span aria-hidden>{rank.icon}</span>
+                  <span>{rank.label}</span>
+                </div>
+                <EventCard
+                  event={{
+                    ...event,
+                    attendees:
+                      event.attendees ??
+                      registrations ??
+                      event.participants,
 
-              <div className="px-5 py-3 bg-white/60 dark:bg-slate-950/20 border-t border-slate-200/60 dark:border-slate-800/60">
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-slate-600 dark:text-slate-300">
-                  <span className="inline-flex items-center gap-1">
-                    <Calendar className="w-3.5 h-3.5 text-indigo-500" />
-                    {registrations} regs
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <Eye className="w-3.5 h-3.5 text-sky-500" />
-                    {pageViews} views
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <Bookmark className="w-3.5 h-3.5 text-amber-500" />
-                    {bookmarks} saves
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <Users className="w-3.5 h-3.5 text-emerald-500" />
-                    {engagement} eng
-                  </span>
+                    participants:
+                      event.participants ??
+                      event.attendees ??
+                      registrations,
+                  }}
+                />
+
+                <div className="px-5 py-3 bg-white/60 dark:bg-slate-950/20 border-t border-slate-200/60 dark:border-slate-800/60">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-slate-600 dark:text-slate-300">
+                    <span className="inline-flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5 text-indigo-500" />
+                      {registrations} regs
+                    </span>
+
+                    <span className="inline-flex items-center gap-1">
+                      <Eye className="w-3.5 h-3.5 text-sky-500" />
+                      {pageViews} views
+                    </span>
+
+                    <span className="inline-flex items-center gap-1">
+                      <Bookmark className="w-3.5 h-3.5 text-amber-500" />
+                      {bookmarks} saves
+                    </span>
+
+                    <span className="inline-flex items-center gap-1">
+                      <Users className="w-3.5 h-3.5 text-emerald-500" />
+                      {engagement} eng
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          )}
         </div>
       </div>
     </section>
