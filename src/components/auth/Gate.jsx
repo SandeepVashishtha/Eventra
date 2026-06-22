@@ -37,7 +37,7 @@ const Gate = ({
     return <Navigate to={redirectTo} replace state={{ from: location, sessionExpired }} />;
   }
 
-  const needsRedirect = !fallback || typeof fallback === "undefined";
+  const needsRedirect = typeof fallback === "undefined";
   const deny = (reason) => {
     if (!needsRedirect) return fallback;
     if (!isAuthenticated()) return <Navigate to={redirectTo} replace state={{ from: location, sessionExpired }} />;

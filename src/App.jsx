@@ -1,17 +1,19 @@
 import { useState, useEffect, lazy, Suspense } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import * as Sentry from "@sentry/react";
+import { Analytics } from "@vercel/analytics/react";
 import "./App.css";
 import "./styles/reduced-motion.css";
 import "./styles/print.css";
 import { toast } from "react-toastify";
-
+import EnvironmentSecurityDashboard from "./components/dev/EnvironmentSecurityDashboard";
+import ScrollRestoration from "./components/ScrollRestoration";
 // Critical path - loaded eagerly (needed before first paint)
 import Navbar from "./components/navbar/Navbar";
 import SkipToContent from "./components/accessibility/SkipToContent";
 import OfflineBanner from "./components/common/OfflineBanner";
 import OfflineConflictModal from "./components/common/OfflineConflictModal";
-import ScrollToTop from "./components/ScrollToTop";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import NotificationToastContainer from "./components/common/NotificationProvider";
@@ -25,6 +27,7 @@ import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
 import { useRoutePrefetch } from "./hooks/useRoutePrefetch";
 import PageTransition from "./components/common/PageTransition";
 import Breadcrumbs from "./components/common/Breadcrumbs";
+import { getAuthRoutes, getProtectedRoutes } from "./components/routes/ProtectedRoutes";
 import {
   AuthFormSkeleton,
   ExploreEventsSkeleton,
@@ -38,8 +41,9 @@ const AppRoutes = lazy(() => import("./components/AppRoutes"));
 const EventRegistration = lazy(() => import("./Pages/Events/EventRegistration"));
 const SavedEventsPage = lazy(() => import("./Pages/SavedEventsPage"));
 const EventRecommendation = lazy(() => import("./Pages/EventRecommendation/EventRecommendation"));
+const MatchmakingHub = lazy(() => import("./Pages/Networking/MatchmakingHub"));
 const EventDetails = lazy(() => import("./Pages/Events/EventDetails"));
-const ExploreEvents = lazy(() => import("./Pages/Events/EventsPage"));
+// const ExploreEvents = lazy(() => import("./Pages/Events/EventsPage"));
 const EventsPage = lazy(() => import("./Pages/Events/EventsPage"));
 
 // Non-critical UI - deferred after first paint
@@ -47,11 +51,11 @@ const FluidCursor = lazy(() => import("./components/visual/FluidCursor"));
 const KeyboardShortcutsModal = lazy(() => import("./components/common/KeyboardShortcutsModal"));
 const OnboardingChecklist = lazy(() => import("./components/user/OnboardingChecklist"));
 const FeedbackButton = lazy(() => import("./components/FeedbackButton"));
-const ScrollToTopButton = lazy(() => import("./components/ScrollToTopButton"));
 const BackToTop = lazy(() => import("./components/common/BackToTop"));
 const ReminderChecker = lazy(() => import("./components/reminders/ReminderChecker"));
 const SessionRecovery = lazy(() => import("./components/SessionRecovery"));
-const ComparativeAnalytics = lazy(() => import("./components/Analytics/ComparativeAnalyticsDashboard"));
+const ThemeCustomizer = lazy(() => import("./components/Layout/ThemeCustomizer"));
+// const ComparativeAnalytics = lazy(() => import("./components/Analytics/ComparativeAnalyticsDashboard"));
 
 
 const OfflineSyncManager = () => {
@@ -159,6 +163,7 @@ function App() {
   }, [t]);
 
   return (
+    
     <ErrorBoundary>
       <AuthProvider>
         <NotificationProvider>
@@ -169,7 +174,7 @@ function App() {
                 <ReminderChecker />
               </Suspense>
               <OfflineSyncManager />
-
+<ScrollRestoration />
               <div className="App">
                 <SkipToContent />
                 <ErrorBoundary level="section" label="Navigation Bar">
@@ -199,6 +204,8 @@ function App() {
                   <PageTransition>
                     <ErrorBoundary>
                       <Routes location={location} key={location?.pathname || "default"}>
+                        {getAuthRoutes()}
+                        {getProtectedRoutes()}
                         <Route
                           path="/register/:id"
                           element={
@@ -242,6 +249,14 @@ function App() {
                           element={<Suspense fallback={null}><SavedEventsPage /></Suspense>}
                         />
                         <Route
+                          path="/matchmaking"
+                          element={
+                            <ProtectedRoute>
+                              <Suspense fallback={null}><MatchmakingHub /></Suspense>
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
                           path="*"
                           element={
                             <Suspense fallback={pageLoader}>
@@ -255,7 +270,7 @@ function App() {
                   </PageTransition>
                 </main>
 
-                <ScrollToTop />
+                
                 {showChatbot && (
                   <ErrorBoundary level="section" label="Chatbot Assist" silent>
                     <Suspense fallback={null}>
@@ -271,14 +286,13 @@ function App() {
                 </ErrorBoundary>
 
                 <Suspense fallback={null}>
-                  <ScrollToTopButton />
-                </Suspense>
-                {/* Enhanced back-to-top with progress ring - appears at 400px */}
-                <Suspense fallback={null}>
                   <BackToTop />
                 </Suspense>
                 <Suspense fallback={null}>
                   <FeedbackButton />
+                </Suspense>
+                <Suspense fallback={null}>
+                  <ThemeCustomizer />
                 </Suspense>
                 <Suspense fallback={null}>
                   <SessionRecovery />
@@ -291,7 +305,9 @@ function App() {
                     </Suspense>
                 </ErrorBoundary>
                 )}
+                {import.meta.env.DEV && <ErrorButton />}
               </div>
+              <Analytics />
             </SessionRecoveryProvider>
           </MyEventsProvider>
         </NotificationProvider>
@@ -299,4 +315,13 @@ function App() {
     </ErrorBoundary>
   );
 }
+
+function ErrorButton() {
+  return (
+    <button onClick={() => { throw new Error("This is your first error!"); }}>
+      Dev Error Trigger
+    </button>
+  );
+}
+
 export default App;

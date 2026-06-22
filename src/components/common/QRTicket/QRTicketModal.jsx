@@ -106,7 +106,7 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
         modalRef.current.removeEventListener("keydown", handleFocusTrap);
       }
     };
-  }, [isOpen]);
+  }, [isOpen, handleFocusTrap]);
 
   const handleShare = async () => {
     const shareUrl = ticket?.qrValue || window.location.href;
@@ -194,7 +194,7 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
         </div>
 
         {/* Action buttons */}
-        <div className="flex gap-3 w-full max-w-[340px]">
+        <div className="flex gap-3 w-full max-w-85">
           {/* Download PNG */}
           <button
             onClick={downloadPNG}
