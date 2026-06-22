@@ -338,7 +338,6 @@ const runTests = async () => {
     }
     delete store.eventra_sse_leader_heartbeat;
   }
-
   await testStatusSyncOnSubscribe();
 
   console.log("🟢 All SSE Multiplexer unit tests completed successfully!");

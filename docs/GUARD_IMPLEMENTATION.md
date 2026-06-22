@@ -552,4 +552,4 @@ See these files for usage examples:
 
 - `src/components/events/EventCard.jsx` - Conditional edit/delete buttons
 - `src/components/admin/AdminTools.jsx` - Admin-only panel
-- `src/Pages/Dashboard.jsx` - Dashboard role-based splitting
+- `src/Pages/Dashboard/Dashboard.js` - Dashboard role-based splitting
