@@ -11,7 +11,7 @@ const ICON_CLASSES = "w-12 h-12 transition-transform duration-300";
 export default function FAQCTA() {
   const { t } = useTranslation();
   const shouldReduceMotion = useReducedMotion();
-  const sectionRef = useRef<HTMLElement>(null);
+  const sectionRef = useRef(null);
   const isInView = useInView(sectionRef, { once: true, margin: "-100px" });
 
   const cards = [

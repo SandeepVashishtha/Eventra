@@ -2,7 +2,6 @@ param(
   [Parameter(Mandatory=$true)]
   [string]$RepoUrl
 )
-
 <#
 .SYNOPSIS
   GSSoC Issue Farming Pipeline — fully automated.
@@ -59,7 +58,7 @@ Write-Output ""
   Write-Output "  Then re-run this script."
   Write-Output ""
   exit 1
-}
+
 # Mask token for any logging (never log the full token)
 $maskedToken = $Token.Substring(0, 4) + "..." + $Token.Substring($Token.Length - 4)
 

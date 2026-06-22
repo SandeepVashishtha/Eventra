@@ -20,33 +20,25 @@ const SearchEmptyState = ({
   browseLabel = "Browse",
   browsePath = "/",
   onClear,
-  variant = "search",
-  title: customTitle,
-  description: customDescription,
 }) => {
   const hasQuery = Boolean(query?.trim());
 
-  const title =
-    customTitle ||
-    (hasQuery
-      ? `No results found for "${query}"`
-      : `No ${itemLabel} found`);
+  const pageTitle = hasQuery
+    ? `No results found for "${query}"`
+    : `No ${itemLabel} found`;
 
-  const description =
-    customDescription ||
-    "Try adjusting your search or explore other sections on Eventra.";
+  const pageDescription =
+    "Try one of these suggestions or explore other sections on Eventra.";
 
   const suggestions = DEFAULT_SUGGESTIONS;
-
   const popularTags = [];
 
   return (
     <EmptyState
-      title={title}
-      description={description}
+      title={pageTitle}
+      description={pageDescription}
       icon={Search}
     >
-      {/* Suggestions */}
       <ul className="mt-6 grid gap-3 text-left text-sm text-slate-700 dark:text-slate-300 sm:grid-cols-3">
         {suggestions.map((suggestion) => (
           <li
@@ -58,7 +50,6 @@ const SearchEmptyState = ({
         ))}
       </ul>
 
-      {/* Tags (optional safe block) */}
       {popularTags.length > 0 && (
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           {popularTags.map((tag) => (
@@ -72,7 +63,6 @@ const SearchEmptyState = ({
         </div>
       )}
 
-      {/* Buttons */}
       <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
         <button
           type="button"
@@ -86,13 +76,12 @@ const SearchEmptyState = ({
         <Link
           to={browsePath}
           onClick={onClear}
-          className="inline-flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-5 py-3 text-sm font-semibold text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800"
+          className="inline-flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-5 py-3 text-sm font-semibold text-slate-800 dark:text-white"
         >
           {browseLabel}
         </Link>
       </div>
 
-      {/* Footer Links */}
       <div className="mt-7 flex flex-wrap items-center justify-center gap-2 text-sm text-slate-500 dark:text-slate-400">
         <span>Search across</span>
 

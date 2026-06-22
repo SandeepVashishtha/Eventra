@@ -24,7 +24,7 @@ const SearchFilter = () => {
   const [favorites, setFavorites] = useState(() => {
     const saved = localStorage.getItem("favoriteEvents");
     return saved ? JSON.parse(saved) : [];
-  });
+});
 
   const categories = [
     { value: "all", label: "All Categories" },
@@ -47,7 +47,7 @@ const SearchFilter = () => {
   ];
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if(typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
 
       if (debouncedSearchTerm) {
@@ -75,9 +75,12 @@ const SearchFilter = () => {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("favoriteEvents", JSON.stringify(favorites));
+    localStorage.setItem(
+    "favoriteEvents",
+    JSON.stringify(favorites)
+    );
   }, [favorites]);
-
+  
   const mockEvents = [
     {
       id: 1,
@@ -155,14 +158,6 @@ const SearchFilter = () => {
     );
   });
 
-  const handleResetFilters = () => {
-    setSearchTerm("");
-    setSelectedCategory("all");
-    setSelectedLocation("all");
-    setPriceFilter("all");
-    setDateFilter("all");
-  };
-
   return (
     <div className="search-filter-container bg-gray-50 dark:bg-black">
       <div className="search-header">
@@ -180,8 +175,11 @@ const SearchFilter = () => {
       </div>
 
       <motion.div
-        whileHover={{ scale: 1.03, y: -5 }}
-        whileTap={{ scale: 0.98 }}
+        whileHover={{scale: 1.03, y: -5}}
+        whileTap={{scale: 0.98}}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.6 }}
         className="search-bar"
       >
         <input
