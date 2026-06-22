@@ -81,6 +81,7 @@ const forbiddenResponse = (url) =>
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin": url.origin,
         "Access-Control-Allow-Credentials": "true",
+        "Vary": "Origin",
       },
     },
   );
