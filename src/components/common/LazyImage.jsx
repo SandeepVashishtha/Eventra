@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-// import { ImageIcon } from 'lucide-react';
+import { ImageIcon } from 'lucide-react';
 import '../../styles/lazy-image.css';
 
 /**
@@ -30,7 +30,7 @@ const LazyImage = ({
   ...props
 }) => {
   const [loaded, setLoaded] = useState(false);
-  const [, setError] = useState(false);
+  const [error, setError] = useState(false);
   const imgRef = useRef(null);
 
   useEffect(() => {
@@ -117,10 +117,10 @@ const imgElement = (
   return (
     <div className={`lazy-img-container ${className}`} style={containerStyle}>
       {/* Shimmer skeleton layer */}
-      {!loaded && <div className="lazy-img-skeleton" />}
+      {!loaded && !error && <div className="lazy-img-skeleton" />}
 
       {/* Optional low-opacity blurred preview */}
-      {!loaded && previewSrc && (
+      {!loaded && !error && previewSrc && (
         <img
           src={previewSrc}
           alt=""
@@ -129,7 +129,11 @@ const imgElement = (
         />
       )}
 
-      {webpSrc ? (
+      {error ? (
+        <div className="lazy-img-error">
+          <ImageIcon className="lazy-img-error-icon" />
+        </div>
+      ) : webpSrc ? (
         <picture>
           <source srcSet={webpSrc} type="image/webp" />
           {imgElement}

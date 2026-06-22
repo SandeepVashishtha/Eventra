@@ -209,7 +209,7 @@ export default function EventHero({
                     exit={{ opacity: 0, y: 8, scale: 0.98 }}
                     transition={{ duration: prefersReducedMotion ? 0 : 0.18, ease: "easeOut" }}
                     className={`
-                      absolute left-0 right-0 top-full z-50 mt-3 overflow-hidden rounded-3xl
+                      absolute left-0 right-0 top-full z-50 mt-3 overflow-y-auto max-h-96 rounded-3xl
                       border border-slate-200 dark:border-slate-700/60 ${darkTheme.card}
                       text-left shadow-2xl backdrop-blur-xl ring-1 ring-black/5 dark:ring-white/10
                     `}

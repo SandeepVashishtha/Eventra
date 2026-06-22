@@ -110,7 +110,7 @@ export default async function registerForEvent(req, res, deps = {}) {
       res.status(201).json({
         message: "Registration successful",
         registration,
-        remaining: capacity.remaining - 1,
+        remaining: capacity.remaining,
       });
 
     }, 30000).catch((err) => {

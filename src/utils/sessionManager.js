@@ -4,6 +4,8 @@
  * Clears all auth tokens, cached data, and redirects to login.
  */
 
+import { deleteAllCookies } from "./cookieUtils.js";
+
 const SESSION_KEYS = [
   "token",
   "user",
@@ -53,17 +55,7 @@ export const clearAuthStorage = () => {
 };
 
 export const clearAuthCookies = () => {
-  try {
-    const cookies = document.cookie.split(";");
-    cookies.forEach((cookie) => {
-      const name = cookie.split("=")[0].trim();
-      document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
-      document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=${window.location.hostname}`;
-    });
-    return true;
-  } catch {
-    return false;
-  }
+  return deleteAllCookies();
 };
 
 export const invalidateSession = async () => {

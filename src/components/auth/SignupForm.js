@@ -98,7 +98,7 @@ const SignupForm = () => {
         setFieldState("email", "error");
       } else {
         const emailAvailability = await validateEmailAvailability(emailValue);
-        if (!emailAvailability?.isValid) {
+        if (!emailAvailability?.isValid && !emailAvailability?.skippedDueToError) {
           nextErrors.email = getResultMessage(
             emailAvailability,
             "This email is already registered. Please log in."
@@ -190,8 +190,6 @@ const SignupForm = () => {
       return;
     }
 
-    // Set validating/loading state immediately
-    setErrors((prev) => ({ ...prev, email: "Checking email availability..." }));
     setFieldState("email", "loading");
 
     const timer = setTimeout(async () => {
@@ -214,8 +212,8 @@ const SignupForm = () => {
           setFieldState("email", "error");
         }
       } catch {
-        setErrors((prev) => ({ ...prev, email: "Validation failed" }));
-        setFieldState("email", "error");
+        setErrors((prev) => ({ ...prev, email: "" }));
+        setFieldState("email", "idle");
       }
     }, 500);
 

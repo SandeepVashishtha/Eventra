@@ -65,10 +65,12 @@ const env = loadEnv(mode, process.cwd(), "");
         "/api": {
           target: backendTarget,
           changeOrigin: true,
+          secure: false,
         },
         "/stream": {
           target: backendTarget,
           changeOrigin: true,
+          secure: false,
         },
       },
     },
@@ -111,7 +113,7 @@ const env = loadEnv(mode, process.cwd(), "");
       // Use esbuild for CSS minification instead of the default lightningcss,
       // which cannot parse the custom Tailwind `short` screen media query.
       cssMinify: "esbuild",
-      chunkSizeWarningLimit: 1500,
+      chunkSizeWarningLimit: 500,
       rollupOptions: {
         output: {
           // manualChunks must be a function in Vite 8 / Rolldown
