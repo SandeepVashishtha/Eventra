@@ -1,18 +1,24 @@
 {
   "compilerOptions": {
-    "target": "esnext",
-    "module": "esnext",
+    "target": "ESNext",
+    "module": "ESNext",
     "moduleResolution": "bundler",
     "allowJs": true,
+    "checkJs": false,
     "noEmit": true,
     "strict": false,
     "jsx": "react-jsx",
-    "esModuleInterop": true,
     "skipLibCheck": true,
-    "allowSyntheticDefaultImports": true
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "types": []
   },
   "include": [
     "src/**/*",
     "api/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "build"
   ]
 }

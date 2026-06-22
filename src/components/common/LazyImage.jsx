@@ -117,10 +117,10 @@ const imgElement = (
   return (
     <div className={`lazy-img-container ${className}`} style={containerStyle}>
       {/* Shimmer skeleton layer */}
-      {!loaded && <div className="lazy-img-skeleton" />}
+      {!loaded && !error && <div className="lazy-img-skeleton" />}
 
       {/* Optional low-opacity blurred preview */}
-      {!loaded && previewSrc && (
+      {!loaded && !error && previewSrc && (
         <img
           src={previewSrc}
           alt=""
@@ -129,7 +129,11 @@ const imgElement = (
         />
       )}
 
-      {webpSrc ? (
+      {error ? (
+        <div className="lazy-img-error">
+          <ImageIcon className="lazy-img-error-icon" />
+        </div>
+      ) : webpSrc ? (
         <picture>
           <source srcSet={webpSrc} type="image/webp" />
           {imgElement}

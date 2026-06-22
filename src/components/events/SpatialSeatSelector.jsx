@@ -28,6 +28,19 @@ const DEFAULT_PRESETS = {
       assignedAttendees: {},
     },
     {
+      id: "accessible-1",
+      type: "round-table",
+      label: "Accessible Seating",
+      x: 50,
+      y: 500,
+      width: 120,
+      height: 120,
+      rotation: 0,
+      seatsCount: 4,
+      tier: "Accessible",
+      assignedAttendees: {},
+    },
+    {
       id: "table-1",
       type: "round-table",
       label: "VIP Table A",
@@ -648,7 +661,9 @@ const SpatialSeatSelector = ({
   );
 };
 
-export default SpatialSeatSelector;
+// Export at end to ensure helper components are defined first
+// (avoids potential parser issues in some linting environments)
+// export will be moved to file end.
 
 // ── Optimized Seat Component ────────────────────────────────────────────────
 
@@ -803,3 +818,5 @@ const Seat = ({ el, seat, allSeats, isSelected, readOnly, onSelect, onHover, con
 };
 
 const MemoizedSeat = memo(Seat);
+
+export default SpatialSeatSelector;

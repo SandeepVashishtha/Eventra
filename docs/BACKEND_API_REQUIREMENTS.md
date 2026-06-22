@@ -40,7 +40,7 @@
 
 The frontend calls all APIs via an Axios instance configured with:
 
-- Base URL: `process.env.REACT_APP_API_URL` (defaults to `http://localhost:8080`)
+- Base URL: an explicitly configured backend URL (`BACKEND_URL`, `VITE_API_URL`, or `REACT_APP_API_URL`)
 - `Content-Type: application/json`
 - `withCredentials: true`
 - Request timeout: 15 seconds
@@ -52,7 +52,7 @@ The frontend calls all APIs via an Axios instance configured with:
 
 📖 **See [Environment Setup Guide](ENV_SETUP_GUIDE.md)** for:
 
-- How to configure `REACT_APP_API_URL` in frontend
+- How to configure `BACKEND_URL`, `VITE_API_URL`, or `REACT_APP_API_URL` in frontend
 - Running the backend locally
 - Troubleshooting backend connection issues
 - Development vs production API endpoints

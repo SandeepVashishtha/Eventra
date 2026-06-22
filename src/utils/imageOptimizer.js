@@ -22,7 +22,7 @@
  * @returns {string}
  */
 export const getOptimizedImageUrl = (originalUrl, options = {}) => {
-  if (!originalUrl || typeof originalUrl !== "string") return originalUrl;
+  if (!originalUrl || typeof originalUrl !== "string") return "";
 
   // If already a Cloudinary URL, return as is
   if (originalUrl.includes("res.cloudinary.com")) {
@@ -35,7 +35,10 @@ export const getOptimizedImageUrl = (originalUrl, options = {}) => {
   if (height) transformations += `,h_${height},c_fill`;
 
   // Use Cloudinary fetch API for real format conversion
-  const cloudName = import.meta.env?.VITE_CLOUDINARY_CLOUD_NAME || "demo";
+  const cloudName = import.meta.env?.VITE_CLOUDINARY_CLOUD_NAME;
+  if (!cloudName) {
+    return originalUrl;
+  }
 
   // Only apply to absolute HTTP/HTTPS URLs that Cloudinary can fetch.
   // Relative paths (/images/hero.jpg), blob: URLs, and data: URIs cannot
@@ -80,3 +83,14 @@ export const generateSrcSet = (url, format = "webp") => {
     .map((w) => `${getOptimizedImageUrl(url, { width: w, format })} ${w}w`)
     .join(", ");
 };
+
+export function supportsWebp() {
+  if (typeof document === "undefined") return false;
+  try {
+    const elem = document.createElement("canvas");
+    if (elem.getContext && elem.getContext("2d")) {
+      return elem.toDataURL("image/webp").indexOf("data:image/webp") === 0;
+    }
+  } catch {}
+  return false;
+}
