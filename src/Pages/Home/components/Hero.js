@@ -1,17 +1,14 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { motion, useAnimation, useScroll, useTransform } from "framer-motion";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect, useMemo } from "react";
+import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import Fuse from "fuse.js";
-import { Calendar, Code, ExternalLink, Handshake, Search, Trophy, Users } from "lucide-react";
+import { Calendar, Handshake, Users } from "lucide-react";
 import CountUpLib from "react-countup";
 
-import ErrorBoundary from "../../../components/common/ErrorBoundary";
 import ModernSearchInput from "../../../components/common/ModernSearchInput";
 import RespawningText from "../../../components/visual/RespawningText";
 import useDebouncedSearch from "../../../hooks/useDebouncedSearch";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
-import useReducedMotion from "../../../hooks/useReducedMotion.js";
 
 // Fetch events from backend API instead of static mock data
 import { eventService } from "../../../services/eventService";
@@ -135,7 +132,6 @@ const [isMobileView, setIsMobileView] = useState(
 );
   useDocumentTitle("Eventra | Home");
 
-  const [isTouch, setIsTouch] = useState(false);
   const [phraseIndex, setPhraseIndex] = useState(0);
   const [showResults, setShowResults] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
@@ -143,12 +139,8 @@ const [isMobileView, setIsMobileView] = useState(
   const { searchTerm, debouncedTerm, setSearchTerm, clear: clearSearchTerm } = useDebouncedSearch("", 300);
 
   const { searchTerm, debouncedTerm, setSearchTerm } = useDebouncedSearch("", 300);
-  const { scrollYProgress } = useScroll({ target: containerRef, offset: ["start start", "end start"] });
 
-  const yText = useTransform(scrollYProgress, [0, 1], [0, 120]);
-  const opacityHero = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
-
-  // Combined and minimized background operations to maximize body optimization
+  // Background operations
   useEffect(() => {
     setIsTouch(window.matchMedia("(pointer: coarse)").matches);
 
@@ -453,19 +445,8 @@ const [isMobileView, setIsMobileView] = useState(
         </motion.div>
 
         <div className="flex justify-center items-center gap-10">
-          <button onClick={()=>navigate("/events")} className="cursor-pointer bg-gradient-to-r from-purple-600 to-pink-500
-text-white
-px-8 py-3
-rounded-full
-font-semibold
-hover:scale-105">Explore Events</button>
-          <button onClick={()=>navigate("/community-event")} className="cursor-pointer border-2 border-purple-500
-text-purple-600
-bg-white
-px-8 py-3
-rounded-full
-font-semibold
-hover:bg-purple-50">Join Community</button>
+          <button onClick={()=>navigate("/events")} className="cursor-pointer bg-gradient-to-r from-purple-600 to-pink-500 text-white px-8 py-3 rounded-full font-semibold hover:scale-105 transition-transform">Explore Events</button>
+          <button onClick={()=>navigate("/community-event")} className="cursor-pointer border-2 border-purple-500 text-purple-600 bg-white px-8 py-3 rounded-full font-semibold hover:bg-purple-50">Join Community</button>
         </div>
 
         {<HeroStats stats={stats} statsReady={statsReady} />}

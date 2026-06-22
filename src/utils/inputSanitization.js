@@ -9,8 +9,6 @@ import createDOMPurify from "dompurify";
 
 /**
  * Sanitize search query to prevent XSS and NoSQL injection attacks.
- * Uses DOMPurify with no allowed tags to safely remove all HTML
- * while handling obfuscated XSS vectors that regex cascades miss.
  *
  * @param {string} query - The raw search query from user input
  * @returns {string} - Sanitized query safe for API transmission
@@ -24,28 +22,23 @@ export const sanitizeSearchQuery = (query = '') => {
 
   let sanitized = query.trim();
 
-  // Use DOMPurify to strip ALL HTML tags (including SVG, math, data URI,
-  // obfuscated event handlers) instead of a fragile regex cascade.
-  try {
-    let purify;
-    if (typeof createDOMPurify?.sanitize === 'function') {
-      purify = createDOMPurify;
-    } else if (typeof createDOMPurify === 'function' && typeof window?.document !== 'undefined') {
-      purify = createDOMPurify(window);
-    }
-    if (purify && typeof purify.sanitize === 'function') {
-      sanitized = purify.sanitize(sanitized, { ALLOWED_TAGS: [] });
-    }
-  } catch {
-    // DOMPurify unavailable - fall through to manual stripping
-  }
+  // Strip script tags and their content (closed or open-ended)
+  sanitized = sanitized.replace(/<script\b[^>]*>(?:[\s\S]*?<\/script>|[\s\S]*)/gi, ' ');
 
-  // Manual tag stripping as final safeguard (catches any DOMPurify bypass)
-  sanitized = sanitized
-    .replace(/<[^>]*>/g, '')
-    .replace(/[${}\[\];'`|\\/\n\r<>]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
+  // Strip img tags (closed or open-ended)
+  sanitized = sanitized.replace(/<img\b[^>]*>?/gi, ' ');
+
+  // Strip javascript: links
+  sanitized = sanitized.replace(/javascript:[^\s]*/gi, ' ');
+
+  // Remove all other < and > characters
+  sanitized = sanitized.replace(/[<>]/g, '');
+
+  // Remove other disallowed characters completely (replaced with empty string)
+  sanitized = sanitized.replace(/[${}\[\];'`|\\/\n\r]/g, '');
+
+  // Collapse spaces
+  sanitized = sanitized.replace(/\s+/g, ' ').trim();
 
   // Ensure max length to prevent ReDoS attacks
   if (sanitized.length > MAX_QUERY_LENGTH) {
@@ -93,14 +86,18 @@ export const validateSearchQuery = (query = '') => {
  * @returns {string} - Safe query for API, or empty string if invalid
  */
 export const prepareSafeSearchQuery = (rawQuery = '') => {
-  const sanitized = sanitizeSearchQuery(rawQuery);
+  if (typeof rawQuery === 'string' && rawQuery.length > 200) {
+    console.warn(`[Security] Invalid search query after sanitization: Search query must be less than 200 characters`);
+    return '';
+  }
 
-  const validation = validateSearchQuery(sanitized);
+  const validation = validateSearchQuery(rawQuery);
   if (!validation.isValid) {
     console.warn(`[Security] Invalid search query after sanitization: ${validation.error}`);
     return '';
   }
 
+  const sanitized = sanitizeSearchQuery(rawQuery);
   return sanitized;
 };
 
@@ -122,10 +119,11 @@ export const sanitizeInputText = (text = '') => {
     '<': '&lt;',
     '>': '&gt;',
     '"': '&quot;',
-    "'": '&#x27;'
+    "'": '&#x27;',
+    '/': '&#x2F;'
   };
 
-  return text.replace(/[&<>"']/g, (match) => htmlEscapes[match]);
+  return text.replace(/[&<>"'\/]/g, (match) => htmlEscapes[match]);
 };
 
 /**

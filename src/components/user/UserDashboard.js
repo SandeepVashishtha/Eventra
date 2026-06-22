@@ -35,6 +35,7 @@ import EventTicket from "./EventTicket";
 import EmptyState from "../common/EmptyState";
 import DashboardEmptyState from "./DashboardEmptyState";
 import OfflineIndicator from "../common/OfflineIndicator";
+import RecentlyViewedEvents from "../common/RecentlyViewedEvents";
 
 const fadeUp = (prefersReducedMotion) => ({
   hidden: { opacity: 0, y: 24 },
@@ -48,6 +49,12 @@ const stagger = (prefersReducedMotion) => ({
   hidden: {},
   visible: { transition: { staggerChildren: prefersReducedMotion ? 0 : 0.08 } }
 });
+
+const RecentlyViewedWrapper = ({ prefersReducedMotion }) => (
+  <motion.section custom={1.5} variants={fadeUp(prefersReducedMotion)}>
+    <RecentlyViewedEvents />
+  </motion.section>
+);
 
 const MOCK_DATA = [
   { id: 1, type: "Event", title: "Tech Talk: AI in 2025", date: "2025-06-15", location: "Mumbai", status: "Completed", projectStatus: "Done", lastUpdate: "-", participationType: "Registered" },
@@ -405,6 +412,8 @@ export default function UserDashboard() {
                       </Link>
                     </div>
                   </motion.section>
+
+                  <RecentlyViewedWrapper prefersReducedMotion={prefersReducedMotion} />
 
                   <div className="ud-three-col">
                     {/* Upcoming Events */}
