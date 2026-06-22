@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Download, Inbox } from "lucide-react";
 import EmptyState from "../components/common/EmptyState";
