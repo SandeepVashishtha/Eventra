@@ -113,10 +113,8 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
       <nav
         ref={navRef}
         aria-label="Primary navigation"
-        className={`sticky top-0 z-sticky w-full transition-all duration-300 ${
-          scrolled
-            ? "border-b border-border bg-navbar/95 backdrop-blur-md shadow-sm"
-            : "border-b border-transparent bg-transparent"
+        className={`sticky top-0 z-50 w-full transition-all duration-300 bg-white/80 backdrop-blur-md dark:bg-zinc-900/80 border-b border-zinc-100 dark:border-zinc-800 ${
+          scrolled ? "shadow-sm" : ""
         }`}
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
