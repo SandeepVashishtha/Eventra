@@ -257,7 +257,7 @@ const Newsletter = () => {
                 "
           />
         </div>
-
+ 
         <button
           type="submit"
           disabled={isSubmitting}

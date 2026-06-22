@@ -23,7 +23,7 @@
 /* Hide when fast scrolling to prevent stuttering */
 body[data-fast-scroll="true"] #scrollToTopBtn,
 body[data-fast-scroll="true"] .fixed-floating-widget {
-    opacity: 0.2 !important;
+    opacity: 0.2;
     pointer-events: none;
 }
   

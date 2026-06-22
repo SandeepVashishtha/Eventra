@@ -1,5 +1,5 @@
 /* ===== EVENTRA - CONSOLIDATED COMPONENTS CSS ===== */
-/* File: src/styles/components.css */
+/* File: src/components/styles/components.css */
 /* Description: Global styles for search, collaboration, hero, features & more */
 /* Last Updated: 2026 */
 
@@ -71,9 +71,6 @@ body {
   --color-text-primary: #f9fafb;
   --color-text-secondary: #9ca3af;
   --color-border: #374151;
-  .dark {
-  color: #f9fafb;
-}
   --color-accent: #818cf8;
   --color-accent-hover: #6366f1;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
@@ -882,8 +879,8 @@ body {
 .request-form input:focus-visible,
 .request-form select:focus-visible,
 .request-form textarea:focus-visible {
-  outline: 2px solid #6366f1 !important;
-  outline-offset: 2px !important;
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
 }
 
 .dark .request-form input,
@@ -915,8 +912,8 @@ body {
 .dark .request-form input:focus-visible,
 .dark .request-form select:focus-visible,
 .dark .request-form textarea:focus-visible {
-  outline: 2px solid #818cf8 !important;
-  outline-offset: 2px !important;
+  outline: 2px solid #818cf8;
+  outline-offset: 2px;
 }
 
 .form-row {
@@ -2072,11 +2069,11 @@ textarea:focus-visible {
   .hero-background,
   .marquee-track,
   .badge {
-    display: none !important;
+    display: none;
   }
   
   .hero-title,
   .section-title {
-    color: #000 !important;
+    color: #000;
   }
 }

@@ -240,6 +240,11 @@ const getSignalingChannel = () => {
  */
 export class P2PFileTransferCoordinator {
   constructor(fileId, fileName, onStateChange, expectedTotalChunks = null) {
+    // Guard against SSR environments where browser APIs are unavailable
+    if (typeof window === "undefined") {
+      throw new Error("P2PFileTransferCoordinator requires a browser environment");
+    }
+
     this.fileId = fileId;
     this.fileName = fileName;
     this.onStateChange = onStateChange;
@@ -267,6 +272,49 @@ export class P2PFileTransferCoordinator {
     }
   }
 
+  async handleP2PQuery(msg) {
+    const cached = await isFileCached(this.fileId);
+    if (cached) {
+      this.bc.postMessage({
+        type: "P2P_AVAILABLE",
+        fileId: this.fileId,
+        from: peerId,
+        to: msg.from
+      });
+    }
+  }
+
+  handleP2PAvailable(msg) {
+    if (msg.to === peerId && !this.pc) {
+      this.connectToPeer(msg.from);
+    }
+  }
+
+  async handleP2POffer(msg) {
+    if (msg.to === peerId) {
+      await this.handleOffer(msg.offer, msg.from);
+    }
+  }
+
+  async handleP2PAnswer(msg) {
+    if (msg.to === peerId) {
+      await this.handleAnswer(msg.answer);
+    }
+  }
+
+  async handleP2PIce(msg) {
+    if (msg.to !== peerId || !this.pc) return;
+    if (this.pc.remoteDescription) {
+      try {
+        await this.pc.addIceCandidate(new RTCIceCandidate(msg.candidate));
+      } catch (err) {
+        logger.error("Error adding ICE candidate:", err);
+      }
+    } else {
+      this.queuedRemoteCandidates.push(msg.candidate);
+    }
+  }
+
   // Set up listeners for the Signaling Channel (BroadcastChannel)
   setupSignaling() {
     this.onMessageListener = async (e) => {
@@ -278,48 +326,23 @@ export class P2PFileTransferCoordinator {
 
       switch (msg.type) {
         case "P2P_QUERY":
-          // Another peer is looking for a file. Do we have it cached?
-          const cached = await isFileCached(this.fileId);
-          if (cached) {
-            this.bc.postMessage({
-              type: "P2P_AVAILABLE",
-              fileId: this.fileId,
-              from: peerId,
-              to: msg.from
-            });
-          }
+          await this.handleP2PQuery(msg);
           break;
 
         case "P2P_AVAILABLE":
-          // Found a peer who has the file! Connect.
-          if (msg.to === peerId && !this.pc) {
-            this.connectToPeer(msg.from);
-          }
+          this.handleP2PAvailable(msg);
           break;
 
         case "P2P_OFFER":
-          // Received connection offer from initiator peer
-          if (msg.to === peerId) {
-            await this.handleOffer(msg.offer, msg.from);
-          }
+          await this.handleP2POffer(msg);
           break;
 
         case "P2P_ANSWER":
-          // Received connection answer
-          if (msg.to === peerId) {
-            await this.handleAnswer(msg.answer);
-          }
+          await this.handleP2PAnswer(msg);
           break;
 
         case "P2P_ICE":
-          // Received ICE candidate
-          if (msg.to === peerId && this.pc) {
-            try {
-              await this.pc.addIceCandidate(new RTCIceCandidate(msg.candidate));
-            } catch (err) {
-              logger.error("Error adding ICE candidate:", err);
-            }
-          }
+          await this.handleP2PIce(msg);
           break;
         
         default:
@@ -351,23 +374,32 @@ export class P2PFileTransferCoordinator {
 
     // We wait 2.5 seconds to discover nearby peers. If none answer, we fail and trigger fallback.
     return new Promise((resolve) => {
-      const searchTimeout = setTimeout(() => {
+      let searchTimeout;
+      let connectionSafetyTimeout;
+      let checkInterval;
+
+      const clearAllTimers = () => {
+        clearTimeout(searchTimeout);
+        clearTimeout(connectionSafetyTimeout);
+        clearInterval(checkInterval);
+      };
+
+      searchTimeout = setTimeout(() => {
         if (!this.pc || this.currentState === "searching") {
           this.cleanup();
+          clearAllTimers();
           resolve(false); // No peers found, trigger server fallback
         }
       }, 2500);
 
-      let checkInterval;
-
       // Add a secondary connection safety timer of 5 seconds total
-      const connectionSafetyTimeout = setTimeout(() => {
+      connectionSafetyTimeout = setTimeout(() => {
         if (this.currentState === "connecting" || this.currentState === "searching") {
           this.cleanup();
-          clearInterval(checkInterval);
+          clearAllTimers();
           resolve(false); // WebRTC connection handshakes timed out, fallback to server
         } else if (this.currentState === "completed" || this.currentState === "transferring") {
-          clearInterval(checkInterval);
+          clearAllTimers();
           resolve(true);
         }
       }, 5000);
@@ -375,14 +407,10 @@ export class P2PFileTransferCoordinator {
       // Attach state listener check to resolve immediately if completed
       checkInterval = setInterval(() => {
         if (this.currentState === "completed") {
-          clearTimeout(searchTimeout);
-          clearTimeout(connectionSafetyTimeout);
-          clearInterval(checkInterval);
+          clearAllTimers();
           resolve(true);
         } else if (this.currentState === "failed") {
-          clearTimeout(searchTimeout);
-          clearTimeout(connectionSafetyTimeout);
-          clearInterval(checkInterval);
+          clearAllTimers();
           resolve(false);
         }
       }, 200);
