@@ -1,5 +1,20 @@
 import { useLocation } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useEffect, useState } from "react";
+
+// Connection speed detection utility
+const checkSlowConnection = () => {
+  if (typeof window === "undefined" || typeof navigator === "undefined") return false;
+  const connection =
+    navigator.connection ||
+    navigator.mozConnection ||
+    navigator.webkitConnection;
+  if (!connection) return false;
+  return (
+    connection.saveData ||
+    ["slow-2g", "2g", "3g"].includes(connection.effectiveType)
+  );
+};
 
 // Route-type based transition picker
 const getVariants = (pathname) => {
@@ -51,21 +66,36 @@ const getTransition = (pathname) => {
 const PageTransition = ({ children }) => {
   const location = useLocation();
   const prefersReducedMotion = useReducedMotion();
+  const [isSlow, setIsSlow] = useState(false);
+  // Track whether the component has mounted to skip initial page-load animation.
+  // This prevents the hero (and all pages) from starting at opacity:0 on first
+  // render, which was causing content to appear faded at 100% browser zoom when
+  // the 220ms animation didn't complete in time.
+  const [hasMounted, setHasMounted] = useState(false);
 
-  const variants = prefersReducedMotion
-    ? reducedMotionVariants
-    : getVariants(location.pathname);
+  useEffect(() => {
+    setIsSlow(checkSlowConnection());
+    // Mark as mounted after first render so subsequent route changes animate normally
+    setHasMounted(true);
+  }, []);
 
-  const transition = prefersReducedMotion
-    ? { duration: 0.15 }
-    : getTransition(location.pathname);
+  const skipAnimation = prefersReducedMotion || isSlow;
+
+  if (skipAnimation) {
+    return <>{children}</>;
+  }
+
+  const variants = getVariants(location.pathname);
+  const transition = getTransition(location.pathname);
 
   return (
-    <AnimatePresence mode="wait" initial={false}>
+    <AnimatePresence mode="popLayout" initial={false}>
       <motion.div
         key={location.pathname}
         variants={variants}
-        initial="initial"
+        // Skip the initial opacity:0 animation on first page load.
+        // Only animate in on route *changes* (hasMounted=true).
+        initial={hasMounted ? "initial" : false}
         animate="animate"
         exit="exit"
         transition={transition}

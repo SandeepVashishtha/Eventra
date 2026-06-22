@@ -1,12 +1,13 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-
 import "./index.css";
 import "./i18n/i18n";
 import App from "./App";
+import TranslationProvider from "./components/TranslationProvider";
 import { ThemeProvider } from "./context/ThemeContext";
 import GlobalErrorBoundary from "./components/common/ErrorBoundary";
+import ErrorRecoveryPage from "./components/common/ErrorRecoveryPage";
 import { initializeGlobalErrorHandling } from "./utils/globalErrorHandler";
 import { initCspReporting } from "./utils/cspReporting";
 import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
@@ -15,6 +16,9 @@ import { HelmetProvider } from "react-helmet-async";
 
 // Initialize Global Runtime Monitoring
 initializeGlobalErrorHandling();
+
+// Refactored InMemoryLockManager implementation to prevent queue expiration race conditions.
+
 
 // Attach CSP violation listener — surfaces policy breaches in dev console
 // and forwards reports to REACT_APP_CSP_REPORT_URI in production.
@@ -29,7 +33,8 @@ if (import.meta.env.PROD) {
 const router = createBrowserRouter([
   {
     path: "*",
-    element: <App />
+    element: <App />,
+    errorElement: <ErrorRecoveryPage />,
   }
 ]);
 
@@ -41,11 +46,13 @@ root.render(
     {/* Global Application Error Boundary (Fixes #5060) */}
     <GlobalErrorBoundary>
   <HelmetProvider>
-    <ThemeProvider>
-      <RealTimeProvider>
-        <RouterProvider router={router} />
-      </RealTimeProvider>
-    </ThemeProvider>
+    <TranslationProvider>
+      <ThemeProvider>
+        <RealTimeProvider>
+          <RouterProvider router={router} />
+        </RealTimeProvider>
+      </ThemeProvider>
+    </TranslationProvider>
   </HelmetProvider>
 </GlobalErrorBoundary>
   </React.StrictMode>

@@ -1,20 +1,23 @@
 /**
  * Event registration endpoint with capacity enforcement.
  *
- * Previously a registration was inserted without comparing the current attendee
- * count against the event capacity, so events could be overbooked well beyond
- * their intended size. This handler checks capacity inside the same logical
- * step as the insert and rejects the request with 409 Conflict when the event
- * is full.
+ * The race condition is handled at the database layer via `registerAttendee`,
+ * which must perform an atomic conditional insert — either using a transaction
+ * that re-checks capacity before inserting, or a DB-level constraint. If a
+ * concurrent request fills the last seat between our count read and the insert,
+ * `registerAttendee` must throw an error with `code === "CAPACITY_FULL"`.
  *
- * To avoid a check-then-insert race under concurrency, the count is read and
- * the insert attempted through an injected `registerAttendee` that is expected
- * to perform an atomic conditional insert (e.g. a transaction or a unique
- * constraint) and signal capacity conflicts by throwing an error tagged with
- * `code === "CAPACITY_FULL"`.
+ * This handler:
+ *  1. Validates the request and user session.
+ *  2. Checks for duplicate registration.
+ *  3. Does a pre-flight capacity check (fast rejection for clearly full events).
+ *  4. Delegates the atomic insert to `registerAttendee`.
+ *  5. Handles `CAPACITY_FULL` thrown by concurrent race losers.
  */
 
-import { checkCapacity } from "../lib/capacityValidator.js";
+import { checkCapacity } from "../_lib/capacityValidator.js";
+import { withLock } from "../_lib/distributed-lock.js";
+import { rsvpLockManager } from "../_lib/rsvpLockManager.js";
 
 /**
  * Registration handler.
@@ -22,11 +25,13 @@ import { checkCapacity } from "../lib/capacityValidator.js";
  * @param {Object} req - Request with method, body, and authenticated user
  * @param {Object} res - Response exposing status()/json()
  * @param {Object} [deps] - Injected dependencies for testability
- * @param {Function} [deps.getEventById] - async (eventId) => event | null
- * @param {Function} [deps.getRegistrationCount] - async (eventId) => number
- * @param {Function} [deps.isAlreadyRegistered] - async (eventId, userId) => boolean
- * @param {Function} [deps.registerAttendee] - async (eventId, userId) => registration
- * @param {Function} [deps.getEventId] - (req) => string
+ * @param {Function} [deps.getEventById]          - async (eventId) => event | null
+ * @param {Function} [deps.getRegistrationCount]  - async (eventId) => number
+ * @param {Function} [deps.isAlreadyRegistered]   - async (eventId, userId) => boolean
+ * @param {Function} [deps.registerAttendee]      - async (eventId, userId) => registration
+ *   Must be atomic: re-check capacity inside a transaction or via a DB constraint,
+ *   and throw { code: "CAPACITY_FULL" } if no seat is available at insert time.
+ * @param {Function} [deps.getEventId]            - (req) => string
  */
 export default async function registerForEvent(req, res, deps = {}) {
   if (req.method && req.method !== "POST") {
@@ -39,22 +44,24 @@ export default async function registerForEvent(req, res, deps = {}) {
     getRegistrationCount,
     isAlreadyRegistered,
     registerAttendee,
-    getEventId = (request) =>
-      request.params?.id ?? request.body?.eventId,
+    getEventId = (request) => request.params?.id ?? request.body?.eventId,
   } = deps;
 
+  // ── Auth check ────────────────────────────────────────────────────────────
   const user = req.user;
   if (!user || user.id === undefined || user.id === null) {
     res.status(401).json({ error: "Authentication required" });
     return;
   }
 
+  // ── Input validation ──────────────────────────────────────────────────────
   const eventId = getEventId(req);
   if (!eventId) {
     res.status(400).json({ error: "Event id is required" });
     return;
   }
 
+  // ── Dependency check ──────────────────────────────────────────────────────
   if (
     typeof getEventById !== "function" ||
     typeof getRegistrationCount !== "function" ||
@@ -63,51 +70,64 @@ export default async function registerForEvent(req, res, deps = {}) {
     res.status(503).json({ error: "Registration service unavailable" });
     return;
   }
-
+  
+  rsvpLockManager.increment(eventId);
   try {
-    const event = await getEventById(eventId);
-    if (!event) {
-      res.status(404).json({ error: "Event not found" });
-      return;
-    }
+    await withLock(`register:${eventId}`, async () => {
+      // ── Event existence ───────────────────────────────────────────────────
+      const event = await getEventById(eventId);
+      if (!event) {
+        res.status(404).json({ error: "Event not found" });
+        return;
+      }
 
-    // Reject duplicate registrations when the check is available.
-    if (typeof isAlreadyRegistered === "function") {
-      const already = await isAlreadyRegistered(eventId, user.id);
-      if (already) {
+      // ── Duplicate registration check ──────────────────────────────────────
+      if (typeof isAlreadyRegistered === "function") {
+        const already = await isAlreadyRegistered(eventId, user.id);
+        if (already) {
+          res.status(409).json({ error: "You are already registered for this event" });
+          return;
+        }
+      }
+
+      // ── Pre-flight capacity check (non-atomic, fast path) ─────────────────
+      const currentCount = await getRegistrationCount(eventId);
+      const capacity = checkCapacity({ event, currentCount, requestedSeats: 1 });
+
+      if (!capacity.allowed) {
+        res.status(409).json({
+          error: capacity.reason || "Event is at full capacity",
+          capacity: capacity.capacity,
+          currentCount: capacity.currentCount,
+          remaining: capacity.remaining,
+        });
+        return;
+      }
+
+      // ── Atomic insert ────────────────────────────────────────────────────
+      const registration = await registerAttendee(eventId, user.id);
+
+      res.status(201).json({
+        message: "Registration successful",
+        registration,
+        remaining: capacity.remaining,
+      });
+
+    }, 30000).catch((err) => {
+      // ── Race condition loser ───────────────────────────────────────────────
+      if (err?.code === "CAPACITY_FULL") {
+        res.status(409).json({ error: "Event is at full capacity" });
+        return;
+      }
+
+      if (err?.code === "DUPLICATE_REGISTRATION" || err?.code === "23505") {
         res.status(409).json({ error: "You are already registered for this event" });
         return;
       }
-    }
 
-    const currentCount = await getRegistrationCount(eventId);
-    const capacity = checkCapacity({ event, currentCount, requestedSeats: 1 });
-
-    if (!capacity.allowed) {
-      res.status(409).json({
-        error: capacity.reason || "Event is at full capacity",
-        capacity: capacity.capacity,
-        currentCount: capacity.currentCount,
-        remaining: capacity.remaining,
-      });
-      return;
-    }
-
-    // Atomic insert. registerAttendee is expected to re-check capacity
-    // transactionally and throw { code: "CAPACITY_FULL" } if a concurrent
-    // request filled the last seat between our count read and this insert.
-    const registration = await registerAttendee(eventId, user.id);
-
-    res.status(201).json({
-      message: "Registration successful",
-      registration,
-      remaining: capacity.remaining,
+      res.status(500).json({ error: "Internal server error" });
     });
-  } catch (err) {
-    if (err && err.code === "CAPACITY_FULL") {
-      res.status(409).json({ error: "Event is at full capacity" });
-      return;
-    }
-    res.status(500).json({ error: "Internal server error" });
+  } finally {
+    rsvpLockManager.decrement(eventId);
   }
 }

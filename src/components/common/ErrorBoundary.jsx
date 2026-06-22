@@ -1,6 +1,15 @@
 import React from "react";
 import "./ErrorBoundary.css";
 import { logError, persistErrors } from "../../utils/errorLogger";
+import { logSecurityEvent } from "../../utils/securityLogger";
+import {
+  categorizeError,
+  ERROR_CATEGORIES,
+  getErrorRecoveryCopy,
+  invalidateCorruptedAssetCache,
+  isRecoverableError,
+  logCategorizedError,
+} from "../../utils/errorRecovery";
 
 function generateErrorId() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -89,7 +98,7 @@ function buildDiagnosticReport(errorId, error, errorInfo) {
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
         if (k && !k.includes("token") && !k.includes("password") && !k.includes("eventra:key-material") && !k.includes("eventra:key-salt")) {
-          try { snap[k] = localStorage.getItem(k)?.slice(0, 200); } catch {}
+          try { snap[k] = process.env.NODE_ENV === "production" ? "[redacted]" : (localStorage.getItem(k)?.slice(0, 200)); } catch {}
         }
       }
       return JSON.stringify(snap, null, 2);
@@ -103,8 +112,8 @@ function buildDiagnosticReport(errorId, error, errorInfo) {
       const snap = {};
       for (let i = 0; i < sessionStorage.length; i++) {
         const k = sessionStorage.key(i);
-        if (k && !k.includes("token") && !k.includes("password")) {
-          try { snap[k] = sessionStorage.getItem(k)?.slice(0, 200); } catch {}
+        if (k && !k.includes("token") && !k.includes("password") && !k.includes("eventra:key-material") && !k.includes("eventra:key-salt")) {
+          try { snap[k] = process.env.NODE_ENV === "production" ? "[redacted]" : (sessionStorage.getItem(k)?.slice(0, 200)); } catch {}
         }
       }
       return JSON.stringify(snap, null, 2);
@@ -158,6 +167,7 @@ class ErrorBoundary extends React.Component {
       retryCount: 0,
       isRecovering: false,
       recoveryMessage: "",
+      category: null,
     };
 
     this.hasRecoveredState = attemptStateRecovery();
@@ -175,10 +185,13 @@ class ErrorBoundary extends React.Component {
     const { level = "page", label } = this.props;
     const errorId = this.state.errorId ?? generateErrorId();
     const errorLabel = label || (level === "page" ? "Page" : level === "section" ? "Section" : "Feature");
-    this.setState({ errorInfo, errorId });
+    const category = categorizeError(error, { level, label: errorLabel, type: this.props.type });
+    this.setState({ errorInfo, errorId, category });
 
     logError(error, errorInfo, { level, label: errorLabel });
+    logCategorizedError(error, errorInfo, { level, label: errorLabel, type: this.props.type });
 
+    logSecurityEvent("SYSTEM_CRASH", { message: error?.toString() || "Unknown error", level });
     persistErrors("error_log", {
       errorId,
       level,
@@ -189,6 +202,8 @@ class ErrorBoundary extends React.Component {
       userAgent: navigator.userAgent,
       stack: error?.stack || "",
       componentStack: errorInfo?.componentStack || "",
+      category,
+      recoverable: isRecoverableError(category, error),
     }, 10);
 
     console.error(`[ErrorBoundary:${errorLabel}]`, error, errorInfo);
@@ -204,6 +219,38 @@ class ErrorBoundary extends React.Component {
     this.setState({ isRecovering: true, recoveryMessage: "Reloading page..." });
     saveAppStateSnapshot();
     setTimeout(() => window.location.reload(), 300);
+  };
+
+  handleGoHome = () => {
+    saveAppStateSnapshot();
+    window.location.assign("/");
+  };
+
+  handleGoBack = () => {
+    saveAppStateSnapshot();
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      window.location.assign("/");
+    }
+  };
+
+  handleCopyReport = async () => {
+    const { error, errorInfo, errorId } = this.state;
+    const report = buildDiagnosticReport(errorId, error, errorInfo);
+
+    try {
+      await navigator.clipboard.writeText(report);
+      this.setState({ copied: true });
+      setTimeout(() => this.setState({ copied: false }), 2000);
+    } catch (err) {
+      console.error("Clipboard copy failed, using fallback:", err);
+      try {
+        const blob = new Blob([report], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        window.open(url, "_blank", "noopener,noreferrer");
+      } catch {}
+    }
   };
 
   handleTryAgain = () => {
@@ -250,23 +297,13 @@ class ErrorBoundary extends React.Component {
     setTimeout(() => window.location.reload(), 300);
   };
 
-  handleCopyReport = () => {
-    const { error, errorInfo, errorId } = this.state;
-    const report = buildDiagnosticReport(errorId, error, errorInfo);
-
-    navigator.clipboard
-      .writeText(report)
-      .then(() => {
-        this.setState({ copied: true });
-        setTimeout(() => this.setState({ copied: false }), 2000);
-      })
-      .catch(() => {
-        try {
-          const blob = new Blob([report], { type: "text/plain" });
-          const url = URL.createObjectURL(blob);
-          window.open(url, "_blank", "noopener,noreferrer");
-        } catch {}
-      });
+  handleAssetRecovery = async () => {
+    this.setState({ isRecovering: true, recoveryMessage: "Refreshing app files..." });
+    saveAppStateSnapshot();
+    try {
+      await invalidateCorruptedAssetCache();
+    } catch {}
+    setTimeout(() => window.location.reload(), 300);
   };
 
   toggleDiagnostics = () => {
@@ -276,9 +313,13 @@ class ErrorBoundary extends React.Component {
   renderPageFallback() {
     const {
       error, errorInfo, errorId, copied,
-      showDiagnostics, retryCount, isRecovering, recoveryMessage,
+      showDiagnostics, retryCount, isRecovering, recoveryMessage, category,
     } = this.state;
     const tooManyRetries = retryCount >= 3;
+    const errorCategory = category || categorizeError(error, { type: this.props.type });
+    const recoveryCopy = getErrorRecoveryCopy(errorCategory);
+    const isAssetError = errorCategory === ERROR_CATEGORIES.ASSET;
+    const isRouteError = errorCategory === ERROR_CATEGORIES.ROUTE;
 
     const lsSnapshot = (() => {
       try {
@@ -286,7 +327,7 @@ class ErrorBoundary extends React.Component {
         for (let i = 0; i < localStorage.length; i++) {
           const k = localStorage.key(i);
           if (k && !k.includes("token") && !k.includes("password") && !k.includes("eventra:key-material") && !k.includes("eventra:key-salt")) {
-            try { snap[k] = localStorage.getItem(k)?.slice(0, 200); } catch {}
+            try { snap[k] = process.env.NODE_ENV === "production" ? "[redacted]" : (localStorage.getItem(k)?.slice(0, 200)); } catch {}
           }
         }
         return JSON.stringify(snap, null, 2);
@@ -329,13 +370,12 @@ class ErrorBoundary extends React.Component {
           </div>
 
           <h1 className="eb-title" id="eb-title">
-            System Crash Prevented
+            {recoveryCopy.title}
           </h1>
           <p className="eb-message" id="eb-description">
-            Eventra encountered an unexpected crash. The issue has been intercepted and
-            logged. You can try reloading, resetting your local cache, or copying the
-            diagnostic report below to report this issue.
+            {recoveryCopy.message}
           </p>
+          <p className="eb-suggestion">{recoveryCopy.suggestion}</p>
 
           {errorId && (
             <p className="eb-error-id" aria-label={`Error reference: ${errorId}`}>
@@ -343,7 +383,7 @@ class ErrorBoundary extends React.Component {
             </p>
           )}
 
-          {error && (
+          {process.env.NODE_ENV !== "production" && error && (
             <div className="eb-error-message-box" role="region" aria-label="Error details">
               <span className="eb-error-label">Error</span>
               <p className="eb-error-text">{error.toString()}</p>
@@ -353,29 +393,25 @@ class ErrorBoundary extends React.Component {
           <div className="eb-actions">
             <button
               className="eb-btn-primary"
-              onClick={this.handleReload}
+              onClick={isAssetError ? this.handleAssetRecovery : this.handleTryAgain}
               disabled={isRecovering}
-              aria-label="Reload the page"
+              aria-label={isAssetError ? "Reload app files" : "Retry recovery"}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
-              {isRecovering ? "Reloading..." : "Reload Page"}
+              {isRecovering ? "Recovering..." : isAssetError ? "Reload Files" : "Retry"}
             </button>
 
             <button
               className="eb-btn-secondary"
-              onClick={this.handleTryAgain}
+              onClick={this.handleReload}
               disabled={tooManyRetries || isRecovering}
-              aria-label={
-                isRecovering ? "Recovery in progress..." :
-                tooManyRetries ? "Maximum retries reached" :
-                `Try again (attempt ${retryCount + 1} of 3)`
-              }
+              aria-label="Refresh the page"
             >
               {isRecovering ? (
                 <><span className="eb-spinner" aria-hidden="true" /> Recovering...</>
-              ) : tooManyRetries ? "Reload Instead" : "Try Again"}
+              ) : tooManyRetries ? "Refresh Page" : "Refresh"}
               {retryCount > 0 && !tooManyRetries && !isRecovering && (
                 <span className="eb-retry-badge" aria-hidden="true">{retryCount}/3</span>
               )}
@@ -384,14 +420,28 @@ class ErrorBoundary extends React.Component {
 
           <div className="eb-actions eb-actions--secondary">
             <button
+              className="eb-btn-secondary"
+              onClick={this.handleGoHome}
+              disabled={isRecovering}
+            >
+              Home
+            </button>
+            <button
+              className="eb-btn-secondary"
+              onClick={this.handleGoBack}
+              disabled={isRecovering}
+            >
+              Back
+            </button>
+            <button
               className="eb-btn-reset-cache"
-              onClick={this.handleResetCache}
+              onClick={isRouteError ? this.handleReload : this.handleResetCache}
               disabled={isRecovering}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
-              {isRecovering ? "Clearing..." : "Reset Cache"}
+              {isRecovering ? "Working..." : isRouteError ? "Refresh Route" : "Reset Cache"}
             </button>
 
             <button
@@ -438,6 +488,14 @@ class ErrorBoundary extends React.Component {
             aria-hidden={!showDiagnostics}
           >
             <div className="eb-meta-grid">
+              <div className="eb-meta-item">
+                <span className="eb-meta-label">Category</span>
+                <span className="eb-meta-value">{errorCategory}</span>
+              </div>
+              <div className="eb-meta-item">
+                <span className="eb-meta-label">Recoverable</span>
+                <span className="eb-meta-value">{String(isRecoverableError(errorCategory, error))}</span>
+              </div>
               <div className="eb-meta-item">
                 <span className="eb-meta-label">URL</span>
                 <span className="eb-meta-value">{sanitizeUrl(window.location.href)}</span>

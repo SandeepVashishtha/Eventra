@@ -18,6 +18,7 @@ export const EVENTS_CACHE_TTL_MS = 24 * 60 * 60 * 1000;  // 24 hours
 export const DETAIL_CACHE_TTL_MS =  6 * 60 * 60 * 1000;  //  6 hours
 
 const readJson = (key, fallback) => {
+  if (typeof localStorage === "undefined") return fallback;
   try {
     return safeJsonParse(localStorage.getItem(key), fallback);
   } catch {
@@ -26,6 +27,7 @@ const readJson = (key, fallback) => {
 };
 
 const writeJson = (key, value) => {
+  if (typeof localStorage === "undefined") return false;
   try {
     localStorage.setItem(key, JSON.stringify(value));
     return true;
@@ -82,6 +84,26 @@ export const getCachedEvents = () => {
 // Event detail cache
 // ---------------------------------------------------------------------------
 
+const MAX_CACHE_SIZE = 50;
+
+const enforceLRU = (cached) => {
+  const keys = Object.keys(cached);
+  if (keys.length <= MAX_CACHE_SIZE) return;
+
+  // Sort keys by cachedAt ascending (oldest first)
+  keys.sort((a, b) => {
+    const timeA = new Date(cached[a]?.cachedAt || 0).getTime();
+    const timeB = new Date(cached[b]?.cachedAt || 0).getTime();
+    return timeA - timeB;
+  });
+
+  // Delete oldest entries until we're at or below the limit
+  const numToRemove = keys.length - MAX_CACHE_SIZE;
+  for (let i = 0; i < numToRemove; i++) {
+    delete cached[keys[i]];
+  }
+};
+
 export const saveCachedEventDetail = (event) => {
   if (!event?.id) {
     return false;
@@ -91,6 +113,7 @@ export const saveCachedEventDetail = (event) => {
     cachedAt: new Date().toISOString(),
     event,
   };
+  enforceLRU(cached);
   return writeJson(EVENT_DETAILS_CACHE_KEY, cached);
 };
 
@@ -123,6 +146,7 @@ export const saveAllCachedEventDetails = (events = []) => {
     }
   });
 
+  enforceLRU(cached);
   return writeJson(EVENT_DETAILS_CACHE_KEY, cached);
 };
 

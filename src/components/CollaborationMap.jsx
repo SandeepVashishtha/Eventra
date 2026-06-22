@@ -19,6 +19,16 @@ const CONNECTIONS = [
   { from: "blr", to: "syd" },
 ];
 
+const getTooltipTransform = (city) => {
+    if (!city) return "translate(-50%, -90%)";
+
+    if (city.x < 350) return "translate(-10%, 10%)";
+    if (city.y < 180) return "translate(-50%, 10%)";
+    if (city.x > 800) return "translate(-100%, -120%)";
+
+    return "translate(-50%, -90%)";
+  };  
+
 export default function CollaborationMap() {
   const [hoveredCity, setHoveredCity] = useState(null);
   const mapRef = useRef(null);
@@ -39,7 +49,7 @@ export default function CollaborationMap() {
   }, []);
 
   return (
-    <section className="py-20 bg-slate-950 text-white relative overflow-hidden">
+    <section className="py-20 dark:bg-slate-950 dark:text-white bg-white text-slate-900 relative overflow-hidden">
       <style>{`
         /* 🔥 FIX: Namespace prefixed to prevent global CSS pollution */
         @keyframes eventra-map-dash {
@@ -65,7 +75,7 @@ export default function CollaborationMap() {
           <span className="inline-block text-xs uppercase tracking-[0.25em] text-indigo-400 font-bold bg-indigo-500/10 px-3.5 py-1.5 rounded-full border border-indigo-500/20">
             Global Network
           </span>
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-white via-slate-100 to-indigo-200 bg-clip-text text-transparent">
+          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-gray-500 dark:bg-linear-to-r from-white via-slate-100 to-indigo-200 bg-clip-text">
             Collaboration Hubs
           </h2>
           <p className="max-w-xl mx-auto text-sm sm:text-base text-slate-400">
@@ -74,7 +84,7 @@ export default function CollaborationMap() {
         </div>
 
         {/* Glassmorphic Map Container */}
-        <div ref={mapRef} className="relative bg-slate-900/40 backdrop-blur-xl border border-white/10 dark:border-slate-800/50 shadow-2xl rounded-3xl p-6 md:p-8 overflow-hidden">
+        <div ref={mapRef} className="relative bg-slate-900/40 backdrop-blur-xl border border-white/10 dark:border-slate-800/50 shadow-2xl rounded-3xl p-6 md:p-8 overflow-visible">
           
           {/* Legend/Status */}
           <div className="absolute top-6 left-6 z-10 hidden sm:flex items-center gap-4 bg-slate-950/60 backdrop-blur border border-white/5 rounded-2xl px-4 py-2.5 text-xs text-slate-300">
@@ -192,20 +202,17 @@ export default function CollaborationMap() {
               })}
             </svg>
 
-            {/* Structured Hub Card Popup */}
             {hoveredCity && (
               <div
-                className="absolute z-30 pointer-events-none"
+                className="absolute z-30 pointer-events-none bg-white dark:bg-slate-900 border border-[#c7d7fd] dark:border-slate-800"
                 style={{
                   left: `${(hoveredCity.x / 1000) * 100}%`,
                   top: `${(hoveredCity.y / 500) * 100}%`,
-                  transform: "translate(-50%, -120%)",
+                  transform: getTooltipTransform(hoveredCity),
                   minWidth: "210px",
                   borderRadius: "14px",
                   boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
-                  border: "1px solid #c7d7fd",
                   overflow: "hidden",
-                  background: "#fff",
                 }}
               >
                 <div style={{ background: "#2563eb", padding: "10px 14px 8px" }}>
@@ -215,16 +222,16 @@ export default function CollaborationMap() {
                   </div>
                   <div style={{ color: "#bfdbfe", fontSize: "9px", marginTop: "3px" }}>📍 {hoveredCity.x}° N · {hoveredCity.y}° E</div>
                 </div>
-                <div style={{ padding: "10px 14px 12px", background: "#fff" }}>
+                <div className="bg-white dark:bg-slate-900" style={{ padding: "10px 14px 12px" }}>
                   <div style={{ fontSize: "9px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "6px" }}>Hub Stats</div>
                   <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
-                    <div style={{ flex: 1, border: "1px solid #e5e7eb", borderRadius: "8px", padding: "5px 8px" }}>
+                    <div className="border border-gray-200 dark:border-slate-700" style={{ flex: 1, borderRadius: "8px", padding: "5px 8px" }}>
                       <div style={{ fontSize: "9px", color: "#9ca3af", fontWeight: 700, textTransform: "uppercase" }}>Developers</div>
-                      <div style={{ fontSize: "16px", fontWeight: 800, color: "#1e293b" }}>{hoveredCity.contributors}</div>
+                      <div className="text-slate-800 dark:text-slate-100" style={{ fontSize: "16px", fontWeight: 800 }}>{hoveredCity.contributors}</div>
                     </div>
-                    <div style={{ flex: 1, border: "1px solid #e5e7eb", borderRadius: "8px", padding: "5px 8px" }}>
+                    <div className="border border-gray-200 dark:border-slate-700" style={{ flex: 1, borderRadius: "8px", padding: "5px 8px" }}>
                       <div style={{ fontSize: "9px", color: "#9ca3af", fontWeight: 700, textTransform: "uppercase" }}>Projects</div>
-                      <div style={{ fontSize: "16px", fontWeight: 800, color: "#1e293b" }}>{hoveredCity.projects}</div>
+                      <div className="text-slate-800 dark:text-slate-100" style={{ fontSize: "16px", fontWeight: 800 }}>{hoveredCity.projects}</div>
                     </div>
                   </div>
                   <div style={{ fontSize: "9px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "5px" }}>Focus Areas</div>
@@ -234,9 +241,9 @@ export default function CollaborationMap() {
                       return <span key={tag} style={{ ...styles[i], fontSize: "10px", fontWeight: 700, borderRadius: "20px", padding: "2px 8px" }}>{tag}</span>;
                     })}
                   </div>
-                  <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div className="border-t border-slate-100 dark:border-slate-800" style={{ paddingTop: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <span style={{ fontSize: "9px", color: "#9ca3af" }}>🌏 {hoveredCity.region} region</span>
-                    <span style={{ fontSize: "10px", color: "#2563eb", fontWeight: 700 }}>View details →</span>
+                    <span className="text-blue-600 dark:text-blue-400" style={{ fontSize: "10px", fontWeight: 700 }}>View details →</span>
                   </div>
                 </div>
               </div>
