@@ -164,13 +164,17 @@ const SECRET_BYTE_LENGTH = CRYPTO_CONFIG.SECRET_BYTE_LENGTH;
  * - Secure entropy ensures keys cannot be guessed or predicted even with massive compute
  */
 const getOrCreateSecret = (storageKey) => {
-  try {
-    const stored = localStorage.getItem(storageKey);
-    if (stored) {
-      return Uint8Array.from(atob(stored), (c) => c.charCodeAt(0));
+  if (typeof localStorage === "undefined") {
+    // SSR environment — fall through to session-scoped value
+  } else {
+    try {
+      const stored = localStorage.getItem(storageKey);
+      if (stored) {
+        return Uint8Array.from(atob(stored), (c) => c.charCodeAt(0));
+      }
+    } catch {
+      // localStorage unavailable — fall through to generate a session-scoped value
     }
-  } catch {
-    // localStorage unavailable — fall through to generate a session-scoped value
   }
 
   // SECURITY: Fail-closed if cryptographic randomness is unavailable
@@ -187,11 +191,13 @@ const getOrCreateSecret = (storageKey) => {
 
   const secret = crypto.getRandomValues(new Uint8Array(SECRET_BYTE_LENGTH));
 
-  try {
-    localStorage.setItem(storageKey, btoa(String.fromCharCode(...secret)));
-  } catch {
-    // Persistence failure: this session's encryption will work, but the key
-    // will not survive a page reload. Graceful degradation.
+  if (typeof localStorage !== "undefined") {
+    try {
+      localStorage.setItem(storageKey, btoa(String.fromCharCode(...secret)));
+    } catch {
+      // Persistence failure: this session's encryption will work, but the key
+      // will not survive a page reload. Graceful degradation.
+    }
   }
   return secret;
 };
