@@ -73,6 +73,16 @@ const RegistrationClosingBadge = ({ event, isPastEvent }) => {
   );
 };
 
+// Event summary text plus the registration-closing-soon indicator.
+const EventDescription = ({ event, isPastEvent }) => (
+  <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+    <p className="text-gray-500 dark:text-gray-400 text-sm leading-6 line-clamp-2">
+      {event.description}
+    </p>
+    <RegistrationClosingBadge event={event} isPastEvent={isPastEvent} />
+  </div>
+);
+
 const getCapacityStyles = (ratio, isFull) => {
   if (isFull || ratio >= 0.85) {
     return {
@@ -328,12 +338,7 @@ const EventCard = ({ event }) => {
       </div>
 
       {/* Description */}
-      <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
-        <p className="text-gray-500 dark:text-gray-400 text-sm leading-6 line-clamp-2">
-          {event.description}
-        </p>
-        <RegistrationClosingBadge event={event} isPastEvent={isPastEvent} />
-      </div>
+      <EventDescription event={event} isPastEvent={isPastEvent} />
 
       {/* Info Grid */}
       <div className="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4 text-gray-600 dark:text-gray-400 text-sm bg-gray-50/50 dark:bg-gray-800/30">
