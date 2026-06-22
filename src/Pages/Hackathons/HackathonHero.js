@@ -155,11 +155,10 @@ export default function HackathonHero({
                   whileHover={{ scale: 1.06 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => onTagSelect(tag)}
-                  className={`px-3.5 py-1.5 text-xs font-semibold rounded-full cursor-pointer transition-all duration-200 border ${
-                    selectedTags.includes(tag)
-                      ? "bg-indigo-600 text-white border-indigo-500 shadow-md dark:shadow-[0_0_12px_rgba(99,102,241,0.5)]"
-                      : "text-slate-600 bg-white/80 border-slate-200 hover:bg-white hover:border-indigo-300 hover:text-indigo-700 shadow-sm dark:text-slate-300 dark:bg-white/5 dark:border-white/10 dark:hover:bg-white/10 dark:hover:border-indigo-500/40 dark:hover:text-white dark:shadow-none backdrop-blur-sm"
-                  }`}
+                  className={`px-3.5 py-1.5 text-xs font-semibold rounded-full cursor-pointer transition-all duration-200 border ${selectedTags.includes(tag)
+                    ? "bg-indigo-600 text-white border-indigo-500 shadow-md dark:shadow-[0_0_12px_rgba(99,102,241,0.5)]"
+                    : "text-slate-600 bg-white/80 border-slate-200 hover:bg-white hover:border-indigo-300 hover:text-indigo-700 shadow-sm dark:text-slate-300 dark:bg-white/5 dark:border-white/10 dark:hover:bg-white/10 dark:hover:border-indigo-500/40 dark:hover:text-white dark:shadow-none backdrop-blur-sm"
+                    }`}
                 >
                   {tag}
                 </motion.span>
@@ -208,45 +207,57 @@ export default function HackathonHero({
       {/* STATS SECTION */}
       {searchQuery.trim() === "" && selectedTags.length === 0 && (
         <ErrorBoundary level="section" label="Hackathon Statistics">
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 mt-14 sm:mt-20 mb-12 sm:mb-16 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          {[
-            { label: "Hackathons Hosted", value: 120, suffix: "+", icon: Calendar, color: "from-blue-500 to-indigo-500" },
-            { label: "Participants", value: 50, suffix: "k+", icon: Users, color: "from-violet-500 to-purple-500" },
-            { label: "Projects Built", value: 8, suffix: "k+", icon: Code2, color: "from-cyan-500 to-blue-500" },
-            { label: "Prizes Awarded", value: 1, prefix: "$", suffix: "M+", icon: Award, color: "from-amber-500 to-orange-500" },
-          ].map((stat, idx) => (
-            <motion.div
-              key={idx}
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.15 + idx * 0.12, duration: prefersReducedMotion ? 0 : 0.6 }}
-              whileHover={{ scale: 1.04, y: -4 }}
-              className="relative overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/5 p-6 flex flex-col items-center text-center backdrop-blur-md shadow-sm hover:shadow-md dark:shadow-[0_4px_24px_rgba(0,0,0,0.3)] transition-all duration-300 group"
-            >
-              {/* Gradient top border line */}
-              <div className={`absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r ${stat.color} opacity-80 group-hover:opacity-100 transition-opacity`} />
+          <div className="relative max-w-6xl mx-auto px-4 sm:px-6 mt-14 sm:mt-20 mb-12 sm:mb-16 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            {[
+              { label: "Hackathons Hosted", value: 120, suffix: "+", icon: Calendar, color: "from-blue-500 to-indigo-500" },
+              { label: "Participants", value: 50, suffix: "k+", icon: Users, color: "from-violet-500 to-purple-500" },
+              { label: "Projects Built", value: 8, suffix: "k+", icon: Code2, color: "from-cyan-500 to-blue-500" },
+              { label: "Prizes Awarded", value: 1, prefix: "$", suffix: "M+", icon: Award, color: "from-amber-500 to-orange-500" },
+            ].map((stat, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{
+                  delay: 0.15 + idx * 0.12,
+                  duration: prefersReducedMotion ? 0 : 0.6
+                }}
+                whileHover={{
+                  scale: 1.06,
+                  y: -8,
+                  rotateX: 5
+                }}
+                className="relative overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/5 p-6 flex flex-col items-center text-center backdrop-blur-md shadow-sm hover:shadow-xl hover:border-indigo-400 dark:hover:border-indigo-500 transition-all duration-300 group"
+              >
+                {/* Gradient top border line */}
+                <div className={`absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r ${stat.color} opacity-80 group-hover:opacity-100 transition-opacity`} />
 
-              {/* Icon */}
-              <div className={`mb-4 flex items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br ${stat.color} shadow-sm dark:shadow-[0_0_20px_rgba(99,102,241,0.2)]`}>
-                <stat.icon className="h-6 w-6 text-white" />
-              </div>
+                {/* Icon */}
+                <motion.div
+                  whileHover={{
+                    rotate: 10,
+                    scale: 1.15
+                  }}
+                  className={`mb-4 flex items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br ${stat.color}`}
+                >                  <stat.icon className="h-6 w-6 text-white" />
+                </motion.div>
 
-              <p className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
-                <CountUp
-                  start={0}
-                  end={stat.value}
-                  duration={2.5}
-                  prefix={stat.prefix}
-                  suffix={stat.suffix}
+                <p className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
+                  <CountUp
+                    start={0}
+                    end={stat.value}
+                    duration={2.5}
+                    prefix={stat.prefix}
+                    suffix={stat.suffix}
                   />
-              </p>
-              <p className="mt-1 text-sm font-medium text-slate-500 dark:text-slate-400">
-                {stat.label}
-              </p>
-            </motion.div>
-          ))}
-        </div>
+                </p>
+                <p className="mt-1 text-sm font-medium text-slate-500 dark:text-slate-400">
+                  {stat.label}
+                </p>
+              </motion.div>
+            ))}
+          </div>
         </ErrorBoundary>
       )}
     </div>
