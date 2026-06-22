@@ -39,6 +39,22 @@ const firstNumber = (event, keys) => keys.reduce((acc, key) => {
  * Derive a score for trending using whatever metrics are available on
  * event objects. Backends may differ; this keeps UI resilient.
  */
+/**
+ * Map a 0-based position in the sorted trending list to a ranking badge.
+ * Top 3 get medal emojis; the rest get a numbered "Trending" badge.
+ */
+const getRankBadge = (index) => {
+  const position = index + 1;
+  const medals = ["🏆", "🥈", "🥉"];
+
+  return {
+    position,
+    icon: medals[index] || "🔥",
+    label: `#${position} Trending`,
+    isTop3: index < 3,
+  };
+};
+
 const getTrendingScore = (event) => {
   const registrations = firstNumber(event, [
     "registrations",
@@ -117,7 +133,9 @@ const TrendingEvents = ({ title = "Trending Events", limit = 6, fetchSize = 24 }
         return String(a.event?.title || "").localeCompare(String(b.event?.title || ""));
       });
 
-    return withScore.slice(0, limit);
+    return withScore
+      .slice(0, limit)
+      .map((item, index) => ({ ...item, rank: getRankBadge(index) }));
   }, [events, limit]);
 
   if (isLoading) {
@@ -200,8 +218,20 @@ const TrendingEvents = ({ title = "Trending Events", limit = 6, fetchSize = 24 }
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {trending.map(({ event, registrations, pageViews, bookmarks, engagement }) => (
-            <div key={event.id ?? event.title} className="rounded-3xl overflow-hidden">
+          {trending.map(({ event, registrations, pageViews, bookmarks, engagement, rank }) => (
+            <div key={event.id ?? event.title} className="relative rounded-3xl overflow-hidden">
+              <div
+                className={`absolute top-3 left-3 z-10 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold shadow-md backdrop-blur-sm ${
+                  rank.isTop3
+                    ? "bg-amber-400/95 text-amber-950 ring-1 ring-amber-300"
+                    : "bg-slate-900/80 text-white ring-1 ring-slate-700"
+                }`}
+                title={`Ranked ${rank.label} by trending score`}
+                aria-label={`Ranked number ${rank.position}, trending`}
+              >
+                <span aria-hidden>{rank.icon}</span>
+                <span>{rank.label}</span>
+              </div>
               <EventCard
                 event={{
                   ...event,
