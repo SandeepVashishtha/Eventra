@@ -72,6 +72,7 @@ describe("registerForEvent", () => {
     assert.strictEqual(state.statusCode, 201);
     assert.ok(state.body.registration);
     assert.strictEqual(state.body.message, "Registration successful");
+    assert.strictEqual(state.body.remaining, 89);
   });
 
   test("returns 409 for duplicate registration", async () => {

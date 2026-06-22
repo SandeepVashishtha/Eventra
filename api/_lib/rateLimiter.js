@@ -1,20 +1,31 @@
 import { incrementWithExpiration, close } from "./rate-limit-storage.js";
 import { isDistributedRateLimitStorageConfigured } from "./rate-limit-config.js";
 
-const NODE_ENV = process.env.NODE_ENV || 'development';
-
-const USE_MEMORY = NODE_ENV !== 'production' || process.env.RATE_LIMIT_MODE === 'memory';
-
 class InMemoryRateLimiter {
   constructor(windowMs, maxRequests) {
     this.windowMs = windowMs;
     this.maxRequests = maxRequests;
     this.store = new Map();
+<<<<<<< HEAD
     this.lastCleanup = Date.now();
+=======
+    this.lastPruned = Date.now();
+  }
+
+  pruneExpired() {
+    const now = Date.now();
+    for (const [key, record] of this.store.entries()) {
+      if (now - record.start > this.windowMs) {
+        this.store.delete(key);
+      }
+    }
+    this.lastPruned = now;
+>>>>>>> master
   }
 
   check(key) {
     const now = Date.now();
+<<<<<<< HEAD
     if (now - this.lastCleanup > this.windowMs) {
       for (const [k, entry] of this.store.entries()) {
         if (now - entry.start > this.windowMs) {
@@ -23,6 +34,14 @@ class InMemoryRateLimiter {
       }
       this.lastCleanup = now;
     }
+=======
+    
+    // Periodically prune the entire store to prevent memory leaks from inactive IPs
+    if (now - this.lastPruned > this.windowMs) {
+      this.pruneExpired();
+    }
+
+>>>>>>> master
     const record = this.store.get(key);
 
     if (!record || now - record.start > this.windowMs) {
@@ -79,11 +98,14 @@ function createFailClosedLimiter(message) {
 }
 
 export const createRateLimiter = (windowMs, maxRequests) => {
+  const NODE_ENV = process.env.NODE_ENV || 'development';
+  const USE_MEMORY = NODE_ENV !== 'production' || process.env.RATE_LIMIT_MODE === 'memory';
+
   if (NODE_ENV === 'production') {
     if (isDistributedRateLimitStorageConfigured()) {
       return new DistributedRateLimiter(windowMs, maxRequests);
     }
-    console.error("[rateLimiter] CRITICAL: Production requires distributed storage. Set KV_REST_API_URL or RATE_LIMIT_REDIS_URL.");
+    console.error("[rateLimiter] CRITICAL: Production requires distributed storage. Set RATE_LIMIT_REDIS_URL.");
     return createFailClosedLimiter("Rate limiting is not configured for production.");
   }
 
@@ -113,11 +135,12 @@ export const enforceRateLimit = async (limiter, key) => {
 };
 
 export function validateRateLimitConfig() {
+  const NODE_ENV = process.env.NODE_ENV || 'development';
   if (NODE_ENV !== 'production') return true;
 
   const errors = [];
   if (!isDistributedRateLimitStorageConfigured()) {
-    errors.push("Production requires distributed rate limiting. Set KV_REST_API_URL/KV_REST_API_TOKEN or RATE_LIMIT_REDIS_URL.");
+    errors.push("Production requires distributed rate limiting. Set RATE_LIMIT_REDIS_URL.");
   }
   if (process.env.RATE_LIMIT_MODE === 'memory') {
     errors.push("RATE_LIMIT_MODE=memory is not allowed in production.");

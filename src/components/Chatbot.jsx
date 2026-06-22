@@ -105,6 +105,7 @@ export default function Chatbot() {
   const replyTimerRef = useRef(null);
   const prevLangRef = useRef(i18n.language);
   const quickPrompts = useMemo(() => getQuickPrompts(t), [t]);
+  const hasInteracted = messages.length > 1;
 
   const clearReplyTimer = useCallback(() => {
     if (replyTimerRef.current) {
@@ -507,18 +508,20 @@ export default function Chatbot() {
             "
             >
               {/* Quick prompts */}
-              <div className="mb-3.5 flex flex-wrap gap-1.5">
-                {quickPrompts.map((prompt) => (
-                  <button
-                    key={prompt}
-                    type="button"
-                    onClick={() => sendMessage(prompt)}
-                    className="rounded-full border border-slate-200/60 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-950/40 px-3 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-linear-to-r hover:from-indigo-600 hover:to-pink-600 hover:text-white hover:border-transparent transition-all duration-300 transform hover:scale-[1.03] focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                  >
-                    {prompt}
-                  </button>
-                ))}
-              </div>
+              {!hasInteracted && (
+                <div className="mb-3.5 flex flex-wrap gap-1.5">
+                  {quickPrompts.map((prompt) => (
+                    <button
+                      key={prompt}
+                      type="button"
+                      onClick={() => sendMessage(prompt)}
+                      className="rounded-full border border-slate-200/60 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-950/40 px-3 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-linear-to-r hover:from-indigo-600 hover:to-pink-600 hover:text-white hover:border-transparent transition-all duration-300 transform hover:scale-[1.03] focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+              )}
 
               {/* Contextual action links */}
               {latestActions.length > 0 && (

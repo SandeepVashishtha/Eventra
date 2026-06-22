@@ -1507,6 +1507,51 @@ If the authenticated user has no notifications:
 - Notifications are returned in newest-first order.
 - Pagination is not currently included.
 
+## Mark Notification as Read
+
+| Method | Endpoint                       |
+| ------ | ------------------------------ |
+| PUT    | `/api/notifications/{id}/read` |
+
+Marks a single notification as read for the authenticated user.
+
+### Authentication
+
+Requires Bearer JWT authentication.
+
+### Path Parameters
+
+| Parameter | Type   | Required | Description     |
+| --------- | ------ | -------- | --------------- |
+| `id`      | number | Yes      | Notification ID |
+
+### Success Response
+
+Status: `200 OK`
+
+```json
+{
+  "id": 1,
+  "title": "Welcome Notification",
+  "message": "This is a manual test notification.",
+  "read": true,
+  "createdAt": "2026-06-09T00:38:52.335113"
+}
+```
+
+### Error Responses
+
+| Status             | Description                                                              |
+| ------------------ | ------------------------------------------------------------------------ |
+| `401 Unauthorized` | Missing or invalid JWT token                                             |
+| `404 Not Found`    | Notification does not exist or does not belong to the authenticated user |
+
+### Notes
+
+- Only the authenticated user’s own notification can be marked as read.
+- If the notification is already read, the endpoint still returns `200 OK`.
+- `PUT /api/notifications/read-all` is not implemented yet and must not be documented in this PR.
+
 ---
 
 # Analytics APIs

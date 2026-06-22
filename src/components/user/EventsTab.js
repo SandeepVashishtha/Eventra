@@ -457,6 +457,49 @@ const normalizedSearch = debouncedTerm.trim().toLowerCase();
   const hostedCount = hostedEvents.length;
   const upcomingCount = [...registeredEvents, ...hostedEvents].filter((event) => getEventStatus(event) === "Upcoming").length;
   const completedCount = [...registeredEvents, ...hostedEvents].filter((event) => getEventStatus(event) === "Completed").length;
+const recentActivities = useMemo(() => {
+  const activities = [];
+
+  registeredEvents.forEach((event) => {
+    activities.push({
+      id: `registered-${event.id}`,
+      type: "Registered",
+      title: event.title,
+      date: event.registeredAt || event.date,
+    });
+  });
+
+  hostedEvents.forEach((event) => {
+    activities.push({
+      id: `hosted-${event.id}`,
+      type: "Hosted",
+      title: event.title,
+      date: event.createdAt || event.date,
+    });
+  });
+
+  waitlistEvents.forEach((event) => {
+    activities.push({
+      id: `waitlist-${event.id}`,
+      type: "Waitlisted",
+      title: event.title,
+      date: event.waitlistJoinedAt || event.date,
+    });
+  });
+
+  return activities
+    .filter((activity) => activity.date)
+    .sort(
+      (a, b) =>
+        new Date(b.date) - new Date(a.date)
+    )
+    .slice(0, 8);
+}, [
+  registeredEvents,
+  hostedEvents,
+  waitlistEvents,
+]);
+
 
   const toggleSection = (section) => {
   setCollapsedSections((prev) => ({

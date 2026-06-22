@@ -3,33 +3,93 @@ import { checkGeoBlock } from "./geo.js";
 import { checkRateLimit } from "./rate-limit.js";
 import { verifyTicketAccess, verifyJwt, parseTokenFromCookie } from "./jwt.js";
 import { addSecurityHeaders, validateBackendOrigin, getBackendOrigins, createSecurityHeaders } from "./csp.js";
+import {
+  isDistributedRateLimitStorageConfigured,
+  isInMemoryRateLimitStorageAllowed,
+} from "../api/_lib/rate-limit-config.js";
+import { getJwtSecret, createJwtConfigErrorResponse } from "../api/_lib/jwtSecret.js";
 
 const validationLimiter = createConcurrencyLimiter(5);
 
 const getSessionRiskState = async (sessionId) => {
   const kvUrl = process.env.KV_REST_API_URL;
   const kvToken = process.env.KV_REST_API_TOKEN;
-  if (!kvUrl || !kvToken) return "active";
+  const isProduction = process.env.NODE_ENV === "production";
 
+  // Check if distributed storage is configured
+  const isDistributedConfigured = isDistributedRateLimitStorageConfigured();
+  const isInMemoryAllowed = isInMemoryRateLimitStorageAllowed();
+
+  // Production: Fail closed - require re-authentication if distributed storage is not configured
+  if (isProduction && !isDistributedConfigured) {
+    console.error(
+      "[SECURITY] Session state unavailable: KV_REST_API_URL and KV_REST_API_TOKEN are required in production. Requiring re-authentication."
+    );
+    return "requires_reauth";
+  }
+
+  // Development/Test: Allow active state if distributed storage is not configured
+  if (!isDistributedConfigured) {
+    if (isInMemoryAllowed) {
+      console.warn(
+        "[DEV] Session state check skipped (distributed storage not configured). Assuming active session."
+      );
+      return "active";
+    } else {
+      // Should not happen, but fail closed if somehow in non-production but in-memory not allowed
+      console.error(
+        "[SECURITY] Session state unavailable: Distributed storage not configured and in-memory fallback not permitted. Requiring re-authentication."
+      );
+      return "requires_reauth";
+    }
+  }
+
+  // Distributed storage is configured - use KV
   try {
     const res = await fetch(`${kvUrl}/get/session:${sessionId}`, {
       headers: { Authorization: `Bearer ${kvToken}` }
     });
-    if (!res.ok) return "active";
+    if (!res.ok) {
+      // Production: Fail closed on KV request failure
+      if (isProduction) {
+        console.error(
+          `[SECURITY] Session state unavailable: KV request failed with status ${res.status}. Requiring re-authentication.`
+        );
+        return "requires_reauth";
+      }
+      // Development: Assume active on KV failure
+      console.warn(
+        `[DEV] KV request failed with status ${res.status}. Assuming active session.`
+      );
+      return "active";
+    }
     const data = await res.json();
     if (!data || !data.result) return "invalidated";
-    
+
     let sessionData = data.result;
     if (typeof sessionData === 'string') {
        sessionData = JSON.parse(sessionData);
     }
-    
+
     // Check inactivity (2 hours)
     if (Date.now() - sessionData.lastActive > 2 * 60 * 60 * 1000 && sessionData.status === "active") {
        return "requires_reauth";
     }
     return sessionData.status || "active";
   } catch(e) {
+    // Production: Fail closed on network errors or invalid responses
+    if (isProduction) {
+      console.error(
+        "[SECURITY] Session state unavailable: KV communication error.",
+        e.message
+      );
+      return "requires_reauth";
+    }
+    // Development: Assume active on errors
+    console.warn(
+      "[DEV] KV communication error. Assuming active session.",
+      e.message
+    );
     return "active";
   }
 };
@@ -154,6 +214,23 @@ async function handleRequest(request) {
       if (authResponse) return authResponse;
     }
   }
+}
+
+async function handleRequest(request) {
+  const geoResponse = checkGeoBlock(request);
+  if (geoResponse) return geoResponse;
+
+  const url = new URL(request.url);
+
+  if (request.method === "OPTIONS") return;
+
+  const originValidationResponse = validateOrigin(request);
+  if (originValidationResponse) return originValidationResponse;
+
+  if (url.pathname.startsWith("/api/")) {
+    const authResponse = await authorizeSession(request, url);
+    if (authResponse) return authResponse;
+  }
 
   const { limited, window } = await checkRateLimit(request);
   if (limited) {
@@ -183,8 +260,18 @@ async function handleRequest(request) {
 
 export { validateBackendOrigin, getBackendOrigins } from "./csp.js";
 
-const SECURITY_HEADERS_OBJ = createSecurityHeaders();
-export { SECURITY_HEADERS_OBJ as SECURITY_HEADERS };
+export const SECURITY_HEADERS = {
+  get "Strict-Transport-Security"() {
+    return "max-age=31536000; includeSubDomains; preload";
+  },
+  get "X-Frame-Options"() { return "DENY"; },
+  get "X-Content-Type-Options"() { return "nosniff"; },
+  get "Referrer-Policy"() { return "strict-origin-when-cross-origin"; },
+  get "Permissions-Policy"() { return "camera=(), microphone=(), geolocation=(), display-capture=()"; },
+  get "Content-Security-Policy"() {
+    return createSecurityHeaders()["Content-Security-Policy"];
+  }
+};
 
 export default async function middleware(request) {
   return validationLimiter.run(() => handleRequest(request));

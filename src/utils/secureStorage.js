@@ -136,7 +136,33 @@ const SALT_STORAGE_KEY = 'eventra:key-salt';
 const KEY_METADATA_KEY = 'eventra:key-metadata';
 const SECRET_BYTE_LENGTH = CRYPTO_CONFIG.SECRET_BYTE_LENGTH;
 
-/** Generate or restore a random 256-bit secret from localStorage. */
+/**
+ * Generate or restore a random 256-bit secret from localStorage.
+ *
+ * SECURITY CRITICAL: This function generates cryptographic secrets used for:
+ * - AES-256-GCM encryption keys
+ * - PBKDF2 key derivation
+ * - Initialization vectors (IVs)
+ *
+ * Why Math.random() is insecure:
+ * - Math.random() is a pseudo-random number generator (PRNG) with predictable output
+ * - It does not provide cryptographically secure entropy
+ * - Its internal state can be reconstructed from observed outputs
+ * - It is suitable only for non-security purposes (UI effects, test data, etc.)
+ * - Using it for cryptographic secrets allows attackers to predict keys and decrypt data
+ *
+ * Why fail-closed behavior is required:
+ * - If secure randomness is unavailable, continuing with weak secrets is worse than failing
+ * - Silent degradation to insecure randomness exposes encrypted data to attack
+ * - Encryption without secure entropy provides a false sense of security
+ * - Failing explicitly allows callers to handle the security requirement appropriately
+ *
+ * Why cryptographic secrets require secure entropy:
+ * - Encryption key strength depends entirely on randomness quality
+ * - Predictable keys negate the security of AES-256-GCM regardless of key length
+ * - PBKDF2 iterations cannot compensate for weak initial entropy
+ * - Secure entropy ensures keys cannot be guessed or predicted even with massive compute
+ */
 const getOrCreateSecret = (storageKey) => {
   try {
     const stored = localStorage.getItem(storageKey);
@@ -147,16 +173,20 @@ const getOrCreateSecret = (storageKey) => {
     // localStorage unavailable — fall through to generate a session-scoped value
   }
 
-  let secret;
-  if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
-    secret = crypto.getRandomValues(new Uint8Array(SECRET_BYTE_LENGTH));
-  } else {
-    // Fallback: generate pseudorandom array if Web Crypto is unavailable (SSR / non-secure)
-    secret = new Uint8Array(SECRET_BYTE_LENGTH);
-    for (let i = 0; i < SECRET_BYTE_LENGTH; i++) {
-      secret[i] = Math.floor(Math.random() * 256);
-    }
+  // SECURITY: Fail-closed if cryptographic randomness is unavailable
+  if (
+    typeof crypto === "undefined" ||
+    typeof crypto.getRandomValues !== "function"
+  ) {
+    throw new Error(
+      "Secure cryptographic randomness is unavailable. " +
+      "Encryption requires a secure context (HTTPS) and Web Crypto API support. " +
+      "Cannot proceed without secure entropy for key generation."
+    );
   }
+
+  const secret = crypto.getRandomValues(new Uint8Array(SECRET_BYTE_LENGTH));
+
   try {
     localStorage.setItem(storageKey, btoa(String.fromCharCode(...secret)));
   } catch {
