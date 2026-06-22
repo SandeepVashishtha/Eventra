@@ -38,7 +38,7 @@ import {
 import { checkRegistrationConflict } from "../../utils/conflictDetection";
 
 // Renders the auto-computed event duration (e.g. "2 Hours", "3 Days").
-// Returns null when no reliable duration is available so EventCard can render
+// Returns null when no reliable duration is available so the grid can render
 // it unconditionally without an extra branch.
 const EventDurationRow = ({ event }) => {
   const duration = formatEventDuration(event);
@@ -54,6 +54,46 @@ const EventDurationRow = ({ event }) => {
     </div>
   );
 };
+
+// Location / type / date / duration summary shown on each event card.
+const EventInfoGrid = ({ event }) => (
+  <div className="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4 text-gray-600 dark:text-gray-400 text-sm bg-gray-50/50 dark:bg-gray-800/30">
+    {/* Location */}
+    <div className="flex items-start gap-2 sm:col-span-2">
+      <MapPin size={14} className="text-pink-500 shrink-0" />
+      <div className="flex flex-col min-w-0">
+        <span className="truncate">{event.location}</span>
+        <span className="text-[11px] text-gray-500 dark:text-gray-400">
+          {getUserTimezone()}
+        </span>
+      </div>
+    </div>
+
+    {/* Event Type */}
+    <div className="flex items-center gap-2">
+      <Tag size={14} className="text-green-500 shrink-0" aria-hidden="true" />
+      <span className="truncate">{event.type}</span>
+    </div>
+
+    {/* Event Date */}
+    <div className="flex items-start gap-2">
+      <Calendar size={14} className="text-indigo-500 shrink-0 mt-0.5" />
+      <div className="flex flex-col">
+        <span className="truncate">
+          {getSmartDateLabel(event.date, event.time)}
+        </span>
+        <span className="text-[11px] text-gray-500 dark:text-gray-400">
+          {new Date(event.date).toLocaleDateString("en-US", {
+            weekday: "short", day: "numeric", month: "short", year: "numeric",
+          })}
+        </span>
+      </div>
+    </div>
+
+    {/* Event Duration */}
+    <EventDurationRow event={event} />
+  </div>
+);
 
 const getCapacityStyles = (ratio, isFull) => {
   if (isFull || ratio >= 0.85) {
@@ -317,42 +357,7 @@ const EventCard = ({ event }) => {
       </div>
 
       {/* Info Grid */}
-      <div className="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4 text-gray-600 dark:text-gray-400 text-sm bg-gray-50/50 dark:bg-gray-800/30">
-        {/* Location */}
-        <div className="flex items-start gap-2 sm:col-span-2">
-          <MapPin size={14} className="text-pink-500 shrink-0" />
-          <div className="flex flex-col min-w-0">
-            <span className="truncate">{event.location}</span>
-            <span className="text-[11px] text-gray-500 dark:text-gray-400">
-              {getUserTimezone()}
-            </span>
-          </div>
-        </div>
-
-        {/* Event Type */}
-        <div className="flex items-center gap-2">
-          <Tag size={14} className="text-green-500 shrink-0" aria-hidden="true" />
-          <span className="truncate">{event.type}</span>
-        </div>
-
-        {/* Event Date */}
-        <div className="flex items-start gap-2">
-          <Calendar size={14} className="text-indigo-500 shrink-0 mt-0.5" />
-          <div className="flex flex-col">
-            <span className="truncate">
-              {getSmartDateLabel(event.date, event.time)}
-            </span>
-            <span className="text-[11px] text-gray-500 dark:text-gray-400">
-              {new Date(event.date).toLocaleDateString("en-US", {
-                weekday: "short", day: "numeric", month: "short", year: "numeric",
-              })}
-            </span>
-          </div>
-        </div>
-
-        {/* Event Duration */}
-        <EventDurationRow event={event} />
-      </div>
+      <EventInfoGrid event={event} />
       <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
         <ReminderControls event={event} canSetReminder={canSetReminder} compact />
       </div>
