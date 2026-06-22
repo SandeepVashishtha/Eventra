@@ -122,9 +122,9 @@ export default function HackathonHero({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35, duration: prefersReducedMotion ? 0 : 0.6 }}
-          className="w-full max-w-3xl mx-auto mt-10"
+         className="w-full max-w-[700px] mx-auto mt-8"
         >
-          <div className="rounded-2xl border border-white/60 dark:border-white/10 bg-white/60 dark:bg-white/5 p-1 shadow-lg dark:shadow-[0_8px_40px_rgba(99,102,241,0.15)] backdrop-blur-xl ring-1 ring-inset ring-slate-200/50 dark:ring-white/5">
+          <div className="rounded-2xl border border-white/60 dark:border-white/10 bg-white/60 dark:bg-white/5 px-2 py-2 shadow-lg dark:shadow-[0_8px_40px_rgba(99,102,241,0.15)] backdrop-blur-xl ring-1 ring-inset ring-slate-200/50 dark:ring-white/5">
             <ModernSearchInput
               searchInputRef={searchInputRef}
               value={searchQuery}
@@ -147,7 +147,7 @@ export default function HackathonHero({
           </div>
 
           {/* TAG FILTERS */}
-          <div className="mt-5 flex items-center justify-between flex-wrap gap-3 px-1">
+          <div className="mt-4 flex items-center justify-between flex-wrap gap-2 px-1">
             <div className="flex gap-2 flex-wrap justify-center">
               {availableTags.slice(0, 10).map((tag, idx) => (
                 <motion.span
