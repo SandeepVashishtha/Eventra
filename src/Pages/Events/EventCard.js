@@ -37,6 +37,24 @@ import {
 } from "../../utils/bookmarkUtils";
 import { checkRegistrationConflict } from "../../utils/conflictDetection";
 
+// Renders the auto-computed event duration (e.g. "2 Hours", "3 Days").
+// Returns null when no reliable duration is available so EventCard can render
+// it unconditionally without an extra branch.
+const EventDurationRow = ({ event }) => {
+  const duration = formatEventDuration(event);
+  if (!duration) return null;
+
+  return (
+    <div className="flex items-center gap-2" title="Event duration">
+      <Clock size={14} className="text-amber-500 shrink-0" aria-hidden="true" />
+      <span className="truncate">
+        <span className="sr-only">Duration: </span>
+        {duration}
+      </span>
+    </div>
+  );
+};
+
 const getCapacityStyles = (ratio, isFull) => {
   if (isFull || ratio >= 0.85) {
     return {
@@ -102,7 +120,6 @@ const EventCard = ({ event }) => {
 
   const computedStatus = getEventStatus(event);
   const canSetReminder = isBookmarked || isRegistered(event.id);
-  const eventDuration = formatEventDuration(event);
 
   useEffect(() => {
     setIsBookmarked(isEventBookmarked(event.id));
@@ -334,15 +351,7 @@ const EventCard = ({ event }) => {
         </div>
 
         {/* Event Duration */}
-        {eventDuration && (
-          <div className="flex items-center gap-2" title="Event duration">
-            <Clock size={14} className="text-amber-500 shrink-0" aria-hidden="true" />
-            <span className="truncate">
-              <span className="sr-only">Duration: </span>
-              {eventDuration}
-            </span>
-          </div>
-        )}
+        <EventDurationRow event={event} />
       </div>
       <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
         <ReminderControls event={event} canSetReminder={canSetReminder} compact />
