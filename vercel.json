@@ -1,6 +1,6 @@
 {
   "installCommand": "rm -f package-lock.json && npm install",
-  "buildCommand": "npm run lint && GENERATE_SOURCEMAP=false npm run build",
+  "buildCommand": "npm run lint && npm run build",
   "outputDirectory": "build",
   "framework": "vite",
   "env": {

@@ -60,7 +60,7 @@
     "vercel-build": "node scripts/validate-env.js && vite build",
     "prebuild": "node scripts/validate-env.js",
     "build": "vite build",
-    "build:fast": "cross-env GENERATE_SOURCEMAP=false vite build",
+    "build:fast": "vite build",
     "preview": "vite preview",
     "validate-env": "node scripts/validate-env.js",
     "test": "npm run test:unit",
