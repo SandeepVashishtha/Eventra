@@ -4,10 +4,12 @@ import { getUserTimezone } from "../../utils/timezoneUtils";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { getSmartDateLabel } from "../../utils/relativeTime";
+import { formatEventDuration } from "../../utils/eventSchedulingUtils";
 import {
   Bookmark,
   BookmarkCheck,
   Calendar,
+  Clock,
   MapPin,
   Tag,
   Star,
@@ -100,6 +102,7 @@ const EventCard = ({ event }) => {
 
   const computedStatus = getEventStatus(event);
   const canSetReminder = isBookmarked || isRegistered(event.id);
+  const eventDuration = formatEventDuration(event);
 
   useEffect(() => {
     setIsBookmarked(isEventBookmarked(event.id));
@@ -329,6 +332,17 @@ const EventCard = ({ event }) => {
             </span>
           </div>
         </div>
+
+        {/* Event Duration */}
+        {eventDuration && (
+          <div className="flex items-center gap-2" title="Event duration">
+            <Clock size={14} className="text-amber-500 shrink-0" aria-hidden="true" />
+            <span className="truncate">
+              <span className="sr-only">Duration: </span>
+              {eventDuration}
+            </span>
+          </div>
+        )}
       </div>
       <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
         <ReminderControls event={event} canSetReminder={canSetReminder} compact />

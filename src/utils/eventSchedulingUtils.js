@@ -125,6 +125,49 @@ export const getEventDurationMinutes = (event = {}) => {
   return DEFAULT_DURATION_MINUTES;
 };
 
+const MINUTES_PER_HOUR = 60;
+const MINUTES_PER_DAY = MINUTES_PER_HOUR * 24;
+const MINUTES_PER_WEEK = MINUTES_PER_DAY * 7;
+
+const pluralize = (value, unit) => `${value} ${unit}${value === 1 ? "" : "s"}`;
+
+// Render a duration in minutes as a friendly, glanceable label
+// (e.g. "45 Minutes", "2 Hours", "1 Day", "3 Days", "1 Week").
+export const formatDurationLabel = (minutes) => {
+  if (!Number.isFinite(minutes) || minutes <= 0) return null;
+
+  if (minutes < MINUTES_PER_HOUR) {
+    return pluralize(minutes, "Minute");
+  }
+  if (minutes < MINUTES_PER_DAY) {
+    return pluralize(Math.round(minutes / MINUTES_PER_HOUR), "Hour");
+  }
+  if (minutes < MINUTES_PER_WEEK) {
+    return pluralize(Math.round(minutes / MINUTES_PER_DAY), "Day");
+  }
+  return pluralize(Math.round(minutes / MINUTES_PER_WEEK), "Week");
+};
+
+// Compute a human-readable duration for an event from its start/end schedule.
+// Returns null when no reliable end is available so the UI can omit the label
+// rather than show a misleading default.
+export const formatEventDuration = (event = {}) => {
+  if (!event || typeof event !== "object") return null;
+
+  if (Number.isFinite(event.durationMinutes) && event.durationMinutes > 0) {
+    return formatDurationLabel(event.durationMinutes);
+  }
+
+  const start = buildDateTime(event.startDate || event.date, event.startTime || event.time);
+  const end = buildDateTime(event.endDate, event.endTime);
+
+  if (start && end && end > start) {
+    return formatDurationLabel(Math.round((end.getTime() - start.getTime()) / 60000));
+  }
+
+  return null;
+};
+
 export const normalizeScheduledEvent = (event = {}) => {
   if (!event || typeof event !== "object") return null;
 

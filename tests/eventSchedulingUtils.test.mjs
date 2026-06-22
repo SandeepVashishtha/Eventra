@@ -6,6 +6,8 @@ import {
   buildScheduleUpdatePayload,
   buildTimeSlots,
   detectScheduleConflicts,
+  formatDurationLabel,
+  formatEventDuration,
   getEventDurationMinutes,
   getSlotDateTime,
   normalizeScheduledEvent,
@@ -16,6 +18,8 @@ import {
 } from "../src/utils/eventSchedulingUtils.js";
 
 console.log("eventSchedulingUtils tests starting...");
+
+const MINUTES_IN_DAY = 60 * 24;
 
 const baseEvents = [
   {
@@ -76,6 +80,37 @@ assert.equal(
   }),
   90,
 );
+
+assert.equal(formatDurationLabel(45), "45 Minutes");
+assert.equal(formatDurationLabel(60), "1 Hour");
+assert.equal(formatDurationLabel(120), "2 Hours");
+assert.equal(formatDurationLabel(MINUTES_IN_DAY), "1 Day");
+assert.equal(formatDurationLabel(MINUTES_IN_DAY * 3), "3 Days");
+assert.equal(formatDurationLabel(MINUTES_IN_DAY * 7), "1 Week");
+assert.equal(formatDurationLabel(0), null);
+assert.equal(formatDurationLabel(NaN), null);
+
+assert.equal(formatEventDuration(baseEvents[0]), "2 Hours");
+assert.equal(
+  formatEventDuration({
+    date: "2026-08-10",
+    time: "9:00 AM",
+    endDate: "2026-08-10",
+    endTime: "9:45 AM",
+  }),
+  "45 Minutes",
+);
+assert.equal(
+  formatEventDuration({
+    date: "2026-12-10",
+    time: "9:00 AM",
+    endDate: "2026-12-13",
+    endTime: "9:00 AM",
+  }),
+  "3 Days",
+);
+// No reliable end date -> omit the label rather than guess.
+assert.equal(formatEventDuration({ date: "2026-08-10", time: "9:00 AM" }), null);
 
 const moved = applyScheduleToEvent(baseEvents[0], new Date("2026-08-11T14:00:00.000Z"), 120);
 assert.equal(moved.date, "2026-08-11");
