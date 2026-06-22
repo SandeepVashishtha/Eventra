@@ -5,7 +5,7 @@
  *
  * This module provides a unified interface for rate-limit storage that works
  * across multiple deployment scenarios:
- * - Production: Uses Redis/Vercel KV for distributed storage
+ * - Production: Uses Redis for distributed storage
  * - Development/Testing: Uses in-memory Map storage
  *
  * The storage interface provides atomic increment-with-expiration operations
@@ -65,19 +65,13 @@ function getRedisClient() {
   }
 
   try {
-    const redisUrl = process.env.RATE_LIMIT_REDIS_URL || process.env.KV_REST_API_URL;
+    const redisUrl = process.env.RATE_LIMIT_REDIS_URL;
     if (!redisUrl) {
-      console.error("[rate-limit-storage.js] No Redis URL configured. Set RATE_LIMIT_REDIS_URL or KV_REST_API_URL.");
-      return null;
-    }
-
-    if (redisUrl.startsWith("https://") || redisUrl.startsWith("http://")) {
-      console.error("[rate-limit-storage.js] KV_REST_API_URL is an HTTP REST endpoint, not a Redis connection URL. Set RATE_LIMIT_REDIS_URL for direct Redis connections.");
+      console.error("[rate-limit-storage.js] No Redis URL configured. Set RATE_LIMIT_REDIS_URL.");
       return null;
     }
 
     const client = new Redis(redisUrl, {
-      password: process.env.KV_REST_API_TOKEN,
       tls: redisUrl.startsWith("rediss://") ? {} : undefined,
       maxRetriesPerRequest: 3,
       retryStrategy: (times) => {
@@ -157,7 +151,7 @@ export async function incrementWithExpiration(key, windowMs) {
     // No Redis configured
     if (!isInMemoryRateLimitStorageAllowed()) {
       throw new Error(
-        "Distributed rate-limit storage is required in production. Configure KV_REST_API_URL and KV_REST_API_TOKEN."
+        "Distributed rate-limit storage is required in production. Configure RATE_LIMIT_REDIS_URL."
       );
     }
     return incrementInMemory(key, windowMs);

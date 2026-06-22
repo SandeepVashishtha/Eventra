@@ -1,4 +1,8 @@
 export const isDndActive = () => {
+  if (typeof window === "undefined" || !window.localStorage) {
+    return false;
+  }
+
   try {
     const prefs = JSON.parse(localStorage.getItem('eventra_notification_prefs') || '{}');
     if (!prefs.dndEnabled) return false;
