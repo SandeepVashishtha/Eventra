@@ -39,8 +39,8 @@ import { checkRegistrationConflict } from "../../utils/conflictDetection";
 // Warning badge shown when an event's registration deadline is within the
 // next 48 hours. Re-evaluates every minute so the remaining-time label stays
 // fresh and the badge auto-hides the moment registration closes. Returns null
-// when the event has no upcoming deadline.
-const RegistrationClosingBadge = ({ event }) => {
+// for past events or when the event has no upcoming deadline.
+const RegistrationClosingBadge = ({ event, isPastEvent }) => {
   const [closingInfo, setClosingInfo] = useState(() =>
     getRegistrationClosingInfo(event)
   );
@@ -55,12 +55,12 @@ const RegistrationClosingBadge = ({ event }) => {
     return () => clearInterval(intervalId);
   }, [event]);
 
-  if (!closingInfo.isClosingSoon) return null;
+  if (isPastEvent || !closingInfo.isClosingSoon) return null;
 
   return (
     <div
       role="status"
-      className="inline-flex items-center gap-[5px] py-1 px-[10px] bg-amber-100 dark:bg-amber-900/30 rounded-[6px] border border-amber-300 dark:border-amber-700 shrink-0 text-[12px] font-medium leading-none text-amber-700 dark:text-amber-300"
+      className="mt-3 inline-flex items-center gap-[5px] py-1 px-[10px] bg-amber-100 dark:bg-amber-900/30 rounded-[6px] border border-amber-300 dark:border-amber-700 shrink-0 text-[12px] font-medium leading-none text-amber-700 dark:text-amber-300"
       title={closingInfo.label}
     >
       <AlertTriangle
@@ -332,11 +332,7 @@ const EventCard = ({ event }) => {
         <p className="text-gray-500 dark:text-gray-400 text-sm leading-6 line-clamp-2">
           {event.description}
         </p>
-        {!isPastEvent && (
-          <div className="mt-3 empty:mt-0">
-            <RegistrationClosingBadge event={event} />
-          </div>
-        )}
+        <RegistrationClosingBadge event={event} isPastEvent={isPastEvent} />
       </div>
 
       {/* Info Grid */}

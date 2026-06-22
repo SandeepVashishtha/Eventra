@@ -16,13 +16,15 @@ const MS_PER_DAY = 24 * MS_PER_HOUR;
 const getRegistrationDeadlineDate = (event = {}) => {
   if (!event || typeof event !== "object") return null;
 
+  // Falls back to "" (not null) so a single falsy check covers missing,
+  // null, undefined and empty-string deadlines without a complex conditional.
   const raw =
     event.registrationEnd ??
     event.registrationDeadline ??
     event.registrationClose ??
-    null;
+    "";
 
-  if (raw === null || raw === undefined || raw === "") return null;
+  if (!raw) return null;
 
   const date = new Date(raw);
   return Number.isNaN(date.getTime()) ? null : date;
