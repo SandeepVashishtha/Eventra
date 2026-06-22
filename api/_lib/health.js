@@ -52,12 +52,23 @@ async function checkDatabase() {
 
 async function checkRateLimiter() {
   try {
-    const { rateLimiterStorageHealth } = await import("./rate-limit-storage.js");
-    const healthy = typeof rateLimiterStorageHealth === "function"
-      ? await rateLimiterStorageHealth().catch(() => false)
-      : true;
-    return { status: healthy ? "healthy" : "degraded", message: "Rate limiter functional" };
-  } catch {
+    const { isDistributedRateLimitStorageConfigured } = await import("./rate-limit-config.js");
+    const isConfigured = isDistributedRateLimitStorageConfigured();
+    if (isConfigured) {
+      // Try to use the storage layer to verify connectivity
+      const { incrementWithExpiration } = await import("./rate-limit-storage.js");
+      // Perform a minimal health check with a test key
+      await incrementWithExpiration("health-check", 1000);
+      return { status: "healthy", message: "Rate limiter (distributed) functional" };
+    }
+    return { status: "healthy", message: "Rate limiter (in-memory) functional" };
+  } catch (error) {
+    // If distributed storage is configured but fails, report as degraded
+    const { isDistributedRateLimitStorageConfigured } = await import("./rate-limit-config.js");
+    if (isDistributedRateLimitStorageConfigured()) {
+      return { status: "degraded", message: `Rate limiter storage error: ${error.message}` };
+    }
+    // In-memory fallback is acceptable in non-production
     return { status: "healthy", message: "Rate limiter (in-memory) functional" };
   }
 }

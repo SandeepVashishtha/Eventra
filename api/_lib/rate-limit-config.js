@@ -5,7 +5,7 @@
  *
  * This module enforces fail-closed security for distributed rate-limiting storage.
  * In-memory rate-limit storage is permitted ONLY in development environments.
- * Production requires KV_REST_API_URL and KV_REST_API_TOKEN to be configured.
+ * Production requires RATE_LIMIT_REDIS_URL to be configured.
  *
  * SECURITY REQUIREMENTS:
  * - Fail closed, never fail open
@@ -19,12 +19,11 @@
 /**
  * Checks if distributed rate-limit storage is properly configured.
  *
- * @returns {boolean} True if KV_REST_API_URL and KV_REST_API_TOKEN are present and non-empty
+ * @returns {boolean} True if RATE_LIMIT_REDIS_URL is present and non-empty
  */
 export const isDistributedRateLimitStorageConfigured = () => {
   return Boolean(
-    process.env.KV_REST_API_URL?.trim() &&
-    process.env.KV_REST_API_TOKEN?.trim()
+    process.env.RATE_LIMIT_REDIS_URL?.trim()
   );
 };
 
@@ -33,7 +32,7 @@ export const isDistributedRateLimitStorageConfigured = () => {
  *
  * Throws an error if:
  * - NODE_ENV is "production" AND
- * - KV_REST_API_URL or KV_REST_API_TOKEN is missing, empty, or whitespace-only
+ * - RATE_LIMIT_REDIS_URL is missing, empty, or whitespace-only
  *
  * This should be called during module initialization to fail fast
  * before the application accepts any authentication requests.
@@ -43,7 +42,7 @@ export const isDistributedRateLimitStorageConfigured = () => {
 export const assertDistributedRateLimitStorageConfigured = () => {
   if (process.env.NODE_ENV === "production" && !isDistributedRateLimitStorageConfigured()) {
     throw new Error(
-      "KV_REST_API_URL and KV_REST_API_TOKEN are required in production for distributed rate limiting. In-memory rate-limit storage is not permitted."
+      "RATE_LIMIT_REDIS_URL is required in production for distributed rate limiting. In-memory rate-limit storage is not permitted."
     );
   }
 };

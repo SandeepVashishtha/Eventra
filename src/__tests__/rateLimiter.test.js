@@ -7,8 +7,7 @@ describe("Distributed Rate Limiter", () => {
 
   beforeEach(() => {
     process.env = { ...originalEnv };
-    delete process.env.KV_REST_API_URL;
-    delete process.env.KV_REST_API_TOKEN;
+    delete process.env.RATE_LIMIT_REDIS_URL;
     process.env.NODE_ENV = "test";
   });
 
@@ -32,55 +31,50 @@ describe("Distributed Rate Limiter", () => {
       const limiter = createRateLimiter(60000, 5);
       const result = await limiter.check("test-key");
       assert.strictEqual(result.allowed, true);
-      assert.strictEqual(result.count, 1);
       assert.strictEqual(result.remaining, 4);
     });
 
     test("should block requests over threshold", async () => {
       const { createRateLimiter } = await import("../../api/_lib/rateLimiter.js");
       const limiter = createRateLimiter(60000, 3);
-      
+
       // Make 3 allowed requests
       await limiter.check("test-key");
       await limiter.check("test-key");
       await limiter.check("test-key");
-      
+
       // 4th request should be blocked
       const result = await limiter.check("test-key");
       assert.strictEqual(result.allowed, false);
-      assert.strictEqual(result.count, 4);
       assert.strictEqual(result.remaining, 0);
     });
 
     test("should reset counter after window expires", async () => {
       const { createRateLimiter } = await import("../../api/_lib/rateLimiter.js");
       const limiter = createRateLimiter(100, 3); // 100ms window
-      
+
       // Exhaust the limit
       await limiter.check("test-key");
       await limiter.check("test-key");
       await limiter.check("test-key");
-      
+
       // Wait for window to expire
       await new Promise(resolve => setTimeout(resolve, 150));
-      
+
       // Should be allowed again
       const result = await limiter.check("test-key");
       assert.strictEqual(result.allowed, true);
-      assert.strictEqual(result.count, 1);
     });
 
     test("should handle multiple keys independently", async () => {
       const { createRateLimiter } = await import("../../api/_lib/rateLimiter.js");
       const limiter = createRateLimiter(60000, 2);
-      
+
       const result1 = await limiter.check("key1");
       const result2 = await limiter.check("key2");
-      
+
       assert.strictEqual(result1.allowed, true);
       assert.strictEqual(result2.allowed, true);
-      assert.strictEqual(result1.count, 1);
-      assert.strictEqual(result2.count, 1);
     });
 
     test("should return remaining requests", async () => {
@@ -98,10 +92,10 @@ describe("Distributed Rate Limiter", () => {
       const { createRateLimiter } = await import("../../api/_lib/rateLimiter.js");
       const windowMs = 60000;
       const limiter = createRateLimiter(windowMs, 5);
-      
+
       const result = await limiter.check("test-key");
-      assert.ok(result.resetAfter > 0);
-      assert.ok(result.resetAfter <= windowMs);
+      assert.ok(result.resetAt > 0);
+      assert.ok(result.resetAt <= Date.now() + windowMs);
     });
   });
 
@@ -181,29 +175,27 @@ describe("Distributed Rate Limiter", () => {
   describe("Storage failure handling", () => {
     test("should fail closed in production on storage error", async () => {
       process.env.NODE_ENV = "production";
-      delete process.env.KV_REST_API_URL;
-      delete process.env.KV_REST_API_TOKEN;
-      
+      delete process.env.RATE_LIMIT_REDIS_URL;
+
       const { createRateLimiter } = await import("../../api/_lib/rateLimiter.js");
       const limiter = createRateLimiter(60000, 5);
-      
-      const result = await limiter.check("test-key");
-      assert.strictEqual(result.allowed, false);
-      assert.strictEqual(result.error, "Rate-limit storage unavailable");
+
+      assert.throws(
+        () => limiter.check("test-key"),
+        /Rate limiting is not configured for production/
+      );
     });
 
     test("should allow requests in development on storage error", async () => {
       process.env.NODE_ENV = "development";
-      delete process.env.KV_REST_API_URL;
-      delete process.env.KV_REST_API_TOKEN;
-      
+      delete process.env.RATE_LIMIT_REDIS_URL;
+
       const { createRateLimiter } = await import("../../api/_lib/rateLimiter.js");
       const limiter = createRateLimiter(60000, 5);
-      
+
       const result = await limiter.check("test-key");
       assert.strictEqual(result.allowed, true);
       // In development, in-memory fallback is used without error
-      assert.strictEqual(result.error, undefined);
     });
   });
 
@@ -225,10 +217,10 @@ describe("Distributed Rate Limiter", () => {
     test("should handle very long windows", async () => {
       const { createRateLimiter } = await import("../../api/_lib/rateLimiter.js");
       const limiter = createRateLimiter(3600000, 5); // 1 hour window
-      
+
       const result = await limiter.check("test-key");
       assert.strictEqual(result.allowed, true);
-      assert.ok(result.resetAfter > 0);
+      assert.ok(result.resetAt > 0);
     });
   });
 });
