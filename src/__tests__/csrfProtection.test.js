@@ -245,4 +245,92 @@ describe("CSRF Protection", () => {
       });
     });
   });
+
+  describe("getCSRFEnforcementMode", () => {
+    it("should default to strict in production when no configuration is set", async () => {
+      const originalProcessEnv = global.process?.env;
+
+      delete global.process?.env?.VITE_CSRF_ENFORCEMENT_MODE;
+      global.process = { env: { NODE_ENV: "production" } };
+
+      const { getCSRFEnforcementMode } = await import("../utils/csrfToken.js");
+      const mode = getCSRFEnforcementMode();
+
+      expect(mode).toBe("strict");
+
+      if (originalProcessEnv) global.process.env = originalProcessEnv;
+    });
+
+    it("should default to warning in development when no configuration is set", async () => {
+      const originalProcessEnv = global.process?.env;
+
+      delete global.process?.env?.VITE_CSRF_ENFORCEMENT_MODE;
+      global.process = { env: { NODE_ENV: "development" } };
+
+      const { getCSRFEnforcementMode } = await import("../utils/csrfToken.js");
+      const mode = getCSRFEnforcementMode();
+
+      expect(mode).toBe("warning");
+
+      if (originalProcessEnv) global.process.env = originalProcessEnv;
+    });
+
+    it("should use explicit strict configuration when set", async () => {
+      const originalProcessEnv = global.process?.env;
+
+      global.process = { env: { NODE_ENV: "development", VITE_CSRF_ENFORCEMENT_MODE: "strict" } };
+
+      const { getCSRFEnforcementMode } = await import("../utils/csrfToken.js");
+      const mode = getCSRFEnforcementMode();
+
+      expect(mode).toBe("strict");
+
+      if (originalProcessEnv) global.process.env = originalProcessEnv;
+    });
+
+    it("should use explicit warning configuration when set", async () => {
+      const originalProcessEnv = global.process?.env;
+
+      global.process = { env: { NODE_ENV: "production", VITE_CSRF_ENFORCEMENT_MODE: "warning" } };
+
+      const { getCSRFEnforcementMode } = await import("../utils/csrfToken.js");
+      const mode = getCSRFEnforcementMode();
+
+      expect(mode).toBe("warning");
+
+      if (originalProcessEnv) global.process.env = originalProcessEnv;
+    });
+
+    it("should use explicit disabled configuration when set", async () => {
+      const originalProcessEnv = global.process?.env;
+
+      global.process = { env: { NODE_ENV: "production", VITE_CSRF_ENFORCEMENT_MODE: "disabled" } };
+
+      const { getCSRFEnforcementMode } = await import("../utils/csrfToken.js");
+      const mode = getCSRFEnforcementMode();
+
+      expect(mode).toBe("disabled");
+
+      if (originalProcessEnv) global.process.env = originalProcessEnv;
+    });
+
+    it("should log warning and fall back to default for invalid configuration value", async () => {
+      const originalProcessEnv = global.process?.env;
+      const originalConsoleWarn = console.warn;
+
+      global.process = { env: { NODE_ENV: "production", VITE_CSRF_ENFORCEMENT_MODE: "invalid" } };
+      console.warn = vi.fn();
+
+      const { getCSRFEnforcementMode } = await import("../utils/csrfToken.js");
+      const mode = getCSRFEnforcementMode();
+
+      expect(mode).toBe("strict");
+      expect(console.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Invalid VITE_CSRF_ENFORCEMENT_MODE value: "invalid"')
+      );
+
+      console.warn = originalConsoleWarn;
+      if (originalProcessEnv) global.process.env = originalProcessEnv;
+    });
+  });
 });

@@ -21,8 +21,6 @@ const originalEnv = { ...process.env };
 
 const RATE_LIMIT_ENV_VARS = [
   'RATE_LIMIT_REDIS_URL',
-  'KV_REST_API_URL',
-  'KV_REST_API_TOKEN',
   'RATE_LIMIT_MODE',
 ];
 
@@ -108,6 +106,18 @@ describe('Distributed Rate Limiter', () => {
       assert.strictEqual(result.allowed, true);
     });
 
+    it('should prune expired records from store Map to prevent memory leaks', async () => {
+      const limiter = await createLimiter(50, 2);
+      await limiter.check('192.168.1.5');
+      assert.strictEqual(limiter.store.size, 1);
+      
+      await new Promise(resolve => setTimeout(resolve, 60));
+      
+      await limiter.check('192.168.1.6');
+      assert.strictEqual(limiter.store.has('192.168.1.5'), false, 'Expired keys should be pruned from the store');
+      assert.strictEqual(limiter.store.size, 1, 'Only the active key should remain');
+    });
+
     it('should track different IPs independently', async () => {
       const limiter = await createLimiter(1000, 2);
       await limiter.check('192.168.1.1');
@@ -183,13 +193,6 @@ describe('Distributed Rate Limiter', () => {
       const result = validateRateLimitConfig();
       assert.strictEqual(result, true);
     });
-
-    it('should pass validation with KV configured', async () => {
-      setTestEnv({ NODE_ENV: 'production', KV_REST_API_URL: 'https://api.vercel-storage.com', KV_REST_API_TOKEN: 'test-token' });
-      const { validateRateLimitConfig } = await import('../api/_lib/rateLimiter.js');
-      const result = validateRateLimitConfig();
-      assert.strictEqual(result, true);
-    });
   });
 
   describe('Pre-configured Limiters', () => {
@@ -231,23 +234,6 @@ describe('Distributed Rate Limiter', () => {
 
     it('should throw on synchronous check for distributed backend', async () => {
       setTestEnv({ NODE_ENV: 'production', RATE_LIMIT_REDIS_URL: 'redis://localhost:6379' });
-      const limiter = await createLimiter(1000, 5);
-      await assertThrowsSyncCheck(limiter, '127.0.0.1');
-    });
-
-    after(() => {
-      restoreEnv();
-    });
-  });
-
-  describe('KV REST API Backend', () => {
-    it('should support KV REST API backend', async () => {
-      const module = await import('../api/_lib/rateLimiter.js');
-      assert.strictEqual(typeof module.createRateLimiter, 'function');
-    });
-
-    it('should throw on synchronous check for distributed backend', async () => {
-      setTestEnv({ NODE_ENV: 'production', KV_REST_API_URL: 'https://api.vercel-storage.com', KV_REST_API_TOKEN: 'test-token' });
       const limiter = await createLimiter(1000, 5);
       await assertThrowsSyncCheck(limiter, '127.0.0.1');
     });
