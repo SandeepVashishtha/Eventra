@@ -7,6 +7,7 @@ import {
   isDistributedRateLimitStorageConfigured,
   isInMemoryRateLimitStorageAllowed,
 } from "../api/_lib/rate-limit-config.js";
+import { getJwtSecret, createJwtConfigErrorResponse } from "../api/_lib/jwtSecret.js";
 
 const validationLimiter = createConcurrencyLimiter(5);
 
@@ -148,12 +149,11 @@ async function authorizeSession(request, url) {
       );
     }
 
-    const jwtSecret = process.env.JWT_SECRET;
-    if (!jwtSecret || !jwtSecret.trim()) {
-      return new Response(
-        JSON.stringify({ error: "Server authentication misconfiguration" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
+    let jwtSecret;
+    try {
+      jwtSecret = getJwtSecret();
+    } catch (error) {
+      return createJwtConfigErrorResponse();
     }
 
     const payload = await verifyJwt(token, jwtSecret);
