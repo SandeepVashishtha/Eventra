@@ -189,6 +189,36 @@ describe('EventCard', () => {
     });
   });
 
+  describe('registration closing soon indicator', () => {
+    const HOUR = 60 * 60 * 1000;
+
+    it('shows a warning badge when registration closes within 48 hours', () => {
+      renderCard({ registrationEnd: new Date(Date.now() + 12 * HOUR).toISOString() });
+      expect(screen.getByText(/registration closes in 12 hours/i)).toBeInTheDocument();
+    });
+
+    it('does not show the badge when there is no registration deadline', () => {
+      renderCard();
+      expect(screen.queryByText(/registration closes/i)).not.toBeInTheDocument();
+    });
+
+    it('does not show the badge once registration has closed', () => {
+      renderCard({ registrationEnd: new Date(Date.now() - HOUR).toISOString() });
+      expect(screen.queryByText(/registration closes/i)).not.toBeInTheDocument();
+    });
+
+    it('does not show the badge when the deadline is beyond 48 hours', () => {
+      renderCard({ registrationEnd: new Date(Date.now() + 72 * HOUR).toISOString() });
+      expect(screen.queryByText(/registration closes/i)).not.toBeInTheDocument();
+    });
+
+    it('does not show the badge for past events', () => {
+      getEventStatus.mockReturnValue('past');
+      renderCard({ registrationEnd: new Date(Date.now() + 12 * HOUR).toISOString() });
+      expect(screen.queryByText(/registration closes/i)).not.toBeInTheDocument();
+    });
+  });
+
   describe('copy link button', () => {
     it('renders a copy-link button with the correct aria-label', () => {
       renderCard();

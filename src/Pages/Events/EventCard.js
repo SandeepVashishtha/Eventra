@@ -4,6 +4,7 @@ import { getUserTimezone } from "../../utils/timezoneUtils";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { getSmartDateLabel } from "../../utils/relativeTime";
+import { getRegistrationClosingInfo } from "../../utils/registrationDeadline";
 import {
   Bookmark,
   BookmarkCheck,
@@ -34,6 +35,43 @@ import {
   subscribeToBookmarkChanges,
 } from "../../utils/bookmarkUtils";
 import { checkRegistrationConflict } from "../../utils/conflictDetection";
+
+// Warning badge shown when an event's registration deadline is within the
+// next 48 hours. Re-evaluates every minute so the remaining-time label stays
+// fresh and the badge auto-hides the moment registration closes. Returns null
+// when the event has no upcoming deadline.
+const RegistrationClosingBadge = ({ event }) => {
+  const [closingInfo, setClosingInfo] = useState(() =>
+    getRegistrationClosingInfo(event)
+  );
+
+  useEffect(() => {
+    setClosingInfo(getRegistrationClosingInfo(event));
+
+    const intervalId = setInterval(() => {
+      setClosingInfo(getRegistrationClosingInfo(event));
+    }, 60 * 1000);
+
+    return () => clearInterval(intervalId);
+  }, [event]);
+
+  if (!closingInfo.isClosingSoon) return null;
+
+  return (
+    <div
+      role="status"
+      className="inline-flex items-center gap-[5px] py-1 px-[10px] bg-amber-100 dark:bg-amber-900/30 rounded-[6px] border border-amber-300 dark:border-amber-700 shrink-0 text-[12px] font-medium leading-none text-amber-700 dark:text-amber-300"
+      title={closingInfo.label}
+    >
+      <AlertTriangle
+        size={12}
+        className="text-amber-600 dark:text-amber-400 shrink-0"
+        aria-hidden="true"
+      />
+      <span>{closingInfo.label}</span>
+    </div>
+  );
+};
 
 const getCapacityStyles = (ratio, isFull) => {
   if (isFull || ratio >= 0.85) {
@@ -294,6 +332,11 @@ const EventCard = ({ event }) => {
         <p className="text-gray-500 dark:text-gray-400 text-sm leading-6 line-clamp-2">
           {event.description}
         </p>
+        {!isPastEvent && (
+          <div className="mt-3 empty:mt-0">
+            <RegistrationClosingBadge event={event} />
+          </div>
+        )}
       </div>
 
       {/* Info Grid */}
