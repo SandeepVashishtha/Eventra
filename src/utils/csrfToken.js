@@ -5,6 +5,8 @@
  * a helper to attach it to fetch requests.
  */
 
+import { setCookie } from "./cookieUtils.js";
+
 const CSRF_META_NAME = "csrf-token";
 const CSRF_COOKIE_NAME = "XSRF-TOKEN";
 const CSRF_HEADER_NAME = "X-CSRF-Token";
@@ -151,8 +153,10 @@ export function csrfFetch(url, options = {}) {
 export function rotateCSRFToken(newToken) {
   if (newToken && typeof newToken === "string") {
     // Update cookies
-    if (typeof document !== "undefined") {
-      document.cookie = `${CSRF_COOKIE_NAME}=${encodeURIComponent(newToken)}; path=/; SameSite=Strict; Secure`;
-    }
+    setCookie(CSRF_COOKIE_NAME, newToken, {
+      path: "/",
+      secure: true,
+      sameSite: "Strict",
+    });
   }
 }
