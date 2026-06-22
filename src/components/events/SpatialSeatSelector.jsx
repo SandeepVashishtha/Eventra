@@ -661,7 +661,9 @@ const SpatialSeatSelector = ({
   );
 };
 
-export default SpatialSeatSelector;
+// Export at end to ensure helper components are defined first
+// (avoids potential parser issues in some linting environments)
+// export will be moved to file end.
 
 // ── Optimized Seat Component ────────────────────────────────────────────────
 
@@ -816,3 +818,5 @@ const Seat = ({ el, seat, allSeats, isSelected, readOnly, onSelect, onHover, con
 };
 
 const MemoizedSeat = memo(Seat);
+
+export default SpatialSeatSelector;

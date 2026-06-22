@@ -16,7 +16,7 @@ const optionalEnvVars = {
   },
   PUBLIC_URL: {
     keys: ["VITE_PUBLIC_URL", "REACT_APP_PUBLIC_URL"],
-    fallback: "https://eventra.sandeepvashishtha.in",
+    fallback: "https://sandeepvashishtha.tech",
   },
   SENTRY_DSN: {
     keys: ["VITE_SENTRY_DSN", "REACT_APP_SENTRY_DSN"],
@@ -97,5 +97,5 @@ export const SENTRY_DSN = getEnvVar(
   optionalEnvVars.SENTRY_DSN.fallback
 );
 
-export { requiredEnvVars };
 export const isSentryEnabled = Boolean(SENTRY_DSN && currentMode === "production");
+export { requiredEnvVars };

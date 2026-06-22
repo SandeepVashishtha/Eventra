@@ -8,13 +8,12 @@ import "./styles/reduced-motion.css";
 import "./styles/print.css";
 import { toast } from "react-toastify";
 import EnvironmentSecurityDashboard from "./components/dev/EnvironmentSecurityDashboard";
-
+import ScrollRestoration from "./components/ScrollRestoration";
 // Critical path - loaded eagerly (needed before first paint)
 import Navbar from "./components/navbar/Navbar";
 import SkipToContent from "./components/accessibility/SkipToContent";
 import OfflineBanner from "./components/common/OfflineBanner";
 import OfflineConflictModal from "./components/common/OfflineConflictModal";
-import ScrollToTop from "./components/ScrollToTop";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import NotificationToastContainer from "./components/common/NotificationProvider";
@@ -28,6 +27,7 @@ import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
 import { useRoutePrefetch } from "./hooks/useRoutePrefetch";
 import PageTransition from "./components/common/PageTransition";
 import Breadcrumbs from "./components/common/Breadcrumbs";
+import { getAuthRoutes, getProtectedRoutes } from "./components/routes/ProtectedRoutes";
 import {
   AuthFormSkeleton,
   ExploreEventsSkeleton,
@@ -163,6 +163,7 @@ function App() {
   }, [t]);
 
   return (
+    
     <ErrorBoundary>
       <AuthProvider>
         <NotificationProvider>
@@ -173,7 +174,7 @@ function App() {
                 <ReminderChecker />
               </Suspense>
               <OfflineSyncManager />
-
+<ScrollRestoration />
               <div className="App">
                 <SkipToContent />
                 <ErrorBoundary level="section" label="Navigation Bar">
@@ -203,6 +204,8 @@ function App() {
                   <PageTransition>
                     <ErrorBoundary>
                       <Routes location={location} key={location?.pathname || "default"}>
+                        {getAuthRoutes()}
+                        {getProtectedRoutes()}
                         <Route
                           path="/register/:id"
                           element={
@@ -267,7 +270,7 @@ function App() {
                   </PageTransition>
                 </main>
 
-                <ScrollToTop />
+                
                 {showChatbot && (
                   <ErrorBoundary level="section" label="Chatbot Assist" silent>
                     <Suspense fallback={null}>
@@ -302,6 +305,7 @@ function App() {
                     </Suspense>
                 </ErrorBoundary>
                 )}
+                {import.meta.env.DEV && <ErrorButton />}
               </div>
               <Analytics />
             </SessionRecoveryProvider>
@@ -311,4 +315,13 @@ function App() {
     </ErrorBoundary>
   );
 }
+
+function ErrorButton() {
+  return (
+    <button onClick={() => { throw new Error("This is your first error!"); }}>
+      Dev Error Trigger
+    </button>
+  );
+}
+
 export default App;

@@ -57,7 +57,7 @@ const NotFoundPage = () => {
       {/* Full-viewport centred section that matches Eventra's indigo/violet palette */}
       <section
         className="relative flex min-h-[85vh] flex-col items-center justify-center overflow-hidden
-                   bg-gradient-to-br from-indigo-950 via-violet-900 to-indigo-800
+                   bg-linear-to-br from-indigo-950 via-violet-900 to-indigo-800
                    px-4 py-20 text-center"
         aria-labelledby="not-found-heading"
       >
@@ -84,7 +84,7 @@ const NotFoundPage = () => {
             <motion.h1
               id="not-found-heading"
               variants={itemVariants}
-              className="bg-gradient-to-b from-white to-indigo-200 bg-clip-text
+              className="bg-linear-to-b from-white to-indigo-200 bg-clip-text
                          text-[8rem] font-black leading-none tracking-tight
                          text-transparent sm:text-[10rem]"
             >
