@@ -9,6 +9,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import jwt from "jsonwebtoken";
+import { validateJwtSecretOrExit } from "./api/_lib/jwtSecret.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -128,11 +129,11 @@ const MOCK_EVENTS = [
   { id: "event-3", title: "Web Dev Workshop" }
 ];
 
-const JWT_SECRET = process.env.JWT_SECRET;
-
-if (!JWT_SECRET || !JWT_SECRET.trim()) {
-  console.error("FATAL: JWT_SECRET environment variable is required and must not be empty or whitespace-only.");
-  console.error("Generate a secure secret using: openssl rand -base64 32");
+let JWT_SECRET;
+try {
+  JWT_SECRET = validateJwtSecretOrExit();
+} catch (error) {
+  console.error(error.message);
   process.exit(1);
 }
 

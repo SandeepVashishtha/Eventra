@@ -1,3 +1,5 @@
+import { getJwtSecret, createJwtConfigErrorResponse } from "../api/_lib/jwtSecret.js";
+
 const base64urlDecode = (str) => {
   let base64 = str.replace(/-/g, "+").replace(/_/g, "/");
   while (base64.length % 4) base64 += "=";
@@ -86,13 +88,12 @@ const forbiddenResponse = (url) =>
   );
 
 export async function verifyTicketAccess(request) {
-  const jwtSecret = process.env.JWT_SECRET;
-  if (!jwtSecret || !jwtSecret.trim()) {
+  let jwtSecret;
+  try {
+    jwtSecret = getJwtSecret();
+  } catch (error) {
     console.error("[middleware] JWT_SECRET is not configured. Rejecting ticket route request.");
-    return new Response(
-      JSON.stringify({ error: "Server authentication misconfiguration" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
+    return createJwtConfigErrorResponse();
   }
 
   const token = parseTokenFromCookie(request);

@@ -1,3 +1,4 @@
+import { incrementWithExpiration } from "../api/_lib/rate-limit-storage.js";
 import {
   isDistributedRateLimitStorageConfigured,
   isInMemoryRateLimitStorageAllowed,
@@ -6,23 +7,15 @@ import {
 const API_RATE_LIMIT = 60;
 const API_RATE_WINDOW_S = 60;
 
-// In-memory fallback for development/testing (shared across requests)
-// Exported for test cleanup
-export const inMemoryRateLimitStore = new Map();
-
 const isRateLimited = async (ip) => {
-  const kvUrl = process.env.KV_REST_API_URL;
-  const kvToken = process.env.KV_REST_API_TOKEN;
   const isProduction = process.env.NODE_ENV === "production";
-
-  // Check if distributed storage is configured
   const isDistributedConfigured = isDistributedRateLimitStorageConfigured();
   const isInMemoryAllowed = isInMemoryRateLimitStorageAllowed();
 
   // Production: Fail closed - reject requests if distributed storage is not configured
   if (isProduction && !isDistributedConfigured) {
     console.error(
-      "[SECURITY] Rate limiting unavailable: KV_REST_API_URL and KV_REST_API_TOKEN are required in production. Rejecting request."
+      "[SECURITY] Rate limiting unavailable: RATE_LIMIT_REDIS_URL is required in production. Rejecting request."
     );
     return true; // Rate limit (reject) in production when storage is unavailable
   }
@@ -33,88 +26,44 @@ const isRateLimited = async (ip) => {
       console.warn(
         "[DEV] Rate limiting using in-memory fallback (distributed storage not configured)"
       );
-      return checkInMemoryRateLimit(ip);
-    } else {
-      // Should not happen, but fail closed if somehow in non-production but in-memory not allowed
-      console.error(
-        "[SECURITY] Rate limiting unavailable: Distributed storage not configured and in-memory fallback not permitted. Rejecting request."
-      );
-      return true; // Rate limit (reject)
     }
+    // Note: incrementWithExpiration handles the in-memory fallback internally
   }
 
-  // Distributed storage is configured - use KV
+  // Use shared storage layer (Redis or in-memory fallback)
   try {
     const key = `rl:${ip}`;
-    const headers = {
-      Authorization: `Bearer ${kvToken}`,
-      "Content-Type": "application/json",
-    };
-
-    const incrRes = await fetch(`${kvUrl}/incr/${key}`, {
-      method: "POST",
-      headers,
-    });
-
-    if (!incrRes.ok) {
-      // Production: Fail closed on KV request failure
-      if (isProduction) {
-        console.error(
-          `[SECURITY] Rate limiting unavailable: KV request failed with status ${incrRes.status}. Rejecting request.`
-        );
-        return true; // Rate limit (reject) in production when KV fails
-      }
-      // Development: Fall back to in-memory on KV failure
-      console.warn(
-        `[DEV] KV request failed with status ${incrRes.status}. Falling back to in-memory rate limiting.`
-      );
-      return checkInMemoryRateLimit(ip);
-    }
-
-    const { result: count } = await incrRes.json();
-
-    if (count === 1) {
-      await fetch(`${kvUrl}/expire/${key}/${API_RATE_WINDOW_S}`, {
-        method: "POST",
-        headers,
-      });
-    }
-
+    const windowMs = API_RATE_WINDOW_S * 1000;
+    const { count } = await incrementWithExpiration(key, windowMs);
     return count > API_RATE_LIMIT;
   } catch (error) {
-    // Production: Fail closed on network errors or invalid responses
+    // Production: Fail closed on storage errors
     if (isProduction) {
       console.error(
-        "[SECURITY] Rate limiting unavailable: KV communication error.",
+        "[SECURITY] Rate limiting unavailable: Storage operation failed.",
         error.message
       );
       return true; // Rate limit (reject) in production on errors
     }
-    // Development: Fall back to in-memory on errors
+    // Development: incrementWithExpiration already falls back to in-memory on errors
     console.warn(
-      "[DEV] KV communication error. Falling back to in-memory rate limiting.",
+      "[DEV] Rate limiting storage error. Using in-memory fallback.",
       error.message
     );
-    return checkInMemoryRateLimit(ip);
+    // Try in-memory fallback directly
+    try {
+      const key = `rl:${ip}`;
+      const windowMs = API_RATE_WINDOW_S * 1000;
+      const { count } = await incrementWithExpiration(key, windowMs);
+      return count > API_RATE_LIMIT;
+    } catch (fallbackError) {
+      console.error(
+        "[SECURITY] Rate limiting unavailable: Both distributed and in-memory storage failed.",
+        fallbackError.message
+      );
+      return true; // Rate limit (reject) if everything fails
+    }
   }
-};
-
-// In-memory rate limit check for development/testing
-const checkInMemoryRateLimit = (ip) => {
-  const key = `rl:${ip}`;
-  const now = Date.now();
-  const entry = inMemoryRateLimitStore.get(key);
-
-  // Reset if window expired
-  if (!entry || now - entry.timestamp > API_RATE_WINDOW_S * 1000) {
-    inMemoryRateLimitStore.set(key, { count: 1, timestamp: now });
-    return false; // Not rate limited
-  }
-
-  entry.count++;
-  inMemoryRateLimitStore.set(key, entry);
-
-  return entry.count > API_RATE_LIMIT;
 };
 
 export async function checkRateLimit(request) {

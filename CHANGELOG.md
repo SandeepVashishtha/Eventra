@@ -1,2 +1,3 @@
 - Fixed useEventRegistration.js line 265: `checkEventCapacity` now treats `maxAttendees: 0` as unlimited capacity.
 - Fixed P2P mesh transfer coordinator hook hangs by clearing the checkCompletion interval and falling back to server download on connection failure or 10-second safety timeout.
+- Fixed InMemoryLockManager: Defer lock lease TTL timeout initiation until the lock is actually acquired by the execution context, preventing premature queue expiration race conditions.
