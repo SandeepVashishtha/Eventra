@@ -397,4 +397,3 @@ const EventFiltersToolbar = ({
 };
 
 export default EventFiltersToolbar;
-

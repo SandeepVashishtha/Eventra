@@ -18,6 +18,91 @@ import { safeJsonParse } from "../utils/safeJsonParse.js";
 const MAX_RETRIES = 3;
 const BASE_BACKOFF_MS = 1_000;
 
+const resolveConflict = (item, serverState, signal) => {
+  return new Promise((resolve) => {
+    if (signal?.aborted) {
+      return resolve({ resolution: "server" });
+    }
+
+    const AUTO_DISMISS_MS = 60_000;
+
+    const cleanup = () => {
+      window.removeEventListener("eventra-offline-conflict-resolved", handleResolution);
+      clearTimeout(timerId);
+    };
+
+    const handleResolution = (e) => {
+      if (e.detail.itemId !== item.id) return;
+      cleanup();
+      resolve(e.detail);
+    };
+
+    const timerId = setTimeout(() => {
+      cleanup();
+      logger.warn(
+        `[useOfflineSync] Conflict modal for item ${item.id} timed out after ${AUTO_DISMISS_MS / 1000}s. Discarding local change.`
+      );
+      resolve({ resolution: "server" });
+    }, AUTO_DISMISS_MS);
+
+    signal?.addEventListener("abort", () => {
+      cleanup();
+      resolve({ resolution: "server" });
+    }, { once: true });
+
+    window.addEventListener("eventra-offline-conflict-resolved", handleResolution);
+
+    window.dispatchEvent(
+      new CustomEvent("eventra-offline-conflict", {
+        detail: { item, serverState },
+      })
+    );
+  });
+};
+
+const postWithBackoff = async ({ url, payload, authToken, attempt = 0, forceOverride = false, signal = null, idempotencyKey = null }) => {
+  if (attempt > 0) {
+    const baseDelayMs = BASE_BACKOFF_MS * Math.pow(2, attempt - 1);
+    const jitterMs = Math.random() * 500;
+    const delayMs = baseDelayMs + jitterMs;
+
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+
+  const headers = { 'Content-Type': 'application/json' };
+  if (authToken) headers.Authorization = `Bearer ${authToken}`;
+  if (forceOverride) headers['X-Override-Conflict'] = 'true';
+  if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey;
+
+  const { response, data } = await fetchWithTimeout(
+    url,
+    {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+      signal
+    },
+    10000
+  );
+
+  if (response.status === 409) {
+    const serverState = data || {};
+    return { status: "conflict", serverState };
+  }
+
+  if (response.ok) return { status: "success" };
+
+  if (response.status >= 400 && response.status < 500) {
+    logger.warn(
+      `Offline queue: server rejected item with ${response.status} — dropping.`,
+      await response.text().catch(() => '')
+    );
+    return { status: "dropped" };
+  }
+
+  throw new Error(`Sync failed with status: ${response.status}`);
+};
+
 /**
  * A custom React hook that syncs queued offline actions to the server
  * when the network connection is restored.
@@ -63,135 +148,7 @@ const useOfflineSync = () => {
 
   useEffect(() => {
     syncLockAborted.current = false;
-  /**
-   * resolveConflict
-   *
-   * Dispatches a conflict event to the UI (which renders a modal) and
-   * waits for the user to choose how to handle it.
-   *
-   * Problems with the original implementation
-   * ─────────────────────────────────────────
-   * The original code created a bare Promise that only resolved when the
-   * user clicked a button in the conflict modal. This meant:
-   *
-   * 1. If the user never saw or dismissed the modal (tab close, navigation,
-   * render failure), the sync loop would hang indefinitely because the
-   * Promise never resolved.
-   *
-   * 2. isSyncing.current would remain true forever, silently blocking all
-   * future sync attempts for the rest of the session.
-   *
-   * 3. The window event listener was never removed on early exit (component
-   * unmount, abort), creating a memory leak and potentially handling
-   * conflict events intended for a different item.
-   *
-   * Fix
-   * ───
-   * - Added a 60-second auto-dismiss timeout. If the user does not respond
-   * in time, the conflict is resolved in favour of the server version so
-   * the sync loop can continue.
-   * - Added AbortSignal support so the conflict waiter is cancelled cleanly
-   * when the enclosing useEffect is torn down (component unmount).
-   * - The window event listener is always removed before the Promise
-   * resolves, in all code paths (user response, timeout, abort).
-   *
-   * @param {object} item        - The queued offline action that caused the conflict
-   * @param {object} serverState - Current server-side state for the conflicted resource
-   * @param {AbortSignal} signal - Optional signal to cancel waiting on unmount
-   * @returns {Promise<{resolution: string, mergedPayload?: object}>}
-   */
-  const resolveConflict = (item, serverState, signal) => {
-    return new Promise((resolve) => {
-      // Immediately resolve if the signal is already aborted. 
-      // addEventListener won't fire retroactively on an aborted signal, causing a 60s hang.
-      if (signal?.aborted) {
-        return resolve({ resolution: "server" });
-      }
 
-      const AUTO_DISMISS_MS = 60_000; // 60 s — avoid hanging the sync loop forever
-
-      const cleanup = () => {
-        window.removeEventListener("eventra-offline-conflict-resolved", handleResolution);
-        clearTimeout(timerId);
-      };
-
-      const handleResolution = (e) => {
-        // Ignore events intended for a different queued item
-        if (e.detail.itemId !== item.id) return;
-        cleanup();
-        resolve(e.detail);
-      };
-
-      // Auto-discard after 60 s: keep the server version so the sync loop
-      // is never permanently frozen by an unanswered modal.
-      const timerId = setTimeout(() => {
-        cleanup();
-        logger.warn(
-          `[useOfflineSync] Conflict modal for item ${item.id} timed out after ${AUTO_DISMISS_MS / 1000}s. Discarding local change.`
-        );
-        resolve({ resolution: "server" });
-      }, AUTO_DISMISS_MS);
-
-      // Cancel if the enclosing useEffect is cleaned up (component unmount)
-      signal?.addEventListener("abort", () => {
-        cleanup();
-        resolve({ resolution: "server" });
-      }, { once: true });
-
-      window.addEventListener("eventra-offline-conflict-resolved", handleResolution);
-
-      // Notify the UI to open the conflict resolution modal
-      window.dispatchEvent(
-        new CustomEvent("eventra-offline-conflict", {
-          detail: { item, serverState },
-        })
-      );
-    });
-  };
-
-    const postWithBackoff = async (url, payload, authToken, attempt = 0, forceOverride = false, signal = null, idempotencyKey = null) => {
-      if (attempt > 0) {
-        const baseDelayMs = BASE_BACKOFF_MS * Math.pow(2, attempt - 1);
-        const jitterMs = Math.random() * 500;
-        const delayMs = baseDelayMs + jitterMs;
-
-        await new Promise((resolve) => setTimeout(resolve, delayMs));
-      }
-
-      const headers = { 'Content-Type': 'application/json' };
-      if (authToken) headers.Authorization = `Bearer ${authToken}`;
-      if (forceOverride) headers['X-Override-Conflict'] = 'true';
-      if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey;
-
-      const { response, data } = await fetchWithTimeout(
-        url,
-        {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(payload),
-          signal // 🔥 FIX: Passed signal so network request aborts if component unmounts mid-sync
-        },
-        10000
-      );
-
-      // Handle 409 Conflict specifically
-      if (response.status === 409) {
-        const serverState = data || {};
-        return { status: "conflict", serverState };
-      }
-
-      if (response.ok) return { status: "success" };
-
-      if (response.status >= 400 && response.status < 500) {
-        logger.warn(
-          `Offline queue: server rejected item with ${response.status} — dropping.`,
-          await response.text().catch(() => '')
-        );
-        return { status: "dropped" };
-      }
-
-      throw new Error(`Sync failed with status: ${response.status}`);
-    };
 
     // AbortController used to cancel any in-progress resolveConflict() wait
     // We use the stable ref to prevent it from being prematurely aborted during re-renders
@@ -200,11 +157,16 @@ const useOfflineSync = () => {
     }
     const conflictController = conflictControllerRef.current;
 
-    const executeSync = async () => {
+    const executeSync = async (resetRetries = false) => {
       const { token: currentToken, user: currentUser, isAuthenticated: currentIsAuthenticated, loading: currentLoading } = authRef.current;
-      const queue = await getQueueIndexedDB();
+      let queue = await getQueueIndexedDB();
       if (queue.length === 0) {
         return;
+      }
+
+      if (resetRetries) {
+        queue = queue.map((item) => ({ ...item, retryCount: 0 }));
+        await setQueue(queue);
       }
 
       // Wait for AuthContext to finish initial session validation before
@@ -220,7 +182,7 @@ const useOfflineSync = () => {
       // when useOfflineSync called isTokenValid("cookie-managed") directly.
       if (!currentIsAuthenticated()) {
         toast.warning(
-          "Security notice: Offline actions are pending, but your session has expired. Please log in again to synchronize them.",
+          "Offline actions are pending but your session has expired. Please log in again to sync them.",
           { autoClose: 6000 }
         );
         return;
@@ -323,15 +285,15 @@ const useOfflineSync = () => {
           try {
             // Determine endpoints dynamically
             const url = item.endpoint || API_ENDPOINTS.EVENTS.REGISTER(item.eventId);
-            let res = await postWithBackoff(
+            let res = await postWithBackoff({
               url,
-              item.payload,
+              payload: item.payload,
               authToken,
-              0,
-              false,
-              conflictController.signal, 
-              item.id // Pass idempotency key
-            );
+              attempt: 0,
+              forceOverride: false,
+              signal: conflictController.signal, 
+              idempotencyKey: item.id
+            });
 
             // Handle Conflict loop — pass the abort signal so the waiter
             // is cancelled cleanly if the component unmounts mid-sync
@@ -340,10 +302,10 @@ const useOfflineSync = () => {
 
               if (resolution.resolution === "local") {
                 // Retry with force flag
-                res = await postWithBackoff(url, item.payload, authToken, 0, true, conflictController.signal, item.id);
+                res = await postWithBackoff({ url, payload: item.payload, authToken, attempt: 0, forceOverride: true, signal: conflictController.signal, idempotencyKey: item.id });
               } else if (resolution.resolution === "merge") {
                 // Post merged content
-                res = await postWithBackoff(url, resolution.mergedPayload, authToken, 0, true, conflictController.signal, item.id);
+                res = await postWithBackoff({ url, payload: resolution.mergedPayload, authToken, attempt: 0, forceOverride: true, signal: conflictController.signal, idempotencyKey: item.id });
               } else {
                 // Discard local (treated as handled success so we proceed)
                 res = { status: "success" };
@@ -362,9 +324,15 @@ const useOfflineSync = () => {
         }
 
         if (failedQueue.length > 0) {
-          await setQueue(failedQueue);
+          // Self-healing: if at least one request succeeded, it implies our network is back up.
+          // In that case, we reset the retryCount of all remaining items to 0 so they can get retried.
+          const finalFailedQueue = successCount > 0
+            ? failedQueue.map(item => ({ ...item, retryCount: 0 }))
+            : failedQueue;
+
+          await setQueue(finalFailedQueue);
           toast.warning(
-            `Synced ${successCount} registration(s). ${failedQueue.length} remaining in local draft queue.`,
+            `Synced ${successCount} registration(s). ${finalFailedQueue.length} remaining in local draft queue.`,
           );
         } else {
           await clearQueue();
@@ -380,12 +348,6 @@ const useOfflineSync = () => {
         }
       } finally {
         isSyncing.current = false;
-
-        // Emit the unified completion event so UI components (e.g. OfflineManager)
-        // that listen for eventra-offline-queue-processed can reset their sync state.
-        // offlineQueue.processQueue() emits this event via notifyQueueProcessed(),
-        // but useOfflineSync runs its own replay loop independently and previously
-        // never emitted it, leaving the OfflineManager spinner stuck permanently.
         if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
           window.dispatchEvent(
             new CustomEvent("eventra-offline-queue-processed", {
@@ -400,7 +362,7 @@ const useOfflineSync = () => {
       }
     };
 
-    const executeSyncWithLocalLock = async () => {
+    const executeSyncWithLocalLock = async (resetRetries = false) => {
       const LOCK_KEY = "eventra_offline_sync_local_lock";
       const LOCK_TIMEOUT_MS = 30_000;
 
@@ -433,7 +395,7 @@ const useOfflineSync = () => {
         window.localStorage.setItem(LOCK_KEY, lockData);
       } catch {
         // If localStorage fails (private mode etc.), run sync directly to avoid blocking
-        await executeSync();
+        await executeSync(resetRetries);
         return;
       }
 
@@ -446,7 +408,7 @@ const useOfflineSync = () => {
       heartbeatIntervalRef.current = heartbeatInterval;
 
       try {
-        await executeSync();
+        await executeSync(resetRetries);
       } finally {
         clearInterval(heartbeatInterval);
         try {
@@ -461,7 +423,7 @@ const useOfflineSync = () => {
       }
     };
 
-    const handleOnline = async () => {
+    const handleOnline = async (resetRetries = false) => {
       // 🔥 FIX: Check both sync state and pending lock state to prevent multiple queuing
       if (isSyncing.current || isLockPending.current) {
         return;
@@ -477,14 +439,14 @@ const useOfflineSync = () => {
                 logger.log("[useOfflineSync] Sync lock is held by another tab via Web Locks. Skipping.");
                 return;
               }
-              await executeSync();
+              await executeSync(resetRetries);
             });
           } catch (err) {
             logger.warn("[useOfflineSync] Web Locks request failed, falling back to LocalStorage lock:", err);
-            await executeSyncWithLocalLock();
+            await executeSyncWithLocalLock(resetRetries);
           }
         } else {
-          await executeSyncWithLocalLock();
+          await executeSyncWithLocalLock(resetRetries);
         }
       } finally {
         isLockPending.current = false;
@@ -492,17 +454,21 @@ const useOfflineSync = () => {
     };
 
     // 🔥 FIX: Safely define the missing functions introduced by the master branch to prevent ReferenceErrors
-    const handleSyncRequested = () => void handleOnline();
+    const handleOnlineTrigger = () => void handleOnline(true);
+    const handleBackgroundSyncTrigger = () => void handleOnline(true);
+    const handleSessionRestoredTrigger = () => void handleOnline(true);
+    const handleQueueUpdatedTrigger = () => void handleOnline(false);
+
     const handleServiceWorkerMessage = (event) => {
       if (event?.data?.type === 'SYNC_REQUESTED') {
-        void handleOnline();
+        void handleOnline(false);
       }
     };
 
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("eventra-background-sync", handleSyncRequested);
-    window.addEventListener("eventra-offline-queue-updated", handleSyncRequested);
-    window.addEventListener("eventra-session-restored", handleSyncRequested);
+    window.addEventListener("online", handleOnlineTrigger);
+    window.addEventListener("eventra-background-sync", handleBackgroundSyncTrigger);
+    window.addEventListener("eventra-offline-queue-updated", handleQueueUpdatedTrigger);
+    window.addEventListener("eventra-session-restored", handleSessionRestoredTrigger);
     navigator.serviceWorker?.addEventListener?.("message", handleServiceWorkerMessage);
 
     let idleId = null;
@@ -511,20 +477,20 @@ const useOfflineSync = () => {
     if (navigator.onLine) {
       if (typeof window.requestIdleCallback === "function") {
         idleId = window.requestIdleCallback(() => {
-          void handleOnline();
+          void handleOnline(true);
         });
       } else {
         timeoutId = setTimeout(() => {
-          void handleOnline();
+          void handleOnline(true);
         }, 200);
       }
     }
 
     return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("eventra-background-sync", handleSyncRequested);
-      window.removeEventListener("eventra-offline-queue-updated", handleSyncRequested);
-      window.removeEventListener("eventra-session-restored", handleSyncRequested);
+      window.removeEventListener("online", handleOnlineTrigger);
+      window.removeEventListener("eventra-background-sync", handleBackgroundSyncTrigger);
+      window.removeEventListener("eventra-offline-queue-updated", handleQueueUpdatedTrigger);
+      window.removeEventListener("eventra-session-restored", handleSessionRestoredTrigger);
       navigator.serviceWorker?.removeEventListener?.("message", handleServiceWorkerMessage);
       
       // Abort any in-progress conflict resolution waiter so its event
