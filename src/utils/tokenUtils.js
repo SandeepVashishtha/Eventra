@@ -7,6 +7,15 @@
  * avoid duplicate implementations.
  */
 
+export function isTokenSkewValid(payload) {
+  if (!payload || typeof payload !== "object") return false;
+  const now = Math.floor(Date.now() / 1000);
+  if (payload.nbf && payload.nbf > now + 30) {
+    return false; // Token not yet active (nbf clock skew)
+  }
+  return true;
+}
+
 export {
   decodeJwtPayload as decodeTokenPayload,
   isTokenExpired,

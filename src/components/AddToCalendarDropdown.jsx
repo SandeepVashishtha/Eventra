@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { getGoogleCalendarUrl, generateRawICSContent } from '../utils/calendarLinks';
 
 const AddToCalendarDropdown = ({ event }) => {
@@ -66,13 +66,13 @@ const AddToCalendarDropdown = ({ event }) => {
             </a>
           </li>
           <li style={{ borderTop: '1px solid #f3f4f6', marginTop: '4px' }}>
-            <a 
-              href="#"
+            <button 
+              type="button"
               onClick={handleDownloadICS}
-              style={{ display: 'block', padding: '8px 16px', color: '#374151', textDecoration: 'none', fontSize: '14px' }}
+              style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', padding: '8px 16px', color: '#374151', textDecoration: 'none', fontSize: '14px', cursor: 'pointer' }}
             >
               Apple / Outlook (.ics)
-            </a>
+            </button>
           </li>
         </ul>
       )}

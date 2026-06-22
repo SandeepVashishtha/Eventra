@@ -4,7 +4,7 @@
   "outputDirectory": "build",
   "framework": "vite",
   "env": {
-    "REACT_APP_API_URL": "/api"
+    "VITE_API_URL": "/api"
   },
   "rewrites": [
     {
@@ -23,7 +23,11 @@
       "destination": "https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net/api/:path*"
     },
     {
-      "source": "/((?!api/.*).*)",
+      "source": "/stream/:path*",
+      "destination": "https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net/stream/:path*"
+    },
+    {
+      "source": "/((?!api/|stream/).*)",
       "destination": "/index.html"
     }
   ],

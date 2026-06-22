@@ -10,6 +10,8 @@ import {
   EVENT_CATEGORIES,
   EVENT_MODES,
   EVENT_STATUS_OPTIONS,
+  EVENT_SKILL_LEVELS,
+  EVENT_TAGS,
   FILTER_PRESETS,
   hasActiveFilters,
   getDefaultFilters,
@@ -32,6 +34,8 @@ const AdvancedFilterPanel = ({
     category: true,
     mode: true,
     status: true,
+    skillLevel: true,
+    tags: false,
     location: false,
     price: false,
     date: false,
@@ -54,6 +58,14 @@ const AdvancedFilterPanel = ({
 
   const handleStatusChange = (statuses) => {
     onFiltersChange({ ...filters, statuses });
+  };
+
+  const handleSkillLevelChange = (skillLevels) => {
+    onFiltersChange({ ...filters, skillLevels });
+  };
+
+  const handleTagsChange = (tags) => {
+    onFiltersChange({ ...filters, tags });
   };
 
   const handleLocationChange = (event) => {
@@ -133,7 +145,7 @@ overflow-hidden
         w-full
         px-8 py-6
         flex items-center justify-between
-        bg-gradient-to-r
+        bg-linear-to-r
         from-indigo-50
         to-white
         dark:from-gray-800
@@ -363,6 +375,52 @@ transition-all duration-300
                   statuses={EVENT_STATUS_OPTIONS}
                   selectedStatuses={filters.statuses || []}
                   onStatusChange={handleStatusChange}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Skill Level Filter Section */}
+          <div>
+            <button
+              onClick={() => toggleSection("skillLevel")}
+              className="w-full flex items-center justify-between py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
+            >
+              <span>Skill Level</span>
+              <ChevronDown
+                size={16}
+                className={`transition-transform ${expandedSections.skillLevel ? "rotate-180" : ""}`}
+              />
+            </button>
+            {expandedSections.skillLevel && (
+              <div className="mt-3">
+                <CategoryFilter
+                  categories={EVENT_SKILL_LEVELS}
+                  selectedCategories={filters.skillLevels || []}
+                  onCategoryChange={handleSkillLevelChange}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Tags Filter Section */}
+          <div>
+            <button
+              onClick={() => toggleSection("tags")}
+              className="w-full flex items-center justify-between py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
+            >
+              <span>Tags</span>
+              <ChevronDown
+                size={16}
+                className={`transition-transform ${expandedSections.tags ? "rotate-180" : ""}`}
+              />
+            </button>
+            {expandedSections.tags && (
+              <div className="mt-3">
+                <CategoryFilter
+                  categories={EVENT_TAGS.map(t => ({ id: t, label: t }))}
+                  selectedCategories={filters.tags || []}
+                  onCategoryChange={handleTagsChange}
                 />
               </div>
             )}

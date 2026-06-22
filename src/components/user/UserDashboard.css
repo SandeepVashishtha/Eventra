@@ -114,32 +114,32 @@
 /* removed dark mode override (handled by CSS variables) */
 
 .ud-nav-active {
-  background: linear-gradient(135deg, #6366f115, #8b5cf615) !important;
-  color: #6366f1 !important;
+  background: linear-gradient(135deg, #6366f115, #8b5cf615);
+  color: #6366f1;
   font-weight: 600;
-  border: 1px solid #c7d2fe !important;
+  border: 1px solid #c7d2fe;
 }
 
 .dark .ud-nav-active {
-  background: rgba(99, 102, 241, 0.18) !important;
-  color: #c7d2fe !important;
-  border-color: rgba(129, 140, 248, 0.35) !important;
+  background: rgba(99, 102, 241, 0.18);
+  color: #c7d2fe;
+  border-color: rgba(129, 140, 248, 0.35);
 }
 
 /* removed dark mode override (handled by CSS variables) */
 
 .ud-nav-logout {
-  color: #ef4444 !important;
+  color: #ef4444;
 }
 .ud-nav-logout:hover {
-  background: #fee2e220 !important;
-  color: #ef4444 !important;
-  border-color: #fca5a5 !important;
+  background: #fee2e220;
+  color: #ef4444;
+  border-color: #fca5a5;
 }
 
 .dark .ud-nav-logout:hover {
-  background: rgba(239, 68, 68, 0.12) !important;
-  border-color: rgba(248, 113, 113, 0.3) !important;
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(248, 113, 113, 0.3);
 }
 
 .ud-sidebar-bottom {
@@ -478,9 +478,30 @@
 /* removed dark mode override (handled by CSS variables) */
 
 /* ── Stat Cards ── */
+.ud-journey-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.ud-journey-label {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-color);
+  margin: 0;
+}
+
+.ud-journey-description {
+  font-size: 0.9rem;
+  color: var(--text-color-light);
+  margin: 0;
+  max-width: 62ch;
+}
+
 .ud-stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: var(--ud-space-md);
 }
 

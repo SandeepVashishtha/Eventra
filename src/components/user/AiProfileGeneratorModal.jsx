@@ -2,8 +2,8 @@ import { useState, useRef } from "react";
 import ReactDOM from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  X, Sparkles, FileText, Github, Loader2,
-  CheckCircle2, AlertTriangle, ArrowRight, User, Copy
+  X, Sparkles, FileText, Github,
+  CheckCircle2, AlertTriangle, ArrowRight, Copy
 } from "lucide-react";
 import { parseGithubProfile, parseResumePDF } from "../../utils/aiProfileParser";
 import { toast } from "react-toastify";
@@ -84,13 +84,12 @@ const AiProfileGeneratorModal = ({ isOpen, onClose, onApplyProfile }) => {
   };
 
   const handleCopyBio = async () => {
-    console.log("BIO VALUE:", parsedData.bio);
-  try {
-    await navigator.clipboard.writeText(parsedData.bio || "");
-    toast.success("Bio copied to clipboard!");
-  } catch (err) {
-    toast.error("Failed to copy bio");
-  }
+    try {
+      await navigator.clipboard.writeText(parsedData.bio || "");
+      toast.success("Bio copied to clipboard!");
+    } catch (err) {
+      toast.error("Failed to copy bio");
+    }
 };
 
   return ReactDOM.createPortal(
@@ -291,7 +290,7 @@ const AiProfileGeneratorModal = ({ isOpen, onClose, onApplyProfile }) => {
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
                       Detected Skills ({parsedData.skills?.length || 0})
                     </label>
-                    <div className="flex flex-wrap gap-2 p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl min-h-[60px]">
+                    <div className="flex flex-wrap gap-2 p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl min-h-15">
                       {parsedData.skills?.map((skill, idx) => (
                         <div key={idx} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-500/30 rounded-lg text-xs font-bold">
                           <span>{skill}</span>

@@ -22,7 +22,7 @@
  * @returns {string}
  */
 export const getOptimizedImageUrl = (originalUrl, options = {}) => {
-  if (!originalUrl || typeof originalUrl !== "string") return originalUrl;
+  if (!originalUrl || typeof originalUrl !== "string") return "";
 
   // If already a Cloudinary URL, return as is
   if (originalUrl.includes("res.cloudinary.com")) {
@@ -83,3 +83,14 @@ export const generateSrcSet = (url, format = "webp") => {
     .map((w) => `${getOptimizedImageUrl(url, { width: w, format })} ${w}w`)
     .join(", ");
 };
+
+export function supportsWebp() {
+  if (typeof document === "undefined") return false;
+  try {
+    const elem = document.createElement("canvas");
+    if (elem.getContext && elem.getContext("2d")) {
+      return elem.toDataURL("image/webp").indexOf("data:image/webp") === 0;
+    }
+  } catch {}
+  return false;
+}
