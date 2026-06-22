@@ -103,7 +103,7 @@
     "@playwright/test": "1.60.0",
     "@storybook/addon-a11y": "^10.4.1",
     "@storybook/addon-docs": "^10.4.1",
-    "@storybook/addon-onboarding": "^10.4.1",
+    "@storybook/addon-onboarding": "^10.4.6",
     "@storybook/preset-create-react-app": "10.4.1",
     "@storybook/react-webpack5": "^10.4.1",
     "@testing-library/react": "16.3.2",
