@@ -30,9 +30,26 @@ async function kvFetch(endpoint, options = {}) {
         ...options.headers,
       },
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.error(
+        "[sessionRisk] KV returned error",
+        {
+          endpoint,
+          status: res.status,
+          statusText: res.statusText
+        }
+      );
+      return null;
+    }
     return await res.json();
-  } catch (e) {
+  } catch (error) {
+    console.error(
+      "[sessionRisk] KV request failed",
+      {
+        endpoint,
+        error: error.message
+      }
+    );
     return null;
   }
 }
@@ -115,7 +132,15 @@ export async function getSessionState(sessionId) {
   if (typeof sessionData === 'string') {
     try {
       sessionData = JSON.parse(sessionData);
-    } catch(e) {
+    } catch(error) {
+      console.error(
+        "[sessionRisk] Failed to parse session data",
+        {
+          sessionId,
+          key,
+          error: error.message
+        }
+      );
       return null;
     }
   }
@@ -126,7 +151,15 @@ export async function getSessionState(sessionId) {
     kvFetch(`/set/${key}`, {
       method: "POST",
       body: JSON.stringify(sessionData),
-    }).catch(() => {});
+    }).catch((error) => {
+      console.error(
+        "[sessionRisk] Background KV update failed",
+        {
+          endpoint: `/set/${key}`,
+          error: error.message
+        }
+      );
+    });
   }
 
   return sessionData;
