@@ -20,6 +20,8 @@ const SearchEmptyState = ({
   browseLabel = "Browse",
   browsePath = "/",
   onClear,
+  onTagClick,
+  popularTags = [],
   variant = "search",
   title: customTitle,
   description: customDescription,
@@ -34,11 +36,9 @@ const SearchEmptyState = ({
 
   const description =
     customDescription ||
-    "Try adjusting your search or explore other sections on Eventra.";
+    "Try adjusting your search or filters, or explore other sections on Eventra.";
 
   const suggestions = DEFAULT_SUGGESTIONS;
-
-  const popularTags = [];
 
   return (
     <EmptyState
@@ -58,17 +58,34 @@ const SearchEmptyState = ({
         ))}
       </ul>
 
-      {/* Tags (optional safe block) */}
+      {/* Popular tags — clickable shortcuts to start a fresh search */}
       {popularTags.length > 0 && (
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
-          {popularTags.map((tag) => (
-            <span
-              key={tag}
-              className="rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-3 py-1 text-xs font-medium text-slate-700 dark:text-slate-200"
-            >
-              {tag}
-            </span>
-          ))}
+        <div className="mt-6">
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
+            Try a popular search
+          </p>
+          <div className="flex flex-wrap justify-center gap-2">
+            {popularTags.map((tag) =>
+              onTagClick ? (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => onTagClick(tag)}
+                  className="rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-3 py-1 text-xs font-medium text-slate-700 dark:text-slate-200 transition-colors hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-900/30 dark:hover:text-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                  aria-label={`Search for ${tag}`}
+                >
+                  {tag}
+                </button>
+              ) : (
+                <span
+                  key={tag}
+                  className="rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-3 py-1 text-xs font-medium text-slate-700 dark:text-slate-200"
+                >
+                  {tag}
+                </span>
+              )
+            )}
+          </div>
         </div>
       )}
 

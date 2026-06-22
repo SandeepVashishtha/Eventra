@@ -49,6 +49,7 @@ const renderCardSection = (
   searchQuery,
   onClearSearch,
   filteredEvents,
+  onTagSearch,
   // hasFilters
 ) => {
   if (isLoading) {
@@ -80,6 +81,7 @@ const renderCardSection = (
             browseLabel="Browse All Events"
             browsePath="/events"
             onClear={onClearSearch}
+            onTagClick={onTagSearch}
             popularTags={["AI", "Blockchain", "Web", "DevOps", "React", "UX"]}
           />
         </div>
@@ -302,6 +304,16 @@ const EventsPage = () => {
     setLocalSearchInput("");
   };
 
+  // Reset any active filters, then search for a popular tag suggested in the
+  // empty-results state so the user gets unconstrained matches.
+  const searchForTag = (tag = "") => {
+    const safeQuery = prepareSafeSearchQuery(tag);
+    clearSearchAndFilters();
+    setLocalSearchInput(safeQuery);
+    listing.setSearchQuery(safeQuery);
+    listing.setSafePage(1);
+  };
+
   const currentFilterConfig = useMemo(
     () => ({
       searchQuery: localSearchInput,
@@ -408,6 +420,7 @@ const EventsPage = () => {
             listing.searchQuery,
             clearSearchAndFilters,
             listing.filteredEvents,
+            searchForTag,
             hasActiveAdvancedFilters(listing.advancedFilters) ||
               listing.filterType !== "all" ||
               listing.categoryFilter !== "all"
