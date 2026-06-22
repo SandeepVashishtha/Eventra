@@ -20,6 +20,7 @@ import ErrorBoundary from "../../components/common/ErrorBoundary";
 import ErrorMessage from "../../components/common/ErrorMessage";
 import { EventTimeline } from "../../components/EventTimeline";
 import TrendingEvents from "../../components/TrendingEvents/TrendingEvents";
+import RecentlyViewedEvents from "../../components/common/RecentlyViewedEvents";
 import { safeJsonParse } from "../../utils/safeJsonParse";
 import {
   decodeAdvancedFilters,
@@ -114,6 +115,12 @@ const renderCardSection = (
     </div>
   );
 };
+
+const RecentlyViewedSection = () => (
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+    <RecentlyViewedEvents />
+  </div>
+);
 
 const EventsPage = () => {
   useDocumentTitle("Eventra | Events");
@@ -339,6 +346,8 @@ const EventsPage = () => {
       <div className="mt-6 sm:mt-8">
         <TrendingEvents title="Trending Events" limit={6} fetchSize={24} />
       </div>
+
+      <RecentlyViewedSection />
 
       <div
         ref={cardSectionRef}

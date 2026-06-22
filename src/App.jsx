@@ -27,6 +27,7 @@ import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
 import { useRoutePrefetch } from "./hooks/useRoutePrefetch";
 import PageTransition from "./components/common/PageTransition";
 import Breadcrumbs from "./components/common/Breadcrumbs";
+import { getAuthRoutes, getProtectedRoutes } from "./components/routes/ProtectedRoutes";
 import {
   AuthFormSkeleton,
   ExploreEventsSkeleton,
@@ -203,6 +204,8 @@ function App() {
                   <PageTransition>
                     <ErrorBoundary>
                       <Routes location={location} key={location?.pathname || "default"}>
+                        {getAuthRoutes()}
+                        {getProtectedRoutes()}
                         <Route
                           path="/register/:id"
                           element={
@@ -302,6 +305,7 @@ function App() {
                     </Suspense>
                 </ErrorBoundary>
                 )}
+                {import.meta.env.DEV && <ErrorButton />}
               </div>
               <Analytics />
             </SessionRecoveryProvider>
@@ -311,4 +315,13 @@ function App() {
     </ErrorBoundary>
   );
 }
+
+function ErrorButton() {
+  return (
+    <button onClick={() => { throw new Error("This is your first error!"); }}>
+      Dev Error Trigger
+    </button>
+  );
+}
+
 export default App;

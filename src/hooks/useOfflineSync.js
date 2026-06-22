@@ -4,16 +4,16 @@
  */
 import { useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
-import { useAuth } from '../context/AuthContext';
-import { API_ENDPOINTS } from '../config/api';
+import { useAuth } from '../context/AuthContext.js';
+import { API_ENDPOINTS } from '../config/api.js';
 
-import { logger } from "../utils/logger";
-import { getQueueIndexedDB, setQueue, clearQueue, filterQueueByOwnership, validateQueueSession } from '../utils/offlineQueue';
-import { ensureSessionSnapshot } from "../utils/sessionSnapshot";
+import { logger } from "../utils/logger.js";
+import { getQueueIndexedDB, setQueue, clearQueue, filterQueueByOwnership, validateQueueSession } from '../utils/offlineQueue.js';
+import { ensureSessionSnapshot } from "../utils/sessionSnapshot.js";
 // isTokenValid import removed; authentication is now checked via isAuthenticated()
 // from AuthContext, which handles both token-based and cookie-managed sessions.
-import { fetchWithTimeout } from "../utils/fetchWithTimeout";
-import { safeJsonParse } from "../utils/safeJsonParse";
+import { fetchWithTimeout } from "../utils/fetchWithTimeout.js";
+import { safeJsonParse } from "../utils/safeJsonParse.js";
 
 const MAX_RETRIES = 3;
 const BASE_BACKOFF_MS = 1_000;

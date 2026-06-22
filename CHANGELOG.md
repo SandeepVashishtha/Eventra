@@ -1,1 +1,2 @@
 - Fixed useEventRegistration.js line 265: `checkEventCapacity` now treats `maxAttendees: 0` as unlimited capacity.
+- Fixed InMemoryLockManager: Defer lock lease TTL timeout initiation until the lock is actually acquired by the execution context, preventing premature queue expiration race conditions.
