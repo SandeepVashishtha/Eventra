@@ -148,6 +148,13 @@ export const formatDurationLabel = (minutes) => {
   return pluralize(Math.round(minutes / MINUTES_PER_WEEK), "Week");
 };
 
+// Minutes between two Date instances, or null when either is missing.
+// A negative/zero result is left as-is; formatDurationLabel treats it as null.
+const diffInMinutes = (start, end) => {
+  if (!start || !end) return null;
+  return Math.round((end.getTime() - start.getTime()) / 60000);
+};
+
 // Compute a human-readable duration for an event from its start/end schedule.
 // Returns null when no reliable end is available so the UI can omit the label
 // rather than show a misleading default.
@@ -161,11 +168,7 @@ export const formatEventDuration = (event = {}) => {
   const start = buildDateTime(event.startDate || event.date, event.startTime || event.time);
   const end = buildDateTime(event.endDate, event.endTime);
 
-  if (start && end && end > start) {
-    return formatDurationLabel(Math.round((end.getTime() - start.getTime()) / 60000));
-  }
-
-  return null;
+  return formatDurationLabel(diffInMinutes(start, end));
 };
 
 export const normalizeScheduledEvent = (event = {}) => {
