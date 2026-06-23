@@ -1,4 +1,4 @@
-import { createRateLimiter } from "../../utils/rateLimiter";
+import { createRateLimiter } from "../utils/rateLimiter";
 /**
  * @file useEventRegistration.js
  * @module hooks/useEventRegistration
@@ -31,8 +31,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useFormValidation } from "../../hooks/useFormValidation";
-import { getEventStatus } from "../../utils/eventUtils";
-import { checkRegistrationConflict, suggestAlternativeEvents } from "../../utils/conflictDetection";
+import { getEventStatus } from "../utils/eventUtils";
+import { checkRegistrationConflict, suggestAlternativeEvents } from "../utils/conflictDetection";
 import { useAuth } from "../../context/AuthContext";
 import { useMyEvents } from "../../context/MyEventsContext";
 // Removed unused API_ENDPOINTS import
@@ -43,12 +43,12 @@ import {
   getCacheAgeLabel,
   getCachedEventDetail,
   saveCachedEventDetail,
-} from "../../utils/offlineEventCache";
-import { pushToQueue } from "../../utils/offlineQueue";
-import { logError } from "../../utils/errorLogger";
-import { logAbuseAttempt } from "../../utils/abuseLogger";
+} from "../utils/offlineEventCache";
+import { pushToQueue } from "../utils/offlineQueue";
+import { logError } from "../utils/errorLogger";
+import { logAbuseAttempt } from "../utils/abuseLogger";
 import hackathonsData from "../../Pages/Hackathons/hackathonMockData.json";
-import registrationLocks from "../../utils/registrationLocks";
+import registrationLocks from "../utils/registrationLocks";
 
 export const MAX_NOTES_CHARS = 500;
 
@@ -404,7 +404,7 @@ const useEventRegistration = (eventIdParam) => {
       setSubmitting(false);
     }
     // Fixed: Added isEventFull to dependency array
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId, event, formData, isAuthenticated, user, token, navigate, registrationPath, addRegistration, clearSession, isEventFull]);
 
   // Handle form submission
@@ -439,7 +439,7 @@ const useEventRegistration = (eventIdParam) => {
       toast.info("This event is full. You will be added to the waitlist.");
     }
 
-      if (await checkAndHandleConflicts()) return;
+    if (await checkAndHandleConflicts()) return;
 
     await proceedWithRegistration();
   }, [isAuthenticated, user, navigate, registrationPath, validateAll, eventId, event, checkEventCapacity, checkAndHandleConflicts, proceedWithRegistration]);
