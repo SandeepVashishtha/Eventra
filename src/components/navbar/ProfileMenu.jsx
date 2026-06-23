@@ -82,32 +82,30 @@ const ProfileMenu = ({ user, logout }) => {
         aria-label={isOpen ? "Close profile menu" : "Open profile menu"}
         aria-expanded={isOpen}
         aria-haspopup="true"
-        className="flex items-center gap-2 rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+        className="flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50/50 hover:bg-zinc-100 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900/40 dark:hover:bg-zinc-800 dark:hover:border-zinc-700 p-1 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
       >
         {user?.profilePicture ? (
           <img
             loading="lazy"
             src={user.profilePicture}
             alt={`${user?.name || "User"} profile`}
-            className="w-9 h-9 rounded-full object-cover border border-border transition-colors"
+            className="w-8 h-8 rounded-full object-cover transition-colors"
           />
         ) : (
-          <div className="w-9 h-9 rounded-full bg-card-bg border border-border flex items-center justify-center transition-colors">
-            <User className="text-text-light w-4.5 h-4.5" />
+          <div className="w-8 h-8 rounded-full bg-card-bg flex items-center justify-center transition-colors">
+            <User className="text-text-light w-4 h-4" />
           </div>
         )}
         <ChevronDown
-          className={`w-4 h-4 text-text-light transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+          className={`w-4 h-4 text-text-light mr-1 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
         />
       </button>
 
       {isOpen && (
         <div
           role="menu"
-          aria-modal="true"
-          aria-orientation="vertical"
           aria-label="Profile menu"
-          className="absolute right-0 mt-3 w-56 origin-top-right rounded-xl border border-border bg-navbar shadow-lg p-2 z-50 animate-in fade-in zoom-in-95 duration-100"
+          className="absolute right-0 mt-3 w-56 origin-top-right rounded-xl border border-zinc-100 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md shadow-lg p-2 z-50 animate-in fade-in zoom-in-95 duration-100"
         >
           <div className="px-3 py-2 mb-2 border-b border-border">
             <p className="text-sm font-semibold text-text truncate">

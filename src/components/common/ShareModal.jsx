@@ -12,7 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import { isValidShareUrl } from "../../utils/shareUtils";
+import { createShareModalData } from "../../utils/shareModalUtils.js";
 const ModalCloseButton = memo(({ onClick }) => (
   <button
     type="button"
@@ -29,37 +29,7 @@ ModalCloseButton.displayName = "ModalCloseButton";
 const ShareModal = ({ isOpen, onClose, event }) => {
   const { containerRef } = useFocusTrap(isOpen, onClose);
   const shareData = useMemo(() => {
-    if (!event) {
-      return null;
-    }
-
-    if (!event.id) {
-      console.warn("[ShareModal] event.id is missing — share URL cannot be constructed.");
-      return null;
-    }
-
-    const shareUrl = `${window.location.origin}/events/${event.id}`;
-    if (!isValidShareUrl(shareUrl)) {
-      console.warn("[ShareModal] Rejected invalid share URL:", shareUrl);
-      return null;
-    }
-    const shareText = `Check out this event: ${event.title}`;
-
-    return {
-      title: event.title,
-      image: event.image,
-      description: event.description ?? "",
-      shareUrl,
-      shareText,
-      links: {
-        twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`,
-        linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`,
-        whatsapp: `https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`,
-        facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
-        telegram: `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`,
-        email: `mailto:?subject=${encodeURIComponent(event.title)}&body=${encodeURIComponent(`${shareText}\n\n${shareUrl}`)}`,
-      },
-    };
+    return createShareModalData(event);
   }, [event]);
 
   const copyLink = useCallback(async () => {
@@ -100,22 +70,17 @@ const ShareModal = ({ isOpen, onClose, event }) => {
     <AnimatePresence>
       {isOpen && shareData ? (
         <motion.div
-  ref={containerRef}
-  className="relative w-full max-w-md rounded-3xl border border-slate-100/10 bg-white p-6 shadow-2xl dark:border-slate-800/50 dark:bg-gray-900"
-  initial={{ opacity: 0, scale: 0.96, y: 12 }}
-  animate={{ opacity: 1, scale: 1, y: 0 }}
-  exit={{ opacity: 0, scale: 0.96, y: 12 }}
-  transition={{ duration: 0.2 }}
-  onClick={(e) => e.stopPropagation()}
->
-          <motion.div
-            className="relative w-full max-w-md rounded-3xl border border-slate-100/10 bg-white p-6 shadow-2xl dark:border-slate-800/50 dark:bg-gray-900"
-            initial={{ opacity: 0, scale: 0.96, y: 12 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: 12 }}
-            transition={{ duration: 0.2 }}
-            onClick={(e) => e.stopPropagation()}
-          >
+          ref={containerRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="share-modal-title"
+          className="relative w-full max-w-md rounded-3xl border border-slate-100/10 bg-white p-6 shadow-2xl dark:border-slate-800/50 dark:bg-gray-900"
+          initial={{ opacity: 0, scale: 0.96, y: 12 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.96, y: 12 }}
+          transition={{ duration: 0.2 }}
+          onClick={(e) => e.stopPropagation()}
+        >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800/40">
               <h2 id="share-modal-title" className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
                 Share Event
@@ -172,7 +137,6 @@ const ShareModal = ({ isOpen, onClose, event }) => {
                 <Copy size={16} /> Copy Link
               </button>
             </div>
-          </motion.div>
         </motion.div>
       ) : null}
     </AnimatePresence>

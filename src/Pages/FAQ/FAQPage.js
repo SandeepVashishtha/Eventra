@@ -40,78 +40,81 @@ export default function FAQSection() {
 function FAQSectionInner() {
   const { t } = useTranslation();
 
-  const faqs = useMemo(() => [
-    {
-      category: t("faq.categories.gettingStarted"),
-      tab: "Hackathons",
-      icon: <Sparkles size={18} />,
-      question: t("faqQuestions.q1"),
-      answer: t("faqQuestions.a1"),
-    },
-    {
-      category: t("faq.categories.eventCreation"),
-      tab: "Hackathons",
-      icon: <Calendar size={18} />,
-      question: t("faqQuestions.q2"),
-      answer: t("faqQuestions.a2"),
-    },
-    {
-      category: t("faq.categories.eventTypes"),
-      tab: "General",
-      icon: <BookOpen size={18} />,
-      question: t("faqQuestions.q3"),
-      answer: t("faqQuestions.a3"),
-    },
-    {
-      category: t("faq.categories.pricing"),
-      tab: "General",
-      icon: <Zap size={18} />,
-      question: t("faqQuestions.q4"),
-      answer: t("faqQuestions.a4"),
-    },
-    {
-      category: t("faq.categories.community"),
-      tab: "Hackathons",
-      icon: <Users size={18} />,
-      question: t("faqQuestions.q5"),
-      answer: t("faqQuestions.a5"),
-    },
-    {
-      category: t("faq.categories.accountManagement"),
-      tab: "Account",
-      icon: <Shield size={18} />,
-      question: t("faqQuestions.q6"),
-      answer: t("faqQuestions.a6"),
-    },
-    {
-      category: t("faq.categories.technicalSupport"),
-      tab: "General",
-      icon: <MessageCircle size={18} />,
-      question: t("faqQuestions.q7"),
-      answer: t("faqQuestions.a7"),
-    },
-    {
-      category: t("faq.categories.eventFeatures"),
-      tab: "General",
-      icon: <Globe size={18} />,
-      question: t("faqQuestions.q8"),
-      answer: t("faqQuestions.a8"),
-    },
-    {
-      category: t("faq.categories.eventManagement"),
-      tab: "Hackathons",
-      icon: <Calendar size={18} />,
-      question: t("faqQuestions.q9"),
-      answer: t("faqQuestions.a9"),
-    },
-    {
-      category: t("faq.categories.privacySecurity"),
-      tab: "Account",
-      icon: <Shield size={18} />,
-      question: t("faqQuestions.q10"),
-      answer: t("faqQuestions.a10"),
-    },
-  ], [t]);
+  const faqs = useMemo(
+    () => [
+      {
+        category: t("faq.categories.gettingStarted"),
+        tab: "Hackathons",
+        icon: <Sparkles size={18} />,
+        question: t("faqQuestions.q1"),
+        answer: t("faqQuestions.a1"),
+      },
+      {
+        category: t("faq.categories.eventCreation"),
+        tab: "Hackathons",
+        icon: <Calendar size={18} />,
+        question: t("faqQuestions.q2"),
+        answer: t("faqQuestions.a2"),
+      },
+      {
+        category: t("faq.categories.eventTypes"),
+        tab: "General",
+        icon: <BookOpen size={18} />,
+        question: t("faqQuestions.q3"),
+        answer: t("faqQuestions.a3"),
+      },
+      {
+        category: t("faq.categories.pricing"),
+        tab: "General",
+        icon: <Zap size={18} />,
+        question: t("faqQuestions.q4"),
+        answer: t("faqQuestions.a4"),
+      },
+      {
+        category: t("faq.categories.community"),
+        tab: "Hackathons",
+        icon: <Users size={18} />,
+        question: t("faqQuestions.q5"),
+        answer: t("faqQuestions.a5"),
+      },
+      {
+        category: t("faq.categories.accountManagement"),
+        tab: "Account",
+        icon: <Shield size={18} />,
+        question: t("faqQuestions.q6"),
+        answer: t("faqQuestions.a6"),
+      },
+      {
+        category: t("faq.categories.technicalSupport"),
+        tab: "General",
+        icon: <MessageCircle size={18} />,
+        question: t("faqQuestions.q7"),
+        answer: t("faqQuestions.a7"),
+      },
+      {
+        category: t("faq.categories.eventFeatures"),
+        tab: "General",
+        icon: <Globe size={18} />,
+        question: t("faqQuestions.q8"),
+        answer: t("faqQuestions.a8"),
+      },
+      {
+        category: t("faq.categories.eventManagement"),
+        tab: "Hackathons",
+        icon: <Calendar size={18} />,
+        question: t("faqQuestions.q9"),
+        answer: t("faqQuestions.a9"),
+      },
+      {
+        category: t("faq.categories.privacySecurity"),
+        tab: "Account",
+        icon: <Shield size={18} />,
+        question: t("faqQuestions.q10"),
+        answer: t("faqQuestions.a10"),
+      },
+    ],
+    [t]
+  );
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -270,6 +273,13 @@ function FAQSectionInner() {
       <style>{`
         .faq-section-root {
           transition: background-color 0.3s ease, color 0.3s ease;
+          --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+          --shadow-md: 0 4px 12px rgba(0,0,0,0.12);
+          --shadow-lg: 0 8px 24px rgba(0,0,0,0.15);
+          --shadow-xl: 0 16px 40px rgba(0,0,0,0.18);
+          --accent-gradient: linear-gradient(135deg, #6366f1, #8b5cf6);
+          --bg-secondary: rgba(0,0,0,0.03);
+          --text-muted: #9ca3af;
           --bg-primary: #fafbfc;
           --bg-secondary: #ffffff;
           --text-primary: #0f172a;
@@ -295,6 +305,12 @@ function FAQSectionInner() {
         }
 
         .dark .faq-section-root {
+          --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+          --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+          --shadow-lg: 0 8px 24px rgba(0,0,0,0.5);
+          --shadow-xl: 0 16px 40px rgba(0,0,0,0.6);
+          --bg-secondary: rgba(255,255,255,0.03);
+          --text-muted: #6b7280;
           --bg-primary: #0f172a;
           --bg-secondary: #1e293b;
           --text-primary: #f1f5f9;
@@ -335,7 +351,7 @@ function FAQSectionInner() {
 
         .faq-heading-block {
           text-align: center;
-          padding: 80px 20px 40px;
+          padding: 72px 20px 40px;
           backdrop-filter: blur(12px);
           -webkit-backdrop-filter: blur(12px);
           width: 100%;
@@ -349,7 +365,7 @@ function FAQSectionInner() {
         }
 
         .faq-heading-inner {
-          max-width: 800px;
+          max-width: 760px;
           width: 100%;
           padding: 0 20px;
           box-sizing: border-box;
@@ -393,8 +409,9 @@ function FAQSectionInner() {
           display: flex;
           flex-direction: column;
           align-items: center;
-          padding: 40px 20px 0 20px;
-          max-width: 100%;
+          padding: 32px 20px 60px;
+          max-width: 860px;
+          margin: 0 auto;
           box-sizing: border-box;
           position: relative;
           z-index: 1;
@@ -403,7 +420,6 @@ function FAQSectionInner() {
         .card-pin-wrapper {
           position: relative;
           width: 100%;
-          max-width: 850px;
           margin-bottom: 20px;
         }
 
@@ -414,21 +430,24 @@ function FAQSectionInner() {
           border-radius: 16px;
           overflow: hidden;
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          box-shadow: var(--shadow-sm);
+           box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+           backdrop-filter: blur(10px);
         }
 
         .faq-accordion-item:hover {
           border-color: var(--card-hover-border);
           box-shadow: var(--shadow-lg);
-          transform: translateY(-2px);
+          transform: translateY(-3px) scale(1.01);
+          transition: all 0.25s ease;
         }
 
         .faq-accordion-header {
           display: flex;
           align-items: center;
-          gap: 16px;
-          padding: 24px 28px;
+          gap: 18px;
+          padding: 24px 26px;
           cursor: pointer;
+          background: rgba(99, 102, 241, 0.03);
           user-select: none;
           transition: all 0.2s ease;
           background: var(--card-bg);
@@ -448,6 +467,8 @@ function FAQSectionInner() {
           border-radius: 12px;
           background: var(--icon-bg);
           color: var(--icon-color);
+           box-shadow: 0 10px 20px rgba(99,102,241,0.15);
+  border: 1px solid rgba(99,102,241,0.15);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -512,6 +533,8 @@ function FAQSectionInner() {
         .faq-accordion-content {
           max-height: 0;
           overflow: hidden;
+          width: 100%;
+          box-sizing: border-box;
           transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
           border-top: 1px solid transparent;
         }
@@ -521,22 +544,23 @@ function FAQSectionInner() {
         }
 
         .faq-answer-wrapper {
-          padding: 24px 28px 28px;
+          padding: 26px 28px 32px;
           display: flex;
           flex-direction: column;
-          gap: 20px;
+          gap: 24px;
         }
 
         .faq-accordion-content p {
           color: var(--text-secondary);
           line-height: 1.8;
-          font-size: 1rem;
+           font-size: 1.05rem;
+          line-height: 1.9;
           margin: 0;
         }
 
         .faq-helpfulness {
-          margin-top: 12px;
-          padding-top: 20px;
+          margin-top: 8px;
+          padding-top: 24px;
           border-top: 1px solid var(--card-border);
           display: flex;
           flex-direction: column;
@@ -559,13 +583,13 @@ function FAQSectionInner() {
         }
 
         .faq-vote-btn {
-          padding: 10px 20px;
-          border-radius: 10px;
+          border-radius: 999px;
+         padding: 8px 16px;
+        transition: all 0.2s ease;
           border: 1px solid;
           font-size: 0.875rem;
           font-weight: 600;
           cursor: pointer;
-          transition: all 0.2s ease;
           background: var(--card-bg);
           white-space: nowrap;
           display: flex;
@@ -575,7 +599,7 @@ function FAQSectionInner() {
 
         .faq-vote-btn:hover {
           transform: translateY(-2px);
-          box-shadow: var(--shadow-md);
+            box-shadow: 0 6px 14px rgba(99,102,241,0.15);
         }
 
         .faq-vote-btn.voted-yes {
@@ -617,8 +641,9 @@ function FAQSectionInner() {
           width: 100%;
           padding: 16px 52px 16px 52px;
           border-radius: 14px;
-          border: 2px solid var(--card-border);
-          background: var(--card-bg);
+         border: 1px solid rgba(99, 102, 241, 0.2);
+          background: rgba(255,255,255,0.7);
+          backdrop-filter: blur(10px);
           font-size: 15px;
           outline: none;
           transition: all 0.3s ease;
@@ -636,6 +661,7 @@ function FAQSectionInner() {
         }
 
         .dark .search-input:focus {
+         background: rgba(30,41,59,0.6);
           box-shadow: 0 0 0 4px rgba(129, 140, 248, 0.1), var(--shadow-md);
         }
 
@@ -728,10 +754,11 @@ function FAQSectionInner() {
         }
 
         .category-btn {
-          padding: 10px 24px;
           font-size: 0.875rem;
           font-weight: 600;
-          border-radius: 12px;
+           border-radius: 999px;
+          padding: 10px 20px;
+          letter-spacing: 0.2px;
           transition: all 0.3s ease;
           border: 2px solid transparent;
           cursor: pointer;
@@ -741,6 +768,8 @@ function FAQSectionInner() {
         }
 
         .category-btn:hover {
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+         box-shadow: 0 6px 16px rgba(99, 102, 241, 0.25);
           transform: translateY(-2px);
           box-shadow: var(--shadow-md);
         }
@@ -821,6 +850,21 @@ function FAQSectionInner() {
           box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
         }
 
+        @keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.faq-accordion-item {
+  animation: fadeUp 0.4s ease;
+}
+
         @media (max-width: 768px) {
           .faq-heading-block {
             padding: 60px 16px 32px;
@@ -835,20 +879,20 @@ function FAQSectionInner() {
           }
 
           .faq-accordion-header {
-            padding: 20px;
-            gap: 14px;
+            padding: 22px 20px;
+            gap: 16px;
           }
 
           .faq-answer-wrapper {
-            padding: 20px;
+            padding: 22px 20px 28px;
           }
 
           .faq-accordion-header h3 {
-            font-size: 1rem;
+            font-size: 1.05rem;
           }
 
           .faq-cards-container {
-            padding: 32px 16px 0 16px;
+            padding: 28px 16px 50px;
           }
 
           .card-pin-wrapper {
@@ -872,6 +916,8 @@ function FAQSectionInner() {
           }
 
           .faq-icon {
+            box-shadow: 0 10px 20px rgba(99,102,241,0.15);
+  border: 1px solid rgba(99,102,241,0.15);
             width: 40px;
             height: 40px;
           }
@@ -882,7 +928,8 @@ function FAQSectionInner() {
           }
         }
       `}</style>
-
+      <div className="faq-page">
+      <div className="faq-container">
       <div className="faq-section-root" ref={sectionRef}>
         <div className="faq-background-pattern" />
 
@@ -1027,9 +1074,7 @@ function FAQSectionInner() {
                         <p>{faq.answer}</p>
 
                         <div className="faq-helpfulness">
-                          <span className="faq-helpfulness-label">
-                            {t("faq.helpfulnessLabel")}
-                          </span>
+                          <span className="faq-helpfulness-label">{t("faq.helpfulnessLabel")}</span>
                           <div className="faq-vote-buttons">
                             <button
                               onClick={() => handleVote(faq.question, "yes")}
@@ -1063,6 +1108,8 @@ function FAQSectionInner() {
           {filteredFaqs.length > 0 && <div className="scroll-spacer" />}
         </div>
         <FAQCTA />
+      </div>
+      </div>
       </div>
     </>
   );

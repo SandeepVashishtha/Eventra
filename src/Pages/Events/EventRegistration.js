@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 // Calendar URL helpers — import from the timezone-aware utility instead of
 // using the old inline implementations (which were UTC-blind and hardcoded
 // a 1-hour event duration — fixed in issue #2015).
-import { getGoogleCalendarUrl, getOutlookCalendarUrl, getYahooCalendarUrl, generateIcsFileBlobUrl } from "../../utils/calendarUrlUtils";
+import { getGoogleCalendarUrl, getOutlookCalendarUrl, getYahooCalendarUrl, generateIcsFileBlobUrl, getWebcalSubscriptionUrl } from "../../utils/calendarUrlUtils";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import hackathonsData from "../Hackathons/hackathonMockData.json";
 import { motion } from "framer-motion";
@@ -45,6 +45,24 @@ import { pushToQueue } from "../../utils/offlineQueue";
 import registrationLocks from "../../utils/registrationLocks";
 
 const MAX_NOTES_CHARS = 500;
+
+const isRequestCanceled = (error, signal) =>
+  signal?.aborted ||
+  error?.name === "AbortError" ||
+  error?.name === "CanceledError" ||
+  error?.code === "ERR_CANCELED";
+
+const generateSecureUUID = () => {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+    return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+      (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+    );
+  }
+  throw new Error("Secure random number generation is not supported in this browser.");
+};
 
 const getRegistrationFailureMessage = (error) => {
   const message = error?.data?.message || error?.data?.error || error?.message || "";
@@ -296,9 +314,25 @@ const EventRegistration = () => {
     isSubmittingRef.current = true;
     setSubmitting(true);
 
-    const isEventFull = event ? event.attendees >= event.maxAttendees : false;
+    // FIX (TOCTOU): Re-check capacity immediately before the POST so the
+    // endpoint decision is based on fresh server data, not on the stale
+    // React state snapshotted when handleSubmit ran. This collapses the
+    // check-then-act window to the minimum possible latency (one request).
+    // refreshEventAvailability also calls setEvent with the latest data, so
+    // the local event state is updated as a side-effect.
+    let isFreshlyFull = false;
+    try {
+      const latestAvailability = await refreshEventAvailability(eventId);
+      isFreshlyFull = latestAvailability != null
+        ? latestAvailability.isFull
+        : (event ? event.attendees >= event.maxAttendees : false);
+    } catch {
+      // If the availability refresh itself fails, fall back to local state
+      // rather than blocking registration entirely.
+      isFreshlyFull = event ? event.attendees >= event.maxAttendees : false;
+    }
 
-    if (isEventFull) {
+    if (isFreshlyFull) {
       try {
         const { joinWaitlist, getQueuePosition } = await import("../../utils/waitlistUtils");
         await joinWaitlist(eventId, user, { ...formData, eventTitle: event?.title || "the event" });
@@ -312,7 +346,7 @@ const EventRegistration = () => {
         toast.error(err.message || t("eventRegistration.toastRegistrationError"));
         return;
       } finally {
-      registrationLocks.delete(eventId);
+        registrationLocks.delete(eventId);
         isSubmittingRef.current = false;
         setSubmitting(false);
       }
@@ -322,6 +356,13 @@ const EventRegistration = () => {
         ? API_ENDPOINTS.EVENTS.REGISTER(eventId)
         : `/api/events/${eventId}/register`;
 
+        // FIX (offline queue dedup): Generate a stable idempotency key once per
+        // submission attempt. It travels with the payload to the backend (which
+        // should honour it for duplicate detection) and is also passed to
+        // pushToQueue so the queue can deduplicate by eventId+userId before
+        // writing to IndexedDB / localStorage.
+        const idempotencyKey = generateSecureUUID();
+
     try {
       const response = await apiUtils.post(
         endpoint,
@@ -329,12 +370,13 @@ const EventRegistration = () => {
           ...formData,
           priority: formData.priority,
           eventId: parseInt(eventId),
+          idempotencyKey,
         },
         token
       );
 
       const regData = response.data || {};
-      const registrationId = regData.registrationId || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `reg-${Date.now()}`);
+      const registrationId = regData.registrationId || generateSecureUUID();
       const qrToken = regData.qrToken || "";
 
       setRegistered(true);
@@ -342,7 +384,7 @@ const EventRegistration = () => {
       // addRegistration(event, formData)
       addRegistration(event, formData, registrationId, qrToken);
       clearSession();
-        } catch (error) {
+    } catch (error) {
       const failureMessage = getRegistrationFailureMessage(error);
 
       if (isCapacityConflictError(error)) {
@@ -356,13 +398,20 @@ const EventRegistration = () => {
         const payload = {
           ...formData,
           eventId: parseInt(eventId),
+          // Carry the idempotency key into the queued payload so that when
+          // the queue replays, the backend rejects any true duplicate.
+          idempotencyKey,
         };
 
         const success = await pushToQueue(
           {
-            actionType: isEventFull ? "JOIN_WAITLIST" : "REGISTER_EVENT",
+            actionType: isFreshlyFull ? "JOIN_WAITLIST" : "REGISTER_EVENT",
             endpoint,
             eventId: parseInt(eventId),
+            // FIX (offline queue dedup): Pass at the item level so pushToQueue
+            // can skip enqueueing if an identical eventId+userId+actionType
+            // entry already exists in the queue.
+            idempotencyKey,
             payload,
           },
           user.id
@@ -386,7 +435,7 @@ const EventRegistration = () => {
 
       if (isAlreadyRegistered) {
         setRegistered(true);
-        toast.success(isEventFull ? t("eventRegistration.toastWaitlistSuccess") : t("eventRegistration.toastRegistrationSuccess"));
+        toast.success(isFreshlyFull ? t("eventRegistration.toastWaitlistSuccess") : t("eventRegistration.toastRegistrationSuccess"));
         const existingRegId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `reg-existing-${Date.now()}`;
         // Do not pass the current form values — the server rejected this
         // submission as a duplicate, so formData is unconfirmed. Storing it
@@ -400,7 +449,6 @@ const EventRegistration = () => {
 
       toast.error(failureMessage);
     } finally {
-      registrationLocksRef.current.delete(eventId);
       isSubmittingRef.current = false;
       setSubmitting(false);
     }
@@ -451,7 +499,7 @@ const EventRegistration = () => {
     // guards above rather than being allowed to start a parallel flow.
     isSubmittingRef.current = true;
     registrationLocks.set(eventId, true);
-
+    setSubmitting(true);  
     let conflictDetected = false;
     try {
       const isFull = await checkEventCapacity(eventId, event);
@@ -480,6 +528,7 @@ const EventRegistration = () => {
       // without blocking future attempts. handleConflictProceed re-acquires.
       isSubmittingRef.current = false;
       registrationLocks.delete(eventId);
+      setSubmitting(false);             // ← ADD THIS LINE
       return;
     }
 
@@ -520,7 +569,7 @@ const EventRegistration = () => {
 
   const isEventFull = event ? event.attendees >= event.maxAttendees : false;
   const status = getEventStatus(event);
-  const isPastEvent = status === "past" || status === "ended";
+  // const isPastEvent = status === "past" || status === "ended";
   const isCancelledEvent = status === "cancelled";
   const isRegistrationBlocked = isEventRegistrationClosed(event);
 
@@ -590,7 +639,7 @@ const EventRegistration = () => {
     const googleCalendarUrl = getGoogleCalendarUrl(event);
     const outlookCalendarUrl = getOutlookCalendarUrl(event);
     const yahooCalendarUrl = getYahooCalendarUrl(event);
-    const icsBlobUrl = generateIcsFileBlobUrl(event);
+    const webcalUrl = event.id ? getWebcalSubscriptionUrl(event.id) : generateIcsFileBlobUrl(event);
     const shareText = `I'm attending ${event.title} on Eventra! Join me there!`;
     const shareUrl = `${window.location.origin}/events/${event.id}`;
 
@@ -692,7 +741,7 @@ const EventRegistration = () => {
                 href={googleCalendarUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
+                className="flex-1 min-w-30 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
               >
                 <svg className="w-4 h-4 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z" />
@@ -703,7 +752,7 @@ const EventRegistration = () => {
                 href={outlookCalendarUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
+                className="flex-1 min-w-30 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
               >
                 <svg className="w-4 h-4 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
@@ -714,7 +763,7 @@ const EventRegistration = () => {
                 href={yahooCalendarUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
+                className="flex-1 min-w-30 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
               >
                 <svg className="w-4 h-4 text-purple-600" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
@@ -722,8 +771,11 @@ const EventRegistration = () => {
                 Yahoo
               </a>
               <a
-                href={icsBlobUrl || '#'}
-                download={event.title ? `${event.title}.ics` : 'event.ics'}
+                href={webcalUrl || '#'}
+                {...(event.id
+                  ? {}
+                  : { download: event.title ? `${event.title}.ics` : 'event.ics' }
+                )}
                 className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
               >
                 <svg className="w-4 h-4 text-slate-600 dark:text-slate-400" viewBox="0 0 24 24" fill="currentColor">
@@ -1042,7 +1094,7 @@ const EventRegistration = () => {
                   htmlFor="additionalInfo"
                   className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                 >
-                  {t("eventRegistration.formAdditionalInfo")}
+                  {t("eventRegistration.formAdditionalInfo") /* Additional Information (Optional) */}
                 </label>
                 <textarea
                   id="additionalInfo"

@@ -52,7 +52,7 @@ const StatCard = ({ title, value, change, icon: Icon, colorClass, index }) => (
     transition={{ delay: index * 0.1 }}
     className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden"
   >
-    <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${colorClass} opacity-10 rounded-bl-[100px] pointer-events-none`} />
+    <div className={`absolute top-0 right-0 w-24 h-24 bg-linear-to-br ${colorClass} opacity-10 rounded-bl-[100px] pointer-events-none`} />
     <div className="flex items-start justify-between">
       <div>
         <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-1">{title}</p>
@@ -62,7 +62,7 @@ const StatCard = ({ title, value, change, icon: Icon, colorClass, index }) => (
           {change} from last week
         </p>
       </div>
-      <div className={`p-3 rounded-2xl bg-gradient-to-br ${colorClass} text-white shadow-lg`}>
+      <div className={`p-3 rounded-2xl bg-linear-to-br ${colorClass} text-white shadow-lg`}>
         <Icon size={24} />
       </div>
     </div>

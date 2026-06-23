@@ -262,16 +262,16 @@ const useEventRegistration = (eventIdParam) => {
         const freshEvent = freshRes.data;
         const capacity = freshEvent.maxAttendees ?? 0;
         const attendees = freshEvent.attendees ?? 0;
-        return attendees >= capacity;
+        return capacity > 0 && attendees >= capacity;
       }
       const capacity = currentEvent?.maxAttendees ?? 0;
       const attendees = currentEvent?.attendees ?? 0;
-      return attendees >= capacity;
+      return capacity > 0 && attendees >= capacity;
     } catch (error) {
       console.error("[checkEventCapacity] Failed to check capacity:", error);
       const capacity = currentEvent?.maxAttendees ?? 0;
       const attendees = currentEvent?.attendees ?? 0;
-      return attendees >= capacity;
+      return capacity > 0 && attendees >= capacity;
     }
   }, []);
 
@@ -320,7 +320,9 @@ const useEventRegistration = (eventIdParam) => {
       return;
     }
     if (!isAuthenticated() || !user?.id) {
-      toast.error("Please log in to register for events.");
+      toast.error(
+        "Authentication required. Please log in to register for events."
+      );
       navigate("/login", {
         state: { from: registrationPath },
       });

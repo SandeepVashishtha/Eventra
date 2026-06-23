@@ -1,91 +1,83 @@
-import { useEffect, useState, useCallback, useRef } from "react";
-import { get as idbGet } from "idb-keyval";
-import { logger } from "../utils/logger";
-import { safeJsonParse } from "../utils/safeJsonParse";
-// Fix (Issue #6525): Import queue utilities instead of writing to IndexedDB directly.
-// All writes now go through enqueueNotification() which batches them, retries on
-// failure, and dead-letters anything that cannot be persisted after MAX_RETRIES.
-import {
-  enqueueNotification,
-  startNotificationQueue,
-  stopNotificationQueue,
-} from "../utils/notificationQueue";
+import { useState, useEffect, useCallback } from "react";
 
 const STORAGE_KEY = "eventra_notifications";
+const FLUSH_INTERVAL_MS = 300;
 
-export const useNotifications = () => {
-  const [notifications, setNotifications] = useState([]);
+let queue = [];
+let flushTimeout = null;
 
-  // Track whether the initial load from IndexedDB has completed so we
-  // don't immediately overwrite persisted data with an empty array on mount.
-  const didLoadRef = useRef(false);
+export function useNotifications() {
+  const [notifications, setNotifications] = useState(() => {
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
 
-  // Start the queue processor on mount and stop it on unmount.
-  useEffect(() => {
-    startNotificationQueue();
-    return () => stopNotificationQueue();
+  const load = useCallback(() => {
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      setNotifications(raw ? JSON.parse(raw) : []);
+    } catch {}
   }, []);
 
-  // Load persisted notifications from IndexedDB on mount
-  useEffect(() => {
-    idbGet(STORAGE_KEY)
-      .then((stored) => {
-        if (stored) {
-          const parsed = safeJsonParse(stored, []);
-          setNotifications(parsed);
-        }
-      })
-      .catch((error) => {
-        logger.error("Failed to fetch notifications from indexedDB", error);
-        setNotifications([]);
-      })
-      .finally(() => {
-        didLoadRef.current = true;
-      });
-  }, []);
-
-  // Re-sync from IndexedDB whenever the queue flushes a batch
   useEffect(() => {
     const handleUpdate = () => {
-      idbGet(STORAGE_KEY)
-        .then((stored) => {
-          if (stored) {
-            const parsed = safeJsonParse(stored, []);
-            setNotifications(parsed);
-          }
-        })
-        .catch((error) => {
-          logger.error("Failed to reload notifications from indexedDB", error);
-        });
+      load();
     };
     window.addEventListener("eventra-notifications-updated", handleUpdate);
-    return () =>
+    return () => {
       window.removeEventListener("eventra-notifications-updated", handleUpdate);
-  }, []);
+    };
+  }, [load]);
 
-  const addNotification = useCallback((notification) => {
-    enqueueNotification(notification);
+  const addNotification = useCallback((notif) => {
+    const newNotif = {
+      id: "notif-" + Math.random().toString(36).substring(2) + Date.now().toString(36),
+      read: false,
+      createdAt: new Date().toISOString(),
+      ...notif,
+    };
+    queue.push(newNotif);
+
+    if (flushTimeout) {
+      clearTimeout(flushTimeout);
+    }
+    flushTimeout = setTimeout(() => {
+      try {
+        const raw = window.localStorage.getItem(STORAGE_KEY);
+        const existing = raw ? JSON.parse(raw) : [];
+        const updated = [...queue, ...existing];
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      } catch {}
+      queue = [];
+      flushTimeout = null;
+      window.dispatchEvent(new CustomEvent("eventra-notifications-updated"));
+    }, FLUSH_INTERVAL_MS);
   }, []);
 
   const markAllAsRead = useCallback(() => {
-    setNotifications((prev) =>
-      prev.map((item) => ({
-        ...item,
-        read: true,
-      }))
-    );
-    setTimeout(() => {
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      const existing = raw ? JSON.parse(raw) : [];
+      const updated = existing.map((n) => ({ ...n, read: true }));
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      setNotifications(updated);
       window.dispatchEvent(new CustomEvent("eventra-notifications-updated"));
-    }, 50);
+    } catch {}
   }, []);
 
-  const requestPermission = async () => {
-    if (!("Notification" in window)) return false;
-    const permission = await Notification.requestPermission();
-    return permission === "granted";
-  };
+  const requestPermission = useCallback(async () => {
+    if (typeof window !== "undefined" && window.Notification) {
+      const permission = await window.Notification.requestPermission();
+      return permission === "granted";
+    }
+    return false;
+  }, []);
 
-  const unreadCount = notifications.filter((item) => !item.read).length;
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   return {
     notifications,
@@ -94,4 +86,4 @@ export const useNotifications = () => {
     markAllAsRead,
     requestPermission,
   };
-};
+}
