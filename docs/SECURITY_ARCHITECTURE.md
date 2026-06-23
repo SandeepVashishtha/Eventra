@@ -63,14 +63,55 @@ sequenceDiagram
 
 ## 3. Rate Limiting Strategy
 
-Eventra protects resource-intensive API paths (like authentication and LLM recommendation probes) using a dual-layer, sliding-window rate limiter keyed by client IP.
+Eventra protects resource-intensive API paths (like authentication and LLM recommendation probes) using a distributed rate limiter keyed by client IP.
 
-- **Sliding-Window Limiter**: Eliminates the boundary-burst vulnerability inherent to fixed-window systems by tracking exact request timestamps per IP and checking counts dynamically.
-- **Periodic sweeps**: The in-memory cache prunes stale IP buckets to ensure memory consumption remains bounded under long-running processes.
-- **Configurations**:
-  - **Login Route**: Limited to 5 requests per minute per IP.
-  - **Signup Route**: Limited to 3 requests per minute per IP.
-  - **General APIs**: Throttled using Edge Middleware / Vercel KV REST API at the routing boundary.
+### 3.1 Distributed Rate Limiting
+
+**CRITICAL**: Eventra enforces distributed rate limiting in production to prevent brute-force attacks and credential stuffing across multiple server instances.
+
+- **Fixed-Window Limiter**: Uses atomic Redis/KV operations to track request counts per IP within time windows. Prevents race conditions through atomic INCR operations.
+- **Distributed Storage**: Rate limit counters are shared across all instances using:
+  - **Vercel KV** (REST API) - for Vercel deployments
+  - **Upstash Redis** (ioredis) - for general Redis deployments
+  - **Standard Redis** (ioredis) - for self-hosted Redis
+  - **In-memory** (development/test only) - NOT suitable for production
+- **Fail-Closed Security**: In production, if distributed storage is required but unavailable, requests are rejected with a 500 error rather than silently bypassing rate limiting.
+- **Atomic Operations**: Uses Redis Lua scripts or KV REST API atomic operations to prevent race conditions during concurrent requests.
+
+### 3.2 Configuration
+
+Environment variables control rate limiting behavior:
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `RATE_LIMIT_REDIS_URL` | Production (one of) | Redis connection URL for distributed rate limiting |
+| `KV_REST_API_URL` | Production (one of) | Upstash Redis REST API URL (Vercel KV migrated to Upstash) |
+| `KV_REST_API_TOKEN` | Production (with KV) | Upstash Redis REST API token |
+| `RATE_LIMIT_MODE` | Optional | Override mode: "distributed" (default in prod) or "memory" (dev/test only) |
+
+**Production Setup**:
+- Set at least one of `RATE_LIMIT_REDIS_URL` or `KV_REST_API_URL`/`KV_REST_API_TOKEN`
+- Build-time validation FAILS if missing in production
+- Runtime rejects requests if misconfigured
+- `RATE_LIMIT_MODE=memory` is NOT allowed in production
+
+**Development Setup**:
+- Falls back to in-memory storage automatically
+- Can explicitly set `RATE_LIMIT_MODE=memory` for testing
+- No distributed storage required
+
+### 3.3 Rate Limit Configurations
+
+- **Login Route**: Limited to 10 requests per minute per IP.
+- **Signup Route**: Limited to 5 requests per minute per IP.
+- **General APIs**: Throttled using Edge Middleware / Vercel KV REST API at the routing boundary (60 requests per minute).
+
+### 3.4 Security Properties
+
+- **Shared State**: Counters persist across serverless cold starts and container restarts
+- **Multi-Instance Safety**: All instances enforce the same limits using shared storage
+- **Race Condition Prevention**: Atomic operations prevent concurrent request bypass
+- **Fail-Secure**: Production rejects requests when rate limiting is unavailable rather than disabling protection
 
 ---
 
@@ -239,35 +280,78 @@ For vulnerabilities, do not open public GitHub issues. Please refer to our respo
 
 **CRITICAL**: Eventra enforces fail-closed security for authentication storage. In-memory user storage is permitted ONLY in development environments.
 
-### 8.1 Production Storage Requirements
+### 8.1 Storage Architecture
 
-- **DATABASE_URL is mandatory in production**: The application will fail to start if `DATABASE_URL` is missing, empty, or whitespace-only when `NODE_ENV=production`.
+Eventra uses a **storage abstraction layer** (`api/auth/user-storage.js`) that provides a unified interface for user storage operations. This layer supports multiple backends:
+
+- **Development/Testing**: In-memory Map backend (no database required)
+- **Production**: Redis backend (using `DATABASE_URL` or `KV_REST_API_URL`)
+
+The storage abstraction provides the following operations:
+- `createUser()` - Create a new user
+- `getUserByEmail()` - Retrieve user by email
+- `getUserByUsername()` - Retrieve user by username
+- `getUserById()` - Retrieve user by ID
+- `updateUser()` - Update user fields
+- `deleteUser()` - Delete a user
+- `isStorageHealthy()` - Check storage health status
+
+### 8.2 Production Storage Requirements
+
+- **DATABASE_URL or KV_REST_API_URL is mandatory in production**: The application will fail to start if neither is configured when `NODE_ENV=production`.
+- **Redis backend**: Production uses Redis for persistent storage via the `ioredis` client.
 - **No fallback to in-memory storage**: Production never falls back to Map-based storage. This prevents silent account loss after server restarts or serverless cold starts.
-- **Fail-fast initialization**: The authentication modules validate storage configuration during module initialization, rejecting startup before accepting any requests.
-- **Runtime protection**: Authentication endpoints return HTTP 500 with a generic "Authentication service unavailable" error if persistent storage is not configured.
+- **Fail-fast initialization**: The storage backend validates configuration during initialization, rejecting startup before accepting any requests.
+- **Runtime protection**: Authentication endpoints return HTTP 500 with a generic "Authentication service unavailable" error if persistent storage is not healthy.
 
-### 8.2 Development Storage
+### 8.3 Development Storage
 
-- In-memory Map storage is allowed when `NODE_ENV` is not `production` (development, test, etc.).
+- In-memory Map storage is used when `NODE_ENV` is not `production` (development, test, etc.).
 - This preserves existing development and test workflows without requiring database setup.
-- Development warnings are logged but do not prevent startup.
+- The storage abstraction layer automatically selects the appropriate backend based on environment.
 
-### 8.3 Security Rationale
+### 8.4 Security Rationale
 
 - **Prevents account loss**: Without persistent storage, all user accounts vanish on server restart, causing 401 authentication failures for previously valid credentials.
 - **Serverless compatibility**: Serverless platforms (Vercel, AWS Lambda) have cold starts that reset in-memory state. Persistent storage is required for production deployments.
 - **Fail-closed design**: The application refuses to operate in an unsafe configuration rather than silently accepting data that will be lost.
+- **Storage abstraction**: By using a unified storage interface, authentication logic is decoupled from storage implementation, making it easier to swap backends or add new storage providers.
 
-### 8.4 Configuration
+### 8.5 Configuration
 
-Set `DATABASE_URL` in your production environment:
+Set `DATABASE_URL` or `KV_REST_API_URL` in your production environment:
 
 ```bash
-# Required in production
-DATABASE_URL=postgresql://user:password@host:5432/database
+# Required in production (Redis connection string)
+DATABASE_URL=redis://user:password@host:6379
+
+# OR use Vercel KV
+KV_REST_API_URL=https://your-kv-store.redis.com
+KV_REST_API_TOKEN=your-kv-token
 ```
 
 The validation script (`scripts/validate-env.js`) enforces this requirement during build time in production.
+
+### 8.6 Storage Backend Implementation Details
+
+#### In-Memory Backend (Development)
+- Uses JavaScript `Map` objects for storage
+- Supports all CRUD operations
+- Data is lost on process restart (acceptable for development)
+- No external dependencies required
+
+#### Redis Backend (Production)
+- Uses `ioredis` client for Redis connections
+- Implements connection pooling and retry logic
+- Stores user data as JSON strings
+- Maintains indexes for email, username, and ID lookups
+- Supports automatic reconnection with exponential backoff
+- Data persists across restarts and deployments
+
+#### Storage Key Schema (Redis)
+- User data: `auth:user:{id}` → JSON user object
+- Email index: `auth:user:email:{email}` → user ID
+- Username index: `auth:user:username:{username}` → user ID
 
 ---
 

@@ -1,4 +1,5 @@
 import ModernAbout from "./ModernAbout";
+import Features from "./Features";
 import AboutCTA from "./AboutCTA";
 import SEOHead from "../../components/SEOHead";
 
@@ -7,12 +8,13 @@ const AboutPage = () => {
     <>
       <SEOHead
         title="About Us"
-        description="Learn about Eventra — the open-source event management platform for communities, colleges, and organizations worldwide."
+        description="Learn how Eventra helps people discover events, manage hackathons, build projects, grow networks, and participate in community-driven programs."
         url={window.location.href}
       />
 
       <main className="min-h-screen bg-slate-950 text-slate-100">
         <ModernAbout />
+        <Features />
         <AboutCTA />
       </main>
     </>

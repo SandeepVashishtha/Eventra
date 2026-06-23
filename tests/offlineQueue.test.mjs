@@ -243,4 +243,32 @@ assert.equal(
   "clearQueue() removes the localStorage key"
 );
 
+// ── multi-user queue preservation test (Issue 30) ───────────────────────────
+reset();
+// User A queues an action
+await pushToQueue(
+  { eventId: "evt-user-a", payload: { action: "register" }, actionType: "REGISTER_EVENT", endpoint: "/api/events/register" },
+  "user-a"
+);
+// User B queues an action
+await pushToQueue(
+  { eventId: "evt-user-b", payload: { action: "register" }, actionType: "REGISTER_EVENT", endpoint: "/api/events/register" },
+  "user-b"
+);
+
+assert.equal(getQueue().length, 2, "Queue should contain both user-a and user-b items");
+
+// Now User B processes the queue
+const processResultForB = await processQueue("user-b", async (url, options) => {
+  return { ok: true, status: 200 };
+});
+
+assert.equal(processResultForB.processed, 1, "Only user-b item should be processed");
+assert.equal(processResultForB.succeeded, 1, "User-b item should succeed");
+
+// Check that User A's item is still in the queue (not cleared!)
+const finalQueue = getQueue();
+assert.equal(finalQueue.length, 1, "User A's item should remain in the queue");
+assert.equal(finalQueue[0].userId, "user-a", "Remaining item should belong to user-a");
+
 console.log("All offlineQueue tests passed ✓");
