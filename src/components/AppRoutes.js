@@ -44,3 +44,4 @@ export default function AppRoutes() {
     </Suspense>
   );
 }
+// Implementation for Enhance RouteFallback Loading State with Skeleton/Animations
