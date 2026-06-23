@@ -1,4 +1,4 @@
-import { safeJsonParse } from "../utils/safeJsonParse";
+import { safeJsonParse } from "./safeJsonParse.js";
 export const NOTIFICATION_CATEGORIES = {
   registrations: {
     label: "Registrations",

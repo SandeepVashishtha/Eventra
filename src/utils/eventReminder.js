@@ -15,6 +15,7 @@ const DEFAULT_NOTIFICATION_OPTIONS = {
 
 // Store active reminders for management (Map<reminderId, timeoutId>)
 const activeReminders = new Map();
+const MAX_TIMEOUT_DELAY = 2147483647; // 2^31 - 1
 
 // Counter for generating unique reminder IDs
 let reminderIdCounter = 0;
@@ -136,6 +137,37 @@ export const sendNotification = (title, options = {}) => {
 };
 
 /**
+ * Internal helper to validate inputs and check notification permissions.
+ *
+ * @param {string} title
+ * @param {number} delay
+ * @returns {boolean} True if validation passes and permissions are granted.
+ */
+const validateAndVerifyPermissions = (title, delay) => {
+  if (!title || typeof title !== "string") {
+    console.error("scheduleReminder: Invalid title provided.");
+    return false;
+  }
+
+  if (typeof delay !== "number" || delay < 0) {
+    console.error("scheduleReminder: Invalid delay provided. Must be a non-negative number.");
+    return false;
+  }
+
+  if (!isNotificationSupported()) {
+    console.warn("Cannot schedule reminder: Notifications not supported.");
+    return false;
+  }
+
+  if (Notification.permission !== "granted") {
+    console.warn("Cannot schedule reminder: Permission not granted.");
+    return false;
+  }
+
+  return true;
+};
+
+/**
  * Schedules a reminder notification after a specified delay
  * Returns a reminder ID that can be used to cancel the reminder
  * 
@@ -147,25 +179,8 @@ export const sendNotification = (title, options = {}) => {
  * @returns {string|null} Reminder ID for cancellation, or null if scheduling failed
  */
 export const scheduleReminder = (title, delay, options = {}) => {
-  // Validate inputs
-  if (!title || typeof title !== "string") {
-    console.error("scheduleReminder: Invalid title provided.");
-    return null;
-  }
-
-  if (typeof delay !== "number" || delay < 0) {
-    console.error("scheduleReminder: Invalid delay provided. Must be a non-negative number.");
-    return null;
-  }
-
-  // Check permission before scheduling
-  if (!isNotificationSupported()) {
-    console.warn("Cannot schedule reminder: Notifications not supported.");
-    return null;
-  }
-
-  if (Notification.permission !== "granted") {
-    console.warn("Cannot schedule reminder: Permission not granted.");
+  // Validate and check permissions
+  if (!validateAndVerifyPermissions(title, delay)) {
     return null;
   }
 
@@ -175,25 +190,36 @@ export const scheduleReminder = (title, delay, options = {}) => {
   // Default body text
   const body = options.body || `${title} starts soon!`;
 
-  // Schedule the notification
-  const timeoutId = setTimeout(() => {
-    sendNotification("⏰ Event Reminder", {
-      body,
-      tag: `eventra-${reminderId}`, // Unique tag for each reminder
-      ...options,
-    });
-
-    // Remove from active reminders after firing
-    activeReminders.delete(reminderId);
-  }, delay);
-
-  // Store the timeout ID for potential cancellation
-  activeReminders.set(reminderId, {
-    timeoutId,
+  // Store the record structure first (with a placeholder/null timeoutId)
+  const record = {
+    timeoutId: null,
     title,
     scheduledAt: Date.now(),
     firesAt: Date.now() + delay,
-  });
+  };
+  activeReminders.set(reminderId, record);
+
+  // Schedule the notification recursively to handle values > 32-bit signed integer limit
+  const scheduleTimeout = (remainingDelay) => {
+    const currentDelay = Math.min(remainingDelay, MAX_TIMEOUT_DELAY);
+    const timeoutId = setTimeout(() => {
+      if (remainingDelay > MAX_TIMEOUT_DELAY) {
+        scheduleTimeout(remainingDelay - MAX_TIMEOUT_DELAY);
+      } else {
+        sendNotification("⏰ Event Reminder", {
+          body,
+          tag: `eventra-${reminderId}`,
+          ...options,
+        });
+        activeReminders.delete(reminderId);
+      }
+    }, currentDelay);
+
+    record.timeoutId = timeoutId;
+    return timeoutId;
+  };
+
+  scheduleTimeout(delay);
 
   return reminderId;
 };

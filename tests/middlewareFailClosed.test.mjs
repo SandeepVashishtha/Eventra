@@ -59,8 +59,8 @@ describe("Middleware Fail-Closed Security", () => {
       
       const body = await response.json();
       assert.ok(
-        body.error === "Server configuration error",
-        "Expected error message to indicate configuration error"
+        body.error === "Server authentication misconfiguration",
+        "Expected error message to indicate authentication misconfiguration"
       );
     });
 

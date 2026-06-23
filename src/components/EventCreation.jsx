@@ -230,7 +230,7 @@ const EventCreation = () => {
                 {/* Banner Preview */}
                 <div className="relative h-72 bg-gray-200 dark:bg-gray-700">
                   {formData.bannerPreview ? (
-                    <img src={formData.bannerPreview} alt="Banner" className="w-full h-full object-cover" />
+                    <img src={formData.bannerPreview} alt="Banner" className="w-full h-full object-cover"  loading="lazy"/>
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-400">
                       No banner uploaded

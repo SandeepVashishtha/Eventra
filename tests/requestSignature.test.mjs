@@ -10,7 +10,7 @@ const payload = {
 
 const secret = "test-secret";
 
-const signed = signRequest(
+const signed = await signRequest(
   payload,
   secret
 );
