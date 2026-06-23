@@ -8,13 +8,56 @@ import {
   isInMemoryRateLimitStorageAllowed,
 } from "../api/_lib/rate-limit-config.js";
 import { getJwtSecret, createJwtConfigErrorResponse } from "../api/_lib/jwtSecret.js";
+import { SESSION_KV_FAILURE_MODE } from "../src/config/env.js";
 
 const validationLimiter = createConcurrencyLimiter(5);
 
-const getSessionRiskState = async (sessionId) => {
+// KV health cache to prevent thundering herd during outages
+// Structure: { isHealthy: boolean, lastCheckTime: number }
+let kvHealthCache = { isHealthy: true, lastCheckTime: 0 };
+const KV_HEALTH_CACHE_TTL = 30 * 1000; // 30 seconds
+
+/**
+ * Checks if KV storage is currently healthy by attempting a lightweight health check.
+ * Results are cached for 30 seconds to prevent excessive KV ping attempts during outages.
+ * @returns {Promise<boolean>} true if KV is healthy, false if unavailable or failed
+ */
+const isKvHealthy = async () => {
+  const now = Date.now();
+  
+  // Return cached result if still valid
+  if (now - kvHealthCache.lastCheckTime < KV_HEALTH_CACHE_TTL) {
+    return kvHealthCache.isHealthy;
+  }
+
+  const kvUrl = process.env.KV_REST_API_URL;
+  const kvToken = process.env.KV_REST_API_TOKEN;
+
+  if (!kvUrl || !kvToken) {
+    return false;
+  }
+
+  try {
+    const res = await fetch(`${kvUrl}/ping`, {
+      headers: { Authorization: `Bearer ${kvToken}` },
+      timeout: 5000, // 5 second timeout for health check
+    });
+    
+    const isHealthy = res.ok;
+    kvHealthCache = { isHealthy, lastCheckTime: now };
+    return isHealthy;
+  } catch (e) {
+    // Network error, timeout, or fetch error - mark as unhealthy
+    kvHealthCache = { isHealthy: false, lastCheckTime: now };
+    return false;
+  }
+};
+
+const getSessionRiskState = async (sessionId, userId) => {
   const kvUrl = process.env.KV_REST_API_URL;
   const kvToken = process.env.KV_REST_API_TOKEN;
   const isProduction = process.env.NODE_ENV === "production";
+  const failureMode = SESSION_KV_FAILURE_MODE || "fail_open";
 
   // Check if distributed storage is configured
   const isDistributedConfigured = isDistributedRateLimitStorageConfigured();
@@ -44,53 +87,82 @@ const getSessionRiskState = async (sessionId) => {
     }
   }
 
-  // Distributed storage is configured - use KV
+  // Distributed storage is configured - use KV with failure mode handling
+  /**
+   * KV Failure Mode Logic:
+   * - fail_open (default): If KV is unavailable, trust the valid JWT and allow the request.
+   *   This prevents a KV outage from breaking authentication for all users.
+   *   Risk: Stale session state (e.g., inactivity timeout not enforced). Mitigated by JWT expiry.
+   * - fail_closed: If KV is unavailable, require re-authentication (original strict behavior).
+   *   Risk: All users logged out during KV outage. Use only if session state accuracy is critical.
+   */
+  
   try {
     const res = await fetch(`${kvUrl}/get/session:${sessionId}`, {
-      headers: { Authorization: `Bearer ${kvToken}` }
+      headers: { Authorization: `Bearer ${kvToken}` },
+      timeout: 10000, // 10 second timeout for session data fetch
     });
+
     if (!res.ok) {
-      // Production: Fail closed on KV request failure
-      if (isProduction) {
+      // KV request failed with bad status code
+      if (failureMode === "fail_closed") {
         console.error(
-          `[SECURITY] Session state unavailable: KV request failed with status ${res.status}. Requiring re-authentication.`
+          `[SECURITY] Session state unavailable: KV request failed with status ${res.status}. Requiring re-authentication (fail_closed mode).`
         );
         return "requires_reauth";
+      } else {
+        // fail_open: Log warning but allow request through
+        console.warn(
+          JSON.stringify({
+            level: "warn",
+            message: "KV unavailable, allowing JWT-valid request (fail_open mode)",
+            reason: "kv_unavailable",
+            userId,
+            mode: "fail_open",
+            jwtValid: true,
+            kvStatus: res.status,
+          })
+        );
+        return "active_unverified"; // Mark as unverified but allow through
       }
-      // Development: Assume active on KV failure
-      console.warn(
-        `[DEV] KV request failed with status ${res.status}. Assuming active session.`
-      );
-      return "active";
     }
+
     const data = await res.json();
     if (!data || !data.result) return "invalidated";
 
     let sessionData = data.result;
     if (typeof sessionData === 'string') {
-       sessionData = JSON.parse(sessionData);
+      sessionData = JSON.parse(sessionData);
     }
 
     // Check inactivity (2 hours)
     if (Date.now() - sessionData.lastActive > 2 * 60 * 60 * 1000 && sessionData.status === "active") {
-       return "requires_reauth";
+      return "requires_reauth";
     }
     return sessionData.status || "active";
-  } catch(e) {
-    // Production: Fail closed on network errors or invalid responses
-    if (isProduction) {
+  } catch (e) {
+    // Network error, timeout, or JSON parse error
+    if (failureMode === "fail_closed") {
       console.error(
-        "[SECURITY] Session state unavailable: KV communication error.",
+        "[SECURITY] Session state unavailable: KV communication error. Requiring re-authentication (fail_closed mode).",
         e.message
       );
       return "requires_reauth";
+    } else {
+      // fail_open: Log warning but allow request through
+      console.warn(
+        JSON.stringify({
+          level: "warn",
+          message: "KV communication error, allowing JWT-valid request (fail_open mode)",
+          reason: "kv_unavailable",
+          userId,
+          mode: "fail_open",
+          jwtValid: true,
+          error: e.message,
+        })
+      );
+      return "active_unverified"; // Mark as unverified but allow through
     }
-    // Development: Assume active on errors
-    console.warn(
-      "[DEV] KV communication error. Assuming active session.",
-      e.message
-    );
-    return "active";
   }
 };
 
@@ -165,11 +237,16 @@ async function authorizeSession(request, url) {
     }
 
     if (payload.sessionId) {
-      const status = await getSessionRiskState(payload.sessionId);
+      const status = await getSessionRiskState(payload.sessionId, payload.userId);
       if (status === "invalidated") {
          return new Response(JSON.stringify({ error: "Session invalidated" }), { status: 401, headers: { "Content-Type": "application/json" }});
       } else if (status === "requires_reauth") {
          return new Response(JSON.stringify({ error: "Re-authentication required", code: "REQUIRES_REAUTH" }), { status: 401, headers: { "Content-Type": "application/json" }});
+      }
+      // status === "active" or "active_unverified" - both allow request through
+      // "active_unverified" indicates KV was unavailable but JWT was valid
+      if (status === "active_unverified") {
+        request.sessionRiskChecked = false;
       }
     }
   }
