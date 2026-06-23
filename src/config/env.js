@@ -22,6 +22,11 @@ const optionalEnvVars = {
     keys: ["VITE_SENTRY_DSN", "REACT_APP_SENTRY_DSN"],
     fallback: "",
   },
+  SESSION_KV_FAILURE_MODE: {
+    keys: ["SESSION_KV_FAILURE_MODE"],
+    fallback: "fail_open",
+    validValues: ["fail_open", "fail_closed"],
+  },
 };
 
 const getFirstDefinedEnvValue = (keys = []) => {
@@ -40,11 +45,18 @@ const isDevelopment = currentMode === "development";
 
 const DEV_API_FALLBACK = "http://localhost:8080";
 
-const getEnvVar = (keys, fallback = "", { required = false, label } = {}) => {
+const getEnvVar = (keys, fallback = "", { required = false, label, validValues = [] } = {}) => {
   const keyList = Array.isArray(keys) ? keys : [keys];
   const value = getFirstDefinedEnvValue(keyList);
 
   if (value) {
+    // Validate against allowed values if provided
+    if (validValues.length > 0 && !validValues.includes(value)) {
+      console.error(
+        `[ENV ERROR] Invalid value for ${label || keyList.join(" or ")}: "${value}". Allowed values: ${validValues.join(", ")}`
+      );
+      return fallback;
+    }
     return value;
   }
 
@@ -95,6 +107,15 @@ export const ENV = {
 export const SENTRY_DSN = getEnvVar(
   optionalEnvVars.SENTRY_DSN.keys,
   optionalEnvVars.SENTRY_DSN.fallback
+);
+
+export const SESSION_KV_FAILURE_MODE = getEnvVar(
+  optionalEnvVars.SESSION_KV_FAILURE_MODE.keys,
+  optionalEnvVars.SESSION_KV_FAILURE_MODE.fallback,
+  {
+    label: "SESSION_KV_FAILURE_MODE",
+    validValues: optionalEnvVars.SESSION_KV_FAILURE_MODE.validValues,
+  }
 );
 
 export const isSentryEnabled = Boolean(SENTRY_DSN && currentMode === "production");
