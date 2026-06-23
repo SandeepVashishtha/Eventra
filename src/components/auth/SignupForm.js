@@ -98,8 +98,11 @@ const SignupForm = () => {
         setFieldState("email", "error");
       } else {
         const emailAvailability = await validateEmailAvailability(emailValue);
-        if (!emailAvailability?.isValid) {
-          nextErrors.email = getResultMessage(emailAvailability, "Email is already registered");
+        if (!emailAvailability?.isValid && !emailAvailability?.skippedDueToError) {
+          nextErrors.email = getResultMessage(
+            emailAvailability,
+            "This email is already registered. Please log in."
+          );
           setFieldState("email", "error");
         } else {
           setFieldState("email", "success");
@@ -187,23 +190,30 @@ const SignupForm = () => {
       return;
     }
 
-    // Set validating/loading state immediately
-    setErrors((prev) => ({ ...prev, email: "Checking email availability..." }));
     setFieldState("email", "loading");
 
     const timer = setTimeout(async () => {
       try {
-        const result = await validateEmailAvailability(email);
+        const result = await validateEmailAvailability(email, {
+          messages: {
+            unavailable: "This email is already registered. Please log in.",
+          },
+        });
         if (result?.isValid) {
           setErrors((prev) => ({ ...prev, email: "" }));
           setFieldState("email", "success");
         } else {
-          setErrors((prev) => ({ ...prev, email: result?.message || "Email is already registered" }));
+          setErrors((prev) => ({
+            ...prev,
+            email:
+              result?.message ||
+              "This email is already registered. Please log in.",
+          }));
           setFieldState("email", "error");
         }
       } catch {
-        setErrors((prev) => ({ ...prev, email: "Validation failed" }));
-        setFieldState("email", "error");
+        setErrors((prev) => ({ ...prev, email: "" }));
+        setFieldState("email", "idle");
       }
     }, 500);
 
@@ -247,9 +257,13 @@ const SignupForm = () => {
         } else if (status === 429) {
           message = "Too many signup attempts. Please try again later.";
         } else if (status === 400) {
-          message = response.data?.message || response.data?.error || "Please check your input and try again.";
+          message =
+            response.data?.message ||
+            response.data?.error ||
+            "Please check your input and try again.";
         } else {
-          message = response.data?.message || response.data?.error || AUTH_ERRORS.registrationFailed;
+          message =
+            response.data?.message || response.data?.error || AUTH_ERRORS.registrationFailed;
         }
         setSubmitError(message);
         toast.error(message);
@@ -294,178 +308,268 @@ const SignupForm = () => {
 
   return (
     <div className="w-full">
-      <div className="mb-6 space-y-3 text-center">
-        <motion.div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-bg-secondary">
-          <Zap className="h-7 w-7 text-primary" />
+      <div className="text-center space-y-4 mb-8">
+        <motion.div
+          className="mx-auto w-16 h-16 rounded-2xl bg-linear-to-r from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg"
+        >
+          <Zap className="w-8 h-8 text-white" />
         </motion.div>
-        <h1 className="text-2xl font-bold text-text">Create Your Account</h1>
+
+        <h1 className="text-4xl font-extrabold bg-linear-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+          Create Your Account
+        </h1>
+
+        <p className="text-base text-text-light max-w-md mx-auto leading-relaxed">
+          Join thousands of developers discovering hackathons, workshops,
+          networking events and career opportunities.
+        </p>
       </div>
+      <div className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-2xl p-8">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-4"
+          noValidate
+          aria-describedby="signup-form-error signup-form-success"
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FormFieldWrapper
+              id="firstName"
+              label="First name"
+              message={errors.firstName}
+              validationState={fieldValidationState.firstName}
+              prefix={<User className="w-4 h-4 text-text-light" />}
+            >
+              <input
+                name="firstName"
+                type="text"
+                value={formData.firstName}
+                onChange={handleChange}
+                placeholder="Enter your first name"
+                className="
+              w-full pl-10 pr-4 py-3.5
+              rounded-xl
+              border border-slate-300/20
+              bg-white/5
+              backdrop-blur-sm
+              text-text
+              placeholder:text-slate-400
+              focus:ring-2
+              focus:ring-blue-500/20
+              focus:border-blue-500
+              transition-all duration-200
+              hover:border-indigo-400/50
+              "
+                disabled={loading}
+              />
+            </FormFieldWrapper>
+            <FormFieldWrapper
+              id="lastName"
+              label="Last name"
+              message={errors.lastName}
+              validationState={fieldValidationState.lastName}
+              prefix={<User className="w-4 h-4 text-text-light" />}
+            >
+              <input
+                name="lastName"
+                type="text"
+                value={formData.lastName}
+                onChange={handleChange}
+                placeholder="Enter your last name"
+                className="
+              w-full pl-10 pr-4 py-3.5
+              rounded-xl
+              border border-slate-300/20
+              bg-white/5
+              backdrop-blur-sm
+              text-text
+              placeholder:text-slate-400
+              focus:ring-2
+              focus:ring-blue-500/20
+              focus:border-blue-500
+              transition-all duration-200
+              hover:border-indigo-400/50
+              "
+                disabled={loading}
+              />
+            </FormFieldWrapper>
+          </div>
 
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-4"
-        noValidate
-        aria-describedby="signup-form-error signup-form-success"
-      >
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormFieldWrapper
-            id="firstName"
-            label="First name"
-            message={errors.firstName}
-            validationState={fieldValidationState.firstName}
-            prefix={<User className="h-4 w-4 text-text-light" />}
+            id="email"
+            label="Email"
+            message={errors.email}
+            validationState={fieldValidationState.email}
+            prefix={<AtSign className="w-4 h-4 text-text-light" />}
           >
             <input
-              name="firstName"
-              type="text"
-              value={formData.firstName}
+              name="email"
+              type="email"
+              value={formData.email}
               onChange={handleChange}
-              placeholder="Enter your first name"
-              className="w-full rounded-lg border border-border bg-bg py-2.5 pr-3 pl-9 text-sm text-text placeholder:text-text-light"
-              required
+              placeholder="Enter your email address"
+              className="
+            w-full pl-10 pr-4 py-3.5
+            rounded-2xl
+            border border-slate-300/20
+            bg-white/5
+            backdrop-blur-sm
+            text-text
+            placeholder:text-slate-400
+            focus:ring-2
+            focus:ring-indigo-500/30
+            focus:border-indigo-500
+            transition-all duration-300
+            hover:border-indigo-400/50
+            "
               disabled={loading}
             />
           </FormFieldWrapper>
+
           <FormFieldWrapper
-            id="lastName"
-            label="Last name"
-            message={errors.lastName}
-            validationState={fieldValidationState.lastName}
-            prefix={<User className="h-4 w-4 text-text-light" />}
+            id="password"
+            label="Password"
+            message={errors.password}
+            validationState={fieldValidationState.password}
+            prefix={<Lock className="w-4 h-4 text-text-light" />}
+            suffix={
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="flex items-center justify-center text-text-light hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded p-1"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-controls="password"
+                aria-pressed={showPassword ? "true" : "false"}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            }
           >
             <input
-              name="lastName"
-              type="text"
-              value={formData.lastName}
+              name="password"
+              type={showPassword ? "text" : "password"}
+              value={formData.password}
               onChange={handleChange}
-              placeholder="Enter your last name"
-              className="w-full rounded-lg border border-border bg-bg py-2.5 pr-3 pl-9 text-sm text-text placeholder:text-text-light"
-              required
+              placeholder="Create a strong password"
+              className="
+            w-full pl-10 pr-4 py-3.5
+            rounded-2xl
+            border border-slate-300/20
+            bg-white/5
+            backdrop-blur-sm
+            text-text
+            placeholder:text-slate-400
+            focus:ring-2
+            focus:ring-indigo-500/30
+            focus:border-indigo-500
+            transition-all duration-300
+            hover:border-indigo-400/50
+            "
               disabled={loading}
             />
           </FormFieldWrapper>
-        </div>
 
-        <FormFieldWrapper
-          id="email"
-          label="Email"
-          message={errors.email}
-          validationState={fieldValidationState.email}
-          prefix={<AtSign className="h-4 w-4 text-text-light" />}
-        >
-          <input
-            name="email"
-            type="email"
-            value={formData.email}
-            onChange={handleChange}
-            placeholder="Enter your email address"
-            className="w-full rounded-lg border border-border bg-bg py-2.5 pr-3 pl-9 text-sm text-text placeholder:text-text-light"
-            required
-            disabled={loading}
-          />
-        </FormFieldWrapper>
+          {formData.password && <PasswordStrengthIndicator password={formData.password} />}
 
-        <FormFieldWrapper
-          id="password"
-          label="Password"
-          message={errors.password}
-          validationState={fieldValidationState.password}
-          prefix={<Lock className="h-4 w-4 text-text-light" />}
-          suffix={
-            <button
-              type="button"
-              onClick={() => setShowPassword((prev) => !prev)}
-              className="flex items-center justify-center rounded p-1 text-text-light hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-              aria-label={showPassword ? "Hide password" : "Show password"}
-              aria-controls="password"
-              aria-pressed={showPassword ? "true" : "false"}
-            >
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
-          }
-        >
-          <input
-            name="password"
-            type={showPassword ? "text" : "password"}
-            value={formData.password}
-            onChange={handleChange}
-            placeholder="Create a strong password"
-            className="w-full rounded-lg border border-border bg-bg py-2.5 pr-9 pl-9 text-sm text-text placeholder:text-text-light"
-            required
-            disabled={loading}
-          />
-        </FormFieldWrapper>
+          <FormFieldWrapper
+            id="confirmPassword"
+            label="Confirm Password"
+            message={errors.confirmPassword || passwordMatchMessage}
+            validationState={fieldValidationState.confirmPassword}
+            prefix={<Lock className="w-4 h-4 text-text-light" />}
+            suffix={
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword((prev) => !prev)}
+                className="flex items-center justify-center text-text-light hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded p-1"
+                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                aria-controls="confirmPassword"
+                aria-pressed={showConfirmPassword ? "true" : "false"}
+              >
+                {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            }
+          >
+            <input
+              name="confirmPassword"
+              type={showConfirmPassword ? "text" : "password"}
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              placeholder="Re-enter your password"
+              className="
+            w-full pl-10 pr-4 py-3.5
+            rounded-2xl
+            border border-slate-300/20
+            bg-white/5
+            backdrop-blur-sm
+            text-text
+            placeholder:text-slate-400
+            focus:ring-2
+            focus:ring-indigo-500/30
+            focus:border-indigo-500
+            transition-all duration-300
+            "
+              disabled={loading}
+            />
+          </FormFieldWrapper>
 
-        {formData.password && <PasswordStrengthIndicator password={formData.password} />}
-
-        <FormFieldWrapper
-          id="confirmPassword"
-          label="Confirm Password"
-          message={errors.confirmPassword || passwordMatchMessage}
-          validationState={fieldValidationState.confirmPassword}
-          prefix={<Lock className="h-4 w-4 text-text-light" />}
-          suffix={
-            <button
-              type="button"
-              onClick={() => setShowConfirmPassword((prev) => !prev)}
-              className="flex items-center justify-center rounded p-1 text-text-light hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-              aria-label={showConfirmPassword ? "Hide password" : "Show password"}
-              aria-controls="confirmPassword"
-              aria-pressed={showConfirmPassword ? "true" : "false"}
-            >
-              {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
-          }
-        >
-          <input
-            name="confirmPassword"
-            type={showConfirmPassword ? "text" : "password"}
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            placeholder="Re-enter your password"
-            className="w-full rounded-lg border border-border bg-bg py-2.5 pr-9 pl-9 text-sm text-text placeholder:text-text-light"
-            required
-            disabled={loading}
-          />
-        </FormFieldWrapper>
-
-        <ValidationMessage
-          id="signup-form-error"
-          message={submitError}
-          state="error"
-          className="rounded-lg border border-red-200 bg-red-50 p-2 text-xs text-red-700"
-        />
-        {success && (
           <ValidationMessage
-            id="signup-form-success"
-            message={success}
-            state="success"
-            className="rounded-lg border border-green-200 bg-green-50 p-2 text-xs text-green-700"
+            id="signup-form-error"
+            message={submitError}
+            state="error"
+            className="text-xs text-red-700 bg-red-50 border border-red-200 p-2 rounded-lg"
           />
-        )}
-
-        <motion.button
-          type="submit"
-          disabled={loading}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-bold text-white hover:bg-primary-hover disabled:opacity-50"
-        >
-          {loading ? (
-            <>
-              <LoaderCircle className="h-4 w-4 animate-spin" />
-              Creating account...
-            </>
-          ) : (
-            "Create Account"
+          {success && (
+            <ValidationMessage
+              id="signup-form-success"
+              message={success}
+              state="success"
+              className="text-xs text-green-700 bg-green-50 border border-green-200 p-2 rounded-lg"
+            />
           )}
-        </motion.button>
-      </form>
+          <p className="text-xs text-center text-text-light">
+            By creating an account, you agree to our
+            <span className="text-primary cursor-pointer"> Terms of Service </span>
+            and
+            <span className="text-primary cursor-pointer"> Privacy Policy</span>.
+          </p>
+          <motion.button
+            type="submit"
+            disabled={loading}
+            className="
+          w-full py-4
+          rounded-2xl
+          font-semibold
+          bg-linear-to-r
+          from-indigo-600
+          via-purple-600
+          to-pink-600
+          hover:scale-[1.02]
+          shadow-xl
+          transition-all
+          duration-300
+          "
+          >
+            {loading ? (
+              <>
+                <LoaderCircle className="h-4 w-4 animate-spin" />
+                Creating account...
+              </>
+            ) : (
+              "Create Account"
+            )}
+          </motion.button>
+        </form>
 
-      <p className="mt-4 text-center text-sm text-text-light">
-        Already have an account?{" "}
-        <Link to="/login" className="text-primary hover:text-primary-hover">
-          Sign in
-        </Link>
-      </p>
+        <p className="text-center text-sm text-text-light mt-6">
+          Already have an account?
+          <Link
+            to="/login"
+            className="ml-1 font-semibold text-indigo-600 hover:text-purple-600 transition-colors"
+          >
+            Sign In
+          </Link>
+        </p>
+      </div>
     </div>
   );
 };

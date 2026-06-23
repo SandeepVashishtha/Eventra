@@ -96,11 +96,11 @@ const getInitialLiveCount = () => {
 
 const AnalyticsDashboard = () => {
   const { analytics, loading: analyticsLoading } = useAnalytics();
-  const [checkins, setCheckins] = useState(getInitialCheckins);
+  const [setCheckins] = useState(getInitialCheckins);
   const [hourlyData, setHourlyData] = useState(INITIAL_HOURLY_DATA);
   const [liveCount, setLiveCount] = useState(getInitialLiveCount);
   const [activeCheckinsPerMinute, setActiveCheckinsPerMinute] = useState(5.4);
-  const [activeTab, setActiveTab] = useState('analytics');
+  const [activeTab] = useState('analytics');
 
   const categoryData = analytics?.categoryBreakdown || FALLBACK_CATEGORY_DATA;
 
@@ -140,7 +140,7 @@ const AnalyticsDashboard = () => {
     } else {
       toast.info(`🔔 Check-in Verified: ${cleanCheckinData.name} matched to ${cleanCheckinData.event}`);
     }
-  }, []);
+  }, [setCheckins]);
 
   // Process real-time SSE stream
   useEffect(() => {
@@ -202,7 +202,11 @@ const AnalyticsDashboard = () => {
     }, 12000);
 
     return () => clearInterval(interval);
-  }, [isStreamActive]);
+  }, [isStreamActive,
+  setCheckins,
+  setLiveCount,
+  setActiveCheckinsPerMinute,
+  setHourlyData,]);
 
   // Manual check-in trigger
   const triggerManualCheckin = () => {

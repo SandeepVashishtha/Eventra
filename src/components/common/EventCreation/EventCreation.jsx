@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
@@ -17,7 +17,7 @@ import LocationFields from "./components/LocationFields";
 import RegistrationDatesFields from "./components/RegistrationDatesFields";
 import TagsInput from "./components/TagsInput";
 import StatsSection from "./components/StatsSection";
-import { useAutoSaveDraft } from "../../../hooks/useAutoSaveDraft";
+// import { useAutoSaveDraft } from "../../../hooks/useAutoSaveDraft";
 import { formatDraftAge } from "../../../utils/eventDraftUtils";
 import {
   DRAFT_KEY,
@@ -32,7 +32,7 @@ import {
 } from "@heroicons/react/24/solid";
 import { API_ENDPOINTS, apiUtils } from "../../../config/api";
 import { useFormSubmit } from "../../../hooks/useFormSubmit";
-import { validateCoordinates } from "../../../utils/eventCreationUtils";
+import { validateCoordinates, buildEventPayload } from "../../../utils/eventCreationUtils";
 import { validateForm } from "../../../utils/eventFormValidation";
 import { safeJsonParse } from "../../../utils/safeJsonParse";
 
@@ -47,7 +47,7 @@ const EventCreation = () => {
     error: submitError,
     success: submitSuccess,
   } = useFormSubmit(async (eventData) => {
-    // Auth is handled by the HttpOnly session cookie ΓÇö apiUtils sends it
+    // Auth is handled by the HttpOnly session cookie GÇö apiUtils sends it
     // automatically via withCredentials. Never read tokens from sessionStorage;
     // setToken was removed as part of the HttpOnly cookie migration.
 
@@ -85,7 +85,7 @@ const EventCreation = () => {
   const [showRestoreModal, setShowRestoreModal] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState(null);
   const [restoreDraftMessage, setRestoreDraftMessage] = useState(
-    `A previously saved event draft was found${lastSavedAt ? " (saved " + formatDraftAge(lastSavedAt) + ")" : ""}. Would you like to restore it?`
+    "A previously saved event draft was found. Would you like to restore it?"
   );
   const location = useLocation();
 
@@ -216,61 +216,7 @@ const EventCreation = () => {
 
   const createEvent = () => {
     try {
-      let coordinates = null;
-      if (formData.location?.coordinates?.latitude && formData.location?.coordinates?.longitude) {
-        coordinates = validateCoordinates(
-          formData.location?.coordinates?.latitude,
-          formData.location?.coordinates?.longitude
-        );
-      }
-
-      const eventStartDate = new Date(
-        `${formData.isMultiDay ? formData.startDate : formData.date}T${formData.startTime}`
-      );
-      const eventEndDate = new Date(
-        `${formData.isMultiDay ? formData.endDate : formData.date}T${formData.endTime}`
-      );
-
-      if (isNaN(eventStartDate.getTime()) || isNaN(eventEndDate.getTime())) {
-        throw new Error("Invalid date or time format");
-      }
-
-      const eventData = {
-        title: formData.title.trim(),
-        description: formData.description.trim(),
-        startDate: eventStartDate.toISOString(),
-        endDate: eventEndDate.toISOString(),
-        timezone: formData.timezone,
-        location: formData.isVirtual
-          ? null
-          : {
-              name: formData.location.name.trim(),
-              address: formData.location.address?.trim() || "",
-              coordinates: coordinates,
-            },
-        isVirtual: formData.isVirtual,
-        virtualLink: formData.isVirtual ? formData.virtualLink.trim() : null,
-        capacity: formData.capacity ? Number(formData.capacity) : null,
-        isPublic: formData.isPublic,
-        requiresApproval: formData.requiresApproval,
-        registrationStart: formData.registrationStart
-          ? new Date(formData.registrationStart).toISOString()
-          : null,
-        registrationEnd: formData.registrationEnd
-          ? new Date(formData.registrationEnd).toISOString()
-          : null,
-        category: formData.category,
-        tags: formData.tags.filter((tag) => tag.trim()),
-        ticketTiers: formData.ticketTiers
-          .filter((tier) => tier.name.trim())
-          .map((tier) => ({
-            name: tier.name.trim(),
-            price: Number(tier.price) || 0,
-            capacity: tier.capacity ? Number(tier.capacity) : null,
-            description: tier.description?.trim() || "",
-          })),
-      };
-
+      const eventData = buildEventPayload(formData);
       submitEventForm(eventData);
     } catch (error) {
       logger.error("Error creating event:", error);
@@ -298,6 +244,16 @@ const EventCreation = () => {
         setRestoreDraftMessage(
           "A duplicated event draft is ready. Would you like to restore it and continue editing?"
         );
+      } else {
+        try {
+          const parsed = safeJsonParse(saved, {});
+          const savedAt = parsed?.savedAt;
+          setRestoreDraftMessage(
+            `A previously saved event draft was found${savedAt ? ` (saved ${formatDraftAge(savedAt)})` : ""}. Would you like to restore it?`
+          );
+        } catch {
+          // keep default message
+        }
       }
     }
 
@@ -310,10 +266,13 @@ const EventCreation = () => {
 
       if (saved) {
         const parsed = safeJsonParse(saved, {});
+        // Draft is stored as { data: formFields, savedAt: "..." }
+        // Spread parsed.data; fall back to parsed itself for legacy plain-object drafts
+        const restoredData = parsed?.data || parsed;
 
         setFormData((prev) => ({
           ...prev,
-          ...parsed,
+          ...restoredData,
           banner: null,
           bannerPreview: null,
         }));
@@ -336,12 +295,19 @@ const EventCreation = () => {
   useEffect(() => {
     if (!isDraftLoaded) return;
 
-    const saveable = { ...formData };
-    delete saveable.banner;
-    delete saveable.bannerPreview;
+    const timer = setTimeout(() => {
+      const saveable = { ...formData };
+      delete saveable.banner;
+      delete saveable.bannerPreview;
 
-    localStorage.setItem(DRAFT_KEY, JSON.stringify({ data: saveable, savedAt: new Date().toISOString() }));
-    setLastSavedAt(new Date().toISOString());
+      localStorage.setItem(
+        DRAFT_KEY,
+        JSON.stringify({ data: saveable, savedAt: new Date().toISOString() })
+      );
+      setLastSavedAt(new Date().toISOString());
+    }, 1000);
+
+    return () => clearTimeout(timer);
   }, [formData, isDraftLoaded]);
 
   useEffect(() => {
@@ -401,7 +367,7 @@ const EventCreation = () => {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-r from-indigo-100 to-white px-4 py-12 sm:px-6 lg:px-8 dark:from-gray-900 dark:to-black">
+    <div className="min-h-screen bg-linear-to-r from-indigo-100 to-white dark:from-gray-900 dark:to-black flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <RestoreDraftModal
         isOpen={showRestoreModal}
         onRestore={handleRestoreDraft}
@@ -410,19 +376,39 @@ const EventCreation = () => {
       />
       {showRestoreModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+          className="
+      fixed inset-0 z-50
+      flex items-center justify-center
+      bg-black/50
+      px-4
+    "
         >
           <div
-            className="w-full max-w-md rounded-3xl border border-gray-200 bg-white p-8 shadow-2xl dark:border-gray-700 dark:bg-gray-900"
+            className="
+        w-full max-w-md
+        bg-white dark:bg-gray-900
+        rounded-3xl
+        p-8
+        shadow-2xl
+        border border-gray-200
+        dark:border-gray-700
+      "
           >
             <h2
-              className="mb-3 text-2xl font-bold text-gray-900 dark:text-white"
+              className="
+          text-2xl font-bold
+          text-gray-900 dark:text-white
+          mb-3
+        "
             >
               Restore Draft?
             </h2>
 
             <p
-              className="mb-6 text-gray-600 dark:text-gray-400"
+              className="
+          text-gray-600 dark:text-gray-400
+          mb-6
+        "
             >
               A previously saved event draft was found. Would you like to restore it?
             </p>
@@ -430,7 +416,15 @@ const EventCreation = () => {
             <div className="flex justify-end gap-3">
               <button
                 onClick={handleDiscardDraft}
-                className="rounded-xl border border-gray-300 px-4 py-2 transition hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800"
+                className="
+            px-4 py-2
+            rounded-xl
+            border border-gray-300
+            dark:border-gray-700
+            hover:bg-gray-100
+            dark:hover:bg-gray-800
+            transition
+          "
                 aria-label="button"
               >
                 Discard
@@ -438,7 +432,15 @@ const EventCreation = () => {
 
               <button
                 onClick={handleRestoreDraft}
-                className="rounded-xl bg-indigo-600 px-5 py-2 font-medium text-white transition hover:bg-indigo-700"
+                className="
+            px-5 py-2
+            rounded-xl
+            bg-indigo-600
+            hover:bg-indigo-700
+            text-white
+            font-medium
+            transition
+          "
                 aria-label="button"
               >
                 Restore Draft
@@ -450,13 +452,13 @@ const EventCreation = () => {
 
       {currentStep === CREATION_STEPS.FORM ? (
         <>
-          <div className="mb-6 flex w-full max-w-4xl justify-end">
+          <div className="w-full max-w-4xl flex justify-end mb-6">
             <button
               onClick={() => {
                 exportAttendeesToCSV(mockAttendees, "event-attendees.csv");
                 toast.success("CSV exported successfully!");
               }}
-              className="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 font-semibold text-white shadow-md transition-all duration-300 hover:bg-emerald-700 hover:shadow-lg"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-300"
             >
               <Download size={18} />
               Download CSV
@@ -467,12 +469,12 @@ const EventCreation = () => {
             initial={{ opacity: 0, y: -30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: prefersReducedMotion ? 0 : 0.7 }}
-            className="mb-10 text-center"
+            className="text-center mb-10"
           >
-            <h1 className="mb-4 text-4xl font-extrabold text-indigo-800 sm:text-5xl dark:text-indigo-300">
+            <h1 className="text-4xl sm:text-5xl font-extrabold text-indigo-800 dark:text-indigo-300 mb-4">
               Create Your Event
             </h1>
-            <p className="text-xs text-gray-600 sm:text-base dark:text-gray-400">
+            <p className="text-xs sm:text-base text-gray-600 dark:text-gray-400">
               Fill in the details below and bring your event to life!
             </p>
           </motion.div>
@@ -483,7 +485,7 @@ const EventCreation = () => {
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
-            className="w-full max-w-4xl rounded-2xl border border-indigo-300 bg-white p-8 shadow-xl dark:border-gray-700 dark:bg-gray-800"
+            className="w-full max-w-4xl bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-8 border border-indigo-300 dark:border-gray-700"
           >
             <div className="space-y-6">
               <GeneralInfoStep
@@ -516,13 +518,13 @@ const EventCreation = () => {
                 viewport={{ once: true }}
                 transition={{ duration: 0.5 }}
               >
-                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  <Calendar className="mr-2 inline-block h-5 w-5 text-indigo-500" />
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <Calendar className="w-5 h-5 text-indigo-500 inline-block mr-2" />
                   Event Duration
                 </label>
                 <div className="flex gap-6">
                   {/* Single-day Event Option */}
-                  <label className="flex items-center gap-2 text-gray-700 dark:text-white">
+                  <label className="flex items-center text-gray-700 dark:text-white gap-2">
                     <input
                       type="radio"
                       name="eventType"
@@ -544,7 +546,7 @@ const EventCreation = () => {
                   </label>
 
                   {/* Multi-day Event Option */}
-                  <label className="flex items-center gap-2 text-gray-700 dark:text-white">
+                  <label className="flex items-center text-gray-700 dark:text-white gap-2">
                     <input
                       type="radio"
                       name="eventType"
@@ -569,9 +571,9 @@ const EventCreation = () => {
 
               {/* Date and Time Fields */}
               {formData.isMultiDay ? (
-                // ≡ƒö╣ Multi-day Event
+                // =ƒö¦ Multi-day Event
                 <motion.div
-                  className="grid grid-cols-1 gap-4 sm:grid-cols-4"
+                  className="grid grid-cols-1 sm:grid-cols-4 gap-4"
                   initial={{ opacity: 0, x: -20 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
@@ -582,7 +584,7 @@ const EventCreation = () => {
                 >
                   {/* Start Date */}
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Start Date <span className="text-red-600">*</span>
                     </label>
                     <input
@@ -596,13 +598,13 @@ const EventCreation = () => {
                       } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
                     />
                     {errors.startDate && (
-                      <span className="mt-1 block text-sm text-red-500">{errors.startDate}</span>
+                      <span className="text-red-500 text-sm mt-1 block">{errors.startDate}</span>
                     )}
                   </div>
 
                   {/* End Date */}
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       End Date <span className="text-red-600">*</span>
                     </label>
                     <input
@@ -616,13 +618,13 @@ const EventCreation = () => {
                       } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
                     />
                     {errors.endDate && (
-                      <span className="mt-1 block text-sm text-red-500">{errors.endDate}</span>
+                      <span className="text-red-500 text-sm mt-1 block">{errors.endDate}</span>
                     )}
                   </div>
 
                   {/* Start Time */}
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Start Time <span className="text-red-600">*</span>
                     </label>
                     <input
@@ -635,13 +637,13 @@ const EventCreation = () => {
                       } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
                     />
                     {errors.startTime && (
-                      <span className="mt-1 block text-sm text-red-500">{errors.startTime}</span>
+                      <span className="text-red-500 text-sm mt-1 block">{errors.startTime}</span>
                     )}
                   </div>
 
                   {/* End Time */}
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       End Time <span className="text-red-600">*</span>
                     </label>
                     <input
@@ -654,14 +656,14 @@ const EventCreation = () => {
                       } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
                     />
                     {errors.endTime && (
-                      <span className="mt-1 block text-sm text-red-500">{errors.endTime}</span>
+                      <span className="text-red-500 text-sm mt-1 block">{errors.endTime}</span>
                     )}
                   </div>
                 </motion.div>
               ) : (
-                // ≡ƒö╕ Single-day Event
+                // =ƒö+ Single-day Event
                 <motion.div
-                  className="grid grid-cols-1 gap-4 sm:grid-cols-3"
+                  className="grid grid-cols-1 sm:grid-cols-3 gap-4"
                   initial={{ opacity: 0, x: -20 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
@@ -672,7 +674,7 @@ const EventCreation = () => {
                 >
                   {/* Event Date */}
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Event Date <span className="text-red-600">*</span>
                     </label>
                     <input
@@ -686,13 +688,13 @@ const EventCreation = () => {
                       } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
                     />
                     {errors.date && (
-                      <span className="mt-1 block text-sm text-red-500">{errors.date}</span>
+                      <span className="text-red-500 text-sm mt-1 block">{errors.date}</span>
                     )}
                   </div>
 
                   {/* Start Time */}
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Start Time <span className="text-red-600">*</span>
                     </label>
                     <input
@@ -705,13 +707,13 @@ const EventCreation = () => {
                       } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
                     />
                     {errors.startTime && (
-                      <span className="mt-1 block text-sm text-red-500">{errors.startTime}</span>
+                      <span className="text-red-500 text-sm mt-1 block">{errors.startTime}</span>
                     )}
                   </div>
 
                   {/* End Time */}
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       End Time <span className="text-red-600">*</span>
                     </label>
                     <input
@@ -724,7 +726,7 @@ const EventCreation = () => {
                       } rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
                     />
                     {errors.endTime && (
-                      <span className="mt-1 block text-sm text-red-500">{errors.endTime}</span>
+                      <span className="text-red-500 text-sm mt-1 block">{errors.endTime}</span>
                     )}
                   </div>
                 </motion.div>
@@ -743,9 +745,9 @@ const EventCreation = () => {
                     name="isVirtual"
                     checked={formData.isVirtual}
                     onChange={handleInputChange}
-                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
                   />
-                  <Globe className="inline-block h-5 w-5 text-indigo-500" />
+                  <Globe className="w-5 h-5 text-indigo-500 inline-block" />
                   This is a virtual event
                 </label>
               </motion.div>
@@ -758,8 +760,8 @@ const EventCreation = () => {
                   viewport={{ once: true }}
                   transition={{ duration: 0.5 }}
                 >
-                  <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    <Link2 className="mr-2 inline-block h-5 w-5 text-indigo-500" />
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <Link2 className="w-5 h-5 text-indigo-500 inline-block mr-2" />
                     Virtual Event Link <span className="text-red-600">*</span>
                   </label>
                   <input
@@ -773,7 +775,7 @@ const EventCreation = () => {
                     } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
                   />
                   {errors.virtualLink && (
-                    <span className="mt-1 text-sm text-red-500">{errors.virtualLink}</span>
+                    <span className="text-red-500 text-sm mt-1">{errors.virtualLink}</span>
                   )}
                 </motion.div>
               ) : (
@@ -791,7 +793,7 @@ const EventCreation = () => {
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: 0.6 }}
               >
-                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Maximum Attendees
                 </label>
                 <input
@@ -804,7 +806,7 @@ const EventCreation = () => {
                   max="100000"
                   className={`w-full border ${errors.capacity ? "border-red-500" : "border-gray-300 dark:border-gray-600"} rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
                 />
-                {errors.capacity && <span className="mt-1 text-sm text-red-500">{errors.capacity}</span>}
+                {errors.capacity && <span className="text-red-500 text-sm mt-1">{errors.capacity}</span>}
               </motion.div>
 
               <RegistrationDatesFields
@@ -826,7 +828,7 @@ const EventCreation = () => {
                     name="isPublic"
                     checked={formData.isPublic}
                     onChange={handleInputChange}
-                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
                   />
                   Make this event public
                 </label>
@@ -836,7 +838,7 @@ const EventCreation = () => {
                     name="requiresApproval"
                     checked={formData.requiresApproval}
                     onChange={handleInputChange}
-                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
                   />
                   Require approval for registration
                 </label>
@@ -863,13 +865,13 @@ const EventCreation = () => {
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: 1.0 }}
               >
-                <div className="mb-2 flex items-center gap-2">
-                  <TagIcon className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                <div className="flex items-center gap-2 mb-2">
+                  <TagIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     Tags
                   </label>
                 </div>
-                <div className="mb-3 flex gap-2">
+                <div className="flex gap-2 mb-3">
                   <input
                     type="text"
                     value={newTag}
@@ -881,15 +883,26 @@ const EventCreation = () => {
                         addTag();
                       }
                     }}
-                    className="flex-1 rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900 focus:ring-1 focus:ring-indigo-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                    className="flex-1 text-sm border border-gray-300 dark:border-gray-600 rounded-lg p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                   />
                   <button
                     type="button"
                     onClick={addTag}
-                    className="flex transform items-center justify-center gap-2 rounded-3xl bg-black px-4 py-2 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:scale-[1.03] hover:bg-zinc-800 hover:shadow-lg focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 active:scale-[0.97]"
+                    className="
+        flex items-center justify-center gap-2
+        px-4 py-2
+        rounded-3xl font-semibold
+        text-white
+        bg-black
+        shadow-md hover:shadow-lg
+        hover:bg-zinc-800
+        transform hover:scale-[1.03] active:scale-[0.97]
+        transition-all duration-300
+        focus:ring-2 focus:ring-offset-2 focus:ring-indigo-400 text-sm
+      "
                     aria-label="button"
                   >
-                    <Plus className="h-4 w-4" />
+                    <Plus className="w-4 h-4" />
                     Add
                   </button>
                 </div>
@@ -897,15 +910,15 @@ const EventCreation = () => {
                   {formData.tags.map((tag, index) => (
                     <span
                       key={index}
-                      className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-3 py-1 text-sm font-medium text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300"
+                      className="inline-flex items-center gap-1 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full text-sm font-medium"
                     >
                       #{tag}
                       <button
                         type="button"
                         onClick={() => removeTag(tag)}
-                        className="ml-1 font-bold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-200"
+                        className="ml-1 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 font-bold"
                       >
-                        ├ù
+                        +ù
                       </button>
                     </span>
                   ))}
@@ -917,7 +930,7 @@ const EventCreation = () => {
                 onClick={handleNext}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-black p-4 font-semibold text-white shadow-lg transition-all duration-300 hover:bg-zinc-800"
+                className="w-full flex items-center justify-center gap-2 bg-black text-white font-semibold p-4 rounded-xl shadow-lg hover:bg-zinc-800 transition-all duration-300"
               >
                 Preview Event
               </motion.button>
@@ -941,3 +954,4 @@ const EventCreation = () => {
 };
 
 export default EventCreation;
+

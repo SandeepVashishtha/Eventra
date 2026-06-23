@@ -49,16 +49,16 @@ export default function LanguageSelector({ className = "", compact = false }) {
         aria-haspopup="listbox"
         aria-label={t("language.switch")}
         className={`
-          flex items-center gap-1.5 rounded-lg border border-border bg-navbar
+          flex items-center gap-1 rounded-lg border border-border bg-navbar
           text-text-light hover:text-text hover:bg-bg-secondary
           transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary
-          ${compact ? "px-2 py-1.5 text-xs" : "px-3 py-2 text-sm"}
+          ${compact ? "px-0.5 py-0.5 text-xs" : "px-1 py-0.5 text-sm"}
         `}
       >
         <Globe className={compact ? "h-3.5 w-3.5" : "h-4 w-4"} aria-hidden="true" />
         <span className="font-medium">{currentLang.nativeLabel}</span>
         <ChevronDown
-          className={`h-3.5 w-3.5 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+          className={`${compact ? "h-3.5 w-3.5" : "h-4 w-4"} transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
           aria-hidden="true"
         />
       </button>
@@ -72,7 +72,7 @@ export default function LanguageSelector({ className = "", compact = false }) {
             transition={{ duration: 0.15, ease: "easeOut" }}
             role="listbox"
             aria-label={t("language.switch")}
-            className="absolute right-0 z-[300] mt-2 min-w-[10rem] origin-top-right rounded-xl border border-border bg-navbar p-1.5 shadow-lg"
+            className="absolute right-0 mt-2 min-w-[10rem] origin-top-right rounded-xl border border-border bg-navbar shadow-lg p-1.5 z-dropdown"
           >
             {supportedLanguages.map((lang) => {
               const isActive = lang.code === language;

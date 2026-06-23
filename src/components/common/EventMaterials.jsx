@@ -263,8 +263,8 @@ const EventMaterials = ({ materials }) => {
                       <motion.div
                         className={`h-full rounded-full ${
                           transfer.type === "p2p" 
-                            ? "bg-gradient-to-r from-emerald-500 to-teal-500" 
-                            : "bg-gradient-to-r from-indigo-500 to-purple-500"
+                            ? "bg-linear-to-r from-emerald-500 to-teal-500" 
+                            : "bg-linear-to-r from-indigo-500 to-purple-500"
                         }`}
                         initial={{ width: 0 }}
                         animate={{ width: `${transfer.progress}%` }}

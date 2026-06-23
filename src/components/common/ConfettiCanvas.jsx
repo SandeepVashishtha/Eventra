@@ -86,7 +86,7 @@ const ConfettiCanvas = ({
   return (
     <canvas
       ref={canvasRef}
-      className="pointer-events-none fixed inset-0 z-[9999]"
+      className="fixed inset-0 pointer-events-none z-top"
       style={{ mixBlendMode: "screen" }}
     />
   );

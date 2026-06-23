@@ -231,7 +231,7 @@ const ModernTestimonialTrain = () => {
 
   return (
     <section 
-      className="relative py-20 px-4 bg-gradient-to-b from-indigo-50 via-indigo-100 to-white dark:from-gray-900 dark:via-indigo-900/20 dark:to-black text-gray-900 dark:text-gray-100 overflow-hidden"
+      className="relative py-20 px-4 bg-linear-to-b from-indigo-50 via-indigo-100 to-white dark:from-gray-900 dark:via-indigo-900/20 dark:to-black text-gray-900 dark:text-gray-100 overflow-hidden"
       aria-label="Community Testimonials"
     >
       {/* 🎨 Floating decorative stars */}
@@ -251,7 +251,7 @@ const ModernTestimonialTrain = () => {
       {/* 📰 Header Section */}
       <div className="max-w-7xl mx-auto text-center mb-10">
         <motion.h2 
-          className="text-3xl md:text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400"
+          className="text-3xl md:text-4xl font-extrabold bg-clip-text text-transparent bg-linear-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400"
           initial={{ opacity: 0, y: -20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -435,7 +435,7 @@ const ModernTestimonialTrain = () => {
         viewport={{ once: true }}
         transition={{ delay: 0.2 }}
       >
-        <div className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-200/50 dark:border-indigo-800/50">
+        <div className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl bg-linear-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-200/50 dark:border-indigo-800/50">
           <span className="text-sm text-gray-700 dark:text-gray-300">
             Have a story to share?
           </span>

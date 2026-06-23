@@ -11,7 +11,7 @@ const ProjectCTA = () => {
   
   return (
     <section 
-      className="relative py-16 px-8 m-8 rounded-3xl bg-gradient-to-tr from-sky-100 via-white to-blue-100 dark:from-[#111827] dark:via-[#0f172a] dark:to-black text-black dark:text-white shadow-xl overflow-hidden border border-gray-200 dark:border-gray-800"
+      className="relative py-16 px-8 m-8 rounded-3xl bg-linear-to-tr from-sky-100 via-white to-blue-100 dark:from-[#111827] dark:via-[#0f172a] dark:to-black text-black dark:text-white shadow-xl overflow-hidden border border-gray-200 dark:border-gray-800"
       // AOS Implementation
       data-aos="zoom-in-up"
       data-aos-duration="1000"

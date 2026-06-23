@@ -1,5 +1,5 @@
 
-import React from 'react';
+// import React from 'react';
 export default function SponsorDashboard() {
   return (
     <div className="mx-auto max-w-4xl p-8">

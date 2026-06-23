@@ -26,7 +26,7 @@ const FormField = ({ label, icon: Icon, error, children, required, hint }) => (
   </div>
 );
 
-const EventBasicInfo = ({ formData, handleInputChange, errors }) => {
+const EventBasicInfo = ({ formData, handleInputChange, handleFieldBlur, errors }) => {
   return (
     <div className="space-y-6">
       <FormField label="Event Title" icon={FileText} error={errors.title} required>
@@ -36,6 +36,7 @@ const EventBasicInfo = ({ formData, handleInputChange, errors }) => {
           name="title"
           value={formData.title}
           onChange={handleInputChange}
+          onBlur={handleFieldBlur}
           maxLength={200}
           aria-describedby="title-counter"
           placeholder="Give your event a catchy title"
@@ -56,6 +57,7 @@ const EventBasicInfo = ({ formData, handleInputChange, errors }) => {
           name="category"
           value={formData.category}
           onChange={handleInputChange}
+          onBlur={handleFieldBlur}
           className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-700 
                    text-gray-900 dark:text-gray-100 focus:outline-none 
                    focus:ring-2 focus:ring-indigo-500 focus:border-transparent
@@ -78,6 +80,7 @@ const EventBasicInfo = ({ formData, handleInputChange, errors }) => {
           name="description"
           value={formData.description}
           onChange={handleInputChange}
+          onBlur={handleFieldBlur}
           rows={5}
           maxLength={500}
           aria-describedby="description-counter"

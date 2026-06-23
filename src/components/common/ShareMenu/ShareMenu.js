@@ -185,7 +185,7 @@ const ShareMenu = ({
   const currentPosition = calculatedPosition || position;
 
   return (
-    <div className={`relative inline-block z-[200] share-menu-container ${className}`} ref={menuRef}>
+    <div className={`relative inline-block z-dropdown share-menu-container ${className}`} ref={menuRef}>
       {/* Share Button */}
       <button
         type="button"
@@ -210,7 +210,7 @@ const ShareMenu = ({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.15 }}
-            className={`share-menu-dropdown absolute z-[9999] ${positionClasses[currentPosition]} shadow-xl rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 ${menuClassName}`}
+            className={`share-menu-dropdown absolute z-popover ${positionClasses[currentPosition]} shadow-xl rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 ${menuClassName}`}
             role="menu"
             aria-label="Sharing options"
           >

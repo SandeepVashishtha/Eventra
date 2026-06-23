@@ -5,7 +5,7 @@ import { useReducedMotion } from '../hooks/useReducedMotion';
 import useDebounce from '../hooks/useDebounce.js';
 import { toast } from 'react-toastify';
 import './components.css';
-import CharacterCounter from "../../components/common/CharacterCounter";
+import CharacterCounter from "./common/CharacterCounter";
 import { sanitizeInputText } from "../utils/inputSanitization";
 import EventMaterials from "./common/EventMaterials";
 import { Plus, Search, Check, X, Briefcase as BriefcaseIcon, DollarSign, Calendar, Users, Send, MessageCircle } from 'lucide-react';

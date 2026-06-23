@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import useReducedMotion from "../../hooks/useReducedMotion";
 import {
@@ -217,6 +217,7 @@ export default function CollaborationNetworkMap() {
   const [zoom, setZoom] = useState(1);
   const [showConnections, setShowConnections] = useState(true);
   const [particlesEnabled, setParticlesEnabled] = useState(false);
+  const hoverTimeoutRef = useRef(null);
 
   // Memoized computations
   const hubCoordinates = useMemo(() => {
@@ -268,7 +269,10 @@ export default function CollaborationNetworkMap() {
       if (e.key === "-" || e.key === "_") setZoom((z) => Math.max(z - 0.2, 0.5));
     };
     window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
+    return () => {
+      window.removeEventListener("keydown", handleKey);
+      if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    };
   }, []);
 
   const getCoordinates = useCallback(
@@ -280,10 +284,28 @@ export default function CollaborationNetworkMap() {
     if (!hub) return {};
     const xPercent = (hub.x / 1000) * 100;
     const yPercent = (hub.y / 500) * 100;
+    
+    // Prevent horizontal overflow
+    let xTransform = "-50%";
+    if (hub.x > 750) {
+      xTransform = "-90%";
+    } else if (hub.x < 250) {
+      xTransform = "-10%";
+    }
+
+    // Prevent vertical overflow for nodes near the top
+    let yTransform = "-100%";
+    let yOffset = -4;
+    if (hub.y < 250) {
+      yTransform = "0%";
+      yOffset = 4;
+    }
+
     return { 
       left: `${xPercent}%`, 
-      top: `${yPercent - 4}%`, 
-      transform: "translate(-50%, -100%)" 
+      top: `${yPercent + yOffset}%`, 
+      x: xTransform,
+      y: yTransform
     };
   }, []);
 
@@ -302,10 +324,21 @@ export default function CollaborationNetworkMap() {
 
   const handleHubHover = useCallback(
     (hub) => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
       if (!pinnedHub) setActiveHub(hub);
     },
     [pinnedHub]
   );
+
+  const handleHubMouseLeave = useCallback(() => {
+    if (!pinnedHub) {
+      hoverTimeoutRef.current = setTimeout(() => {
+        setActiveHub(null);
+      }, 150);
+    }
+  }, [pinnedHub]);
 
   return (
     <section className="bg-white py-16 text-slate-900 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100">
@@ -496,7 +529,6 @@ export default function CollaborationNetworkMap() {
                 {/* Interactive SVG City Nodes mapping */}
                 {filteredHubs.map((hub) => {
                   const isActive = activeHub?.id === hub.id || pinnedHub?.id === hub.id;
-                  const isPinned = pinnedHub?.id === hub.id;
                   const config = ACTIVITY_LEVELS[hub.activity];
                   const hubSize = getHubSize(hub.devs);
 
@@ -505,7 +537,7 @@ export default function CollaborationNetworkMap() {
                       key={hub.id}
                       className="cursor-pointer outline-none select-none"
                       onMouseEnter={() => handleHubHover(hub)}
-                      onMouseLeave={() => !pinnedHub && setActiveHub(null)}
+                      onMouseLeave={handleHubMouseLeave}
                       onClick={() => handleHubClick(hub)}
                       role="button"
                     >
@@ -563,12 +595,14 @@ export default function CollaborationNetworkMap() {
             <AnimatePresence>
               {(activeHub || pinnedHub) && (
                 <motion.div
-                  initial={{ opacity: 0, y: -4, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -4, scale: 0.95 }}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.15 }}
                   className="absolute z-30 w-72 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl dark:border-slate-800 dark:bg-slate-900"
                   style={getPopupStyle(activeHub || pinnedHub)}
+                  onMouseEnter={() => handleHubHover(activeHub || pinnedHub)}
+                  onMouseLeave={handleHubMouseLeave}
                 >
                   {pinnedHub && (
                     <button

@@ -9,15 +9,15 @@ const ProgressStepper = ({ steps, currentStep }) => {
   };
 
   return (
-    <div className="mb-8 w-full">
+    <div className="w-full mb-8">
       {/* Progress Bar Background */}
       <div className="relative mb-8">
         {/* Background Line */}
-        <div className="absolute top-1/2 right-0 left-0 h-1 -translate-y-1/2 rounded-full bg-gray-200 dark:bg-gray-700" />
+        <div className="absolute top-1/2 left-0 right-0 h-1 bg-gray-200 dark:bg-gray-700 rounded-full -translate-y-1/2" />
         
         {/* Progress Fill */}
         <motion.div
-          className="absolute top-1/2 left-0 h-1 -translate-y-1/2 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600"
+          className="absolute top-1/2 left-0 h-1 bg-linear-to-r from-blue-600 to-indigo-600 rounded-full -translate-y-1/2"
           initial={{ width: "0%" }}
           animate={{ width: `${(currentStep / (steps.length - 1)) * 100}%` }}
           transition={{ duration: 0.3, ease: "easeOut" }}

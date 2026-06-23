@@ -111,9 +111,10 @@ const MobileDrawer = ({
                 alt=""
                 aria-hidden="true"
                 className="block h-full w-full object-contain"
+                 loading="lazy"
               />
             </div>
-            <h2 className="xs:text-2xl truncate text-xl font-bold text-text">
+            <h2 className="truncate text-xl font-bold text-text xs:text-2xl">
               Eventra
             </h2>
           </div>
@@ -164,22 +165,26 @@ const MobileDrawer = ({
                   {t("nav.viewProfile")}
                 </Link>
                 <Link
-                  to="/notifications"
-                  onClick={closeMenu}
-                  className={`mobile-drawer-link flex min-h-[48px] w-full items-center gap-2 rounded-lg border-l-2 px-3 py-2 text-sm font-medium transition-all duration-200 ${
-                    isActive("/notifications")
-                      ? "border-primary bg-bg-secondary text-text"
-                      : "border-transparent text-text-light hover:bg-bg hover:text-text"
-                  }`}
-                >
-                  <Bell className="h-5 w-5" />
-                  Notifications
-                  {unreadCount > 0 && (
-                    <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">
-                      {unreadCount > 99 ? "99+" : unreadCount}
-                    </span>
-                  )}
-                </Link>
+                   to="/notifications"
+                   onClick={closeMenu}
+                   className={`mobile-drawer-link flex min-h-[48px] w-full items-center gap-2 rounded-lg border-l-2 px-3 py-2 text-sm font-medium transition-all duration-200 ${
+                     isActive("/notifications")
+                       ? "border-primary bg-bg-secondary text-text"
+                       : "border-transparent text-text-light hover:bg-bg hover:text-text"
+                   }`}
+                   aria-current={isActive("/notifications") ? "page" : undefined}
+                 >
+                   <Bell className="w-5 h-5" aria-hidden="true" />
+                   Notifications
+                   {unreadCount > 0 && (
+                     <span
+                       className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white"
+                       aria-label={`${unreadCount > 99 ? "99 or more" : unreadCount} unread notifications`}
+                     >
+                       {unreadCount > 99 ? "99+" : unreadCount}
+                     </span>
+                   )}
+                 </Link>
                 <Link
                   to="/about"
                   onClick={closeMenu}
@@ -189,7 +194,7 @@ const MobileDrawer = ({
                       : "border-transparent text-text-light hover:bg-bg hover:text-text"
                   }`}
                 >
-                  <Info className="h-5 w-5" />
+                  <Info className="w-5 h-5" />
                   {t("nav.about")}
                 </Link>
                 <Link
@@ -201,7 +206,7 @@ const MobileDrawer = ({
                       : "border-transparent text-text-light hover:bg-bg hover:text-text"
                   }`}
                 >
-                  <HelpCircle className="h-5 w-5" />
+                  <HelpCircle className="w-5 h-5" />
                   {t("nav.faqFull")}
                 </Link>
                 <button
@@ -212,12 +217,12 @@ const MobileDrawer = ({
                   }}
                   className="mobile-drawer-link flex min-h-[48px] w-full items-center gap-2 rounded-lg border-l-2 border-transparent px-3 py-2 text-left text-sm font-medium text-text-light transition-all duration-200 hover:bg-bg hover:text-text"
                 >
-                  <LogIn className="h-5 w-5" />
+                  <LogIn className="w-5 h-5" />
                   {t("nav.signOut")}
                 </button>
               </div>
             ) : (
-              <div className="mt-4 flex flex-col gap-4">
+              <div className="flex flex-col gap-4 mt-4">
                 <Link
                   to="/about"
                   onClick={closeMenu}
@@ -227,7 +232,7 @@ const MobileDrawer = ({
                       : "text-text-light hover:text-text border-transparent"
                   }`}
                 >
-                  <Info className="h-5 w-5" />
+                  <Info className="w-5 h-5" />
                   {t("nav.about")}
                 </Link>
                 <Link
@@ -239,7 +244,7 @@ const MobileDrawer = ({
                       : "text-text-light hover:text-text border-transparent"
                   }`}
                 >
-                  <HelpCircle className="h-5 w-5" />
+                  <HelpCircle className="w-5 h-5" />
                   {t("nav.faqFull")}
                 </Link>
                 <Link
@@ -251,7 +256,7 @@ const MobileDrawer = ({
                       : "text-text-light hover:text-text border-transparent"
                   }`}
                 >
-                  <LogIn className="h-5 w-5" />
+                  <LogIn className="w-5 h-5" />
                   {t("nav.signIn")}
                 </Link>
                 <Link
@@ -263,7 +268,7 @@ const MobileDrawer = ({
                       : "text-text-light hover:text-text border-transparent"
                   }`}
                 >
-                  <UserPlus className="h-5 w-5" />
+                  <UserPlus className="w-5 h-5" />
                   {t("nav.signUp")}
                 </Link>
               </div>
@@ -272,28 +277,32 @@ const MobileDrawer = ({
 
           {/* Preferences Section (Theme & Cursor Toggles) - Unified Semantic Classes */}
           <div className="mt-6 border-t border-border pt-4 sm:hidden">
-            <h3 className="mb-3 px-3 text-xs font-semibold tracking-wider text-text-light/80 uppercase">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-text-light/80 mb-3 px-3">
               Preferences
             </h3>
             <div className="flex items-center gap-3 px-3">
               <button
                 type="button"
                 onClick={toggleTheme}
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border px-3 py-2.5 text-sm font-medium text-text-light transition-all hover:bg-bg-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                aria-pressed={isDarkMode}
+                aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+                className="flex flex-1 items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-border text-sm font-medium text-text-light hover:bg-bg-secondary transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
-                {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
+                {isDarkMode ? <Sun size={16} aria-hidden="true" /> : <Moon size={16} aria-hidden="true" />}
                 <span>{isDarkMode ? "Light" : "Dark"}</span>
               </button>
               <button
                 type="button"
                 onClick={toggleCursor}
+                aria-pressed={cursorEnabled}
+                aria-label={cursorEnabled ? "Disable custom cursor" : "Enable custom cursor"}
                 className={`flex flex-1 items-center justify-center gap-2 py-2.5 px-3 rounded-xl border text-sm font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                   cursorEnabled
                     ? "border-primary/40 bg-primary/10 text-primary"
                     : "border-border text-text-light hover:bg-bg-secondary"
                 }`}
               >
-                <MousePointer size={16} />
+                <MousePointer size={16} aria-hidden="true" />
                 <span>Cursor: {cursorEnabled ? "On" : "Off"}</span>
               </button>
             </div>

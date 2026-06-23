@@ -155,11 +155,25 @@ const FluidCursor = ({ enabled = true }) => {
         );
       }
 
-      gl.clearColor(0.0, 0.0, 0.0, 1.0);
+      gl.clearColor(0.0, 0.0, 0.0, 0.0);
 
       const halfFloatTexType = isWebGL2
-        ? gl.HALF_FLOAT
-        : halfFloat.HALF_FLOAT_OES;
+          ? gl.HALF_FLOAT
+          : halfFloat?.HALF_FLOAT_OES;
+
+        if (!halfFloatTexType) {
+          logger.warn("[FluidCursor] Half float textures not supported.");
+          return {
+            gl: null,
+            ext: {
+              formatRGBA: null,
+              formatRG: null,
+              formatR: null,
+              halfFloatTexType: null,
+              supportLinearFiltering: false,
+            },
+          };
+        }
       let formatRGBA;
       let formatRG;
       let formatR;
@@ -659,7 +673,7 @@ const FluidCursor = ({ enabled = true }) => {
           gl.bindFramebuffer(gl.FRAMEBUFFER, target.fbo);
         }
         if (clear) {
-          gl.clearColor(0.0, 0.0, 0.0, 1.0);
+          gl.clearColor(0.0, 0.0, 0.0, 0.0);
           gl.clear(gl.COLOR_BUFFER_BIT);
         }
         gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
@@ -1084,7 +1098,7 @@ const FluidCursor = ({ enabled = true }) => {
           1.0 / height,
         );
       gl.uniform1i(displayMaterial.uniforms.uTexture, dye.read.attach(0));
-      blit(target);
+      blit(target, true);
     }
 
     function splatPointer(pointer) {
@@ -1166,11 +1180,11 @@ const FluidCursor = ({ enabled = true }) => {
 
     function generateColor() {
       // Premium sky blue / deep ocean cyan (#00A3FF)
-      // Scaled by 0.15 to maintain the perfect density in the fluid solver and prevent over-saturation
+      // Scaled by 0.32 to provide stronger glow visibility on both light and dark backgrounds
       return {
-        r: 0.0 * 0.07,
-        g: (163 / 255) * 0.07,
-        b: (255 / 255) * 0.07
+        r: 0.0 * 0.32,
+        g: (163 / 255) * 0.32,
+        b: (255 / 255) * 0.32
       };
     }
 
@@ -1216,7 +1230,9 @@ const FluidCursor = ({ enabled = true }) => {
     // and detect the actual DOM element beneath it.
     function isExcludedZone(clientX, clientY, target) {
       if (target && typeof target.closest === 'function') {
-        if (target.closest("nav") !== null || target.closest("footer") !== null || target.closest("a") !== null || target.closest("button") !== null) {
+        // Only exclude header nav and footer to prevent cluttering global navigation, 
+        // but keep trail active on buttons, links, and inputs for visual consistency.
+        if (target.closest("nav") !== null || target.closest("footer") !== null) {
           return true;
         }
       }
