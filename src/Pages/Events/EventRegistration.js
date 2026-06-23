@@ -46,6 +46,24 @@ import registrationLocks from "../../utils/registrationLocks";
 
 const MAX_NOTES_CHARS = 500;
 
+const isRequestCanceled = (error, signal) =>
+  signal?.aborted ||
+  error?.name === "AbortError" ||
+  error?.name === "CanceledError" ||
+  error?.code === "ERR_CANCELED";
+
+const generateSecureUUID = () => {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+    return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+      (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+    );
+  }
+  throw new Error("Secure random number generation is not supported in this browser.");
+};
+
 const getRegistrationFailureMessage = (error) => {
   const message = error?.data?.message || error?.data?.error || error?.message || "";
   const normalizedMessage = message.toLowerCase();
@@ -343,10 +361,7 @@ const EventRegistration = () => {
         // should honour it for duplicate detection) and is also passed to
         // pushToQueue so the queue can deduplicate by eventId+userId before
         // writing to IndexedDB / localStorage.
-        const idempotencyKey =
-        typeof crypto !== "undefined" && crypto.randomUUID
-        ? crypto.randomUUID()
-        : `idem-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+        const idempotencyKey = generateSecureUUID();
 
     try {
       const response = await apiUtils.post(
@@ -361,11 +376,12 @@ const EventRegistration = () => {
       );
 
       const regData = response.data || {};
-      const registrationId = regData.registrationId || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `reg-${Date.now()}`);
+      const registrationId = regData.registrationId || generateSecureUUID();
       const qrToken = regData.qrToken || "";
 
       setRegistered(true);
       toast.success(t("eventRegistration.toastRegistrationSuccess"));
+      // addRegistration(event, formData)
       addRegistration(event, formData, registrationId, qrToken);
       clearSession();
     } catch (error) {
@@ -687,7 +703,7 @@ const EventRegistration = () => {
           </p>
 
           <div className="bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200/40 dark:border-slate-800/50 rounded-3xl p-5 mb-8 text-left">
-            <h3 title={event.title} className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-3 line-clamp-2 wrap-break-word min-w-0">
+            <h3 title={event.title} className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-3 line-clamp-2 break-words min-w-0">
               {event.title}
             </h3>
 
@@ -857,7 +873,7 @@ const EventRegistration = () => {
             />
             <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent"></div>
             <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-              <h1 title={event.title} className="text-3xl font-bold mb-2 wrap-break-word">{event.title}</h1>
+              <h1 title={event.title} className="text-3xl font-bold mb-2 break-words">{event.title}</h1>
               <div className="flex flex-wrap gap-4 text-sm">
                 <span className="flex items-center gap-1">
                   <Calendar className="w-4 h-4" />
@@ -1078,7 +1094,7 @@ const EventRegistration = () => {
                   htmlFor="additionalInfo"
                   className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                 >
-                  {t("eventRegistration.formAdditionalInfo")}
+                  {t("eventRegistration.formAdditionalInfo") /* Additional Information (Optional) */}
                 </label>
                 <textarea
                   id="additionalInfo"

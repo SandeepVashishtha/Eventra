@@ -5,6 +5,7 @@
  */
 
 import { apiUtils } from "../config/api.js";
+import { logger } from "./logger.js";
 
 /**
  * Generic async validator factory
@@ -17,11 +18,17 @@ import { apiUtils } from "../config/api.js";
 export const createAsyncValidator = (asyncValidatorFn, debounceMs = 300) => {
   let timeoutId;
 
-  return async function asyncValidator(value, ...args) {
-    return new Promise((resolve) => {
-      clearTimeout(timeoutId);
+  let resolvePrev;
 
+  return async function asyncValidator(value, ...args) {
+    if (resolvePrev) resolvePrev(null);
+
+    clearTimeout(timeoutId);
+
+    return new Promise((resolve) => {
+      resolvePrev = resolve;
       timeoutId = setTimeout(async () => {
+        resolvePrev = null;
         try {
           const result = await asyncValidatorFn(value, ...args);
           resolve(result);
@@ -82,7 +89,7 @@ export const validateUsernameAvailable = async (username) => {
 
     return response.data.available === true || "Username already taken";
   } catch (error) {
-    console.error("Username validation error:", error);
+    logger.error("Username validation error:", error);
     throw error;
   }
 };
@@ -106,7 +113,7 @@ export const validateEmailAvailable = async (email) => {
 
     return response.data.available === true || "Email already registered";
   } catch (error) {
-    console.error("Email validation error:", error);
+    logger.error("Email validation error:", error);
     throw error;
   }
 };
@@ -130,7 +137,7 @@ export const validateEmailDomainExists = async (email) => {
 
     return response.data.valid === true || "Email domain does not exist";
   } catch (error) {
-    console.error("Email domain validation error:", error);
+    logger.error("Email domain validation error:", error);
     throw error;
   }
 };
@@ -156,13 +163,13 @@ export const validatePasswordStrength = async (password) => {
       hasUppercase: /[A-Z]/.test(password),
       hasLowercase: /[a-z]/.test(password),
       hasNumber: /\d/.test(password),
-      hasSpecial: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+      hasSpecial: /[^A-Za-z0-9]/.test(password),
     };
 
     const allMet = Object.values(requirements).every(Boolean);
     return allMet || "Password does not meet strength requirements";
   } catch (error) {
-    console.error("Password strength validation error:", error);
+    logger.error("Password strength validation error:", error);
     throw error;
   }
 };
@@ -186,7 +193,7 @@ export const validatePhoneNumber = async (phone) => {
 
     return response.data.valid === true || "Invalid phone number";
   } catch (error) {
-    console.error("Phone validation error:", error);
+    logger.error("Phone validation error:", error);
     throw error;
   }
 };
@@ -210,7 +217,7 @@ export const validateInvitationCode = async (code) => {
 
     return response.data.valid === true || "Invitation code is invalid or already used";
   } catch (error) {
-    console.error("Invitation code validation error:", error);
+    logger.error("Invitation code validation error:", error);
     throw error;
   }
 };
@@ -235,7 +242,7 @@ export const validatePromoCode = async (code, context = {}) => {
 
     return response.data.valid === true || response.data.message || "Invalid promo code";
   } catch (error) {
-    console.error("Promo code validation error:", error);
+    logger.error("Promo code validation error:", error);
     throw error;
   }
 };
@@ -283,7 +290,7 @@ export const createCustomAsyncValidator = (endpoint, options = {}) => {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       return response.data[successField] === true || errorMessage;
     } catch (error) {
-      console.error("Custom validation error:", error);
+      logger.error("Custom validation error:", error);
       throw error;
     }
   };

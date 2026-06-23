@@ -1,3 +1,4 @@
+@import './styles/telemetryWidgets.css';
 @import "tailwindcss";
 @import url("https://fonts.googleapis.com/css2?family=Oxanium:wght@800&family=Inter:wght@300;400;500;600;700;800;900&display=swap");
 
@@ -90,7 +91,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  width: 100vw;
+  width: 100%;
   height: 100vh;
   background-color: rgba(15, 23, 42, 0.6);
   backdrop-filter: blur(8px);
@@ -175,7 +176,9 @@
   }
 }
 
+html,
 body {
+  position: relative;
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -207,27 +210,27 @@ body {
 
 /* Elevation and Glow utilities */
 .elevation-sm {
-  box-shadow: var(--shadow-premium-sm-val) !important;
+  box-shadow: var(--shadow-premium-sm-val);
 }
 
 .elevation-md {
-  box-shadow: var(--shadow-premium-md-val) !important;
+  box-shadow: var(--shadow-premium-md-val);
 }
 
 .elevation-lg {
-  box-shadow: var(--shadow-premium-lg-val) !important;
+  box-shadow: var(--shadow-premium-lg-val);
 }
 
 .shadow-glow {
-  box-shadow: var(--shadow-glow-md-val) !important;
+  box-shadow: var(--shadow-glow-md-val);
 }
 
 .shadow-glow-sm {
-  box-shadow: var(--shadow-glow-sm-val) !important;
+  box-shadow: var(--shadow-glow-sm-val);
 }
 
 .shadow-glow-lg {
-  box-shadow: var(--shadow-glow-lg-val) !important;
+  box-shadow: var(--shadow-glow-lg-val);
 }
 
 .sr-only {
@@ -548,6 +551,14 @@ html {
 /* Lenis smooth scrolling styles */
 html.lenis {
   height: auto;
+  overflow-x: hidden; /* Forces horizontal cutoff on html */
+}
+
+/* Overrides the dynamic inline body overflow: auto rules */
+body[style] {
+  overflow-x: hidden;
+  position: relative;
+  max-width: 100%;
 }
 
 .lenis.lenis-smooth {
@@ -646,7 +657,7 @@ aside {
      which remains visible otherwise. This ensures pages that use the pastel grid
      utility (like Contributors) render correctly in dark mode. */
   background-color: var(--bg-color);
-  background-image: none !important;
+  background-image: none;
   opacity: 1;
 }
 
@@ -881,7 +892,7 @@ code {
 
   .modal-content,
   [role="dialog"] {
-    max-width: calc(100vw - 2rem);
+    max-width: calc(100% - 2rem);
   }
 }
 
@@ -991,7 +1002,7 @@ input::-ms-reveal,
 input::-ms-clear,
 input::-webkit-clear-button,
 input::-webkit-password-toggle {
-  display: none !important;
+  display: none;
 }
 
 /* Shared pastel grid background used across static pages */
@@ -1150,7 +1161,7 @@ td {
 .no-transition *,
 .no-transition *::before,
 .no-transition *::after {
-  transition: none !important;
+  transition: none;
 }
 
 /* Smooth Scrolling */
@@ -1259,23 +1270,23 @@ select,
 /* WCAG AA Accessibility Contrast Overrides (Light Mode) */
 /* Overriding standard Tailwind light mode gray utilities that fail the 4.5:1 contrast check on white backgrounds */
 html:not(.dark) .text-gray-400 {
-  color: var(--evt-text-muted) !important;
+  color: var(--evt-text-muted);
   /* Gray 500/600 hybrid, passes WCAG AA 4.5:1 */
 }
 
 html:not(.dark) .text-gray-500 {
-  color: var(--evt-neutral-strong) !important;
+  color: var(--evt-neutral-strong);
   /* Gray 600, passes WCAG AA 4.5:1 */
 }
 
 html:not(.dark) .text-gray-600 {
-  color: var(--evt-neutral-strong) !important;
+  color: var(--evt-neutral-strong);
   /* Gray 700, passes WCAG AAA 7:1 */
 }
 
 html:not(.dark) .placeholder-gray-400::placeholder,
 html:not(.dark) ::placeholder {
-  color: var(--evt-text-muted) !important;
+  color: var(--evt-text-muted);
   /* Ensure accessible placeholder contrast */
 }
 
@@ -1294,12 +1305,12 @@ html:not(.dark) ::placeholder {
     box-shadow:
       0 20px 25px -5px rgba(0, 0, 0, 0.1),
       0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    border-color: #a5b4fc !important;
+    border-color: #a5b4fc;
     /* border-indigo-300 */
   }
 
   .dark .event-card-hoverable:hover {
-    border-color: #4338ca !important;
+    border-color: #4338ca;
     /* border-indigo-700 */
     box-shadow:
       0 20px 25px -5px rgba(0, 0, 0, 0.3),
@@ -1309,35 +1320,55 @@ html:not(.dark) ::placeholder {
 
 .project-card,
 .project-card * {
-  color: white !important;
+  color: white;
 }
 
 /* Custom react-toastify overrides for premium visual consistency */
 .Toastify__toast {
-  border-radius: 12px !important;
-  font-family: inherit !important;
+  border-radius: 12px;
+  font-family: inherit;
   box-shadow:
     0 10px 25px -5px rgba(0, 0, 0, 0.08),
-    0 8px 10px -6px rgba(0, 0, 0, 0.08) !important;
+    0 8px 10px -6px rgba(0, 0, 0, 0.08);
 }
 
 /* Light Theme Toast Styles */
 .Toastify__toast--theme-light {
-  background-color: #ffffff !important;
-  color: #0f172a !important;
-  border: 1px solid #e2e8f0 !important;
+  background-color: #ffffff;
+  color: #0f172a;
+  border: 1px solid #e2e8f0;
 }
 
 /* Dark Theme Toast Styles */
 .Toastify__toast--theme-dark {
-  background-color: #0b1120 !important;
-  color: #f1f5f9 !important;
-  border: 1px solid #1e293b !important;
+  background-color: #0b1120;
+  color: #f1f5f9;
+  border: 1px solid #1e293b;
 }
 
 /* Accessibility: Keyboard Outlines on Close Button */
 .Toastify__close-button:focus-visible {
-  outline: 2px solid #38bdf8 !important;
-  outline-offset: 2px !important;
-  border-radius: 4px !important;
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+  border-radius: 4px;
 }
+
+/* Fluid Cursor Styling & Glow Optimization */
+#fluid {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 40;
+  pointer-events: none;
+  opacity: 0.85; /* Optimal opacity for maximum premium visibility without distraction */
+  mix-blend-mode: screen; /* Standard blend mode for vibrant lighting overlays in both light and dark modes */
+  transition: opacity 0.3s ease;
+}
+
+/* Ensure smooth blending over dark and light sections */
+.dark #fluid {
+  mix-blend-mode: plus-lighter; /* Extra premium neon glow on dark backgrounds */
+}
+

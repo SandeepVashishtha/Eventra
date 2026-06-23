@@ -201,7 +201,7 @@ const MyCalendar = () => {
               <CalendarIcon className="w-4 h-4" />
               Scheduling Studio
             </div>
-            <h1 className="text-3xl sm:text-4xl font-black tracking-tight mt-1.5 bg-clip-text text-transparent bg-gradient-to-r from-slate-950 to-indigo-700 dark:from-slate-100 dark:to-indigo-400">
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tight mt-1.5 bg-clip-text text-transparent bg-linear-to-r from-slate-950 to-indigo-700 dark:from-slate-100 dark:to-indigo-400">
               Registrations Calendar
             </h1>
             <p className="text-slate-500 dark:text-slate-400 mt-2 text-xs sm:text-sm max-w-2xl leading-relaxed">
@@ -242,7 +242,7 @@ const MyCalendar = () => {
             {myEvents.length > 0 && (
               <button
                 onClick={() => downloadBulkICSFile(myEvents)}
-                className="p-2.5 px-4 rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white shadow-md hover:shadow-lg"
+                className="p-2.5 px-4 rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer bg-linear-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white shadow-md hover:shadow-lg"
                 aria-label="Export all events as ICS"
               >
                 <Download className="w-3.5 h-3.5" />
@@ -276,12 +276,12 @@ const MyCalendar = () => {
                       onClick={() => setActiveCategory(cat.id)}
                       className={`relative p-2.5 px-4 rounded-xl text-xs font-black tracking-wide border cursor-pointer transition-all ${
                         isActive
-                          ? "bg-gradient-to-r from-indigo-500/10 to-indigo-600/15 border-indigo-500 text-indigo-600 dark:text-indigo-400 shadow-md"
+                          ? "bg-linear-to-r from-indigo-500/10 to-indigo-600/15 border-indigo-500 text-indigo-600 dark:text-indigo-400 shadow-md"
                           : "bg-white/50 dark:bg-slate-900/30 border-slate-200/50 dark:border-slate-800/40 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
                       }`}
                     >
                       <span className="relative z-10 flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full bg-gradient-to-r ${cat.color}`} />
+                        <span className={`w-2 h-2 rounded-full bg-linear-to-r ${cat.color}`} />
                         {cat.label}
                       </span>
                     </motion.button>
@@ -384,7 +384,7 @@ const MyCalendar = () => {
                                       <span
                                         key={`${item.eventId}-${i}`}
                                         className={`w-1.5 h-1.5 rounded-full ${
-                                          selected ? "bg-white" : `bg-gradient-to-r ${theme.color}`
+                                          selected ? "bg-white" : `bg-linear-to-r ${theme.color}`
                                         }`}
                                       />
                                     );
@@ -482,7 +482,7 @@ const MyCalendar = () => {
                     <>
                       {/* Vertical line */}
                       <div className="absolute left-3.5 sm:left-5 top-2 bottom-2 w-0.5 bg-slate-200 dark:bg-slate-800/80 rounded-full" />
-                      <div className="absolute left-3.5 sm:left-5 top-2 h-1/2 w-0.5 bg-gradient-to-b from-indigo-500 to-pink-500 rounded-full shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
+                      <div className="absolute left-3.5 sm:left-5 top-2 h-1/2 w-0.5 bg-linear-to-b from-indigo-500 to-pink-500 rounded-full shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
 
                       <div className="space-y-8">
                         {timelineEvents.map((item, index) => {
@@ -502,7 +502,7 @@ const MyCalendar = () => {
                               className="absolute -left-[30px] sm:-left-[37px] top-1.5 w-5 h-5 rounded-full bg-white dark:bg-slate-950 border-4 flex items-center justify-center z-10"
                               style={{ borderColor: getCategoryBorderColor(theme) }}
                             >
-                              <span className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${theme.color} animate-ping`} />
+                              <span className={`w-1.5 h-1.5 rounded-full bg-linear-to-r ${theme.color} animate-ping`} />
                             </div>
 
                             {/* Date label */}
@@ -526,7 +526,7 @@ const MyCalendar = () => {
                               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                                 <div className="space-y-1.5">
                                   <div className="flex items-center gap-2.5">
-                                    <span className={`px-2.5 py-0.5 rounded-lg text-[9px] font-black uppercase bg-gradient-to-r ${theme.color} text-white`}>
+                                    <span className={`px-2.5 py-0.5 rounded-lg text-[9px] font-black uppercase bg-linear-to-r ${theme.color} text-white`}>
                                       {item.event.category || "General"}
                                     </span>
                                     <span className="text-[11px] font-semibold text-slate-400">
