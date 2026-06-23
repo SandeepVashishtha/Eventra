@@ -22,14 +22,14 @@ const getSessionValidationFailMode = () => {
   const validModes = ["fallback", "open", "closed"];
   
   if (!failMode) {
-    return "fallback"; // Default mode
+    return "closed"; // Default to fail-closed for security
   }
   
   if (!validModes.includes(failMode)) {
     console.warn(
-      `[SESSION] Invalid SESSION_VALIDATION_FAIL_MODE value: "${failMode}". Valid values: fallback, open, closed. Using default: fallback.`
+      `[SESSION_VALIDATION] Invalid SESSION_VALIDATION_FAIL_MODE value: "${failMode}". Valid values: fallback, open, closed. Using default: closed.`
     );
-    return "fallback";
+    return "closed";
   }
   
   return failMode;
@@ -47,15 +47,15 @@ const performFallbackValidation = async (token, jwtSecret) => {
   try {
     const payload = await verifyJwt(token, jwtSecret);
     if (!payload) {
-      console.warn("[SESSION] Fallback validation: JWT verification failed");
+      console.warn("[SESSION_VALIDATION] Fallback validation: JWT verification failed");
       return false;
     }
     
     // JWT is valid and cryptographically sound
-    console.log("[SESSION] Fallback validation: Valid JWT accepted during KV outage");
+    console.log("[SESSION_VALIDATION] Fallback validation: Valid JWT accepted during KV outage");
     return true;
   } catch (error) {
-    console.error("[SESSION] Fallback validation: Error during JWT verification", error.message);
+    console.error("[SESSION_VALIDATION] Fallback validation: Error during JWT verification", error.message);
     return false;
   }
 };
@@ -74,12 +74,12 @@ const getSessionRiskState = async (sessionId, token, jwtSecret) => {
   if (isProduction && !isDistributedConfigured) {
     if (failMode === "closed") {
       console.error(
-        "[SESSION] KV configuration missing (SESSION_VALIDATION_FAIL_MODE=closed). Requiring re-authentication."
+        "[SESSION_VALIDATION] KV configuration missing (SESSION_VALIDATION_FAIL_MODE=closed). Requiring re-authentication."
       );
       return "requires_reauth";
     } else if (failMode === "open") {
       console.warn(
-        "[SESSION] KV configuration missing (SESSION_VALIDATION_FAIL_MODE=open). Accepting valid JWTs."
+        "[SESSION_VALIDATION] KV configuration missing (SESSION_VALIDATION_FAIL_MODE=open). Accepting valid JWTs."
       );
       // In open mode, still validate JWT before accepting
       const isValid = await performFallbackValidation(token, jwtSecret);
@@ -87,7 +87,7 @@ const getSessionRiskState = async (sessionId, token, jwtSecret) => {
     } else {
       // fallback mode
       console.warn(
-        "[SESSION] KV configuration missing (SESSION_VALIDATION_FAIL_MODE=fallback). Attempting fallback validation."
+        "[SESSION_VALIDATION] KV configuration missing (SESSION_VALIDATION_FAIL_MODE=fallback). Attempting fallback validation."
       );
       const isValid = await performFallbackValidation(token, jwtSecret);
       return isValid ? "fallback_active" : "requires_reauth";
@@ -98,13 +98,13 @@ const getSessionRiskState = async (sessionId, token, jwtSecret) => {
   if (!isDistributedConfigured) {
     if (isInMemoryAllowed) {
       console.warn(
-        "[DEV] Session state check skipped (distributed storage not configured). Assuming active session."
+        "[SESSION_VALIDATION] [DEV] Session state check skipped (distributed storage not configured). Assuming active session."
       );
       return "active";
     } else {
       // Should not happen, but fail closed if somehow in non-production but in-memory not allowed
       console.error(
-        "[SECURITY] Session state unavailable: Distributed storage not configured and in-memory fallback not permitted. Requiring re-authentication."
+        "[SESSION_VALIDATION] [SECURITY] Session state unavailable: Distributed storage not configured and in-memory fallback not permitted. Requiring re-authentication."
       );
       return "requires_reauth";
     }
@@ -120,12 +120,12 @@ const getSessionRiskState = async (sessionId, token, jwtSecret) => {
       if (isProduction) {
         if (failMode === "closed") {
           console.error(
-            `[SESSION] KV request failed with status ${res.status} (SESSION_VALIDATION_FAIL_MODE=closed). Requiring re-authentication.`
+            `[SESSION_VALIDATION] KV request failed with status ${res.status} (SESSION_VALIDATION_FAIL_MODE=closed). Requiring re-authentication.`
           );
           return "requires_reauth";
         } else if (failMode === "open") {
           console.warn(
-            `[SESSION] KV request failed with status ${res.status} (SESSION_VALIDATION_FAIL_MODE=open). Accepting valid JWTs.`
+            `[SESSION_VALIDATION] KV request failed with status ${res.status} (SESSION_VALIDATION_FAIL_MODE=open). Accepting valid JWTs.`
           );
           // In open mode, still validate JWT before accepting
           const isValid = await performFallbackValidation(token, jwtSecret);
@@ -133,7 +133,7 @@ const getSessionRiskState = async (sessionId, token, jwtSecret) => {
         } else {
           // fallback mode
           console.warn(
-            `[SESSION] KV request failed with status ${res.status} (SESSION_VALIDATION_FAIL_MODE=fallback). Attempting fallback validation.`
+            `[SESSION_VALIDATION] KV request failed with status ${res.status} (SESSION_VALIDATION_FAIL_MODE=fallback). Attempting fallback validation.`
           );
           const isValid = await performFallbackValidation(token, jwtSecret);
           return isValid ? "fallback_active" : "requires_reauth";
@@ -141,12 +141,15 @@ const getSessionRiskState = async (sessionId, token, jwtSecret) => {
       }
       // Development: Assume active on KV failure
       console.warn(
-        `[DEV] KV request failed with status ${res.status}. Assuming active session.`
+        `[SESSION_VALIDATION] [DEV] KV request failed with status ${res.status}. Assuming active session.`
       );
       return "active";
     }
     const data = await res.json();
-    if (!data || !data.result) return "invalidated";
+    if (!data || !data.result) {
+      console.error("[SESSION_VALIDATION] Revoked session detected - session data not found in KV");
+      return "invalidated";
+    }
 
     let sessionData = data.result;
     if (typeof sessionData === 'string') {
@@ -155,21 +158,29 @@ const getSessionRiskState = async (sessionId, token, jwtSecret) => {
 
     // Check inactivity (2 hours)
     if (Date.now() - sessionData.lastActive > 2 * 60 * 60 * 1000 && sessionData.status === "active") {
+       console.warn("[SESSION_VALIDATION] Session inactive for >2 hours, requiring re-authentication");
        return "requires_reauth";
     }
+    
+    // Check for revoked/invalidated status
+    if (sessionData.status === "invalidated") {
+      console.error("[SESSION_VALIDATION] Revoked session detected - status is invalidated");
+      return "invalidated";
+    }
+    
     return sessionData.status || "active";
   } catch(e) {
     // Handle KV communication error based on failure mode
     if (isProduction) {
       if (failMode === "closed") {
         console.error(
-          "[SESSION] KV communication error (SESSION_VALIDATION_FAIL_MODE=closed). Requiring re-authentication.",
+          "[SESSION_VALIDATION] KV communication error (SESSION_VALIDATION_FAIL_MODE=closed). Requiring re-authentication.",
           e.message
         );
         return "requires_reauth";
       } else if (failMode === "open") {
         console.warn(
-          "[SESSION] KV communication error (SESSION_VALIDATION_FAIL_MODE=open). Accepting valid JWTs.",
+          "[SESSION_VALIDATION] KV communication error (SESSION_VALIDATION_FAIL_MODE=open). Accepting valid JWTs.",
           e.message
         );
         // In open mode, still validate JWT before accepting
@@ -178,7 +189,7 @@ const getSessionRiskState = async (sessionId, token, jwtSecret) => {
       } else {
         // fallback mode
         console.warn(
-          "[SESSION] KV communication error (SESSION_VALIDATION_FAIL_MODE=fallback). Attempting fallback validation.",
+          "[SESSION_VALIDATION] KV communication error (SESSION_VALIDATION_FAIL_MODE=fallback). Attempting fallback validation.",
           e.message
         );
         const isValid = await performFallbackValidation(token, jwtSecret);
@@ -187,7 +198,7 @@ const getSessionRiskState = async (sessionId, token, jwtSecret) => {
     }
     // Development: Assume active on errors
     console.warn(
-      "[DEV] KV communication error. Assuming active session.",
+      "[SESSION_VALIDATION] [DEV] KV communication error. Assuming active session.",
       e.message
     );
     return "active";
