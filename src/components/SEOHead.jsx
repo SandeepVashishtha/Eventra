@@ -73,3 +73,4 @@ export default function SEOHead({
 
   return null; // This component only manages side effects
 }
+// Implementation for Migrate SEOHead.jsx to use react-helmet-async
