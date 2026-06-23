@@ -41,6 +41,7 @@ describe("Middleware Rate Limiting Fallback Behavior", () => {
         NODE_ENV: "production",
         RATE_LIMIT_REDIS_URL: "redis://localhost:6379",
         RATE_LIMIT_FAIL_MODE: "fallback",
+        TRUSTED_PROXIES: "127.0.0.1,::1",
       });
 
       // Dynamic import to get fresh module state
@@ -53,6 +54,7 @@ describe("Middleware Rate Limiting Fallback Behavior", () => {
         headers: new Headers({
           "x-forwarded-for": "192.168.1.1",
         }),
+        socket: { remoteAddress: "127.0.0.1" },
       };
 
       // First request should be allowed
@@ -72,6 +74,7 @@ describe("Middleware Rate Limiting Fallback Behavior", () => {
         NODE_ENV: "production",
         RATE_LIMIT_REDIS_URL: "redis://localhost:6379",
         RATE_LIMIT_FAIL_MODE: "fallback",
+        TRUSTED_PROXIES: "127.0.0.1,::1",
       });
 
       // Dynamic import to get fresh module state
@@ -84,6 +87,7 @@ describe("Middleware Rate Limiting Fallback Behavior", () => {
         headers: new Headers({
           "x-forwarded-for": "192.168.2.1",
         }),
+        socket: { remoteAddress: "127.0.0.1" },
       };
 
       // Request should succeed with in-memory fallback
@@ -114,6 +118,7 @@ describe("Middleware Rate Limiting Fallback Behavior", () => {
         headers: new Headers({
           "x-forwarded-for": "192.168.3.1",
         }),
+        socket: { remoteAddress: "127.0.0.1" },
       };
 
       // Application should remain available
@@ -132,6 +137,7 @@ describe("Middleware Rate Limiting Fallback Behavior", () => {
         NODE_ENV: "production",
         RATE_LIMIT_REDIS_URL: "redis://localhost:6379",
         RATE_LIMIT_FAIL_MODE: "fallback",
+        TRUSTED_PROXIES: "127.0.0.1,::1",
       });
 
       // Dynamic import to get fresh module state
@@ -144,6 +150,7 @@ describe("Middleware Rate Limiting Fallback Behavior", () => {
         headers: new Headers({
           "x-forwarded-for": "192.168.4.1",
         }),
+        socket: { remoteAddress: "127.0.0.1" },
       };
 
       // Even if everything fails, degraded mode should allow requests
@@ -162,6 +169,7 @@ describe("Middleware Rate Limiting Fallback Behavior", () => {
         NODE_ENV: "production",
         RATE_LIMIT_REDIS_URL: "", // Missing Redis
         RATE_LIMIT_FAIL_MODE: "closed",
+        TRUSTED_PROXIES: "127.0.0.1,::1",
       });
 
       // Dynamic import to get fresh module state
@@ -174,6 +182,7 @@ describe("Middleware Rate Limiting Fallback Behavior", () => {
         headers: new Headers({
           "x-forwarded-for": "192.168.5.1",
         }),
+        socket: { remoteAddress: "127.0.0.1" },
       };
 
       // Should reject requests in closed mode
@@ -190,6 +199,7 @@ describe("Middleware Rate Limiting Fallback Behavior", () => {
         NODE_ENV: "production",
         RATE_LIMIT_REDIS_URL: "redis://localhost:6379",
         RATE_LIMIT_FAIL_MODE: "closed",
+        TRUSTED_PROXIES: "127.0.0.1,::1",
       });
 
       // Dynamic import to get fresh module state
@@ -202,6 +212,7 @@ describe("Middleware Rate Limiting Fallback Behavior", () => {
         headers: new Headers({
           "x-forwarded-for": "192.168.5.2",
         }),
+        socket: { remoteAddress: "127.0.0.1" },
       };
 
       // Should reject requests when Redis fails in closed mode
@@ -232,6 +243,7 @@ describe("Middleware Rate Limiting Fallback Behavior", () => {
         headers: new Headers({
           "x-forwarded-for": "192.168.6.1",
         }),
+        socket: { remoteAddress: "127.0.0.1" },
       };
 
       // Should allow requests in open mode
@@ -248,6 +260,7 @@ describe("Middleware Rate Limiting Fallback Behavior", () => {
         NODE_ENV: "production",
         RATE_LIMIT_REDIS_URL: "redis://localhost:6379",
         RATE_LIMIT_FAIL_MODE: "open",
+        TRUSTED_PROXIES: "127.0.0.1,::1",
       });
 
       // Dynamic import to get fresh module state
@@ -260,6 +273,7 @@ describe("Middleware Rate Limiting Fallback Behavior", () => {
         headers: new Headers({
           "x-forwarded-for": "192.168.6.2",
         }),
+        socket: { remoteAddress: "127.0.0.1" },
       };
 
       // Should allow requests when Redis fails in open mode
@@ -277,6 +291,7 @@ describe("Middleware Rate Limiting Fallback Behavior", () => {
       setTestEnv({
         NODE_ENV: "production",
         RATE_LIMIT_REDIS_URL: "", // Missing Redis
+        TRUSTED_PROXIES: "127.0.0.1,::1",
       });
       delete process.env.RATE_LIMIT_FAIL_MODE;
 
@@ -290,6 +305,7 @@ describe("Middleware Rate Limiting Fallback Behavior", () => {
         headers: new Headers({
           "x-forwarded-for": "192.168.7.1",
         }),
+        socket: { remoteAddress: "127.0.0.1" },
       };
 
       // Should use fallback mode (default) and allow requests
@@ -308,6 +324,7 @@ describe("Middleware Rate Limiting Fallback Behavior", () => {
         NODE_ENV: "production",
         RATE_LIMIT_REDIS_URL: "",
         RATE_LIMIT_FAIL_MODE: "invalid-mode",
+        TRUSTED_PROXIES: "127.0.0.1,::1",
       });
 
       // Dynamic import to get fresh module state
@@ -320,6 +337,7 @@ describe("Middleware Rate Limiting Fallback Behavior", () => {
         headers: new Headers({
           "x-forwarded-for": "192.168.8.1",
         }),
+        socket: { remoteAddress: "127.0.0.1" },
       };
 
       // Should use fallback mode (default) when invalid mode is set
@@ -337,6 +355,7 @@ describe("Middleware Rate Limiting Fallback Behavior", () => {
       setTestEnv({
         NODE_ENV: "development",
         RATE_LIMIT_FAIL_MODE: "closed",
+        TRUSTED_PROXIES: "127.0.0.1,::1",
       });
       delete process.env.RATE_LIMIT_REDIS_URL;
 
@@ -350,6 +369,7 @@ describe("Middleware Rate Limiting Fallback Behavior", () => {
         headers: new Headers({
           "x-forwarded-for": "192.168.9.1",
         }),
+        socket: { remoteAddress: "127.0.0.1" },
       };
 
       // Development should always allow requests
@@ -368,6 +388,7 @@ describe("Middleware Rate Limiting Fallback Behavior", () => {
         NODE_ENV: "production",
         RATE_LIMIT_REDIS_URL: "",
         RATE_LIMIT_FAIL_MODE: "FALLBACK", // Uppercase
+        TRUSTED_PROXIES: "127.0.0.1,::1",
       });
 
       // Dynamic import to get fresh module state
@@ -380,6 +401,7 @@ describe("Middleware Rate Limiting Fallback Behavior", () => {
         headers: new Headers({
           "x-forwarded-for": "192.168.10.1",
         }),
+        socket: { remoteAddress: "127.0.0.1" },
       };
 
       // Should handle uppercase mode correctly
@@ -396,6 +418,7 @@ describe("Middleware Rate Limiting Fallback Behavior", () => {
         NODE_ENV: "production",
         RATE_LIMIT_REDIS_URL: "",
         RATE_LIMIT_FAIL_MODE: "  fallback  ", // With whitespace
+        TRUSTED_PROXIES: "127.0.0.1,::1",
       });
 
       // Dynamic import to get fresh module state
@@ -408,6 +431,7 @@ describe("Middleware Rate Limiting Fallback Behavior", () => {
         headers: new Headers({
           "x-forwarded-for": "192.168.10.2",
         }),
+        socket: { remoteAddress: "127.0.0.1" },
       };
 
       // Should handle whitespace correctly

@@ -54,6 +54,7 @@ describe("Middleware Rate Limiting Fail-Closed Security", () => {
         headers: new Headers({
           "x-forwarded-for": "192.168.1.1",
         }),
+        socket: { remoteAddress: "127.0.0.1" },
       };
 
       const result = await checkRateLimit(mockRequest);
@@ -87,6 +88,7 @@ describe("Middleware Rate Limiting Fail-Closed Security", () => {
         headers: new Headers({
           "x-forwarded-for": "192.168.1.2",
         }),
+        socket: { remoteAddress: "127.0.0.1" },
       };
 
       const result = await checkRateLimit(mockRequest);
@@ -115,6 +117,7 @@ describe("Middleware Rate Limiting Fail-Closed Security", () => {
         headers: new Headers({
           "x-forwarded-for": "192.168.1.3",
         }),
+        socket: { remoteAddress: "127.0.0.1" },
       };
 
       const result = await checkRateLimit(mockRequest);
@@ -144,6 +147,7 @@ describe("Middleware Rate Limiting Fail-Closed Security", () => {
         headers: new Headers({
           "x-forwarded-for": "192.168.2.1",
         }),
+        socket: { remoteAddress: "127.0.0.1" },
       };
 
       const result = await checkRateLimit(mockRequest);
@@ -173,6 +177,7 @@ describe("Middleware Rate Limiting Fail-Closed Security", () => {
         headers: new Headers({
           "x-forwarded-for": "192.168.3.1",
         }),
+        socket: { remoteAddress: "127.0.0.1" },
       };
 
       const result = await checkRateLimit(mockRequest);
@@ -205,6 +210,7 @@ describe("Middleware Rate Limiting Fail-Closed Security", () => {
         headers: new Headers({
           "x-forwarded-for": "192.168.4.1",
         }),
+        socket: { remoteAddress: "127.0.0.1" },
       };
 
       const result = await checkRateLimit(mockRequest);
@@ -234,6 +240,7 @@ describe("Middleware Rate Limiting Fail-Closed Security", () => {
         headers: new Headers({
           "x-forwarded-for": "192.168.5.1",
         }),
+        socket: { remoteAddress: "127.0.0.1" },
       };
 
       const result = await checkRateLimit(mockRequest);
@@ -264,6 +271,7 @@ describe("Middleware Rate Limiting Fail-Closed Security", () => {
         headers: new Headers({
           "x-forwarded-for": "192.168.7.1",
         }),
+        socket: { remoteAddress: "127.0.0.1" },
       };
 
       const result = await checkRateLimit(mockRequest);
@@ -293,6 +301,7 @@ describe("Middleware Rate Limiting Fail-Closed Security", () => {
         headers: new Headers({
           "x-forwarded-for": "192.168.9.1",
         }),
+        socket: { remoteAddress: "127.0.0.1" },
       };
 
       // Make 61 requests to exceed the limit
@@ -327,6 +336,7 @@ describe("Middleware Rate Limiting Fail-Closed Security", () => {
         headers: new Headers({
           "x-forwarded-for": "192.168.10.1",
         }),
+        socket: { remoteAddress: "127.0.0.1" },
       };
 
       // Make 60 requests (should be allowed)
@@ -369,6 +379,7 @@ describe("Middleware Rate Limiting Fail-Closed Security", () => {
         headers: new Headers({
           "x-forwarded-for": "192.168.11.1",
         }),
+        socket: { remoteAddress: "127.0.0.1" },
       };
 
       // Exhaust the limit
@@ -394,6 +405,7 @@ describe("Middleware Rate Limiting Fail-Closed Security", () => {
     it("should extract IP from x-forwarded-for header", async () => {
       setTestEnv({
         NODE_ENV: "test",
+        TRUSTED_PROXIES: "127.0.0.1,::1,198.51.100.1",
       });
       delete process.env.KV_REST_API_URL;
       delete process.env.KV_REST_API_TOKEN;
@@ -408,6 +420,7 @@ describe("Middleware Rate Limiting Fail-Closed Security", () => {
         headers: new Headers({
           "x-forwarded-for": "203.0.113.1, 198.51.100.1",
         }),
+        socket: { remoteAddress: "198.51.100.1" },
       };
 
       const result = await checkRateLimit(mockRequest);
@@ -418,6 +431,7 @@ describe("Middleware Rate Limiting Fail-Closed Security", () => {
     it("should extract IP from x-real-ip header when x-forwarded-for is missing", async () => {
       setTestEnv({
         NODE_ENV: "test",
+        TRUSTED_PROXIES: "127.0.0.1,::1",
       });
       delete process.env.KV_REST_API_URL;
       delete process.env.KV_REST_API_TOKEN;
@@ -432,6 +446,7 @@ describe("Middleware Rate Limiting Fail-Closed Security", () => {
         headers: new Headers({
           "x-real-ip": "203.0.113.2",
         }),
+        socket: { remoteAddress: "127.0.0.1" },
       };
 
       const result = await checkRateLimit(mockRequest);
@@ -466,6 +481,7 @@ describe("Middleware Rate Limiting Fail-Closed Security", () => {
     it("should track rate limits separately for different IPs", async () => {
       setTestEnv({
         NODE_ENV: "test",
+        TRUSTED_PROXIES: "127.0.0.1,::1",
       });
       delete process.env.RATE_LIMIT_REDIS_URL;
 
@@ -479,12 +495,14 @@ describe("Middleware Rate Limiting Fail-Closed Security", () => {
         headers: new Headers({
           "x-forwarded-for": "192.168.12.1",
         }),
+        socket: { remoteAddress: "127.0.0.1" },
       };
 
       const mockRequest2 = {
         headers: new Headers({
           "x-forwarded-for": "192.168.12.2",
         }),
+        socket: { remoteAddress: "127.0.0.1" },
       };
 
       // Exhaust limit for IP1

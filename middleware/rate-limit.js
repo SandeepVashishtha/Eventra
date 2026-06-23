@@ -4,6 +4,7 @@ import {
   isInMemoryRateLimitStorageAllowed,
   getRateLimitFailMode,
 } from "../api/_lib/rate-limit-config.js";
+import { getClientIp } from "../api/_lib/getClientIp.js";
 
 const API_RATE_LIMIT = 60;
 const API_RATE_WINDOW_S = 60;
@@ -97,10 +98,8 @@ const isRateLimited = async (ip) => {
 };
 
 export async function checkRateLimit(request) {
-  const ip =
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    request.headers.get("x-real-ip") ||
-    "unknown";
+  // Use secure getClientIp function with trusted proxy validation
+  const ip = getClientIp(request);
 
   if (await isRateLimited(ip)) {
     return { limited: true, ip, window: API_RATE_WINDOW_S };
