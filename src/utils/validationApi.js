@@ -175,7 +175,15 @@ export const requestValidation = async (endpoint, options = {}) => {
       const status = error.status;
       const data = error.data;
 
-      // If the API explicitly returned a validation failure (like 400, 409)
+      // If the API explicitly returned an authentication or validation failure.
+      if (status === 409) {
+        return createValidationResponse(
+          false,
+          invalidMessage,
+          { status, data }
+        );
+      }
+
       if (status === 401 || status === 403) {
         return createValidationResponse(
           false,
@@ -194,12 +202,13 @@ export const requestValidation = async (endpoint, options = {}) => {
 
   const timedOut = lastError?.isTimeout || lastError?.name === "AbortError";
   return createValidationResponse(
-    false,
-    timedOut ? "Validation request timed out. Please try again." : networkMessage,
+    true,
+    "",
     {
       error: lastError,
       isTimeout: timedOut,
       isNetworkError: !timedOut,
+      skippedDueToError: true,
     },
   );
 };

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef  } from "react";
 import { Bookmark, CalendarDays } from "lucide-react";
 import { Link } from "react-router-dom";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
@@ -38,7 +38,7 @@ const BookmarkedEvents = () => {
     backgroundPosition: "center",
     backgroundRepeat: "no-repeat",
     minHeight: "100vh",
-    width: "100vw"
+    width: "100%"
   }}
 >
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -58,7 +58,7 @@ const BookmarkedEvents = () => {
 
           <Link
             to="/events"
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:from-indigo-500 hover:via-indigo-600 hover:to-slate-800 hover:shadow-xl"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-indigo-600 via-indigo-700 to-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:from-indigo-500 hover:via-indigo-600 hover:to-slate-800 hover:shadow-xl"
           >
             <CalendarDays size={18} />
             Explore Events

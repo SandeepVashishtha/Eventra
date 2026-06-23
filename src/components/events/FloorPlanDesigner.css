@@ -270,8 +270,8 @@
 }
 
 .fp-svg-element-selected {
-  stroke: #818cf8 !important;
-  stroke-width: 2.5px !important;
+  stroke: #818cf8;
+  stroke-width: 2.5px;
   stroke-dasharray: 4 2;
   filter: drop-shadow(0 0 12px rgba(99, 102, 241, 0.8));
 }
@@ -324,8 +324,8 @@
 }
 
 .fp-control-btn-active {
-  background: #6366f1 !important;
-  color: #ffffff !important;
+  background: #6366f1;
+  color: #ffffff;
 }
 
 .fp-zoom-display {
@@ -743,7 +743,7 @@
 
   .fp-sidebar,
   .fp-sidebar-right {
-    width: 100% !important;
+    width: 100%;
     height: auto;
     border: none;
   }
@@ -841,9 +841,9 @@
 }
 
 .fp-svg-element-colliding {
-  stroke: #ef4444 !important;
-  stroke-width: 2.5px !important;
-  filter: drop-shadow(0 0 14px rgba(239, 68, 68, 0.95)) !important;
+  stroke: #ef4444;
+  stroke-width: 2.5px;
+  filter: drop-shadow(0 0 14px rgba(239, 68, 68, 0.95));
   animation: fpPulseRed 1.5s infinite alternate ease-in-out;
 }
 
@@ -853,7 +853,7 @@
   }
   100% {
     opacity: 1;
-    filter: drop-shadow(0 0 18px rgba(239, 68, 68, 1)) !important;
+    filter: drop-shadow(0 0 18px rgba(239, 68, 68, 1));
   }
 }
 

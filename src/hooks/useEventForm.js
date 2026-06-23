@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { toast } from "react-toastify";
-import { API_ENDPOINTS } from "../config/api";
-import { eventService } from "../services/eventService";
+import { API_ENDPOINTS, apiUtils } from "../config/api.js";
 import { useFormSubmit } from "./useFormSubmit";
 import {
   DRAFT_KEY,
@@ -283,6 +282,12 @@ export const useEventForm = () => {
     formDataRef.current = formData;
   }, [formData]);
 
+  const resetForm = useCallback(() => {
+    setFormData(initialFormData);
+    setErrors({});
+    localStorage.removeItem(scopedDraftKey);
+  }, [scopedDraftKey]);
+
   // 🎯 Form Submission Hook
   const {
     handleSubmit: submitEventForm,
@@ -299,7 +304,7 @@ export const useEventForm = () => {
       return { id: "mock-event-id", success: true };
     }
 
-    const response = await eventService.createEvent(sanitized);
+    const response = await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, sanitized);
     const result = response.data;
 
     if (!(response.status === 200 && result?.success)) {
@@ -307,6 +312,7 @@ export const useEventForm = () => {
       throw new Error(errorMessage);
     }
 
+    resetForm();
     return result;
   });
 
@@ -547,12 +553,6 @@ export const useEventForm = () => {
     const { name, value } = e.target;
     if (name) validateField(name, value);
   }, [validateField]);
-
-  const resetForm = useCallback(() => {
-    setFormData(initialFormData);
-    setErrors({});
-    localStorage.removeItem(scopedDraftKey);
-  }, [scopedDraftKey]);
 
   const handleInputChange = useCallback((e) => {
     const { name, value, type, checked } = e.target;

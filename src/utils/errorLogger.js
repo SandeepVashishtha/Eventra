@@ -13,7 +13,7 @@
 
 import { SENTRY_DSN, isSentryEnabled } from "../config/env.js";
 import { safeParseJson } from "./jsonUtils.js";
-import { logger } from "./logger.js";
+import { logger, isDevelopment } from "./logger.js";
 
 /**
  * Lazy-loaded reference to the Sentry browser SDK.
@@ -75,8 +75,8 @@ function buildErrorEntry(error, errorInfo, extra = {}) {
     url: typeof window !== "undefined" ? window.location.href : "",
     userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "",
     message: error ? error.toString() : "Unknown error",
-    stack: error?.stack || "",
-    componentStack: errorInfo?.componentStack || "",
+    stack: isDevelopment ? (error?.stack || "") : "Redacted in production",
+    componentStack: isDevelopment ? (errorInfo?.componentStack || "") : "Redacted in production",
     ...extra,
   };
 }
