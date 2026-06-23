@@ -206,7 +206,7 @@ export const EventTimeline: React.FC = () => {
                 Interactive Schedule
               </span>
             </div>
-            <h2 className="text-3xl font-extrabold tracking-tight dark:text-white sm:text-4xl bg-gradient-to-r from-white via-slate-100 to-indigo-300 bg-clip-text text-slate-950">
+            <h2 className="text-3xl font-extrabold tracking-tight dark:text-white sm:text-4xl bg-linear-to-r from-white via-slate-100 to-indigo-300 bg-clip-text text-slate-950">
               My Timeline Planner
             </h2>
             <p className="mt-2 text-sm text-slate-400 max-w-xl">

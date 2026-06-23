@@ -127,79 +127,25 @@ const openDB = () => {
       }
 
       // ── Schema upgrade path (oldVersion >= 1) ──────────────────────────────
-      // Step 1: Rescue whatever is currently in the store BEFORE touching it.
-      //         We also merge with the localStorage mirror to maximise recovery.
-      let rescuedItems = [];
-      const lsMirror = _rescueFromLocalStorage();
-
+      // Step 1: Synchronously delete and recreate store during upgrade transaction
       if (db.objectStoreNames.contains(STORE_NAME)) {
-        // Read all existing records synchronously inside the upgrade transaction
-        const oldStore = transaction.objectStore(STORE_NAME);
-        const getAllReq = oldStore.getAll();
-
-        getAllReq.onsuccess = () => {
-          const dbItems = getAllReq.result || [];
-
-          // Merge DB items with localStorage mirror — deduplicate by item id
-          const seen = new Set();
-          rescuedItems = [...dbItems, ...lsMirror].filter((item) => {
-            if (!item || !item.id || seen.has(item.id)) return false;
-            seen.add(item.id);
-            return true;
-          });
-
-          // Step 2: Delete old store so we can recreate with updated schema
-          db.deleteObjectStore(STORE_NAME);
-
-          // Step 3: Create new store with updated schema
-          db.createObjectStore(STORE_NAME, { keyPath: "id" });
-
-          // Step 4: Re-insert rescued items into the new store
-          // We must use the same upgrade transaction — it stays open until
-          // the upgrade completes, so we can reuse it here.
-          const newStore = transaction.objectStore(STORE_NAME);
-          rescuedItems.forEach((item) => {
-            newStore.put(item);
-          });
-
-          // Step 5: Update localStorage mirror to reflect rescued items
-          try {
-            if (rescuedItems.length > 0) {
-              localStorage.setItem(QUEUE_KEY, JSON.stringify(rescuedItems));
-            } else {
-              localStorage.removeItem(QUEUE_KEY);
-            }
-          } catch {
-            // localStorage might be full — non-fatal
-          }
-
-          // Step 6: Notify UI
-          _dispatchUpgradeEvent(rescuedItems.length);
-        };
-
-        getAllReq.onerror = () => {
-          // Couldn't read old store — fall back to localStorage mirror only
-          db.deleteObjectStore(STORE_NAME);
-          const newStore = db.createObjectStore(STORE_NAME, { keyPath: "id" });
-
-          lsMirror.forEach((item) => {
-            newStore.put(item);
-          });
-
-          try {
-            if (lsMirror.length > 0) {
-              localStorage.setItem(QUEUE_KEY, JSON.stringify(lsMirror));
-            }
-          } catch {
-            // non-fatal
-          }
-
-          _dispatchUpgradeEvent(lsMirror.length);
-        };
-      } else {
-        // Store didn't exist yet — just create it
-        db.createObjectStore(STORE_NAME, { keyPath: "id" });
+        db.deleteObjectStore(STORE_NAME);
       }
+      db.createObjectStore(STORE_NAME, { keyPath: "id" });
+
+      // Step 2: Rescue queued actions synchronously from the localStorage mirror
+      const rescuedItems = _rescueFromLocalStorage();
+
+      // Step 3: Put rescued items back into the newly created store synchronously
+      if (rescuedItems.length > 0) {
+        const store = transaction.objectStore(STORE_NAME);
+        rescuedItems.forEach((item) => {
+          store.put(item);
+        });
+      }
+
+      // Step 4: Dispatch upgrade event
+      _dispatchUpgradeEvent(rescuedItems.length);
     };
 
     request.onsuccess = (e) => resolve(e.target.result);
@@ -733,7 +679,6 @@ export const processQueue = async (currentUserId, fetchFn, options = {}) => {
 
   const validated = filterQueueByOwnership(queue, currentUserId);
   if (validated.length === 0) {
-    await clearQueue();
     return { processed: 0, succeeded: 0, dropped: 0, remaining: 0 };
   }
 
@@ -742,7 +687,9 @@ export const processQueue = async (currentUserId, fetchFn, options = {}) => {
   const currentSession = ensureSessionSnapshot(currentUserId);
   const sessionValidated = validateQueueSession(validated, currentSession);
   if (sessionValidated.length === 0) {
-    await clearQueue();
+    const validatedIds = new Set(validated.map(item => item.id));
+    const otherUsersQueue = queue.filter(item => !validatedIds.has(item.id));
+    await setQueue(otherUsersQueue);
     return { processed: 0, succeeded: 0, dropped: 0, remaining: 0 };
   }
 
@@ -774,11 +721,10 @@ export const processQueue = async (currentUserId, fetchFn, options = {}) => {
     }
   }
 
-  if (failed.length > 0) {
-    await setQueue(failed);
-  } else {
-    await clearQueue();
-  }
+  const validatedIds = new Set(validated.map(item => item.id));
+  const otherUsersQueue = queue.filter(item => !validatedIds.has(item.id));
+  const finalQueue = [...otherUsersQueue, ...failed];
+  await setQueue(finalQueue);
 
   const remaining = failed.length;
 

@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState, useEffect, useCallback } from "react";
 
 import ErrorBoundary from "../../components/common/ErrorBoundary";
-import { fetchWithTimeout } from "../../utils/fetchWithTimeout";
+import { fetchLeaderboardData, getCacheTimestamp, clearLeaderboardCache } from "../../services/githubLeaderboardService";
 import confetti from "canvas-confetti";
 import GSSoCContribution from "./GSSoCContribution";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
@@ -29,7 +29,6 @@ import LeaderboardControls from "./components/LeaderboardControls";
 import LeaderboardStatsCards from "./components/LeaderboardStatsCards";
 import LeaderboardTable from "./components/LeaderboardTable";
 
-const LEADERBOARD_CACHE_TTL = 60 * 60 * 1000;
 const CONTRIBUTORS_PER_PAGE = 10;
 const SEARCH_DEBOUNCE_MS = 400;
 const CONFETTI_CONFIG = {
@@ -89,7 +88,6 @@ const useLocalStorage = (key, initialValue) => {
   return [storedValue, setValue];
 };
 
-// ─── Main Component ───────────────────────────────────────────────
 export default function LeaderBoard() {
   const { t } = useTranslation();
   useDocumentTitle(t("leaderboard.pageTitle"));
@@ -104,7 +102,10 @@ export default function LeaderBoard() {
   const [streaks, setStreaks] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [lastUpdated, setLastUpdated] = useState("");
+  const [lastUpdated, setLastUpdated] = useState(() => {
+    const ts = getCacheTimestamp();
+    return ts ? t("leaderboard.statusCached", { time: formatLastUpdated(ts, t) }) : "";
+  });
   const [search, setSearch] = useState("");
   const [, setRecentSearches] = useLocalStorage(
     STORAGE_KEYS.RECENT_SEARCHES,
@@ -168,9 +169,6 @@ export default function LeaderBoard() {
     [t]
   );
 
-  // ─── Effects ───────────────────────────────────────────────
-
-  // Initial confetti celebration
   useEffect(() => {
     const timer = setTimeout(() => {
       confetti(CONFETTI_CONFIG);
@@ -239,45 +237,22 @@ export default function LeaderBoard() {
         setLoading(true);
         setError(null);
 
-        const cached = storageManager.get(
-          STORAGE_KEYS.LEADERBOARD_CACHE,
-          validators.isObject
-        );
-
-        if (cached?.data && cached?.timestamp) {
-          const age = Date.now() - cached.timestamp;
-          if (age < LEADERBOARD_CACHE_TTL) {
-            if (isMounted) {
-              setContributors(cached.data);
-              setLastUpdated(t("leaderboard.statusCached", { time: formatLastUpdated(cached.timestamp, t) }));
-              setLoading(false);
-              return;
-            }
-          }
-        }
-
-        const { data } = await fetchWithTimeout("/api/leaderboard", {}, 15000);
-
-        if (!Array.isArray(data)) {
-          throw new Error("Invalid leaderboard data format");
-        }
-
-        const preparedData = prepareLeaderboardEntries(data);
+        const contributors = await fetchLeaderboardData(false);
 
         if (isMounted) {
-          const sorted = [...preparedData].sort((a, b) => b.points - a.points);
-          setContributors(sorted);
-          setLastUpdated(t("leaderboard.statusUpdated", { time: formatLastUpdated(Date.now(), t) }));
-
-          storageManager.set(STORAGE_KEYS.LEADERBOARD_CACHE, {
-            data: sorted,
-            timestamp: Date.now(),
-          });
+          const cacheTs = getCacheTimestamp();
+          const preparedData = prepareLeaderboardEntries(contributors);
+          setContributors(preparedData);
+          setLastUpdated(
+            cacheTs
+              ? t("leaderboard.statusCached", { time: formatLastUpdated(cacheTs, t) })
+              : t("leaderboard.statusUpdated", { time: formatLastUpdated(Date.now(), t) })
+          );
         }
       } catch (err) {
         logger.error("Failed to load leaderboard:", err);
         if (isMounted) {
-          setError(t("leaderboard.errorLoadFailed"));
+          setError(err.message || t("leaderboard.errorLoadFailed"));
           setContributors([]);
         }
       } finally {
@@ -291,6 +266,40 @@ export default function LeaderBoard() {
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    const handleServiceWorkerMessage = (event) => {
+      if (event.data && event.data.type === "LEADERBOARD_UPDATED") {
+        const newData = event.data.data;
+        if (Array.isArray(newData)) {
+          logger.log("[Leaderboard] Received updated rankings from service worker.");
+          const preparedData = prepareLeaderboardEntries(newData);
+          const sorted = [...preparedData].sort((a, b) => b.points - a.points);
+          setContributors(sorted);
+          setLastUpdated(t("leaderboard.statusUpdated", { time: formatLastUpdated(Date.now(), t) }));
+
+          try {
+            storageManager.set(STORAGE_KEYS.LEADERBOARD_CACHE, {
+              data: sorted,
+              timestamp: Date.now(),
+            });
+          } catch (err) {
+            logger.warn("Failed to update leaderboard cache on SW message:", err);
+          }
+        }
+      }
+    };
+
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.addEventListener("message", handleServiceWorkerMessage);
+    }
+
+    return () => {
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.removeEventListener("message", handleServiceWorkerMessage);
+      }
+    };
+  }, [t]);
 
   const handleSearchChange = useCallback((e) => {
     const query = e.target.value;
@@ -310,20 +319,13 @@ export default function LeaderBoard() {
 
     setIsRefreshing(true);
     try {
-      const { data } = await fetchWithTimeout("/api/leaderboard", {}, 10000);
-      if (Array.isArray(data)) {
-        const preparedData = prepareLeaderboardEntries(data);
-        const sorted = [...preparedData].sort((a, b) => b.points - a.points);
-        setContributors(sorted);
-        setLastUpdated(t("leaderboard.statusRefreshed", { time: formatLastUpdated(Date.now(), t) }));
+      clearLeaderboardCache();
+      const contributors = await fetchLeaderboardData(true);
+      const preparedData = prepareLeaderboardEntries(contributors);
+      setContributors(preparedData);
+      setLastUpdated(t("leaderboard.statusRefreshed", { time: formatLastUpdated(Date.now(), t) }));
 
-        storageManager.set(STORAGE_KEYS.LEADERBOARD_CACHE, {
-          data: sorted,
-          timestamp: Date.now(),
-        });
-
-        confetti({ ...CONFETTI_CONFIG, particleCount: 50, spread: 50 });
-      }
+      confetti({ ...CONFETTI_CONFIG, particleCount: 50, spread: 50 });
     } catch (err) {
       logger.error("Refresh failed:", err);
     } finally {
@@ -396,7 +398,6 @@ export default function LeaderBoard() {
     setSortBy(value);
   }, []);
 
-  // ─── Podium Configuration ───────────────────────────────────────────────
   const podiumConfig = useMemo(() => [
     {
       position: t("leaderboard.podiumPositions.2nd"),
@@ -423,7 +424,7 @@ export default function LeaderBoard() {
         badgeClass: "bg-yellow-400 text-yellow-950 shadow-[0_2px_10px_rgba(234,179,8,0.3)]",
         size: "h-22 w-22",
         pointsClass: "text-amber-500",
-        medalClass: "bg-gradient-to-r from-yellow-400 to-amber-500 text-amber-950",
+        medalClass: "bg-linear-to-r from-yellow-400 to-amber-500 text-amber-950",
       },
       isFirst: true,
     },
@@ -446,7 +447,7 @@ export default function LeaderBoard() {
   return (
     <ErrorBoundary level="feature">
       <div
-        className="relative overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(224,233,242,0.52),_transparent_42%),linear-gradient(180deg,#f8fbfe_0%,#eef4fa_100%)] pt-20 md:pt-24 py-12 sm:py-16 transition-colors duration-300"
+        className="relative overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(224,233,242,0.52),_transparent_42%),linear-gradient(180deg,#f8fbfe_0%,#eef4fa_100%)] dark:bg-[radial-gradient(circle_at_top,_rgba(30,41,59,0.52),_transparent_42%),linear-gradient(180deg,#0f172a_0%,#1e293b_100%)] pt-20 md:pt-24 py-12 sm:py-16 transition-colors duration-300"
         role="main"
         aria-labelledby="leaderboard-heading"
       >
