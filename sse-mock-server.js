@@ -10,6 +10,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import jwt from "jsonwebtoken";
 import { validateJwtSecretOrExit } from "./api/_lib/jwtSecret.js";
+import { getTicketJwtExpiry } from "./api/_lib/ticket-token-config.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -343,12 +344,22 @@ const server = http.createServer(async (req, res) => {
     }
 
     try {
-      const token = jwt.sign(
-        { registrationId: reg.registrationId, eventId: reg.eventId, userId: reg.userId, userName: reg.userName },
-        JWT_SECRET,
-        { expiresIn: "7d" }
-      );
+      // Use configurable/event-aware expiration from ticket-token-config
+      const expiry = getTicketJwtExpiry();
+      const payload = { registrationId: reg.registrationId, eventId: reg.eventId, userId: reg.userId, userName: reg.userName };
+      const signOptions = { subject: "ticket" };
+
+      // If expiry is a number (Unix timestamp), set exp claim directly in payload
+      // If expiry is a string (duration), use expiresIn option
+      if (typeof expiry === "number") {
+        payload.exp = expiry;
+      } else {
+        signOptions.expiresIn = expiry;
+      }
+
+      const token = jwt.sign(payload, JWT_SECRET, signOptions);
       reg.qrToken = token;
+      console.log(`[TICKET_TOKEN] Mock server generated token with expiry: ${expiry}`);
       return jsonResponse(res, 200, { success: true, token, registrationId: reg.registrationId });
     } catch (err) {
       return jsonResponse(res, 500, { error: "Failed to sign mock token" });

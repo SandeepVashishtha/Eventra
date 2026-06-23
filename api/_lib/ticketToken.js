@@ -6,8 +6,9 @@
  * in QR codes without leaking internal identifiers.
  */
 
-import { getJwtSecret } from "../auth/_jwt-config.js";
+import { getJwtSecret } from "./jwtSecret.js";
 import jwt from "jsonwebtoken";
+import { getTicketJwtExpiry } from "./ticket-token-config.js";
 
 /**
  * Generates a unique ticket token using crypto.randomUUID().
@@ -34,19 +35,35 @@ export function generateTicketToken() {
  * Contains only the public-safe fields: ticketToken, eventId, registrationId.
  * Never embeds PII (name, email, phone).
  *
+ * Expiration strategy:
+ * - If eventEndTime is provided and valid: expires at event end + 24h grace period
+ * - Otherwise: uses TICKET_JWT_EXPIRY env var or default (30d)
+ *
  * @param {Object} params
  * @param {string} params.ticketToken  - The UUID ticket token
  * @param {string|number} params.eventId - The event identifier
  * @param {string} params.registrationId - The registration identifier
+ * @param {string|Date} [params.eventEndTime] - Event end time for event-aware expiration
  * @returns {string} Signed JWT string
  */
-export function signTicketJwt({ ticketToken, eventId, registrationId }) {
+export function signTicketJwt({ ticketToken, eventId, registrationId, eventEndTime = null }) {
   const secret = getJwtSecret();
-  return jwt.sign(
-    { ticketToken, eventId: String(eventId), registrationId },
-    secret,
-    { expiresIn: "365d", subject: "ticket" }
-  );
+  const expiry = getTicketJwtExpiry({ eventEndTime });
+
+  const payload = { ticketToken, eventId: String(eventId), registrationId };
+  const signOptions = { subject: "ticket" };
+
+  // If expiry is a number (Unix timestamp), set exp claim directly in payload
+  // If expiry is a string (duration), use expiresIn option
+  if (typeof expiry === "number") {
+    payload.exp = expiry;
+    console.log("[TICKET_TOKEN] Generated JWT with event-aware expiration");
+  } else {
+    signOptions.expiresIn = expiry;
+    console.log(`[TICKET_TOKEN] Generated JWT with configured expiry: ${expiry}`);
+  }
+
+  return jwt.sign(payload, secret, signOptions);
 }
 
 /**
