@@ -13,8 +13,8 @@ Eventra is a modern platform designed for builders to discover hackathons, showc
 
 We provide RESTful APIs for automated interaction with our platform.
 
-- **API Catalog**: [/.well-known/api-catalog](https://eventra.sandeepvashishtha.in/.well-known/api-catalog)
-- **API Documentation**: [/apiDocs](https://eventra.sandeepvashishtha.in/apiDocs)
+- **API Catalog**: /.well-known/api-catalog
+- **API Documentation**: /apiDocs
 
 ## Agent Support
 
