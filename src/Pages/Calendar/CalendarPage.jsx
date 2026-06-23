@@ -30,6 +30,7 @@ import { SkeletonBlock } from "../../components/common/SkeletonLoaders";
 import EmptyState from "../../components/common/EmptyState";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "./CalendarPage.css";
+import { useTranslation } from "react-i18next";
 
 const locales = {
   "en-US": enUS,
@@ -167,6 +168,7 @@ const CalendarToolbar = ({ label, onNavigate }) => {
 const CalendarPage = () => {
   const { events, isLoading, loadError, refresh } = useCalendarEvents();
   const [selectedDate, setSelectedDate] = useState(startOfDay(new Date()));
+  const { t } = useTranslation();
 
   const normalizedEvents = useMemo(
     () => events.map((event) => ({ ...event, status: getEventStatus(event) })),
@@ -371,9 +373,9 @@ const CalendarPage = () => {
               {!isLoading && selectedEvents.length === 0 ? (
                 <EmptyState
                   compact={true}
-                  icon={CalendarDays}
-                  title="No events scheduled"
-                  description="No upcoming events scheduled for this day."
+                  icon={<CalendarDays size={32} className="text-slate-400 dark:text-slate-500" />}
+                  title={t("event.noEventsScheduled")}
+                  message={t("event.noUpcomingEvents")}
                 />
               ) : null}
 
@@ -395,7 +397,7 @@ const CalendarPage = () => {
                         <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 transition-transform group-hover:translate-x-0.5" />
                       </div>
 
-                      <h4 className="mt-2 text-[15px] font-bold text-slate-900 dark:text-white line-clamp-2 wrap-break-word leading-snug">
+                      <h4 title={event.title} className="mt-2 text-[15px] font-bold text-slate-900 dark:text-white line-clamp-2 break-words leading-snug">
                         {event.title}
                       </h4>
 

@@ -1,4 +1,4 @@
-/* eslint-disable-next-line no-console */
+ 
 /**
  * @file secureStorage.js
  * @module utils/secureStorage
@@ -86,7 +86,7 @@ const CRYPTO_CONFIG = {
 const CRYPTO_ALGORITHM = CRYPTO_CONFIG.ALGORITHM;
 const KEY_LENGTH = CRYPTO_CONFIG.KEY_LENGTH;
 const IV_LENGTH = CRYPTO_CONFIG.IV_LENGTH;
-// eslint-disable-next-line no-unused-vars -- Kept for backward compatibility
+ 
 const PBKDF2_ITERATIONS = CRYPTO_CONFIG.PBKDF2_ITERATIONS;
 
 const isCryptoAvailable = () => {
@@ -136,7 +136,33 @@ const SALT_STORAGE_KEY = 'eventra:key-salt';
 const KEY_METADATA_KEY = 'eventra:key-metadata';
 const SECRET_BYTE_LENGTH = CRYPTO_CONFIG.SECRET_BYTE_LENGTH;
 
-/** Generate or restore a random 256-bit secret from localStorage. */
+/**
+ * Generate or restore a random 256-bit secret from localStorage.
+ *
+ * SECURITY CRITICAL: This function generates cryptographic secrets used for:
+ * - AES-256-GCM encryption keys
+ * - PBKDF2 key derivation
+ * - Initialization vectors (IVs)
+ *
+ * Why Math.random() is insecure:
+ * - Math.random() is a pseudo-random number generator (PRNG) with predictable output
+ * - It does not provide cryptographically secure entropy
+ * - Its internal state can be reconstructed from observed outputs
+ * - It is suitable only for non-security purposes (UI effects, test data, etc.)
+ * - Using it for cryptographic secrets allows attackers to predict keys and decrypt data
+ *
+ * Why fail-closed behavior is required:
+ * - If secure randomness is unavailable, continuing with weak secrets is worse than failing
+ * - Silent degradation to insecure randomness exposes encrypted data to attack
+ * - Encryption without secure entropy provides a false sense of security
+ * - Failing explicitly allows callers to handle the security requirement appropriately
+ *
+ * Why cryptographic secrets require secure entropy:
+ * - Encryption key strength depends entirely on randomness quality
+ * - Predictable keys negate the security of AES-256-GCM regardless of key length
+ * - PBKDF2 iterations cannot compensate for weak initial entropy
+ * - Secure entropy ensures keys cannot be guessed or predicted even with massive compute
+ */
 const getOrCreateSecret = (storageKey) => {
   try {
     const stored = localStorage.getItem(storageKey);
@@ -147,7 +173,20 @@ const getOrCreateSecret = (storageKey) => {
     // localStorage unavailable — fall through to generate a session-scoped value
   }
 
+  // SECURITY: Fail-closed if cryptographic randomness is unavailable
+  if (
+    typeof crypto === "undefined" ||
+    typeof crypto.getRandomValues !== "function"
+  ) {
+    throw new Error(
+      "Secure cryptographic randomness is unavailable. " +
+      "Encryption requires a secure context (HTTPS) and Web Crypto API support. " +
+      "Cannot proceed without secure entropy for key generation."
+    );
+  }
+
   const secret = crypto.getRandomValues(new Uint8Array(SECRET_BYTE_LENGTH));
+
   try {
     localStorage.setItem(storageKey, btoa(String.fromCharCode(...secret)));
   } catch {
@@ -329,7 +368,7 @@ const decryptValue = async (storageKey, stored) => {
       // Versioned payload - use migration framework if needed
       return await decryptVersionedPayload(storageKey, payload, key);
     }
-  } catch (_e) {
+  } catch {
     // Not JSON or invalid - fall through to legacy format
   }
 
@@ -402,7 +441,6 @@ const decryptV1 = async (storageKey, payload, key, encoder) => {
  * @param {string} plaintext - The decrypted plaintext
  * @returns {Promise<string>} Re-encrypted value with new version
  */
-// eslint-disable-next-line no-unused-vars -- Reserved for future migration implementations
 const migratePayload = async (fromVersion, toVersion, storageKey, plaintext) => {
   // Future migrations can be implemented here
   // For now, v1 is current, so no migration needed

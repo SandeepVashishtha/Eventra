@@ -1,6 +1,14 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Star, QrCode, TrendingUp, Users, Lock, Globe, ArrowRight } from "lucide-react";
+import {
+  ArrowRight,
+  CalendarCheck,
+  Code2,
+  Handshake,
+  QrCode,
+  Sparkles,
+  Trophy,
+} from "lucide-react";
 
 const ICON_CLASSES = "text-blue-400 w-6 h-6";
 
@@ -30,64 +38,64 @@ const item = {
 
 const features = [
   {
-    icon: <Star className={ICON_CLASSES} />,
-    title: "Smart Event Creation",
-    stat: "90% faster setup",
+    icon: <CalendarCheck className={ICON_CLASSES} />,
+    title: "Event Discovery and Registration",
+    stat: "Events",
     description:
-      "Launch events quickly using intelligent templates, streamlined workflows, and automated event management tools.",
-    cta: "Start Creating",
+      "Browse upcoming programs, understand the details, save interesting opportunities, and register through a clear user flow.",
+    cta: "Explore Events",
     link: "/events",
     enabled: true,
   },
   {
+    icon: <Trophy className={ICON_CLASSES} />,
+    title: "Hackathon Participation",
+    stat: "Hackathons",
+    description:
+      "Find hackathons, follow schedules, collaborate with teams, and move from ideas to submissions with community support.",
+    cta: "View Hackathons",
+    link: "/hackathons",
+    enabled: true,
+  },
+  {
+    icon: <Code2 className={ICON_CLASSES} />,
+    title: "Project Showcase",
+    stat: "Projects",
+    description:
+      "Share work, discover community projects, and keep building after events through visible project spaces.",
+    cta: "Browse Projects",
+    link: "/projects",
+    enabled: true,
+  },
+  {
+    icon: <Handshake className={ICON_CLASSES} />,
+    title: "Networking and Community",
+    stat: "Connections",
+    description:
+      "Meet organizers, mentors, contributors, and peers through community surfaces built around participation.",
+    cta: "Join Community",
+    link: "/community-event",
+    enabled: true,
+  },
+  {
     icon: <QrCode className={ICON_CLASSES} />,
-    title: "Instant QR Check-ins",
-    stat: "3 sec check-in",
+    title: "Organizer Tools",
+    stat: "Manage",
     description:
-      "Provide attendees with seamless check-ins using secure QR codes and real-time attendance tracking.",
-    cta: "See Demo",
-    link: "#",
-    enabled: false,
+      "Support event operations with registration handling, ticket-friendly check-ins, dashboards, and feedback workflows.",
+    cta: "Read Docs",
+    link: "/documentation",
+    enabled: true,
   },
   {
-    icon: <TrendingUp className={ICON_CLASSES} />,
-    title: "Live Analytics",
-    stat: "15+ metrics",
+    icon: <Sparkles className={ICON_CLASSES} />,
+    title: "Beginner-Friendly Experience",
+    stat: "Benefits",
     description:
-      "Monitor registrations, engagement, participation trends, and event performance through live dashboards.",
-    cta: "View Dashboard",
-    link: "#",
-    enabled: false,
-  },
-  {
-    icon: <Users className={ICON_CLASSES} />,
-    title: "Community Collaboration",
-    stat: "Unlimited teams",
-    description:
-      "Work together with organizers, contributors, and participants through collaborative event workflows.",
-    cta: "Add Team",
-    link: "#",
-    enabled: false,
-  },
-  {
-    icon: <Lock className={ICON_CLASSES} />,
-    title: "Secure by Design",
-    stat: "Enterprise-grade",
-    description:
-      "Advanced security controls, privacy-first architecture, and trusted authentication systems.",
-    cta: "Learn More",
-    link: "#",
-    enabled: false,
-  },
-  {
-    icon: <Globe className={ICON_CLASSES} />,
-    title: "Global Accessibility",
-    stat: "Worldwide",
-    description:
-      "Designed for communities, educational institutions, and organizations across the globe.",
-    cta: "Go Global",
-    link: "#",
-    enabled: false,
+      "Help new users quickly understand what to attend, how to participate, and where to continue learning.",
+    cta: "Get Started",
+    link: "/signup",
+    enabled: true,
   },
 ];
 
@@ -124,12 +132,13 @@ export default function Features() {
           className="text-center mb-20"
         >
           <motion.h2 variants={item} id="features-heading" className={HEADING_CLASSES}>
-            Features That Power Every Event
+            What You Can Do with Eventra
           </motion.h2>
 
           <motion.p variants={item} className={DESCRIPTION_CLASSES}>
-            Eventra provides everything needed to create, manage, scale, and grow successful events
-            while fostering stronger communities.
+            Eventra combines discovery, event operations, hackathon workflows, project visibility,
+            and community engagement so new users can move from interest to participation with
+            confidence.
           </motion.p>
         </motion.div>
 
