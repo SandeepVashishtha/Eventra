@@ -1,18 +1,32 @@
 /**
  * Distributed Lock Concurrency Tests
- * 
+ *
  * Tests for the distributed lock implementation covering:
  * - Mutual exclusion guarantees
  * - Lock expiration behavior
  * - FIFO ordering of queued waiters
  * - Ownership safety
  * - Backward compatibility
+ * - Redis-based distributed locking
+ * - TTL handling
+ * - Retry logic
+ * - Production validation
  */
 
-import { describe, it, beforeEach } from 'node:test';
+import { describe, it, beforeEach, before } from 'node:test';
 import assert from 'node:assert';
 
-describe('Distributed Lock - Mutual Exclusion', () => {
+// Store original NODE_ENV
+const originalNodeEnv = process.env.NODE_ENV;
+
+describe('Distributed Lock - In-Memory Fallback (Development/Test)', () => {
+  before(() => {
+    // Force in-memory mode for these tests
+    process.env.NODE_ENV = 'test';
+    delete process.env.DISTRIBUTED_LOCK_REDIS_URL;
+    delete process.env.RATE_LIMIT_REDIS_URL;
+  });
+
   beforeEach(async () => {
     const { resetLockManager } = await import('../api/_lib/distributed-lock.js');
     resetLockManager();
@@ -26,13 +40,13 @@ describe('Distributed Lock - Mutual Exclusion', () => {
     async function simulateSlowOperation(callerId, durationMs) {
       executionLog.push(`[${callerId}] ENTERING`);
       criticalSectionActive.add(callerId);
-      
+
       if (criticalSectionActive.size > 1) {
         executionLog.push(`CONCURRENCY BUG: ${Array.from(criticalSectionActive).join(' and ')}`);
       }
-      
+
       await new Promise(resolve => setTimeout(resolve, durationMs));
-      
+
       criticalSectionActive.delete(callerId);
       executionLog.push(`[${callerId}] EXITING`);
     }
@@ -53,12 +67,12 @@ describe('Distributed Lock - Mutual Exclusion', () => {
     // Verify no concurrent execution
     const hasConcurrencyBug = executionLog.some(log => log.includes('CONCURRENCY BUG'));
     assert.strictEqual(hasConcurrencyBug, false, 'Critical sections should not overlap');
-    
+
     // Verify A completed before B started
     const aEnterIndex = executionLog.findIndex(log => log.includes('[A] ENTERING'));
     const aExitIndex = executionLog.findIndex(log => log.includes('[A] EXITING'));
     const bEnterIndex = executionLog.findIndex(log => log.includes('[B] ENTERING'));
-    
+
     assert.ok(aExitIndex < bEnterIndex, 'Caller A should exit before Caller B enters');
   });
 
@@ -78,7 +92,7 @@ describe('Distributed Lock - Mutual Exclusion', () => {
     }
 
     // Launch 5 concurrent tasks
-    const tasks = ['A', 'B', 'C', 'D', 'E'].map(id => 
+    const tasks = ['A', 'B', 'C', 'D', 'E'].map(id =>
       withLock('test-key-2', () => task(id))
     );
 
@@ -86,14 +100,14 @@ describe('Distributed Lock - Mutual Exclusion', () => {
 
     // Verify sequential execution (max concurrent should be 1)
     assert.strictEqual(maxConcurrent, 1, 'Only one task should execute at a time');
-    
+
     // Verify no overlapping starts/ends
     for (let i = 0; i < executionOrder.length - 1; i++) {
       const current = executionOrder[i];
       const next = executionOrder[i + 1];
       const currentId = current.split('-')[0];
       const nextId = next.split('-')[0];
-      
+
       // If current is start, next should be end of same task or start of different task
       // But never start of different task before end of current
       if (current.endsWith('-start') && next.endsWith('-start')) {
@@ -103,7 +117,7 @@ describe('Distributed Lock - Mutual Exclusion', () => {
   });
 });
 
-describe('Distributed Lock - FIFO Ordering', () => {
+describe('Distributed Lock - FIFO Ordering (In-Memory)', () => {
   beforeEach(async () => {
     const { resetLockManager } = await import('../api/_lib/distributed-lock.js');
     resetLockManager();
@@ -188,7 +202,7 @@ describe('Distributed Lock - FIFO Ordering', () => {
   });
 });
 
-describe('Distributed Lock - Ownership Safety', () => {
+describe('Distributed Lock - Ownership Safety (In-Memory)', () => {
   beforeEach(async () => {
     const { resetLockManager } = await import('../api/_lib/distributed-lock.js');
     resetLockManager();
@@ -197,35 +211,35 @@ describe('Distributed Lock - Ownership Safety', () => {
   it('should prevent stale release from affecting newer lock', async () => {
     const { getLockManager } = await import('../api/_lib/distributed-lock.js');
     const manager = getLockManager();
-    
+
     // First acquisition
     const release1 = await manager.acquire('test-key-5');
-    
+
     // Second acquisition (queues behind first)
     const release2Promise = manager.acquire('test-key-5');
-    
+
     // Release first lock
     release1();
-    
+
     // Second lock should now be acquired
     const release2 = await release2Promise;
-    
+
     // Try to release first lock again (should be idempotent)
     release1();
-    
+
     // Second lock should still be held
     // Verify by trying to acquire a third lock
     const release3Promise = manager.acquire('test-key-5');
     let acquired = false;
     release3Promise.then(() => { acquired = true; });
-    
+
     await new Promise(resolve => setTimeout(resolve, 10));
-    
+
     assert.strictEqual(acquired, false, 'Third lock should not acquire while second is held');
-    
+
     // Release second lock
     release2();
-    
+
     // Now third should acquire
     await release3Promise;
   });
@@ -233,21 +247,21 @@ describe('Distributed Lock - Ownership Safety', () => {
   it('should handle multiple releases gracefully', async () => {
     const { getLockManager } = await import('../api/_lib/distributed-lock.js');
     const manager = getLockManager();
-    
+
     const release = await manager.acquire('test-key-6');
-    
+
     // Release multiple times (should be idempotent)
     release();
     release();
     release();
-    
+
     // Should not throw and should allow new acquisition
     const release2 = await manager.acquire('test-key-6');
     release2();
   });
 });
 
-describe('Distributed Lock - Backward Compatibility', () => {
+describe('Distributed Lock - Backward Compatibility (In-Memory)', () => {
   beforeEach(async () => {
     const { resetLockManager } = await import('../api/_lib/distributed-lock.js');
     resetLockManager();
@@ -255,39 +269,39 @@ describe('Distributed Lock - Backward Compatibility', () => {
 
   it('should support withLock API with default TTL', async () => {
     const { withLock } = await import('../api/_lib/distributed-lock.js');
-    
+
     let executed = false;
     await withLock('test-key-7', async () => {
       executed = true;
     });
-    
+
     assert.strictEqual(executed, true);
   });
 
   it('should support withLock API with custom TTL', async () => {
     const { withLock } = await import('../api/_lib/distributed-lock.js');
-    
+
     let executed = false;
     await withLock('test-key-8', async () => {
       executed = true;
     }, 5000);
-    
+
     assert.strictEqual(executed, true);
   });
 
   it('should return result from protected function', async () => {
     const { withLock } = await import('../api/_lib/distributed-lock.js');
-    
+
     const result = await withLock('test-key-9', async () => {
       return 42;
     });
-    
+
     assert.strictEqual(result, 42);
   });
 
   it('should propagate errors from protected function', async () => {
     const { withLock } = await import('../api/_lib/distributed-lock.js');
-    
+
     await assert.rejects(
       async () => {
         await withLock('test-key-10', async () => {
@@ -301,7 +315,7 @@ describe('Distributed Lock - Backward Compatibility', () => {
   it('should release lock even if function throws', async () => {
     const { withLock, getLockManager } = await import('../api/_lib/distributed-lock.js');
     const manager = getLockManager();
-    
+
     try {
       await withLock('test-key-11', async () => {
         throw new Error('Test error');
@@ -309,7 +323,7 @@ describe('Distributed Lock - Backward Compatibility', () => {
     } catch (e) {
       // Expected
     }
-    
+
     // Lock should be released, allowing new acquisition
     const release = await manager.acquire('test-key-11');
     release();
@@ -317,17 +331,17 @@ describe('Distributed Lock - Backward Compatibility', () => {
 
   it('should support Infinity TTL', async () => {
     const { withLock } = await import('../api/_lib/distributed-lock.js');
-    
+
     let executed = false;
     await withLock('test-key-12', async () => {
       executed = true;
     }, Infinity);
-    
+
     assert.strictEqual(executed, true);
   });
 });
 
-describe('Distributed Lock - Edge Cases', () => {
+describe('Distributed Lock - Edge Cases (In-Memory)', () => {
   beforeEach(async () => {
     const { resetLockManager } = await import('../api/_lib/distributed-lock.js');
     resetLockManager();
@@ -354,19 +368,19 @@ describe('Distributed Lock - Edge Cases', () => {
     // Both should be able to execute concurrently (different keys)
     const key1Start = executionLog.indexOf('key1-start');
     const key2Start = executionLog.indexOf('key2-start');
-    
+
     // They should start close to each other (concurrent)
     assert.ok(Math.abs(key1Start - key2Start) <= 1, 'Different keys should allow concurrent execution');
   });
 
   it('should handle zero TTL', async () => {
     const { withLock } = await import('../api/_lib/distributed-lock.js');
-    
+
     let executed = false;
     await withLock('test-key-13', async () => {
       executed = true;
     }, 0);
-    
+
     assert.strictEqual(executed, true);
   });
 
@@ -384,5 +398,93 @@ describe('Distributed Lock - Edge Cases', () => {
 
     // Verify all executed in order
     assert.deepStrictEqual(results, Array.from({ length: count }, (_, i) => i));
+  });
+});
+
+describe('Distributed Lock - Production Validation', () => {
+  beforeEach(async () => {
+    const { resetLockManager } = await import('../api/_lib/distributed-lock.js');
+    resetLockManager();
+    // Restore original NODE_ENV before each test
+    process.env.NODE_ENV = originalNodeEnv;
+  });
+
+  it('should fail startup in production without Redis', async () => {
+    process.env.NODE_ENV = 'production';
+    delete process.env.DISTRIBUTED_LOCK_REDIS_URL;
+    delete process.env.RATE_LIMIT_REDIS_URL;
+
+    await assert.rejects(
+      async () => {
+        const { getLockManager } = await import('../api/_lib/distributed-lock.js');
+        getLockManager();
+      },
+      /Distributed lock storage is required in production/
+    );
+  });
+
+  it('should allow in-memory fallback in development without Redis', async () => {
+    process.env.NODE_ENV = 'development';
+    delete process.env.DISTRIBUTED_LOCK_REDIS_URL;
+    delete process.env.RATE_LIMIT_REDIS_URL;
+
+    const { getLockManager, withLock } = await import('../api/_lib/distributed-lock.js');
+    const manager = getLockManager();
+
+    let executed = false;
+    await withLock('test-key-dev', async () => {
+      executed = true;
+    });
+
+    assert.strictEqual(executed, true);
+  });
+
+  it('should allow in-memory fallback in test without Redis', async () => {
+    process.env.NODE_ENV = 'test';
+    delete process.env.DISTRIBUTED_LOCK_REDIS_URL;
+    delete process.env.RATE_LIMIT_REDIS_URL;
+
+    const { getLockManager, withLock } = await import('../api/_lib/distributed-lock.js');
+    const manager = getLockManager();
+
+    let executed = false;
+    await withLock('test-key-test', async () => {
+      executed = true;
+    });
+
+    assert.strictEqual(executed, true);
+  });
+});
+
+describe('Distributed Lock - API Compatibility', () => {
+  beforeEach(async () => {
+    const { resetLockManager } = await import('../api/_lib/distributed-lock.js');
+    resetLockManager();
+  });
+
+  it('should support options parameter in withLock', async () => {
+    const { withLock } = await import('../api/_lib/distributed-lock.js');
+
+    let executed = false;
+    await withLock('test-key-options', async () => {
+      executed = true;
+    }, 30000, { retries: 5, retryDelayMs: 50 });
+
+    assert.strictEqual(executed, true);
+  });
+
+  it('should support acquire with options', async () => {
+    const { getLockManager } = await import('../api/_lib/distributed-lock.js');
+    const manager = getLockManager();
+
+    const release = await manager.acquire('test-key-acquire-options', 30000, { retries: 2, retryDelayMs: 100 });
+    release();
+  });
+
+  it('should support close function', async () => {
+    const { close } = await import('../api/_lib/distributed-lock.js');
+
+    // Should not throw even in in-memory mode
+    await close();
   });
 });

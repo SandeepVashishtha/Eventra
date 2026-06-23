@@ -1,13 +1,22 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { getLockManager, withLock } from "../api/_lib/distributed-lock.js";
+import { getLockManager, withLock, resetLockManager } from "../api/_lib/distributed-lock.js";
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 test("InMemoryLockManager - Concurrency & TTL Behavior", async (t) => {
+  // Ensure test environment for in-memory fallback
+  process.env.NODE_ENV = "test";
+  delete process.env.DISTRIBUTED_LOCK_REDIS_URL;
+  delete process.env.RATE_LIMIT_REDIS_URL;
+
+  t.after(() => {
+    resetLockManager();
+  });
+
   await t.test("should serialize lock execution", async () => {
     const execution = [];
-    
+
     const p1 = withLock("test-key", async () => {
       execution.push("start-1");
       await delay(50);
