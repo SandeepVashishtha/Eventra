@@ -3,6 +3,7 @@ import { checkGeoBlock } from "./geo.js";
 import { checkRateLimit } from "./rate-limit.js";
 import { verifyTicketAccess, verifyJwt, parseTokenFromCookie } from "./jwt.js";
 import { addSecurityHeaders, validateBackendOrigin, getBackendOrigins, createSecurityHeaders } from "./csp.js";
+import { validateCsrf, attachCsrfCookie, requiresCsrfProtection } from "./csrf.js";
 import {
   isDistributedRateLimitStorageConfigured,
   isInMemoryRateLimitStorageAllowed,
@@ -185,6 +186,14 @@ async function handleRequest(request) {
 
   const originValidationResponse = validateOrigin(request);
   if (originValidationResponse) return originValidationResponse;
+
+  if (requiresCsrfProtection(request.method) && url.pathname.startsWith("/api/")) {
+    const csrfResult = validateCsrf(request);
+    if (!csrfResult.valid && csrfResult.response) {
+      addSecurityHeaders(csrfResult.response.headers);
+      return csrfResult.response;
+    }
+  }
 
   if (url.pathname.startsWith("/api/")) {
     const authResponse = await authorizeSession(request, url);
