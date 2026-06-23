@@ -18,11 +18,11 @@
   *,
   *::before,
   *::after {
-    background: white !important;
-    background-color: white !important;
-    color: black !important;
-    box-shadow: none !important;
-    text-shadow: none !important;
+    background: white;
+    background-color: white;
+    color: black;
+    box-shadow: none;
+    text-shadow: none;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
@@ -35,13 +35,13 @@
   [role="banner"],
   .navbar,
   .nav {
-    display: none !important;
+    display: none;
   }
 
   /* Footer */
   footer,
   [role="contentinfo"] {
-    display: none !important;
+    display: none;
   }
 
   /* Floating / fixed elements: back-to-top, chatbot, feedback, scroll progress */
@@ -53,7 +53,7 @@
   [class*="feedback"],
   [aria-label="Back to top"],
   [data-chatbot] {
-    display: none !important;
+    display: none;
   }
 
   /* Share / social buttons */
@@ -61,26 +61,26 @@
   [aria-label*="share"],
   [aria-label*="Share"],
   [class*="social"] {
-    display: none !important;
+    display: none;
   }
 
   /* Register / CTA buttons */
   [class*="register"],
   [class*="cta"],
   button:not([aria-label*="print"]) {
-    display: none !important;
+    display: none;
   }
 
   /* Countdown timer (meaningless when printed) */
   [class*="countdown"],
   [class*="timer"] {
-    display: none !important;
+    display: none;
   }
 
   /* Sidebar / sticky info panel */
   aside,
   [role="complementary"] {
-    display: none !important;
+    display: none;
   }
 
   /* ── Typography & layout ─────────────────────────────────────────────────── */
@@ -123,8 +123,8 @@
   .event-banner img,
   img[alt*="event banner"],
   img[alt*="banner"] {
-    max-width: 100% !important;
-    height: auto !important;
+    max-width: 100%;
+    height: auto;
     page-break-inside: avoid;
   }
 
@@ -132,13 +132,13 @@
   a[href]::after {
     content: " (" attr(href) ")";
     font-size: 9pt;
-    color: #555 !important;
+    color: #555;
   }
 
   /* Suppress URL expansion for icon/button links that have no readable text */
   a[href^="#"]::after,
   a[aria-hidden="true"]::after {
-    content: "" !important;
+    content: "";
   }
 
   /* ── Page margins ────────────────────────────────────────────────────────── */
@@ -151,25 +151,25 @@
   main,
   [id="main-content"],
   .event-details-content {
-    width: 100% !important;
-    max-width: 100% !important;
-    padding: 0 !important;
-    margin: 0 !important;
+    width: 100%;
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
   }
 
   /* Grid reflow: collapse multi-column layout to single column */
   .grid,
   [class*="grid-cols"] {
-    display: block !important;
+    display: block;
   }
 
   /* ── Event metadata chips ────────────────────────────────────────────────── */
   [class*="badge"],
   [class*="tag"],
   [class*="chip"] {
-    border: 1px solid #ccc !important;
-    background: transparent !important;
-    color: black !important;
+    border: 1px solid #ccc;
+    background: transparent;
+    color: black;
     padding: 2px 6px;
     border-radius: 4px;
   }

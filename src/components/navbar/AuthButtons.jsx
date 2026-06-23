@@ -40,7 +40,7 @@ const AuthButtons = () => {
   }, [isOpen, closeMenu]);
 
   return (
-    <div className="flex items-center justify-center gap-2.5">
+    <div className="flex items-center justify-center gap-1.5">
       <div className="relative" ref={menuRef}>
         <button
           ref={buttonRef}

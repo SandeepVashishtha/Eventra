@@ -1,6 +1,8 @@
+import { useState } from "react";
 const RecommendationBanner = () => {
+  const [activeFilter, setActiveFilter] = useState("AI/ML");
   return (
-    <section 
+    <section
       className="relative overflow-hidden px-4 md:px-8 py-16 text-slate-900 dark:text-white border-t border-slate-200/60 dark:border-slate-800/60 transition-colors duration-300"
       /* MODIFIED: Re-applied the identical matching background gradient flow from the events carousel */
       style={{
@@ -8,7 +10,7 @@ const RecommendationBanner = () => {
       }}
     >
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-28 bg-gradient-to-b from-white/80 dark:from-slate-950/40 to-transparent" />
+        <div className="absolute top-0 left-0 right-0 h-28 bg-linear-to-b from-white/80 dark:from-slate-950/40 to-transparent" />
         <div className="absolute top-10 left-8 h-40 w-40 rounded-full bg-white/35 dark:bg-slate-800/10 blur-3xl" />
         <div className="absolute top-24 right-8 h-52 w-52 rounded-full bg-sky-100/35 dark:bg-brand-violet/5 blur-3xl" />
       </div>
@@ -59,12 +61,19 @@ const RecommendationBanner = () => {
                 'Hackathons',
                 'Beginner Friendly',
               ].map((tag, index) => (
-                <span
-                  key={index}
-                  className="px-3 py-1.5 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-700 dark:text-slate-300 shadow-sm hover:border-brand-violet/50 transition-colors duration-200"
-                >
-                  {tag}
-                </span>
+                <button
+    key={index}
+    type="button"
+    onClick={() => setActiveFilter(tag)}
+    className={`px-3 py-1.5 rounded-full text-sm shadow-sm transition-all duration-300 border ${
+      activeFilter === tag
+        ? "bg-brand-violet text-white border-brand-violet shadow-[0_0_15px_rgba(139,92,246,0.35)] scale-105"
+        : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-brand-violet/50"
+    }`}
+  >
+    {tag}
+  </button>
+
               ))}
             </div>
 
@@ -72,7 +81,16 @@ const RecommendationBanner = () => {
             <div className="flex flex-wrap gap-4 mt-8">
               <a
                 href="/event-recommendation"
-                className="px-6 py-3 rounded-full bg-brand-violet hover:bg-brand-violet/90 text-white text-sm font-semibold transition-all shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-violet/50"
+                className="
+    px-6 py-3
+    rounded-full
+    bg-violet-600
+    hover:bg-violet-700
+    text-white
+    font-semibold
+    shadow-md
+    transition-all
+  "
               >
                 Try Recommendation Assistant
               </a>
