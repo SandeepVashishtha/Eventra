@@ -99,8 +99,8 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
         transition-colors
         ${
           isActive
-            ? "bg-bg-secondary text-text"
-            : "text-text-secondary hover:bg-bg hover:text-text"
+            ? "bg-bg-secondary text-indigo-600 dark:text-indigo-400 font-semibold"
+            : "text-text-secondary hover:bg-bg hover:text-indigo-600 dark:hover:text-indigo-400"
         }
       `
       : `
@@ -108,14 +108,15 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
         whitespace-nowrap
         px-1 py-1
         text-[13px]
+        font-medium
         uppercase
-        tracking-wide
+        tracking-wider
         border-b-2
-        transition-all
+        transition-all duration-200
         ${
           isActive
-            ? "border-primary text-text"
-            : "border-transparent text-text-secondary hover:text-text hover:border-border"
+            ? "border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400 font-semibold"
+            : "border-transparent text-text-secondary hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-600/30 dark:hover:border-indigo-400/30"
         }
       `;
 
@@ -210,7 +211,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                   className={
                     vertical
                       ? "mt-2 ml-4 space-y-1"
-                      : "absolute left-0 top-full mt-3 min-w-[220px] rounded-lg border border-border bg-navbar p-2 shadow-lg z-50"
+                      : "absolute left-0 top-full mt-3 min-w-[220px] rounded-lg border border-zinc-100 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md p-2 shadow-lg z-50"
                   }
                 >
                   {item.subItems.map((sub) => (
@@ -229,11 +230,11 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                           rounded-md
                           px-3 py-2
                           text-sm
-                          transition-colors
+                          transition-all duration-200
                           ${
                             isActive
-                              ? "bg-bg-secondary text-text font-medium"
-                              : "text-text-secondary hover:bg-bg hover:text-text"
+                              ? "bg-bg-secondary text-indigo-600 dark:text-indigo-400 font-medium"
+                              : "text-text-secondary hover:bg-bg hover:text-indigo-600 dark:hover:text-indigo-400"
                           }
                         `
                       }
