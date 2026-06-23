@@ -227,14 +227,7 @@ function App() {
                             </Suspense>
                           }
                         />
-                        {/* TODO: Implement missing auth/dashboard routes
-                          Pages do not exist:
-                          - ./Pages/auth/Login
-                          - ./Pages/auth/Signup
-                          - ./Pages/dashboard/Dashboard
-                          - ./Pages/Admin/AdminPanel
-                          - ./Pages/user/Profile
-                        */}
+                        
                         <Route
                           path="/event-recommendation"
                           element={<Suspense fallback={null}><EventRecommendation /></Suspense>}
@@ -301,39 +294,13 @@ function App() {
                 </ErrorBoundary>
                 )}
 
-                <ErrorButton />
+                
               </div>
             </SessionRecoveryProvider>
           </MyEventsProvider>
         </NotificationProvider>
       </AuthProvider>
     </ErrorBoundary>
-  );
-}
-
-function ErrorButton() {
-  return (
-    <button
-      onClick={() => {
-        throw new Error('This is your first error!');
-      }}
-      style={{
-        position: "fixed",
-        bottom: "20px",
-        left: "20px",
-        zIndex: 9999,
-        padding: "10px 15px",
-        backgroundColor: "#e11d48",
-        color: "white",
-        border: "none",
-        borderRadius: "5px",
-        cursor: "pointer",
-        fontWeight: "bold",
-        boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-      }}
-    >
-      Break the world
-    </button>
   );
 }
 
