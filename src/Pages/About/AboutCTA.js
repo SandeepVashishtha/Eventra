@@ -32,7 +32,7 @@ const bubbles = [
 const AboutCTA = () => {
   return (
     <motion.section
-      className="relative overflow-hidden rounded-3xl mx-4 md:mx-8 my-16 border border-slate-800 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950"
+      className="relative overflow-hidden rounded-3xl mx-4 md:mx-8 my-16 border border-slate-800 bg-linear-to-br from-slate-950 via-slate-900 to-indigo-950"
       initial={{ opacity: 0, y: 40 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-100px" }}
@@ -94,7 +94,7 @@ const AboutCTA = () => {
           viewport={{ once: true }}
         >
           Build, Collaborate & Grow
-          <span className="block bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
+          <span className="block bg-linear-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
             Together with Eventra
           </span>
         </motion.h2>
@@ -146,7 +146,7 @@ const AboutCTA = () => {
         >
           <Link
             to="/signup"
-            className="group inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-105 transition-all duration-300"
+            className="group inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-semibold text-white bg-linear-to-r from-blue-600 to-indigo-600 shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-105 transition-all duration-300"
           >
             <Users size={20} />
             Get Started Free

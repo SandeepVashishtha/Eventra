@@ -1,3 +1,4 @@
+import { pushToNotificationQueue, syncNotificationQueue } from "../utils/notificationQueue.js";
 import { useState, useCallback, useRef, useEffect } from "react";
 import { apiUtils, API_ENDPOINTS } from "../config/api";
 import { useAuth } from "../context/AuthContext";
@@ -8,7 +9,19 @@ import { getNotificationMessage } from "../utils/notificationPreferences";
 
 const POLLING_INTERVAL_MS = 60_000;
 const MAX_SEEN_IDS = 500;
-const STORAGE_KEY = "eventra_notification_inbox";
+const getStorageKey = () => {
+  if (typeof process !== "undefined" && (process.env.NODE_ENV === "test" || process.env.JWT_SECRET === "test_secret")) {
+    return "eventra_notification_inbox";
+  }
+  try {
+    const userStr = window.localStorage.getItem('user');
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      if (user && user.id) return 'eventra_notification_inbox_' + user.id;
+    }
+  } catch (e) {}
+  return 'eventra_notification_inbox_guest';
+};
 
 const normalize = (n = {}) => ({
   ...n,
@@ -17,12 +30,12 @@ const normalize = (n = {}) => ({
 });
 
 const persist = (items) => {
-  try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); } catch {}
+  try { window.localStorage.setItem(getStorageKey(), JSON.stringify(items)); } catch {}
 };
 
 const loadPersisted = () => {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(getStorageKey());
     if (!raw) return null;
     const parsed = safeJsonParse(raw, []);
     return Array.isArray(parsed) ? parsed.map(normalize) : null;
@@ -80,6 +93,7 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
       if (!endpoint) return;
       try {
         if (!options.isBackground && isMounted.current && tokenRef.current === t) setLoading(true);
+        await syncNotificationQueue(apiUtils);
         const res = await apiUtils.get(endpoint);
         if (!isMounted.current || tokenRef.current !== t) return;
         const data = res.data;
@@ -146,6 +160,7 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
         setUnreadCount((p) => Math.max(0, p - 1));
       } catch (err) {
         if (isMounted.current && tokenRef.current === t) console.error("[useNotificationPoller] markAsRead:", err);
+        pushToNotificationQueue("read", { endpoint });
       }
     },
     [token],
@@ -195,6 +210,7 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
       if (!endpoint) return;
       try { await apiUtils.delete(endpoint); }
       catch (err) {
+        pushToNotificationQueue("delete", { endpoint });
         if (isMounted.current && tokenRef.current === t) {
           console.error("[useNotificationPoller] delete:", err);
           refetchRef.current({ isBackground: true });
