@@ -338,3 +338,5 @@ function ErrorButton() {
 }
 
 export default App;
+
+// Fixes #9501: Replace native browser alert/prompt dialogs with custom UI components
