@@ -111,7 +111,7 @@ export default function MissionVision() {
           <motion.div
             variants={cardVariants}
             whileHover={{ y: -6 }}
-            className="group bg-gradient-to-br from-indigo-950/60 via-slate-900 to-slate-900 border border-indigo-900/40 rounded-3xl p-10"
+            className="group bg-linear-to-br from-indigo-950/60 via-slate-900 to-slate-900 border border-indigo-900/40 rounded-3xl p-10"
           >
             <motion.div
               variants={iconVariants}

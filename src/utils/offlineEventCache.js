@@ -18,6 +18,7 @@ export const EVENTS_CACHE_TTL_MS = 24 * 60 * 60 * 1000;  // 24 hours
 export const DETAIL_CACHE_TTL_MS =  6 * 60 * 60 * 1000;  //  6 hours
 
 const readJson = (key, fallback) => {
+  if (typeof localStorage === "undefined") return fallback;
   try {
     return safeJsonParse(localStorage.getItem(key), fallback);
   } catch {
@@ -26,6 +27,7 @@ const readJson = (key, fallback) => {
 };
 
 const writeJson = (key, value) => {
+  if (typeof localStorage === "undefined") return false;
   try {
     localStorage.setItem(key, JSON.stringify(value));
     return true;
