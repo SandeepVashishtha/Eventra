@@ -133,3 +133,4 @@ const BackToTop = ({
 };
 
 export default BackToTop;
+// Implementation for Localize hardcoded strings in BackToTop and InstallAppButton
