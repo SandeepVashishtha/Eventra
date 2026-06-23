@@ -76,29 +76,33 @@ export function fetchProfileWithCache(username, fetcher) {
   const existing = inFlightRequests.get(username);
   if (existing) return existing;
 
+  const controller = new AbortController();
   let timeoutId;
+  
   const timeoutPromise = new Promise((_, reject) => {
-    timeoutId = setTimeout(() => reject(new Error(`Fetch timeout for profile: ${username}`)), FETCH_TIMEOUT_MS);
+    timeoutId = setTimeout(() => {
+      controller.abort(new Error(`Fetch timeout for profile: ${username}`));
+      reject(new Error(`Fetch timeout for profile: ${username}`));
+    }, FETCH_TIMEOUT_MS);
   });
 
   const request = Promise.race([
-    fetcher(username).then((data) => {
+    fetcher(username, { signal: controller.signal }).then((data) => {
       clearTimeout(timeoutId);
       return data;
     }),
     timeoutPromise
-  ]).then(
-    (data) => {
+  ])
+    .then((data) => {
       setCachedProfile(username, data);
       inFlightRequests.delete(username);
       return data;
-    },
-    (err) => {
+    })
+    .catch((err) => {
       clearTimeout(timeoutId);
       inFlightRequests.delete(username);
       throw err;
-    }
-  );
+    });
 
   inFlightRequests.set(username, request);
   return request;

@@ -30,6 +30,9 @@ export const useRoutePrefetch = (config = {}) => {
   const location = useLocation();
 
   const prefetch = useCallback((importFn, key) => {
+    // Guard: window is only available in browser environments.
+    if (typeof window === "undefined") return;
+
     // Wrap in requestIdleCallback to not block the main thread
     if ("requestIdleCallback" in window) {
       window.requestIdleCallback(() => prefetchRoute(importFn, key));

@@ -64,6 +64,9 @@ const useLocalStorage = (key, initialValue) => {
           const newValue = value instanceof Function ? value(currentVal) : value;
 
           queueMicrotask(() => {
+            // SSR guard: queueMicrotask runs after the sync render phase.
+            // In SSR (Node.js), window is unavailable even after the tick advances.
+            if (typeof window === "undefined") return;
             window.localStorage.setItem(key, JSON.stringify(newValue));
             isInternalWrite.current = true;
             window.dispatchEvent(new CustomEvent("local-storage", { detail: { key } }));
