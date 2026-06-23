@@ -82,13 +82,17 @@ const useLocalStorage = (key, initialValue) => {
   );
 
   const removeValue = useCallback(() => {
+    if (typeof window === "undefined") return;
     try {
       window.localStorage.removeItem(key);
       setStoredValue(initialValueRef.current);
 
       // 🔥 FIX: Mark as internal before dispatching
       isInternalWrite.current = true;
-      window.dispatchEvent(new CustomEvent("local-storage", { detail: { key } }));
+      queueMicrotask(() => {
+        if (typeof window === "undefined") return;
+        window.dispatchEvent(new CustomEvent("local-storage", { detail: { key } }));
+      });
     } catch (error) {
       logger.warn(`useLocalStorage: error removing key "${key}":`, error);
     }
