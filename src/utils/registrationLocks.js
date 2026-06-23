@@ -33,7 +33,7 @@ const activeLocks = new Set();
 
 const registrationLocks = {
   has: (eventId) => activeLocks.has(eventId),
-  set: (eventId, value) => {
+  set: (eventId) => {
     activeLocks.add(eventId);
   },
   delete: (eventId) => {

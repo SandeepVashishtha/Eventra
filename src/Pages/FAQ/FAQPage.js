@@ -430,21 +430,24 @@ function FAQSectionInner() {
           border-radius: 16px;
           overflow: hidden;
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          box-shadow: var(--shadow-sm);
+           box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+           backdrop-filter: blur(10px);
         }
 
         .faq-accordion-item:hover {
           border-color: var(--card-hover-border);
           box-shadow: var(--shadow-lg);
-          transform: translateY(-2px);
+          transform: translateY(-3px) scale(1.01);
+          transition: all 0.25s ease;
         }
 
         .faq-accordion-header {
           display: flex;
           align-items: center;
           gap: 18px;
-          padding: 26px 28px;
+          padding: 24px 26px;
           cursor: pointer;
+          background: rgba(99, 102, 241, 0.03);
           user-select: none;
           transition: all 0.2s ease;
           background: var(--card-bg);
@@ -464,6 +467,8 @@ function FAQSectionInner() {
           border-radius: 12px;
           background: var(--icon-bg);
           color: var(--icon-color);
+           box-shadow: 0 10px 20px rgba(99,102,241,0.15);
+  border: 1px solid rgba(99,102,241,0.15);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -548,7 +553,8 @@ function FAQSectionInner() {
         .faq-accordion-content p {
           color: var(--text-secondary);
           line-height: 1.8;
-          font-size: 1rem;
+           font-size: 1.05rem;
+          line-height: 1.9;
           margin: 0;
         }
 
@@ -577,13 +583,13 @@ function FAQSectionInner() {
         }
 
         .faq-vote-btn {
-          padding: 10px 20px;
-          border-radius: 10px;
+          border-radius: 999px;
+         padding: 8px 16px;
+        transition: all 0.2s ease;
           border: 1px solid;
           font-size: 0.875rem;
           font-weight: 600;
           cursor: pointer;
-          transition: all 0.2s ease;
           background: var(--card-bg);
           white-space: nowrap;
           display: flex;
@@ -593,7 +599,7 @@ function FAQSectionInner() {
 
         .faq-vote-btn:hover {
           transform: translateY(-2px);
-          box-shadow: var(--shadow-md);
+            box-shadow: 0 6px 14px rgba(99,102,241,0.15);
         }
 
         .faq-vote-btn.voted-yes {
@@ -635,8 +641,9 @@ function FAQSectionInner() {
           width: 100%;
           padding: 16px 52px 16px 52px;
           border-radius: 14px;
-          border: 2px solid var(--card-border);
-          background: var(--card-bg);
+         border: 1px solid rgba(99, 102, 241, 0.2);
+          background: rgba(255,255,255,0.7);
+          backdrop-filter: blur(10px);
           font-size: 15px;
           outline: none;
           transition: all 0.3s ease;
@@ -654,6 +661,7 @@ function FAQSectionInner() {
         }
 
         .dark .search-input:focus {
+         background: rgba(30,41,59,0.6);
           box-shadow: 0 0 0 4px rgba(129, 140, 248, 0.1), var(--shadow-md);
         }
 
@@ -746,10 +754,11 @@ function FAQSectionInner() {
         }
 
         .category-btn {
-          padding: 10px 24px;
           font-size: 0.875rem;
           font-weight: 600;
-          border-radius: 12px;
+           border-radius: 999px;
+          padding: 10px 20px;
+          letter-spacing: 0.2px;
           transition: all 0.3s ease;
           border: 2px solid transparent;
           cursor: pointer;
@@ -759,6 +768,8 @@ function FAQSectionInner() {
         }
 
         .category-btn:hover {
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+         box-shadow: 0 6px 16px rgba(99, 102, 241, 0.25);
           transform: translateY(-2px);
           box-shadow: var(--shadow-md);
         }
@@ -839,6 +850,21 @@ function FAQSectionInner() {
           box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
         }
 
+        @keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.faq-accordion-item {
+  animation: fadeUp 0.4s ease;
+}
+
         @media (max-width: 768px) {
           .faq-heading-block {
             padding: 60px 16px 32px;
@@ -890,6 +916,8 @@ function FAQSectionInner() {
           }
 
           .faq-icon {
+            box-shadow: 0 10px 20px rgba(99,102,241,0.15);
+  border: 1px solid rgba(99,102,241,0.15);
             width: 40px;
             height: 40px;
           }
@@ -900,7 +928,8 @@ function FAQSectionInner() {
           }
         }
       `}</style>
-
+      <div className="faq-page">
+      <div className="faq-container">
       <div className="faq-section-root" ref={sectionRef}>
         <div className="faq-background-pattern" />
 
@@ -1079,6 +1108,8 @@ function FAQSectionInner() {
           {filteredFaqs.length > 0 && <div className="scroll-spacer" />}
         </div>
         <FAQCTA />
+      </div>
+      </div>
       </div>
     </>
   );
