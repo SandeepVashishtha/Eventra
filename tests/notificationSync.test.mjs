@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 
+process.env.NODE_ENV = "test";
+
 // ── Minimal JSDOM Environment Setup ──────────────────────────────────────────
 const dom = new JSDOM("<!DOCTYPE html><html><body></body></html>", {
   url: "http://localhost",
@@ -91,7 +93,56 @@ globalThis.React = {
       _effects.push({ fn, idx });
     }
   },
-  useCallback: (fn) => fn,
+  useCallback: (fn, deps) => {
+    const idx = _stateIndex++;
+    if (_stateSlots[idx] === undefined) {
+      _stateSlots[idx] = [fn, deps];
+      return fn;
+    }
+    const [prevFn, prevDeps] = _stateSlots[idx];
+    let changed = false;
+    if (!prevDeps || !deps) {
+      changed = true;
+    } else {
+      for (let i = 0; i < deps.length; i++) {
+        if (deps[i] !== prevDeps[i]) {
+          changed = true;
+          break;
+        }
+      }
+    }
+    if (changed) {
+      _stateSlots[idx] = [fn, deps];
+      return fn;
+    }
+    return prevFn;
+  },
+  useMemo: (fn, deps) => {
+    const idx = _stateIndex++;
+    if (_stateSlots[idx] === undefined) {
+      const val = fn();
+      _stateSlots[idx] = [val, deps];
+      return val;
+    }
+    const [prevVal, prevDeps] = _stateSlots[idx];
+    let changed = false;
+    if (!prevDeps || !deps) {
+      changed = true;
+    } else {
+      for (let i = 0; i < deps.length; i++) {
+        if (deps[i] !== prevDeps[i]) {
+          changed = true;
+          break;
+        }
+      }
+    }
+    if (changed) {
+      const val = fn();
+      _stateSlots[idx] = [val, deps];
+      return val;
+    }
+    return prevVal;
+  },
   useRef: (initial) => {
     const idx = _stateIndex++;
     if (_stateSlots[idx] === undefined) {
@@ -113,6 +164,21 @@ const { useNotificationPoller } = await import("../src/hooks/useNotificationPoll
 const { joinWaitlist, promoteNextUser } = await import("../src/utils/waitlistUtils.js");
 const { apiUtils } = await import("../src/config/api.js");
 
+// Mock HTTP methods globally to prevent network calls during testing
+apiUtils.post = async (url, data) => {
+  console.log("MOCK POST CALLED", url);
+  return { ok: true, status: 200, data: {} };
+};
+apiUtils.get = async (url) => {
+  console.log("MOCK GET CALLED", url);
+  const raw = localStorage.getItem("eventra_notification_inbox");
+  const data = raw ? JSON.parse(raw) : [];
+  return { ok: true, status: 200, data };
+};
+
+const deliverNew = () => {};
+const hasCompletedInitialFetchRef = { current: true };
+
 function renderHook() {
   if (isRunningRender) return;
   isRunningRender = true;
@@ -120,9 +186,6 @@ function renderHook() {
     _stateIndex = 0;
     _effectIndex = 0;
     _effects = [];
-
-    const deliverNew = () => {};
-    const hasCompletedInitialFetchRef = { current: true };
 
     hookResult = useNotificationPoller(deliverNew, hasCompletedInitialFetchRef);
 
@@ -165,6 +228,9 @@ const runAll = async () => {
     assert.equal(hookResult.notifications.length, 0, "Initially 0 notifications");
     assert.equal(hookResult.unreadCount, 0, "Initially unread count is 0");
 
+    // Allow the initial fetch to resolve
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
     // Promote user (triggers addLocalNotification)
     await promoteNextUser(eventId, { id: eventId, title: "Special Masterclass" });
 
@@ -195,6 +261,8 @@ const runAll = async () => {
 
     renderingEnabled = true;
     renderHook();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    console.log("HOOK RESULT:", hookResult);
     window.dispatchEvent(new CustomEvent("eventra-notifications-updated"));
 
     assert.equal(hookResult.unreadCount, 2);
@@ -302,7 +370,9 @@ const runAll = async () => {
   console.log("\nAll Notification Synchronization tests passed successfully! ✓");
 };
 
-runAll().catch((err) => {
+runAll().then(() => {
+  process.exit(0);
+}).catch((err) => {
   console.error("Test execution failed:", err);
   process.exit(1);
 });

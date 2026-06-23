@@ -4,7 +4,7 @@
  * (e.g. SSR, tests) where neither is available. Without the typeof guard,
  * `process` is undefined in the browser and the module crashes on load.
  */
-const isDevelopment = (() => {
+export const isDevelopment = (() => {
   if (typeof import.meta !== "undefined" && import.meta.env) {
     if (import.meta.env.DEV === true) return true;
     if (import.meta.env.PROD === true) return false;

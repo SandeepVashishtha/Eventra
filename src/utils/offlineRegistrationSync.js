@@ -1,5 +1,7 @@
 import logger from '../utils/logger';
 
+import { logger } from './logger';
+
 export const registerOfflineSync = async () => {
   if ('serviceWorker' in navigator && 'SyncManager' in window) {
     try {

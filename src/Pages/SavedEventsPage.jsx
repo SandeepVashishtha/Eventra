@@ -11,6 +11,13 @@ const SavedEventsPage = () => {
   const { bookmarks, toggleBookmark } = useBookmarks();
   const [sortBy, setSortBy] = useState("savedAt");
   const [exporting, setExporting] = useState(false);
+  const exportTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (exportTimeoutRef.current) clearTimeout(exportTimeoutRef.current);
+    };
+  }, []);
 
   const sorted = useMemo(
     () => [...bookmarks].sort((a, b) =>
@@ -28,7 +35,7 @@ const SavedEventsPage = () => {
       toast.error("Failed to export saved events. Please try again.");
     } finally {
       // Brief visual feedback before resetting
-      setTimeout(() => setExporting(false), 800);
+      exportTimeoutRef.current = setTimeout(() => setExporting(false), 800);
     }
   };
 
@@ -93,7 +100,7 @@ const SavedEventsPage = () => {
               key={event.id}
               className="rounded-3xl border border-gray-100 bg-white p-5 shadow-[0_10px_25px_rgba(0,0,0,0.05)] transition-all duration-300 hover:-translate-y-1 hover:border-indigo-200 hover:shadow-xl dark:border-gray-800 dark:bg-gray-900 dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)] dark:hover:border-indigo-700"
             >
-              <h3 title={event.title || event.name} className="mb-2 text-lg font-bold tracking-tight text-gray-950 dark:text-slate-100 line-clamp-2 wrap-break-word min-w-0">
+              <h3 title={event.title || event.name} className="mb-2 text-lg font-bold tracking-tight text-gray-950 dark:text-slate-100 line-clamp-2 break-words min-w-0">
                 {event.title || event.name}
               </h3>
               <p className="text-sm text-gray-600 dark:text-slate-400">{event.date}</p>
