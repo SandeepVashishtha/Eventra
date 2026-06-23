@@ -6,28 +6,116 @@ import {
 const API_RATE_LIMIT = 60;
 const API_RATE_WINDOW_S = 60;
 
-// In-memory fallback for development/testing (shared across requests)
-// Exported for test cleanup
 export const inMemoryRateLimitStore = new Map();
+
+const TRUSTED_PROXY_CIDR_DEFAULT = [
+  "10.0.0.0/8",
+  "172.16.0.0/12",
+  "192.168.0.0/16",
+  "127.0.0.0/8",
+];
+
+function parseCIDR(cidr) {
+  const [ip, bits] = cidr.split("/");
+  const maskBits = bits ? parseInt(bits, 10) : 32;
+  const octets = ip.split(".").map(Number);
+  const ipNum =
+    ((octets[0] << 24) | (octets[1] << 16) | (octets[2] << 8) | octets[3]) >>>
+    0;
+  const mask = ~0 << (32 - maskBits);
+  return { network: ipNum & mask, mask };
+}
+
+function ipInCIDR(ip, cidrList) {
+  const octets = ip.split(".").map(Number);
+  if (octets.length !== 4 || octets.some(isNaN)) return false;
+  const ipNum =
+    ((octets[0] << 24) | (octets[1] << 16) | (octets[2] << 8) | octets[3]) >>>
+    0;
+  for (const cidr of cidrList) {
+    const { network, mask } = parseCIDR(cidr);
+    if ((ipNum & mask) === network) return true;
+  }
+  return false;
+}
+
+const IPV4_RE =
+  /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
+const IPV6_RE =
+  /^([0-9a-fA-F]{0,4}:){2,7}([0-9a-fA-F]{0,4})$/;
+
+function isValidIP(value) {
+  if (typeof value !== "string" || !value) return false;
+
+  const v4Match = value.match(IPV4_RE);
+  if (v4Match) {
+    return v4Match.slice(1).every((octet) => {
+      const n = parseInt(octet, 10);
+      return n >= 0 && n <= 255;
+    });
+  }
+
+  return IPV6_RE.test(value);
+}
+
+function resolveClientIP(request) {
+  const platformIP =
+    request.headers.get("x-vercel-ip") ||
+    request.headers.get("cf-connecting-ip") ||
+    request.headers.get("true-client-ip");
+
+  if (platformIP && isValidIP(platformIP)) {
+    return platformIP;
+  }
+
+  const forwarded = request.headers.get("x-forwarded-for");
+  const realIP = request.headers.get("x-real-ip");
+
+  if (forwarded && typeof forwarded === "string") {
+    const proxies = forwarded.split(",").map((s) => s.trim()).filter(Boolean);
+
+    if (proxies.length === 1 && isValidIP(proxies[0])) {
+      return proxies[0];
+    }
+
+    if (proxies.length > 1) {
+      const trustedCidrEnv = process.env.TRUSTED_PROXY_CIDR;
+      const trustedCIDRs = trustedCidrEnv
+        ? trustedCidrEnv.split(",").map((s) => s.trim()).filter(Boolean)
+        : TRUSTED_PROXY_CIDR_DEFAULT;
+
+      for (let i = proxies.length - 1; i >= 0; i--) {
+        if (!isValidIP(proxies[i])) continue;
+        if (!ipInCIDR(proxies[i], trustedCIDRs)) {
+          return proxies[i];
+        }
+      }
+      return proxies[0];
+    }
+  }
+
+  if (realIP && isValidIP(realIP)) {
+    return realIP;
+  }
+
+  return "unknown";
+}
 
 const isRateLimited = async (ip) => {
   const kvUrl = process.env.KV_REST_API_URL;
   const kvToken = process.env.KV_REST_API_TOKEN;
   const isProduction = process.env.NODE_ENV === "production";
 
-  // Check if distributed storage is configured
   const isDistributedConfigured = isDistributedRateLimitStorageConfigured();
   const isInMemoryAllowed = isInMemoryRateLimitStorageAllowed();
 
-  // Production: Fail closed - reject requests if distributed storage is not configured
   if (isProduction && !isDistributedConfigured) {
     console.error(
       "[SECURITY] Rate limiting unavailable: KV_REST_API_URL and KV_REST_API_TOKEN are required in production. Rejecting request."
     );
-    return true; // Rate limit (reject) in production when storage is unavailable
+    return true;
   }
 
-  // Development/Test: Use in-memory fallback if distributed storage is not configured
   if (!isDistributedConfigured) {
     if (isInMemoryAllowed) {
       console.warn(
@@ -35,15 +123,13 @@ const isRateLimited = async (ip) => {
       );
       return checkInMemoryRateLimit(ip);
     } else {
-      // Should not happen, but fail closed if somehow in non-production but in-memory not allowed
       console.error(
         "[SECURITY] Rate limiting unavailable: Distributed storage not configured and in-memory fallback not permitted. Rejecting request."
       );
-      return true; // Rate limit (reject)
+      return true;
     }
   }
 
-  // Distributed storage is configured - use KV
   try {
     const key = `rl:${ip}`;
     const headers = {
@@ -57,14 +143,12 @@ const isRateLimited = async (ip) => {
     });
 
     if (!incrRes.ok) {
-      // Production: Fail closed on KV request failure
       if (isProduction) {
         console.error(
           `[SECURITY] Rate limiting unavailable: KV request failed with status ${incrRes.status}. Rejecting request.`
         );
-        return true; // Rate limit (reject) in production when KV fails
+        return true;
       }
-      // Development: Fall back to in-memory on KV failure
       console.warn(
         `[DEV] KV request failed with status ${incrRes.status}. Falling back to in-memory rate limiting.`
       );
@@ -82,15 +166,13 @@ const isRateLimited = async (ip) => {
 
     return count > API_RATE_LIMIT;
   } catch (error) {
-    // Production: Fail closed on network errors or invalid responses
     if (isProduction) {
       console.error(
         "[SECURITY] Rate limiting unavailable: KV communication error.",
         error.message
       );
-      return true; // Rate limit (reject) in production on errors
+      return true;
     }
-    // Development: Fall back to in-memory on errors
     console.warn(
       "[DEV] KV communication error. Falling back to in-memory rate limiting.",
       error.message
@@ -99,16 +181,16 @@ const isRateLimited = async (ip) => {
   }
 };
 
-// In-memory rate limit check for development/testing
 const checkInMemoryRateLimit = (ip) => {
+  if (!isValidIP(ip) && ip !== "unknown") return true;
+
   const key = `rl:${ip}`;
   const now = Date.now();
   const entry = inMemoryRateLimitStore.get(key);
 
-  // Reset if window expired
   if (!entry || now - entry.timestamp > API_RATE_WINDOW_S * 1000) {
     inMemoryRateLimitStore.set(key, { count: 1, timestamp: now });
-    return false; // Not rate limited
+    return false;
   }
 
   entry.count++;
@@ -118,10 +200,7 @@ const checkInMemoryRateLimit = (ip) => {
 };
 
 export async function checkRateLimit(request) {
-  const ip =
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    request.headers.get("x-real-ip") ||
-    "unknown";
+  const ip = resolveClientIP(request);
 
   if (await isRateLimited(ip)) {
     return { limited: true, ip, window: API_RATE_WINDOW_S };
