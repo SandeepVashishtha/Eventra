@@ -200,6 +200,7 @@ async function handleRequest(request) {
     addSecurityHeaders(responseHeaders);
     responseHeaders.set("Access-Control-Allow-Origin", url.origin);
     responseHeaders.set("Access-Control-Allow-Credentials", "true");
+    responseHeaders.set("Vary", "Origin");
     return new Response(
       JSON.stringify({ error: "Too many requests. Please try again later." }),
       {
