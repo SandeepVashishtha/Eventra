@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const eventsController = require('../../controllers/eventsController');
+const { handleServerError } = require('../_lib/errorHandler.js');
 
 // Existing endpoints
 router.get('/', eventsController.listEvents);
@@ -28,7 +29,7 @@ router.get('/filter', (req, res) => {
 
     eventsController.filterAndSortEvents(filters)
         .then(events => res.status(200).json(events))
-        .catch(err => res.status(500).json({ error: err.message }));
+        .catch(err => handleServerError(res, err, { endpoint: '/events/filter' }));
 });
 
 module.exports = router;

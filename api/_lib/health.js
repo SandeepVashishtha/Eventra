@@ -1,4 +1,5 @@
 import { isStorageHealthy } from "../auth/_user-storage.js";
+import { logger } from "../../src/utils/logger.js";
 
 const START_TIME = Date.now();
 const START_TIME_ISO = new Date(START_TIME).toISOString();
@@ -46,7 +47,8 @@ async function checkDatabase() {
     const result = await isStorageHealthy();
     return { status: result ? "healthy" : "degraded", message: result ? "Database reachable" : "Database unreachable" };
   } catch (error) {
-    return { status: "unhealthy", message: error.message };
+    logger.error("Database health check failed", { message: error.message, stack: error.stack });
+    return { status: "unhealthy", message: "Database check failed" };
   }
 }
 
@@ -66,7 +68,8 @@ async function checkRateLimiter() {
     // If distributed storage is configured but fails, report as degraded
     const { isDistributedRateLimitStorageConfigured } = await import("./rate-limit-config.js");
     if (isDistributedRateLimitStorageConfigured()) {
-      return { status: "degraded", message: `Rate limiter storage error: ${error.message}` };
+      logger.error("Rate limiter storage health check failed", { message: error.message, stack: error.stack });
+      return { status: "degraded", message: "Rate limiter storage error" };
     }
     // In-memory fallback is acceptable in non-production
     return { status: "healthy", message: "Rate limiter (in-memory) functional" };

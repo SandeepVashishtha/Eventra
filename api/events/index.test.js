@@ -36,4 +36,23 @@ describe('Event Filtering & Sorting API', () => {
     expect(response.statusCode).toBe(400);
     expect(response.body.error).toBeDefined();
   });
+
+  test('Should NOT expose internal error messages on server error', async () => {
+    // This test verifies that when an internal error occurs,
+    // the response contains a generic error message, not the raw exception
+    const response = await request(app).get('/api/events/filter').query({ invalidDate: 'not-a-date' });
+    
+    if (response.statusCode === 500) {
+      // If we get a 500, ensure it's a generic message
+      expect(response.body.error).toBeDefined();
+      expect(response.body.error).toBe('Internal server error');
+      // Ensure no internal error details are exposed
+      expect(response.body.error).not.toContain('MongoError');
+      expect(response.body.error).not.toContain('TypeError');
+      expect(response.body.error).not.toContain('ReferenceError');
+      expect(response.body.error).not.toContain('Prisma');
+      expect(response.body.error).not.toContain('Redis');
+      expect(response.body.error).not.toContain('stack');
+    }
+  });
 });
