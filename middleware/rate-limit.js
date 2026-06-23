@@ -2,6 +2,7 @@ import { incrementWithExpiration } from "../api/_lib/rate-limit-storage.js";
 import {
   isDistributedRateLimitStorageConfigured,
   isInMemoryRateLimitStorageAllowed,
+  getRateLimitFailMode,
 } from "../api/_lib/rate-limit-config.js";
 
 const API_RATE_LIMIT = 60;
@@ -11,57 +12,86 @@ const isRateLimited = async (ip) => {
   const isProduction = process.env.NODE_ENV === "production";
   const isDistributedConfigured = isDistributedRateLimitStorageConfigured();
   const isInMemoryAllowed = isInMemoryRateLimitStorageAllowed();
+  const failMode = getRateLimitFailMode();
 
-  // Production: Fail closed - reject requests if distributed storage is not configured
-  if (isProduction && !isDistributedConfigured) {
+  // Check fail-closed mode: reject if distributed storage is not configured
+  if (isProduction && !isDistributedConfigured && failMode === "closed") {
     console.error(
-      "[SECURITY] Rate limiting unavailable: RATE_LIMIT_REDIS_URL is required in production. Rejecting request."
+      "[RATE_LIMIT] Distributed storage not configured in production (fail-closed mode). Rejecting request."
     );
-    return true; // Rate limit (reject) in production when storage is unavailable
+    return true; // Rate limit (reject) in fail-closed mode when storage is unavailable
   }
 
-  // Development/Test: Use in-memory fallback if distributed storage is not configured
+  // Log when using in-memory fallback
   if (!isDistributedConfigured) {
-    if (isInMemoryAllowed) {
+    if (isInMemoryAllowed || failMode !== "closed") {
       console.warn(
-        "[DEV] Rate limiting using in-memory fallback (distributed storage not configured)"
+        "[RATE_LIMIT] Distributed storage not configured. Using in-memory fallback."
       );
     }
-    // Note: incrementWithExpiration handles the in-memory fallback internally
   }
 
-  // Use shared storage layer (Redis or in-memory fallback)
+  // Try distributed storage first, then fall back to in-memory if needed
   try {
     const key = `rl:${ip}`;
     const windowMs = API_RATE_WINDOW_S * 1000;
     const { count } = await incrementWithExpiration(key, windowMs);
     return count > API_RATE_LIMIT;
   } catch (error) {
-    // Production: Fail closed on storage errors
-    if (isProduction) {
-      console.error(
-        "[SECURITY] Rate limiting unavailable: Storage operation failed.",
-        error.message
-      );
-      return true; // Rate limit (reject) in production on errors
+    // Handle storage failure based on fail mode
+    console.error("[RATE_LIMIT] Distributed storage operation failed:", error.message);
+
+    // In development/test, always allow with in-memory fallback regardless of fail mode
+    if (!isProduction) {
+      console.warn("[RATE_LIMIT] Development environment: Using in-memory fallback");
+      try {
+        const key = `rl:${ip}`;
+        const windowMs = API_RATE_WINDOW_S * 1000;
+        const { count } = await incrementWithExpiration(key, windowMs, {
+          forceInMemoryFallback: true,
+        });
+        return count > API_RATE_LIMIT;
+      } catch (fallbackError) {
+        console.error(
+          "[RATE_LIMIT] In-memory fallback failed in development. Allowing request.",
+          fallbackError.message
+        );
+        return false; // Allow request in development
+      }
     }
-    // Development: incrementWithExpiration already falls back to in-memory on errors
-    console.warn(
-      "[DEV] Rate limiting storage error. Using in-memory fallback.",
-      error.message
-    );
-    // Try in-memory fallback directly
+
+    if (failMode === "closed") {
+      // Fail-closed: reject all requests when storage fails (production only)
+      console.error(
+        "[RATE_LIMIT] Storage unavailable in fail-closed mode. Rejecting request."
+      );
+      return true;
+    }
+
+    if (failMode === "open") {
+      // Fail-open: allow all requests when storage fails
+      console.warn(
+        "[RATE_LIMIT] Storage unavailable in fail-open mode. Allowing request without rate limiting."
+      );
+      return false; // Allow request
+    }
+
+    // Fallback mode (default): try in-memory, then allow if that fails
+    console.warn("[RATE_LIMIT] Attempting in-memory fallback...");
     try {
       const key = `rl:${ip}`;
       const windowMs = API_RATE_WINDOW_S * 1000;
-      const { count } = await incrementWithExpiration(key, windowMs);
+      const { count } = await incrementWithExpiration(key, windowMs, {
+        forceInMemoryFallback: true,
+      });
       return count > API_RATE_LIMIT;
     } catch (fallbackError) {
+      // Degraded mode: both distributed and in-memory failed
       console.error(
-        "[SECURITY] Rate limiting unavailable: Both distributed and in-memory storage failed.",
+        "[RATE_LIMIT] CRITICAL: Both distributed and in-memory storage failed. Entering degraded mode (allowing requests).",
         fallbackError.message
       );
-      return true; // Rate limit (reject) if everything fails
+      return false; // Allow request in degraded mode
     }
   }
 };
