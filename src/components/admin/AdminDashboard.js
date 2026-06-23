@@ -515,7 +515,7 @@ const AdminDashboard = () => {
                     <div className="relative">
                       <button
                         onClick={() => setShowExportDropdown(!showExportDropdown)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-bold text-slate-700 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer"
+                        className="dark:text-slate-350 inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800"
                       >
                         <Download size={13} /> Export
                         <ChevronDown size={12} className={`transition-transform duration-200 ${showExportDropdown ? "rotate-180" : ""}`} />
@@ -523,9 +523,9 @@ const AdminDashboard = () => {
                       {showExportDropdown && (
                         <>
                           <div className="fixed inset-0 z-10" onClick={() => setShowExportDropdown(false)} />
-                          <div className="absolute right-0 mt-1.5 w-36 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg py-1 z-20 animate-fadeIn">
-                            <button onClick={() => { exportToCSV(users, "users_list"); setShowExportDropdown(false); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-850 transition">Export as CSV</button>
-                            <button onClick={() => { exportToJSON(users, "users_list"); setShowExportDropdown(false); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-850 transition">Export as JSON</button>
+                          <div className="animate-fadeIn absolute right-0 z-20 mt-1.5 w-36 rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-800 dark:bg-slate-900">
+                            <button onClick={() => { exportToCSV(users, "users_list"); setShowExportDropdown(false); }} className="dark:hover:bg-slate-850 w-full px-3 py-2 text-left text-xs font-semibold text-slate-700 transition hover:bg-slate-100 dark:text-slate-300">Export as CSV</button>
+                            <button onClick={() => { exportToJSON(users, "users_list"); setShowExportDropdown(false); }} className="dark:hover:bg-slate-850 w-full px-3 py-2 text-left text-xs font-semibold text-slate-700 transition hover:bg-slate-100 dark:text-slate-300">Export as JSON</button>
                           </div>
                         </>
                       )}
@@ -767,20 +767,20 @@ const AdminDashboard = () => {
             exit={{ opacity: 0, scale: 0.95 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex justify-between items-center mb-4 border-b pb-2">
+            <div className="mb-4 flex items-center justify-between border-b pb-2">
               <h3 className="ad-modal-title" style={{ margin: 0 }}>
                 Waitlist for {selectedWaitlistEvent.title}
               </h3>
               <button onClick={() => setSelectedWaitlistEvent(null)} className="text-gray-500 hover:text-gray-700">✕</button>
             </div>
             
-            <div className="mb-4 flex items-center justify-between bg-slate-50 dark:bg-slate-800/40 p-3 rounded-xl">
-              <span className="text-xs font-semibold text-slate-650 dark:text-slate-400">
+            <div className="mb-4 flex items-center justify-between rounded-xl bg-slate-50 p-3 dark:bg-slate-800/40">
+              <span className="text-slate-650 text-xs font-semibold dark:text-slate-400">
                 Capacity: {selectedWaitlistEvent.attendees} / {selectedWaitlistEvent.maxAttendees} registered
               </span>
               <button
                 onClick={handleIncreaseCapacity}
-                className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition cursor-pointer"
+                className="cursor-pointer rounded-lg bg-indigo-600 px-3 py-1 text-xs font-bold text-white transition hover:bg-indigo-700"
               >
                 Increase Capacity
               </button>
@@ -825,11 +825,11 @@ const AdminDashboard = () => {
 
             <div style={{ maxHeight: "300px", overflowY: "auto" }}>
               {waitlistUsers.length === 0 ? (
-                <p className="text-center py-6 text-sm text-gray-500">No users on the waitlist for this event.</p>
+                <p className="py-6 text-center text-sm text-gray-500">No users on the waitlist for this event.</p>
               ) : (
-                <table className="w-full text-left text-xs border-collapse">
+                <table className="w-full border-collapse text-left text-xs">
                   <thead>
-                    <tr className="border-b dark:border-gray-800 text-slate-500 dark:text-slate-400 font-semibold">
+                    <tr className="border-b font-semibold text-slate-500 dark:border-gray-800 dark:text-slate-400">
                       <th className="py-2">Pos</th>
                       <th className="py-2">User</th>
                       <th className="py-2">Email</th>
@@ -839,7 +839,7 @@ const AdminDashboard = () => {
                   </thead>
                   <tbody>
                     {waitlistUsers.map((w, index) => (
-                      <tr key={w.userId} className="border-b dark:border-gray-800/50 hover:bg-slate-50/50 dark:hover:bg-slate-850/50">
+                      <tr key={w.userId} className="dark:hover:bg-slate-850/50 border-b hover:bg-slate-50/50 dark:border-gray-800/50">
                         <td className="py-2 font-bold text-amber-600 dark:text-amber-400">{index + 1}</td>
                         <td className="py-2">{w.userName}</td>
                         <td className="py-2 text-slate-500">{w.userEmail || "—"}</td>
@@ -847,7 +847,7 @@ const AdminDashboard = () => {
                         <td className="py-2">
                           <button
                             onClick={() => handleRemoveFromWaitlist(w.userId)}
-                            className="text-red-500 hover:underline font-semibold cursor-pointer"
+                            className="cursor-pointer font-semibold text-red-500 hover:underline"
                           >
                             Remove
                           </button>

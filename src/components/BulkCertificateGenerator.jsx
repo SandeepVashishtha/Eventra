@@ -38,7 +38,7 @@ const BulkCertificateGenerator = ({ eventName, eventDate, eventType, organizerNa
   };
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 space-y-4">
+    <div className="space-y-4 rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
       <div>
         <h3 className="text-lg font-bold text-gray-900 dark:text-white">Bulk Certificate Generation</h3>
         <p className="text-sm text-gray-500 dark:text-gray-400">{attendees.length} attendees selected</p>
@@ -61,14 +61,14 @@ const BulkCertificateGenerator = ({ eventName, eventDate, eventType, organizerNa
       </div>
 
       {isGenerating && (
-        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-          <div className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
+        <div className="h-2 w-full rounded-full bg-gray-200 dark:bg-gray-700">
+          <div className="h-2 rounded-full bg-indigo-600 transition-all duration-300"
             style={{ width: `${(progress / attendees.length) * 100}%` }} />
         </div>
       )}
 
       <button onClick={handleBulkGenerate} disabled={isGenerating}
-        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">
         {isGenerating ? `⏳ Generating ${progress}/${attendees.length}...` : `📜 Generate All ${attendees.length} Certificates`}
       </button>
     </div>

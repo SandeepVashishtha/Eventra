@@ -22,7 +22,7 @@ const MobileNavGroup = ({ item, isActive, isOpen, onToggle, closeAllMenus, locat
     {isOpen && (
       <div
         id={`mobile-nav-group-${item.name.toLowerCase().replace(/\s+/g, "-")}`}
-        className="mt-2 ml-3 pl-3 border-l-2 border-gray-200 dark:border-white/20 space-y-1"
+        className="mt-2 ml-3 space-y-1 border-l-2 border-gray-200 pl-3 dark:border-white/20"
       >
         {item.subItems.map((sub) => {
           const isSubActive = location.pathname.startsWith(sub.href);

@@ -39,14 +39,14 @@ const DEBOUNCE_CONFIGURATION_PRESETS = {
 // =========================================================================
 const FormHeaderRibbon = memo(() => {
   return (
-    <div className="text-center mb-6 header-branding-wrapper select-none">
-      <div className="inline-flex p-3 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 mb-3 border border-blue-100/30">
-        <ShieldCheck className="w-6 h-6 animate-pulse" />
+    <div className="header-branding-wrapper mb-6 text-center select-none">
+      <div className="mb-3 inline-flex rounded-full border border-blue-100/30 bg-blue-50 p-3 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
+        <ShieldCheck className="h-6 w-6 animate-pulse" />
       </div>
       <h1 className="text-3xl font-black tracking-tight text-gray-900 dark:text-white">
         Create Account
       </h1>
-      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 max-w-xs mx-auto">
+      <p className="mx-auto mt-1 max-w-xs text-xs text-gray-500 dark:text-gray-400">
         Join the Eventra network portal to securely manage, map, and organize live interactive project hub environments.
       </p>
     </div>
@@ -224,14 +224,14 @@ const SignupFormExample = ({ onSignupSuccess }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 300, damping: 25 }}
-      className="max-w-md mx-auto mt-8 p-6 md:p-8 bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800/60 registration-card-container"
+      className="registration-card-container mx-auto mt-8 max-w-md rounded-2xl border border-gray-100 bg-white p-6 shadow-xl md:p-8 dark:border-gray-800/60 dark:bg-gray-900"
     >
       {/* Decoupled header segment insertion */}
       <FormHeaderRibbon />
 
       <form onSubmit={handleFormSubmit} className="space-y-4" noValidate>
         
-        <div className="grid grid-cols-2 gap-4 names-split-row">
+        <div className="names-split-row grid grid-cols-2 gap-4">
           <FormField
             label="First Name"
             name="firstName"
@@ -313,12 +313,12 @@ const SignupFormExample = ({ onSignupSuccess }) => {
           placeholder="••••••••"
         />
         {Object.keys(errors).some((key) => touched[key] && errors[key]) && (
-          <div className="rounded-lg border border-red-200 bg-red-50 dark:bg-red-950/20 px-3 py-2 text-sm text-red-700 dark:text-red-300">
+          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/20 dark:text-red-300">
             Please correct the highlighted fields before continuing.
           </div>
         )}
         {/* Action Button Segment Wrapper */}
-        <div className="pt-2 action-submission-wrapper">
+        <div className="action-submission-wrapper pt-2">
           <motion.button
             type="submit"
             disabled={isSubmitting}
@@ -342,9 +342,9 @@ const SignupFormExample = ({ onSignupSuccess }) => {
         </div>
 
         {/* Stabilization Context Ribbon */}
-        <div className="text-center text-xs font-semibold h-4 mt-2 transition-colors duration-200 tracking-wide select-none">
+        <div className="mt-2 h-4 text-center text-xs font-semibold tracking-wide transition-colors duration-200 select-none">
           {isFormValid ? (
-            <p className="text-green-600 dark:text-green-400 font-bold animate-pulse">
+            <p className="animate-pulse font-bold text-green-600 dark:text-green-400">
               ✓ Token checks initialized successfully. Form validation clear.
             </p>
           ) : (
@@ -393,12 +393,12 @@ const FormField = memo(({
   }, [touched, validation.validationState]);
 
   return (
-    <div className="space-y-1.5 field-structural-node-block group">
+    <div className="field-structural-node-block group space-y-1.5">
       
       {/* Accessible Label Node */}
       <label
         htmlFor={name}
-        className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400"
+        className="block text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400"
       >
         {label}
       </label>
@@ -424,7 +424,7 @@ const FormField = memo(({
           onBlur={onBlur}
           placeholder={placeholder}
           disabled={validation.isValidating}
-          className="flex-1 bg-transparent border-none outline-none text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-0 p-0"
+          className="flex-1 border-none bg-transparent p-0 text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-0 dark:text-white dark:placeholder-gray-500"
           {...validation.ariaAttributes}
         />
 
@@ -435,13 +435,13 @@ const FormField = memo(({
               initial={{ scale: 0.6, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.6, opacity: 0 }}
-              className="shrink-0 selection-indicator-node"
+              className="selection-indicator-node shrink-0"
             >
               {validation.isValidating && (
-                <Loader size={16} className="text-blue-500 animate-spin" />
+                <Loader size={16} className="animate-spin text-blue-500" />
               )}
               {validation.validationState === "success" && (
-                <Check size={16} className="text-green-500 font-bold" />
+                <Check size={16} className="font-bold text-green-500" />
               )}
               {validation.validationState === "error" && (
                 <AlertCircle size={16} className="text-red-500" />
@@ -452,7 +452,7 @@ const FormField = memo(({
       </div>
 
       {/* 🎯 PRE-ALLOCATED STABILIZATION CONTAINER FOR ALERT MESSAGE PLACEMENT */}
-      <div className="h-5 px-1 overflow-hidden layout-stabilizer-container select-none">
+      <div className="layout-stabilizer-container h-5 overflow-hidden px-1 select-none">
         <AnimatePresence mode="wait">
           {validation.shouldShowError ? (
             <motion.p
@@ -461,7 +461,7 @@ const FormField = memo(({
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
-              className="text-xs font-bold text-red-600 dark:text-red-400 tracking-tight"
+              className="text-xs font-bold tracking-tight text-red-600 dark:text-red-400"
               role="alert"
               aria-live="assertive"
             >
@@ -474,14 +474,14 @@ const FormField = memo(({
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
-              className="text-xs font-semibold text-green-600 dark:text-green-400 tracking-tight flex items-center gap-1"
+              className="flex items-center gap-1 text-xs font-semibold tracking-tight text-green-600 dark:text-green-400"
             >
               Field entry verified.
             </motion.p>
           ) : helpText ? (
             <motion.p
               key={`${name}-help-text`}
-              className="text-[11px] text-gray-400 dark:text-gray-500 tracking-tight leading-none"
+              className="text-[11px] leading-none tracking-tight text-gray-400 dark:text-gray-500"
             >
               {helpText}
             </motion.p>

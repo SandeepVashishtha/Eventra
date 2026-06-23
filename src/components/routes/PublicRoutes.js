@@ -42,7 +42,7 @@ const withModuleBoundary = (children, boundaryName) => (
     boundaryName={boundaryName}
     title={boundaryName + " needs a reset"}
   >
-    <Suspense fallback={<div className="flex justify-center items-center min-h-[50vh] text-gray-500 animate-pulse">Loading {boundaryName}...</div>}>
+    <Suspense fallback={<div className="flex min-h-[50vh] animate-pulse items-center justify-center text-gray-500">Loading {boundaryName}...</div>}>
       {children}
     </Suspense>
   </ErrorBoundary>
@@ -50,7 +50,7 @@ const withModuleBoundary = (children, boundaryName) => (
 
 // 🔥 FIX: Added helper for naked utility routes
 const withPublicSuspense = (children) => (
-  <Suspense fallback={<div className="flex justify-center items-center min-h-screen text-gray-500 animate-pulse">Loading...</div>}>
+  <Suspense fallback={<div className="flex min-h-screen animate-pulse items-center justify-center text-gray-500">Loading...</div>}>
     {children}
   </Suspense>
 );

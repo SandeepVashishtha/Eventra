@@ -20,7 +20,7 @@ const CalendarView = ({ events }) => {
 
   return (
     <section className="my-6">
-      <h3 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">
+      <h3 className="mb-3 text-lg font-semibold text-gray-800 dark:text-gray-200">
         Your Registered Events
       </h3>
       <ul className="space-y-3">
@@ -46,7 +46,7 @@ const CalendarView = ({ events }) => {
           return (
             <li
               key={ev.id ?? `reg-${index}`}
-              className="p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+              className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800"
             >
               <p className="font-medium text-gray-900 dark:text-gray-100">
                 {ev.title || "Untitled Event"}

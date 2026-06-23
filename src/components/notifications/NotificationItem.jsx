@@ -57,7 +57,7 @@ const NotificationItem = ({
               {notification.title}
             </p>
             {!compact && (
-              <p className="mt-0.5 text-xs font-medium uppercase tracking-wide text-indigo-600/80 dark:text-indigo-400/80">
+              <p className="mt-0.5 text-xs font-medium tracking-wide text-indigo-600/80 uppercase dark:text-indigo-400/80">
                 {categoryLabel}
               </p>
             )}
@@ -70,7 +70,7 @@ const NotificationItem = ({
           )}
         </div>
 
-        <p className="mt-1 text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
+        <p className="mt-1 line-clamp-2 text-sm text-gray-600 dark:text-gray-300">
           {notification.message}
         </p>
 
@@ -98,7 +98,7 @@ const NotificationItem = ({
   }`;
 
   const actions = showActions && (
-    <div className="flex shrink-0 flex-col gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+    <div className="flex shrink-0 flex-col gap-1 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
       {isUnread && onMarkRead && (
         <button
           type="button"

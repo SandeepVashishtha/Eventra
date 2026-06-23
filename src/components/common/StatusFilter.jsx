@@ -15,7 +15,7 @@ const StatusFilter = ({ statuses, selectedStatuses, onStatusChange }) => {
 
   return (
     <div className="space-y-2">
-      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
+      <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-gray-100">
         Event Status
       </h3>
       <div className="grid grid-cols-1 gap-2">

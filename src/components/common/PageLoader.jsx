@@ -1,7 +1,7 @@
 
 const PageLoader = ({ text = "Loading..." }) => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
+    <div className="flex min-h-screen items-center justify-center bg-white dark:bg-black">
       <div
         className="flex flex-col items-center gap-4"
         role="status"
@@ -12,12 +12,12 @@ const PageLoader = ({ text = "Loading..." }) => {
 
         {/* Spinner */}
         <div
-          className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"
+          className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent"
           aria-hidden="true"
         ></div>
 
         {/* Loading Text */}
-        <p className="text-gray-600 dark:text-gray-400 font-medium">
+        <p className="font-medium text-gray-600 dark:text-gray-400">
           {text}
         </p>
       </div>

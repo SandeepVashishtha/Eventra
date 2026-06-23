@@ -15,7 +15,7 @@ const MobileNavbar = ({
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="mobile-menu-button lg:hidden inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl p-3 text-text-light transition-colors hover:bg-bg-secondary hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        className="mobile-menu-button inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl p-3 text-text-light transition-colors hover:bg-bg-secondary hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-primary lg:hidden"
         aria-label={isOpen ? "Close navigation menu" : "Open navigation menu"}
         aria-expanded={isOpen}
         aria-haspopup="dialog"

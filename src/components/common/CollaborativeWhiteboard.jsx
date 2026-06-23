@@ -521,9 +521,9 @@ export default function CollaborativeWhiteboard() {
   return (
     <div className="flex flex-col gap-6" ref={containerRef}>
       {/* HUD Whiteboard Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-slate-900 border border-slate-800 rounded-3xl shadow-lg">
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-slate-800 bg-slate-900 p-4 shadow-lg">
         {/* Tools Select Group */}
-        <div className="flex items-center gap-2 bg-slate-950 p-1.5 rounded-2xl border border-slate-800 shadow-inner">
+        <div className="flex items-center gap-2 rounded-2xl border border-slate-800 bg-slate-950 p-1.5 shadow-inner">
           {[
             { id: "pencil", icon: Pencil, label: "Sketcher" },
             { id: "line", icon: Minus, label: "Straight Line" },
@@ -571,23 +571,23 @@ export default function CollaborativeWhiteboard() {
 
         {/* Width Adjustment Slider */}
         <div className="flex items-center gap-3">
-          <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Line Thickness</span>
+          <span className="text-[10px] font-black tracking-wider text-slate-500 uppercase">Line Thickness</span>
           <input
             type="range"
             min="2"
             max="12"
             value={lineWidth}
             onChange={(e) => setLineWidth(parseInt(e.target.value, 10))}
-            className="w-24 accent-indigo-500 h-1 bg-slate-950 rounded-full appearance-none cursor-pointer"
+            className="h-1 w-24 cursor-pointer appearance-none rounded-full bg-slate-950 accent-indigo-500"
           />
-          <span className="text-xs font-black text-slate-300 min-w-4 text-center">{lineWidth}px</span>
+          <span className="min-w-4 text-center text-xs font-black text-slate-300">{lineWidth}px</span>
         </div>
 
         {/* Action Controls */}
         <div className="flex items-center gap-2 border-l border-slate-800 pl-4">
           {/* Active Mesh Indicator */}
-          <div className="flex items-center gap-2 text-xs font-black text-slate-400 dark:text-slate-400 mr-2 bg-slate-950/60 p-2 rounded-2xl border border-slate-800/80">
-            <Users className="w-3.5 h-3.5 text-indigo-500 animate-pulse" />
+          <div className="mr-2 flex items-center gap-2 rounded-2xl border border-slate-800/80 bg-slate-950/60 p-2 text-xs font-black text-slate-400 dark:text-slate-400">
+            <Users className="h-3.5 w-3.5 animate-pulse text-indigo-500" />
             <span>P2P Peer Mesh Count: <span className="font-extrabold text-indigo-400">{peersCount}</span></span>
           </div>
 
@@ -595,7 +595,7 @@ export default function CollaborativeWhiteboard() {
             type="button"
             onClick={exportBoard}
             title="Download PNG snapshot"
-            className="p-2.5 rounded-xl border border-slate-800 hover:border-slate-700 bg-slate-950 text-slate-300 hover:text-white transition cursor-pointer flex items-center justify-center"
+            className="flex cursor-pointer items-center justify-center rounded-xl border border-slate-800 bg-slate-950 p-2.5 text-slate-300 transition hover:border-slate-700 hover:text-white"
           >
             <Download size={14} />
           </button>
@@ -604,7 +604,7 @@ export default function CollaborativeWhiteboard() {
             type="button"
             onClick={clearBoard}
             title="Clear whiteboard board"
-            className="p-2.5 rounded-xl border border-rose-500/20 hover:border-rose-500/40 bg-rose-500/5 text-rose-500 hover:bg-rose-500/10 transition cursor-pointer flex items-center justify-center"
+            className="flex cursor-pointer items-center justify-center rounded-xl border border-rose-500/20 bg-rose-500/5 p-2.5 text-rose-500 transition hover:border-rose-500/40 hover:bg-rose-500/10"
           >
             <Trash2 size={14} />
           </button>
@@ -613,7 +613,7 @@ export default function CollaborativeWhiteboard() {
 
       {/* Main Interactive Drawing Board Viewport */}
       <div 
-        className="relative border border-slate-800 rounded-3xl overflow-hidden bg-slate-950 shadow-inner flex items-center justify-center w-full aspect-[5/3]" 
+        className="relative flex aspect-[5/3] w-full items-center justify-center overflow-hidden rounded-3xl border border-slate-800 bg-slate-950 shadow-inner" 
         style={{ minHeight: "360px" }}
       >
         <canvas
@@ -631,7 +631,7 @@ export default function CollaborativeWhiteboard() {
             if (e.touches.length === 1) draw(e.touches[0].clientX, e.touches[0].clientY);
           }}
           onTouchEnd={stopDrawing}
-          className="w-full h-full block cursor-crosshair"
+          className="block h-full w-full cursor-crosshair"
           style={{ backgroundColor: "#020617" }}
         />
 
@@ -642,7 +642,7 @@ export default function CollaborativeWhiteboard() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute p-4 rounded-2xl bg-slate-900 border border-indigo-500/50 shadow-2xl z-30 flex flex-col gap-2.5 max-w-xs"
+              className="absolute z-30 flex max-w-xs flex-col gap-2.5 rounded-2xl border border-indigo-500/50 bg-slate-900 p-4 shadow-2xl"
               style={{
                 left: `${(textPos.x / 1000) * 100}%`,
                 top: `${(textPos.y / 600) * 100}%`,
@@ -650,7 +650,7 @@ export default function CollaborativeWhiteboard() {
               }}
             >
               <form onSubmit={handleTextSubmit} className="flex flex-col gap-2">
-                <span className="text-[9px] font-black uppercase text-indigo-400 flex items-center gap-1">
+                <span className="flex items-center gap-1 text-[9px] font-black text-indigo-400 uppercase">
                   <Sparkles size={10} /> Text Stamp input
                 </span>
                 <input
@@ -659,20 +659,20 @@ export default function CollaborativeWhiteboard() {
                   placeholder="Type a word..."
                   value={textInput}
                   onChange={(e) => setTextInput(e.target.value)}
-                  className="px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-950 text-white outline-none focus:border-indigo-500 text-xs"
+                  className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-1.5 text-xs text-white outline-none focus:border-indigo-500"
                   required
                 />
-                <div className="flex gap-1.5 justify-end">
+                <div className="flex justify-end gap-1.5">
                   <button
                     type="button"
                     onClick={() => { setTextPos(null); setTextInput(""); }}
-                    className="px-2.5 py-1.5 rounded-lg border border-slate-800 text-[10px] font-bold text-slate-400 hover:text-white"
+                    className="rounded-lg border border-slate-800 px-2.5 py-1.5 text-[10px] font-bold text-slate-400 hover:text-white"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-[10px] font-bold text-white shadow-sm"
+                    className="rounded-lg bg-indigo-600 px-2.5 py-1.5 text-[10px] font-bold text-white shadow-sm hover:bg-indigo-700"
                   >
                     Place
                   </button>

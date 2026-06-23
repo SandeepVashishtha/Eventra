@@ -14,25 +14,25 @@ export default function RestoreDraftModal({ isOpen, onRestore, onDiscard, messag
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
-            className="w-full max-w-md bg-white dark:bg-gray-900 rounded-3xl p-8 shadow-2xl border border-gray-200 dark:border-gray-700"
+            className="w-full max-w-md rounded-3xl border border-gray-200 bg-white p-8 shadow-2xl dark:border-gray-700 dark:bg-gray-900"
           >
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
+            <h2 className="mb-3 text-2xl font-bold text-gray-900 dark:text-white">
               Restore Draft?
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
+            <p className="mb-6 text-gray-600 dark:text-gray-400">
               {message || "A previously saved event draft was found. Would you like to restore it?"}
             </p>
             <div className="flex justify-end gap-3">
               <button
                 onClick={onDiscard}
-                className="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                className="rounded-xl border border-gray-300 px-4 py-2 transition hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800"
                 aria-label="button"
               >
                 Discard
               </button>
               <button
                 onClick={onRestore}
-                className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium transition"
+                className="rounded-xl bg-indigo-600 px-5 py-2 font-medium text-white transition hover:bg-indigo-700"
                 aria-label="button"
               >
                 Restore Draft

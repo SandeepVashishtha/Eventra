@@ -185,7 +185,7 @@ export default function UserProfile() {
             {/* Contact Info card */}
             <motion.div custom={1} variants={fadeUp(prefersReducedMotion)} className="upv-card">
               <div className="upv-card-header">
-                <span className="upv-card-icon text-indigo-600 bg-indigo-500/10 dark:text-indigo-400 dark:bg-indigo-500/20">
+                <span className="upv-card-icon bg-indigo-500/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400">
                   <User size={16} />
                 </span>
                 <h2 className="upv-card-title">Personal Info</h2>
@@ -217,7 +217,7 @@ export default function UserProfile() {
             {profile?.bio && (
               <motion.div custom={2} variants={fadeUp(prefersReducedMotion)} className="upv-card">
                 <div className="upv-card-header">
-                  <span className="upv-card-icon text-purple-600 bg-purple-500/10 dark:text-purple-400 dark:bg-purple-500/20">
+                  <span className="upv-card-icon bg-purple-500/10 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400">
                     <FileText size={16} />
                   </span>
                   <h2 className="upv-card-title">About</h2>
@@ -230,7 +230,7 @@ export default function UserProfile() {
             {hasSocials && (
               <motion.div custom={3} variants={fadeUp(prefersReducedMotion)} className="upv-card">
                 <div className="upv-card-header">
-                  <span className="upv-card-icon text-emerald-600 bg-emerald-500/10 dark:text-emerald-400 dark:bg-emerald-500/20">
+                  <span className="upv-card-icon bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
                     <Globe size={16} />
                   </span>
                   <h2 className="upv-card-title">Social Links</h2>
@@ -268,7 +268,7 @@ export default function UserProfile() {
             {/* Activity stats */}
             <motion.div custom={1} variants={fadeUp(prefersReducedMotion)} className="upv-card">
               <div className="upv-card-header">
-                <span className="upv-card-icon text-amber-600 bg-amber-500/10 dark:text-amber-400 dark:bg-amber-500/20">
+                <span className="upv-card-icon bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400">
                   <Activity size={16} />
                 </span>
                 <h2 className="upv-card-title">Activity Stats</h2>
@@ -297,7 +297,7 @@ export default function UserProfile() {
             {/* Skills / Interests */}
             <motion.div custom={2} variants={fadeUp(prefersReducedMotion)} className="upv-card">
               <div className="upv-card-header">
-                <span className="upv-card-icon text-indigo-600 bg-indigo-500/10 dark:text-indigo-400 dark:bg-indigo-500/20">
+                <span className="upv-card-icon bg-indigo-500/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400">
                   <Zap size={16} />
                 </span>
                 <h2 className="upv-card-title">Skills &amp; Interests</h2>
@@ -322,7 +322,7 @@ export default function UserProfile() {
             {/* Achievements quick link */}
             <motion.div custom={3} variants={fadeUp(prefersReducedMotion)} className="upv-card upv-achievements-card">
               <div className="upv-card-header">
-                <span className="upv-card-icon text-pink-600 bg-pink-500/10 dark:text-pink-400 dark:bg-pink-500/20">
+                <span className="upv-card-icon bg-pink-500/10 text-pink-600 dark:bg-pink-500/20 dark:text-pink-400">
                   <Trophy size={16} />
                 </span>
                 <h2 className="upv-card-title">Achievements</h2>

@@ -8,15 +8,15 @@ export default function GuidelinesSection({ prefersReducedMotion }) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: prefersReducedMotion ? 0 : 0.7 }}
-      className="w-full max-w-4xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg rounded-2xl p-6 mb-10"
+      className="mb-10 w-full max-w-4xl rounded-2xl border border-gray-200 bg-white p-6 shadow-lg dark:border-gray-700 dark:bg-gray-800"
     >
-      <div className="flex items-center gap-2 mb-3">
-        <ClipboardDocumentListIcon className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+      <div className="mb-3 flex items-center gap-2">
+        <ClipboardDocumentListIcon className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
         <h2 className="text-xl font-semibold text-indigo-700 dark:text-indigo-400">
           Guidelines
         </h2>
       </div>
-      <ul className="list-disc pl-6 space-y-3 text-gray-700 dark:text-gray-300 text-sm sm:text-base">
+      <ul className="list-disc space-y-3 pl-6 text-sm text-gray-700 sm:text-base dark:text-gray-300">
         <li>
           Provide a <span className="font-medium">clear and catchy title</span> that
           accurately represents your event (3-200 characters).

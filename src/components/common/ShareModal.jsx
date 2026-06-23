@@ -17,7 +17,7 @@ const ModalCloseButton = memo(({ onClick }) => (
   <button
     type="button"
     onClick={onClick}
-    className="flex h-8 w-8 items-center justify-center rounded-full text-xl font-medium text-slate-400 transition-all duration-200 hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+    className="flex h-8 w-8 items-center justify-center rounded-full text-xl font-medium text-slate-400 transition-all duration-200 hover:bg-slate-100 hover:text-slate-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:hover:bg-slate-800 dark:hover:text-slate-200"
     aria-label="Close Share Modal"
   >
     <X size={18} />

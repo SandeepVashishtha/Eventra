@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 function DateField({ name, label, value, onChange, min, error }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+      <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
         {label} <span className="text-red-600">*</span>
       </label>
       <input
@@ -14,7 +14,7 @@ function DateField({ name, label, value, onChange, min, error }) {
         min={min}
         className={`w-full border ${error ? "border-red-500" : "border-gray-300 dark:border-gray-600"} rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
       />
-      {error && <span className="text-red-500 text-sm mt-1 block">{error}</span>}
+      {error && <span className="mt-1 block text-sm text-red-500">{error}</span>}
     </div>
   );
 }
@@ -22,7 +22,7 @@ function DateField({ name, label, value, onChange, min, error }) {
 function TimeField({ name, label, value, onChange, error }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+      <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
         {label} <span className="text-red-600">*</span>
       </label>
       <input
@@ -32,7 +32,7 @@ function TimeField({ name, label, value, onChange, error }) {
         onChange={onChange}
         className={`w-full border ${error ? "border-red-500" : "border-gray-300 dark:border-gray-600"} rounded-lg p-3 text-gray-700 dark:text-white bg-white dark:bg-gray-700`}
       />
-      {error && <span className="text-red-500 text-sm mt-1 block">{error}</span>}
+      {error && <span className="mt-1 block text-sm text-red-500">{error}</span>}
     </div>
   );
 }
@@ -44,7 +44,7 @@ export default function DateTimeFields({ formData, handleInputChange, errors, pr
   if (formData.isMultiDay) {
     return (
       <motion.div
-        className="grid grid-cols-1 sm:grid-cols-4 gap-4"
+        className="grid grid-cols-1 gap-4 sm:grid-cols-4"
         initial={{ opacity: 0, x: -20 }}
         whileInView={{ opacity: 1, x: 0 }}
         viewport={{ once: true }}
@@ -60,7 +60,7 @@ export default function DateTimeFields({ formData, handleInputChange, errors, pr
 
   return (
     <motion.div
-      className="grid grid-cols-1 sm:grid-cols-3 gap-4"
+      className="grid grid-cols-1 gap-4 sm:grid-cols-3"
       initial={{ opacity: 0, x: -20 }}
       whileInView={{ opacity: 1, x: 0 }}
       viewport={{ once: true }}
