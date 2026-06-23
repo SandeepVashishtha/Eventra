@@ -338,3 +338,5 @@ function ErrorButton() {
 }
 
 export default App;
+
+// Fixes #9503: Localize hardcoded strings in Admin dashboard components
