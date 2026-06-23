@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
@@ -32,7 +32,7 @@ import {
 } from "@heroicons/react/24/solid";
 import { API_ENDPOINTS, apiUtils } from "../../../config/api";
 import { useFormSubmit } from "../../../hooks/useFormSubmit";
-import { validateCoordinates } from "../../../utils/eventCreationUtils";
+import { validateCoordinates, buildEventPayload } from "../../../utils/eventCreationUtils";
 import { validateForm } from "../../../utils/eventFormValidation";
 import { safeJsonParse } from "../../../utils/safeJsonParse";
 
@@ -47,7 +47,7 @@ const EventCreation = () => {
     error: submitError,
     success: submitSuccess,
   } = useFormSubmit(async (eventData) => {
-    // Auth is handled by the HttpOnly session cookie ΓÇö apiUtils sends it
+    // Auth is handled by the HttpOnly session cookie GÇö apiUtils sends it
     // automatically via withCredentials. Never read tokens from sessionStorage;
     // setToken was removed as part of the HttpOnly cookie migration.
 
@@ -216,61 +216,7 @@ const EventCreation = () => {
 
   const createEvent = () => {
     try {
-      let coordinates = null;
-      if (formData.location?.coordinates?.latitude && formData.location?.coordinates?.longitude) {
-        coordinates = validateCoordinates(
-          formData.location?.coordinates?.latitude,
-          formData.location?.coordinates?.longitude
-        );
-      }
-
-      const eventStartDate = new Date(
-        `${formData.isMultiDay ? formData.startDate : formData.date}T${formData.startTime}`
-      );
-      const eventEndDate = new Date(
-        `${formData.isMultiDay ? formData.endDate : formData.date}T${formData.endTime}`
-      );
-
-      if (isNaN(eventStartDate.getTime()) || isNaN(eventEndDate.getTime())) {
-        throw new Error("Invalid date or time format");
-      }
-
-      const eventData = {
-        title: formData.title.trim(),
-        description: formData.description.trim(),
-        startDate: eventStartDate.toISOString(),
-        endDate: eventEndDate.toISOString(),
-        timezone: formData.timezone,
-        location: formData.isVirtual
-          ? null
-          : {
-              name: formData.location.name.trim(),
-              address: formData.location.address?.trim() || "",
-              coordinates: coordinates,
-            },
-        isVirtual: formData.isVirtual,
-        virtualLink: formData.isVirtual ? formData.virtualLink.trim() : null,
-        capacity: formData.capacity ? Number(formData.capacity) : null,
-        isPublic: formData.isPublic,
-        requiresApproval: formData.requiresApproval,
-        registrationStart: formData.registrationStart
-          ? new Date(formData.registrationStart).toISOString()
-          : null,
-        registrationEnd: formData.registrationEnd
-          ? new Date(formData.registrationEnd).toISOString()
-          : null,
-        category: formData.category,
-        tags: formData.tags.filter((tag) => tag.trim()),
-        ticketTiers: formData.ticketTiers
-          .filter((tier) => tier.name.trim())
-          .map((tier) => ({
-            name: tier.name.trim(),
-            price: Number(tier.price) || 0,
-            capacity: tier.capacity ? Number(tier.capacity) : null,
-            description: tier.description?.trim() || "",
-          })),
-      };
-
+      const eventData = buildEventPayload(formData);
       submitEventForm(eventData);
     } catch (error) {
       logger.error("Error creating event:", error);
@@ -625,7 +571,7 @@ const EventCreation = () => {
 
               {/* Date and Time Fields */}
               {formData.isMultiDay ? (
-                // ≡ƒö╣ Multi-day Event
+                // =ƒö¦ Multi-day Event
                 <motion.div
                   className="grid grid-cols-1 sm:grid-cols-4 gap-4"
                   initial={{ opacity: 0, x: -20 }}
@@ -715,7 +661,7 @@ const EventCreation = () => {
                   </div>
                 </motion.div>
               ) : (
-                // ≡ƒö╕ Single-day Event
+                // =ƒö+ Single-day Event
                 <motion.div
                   className="grid grid-cols-1 sm:grid-cols-3 gap-4"
                   initial={{ opacity: 0, x: -20 }}
@@ -972,7 +918,7 @@ const EventCreation = () => {
                         onClick={() => removeTag(tag)}
                         className="ml-1 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 font-bold"
                       >
-                        ├ù
+                        +ù
                       </button>
                     </span>
                   ))}
@@ -1008,3 +954,4 @@ const EventCreation = () => {
 };
 
 export default EventCreation;
+

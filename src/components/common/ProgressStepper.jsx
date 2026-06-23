@@ -17,7 +17,7 @@ const ProgressStepper = ({ steps, currentStep }) => {
         
         {/* Progress Fill */}
         <motion.div
-          className="absolute top-1/2 left-0 h-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full -translate-y-1/2"
+          className="absolute top-1/2 left-0 h-1 bg-linear-to-r from-blue-600 to-indigo-600 rounded-full -translate-y-1/2"
           initial={{ width: "0%" }}
           animate={{ width: `${(currentStep / (steps.length - 1)) * 100}%` }}
           transition={{ duration: 0.3, ease: "easeOut" }}

@@ -114,6 +114,7 @@ export const ThemeProvider = ({ children }) => {
 
     // Apply active skin theme colors — pick the variant that matches the resolved mode
     const activeTheme = THEMES[activeThemeId] || THEMES.default;
+
     const themeColors =
       resolvedTheme === "dark"
         ? (activeTheme.colors.dark || activeTheme.colors.light)
@@ -166,10 +167,10 @@ export const ThemeProvider = ({ children }) => {
     const styleId = "reduced-motion-override";
     const css = `
       *, *::before, *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-        scroll-behavior: auto !important;
+        animation-duration: 0.01ms;
+        animation-iteration-count: 1;
+        transition-duration: 0.01ms;
+        scroll-behavior: auto;
       }
     `;
 
@@ -193,10 +194,10 @@ export const ThemeProvider = ({ children }) => {
         styleEl.id = styleId;
         styleEl.textContent = `
           *, *::before, *::after {
-            animation-duration: 0.01ms !important;
-            animation-iteration-count: 1 !important;
-            transition-duration: 0.01ms !important;
-            scroll-behavior: auto !important;
+            animation-duration: 0.01ms;
+            animation-iteration-count: 1;
+            transition-duration: 0.01ms;
+            scroll-behavior: auto;
           }
         `;
         styleEl.innerHTML = css;

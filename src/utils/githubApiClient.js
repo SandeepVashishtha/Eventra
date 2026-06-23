@@ -3,6 +3,19 @@ import { logError } from "./errorLogger";
 
 const GITHUB_HOST = "github.com";
 
+const buildDirectGitHubUrl = (path, queryParams = {}) => {
+  const sanitizedPath = `/${path.replace(/^\/+/, "")}`;
+  const params = new URLSearchParams();
+
+  Object.entries(queryParams).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === "") return;
+    params.set(key, String(value));
+  });
+
+  const query = params.toString();
+  return `https://api.github.com${sanitizedPath}${query ? `?${query}` : ""}`;
+};
+
 export const buildGitHubProxyUrl = (path, queryParams = {}) => {
   // 🔥 FIX 1: Prevent Protocol-Relative SSRF Bypass (e.g. "//evil.com")
   // Remove ALL leading slashes, then explicitly prepend exactly one.
@@ -31,14 +44,32 @@ export const buildGitHubProxyUrl = (path, queryParams = {}) => {
  * @returns {Promise<any>} Parsed JSON response
  */
 export const fetchGitHubJson = async (path, queryParams = {}, options = {}) => {
+  const proxyUrl = buildGitHubProxyUrl(path, queryParams);
+  const directUrl = buildDirectGitHubUrl(path, queryParams);
+
   try {
     const { data } = await fetchWithTimeout(
-      buildGitHubProxyUrl(path, queryParams),
+      proxyUrl,
       options
     );
 
     return data;
   } catch (error) {
+    if (error?.status === 401 || error?.status === 403) {
+      try {
+        const { data } = await fetchWithTimeout(directUrl, {
+          ...options,
+          headers: {
+            ...(options.headers || {}),
+            Accept: "application/vnd.github+json",
+          },
+        });
+        return data;
+      } catch (directError) {
+        error = directError;
+      }
+    }
+
     let message = "Failed to fetch data from GitHub";
     //let severity = "warn";
 
