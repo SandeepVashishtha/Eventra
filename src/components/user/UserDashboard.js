@@ -11,7 +11,7 @@ import { useState, useEffect, useMemo } from "react";
 import ErrorBoundary from "../common/ErrorBoundary";
 import { useAuth } from "../../context/AuthContext";
 import { useMyEvents } from "../../context/MyEventsContext";
-import useBookmarks from "../../hooks/useBookmarks";
+import { getBookmarkedEvents, subscribeToBookmarkChanges } from "../../utils/bookmarkUtils";
 import { getEventStatus } from "../../utils/eventUtils";
 import StatusBadge from "../common/StatusBadge";
 import { requestNotificationPermission, disableNotifications } from "../../utils/NotificationManager";
@@ -82,8 +82,12 @@ export default function UserDashboard() {
   const [loading, setLoading] = useState(true);
   const [pushEnabled, setPushEnabled] = useState(() => readNotificationPreferences().push);
   const { myEvents, loading: myEventsLoading } = useMyEvents();
-  const { bookmarks } = useBookmarks(user?.id || user?.email || "guest");
+  const [bookmarks, setBookmarks] = useState(() => getBookmarkedEvents());
 
+  useEffect(() => {
+   setBookmarks(getBookmarkedEvents());
+   return subscribeToBookmarkChanges(setBookmarks);
+  }, []);
   const journeyStats = useMemo(() => {
     const records = Array.isArray(myEvents) ? myEvents : [];
     const registeredItems = records

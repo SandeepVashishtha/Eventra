@@ -6,9 +6,14 @@ import { sanitizeMarkdown } from "../../utils/sanitizeHtml";
 import { toast } from "react-toastify";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
-import { Calendar, MapPin, Clock, Tag, CalendarPlus, Link2, Check } from "lucide-react";
+import { Calendar, MapPin, Clock, Tag, CalendarPlus, Link2, Check, Bookmark, BookmarkCheck } from "lucide-react";
 import { getEventStatus, isEventRegistrationClosed } from "../../utils/eventUtils";
-import { isEventBookmarked } from "../../utils/bookmarkUtils";
+import {
+  isEventBookmarked,
+  addBookmarkedEvent,
+  removeBookmarkedEvent,
+  subscribeToBookmarkChanges,
+} from "../../utils/bookmarkUtils";
 import { DRAFT_KEY } from "../../constants/eventDefaults";
 import { useMyEvents } from "../../context/MyEventsContext";
 import { logger } from "../../utils/logger";
@@ -54,6 +59,7 @@ const EventDetails = () => {
   const [fetchLoading, setFetchLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(false);
 
   const { isRegistered } = useMyEvents();
   const [linkCopied, setLinkCopied] = useState(false);
@@ -126,6 +132,24 @@ const EventDetails = () => {
     if (!event) return;
     addRecentlyViewed(event);
   }, [event, addRecentlyViewed]);
+  useEffect(() => {
+    if (!event) return;
+    setIsBookmarked(isEventBookmarked(event.id));
+    return subscribeToBookmarkChanges(() => {
+      setIsBookmarked(isEventBookmarked(event.id));
+    });
+  }, [event]);
+
+  const handleBookmarkToggle = () => {
+    if (!event) return;
+    if (isBookmarked) {
+      removeBookmarkedEvent(event.id);
+      toast.info("Removed from bookmarked events.", { toastId: `bookmark-${event.id}` });
+    } else {
+      addBookmarkedEvent(event);
+      toast.success("Event bookmarked.", { toastId: `bookmark-${event.id}` });
+    }
+  };
 
   const handlePrint = () => {
     setIsPrinting(true);
@@ -302,7 +326,7 @@ ${window.location.href}
     );
   }
 
-  const canSetReminder = isEventBookmarked(event.id) || isRegistered(event.id);
+  const canSetReminder = isBookmarked || isRegistered(event.id);
   const isRegistrationClosed = isEventRegistrationClosed(event);
 
   return (
@@ -366,6 +390,23 @@ ${window.location.href}
                 className="inline-flex items-center justify-center rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-indigo-700 transition"
               >
                 Share Event
+              </button>
+              <button
+                onClick={handleBookmarkToggle}
+                aria-pressed={isBookmarked}
+                aria-label={isBookmarked ? "Remove event bookmark" : "Bookmark event"}
+                className={`inline-flex items-center justify-center gap-2 rounded-full border px-6 py-3 text-sm font-semibold shadow-sm transition ${
+                  isBookmarked
+                    ? "border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+                    : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+                }`}
+              >
+                {isBookmarked ? (
+                  <BookmarkCheck size={18} />
+                ) : (
+                  <Bookmark size={18} />
+                )}
+                {isBookmarked ? "Saved" : "Save Event"}
               </button>
 
               {isOrganizer && event.status !== "cancelled" && (

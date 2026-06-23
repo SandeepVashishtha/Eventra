@@ -1,27 +1,32 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Download, Inbox } from "lucide-react";
 import EmptyState from "../components/common/EmptyState";
-import useBookmarks from "../hooks/useBookmarks";
+import {
+  getBookmarkedEvents,
+  removeBookmarkedEvent,
+  subscribeToBookmarkChanges,
+} from "../utils/bookmarkUtils";
 import { exportToCSV } from "../utils/exportUtils";
 import { toast } from "react-toastify";
 
 const SavedEventsPage = () => {
   // const navigate = useNavigate();
-  const { bookmarks, toggleBookmark } = useBookmarks();
-  const [sortBy, setSortBy] = useState("savedAt");
+  const [bookmarks, setBookmarks] = useState(() => getBookmarkedEvents());
+  const [sortBy, setSortBy] = useState("bookmarkedAt");
   const [exporting, setExporting] = useState(false);
   const exportTimeoutRef = useRef(null);
 
   useEffect(() => {
-    return () => {
-      if (exportTimeoutRef.current) clearTimeout(exportTimeoutRef.current);
-    };
+   setBookmarks(getBookmarkedEvents());
+   return subscribeToBookmarkChanges(setBookmarks);
   }, []);
 
   const sorted = useMemo(
     () => [...bookmarks].sort((a, b) =>
-      sortBy === "savedAt" ? b.savedAt - a.savedAt : new Date(a.date) - new Date(b.date)
+      sortBy === "bookmarkedAt"
+       ? new Date(b.bookmarkedAt).getTime() - new Date(a.bookmarkedAt).getTime()
+       : new Date(a.date) - new Date(b.date)
     ),
     [bookmarks, sortBy]
   );
@@ -75,7 +80,7 @@ const SavedEventsPage = () => {
               onChange={(e) => setSortBy(e.target.value)}
               className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
             >
-              <option value="savedAt">Recently Saved</option>
+              <option value="bookmarkedAt">Recently Saved</option>
               <option value="date">Event Date</option>
             </select>
 
@@ -113,7 +118,10 @@ const SavedEventsPage = () => {
                 </Link>
                 <button
                   type="button"
-                  onClick={() => toggleBookmark(event)}
+                  onClick={() => {
+                   removeBookmarkedEvent(event.id);
+                   setBookmarks(getBookmarkedEvents());
+                  }}
                   className="inline-flex items-center justify-center rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300 dark:hover:bg-red-900/50"
                 >
                   Remove
