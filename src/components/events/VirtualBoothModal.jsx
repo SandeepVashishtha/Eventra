@@ -241,7 +241,7 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
                 <div className="flex items-center gap-3 pt-2">
                   <a
                     href="https://example.com"
-                    target="_blank"
+                    target="_blank" rel="noopener noreferrer"
                     rel="noopener noreferrer"
                     className="p-2.5 text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg border border-white/5 hover:border-indigo-500/20 transition-all"
                     title="Website"
@@ -250,7 +250,7 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
                   </a>
                   <a
                     href="https://linkedin.com"
-                    target="_blank"
+                    target="_blank" rel="noopener noreferrer"
                     rel="noopener noreferrer"
                     className="p-2.5 text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg border border-white/5 hover:border-indigo-500/20 transition-all"
                     title="LinkedIn"
@@ -259,7 +259,7 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
                   </a>
                   <a
                     href="https://twitter.com"
-                    target="_blank"
+                    target="_blank" rel="noopener noreferrer"
                     rel="noopener noreferrer"
                     className="p-2.5 text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg border border-white/5 hover:border-indigo-500/20 transition-all"
                     title="Twitter"
@@ -268,7 +268,7 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
                   </a>
                   <a
                     href="https://github.com"
-                    target="_blank"
+                    target="_blank" rel="noopener noreferrer"
                     rel="noopener noreferrer"
                     className="p-2.5 text-gray-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg border border-white/5 hover:border-indigo-500/20 transition-all"
                     title="GitHub"

@@ -111,7 +111,7 @@ const HackathonDetailsPage = () => {
               <div className="mt-8 flex flex-wrap gap-3">
                 <a
                   href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(foundHackathon.title)}&dates=${foundHackathon.startDate.replaceAll("-", "")}/${foundHackathon.endDate.replaceAll("-", "")}&details=${encodeURIComponent(foundHackathon.description)}&location=${encodeURIComponent(foundHackathon.location)}`}
-                  target="_blank" rel="noopener noreferrer"
+                  target="_blank" rel="noopener noreferrer" rel="noopener noreferrer"
                   className="inline-flex items-center justify-center rounded-full bg-primary hover:opacity-90 px-6 py-3 text-sm font-semibold text-white shadow transition"
                 >
                   Add Reminder

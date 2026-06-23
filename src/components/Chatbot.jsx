@@ -64,7 +64,7 @@ function renderMarkdownToReact(text) {
         const isSafeUrl = !hasScheme || isSafeScheme;
         const safeUrl = isSafeUrl ? rawUrl : "#";
         inlineParts.push(
-          <a key={inlineKey++} href={safeUrl} target="_blank" rel="noopener noreferrer" className="text-indigo-500 underline">
+          <a key={inlineKey++} href={safeUrl} target="_blank" rel="noopener noreferrer" rel="noopener noreferrer" className="text-indigo-500 underline">
             {match[8]}
           </a>
         );

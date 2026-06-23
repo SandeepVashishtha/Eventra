@@ -111,19 +111,19 @@ const ShareModal = ({ isOpen, onClose, event }) => {
             </div>
 
             <div className="mt-6 grid grid-cols-2 gap-3">
-              <a href={shareData.links.twitter} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 rounded-xl bg-black px-4 py-3 text-sm font-medium text-white transition-all hover:bg-slate-800">
+              <a href={shareData.links.twitter} target="_blank" rel="noopener noreferrer" rel="noopener noreferrer" className="flex items-center justify-center gap-2 rounded-xl bg-black px-4 py-3 text-sm font-medium text-white transition-all hover:bg-slate-800">
                 <Twitter size={16} /> Twitter/X
               </a>
-              <a href={shareData.links.linkedin} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-3 text-sm font-medium text-white transition-all hover:bg-blue-800">
+              <a href={shareData.links.linkedin} target="_blank" rel="noopener noreferrer" rel="noopener noreferrer" className="flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-3 text-sm font-medium text-white transition-all hover:bg-blue-800">
                 <Linkedin size={16} /> LinkedIn
               </a>
-              <a href={shareData.links.whatsapp} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-3 text-sm font-medium text-white transition-all hover:bg-green-700">
+              <a href={shareData.links.whatsapp} target="_blank" rel="noopener noreferrer" rel="noopener noreferrer" className="flex items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-3 text-sm font-medium text-white transition-all hover:bg-green-700">
                 <MessageCircle size={16} /> WhatsApp
               </a>
-              <a href={shareData.links.facebook} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-medium text-white transition-all hover:bg-blue-700">
+              <a href={shareData.links.facebook} target="_blank" rel="noopener noreferrer" rel="noopener noreferrer" className="flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-medium text-white transition-all hover:bg-blue-700">
                 <Facebook size={16} /> Facebook
               </a>
-              <a href={shareData.links.telegram} target="_blank" rel="noopener noreferrer" className="col-span-2 flex items-center justify-center gap-2 rounded-xl bg-sky-500 px-4 py-3 text-sm font-medium text-white transition-all hover:bg-sky-600">
+              <a href={shareData.links.telegram} target="_blank" rel="noopener noreferrer" rel="noopener noreferrer" className="col-span-2 flex items-center justify-center gap-2 rounded-xl bg-sky-500 px-4 py-3 text-sm font-medium text-white transition-all hover:bg-sky-600">
                 <Send size={16} /> Telegram
               </a>
               <a href={shareData.links.email} className="col-span-2 flex items-center justify-center gap-2 rounded-xl bg-slate-100 px-4 py-3 text-sm font-medium text-slate-800 transition-all hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700">

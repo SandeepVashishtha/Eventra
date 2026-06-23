@@ -737,7 +737,7 @@ const AdminDashboard = () => {
             <p className="ad-footer-copyright">© {new Date().getFullYear()} Eventra. Admin Control Panel.</p>
             <div className="ad-footer-links">
               <Link to="/helpcenter" className="ad-footer-link">Help Center</Link>
-              <a href={`https://github.com/${ENV.GITHUB_REPO}`} target="_blank" rel="noopener noreferrer" className="ad-footer-link">GitHub</a>
+              <a href={`https://github.com/${ENV.GITHUB_REPO}`} target="_blank" rel="noopener noreferrer" rel="noopener noreferrer" className="ad-footer-link">GitHub</a>
               <Link to="/privacy" className="ad-footer-link">Privacy Policy</Link>
               <Link to="/terms" className="ad-footer-link">Terms of Service</Link>
             </div>

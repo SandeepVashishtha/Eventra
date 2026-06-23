@@ -248,7 +248,7 @@ const HelpCenter = () => {
             <a
               key={idx}
               href={item.link}
-              target="_blank" rel="noopener noreferrer"
+              target="_blank" rel="noopener noreferrer" rel="noopener noreferrer"
               className="group bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 flex flex-col items-center text-center transition-transform transform hover:scale-105 hover:shadow-2xl"
             >
               <div

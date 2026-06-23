@@ -587,7 +587,7 @@ const EventDetails = () => {
                     <CalendarPlus size={15} className="text-green-500" /> Download .ics Invite
                   </button>
                   {generateGoogleCalendarLink(event) && (
-                    <a href={generateGoogleCalendarLink(event)} target="_blank" rel="noopener noreferrer" className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100 shadow-sm hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-200" aria-label="Add to Google Calendar">
+                    <a href={generateGoogleCalendarLink(event)} target="_blank" rel="noopener noreferrer" rel="noopener noreferrer" className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100 shadow-sm hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-200" aria-label="Add to Google Calendar">
                       <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
                         <path fill="#4285F4" d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12s4.48 10 10 10 10-4.48 10-10z" />
                         <path fill="#fff" d="M13 7h-2v6l5.25 3.15.75-1.23-4-2.37z" />
@@ -595,7 +595,7 @@ const EventDetails = () => {
                     </a>
                   )}
                   {generateOutlookLink(event) && (
-                    <a href={generateOutlookLink(event)} target="_blank" rel="noopener noreferrer" className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100 shadow-sm hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-200" aria-label="Add to Outlook Calendar">
+                    <a href={generateOutlookLink(event)} target="_blank" rel="noopener noreferrer" rel="noopener noreferrer" className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100 shadow-sm hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-200" aria-label="Add to Outlook Calendar">
                       <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
                         <path fill="#0078D4" d="M2 6l10-4 10 4v12l-10 4L2 18z" />
                         <path fill="#fff" d="M12 4L4 7v10l8 3 8-3V7z" />

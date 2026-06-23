@@ -664,7 +664,7 @@ const ContributorGuide = () => {
         </p>
         <motion.a
           href="https://github.com/SandeepVashishtha/Eventra"
-          target="_blank" rel="noopener noreferrer"
+          target="_blank" rel="noopener noreferrer" rel="noopener noreferrer"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           className="inline-flex items-center justify-center gap-3 bg-gradient-to-r from-sky-100 to-amber-100 text-black font-semibold px-8 py-3 rounded-full shadow-lg hover:from-sky-200 hover:to-amber-200 transition-all duration-300"

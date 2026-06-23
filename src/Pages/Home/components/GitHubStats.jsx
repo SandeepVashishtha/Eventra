@@ -235,7 +235,7 @@ export default function GitHubStats() {
                 <motion.a
                   key={label}
                   href={link}
-                  target="_blank" rel="noopener noreferrer"
+                  target="_blank" rel="noopener noreferrer" rel="noopener noreferrer"
                   whileHover={{ scale: 1.1, rotate: 1 }}
                   whileTap={{ scale: 0.95 }}
                   className="group flex flex-col items-center justify-center bg-white dark:bg-gray-800 rounded-2xl px-3 py-4 sm:px-6 sm:py-6 md:px-8 shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-700 relative overflow-hidden"

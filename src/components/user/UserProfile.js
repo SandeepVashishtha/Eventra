@@ -237,21 +237,21 @@ export default function UserProfile() {
                 </div>
                 <div className="upv-socials">
                   {profile?.github && (
-                    <a href={sanitizeUrl(profile.github)} target="_blank" rel="noopener noreferrer" className="upv-social-link upv-social-github">
+                    <a href={sanitizeUrl(profile.github)} target="_blank" rel="noopener noreferrer" rel="noopener noreferrer" className="upv-social-link upv-social-github">
                       <Github size={16} />
                       <span>GitHub</span>
                       <ChevronRight size={13} className="upv-social-arrow" />
                     </a>
                   )}
                   {profile?.linkedin && (
-                    <a href={sanitizeUrl(profile.linkedin)} target="_blank" rel="noopener noreferrer" className="upv-social-link upv-social-linkedin">
+                    <a href={sanitizeUrl(profile.linkedin)} target="_blank" rel="noopener noreferrer" rel="noopener noreferrer" className="upv-social-link upv-social-linkedin">
                       <Linkedin size={16} />
                       <span>LinkedIn</span>
                       <ChevronRight size={13} className="upv-social-arrow" />
                     </a>
                   )}
                   {profile?.portfolio && (
-                    <a href={sanitizeUrl(profile.portfolio)} target="_blank" rel="noopener noreferrer" className="upv-social-link upv-social-portfolio">
+                    <a href={sanitizeUrl(profile.portfolio)} target="_blank" rel="noopener noreferrer" rel="noopener noreferrer" className="upv-social-link upv-social-portfolio">
                       <Globe size={16} />
                       <span>Portfolio</span>
                       <ChevronRight size={13} className="upv-social-arrow" />
