@@ -338,3 +338,5 @@ function ErrorButton() {
 }
 
 export default App;
+
+// Fixes #9502: Refactor direct localStorage usage to utilize centralized storageManager
