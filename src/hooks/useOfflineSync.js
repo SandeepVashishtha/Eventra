@@ -4,16 +4,16 @@
  */
 import { useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
-import { useAuth } from '../context/AuthContext';
-import { API_ENDPOINTS } from '../config/api';
+import { useAuth } from '../context/AuthContext.js';
+import { API_ENDPOINTS } from '../config/api.js';
 
-import { logger } from "../utils/logger";
-import { getQueueIndexedDB, setQueue, clearQueue, filterQueueByOwnership, validateQueueSession } from '../utils/offlineQueue';
-import { ensureSessionSnapshot } from "../utils/sessionSnapshot";
+import { logger } from "../utils/logger.js";
+import { getQueueIndexedDB, setQueue, clearQueue, filterQueueByOwnership, validateQueueSession } from '../utils/offlineQueue.js';
+import { ensureSessionSnapshot } from "../utils/sessionSnapshot.js";
 // isTokenValid import removed; authentication is now checked via isAuthenticated()
 // from AuthContext, which handles both token-based and cookie-managed sessions.
-import { fetchWithTimeout } from "../utils/fetchWithTimeout";
-import { safeJsonParse } from "../utils/safeJsonParse";
+import { fetchWithTimeout } from "../utils/fetchWithTimeout.js";
+import { safeJsonParse } from "../utils/safeJsonParse.js";
 
 const MAX_RETRIES = 3;
 const BASE_BACKOFF_MS = 1_000;
@@ -220,7 +220,7 @@ const useOfflineSync = () => {
       // when useOfflineSync called isTokenValid("cookie-managed") directly.
       if (!currentIsAuthenticated()) {
         toast.warning(
-          "Offline actions are pending but your session has expired. Please log in again to sync them.",
+          "Security notice: Offline actions are pending, but your session has expired. Please log in again to synchronize them.",
           { autoClose: 6000 }
         );
         return;
@@ -290,14 +290,19 @@ const useOfflineSync = () => {
 
       isSyncing.current = true;
 
+      // 🔥 FIX: Hoist counters and the failure list ABOVE the try so the
+      // `finally` block can read them. Previously they were declared inside
+      // the try (block-scoped) and the dispatch in finally threw
+      // ReferenceError on every successful sync, leaving the OfflineManager
+      // spinner stuck permanently.
+      let successCount = 0;
+      let droppedCount = 0;
+      let failedQueue = [];
+
       try {
         toast.info(`Syncing ${sessionValidatedQueue.length} cached offline action(s)...`, {
           autoClose: 2000,
         });
-
-        const failedQueue = [];
-        let successCount = 0;
-        let droppedCount = 0;
 
         for (const item of sessionValidatedQueue) {
           // Halt the zombie loop immediately if the session changed or component unmounted.
@@ -399,8 +404,17 @@ const useOfflineSync = () => {
       const LOCK_KEY = "eventra_offline_sync_local_lock";
       const LOCK_TIMEOUT_MS = 30_000;
 
+      // 🔥 FIX: SSR guard. Previously the localStorage access below
+      // threw ReferenceError in any Node.js-like environment. On SSR
+      // there is no cross-tab concern, so we just return without
+      // acquiring a lock — the Web Locks API path (if available) still
+      // runs via handleOnline. Falls through to a no-op otherwise.
+      if (typeof window === "undefined" || !window.localStorage) {
+        return;
+      }
+
       const now = Date.now();
-      const lockVal = localStorage.getItem(LOCK_KEY);
+      const lockVal = window.localStorage.getItem(LOCK_KEY);
 
       if (lockVal) {
         try {
@@ -414,9 +428,9 @@ const useOfflineSync = () => {
 
       const currentTabId = Math.random().toString(36).slice(2, 9);
       const lockData = JSON.stringify({ timestamp: now, tabId: currentTabId });
-      
+
       try {
-        localStorage.setItem(LOCK_KEY, lockData);
+        window.localStorage.setItem(LOCK_KEY, lockData);
       } catch {
         // If localStorage fails (private mode etc.), run sync directly to avoid blocking
         await executeSync();
@@ -426,7 +440,7 @@ const useOfflineSync = () => {
       const heartbeatInterval = setInterval(() => {
         if (syncLockAborted.current) { clearInterval(heartbeatInterval); return; }
         try {
-          localStorage.setItem(LOCK_KEY, JSON.stringify({ timestamp: Date.now(), tabId: currentTabId }));
+          window.localStorage.setItem(LOCK_KEY, JSON.stringify({ timestamp: Date.now(), tabId: currentTabId }));
         } catch {}
       }, 10_000);
       heartbeatIntervalRef.current = heartbeatInterval;
@@ -436,11 +450,11 @@ const useOfflineSync = () => {
       } finally {
         clearInterval(heartbeatInterval);
         try {
-          const checkVal = localStorage.getItem(LOCK_KEY);
+          const checkVal = window.localStorage.getItem(LOCK_KEY);
           if (checkVal) {
             const parsed = safeJsonParse(checkVal, {});
             if (parsed && parsed.tabId === currentTabId) {
-              localStorage.removeItem(LOCK_KEY);
+              window.localStorage.removeItem(LOCK_KEY);
             }
           }
         } catch {}
@@ -532,8 +546,7 @@ const useOfflineSync = () => {
         clearTimeout(timeoutId);
       }
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, user?.id]);
+  }, [token, user?.id, isAuthenticated, loading]);
 };
 
 export default useOfflineSync;

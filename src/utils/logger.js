@@ -1,5 +1,8 @@
 /**
  * Determines if the current environment is for development.
+ * Safe in both browser (Vite via import.meta.env) and Node-like environments
+ * (e.g. SSR, tests) where neither is available. Without the typeof guard,
+ * `process` is undefined in the browser and the module crashes on load.
  */
 const isDevelopment = typeof import.meta.env !== "undefined"
   ? import.meta.env.DEV

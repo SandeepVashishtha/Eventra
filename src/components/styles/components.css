@@ -879,8 +879,8 @@ body {
 .request-form input:focus-visible,
 .request-form select:focus-visible,
 .request-form textarea:focus-visible {
-  outline: 2px solid #6366f1 !important;
-  outline-offset: 2px !important;
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
 }
 
 .dark .request-form input,
@@ -912,8 +912,8 @@ body {
 .dark .request-form input:focus-visible,
 .dark .request-form select:focus-visible,
 .dark .request-form textarea:focus-visible {
-  outline: 2px solid #818cf8 !important;
-  outline-offset: 2px !important;
+  outline: 2px solid #818cf8;
+  outline-offset: 2px;
 }
 
 .form-row {
@@ -2069,11 +2069,11 @@ textarea:focus-visible {
   .hero-background,
   .marquee-track,
   .badge {
-    display: none !important;
+    display: none;
   }
   
   .hero-title,
   .section-title {
-    color: #000 !important;
+    color: #000;
   }
 }

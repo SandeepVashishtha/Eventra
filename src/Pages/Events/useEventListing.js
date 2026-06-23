@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import mockEvents from "./eventsMockData.json";
+// import mockEvents from "./eventsMockData.json";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { getEventStatus } from "../../utils/eventUtils";
 import useDebounce from "../../hooks/useDebounce";
@@ -7,7 +7,7 @@ import { useStableFilters } from "../../hooks/useStableFilters";
 import {
   applyAdvancedFilters,
   getDateRange,
-  getDefaultFilters,
+  // getDefaultFilters,
   getPriceStats,
   normalizeAdvancedFilters,
 } from "../../utils/advancedFilterUtils";
@@ -203,8 +203,7 @@ const useEventListing = () => {
 
   const setAdvancedFilters = useCallback((filters) => {
     setAdvancedFiltersState(normalizeAdvancedFilters(filters));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [setAdvancedFiltersState, normalizeAdvancedFilters]);
 
   const priceStats = useMemo(() => getPriceStats(events), [events]);
   const dateRangeStats = useMemo(() => getDateRange(events), [events]);

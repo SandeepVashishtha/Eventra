@@ -26,6 +26,13 @@ const SponsorDashboard = () => {
   engagementRate: 0,
 });
   const [isSaving, setIsSaving] = useState(false);
+  const saveTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    };
+  }, []);
 
   // Mock analytics for the dashboard
   const [stats] = useState({
@@ -80,7 +87,7 @@ const SponsorDashboard = () => {
     e.preventDefault();
     setIsSaving(true);
     
-    setTimeout(() => {
+    saveTimeoutRef.current = setTimeout(() => {
       localStorage.setItem("eventra_sponsor_settings", JSON.stringify(settings));
       setIsSaving(false);
       toast.success("Booth settings updated successfully! Changes will reflect in the Virtual Venue.", {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
 import { ArrowRight, Pencil, CheckCircle, AlertCircle, Calendar, MapPin, Ticket as TicketIcon } from "lucide-react";
@@ -29,7 +29,7 @@ const EventCreation = () => {
     isSubmitting,
     submitError,
     submitSuccess,
-    submitEventForm,
+    // submitEventForm,
     validateForm,
     handleFieldBlur,
     isFormValid,
@@ -230,7 +230,7 @@ const EventCreation = () => {
                 {/* Banner Preview */}
                 <div className="relative h-72 bg-gray-200 dark:bg-gray-700">
                   {formData.bannerPreview ? (
-                    <img src={formData.bannerPreview} alt="Banner" className="w-full h-full object-cover" />
+                    <img src={formData.bannerPreview} alt="Banner" className="w-full h-full object-cover"  loading="lazy"/>
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-400">
                       No banner uploaded
@@ -245,7 +245,7 @@ const EventCreation = () => {
 
                 <div className="p-8 space-y-8">
                   <div className="space-y-4">
-                    <h2 className="text-3xl font-bold text-gray-900 dark:text-white break-words">
+                    <h2 className="text-3xl font-bold text-gray-900 dark:text-white wrap-break-word">
                       {formData.title}
                     </h2>
                     <div className="flex flex-wrap gap-2">

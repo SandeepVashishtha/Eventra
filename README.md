@@ -5,6 +5,11 @@ Modern event and hackathon platform for communities, organizers, and contributor
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![React](https://img.shields.io/badge/React-18.2-blue.svg)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-8.x-646CFF.svg)](https://vitejs.dev/)
+[![Stars](https://img.shields.io/github/stars/SandeepVashishtha/Eventra?style=flat&color=yellow)](https://github.com/SandeepVashishtha/Eventra/stargazers)
+[![Forks](https://img.shields.io/github/forks/SandeepVashishtha/Eventra?style=flat&color=orange)](https://github.com/SandeepVashishtha/Eventra/forks)
+[![Contributors](https://img.shields.io/github/contributors/SandeepVashishtha/Eventra?style=flat&color=green)](https://github.com/SandeepVashishtha/Eventra/graphs/contributors)
+[![Open Issues](https://img.shields.io/github/issues/SandeepVashishtha/Eventra?style=flat&color=red)](https://github.com/SandeepVashishtha/Eventra/issues)
+[![Open PRs](https://img.shields.io/github/issues-pr/SandeepVashishtha/Eventra?style=flat&color=blue)](https://github.com/SandeepVashishtha/Eventra/pulls)
 
 ---
 
@@ -12,13 +17,33 @@ Modern event and hackathon platform for communities, organizers, and contributor
 
 🚧 Eventra is actively maintained and welcomes contributions from the open-source community. Please check existing issues before creating new ones and follow the contribution guidelines when submitting pull requests.
 
+## Quick Start
+
+Get Eventra running locally in under a minute:
+
+```bash
+git clone https://github.com/SandeepVashishtha/Eventra.git
+cd Eventra
+npm install
+npm run dev
+```
+
+App runs at `http://localhost:3000`.
+
+> See [Local Development](#local-development) for detailed setup instructions and [Common Setup Issues](#common-setup-issues) for troubleshooting.
+
 ## Table of Contents
 
 - [Project Status Notice](#project-status-notice)
+- [Quick Start](#quick-start)
 - [Overview](#overview)
+- [Feature Showcase](#feature-showcase)
 - [Key Features](#key-features)
 - [Tech Stack](#tech-stack)
 - [Project Architecture](#project-architecture)
+  - [Frontend–Backend Communication](#frontendbackend-communication)
+  - [Authentication Flow](#authentication-flow)
+  - [Route Protection](#route-protection)
 - [Project Structure](#project-structure)
 - [Prerequisites](#prerequisites)
 - [Local Development](#local-development)
@@ -28,8 +53,12 @@ Modern event and hackathon platform for communities, organizers, and contributor
 - [Testing and Quality](#testing-and-quality)
 - [SSE Mock Server (Optional)](#sse-mock-server-optional)
 - [Deployment](#deployment)
+- [Roadmap](#roadmap)
 - [Documentation](#documentation)
 - [Contributing](#contributing)
+  - [Branch Naming](#branch-naming)
+  - [Commit Conventions](#commit-conventions)
+  - [PR Checklist](#pr-checklist)
 - [License](#license)
 - [Contributors](#contributors)
 - [Maintainers](#maintainers)
@@ -48,6 +77,18 @@ This repository contains the frontend application. The Spring Boot backend is ma
 - Backend repo: <https://github.com/SandeepVashishtha/Eventra-Backend>
 - Backend API base: <https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net>
 - Swagger: <https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net/swagger-ui/index.html>
+
+## Feature Showcase
+
+Eventra brings together event discovery, hackathon management, and community collaboration in a single platform:
+
+- **Event Management** — Browse, filter, and register for events with detailed views and scheduling.
+- **Hackathon Platform** — Dedicated hackathon section with team formation, submissions, and judging workflows.
+- **User Dashboard** — Track your contributions, achievements, points, and program progress with GSSoC integration.
+- **Organizer Dashboard** — Create and manage events, view registrations, and engage with attendees.
+- **Authentication** — Auth-aware routing with protected pages, role-based access, and session management.
+- **Notifications** — Real-time and offline-friendly notification system with SSE support.
+- **Feedback System** — Rate and review events with rich feedback forms and moderation.
 
 ## Key Features
 
@@ -81,27 +122,54 @@ graph TD
     Backend --> Azure[Azure Spring Boot]
     Client -.-> VercelRewrite[Vercel /api/* Rewrite]
     VercelRewrite --> Backend
+    Client --> Auth[Auth: JWT Middleware]
+    Auth --> Protected[Protected Routes]
+    Protected --> RoleCheck[Role-Based Access]
+    RoleCheck --> OrgDash[Organizer Dashboard]
+    RoleCheck --> UserDash[User Dashboard]
 ```
+
+### Frontend–Backend Communication
+
+- The React app communicates with the Spring Boot backend via REST API calls.
+- In production, `/api/*` requests are rewritten to the Azure-hosted backend via Vercel rewrites.
+- In development, Vite proxies API calls to `http://localhost:8080` (see `vite.config.js`).
+- Backend URL resolution priority: `BACKEND_URL` → `VITE_API_URL` → `REACT_APP_API_URL` (configured in `src/config/backendConfig.js`).
+
+### Authentication Flow
+
+- JWT-based authentication handled via Edge Middleware and context providers.
+- Protected routes check for valid tokens before rendering; unauthenticated users are redirected to login.
+- Role-aware behavior distinguishes organizers, contributors, and viewers.
+- The server-side `JWT_SECRET` environment variable is used for token signing and validation.
+
+### Route Protection
+
+- Route-level guards in `src/components/` enforce authentication and role requirements.
+- Public routes (home, events, hackathons) are accessible without authentication.
+- Protected routes (dashboards, organizer panels) require a valid JWT and optionally specific roles.
+- Middleware runs at the edge for production builds, validating tokens before requests reach the app.
 
 ## Project Structure
 
 ```text
 Eventra/
 |-- docs/                # Architecture, env setup, onboarding, security docs
-|-- public/              # Static assets
+|-- public/              # Static assets (images, icons, manifests)
 |-- scripts/             # Validation and automation scripts
 |-- src/
-|   |-- Pages/           # Route-level pages
-|   |-- components/      # Shared and feature components
-|   |-- context/         # React context providers
-|   |-- hooks/           # Custom hooks
-|   |-- utils/           # Utility modules
-|   |-- config/          # Runtime/env config helpers
-|   |-- App.jsx
-|   `-- index.jsx
-|-- tests/               # Node-based unit/integration tests
-|-- vite.config.js
-|-- vercel.json
+|   |-- Pages/           # Route-level pages (Home, Events, Hackathons, Leaderboard, etc.)
+|   |-- components/      # Shared and feature components (Navbar, Footer, Cards)
+|   |-- context/         # React context providers (Auth, Theme, Toast)
+|   |-- hooks/           # Custom React hooks (useCountdown, useOnlineStatus, etc.)
+|   |-- utils/           # Utility modules (formatting, validation, helpers)
+|   |-- config/          # Runtime/env config helpers (backend URL resolution)
+|   |-- App.jsx          # Root component with route definitions
+|   `-- index.jsx        # Application entry point
+|-- tests/               # Node-based unit/integration tests (Vitest)
+|-- e2e/                 # Playwright end-to-end tests
+|-- vite.config.js       # Vite configuration (aliases, proxy, plugins)
+|-- vercel.json          # Vercel deployment config (rewrites, headers)
 `-- README.md
 ```
 
@@ -128,17 +196,50 @@ cp .env.example .env
 > **Tip:** If your operating system does not support `cp`, copy the file manually or use `copy .env.example .env` on Windows.
 
 1. Start dev server:
-Set at least one backend URL before starting the app:
-
-```env
-VITE_API_URL=http://localhost:8080
-```
-
-1. Start dev server:
 
 npm run dev
 
 App runs at `http://localhost:3000` (configured in `vite.config.js`).
+
+## Common Setup Issues
+
+### Dependency Installation Warnings
+
+Some users may see peer dependency or engine warnings during `npm install`. In most cases, the installation still completes successfully.
+
+If installation fails, try:
+
+```bash
+npm install --legacy-peer-deps
+```
+
+### Port Already in Use
+
+If port `3000` is already occupied, stop the existing process or run:
+
+```bash
+npx kill-port 3000
+```
+
+### Vite Cache Issues
+
+If the frontend shows unexpected build or parsing errors, clear the Vite cache and restart the server:
+
+```bash
+rm -rf node_modules/.vite
+npm run dev
+```
+
+For Windows PowerShell:
+
+```powershell
+Remove-Item -Recurse -Force node_modules/.vite
+npm run dev
+```
+
+### Environment Variable Issues
+
+Make sure `.env` is created correctly from `.env.example` before starting the development server.
 
 ## Docker Development
 
@@ -170,19 +271,22 @@ The production-optimized build will be served via Nginx at `http://localhost:808
 
 ## Environment Variables
 
-Use `.env.example` as the source of truth. Backend configuration is explicit: set at least one of `BACKEND_URL`, `VITE_API_URL`, or `REACT_APP_API_URL`. The app no longer falls back to a production backend when these values are missing.
+Use `.env.example` as the source of truth. See [docs/ENV_SETUP_GUIDE.md](docs/ENV_SETUP_GUIDE.md) for detailed configuration information.
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `VITE_API_URL` | One of backend URLs | Backend API base URL used by Vite client builds and the dev proxy |
-| `BACKEND_URL` | One of backend URLs | Backend origin used by the Vite dev proxy |
-| `REACT_APP_API_URL` | One of backend URLs | Compatibility API base URL used by client requests and the dev proxy |
+| `BACKEND_URL` | No | Backend origin (highest priority, overrides others) |
+| `VITE_API_URL` | No | Backend API base URL (Vite - preferred) |
+| `REACT_APP_API_URL` | No | Backend API base URL (CRA compatibility) |
 | `REACT_APP_GITHUB_REPO` | No | Public repo identifier used in metadata |
 | `REACT_APP_PUBLIC_URL` | No | Canonical public app URL |
 | `REACT_APP_VAPID_PUBLIC_KEY` | No | Public web-push key |
 | `REACT_APP_CSP_REPORT_URI` | No | CSP report endpoint |
 | `REACT_APP_SENTRY_DSN` | No | Sentry browser error reporting DSN, used only in production |
 | `JWT_SECRET` | Yes (server-side) | JWT signing secret for Edge Middleware auth verification |
+| `DATABASE_URL` | Yes (server-side, production) | Database connection URL for persistent authentication storage |
+| `KV_REST_API_URL` | Yes (server-side, production) | Vercel KV/Redis REST API URL for distributed rate limiting |
+| `KV_REST_API_TOKEN` | Yes (server-side, production) | Vercel KV/Redis REST API token for distributed rate limiting |
 | `BLOCKED_COUNTRIES` | No (server-side) | Comma-separated ISO 3166-1 alpha-2 country codes to block |
 
 Examples:
@@ -196,6 +300,8 @@ or:
 ```env
 BACKEND_URL=https://api.example.com
 ```
+
+**Backend Configuration**: All backend endpoint configuration is centralized in `src/config/backendConfig.js`. The system resolves backend URLs in priority order: `BACKEND_URL` → `VITE_API_URL` → `REACT_APP_API_URL`. In development, defaults to `http://localhost:8080`. In production, no automatic fallback - configuration must be explicitly set to avoid configuration drift.
 
 Security note: never place private secrets in `REACT_APP_*` or `VITE_*` variables because they are exposed to the client bundle.
 
@@ -256,9 +362,13 @@ For local realtime testing:
 node sse-mock-server.js
 ```
 
+Required environment variables:
+
+- `JWT_SECRET` - JWT signing secret for token generation and validation. Generate with: `openssl rand -base64 32`
+
 Optional environment flags:
 
-- `SSE_MOCK_PORT` (default `4001`)
+- `SSE_MOCK_PORT` (default `8080`)
 - `ALLOWED_ORIGIN` (default `http://localhost:3000`)
 - `SSE_DEBUG` (`true` or `false`)
 
@@ -271,6 +381,26 @@ Vercel configuration is checked in via [`vercel.json`](vercel.json):
 - `/api/*` is rewritten to the hosted Spring Boot backend (the sole API provider)
 - No serverless functions are deployed — the `api/` directory was removed as dead code
 
+## Roadmap
+
+### Current Goals
+- Expand GSSoC contributor dashboard with real-time leaderboard updates
+- Improve event discovery with advanced filtering and search
+- Enhance organizer tools for event analytics
+
+### Planned Features
+- Mobile responsive redesign for core pages
+- Dark mode refinements across all surfaces
+- In-app notification system with email digests
+- Team collaboration features for hackathons
+- Performance optimizations (code splitting, lazy loading)
+
+### Future Improvements
+- Progressive Web App (PWA) support
+- Multi-language internationalization (i18n)
+- Integration with calendar apps (Google Calendar, Outlook)
+- Community forums and discussion boards
+
 ## Documentation
 
 - [Architecture and Roles](docs/ARCHITECTURE_AND_ROLES.md)
@@ -281,9 +411,55 @@ Vercel configuration is checked in via [`vercel.json`](vercel.json):
 
 ## Contributing
 
+We welcome contributions from the community! Please follow our guidelines to keep the project maintainable.
+
 - Follow [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
-- Open focused pull requests with clear scope and test notes
 - Issues may be auto-unassigned after inactivity by workflow: [auto-unassign-stale-issues.yml](.github/workflows/auto-unassign-stale-issues.yml)
+
+### Branch Naming
+
+Use descriptive branch names with a type prefix:
+
+| Prefix | Purpose |
+| --- | --- |
+| `fix/` | Bug fixes |
+| `feat/` | New features |
+| `docs/` | Documentation changes |
+| `refactor/` | Code refactoring |
+| `chore/` | Maintenance, dependencies |
+| `test/` | Test additions or fixes |
+
+Example: `feat/add-event-filters`, `fix/navbar-overlap`, `docs/update-readme`
+
+### Commit Conventions
+
+Use conventional commit messages:
+
+```
+<type>: <short description>
+
+<optional longer description>
+```
+
+Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`
+
+Examples:
+- `feat: add event search with date filters`
+- `fix: resolve navbar overlap on mobile`
+- `docs: update environment setup guide`
+- `refactor: extract common card component`
+
+### PR Checklist
+
+Before opening a pull request:
+
+- [ ] Changes are scoped to a single purpose (one fix or feature per PR)
+- [ ] Code follows existing conventions (linted, formatted)
+- [ ] All tests pass: `npm run check`
+- [ ] New functionality includes tests where applicable
+- [ ] UI changes have been tested in light and dark mode
+- [ ] Commit messages follow conventional format
+- [ ] PR description clearly explains what and why
 
 ## License
 
