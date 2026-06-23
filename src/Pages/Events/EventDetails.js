@@ -36,7 +36,7 @@ import useRecentlyViewed from "../../hooks/useRecentlyViewed";
 import { apiUtils, API_ENDPOINTS } from "../../config/api";
 import mockEvents from "./eventsMockData.json";
 import CopyButton from '../../components/ui/CopyButton';
-import { Share2 } from "lucide-react";
+
 const isRequestCanceled = (error, signal) =>
   signal?.aborted ||
   error?.name === "AbortError" ||
