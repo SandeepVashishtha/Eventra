@@ -59,7 +59,7 @@ export const createSecurityHeaders = () => {
   const cspValue =
     "default-src 'self'; " +
     "script-src 'self' https://accounts.google.com https://cdn.jsdelivr.net; " +
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+    "style-src 'self' https://fonts.googleapis.com; " +
     "img-src 'self' data: https:; " +
     "font-src 'self' https://fonts.gstatic.com; " +
     "connect-src 'self' https://api.github.com " + cspOrigins + "; " +
