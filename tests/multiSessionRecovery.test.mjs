@@ -29,6 +29,21 @@ const createStorage = () => {
 const t1 = new Date("2026-06-05T10:00:00.000Z");
 const t2 = new Date("2026-06-05T12:15:00.000Z");
 
+const originalDate = globalThis.Date;
+class MockDate extends originalDate {
+  constructor(...args) {
+    if (args.length === 0) {
+      super("2026-06-05T12:15:00.000Z");
+    } else {
+      super(...args);
+    }
+  }
+  static now() {
+    return new originalDate("2026-06-05T12:15:00.000Z").getTime();
+  }
+}
+globalThis.Date = MockDate;
+
 console.log("multiSessionRecovery tests starting...");
 
 const eventDraft = createRecoverySession({
@@ -137,3 +152,4 @@ assert.equal(filterRecoverySessions([eventDraft, profileDraft], "profile").lengt
 assert.equal(sortRecoverySessions([eventDraft, profileDraft])[0].id, "session_456");
 
 console.log("multiSessionRecovery tests passed");
+globalThis.Date = originalDate;

@@ -10,6 +10,14 @@ import path from "node:path";
 import fs from "node:fs";
 
 export async function resolve(specifier, context, nextResolve) {
+  if (specifier.includes("api/auth/jwt-config.js")) {
+    const realPath = path.resolve("api/auth/_jwt-config.js");
+    return {
+      url: pathToFileURL(realPath).href,
+      shortCircuit: true
+    };
+  }
+
   if (context.parentURL && (
     context.parentURL.includes("useOfflineSync.test.mjs") ||
     context.parentURL.includes("useOfflineSync.js") ||

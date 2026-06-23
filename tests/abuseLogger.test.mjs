@@ -72,7 +72,7 @@ describe("abuseLogger robustness", () => {
     // Populate with 105 logs
     const initialLogs = Array.from({ length: 105 }, (_, i) => ({
       type: "DUMMY",
-      timestamp: Date.now() - i,
+      timestamp: Date.now() - 120000 - i,
       details: { i },
     }));
     mockStorage.setItem("eventra_abuse_logs", JSON.stringify(initialLogs));

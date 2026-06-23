@@ -23,7 +23,7 @@
   .animate-spin,
   [class*="animate-"],
   [class*="motion-"] {
-    display: none !important;
+    display: none;
   }
 
   /* Force print-friendly colors */
@@ -37,10 +37,10 @@
   [class*="bg-zinc"],
   [class*="bg-slate"],
   [class*="dark:"] {
-    background: white !important;
-    color: black !important;
-    box-shadow: none !important;
-    text-shadow: none !important;
+    background: white;
+    color: black;
+    box-shadow: none;
+    text-shadow: none;
   }
 
   /* Make links show their URLs */
@@ -74,20 +74,20 @@
 
   /* Ensure images print */
   img {
-    max-width: 100% !important;
+    max-width: 100%;
     page-break-inside: avoid;
   }
 
   /* Remove Tailwind dark mode backgrounds */
   .dark,
   [data-theme="dark"] {
-    background: white !important;
-    color: black !important;
+    background: white;
+    color: black;
   }
 
   /* Show print-only elements */
   .print-only {
-    display: block !important;
+    display: block;
   }
 }
 
