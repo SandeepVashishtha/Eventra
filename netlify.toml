@@ -1,4 +1,9 @@
 # Netlify Configuration File
+#
+# NOTE: Keep CSP in sync with middleware/csp.js (authoritative source).
+#       Security headers here are the first defense at the edge;
+#       middleware/csp.js adds dynamic backend origins at request time.
+#       When deploying on Netlify, ensure BACKEND_URL env var is set.
 
 [build]
   command = "npm run build"
@@ -24,7 +29,7 @@
     Permissions-Policy = "camera=(), microphone=(), geolocation=(), browsing-topics=(), interest-cohort=(), payment=(), usb=(), bluetooth=()"
     Cross-Origin-Opener-Policy = "same-origin-allow-popups"
     Cross-Origin-Resource-Policy = "same-site"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' https://accounts.google.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.github.com; frame-src 'self' https://accounts.google.com"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; style-src-elem 'self' https://fonts.googleapis.com; style-src-attr 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://api.github.com https://accounts.google.com https://www.googleapis.com https://api.emailjs.com; frame-src 'self' https://accounts.google.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests"
 
 [[headers]]
   for = "/"
