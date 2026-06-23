@@ -6,7 +6,7 @@
  * in QR codes without leaking internal identifiers.
  */
 
-import { getJwtSecret } from "../auth/_jwt-config.js";
+import { getJwtSecret } from "./jwtSecret.js";
 import jwt from "jsonwebtoken";
 
 /**
