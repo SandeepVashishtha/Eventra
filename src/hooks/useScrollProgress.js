@@ -32,6 +32,7 @@ export function useScrollProgress() {
   const rafRef = useRef(null);
 
   useEffect(() => {
+    if (typeof document === 'undefined' || typeof window === 'undefined') return;
     const update = () => {
       const doc = document.documentElement;
       const scrollTop = window.scrollY || doc.scrollTop || 0;
