@@ -1,3 +1,4 @@
+import EventDuration from "../../components/common/EventDuration";
 import { getEventDuration } from "../../utils/eventDurationUtils";
 import { memo, useCallback, useEffect, useId, useState } from "react";
 import { logger } from "../../utils/logger";
@@ -326,11 +327,7 @@ const durationText = getEventDuration(event);
               {new Date(event.date).toLocaleDateString("en-US", {
                 weekday: "short", day: "numeric", month: "short", year: "numeric",
               })}
-              {durationText && (
-  <span className="text-[11px] font-medium text-indigo-600 dark:text-indigo-400">
-    Duration: {durationText}
-  </span>
-)}
+              <EventDuration duration={durationText} /><EventDuration duration={durationText} />
             </span>
           </div>
         </div>
