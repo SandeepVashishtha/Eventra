@@ -1,3 +1,4 @@
+import StatusBadge from "../../components/common/StatusBadge";
 import "./EventDetails.print.css";
 import CountdownTimer from "../../components/common/CountdownTimer";
 import { useEffect, useState, useCallback, useRef } from "react";
@@ -557,8 +558,10 @@ ${window.location.href}
                   <Tag className="h-5 w-5 text-indigo-600" />
                   <div>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Status</p>
-                    <p className="font-semibold capitalize">{event.status}</p>
-                  </div>
+                    <div className="mt-1">
+                      <StatusBadge status={event.status} />
+                      </div>
+                      </div>
                 </div>
 
                 {/* Event Countdown */}
