@@ -32,21 +32,33 @@ const EventDetailsPage = () => {
   const [waitlistCount, setWaitlistCount] = useState(0);
 
   useEffect(() => {
+    let isCancelled = false;
     if (userId && event) {
       import("../../utils/waitlistUtils").then(({ getQueuePosition }) => {
-        setQueuePosition(getQueuePosition(event.id, userId));
-      }).catch(() => setQueuePosition(-1));
+        if (!isCancelled) setQueuePosition(getQueuePosition(event.id, userId));
+      }).catch(() => { 
+        if (!isCancelled) setQueuePosition(-1); 
+      });
     } else {
       setQueuePosition(-1);
     }
+    return () => { 
+      isCancelled = true; 
+    };
   }, [userId, event, waitlistUpdated]);
 
   useEffect(() => {
+    let isCancelled = false;
     if (event) {
       import("../../utils/waitlistUtils").then(({ getEventWaitlist }) => {
-        setWaitlistCount(getEventWaitlist(event.id).length);
-      }).catch(() => setWaitlistCount(0));
+        if (!isCancelled) setWaitlistCount(getEventWaitlist(event.id).length);
+      }).catch(() => {
+        if (!isCancelled) setWaitlistCount(0);
+      });
     }
+    return () => {
+      isCancelled = true;
+    };
   }, [event, waitlistUpdated]);
 
   const handleLeaveWaitlist = async () => {
@@ -100,7 +112,7 @@ const EventDetailsPage = () => {
   };
 
   useEffect(() => {
-    let isCancelled = false;
+    let isCancelled = false; 
     const requestId = latestRequestIdRef.current + 1;
     latestRequestIdRef.current = requestId;
     const controller = new AbortController();
