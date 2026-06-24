@@ -84,7 +84,9 @@ const generateUserId = () => crypto.randomUUID();
 
 function setCookie(res, token) {
   const isProd = process.env.NODE_ENV === "production";
-  const cookieValue = `token=${token}; HttpOnly; Path=/; Max-Age=${JWT_COOKIE_MAX_AGE_SECONDS}; SameSite=Strict${isProd ? '; Secure' : ''}`;
+  const sameSite = process.env.COOKIE_SAME_SITE || "Strict";
+  const secureFlag = isProd || sameSite === "None" ? "; Secure" : "";
+  const cookieValue = `token=${token}; HttpOnly; Path=/; Max-Age=${JWT_COOKIE_MAX_AGE_SECONDS}; SameSite=${sameSite}${secureFlag}`;
   try {
     if (typeof res.setHeader === 'function') {
       res.setHeader('Set-Cookie', cookieValue);
