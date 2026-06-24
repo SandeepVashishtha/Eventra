@@ -1,3 +1,4 @@
+import { getEventDuration } from "../../utils/eventDurationUtils";
 import { memo, useCallback, useEffect, useId, useState } from "react";
 import { logger } from "../../utils/logger";
 import { getUserTimezone } from "../../utils/timezoneUtils";
@@ -98,33 +99,7 @@ const EventCard = ({ event }) => {
       });
   };
 
-  const computedStatus = getEventStatus(event);
-  const canSetReminder = isBookmarked || isRegistered(event.id);
-  const startDate = event.startDate
-  ? new Date(event.startDate)
-  : new Date(event.date);
-
-const endDate = event.endDate
-  ? new Date(event.endDate)
-  : null;
-
-let durationText = "";
-
-if (endDate && !Number.isNaN(endDate.getTime())) {
-  const diffDays = Math.ceil(
-    (endDate - startDate) / (1000 * 60 * 60 * 24)
-  );
-
-  if (diffDays <= 1) {
-    durationText = "1 Day";
-  } else if (diffDays < 7) {
-    durationText = `${diffDays} Days`;
-  } else {
-    durationText = `${Math.ceil(diffDays / 7)} Week${
-      Math.ceil(diffDays / 7) > 1 ? "s" : ""
-    }`;
-  }
-}
+const durationText = getEventDuration(event);
 
   useEffect(() => {
     setIsBookmarked(isEventBookmarked(event.id));
