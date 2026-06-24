@@ -17,6 +17,7 @@ import { HelmetProvider } from "react-helmet-async";
 // Initialize Global Runtime Monitoring
 initializeGlobalErrorHandling();
 
+// Fixed Normalized ApiError Object Mismatch on Waitlist conflict errors.
 // Refactored InMemoryLockManager implementation to prevent queue expiration race conditions.
 
 

@@ -334,4 +334,31 @@ console.log("Running Waitlist System unit tests...");
   console.log("✓ Test 11: Promote Record Online Server Error");
 }
 
+// 12. Join Waitlist Server Conflict (409) User-Friendly Error
+{
+  resetAll();
+  const eventId = 5;
+  const user = { id: "user-12", email: "user12@example.com", fullName: "User Twelve" };
+
+  const { apiUtils, ApiError } = await import("../src/config/api.js");
+  const originalPost = apiUtils.post;
+  
+  apiUtils.post = async () => {
+    throw new ApiError("Conflict", { status: 409 });
+  };
+
+  await assert.rejects(
+    async () => {
+      await joinWaitlist(eventId, user, {});
+    },
+    (err) => {
+      assert.equal(err.message, "You are already on the waitlist for this event.");
+      return true;
+    }
+  );
+
+  apiUtils.post = originalPost;
+  console.log("✓ Test 12: Join Waitlist Server Conflict (409) User-Friendly Error");
+}
+
 console.log("\nAll Waitlist unit tests passed successfully! ✓");

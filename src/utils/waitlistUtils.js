@@ -158,53 +158,18 @@ export const incrementEventAttendees = (eventId) => {
   }
 };
 
-// Join waitlist - tries server first, falls back to localStorage offline
-export const joinWaitlist = async (eventId, user, registrationForm = {}) => {
-  const id = parseEventId(eventId);
-  const userId = user.id || user.email;
-  if (!userId) throw new Error("Authentication required to join waitlist.");
+// Helper to extract a user name from the user object
+const getUserName = (user) => {
+  return (
+    user?.fullName ||
+    `${user?.firstName || ""} ${user?.lastName || ""}`.trim() ||
+    user?.username ||
+    "Anonymous"
+  );
+};
 
-  try {
-    const response = await apiUtils.post(`${API_ENDPOINTS.EVENTS.ALL}/${id}/waitlist`, {
-      userId,
-      name: user.fullName || `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.username || "Anonymous",
-      email: user.email,
-      phone: registrationForm.phone || "",
-      eventTitle: registrationForm.eventTitle || "the event",
-    });
-    if (response.ok) {
-      const newEntry = {
-        userId,
-        userName:
-          user.fullName ||
-          `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
-          user.username ||
-          "Anonymous",
-        userEmail: user.email,
-        phone: registrationForm.phone || "",
-        eventId: id,
-        joinedAt: new Date().toISOString(),
-        status: "waiting",
-      };
-      const records = getGlobalWaitlist();
-      records.push(newEntry);
-      saveGlobalWaitlist(records);
-      await addLocalNotification("Waitlist Joined", `You have successfully joined the waitlist for ${registrationForm.eventTitle || "the event"}.`);
-      return newEntry;
-    }
-    throw new Error(response.data?.message || "Server rejected waitlist join");
-  } catch (error) {
-    if (error.response?.status === 409) {
-      throw new Error("You are already on the waitlist for this event.");
-    }
-    if (error.isNetworkError || error.isTimeout) {
-      // Fall through to offline fallback
-    } else {
-      throw error;
-    }
-  }
-
-  // Offline fallback: store locally
+// Helper for joinWaitlist offline fallback
+const joinWaitlistOffline = async (id, userId, user, registrationForm) => {
   const legacyKey = `my_events_${userId}`;
   const userRegKey = getOrMigrateKey("my_events", userId, legacyKey);
   try {
@@ -227,13 +192,9 @@ export const joinWaitlist = async (eventId, user, registrationForm = {}) => {
 
   const newEntry = {
     userId,
-    userName:
-      user.fullName ||
-      `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
-      user.username ||
-      "Anonymous",
-    userEmail: user.email,
-    phone: registrationForm.phone || "",
+    userName: getUserName(user),
+    userEmail: user?.email,
+    phone: registrationForm?.phone || "",
     eventId: id,
     joinedAt: new Date().toISOString(),
     status: "waiting",
@@ -244,10 +205,56 @@ export const joinWaitlist = async (eventId, user, registrationForm = {}) => {
 
   await addLocalNotification(
     "Waitlist Joined (Offline)",
-    `You have been added to the offline waitlist for ${registrationForm.eventTitle || "the event"}. It will sync when you are back online.`
+    `You have been added to the offline waitlist for ${registrationForm?.eventTitle || "the event"}. It will sync when you are back online.`
   );
 
   return newEntry;
+};
+
+// Join waitlist - tries server first, falls back to localStorage offline
+export const joinWaitlist = async (eventId, user, registrationForm = {}) => {
+  const id = parseEventId(eventId);
+  const userId = user?.id || user?.email;
+  if (!userId) throw new Error("Authentication required to join waitlist.");
+
+  try {
+    const response = await apiUtils.post(`${API_ENDPOINTS.EVENTS.ALL}/${id}/waitlist`, {
+      userId,
+      name: getUserName(user),
+      email: user?.email,
+      phone: registrationForm.phone || "",
+      eventTitle: registrationForm.eventTitle || "the event",
+    });
+    if (response.ok) {
+      const newEntry = {
+        userId,
+        userName: getUserName(user),
+        userEmail: user?.email,
+        phone: registrationForm.phone || "",
+        eventId: id,
+        joinedAt: new Date().toISOString(),
+        status: "waiting",
+      };
+      const records = getGlobalWaitlist();
+      records.push(newEntry);
+      saveGlobalWaitlist(records);
+      await addLocalNotification("Waitlist Joined", `You have successfully joined the waitlist for ${registrationForm.eventTitle || "the event"}.`);
+      return newEntry;
+    }
+    throw new Error(response.data?.message || "Server rejected waitlist join");
+  } catch (error) {
+    const status = error.status || error.response?.status;
+    if (status === 409) {
+      throw new Error("You are already on the waitlist for this event.");
+    }
+    if (error.isNetworkError || error.isTimeout) {
+      // Fall through to offline fallback
+    } else {
+      throw error;
+    }
+  }
+
+  return joinWaitlistOffline(id, userId, user, registrationForm);
 };
 
 // Leave waitlist - tries server first, falls back to localStorage
