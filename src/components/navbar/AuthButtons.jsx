@@ -49,19 +49,17 @@ const AuthButtons = () => {
           aria-expanded={isOpen}
           aria-haspopup="menu"
           aria-controls={isOpen ? menuId : undefined}
-          className="flex items-center gap-2 rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50/50 hover:bg-zinc-100 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900/40 dark:hover:bg-zinc-800 dark:hover:border-zinc-700 text-text-light hover:text-text transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary px-3 py-1.5 text-sm font-medium"
         >
-          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-full text-sm font-medium text-text-light hover:bg-bg-secondary hover:text-text transition-colors">
-            {t("nav.profile")}
-            <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
-          </div>
+          <span>{t("nav.profile")}</span>
+          <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
         </button>
 
         {isOpen && (
           <div
             id={menuId}
             role="menu"
-            className="absolute right-0 mt-3 w-64 origin-top-right rounded-xl border border-border bg-navbar shadow-lg p-2 z-50 animate-in fade-in zoom-in-95 duration-100"
+            className="absolute right-0 mt-3 w-64 origin-top-right rounded-xl border border-zinc-100 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md shadow-lg p-2 z-50 animate-in fade-in zoom-in-95 duration-100"
           >
             <div className="space-y-1">
               <Link

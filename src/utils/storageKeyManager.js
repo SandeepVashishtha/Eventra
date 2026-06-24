@@ -35,7 +35,7 @@ export const getOpaqueKey = (namespace, userId) => {
   }
 
   const isTest = typeof process !== "undefined" &&
-    (process.env.NODE_ENV === "test" || process.env.JWT_SECRET === "test_secret") &&
+    (process.env.NODE_ENV === "test" || process.env.VITE_TEST_MODE === "true") &&
     process.env.TEST_OPACITY !== "true";
 
   if (isTest) {

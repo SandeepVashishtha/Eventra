@@ -15,7 +15,6 @@
  * operations will throw errors rather than silently falling back to insecure storage.
  */
 
-import Redis from "ioredis";
 import {
   isDistributedRateLimitStorageConfigured,
   isInMemoryRateLimitStorageAllowed,
@@ -23,6 +22,7 @@ import {
 
 // Redis client singleton (lazy initialization)
 let redisClient = null;
+let RedisClass = null;
 
 // In-memory fallback storage (only for development/testing)
 const inMemoryStore = new Map();
@@ -42,20 +42,33 @@ function registerCleanupHook() {
       redisClient = null;
     }
   };
-  process.on("exit", cleanup);
-  process.on("SIGINT", cleanup);
-  process.on("SIGTERM", cleanup);
+  if (typeof process !== "undefined" && typeof process.on === "function") {
+    process.on("beforeExit", cleanup);
+    process.on("SIGINT", () => {
+      cleanup();
+      process.exit(0);
+    });
+    process.on("SIGTERM", () => {
+      cleanup();
+      process.exit(0);
+    });
+  }
 }
 
 /**
  * Gets or creates the Redis client.
  *
- * @returns {Redis|null} Redis client or null if not configured
+ * @returns {Promise<Redis|null>} Redis client or null if not configured
  * @throws {Error} If Redis connection fails
  */
-function getRedisClient() {
+async function getRedisClient() {
   if (redisClient !== null) {
     return redisClient;
+  }
+
+  // Check if we are running in an environment that supports ioredis (Node.js runtime)
+  if (typeof process === "undefined" || !process.release || process.env.EDGE_RUNTIME) {
+    return null;
   }
 
   registerCleanupHook();
@@ -71,7 +84,14 @@ function getRedisClient() {
       return null;
     }
 
-    const client = new Redis(redisUrl, {
+    if (!RedisClass) {
+      // Use webpackIgnore and @vite-ignore to prevent bundlers from statically analyzing
+      // and including ioredis and its Node.js dependencies in Edge/browser builds.
+      const module = await import(/* webpackIgnore: true */ /* @vite-ignore */ "ioredis");
+      RedisClass = module.default || module;
+    }
+
+    const client = new RedisClass(redisUrl, {
       tls: redisUrl.startsWith("rediss://") ? {} : undefined,
       maxRetriesPerRequest: 3,
       retryStrategy: (times) => {
@@ -103,11 +123,21 @@ function getRedisClient() {
  *
  * @param {string} key - The rate-limit key (e.g., IP address)
  * @param {number} windowMs - Time window in milliseconds
+ * @param {Object} options - Optional configuration
+ * @param {boolean} options.forceInMemoryFallback - Skip Redis and use in-memory directly
  * @returns {Promise<{count: number, ttl: number}>} Current count and time-to-live
- * @throws {Error} If storage operation fails in production
+ * @throws {Error} If storage operation fails and fallback is not allowed
  */
-export async function incrementWithExpiration(key, windowMs) {
-  const redis = getRedisClient();
+export async function incrementWithExpiration(key, windowMs, options = {}) {
+  const { forceInMemoryFallback = false } = options;
+
+  // If forced to use in-memory, skip Redis entirely
+  if (forceInMemoryFallback) {
+    console.warn("[RATE_LIMIT] Using forced in-memory fallback for rate limiting");
+    return incrementInMemory(key, windowMs);
+  }
+
+  const redis = await getRedisClient();
 
   if (redis) {
     // Use Redis for distributed storage
@@ -136,23 +166,35 @@ export async function incrementWithExpiration(key, windowMs) {
 
       return { count, ttl: windowMs };
     } catch (err) {
-      // In production, fail closed - do not silently fall back
-      if (process.env.NODE_ENV === "production") {
-        console.error("[rate-limit-storage.js] Redis operation failed in production:", err);
+      // Log the Redis failure
+      console.error("[RATE_LIMIT] Distributed storage (Redis) unavailable:", err.message);
+      
+      // Check if in-memory fallback is allowed based on fail mode
+      const failMode = process.env.RATE_LIMIT_FAIL_MODE?.toLowerCase()?.trim() || "fallback";
+      
+      if (failMode === "closed") {
+        // Fail-closed mode: reject when storage fails
         throw new Error(
-          "Rate-limit storage unavailable. Cannot safely enforce rate limits without distributed storage."
+          "Rate-limit storage unavailable. Cannot safely enforce rate limits without distributed storage (fail-closed mode)."
         );
       }
-      // In development/test, fall back to in-memory storage
-      console.warn("[rate-limit-storage.js] Redis unavailable, falling back to in-memory storage:", err.message);
+      
+      // For "fallback" and "open" modes, fall back to in-memory
+      console.warn("[RATE_LIMIT] Falling back to in-memory rate limiting");
       return incrementInMemory(key, windowMs);
     }
   } else {
     // No Redis configured
     if (!isInMemoryRateLimitStorageAllowed()) {
-      throw new Error(
-        "Distributed rate-limit storage is required in production. Configure RATE_LIMIT_REDIS_URL."
-      );
+      const failMode = process.env.RATE_LIMIT_FAIL_MODE?.toLowerCase()?.trim() || "fallback";
+      
+      if (failMode === "closed") {
+        throw new Error(
+          "Distributed rate-limit storage is required in production. Configure RATE_LIMIT_REDIS_URL (fail-closed mode)."
+        );
+      }
+      
+      console.warn("[RATE_LIMIT] Distributed storage not configured, using in-memory fallback");
     }
     return incrementInMemory(key, windowMs);
   }
@@ -188,7 +230,7 @@ function incrementInMemory(key, windowMs) {
  * @returns {Promise<void>}
  */
 export async function resetKey(key) {
-  const redis = getRedisClient();
+  const redis = await getRedisClient();
 
   if (redis) {
     try {
@@ -208,18 +250,26 @@ export async function resetKey(key) {
  * @returns {Promise<void>}
  */
 export async function clearAll() {
-  const redis = getRedisClient();
+  const redis = await getRedisClient();
 
   if (redis) {
     try {
-      // Delete all keys with the rate-limit prefix (if we use one)
-      // For now, we'll just flush the database in test mode
-      if (process.env.NODE_ENV === "test") {
-        await redis.flushdb();
+      // Check if Redis is connected before attempting operations
+      if (redis.status === "ready") {
+        // Delete all keys with the rate-limit prefix (if we use one)
+        // For now, we'll just flush the database in test mode
+        if (process.env.NODE_ENV === "test") {
+          await redis.flushdb();
+        }
+      } else {
+        // Redis client exists but not connected, fall back to in-memory
+        console.warn("[rate-limit-storage.js] Redis not connected, clearing in-memory store instead");
+        inMemoryStore.clear();
       }
     } catch (err) {
       console.error("[rate-limit-storage.js] Failed to clear Redis:", err);
-      throw err;
+      // Fall back to clearing in-memory store
+      inMemoryStore.clear();
     }
   } else {
     inMemoryStore.clear();
