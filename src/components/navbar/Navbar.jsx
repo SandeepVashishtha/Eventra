@@ -113,12 +113,12 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
       <nav
         ref={navRef}
         aria-label="Primary navigation"
-        className={`sticky top-0 z-50 w-full transition-all duration-300 bg-white/80 backdrop-blur-md dark:bg-zinc-900/80 border-b border-zinc-100 dark:border-zinc-800 ${
+        className={`sticky top-0 z-50 w-full transition-all duration-300 bg-white/70 backdrop-blur-md dark:bg-black/70 border-b border-gray-200/50 dark:border-zinc-800/50 ${
           scrolled ? "shadow-sm" : ""
         }`}
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid h-16 grid-cols-[auto_1fr_auto] items-center gap-6">
+          <div className="flex h-16 items-center justify-between gap-2 lg:gap-4">
 
             {/* Logo */}
             <Link
@@ -144,7 +144,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             </Link>
 
             {/* Desktop Navigation */}
-            <div className="hidden lg:flex justify-center overflow-hidden">
+            <div className="hidden lg:flex flex-1 justify-center shrink-0 mx-2">
               <DesktopNavbar />
             </div>
 
