@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
-import { api } from "../utils/apiUtils";
+import { apiUtils } from "../config/api";
 import { logError } from "../utils/errorLogger";
 import { toast } from "react-toastify";
 
@@ -14,7 +14,7 @@ const useAnalytics = () => {
     if (!token) { setLoading(false); return; }
     const fetchAnalytics = async () => {
       try {
-        const res = await api.get("/analytics/summary");
+        const res = await apiUtils.get("/analytics/summary");
         setAnalytics(res.data);
       } catch (err) {
         logError(err, null, { hook: "useAnalytics", action: "fetchAnalytics" });

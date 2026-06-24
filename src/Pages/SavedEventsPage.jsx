@@ -1,7 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useState, useMemo } from "react";
-import { Link } from "react-router-dom";
 import { Download, Inbox } from "lucide-react";
 import EmptyState from "../components/common/EmptyState";
 import { useAuth } from "../context/AuthContext";
@@ -13,8 +11,6 @@ const SavedEventsPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { bookmarks, toggleBookmark } = useBookmarks(user?.id || user?.email || "guest");
-  // const navigate = useNavigate();
-  const { bookmarks, toggleBookmark } = useBookmarks();
   const [sortBy, setSortBy] = useState("savedAt");
   const [exporting, setExporting] = useState(false);
   const exportTimeoutRef = useRef(null);
