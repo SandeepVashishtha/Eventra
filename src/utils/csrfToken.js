@@ -37,6 +37,7 @@ export const getCSRFEnforcementMode = () => {
     );
     return defaultMode;
   }
+  return "strict";
   
   return configuredMode || defaultMode;
 };
