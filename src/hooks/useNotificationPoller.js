@@ -6,6 +6,7 @@ import usePageVisibility from "./usePageVisibility";
 import seedNotifications from "../data/mockNotifications.json";
 import { safeJsonParse } from "../utils/safeJsonParse";
 import { getNotificationMessage } from "../utils/notificationPreferences";
+import { get as idbGet, del as idbDel } from "idb-keyval";
 
 const POLLING_INTERVAL_MS = 60_000;
 const MAX_SEEN_IDS = 500;
@@ -243,7 +244,6 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
   useEffect(() => {
     const migrateLegacy = async () => {
       try {
-        const { get: idbGet, del: idbDel } = await import("idb-keyval");
         const raw = await idbGet("eventra_notifications");
         if (raw) {
           const legacy = safeJsonParse(raw, []);
