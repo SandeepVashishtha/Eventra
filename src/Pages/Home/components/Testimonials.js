@@ -1,5 +1,5 @@
 import { Quote, Star, Play, Pause, ChevronLeft, ChevronRight, Share2, CheckCircle, ExternalLink } from "lucide-react";
-import { useRef, useEffect, useState, useMemo, useCallback } from "react";
+import { useRef, useEffect, useState, useMemo, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 // 🎯 Enhanced testimonials data with more metadata
@@ -456,4 +456,4 @@ const ModernTestimonialTrain = () => {
   );
 };
 
-export default ModernTestimonialTrain;
+export default memo(ModernTestimonialTrain);

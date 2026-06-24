@@ -58,3 +58,25 @@ export const assertDistributedRateLimitStorageConfigured = () => {
 export const isInMemoryRateLimitStorageAllowed = () => {
   return process.env.NODE_ENV !== "production";
 };
+
+/**
+ * Gets the rate limit failure mode configuration.
+ *
+ * Determines how the rate limiter behaves when distributed storage is unavailable:
+ * - "fallback": Try distributed storage, fall back to in-memory, then allow (default)
+ * - "open": Allow requests when storage fails (no rate limiting during outages)
+ * - "closed": Reject requests when storage fails (current fail-closed behavior)
+ *
+ * @returns {string} The failure mode: "fallback", "open", or "closed"
+ */
+export const getRateLimitFailMode = () => {
+  const mode = process.env.RATE_LIMIT_FAIL_MODE?.toLowerCase()?.trim();
+  const validModes = ["fallback", "open", "closed"];
+  
+  if (mode && validModes.includes(mode)) {
+    return mode;
+  }
+  
+  // Default to fallback mode for improved resiliency
+  return "fallback";
+};

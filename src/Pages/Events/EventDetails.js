@@ -1,3 +1,4 @@
+import StatusBadge from "../../components/common/StatusBadge";
 import "./EventDetails.print.css";
 import CountdownTimer from "../../components/common/CountdownTimer";
 import { useEffect, useState, useCallback, useRef } from "react";
@@ -297,6 +298,18 @@ ${window.location.href}
 
   const canSetReminder = isEventBookmarked(event.id) || isRegistered(event.id);
   const isRegistrationClosed = isEventRegistrationClosed(event);
+  const registrationEnd = event.registrationEnd
+  ? new Date(event.registrationEnd)
+  : null;
+
+const hoursLeft = registrationEnd
+  ? Math.ceil((registrationEnd - new Date()) / (1000 * 60 * 60))
+  : null;
+
+const showClosingSoon =
+  hoursLeft !== null &&
+  hoursLeft > 0 &&
+  hoursLeft <= 48;
 
   return (
     <>
@@ -339,21 +352,26 @@ ${window.location.href}
               />
             </div>
 
-            <div className="flex flex-wrap gap-3">
-              {isRegistrationClosed ? (
-                <>
-                  <span className="inline-flex items-center justify-center rounded-full bg-gray-200 px-6 py-3 text-sm font-semibold text-gray-600 shadow-sm cursor-not-allowed dark:bg-gray-800 dark:text-gray-300">
-                    Event Ended
-                  </span>
-                  {event.status === "past" && (
-                    <CertificateDownload eventName={event.title} eventDate={event.date} eventType={event.type} />
-                  )}
-                </>
-              ) : (
-                <Link to={`/events/${event.id}/register`} className="inline-flex items-center justify-center rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-slate-800 transition">
-                  Register Now
-                </Link>
-              )}
+           <div className="flex flex-wrap gap-3">
+
+  {showClosingSoon && (
+    <span className="inline-flex items-center rounded-full bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+      ⚠ Registration closes {hoursLeft <= 24 ? "today" : `in ${hoursLeft} hours`}
+    </span>
+  )}
+
+  {isRegistrationClosed ? (
+    <>
+      ...
+    </>
+  ) : (
+    <Link
+      to={`/events/${event.id}/register`}
+      className="inline-flex items-center justify-center rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-slate-800 transition"
+    >
+      Register Now
+    </Link>
+  )}
 
               <button
                 onClick={() => setShowShareModal(true)}
@@ -551,8 +569,10 @@ ${window.location.href}
                   <Tag className="h-5 w-5 text-indigo-600" />
                   <div>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Status</p>
-                    <p className="font-semibold capitalize">{event.status}</p>
-                  </div>
+                    <div className="mt-1">
+                      <StatusBadge status={event.status} />
+                      </div>
+                      </div>
                 </div>
 
                 {/* Event Countdown */}

@@ -232,14 +232,7 @@ function App() {
                             </Suspense>
                           }
                         />
-                        {/* TODO: Implement missing auth/dashboard routes
-                          Pages do not exist:
-                          - ./Pages/auth/Login
-                          - ./Pages/auth/Signup
-                          - ./Pages/dashboard/Dashboard
-                          - ./Pages/Admin/AdminPanel
-                          - ./Pages/user/Profile
-                        */}
+                        
                         <Route
                           path="/event-recommendation"
                           element={<Suspense fallback={null}><EventRecommendation /></Suspense>}
@@ -305,7 +298,8 @@ function App() {
                     </Suspense>
                 </ErrorBoundary>
                 )}
-                {import.meta.env.DEV && <ErrorButton />}
+
+                
               </div>
               <Analytics />
             </SessionRecoveryProvider>
@@ -313,14 +307,6 @@ function App() {
         </NotificationProvider>
       </AuthProvider>
     </ErrorBoundary>
-  );
-}
-
-function ErrorButton() {
-  return (
-    <button onClick={() => { throw new Error("This is your first error!"); }}>
-      Dev Error Trigger
-    </button>
   );
 }
 

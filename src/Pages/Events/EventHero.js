@@ -1,7 +1,7 @@
 import { AnimatePresence, motion, useInView } from "framer-motion";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 import { Award, Calendar, Clock, Code2, Sparkles, TrendingUp, Trash2, Users } from "lucide-react";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import ModernSearchInput from "../../components/common/ModernSearchInput";
 import CountUpLib from "react-countup";
@@ -51,7 +51,7 @@ const StatCounter = ({ stat, shouldAnimate }) => {
   );
 };
 
-export default function EventHero({
+function EventHero({
   searchQuery,
   handleSearch,
   filteredEvents,
@@ -375,3 +375,5 @@ export default function EventHero({
     </div>
   );
 }
+
+export default memo(EventHero);
