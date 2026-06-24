@@ -85,7 +85,9 @@ async function getRedisClient() {
     }
 
     if (!RedisClass) {
-      const module = await import("ioredis");
+      // Use webpackIgnore and @vite-ignore to prevent bundlers from statically analyzing
+      // and including ioredis and its Node.js dependencies in Edge/browser builds.
+      const module = await import(/* webpackIgnore: true */ /* @vite-ignore */ "ioredis");
       RedisClass = module.default || module;
     }
 
