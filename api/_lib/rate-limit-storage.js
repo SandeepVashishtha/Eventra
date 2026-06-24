@@ -15,7 +15,6 @@
  * operations will throw errors rather than silently falling back to insecure storage.
  */
 
-import Redis from "ioredis";
 import {
   isDistributedRateLimitStorageConfigured,
   isInMemoryRateLimitStorageAllowed,
@@ -23,6 +22,7 @@ import {
 
 // Redis client singleton (lazy initialization)
 let redisClient = null;
+let RedisClass = null;
 
 // In-memory fallback storage (only for development/testing)
 const inMemoryStore = new Map();
@@ -42,26 +42,33 @@ function registerCleanupHook() {
       redisClient = null;
     }
   };
-  process.on("beforeExit", cleanup);
-process.on("SIGINT", () => {
-  cleanup();
-  process.exit(0);
-});
-process.on("SIGTERM", () => {
-  cleanup();
-  process.exit(0);
-});
+  if (typeof process !== "undefined" && typeof process.on === "function") {
+    process.on("beforeExit", cleanup);
+    process.on("SIGINT", () => {
+      cleanup();
+      process.exit(0);
+    });
+    process.on("SIGTERM", () => {
+      cleanup();
+      process.exit(0);
+    });
+  }
 }
 
 /**
  * Gets or creates the Redis client.
  *
- * @returns {Redis|null} Redis client or null if not configured
+ * @returns {Promise<Redis|null>} Redis client or null if not configured
  * @throws {Error} If Redis connection fails
  */
-function getRedisClient() {
+async function getRedisClient() {
   if (redisClient !== null) {
     return redisClient;
+  }
+
+  // Check if we are running in an environment that supports ioredis (Node.js runtime)
+  if (typeof process === "undefined" || !process.release || process.env.EDGE_RUNTIME) {
+    return null;
   }
 
   registerCleanupHook();
@@ -77,7 +84,12 @@ function getRedisClient() {
       return null;
     }
 
-    const client = new Redis(redisUrl, {
+    if (!RedisClass) {
+      const module = await import("ioredis");
+      RedisClass = module.default || module;
+    }
+
+    const client = new RedisClass(redisUrl, {
       tls: redisUrl.startsWith("rediss://") ? {} : undefined,
       maxRetriesPerRequest: 3,
       retryStrategy: (times) => {
@@ -123,7 +135,7 @@ export async function incrementWithExpiration(key, windowMs, options = {}) {
     return incrementInMemory(key, windowMs);
   }
 
-  const redis = getRedisClient();
+  const redis = await getRedisClient();
 
   if (redis) {
     // Use Redis for distributed storage
@@ -216,7 +228,7 @@ function incrementInMemory(key, windowMs) {
  * @returns {Promise<void>}
  */
 export async function resetKey(key) {
-  const redis = getRedisClient();
+  const redis = await getRedisClient();
 
   if (redis) {
     try {
@@ -236,7 +248,7 @@ export async function resetKey(key) {
  * @returns {Promise<void>}
  */
 export async function clearAll() {
-  const redis = getRedisClient();
+  const redis = await getRedisClient();
 
   if (redis) {
     try {
