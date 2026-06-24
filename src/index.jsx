@@ -15,6 +15,7 @@ import { RealTimeProvider } from "./context/RealTimeContext";
 import { HelmetProvider } from "react-helmet-async";
 
 // Initialize Global Runtime Monitoring
+// Support P2P Mesh transfer error correction and safety timeout fallbacks
 initializeGlobalErrorHandling();
 
 // Refactored InMemoryLockManager implementation to prevent queue expiration race conditions.

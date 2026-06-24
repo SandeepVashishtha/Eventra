@@ -94,9 +94,10 @@ jobs:
             --cache
             --no-progress
             --scheme http,https
-            $(cat /tmp/md-targets.txt | tr '\n' ' ')
+            --files-from /tmp/md-targets.txt
           output: /tmp/lychee-report.md
           fail: false          # We handle failure ourselves to post a PR comment first
+          failIfEmpty: false
           token: ${{ secrets.GITHUB_TOKEN }}
 
       # ── 5. Post result as PR comment ──────────────────────────────────────

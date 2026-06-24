@@ -73,30 +73,7 @@ const EventMaterials = ({ materials }) => {
       }
     );
 
-    // 3. Search for nearby active peers
-    const foundPeer = await coordinator.startP2PSearch();
-
-    if (foundPeer) {
-      // P2P transfer is now running asynchronously via RTCPeerConnection DataChannel.
-      // Once completed, the coordinator will trigger state change, write chunks, and clean up.
-      // Let's hook a check to trigger local file download once completed
-      const checkCompletion = setInterval(async () => {
-        const completed = await isFileCached(fileId);
-        if (completed) {
-          clearInterval(checkCompletion);
-          triggerLocalDownload(fileId, fileName);
-          setCachedStatus((prev) => ({ ...prev, [fileId]: true }));
-          setTimeout(() => {
-            setActiveTransfer((prev) => {
-              const copy = { ...prev };
-              delete copy[fileId];
-              return copy;
-            });
-          }, 3000);
-        }
-      }, 500);
-    } else {
-      // 4. Fallback to simulated Server Download if no peer found
+    const triggerServerDownloadFallback = async () => {
       setActiveTransfer((prev) => ({
         ...prev,
         [fileId]: {
@@ -132,6 +109,44 @@ const EventMaterials = ({ materials }) => {
           return copy;
         });
       }, 3000);
+    };
+
+    // 3. Search for nearby active peers
+    const foundPeer = await coordinator.startP2PSearch();
+
+    if (foundPeer) {
+      // P2P transfer is now running asynchronously via RTCPeerConnection DataChannel.
+      // Once completed, the coordinator will trigger state change, write chunks, and clean up.
+      // Let's hook a check to trigger local file download once completed
+      const startTime = Date.now();
+      const checkCompletion = setInterval(async () => {
+        const completed = await isFileCached(fileId);
+        if (completed) {
+          clearInterval(checkCompletion);
+          triggerLocalDownload(fileId, fileName);
+          setCachedStatus((prev) => ({ ...prev, [fileId]: true }));
+          setTimeout(() => {
+            setActiveTransfer((prev) => {
+              const copy = { ...prev };
+              delete copy[fileId];
+              return copy;
+            });
+          }, 3000);
+          return;
+        }
+
+        const isFailed = coordinator.currentState === "failed";
+        const isTimeout = Date.now() - startTime > 10000; // 10s safety timeout
+
+        if (isFailed || isTimeout) {
+          clearInterval(checkCompletion);
+          coordinator.cleanup();
+          await triggerServerDownloadFallback();
+        }
+      }, 500);
+    } else {
+      // 4. Fallback to simulated Server Download if no peer found
+      await triggerServerDownloadFallback();
     }
   };
 
