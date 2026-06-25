@@ -33,6 +33,7 @@ const Tag = ({ tag, onRemove }) => (
       onClick={() => onRemove(tag)}
       className="hover:bg-primary/30 rounded-full p-0.5 transition-colors"
       aria-label={`Remove tag ${tag}`}
+      title={`Remove ${tag}`}
     >
       <X className="w-3 h-3" />
     </button>
@@ -114,7 +115,12 @@ const CustomDropdown = ({ label, value, options, onChange, placeholder = "Select
 
   const selectedOption = options.find((o) => getOptionValue(o) === value);
   const displayText = selectedOption ? getOptionLabel(selectedOption) : placeholder;
-
+const activeFilterCount =
+  Number(!!filters.difficulty) +
+  Number(!!filters.prize) +
+  Number(!!filters.location) +
+  selectedTags.length +
+  Number(sortBy !== "default");
   return (
     <div className="relative">
       {label && (
@@ -574,6 +580,8 @@ const HackathonHub = () => {
               <button
                 type="button"
                 onClick={() => setShowFilters(!showFilters)}
+                title={showFilters ? "Hide filters" : "Show filters"}
+aria-label={showFilters ? "Hide filters" : "Show filters"}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${
                   showFilters
                     ? "bg-primary text-white border-primary shadow-glow-sm"
@@ -591,6 +599,7 @@ const HackathonHub = () => {
                 <button
                   type="button"
                   onClick={resetFilters}
+                  title="Clear all active filters"
                   className="text-xs text-primary hover:opacity-90 font-semibold border border-primary/20 px-3 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 transition-all"
                   aria-label="Clear hackathon filters"
                 >
