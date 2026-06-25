@@ -142,27 +142,13 @@ export async function incrementWithExpiration(key, windowMs, options = {}) {
   if (redis) {
     // Use Redis for distributed storage
     try {
-      // Atomic operation: increment and set expiration if key is new
-      const pipeline = redis.pipeline();
-      pipeline.incr(key);
-      pipeline.pexpire(key, windowMs);
-      const results = await pipeline.exec();
-
-      if (!results) {
-        throw new Error("Redis pipeline returned no results");
-      }
-
-      const [incrErr, count] = results[0];
-      const [expireErr, ttlResult] = results[1];
-
-      if (incrErr) {
-        throw incrErr;
-      }
-
-      if (expireErr) {
-        console.error("[rate-limit-storage.js] Failed to set expiration:", expireErr);
-        // Continue anyway - the key will expire naturally via Redis cleanup
-      }
+      // Atomic operation: increment and set expiration only if key is new (count === 1)
+      const count = await redis.eval(
+        "local current = redis.call('incr', KEYS[1]); if current == 1 then redis.call('pexpire', KEYS[1], ARGV[1]) end; return current;",
+        1,
+        key,
+        windowMs
+      );
 
       return { count, ttl: windowMs };
     } catch (err) {
