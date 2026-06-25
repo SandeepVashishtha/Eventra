@@ -1,415 +1,168 @@
-import { motion, useAnimation, AnimatePresence, MotionConfig } from "framer-motion";
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect, useMemo, memo } from "react";
+import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import Fuse from "fuse.js";
-import { Search, Calendar, Trophy, Code, ExternalLink } from "lucide-react";
+import { Calendar, Handshake, Users } from "lucide-react";
+import CountUpLib from "react-countup";
 
-// Import mock data
-import eventsData from "../../Events/eventsMockData.json";
-import hackathonsData from "../../Hackathons/hackathonMockData.json";
-import projectsData from "../../Projects/mockProjectsData.json";
-import RespawningText from "../../../jhalak/RespawningText";
 import ModernSearchInput from "../../../components/common/ModernSearchInput";
-import CountUp from "react-countup";
+import RespawningText from "../../../components/visual/RespawningText";
+import useDebouncedSearch from "../../../hooks/useDebouncedSearch";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
 
-const MotionLink = motion(Link);
-
-const Hero = () => {
-  useDocumentTitle("Eventra | Home");
-  const phrases = [
-    "Amazing Tech Events",
-    "Exciting Hackathons Today",
-    "Innovative Dev Workshops",
-    "Cutting-Edge Tech Meetups",
-  ];
+// Fetch events from backend API instead of static mock data
+import { eventService } from "../../../services/eventService";
+import hackathonsData from "../../Hackathons/hackathonMockData.json";
+import projectsData from "../../Projects/mockProjectsData.json";
+import { useNavigate } from "react-router-dom";
 
 
-  const [index, setIndex] = useState(0);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
-  const [showResults, setShowResults] = useState(false);
-  const [isDark, setIsDark] = useState(
-    document.documentElement.classList.contains("dark")
-  );
+const CountUp = CountUpLib.default || CountUpLib;
 
-  // Sync isDark with theme changes
-  useEffect(() => {
-    const observer = new MutationObserver(() => {
-      setIsDark(document.documentElement.classList.contains("dark"));
-    });
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-    return () => observer.disconnect();
-  }, []);
+const HEADLINE_PHRASES = [
+  "Amazing Tech Events",
+  "Exciting Hackathons Today",
+  "Innovative Dev Workshops",
+  "Cutting-Edge Tech Meetups",
+];
+const TAGLINE_TEXTS = ["Build. Connect. Innovate.", "Discover Opportunities.", "Join the Tech Community."];
+const SEARCH_RESULT_LIMIT = 5;
 
-  // Change phrase every 3 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setIndex((prev) => (prev + 1) % phrases.length);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [phrases.length]);
+const createSearchItem = (item, type, searchType) => ({
+  id: item.id,
+  title: item.title,
+  description: item.description,
+  location: item.location,
+  tags: item.tags,
+  techStack: item.techStack,
+  type,
+  searchType,
+});
 
-  const controls = useAnimation();
+// =========================================================================
+// SUB-COMPONENT 1: STATS CARD GRID
+// =========================================================================
+const HeroStats = ({ stats, statsReady }) => (
+  <motion.div className="grid grid-cols-3 gap-4 mt-10">
+    {stats.map((s) => {
+      const IconComponent = s.icon;
+      
+      // 🔥 safety check
+      if (!IconComponent) {
+        return null;
+      }
 
-  useEffect(() => {
-    controls.start("show");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [controls]);
+      return (
+        <motion.div key={s.label} className="p-4 border rounded-xl">
+          <IconComponent className="w-6 h-6 mb-2" />
 
-  // Global search functionality
-  const createSearchItem = (item, type, searchType) => ({
-    id: item.id,
-    title: item.title,
-    description: item.description,
-    location: item.location,
-    tags: item.tags,
-    techStack: item.techStack,
-    category: item.category,
-    author: item.author,
-    organizer: item.organizer,
-    type,
-    searchType,
-  });
-
-  const allData = [
-    ...eventsData.map((item) => createSearchItem(item, "event", "Events")),
-    ...hackathonsData.map((item) =>
-      createSearchItem(item, "hackathon", "Hackathons")
-    ),
-    ...projectsData.map((item) =>
-      createSearchItem(item, "project", "Projects")
-    ),
-  ];
-
-  const fuse = new Fuse(allData, {
-    keys: [
-      "title",
-      "description",
-      "location",
-      "tags",
-      "techStack",
-      "category",
-      "author",
-      "organizer",
-      "type",
-    ],
-    threshold: 0.3,
-    includeScore: true,
-  });
-
-  const handleSearch = (query) => {
-    setSearchQuery(query);
-    if (query.trim()) {
-      const results = fuse.search(query).slice(0, 8);
-      setSearchResults(results);
-      setShowResults(true);
-    } else {
-      setSearchResults([]);
-      setShowResults(false);
-    }
-  };
-
-  const clearSearch = () => {
-    setShowResults(false);
-    setSearchQuery("");
-  };
-
-  const getResultHref = (item) => {
-    const query = encodeURIComponent(item.title || searchQuery);
-    if (item.type === "event") return `/events?search=${query}`;
-    if (item.type === "hackathon") return `/hackathons?search=${query}`;
-    if (item.type === "project") return `/projects?search=${query}`;
-    return "/";
-  };
-
-  const getResultIcon = (type) => {
-    switch (type) {
-      case "event":
-        return <Calendar className="w-4 h-4" />;
-      case "hackathon":
-        return <Trophy className="w-4 h-4" />;
-      case "project":
-        return <Code className="w-4 h-4" />;
-      default:
-        return <Search className="w-4 h-4" />;
-    }
-  };
-
-  const container = {
-    hidden: {},
-    show: { transition: { staggerChildren: 0.15 } },
-  };
-
-  const fadeUp = {
-    hidden: { y: 40, opacity: 0 },
-    show: { y: 0, opacity: 1, transition: { duration: 0.8, ease: "easeOut" } },
-  };
-
-  const stats = [
-    { value: "1500+", label: "Developers Joined" },
-    { value: "75",    label: "Events Organized"  },
-    { value: "30+",   label: "Partners & Sponsors" },
-  ];
-
-  return (
-    <section className="relative overflow-hidden 
-bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white 
-dark:from-slate-950 dark:via-slate-900 dark:to-black
-text-slate-900 dark:text-gray-100 
-pb-16 sm:pb-20 md:pb-24 pt-6 sm:pt-10 
-border-b border-gray-100 dark:border-slate-900">
-      {/* Hero Content */}
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10 pt-20">
-        <motion.div
-          className="text-center"
-          variants={container}
-          initial="hidden"
-          animate={controls}
-          data-aos="zoom-in"
-          data-aos-once="true"
-          data-aos-duration="1000"
-        >
-          <MotionConfig reducedMotion="never">
-            {/* Headline */}
-            <motion.h1
-              className="mx-auto max-w-[92vw] mt-6 text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-5 sm:mb-6 leading-tight sm:leading-tight text-gray-900 dark:text-white break-words px-2 sm:px-0"
-              style={{ fontFamily: '"Anton", sans-serif' }}
-            >
-              <motion.span
-                className="block text-gray-900 dark:text-white mb-2 md:mb-0"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-              >
-                <RespawningText texts={["Discover & Join", "Innovate & Create", "Learn & Grow"]} />
-              </motion.span>
-
-              <div className="relative mx-auto h-14 sm:h-24 md:h-28 lg:h-32 overflow-hidden flex justify-center items-center max-w-full">
-                <AnimatePresence mode="wait">
-                  <motion.span
-                    key={index}
-                    className="block mt-2 text-gray-900 dark:text-white mb-4 pb-2 whitespace-normal text-center px-1"
-                    initial={{ opacity: 0, y: 40 }}
-                    animate={{
-                      opacity: 1,
-                      y: 0,
-                      transition: { duration: 0.8, ease: "easeOut" },
-                    }}
-                    exit={{
-                      opacity: 0,
-                      y: -40,
-                      transition: { duration: 0.5, ease: "easeIn" },
-                    }}
-                  >
-                    <span className="text-blue-600 dark:text-blue-500">
-                    {phrases[index]}
-                    </span>
-                  </motion.span>
-                </AnimatePresence>
-              </div>
-            </motion.h1>
-          </MotionConfig>
-
-          {/* Subtext */}
-          <motion.p
-            variants={fadeUp}
-            className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mt-2 mb-7 sm:mb-8 px-4 sm:px-0"
-          >
-            Connect with developers, learn new skills, and grow your network at
-            the best tech events, hackathons, and workshops in your area.
-          </motion.p>
-
-          {/* Global Search Bar */}
-          <div className="w-full max-w-2xl mx-auto mb-8 sm:mb-10">
-            <ModernSearchInput
-              value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
-              placeholder="Search events, hackathons, projects..."
-              onFocus={() => searchQuery && setShowResults(true)}
-              onBlur={() => setTimeout(() => setShowResults(false), 200)}
-            >
-              {/* Search Results Dropdown */}
-              <AnimatePresence>
-                {showResults && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute top-full left-0 right-0 mt-3 
-                     bg-white dark:bg-slate-900
-rounded-xl
-shadow-2xl
-border border-gray-200 dark:border-slate-700
-                     max-h-96 overflow-y-auto z-50"
-                  >
-                    <div className="p-4">
-                      {searchResults.length > 0 ? (
-                        <>
-                          <div className="text-sm text-gray-500 mb-3 font-medium">
-                            Search Results ({searchResults.length})
-                          </div>
-                          <div className="space-y-2">
-                            {searchResults.map((result, index) => (
-                              <MotionLink
-                                key={`${result.item.type}-${result.item.id}`}
-                                to={getResultHref(result.item)}
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: index * 0.05 }}
-                                onClick={clearSearch}
-                                className="flex items-center gap-3 p-3 rounded-lg 
-                                 hover:bg-gray-50 dark:hover:bg-slate-800
-                                 cursor-pointer transition-colors group text-left no-underline"
-                                aria-label={`Open ${result.item.title} in ${result.item.searchType || result.item.type || "page"
-                                  }`}
-                              >
-                                <div className="flex-shrink-0 p-2 bg-blue-100 rounded-xl text-blue-600 group-hover:bg-blue-200 transition-colors">
-                                  {getResultIcon(result.item.type)}
-                                </div>
-                                <div className="flex-1 min-w-0 relative">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <h4 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                                      {result.item.title}
-                                    </h4>
-                                    <span
-                                      className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium 
-                                           bg-gray-100 dark:bg-slate-800
-text-gray-600 dark:text-gray-300"
-                                    >
-                                      {result.item.searchType}
-                                    </span>
-                                  </div>
-                                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 absolute left-0">
-                                    {result.item.description?.substring(0, 80)}...
-                                  </p>
-                                </div>
-                                <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors" />
-                              </MotionLink>
-                            ))}
-                          </div>
-                        </>
-                      ) : (
-                        <motion.div
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: 10 }}
-                          transition={{ duration: 0.25, ease: "easeOut" }}
-                          className="text-center text-gray-500 dark:text-gray-400 py-10 text-base"
-                        >
-                          No results match "
-                          <span className="font-medium text-gray-700 dark:text-white">
-                            {searchQuery}
-                          </span>
-                          "
-                        </motion.div>
-                      )}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </ModernSearchInput>
+          <div>
+            {statsReady ? (
+              <CountUp end={s.value} suffix={s.suffix} />
+            ) : (
+              <span>{`${s.value}${s.suffix}`}</span>
+            )}
           </div>
 
-          {/* Buttons */}
-          <motion.div
-            variants={container}
-            className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-6 mb-12 sm:mb-16"
-          >
-            {/* Primary Button - Explore Events */}
-            <motion.div variants={fadeUp}>
-              <Link
-                to="/events"
-                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-blue-500 dark:bg-blue-900 text-white dark:text-white font-bold shadow-md shadow-blue-200 dark:shadow-none overflow-hidden group transform transition-all duration-300 hover:scale-105 hover:bg-blue-600 dark:hover:bg-blue-800"
-              >
-                <span className="relative z-10 flex items-center">
-                  Explore Events
-                  <svg
-                    className="ml-3 w-5 h-5 transition-transform duration-300 group-hover:translate-x-2"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </span>
-              </Link>
-            </motion.div>
-
-            {/* Secondary Button - Join Hackathons */}
-            <motion.div variants={fadeUp}>
-              <Link
-                to="/hackathons"
-                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-amber-400 dark:bg-yellow-900 border border-amber-300 dark:border-yellow-700 text-white dark:text-white font-semibold shadow-md shadow-amber-100 dark:shadow-none hover:shadow-lg hover:bg-amber-500 dark:hover:bg-yellow-800 hover:scale-105 transition-all duration-300"
-              >
-                Join Hackathons
-              </Link>
-            </motion.div>
-
-            {/* Tertiary Button - Learn More */}
-            <motion.div variants={fadeUp}>
-              <Link
-                to="/about"
-                className="relative inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-pink-500 dark:bg-pink-900 text-white dark:text-white font-semibold shadow-md shadow-pink-100 dark:shadow-none transform transition-all duration-300 hover:scale-105 hover:bg-pink-600 dark:hover:bg-pink-800"
-              >
-                Learn More
-                <svg
-                  className="ml-3 w-5 h-5 transition-transform duration-300 group-hover:translate-x-2"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </Link>
-            </motion.div>
-          </motion.div>
-
-          {/* Animated Stats Cards */}
-          {!searchQuery.trim() && (
-            <motion.div
-              variants={fadeUp}
-              className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6"
-            >
-              {stats.map((stat, i) => (
-                <motion.div
-                  key={i}
-                  variants={fadeUp}
-                  whileHover={{ scale: 1.02 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                  className="bg-white/90 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl p-5 sm:p-6 text-center shadow-xl shadow-blue-100/50 dark:shadow-none border border-blue-100 dark:border-gray-700 hover:shadow-blue-200/60 transition-shadow duration-300"
-                >
-                  <p className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">
-                    <CountUp
-                      start={0}
-                      end={stat.value}
-                      duration={2.5}
-                      suffix={stat.suffix}
-                      enableScrollSpy
-                      scrollSpyOnce
-                    />
-                  </p>
-                  <p className="text-gray-500 dark:text-gray-300 text-sm">
-                    {stat.label}
-                  </p>
-                </motion.div>
-              ))}
-            </motion.div>
-          )}
+          <div>{s.label}</div>
         </motion.div>
-      </div>
+      );
+    })}
+  </motion.div>
+);
+
+// =========================================================================
+// MAIN HERO COMPONENT
+// =========================================================================
+const Hero = () => {
+  const { t } = useTranslation();
+  useDocumentTitle("Eventra | Home");
+  const navigate = useNavigate();
+
+  const [phraseIndex, setPhraseIndex] = useState(0);
+  const [statsReady, setStatsReady] = useState(false);
+  const [, setShowResults] = useState(false);
+  const [, setSearchResults] = useState([]);
+  const [eventsData, setEventsData] = useState([]);
+
+  // Fetch events from backend API
+  useEffect(() => {
+    let cancelled = false;
+    eventService.getAllEvents().then((res) => {
+      if (cancelled) return;
+      const raw = Array.isArray(res.data) ? res.data : res.data?.content ?? [];
+      setEventsData(raw);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
+  // Build search index from fetched events + static hackathons/projects
+  const searchIndex = useMemo(() => {
+    const allSearchItems = [
+      ...eventsData.map((i) => createSearchItem(i, "event", "Events")),
+      ...hackathonsData.map((i) => createSearchItem(i, "hackathon", "Hackathons")),
+      ...projectsData.map((i) => createSearchItem(i, "project", "Projects")),
+    ];
+    return new Fuse(allSearchItems, {
+      keys: ["title", "description", "location", "tags", "techStack", "type"],
+      threshold: 0.3,
+      includeScore: true,
+    });
+  }, [eventsData]);
+
+  const { searchTerm, debouncedTerm, setSearchTerm } = useDebouncedSearch("", 300);
+
+  // Background operations
+  useEffect(() => {
+    const timer = setTimeout(() => setStatsReady(true), 100);
+    const interval = setInterval(() => setPhraseIndex((p) => (p + 1) % HEADLINE_PHRASES.length), 3000);
+    return () => { clearTimeout(timer); clearInterval(interval); };
+  }, []);
+
+  useEffect(() => {
+    const trimmed = debouncedTerm.trim();
+    setSearchResults(trimmed ? searchIndex.search(trimmed).slice(0, SEARCH_RESULT_LIMIT) : []);
+    setShowResults(!!trimmed);
+  }, [debouncedTerm, searchIndex]);
+
+  const stats = useMemo(() => [
+    { value: 1500, label: t("landing.hero.stats.developers"), suffix: "+", icon: Users },
+    { value: 75, label: t("landing.hero.stats.events"), suffix: "+", icon: Calendar },
+    { value: 30, label: t("landing.hero.stats.partners"), suffix: "+", icon: Handshake },
+  ], [t]);
+
+  return (
+    <section className="min-h-[80vh] flex items-center justify-center relative overflow-hidden py-16 sm:py-20 md:py-24">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="w-full max-w-4xl mx-auto px-4 flex flex-col gap-10"
+      >
+        <motion.h1 className="text-4xl font-bold text-center">
+          <RespawningText texts={TAGLINE_TEXTS} />
+          <div>{HEADLINE_PHRASES[phraseIndex]}</div>
+        </motion.h1>
+        
+        <div className="text-xl text-violet-700 text-center">Discover hackathons, workshops, projects, and networking opportunities designed to help you learn, build, and connect.</div>
+
+        <motion.div className="w-full max-w-2xl mx-auto">
+          <ModernSearchInput
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search..."
+          />
+        </motion.div>
+
+        <div className="flex justify-center items-center gap-10">
+          <button onClick={()=>navigate("/events")} className="cursor-pointer bg-gradient-to-r from-purple-600 to-pink-500 text-white px-8 py-3 rounded-full font-semibold hover:scale-105 transition-transform">Explore Events</button>
+          <button onClick={()=>navigate("/community-event")} className="cursor-pointer border-2 border-purple-500 text-purple-600 bg-white px-8 py-3 rounded-full font-semibold hover:bg-purple-50">Join Community</button>
+        </div>
+
+        {<HeroStats stats={stats} statsReady={statsReady} />}
+      </motion.div>
     </section>
   );
 };
 
-export default Hero;
+export default memo(Hero);

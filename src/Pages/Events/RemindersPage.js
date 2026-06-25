@@ -8,14 +8,20 @@ import {
   subscribeToReminderChanges,
 } from "../../utils/reminderUtils";
 
-const formatEventDate = (event) =>
-  new Date(`${event.date} ${event.time || "12:00 AM"}`).toLocaleString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+import { parseEventDateTimeLocal } from "../../utils/timezoneUtils";
+
+const formatEventDate = (event) => {
+  const parsed = parseEventDateTimeLocal(event.date, event.time);
+  return parsed
+    ? parsed.toLocaleString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      })
+    : "";
+};
 
 const formatTriggerDate = (triggerAt) =>
   new Date(triggerAt).toLocaleString("en-US", {
@@ -53,25 +59,32 @@ const RemindersPage = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-white pt-28 pb-16 text-slate-900 dark:from-slate-950 dark:via-slate-950 dark:to-gray-950 dark:text-gray-100">
+    <div className="min-h-screen bg-linear-to-b from-indigo-50 via-white to-white pt-12 pb-16 text-slate-900 dark:from-slate-950 dark:via-slate-950 dark:to-gray-950 dark:text-gray-100" style={{
+    backgroundImage: "url('/assets/bookmarkbg.png')",
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    backgroundRepeat: "no-repeat",
+    minHeight: "100vh",
+    width:"100%"
+  }}>
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-white/80 px-4 py-2 text-sm font-semibold text-indigo-700 shadow-sm dark:border-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-300">
+            <div className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-white/80 px-4 py-2 text-sm font-semibold text-indigo-700 shadow-sm dark:border-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-600">
               <Bell size={16} />
               {reminders.length} active
             </div>
-            <h1 className="mt-4 text-3xl font-bold tracking-tight text-gray-950 dark:text-white sm:text-4xl">
+            <h1 className="mt-4 text-3xl font-bold tracking-tight text-gray-950 dark:text-slate-100 sm:text-4xl">
               Event Reminders
             </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-gray-600 dark:text-gray-400 sm:text-base">
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-gray-600 dark:text-slate-400 sm:text-base">
               Manage upcoming reminder alerts for events you have bookmarked or registered for.
             </p>
           </div>
 
           <Link
             to="/bookmarks"
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:from-indigo-500 hover:via-indigo-600 hover:to-slate-800 hover:shadow-xl"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-indigo-600 via-indigo-700 to-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:from-indigo-500 hover:via-indigo-600 hover:to-slate-800 hover:shadow-xl"
           >
             <CalendarDays size={18} />
             View Bookmarks
@@ -110,13 +123,12 @@ const RemindersPage = () => {
                     <img
                       src={event.image}
                       alt={event.title}
-                      className="h-44 w-full object-cover sm:h-full"
-                    />
+                      className="h-44 w-full object-cover sm:h-full" loading="lazy"/>
 
                     <div className="p-5">
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                         <div>
-                          <h2 className="text-xl font-bold text-gray-950 dark:text-white">
+                          <h2 title={event.title} className="text-xl font-bold text-gray-950 dark:text-white line-clamp-2 break-words min-w-0">
                             {event.title}
                           </h2>
                           <div className="mt-3 space-y-2 text-sm text-gray-600 dark:text-gray-300">

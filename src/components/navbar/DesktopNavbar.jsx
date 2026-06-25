@@ -1,30 +1,14 @@
-import React from "react";
+
 import NavbarLinks from "./NavbarLinks";
-import AuthButtons from "./AuthButtons";
-import ProfileMenu from "./ProfileMenu";
 
-const DesktopNavbar = ({
-  isAuthenticated,
-  user,
-  logout,
-  isDarkMode,
-  toggleTheme,
-  cursorEnabled,
-  toggleCursor,
-}) => {
+const DesktopNavbar = () => {
   return (
-    <div className="hidden lg:flex items-center justify-between flex-1 gap-2">
+    <div className="flex items-center justify-center">
       <NavbarLinks />
-
-      <div className="flex items-center gap-4 mr-5">
-        {isAuthenticated ? (
-          <ProfileMenu user={user} logout={logout} />
-        ) : (
-          <AuthButtons />
-        )}
-      </div>
     </div>
   );
 };
 
 export default DesktopNavbar;
+
+

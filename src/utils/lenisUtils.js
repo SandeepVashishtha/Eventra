@@ -30,7 +30,13 @@ export const scrollToTop = (options = {}) => {
       duration: 1.2,
       ...options,
     });
+    return;
   }
+
+  window.scrollTo({
+    top: 0,
+    behavior: options.behavior || "smooth",
+  });
 };
 
 /**

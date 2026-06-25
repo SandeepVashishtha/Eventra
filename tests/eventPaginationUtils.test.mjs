@@ -8,7 +8,7 @@ import {
   getTotalPages,
   getVisiblePaginationPages,
   sortEventsByDate,
-} from "../src/Pages/Events/eventPaginationUtils.js";
+} from "../src/Pages/Events/eventPaginationUtils.mjs";
 
 const sampleEvents = [
   {
@@ -158,6 +158,21 @@ assert.deepEqual(
   "filter, sort, and pagination compose correctly"
 );
 
-if (process.env.NODE_ENV === "development") {
+// Clamp tests with float / string conversions
+assert.equal(clampPage("3", 5), 3, "stringified numbers are coerced and clamped");
+assert.equal(clampPage(2.5, 5), 2.5, "float values pass through clamp correctly");
+
+// Sorting events with duplicate dates
+const eventsWithDuplicateDates = [
+  { id: 1, title: "A", date: "2026-06-01" },
+  { id: 2, title: "B", date: "2026-06-01" },
+];
+assert.deepEqual(
+  sortEventsByDate(eventsWithDuplicateDates, "Newest").map(e => e.id),
+  [1, 2],
+  "newest sort maintains stable sorting on duplicate dates"
+);
+
+if (process.env.NODE_ENV === "development" || true) {
  console.log("event pagination edge cases passed");
 }

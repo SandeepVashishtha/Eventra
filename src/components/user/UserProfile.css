@@ -1,0 +1,604 @@
+/* ============================================================
+   UserProfile.css  —  Eventra Profile View Page
+   Matches the minimalist dark/light theme of UserDashboard
+   ============================================================ */
+
+/* ── Root ── */
+.upv-root {
+  min-height: 100vh;
+  background: var(--bg-color, #f8fafc);
+  font-family: 'Inter', system-ui, sans-serif;
+  padding: 2rem 1.25rem 4rem;
+}
+
+.dark .upv-root {
+  background: #080f1e;
+}
+
+/* ── Container ── */
+.upv-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ── Hero Card ── */
+.upv-hero-card {
+  position: relative;
+  background: var(--card-bg-color, #fff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(99, 102, 241, 0.07);
+}
+
+.dark .upv-hero-card {
+  background: rgba(17, 24, 39, 0.95);
+  border-color: rgba(148, 163, 184, 0.18);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28);
+}
+
+/* Gradient banner at top */
+.upv-hero-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 110px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 60%, #ec4899 100%);
+  opacity: 0.9;
+}
+
+.dark .upv-hero-bg {
+  opacity: 0.7;
+}
+
+.upv-hero-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  gap: 1.5rem;
+  padding: 0 2rem 1.75rem;
+  flex-wrap: wrap;
+}
+
+/* ── Avatar ── */
+.upv-avatar-wrap {
+  position: relative;
+  margin-top: 60px;
+  flex-shrink: 0;
+}
+
+.upv-avatar-img,
+.upv-avatar-placeholder {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid #fff;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.18);
+}
+
+.dark .upv-avatar-img,
+.dark .upv-avatar-placeholder {
+  border-color: #1e293b;
+}
+
+.upv-avatar-placeholder {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.upv-avatar-initials {
+  color: #fff;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -1px;
+}
+
+.upv-avatar-ring {
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 2px solid rgba(99, 102, 241, 0.4);
+  pointer-events: none;
+  animation: upv-pulse-ring 3s ease-in-out infinite;
+}
+
+@keyframes upv-pulse-ring {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50%       { opacity: 1;   transform: scale(1.04); }
+}
+
+/* ── Hero Info ── */
+.upv-hero-info {
+  flex: 1;
+  padding-top: 70px;
+  min-width: 0;
+}
+
+.upv-display-name {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--text-color, #111827);
+  margin: 0 0 0.2rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dark .upv-display-name { color: #f8fafc; }
+
+.upv-username {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.9rem;
+  color: #6366f1;
+  margin: 0 0 0.5rem;
+  font-weight: 500;
+}
+
+.upv-bio {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.55;
+  max-width: 520px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.dark .upv-bio { color: #94a3b8; }
+
+/* ── Edit Button ── */
+.upv-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1.2rem;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 0.18s, box-shadow 0.18s, opacity 0.18s;
+  margin-top: 70px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+}
+
+.upv-edit-btn:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 8px 22px rgba(99, 102, 241, 0.45);
+  opacity: 0.93;
+}
+
+/* ── Body layout ── */
+.upv-body {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+/* ── Card base ── */
+.upv-card {
+  background: var(--card-bg-color, #fff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 16px;
+  padding: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.22s, border-color 0.22s, transform 0.22s;
+}
+
+.dark .upv-card {
+  background: rgba(17, 24, 39, 0.95);
+  border-color: rgba(148, 163, 184, 0.18);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.22);
+}
+
+.upv-card:hover {
+  box-shadow: 0 8px 28px rgba(99, 102, 241, 0.1);
+  border-color: rgba(99, 102, 241, 0.25);
+  transform: translateY(-2px);
+}
+
+.dark .upv-card:hover {
+  border-color: rgba(129, 140, 248, 0.3);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.32);
+}
+
+.upv-left,
+.upv-right {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* ── Card Header ── */
+.upv-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.upv-card-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.upv-card-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-color, #111827);
+  margin: 0;
+}
+
+.dark .upv-card-title { color: #f1f5f9; }
+
+/* ── Info List ── */
+.upv-info-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.upv-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 10px;
+  background: #f9fafb;
+  border: 1px solid #f3f4f6;
+  transition: background 0.15s;
+}
+
+.dark .upv-info-row {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(148, 163, 184, 0.12);
+}
+
+.upv-info-row:hover {
+  background: #f3f4f6;
+}
+
+.dark .upv-info-row:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.upv-info-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+
+.dark .upv-info-label { color: #94a3b8; }
+
+.upv-info-value {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-color, #111827);
+  text-align: right;
+  word-break: break-all;
+  max-width: 170px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dark .upv-info-value { color: #e2e8f0; }
+
+.upv-empty-val {
+  color: #9ca3af;
+  font-style: italic;
+  font-weight: 400;
+}
+
+.dark .upv-empty-val { color: #4b5563; }
+
+/* ── About text ── */
+.upv-about-text {
+  font-size: 0.875rem;
+  color: #6b7280;
+  line-height: 1.7;
+  margin: 0;
+  white-space: pre-line;
+}
+
+.dark .upv-about-text { color: #94a3b8; }
+
+/* ── Social Links ── */
+.upv-socials {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.upv-social-link {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: all 0.18s;
+  color: var(--text-color, #111827);
+  background: #f9fafb;
+}
+
+.dark .upv-social-link {
+  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(148, 163, 184, 0.12);
+}
+
+.upv-social-link span { flex: 1; }
+
+.upv-social-arrow {
+  color: #9ca3af;
+  transition: transform 0.18s, color 0.18s;
+}
+
+.upv-social-github:hover  { background: #f0f0f0; border-color: #d1d5db; }
+.upv-social-linkedin:hover{ background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+.upv-social-portfolio:hover{ background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+
+.dark .upv-social-github:hover   { background: rgba(255,255,255,0.06); border-color: rgba(148,163,184,0.28); }
+.dark .upv-social-linkedin:hover { background: rgba(99,102,241,0.12); border-color: rgba(129,140,248,0.3); color: #818cf8; }
+.dark .upv-social-portfolio:hover{ background: rgba(16,185,129,0.1); border-color: rgba(52,211,153,0.3); color: #34d399; }
+
+.upv-social-link:hover .upv-social-arrow {
+  transform: translateX(3px);
+  color: currentColor;
+}
+
+/* ── Stats grid ── */
+.upv-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.85rem;
+}
+
+.upv-stat-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border: 1px solid #f3f4f6;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  cursor: default;
+}
+
+.dark .upv-stat-card {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(148, 163, 184, 0.12);
+}
+
+.upv-stat-card:hover {
+  border-color: var(--stat-accent, #6366f1);
+  box-shadow: 0 6px 18px -4px color-mix(in srgb, var(--stat-accent, #6366f1) 22%, transparent);
+  transform: translateY(-3px);
+}
+
+.upv-stat-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.upv-stat-body { flex: 1; }
+
+.upv-stat-value {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--text-color, #111827);
+  line-height: 1;
+  margin: 0 0 0.15rem;
+}
+
+.dark .upv-stat-value { color: #f8fafc; }
+
+.upv-stat-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-color, #374151);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin: 0 0 0.1rem;
+}
+
+.dark .upv-stat-label { color: #cbd5e1; }
+
+.upv-stat-sub {
+  font-size: 0.72rem;
+  color: #9ca3af;
+  margin: 0;
+}
+
+.dark .upv-stat-sub { color: #64748b; }
+
+/* ── Skills ── */
+.upv-skills-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.upv-skill-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.28rem 0.8rem;
+  background: #eef2ff;
+  color: #4338ca;
+  border: 1px solid #c7d2fe;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  transition: all 0.16s;
+}
+
+.upv-skill-tag:hover {
+  background: #6366f1;
+  color: #fff;
+  border-color: #6366f1;
+  transform: translateY(-1px);
+}
+
+.dark .upv-skill-tag {
+  background: rgba(99, 102, 241, 0.15);
+  color: #a5b4fc;
+  border-color: rgba(129, 140, 248, 0.3);
+}
+
+.dark .upv-skill-tag:hover {
+  background: #6366f1;
+  color: #fff;
+  border-color: #6366f1;
+}
+
+/* ── Achievements card ── */
+.upv-achievements-card { gap: 0.85rem; }
+
+.upv-achievements-desc {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.55;
+}
+
+.dark .upv-achievements-desc { color: #94a3b8; }
+
+.upv-achievements-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1.1rem;
+  background: linear-gradient(135deg, #ec4899, #8b5cf6);
+  color: #fff;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 0.18s, box-shadow 0.18s, opacity 0.18s;
+  align-self: flex-start;
+  box-shadow: 0 4px 14px rgba(236, 72, 153, 0.3);
+}
+
+.upv-achievements-btn:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 8px 22px rgba(236, 72, 153, 0.4);
+  opacity: 0.92;
+}
+
+/* ── Empty / inline states ── */
+.upv-empty-msg {
+  font-size: 0.875rem;
+  color: #9ca3af;
+  margin: 0;
+}
+
+.dark .upv-empty-msg { color: #4b5563; }
+
+.upv-inline-link {
+  color: #6366f1;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.upv-inline-link:hover { text-decoration: underline; }
+
+/* ── Skeleton loader ── */
+.upv-skeleton-wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.upv-skeleton {
+  height: 120px;
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background-size: 200% 100%;
+  border-radius: 16px;
+  animation: upv-shimmer 1.5s infinite;
+}
+
+.dark .upv-skeleton {
+  background: linear-gradient(90deg, rgba(30,41,59,0.8) 25%, rgba(51,65,85,0.5) 50%, rgba(30,41,59,0.8) 75%);
+  background-size: 200% 100%;
+}
+
+@keyframes upv-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .upv-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .upv-root { padding: 1rem 0.75rem 3rem; }
+
+  .upv-hero-content {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0 1.25rem 1.5rem;
+  }
+
+  .upv-hero-info { padding-top: 0; }
+
+  .upv-edit-btn { margin-top: 0; width: 100%; justify-content: center; }
+
+  .upv-display-name { font-size: 1.35rem; white-space: normal; }
+
+  .upv-stats-grid { grid-template-columns: 1fr 1fr; }
+
+  .upv-card { padding: 1rem; }
+}
+
+@media (max-width: 400px) {
+  .upv-stats-grid { grid-template-columns: 1fr; }
+}
