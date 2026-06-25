@@ -53,7 +53,7 @@ const WhatsHappening = () => {
     return () => { cancelled = true; };
   }, []);
 
-  const formatEventsData = (events) => {
+  const formatEventsData = useCallback((events) => {
     const now = new Date();
     const dayMs = 1000 * 60 * 60 * 24;
 
@@ -109,9 +109,9 @@ const WhatsHappening = () => {
         attendees: event.attendees,
         timeLeft: getEventTimeLeft(event),
       }));
-  };
+  }, []);
 
-  const formatHackathonsData = (hackathons) => {
+  const formatHackathonsData = useCallback((hackathons) => {
     const now = new Date();
     const dayMs = 1000 * 60 * 60 * 24;
 
@@ -159,12 +159,12 @@ const WhatsHappening = () => {
         prize: hackathon.prize,
         participants: hackathon.participants,
       }));
-  };
+  }, []);
 
-  const upcomingEvents = [
+  const upcomingEvents = useMemo(() => [
     ...formatEventsData(eventsData),
     ...formatHackathonsData(hackathonsData),
-  ].sort((a, b) => new Date(a.rawDate) - new Date(b.rawDate));
+  ].sort((a, b) => new Date(a.rawDate) - new Date(b.rawDate)), [eventsData, formatEventsData, formatHackathonsData]);
 
   const [cardsPerView, setCardsPerView] = useState(1);
 
