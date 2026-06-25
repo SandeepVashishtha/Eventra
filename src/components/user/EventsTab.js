@@ -52,6 +52,37 @@ const getEventStatus = (event) => {
   return "Upcoming";
 };
 
+const sortEvents = (events, sortBy) => {
+  return [...events].sort((a, b) => {
+    if (sortBy === "soonest") {
+      const da = a.date ? new Date(a.date) : new Date(0);
+      const db = b.date ? new Date(b.date) : new Date(0);
+      return da - db;
+    }
+    if (sortBy === "registered") {
+      const da = a.registeredAt ? new Date(a.registeredAt) : new Date(0);
+      const db = b.registeredAt ? new Date(b.registeredAt) : new Date(0);
+      return db - da;
+    }
+    if (sortBy === "name") {
+      return (a.title || "").localeCompare(b.title || "");
+    }
+    return 0;
+  });
+};
+
+const filterEvents = (pool, debouncedTerm, normalizedSearch, filterStatus, filterType) => {
+  return pool.filter((event) => {
+    const searchTarget = `${event?.title || ""} ${event?.location || ""} ${event?.description || ""} ${(event?.tags || []).join(" ")}`.toLowerCase();
+    const matchSearch = !debouncedTerm || searchTarget.includes(normalizedSearch);
+    const status = getEventStatus(event);
+    const matchStatus = filterStatus === "All" || status === filterStatus;
+    const typeLabel = event?.type ? event.type.charAt(0).toUpperCase() + event.type.slice(1) : "";
+    const matchType = filterType === "All" || typeLabel === filterType;
+    return matchSearch && matchStatus && matchType;
+  });
+};
+
 
 
 const EventCard = ({ event, index, onRemoveRegistration, showCancel, onViewTicket, onViewRecent }) => {
@@ -373,35 +404,9 @@ const normalizedSearch = debouncedTerm.trim().toLowerCase();
 
   const filteredEvents = useMemo(() => {
     const pool = [...registeredEvents, ...hostedEvents];
-    const result = pool.filter((event) => {
-      const searchTarget = `${event?.title || ""} ${event?.location || ""} ${event?.description || ""} ${(event?.tags || []).join(" ")}`.toLowerCase();
-      const matchSearch = !debouncedTerm || searchTarget.includes(normalizedSearch);
-      const status = getEventStatus(event);
-      const matchStatus = filterStatus === "All" || status === filterStatus;
-      const typeLabel = event?.type ? event.type.charAt(0).toUpperCase() + event.type.slice(1) : "";
-      const matchType = filterType === "All" || typeLabel === filterType;
-      return matchSearch && matchStatus && matchType;
-    });
-
-    result.sort((a, b) => {
-      if (sortBy === "soonest") {
-        const da = a.date ? new Date(a.date) : new Date(0);
-        const db = b.date ? new Date(b.date) : new Date(0);
-        return da - db;
-      }
-      if (sortBy === "registered") {
-        const da = a.registeredAt ? new Date(a.registeredAt) : new Date(0);
-        const db = b.registeredAt ? new Date(b.registeredAt) : new Date(0);
-        return db - da;
-      }
-      if (sortBy === "name") {
-        return (a.title || "").localeCompare(b.title || "");
-      }
-      return 0;
-    });
-
-    return result;
-  }, [registeredEvents, hostedEvents, debouncedTerm, filterStatus, filterType, sortBy]);
+    const filtered = filterEvents(pool, debouncedTerm, normalizedSearch, filterStatus, filterType);
+    return sortEvents(filtered, sortBy);
+  }, [registeredEvents, hostedEvents, debouncedTerm, normalizedSearch, filterStatus, filterType, sortBy]);
 
   useEffect(() => {
     if (debouncedTerm && debouncedTerm.trim().length > 1) {
