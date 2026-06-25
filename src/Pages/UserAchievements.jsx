@@ -444,6 +444,9 @@ export default function UserAchievements() {
                       : 'bg-card-bg/15 border-border/30 opacity-70 hover:opacity-100 shadow-none'
                   }`}
                   onClick={() => toggleExpand(badge.id)}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleExpand(badge.id); } }}
+                  role="button"
+                  tabIndex={0}
                   whileHover={{ y: -4 }}
                   transition={{ type: "spring", stiffness: 250, damping: 20 }}
                 >
