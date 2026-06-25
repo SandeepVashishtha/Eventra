@@ -67,10 +67,18 @@ export const getGlobalWaitlist = () => {
 
 // Persist waitlist entries globally (offline cache only)
 export const saveGlobalWaitlist = (records) => {
-  try {
-    localStorage.setItem(GLOBAL_WAITLIST_KEY, JSON.stringify(records));
-  } catch (error) {
-    logger.error("[WaitlistUtils] Failed to save global waitlist:", error);
+  const save = () => {
+    try {
+      localStorage.setItem(GLOBAL_WAITLIST_KEY, JSON.stringify(records));
+    } catch (error) {
+      logger.error("[WaitlistUtils] Failed to save global waitlist:", error);
+    }
+  };
+
+  if (typeof window !== "undefined" && window.requestIdleCallback) {
+    window.requestIdleCallback(save, { timeout: 2000 });
+  } else {
+    setTimeout(save, 0);
   }
 };
 
