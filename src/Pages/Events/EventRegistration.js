@@ -1114,6 +1114,12 @@ const EventRegistration = () => {
                 </button>
                 <button
                   type="submit"
+                  onClick={(e) => {
+                    if (isSubmittingRef.current || submitting) {
+                      e.preventDefault();
+                      return;
+                    }
+                  }}
                   disabled={submitting || !isFormValid}
                   className="flex-1 px-6 py-3 bg-black text-white rounded-lg hover:bg-zinc-800 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   aria-label={t("eventRegistration.formSubmitAriaLabel")}
