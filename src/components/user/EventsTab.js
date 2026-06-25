@@ -605,6 +605,15 @@ const addToRecentEvents = (event) => {
       <h2 className="text-2xl font-bold text-slate-800 dark:text-white">
         Recently Viewed
       </h2>
+      <button
+        onClick={() => {
+          localStorage.removeItem("recentEvents");
+          setRecentEvents([]);
+        }}
+        className="text-sm font-medium text-red-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+      >
+        Clear All
+      </button>
     </div>
 
     <div className="flex gap-4 overflow-x-auto pb-2">
