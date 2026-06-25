@@ -38,10 +38,28 @@ export function generateTicketToken() {
  * @param {string} params.ticketToken  - The UUID ticket token
  * @param {string|number} params.eventId - The event identifier
  * @param {string} params.registrationId - The registration identifier
+ * @param {string|Date} [params.eventEndTime] - Optional event end time to calculate dynamic expiration
  * @returns {string} Signed JWT string
  */
-export function signTicketJwt({ ticketToken, eventId, registrationId }) {
+export function signTicketJwt({ ticketToken, eventId, registrationId, eventEndTime }) {
   const secret = getJwtSecret();
+  
+  let expiresIn = "365d"; // Default fallback
+  
+  if (eventEndTime) {
+    const end = new Date(eventEndTime).getTime();
+    if (!isNaN(end)) {
+      // Allow 24h buffer after event ends
+      const expiresAt = end + 24 * 60 * 60 * 1000;
+      const now = Date.now();
+      if (expiresAt > now) {
+        expiresIn = Math.floor((expiresAt - now) / 1000); // seconds
+      } else {
+        expiresIn = 60 * 60; // Event ended, fallback 1 hour
+      }
+    }
+  }
+
   return jwt.sign(
     { ticketToken, eventId: String(eventId), registrationId },
     secret,
