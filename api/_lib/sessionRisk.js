@@ -4,9 +4,6 @@
  * Utilities for tracking session risk, handling failed logins, and evaluating session states.
  */
 
-const KV_URL = process.env.KV_REST_API_URL;
-const KV_TOKEN = process.env.KV_REST_API_TOKEN;
-
 // Config
 const FAILED_LOGIN_THRESHOLD = 5;
 const FAILED_LOGIN_WINDOW_S = 600; // 10 minutes
@@ -15,41 +12,45 @@ const SESSION_EXPIRY_S = 24 * 60 * 60; // 24 hours
 
 const memoryStore = new Map();
 
-/**
- * Helper to fetch KV
- */
-async function kvFetch(endpoint, options = {}) {
-  if (!KV_URL || !KV_TOKEN) return null;
-  const url = `${KV_URL}${endpoint}`;
+// ---------------------------------------------------------------------------
+// Redis Client Initialization
+// ---------------------------------------------------------------------------
+let redisClient = null;
+let RedisClass = null;
+
+async function getRedisClient() {
+  if (redisClient !== null) {
+    return redisClient;
+  }
+
+  if (typeof process === "undefined" || !process.release || process.env.EDGE_RUNTIME) {
+    return null;
+  }
+
+  const redisUrl = process.env.REDIS_URL || process.env.KV_REST_API_URL || process.env.KV_URL;
+  if (!redisUrl) {
+    return null;
+  }
+
   try {
-    const res = await fetch(url, {
-      ...options,
-      headers: {
-        Authorization: `Bearer ${KV_TOKEN}`,
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
-    });
-    if (!res.ok) {
-      console.error(
-        "[sessionRisk] KV returned error",
-        {
-          endpoint,
-          status: res.status,
-          statusText: res.statusText
-        }
-      );
-      return null;
+    if (!RedisClass) {
+      const module = await import(/* webpackIgnore: true */ /* @vite-ignore */ "ioredis");
+      RedisClass = module.default || module;
     }
-    return await res.json();
-  } catch (error) {
-    console.error(
-      "[sessionRisk] KV request failed",
-      {
-        endpoint,
-        error: error.message
-      }
-    );
+
+    redisClient = new RedisClass(redisUrl, {
+      tls: redisUrl.startsWith("rediss://") ? {} : undefined,
+      maxRetriesPerRequest: 3,
+      retryStrategy: (times) => Math.min(times * 100, 500)
+    });
+
+    redisClient.on("error", (err) => {
+      console.error("[sessionRisk.js] Redis client error:", err);
+    });
+
+    return redisClient;
+  } catch (err) {
+    console.error("[sessionRisk.js] Failed to initialize Redis:", err);
     return null;
   }
 }
@@ -58,7 +59,9 @@ export async function trackFailedLogin(username) {
   if (!username) return false;
   const key = `auth:failed:${username.toLowerCase()}`;
   
-  if (!KV_URL || !KV_TOKEN) {
+  const redis = await getRedisClient();
+  
+  if (!redis) {
     const data = memoryStore.get(key) || { count: 0, expires: Date.now() + FAILED_LOGIN_WINDOW_S * 1000 };
     if (Date.now() > data.expires) {
       data.count = 1;
@@ -70,12 +73,9 @@ export async function trackFailedLogin(username) {
     return data.count >= FAILED_LOGIN_THRESHOLD;
   }
 
-  const res = await kvFetch(`/incr/${key}`, { method: "POST" });
-  if (!res) return false;
-  const count = res.result;
-
+  const count = await redis.incr(key);
   if (count === 1) {
-    await kvFetch(`/expire/${key}/${FAILED_LOGIN_WINDOW_S}`, { method: "POST" });
+    await redis.expire(key, FAILED_LOGIN_WINDOW_S);
   }
 
   return count >= FAILED_LOGIN_THRESHOLD;
@@ -84,11 +84,14 @@ export async function trackFailedLogin(username) {
 export async function clearFailedLogin(username) {
   if (!username) return;
   const key = `auth:failed:${username.toLowerCase()}`;
-  if (!KV_URL || !KV_TOKEN) {
+  
+  const redis = await getRedisClient();
+  if (!redis) {
     memoryStore.delete(key);
     return;
   }
-  await kvFetch(`/del/${key}`, { method: "POST" });
+  
+  await redis.del(key);
 }
 
 export async function registerSession(sessionId, userId, ip) {
@@ -101,22 +104,20 @@ export async function registerSession(sessionId, userId, ip) {
     riskScore: 0,
   };
 
-  if (!KV_URL || !KV_TOKEN) {
+  const redis = await getRedisClient();
+  if (!redis) {
     memoryStore.set(key, sessionData);
     return;
   }
 
-  await kvFetch(`/set/${key}`, {
-    method: "POST",
-    body: JSON.stringify(sessionData),
-  });
-  await kvFetch(`/expire/${key}/${SESSION_EXPIRY_S}`, { method: "POST" });
+  await redis.set(key, JSON.stringify(sessionData), 'EX', SESSION_EXPIRY_S);
 }
 
 export async function getSessionState(sessionId) {
   const key = `session:${sessionId}`;
   
-  if (!KV_URL || !KV_TOKEN) {
+  const redis = await getRedisClient();
+  if (!redis) {
     const data = memoryStore.get(key);
     if (!data) return null;
     if (Date.now() - data.lastActive > INACTIVITY_THRESHOLD_MS && data.status === "active") {
@@ -125,40 +126,22 @@ export async function getSessionState(sessionId) {
     return data;
   }
 
-  const res = await kvFetch(`/get/${key}`);
-  if (!res || !res.result) return null;
+  const res = await redis.get(key);
+  if (!res) return null;
 
-  let sessionData = res.result;
-  if (typeof sessionData === 'string') {
-    try {
-      sessionData = JSON.parse(sessionData);
-    } catch(error) {
-      console.error(
-        "[sessionRisk] Failed to parse session data",
-        {
-          sessionId,
-          key,
-          error: error.message
-        }
-      );
-      return null;
-    }
+  let sessionData;
+  try {
+    sessionData = JSON.parse(res);
+  } catch(error) {
+    console.error("[sessionRisk] Failed to parse session data", { sessionId, key, error: error.message });
+    return null;
   }
 
   if (Date.now() - sessionData.lastActive > INACTIVITY_THRESHOLD_MS && sessionData.status === "active") {
     sessionData.status = "requires_reauth";
     // Optimistically update KV in background
-    kvFetch(`/set/${key}`, {
-      method: "POST",
-      body: JSON.stringify(sessionData),
-    }).catch((error) => {
-      console.error(
-        "[sessionRisk] Background KV update failed",
-        {
-          endpoint: `/set/${key}`,
-          error: error.message
-        }
-      );
+    redis.set(key, JSON.stringify(sessionData), 'KEEPTTL').catch((error) => {
+      console.error("[sessionRisk] Background Redis update failed", { key, error: error.message });
     });
   }
 
@@ -172,16 +155,14 @@ export async function updateSessionActivity(sessionId) {
   sessionData.lastActive = Date.now();
   
   const key = `session:${sessionId}`;
-  if (!KV_URL || !KV_TOKEN) {
+  
+  const redis = await getRedisClient();
+  if (!redis) {
     memoryStore.set(key, sessionData);
     return;
   }
 
-  await kvFetch(`/set/${key}`, {
-    method: "POST",
-    body: JSON.stringify(sessionData),
-  });
-  await kvFetch(`/expire/${key}/${SESSION_EXPIRY_S}`, { method: "POST" });
+  await redis.set(key, JSON.stringify(sessionData), 'EX', SESSION_EXPIRY_S);
 }
 
 export async function setSessionStatus(sessionId, status) {
@@ -191,14 +172,12 @@ export async function setSessionStatus(sessionId, status) {
   sessionData.status = status;
   
   const key = `session:${sessionId}`;
-  if (!KV_URL || !KV_TOKEN) {
+  
+  const redis = await getRedisClient();
+  if (!redis) {
     memoryStore.set(key, sessionData);
     return;
   }
 
-  await kvFetch(`/set/${key}`, {
-    method: "POST",
-    body: JSON.stringify(sessionData),
-  });
-  await kvFetch(`/expire/${key}/${SESSION_EXPIRY_S}`, { method: "POST" });
+  await redis.set(key, JSON.stringify(sessionData), 'EX', SESSION_EXPIRY_S);
 }
