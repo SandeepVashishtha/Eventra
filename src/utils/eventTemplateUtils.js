@@ -44,8 +44,9 @@ const sanitizeTemplateData = (formData) => {
  * @returns {Array} Array of template objects
  */
 export const getTemplates = () => {
+  if (typeof window === "undefined" || !window.localStorage) return [];
   try {
-    const stored = localStorage.getItem(TEMPLATES_KEY);
+    const stored = window.localStorage.getItem(TEMPLATES_KEY);
     if (!stored) return [];
 
     const templates = safeJsonParse(stored, []);
@@ -91,7 +92,9 @@ export const saveTemplate = (templateName, formData) => {
     };
 
     templates.push(newTemplate);
-    localStorage.setItem(TEMPLATES_KEY, JSON.stringify(templates));
+    if (typeof window !== "undefined" && window.localStorage) {
+      window.localStorage.setItem(TEMPLATES_KEY, JSON.stringify(templates));
+    }
 
     return newTemplate;
   } catch (error) {
@@ -137,7 +140,9 @@ export const deleteTemplate = (templateId) => {
       return false;
     }
 
-    localStorage.setItem(TEMPLATES_KEY, JSON.stringify(filteredTemplates));
+    if (typeof window !== "undefined" && window.localStorage) {
+      window.localStorage.setItem(TEMPLATES_KEY, JSON.stringify(filteredTemplates));
+    }
     return true;
   } catch (error) {
     console.error("[EventTemplates] Error deleting template:", error);
@@ -151,7 +156,9 @@ export const deleteTemplate = (templateId) => {
  */
 export const clearAllTemplates = () => {
   try {
-    localStorage.removeItem(TEMPLATES_KEY);
+    if (typeof window !== "undefined" && window.localStorage) {
+      window.localStorage.removeItem(TEMPLATES_KEY);
+    }
     return true;
   } catch (error) {
     console.error("[EventTemplates] Error clearing templates:", error);
