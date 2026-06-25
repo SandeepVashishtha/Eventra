@@ -59,6 +59,13 @@ const EventDetails = () => {
   const [linkCopied, setLinkCopied] = useState(false);
   const latestRequestIdRef = useRef(0);
   const abortControllerRef = useRef(null);
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   const loadEvent = useCallback(async () => {
     abortControllerRef.current?.abort();
@@ -67,6 +74,7 @@ const EventDetails = () => {
     abortControllerRef.current = controller;
     const requestId = ++latestRequestIdRef.current;
     const isLatestRequest = () =>
+      isMounted.current &&
       latestRequestIdRef.current === requestId &&
       abortControllerRef.current === controller &&
       !controller.signal.aborted;
