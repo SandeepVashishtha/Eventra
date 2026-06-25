@@ -99,7 +99,7 @@ const MobileDrawer = ({
         role="dialog"
         aria-modal="true"
         aria-label="Mobile navigation"
-        className={`mobile-drawer-panel absolute right-0 top-0 flex w-[min(92vw,24rem)] max-w-drawer flex-col bg-navbar shadow-premium-lg transition-transform duration-200 ease-out ${
+        className={`mobile-drawer-panel absolute right-0 top-0 flex h-dvh w-[min(92vw,24rem)] flex-col bg-navbar shadow-premium-lg transition-transform duration-200 ease-out ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -129,7 +129,7 @@ const MobileDrawer = ({
           </button>
         </div>
 
-        <div className="flex h-[calc(100%-73px)] flex-col overflow-y-auto px-4 py-5">
+        <div className="flex flex-1 flex-col overflow-y-auto px-4 py-5">
           <NavbarLinks
             vertical
             onClick={closeMenu}
