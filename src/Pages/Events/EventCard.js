@@ -1,3 +1,5 @@
+import EventDuration from "../../components/common/EventDuration";
+import { getEventDuration } from "../../utils/eventDurationUtils";
 import { memo, useCallback, useEffect, useId, useState } from "react";
 import { logger } from "../../utils/logger";
 import { getUserTimezone } from "../../utils/timezoneUtils";
@@ -98,8 +100,7 @@ const EventCard = ({ event }) => {
       });
   };
 
-  const computedStatus = getEventStatus(event);
-  const canSetReminder = isBookmarked || isRegistered(event.id);
+const durationText = getEventDuration(event);
 
   useEffect(() => {
     setIsBookmarked(isEventBookmarked(event.id));
@@ -326,6 +327,7 @@ const EventCard = ({ event }) => {
               {new Date(event.date).toLocaleDateString("en-US", {
                 weekday: "short", day: "numeric", month: "short", year: "numeric",
               })}
+              <EventDuration duration={durationText} /><EventDuration duration={durationText} />
             </span>
           </div>
         </div>
