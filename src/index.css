@@ -449,11 +449,11 @@ html {
   --evt-surface-hover: #334155;
   --evt-text-primary: #f8fafc;
   --evt-text-heading: #ffffff;
-  --evt-text-secondary: #e2e8f0;
-  --evt-text-muted: #94a3b8;
+  --evt-text-secondary: #f1f5f9;
+  --evt-text-muted: #cbd5e1;
   --evt-border-default: #334155;
-  --evt-border-subtle: rgba(255, 255, 255, 0.15);
-  --evt-border-input: #475569;
+  --evt-border-subtle: rgba(255, 255, 255, 0.25);
+  --evt-border-input: #64748b;
   --evt-brand-primary: #3b82f6;
   --evt-brand-primary-strong: #60a5fa;
   --evt-brand-primary-hover: #2563eb;
