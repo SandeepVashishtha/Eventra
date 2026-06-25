@@ -51,7 +51,7 @@ const retryServiceWorkerOperation = async (
 };
 
 export function register(config) {
-  if (isProd && 'serviceWorker' in navigator) {
+  if (typeof window !== "undefined" && isProd && 'serviceWorker' in navigator) {
     // The URL constructor is available in all browsers that support SW.
     const publicUrl = new URL(publicBaseUrl, window.location.href);
     if (publicUrl.origin !== window.location.origin) {
