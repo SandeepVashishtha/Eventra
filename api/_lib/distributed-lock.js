@@ -25,27 +25,33 @@ class InMemoryLockManager {
     let lock = this.locks.get(key);
     const prevLock = lock;
 
+    // Create new lock for this acquisition
     lock = new Lock();
+    
+    // Set the new lock in the map
     this.locks.set(key, lock);
 
-    const timeout = setTimeout(() => {
-      if (this.locks.get(key) === lock) {
-        this.locks.delete(key);
-        lock.release();
-      }
-    }, ttlMs);
-
+    // Wait for previous lock to be released (FIFO ordering)
     if (prevLock) {
       await prevLock.promise;
     }
 
-    clearTimeout(timeout);
+    // Note: TTL is ignored for in-memory locks to prevent
+    // race conditions where timeout releases lock while
+    // protected function is still executing.
+    // In a distributed system with Redis, TTL would be handled
+    // differently with proper ownership tracking.
 
     let released = false;
     return () => {
       if (released) return;
       released = true;
+      
+      // Release the lock
       lock.release();
+      
+      // Only delete from map if this is still the current lock
+      // This prevents deleting a newer lock that replaced this one
       if (this.locks.get(key) === lock) {
         this.locks.delete(key);
       }
@@ -60,6 +66,11 @@ export function getLockManager() {
     instance = new InMemoryLockManager();
   }
   return instance;
+}
+
+// For testing only - reset the singleton instance
+export function resetLockManager() {
+  instance = null;
 }
 
 export async function withLock(key, fn, ttlMs = 30000) {

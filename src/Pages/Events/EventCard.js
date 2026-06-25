@@ -1,3 +1,5 @@
+import EventDuration from "../../components/common/EventDuration";
+import { getEventDuration } from "../../utils/eventDurationUtils";
 import { memo, useCallback, useEffect, useId, useState } from "react";
 import { logger } from "../../utils/logger";
 import { getUserTimezone } from "../../utils/timezoneUtils";
@@ -98,8 +100,7 @@ const EventCard = ({ event }) => {
       });
   };
 
-  const computedStatus = getEventStatus(event);
-  const canSetReminder = isBookmarked || isRegistered(event.id);
+const durationText = getEventDuration(event);
 
   useEffect(() => {
     setIsBookmarked(isEventBookmarked(event.id));
@@ -138,11 +139,13 @@ const EventCard = ({ event }) => {
   );
 
   return (
-    <article
+    <motion.article
       data-aos="zoom-in"
       data-aos-duration="800"
       aria-labelledby={titleId}
-      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-lg backdrop-blur-sm transition-all duration-300 flex flex-col z-10 event-card-hoverable overflow-hidden border border-gray-100 dark:border-gray-800"
+      whileHover={{ scale: 1.02, y: -5, boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15)" }}
+      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-lg backdrop-blur-sm flex flex-col z-10 event-card-hoverable overflow-hidden border border-gray-100 dark:border-gray-800"
     >
       {/* Action buttons */}
       <div className="absolute top-3 right-3 z-200 flex space-x-1.5 items-center">
@@ -326,6 +329,7 @@ const EventCard = ({ event }) => {
               {new Date(event.date).toLocaleDateString("en-US", {
                 weekday: "short", day: "numeric", month: "short", year: "numeric",
               })}
+              <EventDuration duration={durationText} /><EventDuration duration={durationText} />
             </span>
           </div>
         </div>
@@ -405,7 +409,7 @@ const EventCard = ({ event }) => {
           </span>
         </Link>
       </div>
-    </article>
+    </motion.article>
   );
 };
 

@@ -88,22 +88,24 @@ const ProfileMenu = ({ user, logout }) => {
         aria-label={isOpen ? "Close profile menu" : "Open profile menu"}
         aria-expanded={isOpen}
         aria-haspopup="true"
-        className="flex items-center gap-2 rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+        className="flex items-center gap-2 rounded-full border border-gray-200/80 bg-white/80 hover:bg-white shadow-sm hover:shadow-md dark:border-zinc-700/80 dark:bg-zinc-900/80 dark:hover:bg-zinc-800 p-1 pr-3 backdrop-blur-md transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
       >
         {user?.profilePicture ? (
           <img
             loading="lazy"
             src={user.profilePicture}
             alt={`${user?.name || "User"} profile`}
-            className="w-9 h-9 rounded-full object-cover border border-border transition-colors"
+            className="w-7 h-7 rounded-full object-cover transition-colors ring-1 ring-border shadow-sm"
           />
         ) : (
-          <div className="w-9 h-9 rounded-full bg-card-bg border border-border flex items-center justify-center transition-colors">
-            <User className="text-text-light w-4.5 h-4.5" />
+          <div className="w-7 h-7 rounded-full bg-card-bg flex items-center justify-center transition-colors ring-1 ring-border shadow-sm">
+            <User className="text-text-light w-3.5 h-3.5" strokeWidth={1.5} />
           </div>
         )}
+        <span className="text-sm font-medium tracking-wide hidden sm:block text-text-light hover:text-text">{user?.name?.split(" ")[0] || "Profile"}</span>
         <ChevronDown
-          className={`w-4 h-4 text-text-light transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+          className={`w-3.5 h-3.5 text-text-light transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+          strokeWidth={1.5}
         />
       </button>
 
@@ -111,7 +113,7 @@ const ProfileMenu = ({ user, logout }) => {
         <div
           role="menu"
           aria-label="Profile menu"
-          className="absolute right-0 mt-3 w-56 origin-top-right rounded-xl border border-border bg-navbar shadow-lg p-2 z-dropdown animate-in fade-in zoom-in-95 duration-100"
+          className="absolute right-0 mt-3 w-56 origin-top-right rounded-xl border border-zinc-100 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md shadow-lg p-2 z-50 animate-in fade-in zoom-in-95 duration-100"
         >
           <div className="px-3 py-2 mb-2 border-b border-border">
             <p className="text-sm font-semibold text-text truncate">

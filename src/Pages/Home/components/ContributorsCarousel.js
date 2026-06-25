@@ -1,6 +1,6 @@
 import { GitBranch, ChevronLeft, ChevronRight } from "lucide-react";
 import { FaMedal, FaCodeBranch, FaUserFriends, FaBuilding, FaMapMarkerAlt, FaGithub, FaExternalLinkAlt } from "react-icons/fa";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, memo } from "react";
 import useReducedMotion from "../../../hooks/useReducedMotion.js";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -516,4 +516,4 @@ const Contributors = () => {
   );
 };
 
-export default Contributors;
+export default memo(Contributors);

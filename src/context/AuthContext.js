@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useCallback, useRef, useState } from "react";
-import { setOnUnauthorizedHandler, setRequiresReauthHandler, setAuthToken } from "../config/api.js";
+import { setOnUnauthorizedHandler, setRequiresReauthHandler, setAuthToken, apiUtils } from "../config/api.js";
 import { authService } from "../services/authService.js";
 import { userService } from "../services/userService.js";
 import { syncSecureStorage } from "../utils/secureStorage.js";
@@ -9,6 +9,7 @@ import { isTokenValid } from "../utils/tokenUtils.js";
 import { toast } from "react-toastify";
 import { ROLES, ROLE_PERMISSIONS } from "../config/roles.js";
 import { getSessionChannel, closeSessionChannel, SESSION_TERMINATED, broadcastSessionTerminated } from "../utils/sessionBroadcast.js";
+import { deleteCookie, setCookie } from "../utils/cookieUtils.js";
 import ReAuthModal from "../components/auth/ReAuthModal";
 
 // Create context for Authentication
@@ -40,10 +41,10 @@ const extractSession = (data, fallbackEmail) => {
   // Extract user details from raw API response payload structure
   const rawUser = data?.user ?? data?.data ?? data ?? null;
   const rawRoles = rawUser?.roles ?? (rawUser?.role ? [rawUser.role] : []);
-  
+
   // Normalize roles to ensure consistent uppercase format and organization names
   const resolvedRoles = normalizeRoles(rawRoles);
-  
+
   // Build user permissions by combining token-based and role-based permissions
   const tokenPermissions = Array.isArray(rawUser?.permissions)
     ? rawUser.permissions.map((p) => String(p))
@@ -87,10 +88,10 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [authRequest, setAuthRequest] = useState({ loading: false, error: null });
   const [requiresReauth, setRequiresReauth] = useState(false);
-  
+
   // Ref to track mounting status and prevent setting state on unmounted components
   const isMountedRef = useRef(true);
-  
+
   // Ref to track whether session expired toast has already been displayed to prevent spamming
   const expiryToastShownRef = useRef(false);
 
@@ -113,11 +114,14 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setToken(null);
     setAuthToken(null);
-    
+
     // Invalidate token cookie
-    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure; SameSite=Strict";
-    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Strict";
-    
+    deleteCookie("auth_token", {
+      path: "/",
+      secure: true,
+      sameSite: "Strict",
+    });
+
     // Clear user metadata from secure/local storage manager
     syncSecureStorage.removeItem("user");
     return true;
@@ -167,9 +171,9 @@ export const AuthProvider = ({ children }) => {
     } catch (e) {
       console.warn("[AuthContext] Failed to read from secure storage during expiry check", e);
     }
-    
+
     clearSession();
-    
+
     if (!hadPreviousSession || expiryToastShownRef.current) return;
     expiryToastShownRef.current = true;
     toast.info(
@@ -179,12 +183,7 @@ export const AuthProvider = ({ children }) => {
         autoClose: 5000,
       }
     );
-    
-    toast.info("Session expired. Please log in again.", {
-      toastId: "session-expired",
-      autoClose: 4000,
-    });
-    
+
     setTimeout(() => {
       window.location.replace("/login");
     }, 1500);
@@ -197,21 +196,10 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const validate = async () => {
       try {
-        const cookieToken = document.cookie
-          .split("; ")
-          .find((row) => row.startsWith("token="))
-          ?.split("=")[1];
-        
+        const res = await apiUtils.get("/api/auth/me");
         let activeToken = "cookie-managed";
-        if (cookieToken && cookieToken !== "cookie-managed") {
-          activeToken = cookieToken;
-          setToken(cookieToken);
-          setAuthToken(cookieToken);
-        }
-
-        const res = await userService.getProfile();
         if (!isMountedRef.current) return;
-        
+
         if (res.ok && res.data) {
           const { sessionUser } = extractSession(res.data, null);
           if (!isMountedRef.current) return;
@@ -222,7 +210,7 @@ export const AuthProvider = ({ children }) => {
         }
       } catch (err) {
         if (!isMountedRef.current) return;
-        
+
         // If server returns unauthorized or forbidden, clear cached state
         if (err?.status === 401 || err?.status === 403) {
           clearSession();
@@ -249,7 +237,7 @@ export const AuthProvider = ({ children }) => {
         if (isMountedRef.current) setLoading(false);
       }
     };
-    
+
     validate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -279,10 +267,10 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     if (!token || token === "cookie-managed") return;
     expiryToastShownRef.current = false;
-    
+
     const expSeconds = user?.exp;
     let timerId;
-    
+
     if (typeof expSeconds === "number") {
       const msUntilExpiry = expSeconds * 1000 - Date.now() + 1000;
       timerId = setTimeout(() => {
@@ -293,7 +281,7 @@ export const AuthProvider = ({ children }) => {
         if (!isTokenValid(token)) clearExpiredSession();
       }, 60000);
     }
-    
+
     return () => {
       if (typeof expSeconds === "number") {
         clearTimeout(timerId);
@@ -315,11 +303,14 @@ export const AuthProvider = ({ children }) => {
     setToken(sessionToken);
     setUser(sessionUser);
     setAuthToken(sessionToken);
-    
+
     try {
       if (sessionToken && sessionToken !== "cookie-managed") {
-        const secureFlag = window.location.protocol === "https:" ? "Secure;" : "";
-        document.cookie = `token=${sessionToken}; path=/; ${secureFlag} SameSite=Strict`;
+        setCookie("token", sessionToken, {
+          path: "/",
+          secure: window.location.protocol === "https:",
+          sameSite: "Strict",
+        });
       }
     } catch (err) {
       console.warn("[AuthContext] Failed to write cookie:", err);
@@ -378,8 +369,11 @@ export const AuthProvider = ({ children }) => {
       } catch (error) {
         if (!isMountedRef.current) return false;
         // Fix (Issue #8646):
-        document.cookie = "token=; Max-Age=0; path=/; Secure; SameSite=Strict";
-        document.cookie = "token=; Max-Age=0; path=/; SameSite=Strict";
+        deleteCookie("token", {
+          path: "/",
+          secureVariants: true,
+          sameSite: "Strict",
+        });
 
         const status = error?.status || error?.response?.status;
         // Re-throw server errors so Login.js catch can show the correct message

@@ -101,14 +101,12 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
       <nav
         ref={navRef}
         aria-label="Primary navigation"
-        className={`sticky top-0 z-sticky w-full transition-all duration-300 ${
-          scrolled
-            ? "border-b border-border bg-navbar/95 backdrop-blur-md shadow-sm"
-            : "border-b border-transparent bg-transparent"
+        className={`sticky top-0 z-50 w-full transition-all duration-300 bg-white/70 backdrop-blur-md dark:bg-black/70 border-b border-gray-200/50 dark:border-zinc-800/50 ${
+          scrolled ? "shadow-sm" : ""
         }`}
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid h-16 grid-cols-[auto_1fr_auto] items-center gap-6">
+          <div className="flex h-16 items-center justify-between gap-2 lg:gap-4">
             {/* Logo */}
             <Link to="/" aria-label="Eventra Home" className="flex items-center shrink-0">
               <div className="flex items-center gap-3">
@@ -129,7 +127,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             </Link>
 
             {/* Desktop Navigation */}
-            <div className="hidden lg:flex justify-center overflow-hidden">
+            <div className="hidden lg:flex flex-1 justify-center shrink-0 mx-2">
               <DesktopNavbar />
             </div>
 

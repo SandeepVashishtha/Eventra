@@ -18,6 +18,18 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
   }, [location.pathname]);
 
   useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setOpenMenu(null);
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
+  useEffect(() => {
     if (vertical) return;
 
     const handleOutsideClick = (event) => {
@@ -72,22 +84,24 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
         transition-all duration-200
         ${
           isActive
-            ? "bg-bg-secondary text-text border-l-4 border-primary font-semibold"
-            : "text-text-secondary hover:bg-bg hover:text-text"
+            ? "bg-bg-secondary text-primary font-semibold border-l-4 border-primary font-semibold"
+            : "text-text-secondary hover:bg-bg hover:text-primary"
         }
       `
       : `
         flex items-center gap-1.5
         whitespace-nowrap
-        px-3 py-2
-        text-sm font-medium
-        tracking-wide
-        border-b-2 border-transparent
-        transition-all duration-200
+        px-1 py-1
+        text-[13px]
+        font-medium
+        uppercase
+        tracking-[0.04em]
+        border-b-2
+        transition-all duration-150 ease-out hover:scale-[1.02] active:scale-[0.98]
         ${
           isActive
-            ? "border-primary text-text font-semibold"
-            : "text-text-secondary hover:text-text hover:border-border"
+            ? "border-primary text-text dark:text-white font-semibold font-semibold"
+            : "text-text-secondary hover:text-text dark:hover:text-white hover:border-gray-300 dark:hover:border-zinc-700"
         }
       `;
 
@@ -122,8 +136,18 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                   <button
                     type="button"
                     aria-expanded={isOpen}
+                    aria-haspopup="menu"
                     aria-controls={menuId}
                     onClick={() => setOpenMenu(isOpen ? null : item.nameKey)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        setOpenMenu(
+                          isOpen
+                            ? null
+                            : item.nameKey
+                        );
+                      }
+                    }}
                     className="ml-0.5 rounded p-1.5 hover:bg-bg-secondary transition-colors"
                     aria-label={`Toggle ${t(item.nameKey)} menu`}
                   >
@@ -143,7 +167,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                   className={
                     vertical
                       ? "mt-1 ml-6 space-y-1"
-                      : "absolute left-0 top-full mt-3 w-56 rounded-xl border border-border bg-navbar p-2 shadow-lg z-50 animate-in fade-in zoom-in-95"
+                      : "absolute left-0 top-full mt-3 w-56 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md p-2 shadow-lg z-50 animate-in fade-in zoom-in-95"
                   }
                 >
                   {item.subItems.map((sub) => (
@@ -153,15 +177,15 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                       onClick={(e) => handleClick(sub.href, e)}
                       className={({ isActive }) =>
                         `
-                          flex items-center gap-3
-                          rounded-lg
-                          px-4 py-2.5
-                          text-sm font-medium
+                          flex items-center gap-2
+                          rounded-md
+                          px-3 py-2
+                          text-sm
                           transition-all duration-200
                           ${
                             isActive
-                              ? "bg-bg-secondary text-text font-semibold"
-                              : "text-text-secondary hover:bg-bg hover:text-text"
+                              ? "bg-bg-secondary text-indigo-600 dark:text-indigo-400 font-semibold"
+                              : "text-text-secondary hover:bg-bg hover:text-indigo-600 dark:hover:text-indigo-400"
                           }
                         `
                       }

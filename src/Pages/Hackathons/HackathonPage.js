@@ -537,10 +537,11 @@ const HackathonHub = () => {
         </div>
       )}
 
-      {/* Hackathons Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Section header + Filters toggle */}
-        <div className="mb-8" data-aos="fade-up" data-aos-delay="200">
+      <div
+        ref={cardsSectionRef}
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+      >
+        <div className="mb-8">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-1">
@@ -772,91 +773,32 @@ const HackathonHub = () => {
                   }}
                 />
 
-                <div className="absolute inset-0 z-0 overflow-hidden">
-                  {[...Array(6)].map((_, i) => {
-                    const positions = [
-                      { left: "10%", top: "20%" }, { left: "70%", top: "15%" },
-                      { left: "30%", top: "70%" }, { left: "80%", top: "60%" },
-                      { left: "50%", top: "40%" }, { left: "20%", top: "50%" },
-                    ];
-                    const size = 30 + Math.random() * 40;
-                    return (
-                      <motion.div
-                        key={i}
-                        className="absolute rounded-full bg-primary/20 dark:bg-primary/20"
-                        style={{ width: size, height: size, left: positions[i].left, top: positions[i].top, opacity: 0.3 }}
-                        animate={{ y: [0, -30, 0], x: [0, 10, -10, 0], scale: [1, 1.2, 1] }}
-                        transition={{ duration: prefersReducedMotion ? 0 : 6 + i, repeat: Infinity, ease: "easeInOut", delay: i * 0.5 }}
-                      />
-                    );
-                  })}
-                </div>
+      {/* Reset Filters Button */}
+      {(searchQuery ||
+        filters.difficulty ||
+        filters.prize ||
+        filters.location ||
+        selectedTags.length > 0) && (
+        <div className="mt-6 flex justify-center">
+          <button
+            onClick={resetFilters}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-black hover:bg-zinc-800 text-white text-sm font-medium shadow-md transition-all duration-300"
+          >
+            <FiRotateCw className="w-4 h-4" />
+            Reset Filters
+          </button>
+        </div>
+      )}
+    </motion.div>
+  )}
+</AnimatePresence>
 
-                <div className="mx-auto max-w-md relative z-10">
-                  <motion.div
-                    animate={{ y: [0, -8, 0] }}
-                    transition={{ duration: prefersReducedMotion ? 0 : 3, repeat: Infinity, ease: "easeInOut" }}
-                    className="flex justify-center items-center w-24 h-24 rounded-full bg-indigo-50 dark:bg-indigo-950/30 shadow-sm mx-auto border border-indigo-100 dark:border-indigo-800/50"
-                  >
-                    <Rocket className="h-12 w-12 text-indigo-600 dark:text-indigo-400" />
-                  </motion.div>
+       
 
-                  <h3 className="mt-6 text-2xl font-bold text-slate-900 dark:text-gray-100">
-                    No hackathons available right now 🚀
-                  </h3>
-
-                  <p className="mt-3 text-sm text-gray-600 dark:text-gray-400 leading-relaxed max-w-sm mx-auto">
-                    {debouncedSearchQuery || filters.difficulty || filters.prize || filters.location || selectedTags.length > 0
-                      ? "No hackathons match your current filters. Try adjusting your search or clearing your filters."
-                      : "Be the first to host one or check back later for upcoming opportunities."}
-                  </p>
-
-                  <div className="mt-8 flex flex-col sm:flex-row flex-wrap gap-4 justify-center items-center">
-                    <motion.button
-                      type="button"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={scrollToCards}
-                      className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium rounded-xl text-white bg-linear-to-r from-blue-600 via-indigo-600 to-violet-600 hover:opacity-90 shadow-lg transition-all"
-                    >
-                      <Compass className="w-4 h-4" />
-                      Explore Hackathons
-                    </motion.button>
-
-                    <motion.div
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <Link 
-                        to="/host-hackathon"
-                        className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium rounded-xl text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-gray-900 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 shadow-sm transition-all"
-                      >
-                        <PlusCircle className="w-4 h-4" />
-                        Host a Hackathon
-                      </Link>
-                    </motion.div>
-
-                    {(debouncedSearchQuery || filters.difficulty || filters.prize || filters.location || selectedTags.length > 0) && (
-                      <motion.button
-                        type="button"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={resetFilters}
-                        className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium rounded-xl text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-all w-full sm:w-auto"
-                      >
-                        <RefreshCw className="w-4 h-4" />
-                        Reset Filters
-                      </motion.button>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </ErrorBoundary>
       </div>
       
       <HackathonCTA />
+      <BackToTopButton positionClass={positionClass} />
     </div>
   );
 };

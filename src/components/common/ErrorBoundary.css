@@ -190,6 +190,25 @@
   color: #94a3b8;
 }
 
+.eb-suggestion {
+  position: relative;
+  z-index: 1;
+  max-width: 420px;
+  margin: 0 auto 18px;
+  padding: 10px 12px;
+  border: 1px solid rgba(14, 165, 233, 0.18);
+  border-radius: 10px;
+  background: rgba(14, 165, 233, 0.07);
+  color: #0369a1;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+.dark .eb-suggestion {
+  background: rgba(14, 165, 233, 0.1);
+  border-color: rgba(56, 189, 248, 0.2);
+  color: #7dd3fc;
+}
+
 /* ── Error Reference ID ─────────────────────────────────────── */
 .eb-error-id {
   font-size: 0.8125rem;

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React from "react";
 
 /**
@@ -21,7 +22,7 @@ const Loading = ({
       className={`flex flex-col items-center justify-center gap-4 py-8 ${className}`}
       role="status"
       aria-live="polite"
-      aria-label={text || "Loading..."}
+      aria-label={text || t("app.loading")}
     >
       <div
         className={`${size} animate-spin rounded-full border-4 border-indigo-500 border-t-transparent dark:border-indigo-400 dark:border-t-transparent`}
@@ -34,7 +35,7 @@ const Loading = ({
         </span>
       )}
 
-      <span className="sr-only">Loading...</span>
+      <span className="sr-only">{t("app.loading")}</span>
     </div>
   );
 };

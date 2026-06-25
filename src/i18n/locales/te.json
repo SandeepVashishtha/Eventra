@@ -92,7 +92,12 @@
     "feedbackTypeRequired": "Please select a feedback type",
     "feedbackMessageRequired": "Message is required",
     "feedbackMessageMinLength": "Message must be at least 20 characters",
-    "feedbackRatingRequired": "Please provide a rating"
+    "feedbackRatingRequired": "Please provide a rating",
+    "featureTitleRequired": "Feature title is required",
+    "featureTitleMinLength": "Feature title must be at least 5 characters",
+    "featureProblemRequired": "Please describe the problem this feature would solve",
+    "featureProblemMinLength": "Problem description must be at least 20 characters",
+    "featurePriorityRequired": "Please select a priority level"
   },
   "error": {
     "generic": "An unexpected error occurred. Please try again.",
@@ -674,6 +679,18 @@
     "charCountDisplay": "{{current}} / {{max}}",
     "toastValidationError": "Please fill in all required fields correctly",
     "toastSuccess": "Thank you for your feedback! We appreciate your input.",
-    "toastError": "There was an error submitting your feedback. Please try again."
+    "toastError": "There was an error submitting your feedback. Please try again.",
+    "featureRequest": {
+      "sectionTitle": "Feature Request Details",
+      "titleLabel": "Feature Title",
+      "problemLabel": "Problem it solves",
+      "alternativesLabel": "Alternatives considered",
+      "optionalBadge": "optional",
+      "priorityLabel": "Priority",
+      "priorityLow": "Low",
+      "priorityMedium": "Medium",
+      "priorityHigh": "High",
+      "priorityCritical": "Critical"
+    }
   }
 }

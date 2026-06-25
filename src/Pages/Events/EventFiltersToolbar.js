@@ -1,4 +1,4 @@
-import { Grid, List, Calendar, Search, X, RotateCcw, Sparkles, Filter, Save, Pencil, Trash2, Upload, RefreshCcw, Download } from "lucide-react";
+import { Grid, List, Search, X, RotateCcw, Sparkles, Filter } from "lucide-react";
 import { useState, useEffect, useRef, memo, useCallback } from "react";
 import StyledDropdown from "../../components/StyledDropdown";
 import AdvancedFilterPanel from "../../components/common/AdvancedFilterPanel";
@@ -396,5 +396,5 @@ const EventFiltersToolbar = ({
   );
 };
 
-export default EventFiltersToolbar;
+export default memo(EventFiltersToolbar);
 

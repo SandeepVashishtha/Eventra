@@ -57,21 +57,19 @@ const AuthButtons = ({ isLoggedIn = false }) => {
           aria-expanded={isOpen}
           aria-haspopup="menu"
           aria-controls={isOpen ? menuId : undefined}
-          className="flex items-center gap-2 rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          className="flex items-center gap-2 rounded-full border border-gray-200/80 bg-white/80 hover:bg-white shadow-sm hover:shadow-md dark:border-zinc-700/80 dark:bg-zinc-900/80 dark:hover:bg-zinc-800 text-text-light hover:text-text backdrop-blur-md transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary px-3 py-1.5 text-sm font-medium tracking-wide"
         >
-          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-full text-sm font-medium text-text-light hover:bg-bg-secondary hover:text-text transition-colors">
-            {isLoggedIn ? t("nav.profile") : t("nav.account")}
-            <ChevronDown
+          <span>{isLoggedIn ? t("nav.profile") : t("nav.account")}</span>
+          <ChevronDown
               className={`w-4 h-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
-            />
-          </div>
+            strokeWidth={1.5} />
         </button>
 
         {isOpen && (
           <div
             id={menuId}
             role="menu"
-            className="absolute right-0 mt-3 w-64 origin-top-right rounded-xl border border-border bg-navbar shadow-lg p-2 z-50 animate-in fade-in zoom-in-95 duration-100"
+            className="absolute right-0 mt-3 w-64 origin-top-right rounded-xl border border-zinc-100 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md shadow-lg p-2 z-50 animate-in fade-in zoom-in-95 duration-100"
           >
             <div className="space-y-1">
               {isLoggedIn ? (

@@ -68,22 +68,25 @@ const processInterestQueue = async () => {
     }
   } catch (error) {
     logger.error("Failed to update user interests:", error);
-    interestQueue = []; // Clear the queue on persistent error to avoid infinite recursion
+    // Do not clear interestQueue — the isUpdating lock already prevents infinite recursion.
+    // Preserving the queue allows pending interests to be retried on the next call.
   } finally {
     isUpdating = false;
     if (interestQueue.length > 0) {
-      processInterestQueue();
+      await processInterestQueue();
     }
   }
 };
 
 export const trackUserInterest = (interest) => {
-  if (typeof interest !== "string" || !interest.trim() || interest.length > 100) return;
+  if (typeof interest !== "string" || !interest.trim() || interest.length > 100) {
+    return Promise.resolve();
+  }
   if (interestQueue.length >= MAX_QUEUE_SIZE) {
     interestQueue.shift(); // Evict oldest entry
   }
   interestQueue.push(interest.trim());
-  processInterestQueue();
+  return processInterestQueue();
 };
 
 export const clearActivityHistory = () => {
