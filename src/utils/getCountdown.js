@@ -2,6 +2,13 @@ export function getCountdown(eventDate) {
   const now = new Date().getTime();
   const target = new Date(eventDate).getTime();
 
+  if (isNaN(target)) {
+    return {
+      status: "UNKNOWN",
+      text: "TBA",
+    };
+  }
+
   const diff = target - now;
 
   if (diff <= 0) {
