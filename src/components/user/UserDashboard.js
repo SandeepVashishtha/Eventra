@@ -384,7 +384,7 @@ export default function UserDashboard() {
                       { label: "Saved Events", value: journeyStats.savedEvents, sub: "Events bookmarked to review", icon: <FolderOpen size={20} />, accent: "#f59e0b" },
                       { label: "Upcoming Events", value: journeyStats.upcomingEvents, sub: "Next events on your schedule", icon: <Clock size={20} />, accent: "#0ea5e9" },
                     ].map((s, i) => (
-                      <motion.div key={s.label} custom={i} variants={fadeUp(prefersReducedMotion)} className="ud-stat-card">
+                      <motion.div key={s.label} custom={i} variants={fadeUp(prefersReducedMotion)} className="ud-stat-card backdrop-blur-md bg-white/10 border border-white/20 shadow-lg">
                         <div className="ud-stat-icon" style={{ background: s.accent + "18", color: s.accent }}>{s.icon}</div>
                         <div className="ud-stat-info">
                           <p className="ud-stat-label">{s.label}</p>
@@ -399,13 +399,13 @@ export default function UserDashboard() {
                     <h2 className="ud-section-title"><Zap size={17} /> Quick Actions</h2>
                     <div className="ud-quick-grid">
                       {QUICK_ACTIONS.map(a => (
-                        <Link key={a.label} to={a.to} className="ud-quick-card" style={{ "--qa-color": a.color }}>
+                        <Link key={a.label} to={a.to} className="ud-quick-card backdrop-blur-md bg-white/10 border border-white/20" style={{ "--qa-color": a.color }}>
                           <span className="ud-quick-icon" style={{ color: a.color, background: a.color + "18" }}>{a.icon}</span>
                           <span className="ud-quick-label">{a.label}</span>
                           <ChevronRight size={14} className="ud-quick-arrow" />
                         </Link>
                       ))}
-                      <Link to="/create-event" className="ud-quick-card ud-quick-new" style={{ "--qa-color": "#6366f1" }}>
+                      <Link to="/create-event" className="ud-quick-card ud-quick-new backdrop-blur-md bg-white/10 border border-indigo-500/30" style={{ "--qa-color": "#6366f1" }}>
                         <span className="ud-quick-icon" style={{ color: "#6366f1", background: "#6366f118" }}><Plus size={22} /></span>
                         <span className="ud-quick-label">New Event</span>
                         <ChevronRight size={14} className="ud-quick-arrow" />
@@ -417,7 +417,7 @@ export default function UserDashboard() {
 
                   <div className="ud-three-col">
                     {/* Upcoming Events */}
-                    <motion.section custom={2} variants={fadeUp(prefersReducedMotion)} className="ud-card">
+                    <motion.section custom={2} variants={fadeUp(prefersReducedMotion)} className="ud-card backdrop-blur-md bg-white/10 border border-white/20 shadow-lg">
                       <div className="ud-card-head">
                         <span className="ud-card-icon" style={{ background: "#6366f118", color: "#6366f1" }}><Clock size={16} /></span>
                         <h3>Upcoming Events</h3>
@@ -445,7 +445,7 @@ export default function UserDashboard() {
                     </motion.section>
  
                     {/* Upcoming Hackathons */}
-                    <motion.section custom={3} variants={fadeUp(prefersReducedMotion)} className="ud-card">
+                    <motion.section custom={3} variants={fadeUp(prefersReducedMotion)} className="ud-card backdrop-blur-md bg-white/10 border border-white/20 shadow-lg">
                       <div className="ud-card-head">
                         <span className="ud-card-icon" style={{ background: "#ec489918", color: "#ec4899" }} />
                         <h3>Upcoming Hackathons</h3>
@@ -473,7 +473,7 @@ export default function UserDashboard() {
                     </motion.section>
  
                     {/* Active Projects */}
-                    <motion.section custom={4} variants={fadeUp(prefersReducedMotion)} className="ud-card">
+                    <motion.section custom={4} variants={fadeUp(prefersReducedMotion)} className="ud-card backdrop-blur-md bg-white/10 border border-white/20 shadow-lg">
                       <div className="ud-card-head">
                         <span className="ud-card-icon" style={{ background: "#8b5cf618", color: "#8b5cf6" }} />
                         <h3>Active Projects</h3>
