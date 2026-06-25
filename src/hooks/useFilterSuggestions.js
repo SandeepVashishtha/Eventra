@@ -12,7 +12,7 @@ export const useFilterSuggestions = ({
   currentFilters = {},
   visibleEvents = [],
   presets = [],
-  storage = globalThis.localStorage,
+  storage = typeof globalThis !== "undefined" ? globalThis.localStorage : null,
   storageKey = FILTER_SUGGESTIONS_STORAGE_KEY,
   limit = 10,
 } = {}) => {
