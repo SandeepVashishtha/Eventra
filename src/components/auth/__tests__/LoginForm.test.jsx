@@ -24,21 +24,18 @@ let container;
 let root;
 let loginMock;
 
- 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
- 
 
 const renderLogin = () => {
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
 
-   
   act(() => {
     root.render(
       <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <LoginForm />
-      </MemoryRouter>,
+      </MemoryRouter>
     );
   });
 
@@ -52,7 +49,7 @@ const changeInput = (name, value) => {
     const element = input(name);
     const valueSetter = Object.getOwnPropertyDescriptor(
       window.HTMLInputElement.prototype,
-      "value",
+      "value"
     ).set;
     valueSetter.call(element, value);
     element.dispatchEvent(new Event("input", { bubbles: true }));
@@ -61,9 +58,9 @@ const changeInput = (name, value) => {
 
 const submitForm = async () => {
   await act(async () => {
-    container.querySelector("form").dispatchEvent(
-      new Event("submit", { bubbles: true, cancelable: true }),
-    );
+    container
+      .querySelector("form")
+      .dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
   });
 };
 
@@ -75,7 +72,6 @@ beforeEach(() => {
 
 afterEach(() => {
   if (root) {
-     
     act(() => {
       root.unmount();
     });
@@ -106,7 +102,7 @@ describe("LoginForm integration", () => {
 
     expect(container.textContent).toContain("Invalid email format");
     expect(input("usernameOrEmail").getAttribute("aria-describedby")).toContain(
-      "usernameOrEmail-message",
+      "usernameOrEmail-message"
     );
     expect(loginMock).not.toHaveBeenCalled();
   });
@@ -118,9 +114,7 @@ describe("LoginForm integration", () => {
 
     await submitForm();
 
-    expect(container.textContent).toContain(
-      "Password must be at least 8 characters",
-    );
+    expect(container.textContent).toContain("Password must be at least 8 characters");
     expect(loginMock).not.toHaveBeenCalled();
   });
 

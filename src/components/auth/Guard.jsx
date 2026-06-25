@@ -9,10 +9,7 @@ const Guard = ({
   fallback = null,
   children,
 }) => {
-  const roles = [
-    ...(requireRole ? [requireRole] : []),
-    ...requireRoles,
-  ];
+  const roles = [...(requireRole ? [requireRole] : []), ...requireRoles];
 
   return (
     <Gate

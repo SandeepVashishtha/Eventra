@@ -167,9 +167,7 @@ export const clearAllTemplates = () => {
 export const templateNameExists = (templateName) => {
   try {
     const templates = getTemplates();
-    return templates.some(
-      (t) => t.name.toLowerCase() === templateName.toLowerCase()
-    );
+    return templates.some((t) => t.name.toLowerCase() === templateName.toLowerCase());
   } catch (error) {
     console.error("[EventTemplates] Error checking template name:", error);
     return false;

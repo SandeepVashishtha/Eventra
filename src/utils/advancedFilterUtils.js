@@ -31,7 +31,14 @@ export const EVENT_SKILL_LEVELS = [
 ];
 
 export const EVENT_TAGS = [
-  "React", "Node", "Design", "AI", "Business", "Startup", "Finance", "Marketing"
+  "React",
+  "Node",
+  "Design",
+  "AI",
+  "Business",
+  "Startup",
+  "Finance",
+  "Marketing",
 ];
 
 // Event status options
@@ -121,8 +128,7 @@ export const getCategoryLabel = (categoryKey) => {
 
   const category = EVENT_CATEGORIES.find(
     (cat) =>
-      cat.id === trimmedKey ||
-      normalizeFilterValue(cat.label) === normalizeFilterValue(trimmedKey),
+      cat.id === trimmedKey || normalizeFilterValue(cat.label) === normalizeFilterValue(trimmedKey)
   );
 
   return category?.label || trimmedKey;
@@ -150,7 +156,7 @@ export const filterByCategory = (events, selectedCategories) => {
         (category) =>
           category &&
           (category.id === cat ||
-            normalizeFilterValue(category.label) === normalizeFilterValue(cat)),
+            normalizeFilterValue(category.label) === normalizeFilterValue(cat))
       );
 
       return (
@@ -166,15 +172,19 @@ export const filterByLocation = (events, locationQuery) => {
   if (!Array.isArray(events)) {
     return [];
   }
-  const query = String(locationQuery || "").trim().toLowerCase();
+  const query = String(locationQuery || "")
+    .trim()
+    .toLowerCase();
   if (!query) {
     return events;
   }
 
   return events.filter((event) =>
-    event ? String(event.location || event.venue || event.city || "")
-      .toLowerCase()
-      .includes(query) : false,
+    event
+      ? String(event.location || event.venue || event.city || "")
+          .toLowerCase()
+          .includes(query)
+      : false
   );
 };
 
@@ -195,7 +205,8 @@ export const filterByMode = (events, selectedModes) => {
   return events.filter((event) => {
     if (!event) return false;
     // Safely extract the raw mode without implicitly falling back to a valid filter value
-    const rawMode = event.eventMode !== undefined ? event.eventMode : (event.mode !== undefined ? event.mode : "");
+    const rawMode =
+      event.eventMode !== undefined ? event.eventMode : event.mode !== undefined ? event.mode : "";
     return selectedModes.includes(normalizeFilterValue(rawMode));
   });
 };
@@ -237,12 +248,8 @@ export const filterByDateRange = (events, dateRange) => {
     return events;
   }
 
-  const startDate = dateRange.startDate
-    ? new Date(dateRange.startDate)
-    : new Date("1900-01-01");
-  const endDate = dateRange.endDate
-    ? new Date(dateRange.endDate)
-    : new Date("2099-12-31");
+  const startDate = dateRange.startDate ? new Date(dateRange.startDate) : new Date("1900-01-01");
+  const endDate = dateRange.endDate ? new Date(dateRange.endDate) : new Date("2099-12-31");
 
   // Set end date to end of day
   endDate.setHours(23, 59, 59, 999);
@@ -272,7 +279,7 @@ export const filterByStatus = (events, selectedStatuses) => {
     if (!event) return false;
     const status = normalizeFilterValue(event.status || "upcoming");
     return selectedStatuses.some(
-      (selectedStatus) => normalizeFilterValue(selectedStatus) === status,
+      (selectedStatus) => normalizeFilterValue(selectedStatus) === status
     );
   });
 };
@@ -283,7 +290,7 @@ export const filterBySkillLevel = (events, selectedSkillLevels) => {
   return events.filter((event) => {
     if (!event) return false;
     const level = normalizeFilterValue(event.skillLevel || "beginner");
-    return selectedSkillLevels.some(selected => normalizeFilterValue(selected) === level);
+    return selectedSkillLevels.some((selected) => normalizeFilterValue(selected) === level);
   });
 };
 
@@ -293,7 +300,7 @@ export const filterByTags = (events, selectedTags) => {
   return events.filter((event) => {
     if (!event || !Array.isArray(event.tags)) return false;
     const eventTags = event.tags.map(normalizeFilterValue);
-    return selectedTags.some(tag => eventTags.includes(normalizeFilterValue(tag)));
+    return selectedTags.some((tag) => eventTags.includes(normalizeFilterValue(tag)));
   });
 };
 
@@ -368,9 +375,7 @@ export const getPriceStats = (events) => {
     return { min: 0, max: 0, average: 0 };
   }
 
-  const prices = events
-    .map((e) => e.price || 0)
-    .filter((p) => typeof p === "number");
+  const prices = events.map((e) => e.price || 0).filter((p) => typeof p === "number");
 
   if (prices.length === 0) {
     return { min: 0, max: 0, average: 0 };
@@ -422,10 +427,8 @@ export const hasActiveFilters = (filters = {}) => {
     (filters.skillLevels && filters.skillLevels.length > 0) ||
     (filters.tags && filters.tags.length > 0) ||
     (filters.location && filters.location.trim() !== "") ||
-    (filters.priceRange &&
-      (filters.priceRange.min > 0 || filters.priceRange.max < Infinity)) ||
-    (filters.dateRange &&
-      (filters.dateRange.startDate || filters.dateRange.endDate))
+    (filters.priceRange && (filters.priceRange.min > 0 || filters.priceRange.max < Infinity)) ||
+    (filters.dateRange && (filters.dateRange.startDate || filters.dateRange.endDate))
   );
 };
 
@@ -458,10 +461,7 @@ export const normalizeAdvancedFilters = (filters = {}) => ({
   priceRange: filters.priceRange
     ? {
         min: Number(filters.priceRange.min) || 0,
-        max:
-          filters.priceRange.max === Infinity
-            ? Infinity
-            : Number(filters.priceRange.max) || 0,
+        max: filters.priceRange.max === Infinity ? Infinity : Number(filters.priceRange.max) || 0,
       }
     : null,
   dateRange: filters.dateRange
@@ -483,10 +483,7 @@ export const serializeAdvancedFilters = (filters = {}) => {
   if (normalized.tags.length) payload.tags = normalized.tags;
   if (normalized.location.trim()) payload.location = normalized.location.trim();
   if (normalized.priceRange) payload.priceRange = normalized.priceRange;
-  if (
-    normalized.dateRange &&
-    (normalized.dateRange.startDate || normalized.dateRange.endDate)
-  ) {
+  if (normalized.dateRange && (normalized.dateRange.startDate || normalized.dateRange.endDate)) {
     payload.dateRange = normalized.dateRange;
   }
 
@@ -495,9 +492,7 @@ export const serializeAdvancedFilters = (filters = {}) => {
 
 export const encodeAdvancedFilters = (filters = {}) => {
   const payload = serializeAdvancedFilters(filters);
-  return Object.keys(payload).length
-    ? encodeURIComponent(JSON.stringify(payload))
-    : "";
+  return Object.keys(payload).length ? encodeURIComponent(JSON.stringify(payload)) : "";
 };
 
 export const decodeAdvancedFilters = (value) => {
@@ -507,7 +502,7 @@ export const decodeAdvancedFilters = (value) => {
 
   try {
     const parsed = JSON.parse(decodeURIComponent(value));
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
       return getDefaultFilters();
     }
     return normalizeAdvancedFilters(parsed);

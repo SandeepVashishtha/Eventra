@@ -5,16 +5,13 @@ import ValidationStatusIcon from "../ValidationStatusIcon";
 let container;
 let root;
 
- 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
- 
 
 const render = (element) => {
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
 
-   
   act(() => {
     root.render(element);
   });
@@ -24,7 +21,6 @@ const render = (element) => {
 
 afterEach(() => {
   if (root) {
-     
     act(() => {
       root.unmount();
     });
@@ -68,9 +64,7 @@ describe("ValidationStatusIcon", () => {
     render(<ValidationStatusIcon state="success" className="custom-icon" />);
 
     expect(
-      container
-        .querySelector("[data-state='success']")
-        .classList.contains("custom-icon"),
+      container.querySelector("[data-state='success']").classList.contains("custom-icon")
     ).toBe(true);
   });
 

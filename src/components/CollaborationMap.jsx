@@ -1,12 +1,60 @@
 import { useState, useEffect, useRef } from "react";
 
 const CITIES = [
-  { id: "nyc", name: "New York", x: 250, y: 180, contributors: "1,250", projects: "340", region: "Americas" },
-  { id: "lon", name: "London", x: 480, y: 140, contributors: "940", projects: "210", region: "Europe" },
-  { id: "ber", name: "Berlin", x: 520, y: 135, contributors: "720", projects: "180", region: "Europe" },
-  { id: "blr", name: "Bangalore", x: 690, y: 260, contributors: "2,100", projects: "550", region: "Asia" },
-  { id: "tok", name: "Tokyo", x: 830, y: 170, contributors: "850", projects: "190", region: "Asia" },
-  { id: "syd", name: "Sydney", x: 880, y: 380, contributors: "540", projects: "120", region: "Oceania" },
+  {
+    id: "nyc",
+    name: "New York",
+    x: 250,
+    y: 180,
+    contributors: "1,250",
+    projects: "340",
+    region: "Americas",
+  },
+  {
+    id: "lon",
+    name: "London",
+    x: 480,
+    y: 140,
+    contributors: "940",
+    projects: "210",
+    region: "Europe",
+  },
+  {
+    id: "ber",
+    name: "Berlin",
+    x: 520,
+    y: 135,
+    contributors: "720",
+    projects: "180",
+    region: "Europe",
+  },
+  {
+    id: "blr",
+    name: "Bangalore",
+    x: 690,
+    y: 260,
+    contributors: "2,100",
+    projects: "550",
+    region: "Asia",
+  },
+  {
+    id: "tok",
+    name: "Tokyo",
+    x: 830,
+    y: 170,
+    contributors: "850",
+    projects: "190",
+    region: "Asia",
+  },
+  {
+    id: "syd",
+    name: "Sydney",
+    x: 880,
+    y: 380,
+    contributors: "540",
+    projects: "120",
+    region: "Oceania",
+  },
 ];
 
 const CONNECTIONS = [
@@ -20,14 +68,14 @@ const CONNECTIONS = [
 ];
 
 const getTooltipTransform = (city) => {
-    if (!city) return "translate(-50%, -90%)";
+  if (!city) return "translate(-50%, -90%)";
 
-    if (city.x < 350) return "translate(-10%, 10%)";
-    if (city.y < 180) return "translate(-50%, 10%)";
-    if (city.x > 800) return "translate(-100%, -120%)";
+  if (city.x < 350) return "translate(-10%, 10%)";
+  if (city.y < 180) return "translate(-50%, 10%)";
+  if (city.x > 800) return "translate(-100%, -120%)";
 
-    return "translate(-50%, -90%)";
-  };  
+  return "translate(-50%, -90%)";
+};
 
 export default function CollaborationMap() {
   const [hoveredCity, setHoveredCity] = useState(null);
@@ -36,15 +84,15 @@ export default function CollaborationMap() {
   // 🔥 FIX: Added click-outside listener to support mobile touch dismissals
   useEffect(() => {
     const handleOutsideClick = (e) => {
-      if (mapRef.current && !e.target.closest('.city-node')) {
+      if (mapRef.current && !e.target.closest(".city-node")) {
         setHoveredCity(null);
       }
     };
-    document.addEventListener('touchstart', handleOutsideClick);
-    document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener("touchstart", handleOutsideClick);
+    document.addEventListener("mousedown", handleOutsideClick);
     return () => {
-      document.removeEventListener('touchstart', handleOutsideClick);
-      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener("touchstart", handleOutsideClick);
+      document.removeEventListener("mousedown", handleOutsideClick);
     };
   }, []);
 
@@ -79,13 +127,16 @@ export default function CollaborationMap() {
             Collaboration Hubs
           </h2>
           <p className="max-w-xl mx-auto text-sm sm:text-base text-slate-400">
-            Connecting developers and event organizers across mock world hubs. Hover over any node to view real-time contributor statistics.
+            Connecting developers and event organizers across mock world hubs. Hover over any node
+            to view real-time contributor statistics.
           </p>
         </div>
 
         {/* Glassmorphic Map Container */}
-        <div ref={mapRef} className="relative bg-slate-900/40 backdrop-blur-xl border border-white/10 dark:border-slate-800/50 shadow-2xl rounded-3xl p-6 md:p-8 overflow-visible">
-          
+        <div
+          ref={mapRef}
+          className="relative bg-slate-900/40 backdrop-blur-xl border border-white/10 dark:border-slate-800/50 shadow-2xl rounded-3xl p-6 md:p-8 overflow-visible"
+        >
           {/* Legend/Status */}
           <div className="absolute top-6 left-6 z-10 hidden sm:flex items-center gap-4 bg-slate-950/60 backdrop-blur border border-white/5 rounded-2xl px-4 py-2.5 text-xs text-slate-300">
             <div className="flex items-center gap-1.5">
@@ -102,7 +153,12 @@ export default function CollaborationMap() {
           {/* 🔥 FIX: Wrapped SVG and Tooltip in a strictly proportional inner div. 
               This ensures padding from the parent doesn't corrupt the percentage coordinates. */}
           <div className="relative w-full aspect-[2/1]">
-            <svg viewBox="0 0 1000 500" className="absolute inset-0 w-full h-full select-none" aria-label="Global collaboration map map" role="img">
+            <svg
+              viewBox="0 0 1000 500"
+              className="absolute inset-0 w-full h-full select-none"
+              aria-label="Global collaboration map map"
+              role="img"
+            >
               {/* World Stylized Silhouette / Grid (Dotted map styling) */}
               <defs>
                 <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
@@ -113,16 +169,66 @@ export default function CollaborationMap() {
                   <stop offset="100%" stopColor="#ec4899" stopOpacity="0.8" />
                 </linearGradient>
               </defs>
-              
+
               {/* Dotted Grid Overlay */}
               <rect width="1000" height="500" fill="url(#grid)" />
 
               {/* Dotted Outline representing Simplified Continent Clusters */}
-              <ellipse cx="230" cy="180" rx="140" ry="70" fill="none" stroke="#475569" strokeWidth="1" strokeDasharray="4,4" opacity="0.2" />
-              <ellipse cx="340" cy="350" rx="70" ry="110" fill="none" stroke="#475569" strokeWidth="1" strokeDasharray="4,4" opacity="0.15" />
-              <ellipse cx="600" cy="160" rx="220" ry="100" fill="none" stroke="#475569" strokeWidth="1" strokeDasharray="4,4" opacity="0.2" />
-              <ellipse cx="530" cy="290" rx="95" ry="105" fill="none" stroke="#475569" strokeWidth="1" strokeDasharray="4,4" opacity="0.15" />
-              <ellipse cx="850" cy="360" rx="90" ry="70" fill="none" stroke="#475569" strokeWidth="1" strokeDasharray="4,4" opacity="0.2" />
+              <ellipse
+                cx="230"
+                cy="180"
+                rx="140"
+                ry="70"
+                fill="none"
+                stroke="#475569"
+                strokeWidth="1"
+                strokeDasharray="4,4"
+                opacity="0.2"
+              />
+              <ellipse
+                cx="340"
+                cy="350"
+                rx="70"
+                ry="110"
+                fill="none"
+                stroke="#475569"
+                strokeWidth="1"
+                strokeDasharray="4,4"
+                opacity="0.15"
+              />
+              <ellipse
+                cx="600"
+                cy="160"
+                rx="220"
+                ry="100"
+                fill="none"
+                stroke="#475569"
+                strokeWidth="1"
+                strokeDasharray="4,4"
+                opacity="0.2"
+              />
+              <ellipse
+                cx="530"
+                cy="290"
+                rx="95"
+                ry="105"
+                fill="none"
+                stroke="#475569"
+                strokeWidth="1"
+                strokeDasharray="4,4"
+                opacity="0.15"
+              />
+              <ellipse
+                cx="850"
+                cy="360"
+                rx="90"
+                ry="70"
+                fill="none"
+                stroke="#475569"
+                strokeWidth="1"
+                strokeDasharray="4,4"
+                opacity="0.2"
+              />
 
               {/* Connections */}
               {CONNECTIONS.map((conn, idx) => {
@@ -216,34 +322,145 @@ export default function CollaborationMap() {
                 }}
               >
                 <div style={{ background: "#2563eb", padding: "10px 14px 8px" }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <span style={{ fontWeight: 700, color: "#fff", fontSize: "13px" }}>{hoveredCity.name}</span>
-                    <span style={{ background: "rgba(255,255,255,0.2)", color: "#e0e7ff", fontSize: "9px", fontWeight: 700, borderRadius: "20px", padding: "2px 8px" }}>{hoveredCity.region}</span>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <span style={{ fontWeight: 700, color: "#fff", fontSize: "13px" }}>
+                      {hoveredCity.name}
+                    </span>
+                    <span
+                      style={{
+                        background: "rgba(255,255,255,0.2)",
+                        color: "#e0e7ff",
+                        fontSize: "9px",
+                        fontWeight: 700,
+                        borderRadius: "20px",
+                        padding: "2px 8px",
+                      }}
+                    >
+                      {hoveredCity.region}
+                    </span>
                   </div>
-                  <div style={{ color: "#bfdbfe", fontSize: "9px", marginTop: "3px" }}>📍 {hoveredCity.x}° N · {hoveredCity.y}° E</div>
+                  <div style={{ color: "#bfdbfe", fontSize: "9px", marginTop: "3px" }}>
+                    📍 {hoveredCity.x}° N · {hoveredCity.y}° E
+                  </div>
                 </div>
                 <div className="bg-white dark:bg-slate-900" style={{ padding: "10px 14px 12px" }}>
-                  <div style={{ fontSize: "9px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "6px" }}>Hub Stats</div>
+                  <div
+                    style={{
+                      fontSize: "9px",
+                      fontWeight: 700,
+                      color: "#9ca3af",
+                      letterSpacing: "0.08em",
+                      textTransform: "uppercase",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    Hub Stats
+                  </div>
                   <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
-                    <div className="border border-gray-200 dark:border-slate-700" style={{ flex: 1, borderRadius: "8px", padding: "5px 8px" }}>
-                      <div style={{ fontSize: "9px", color: "#9ca3af", fontWeight: 700, textTransform: "uppercase" }}>Developers</div>
-                      <div className="text-slate-800 dark:text-slate-100" style={{ fontSize: "16px", fontWeight: 800 }}>{hoveredCity.contributors}</div>
+                    <div
+                      className="border border-gray-200 dark:border-slate-700"
+                      style={{ flex: 1, borderRadius: "8px", padding: "5px 8px" }}
+                    >
+                      <div
+                        style={{
+                          fontSize: "9px",
+                          color: "#9ca3af",
+                          fontWeight: 700,
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        Developers
+                      </div>
+                      <div
+                        className="text-slate-800 dark:text-slate-100"
+                        style={{ fontSize: "16px", fontWeight: 800 }}
+                      >
+                        {hoveredCity.contributors}
+                      </div>
                     </div>
-                    <div className="border border-gray-200 dark:border-slate-700" style={{ flex: 1, borderRadius: "8px", padding: "5px 8px" }}>
-                      <div style={{ fontSize: "9px", color: "#9ca3af", fontWeight: 700, textTransform: "uppercase" }}>Projects</div>
-                      <div className="text-slate-800 dark:text-slate-100" style={{ fontSize: "16px", fontWeight: 800 }}>{hoveredCity.projects}</div>
+                    <div
+                      className="border border-gray-200 dark:border-slate-700"
+                      style={{ flex: 1, borderRadius: "8px", padding: "5px 8px" }}
+                    >
+                      <div
+                        style={{
+                          fontSize: "9px",
+                          color: "#9ca3af",
+                          fontWeight: 700,
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        Projects
+                      </div>
+                      <div
+                        className="text-slate-800 dark:text-slate-100"
+                        style={{ fontSize: "16px", fontWeight: 800 }}
+                      >
+                        {hoveredCity.projects}
+                      </div>
                     </div>
                   </div>
-                  <div style={{ fontSize: "9px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "5px" }}>Focus Areas</div>
-                  <div style={{ display: "flex", gap: "4px", flexWrap: "wrap", marginBottom: "10px" }}>
+                  <div
+                    style={{
+                      fontSize: "9px",
+                      fontWeight: 700,
+                      color: "#9ca3af",
+                      letterSpacing: "0.08em",
+                      textTransform: "uppercase",
+                      marginBottom: "5px",
+                    }}
+                  >
+                    Focus Areas
+                  </div>
+                  <div
+                    style={{ display: "flex", gap: "4px", flexWrap: "wrap", marginBottom: "10px" }}
+                  >
                     {["EdTech", "AgriTech", "HealthTech"].map((tag, i) => {
-                      const styles = [{ background: "#dbeafe", color: "#2563eb" }, { background: "#dcfce7", color: "#16a34a" }, { background: "#fef9c3", color: "#b45309" }];
-                      return <span key={tag} style={{ ...styles[i], fontSize: "10px", fontWeight: 700, borderRadius: "20px", padding: "2px 8px" }}>{tag}</span>;
+                      const styles = [
+                        { background: "#dbeafe", color: "#2563eb" },
+                        { background: "#dcfce7", color: "#16a34a" },
+                        { background: "#fef9c3", color: "#b45309" },
+                      ];
+                      return (
+                        <span
+                          key={tag}
+                          style={{
+                            ...styles[i],
+                            fontSize: "10px",
+                            fontWeight: 700,
+                            borderRadius: "20px",
+                            padding: "2px 8px",
+                          }}
+                        >
+                          {tag}
+                        </span>
+                      );
                     })}
                   </div>
-                  <div className="border-t border-slate-100 dark:border-slate-800" style={{ paddingTop: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: "9px", color: "#9ca3af" }}>🌏 {hoveredCity.region} region</span>
-                    <span className="text-blue-600 dark:text-blue-400" style={{ fontSize: "10px", fontWeight: 700 }}>View details →</span>
+                  <div
+                    className="border-t border-slate-100 dark:border-slate-800"
+                    style={{
+                      paddingTop: "8px",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <span style={{ fontSize: "9px", color: "#9ca3af" }}>
+                      🌏 {hoveredCity.region} region
+                    </span>
+                    <span
+                      className="text-blue-600 dark:text-blue-400"
+                      style={{ fontSize: "10px", fontWeight: 700 }}
+                    >
+                      View details →
+                    </span>
                   </div>
                 </div>
               </div>
@@ -254,10 +471,3 @@ export default function CollaborationMap() {
     </section>
   );
 }
-
-
-
-
-
-
-

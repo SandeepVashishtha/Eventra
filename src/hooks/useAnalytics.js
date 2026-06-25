@@ -11,7 +11,10 @@ const useAnalytics = () => {
   const { token } = useAuth();
 
   useEffect(() => {
-    if (!token) { setLoading(false); return; }
+    if (!token) {
+      setLoading(false);
+      return;
+    }
     const fetchAnalytics = async () => {
       try {
         const res = await apiUtils.get("/analytics/summary");

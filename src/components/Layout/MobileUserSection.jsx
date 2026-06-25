@@ -1,11 +1,5 @@
 import { Link } from "react-router-dom";
-import {
-  LayoutDashboard,
-  LogOut,
-  Trophy,
-  UserCog,
-  UserIcon,
-} from "lucide-react";
+import { LayoutDashboard, LogOut, Trophy, UserCog, UserIcon } from "lucide-react";
 
 const MobileUserSection = ({
   user,
@@ -21,7 +15,9 @@ const MobileUserSection = ({
         <img
           src={user.profilePicture}
           alt="Profile"
-          className="w-10 h-10 rounded-full object-cover" loading="lazy"/>
+          className="w-10 h-10 rounded-full object-cover"
+          loading="lazy"
+        />
       ) : (
         <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-white">
           <UserIcon className="w-6 h-6" />

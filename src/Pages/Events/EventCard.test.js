@@ -1,66 +1,70 @@
-import { render, screen } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
+import { render, screen } from "@testing-library/react";
+import { BrowserRouter } from "react-router-dom";
 
-import EventCard from './EventCard';
-import userEvent from '@testing-library/user-event';
-import { getEventStatus } from '../../utils/eventUtils';
+import EventCard from "./EventCard";
+import userEvent from "@testing-library/user-event";
+import { getEventStatus } from "../../utils/eventUtils";
 
-jest.mock('../../utils/timezoneUtils', () => ({
-  getUserTimezone: jest.fn().mockReturnValue('UTC'),
+jest.mock("../../utils/timezoneUtils", () => ({
+  getUserTimezone: jest.fn().mockReturnValue("UTC"),
 }));
 
-jest.mock('../../utils/relativeTime', () => ({
-  getSmartDateLabel: jest.fn().mockReturnValue('Jun 15, 2027'),
+jest.mock("../../utils/relativeTime", () => ({
+  getSmartDateLabel: jest.fn().mockReturnValue("Jun 15, 2027"),
 }));
 
-jest.mock('../../utils/calendarUtils', () => ({
-  addEventToGoogleCalendar: jest.fn().mockReturnValue('https://calendar.google.com/'),
+jest.mock("../../utils/calendarUtils", () => ({
+  addEventToGoogleCalendar: jest.fn().mockReturnValue("https://calendar.google.com/"),
 }));
 
-jest.mock('../../utils/shareUtils', () => ({
+jest.mock("../../utils/shareUtils", () => ({
   generateEventSharingData: jest.fn().mockReturnValue({}),
 }));
 
-jest.mock('../../utils/bookmarkUtils', () => ({
+jest.mock("../../utils/bookmarkUtils", () => ({
   isEventBookmarked: jest.fn().mockReturnValue(false),
   addBookmarkedEvent: jest.fn(),
   removeBookmarkedEvent: jest.fn(),
   subscribeToBookmarkChanges: jest.fn().mockReturnValue(() => {}),
 }));
 
-jest.mock('../../utils/conflictDetection', () => ({
+jest.mock("../../utils/conflictDetection", () => ({
   checkRegistrationConflict: jest.fn().mockReturnValue({ hasConflict: false }),
 }));
 
-jest.mock('../../utils/eventUtils', () => ({
-  getEventStatus: jest.fn().mockReturnValue('upcoming'),
+jest.mock("../../utils/eventUtils", () => ({
+  getEventStatus: jest.fn().mockReturnValue("upcoming"),
 }));
 
-jest.mock('../../context/MyEventsContext', () => ({
+jest.mock("../../context/MyEventsContext", () => ({
   useMyEvents: jest.fn(),
 }));
 
-jest.mock('../../components/common/ShareMenu', () =>
-  function ShareMenu({ children }) { return children || null; }
+jest.mock(
+  "../../components/common/ShareMenu",
+  () =>
+    function ShareMenu({ children }) {
+      return children || null;
+    }
 );
 
-jest.mock('../../components/common/StatusBadge', () => () => null);
+jest.mock("../../components/common/StatusBadge", () => () => null);
 
-jest.mock('../../components/reminders/ReminderControls', () => () => null);
+jest.mock("../../components/reminders/ReminderControls", () => () => null);
 
-jest.mock('react-toastify', () => ({
+jest.mock("react-toastify", () => ({
   toast: { success: jest.fn(), error: jest.fn(), info: jest.fn() },
 }));
 
 const baseEvent = {
   id: 42,
-  title: 'GSSoC Hackathon 2027',
-  description: 'A global open source hackathon for developers.',
-  location: 'Online',
-  type: 'Hackathon',
-  date: '2027-06-15',
-  time: '10:00 AM',
-  image: 'https://example.com/event.jpg',
+  title: "GSSoC Hackathon 2027",
+  description: "A global open source hackathon for developers.",
+  location: "Online",
+  type: "Hackathon",
+  date: "2027-06-15",
+  time: "10:00 AM",
+  image: "https://example.com/event.jpg",
 };
 
 const renderCard = (eventOverrides = {}) =>
@@ -70,46 +74,46 @@ const renderCard = (eventOverrides = {}) =>
     </BrowserRouter>
   );
 
-const { checkRegistrationConflict } = require('../../utils/conflictDetection');
-const { isEventBookmarked, subscribeToBookmarkChanges } = require('../../utils/bookmarkUtils');
-const { useMyEvents } = require('../../context/MyEventsContext');
+const { checkRegistrationConflict } = require("../../utils/conflictDetection");
+const { isEventBookmarked, subscribeToBookmarkChanges } = require("../../utils/bookmarkUtils");
+const { useMyEvents } = require("../../context/MyEventsContext");
 
 const defaultMyEvents = () => ({ myEvents: [], isRegistered: () => false });
 
-describe('EventCard', () => {
+describe("EventCard", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    getEventStatus.mockReturnValue('upcoming');
+    getEventStatus.mockReturnValue("upcoming");
     checkRegistrationConflict.mockReturnValue({ hasConflict: false });
     isEventBookmarked.mockReturnValue(false);
     subscribeToBookmarkChanges.mockReturnValue(() => {});
     useMyEvents.mockReturnValue(defaultMyEvents());
   });
 
-  describe('rendering', () => {
-    it('renders the event title', () => {
+  describe("rendering", () => {
+    it("renders the event title", () => {
       renderCard();
-      expect(screen.getByText('GSSoC Hackathon 2027')).toBeInTheDocument();
+      expect(screen.getByText("GSSoC Hackathon 2027")).toBeInTheDocument();
     });
 
-    it('renders the event description', () => {
+    it("renders the event description", () => {
       renderCard();
       expect(screen.getByText(/global open source hackathon/i)).toBeInTheDocument();
     });
 
-    it('renders the event location', () => {
+    it("renders the event location", () => {
       renderCard();
-      expect(screen.getByText('Online')).toBeInTheDocument();
+      expect(screen.getByText("Online")).toBeInTheDocument();
     });
 
-    it('renders the event type', () => {
+    it("renders the event type", () => {
       renderCard();
-      expect(screen.getByText('Hackathon')).toBeInTheDocument();
+      expect(screen.getByText("Hackathon")).toBeInTheDocument();
     });
   });
 
-  describe('capacity display', () => {
-    it('shows spots-left count when event is not full', () => {
+  describe("capacity display", () => {
+    it("shows spots-left count when event is not full", () => {
       renderCard({ maxAttendees: 100, attendees: 42 });
       expect(screen.getByText(/58 spots left/i)).toBeInTheDocument();
       expect(screen.getByText(/42 \/ 100 registered/i)).toBeInTheDocument();
@@ -117,67 +121,67 @@ describe('EventCard', () => {
 
     it('shows "Full" badge and 0 spots when event is at capacity', () => {
       renderCard({ maxAttendees: 50, attendees: 50 });
-      expect(screen.getByText('Full')).toBeInTheDocument();
+      expect(screen.getByText("Full")).toBeInTheDocument();
       expect(screen.getByText(/50 \/ 50 registered/i)).toBeInTheDocument();
     });
 
-    it('does not render capacity section when maxAttendees is absent', () => {
+    it("does not render capacity section when maxAttendees is absent", () => {
       renderCard();
       expect(screen.queryByText(/registered/i)).not.toBeInTheDocument();
     });
   });
 
-  describe('call-to-action links', () => {
+  describe("call-to-action links", () => {
     it('shows "Register Now" link for upcoming events', () => {
       renderCard();
-      expect(screen.getByRole('link', { name: /register now/i })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /register now/i })).toBeInTheDocument();
     });
 
     it('"Register Now" link points to the event registration path', () => {
       renderCard();
-      const link = screen.getByRole('link', { name: /register now/i });
-      expect(link).toHaveAttribute('href', '/events/42/register');
+      const link = screen.getByRole("link", { name: /register now/i });
+      expect(link).toHaveAttribute("href", "/events/42/register");
     });
 
     it('shows "View Details" link', () => {
       renderCard();
-      expect(screen.getByRole('link', { name: /view details/i })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /view details/i })).toBeInTheDocument();
     });
 
     it('shows "Event Ended" text and no register link for past events', () => {
-      getEventStatus.mockReturnValue('past');
+      getEventStatus.mockReturnValue("past");
       renderCard();
       expect(screen.getByText(/event ended/i)).toBeInTheDocument();
-      expect(screen.queryByRole('link', { name: /register now/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("link", { name: /register now/i })).not.toBeInTheDocument();
     });
   });
 
-  describe('conflict indicator', () => {
+  describe("conflict indicator", () => {
     it('shows "Conflict" badge when the event conflicts with registered events', () => {
       checkRegistrationConflict.mockReturnValue({ hasConflict: true });
       renderCard();
-      expect(screen.getByText('Conflict')).toBeInTheDocument();
+      expect(screen.getByText("Conflict")).toBeInTheDocument();
     });
   });
 
-  describe('bookmark interaction', () => {
-    const { addBookmarkedEvent, removeBookmarkedEvent } = require('../../utils/bookmarkUtils');
-    const { toast } = require('react-toastify');
+  describe("bookmark interaction", () => {
+    const { addBookmarkedEvent, removeBookmarkedEvent } = require("../../utils/bookmarkUtils");
+    const { toast } = require("react-toastify");
 
-    it('calls addBookmarkedEvent and shows toast when bookmarking an unbookmarked event', async () => {
+    it("calls addBookmarkedEvent and shows toast when bookmarking an unbookmarked event", async () => {
       isEventBookmarked.mockReturnValue(false);
       renderCard();
       const user = userEvent.setup();
-      await user.click(screen.getByRole('button', { name: /bookmark event/i }));
+      await user.click(screen.getByRole("button", { name: /bookmark event/i }));
       expect(addBookmarkedEvent).toHaveBeenCalledTimes(1);
       expect(toast.success).toHaveBeenCalled();
     });
 
-    it('calls removeBookmarkedEvent and shows info toast when removing a bookmark', async () => {
+    it("calls removeBookmarkedEvent and shows info toast when removing a bookmark", async () => {
       isEventBookmarked.mockReturnValue(true);
       renderCard();
       const user = userEvent.setup();
-      await user.click(screen.getByRole('button', { name: /remove event bookmark/i }));
+      await user.click(screen.getByRole("button", { name: /remove event bookmark/i }));
       expect(removeBookmarkedEvent).toHaveBeenCalledWith(42);
       expect(toast.info).toHaveBeenCalled();
     });
@@ -185,15 +189,15 @@ describe('EventCard', () => {
     it('shows "Registered" badge when the user is registered for the event', () => {
       useMyEvents.mockReturnValueOnce({ myEvents: [], isRegistered: () => true });
       renderCard();
-      expect(screen.getByText('Registered')).toBeInTheDocument();
+      expect(screen.getByText("Registered")).toBeInTheDocument();
     });
   });
 
-  describe('copy link button', () => {
-    it('renders a copy-link button with the correct aria-label', () => {
+  describe("copy link button", () => {
+    it("renders a copy-link button with the correct aria-label", () => {
       renderCard();
       expect(
-        screen.getByRole('button', { name: /copy link for GSSoC Hackathon 2027/i })
+        screen.getByRole("button", { name: /copy link for GSSoC Hackathon 2027/i })
       ).toBeInTheDocument();
     });
   });

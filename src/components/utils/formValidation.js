@@ -15,10 +15,7 @@ const PATTERNS = {
 
 export const sanitizeString = (value) => {
   if (typeof value !== "string") return "";
-  return value
-    .replace(PATTERNS.noScript, "")
-    .replace(PATTERNS.noHtml, "")
-    .trim();
+  return value.replace(PATTERNS.noScript, "").replace(PATTERNS.noHtml, "").trim();
 };
 
 export const validateEmail = (email) => {
@@ -31,20 +28,27 @@ export const validateEmail = (email) => {
 
 export const validatePassword = (password) => {
   if (!password) return { valid: false, message: "Password is required" };
-  if (password.length < 8) return { valid: false, message: "Password must be at least 8 characters" };
+  if (password.length < 8)
+    return { valid: false, message: "Password must be at least 8 characters" };
   if (password.length > 128) return { valid: false, message: "Password is too long" };
-  if (!/[A-Z]/.test(password)) return { valid: false, message: "Password must contain an uppercase letter" };
-  if (!/[a-z]/.test(password)) return { valid: false, message: "Password must contain a lowercase letter" };
+  if (!/[A-Z]/.test(password))
+    return { valid: false, message: "Password must contain an uppercase letter" };
+  if (!/[a-z]/.test(password))
+    return { valid: false, message: "Password must contain a lowercase letter" };
   if (!/[0-9]/.test(password)) return { valid: false, message: "Password must contain a number" };
   return { valid: true, message: "" };
 };
 
 export const validateText = (value, { min = 1, max = 500, fieldName = "Field" } = {}) => {
-  if (!value || typeof value !== "string") return { valid: false, message: `${fieldName} is required` };
+  if (!value || typeof value !== "string")
+    return { valid: false, message: `${fieldName} is required` };
   const sanitized = sanitizeString(value);
-  if (sanitized.length < min) return { valid: false, message: `${fieldName} must be at least ${min} characters` };
-  if (sanitized.length > max) return { valid: false, message: `${fieldName} must be at most ${max} characters` };
-  if (PATTERNS.sqlInjection.test(sanitized)) return { valid: false, message: `${fieldName} contains invalid characters` };
+  if (sanitized.length < min)
+    return { valid: false, message: `${fieldName} must be at least ${min} characters` };
+  if (sanitized.length > max)
+    return { valid: false, message: `${fieldName} must be at most ${max} characters` };
+  if (PATTERNS.sqlInjection.test(sanitized))
+    return { valid: false, message: `${fieldName} contains invalid characters` };
   return { valid: true, message: "", sanitized };
 };
 

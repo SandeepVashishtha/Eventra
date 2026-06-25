@@ -35,13 +35,7 @@ import { useCallback } from "react";
  * @param {Function} [opts.onTogglePlay]- Called to toggle auto-play on Space/Enter
  * @returns {{ containerProps: Object }}
  */
-export default function useCarouselKeyboardNav({
-  onPrev,
-  onNext,
-  onFirst,
-  onLast,
-  onTogglePlay,
-}) {
+export default function useCarouselKeyboardNav({ onPrev, onNext, onFirst, onLast, onTogglePlay }) {
   const handleKeyDown = useCallback(
     (e) => {
       switch (e.key) {

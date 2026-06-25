@@ -11,11 +11,7 @@ import SkeletonEventCard from "./SkeletonEventCard";
  * @param {string}  viewMode - "grid" or "list" (default: "grid")
  * @param {React.ComponentType} CardSkeleton - Skeleton card component to render
  */
-const SkeletonGrid = ({
-  count = 6,
-  viewMode = "grid",
-  CardSkeleton = SkeletonEventCard,
-}) => {
+const SkeletonGrid = ({ count = 6, viewMode = "grid", CardSkeleton = SkeletonEventCard }) => {
   const skeletonItems = useMemo(
     () => Array.from({ length: count }, (_, i) => `skeleton-${i + 1}`),
     [count]

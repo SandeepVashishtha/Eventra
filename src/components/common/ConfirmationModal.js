@@ -95,11 +95,7 @@ const ConfirmationModal = ({
   };
 
   return (
-    <div
-      className="confirmation-modal-overlay"
-      onClick={handleOverlayClick}
-      role="presentation"
-    >
+    <div className="confirmation-modal-overlay" onClick={handleOverlayClick} role="presentation">
       <div
         ref={modalRef}
         className="confirmation-modal-content"

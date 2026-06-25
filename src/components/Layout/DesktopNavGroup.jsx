@@ -30,7 +30,7 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown }) 
     return () => {
       window.removeEventListener("resize", updatePosition);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   const handleKeyDown = (event) => {
@@ -86,52 +86,53 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown }) 
       </button>
 
       <AnimatePresence>
-        {isOpen && createPortal(
-          <motion.div
-            id={menuId}
-            role="menu"
-            aria-label={`${item.name} navigation`}
-            key={`dd-${item.name}`}
-            initial={{ opacity: 0, y: 15, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            style={{
-              // 🔥 FIX 2 cont: Changed 'fixed' to 'absolute'. ScrollY + absolute = correct page placement.
-              position: 'absolute',
-              top: `${dropPos.top}px`,
-              left: `${dropPos.left}px`,
-              transform: 'translateX(-50%)',
-              zIndex: 9999,
-            }}
-            className="w-60 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-3xl shadow-[0_8px_32px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_32px_rgba(99,102,241,0.1)] rounded-2xl border border-white/40 dark:border-zinc-700/40 p-2 overflow-hidden"
-          >
-            {item.subItems.map((sub) => (
-              <Link
-                key={sub.name}
-                to={sub.href}
-                onClick={() => setOpenDropdown(null)}
-                role="menuitem"
-                // 🔥 FIX 3: Added focus-visible states for keyboard accessibility
-                className={`group flex items-center gap-3 w-full px-3 py-2.5 text-[15px] font-medium rounded-lg transition-all duration-200 border focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
-                  location.pathname.startsWith(sub.href)
-                    ? "bg-indigo-100/60 dark:bg-indigo-500/20 border-indigo-200/80 dark:border-indigo-500/50 text-indigo-600 dark:text-indigo-400 font-semibold shadow-sm"
-                    : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 border-transparent"
-                }`}
-              >
-                {React.cloneElement(sub.icon, {
-                  className: `w-5 h-5 transition-colors ${
+        {isOpen &&
+          createPortal(
+            <motion.div
+              id={menuId}
+              role="menu"
+              aria-label={`${item.name} navigation`}
+              key={`dd-${item.name}`}
+              initial={{ opacity: 0, y: 15, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              style={{
+                // 🔥 FIX 2 cont: Changed 'fixed' to 'absolute'. ScrollY + absolute = correct page placement.
+                position: "absolute",
+                top: `${dropPos.top}px`,
+                left: `${dropPos.left}px`,
+                transform: "translateX(-50%)",
+                zIndex: 9999,
+              }}
+              className="w-60 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-3xl shadow-[0_8px_32px_rgba(0,0,0,0.1)] dark:shadow-[0_8px_32px_rgba(99,102,241,0.1)] rounded-2xl border border-white/40 dark:border-zinc-700/40 p-2 overflow-hidden"
+            >
+              {item.subItems.map((sub) => (
+                <Link
+                  key={sub.name}
+                  to={sub.href}
+                  onClick={() => setOpenDropdown(null)}
+                  role="menuitem"
+                  // 🔥 FIX 3: Added focus-visible states for keyboard accessibility
+                  className={`group flex items-center gap-3 w-full px-3 py-2.5 text-[15px] font-medium rounded-lg transition-all duration-200 border focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
                     location.pathname.startsWith(sub.href)
-                      ? "text-indigo-600 dark:text-indigo-400"
-                      : "text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300"
-                  }`,
-                })}
-                {sub.name}
-              </Link>
-            ))}
-          </motion.div>,
-          document.body
-        )}
+                      ? "bg-indigo-100/60 dark:bg-indigo-500/20 border-indigo-200/80 dark:border-indigo-500/50 text-indigo-600 dark:text-indigo-400 font-semibold shadow-sm"
+                      : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 border-transparent"
+                  }`}
+                >
+                  {React.cloneElement(sub.icon, {
+                    className: `w-5 h-5 transition-colors ${
+                      location.pathname.startsWith(sub.href)
+                        ? "text-indigo-600 dark:text-indigo-400"
+                        : "text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300"
+                    }`,
+                  })}
+                  {sub.name}
+                </Link>
+              ))}
+            </motion.div>,
+            document.body
+          )}
       </AnimatePresence>
     </div>
   );

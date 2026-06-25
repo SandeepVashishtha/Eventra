@@ -82,14 +82,8 @@ export const ENV = {
     required: !isDevelopment,
     label: "API_URL",
   }),
-  GITHUB_REPO: getEnvVar(
-    optionalEnvVars.GITHUB_REPO.keys,
-    optionalEnvVars.GITHUB_REPO.fallback
-  ),
-  PUBLIC_URL: getEnvVar(
-    optionalEnvVars.PUBLIC_URL.keys,
-    optionalEnvVars.PUBLIC_URL.fallback
-  ),
+  GITHUB_REPO: getEnvVar(optionalEnvVars.GITHUB_REPO.keys, optionalEnvVars.GITHUB_REPO.fallback),
+  PUBLIC_URL: getEnvVar(optionalEnvVars.PUBLIC_URL.keys, optionalEnvVars.PUBLIC_URL.fallback),
 };
 
 export const SENTRY_DSN = getEnvVar(

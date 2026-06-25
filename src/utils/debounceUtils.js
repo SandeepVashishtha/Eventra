@@ -43,10 +43,7 @@ export const isDebounceCancelledError = (error) =>
  * });
  */
 export const debounceAsync = (asyncFn, delay = 500, options = {}) => {
-  const {
-    resolveOnCancel = false,
-    cancelledValue = undefined,
-  } = options;
+  const { resolveOnCancel = false, cancelledValue = undefined } = options;
 
   let timeoutId = null;
   let pendingReject = null;
@@ -86,17 +83,17 @@ export const debounceAsync = (asyncFn, delay = 500, options = {}) => {
 
       timeoutId = setTimeout(async () => {
         timeoutId = null;
-        
+
         const currentResolve = pendingResolve;
         const currentReject = pendingReject;
-        
+
         const controller = new AbortController();
         activeAbortController = controller;
 
         try {
           // Pass signal as an extra argument so callers can wire it up to fetch()
           const result = await asyncFn(...args, { signal: controller.signal });
-          
+
           if (activeAbortController === controller) {
             activeAbortController = null;
             if (pendingResolve === currentResolve) {

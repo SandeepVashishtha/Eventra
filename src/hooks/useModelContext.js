@@ -38,13 +38,13 @@ export const useModelContext = () => {
             inputSchema: {
               type: "object",
               properties: {
-                query: { type: "string", description: "Search term for events" }
-              }
+                query: { type: "string", description: "Search term for events" },
+              },
             },
             execute: async ({ query }) => {
               navigate(`/events?search=${encodeURIComponent(query)}`);
               return { success: true, message: `Searching for ${query}` };
-            }
+            },
           },
           {
             name: "get_api_docs",
@@ -53,9 +53,9 @@ export const useModelContext = () => {
             execute: async () => {
               navigate("/api-docs");
               return { success: true, message: "Navigating to API documentation" };
-            }
-          }
-        ]
+            },
+          },
+        ],
       });
     }
   }, [navigate]);

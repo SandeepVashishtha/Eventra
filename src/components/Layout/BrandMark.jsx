@@ -1,5 +1,3 @@
-
-
 const BrandMark = ({ compact = false }) => (
   <div className="flex min-w-0 items-center gap-3">
     <div

@@ -6,12 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
  *
  * Modal for collecting template name from user before saving.
  */
-export default function TemplateNamePrompt({
-  isOpen,
-  onSave,
-  onCancel,
-  loading = false,
-}) {
+export default function TemplateNamePrompt({ isOpen, onSave, onCancel, loading = false }) {
   const [templateName, setTemplateName] = useState("");
   const inputRef = useRef(null);
 
@@ -66,7 +61,8 @@ export default function TemplateNamePrompt({
               Save as Template
             </h2>
             <p className="text-gray-600 dark:text-gray-400 text-sm mb-6">
-              Give your template a descriptive name (e.g., &ldquo;Workshop Template&rdquo;, &ldquo;Meetup 2026&rdquo;)
+              Give your template a descriptive name (e.g., &ldquo;Workshop Template&rdquo;,
+              &ldquo;Meetup 2026&rdquo;)
             </p>
 
             <input
@@ -105,9 +101,7 @@ export default function TemplateNamePrompt({
             </div>
 
             <div className="text-xs text-gray-500 dark:text-gray-400 mt-4">
-              {templateName.length > 0 && (
-                <p>{templateName.length}/100 characters</p>
-              )}
+              {templateName.length > 0 && <p>{templateName.length}/100 characters</p>}
             </div>
           </motion.div>
         </motion.div>

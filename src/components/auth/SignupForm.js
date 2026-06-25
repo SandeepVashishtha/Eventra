@@ -205,9 +205,7 @@ const SignupForm = () => {
         } else {
           setErrors((prev) => ({
             ...prev,
-            email:
-              result?.message ||
-              "This email is already registered. Please log in.",
+            email: result?.message || "This email is already registered. Please log in.",
           }));
           setFieldState("email", "error");
         }
@@ -309,9 +307,7 @@ const SignupForm = () => {
   return (
     <div className="w-full">
       <div className="text-center space-y-4 mb-8">
-        <motion.div
-          className="mx-auto w-16 h-16 rounded-2xl bg-linear-to-r from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg"
-        >
+        <motion.div className="mx-auto w-16 h-16 rounded-2xl bg-linear-to-r from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg">
           <Zap className="w-8 h-8 text-white" />
         </motion.div>
 
@@ -320,8 +316,8 @@ const SignupForm = () => {
         </h1>
 
         <p className="text-base text-text-light max-w-md mx-auto leading-relaxed">
-          Join thousands of developers discovering hackathons, workshops,
-          networking events and career opportunities.
+          Join thousands of developers discovering hackathons, workshops, networking events and
+          career opportunities.
         </p>
       </div>
       <div className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-2xl p-8">

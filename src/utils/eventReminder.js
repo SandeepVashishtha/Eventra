@@ -40,7 +40,7 @@ export const getNotificationPermission = () => {
 /**
  * Requests notification permission from the user
  * Handles all permission states gracefully with proper error handling
- * 
+ *
  * @returns {Promise<{granted: boolean, permission: string, alreadySet: boolean}>}
  */
 export const requestNotificationPermission = async () => {
@@ -81,7 +81,7 @@ export const requestNotificationPermission = async () => {
 
 /**
  * Sends an immediate notification
- * 
+ *
  * @param {string} title - Notification title
  * @param {Object} options - Notification options
  * @param {string} [options.body] - Notification body text
@@ -170,7 +170,7 @@ const validateAndVerifyPermissions = (title, delay) => {
 /**
  * Schedules a reminder notification after a specified delay
  * Returns a reminder ID that can be used to cancel the reminder
- * 
+ *
  * @param {string} title - Event/reminder title
  * @param {number} delay - Delay in milliseconds
  * @param {Object} [options] - Additional notification options
@@ -226,7 +226,7 @@ export const scheduleReminder = (title, delay, options = {}) => {
 
 /**
  * Cancels a specific scheduled reminder
- * 
+ *
  * @param {string} reminderId - The ID returned by scheduleReminder
  * @returns {boolean} True if the reminder was found and cancelled
  */
@@ -244,7 +244,7 @@ export const cancelReminder = (reminderId) => {
 
 /**
  * Cancels all scheduled reminders
- * 
+ *
  * @returns {number} Number of reminders cancelled
  */
 export const cancelAllReminders = () => {
@@ -259,7 +259,7 @@ export const cancelAllReminders = () => {
 
 /**
  * Gets a list of all active (pending) reminders
- * 
+ *
  * @returns {Array<{id: string, title: string, scheduledAt: number, firesAt: number, timeRemaining: number}>}
  */
 export const getActiveReminders = () => {
@@ -282,7 +282,7 @@ export const getActiveReminders = () => {
 
 /**
  * Gets the count of active reminders
- * 
+ *
  * @returns {number} Number of pending reminders
  */
 export const getActiveReminderCount = () => {

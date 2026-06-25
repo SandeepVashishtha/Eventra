@@ -19,7 +19,6 @@ initializeGlobalErrorHandling();
 
 // Refactored InMemoryLockManager implementation to prevent queue expiration race conditions.
 
-
 // Attach CSP violation listener — surfaces policy breaches in dev console
 // and forwards reports to REACT_APP_CSP_REPORT_URI in production.
 initCspReporting();
@@ -35,7 +34,7 @@ const router = createBrowserRouter([
     path: "*",
     element: <App />,
     errorElement: <ErrorRecoveryPage />,
-  }
+  },
 ]);
 
 // Mount the React application to the DOM
@@ -45,15 +44,15 @@ root.render(
   <React.StrictMode>
     {/* Global Application Error Boundary (Fixes #5060) */}
     <GlobalErrorBoundary>
-  <HelmetProvider>
-    <TranslationProvider>
-      <ThemeProvider>
-        <RealTimeProvider>
-          <RouterProvider router={router} />
-        </RealTimeProvider>
-      </ThemeProvider>
-    </TranslationProvider>
-  </HelmetProvider>
-</GlobalErrorBoundary>
+      <HelmetProvider>
+        <TranslationProvider>
+          <ThemeProvider>
+            <RealTimeProvider>
+              <RouterProvider router={router} />
+            </RealTimeProvider>
+          </ThemeProvider>
+        </TranslationProvider>
+      </HelmetProvider>
+    </GlobalErrorBoundary>
   </React.StrictMode>
 );

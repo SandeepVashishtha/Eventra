@@ -1,16 +1,16 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { 
-  Sparkles, 
-  Download, 
-  CheckCircle2, 
-  FileDown, 
-  Image as ImageIcon, 
-  User, 
+import {
+  Sparkles,
+  Download,
+  CheckCircle2,
+  FileDown,
+  Image as ImageIcon,
+  User,
   X,
   Shield,
   Zap,
-  Award
+  Award,
 } from "lucide-react";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
@@ -48,7 +48,7 @@ const BADGE_TEMPLATES = {
     badgeLabelClass: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
     ringClass: "from-cyan-500 to-blue-500",
     glowClass: "bg-cyan-500/10",
-  }
+  },
 };
 
 export default function EventBadgeGenerator({ onClose, userStats = {} }) {
@@ -67,9 +67,9 @@ export default function EventBadgeGenerator({ onClose, userStats = {} }) {
   const checklist = [
     { id: "registered", text: "Registered for at least 1 Event", done: totalEvents >= 1, xp: 100 },
     { id: "streak", text: "Maintain active Event Streak", done: currentStreak >= 1, xp: 150 },
-    { id: "badges", text: "Claimed a Milestone Token", done: unlockedCount >= 1, xp: 250 }
+    { id: "badges", text: "Claimed a Milestone Token", done: unlockedCount >= 1, xp: 250 },
   ];
-  const completedCount = checklist.filter(item => item.done).length;
+  const completedCount = checklist.filter((item) => item.done).length;
   const isFullyVerified = completedCount === checklist.length;
 
   // Handle avatar upload
@@ -120,7 +120,7 @@ export default function EventBadgeGenerator({ onClose, userStats = {} }) {
         backgroundColor: null,
       });
       const imgData = canvas.toDataURL("image/png");
-      
+
       // A4 dimensions: 210 x 297 mm. Render badge in center.
       const pdf = new jsPDF("p", "mm", "a4");
       const imgWidth = 90; // Badge width in mm
@@ -148,8 +148,10 @@ export default function EventBadgeGenerator({ onClose, userStats = {} }) {
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(10);
       pdf.setTextColor(148, 163, 184);
-      pdf.text("This badge grants access to the Eventra Contribution Arena.", 105, 55, { align: "center" });
-      
+      pdf.text("This badge grants access to the Eventra Contribution Arena.", 105, 55, {
+        align: "center",
+      });
+
       pdf.save(`eventra-badge-${attendeeName.toLowerCase().replace(/\s+/g, "-")}.pdf`);
       toast.success("PDF Pass generated and downloaded.");
     } catch (err) {
@@ -187,33 +189,41 @@ export default function EventBadgeGenerator({ onClose, userStats = {} }) {
                 Badge Studio
               </div>
               <h2 className="text-2xl font-black text-white mt-1">Generate Attendee Badge</h2>
-              <p className="text-xs text-slate-400 mt-1">Design a certified visual pass demonstrating your achievements.</p>
+              <p className="text-xs text-slate-400 mt-1">
+                Design a certified visual pass demonstrating your achievements.
+              </p>
             </div>
 
             {/* Verification Checklist */}
             <div className="p-4 bg-slate-950/50 border border-slate-800 rounded-2xl space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Verification Checklist</span>
-                <span className="text-xs font-black text-slate-400">{completedCount} / 3 Complete</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">
+                  Verification Checklist
+                </span>
+                <span className="text-xs font-black text-slate-400">
+                  {completedCount} / 3 Complete
+                </span>
               </div>
-              
+
               {/* Progress bar */}
               <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                <motion.div 
-                  className="h-full bg-linear-to-r from-indigo-500 to-purple-500" 
+                <motion.div
+                  className="h-full bg-linear-to-r from-indigo-500 to-purple-500"
                   animate={{ width: `${(completedCount / 3) * 100}%` }}
                 />
               </div>
 
               <div className="space-y-2 pt-1">
-                {checklist.map(item => (
+                {checklist.map((item) => (
                   <div key={item.id} className="flex items-center gap-2 text-xs">
                     {item.done ? (
                       <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                     ) : (
                       <div className="w-4 h-4 border border-slate-700 rounded-full shrink-0 flex items-center justify-center text-[8px] text-slate-500 font-bold" />
                     )}
-                    <span className={item.done ? "text-slate-350" : "text-slate-500"}>{item.text}</span>
+                    <span className={item.done ? "text-slate-350" : "text-slate-500"}>
+                      {item.text}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -222,9 +232,11 @@ export default function EventBadgeGenerator({ onClose, userStats = {} }) {
             {/* Customized Inputs */}
             <div className="space-y-3">
               <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Attendee Name</label>
-                <input 
-                  type="text" 
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">
+                  Attendee Name
+                </label>
+                <input
+                  type="text"
                   value={attendeeName}
                   onChange={(e) => setAttendeeName(e.target.value)}
                   placeholder="Enter full name"
@@ -233,9 +245,11 @@ export default function EventBadgeGenerator({ onClose, userStats = {} }) {
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Attendee Title / Role</label>
-                <input 
-                  type="text" 
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">
+                  Attendee Title / Role
+                </label>
+                <input
+                  type="text"
                   value={attendeeRole}
                   onChange={(e) => setAttendeeRole(e.target.value)}
                   placeholder="Enter role (e.g. Developer)"
@@ -245,15 +259,22 @@ export default function EventBadgeGenerator({ onClose, userStats = {} }) {
 
               {/* Upload Avatar */}
               <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Profile Image</label>
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">
+                  Profile Image
+                </label>
                 <div className="flex items-center gap-3">
                   <label className="px-4 py-2 border border-slate-800 bg-slate-950 hover:bg-slate-850 rounded-xl text-xs font-bold text-slate-350 cursor-pointer transition flex items-center gap-1.5 active:scale-[0.98]">
                     <ImageIcon size={14} />
                     <span>Upload Image</span>
-                    <input type="file" onChange={handleAvatarChange} accept="image/*" className="hidden" />
+                    <input
+                      type="file"
+                      onChange={handleAvatarChange}
+                      accept="image/*"
+                      className="hidden"
+                    />
                   </label>
                   {avatar && (
-                    <button 
+                    <button
                       onClick={() => setAvatar(null)}
                       className="text-xs text-rose-500 hover:text-rose-400 font-bold cursor-pointer"
                     >
@@ -265,9 +286,11 @@ export default function EventBadgeGenerator({ onClose, userStats = {} }) {
 
               {/* Template Selection */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Theme Preset</label>
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">
+                  Theme Preset
+                </label>
                 <div className="flex gap-2">
-                  {Object.values(BADGE_TEMPLATES).map(t => (
+                  {Object.values(BADGE_TEMPLATES).map((t) => (
                     <button
                       key={t.id}
                       onClick={() => setSelectedTemplate(t.id)}
@@ -296,7 +319,7 @@ export default function EventBadgeGenerator({ onClose, userStats = {} }) {
                 <Download size={14} />
                 <span>Export PNG</span>
               </button>
-              
+
               <button
                 onClick={downloadPDF}
                 disabled={exporting}
@@ -307,7 +330,9 @@ export default function EventBadgeGenerator({ onClose, userStats = {} }) {
               </button>
             </div>
             {exporting && (
-              <p className="text-[10px] text-center text-slate-550 animate-pulse font-medium">Generating digital pass document, please hold...</p>
+              <p className="text-[10px] text-center text-slate-550 animate-pulse font-medium">
+                Generating digital pass document, please hold...
+              </p>
             )}
           </div>
         </div>
@@ -318,19 +343,27 @@ export default function EventBadgeGenerator({ onClose, userStats = {} }) {
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#020617_1px,transparent_1px),linear-gradient(to_bottom,#020617_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-40 pointer-events-none" />
 
           {/* Badge element to snapshot */}
-          <div 
+          <div
             ref={badgeRef}
             className={`w-[260px] h-[400px] bg-linear-to-b ${currentTemplate.bgGradient} border-2 ${currentTemplate.borderClass} rounded-3xl relative overflow-hidden flex flex-col justify-between items-center p-5 select-none`}
             style={{ fontFamily: "Inter, sans-serif" }}
           >
             {/* Template Ambient Glow Overlay */}
-            <div className={`absolute -top-12 -left-12 w-28 h-28 ${currentTemplate.glowClass} rounded-full blur-2xl pointer-events-none`} />
-            <div className={`absolute -bottom-12 -right-12 w-28 h-28 ${currentTemplate.glowClass} rounded-full blur-2xl pointer-events-none`} />
+            <div
+              className={`absolute -top-12 -left-12 w-28 h-28 ${currentTemplate.glowClass} rounded-full blur-2xl pointer-events-none`}
+            />
+            <div
+              className={`absolute -bottom-12 -right-12 w-28 h-28 ${currentTemplate.glowClass} rounded-full blur-2xl pointer-events-none`}
+            />
 
             {/* Pass Header */}
             <div className="w-full flex items-center justify-between border-b border-white/10 pb-2 z-10">
-              <span className="text-[10px] font-black tracking-widest text-indigo-400 uppercase">Eventra 2026</span>
-              <span className={`text-[8px] font-extrabold px-2 py-0.5 rounded-full border ${currentTemplate.badgeLabelClass}`}>
+              <span className="text-[10px] font-black tracking-widest text-indigo-400 uppercase">
+                Eventra 2026
+              </span>
+              <span
+                className={`text-[8px] font-extrabold px-2 py-0.5 rounded-full border ${currentTemplate.badgeLabelClass}`}
+              >
                 {currentTemplate.badgeLabel}
               </span>
             </div>
@@ -339,31 +372,47 @@ export default function EventBadgeGenerator({ onClose, userStats = {} }) {
             <div className="flex flex-col items-center space-y-3 z-10 mt-3">
               <div className="relative">
                 {/* Aura border */}
-                <span className={`absolute -inset-1 rounded-full bg-linear-to-r ${currentTemplate.ringClass} blur-xs opacity-80 animate-pulse`} />
+                <span
+                  className={`absolute -inset-1 rounded-full bg-linear-to-r ${currentTemplate.ringClass} blur-xs opacity-80 animate-pulse`}
+                />
                 <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-slate-800 bg-slate-900 flex items-center justify-center">
                   {avatar ? (
-                    <img src={avatar} alt="Avatar" className="w-full h-full object-cover" loading="lazy" />
+                    <img
+                      src={avatar}
+                      alt="Avatar"
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
                   ) : (
                     <User className="w-8 h-8 text-slate-655" />
                   )}
                 </div>
                 {isFullyVerified && (
-                  <div className="absolute -bottom-1 -right-1 flex items-center justify-center bg-emerald-500 border border-slate-950 rounded-full w-5 h-5 text-white shadow" title="Verified Attendee">
+                  <div
+                    className="absolute -bottom-1 -right-1 flex items-center justify-center bg-emerald-500 border border-slate-950 rounded-full w-5 h-5 text-white shadow"
+                    title="Verified Attendee"
+                  >
                     <Shield size={10} className="fill-white" />
                   </div>
                 )}
               </div>
 
               <div className="text-center space-y-0.5">
-                <h4 className="text-sm font-black text-white leading-none tracking-tight">{attendeeName}</h4>
-                <p className="text-[9px] text-slate-450 uppercase tracking-widest font-extrabold">{attendeeRole}</p>
+                <h4 className="text-sm font-black text-white leading-none tracking-tight">
+                  {attendeeName}
+                </h4>
+                <p className="text-[9px] text-slate-450 uppercase tracking-widest font-extrabold">
+                  {attendeeRole}
+                </p>
               </div>
             </div>
 
             {/* Checklist Badges / Credentials metrics inside Badge */}
             <div className="w-full bg-slate-950/70 border border-slate-850 p-2.5 rounded-2xl flex justify-around text-center z-10">
               <div>
-                <span className="text-[7px] font-black text-slate-400 uppercase block tracking-wider">Events</span>
+                <span className="text-[7px] font-black text-slate-400 uppercase block tracking-wider">
+                  Events
+                </span>
                 <span className="text-xs font-black text-indigo-400 mt-0.5 block flex items-center justify-center gap-0.5">
                   <Award size={10} />
                   {totalEvents}
@@ -371,7 +420,9 @@ export default function EventBadgeGenerator({ onClose, userStats = {} }) {
               </div>
               <div className="border-r border-slate-800" />
               <div>
-                <span className="text-[7px] font-black text-slate-400 uppercase block tracking-wider">Streak</span>
+                <span className="text-[7px] font-black text-slate-400 uppercase block tracking-wider">
+                  Streak
+                </span>
                 <span className="text-xs font-black text-pink-400 mt-0.5 block flex items-center justify-center gap-0.5">
                   <Zap size={10} />
                   {currentStreak}
@@ -379,7 +430,9 @@ export default function EventBadgeGenerator({ onClose, userStats = {} }) {
               </div>
               <div className="border-r border-slate-800" />
               <div>
-                <span className="text-[7px] font-black text-slate-400 uppercase block tracking-wider">Tokens</span>
+                <span className="text-[7px] font-black text-slate-400 uppercase block tracking-wider">
+                  Tokens
+                </span>
                 <span className="text-xs font-black text-emerald-400 mt-0.5 block flex items-center justify-center gap-0.5">
                   <CheckCircle2 size={10} />
                   {unlockedCount}
@@ -390,14 +443,18 @@ export default function EventBadgeGenerator({ onClose, userStats = {} }) {
             {/* QR Code Verification Footer */}
             <div className="w-full flex items-center justify-between pt-2 border-t border-white/5 z-10">
               <div className="text-left">
-                <span className="text-[7px] font-black text-slate-550 uppercase tracking-wide block leading-none">Security Verification</span>
-                <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider block mt-1">Verified Member</span>
+                <span className="text-[7px] font-black text-slate-550 uppercase tracking-wide block leading-none">
+                  Security Verification
+                </span>
+                <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider block mt-1">
+                  Verified Member
+                </span>
               </div>
               <div className="p-1 bg-white rounded-md shrink-0">
-                <QRCode 
+                <QRCode
                   value={`https://eventra.dev/verify/attendee/${attendeeName.toLowerCase().replace(/\s+/g, "-")}`}
-                  size={36} 
-                  level="M" 
+                  size={36}
+                  level="M"
                   bgColor="#ffffff"
                   fgColor="#020617"
                 />

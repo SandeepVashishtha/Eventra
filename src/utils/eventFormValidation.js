@@ -56,9 +56,7 @@ export const validateForm = (formData) => {
     const registrationStart = formData.registrationStart
       ? new Date(formData.registrationStart)
       : null;
-    const registrationEnd = formData.registrationEnd
-      ? new Date(formData.registrationEnd)
-      : null;
+    const registrationEnd = formData.registrationEnd ? new Date(formData.registrationEnd) : null;
     const eventStart = new Date(
       `${formData.isMultiDay ? formData.startDate : formData.date}T${formData.startTime}`
     );

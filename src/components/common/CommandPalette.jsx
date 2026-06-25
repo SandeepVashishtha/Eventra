@@ -6,7 +6,6 @@ import {
   Search,
   Sparkles,
   Command,
-
   Sun,
   Moon,
   MousePointer,
@@ -16,7 +15,7 @@ import {
   Layers,
   ArrowUp,
   ArrowDown,
-  CornerDownLeft
+  CornerDownLeft,
 } from "lucide-react";
 import { useModalStack } from "../../hooks/useModalStack";
 
@@ -30,7 +29,7 @@ export default function CommandPalette({
   cursorEnabled,
   toggleCursor,
   isAuthenticated,
-  handleLogoutClick
+  handleLogoutClick,
 }) {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
@@ -40,49 +39,146 @@ export default function CommandPalette({
   const { isTopmost } = useModalStack(isOpen);
 
   // Search Catalog containing navigations, quick system actions, events, and hackathons
-  const searchCatalog = useMemo(() => [
-    // ── Pages ────────────────────────────────────────────────────────────────
-    { name: "Explore Events Portal", href: "/events", category: "Pages", type: "nav", icon: Calendar },
-    { name: "Live Hackathons", href: "/hackathons", category: "Pages", type: "nav", icon: Sparkles },
-    { name: "Platform Projects Hub", href: "/projects", category: "Pages", type: "nav", icon: Layers },
-    { name: "Leaderboard Standings", href: "/leaderboard", category: "Pages", type: "nav", icon: Sparkles },
-    { name: "Eventra Bookmarks", href: "/bookmarks", category: "Pages", type: "nav", icon: Calendar },
-    { name: "Contribute & Open Source Guide", href: "/contributorguide", category: "Pages", type: "nav", icon: Layers },
-    { name: "Platform Frequently Asked Questions (FAQ)", href: "/faq", category: "Pages", type: "nav", icon: HelpCircle },
-    { name: "Contact Support Team", href: "/contact", category: "Pages", type: "nav", icon: HelpCircle },
-    { name: "User Settings Dashboard", href: "/dashboard", category: "Pages", type: "nav", icon: Layers },
-    { name: "Edit Account Profile", href: "/profile", category: "Pages", type: "nav", icon: Layers },
+  const searchCatalog = useMemo(
+    () => [
+      // ── Pages ────────────────────────────────────────────────────────────────
+      {
+        name: "Explore Events Portal",
+        href: "/events",
+        category: "Pages",
+        type: "nav",
+        icon: Calendar,
+      },
+      {
+        name: "Live Hackathons",
+        href: "/hackathons",
+        category: "Pages",
+        type: "nav",
+        icon: Sparkles,
+      },
+      {
+        name: "Platform Projects Hub",
+        href: "/projects",
+        category: "Pages",
+        type: "nav",
+        icon: Layers,
+      },
+      {
+        name: "Leaderboard Standings",
+        href: "/leaderboard",
+        category: "Pages",
+        type: "nav",
+        icon: Sparkles,
+      },
+      {
+        name: "Eventra Bookmarks",
+        href: "/bookmarks",
+        category: "Pages",
+        type: "nav",
+        icon: Calendar,
+      },
+      {
+        name: "Contribute & Open Source Guide",
+        href: "/contributorguide",
+        category: "Pages",
+        type: "nav",
+        icon: Layers,
+      },
+      {
+        name: "Platform Frequently Asked Questions (FAQ)",
+        href: "/faq",
+        category: "Pages",
+        type: "nav",
+        icon: HelpCircle,
+      },
+      {
+        name: "Contact Support Team",
+        href: "/contact",
+        category: "Pages",
+        type: "nav",
+        icon: HelpCircle,
+      },
+      {
+        name: "User Settings Dashboard",
+        href: "/dashboard",
+        category: "Pages",
+        type: "nav",
+        icon: Layers,
+      },
+      {
+        name: "Edit Account Profile",
+        href: "/profile",
+        category: "Pages",
+        type: "nav",
+        icon: Layers,
+      },
 
-    // ── Quick Actions ────────────────────────────────────────────────────────
-    {
-      name: `Switch Theme to ${isDarkMode ? "Light Mode" : "Dark Mode"}`,
-      action: "theme",
-      category: "System Actions",
-      type: "action",
-      icon: isDarkMode ? Sun : Moon
-    },
-    {
-      name: `Toggle Cursor to ${cursorEnabled ? "Static" : "Fluid Custom"}`,
-      action: "cursor",
-      category: "System Actions",
-      type: "action",
-      icon: MousePointer
-    },
-    ...(isAuthenticated ? [{
-  name: "Sign Out / Logout of Account",
-  action: "logout",
-  category: "System Actions",
-  type: "action",
-  icon: LogOut
-}] : []),
+      // ── Quick Actions ────────────────────────────────────────────────────────
+      {
+        name: `Switch Theme to ${isDarkMode ? "Light Mode" : "Dark Mode"}`,
+        action: "theme",
+        category: "System Actions",
+        type: "action",
+        icon: isDarkMode ? Sun : Moon,
+      },
+      {
+        name: `Toggle Cursor to ${cursorEnabled ? "Static" : "Fluid Custom"}`,
+        action: "cursor",
+        category: "System Actions",
+        type: "action",
+        icon: MousePointer,
+      },
+      ...(isAuthenticated
+        ? [
+            {
+              name: "Sign Out / Logout of Account",
+              action: "logout",
+              category: "System Actions",
+              type: "action",
+              icon: LogOut,
+            },
+          ]
+        : []),
 
-    // ── Sample Events ────────────────────────────────────────────────────────
-    { name: "Web3 Buildathon 2026", href: "/hackathons", category: "Hackathons", type: "nav", icon: Sparkles },
-    { name: "AI Innovations Summit", href: "/events", category: "Events", type: "nav", icon: Calendar },
-    { name: "React Advanced Core Workshop", href: "/events", category: "Events", type: "nav", icon: Calendar },
-    { name: "Next.js Fullstack Sprint", href: "/events", category: "Events", type: "nav", icon: Calendar },
-    { name: "Global Open Source Hackfest", href: "/hackathons", category: "Hackathons", type: "nav", icon: Sparkles }
-  ], [isDarkMode, cursorEnabled, isAuthenticated]);
+      // ── Sample Events ────────────────────────────────────────────────────────
+      {
+        name: "Web3 Buildathon 2026",
+        href: "/hackathons",
+        category: "Hackathons",
+        type: "nav",
+        icon: Sparkles,
+      },
+      {
+        name: "AI Innovations Summit",
+        href: "/events",
+        category: "Events",
+        type: "nav",
+        icon: Calendar,
+      },
+      {
+        name: "React Advanced Core Workshop",
+        href: "/events",
+        category: "Events",
+        type: "nav",
+        icon: Calendar,
+      },
+      {
+        name: "Next.js Fullstack Sprint",
+        href: "/events",
+        category: "Events",
+        type: "nav",
+        icon: Calendar,
+      },
+      {
+        name: "Global Open Source Hackfest",
+        href: "/hackathons",
+        category: "Hackathons",
+        type: "nav",
+        icon: Sparkles,
+      },
+    ],
+    [isDarkMode, cursorEnabled, isAuthenticated]
+  );
 
   // Fuzzy match query ranking helper
   const getFuzzyScore = (text, queryStr) => {
@@ -109,14 +205,11 @@ export default function CommandPalette({
     if (!query.trim()) return searchCatalog;
 
     return searchCatalog
-      .map(item => ({
+      .map((item) => ({
         ...item,
-        score: Math.max(
-          getFuzzyScore(item.name, query),
-          getFuzzyScore(item.category, query)
-        )
+        score: Math.max(getFuzzyScore(item.name, query), getFuzzyScore(item.category, query)),
       }))
-      .filter(item => item.score > 0)
+      .filter((item) => item.score > 0)
       .sort((a, b) => b.score - a.score);
   }, [query, searchCatalog]);
 
@@ -141,19 +234,22 @@ export default function CommandPalette({
   }, [isOpen]);
 
   // Handle selected item action
-  const handleSelect = useCallback((item) => {
-    if (item.type === "nav") {
-      navigate(item.href);
-      onClose();
-      return;
-    }
-    if (item.type === "action") {
-      if (item.action === "theme") toggleTheme();
-      else if (item.action === "cursor") toggleCursor();
-      else if (item.action === "logout") handleLogoutClick();
-      onClose();
-    }
-  }, [navigate, onClose, toggleTheme, toggleCursor, handleLogoutClick]);
+  const handleSelect = useCallback(
+    (item) => {
+      if (item.type === "nav") {
+        navigate(item.href);
+        onClose();
+        return;
+      }
+      if (item.type === "action") {
+        if (item.action === "theme") toggleTheme();
+        else if (item.action === "cursor") toggleCursor();
+        else if (item.action === "logout") handleLogoutClick();
+        onClose();
+      }
+    },
+    [navigate, onClose, toggleTheme, toggleCursor, handleLogoutClick]
+  );
 
   // Keyboard navigation controller
   useEffect(() => {
@@ -164,10 +260,12 @@ export default function CommandPalette({
 
       if (e.key === "ArrowDown") {
         e.preventDefault();
-        setActiveIndex(prev => (prev + 1) % Math.max(1, filteredItems.length));
+        setActiveIndex((prev) => (prev + 1) % Math.max(1, filteredItems.length));
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
-        setActiveIndex(prev => (prev - 1 + filteredItems.length) % Math.max(1, filteredItems.length));
+        setActiveIndex(
+          (prev) => (prev - 1 + filteredItems.length) % Math.max(1, filteredItems.length)
+        );
       } else if (e.key === "Enter") {
         e.preventDefault();
         if (filteredItems[activeIndex]) {
@@ -225,7 +323,7 @@ export default function CommandPalette({
               ref={inputRef}
               type="text"
               value={query}
-              onChange={e => setQuery(e.target.value)}
+              onChange={(e) => setQuery(e.target.value)}
               placeholder="Search platform, pages, events, or actions..."
               className="flex-1 bg-transparent border-none outline-none text-slate-800 dark:text-white placeholder-slate-400 text-base"
             />
@@ -251,7 +349,7 @@ export default function CommandPalette({
     [-webkit-overflow-scrolling:touch]
   "
           >
-            {trendTags.map(tag => (
+            {trendTags.map((tag) => (
               <button
                 key={tag}
                 type="button"
@@ -274,7 +372,6 @@ export default function CommandPalette({
             ))}
           </div>
 
-
           {/* Results container */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4" data-lenis-prevent>
             {filteredItems.length > 0 ? (
@@ -293,14 +390,17 @@ export default function CommandPalette({
                           onMouseEnter={() => setActiveIndex(originalIndex)}
                           className={`
                             group flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-150 select-none
-                            ${active
-                              ? "bg-linear-to-r from-indigo-600 to-pink-600 text-white shadow-lg shadow-indigo-500/20 translate-x-1"
-                              : "hover:bg-slate-100 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-300"
+                            ${
+                              active
+                                ? "bg-linear-to-r from-indigo-600 to-pink-600 text-white shadow-lg shadow-indigo-500/20 translate-x-1"
+                                : "hover:bg-slate-100 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-300"
                             }
                           `}
                         >
                           <div className="flex items-center gap-3">
-                            <Icon className={`h-5 w-5 ${active ? "text-white" : "text-slate-400 dark:text-slate-500 group-hover:text-slate-600"}`} />
+                            <Icon
+                              className={`h-5 w-5 ${active ? "text-white" : "text-slate-400 dark:text-slate-500 group-hover:text-slate-600"}`}
+                            />
                             <span className="text-sm font-semibold tracking-tight">{name}</span>
                           </div>
                           {active && (

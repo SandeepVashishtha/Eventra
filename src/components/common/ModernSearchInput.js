@@ -46,9 +46,7 @@ const ModernSearchInput = ({
         {/* Left Icon */}
         <div
           className={`absolute left-4 top-1/2 -translate-y-1/2 z-20 pointer-events-none ${
-            isFocused
-              ? "text-indigo-500"
-              : "text-gray-400 dark:text-gray-500"
+            isFocused ? "text-indigo-500" : "text-gray-400 dark:text-gray-500"
           }`}
         >
           {leftIcon}

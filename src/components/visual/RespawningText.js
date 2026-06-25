@@ -2,9 +2,9 @@
  * @fileoverview RespawningText - Animated typewriter text component for Eventra
  * @module components/visual/RespawningText
  */
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { useReducedMotion } from '../../hooks/useReducedMotion';
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { useReducedMotion } from "../../hooks/useReducedMotion";
 
 /**
  * A React component that displays an animated typewriter effect,
@@ -31,7 +31,12 @@ import { useReducedMotion } from '../../hooks/useReducedMotion';
  *   pauseTime={3000}
  * />
  */
-const RespawningText = ({ texts = ["Discover & Join"], typingSpeed = 150, deletingSpeed = 100, pauseTime = 2000 }) => {
+const RespawningText = ({
+  texts = ["Discover & Join"],
+  typingSpeed = 150,
+  deletingSpeed = 100,
+  pauseTime = 2000,
+}) => {
   const [currentText, setCurrentText] = useState("");
   const [textIndex, setTextIndex] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -79,7 +84,16 @@ const RespawningText = ({ texts = ["Discover & Join"], typingSpeed = 150, deleti
     timeoutId = setTimeout(handleTyping, isDeleting ? deletingSpeed : typingSpeed);
 
     return () => clearTimeout(timeoutId);
-  }, [currentText, isDeleting, textIndex, texts, typingSpeed, deletingSpeed, pauseTime, prefersReducedMotion]);
+  }, [
+    currentText,
+    isDeleting,
+    textIndex,
+    texts,
+    typingSpeed,
+    deletingSpeed,
+    pauseTime,
+    prefersReducedMotion,
+  ]);
 
   return (
     <span className="inline-block relative whitespace-normal mb-1">

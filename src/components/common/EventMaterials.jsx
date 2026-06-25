@@ -1,7 +1,12 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Download, Loader2, CheckCircle, Server, Zap, Sparkles, HelpCircle } from "lucide-react";
-import { isFileCached, getCachedFile, simulateServerDownload, P2PFileTransferCoordinator } from "../../utils/p2pFileTransfer";
+import {
+  isFileCached,
+  getCachedFile,
+  simulateServerDownload,
+  P2PFileTransferCoordinator,
+} from "../../utils/p2pFileTransfer";
 
 const EventMaterials = ({ materials }) => {
   const [cachedStatus, setCachedStatus] = useState({});
@@ -55,23 +60,19 @@ const EventMaterials = ({ materials }) => {
     }
 
     // 2. Start P2P Mesh Coordinator
-    const coordinator = new P2PFileTransferCoordinator(
-      fileId,
-      fileName,
-      (update) => {
-        // onStateChange callback
-        setActiveTransfer((prev) => ({
-          ...prev,
-          [fileId]: {
-            state: update.state,
-            progress: update.progress,
-            speed: update.speed,
-            peerCount: update.count || 0,
-            type: "p2p"
-          }
-        }));
-      }
-    );
+    const coordinator = new P2PFileTransferCoordinator(fileId, fileName, (update) => {
+      // onStateChange callback
+      setActiveTransfer((prev) => ({
+        ...prev,
+        [fileId]: {
+          state: update.state,
+          progress: update.progress,
+          speed: update.speed,
+          peerCount: update.count || 0,
+          type: "p2p",
+        },
+      }));
+    });
 
     // 3. Search for nearby active peers
     const foundPeer = await coordinator.startP2PSearch();
@@ -104,8 +105,8 @@ const EventMaterials = ({ materials }) => {
           progress: 0,
           speed: "2.4 MB/s",
           peerCount: 0,
-          type: "server"
-        }
+          type: "server",
+        },
       }));
 
       await simulateServerDownload(fileId, fileName, (progress) => {
@@ -116,15 +117,15 @@ const EventMaterials = ({ materials }) => {
             progress,
             speed: "2.8 MB/s",
             peerCount: 0,
-            type: "server"
-          }
+            type: "server",
+          },
         }));
       });
 
       // Write complete and trigger download
       triggerLocalDownload(fileId, fileName);
       setCachedStatus((prev) => ({ ...prev, [fileId]: true }));
-      
+
       setTimeout(() => {
         setActiveTransfer((prev) => {
           const copy = { ...prev };
@@ -159,9 +160,13 @@ const EventMaterials = ({ materials }) => {
         <div>
           <h3 className="text-xl font-bold text-gray-950 dark:text-white flex items-center gap-2">
             Shared Material Resources
-            <span className="text-[10px] uppercase bg-indigo-500/10 text-indigo-500 dark:bg-indigo-900/20 dark:text-indigo-400 font-bold px-2 py-0.5 rounded-md">P2P Mesh</span>
+            <span className="text-[10px] uppercase bg-indigo-500/10 text-indigo-500 dark:bg-indigo-900/20 dark:text-indigo-400 font-bold px-2 py-0.5 rounded-md">
+              P2P Mesh
+            </span>
           </h3>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">Download materials peer-to-peer to conserve bandwidth and bypass latency</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            Download materials peer-to-peer to conserve bandwidth and bypass latency
+          </p>
         </div>
       </div>
 
@@ -171,17 +176,30 @@ const EventMaterials = ({ materials }) => {
           const isCached = cachedStatus[material.id];
 
           return (
-            <div key={material.id} className="p-5 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-950/20 flex flex-col gap-4">
+            <div
+              key={material.id}
+              className="p-5 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-950/20 flex flex-col gap-4"
+            >
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-xl text-xl flex items-center justify-center font-bold ${getColor(material.type)}`}>
+                  <div
+                    className={`w-12 h-12 rounded-xl text-xl flex items-center justify-center font-bold ${getColor(material.type)}`}
+                  >
                     {getIcon(material.type)}
                   </div>
                   <div>
-                    <p className="font-bold text-gray-950 dark:text-white text-sm">{material.title}</p>
+                    <p className="font-bold text-gray-950 dark:text-white text-sm">
+                      {material.title}
+                    </p>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-md ${getColor(material.type)}`}>{material.type}</span>
-                      <span className="text-xs text-zinc-500 dark:text-zinc-400 font-semibold">{material.size}</span>
+                      <span
+                        className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-md ${getColor(material.type)}`}
+                      >
+                        {material.type}
+                      </span>
+                      <span className="text-xs text-zinc-500 dark:text-zinc-400 font-semibold">
+                        {material.size}
+                      </span>
                       {isCached && (
                         <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 flex items-center gap-1">
                           <CheckCircle size={10} /> Local Cache
@@ -195,12 +213,14 @@ const EventMaterials = ({ materials }) => {
                 <button
                   type="button"
                   onClick={() => handleDownloadClick(material)}
-                  disabled={transfer && transfer.state !== "completed" && transfer.state !== "failed"}
+                  disabled={
+                    transfer && transfer.state !== "completed" && transfer.state !== "failed"
+                  }
                   className={`px-4.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-[0.98] flex items-center gap-2 cursor-pointer ${
-                    isCached 
-                      ? "bg-emerald-600 hover:bg-emerald-700 text-white" 
-                      : transfer 
-                        ? "bg-zinc-800 text-zinc-400 cursor-not-allowed" 
+                    isCached
+                      ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                      : transfer
+                        ? "bg-zinc-800 text-zinc-400 cursor-not-allowed"
                         : "bg-indigo-600 hover:bg-indigo-700 text-white"
                   }`}
                   style={{ cursor: transfer ? "not-allowed" : "pointer" }}
@@ -252,18 +272,16 @@ const EventMaterials = ({ materials }) => {
                           </span>
                         )}
                       </div>
-                      
-                      <div className="text-xs font-bold text-zinc-400">
-                        {transfer.speed}
-                      </div>
+
+                      <div className="text-xs font-bold text-zinc-400">{transfer.speed}</div>
                     </div>
 
                     {/* Progress Bar with mode color indicators */}
                     <div className="w-full h-2.5 bg-zinc-900 border border-zinc-850 rounded-full overflow-hidden flex">
                       <motion.div
                         className={`h-full rounded-full ${
-                          transfer.type === "p2p" 
-                            ? "bg-linear-to-r from-emerald-500 to-teal-500" 
+                          transfer.type === "p2p"
+                            ? "bg-linear-to-r from-emerald-500 to-teal-500"
                             : "bg-linear-to-r from-indigo-500 to-purple-500"
                         }`}
                         initial={{ width: 0 }}
@@ -274,7 +292,9 @@ const EventMaterials = ({ materials }) => {
 
                     {/* Footer Progress metadata logs */}
                     <div className="flex justify-between items-center mt-2.5 text-[10px] font-bold tracking-wide uppercase text-zinc-500">
-                      <span>Status: <span className="text-zinc-350">{transfer.state}</span></span>
+                      <span>
+                        Status: <span className="text-zinc-350">{transfer.state}</span>
+                      </span>
                       <span>{transfer.progress}%</span>
                     </div>
                   </motion.div>

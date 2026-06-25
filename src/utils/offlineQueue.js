@@ -67,8 +67,8 @@ const DB_VERSION = 2;
 // ---------------------------------------------------------------------------
 const _rescueFromLocalStorage = () => {
   try {
-          const raw = localStorage.getItem(QUEUE_KEY);
-          return safeJsonParse(raw, []);
+    const raw = localStorage.getItem(QUEUE_KEY);
+    return safeJsonParse(raw, []);
   } catch {
     return [];
   }
@@ -197,11 +197,12 @@ export const getQueueIndexedDB = async () => {
       request.onsuccess = () => {
         const items = request.result || [];
         // SECURITY (Issue #6449): Validate structural integrity to prevent cache poisoning
-        const validItems = items.filter(item => 
-          item && 
-          typeof item.id === 'string' && 
-          typeof item.actionType === 'string' &&
-          typeof item.payload === 'object'
+        const validItems = items.filter(
+          (item) =>
+            item &&
+            typeof item.id === "string" &&
+            typeof item.actionType === "string" &&
+            typeof item.payload === "object"
         );
         resolve(validItems);
       };
@@ -286,9 +287,7 @@ export const pushToQueue = async (item, userId = null) => {
     payload: item.payload || {},
     endpoint: item.endpoint || null,
     idempotencyKey: item.idempotencyKey || null,
-    conflictStrategy:
-      item.conflictStrategy ||
-      offlineSyncConfig.defaultConflictStrategy,
+    conflictStrategy: item.conflictStrategy || offlineSyncConfig.defaultConflictStrategy,
     // SECURITY: Attach user ID to validate ownership on replay
     userId: userId || null,
     sessionId: ensureSessionSnapshot(userId),
@@ -320,26 +319,26 @@ export const pushToQueue = async (item, userId = null) => {
     return false;
   }
   const isDuplicate = queue.some((existing) => {
-  if (actionItem.idempotencyKey && existing.idempotencyKey) {
-    return existing.idempotencyKey === actionItem.idempotencyKey;
+    if (actionItem.idempotencyKey && existing.idempotencyKey) {
+      return existing.idempotencyKey === actionItem.idempotencyKey;
+    }
+
+    return (
+      existing.eventId === actionItem.eventId &&
+      existing.userId === actionItem.userId &&
+      existing.actionType === actionItem.actionType
+    );
+  });
+
+  if (isDuplicate) {
+    logger.warn(
+      `[OfflineQueue] Duplicate action detected for event ${actionItem.eventId} ` +
+        `(user ${actionItem.userId}, type ${actionItem.actionType}). Skipping enqueue.`
+    );
+    return true;
   }
 
-  return (
-    existing.eventId === actionItem.eventId &&
-    existing.userId === actionItem.userId &&
-    existing.actionType === actionItem.actionType
-  );
-});
-
-if (isDuplicate) {
-  logger.warn(
-    `[OfflineQueue] Duplicate action detected for event ${actionItem.eventId} ` +
-      `(user ${actionItem.userId}, type ${actionItem.actionType}). Skipping enqueue.`
-  );
-  return true;
-}
-
-queue.push(actionItem);
+  queue.push(actionItem);
 
   let localStorageSuccess = false;
   try {
@@ -408,7 +407,7 @@ export const setQueue = async (newQueue) => {
         newQueue.forEach((item) => store.put(item));
 
         tx.oncomplete = () => resolve();
-        tx.onerror = (e) => reject(e.target?.error || new Error('IndexedDB transaction failed'));
+        tx.onerror = (e) => reject(e.target?.error || new Error("IndexedDB transaction failed"));
       };
       clearReq.onerror = () => reject(clearReq.error);
     });
@@ -564,7 +563,8 @@ export const processQueueItem = async (item, fetchFn, options = {}) => {
   const { signal, onConflict } = options;
 
   for (let attempt = 0; attempt <= MAX_RETRY_COUNT; attempt++) {
-    if (signal?.aborted) return { status: "error", item, error: new DOMException("Aborted", "AbortError") };
+    if (signal?.aborted)
+      return { status: "error", item, error: new DOMException("Aborted", "AbortError") };
 
     if (attempt > 0) {
       const delay = BASE_BACKOFF_MS * Math.pow(2, attempt - 1) + Math.random() * 500;
@@ -609,26 +609,40 @@ export const processQueueItem = async (item, fetchFn, options = {}) => {
 
       if (response.status === 409) {
         let serverState = null;
-        try { serverState = await response.json(); } catch { serverState = {}; }
+        try {
+          serverState = await response.json();
+        } catch {
+          serverState = {};
+        }
 
         if (typeof onConflict === "function") {
           const resolution = await onConflict(item, serverState);
-          if (resolution === "retry") { clearPendingTimeout(); continue; }
-          if (resolution === "discard") { clearPendingTimeout(); return { status: "dropped", item }; }
-          clearPendingTimeout(); return { status: "success", item };
+          if (resolution === "retry") {
+            clearPendingTimeout();
+            continue;
+          }
+          if (resolution === "discard") {
+            clearPendingTimeout();
+            return { status: "dropped", item };
+          }
+          clearPendingTimeout();
+          return { status: "success", item };
         }
-        clearPendingTimeout(); return { status: "conflict", item, serverState };
+        clearPendingTimeout();
+        return { status: "conflict", item, serverState };
       }
 
       if (response.status >= 400 && response.status < 500) {
         logger.warn(
           `[OfflineQueue] Server rejected item ${item.id} with ${response.status} — dropping.`
         );
-        clearPendingTimeout(); return { status: "dropped", item };
+        clearPendingTimeout();
+        return { status: "dropped", item };
       }
 
       // 5xx — retry with backoff
-      clearPendingTimeout(); continue;
+      clearPendingTimeout();
+      continue;
     } catch (error) {
       clearPendingTimeout();
       if (error.name === "AbortError") return { status: "error", item, error };
@@ -687,8 +701,8 @@ export const processQueue = async (currentUserId, fetchFn, options = {}) => {
   const currentSession = ensureSessionSnapshot(currentUserId);
   const sessionValidated = validateQueueSession(validated, currentSession);
   if (sessionValidated.length === 0) {
-    const validatedIds = new Set(validated.map(item => item.id));
-    const otherUsersQueue = queue.filter(item => !validatedIds.has(item.id));
+    const validatedIds = new Set(validated.map((item) => item.id));
+    const otherUsersQueue = queue.filter((item) => !validatedIds.has(item.id));
     await setQueue(otherUsersQueue);
     return { processed: 0, succeeded: 0, dropped: 0, remaining: 0 };
   }
@@ -721,8 +735,8 @@ export const processQueue = async (currentUserId, fetchFn, options = {}) => {
     }
   }
 
-  const validatedIds = new Set(validated.map(item => item.id));
-  const otherUsersQueue = queue.filter(item => !validatedIds.has(item.id));
+  const validatedIds = new Set(validated.map((item) => item.id));
+  const otherUsersQueue = queue.filter((item) => !validatedIds.has(item.id));
   const finalQueue = [...otherUsersQueue, ...failed];
   await setQueue(finalQueue);
 

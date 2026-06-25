@@ -11,7 +11,7 @@ const ICON_CLASSES = "w-12 h-12 transition-transform duration-300";
 export default function FAQCTA() {
   const { t } = useTranslation();
   const shouldReduceMotion = useReducedMotion();
-  const sectionRef = useRef<HTMLElement>(null);
+  const sectionRef = useRef < HTMLElement > null;
   const isInView = useInView(sectionRef, { once: true, margin: "-100px" });
 
   const cards = [
@@ -181,9 +181,7 @@ export default function FAQCTA() {
 
               {/* Arrow indicator */}
               <div className="relative mt-auto flex items-center gap-2 text-white/60 group-hover:text-white transition-all duration-300">
-                <span className="text-sm font-medium">
-                  {t("common.learnMore", "Learn more")}
-                </span>
+                <span className="text-sm font-medium">{t("common.learnMore", "Learn more")}</span>
                 <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300" />
               </div>
             </MotionLink>

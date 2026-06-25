@@ -22,7 +22,9 @@ export default function RegistrationDatesFields({ formData, handleInputChange, e
           onChange={handleInputChange}
           className={`w-full border ${errors.registrationStart ? "border-red-500" : "border-gray-300 dark:border-gray-600"} rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
         />
-        {errors.registrationStart && <span className="text-red-500 text-sm mt-1">{errors.registrationStart}</span>}
+        {errors.registrationStart && (
+          <span className="text-red-500 text-sm mt-1">{errors.registrationStart}</span>
+        )}
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -36,7 +38,9 @@ export default function RegistrationDatesFields({ formData, handleInputChange, e
           onChange={handleInputChange}
           className={`w-full border ${errors.registrationEnd ? "border-red-500" : "border-gray-300 dark:border-gray-600"} rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
         />
-        {errors.registrationEnd && <span className="text-red-500 text-sm mt-1">{errors.registrationEnd}</span>}
+        {errors.registrationEnd && (
+          <span className="text-red-500 text-sm mt-1">{errors.registrationEnd}</span>
+        )}
       </div>
     </motion.div>
   );

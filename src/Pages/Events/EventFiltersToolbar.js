@@ -49,7 +49,7 @@ const EventFiltersToolbar = ({
   const [exportMessage, setExportMessage] = useState("");
   const [exportError, setExportError] = useState("");
   const debounceRef = useRef(null);
-  
+
   const {
     presets,
     presetError,
@@ -59,7 +59,7 @@ const EventFiltersToolbar = ({
     updatePreset,
     deletePreset,
   } = useEventFilterPresets();
-  
+
   const { suggestions } = useFilterSuggestions({
     currentFilters: currentFilterConfig,
     visibleEvents,
@@ -115,20 +115,30 @@ const EventFiltersToolbar = ({
     setExportMessage("");
     setExportError("");
     try {
-      const result = exportEventsResultFile({ events: visibleEvents, filters: currentFilterConfig, format });
+      const result = exportEventsResultFile({
+        events: visibleEvents,
+        filters: currentFilterConfig,
+        format,
+      });
       if (!result.ok) {
         setExportError(result.error);
         return;
       }
-      setExportMessage(`Exported ${result.count} event${result.count === 1 ? "" : "s"} to ${result.filename}.`);
+      setExportMessage(
+        `Exported ${result.count} event${result.count === 1 ? "" : "s"} to ${result.filename}.`
+      );
     } catch {
       setExportError("Unable to export events right now.");
     }
   };
 
   const suggestionKindLabels = {
-    category: "Category", location: "Location", eventType: "Type",
-    dateRange: "Date", combination: "Combo", preset: "Preset",
+    category: "Category",
+    location: "Location",
+    eventType: "Type",
+    dateRange: "Date",
+    combination: "Combo",
+    preset: "Preset",
   };
 
   const hasAnyFilterActive =
@@ -137,54 +147,58 @@ const EventFiltersToolbar = ({
     (categoryFilter && categoryFilter !== "all");
 
   // Refined, clean pill styles
-  const renderFilterTab = useCallback((tab) => {
-    const isActive = filterType === tab.key;
-    return (
-      <button
-        key={tab.key}
-        type="button"
-        onClick={() => onFilterChange(tab.key)}
-        className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-lg transition-all border cursor-pointer ${
-          isActive
-            ? "bg-blue-600 text-white border-blue-500 shadow-sm shadow-blue-600/20"
-            : "bg-zinc-800/50 hover:bg-zinc-700/50 text-zinc-400 hover:text-zinc-100 border-white/5 hover:border-white/10"
-        }`}
-      >
-        {tab.pulse && (
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-          </span>
-        )}
-        {tab.label}
-      </button>
-    );
-  }, [filterType, onFilterChange]);
+  const renderFilterTab = useCallback(
+    (tab) => {
+      const isActive = filterType === tab.key;
+      return (
+        <button
+          key={tab.key}
+          type="button"
+          onClick={() => onFilterChange(tab.key)}
+          className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-lg transition-all border cursor-pointer ${
+            isActive
+              ? "bg-blue-600 text-white border-blue-500 shadow-sm shadow-blue-600/20"
+              : "bg-zinc-800/50 hover:bg-zinc-700/50 text-zinc-400 hover:text-zinc-100 border-white/5 hover:border-white/10"
+          }`}
+        >
+          {tab.pulse && (
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+          )}
+          {tab.label}
+        </button>
+      );
+    },
+    [filterType, onFilterChange]
+  );
 
-  const renderCategoryButton = useCallback((cat) => {
-    const isActive = categoryFilter === cat.id;
-    return (
-      <button
-        key={cat.id}
-        type="button"
-        onClick={() => onCategoryChange(cat.id)}
-        className={`px-3.5 py-1.5 text-xs font-medium rounded-lg border whitespace-nowrap transition-all cursor-pointer ${
-          isActive
-            ? "bg-zinc-100 text-zinc-900 border-zinc-200 shadow-sm font-semibold"
-            : "bg-zinc-800/50 hover:bg-zinc-700/50 text-zinc-400 hover:text-zinc-100 border-white/5 hover:border-white/10"
-        }`}
-      >
-        {cat.label}
-      </button>
-    );
-  }, [categoryFilter, onCategoryChange]);
+  const renderCategoryButton = useCallback(
+    (cat) => {
+      const isActive = categoryFilter === cat.id;
+      return (
+        <button
+          key={cat.id}
+          type="button"
+          onClick={() => onCategoryChange(cat.id)}
+          className={`px-3.5 py-1.5 text-xs font-medium rounded-lg border whitespace-nowrap transition-all cursor-pointer ${
+            isActive
+              ? "bg-zinc-100 text-zinc-900 border-zinc-200 shadow-sm font-semibold"
+              : "bg-zinc-800/50 hover:bg-zinc-700/50 text-zinc-400 hover:text-zinc-100 border-white/5 hover:border-white/10"
+          }`}
+        >
+          {cat.label}
+        </button>
+      );
+    },
+    [categoryFilter, onCategoryChange]
+  );
 
   return (
     <div className="sticky top-0 z-30 w-full flex flex-col gap-6 bg-slate-950/80 backdrop-blur-md p-4 sm:p-6 rounded-3xl border border-slate-900 shadow-xl">
-
       {/* Header */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b border-slate-900 pb-5">
-
         <div>
           <h3 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
             <Filter size={18} className="text-indigo-400" />
@@ -198,7 +212,6 @@ const EventFiltersToolbar = ({
 
         {/* Controls */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full lg:w-auto">
-
           <button
             type="button"
             onClick={() => onToggleAdvancedFilters?.((isOpen) => !isOpen)}
@@ -208,10 +221,7 @@ const EventFiltersToolbar = ({
                 : "bg-slate-900 border-slate-800 text-slate-300 hover:text-white hover:bg-slate-850"
             }`}
           >
-            <Sparkles
-              size={14}
-              className={isAdvancedFiltersOpen ? "animate-pulse" : ""}
-            />
+            <Sparkles size={14} className={isAdvancedFiltersOpen ? "animate-pulse" : ""} />
             Advanced Options
           </button>
 
@@ -252,7 +262,6 @@ const EventFiltersToolbar = ({
 
       {/* Search + Pills */}
       <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-4">
-
         {/* Search */}
         <div className="relative flex-1 group">
           <Search
@@ -281,7 +290,6 @@ const EventFiltersToolbar = ({
 
         {/* Pills */}
         <div className="flex flex-wrap sm:flex-nowrap gap-2 items-stretch sm:items-center w-full xl:w-auto overflow-x-auto scrollbar-none">
-
           {[
             { key: "all", label: "All Events" },
             { key: "live", label: "Live Now" },
@@ -310,13 +318,11 @@ const EventFiltersToolbar = ({
 
       {/* Categories */}
       <div className="flex flex-col gap-2">
-
         <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
           Domain Category
         </span>
 
         <div className="hidden md:flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none w-full">
-
           {CATEGORY_OPTIONS.map((cat) => {
             const isActive = categoryFilter === cat.id;
 
@@ -354,7 +360,6 @@ const EventFiltersToolbar = ({
 
       {/* Sort + View */}
       <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 border-t border-slate-900 pt-5">
-
         <div className="w-full lg:w-auto">
           <StyledDropdown
             label=""
@@ -366,7 +371,6 @@ const EventFiltersToolbar = ({
         </div>
 
         <div className="w-full lg:w-auto flex items-center justify-center space-x-2 bg-slate-900/60 border border-slate-800/80 rounded-xl p-1 shadow-inner">
-
           <button
             type="button"
             onClick={() => onViewModeChange("grid")}
@@ -397,4 +401,3 @@ const EventFiltersToolbar = ({
 };
 
 export default memo(EventFiltersToolbar);
-

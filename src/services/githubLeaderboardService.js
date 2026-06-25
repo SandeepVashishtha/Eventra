@@ -35,10 +35,7 @@ function readCache() {
 
 function writeCache(data) {
   try {
-    localStorage.setItem(
-      CACHE_KEY,
-      JSON.stringify({ data, timestamp: Date.now() })
-    );
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ data, timestamp: Date.now() }));
   } catch (err) {
     logger.warn("[Leaderboard] Cache write error (storage full?):", err);
   }
@@ -70,8 +67,8 @@ async function fetchPRPage(page, signal) {
       res.status === 403
         ? "GitHub API rate limit exceeded. Leaderboard will retry in 1 hour."
         : res.status === 404
-        ? `Repository ${REPO_OWNER}/${REPO_NAME} not found on GitHub.`
-        : `GitHub API error (HTTP ${res.status}).`;
+          ? `Repository ${REPO_OWNER}/${REPO_NAME} not found on GitHub.`
+          : `GitHub API error (HTTP ${res.status}).`;
 
     throw new Error(msg);
   }
@@ -94,8 +91,7 @@ async function fetchAllClosedPRs(signal) {
   return all;
 }
 
-const labelName = (label) =>
-  typeof label === "string" ? label : label?.name ?? "";
+const labelName = (label) => (typeof label === "string" ? label : (label?.name ?? ""));
 
 function aggregateContributors(prs) {
   const map = new Map();
@@ -120,11 +116,8 @@ function aggregateContributors(prs) {
       map.set(login, {
         username: login,
         name: pr.user?.name ?? login,
-        avatar:
-          avatar_url ??
-          `https://avatars.githubusercontent.com/${encodeURIComponent(login)}`,
-        profile:
-          html_url ?? `https://github.com/${encodeURIComponent(login)}`,
+        avatar: avatar_url ?? `https://avatars.githubusercontent.com/${encodeURIComponent(login)}`,
+        profile: html_url ?? `https://github.com/${encodeURIComponent(login)}`,
         points: prPoints,
         prs: 1,
       });

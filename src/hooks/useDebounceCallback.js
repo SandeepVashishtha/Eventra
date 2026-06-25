@@ -8,12 +8,15 @@ export default function useDebounceCallback(callback, delay = 300) {
     callbackRef.current = callback;
   }, [callback]);
 
-  const debouncedFn = useCallback((...args) => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      callbackRef.current(...args);
-    }, delay);
-  }, [delay]);
+  const debouncedFn = useCallback(
+    (...args) => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => {
+        callbackRef.current(...args);
+      }, delay);
+    },
+    [delay]
+  );
 
   useEffect(() => {
     return () => {

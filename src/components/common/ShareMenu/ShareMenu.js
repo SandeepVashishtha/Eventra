@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 // Consolidated lucide-react imports for code cleanliness
-import { Facebook, Linkedin, MessageCircle, Send, Share2, Copy, Mail, Check } from 'lucide-react';
-import { generateSharingUrl, copyToClipboard } from '../../../utils/shareUtils';
-import { toast } from 'react-toastify';
-import './ShareMenu.css';
+import { Facebook, Linkedin, MessageCircle, Send, Share2, Copy, Mail, Check } from "lucide-react";
+import { generateSharingUrl, copyToClipboard } from "../../../utils/shareUtils";
+import { toast } from "react-toastify";
+import "./ShareMenu.css";
 
 /**
  * ShareMenu Component
@@ -19,14 +19,14 @@ import './ShareMenu.css';
 const ShareMenu = ({
   shareData,
   children,
-  position = 'bottom',
-  menuClassName = '',
-  buttonClassName = '',
-  className = '',
+  position = "bottom",
+  menuClassName = "",
+  buttonClassName = "",
+  className = "",
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [calculatedPosition, setCalculatedPosition] = useState('bottom');
+  const [calculatedPosition, setCalculatedPosition] = useState("bottom");
   const menuRef = useRef(null);
   const buttonRef = useRef(null);
   const timeoutRef = useRef(null); // Ref to track timeouts and prevent memory leaks
@@ -39,51 +39,51 @@ const ShareMenu = ({
       const viewportWidth = window.innerWidth;
       const menuHeight = 350; // Approximate height of the menu
       const menuWidth = 256; // w-64 = 256px
-      
+
       let bestPosition = position;
-      
+
       // For 'above' position, check if there's enough space above
-      if (position === 'above') {
+      if (position === "above") {
         if (rect.top < menuHeight + 20) {
           // Not enough space above, use bottom
-          bestPosition = 'bottom';
+          bestPosition = "bottom";
         } else {
-          bestPosition = 'above';
+          bestPosition = "above";
         }
       }
-      
+
       // For cards where buttons are inside the card (top-2), adjust logic
-      if (position === 'above' && rect.top > 50) {
+      if (position === "above" && rect.top > 50) {
         // If we're positioning inside a card, prefer bottom
-        bestPosition = 'bottom';
+        bestPosition = "bottom";
       }
-      
+
       // For other positions, check viewport boundaries
-      if (position === 'bottom' && rect.bottom + menuHeight > viewportHeight - 20) {
-        bestPosition = 'top';
+      if (position === "bottom" && rect.bottom + menuHeight > viewportHeight - 20) {
+        bestPosition = "top";
       }
-      
-      if (position === 'right' && rect.right + menuWidth > viewportWidth - 20) {
-        bestPosition = 'left';
+
+      if (position === "right" && rect.right + menuWidth > viewportWidth - 20) {
+        bestPosition = "left";
       }
-      
-      if (position === 'left' && rect.left - menuWidth < 20) {
-        bestPosition = 'right';
+
+      if (position === "left" && rect.left - menuWidth < 20) {
+        bestPosition = "right";
       }
-      
+
       setCalculatedPosition(bestPosition);
     }
     setIsOpen(!isOpen);
   };
 
   const handleCopyLink = () => {
-    const url = generateSharingUrl(shareData, 'copy');
+    const url = generateSharingUrl(shareData, "copy");
     copyToClipboard(url);
     setCopied(true);
-    
+
     // Clear any existing timeouts to prevent memory leaks
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    
+
     // Reset copied status after 2 seconds safely
     timeoutRef.current = setTimeout(() => {
       setCopied(false);
@@ -93,28 +93,29 @@ const ShareMenu = ({
   const handleShare = (platform) => {
     //To generate the URL and data
     const url = generateSharingUrl(shareData, platform);
-    
+
     //Native Share Logic
-    if(platform === 'system' && navigator.share) {
-      navigator.share({
-        title: shareData.title,
-        text: shareData.description,
-        url: shareData.url || window.location.href,
-      })
-      .then(()=>setIsOpen(false))
-      .catch((err) => {
-        // Ignore AbortError caused by users intentionally closing the native share dialog
-        if (err.name !== 'AbortError') {
-          console.error('Error sharing:', err);
-          toast.error("Failed to share event", { autoClose: 2000 });
-        }
-      });
+    if (platform === "system" && navigator.share) {
+      navigator
+        .share({
+          title: shareData.title,
+          text: shareData.description,
+          url: shareData.url || window.location.href,
+        })
+        .then(() => setIsOpen(false))
+        .catch((err) => {
+          // Ignore AbortError caused by users intentionally closing the native share dialog
+          if (err.name !== "AbortError") {
+            console.error("Error sharing:", err);
+            toast.error("Failed to share event", { autoClose: 2000 });
+          }
+        });
       return;
     }
-    if (platform === 'copy') {
+    if (platform === "copy") {
       copyToClipboard(url);
       setCopied(true);
-      
+
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       timeoutRef.current = setTimeout(() => setCopied(false), 2000);
       return;
@@ -123,12 +124,12 @@ const ShareMenu = ({
     if (!url) {
       return;
     }
-    
+
     // Open URL in a new window for social platforms
-    window.open(url, '_blank', 'noopener,noreferrer');
+    window.open(url, "_blank", "noopener,noreferrer");
     setIsOpen(false);
   };
-  
+
   // Handle component unmount memory leak cleanup
   useEffect(() => {
     return () => {
@@ -143,7 +144,7 @@ const ShareMenu = ({
         setIsOpen(false);
       }
     };
-    
+
     const handleResize = () => {
       if (isOpen) {
         // Recalculate position on window resize
@@ -152,47 +153,50 @@ const ShareMenu = ({
     };
 
     const handleEscapeKey = (event) => {
-      if (event.key === 'Escape') {
+      if (event.key === "Escape") {
         setIsOpen(false);
         buttonRef.current?.focus();
       }
     };
-    
+
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('keydown', handleEscapeKey);
-      window.addEventListener('resize', handleResize);
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleEscapeKey);
+      window.addEventListener("resize", handleResize);
     }
-    
+
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleEscapeKey);
-      window.removeEventListener('resize', handleResize);
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscapeKey);
+      window.removeEventListener("resize", handleResize);
     };
   }, [isOpen, menuRef]);
-  
+
   // Determine the position class for the menu
   const positionClasses = {
-    top: 'bottom-full mb-2',
-    bottom: 'top-full mt-2',
-    left: 'right-full mr-2',
-    right: 'left-full ml-2',
-    center: 'top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2',
-    above: 'bottom-full mb-2 left-1/2 transform -translate-x-1/2',
-    'bottom-right': 'top-full mt-2 right-0' // New position for buttons inside cards
+    top: "bottom-full mb-2",
+    bottom: "top-full mt-2",
+    left: "right-full mr-2",
+    right: "left-full ml-2",
+    center: "top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2",
+    above: "bottom-full mb-2 left-1/2 transform -translate-x-1/2",
+    "bottom-right": "top-full mt-2 right-0", // New position for buttons inside cards
   };
 
   const currentPosition = calculatedPosition || position;
 
   return (
-    <div className={`relative inline-block z-dropdown share-menu-container ${className}`} ref={menuRef}>
+    <div
+      className={`relative inline-block z-dropdown share-menu-container ${className}`}
+      ref={menuRef}
+    >
       {/* Share Button */}
       <button
         type="button"
         className={`cursor-pointer ${buttonClassName}`}
         onClick={toggleMenu}
         ref={buttonRef}
-        aria-label={isOpen ? 'Close sharing options' : 'Open sharing options'}
+        aria-label={isOpen ? "Close sharing options" : "Open sharing options"}
         aria-expanded={isOpen}
         aria-haspopup="menu"
       >
@@ -202,7 +206,7 @@ const ShareMenu = ({
           </span>
         )}
       </button>
-      
+
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -218,12 +222,12 @@ const ShareMenu = ({
               {/* Native System Share (Only shows if browser supports it) */}
               {navigator.share && (
                 <button
-                onClick={() => handleShare('system')}
-                role="menuitem"
-                className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-b border-gray-100 dark:border-gray-800"
+                  onClick={() => handleShare("system")}
+                  role="menuitem"
+                  className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-b border-gray-100 dark:border-gray-800"
                 >
                   <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
-                  <Share2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400"/>
+                    <Share2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                   </div>
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     Share via System
@@ -236,7 +240,8 @@ const ShareMenu = ({
                 onClick={handleCopyLink}
                 role="menuitem"
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-               aria-label="Copy link to clipboard">
+                aria-label="Copy link to clipboard"
+              >
                 <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                   {copied ? (
                     <Check className="w-4 h-4 text-green-600" />
@@ -245,13 +250,13 @@ const ShareMenu = ({
                   )}
                 </div>
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {copied ? 'Copied!' : 'Copy link to clipboard'}
+                  {copied ? "Copied!" : "Copy link to clipboard"}
                 </span>
               </button>
-              
+
               {/* Email */}
               <button
-                onClick={() => handleShare('email')}
+                onClick={() => handleShare("email")}
                 role="menuitem"
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
@@ -260,68 +265,89 @@ const ShareMenu = ({
                 </div>
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Email</span>
               </button>
-              
+
               {/* WhatsApp */}
               <button
-                onClick={() => handleShare('whatsapp')}
+                onClick={() => handleShare("whatsapp")}
                 role="menuitem"
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
                 <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
                   <MessageCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
                 </div>
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">WhatsApp</span>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  WhatsApp
+                </span>
               </button>
-              
+
               {/* Twitter/X */}
               <button
-                onClick={() => handleShare('twitter')}
+                onClick={() => handleShare("twitter")}
                 role="menuitem"
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
                 <div className="w-8 h-8 rounded-full bg-black dark:bg-gray-700 flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-white"
+                  >
                     <path d="M4 4l11.733 16h4.267l-11.733 -16z"></path>
                     <path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772"></path>
                   </svg>
                 </div>
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Twitter/X</span>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Twitter/X
+                </span>
               </button>
-              
+
               {/* Facebook */}
               <button
-                onClick={() => handleShare('facebook')}
+                onClick={() => handleShare("facebook")}
                 role="menuitem"
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
                 <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
                   <Facebook className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 </div>
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Facebook</span>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Facebook
+                </span>
               </button>
-              
+
               {/* LinkedIn */}
               <button
-                onClick={() => handleShare('linkedin')}
+                onClick={() => handleShare("linkedin")}
                 role="menuitem"
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
                 <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
                   <Linkedin className="w-4 h-4 text-blue-700 dark:text-blue-400" />
                 </div>
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">LinkedIn</span>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  LinkedIn
+                </span>
               </button>
-              
+
               {/* Telegram */}
               <button
-                onClick={() => handleShare('telegram')}
+                onClick={() => handleShare("telegram")}
                 role="menuitem"
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
                 <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
                   <Send className="w-4 h-4 text-blue-500 dark:text-blue-400" />
                 </div>
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Telegram</span>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Telegram
+                </span>
               </button>
             </div>
           </motion.div>

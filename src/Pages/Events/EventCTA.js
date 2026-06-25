@@ -6,17 +6,14 @@ const EventCTA = () => {
   const [showModal, setShowModal] = useState(false);
 
   return (
-    <section 
+    <section
       className="relative py-16 px-8 m-8 rounded-3xl bg-linear-to-r from-slate-950 via-slate-900 to-indigo-950 text-white shadow-xl overflow-hidden"
       // AOS Implementation
       data-aos="zoom-in-up"
       data-aos-duration="1000"
     >
       {/* Snake-like glowing line */}
-      <svg
-        className="absolute inset-0 w-full h-full"
-        xmlns="http://www.w3.org/2000/svg"
-      >
+      <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
         <path
           d="M0,100 Q150,200 300,100 T600,100 T900,150 T1200,120"
           fill="transparent"
@@ -29,16 +26,10 @@ const EventCTA = () => {
       <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
         {/* Text */}
         <div className="md:w-1/2 text-center md:text-left">
-          <h2
-            className="text-4xl md:text-5xl font-bold mb-4"
-          >
-            Stay Updated with Our Events
-          </h2>
-          <p
-            className="text-lg md:text-xl mb-6"
-          >
-            Explore upcoming events, workshops, and webinars. Join the community
-            and never miss out on learning opportunities.
+          <h2 className="text-4xl md:text-5xl font-bold mb-4">Stay Updated with Our Events</h2>
+          <p className="text-lg md:text-xl mb-6">
+            Explore upcoming events, workshops, and webinars. Join the community and never miss out
+            on learning opportunities.
           </p>
         </div>
 
@@ -66,10 +57,11 @@ const EventCTA = () => {
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
           {/* UPDATED: Modal card background, border, and text */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 w-full max-w-md relative text-center dark:border dark:border-gray-700">
-            <h3 className="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">Join Our Community</h3>
+            <h3 className="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">
+              Join Our Community
+            </h3>
             <p className="text-gray-700 dark:text-gray-400 text-lg">
-              To participate in events, please explore the event cards listed on
-              this page.
+              To participate in events, please explore the event cards listed on this page.
             </p>
             {/* The close button works well in both themes. */}
             <button

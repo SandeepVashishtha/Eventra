@@ -59,7 +59,7 @@ describe("Distributed Rate Limiter", () => {
       await limiter.check("test-key");
 
       // Wait for window to expire
-      await new Promise(resolve => setTimeout(resolve, 150));
+      await new Promise((resolve) => setTimeout(resolve, 150));
 
       // Should be allowed again
       const result = await limiter.check("test-key");
@@ -80,10 +80,10 @@ describe("Distributed Rate Limiter", () => {
     test("should return remaining requests", async () => {
       const { createRateLimiter } = await import("../../api/_lib/rateLimiter.js");
       const limiter = createRateLimiter(60000, 5);
-      
+
       const result1 = await limiter.check("test-key");
       assert.strictEqual(result1.remaining, 4);
-      
+
       const result2 = await limiter.check("test-key");
       assert.strictEqual(result2.remaining, 3);
     });
@@ -103,29 +103,26 @@ describe("Distributed Rate Limiter", () => {
     test("should not throw when under threshold", async () => {
       const { createRateLimiter, enforceRateLimit } = await import("../../api/_lib/rateLimiter.js");
       const limiter = createRateLimiter(60000, 5);
-      
+
       await assert.doesNotReject(enforceRateLimit(limiter, "test-key"));
     });
 
     test("should throw error when over threshold", async () => {
       const { createRateLimiter, enforceRateLimit } = await import("../../api/_lib/rateLimiter.js");
       const limiter = createRateLimiter(60000, 2);
-      
+
       await enforceRateLimit(limiter, "test-key");
       await enforceRateLimit(limiter, "test-key");
-      
-      await assert.rejects(
-        enforceRateLimit(limiter, "test-key"),
-        /Too many requests/
-      );
+
+      await assert.rejects(enforceRateLimit(limiter, "test-key"), /Too many requests/);
     });
 
     test("should throw error with status 429", async () => {
       const { createRateLimiter, enforceRateLimit } = await import("../../api/_lib/rateLimiter.js");
       const limiter = createRateLimiter(60000, 1);
-      
+
       await enforceRateLimit(limiter, "test-key");
-      
+
       try {
         await enforceRateLimit(limiter, "test-key");
         assert.fail("Should have thrown");
@@ -139,13 +136,13 @@ describe("Distributed Rate Limiter", () => {
     test("should be configured with correct limits", async () => {
       const { loginRateLimiter } = await import("../../api/_lib/rateLimiter.js");
       assert.ok(loginRateLimiter.check);
-      
+
       // Test that it allows 10 requests
       for (let i = 0; i < 10; i++) {
         const result = await loginRateLimiter.check("test-ip");
         assert.strictEqual(result.allowed, true);
       }
-      
+
       // 11th request should be blocked
       const result = await loginRateLimiter.check("test-ip");
       assert.strictEqual(result.allowed, false);
@@ -156,16 +153,18 @@ describe("Distributed Rate Limiter", () => {
     test("should handle concurrent requests correctly", async () => {
       const { createRateLimiter } = await import("../../api/_lib/rateLimiter.js");
       const limiter = createRateLimiter(60000, 10);
-      
+
       // Make 10 concurrent requests
-      const promises = Array(10).fill(null).map(() => limiter.check("concurrent-key"));
+      const promises = Array(10)
+        .fill(null)
+        .map(() => limiter.check("concurrent-key"));
       const results = await Promise.all(promises);
-      
+
       // All should be allowed
-      results.forEach(result => {
+      results.forEach((result) => {
         assert.strictEqual(result.allowed, true);
       });
-      
+
       // 11th concurrent request should be blocked
       const result11 = await limiter.check("concurrent-key");
       assert.strictEqual(result11.allowed, false);
@@ -203,13 +202,13 @@ describe("Distributed Rate Limiter", () => {
     test("should handle very short windows", async () => {
       const { createRateLimiter } = await import("../../api/_lib/rateLimiter.js");
       const limiter = createRateLimiter(50, 2); // 50ms window
-      
+
       await limiter.check("test-key");
       await limiter.check("test-key");
-      
+
       // Wait just past window
-      await new Promise(resolve => setTimeout(resolve, 60));
-      
+      await new Promise((resolve) => setTimeout(resolve, 60));
+
       const result = await limiter.check("test-key");
       assert.strictEqual(result.allowed, true);
     });

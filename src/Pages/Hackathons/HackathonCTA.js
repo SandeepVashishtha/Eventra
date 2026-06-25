@@ -10,10 +10,22 @@ const HackathonCTA = () => {
 
   // Floating orbs
   const orbs = [
-    { size: 180, top: "-10%", left: "-8%",  color: "bg-blue-300/40 dark:bg-blue-600/20",   delay: 0 },
-    { size: 140, top: "60%",  left: "75%",  color: "bg-violet-300/40 dark:bg-violet-600/20", delay: 1.5 },
-    { size: 100, top: "30%",  left: "50%",  color: "bg-indigo-200/50 dark:bg-indigo-500/10", delay: 3 },
-    { size: 80,  top: "80%",  left: "20%",  color: "bg-cyan-300/40 dark:bg-cyan-500/10",   delay: 2 },
+    { size: 180, top: "-10%", left: "-8%", color: "bg-blue-300/40 dark:bg-blue-600/20", delay: 0 },
+    {
+      size: 140,
+      top: "60%",
+      left: "75%",
+      color: "bg-violet-300/40 dark:bg-violet-600/20",
+      delay: 1.5,
+    },
+    {
+      size: 100,
+      top: "30%",
+      left: "50%",
+      color: "bg-indigo-200/50 dark:bg-indigo-500/10",
+      delay: 3,
+    },
+    { size: 80, top: "80%", left: "20%", color: "bg-cyan-300/40 dark:bg-cyan-500/10", delay: 2 },
   ];
 
   return (
@@ -34,7 +46,12 @@ const HackathonCTA = () => {
             className={`absolute rounded-full ${orb.color} blur-2xl dark:blur-3xl pointer-events-none`}
             style={{ width: orb.size, height: orb.size, top: orb.top, left: orb.left }}
             animate={{ y: [0, -20, 0], x: [0, 12, 0], scale: [1, 1.1, 1] }}
-            transition={{ duration: prefersReducedMotion ? 0 : 8 + idx * 2, repeat: Infinity, ease: "easeInOut", delay: orb.delay }}
+            transition={{
+              duration: prefersReducedMotion ? 0 : 8 + idx * 2,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: orb.delay,
+            }}
           />
         ))}
 
@@ -82,8 +99,8 @@ const HackathonCTA = () => {
             viewport={{ once: true }}
             transition={{ duration: prefersReducedMotion ? 0 : 0.7, delay: 0.2 }}
           >
-            Participate in exciting hackathons, showcase your skills, and connect
-            with innovators around the world.
+            Participate in exciting hackathons, showcase your skills, and connect with innovators
+            around the world.
           </motion.p>
 
           <div className="flex flex-col sm:flex-row justify-center gap-4">
@@ -138,10 +155,13 @@ const HackathonCTA = () => {
                 <UserPlus className="w-6 h-6 text-white" />
               </div>
 
-              <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-white">Register for Hackathon</h3>
+              <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-white">
+                Register for Hackathon
+              </h3>
               <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
                 To register, please select a hackathon from the cards displayed above and click the{" "}
-                <strong className="text-indigo-600 dark:text-indigo-300">Register</strong> button on the card.
+                <strong className="text-indigo-600 dark:text-indigo-300">Register</strong> button on
+                the card.
               </p>
 
               <button

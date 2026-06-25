@@ -1,5 +1,18 @@
-import { createContext, useContext, useEffect, useMemo, useCallback, useRef, useState } from "react";
-import { setOnUnauthorizedHandler, setRequiresReauthHandler, setAuthToken, apiUtils } from "../config/api.js";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+  useState,
+} from "react";
+import {
+  setOnUnauthorizedHandler,
+  setRequiresReauthHandler,
+  setAuthToken,
+  apiUtils,
+} from "../config/api.js";
 import { authService } from "../services/authService.js";
 import { userService } from "../services/userService.js";
 import { syncSecureStorage } from "../utils/secureStorage.js";
@@ -8,7 +21,12 @@ import { useTokenExpiry } from "../hooks/useTokenExpiry.js";
 import { isTokenValid } from "../utils/tokenUtils.js";
 import { toast } from "react-toastify";
 import { ROLES, ROLE_PERMISSIONS } from "../config/roles.js";
-import { getSessionChannel, closeSessionChannel, SESSION_TERMINATED, broadcastSessionTerminated } from "../utils/sessionBroadcast.js";
+import {
+  getSessionChannel,
+  closeSessionChannel,
+  SESSION_TERMINATED,
+  broadcastSessionTerminated,
+} from "../utils/sessionBroadcast.js";
 import { deleteCookie, setCookie } from "../utils/cookieUtils.js";
 import ReAuthModal from "../components/auth/ReAuthModal";
 
@@ -18,7 +36,7 @@ const AuthContext = createContext();
 /**
  * Custom hook to consume the AuthContext.
  * Ensures that it is only used within a valid AuthProvider.
- * 
+ *
  * @returns {Object} Authentication context state and helper functions.
  */
 export const useAuth = () => {
@@ -32,7 +50,7 @@ export const useAuth = () => {
 /**
  * Helper function to extract user details and session state from raw response data.
  * Merges roles and parses associated permissions and scopes for user authorization checks.
- * 
+ *
  * @param {Object} data - Raw response data from the API (auth/profile response).
  * @param {string|null} fallbackEmail - Fallback identifier/email when not present in response.
  * @returns {Object} Extracted session user details.
@@ -106,7 +124,7 @@ export const AuthProvider = ({ children }) => {
   /**
    * Helper function to clear all active session state.
    * Wipes cookie, local storage, API auth headers, and React local state.
-   * 
+   *
    * @returns {boolean} True if state cleared, false if unmounted.
    */
   const clearSession = useCallback(() => {
@@ -157,7 +175,7 @@ export const AuthProvider = ({ children }) => {
   useTokenExpiry({
     token,
     user,
-    onExpired: clearSession
+    onExpired: clearSession,
   });
 
   /**
@@ -273,9 +291,12 @@ export const AuthProvider = ({ children }) => {
 
     if (typeof expSeconds === "number") {
       const msUntilExpiry = expSeconds * 1000 - Date.now() + 1000;
-      timerId = setTimeout(() => {
-        clearExpiredSession();
-      }, Math.max(msUntilExpiry, 0));
+      timerId = setTimeout(
+        () => {
+          clearExpiredSession();
+        },
+        Math.max(msUntilExpiry, 0)
+      );
     } else {
       timerId = setInterval(() => {
         if (!isTokenValid(token)) clearExpiredSession();
@@ -294,7 +315,7 @@ export const AuthProvider = ({ children }) => {
   /**
    * Persists the active session state to local variables and secure cache.
    * Strips administrative permissions/roles from plain storage to mitigate local XSS exploits.
-   * 
+   *
    * @param {string} sessionToken - The active JWT token identifier or cookie placeholder.
    * @param {Object} sessionUser - The complete user profile object containing credentials.
    * @returns {boolean} Successful persistence state.
@@ -318,7 +339,12 @@ export const AuthProvider = ({ children }) => {
 
     try {
       // Security Contract: Strip authorization keys from display profile object stored in localStorage
-      const { roles: _roles, permissions: _permissions, scopes: _scopes, ...displayProfile } = sessionUser;
+      const {
+        roles: _roles,
+        permissions: _permissions,
+        scopes: _scopes,
+        ...displayProfile
+      } = sessionUser;
       await syncSecureStorage.setItem("user", JSON.stringify(displayProfile));
     } catch (error) {
       console.error("[AuthContext] Error persisting user profile safely:", error);
@@ -427,33 +453,36 @@ export const AuthProvider = ({ children }) => {
   const permissions = usePermissions(user);
 
   // Memoize context provider values to prevent redundant subscriber re-renders
-  const value = useMemo(() => ({
-    user,
-    token,
-    loading,
-    authRequest,
-    requiresReauth,
-    setRequiresReauth,
-    login,
-    logout,
-    setAuthSession,
-    setUser,
-    isAuthenticated,
-    ...permissions,
-  }), [
-    user,
-    token,
-    loading,
-    authRequest,
-    requiresReauth,
-    setRequiresReauth,
-    login,
-    logout,
-    setAuthSession,
-    setUser,
-    isAuthenticated,
-    permissions
-  ]);
+  const value = useMemo(
+    () => ({
+      user,
+      token,
+      loading,
+      authRequest,
+      requiresReauth,
+      setRequiresReauth,
+      login,
+      logout,
+      setAuthSession,
+      setUser,
+      isAuthenticated,
+      ...permissions,
+    }),
+    [
+      user,
+      token,
+      loading,
+      authRequest,
+      requiresReauth,
+      setRequiresReauth,
+      login,
+      logout,
+      setAuthSession,
+      setUser,
+      isAuthenticated,
+      permissions,
+    ]
+  );
 
   return (
     <AuthContext.Provider value={value}>

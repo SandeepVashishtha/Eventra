@@ -25,15 +25,9 @@ export const ErrorFallback = ({ error, resetErrorBoundary }) => {
         </svg>
       </div>
 
-      <h2 className="text-lg font-semibold text-red-700 dark:text-red-300">
-        Something went wrong
-      </h2>
+      <h2 className="text-lg font-semibold text-red-700 dark:text-red-300">Something went wrong</h2>
 
-      {error?.message && (
-        <p className="text-sm text-red-600 dark:text-red-400">
-          {error.message}
-        </p>
-      )}
+      {error?.message && <p className="text-sm text-red-600 dark:text-red-400">{error.message}</p>}
 
       <div className="flex gap-3 flex-wrap justify-center">
         {resetErrorBoundary && (

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState , useRef  } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import {
   FILTER_SUGGESTIONS_STORAGE_KEY,
   generateFilterSuggestions,
@@ -16,29 +16,22 @@ export const useFilterSuggestions = ({
   storageKey = FILTER_SUGGESTIONS_STORAGE_KEY,
   limit = 10,
 } = {}) => {
-  const [history, setHistory] = useState(() =>
-    readSuggestionHistory(storage, storageKey),
-  );
+  const [history, setHistory] = useState(() => readSuggestionHistory(storage, storageKey));
 
-  const filterSignature = useMemo(
-    () => JSON.stringify(currentFilters || {}),
-    [currentFilters],
-  );
+  const filterSignature = useMemo(() => JSON.stringify(currentFilters || {}), [currentFilters]);
 
   const visibleEventSignature = useMemo(
     () =>
       JSON.stringify(
-        (Array.isArray(visibleEvents) ? visibleEvents : [])
-          .slice(0, 12)
-          .map((event) => ({
-            id: event?.id,
-            title: event?.title || event?.name,
-            category: event?.category || event?.type,
-            location: event?.location,
-            mode: event?.eventMode || event?.mode,
-          })),
+        (Array.isArray(visibleEvents) ? visibleEvents : []).slice(0, 12).map((event) => ({
+          id: event?.id,
+          title: event?.title || event?.name,
+          category: event?.category || event?.type,
+          location: event?.location,
+          mode: event?.eventMode || event?.mode,
+        }))
       ),
-    [visibleEvents],
+    [visibleEvents]
   );
 
   useEffect(() => {
@@ -62,7 +55,13 @@ export const useFilterSuggestions = ({
       writeSuggestionHistory(next, storage, storageKey);
       return next;
     });
-  }, [visibleEventSignature, storage, storageKey, recordVisibleEventSignals, writeSuggestionHistory]);
+  }, [
+    visibleEventSignature,
+    storage,
+    storageKey,
+    recordVisibleEventSignals,
+    writeSuggestionHistory,
+  ]);
 
   const suggestions = useMemo(
     () =>
@@ -72,7 +71,7 @@ export const useFilterSuggestions = ({
         presets,
         limit,
       }),
-    [history, limit, presets, visibleEvents],
+    [history, limit, presets, visibleEvents]
   );
 
   return {

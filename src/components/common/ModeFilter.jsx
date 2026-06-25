@@ -15,9 +15,7 @@ const ModeFilter = ({ modes, selectedModes, onModeChange }) => {
 
   return (
     <div className="space-y-2">
-      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
-        Event Mode
-      </h3>
+      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Event Mode</h3>
       <div className="grid grid-cols-1 gap-2">
         {modes.map((mode) => (
           <button
@@ -36,9 +34,7 @@ const ModeFilter = ({ modes, selectedModes, onModeChange }) => {
                   : "border-gray-400 dark:border-gray-500"
               }`}
             >
-              {selectedModes.includes(mode.id) && (
-                <Check size={12} className="text-white" />
-              )}
+              {selectedModes.includes(mode.id) && <Check size={12} className="text-white" />}
             </div>
             <span className="flex-1">{mode.label}</span>
           </button>

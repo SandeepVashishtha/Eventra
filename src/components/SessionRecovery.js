@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
-import { useSessionRecovery } from '../context/SessionRecoveryContext';
-import { Wifi, WifiOff, RefreshCw, X, CheckCircle, AlertCircle } from 'lucide-react';
-import useSessionExportImport from '../hooks/useSessionExportImport';
+import { useState, useEffect, useRef } from "react";
+import { useSessionRecovery } from "../context/SessionRecoveryContext";
+import { Wifi, WifiOff, RefreshCw, X, CheckCircle, AlertCircle } from "lucide-react";
+import useSessionExportImport from "../hooks/useSessionExportImport";
 
 const SessionRecovery = () => {
   // 🔥 FIX: Added fallback empty object to prevent TypeError if context is missing in tests
@@ -44,7 +44,7 @@ const SessionRecovery = () => {
     sessions: visibleRecoverySessions,
     onImportSessions: importRecoverySessions,
   });
-  
+
   // 🔥 FIX: SSR Hydration guard to prevent Date.now() mismatches between server and client
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => {
@@ -69,13 +69,13 @@ const SessionRecovery = () => {
       const session = await restoreSession?.();
       if (session) {
         // 🔥 FIX: Ensure window exists before dispatching (SSR safety)
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('sessionRestored', { detail: session }));
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("sessionRestored", { detail: session }));
         }
         dismissRecoveryPrompt?.();
       }
     } catch (error) {
-      console.error('Failed to restore session:', error);
+      console.error("Failed to restore session:", error);
     } finally {
       setIsRestoring(false);
     }
@@ -90,13 +90,15 @@ const SessionRecovery = () => {
     setIsRestoring(true);
     try {
       const session = await restoreRecoverySessionById?.(sessionId);
-      if (session && typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('sessionRestored', { detail: session.draftData || session }));
-        window.dispatchEvent(new CustomEvent('cloudSessionRestored', { detail: session }));
+      if (session && typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("sessionRestored", { detail: session.draftData || session })
+        );
+        window.dispatchEvent(new CustomEvent("cloudSessionRestored", { detail: session }));
       }
       dismissRecoveryPrompt?.();
     } catch (error) {
-      console.error('Failed to restore cloud session:', error);
+      console.error("Failed to restore cloud session:", error);
     } finally {
       setIsRestoring(false);
     }
@@ -128,7 +130,7 @@ const SessionRecovery = () => {
     setSelectedImportIds((current) =>
       current.includes(sessionId)
         ? current.filter((id) => id !== sessionId)
-        : [...current, sessionId],
+        : [...current, sessionId]
     );
   };
 
@@ -136,13 +138,13 @@ const SessionRecovery = () => {
     setSelectedExportIds((current) =>
       current.includes(sessionId)
         ? current.filter((id) => id !== sessionId)
-        : [...current, sessionId],
+        : [...current, sessionId]
     );
   };
 
   const handleExportSelected = () => {
     const selectedSessions = visibleRecoverySessions.filter((session) =>
-      selectedExportIds.includes(session.sessionId),
+      selectedExportIds.includes(session.sessionId)
     );
     exportSessions(selectedSessions);
   };
@@ -217,7 +219,8 @@ const SessionRecovery = () => {
                 Recovery Sessions
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                We found {visibleRecoverySessions.length} recoverable draft{visibleRecoverySessions.length === 1 ? '' : 's'} across local and cloud storage.
+                We found {visibleRecoverySessions.length} recoverable draft
+                {visibleRecoverySessions.length === 1 ? "" : "s"} across local and cloud storage.
               </p>
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center mb-4">
                 <input
@@ -265,7 +268,9 @@ const SessionRecovery = () => {
                 </label>
               </div>
               {(statusMessage || importError) && (
-                <p className={`mb-3 rounded-lg px-3 py-2 text-sm ${importError ? 'bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300' : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'}`}>
+                <p
+                  className={`mb-3 rounded-lg px-3 py-2 text-sm ${importError ? "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300" : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"}`}
+                >
                   {importError || statusMessage}
                 </p>
               )}
@@ -274,7 +279,8 @@ const SessionRecovery = () => {
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className="font-semibold text-blue-900 dark:text-blue-100">
-                        Previewing {importPreview.sessions.length} imported session{importPreview.sessions.length === 1 ? '' : 's'}
+                        Previewing {importPreview.sessions.length} imported session
+                        {importPreview.sessions.length === 1 ? "" : "s"}
                       </p>
                       <p className="text-xs text-blue-700 dark:text-blue-300">
                         Exported {new Date(importPreview.exportedAt).toLocaleString()}
@@ -293,7 +299,10 @@ const SessionRecovery = () => {
                   </div>
                   <div className="mt-3 max-h-40 space-y-2 overflow-y-auto">
                     {importPreview.sessions.map((session) => (
-                      <label key={session.sessionId} className="flex items-center gap-2 text-sm text-blue-950 dark:text-blue-100">
+                      <label
+                        key={session.sessionId}
+                        className="flex items-center gap-2 text-sm text-blue-950 dark:text-blue-100"
+                      >
                         <input
                           type="checkbox"
                           checked={selectedImportIds.includes(session.sessionId)}
@@ -325,11 +334,14 @@ const SessionRecovery = () => {
               <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
                 {visibleRecoverySessions.map((session) => {
                   const updated = new Date(session.updatedAt || session.lastUpdated);
-                  const label = session.type?.replace(/-/g, ' ') || 'draft';
+                  const label = session.type?.replace(/-/g, " ") || "draft";
                   const isRenaming = renamingSessionId === session.sessionId;
 
                   return (
-                    <div key={session.sessionId} className="rounded-lg border border-gray-200 dark:border-slate-700 p-3">
+                    <div
+                      key={session.sessionId}
+                      className="rounded-lg border border-gray-200 dark:border-slate-700 p-3"
+                    >
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-start gap-3 min-w-0">
                           <input
@@ -340,29 +352,36 @@ const SessionRecovery = () => {
                             aria-label={`Select ${session.name} for export`}
                           />
                           <div className="min-w-0">
-                          {isRenaming ? (
-                            <div className="flex gap-2">
-                              <input
-                                type="text"
-                                value={renameValue}
-                                onChange={(event) => setRenameValue(event.target.value)}
-                                className="min-w-0 rounded-md border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 text-sm text-gray-900 dark:text-white"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => saveRename(session.sessionId)}
-                                className="text-sm font-semibold text-blue-600 dark:text-blue-400"
-                              >
-                                Save
-                              </button>
-                            </div>
-                          ) : (
-                            <p className="font-semibold text-gray-900 dark:text-white truncate">{session.name}</p>
-                          )}
-                          <p className="capitalize text-xs text-gray-500 dark:text-gray-400">{label} • {session.source || 'local'}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            Updated {Number.isNaN(updated.getTime()) ? 'recently' : updated.toLocaleString()}
-                          </p>
+                            {isRenaming ? (
+                              <div className="flex gap-2">
+                                <input
+                                  type="text"
+                                  value={renameValue}
+                                  onChange={(event) => setRenameValue(event.target.value)}
+                                  className="min-w-0 rounded-md border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 text-sm text-gray-900 dark:text-white"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => saveRename(session.sessionId)}
+                                  className="text-sm font-semibold text-blue-600 dark:text-blue-400"
+                                >
+                                  Save
+                                </button>
+                              </div>
+                            ) : (
+                              <p className="font-semibold text-gray-900 dark:text-white truncate">
+                                {session.name}
+                              </p>
+                            )}
+                            <p className="capitalize text-xs text-gray-500 dark:text-gray-400">
+                              {label} • {session.source || "local"}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              Updated{" "}
+                              {Number.isNaN(updated.getTime())
+                                ? "recently"
+                                : updated.toLocaleString()}
+                            </p>
                           </div>
                         </div>
                         <div className="flex flex-wrap gap-2">
@@ -419,15 +438,16 @@ const SessionRecovery = () => {
     const isValidTimestamp =
       sessionData &&
       sessionData.timestamp &&
-      typeof sessionData.timestamp === 'number' &&
+      typeof sessionData.timestamp === "number" &&
       !isNaN(sessionData.timestamp);
 
     if (!isValidTimestamp) return null;
 
     // 🔥 FIX: Added Math.max(0, ...) to prevent negative minutes if user's clock is skewed
-    const timeSinceSession = Math.max(0, Math.floor(
-      (Date.now() - sessionData.timestamp) / 1000 / 60
-    ));
+    const timeSinceSession = Math.max(
+      0,
+      Math.floor((Date.now() - sessionData.timestamp) / 1000 / 60)
+    );
 
     return (
       <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 animate-slide-down">
@@ -443,8 +463,11 @@ const SessionRecovery = () => {
                 Resume where you left off?
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                We found a session from {timeSinceSession === 0 ? 'just now' : `${timeSinceSession} minute${timeSinceSession > 1 ? 's' : ''} ago`}.
-                Would you like to restore your previous activity?
+                We found a session from{" "}
+                {timeSinceSession === 0
+                  ? "just now"
+                  : `${timeSinceSession} minute${timeSinceSession > 1 ? "s" : ""} ago`}
+                . Would you like to restore your previous activity?
               </p>
               <div className="flex gap-3">
                 <button

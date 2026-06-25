@@ -98,11 +98,11 @@ const EditProfile = () => {
   const fileInputRef = useRef(null);
 
   const handleApplyAiProfile = (parsedData) => {
-    setForm(prev => {
+    setForm((prev) => {
       const nextSkills = [...prev.skills];
       if (parsedData.skills && parsedData.skills.length > 0) {
-        parsedData.skills.forEach(skill => {
-          if (!nextSkills.some(s => s.toLowerCase() === skill.toLowerCase())) {
+        parsedData.skills.forEach((skill) => {
+          if (!nextSkills.some((s) => s.toLowerCase() === skill.toLowerCase())) {
             nextSkills.push(skill);
           }
         });
@@ -228,7 +228,9 @@ const EditProfile = () => {
     // Enforce a strict 1MB limit. Base64 inflates sizes by ~33%, meaning
     // anything over 1MB risks exceeding the total ~5MB localStorage boundary.
     if (file.size > 1048576) {
-      alert("Image is too large. Please select an image under 1MB to prevent browser storage errors.");
+      alert(
+        "Image is too large. Please select an image under 1MB to prevent browser storage errors."
+      );
       if (fileInputRef.current) {
         fileInputRef.current.value = null;
       }
@@ -270,11 +272,11 @@ const EditProfile = () => {
       setSuccessMessage("Profile updated successfully");
       setConfirmOpen(false);
       setUser(resolvedForm);
-      
+
       // 🔥 FIX 2: Strip massive Base64 strings before saving to storage to prevent QuotaExceededError crashes
       const safeStorageUser = { ...resolvedForm };
       delete safeStorageUser.avatarBase64;
-      
+
       try {
         await syncSecureStorage.setItem("user", JSON.stringify(safeStorageUser));
       } catch {
@@ -698,7 +700,8 @@ const ConfirmModal = ({ open, onCancel, onConfirm, loading }) => {
             type="button"
             onClick={onCancel}
             className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-           aria-label="button">
+            aria-label="button"
+          >
             Cancel
           </button>
           <button
@@ -706,7 +709,8 @@ const ConfirmModal = ({ open, onCancel, onConfirm, loading }) => {
             onClick={onConfirm}
             disabled={loading}
             className="px-4 py-2 rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60"
-           aria-label="button">
+            aria-label="button"
+          >
             {loading ? "Saving..." : "Save"}
           </button>
         </div>

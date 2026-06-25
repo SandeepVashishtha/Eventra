@@ -101,7 +101,7 @@ export const addBookmarkedEvent = (event) => {
     nextBookmarks.shift();
     // Re-sort newest-first for consistent read order
     nextBookmarks.sort(
-      (a, b) => new Date(b.bookmarkedAt).getTime() - new Date(a.bookmarkedAt).getTime(),
+      (a, b) => new Date(b.bookmarkedAt).getTime() - new Date(a.bookmarkedAt).getTime()
     );
   }
 
@@ -118,7 +118,7 @@ export const addBookmarkedEvent = (event) => {
 export const removeBookmarkedEvent = (eventId) => {
   const normalizedId = normalizeEventId(eventId);
   const nextBookmarks = readBookmarks().filter(
-    (event) => normalizeEventId(event.id) !== normalizedId,
+    (event) => normalizeEventId(event.id) !== normalizedId
   );
 
   writeBookmarks(nextBookmarks);
@@ -146,7 +146,7 @@ export const pruneBookmarks = () => {
   if (bookmarks.length <= MAX_BOOKMARKS) return bookmarks;
 
   const sorted = [...bookmarks].sort(
-    (a, b) => new Date(b.bookmarkedAt).getTime() - new Date(a.bookmarkedAt).getTime(),
+    (a, b) => new Date(b.bookmarkedAt).getTime() - new Date(a.bookmarkedAt).getTime()
   );
   const pruned = sorted.slice(0, MAX_BOOKMARKS);
   writeBookmarks(pruned);

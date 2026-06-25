@@ -5,18 +5,13 @@ const useTouchSwipe = (onSwipeRight) => {
   const touchEndX = useRef(0);
 
   const onTouchStart = (e) => {
-    touchStartX.current =
-      e.changedTouches[0].screenX;
+    touchStartX.current = e.changedTouches[0].screenX;
   };
 
   const onTouchEnd = (e) => {
-    touchEndX.current =
-      e.changedTouches[0].screenX;
+    touchEndX.current = e.changedTouches[0].screenX;
 
-    if (
-      touchEndX.current - touchStartX.current >
-      50
-    ) {
+    if (touchEndX.current - touchStartX.current > 50) {
       onSwipeRight();
     }
   };

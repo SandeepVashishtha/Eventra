@@ -16,8 +16,4 @@ export function isTokenSkewValid(payload) {
   return true;
 }
 
-export {
-  decodeJwtPayload as decodeTokenPayload,
-  isTokenExpired,
-  isTokenValid,
-} from './auth.js';
+export { decodeJwtPayload as decodeTokenPayload, isTokenExpired, isTokenValid } from "./auth.js";

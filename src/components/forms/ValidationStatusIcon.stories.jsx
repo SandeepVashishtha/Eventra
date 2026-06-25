@@ -74,14 +74,12 @@ export const Info = {
 export const AllStates = {
   render: () => (
     <div className="grid gap-3 text-sm text-gray-700 dark:text-gray-200">
-      {["idle", "validating", "success", "error", "warning", "info"].map(
-        (state) => (
-          <div key={state} className="flex items-center gap-2">
-            <ValidationStatusIcon state={state} />
-            <span className="capitalize">{state}</span>
-          </div>
-        ),
-      )}
+      {["idle", "validating", "success", "error", "warning", "info"].map((state) => (
+        <div key={state} className="flex items-center gap-2">
+          <ValidationStatusIcon state={state} />
+          <span className="capitalize">{state}</span>
+        </div>
+      ))}
     </div>
   ),
 };

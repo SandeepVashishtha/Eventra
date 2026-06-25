@@ -32,13 +32,7 @@ const ALERT_CONFIG = {
   },
 };
 
-const Alert = ({
-  variant = "info",
-  title,
-  message,
-  dismissible = false,
-  className = "",
-}) => {
+const Alert = ({ variant = "info", title, message, dismissible = false, className = "" }) => {
   const [dismissed, setDismissed] = useState(false);
 
   if (!message || dismissed) return null;
@@ -55,14 +49,8 @@ const Alert = ({
         <Icon className={`h-5 w-5 ${config.iconColor}`} aria-hidden="true" />
       </div>
       <div className="flex-1">
-        {title && (
-          <strong className={`block font-medium ${config.title}`}>
-            {title}
-          </strong>
-        )}
-        <p className={`text-sm ${title ? "mt-1" : ""} ${config.message}`}>
-          {message}
-        </p>
+        {title && <strong className={`block font-medium ${config.title}`}>{title}</strong>}
+        <p className={`text-sm ${title ? "mt-1" : ""} ${config.message}`}>{message}</p>
       </div>
       {dismissible && (
         <button

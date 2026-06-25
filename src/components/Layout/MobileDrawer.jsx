@@ -17,12 +17,22 @@ const NavList = ({ navItems, location, openDropdown, onToggleGroup, onLinkClick 
   <>
     {navItems.map((item) => {
       const isActive = item.href
-        ? (item.href === "/" ? location.pathname === "/" : location.pathname.startsWith(item.href))
-        : item.subItems?.some(s => location.pathname.startsWith(s.href));
+        ? item.href === "/"
+          ? location.pathname === "/"
+          : location.pathname.startsWith(item.href)
+        : item.subItems?.some((s) => location.pathname.startsWith(s.href));
 
       if (item.subItems) {
         return (
-          <MobileNavGroup key={item.name} item={item} isActive={isActive} isOpen={openDropdown === item.name} onToggle={() => onToggleGroup(item.name)} closeAllMenus={onLinkClick} location={location} />
+          <MobileNavGroup
+            key={item.name}
+            item={item}
+            isActive={isActive}
+            isOpen={openDropdown === item.name}
+            onToggle={() => onToggleGroup(item.name)}
+            closeAllMenus={onLinkClick}
+            location={location}
+          />
         );
       }
       return (
@@ -76,7 +86,12 @@ const MobileDrawerFooter = ({
         <AuthButtons isMobile={true} closeAllMenus={closeAllMenus} />
       )}
       <div className="flex gap-3 mt-4">
-        <ThemeToggleButton isDarkMode={isDarkMode} toggleTheme={toggleTheme} isMobile={true} setIsCustomizerOpen={setIsCustomizerOpen} />
+        <ThemeToggleButton
+          isDarkMode={isDarkMode}
+          toggleTheme={toggleTheme}
+          isMobile={true}
+          setIsCustomizerOpen={setIsCustomizerOpen}
+        />
         <CursorToggleButton
           cursorEnabled={cursorEnabled}
           toggleCursor={toggleCursor}
@@ -87,7 +102,23 @@ const MobileDrawerFooter = ({
   </div>
 );
 
-const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeAllMenus, handleTouchStart, handleTouchMove, handleTouchEnd, closeBtnRef, handleLogoutClick, primaryLine, secondaryLine, cursorEnabled, toggleCursor, navItems }) => {
+const MobileDrawer = ({
+  isOpen,
+  drawerRef,
+  openDropdown,
+  setOpenDropdown,
+  closeAllMenus,
+  handleTouchStart,
+  handleTouchMove,
+  handleTouchEnd,
+  closeBtnRef,
+  handleLogoutClick,
+  primaryLine,
+  secondaryLine,
+  cursorEnabled,
+  toggleCursor,
+  navItems,
+}) => {
   const location = useLocation();
   const { isDarkMode, toggleTheme, setIsCustomizerOpen } = useTheme();
   const { user, isAuthenticated } = useAuth();

@@ -9,35 +9,42 @@ export const ERROR_CATEGORIES = {
   UNKNOWN: "unknown",
 };
 
-const ASSET_PATTERN = /chunk|loading css chunk|failed to fetch dynamically imported module|importing a module script|stylesheet|script error|image/i;
+const ASSET_PATTERN =
+  /chunk|loading css chunk|failed to fetch dynamically imported module|importing a module script|stylesheet|script error|image/i;
 const ROUTE_PATTERN = /route|router|navigation|not found|404/i;
 const NETWORK_PATTERN = /network|offline|failed to fetch|load failed|timeout|econnaborted/i;
 
 const CATEGORY_COPY = {
   [ERROR_CATEGORIES.ROUTE]: {
     title: "We could not open this page",
-    message: "The page did not load cleanly. You can go back, return home, or refresh to try this route again.",
+    message:
+      "The page did not load cleanly. You can go back, return home, or refresh to try this route again.",
     suggestion: "If you followed an old link, start from Home and navigate to the page again.",
   },
   [ERROR_CATEGORIES.API]: {
     title: "We could not reach Eventra data",
-    message: "A request to Eventra failed. Your work is still safe, and recoverable requests will retry automatically.",
-    suggestion: "Check your connection, then retry. If you were editing, keep this tab open until the request succeeds.",
+    message:
+      "A request to Eventra failed. Your work is still safe, and recoverable requests will retry automatically.",
+    suggestion:
+      "Check your connection, then retry. If you were editing, keep this tab open until the request succeeds.",
   },
   [ERROR_CATEGORIES.ASSET]: {
     title: "A page file did not load",
     message: "One of the files needed for this screen may be stale or incomplete.",
-    suggestion: "Retry once. If it keeps failing, refresh with cache cleanup to download a fresh copy.",
+    suggestion:
+      "Retry once. If it keeps failing, refresh with cache cleanup to download a fresh copy.",
   },
   [ERROR_CATEGORIES.NETWORK]: {
     title: "You appear to be offline",
-    message: "Eventra cannot confirm the latest data right now. Cached pages and offline actions may still work.",
+    message:
+      "Eventra cannot confirm the latest data right now. Cached pages and offline actions may still work.",
     suggestion: "Reconnect to the internet, then retry or refresh this page.",
   },
   [ERROR_CATEGORIES.RUNTIME]: {
     title: "Something went wrong",
     message: "Eventra caught an unexpected problem before it could break the rest of the app.",
-    suggestion: "Retry the section. If it happens again, refresh the page and share the error reference with support.",
+    suggestion:
+      "Retry the section. If it happens again, refresh the page and share the error reference with support.",
   },
   [ERROR_CATEGORIES.UNKNOWN]: {
     title: "Something needs a reset",
@@ -54,7 +61,8 @@ export function categorizeError(error, metadata = {}) {
   const source = String(metadata.source || metadata.url || error?.config?.url || "").toLowerCase();
 
   if (metadata.type === "route" || ROUTE_PATTERN.test(source)) return ERROR_CATEGORIES.ROUTE;
-  if (metadata.type === "asset" || ASSET_PATTERN.test(message) || ASSET_PATTERN.test(source)) return ERROR_CATEGORIES.ASSET;
+  if (metadata.type === "asset" || ASSET_PATTERN.test(message) || ASSET_PATTERN.test(source))
+    return ERROR_CATEGORIES.ASSET;
   const isOffline = typeof navigator !== "undefined" && navigator.onLine === false;
   if (error?.isNetworkError || error?.isTimeout || isOffline || NETWORK_PATTERN.test(message)) {
     return ERROR_CATEGORIES.NETWORK;
@@ -71,7 +79,9 @@ export function getErrorRecoveryCopy(category) {
 }
 
 export function isRecoverableError(category, error = {}) {
-  if ([ERROR_CATEGORIES.ROUTE, ERROR_CATEGORIES.ASSET, ERROR_CATEGORIES.NETWORK].includes(category)) {
+  if (
+    [ERROR_CATEGORIES.ROUTE, ERROR_CATEGORIES.ASSET, ERROR_CATEGORIES.NETWORK].includes(category)
+  ) {
     return true;
   }
   if (category === ERROR_CATEGORIES.API) {
@@ -91,13 +101,21 @@ export function logCategorizedError(error, errorInfo = null, metadata = {}) {
     ...metadata,
   };
 
-  logError(error instanceof Error ? error : new Error(String(error || "Unknown error")), errorInfo, entry);
-  persistErrors("categorized_error_log", {
-    ...entry,
-    message: error?.message || String(error || "Unknown error"),
-    status: error?.status || error?.response?.status || null,
-    timestamp: new Date().toISOString(),
-  }, 20);
+  logError(
+    error instanceof Error ? error : new Error(String(error || "Unknown error")),
+    errorInfo,
+    entry
+  );
+  persistErrors(
+    "categorized_error_log",
+    {
+      ...entry,
+      message: error?.message || String(error || "Unknown error"),
+      status: error?.status || error?.response?.status || null,
+      timestamp: new Date().toISOString(),
+    },
+    20
+  );
 
   return entry;
 }

@@ -3,13 +3,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import useReducedMotion from "../hooks/useReducedMotion";
 
-const Dropdown = ({
-  label,
-  value,
-  options,
-  onChange,
-  placeholder = "Select",
-}) => {
+const Dropdown = ({ label, value, options, onChange, placeholder = "Select" }) => {
   const prefersReducedMotion = useReducedMotion();
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -102,7 +96,7 @@ const Dropdown = ({
       setActiveIndex((prev) =>
         event.key === "ArrowDown"
           ? Math.min(prev + 1, allOptions.length - 1)
-          : Math.max(prev - 1, 0),
+          : Math.max(prev - 1, 0)
       );
       return;
     }
@@ -149,9 +143,7 @@ const Dropdown = ({
         <span
           id={`${listboxId}-value`}
           className={`text-sm ${
-            !value
-              ? "text-gray-400 dark:text-gray-300"
-              : "text-gray-700 dark:text-gray-100"
+            !value ? "text-gray-400 dark:text-gray-300" : "text-gray-700 dark:text-gray-100"
           }`}
         >
           {value || placeholder}

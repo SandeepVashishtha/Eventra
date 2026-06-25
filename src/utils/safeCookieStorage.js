@@ -7,7 +7,7 @@ export const safeCookieStorage = {
   setItem(key, value, days = 7) {
     try {
       const expiresDate = new Date();
-      expiresDate.setTime(expiresDate.getTime() + (days * 24 * 60 * 60 * 1000));
+      expiresDate.setTime(expiresDate.getTime() + days * 24 * 60 * 60 * 1000);
       return setCookie(key, value, {
         expires: expiresDate,
         path: "/",
@@ -17,5 +17,5 @@ export const safeCookieStorage = {
     } catch {
       return false;
     }
-  }
+  },
 };

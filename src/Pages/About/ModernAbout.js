@@ -1,12 +1,5 @@
 import { motion } from "framer-motion";
-import {
-  CalendarDays,
-  Code2,
-  HeartHandshake,
-  Network,
-  Trophy,
-  Users,
-} from "lucide-react";
+import { CalendarDays, Code2, HeartHandshake, Network, Trophy, Users } from "lucide-react";
 
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { useReducedMotion } from "../../hooks/useReducedMotion";
@@ -158,9 +151,9 @@ export default function ModernAbout() {
               className="max-w-3xl mx-auto text-lg md:text-xl text-slate-400 leading-relaxed mb-16"
             >
               Eventra is an open-source platform for discovering, hosting, and managing community
-              events. It brings event management, hackathons, networking, project collaboration,
-              and participant engagement into one accessible experience for organizers and new
-              users alike.
+              events. It brings event management, hackathons, networking, project collaboration, and
+              participant engagement into one accessible experience for organizers and new users
+              alike.
             </motion.p>
           </motion.div>
 
@@ -222,8 +215,8 @@ export default function ModernAbout() {
             </motion.h2>
 
             <motion.p variants={item} className="max-w-3xl mx-auto text-lg text-slate-400">
-              Eventra helps communities reduce event friction, welcome first-time participants,
-              and keep learning, collaboration, and project momentum going after each event ends.
+              Eventra helps communities reduce event friction, welcome first-time participants, and
+              keep learning, collaboration, and project momentum going after each event ends.
             </motion.p>
           </motion.div>
 

@@ -16,7 +16,6 @@ import hackathonsData from "../../Hackathons/hackathonMockData.json";
 import projectsData from "../../Projects/mockProjectsData.json";
 import { useNavigate } from "react-router-dom";
 
-
 const CountUp = CountUpLib.default || CountUpLib;
 
 const HEADLINE_PHRASES = [
@@ -25,7 +24,11 @@ const HEADLINE_PHRASES = [
   "Innovative Dev Workshops",
   "Cutting-Edge Tech Meetups",
 ];
-const TAGLINE_TEXTS = ["Build. Connect. Innovate.", "Discover Opportunities.", "Join the Tech Community."];
+const TAGLINE_TEXTS = [
+  "Build. Connect. Innovate.",
+  "Discover Opportunities.",
+  "Join the Tech Community.",
+];
 const SEARCH_RESULT_LIMIT = 5;
 
 const createSearchItem = (item, type, searchType) => ({
@@ -46,7 +49,7 @@ const HeroStats = ({ stats, statsReady }) => (
   <motion.div className="grid grid-cols-3 gap-4 mt-10">
     {stats.map((s) => {
       const IconComponent = s.icon;
-      
+
       // 🔥 safety check
       if (!IconComponent) {
         return null;
@@ -88,12 +91,17 @@ const Hero = () => {
   // Fetch events from backend API
   useEffect(() => {
     let cancelled = false;
-    eventService.getAllEvents().then((res) => {
-      if (cancelled) return;
-      const raw = Array.isArray(res.data) ? res.data : res.data?.content ?? [];
-      setEventsData(raw);
-    }).catch(() => {});
-    return () => { cancelled = true; };
+    eventService
+      .getAllEvents()
+      .then((res) => {
+        if (cancelled) return;
+        const raw = Array.isArray(res.data) ? res.data : (res.data?.content ?? []);
+        setEventsData(raw);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Build search index from fetched events + static hackathons/projects
@@ -115,8 +123,14 @@ const Hero = () => {
   // Background operations
   useEffect(() => {
     const timer = setTimeout(() => setStatsReady(true), 100);
-    const interval = setInterval(() => setPhraseIndex((p) => (p + 1) % HEADLINE_PHRASES.length), 3000);
-    return () => { clearTimeout(timer); clearInterval(interval); };
+    const interval = setInterval(
+      () => setPhraseIndex((p) => (p + 1) % HEADLINE_PHRASES.length),
+      3000
+    );
+    return () => {
+      clearTimeout(timer);
+      clearInterval(interval);
+    };
   }, []);
 
   useEffect(() => {
@@ -125,15 +139,18 @@ const Hero = () => {
     setShowResults(!!trimmed);
   }, [debouncedTerm, searchIndex]);
 
-  const stats = useMemo(() => [
-    { value: 1500, label: t("landing.hero.stats.developers"), suffix: "+", icon: Users },
-    { value: 75, label: t("landing.hero.stats.events"), suffix: "+", icon: Calendar },
-    { value: 30, label: t("landing.hero.stats.partners"), suffix: "+", icon: Handshake },
-  ], [t]);
+  const stats = useMemo(
+    () => [
+      { value: 1500, label: t("landing.hero.stats.developers"), suffix: "+", icon: Users },
+      { value: 75, label: t("landing.hero.stats.events"), suffix: "+", icon: Calendar },
+      { value: 30, label: t("landing.hero.stats.partners"), suffix: "+", icon: Handshake },
+    ],
+    [t]
+  );
 
   return (
     <section className="min-h-[80vh] flex items-center justify-center relative overflow-hidden py-16 sm:py-20 md:py-24">
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
@@ -143,8 +160,11 @@ const Hero = () => {
           <RespawningText texts={TAGLINE_TEXTS} />
           <div>{HEADLINE_PHRASES[phraseIndex]}</div>
         </motion.h1>
-        
-        <div className="text-xl text-violet-700 text-center">Discover hackathons, workshops, projects, and networking opportunities designed to help you learn, build, and connect.</div>
+
+        <div className="text-xl text-violet-700 text-center">
+          Discover hackathons, workshops, projects, and networking opportunities designed to help
+          you learn, build, and connect.
+        </div>
 
         <motion.div className="w-full max-w-2xl mx-auto">
           <ModernSearchInput
@@ -155,8 +175,18 @@ const Hero = () => {
         </motion.div>
 
         <div className="flex justify-center items-center gap-10">
-          <button onClick={()=>navigate("/events")} className="cursor-pointer bg-gradient-to-r from-purple-600 to-pink-500 text-white px-8 py-3 rounded-full font-semibold hover:scale-105 transition-transform">Explore Events</button>
-          <button onClick={()=>navigate("/community-event")} className="cursor-pointer border-2 border-purple-500 text-purple-600 bg-white px-8 py-3 rounded-full font-semibold hover:bg-purple-50">Join Community</button>
+          <button
+            onClick={() => navigate("/events")}
+            className="cursor-pointer bg-gradient-to-r from-purple-600 to-pink-500 text-white px-8 py-3 rounded-full font-semibold hover:scale-105 transition-transform"
+          >
+            Explore Events
+          </button>
+          <button
+            onClick={() => navigate("/community-event")}
+            className="cursor-pointer border-2 border-purple-500 text-purple-600 bg-white px-8 py-3 rounded-full font-semibold hover:bg-purple-50"
+          >
+            Join Community
+          </button>
         </div>
 
         {<HeroStats stats={stats} statsReady={statsReady} />}

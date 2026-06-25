@@ -230,9 +230,10 @@ describe("CORS Protection", () => {
     });
 
     it("should handle multiple allowed origins", async () => {
-      process.env.ALLOWED_ORIGINS = "https://eventra.com,https://www.eventra.com,https://api.eventra.com";
+      process.env.ALLOWED_ORIGINS =
+        "https://eventra.com,https://www.eventra.com,https://api.eventra.com";
       const { buildCorsHeaders } = await import("../../api/auth/cors.js");
-      
+
       const req1 = { headers: { origin: "https://eventra.com" } };
       const headers1 = buildCorsHeaders(req1);
       expect(headers1["Access-Control-Allow-Origin"]).toBe("https://eventra.com");
@@ -274,12 +275,21 @@ describe("CORS Protection", () => {
         setHeader: vi.fn(),
         status: vi.fn(() => ({ json: vi.fn() })),
       };
-      
+
       corsResponse(req, res, 200, { success: true });
-      
-      expect(res.setHeader).toHaveBeenCalledWith("Access-Control-Allow-Origin", "https://eventra.com");
-      expect(res.setHeader).toHaveBeenCalledWith("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-      expect(res.setHeader).toHaveBeenCalledWith("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+      expect(res.setHeader).toHaveBeenCalledWith(
+        "Access-Control-Allow-Origin",
+        "https://eventra.com"
+      );
+      expect(res.setHeader).toHaveBeenCalledWith(
+        "Access-Control-Allow-Methods",
+        "GET, POST, PUT, DELETE, OPTIONS"
+      );
+      expect(res.setHeader).toHaveBeenCalledWith(
+        "Access-Control-Allow-Headers",
+        "Content-Type, Authorization"
+      );
       expect(res.setHeader).toHaveBeenCalledWith("Vary", "Origin");
       expect(res.status).toHaveBeenCalledWith(200);
     });

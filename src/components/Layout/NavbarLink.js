@@ -7,9 +7,7 @@ const NavbarLink = ({ navItems = [] }) => {
     <div className="hidden md:flex items-center gap-4">
       {navItems.map((item) => {
         const isActive =
-          item.href === "/"
-            ? location.pathname === "/"
-            : location.pathname.startsWith(item.href);
+          item.href === "/" ? location.pathname === "/" : location.pathname.startsWith(item.href);
 
         return (
           <Link
@@ -22,11 +20,7 @@ const NavbarLink = ({ navItems = [] }) => {
                 : "text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400"
             }`}
           >
-            {item.icon && (
-              <span className="mr-1.5 flex items-center">
-                {item.icon}
-              </span>
-            )}
+            {item.icon && <span className="mr-1.5 flex items-center">{item.icon}</span>}
 
             <span>{item.name}</span>
 

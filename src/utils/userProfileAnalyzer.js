@@ -17,16 +17,12 @@ export const getUserProfile = () => {
   }
 
   return {
-    interests:
-      saved.interests || [],
+    interests: saved.interests || [],
 
-    techStack:
-      saved.techStack || [],
+    techStack: saved.techStack || [],
 
-    eventTypes:
-      saved.eventTypes || [],
+    eventTypes: saved.eventTypes || [],
 
-    level:
-      saved.level || "Beginner",
+    level: saved.level || "Beginner",
   };
 };

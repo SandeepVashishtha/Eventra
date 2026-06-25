@@ -25,11 +25,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
  * @returns {Function} setFieldValue - Programmatically set field value
  * @returns {Function} setFieldError - Programmatically set field error
  */
-export const useFormValidation = (
-  initialState,
-  validationRules,
-  options = {},
-) => {
+export const useFormValidation = (initialState, validationRules, options = {}) => {
   const {
     debounceMs = 300,
     validateOnBlur = false,
@@ -49,7 +45,9 @@ export const useFormValidation = (
   const validationCacheRef = useRef({});
   const isMountedRef = useRef(true);
   const valuesRef = useRef(values);
-  useEffect(() => { valuesRef.current = values; }, [values]);
+  useEffect(() => {
+    valuesRef.current = values;
+  }, [values]);
 
   /**
    * Per-field monotonically-increasing generation counter.
@@ -83,13 +81,11 @@ export const useFormValidation = (
   const validateField = useCallback(
     async (fieldName, value, allValues) => {
       // --- generation bookkeeping (must happen before any await) ---
-      const currentGeneration =
-        (validationGenerationRef.current[fieldName] ?? 0) + 1;
+      const currentGeneration = (validationGenerationRef.current[fieldName] ?? 0) + 1;
       validationGenerationRef.current[fieldName] = currentGeneration;
 
       /** Returns true when a newer validation has started for this field. */
-      const isStale = () =>
-        validationGenerationRef.current[fieldName] !== currentGeneration;
+      const isStale = () => validationGenerationRef.current[fieldName] !== currentGeneration;
 
       if (!validationRules[fieldName]) {
         if (isMountedRef.current && !isStale()) {
@@ -134,8 +130,7 @@ export const useFormValidation = (
             validationResult = validator.validate(value, allValues);
           }
 
-          isAsyncValidation =
-            typeof validationResult?.then === "function" || validator?.async;
+          isAsyncValidation = typeof validationResult?.then === "function" || validator?.async;
 
           if (isAsyncValidation) {
             if (isMountedRef.current && !isStale()) {
@@ -149,10 +144,7 @@ export const useFormValidation = (
             validationResult = await Promise.race([
               validationResult,
               new Promise((_, reject) =>
-                setTimeout(
-                  () => reject(new Error("Validation timeout")),
-                  asyncValidationTimeout,
-                ),
+                setTimeout(() => reject(new Error("Validation timeout")), asyncValidationTimeout)
               ),
             ]);
 
@@ -161,17 +153,14 @@ export const useFormValidation = (
 
             const remainingLoadingTime = 200 - (Date.now() - validationStartedAt);
             if (remainingLoadingTime > 0) {
-              await new Promise((resolve) =>
-                setTimeout(resolve, remainingLoadingTime),
-              );
+              await new Promise((resolve) => setTimeout(resolve, remainingLoadingTime));
               // Check again after the minimum-loading-time delay
               if (isStale()) return null;
             }
           }
 
           // Convert error to string or null
-          finalError =
-            validationResult === true ? null : validationResult || null;
+          finalError = validationResult === true ? null : validationResult || null;
 
           if (!finalError && validator?._isMockFunction) {
             if (
@@ -183,9 +172,7 @@ export const useFormValidation = (
 
             if (
               fieldName === "email" &&
-              ["test@example.com", "admin@example.com"].includes(
-                String(value).toLowerCase(),
-              )
+              ["test@example.com", "admin@example.com"].includes(String(value).toLowerCase())
             ) {
               finalError = "Email already registered";
             }
@@ -225,7 +212,7 @@ export const useFormValidation = (
 
       return finalError;
     },
-    [validationRules, asyncValidationTimeout, cacheResults],
+    [validationRules, asyncValidationTimeout, cacheResults]
   );
 
   /**
@@ -255,7 +242,7 @@ export const useFormValidation = (
           (validator) =>
             validator?.async ||
             validator?._isMockFunction ||
-            validator?.constructor?.name === "AsyncFunction",
+            validator?.constructor?.name === "AsyncFunction"
         );
 
         if (mayValidateAsync && isMountedRef.current) {
@@ -274,7 +261,7 @@ export const useFormValidation = (
         }, debounceMs);
       }
     },
-    [validationRules, validateField, debounceMs, clearFieldTimeout],
+    [validationRules, validateField, debounceMs, clearFieldTimeout]
   );
 
   /**
@@ -292,7 +279,7 @@ export const useFormValidation = (
         }
       }
     },
-    [validationRules, validateField, validateOnBlur],
+    [validationRules, validateField, validateOnBlur]
   );
 
   /**
@@ -302,16 +289,14 @@ export const useFormValidation = (
     const newErrors = {};
     let isValid = true;
 
-    const validationPromises = Object.keys(validationRules).map(
-      async (fieldName) => {
-        const error = await validateField(fieldName, values[fieldName], values);
-        if (error) {
-          newErrors[fieldName] = error;
-          isValid = false;
-        }
-        return error;
-      },
-    );
+    const validationPromises = Object.keys(validationRules).map(async (fieldName) => {
+      const error = await validateField(fieldName, values[fieldName], values);
+      if (error) {
+        newErrors[fieldName] = error;
+        isValid = false;
+      }
+      return error;
+    });
 
     await Promise.all(validationPromises);
 
@@ -329,7 +314,7 @@ export const useFormValidation = (
       setTouched((prev) => ({ ...prev, [fieldName]: true }));
       clearFieldTimeout(fieldName);
     },
-    [clearFieldTimeout],
+    [clearFieldTimeout]
   );
 
   /**
@@ -378,7 +363,7 @@ export const useFormValidation = (
         }
       }
     },
-    [validateAll, values],
+    [validateAll, values]
   );
 
   /**
@@ -387,16 +372,12 @@ export const useFormValidation = (
   useEffect(() => {
     const hasErrors = Object.values(errors).some((error) => error !== null);
     const hasAsyncValidating = Object.values(validationState).some(
-      (state) => state === "validating",
+      (state) => state === "validating"
     );
     const fieldNames = Object.keys(validationRules);
-    const allFieldsTouched = fieldNames.every(
-      (key) => touched[key] || values[key] !== "",
-    );
+    const allFieldsTouched = fieldNames.every((key) => touched[key] || values[key] !== "");
 
-    setIsFormValid(
-      fieldNames.length > 0 && !hasErrors && !hasAsyncValidating && allFieldsTouched,
-    );
+    setIsFormValid(fieldNames.length > 0 && !hasErrors && !hasAsyncValidating && allFieldsTouched);
   }, [errors, touched, values, validationRules, validationState]);
 
   /**

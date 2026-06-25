@@ -8,7 +8,10 @@ export default function LeaderboardHero({ stats, currentContributors }) {
         GSSoC&apos;26 Contribution Arena
       </div>
 
-      <h1 id="leaderboard-heading" className="mt-5 text-4xl sm:text-6xl font-extrabold tracking-tight text-slate-950 dark:text-white">
+      <h1
+        id="leaderboard-heading"
+        className="mt-5 text-4xl sm:text-6xl font-extrabold tracking-tight text-slate-950 dark:text-white"
+      >
         Community{" "}
         <span className="bg-linear-to-r from-slate-700 via-slate-500 to-slate-300 dark:from-slate-300 dark:via-slate-400 dark:to-slate-500 bg-clip-text text-transparent">
           Leaderboard
@@ -16,13 +19,20 @@ export default function LeaderboardHero({ stats, currentContributors }) {
       </h1>
 
       <p className="mt-4 max-w-2xl text-base leading-7 text-slate-500 dark:text-slate-400 sm:text-lg">
-        A concise view of active contributors, ranked by impact, with live updates and a clear breakdown of points, PRs, and achievement tiers.
+        A concise view of active contributors, ranked by impact, with live updates and a clear
+        breakdown of points, PRs, and achievement tiers.
       </p>
 
       <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-xs font-semibold text-slate-500 dark:text-slate-400">
-        <span className="rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5">{stats.totalContributors} contributors</span>
-        <span className="rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5">{stats.flooredTotalPRs} merged PRs</span>
-        <span className="rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5">{currentContributors.length} shown on this page</span>
+        <span className="rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5">
+          {stats.totalContributors} contributors
+        </span>
+        <span className="rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5">
+          {stats.flooredTotalPRs} merged PRs
+        </span>
+        <span className="rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5">
+          {currentContributors.length} shown on this page
+        </span>
       </div>
     </header>
   );

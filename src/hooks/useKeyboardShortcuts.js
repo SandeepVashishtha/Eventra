@@ -62,14 +62,13 @@ export const useKeyboardShortcuts = (shortcuts = {}, disabled = false) => {
 
       const activeElement = document.activeElement;
       const isTyping =
-        activeElement && (
-          activeElement.tagName === "INPUT" ||
+        activeElement &&
+        (activeElement.tagName === "INPUT" ||
           activeElement.tagName === "TEXTAREA" ||
           activeElement.tagName === "SELECT" ||
           activeElement.isContentEditable ||
           activeElement.contentEditable === "true" ||
-          activeElement.getAttribute?.("contenteditable") === "true"
-        );
+          activeElement.getAttribute?.("contenteditable") === "true");
 
       const key = event.key;
       const ctrl = event.ctrlKey || event.metaKey;
@@ -87,7 +86,9 @@ export const useKeyboardShortcuts = (shortcuts = {}, disabled = false) => {
       keyString += key.toLowerCase();
 
       // 1. Direct handler match (e.g. "ctrl+k", "alt+d"), or bare key when no modifiers active
-      const handler = shortcutsRef.current[keyString] || (!ctrl && !alt && !shift ? shortcutsRef.current[key.toLowerCase()] : undefined);
+      const handler =
+        shortcutsRef.current[keyString] ||
+        (!ctrl && !alt && !shift ? shortcutsRef.current[key.toLowerCase()] : undefined);
 
       if (handler) {
         event.preventDefault();
@@ -128,8 +129,9 @@ export const useKeyboardShortcuts = (shortcuts = {}, disabled = false) => {
         if (shortcutsRef.current.onSearchFocus) {
           shortcutsRef.current.onSearchFocus();
         } else {
-          const input = document.querySelector('nav input[type="text"], nav input[type="search"]') ||
-                        document.querySelector('input[type="text"], input[type="search"]');
+          const input =
+            document.querySelector('nav input[type="text"], nav input[type="search"]') ||
+            document.querySelector('input[type="text"], input[type="search"]');
           if (input) input.focus();
         }
         return;
@@ -142,8 +144,9 @@ export const useKeyboardShortcuts = (shortcuts = {}, disabled = false) => {
         if (shortcutsRef.current.onCloseHelp) {
           shortcutsRef.current.onCloseHelp();
         }
-        const input = document.querySelector('nav input[type="text"], nav input[type="search"]') ||
-                      document.querySelector('input[type="text"], input[type="search"]');
+        const input =
+          document.querySelector('nav input[type="text"], nav input[type="search"]') ||
+          document.querySelector('input[type="text"], input[type="search"]');
         if (input) input.focus();
         return;
       }

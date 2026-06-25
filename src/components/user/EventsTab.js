@@ -83,17 +83,17 @@ const EventCard = ({
       })
     : "—";
 
-    const handleCopyLink = async () => {
-  try {
-    const eventLink = `${window.location.origin}/events/${event.id || event.eventId}`;
+  const handleCopyLink = async () => {
+    try {
+      const eventLink = `${window.location.origin}/events/${event.id || event.eventId}`;
 
-    await navigator.clipboard.writeText(eventLink);
+      await navigator.clipboard.writeText(eventLink);
 
-    toast.success("Link copied successfully");
-  } catch (error) {
-    toast.error("Failed to copy link");
-  }
-};
+      toast.success("Link copied successfully");
+    } catch (error) {
+      toast.error("Failed to copy link");
+    }
+  };
 
   return (
     <motion.div
@@ -138,9 +138,7 @@ const EventCard = ({
       </div>
 
       <div className="px-6 py-2 flex justify-between">
-        <span className="text-xs">
-          {showCancel ? "Registered" : "Hosted"}
-        </span>
+        <span className="text-xs">{showCancel ? "Registered" : "Hosted"}</span>
         <StatusBadge status={status} />
       </div>
 
@@ -168,10 +166,7 @@ const EventCard = ({
               <Trash2 size={13} /> Cancel
             </button>
 
-            <button
-              className="group/btn w-full sm:flex-1"
-              onClick={() => onViewTicket?.(event)}
-            >
+            <button className="group/btn w-full sm:flex-1" onClick={() => onViewTicket?.(event)}>
               <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-indigo-650 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
                 <Ticket size={13} className="relative" />
                 <span className="relative">Ticket</span>
@@ -179,18 +174,12 @@ const EventCard = ({
             </button>
           </>
         ) : (
-          <Link
-            to={`/events/${event?.id}`}
-            onClick={() => addToRecentEvents?.(event)}
-          >
+          <Link to={`/events/${event?.id}`} onClick={() => addToRecentEvents?.(event)}>
             <Activity size={13} /> Analytics
           </Link>
         )}
 
-        <Link
-          to={`/events/${event?.id}`}
-          onClick={() => addToRecentEvents?.(event)}
-        >
+        <Link to={`/events/${event?.id}`} onClick={() => addToRecentEvents?.(event)}>
           View
         </Link>
       </div>
@@ -214,16 +203,11 @@ const WaitlistCard = memo(({ event, index, onLeaveWaitlist }) => {
 
     import("../../utils/waitlistUtils")
       .then(({ getQueuePosition }) => {
-        setQueuePos(
-          getQueuePosition(event.id, user.id || user.email)
-        );
+        setQueuePos(getQueuePosition(event.id, user.id || user.email));
       })
       .catch(() => setQueuePos(-1));
   }, [event.id, user]);
 
-
-
- 
   return (
     <motion.div
       className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl backdrop-blur-sm transition-all duration-500 hover:scale-[1.02] flex flex-col z-10 overflow-hidden"
@@ -245,21 +229,21 @@ const WaitlistCard = memo(({ event, index, onLeaveWaitlist }) => {
           <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent" />
         </div>
       )}
-<div className="px-6 py-4 flex-1">
-  <h4 className="text-lg font-bold text-gray-800 dark:text-gray-100 line-clamp-2 min-h-[56px] leading-snug mb-1">
-    {event.title}
-  </h4>
+      <div className="px-6 py-4 flex-1">
+        <h4 className="text-lg font-bold text-gray-800 dark:text-gray-100 line-clamp-2 min-h-[56px] leading-snug mb-1">
+          {event.title}
+        </h4>
 
-  <div className="space-y-1.5 text-xs text-gray-500 dark:text-gray-400">
-    <div className="flex items-center gap-1.5">
-      <Calendar size={12} /> {event.date}
-    </div>
+        <div className="space-y-1.5 text-xs text-gray-500 dark:text-gray-400">
+          <div className="flex items-center gap-1.5">
+            <Calendar size={12} /> {event.date}
+          </div>
 
-    <div className="flex items-center gap-1.5">
-      <MapPin size={12} /> {event.location}
-    </div>
-  </div>
-</div>
+          <div className="flex items-center gap-1.5">
+            <MapPin size={12} /> {event.location}
+          </div>
+        </div>
+      </div>
 
       <div className="px-6 py-3 bg-amber-50/50 dark:bg-amber-950/10 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
         <span className="text-xs font-semibold text-amber-700 dark:text-amber-400">
@@ -289,41 +273,47 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   useEffect(() => {
     setIsLoading(true);
     if (user) {
-      import("../../utils/waitlistUtils.js").then(({ getGlobalWaitlist }) => {
-        const records = getGlobalWaitlist();
-        const userId = user.id || user.email;
-        const userWaitlists = records.filter(r => r.userId === userId && r.status === 'waiting');
-        
-        import("../../Pages/Events/eventsMockData.json").then(({ default: mockEvents }) => {
-          const resolved = userWaitlists.map(w => {
-            const foundEvent = mockEvents.find(e => e.id === w.eventId);
-            if (foundEvent) {
-              return {
-                ...foundEvent,
-                waitlistJoinedAt: w.joinedAt,
-                isWaitlist: true,
-              };
-            }
-            return {
-              id: w.eventId,
-              title: `Event #${w.eventId}`,
-              date: "",
-              time: "",
-              location: "Details unavailable",
-              type: "event",
-              isWaitlist: true,
-            };
-          });
-          setWaitlistEvents(resolved);
+      import("../../utils/waitlistUtils.js")
+        .then(({ getGlobalWaitlist }) => {
+          const records = getGlobalWaitlist();
+          const userId = user.id || user.email;
+          const userWaitlists = records.filter(
+            (r) => r.userId === userId && r.status === "waiting"
+          );
+
+          import("../../Pages/Events/eventsMockData.json")
+            .then(({ default: mockEvents }) => {
+              const resolved = userWaitlists.map((w) => {
+                const foundEvent = mockEvents.find((e) => e.id === w.eventId);
+                if (foundEvent) {
+                  return {
+                    ...foundEvent,
+                    waitlistJoinedAt: w.joinedAt,
+                    isWaitlist: true,
+                  };
+                }
+                return {
+                  id: w.eventId,
+                  title: `Event #${w.eventId}`,
+                  date: "",
+                  time: "",
+                  location: "Details unavailable",
+                  type: "event",
+                  isWaitlist: true,
+                };
+              });
+              setWaitlistEvents(resolved);
+              setIsLoading(false);
+            })
+            .catch(() => {
+              setWaitlistEvents([]);
+              setIsLoading(false);
+            });
+        })
+        .catch(() => {
+          setWaitlistEvents([]);
           setIsLoading(false);
-      }).catch(() => {
-  setWaitlistEvents([]);
-  setIsLoading(false);
-});
-     }).catch(() => {
-  setWaitlistEvents([]);
-  setIsLoading(false);
-});
+        });
     } else {
       setWaitlistEvents([]);
     }
@@ -340,22 +330,22 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const [filterType, setFilterType] = useState("All");
   const [sortBy, setSortBy] = useState("soonest");
   const [collapsedSections, setCollapsedSections] = useState(() => {
-  try {
-    return JSON.parse(
-      localStorage.getItem("eventSectionVisibility")
-    ) || {
-      registered: false,
-      hosted: false,
-      waitlist: false,
-    };
-  } catch {
-    return {
-      registered: false,
-      hosted: false,
-      waitlist: false,
-    };
-  }
-});
+    try {
+      return (
+        JSON.parse(localStorage.getItem("eventSectionVisibility")) || {
+          registered: false,
+          hosted: false,
+          waitlist: false,
+        }
+      );
+    } catch {
+      return {
+        registered: false,
+        hosted: false,
+        waitlist: false,
+      };
+    }
+  });
   const [cancelTarget, setCancelTarget] = useState(null);
 
   const [recentSearches, setRecentSearches] = useState([]);
@@ -371,36 +361,29 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   );
 
   useEffect(() => {
-    const stored = JSON.parse(
-      localStorage.getItem("recentEvents") || "[]"
-    );
+    const stored = JSON.parse(localStorage.getItem("recentEvents") || "[]");
     setRecentEvents(stored);
     const saved = safeParseJson(localStorage.getItem("recentSearches"), []);
     setRecentSearches(saved);
   }, []);
 
   const addToRecentEvents = (event) => {
-    const existing = JSON.parse(
-      localStorage.getItem("recentEvents") || "[]"
-    );
+    const existing = JSON.parse(localStorage.getItem("recentEvents") || "[]");
 
     const filtered = existing.filter((e) => e.id !== event.id);
     const updated = [event, ...filtered].slice(0, 6);
 
-    localStorage.setItem(
-      "recentEvents",
-      JSON.stringify(updated)
-    );
+    localStorage.setItem("recentEvents", JSON.stringify(updated));
     setRecentEvents(updated);
   };
 
-const normalizedSearch = debouncedTerm.trim().toLowerCase();
-
+  const normalizedSearch = debouncedTerm.trim().toLowerCase();
 
   const filteredEvents = useMemo(() => {
     const pool = [...registeredEvents, ...hostedEvents];
     const result = pool.filter((event) => {
-      const searchTarget = `${event?.title || ""} ${event?.location || ""} ${event?.description || ""} ${(event?.tags || []).join(" ")}`.toLowerCase();
+      const searchTarget =
+        `${event?.title || ""} ${event?.location || ""} ${event?.description || ""} ${(event?.tags || []).join(" ")}`.toLowerCase();
       const matchSearch = !debouncedTerm || searchTarget.includes(normalizedSearch);
       const status = getEventStatus(event);
       const matchStatus = filterStatus === "All" || status === filterStatus;
@@ -439,10 +422,10 @@ const normalizedSearch = debouncedTerm.trim().toLowerCase();
       } catch (e) {
         saved = [];
       }
-      
+
       const updatedHistory = [
         debouncedTerm.trim(),
-        ...saved.filter((term) => term.toLowerCase() !== debouncedTerm.trim().toLowerCase())
+        ...saved.filter((term) => term.toLowerCase() !== debouncedTerm.trim().toLowerCase()),
       ].slice(0, 5);
 
       localStorage.setItem("recentSearches", JSON.stringify(updatedHistory));
@@ -455,79 +438,68 @@ const normalizedSearch = debouncedTerm.trim().toLowerCase();
 
   const registeredCount = registeredEvents.length;
   const hostedCount = hostedEvents.length;
-  const upcomingCount = [...registeredEvents, ...hostedEvents].filter((event) => getEventStatus(event) === "Upcoming").length;
-  const completedCount = [...registeredEvents, ...hostedEvents].filter((event) => getEventStatus(event) === "Completed").length;
-const recentActivities = useMemo(() => {
-  const activities = [];
+  const upcomingCount = [...registeredEvents, ...hostedEvents].filter(
+    (event) => getEventStatus(event) === "Upcoming"
+  ).length;
+  const completedCount = [...registeredEvents, ...hostedEvents].filter(
+    (event) => getEventStatus(event) === "Completed"
+  ).length;
+  const recentActivities = useMemo(() => {
+    const activities = [];
 
-  registeredEvents.forEach((event) => {
-    activities.push({
-      id: `registered-${event.id}`,
-      type: "Registered",
-      title: event.title,
-      date: event.registeredAt || event.date,
+    registeredEvents.forEach((event) => {
+      activities.push({
+        id: `registered-${event.id}`,
+        type: "Registered",
+        title: event.title,
+        date: event.registeredAt || event.date,
+      });
     });
-  });
 
-  hostedEvents.forEach((event) => {
-    activities.push({
-      id: `hosted-${event.id}`,
-      type: "Hosted",
-      title: event.title,
-      date: event.createdAt || event.date,
+    hostedEvents.forEach((event) => {
+      activities.push({
+        id: `hosted-${event.id}`,
+        type: "Hosted",
+        title: event.title,
+        date: event.createdAt || event.date,
+      });
     });
-  });
 
-  waitlistEvents.forEach((event) => {
-    activities.push({
-      id: `waitlist-${event.id}`,
-      type: "Waitlisted",
-      title: event.title,
-      date: event.waitlistJoinedAt || event.date,
+    waitlistEvents.forEach((event) => {
+      activities.push({
+        id: `waitlist-${event.id}`,
+        type: "Waitlisted",
+        title: event.title,
+        date: event.waitlistJoinedAt || event.date,
+      });
     });
-  });
 
-  return activities
-    .filter((activity) => activity.date)
-    .sort(
-      (a, b) =>
-        new Date(b.date) - new Date(a.date)
-    )
-    .slice(0, 8);
-}, [
-  registeredEvents,
-  hostedEvents,
-  waitlistEvents,
-]);
-
+    return activities
+      .filter((activity) => activity.date)
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .slice(0, 8);
+  }, [registeredEvents, hostedEvents, waitlistEvents]);
 
   const toggleSection = (section) => {
-  setCollapsedSections((prev) => ({
-    ...prev,
-    [section]: !prev[section],
-  }));
-};
-
-const togglePinnedEvent = (event) => {
-  const exists = pinnedEvents.some(
-    (item) => item.id === event.id
-  );
-
-  if (exists) {
-    setPinnedEvents((prev) =>
-      prev.filter((item) => item.id !== event.id)
-    );
-
-    toast.info("Event unpinned");
-  } else {
-    setPinnedEvents((prev) => [
-      event,
+    setCollapsedSections((prev) => ({
       ...prev,
-    ]);
+      [section]: !prev[section],
+    }));
+  };
 
-    toast.success("Event pinned");
-  }
-};
+  const togglePinnedEvent = (event) => {
+    const exists = pinnedEvents.some((item) => item.id === event.id);
+
+    if (exists) {
+      setPinnedEvents((prev) => prev.filter((item) => item.id !== event.id));
+
+      toast.info("Event unpinned");
+    } else {
+      setPinnedEvents((prev) => [event, ...prev]);
+
+      toast.success("Event pinned");
+    }
+  };
   const handleCancelClick = (id, title) => setCancelTarget({ id, title });
   const handleCancelDismiss = () => setCancelTarget(null);
   const handleCancelConfirm = useCallback(() => {
@@ -537,45 +509,42 @@ const togglePinnedEvent = (event) => {
   }, [cancelTarget, removeRegistration]);
 
   const saveCurrentPreset = () => {
-  const preset = {
-    id: Date.now(),
-    searchQuery,
-    filterStatus,
-    filterType,
-    sortBy,
+    const preset = {
+      id: Date.now(),
+      searchQuery,
+      filterStatus,
+      filterType,
+      sortBy,
+    };
+
+    const updated = [
+      preset,
+      ...recentPresets.filter(
+        (p) =>
+          !(
+            p.searchQuery === preset.searchQuery &&
+            p.filterStatus === preset.filterStatus &&
+            p.filterType === preset.filterType &&
+            p.sortBy === preset.sortBy
+          )
+      ),
+    ].slice(0, 5);
+
+    setRecentPresets(updated);
+
+    localStorage.setItem("recentEventPresets", JSON.stringify(updated));
+
+    toast.success("Filter preset saved");
   };
 
-  const updated = [
-    preset,
-    ...recentPresets.filter(
-      (p) =>
-        !(
-          p.searchQuery === preset.searchQuery &&
-          p.filterStatus === preset.filterStatus &&
-          p.filterType === preset.filterType &&
-          p.sortBy === preset.sortBy
-        )
-    ),
-  ].slice(0, 5);
+  const applyPreset = (preset) => {
+    setSearchQuery(preset.searchQuery);
+    setFilterStatus(preset.filterStatus);
+    setFilterType(preset.filterType);
+    setSortBy(preset.sortBy);
 
-  setRecentPresets(updated);
-
-  localStorage.setItem(
-    "recentEventPresets",
-    JSON.stringify(updated)
-  );
-
-  toast.success("Filter preset saved");
-};
-
-const applyPreset = (preset) => {
-  setSearchQuery(preset.searchQuery);
-  setFilterStatus(preset.filterStatus);
-  setFilterType(preset.filterType);
-  setSortBy(preset.sortBy);
-
-  toast.success("Preset applied");
-};
+    toast.success("Preset applied");
+  };
 
   return (
     <motion.div className="ud-content">
@@ -585,7 +554,12 @@ const applyPreset = (preset) => {
         </h2>
       </div>
       {registeredCount + hostedCount > 0 && (
-        <motion.div className="my-events-summary" variants={staggerVariants} initial="hidden" animate="visible">
+        <motion.div
+          className="my-events-summary"
+          variants={staggerVariants}
+          initial="hidden"
+          animate="visible"
+        >
           {[
             { label: "Registered", value: registeredCount, color: "#6366f1" },
             { label: "Hosted", value: hostedCount, color: "#ec4899" },
@@ -628,7 +602,11 @@ const applyPreset = (preset) => {
                 }}
               />
               {searchQuery && (
-                <button className="ud-search-clear" onClick={() => setSearchQuery("")} aria-label="Clear search query">
+                <button
+                  className="ud-search-clear"
+                  onClick={() => setSearchQuery("")}
+                  aria-label="Clear search query"
+                >
                   <X size={13} />
                 </button>
               )}
@@ -651,7 +629,7 @@ const applyPreset = (preset) => {
                 />
               )}
             </div>
-            
+
             {recentSearches.length > 0 && (
               <button
                 onClick={() => {
@@ -665,7 +643,7 @@ const applyPreset = (preset) => {
             )}
 
             <StyledDropdown
-            aria-label="Event filter dropdown"
+              aria-label="Event filter dropdown"
               label=""
               value={filterStatus === "All" ? "" : filterStatus}
               placeholder="All Statuses"
@@ -689,8 +667,8 @@ const applyPreset = (preset) => {
                 sortBy === "soonest"
                   ? "Soonest First"
                   : sortBy === "registered"
-                  ? "Registration Date"
-                  : "Event Name"
+                    ? "Registration Date"
+                    : "Event Name"
               }
               placeholder="Sort by"
               options={["Soonest First", "Registration Date", "Event Name"]}
@@ -716,11 +694,7 @@ const applyPreset = (preset) => {
           )}
 
           {filteredEvents.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="w-full mt-4"
-            >
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="w-full mt-4">
               <SearchEmptyState
                 query={searchQuery}
                 itemLabel="events"
@@ -747,10 +721,16 @@ const applyPreset = (preset) => {
                       <Ticket size={18} /> Registered Events
                     </h3>
                     <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
-                      {filteredRegisteredEvents.length} event{filteredRegisteredEvents.length === 1 ? "" : "s"}
+                      {filteredRegisteredEvents.length} event
+                      {filteredRegisteredEvents.length === 1 ? "" : "s"}
                     </span>
                   </div>
-                  <motion.div className="ud-items-grid" variants={staggerVariants} initial="hidden" animate="visible">
+                  <motion.div
+                    className="ud-items-grid"
+                    variants={staggerVariants}
+                    initial="hidden"
+                    animate="visible"
+                  >
                     {filteredRegisteredEvents.map((event, index) => (
                       <EventCard
                         key={event.eventId || event.id}
@@ -773,10 +753,16 @@ const applyPreset = (preset) => {
                       <Calendar size={18} /> Hosted Events
                     </h3>
                     <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
-                      {filteredHostedEvents.length} event{filteredHostedEvents.length === 1 ? "" : "s"}
+                      {filteredHostedEvents.length} event
+                      {filteredHostedEvents.length === 1 ? "" : "s"}
                     </span>
                   </div>
-                  <motion.div className="ud-items-grid" variants={staggerVariants} initial="hidden" animate="visible">
+                  <motion.div
+                    className="ud-items-grid"
+                    variants={staggerVariants}
+                    initial="hidden"
+                    animate="visible"
+                  >
                     {filteredHostedEvents.map((event, index) => (
                       <EventCard
                         key={event.id}
@@ -800,16 +786,26 @@ const applyPreset = (preset) => {
                       {waitlistEvents.length} event{waitlistEvents.length === 1 ? "" : "s"}
                     </span>
                   </div>
-                  <motion.div className="ud-items-grid" variants={staggerVariants} initial="hidden" animate="visible">
+                  <motion.div
+                    className="ud-items-grid"
+                    variants={staggerVariants}
+                    initial="hidden"
+                    animate="visible"
+                  >
                     {waitlistEvents.map((event, index) => (
                       <WaitlistCard
                         key={event.id}
                         event={event}
                         index={index}
                         onLeaveWaitlist={async (id) => {
-                          if (window.confirm(`Are you sure you want to leave the waitlist for "${event.title}"?`)) {
+                          if (
+                            window.confirm(
+                              `Are you sure you want to leave the waitlist for "${event.title}"?`
+                            )
+                          ) {
                             try {
-                              const { leaveWaitlist } = await import("../../utils/waitlistUtils.js");
+                              const { leaveWaitlist } =
+                                await import("../../utils/waitlistUtils.js");
                               await leaveWaitlist(id, user.id || user.email);
                               toast.success("Left the waitlist successfully.");
                               triggerWaitlistUpdate();
@@ -832,24 +828,18 @@ const applyPreset = (preset) => {
       <AnimatePresence>
         {cancelTarget &&
           ReactDOM.createPortal(
-            <div
-              className="backdrop"
-              onClick={() => setCancelTarget(null)}
-            >
+            <div className="backdrop" onClick={() => setCancelTarget(null)}>
               <div onClick={(e) => e.stopPropagation()}>
                 <h3>Cancel?</h3>
-                <button onClick={handleCancelConfirm}>
-                  Yes
+                <button onClick={handleCancelConfirm}>Yes</button>
+                <button
+                  onClick={() => handleCopyEventLink(event?.id)}
+                  aria-label="Copy event link"
+                  className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-300 hover:scale-105"
+                >
+                  <Copy size={16} />
+                  Copy Link
                 </button>
-<button
-  onClick={() => handleCopyEventLink(event?.id)}
-  aria-label="Copy event link"
-  className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-300 hover:scale-105"
->
-  <Copy size={16} />
-  Copy Link
-</button>
-
               </div>
             </div>,
             document.body

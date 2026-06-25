@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Clock } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { Clock } from "lucide-react";
 
 const WaitlistPromotionBanner = ({ eventName, expirationTime, onClaim, onDecline }) => {
   const [timeLeft, setTimeLeft] = useState("");
@@ -38,18 +38,16 @@ const WaitlistPromotionBanner = ({ eventName, expirationTime, onClaim, onDecline
           <p className="text-sm text-orange-100">Claim your spot before the timer runs out.</p>
         </div>
       </div>
-      
+
       <div className="flex items-center gap-4 w-full md:w-auto">
-        <div className="text-xl font-mono font-bold bg-black/20 px-3 py-1 rounded">
-          {timeLeft}
-        </div>
-        <button 
+        <div className="text-xl font-mono font-bold bg-black/20 px-3 py-1 rounded">{timeLeft}</div>
+        <button
           onClick={onClaim}
           className="bg-white text-orange-600 hover:bg-orange-50 font-bold py-2 px-4 rounded transition shadow"
         >
           Claim Spot
         </button>
-        <button 
+        <button
           onClick={onDecline}
           className="bg-transparent hover:bg-black/10 text-white font-medium py-2 px-3 rounded transition"
         >

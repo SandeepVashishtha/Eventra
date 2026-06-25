@@ -1,7 +1,17 @@
 // import React from "react";
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
-  LineChart, Line, PieChart, Pie, Cell 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts";
 import { Users, Eye, TrendingUp, Calendar as CalendarIcon } from "lucide-react";
 import { DashboardStatCardSkeleton } from "../common/SkeletonLoaders";
@@ -29,14 +39,16 @@ const MOCK_DEMOGRAPHICS = [
   { name: "Academics", value: 10 },
 ];
 
-const COLORS = ['#6366f1', '#ec4899', '#8b5cf6', '#10b981'];
+const COLORS = ["#6366f1", "#ec4899", "#8b5cf6", "#10b981"];
 
 export default function AnalyticsTab({ loading }) {
   if (loading) {
     return (
       <div className="space-y-6">
         <div className="ud-stats-grid">
-          {[...Array(3)].map((_, i) => <DashboardStatCardSkeleton key={i} />)}
+          {[...Array(3)].map((_, i) => (
+            <DashboardStatCardSkeleton key={i} />
+          ))}
         </div>
       </div>
     );
@@ -47,7 +59,9 @@ export default function AnalyticsTab({ loading }) {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">Organizer Analytics</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Track your event performance and audience insights.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Track your event performance and audience insights.
+          </p>
         </div>
       </div>
 
@@ -57,9 +71,13 @@ export default function AnalyticsTab({ loading }) {
             <Users size={24} />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Registrations</p>
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+              Total Registrations
+            </p>
             <h3 className="text-2xl font-bold text-gray-900 dark:text-white">1,245</h3>
-            <p className="text-xs text-green-500 flex items-center gap-1 mt-1"><TrendingUp size={12} /> +12% this week</p>
+            <p className="text-xs text-green-500 flex items-center gap-1 mt-1">
+              <TrendingUp size={12} /> +12% this week
+            </p>
           </div>
         </div>
 
@@ -70,7 +88,9 @@ export default function AnalyticsTab({ loading }) {
           <div>
             <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Page Views</p>
             <h3 className="text-2xl font-bold text-gray-900 dark:text-white">8,432</h3>
-            <p className="text-xs text-green-500 flex items-center gap-1 mt-1"><TrendingUp size={12} /> +24% this week</p>
+            <p className="text-xs text-green-500 flex items-center gap-1 mt-1">
+              <TrendingUp size={12} /> +24% this week
+            </p>
           </div>
         </div>
 
@@ -88,14 +108,28 @@ export default function AnalyticsTab({ loading }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
-          <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200 mb-4">Registration Trends</h3>
+          <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200 mb-4">
+            Registration Trends
+          </h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={MOCK_REGISTRATION_DATA}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} />
-                <RechartsTooltip cursor={{ fill: 'rgba(99, 102, 241, 0.05)' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} />
+                <XAxis
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "#6b7280", fontSize: 12 }}
+                />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 12 }} />
+                <RechartsTooltip
+                  cursor={{ fill: "rgba(99, 102, 241, 0.05)" }}
+                  contentStyle={{
+                    borderRadius: "12px",
+                    border: "none",
+                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                  }}
+                />
                 <Bar dataKey="registrations" fill="#6366f1" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -103,15 +137,35 @@ export default function AnalyticsTab({ loading }) {
         </div>
 
         <div className="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
-          <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200 mb-4">Page Views over Time</h3>
+          <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200 mb-4">
+            Page Views over Time
+          </h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={MOCK_PAGE_VIEWS}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} />
-                <RechartsTooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} />
-                <Line type="monotone" dataKey="views" stroke="#ec4899" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                <XAxis
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "#6b7280", fontSize: 12 }}
+                />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 12 }} />
+                <RechartsTooltip
+                  contentStyle={{
+                    borderRadius: "12px",
+                    border: "none",
+                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="views"
+                  stroke="#ec4899"
+                  strokeWidth={3}
+                  dot={{ r: 4, strokeWidth: 2 }}
+                  activeDot={{ r: 6 }}
+                />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -119,16 +173,25 @@ export default function AnalyticsTab({ loading }) {
 
         <div className="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm lg:col-span-2 flex flex-col md:flex-row items-center gap-8">
           <div className="flex-1 w-full">
-            <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200 mb-4">Audience Demographics</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Understand who is attending your events. Most of your audience consists of students.</p>
+            <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200 mb-4">
+              Audience Demographics
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              Understand who is attending your events. Most of your audience consists of students.
+            </p>
             <div className="space-y-3">
               {MOCK_DEMOGRAPHICS.map((entry, index) => (
                 <div key={entry.name} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                    <div
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                    />
                     <span className="text-sm text-gray-700 dark:text-gray-300">{entry.name}</span>
                   </div>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">{entry.value}%</span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">
+                    {entry.value}%
+                  </span>
                 </div>
               ))}
             </div>
@@ -149,7 +212,13 @@ export default function AnalyticsTab({ loading }) {
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <RechartsTooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} />
+                <RechartsTooltip
+                  contentStyle={{
+                    borderRadius: "12px",
+                    border: "none",
+                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                  }}
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>

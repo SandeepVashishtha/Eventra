@@ -1,4 +1,14 @@
-import { Star, Github, ExternalLink, AlertCircle, GitPullRequest, Cpu, Code2, Layers, Bookmark } from "lucide-react";
+import {
+  Star,
+  Github,
+  ExternalLink,
+  AlertCircle,
+  GitPullRequest,
+  Cpu,
+  Code2,
+  Layers,
+  Bookmark,
+} from "lucide-react";
 import { useState, useEffect, useRef, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
@@ -22,7 +32,7 @@ const saveMetricsCache = (cache) => {
 };
 
 const toStr = (val, fallback = "") =>
-  typeof val === "string" ? val : val?.name ?? val?.label ?? val?.text ?? fallback;
+  typeof val === "string" ? val : (val?.name ?? val?.label ?? val?.text ?? fallback);
 
 // Status Badge Styling Helper
 const getStatusColor = (status) => {
@@ -41,7 +51,8 @@ const getStatusColor = (status) => {
 
 // Difficulty Styling Helper
 const getDifficultyColor = (difficulty) => {
-  if (!difficulty) return "bg-slate-50 text-white dark:bg-slate-900 dark:text-white border-slate-200/50";
+  if (!difficulty)
+    return "bg-slate-50 text-white dark:bg-slate-900 dark:text-white border-slate-200/50";
   switch (difficulty.toLowerCase()) {
     case "beginner":
       return "bg-sky-900/40 text-white border-sky-500/30";
@@ -260,9 +271,10 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
       <div
         className="pointer-events-none absolute -inset-px opacity-0 group-hover:opacity-100 transition-opacity duration-300"
         style={{
-          background: coords.x && coords.y
-            ? `radial-gradient(600px circle at ${coords.x}px ${coords.y}px, rgba(99,102,241,0.06), transparent 40%)`
-            : undefined,
+          background:
+            coords.x && coords.y
+              ? `radial-gradient(600px circle at ${coords.x}px ${coords.y}px, rgba(99,102,241,0.06), transparent 40%)`
+              : undefined,
         }}
       />
 
@@ -315,7 +327,9 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
       {/* Main Content Layout */}
       <div className="relative z-10 flex flex-col flex-1 p-4 space-y-4 bg-slate-800">
         {/* Description */}
-        <p className="text-xs sm:text-sm text-white leading-relaxed line-clamp-3">{safeDescription}</p>
+        <p className="text-xs sm:text-sm text-white leading-relaxed line-clamp-3">
+          {safeDescription}
+        </p>
 
         {/* Categories & Level badge pills */}
         <div className="flex flex-wrap gap-2 pt-1">

@@ -1,5 +1,5 @@
-import { formatTimeRange } from '../utils/conflictDetection';
-import { getUserTimezone } from '../utils/timezoneUtils';
+import { formatTimeRange } from "../utils/conflictDetection";
+import { getUserTimezone } from "../utils/timezoneUtils";
 
 /**
  * CalendarView
@@ -35,10 +35,10 @@ const CalendarView = ({ events }) => {
             const parsedDate = new Date(ev.date);
             if (!isNaN(parsedDate.getTime())) {
               formattedDate = parsedDate.toLocaleDateString(undefined, {
-                weekday: 'short',
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
+                weekday: "short",
+                month: "short",
+                day: "numeric",
+                year: "numeric",
               });
             }
           }
@@ -52,13 +52,8 @@ const CalendarView = ({ events }) => {
                 {ev.title || "Untitled Event"}
               </p>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                {formattedDate}{' '}
-                {ev.time ? formatTimeRange(
-                  ev.time,
-                  ev.durationMinutes || 60,
-                  ev.date,
-                  userTz
-                ) : ""}
+                {formattedDate}{" "}
+                {ev.time ? formatTimeRange(ev.time, ev.durationMinutes || 60, ev.date, userTz) : ""}
               </p>
             </li>
           );

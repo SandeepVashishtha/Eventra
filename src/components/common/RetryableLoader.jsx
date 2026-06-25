@@ -45,9 +45,7 @@ const RetryableLoader = ({
         aria-busy="true"
       >
         <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-          {loadingText}
-        </p>
+        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{loadingText}</p>
       </div>
     );
   }

@@ -1,20 +1,18 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  
   Users,
   Award,
   Terminal,
   FileText,
   Settings,
   Lock,
-  
   CheckCircle2,
   Clock,
   ArrowRight,
   Shield,
   Zap,
-  ChevronRight
+  ChevronRight,
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import TeamWorkspace from "../../components/hackathons/TeamWorkspace";
@@ -24,95 +22,97 @@ const PHASES = [
     id: 1,
     name: "Ideation & Planning",
     status: "completed",
-    description: "Brainstorming themes, setting up rules, securing sponsors, and assembling core mentor teams.",
+    description:
+      "Brainstorming themes, setting up rules, securing sponsors, and assembling core mentor teams.",
     icon: Terminal,
     color: "from-blue-500 to-cyan-500",
     tasks: [
       { id: "p1", text: "Finalize event themes and tracks", done: true },
       { id: "p2", text: "Secure sponsor packages and hardware resources", done: true },
       { id: "p3", text: "Create marketing website and initial landing assets", done: true },
-      { id: "p4", text: "Draft comprehensive rules & code of conduct", done: true }
+      { id: "p4", text: "Draft comprehensive rules & code of conduct", done: true },
     ],
     resources: [
       { name: "Organizer Handbook.pdf", type: "PDF", size: "2.4 MB" },
-      { name: "Sponsor Pitch Template.key", type: "Slides", size: "12.1 MB" }
-    ]
+      { name: "Sponsor Pitch Template.key", type: "Slides", size: "12.1 MB" },
+    ],
   },
   {
     id: 2,
     name: "Registration & Team Formation",
     status: "active",
-    description: "Accepting participant registrations, hosting team networking mixers, and reviewing applications.",
+    description:
+      "Accepting participant registrations, hosting team networking mixers, and reviewing applications.",
     icon: Users,
     color: "from-indigo-500 to-purple-500",
     tasks: [
       { id: "t1", text: "Launch participant registration form", done: true },
       { id: "t2", text: "Host virtual team matching mixer on Discord", done: true },
       { id: "t3", text: "Approve pending applications (Current: 432 approved)", done: false },
-      { id: "t4", text: "Release mentor and judging sign-up forms", done: false }
+      { id: "t4", text: "Release mentor and judging sign-up forms", done: false },
     ],
     resources: [
       { name: "Team_Formation_Guide.md", type: "Markdown", size: "12 KB" },
-      { name: "Eventra Discord Invite Link", type: "External Link", size: "N/A" }
-    ]
+      { name: "Eventra Discord Invite Link", type: "External Link", size: "N/A" },
+    ],
   },
   {
     id: 3,
     name: "Active Hacking Phase",
     status: "upcoming",
-    description: "The main coding phase! 48 hours of building, workshops, mentor ticketing, and midnight snacks.",
+    description:
+      "The main coding phase! 48 hours of building, workshops, mentor ticketing, and midnight snacks.",
     icon: Zap,
     color: "from-amber-500 to-rose-500",
     tasks: [
       { id: "h1", text: "Opening ceremony keynotes & track announcements", done: false },
       { id: "h2", text: "Open the mentor support ticketing queue", done: false },
       { id: "h3", text: "Midnight mini-games & wellness check-ins", done: false },
-      { id: "h4", text: "Host Git & deployment troubleshooting workshop", done: false }
+      { id: "h4", text: "Host Git & deployment troubleshooting workshop", done: false },
     ],
     resources: [
       { name: "API_Starter_Boilerplates.zip", type: "ZIP", size: "15.4 MB" },
-      { name: "Mentor ticketing dashboard login", type: "External", size: "N/A" }
-    ]
+      { name: "Mentor ticketing dashboard login", type: "External", size: "N/A" },
+    ],
   },
   {
     id: 4,
     name: "Project Submission & Judging",
     status: "upcoming",
-    description: "Locking code submissions, routing projects to judges, and scoring based on innovation & design.",
+    description:
+      "Locking code submissions, routing projects to judges, and scoring based on innovation & design.",
     icon: FileText,
     color: "from-pink-500 to-red-500",
     tasks: [
       { id: "s1", text: "Lock devpost and github submissions", done: false },
       { id: "s2", text: "Auto-assign judging assignments using scoring algorithm", done: false },
       { id: "s3", text: "Submit final peer review scoring rubrics", done: false },
-      { id: "s4", text: "Aggregate scoreboard & flag anomaly ratings", done: false }
+      { id: "s4", text: "Aggregate scoreboard & flag anomaly ratings", done: false },
     ],
     resources: [
       { name: "Judging_Rubric_v1.0.pdf", type: "PDF", size: "1.1 MB" },
-      { name: "Devpost submission tutorial", type: "Video Link", size: "4 mins" }
-    ]
+      { name: "Devpost submission tutorial", type: "Video Link", size: "4 mins" },
+    ],
   },
   {
     id: 5,
     name: "Winners Showcase & Closure",
     status: "upcoming",
-    description: "Stellar closing ceremony, live winner project demos, distributing prizes, and sponsor matching.",
+    description:
+      "Stellar closing ceremony, live winner project demos, distributing prizes, and sponsor matching.",
     icon: Award,
     color: "from-emerald-500 to-teal-500",
     tasks: [
       { id: "w1", text: "Host live final 5 project pitches", done: false },
       { id: "w2", text: "Announce gold, silver, bronze and sponsor track winners", done: false },
       { id: "w3", text: "Send digital participant completion badges (NFTs)", done: false },
-      { id: "w4", text: "Publish post-event summary newsletter and feedback loop", done: false }
+      { id: "w4", text: "Publish post-event summary newsletter and feedback loop", done: false },
     ],
-    resources: [
-      { name: "Prizes_Claim_Instructions.pdf", type: "PDF", size: "850 KB" }
-    ]
-  }
+    resources: [{ name: "Prizes_Claim_Instructions.pdf", type: "PDF", size: "850 KB" }],
+  },
 ];
 
 const HackathonLifecycle = () => {
-
   // Mock Active Phase Management
   const [activePhaseIndex, setActivePhaseIndex] = useState(1); // Defaults to registration
   const [selectedPhaseId, setSelectedPhaseId] = useState(2); // Selected phase to view
@@ -182,7 +182,7 @@ const HackathonLifecycle = () => {
       confetti({
         particleCount: 150,
         spread: 80,
-        origin: { y: 0.6 }
+        origin: { y: 0.6 },
       });
     }
   };
@@ -190,7 +190,6 @@ const HackathonLifecycle = () => {
   return (
     <div className="min-h-screen bg-bg text-text py-20 px-4 md:px-8 transition-colors duration-300">
       <div className="max-w-6xl mx-auto space-y-10">
-        
         {/* HEADER SECTION */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 border-b border-border pb-8">
           <div>
@@ -202,7 +201,8 @@ const HackathonLifecycle = () => {
               Hackathon Lifecycle
             </h1>
             <p className="text-text-light mt-2 max-w-xl text-base">
-              Track the current execution stage, organize phase tasks, fetch resources, and simulate real-time workflow phases below.
+              Track the current execution stage, organize phase tasks, fetch resources, and simulate
+              real-time workflow phases below.
             </p>
           </div>
 
@@ -229,7 +229,8 @@ const HackathonLifecycle = () => {
               Organizer Phase Command Board
             </div>
             <p className="text-sm text-primary/80 mb-6">
-              Simulate operational transition changes between phases to test real-time state updates across the participant portal.
+              Simulate operational transition changes between phases to test real-time state updates
+              across the participant portal.
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
               {phasesList.map((phase, idx) => (
@@ -285,14 +286,16 @@ const HackathonLifecycle = () => {
                   )}
                 </div>
 
-                <div className={`inline-flex p-2.5 rounded-xl bg-linear-to-br ${phase.color} text-white mb-4`}>
+                <div
+                  className={`inline-flex p-2.5 rounded-xl bg-linear-to-br ${phase.color} text-white mb-4`}
+                >
                   <PhaseIcon className="w-5 h-5" />
                 </div>
 
                 <h3 className="font-bold text-sm text-text-light uppercase tracking-widest">
                   Phase {phase.id}
                 </h3>
-                
+
                 <h2 className="font-extrabold text-base tracking-tight mt-1 text-text">
                   {phase.name}
                 </h2>
@@ -315,14 +318,14 @@ const HackathonLifecycle = () => {
         {/* SELECTED PHASE WORKSPACE */}
         {selectedPhase && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
             {/* LEFT COLUMN: PHASE OVERVIEW & RESOURCES */}
             <div className="lg:col-span-2 space-y-6">
-              
               {/* DESCRIPTION BOARD */}
               <div className="bg-card-bg border border-border rounded-3xl p-6 md:p-8 shadow-sm">
                 <div className="flex items-center gap-3">
-                  <div className={`p-3 rounded-xl bg-linear-to-br ${selectedPhase.color} text-white`}>
+                  <div
+                    className={`p-3 rounded-xl bg-linear-to-br ${selectedPhase.color} text-white`}
+                  >
                     <selectedPhase.icon className="w-6 h-6" />
                   </div>
                   <div>
@@ -395,7 +398,8 @@ const HackathonLifecycle = () => {
                         <button
                           type="button"
                           className="px-3 py-1.5 rounded-xl bg-bg hover:bg-card-bg border border-border text-xs font-bold text-primary shadow-sm"
-                         aria-label="button">
+                          aria-label="button"
+                        >
                           Fetch File
                         </button>
                       </div>
@@ -411,7 +415,6 @@ const HackathonLifecycle = () => {
 
             {/* RIGHT COLUMN: DYNAMIC COMPONENT ACTIONS / CHECKLIST */}
             <div className="space-y-6">
-              
               {/* CHECKLIST */}
               <div className="bg-card-bg border border-border rounded-3xl p-6 shadow-sm">
                 <h3 className="text-lg font-bold text-text border-b border-border pb-3">
@@ -422,10 +425,7 @@ const HackathonLifecycle = () => {
                 </p>
 
                 {isOrganizerMode && (
-                  <form
-                    onSubmit={handleAddTask}
-                    className="flex gap-2 mb-5"
-                  >
+                  <form onSubmit={handleAddTask} className="flex gap-2 mb-5">
                     <input
                       type="text"
                       value={newTaskText}
@@ -437,7 +437,8 @@ const HackathonLifecycle = () => {
                     <button
                       type="submit"
                       className="px-4 py-2 rounded-xl bg-primary hover:opacity-90 text-sm font-bold text-white shadow-sm transition shrink-0"
-                     aria-label="button">
+                      aria-label="button"
+                    >
                       Add Task
                     </button>
                   </form>
@@ -461,7 +462,9 @@ const HackathonLifecycle = () => {
                           <div className="w-5 h-5 rounded-full border-2 border-border hover:border-primary transition-colors" />
                         )}
                       </div>
-                      <span className={`text-sm font-semibold leading-relaxed ${task.done ? "line-through opacity-70" : ""}`}>
+                      <span
+                        className={`text-sm font-semibold leading-relaxed ${task.done ? "line-through opacity-70" : ""}`}
+                      >
                         {task.text}
                       </span>
                     </button>
@@ -479,7 +482,8 @@ const HackathonLifecycle = () => {
                   Fast Track Registration
                 </h3>
                 <p className="text-xs text-indigo-250 mt-2 leading-relaxed">
-                  Join the current Hackathon as an active participant to start pitching dynamic concepts and secure your place.
+                  Join the current Hackathon as an active participant to start pitching dynamic
+                  concepts and secure your place.
                 </p>
                 <div className="mt-6 flex flex-col gap-2.5">
                   <Link
@@ -497,12 +501,9 @@ const HackathonLifecycle = () => {
                   </Link>
                 </div>
               </div>
-
             </div>
-
           </div>
         )}
-
       </div>
     </div>
   );

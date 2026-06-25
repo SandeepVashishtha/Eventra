@@ -8,12 +8,23 @@ const sortOptions = [
   { label: "Username (A \u2192 Z)", value: "username" },
 ];
 
-export default function LeaderboardControls({ search, onSearchChange, sortBy, onSortChange, onRefresh, onExport, isRefreshing, searchInputRef }) {
-
+export default function LeaderboardControls({
+  search,
+  onSearchChange,
+  sortBy,
+  onSortChange,
+  onRefresh,
+  onExport,
+  isRefreshing,
+  searchInputRef,
+}) {
   return (
     <div className="mb-8 flex flex-col gap-4 rounded-[28px] border border-slate-200/70 dark:border-slate-800/70 bg-white/80 dark:bg-slate-900/80 p-4 shadow-[0_16px_50px_rgba(15,23,42,0.06)] dark:shadow-[0_16px_50px_rgba(0,0,0,0.3)] backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between">
       <div className="relative w-full sm:max-w-xs">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" aria-hidden="true" />
+        <Search
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500"
+          aria-hidden="true"
+        />
         <input
           ref={searchInputRef}
           type="search"
@@ -46,7 +57,10 @@ export default function LeaderboardControls({ search, onSearchChange, sortBy, on
           aria-label="Refresh leaderboard data"
           title="Refresh data"
         >
-          <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} aria-hidden="true" />
+          <RefreshCw
+            className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`}
+            aria-hidden="true"
+          />
         </motion.button>
 
         <motion.button

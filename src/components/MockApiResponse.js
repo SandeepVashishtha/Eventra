@@ -54,10 +54,10 @@ const mockResponses = {
 
 const MockApiResponse = () => {
   const location = useLocation();
-  
+
   // 🔥 FIX: Normalize the path by removing any trailing slashes to prevent 404s on exact matches
   const normalizedPath = location.pathname.replace(/\/$/, "");
-  
+
   const response = mockResponses[normalizedPath] || {
     status: 404,
     source: "mock",

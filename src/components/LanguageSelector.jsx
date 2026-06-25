@@ -56,7 +56,11 @@ export default function LanguageSelector({ className = "", compact = false }) {
           ${compact ? "px-3 py-1.5 text-xs" : "px-4 py-2 text-sm"}
         `}
       >
-        <Globe className={compact ? "h-3.5 w-3.5" : "h-4 w-4"} strokeWidth={1.5} aria-hidden="true" />
+        <Globe
+          className={compact ? "h-3.5 w-3.5" : "h-4 w-4"}
+          strokeWidth={1.5}
+          aria-hidden="true"
+        />
         <span className="font-medium tracking-wide">{currentLang.nativeLabel}</span>
         <ChevronDown
           className={`${compact ? "h-3.5 w-3.5" : "h-4 w-4"} transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
@@ -88,9 +92,10 @@ export default function LanguageSelector({ className = "", compact = false }) {
                   className={`
                     flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm
                     transition-colors duration-150
-                    ${isActive
-                      ? "bg-primary/10 text-primary font-semibold"
-                      : "text-text-light hover:bg-bg-secondary hover:text-text"
+                    ${
+                      isActive
+                        ? "bg-primary/10 text-primary font-semibold"
+                        : "text-text-light hover:bg-bg-secondary hover:text-text"
                     }
                   `}
                 >

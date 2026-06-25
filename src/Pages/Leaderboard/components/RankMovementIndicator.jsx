@@ -35,7 +35,10 @@ const RankMovementIndicator = memo(({ liveDifference }) => {
     );
   }
   return (
-    <span className="inline-flex items-center text-[10px] font-bold text-slate-400" aria-label="No rank change">
+    <span
+      className="inline-flex items-center text-[10px] font-bold text-slate-400"
+      aria-label="No rank change"
+    >
       <Minus className="w-2 h-2" aria-hidden="true" />
     </span>
   );

@@ -2,11 +2,11 @@
 export function accessibleCardProps(onClickHandler) {
   return {
     tabIndex: 0,
-    role: 'button',
+    role: "button",
     onKeyDown: (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
+      if (e.key === "Enter" || e.key === " ") {
         onClickHandler();
       }
-    }
+    },
   };
 }

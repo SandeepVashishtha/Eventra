@@ -23,9 +23,7 @@ export default function StatsSection() {
           className="bg-white dark:bg-gray-800 border border-indigo-200 dark:border-gray-700 rounded-2xl shadow-md p-6 text-center flex flex-col items-center"
         >
           <stat.icon className="w-10 h-10 text-indigo-600 dark:text-indigo-400 mb-3 animate-bounce" />
-          <h3 className="text-3xl font-bold text-indigo-700 dark:text-indigo-400">
-            {stat.number}
-          </h3>
+          <h3 className="text-3xl font-bold text-indigo-700 dark:text-indigo-400">{stat.number}</h3>
           <p className="text-gray-600 dark:text-gray-400 mt-2">{stat.label}</p>
         </motion.div>
       ))}

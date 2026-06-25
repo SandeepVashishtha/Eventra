@@ -78,22 +78,28 @@ const NotificationSettings = () => {
     [preferences.categories]
   );
 
-  const setPreference = useCallback((key, value) => {
-    updatePreferences((current) => ({ ...current, [key]: value }));
-  }, [updatePreferences]);
+  const setPreference = useCallback(
+    (key, value) => {
+      updatePreferences((current) => ({ ...current, [key]: value }));
+    },
+    [updatePreferences]
+  );
 
-  const setCategoryPreference = useCallback((category, channel, value) => {
-    updatePreferences((current) => ({
-      ...current,
-      categories: {
-        ...current.categories,
-        [category]: {
-          ...current.categories[category],
-          [channel]: value,
+  const setCategoryPreference = useCallback(
+    (category, channel, value) => {
+      updatePreferences((current) => ({
+        ...current,
+        categories: {
+          ...current.categories,
+          [category]: {
+            ...current.categories[category],
+            [channel]: value,
+          },
         },
-      },
-    }));
-  }, [updatePreferences]);
+      }));
+    },
+    [updatePreferences]
+  );
 
   const showStatusMessage = (message) => {
     setStatusMessage(message);

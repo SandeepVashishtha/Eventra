@@ -11,17 +11,20 @@ import { get as idbGet, del as idbDel } from "idb-keyval";
 const POLLING_INTERVAL_MS = 60_000;
 const MAX_SEEN_IDS = 500;
 const getStorageKey = () => {
-  if (typeof process !== "undefined" && (process.env.NODE_ENV === "test" || process.env.VITE_TEST_MODE === "true")) {
+  if (
+    typeof process !== "undefined" &&
+    (process.env.NODE_ENV === "test" || process.env.VITE_TEST_MODE === "true")
+  ) {
     return "eventra_notification_inbox";
   }
   try {
-    const userStr = window.localStorage.getItem('user');
+    const userStr = window.localStorage.getItem("user");
     if (userStr) {
       const user = JSON.parse(userStr);
-      if (user && user.id) return 'eventra_notification_inbox_' + user.id;
+      if (user && user.id) return "eventra_notification_inbox_" + user.id;
     }
   } catch (e) {}
-  return 'eventra_notification_inbox_guest';
+  return "eventra_notification_inbox_guest";
 };
 
 const normalize = (n = {}) => ({
@@ -31,7 +34,9 @@ const normalize = (n = {}) => ({
 });
 
 const persist = (items) => {
-  try { window.localStorage.setItem(getStorageKey(), JSON.stringify(items)); } catch {}
+  try {
+    window.localStorage.setItem(getStorageKey(), JSON.stringify(items));
+  } catch {}
 };
 
 const loadPersisted = () => {
@@ -40,7 +45,9 @@ const loadPersisted = () => {
     if (!raw) return null;
     const parsed = safeJsonParse(raw, []);
     return Array.isArray(parsed) ? parsed.map(normalize) : null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 };
 
 export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
@@ -54,9 +61,18 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
   const tokenRef = useRef(token);
   const isPageVisibleRef = useRef(isPageVisible);
 
-  useEffect(() => { isMounted.current = true; return () => { isMounted.current = false; }; }, []);
-  useEffect(() => { tokenRef.current = token; }, [token]);
-  useEffect(() => { isPageVisibleRef.current = isPageVisible; }, [isPageVisible]);
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+  useEffect(() => {
+    tokenRef.current = token;
+  }, [token]);
+  useEffect(() => {
+    isPageVisibleRef.current = isPageVisible;
+  }, [isPageVisible]);
 
   const addSeenId = (id) => {
     if (seenIds.current.has(id)) return;
@@ -83,7 +99,7 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
       }
       hasCompletedInitialFetchRef.current = true;
     },
-    [deliverNew, hasCompletedInitialFetchRef],
+    [deliverNew, hasCompletedInitialFetchRef]
   );
 
   const fetchNotifications = useCallback(
@@ -109,11 +125,13 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
         if (!options.isBackground && isMounted.current && tokenRef.current === t) setLoading(false);
       }
     },
-    [token, applyList],
+    [token, applyList]
   );
 
   const refetchRef = useRef(fetchNotifications);
-  useEffect(() => { refetchRef.current = fetchNotifications; }, [fetchNotifications]);
+  useEffect(() => {
+    refetchRef.current = fetchNotifications;
+  }, [fetchNotifications]);
 
   useEffect(() => {
     if (!token) {
@@ -160,11 +178,12 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
         });
         setUnreadCount((p) => Math.max(0, p - 1));
       } catch (err) {
-        if (isMounted.current && tokenRef.current === t) console.error("[useNotificationPoller] markAsRead:", err);
+        if (isMounted.current && tokenRef.current === t)
+          console.error("[useNotificationPoller] markAsRead:", err);
         pushToNotificationQueue("read", { endpoint });
       }
     },
-    [token],
+    [token]
   );
 
   const markAllAsRead = useCallback(async () => {
@@ -209,8 +228,9 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
       if (!token || typeof fn !== "function") return;
       const endpoint = fn(id);
       if (!endpoint) return;
-      try { await apiUtils.delete(endpoint); }
-      catch (err) {
+      try {
+        await apiUtils.delete(endpoint);
+      } catch (err) {
         pushToNotificationQueue("delete", { endpoint });
         if (isMounted.current && tokenRef.current === t) {
           console.error("[useNotificationPoller] delete:", err);
@@ -218,11 +238,13 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
         }
       }
     },
-    [token],
+    [token]
   );
 
   const markAsReadRef = useRef(markAsRead);
-  useEffect(() => { markAsReadRef.current = markAsRead; }, [markAsRead]);
+  useEffect(() => {
+    markAsReadRef.current = markAsRead;
+  }, [markAsRead]);
 
   // Same-tab sync listener
   useEffect(() => {
@@ -261,9 +283,7 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
               const timestamp = ln.createdAt || ln.timestamp || new Date().toISOString();
 
               const exists = merged.some(
-                (cn) =>
-                  String(cn.id) === id ||
-                  (cn.title === title && cn.message === message)
+                (cn) => String(cn.id) === id || (cn.title === title && cn.message === message)
               );
 
               if (!exists) {
@@ -298,8 +318,15 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
   }, []);
 
   return {
-    notifications, unreadCount, loading,
-    fetchNotifications, markAsRead, markAllAsRead, deleteNotification,
-    applyList, seenIds, markAsReadRef,
+    notifications,
+    unreadCount,
+    loading,
+    fetchNotifications,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    applyList,
+    seenIds,
+    markAsReadRef,
   };
 }

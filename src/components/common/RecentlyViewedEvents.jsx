@@ -1,19 +1,19 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import useRecentlyViewed from '../../hooks/useRecentlyViewed';
-import LazyImage from './LazyImage';
-import './RecentlyViewedEvents.css';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import useRecentlyViewed from "../../hooks/useRecentlyViewed";
+import LazyImage from "./LazyImage";
+import "./RecentlyViewedEvents.css";
 
 /**
  * Pure utility function to format date strings.
  */
 const formatDate = (dateStr) => {
-  if (!dateStr) return '';
+  if (!dateStr) return "";
   try {
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
+    return new Date(dateStr).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
     });
   } catch {
     return dateStr;
@@ -34,7 +34,9 @@ const RecentlyViewedHeader = ({
   return (
     <div className="rv-header">
       <div className="rv-title-group">
-        <span className="rv-icon" aria-hidden="true">🕑</span>
+        <span className="rv-icon" aria-hidden="true">
+          🕑
+        </span>
         <h2 className="rv-title">Recently Viewed</h2>
         <span className="rv-count">{count}</span>
       </div>
@@ -46,16 +48,16 @@ const RecentlyViewedHeader = ({
             onClick={onToggleShowAll}
             aria-expanded={showAll}
           >
-            {showAll ? 'Show Less' : `View All (${count})`}
+            {showAll ? "Show Less" : `View All (${count})`}
           </button>
         )}
         <button
-          className={`rv-btn ${confirmClear ? 'rv-btn--danger' : 'rv-btn--ghost'}`}
+          className={`rv-btn ${confirmClear ? "rv-btn--danger" : "rv-btn--ghost"}`}
           onClick={onClear}
           title="Clear viewing history"
           aria-label="button"
         >
-          {confirmClear ? '✕ Confirm Clear' : 'Clear History'}
+          {confirmClear ? "✕ Confirm Clear" : "Clear History"}
         </button>
       </div>
     </div>
@@ -71,7 +73,7 @@ const RecentlyViewedCard = ({ event, onCardClick, onRemove }) => {
       className="rv-card"
       role="listitem"
       onClick={() => onCardClick(event)}
-      onKeyDown={(e) => e.key === 'Enter' && onCardClick(event)}
+      onKeyDown={(e) => e.key === "Enter" && onCardClick(event)}
       tabIndex={0}
       aria-label={`View event: ${event.title}`}
     >
@@ -105,9 +107,7 @@ const RecentlyViewedCard = ({ event, onCardClick, onRemove }) => {
         )}
 
         {/* Category badge */}
-        {event.category && (
-          <span className="rv-card__badge">{event.category}</span>
-        )}
+        {event.category && <span className="rv-card__badge">{event.category}</span>}
       </div>
 
       {/* Content */}
@@ -138,7 +138,7 @@ const RecentlyViewedCard = ({ event, onCardClick, onRemove }) => {
 
 /**
  * RecentlyViewedTracker Component
- * 
+ *
  * Simple declarative component to trigger adding an event to history.
  * Intended to be rendered in EventDetails.js with `<RecentlyViewedTracker event={event} />`
  */

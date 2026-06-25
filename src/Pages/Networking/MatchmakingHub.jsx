@@ -6,7 +6,7 @@ import { Calendar, MessageSquare, Zap, Star } from "lucide-react";
 import { toast } from "react-toastify";
 
 // 1. IMPORT THE MASTER SKIN LAYOUT SHELL
-import DashboardLayout from "../../components/Layout/DashboardLayout"; 
+import DashboardLayout from "../../components/Layout/DashboardLayout";
 
 const MatchmakingHub = () => {
   const { eventId = "networking-hub" } = useParams();
@@ -37,23 +37,36 @@ const MatchmakingHub = () => {
           </div>
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">AI Matchmaking Hub</h1>
-            <p className="text-gray-500">Smart networking recommendations based on your profile and event history.</p>
+            <p className="text-gray-500">
+              Smart networking recommendations based on your profile and event history.
+            </p>
           </div>
         </div>
 
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="animate-pulse bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 h-64" />
+              <div
+                key={i}
+                className="animate-pulse bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-100 dark:border-gray-700 h-64"
+              />
             ))}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {connections.map((conn) => (
-              <div key={conn.id} className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col h-full hover:shadow-xl transition-shadow">
+              <div
+                key={conn.id}
+                className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col h-full hover:shadow-xl transition-shadow"
+              >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-4">
-                    <img src={conn.avatar} alt={conn.name} className="w-14 h-14 rounded-full border-2 border-indigo-100 dark:border-indigo-900"  loading="lazy" />
+                    <img
+                      src={conn.avatar}
+                      alt={conn.name}
+                      className="w-14 h-14 rounded-full border-2 border-indigo-100 dark:border-indigo-900"
+                      loading="lazy"
+                    />
                     <div>
                       <h3 className="font-bold text-lg dark:text-white">{conn.name}</h3>
                       <p className="text-sm text-gray-500">{conn.role}</p>
@@ -63,22 +76,25 @@ const MatchmakingHub = () => {
                     <Star className="w-3 h-3" /> {conn.matchScore}%
                   </div>
                 </div>
-                
+
                 <div className="p-3 bg-indigo-50 dark:bg-indigo-900/10 rounded-xl mb-4 text-sm text-indigo-800 dark:text-indigo-300">
                   <span className="font-semibold block mb-1">Why you match:</span>
                   {conn.matchReason}
                 </div>
 
                 <div className="flex flex-wrap gap-2 mb-6">
-                  {conn.skills.map(skill => (
-                    <span key={skill} className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-md text-gray-600 dark:text-gray-300">
+                  {conn.skills.map((skill) => (
+                    <span
+                      key={skill}
+                      className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-md text-gray-600 dark:text-gray-300"
+                    >
                       {skill}
                     </span>
                   ))}
                 </div>
 
                 <div className="mt-auto flex gap-3">
-                  <button 
+                  <button
                     onClick={() => handleSchedule(conn)}
                     className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
                   >

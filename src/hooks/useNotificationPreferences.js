@@ -15,7 +15,7 @@ export function useNotificationPreferences() {
   useEffect(() => {
     const handler = (event) => {
       setPreferences(
-        normalizeNotificationPreferences(event.detail || readNotificationPreferences()),
+        normalizeNotificationPreferences(event.detail || readNotificationPreferences())
       );
     };
     window.addEventListener("eventra-notification-preferences", handler);
@@ -47,7 +47,7 @@ export function useNotificationPreferences() {
         return { savedRemotely: false, preferences: normalized, error };
       }
     },
-    [preferences, token],
+    [preferences, token]
   );
 
   return {

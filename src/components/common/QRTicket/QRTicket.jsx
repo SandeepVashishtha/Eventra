@@ -28,19 +28,22 @@ const TYPE_CONFIG = {
   General: {
     accent: "#7c3aed",
     accentLight: "rgba(124,58,237,0.18)",
-    badgeClass: "bg-purple-500/20 text-purple-300 print:bg-white print:text-purple-700 print:border print:border-purple-300",
+    badgeClass:
+      "bg-purple-500/20 text-purple-300 print:bg-white print:text-purple-700 print:border print:border-purple-300",
     label: "GENERAL",
   },
   VIP: {
     accent: "#eab308",
     accentLight: "rgba(234,179,8,0.18)",
-    badgeClass: "bg-yellow-500/20 text-yellow-300 print:bg-white print:text-yellow-700 print:border print:border-yellow-300",
+    badgeClass:
+      "bg-yellow-500/20 text-yellow-300 print:bg-white print:text-yellow-700 print:border print:border-yellow-300",
     label: "VIP ACCESS",
   },
   Speaker: {
     accent: "#10b981",
     accentLight: "rgba(16,185,129,0.18)",
-    badgeClass: "bg-emerald-500/20 text-emerald-300 print:bg-white print:text-emerald-700 print:border print:border-emerald-300",
+    badgeClass:
+      "bg-emerald-500/20 text-emerald-300 print:bg-white print:text-emerald-700 print:border print:border-emerald-300",
     label: "SPEAKER",
   },
 };

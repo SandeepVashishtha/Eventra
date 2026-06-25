@@ -1,4 +1,3 @@
-
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertCircle, History, Trash2, ArrowRight } from "lucide-react";
 
@@ -20,9 +19,10 @@ const DraftRestoreModal = ({ show, onRestore, onDiscard }) => {
                 </div>
                 <h3 className="text-xl font-bold">Unfinished Draft Found</h3>
               </div>
-              
+
               <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                It looks like you were in the middle of creating an event. Would you like to restore your progress or start fresh?
+                It looks like you were in the middle of creating an event. Would you like to restore
+                your progress or start fresh?
               </p>
 
               <div className="grid grid-cols-1 gap-3 pt-2">
@@ -36,7 +36,7 @@ const DraftRestoreModal = ({ show, onRestore, onDiscard }) => {
                   </div>
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </button>
-                
+
                 <button
                   onClick={onDiscard}
                   className="flex items-center gap-3 p-4 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-xl transition-all"
@@ -46,7 +46,7 @@ const DraftRestoreModal = ({ show, onRestore, onDiscard }) => {
                 </button>
               </div>
             </div>
-            
+
             <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700 flex items-center gap-2 text-xs text-gray-500">
               <AlertCircle className="w-4 h-4" />
               <span>Restoring will overwrite any current changes.</span>

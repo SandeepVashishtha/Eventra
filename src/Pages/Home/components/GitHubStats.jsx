@@ -74,12 +74,11 @@ export default function GitHubStats() {
 
     (async () => {
       try {
-        const [repoResult, contributorsResult, prResult] =
-          await Promise.allSettled([
-            fetchStat(GITHUB_USER, GITHUB_REPO),
-            fetchStat(GITHUB_USER, GITHUB_REPO, 1, 1),
-            fetchStat(GITHUB_USER, GITHUB_REPO, { per_page: 1 }),
-          ]);
+        const [repoResult, contributorsResult, prResult] = await Promise.allSettled([
+          fetchStat(GITHUB_USER, GITHUB_REPO),
+          fetchStat(GITHUB_USER, GITHUB_REPO, 1, 1),
+          fetchStat(GITHUB_USER, GITHUB_REPO, { per_page: 1 }),
+        ]);
 
         if (repoResult.status === "rejected") {
           const cached = readCache();
@@ -147,71 +146,74 @@ export default function GitHubStats() {
     };
   }, []);
 
-  const statCards = useMemo(() => [
-    {
-      label: "Stars",
-      value: stats.stars,
-      icon: <Star className="text-yellow-500" size={40} />,
-      link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/stargazers`,
-    },
-    {
-      label: "Forks",
-      value: stats.forks,
-      icon: <GitFork className="text-blue-500" size={40} />,
-      link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/network/members`,
-    },
-    {
-      label: "Issues",
-      value: stats.issues,
-      icon: <AlertCircle className="text-red-500" size={40} />,
-      link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/issues`,
-    },
-    {
-      label: "Pull Requests",
-      value: stats.pullRequests,
-      icon: <GitPullRequest className="text-pink-500" size={40} />,
-      link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/pulls`,
-    },
+  const statCards = useMemo(
+    () => [
+      {
+        label: "Stars",
+        value: stats.stars,
+        icon: <Star className="text-yellow-500" size={40} />,
+        link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/stargazers`,
+      },
+      {
+        label: "Forks",
+        value: stats.forks,
+        icon: <GitFork className="text-blue-500" size={40} />,
+        link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/network/members`,
+      },
+      {
+        label: "Issues",
+        value: stats.issues,
+        icon: <AlertCircle className="text-red-500" size={40} />,
+        link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/issues`,
+      },
+      {
+        label: "Pull Requests",
+        value: stats.pullRequests,
+        icon: <GitPullRequest className="text-pink-500" size={40} />,
+        link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/pulls`,
+      },
 
-    {
-      label: "Contributors",
-      value: stats.contributors,
-      icon: <Users className="text-black" size={40} />,
-      link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/graphs/contributors`,
-    },
-    {
-      label: "Watchers",
-      value: stats.watchers,
-      icon: <Eye className="text-cyan-500" size={40} />,
-      link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/watchers`,
-    },
-    {
-      label: "License",
-      value: stats.license,
-      icon: <Scale className="text-gray-600 dark:text-gray-400" size={40} />,
-      link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/blob/main/LICENSE`,
-    },
-    {
-      label: "Last Update",
-      value: stats.lastCommit,
-      icon: <Clock className="text-black" size={40} />,
-      link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/commits`,
-    },
-    {
-      label: "Code Size",
-      value: `${(stats.size / 1024).toFixed(1)} MB`,
-      icon: <Code2 className="text-green-500" size={40} />,
-      link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}`,
-    },
-    {
-      label: "Languages",
-      value: Object.keys(stats.languages).length
-        ? Object.keys(stats.languages).join(", ")
-        : "React",
-      icon: <Languages className="text-amber-600" size={40} />,
-      link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}`,
-    },
-  ], [stats]);
+      {
+        label: "Contributors",
+        value: stats.contributors,
+        icon: <Users className="text-black" size={40} />,
+        link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/graphs/contributors`,
+      },
+      {
+        label: "Watchers",
+        value: stats.watchers,
+        icon: <Eye className="text-cyan-500" size={40} />,
+        link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/watchers`,
+      },
+      {
+        label: "License",
+        value: stats.license,
+        icon: <Scale className="text-gray-600 dark:text-gray-400" size={40} />,
+        link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/blob/main/LICENSE`,
+      },
+      {
+        label: "Last Update",
+        value: stats.lastCommit,
+        icon: <Clock className="text-black" size={40} />,
+        link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/commits`,
+      },
+      {
+        label: "Code Size",
+        value: `${(stats.size / 1024).toFixed(1)} MB`,
+        icon: <Code2 className="text-green-500" size={40} />,
+        link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}`,
+      },
+      {
+        label: "Languages",
+        value: Object.keys(stats.languages).length
+          ? Object.keys(stats.languages).join(", ")
+          : "React",
+        icon: <Languages className="text-amber-600" size={40} />,
+        link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}`,
+      },
+    ],
+    [stats]
+  );
 
   return (
     <section className="py-16 bg-white dark:bg-black ">
@@ -236,7 +238,8 @@ export default function GitHubStats() {
                 <motion.a
                   key={label}
                   href={link}
-                  target="_blank" rel="noopener noreferrer"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   whileHover={{ scale: 1.1, rotate: 1 }}
                   whileTap={{ scale: 0.95 }}
                   className="group flex flex-col items-center justify-center bg-white dark:bg-gray-800 rounded-2xl px-3 py-4 sm:px-6 sm:py-6 md:px-8 shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-700 relative overflow-hidden"

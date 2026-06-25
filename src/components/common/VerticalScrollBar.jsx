@@ -5,11 +5,11 @@ import "./VerticalScrollBar.css";
  * A custom vertical scroll progress bar component.
  * Displays the scroll progress of the window and allows for custom styling.
  */
-const VerticalScrollBar = ({ 
+const VerticalScrollBar = ({
   color = "var(--primary-color, #3b82f6)",
   width = "4px",
   showOnIdle = false,
-  className = "" 
+  className = "",
 }) => {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isVisible, setIsVisible] = useState(!showOnIdle);
@@ -48,15 +48,15 @@ const VerticalScrollBar = ({
   }, [showOnIdle]);
 
   return (
-    <div 
+    <div
       className={`vertical-scroll-bar-container ${isVisible ? "visible" : "hidden"} ${className}`}
       style={{ width }}
     >
-      <div 
+      <div
         className="vertical-scroll-bar-progress"
-        style={{ 
+        style={{
           height: `${scrollProgress}%`,
-          backgroundColor: color
+          backgroundColor: color,
         }}
       />
     </div>

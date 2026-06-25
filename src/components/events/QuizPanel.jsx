@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState } from "react";
 
 const QuizPanel = ({ quiz, onComplete = () => {}, isSubmitting = false }) => {
   const firstQuestion = useMemo(() => quiz?.questions?.[0] ?? null, [quiz]);
@@ -33,8 +33,8 @@ const QuizPanel = ({ quiz, onComplete = () => {}, isSubmitting = false }) => {
                 onClick={() => setSelectedOptionId(option.id)}
                 className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
                   selectedOptionId === option.id
-                    ? 'border-indigo-400 bg-indigo-600/30'
-                    : 'border-white/20 bg-black/20 hover:bg-black/30'
+                    ? "border-indigo-400 bg-indigo-600/30"
+                    : "border-white/20 bg-black/20 hover:bg-black/30"
                 }`}
               >
                 {option.text}

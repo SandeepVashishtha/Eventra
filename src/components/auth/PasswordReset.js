@@ -1,10 +1,14 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useRef, useEffect, useCallback } from "react";
+import { Link, useNavigate } from "react-router-dom";
 // Under the hood, password reset requests are sent to API_ENDPOINTS.AUTH.RESET_PASSWORD via authService.
-import { authService } from '../../services/authService';
+import { authService } from "../../services/authService";
 import { motion } from "framer-motion";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
-import { RESET_COOLDOWN_SECONDS, secondsUntilUnlock, STORAGE_KEY_RESET_LAST_SUBMIT } from '../../utils/rateLimitUtils';
+import {
+  RESET_COOLDOWN_SECONDS,
+  secondsUntilUnlock,
+  STORAGE_KEY_RESET_LAST_SUBMIT,
+} from "../../utils/rateLimitUtils";
 
 // ---------------------------------------------------------------------------
 // sessionStorage helpers — persist cooldown across page refreshes (Issue #5720)
@@ -40,10 +44,10 @@ const writeLastSubmit = (ts) => {
 
 const PasswordReset = () => {
   useDocumentTitle("Reset Password | Eventra");
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
 
   // FIX (Issue #5720): Seed from sessionStorage so cooldown survives page refresh.
@@ -68,7 +72,7 @@ const PasswordReset = () => {
   }, []);
 
   const startCooldownTimer = useCallback(() => {
-    clearAllTimers(); 
+    clearAllTimers();
     const unlockAt = lastSubmitRef.current + RESET_COOLDOWN_SECONDS * 1000;
     setCooldownSeconds(secondsUntilUnlock(unlockAt));
 
@@ -94,7 +98,7 @@ const PasswordReset = () => {
         startCooldownTimer();
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // intentionally runs once on mount
 
   const isCoolingDown = () => {
@@ -119,14 +123,14 @@ const PasswordReset = () => {
     setLoading(true);
     try {
       const response = await authService.resetPassword(email);
-      setMessage(response.data?.message || 'Password reset link sent! Check your email.');
+      setMessage(response.data?.message || "Password reset link sent! Check your email.");
       lastSubmitRef.current = Date.now();
       writeLastSubmit(lastSubmitRef.current); // FIX (Issue #5720): persist so refresh can't bypass cooldown
       startCooldownTimer();
-      navTimerRef.current = setTimeout(() => navigate('/login'), 3000);
+      navTimerRef.current = setTimeout(() => navigate("/login"), 3000);
     } catch (err) {
       const backendMessage = err.response?.data?.message || err?.data?.message;
-      setError(backendMessage || 'Failed to send reset link. Please try again.');
+      setError(backendMessage || "Failed to send reset link. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -142,13 +146,28 @@ const PasswordReset = () => {
           whileTap={{ scale: 0.95 }}
           className="mx-auto w-16 h-16 bg-linear-to-r from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg transform transition-transform duration-200"
         >
-          <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+          <svg
+            className="w-8 h-8 text-white"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M13 10V3L4 14h7v7l9-11h-7z"
+            />
           </svg>
         </motion.div>
 
-        <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 text-center">Reset Password</h1>
-        <p className="text-sm text-gray-600 dark:text-gray-400 text-center">Secure your account and get back to creating events.</p>
+        <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 text-center">
+          Reset Password
+        </h1>
+        <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
+          Secure your account and get back to creating events.
+        </p>
 
         {isCoolingDown() && cooldownSeconds > 0 && (
           <motion.div
@@ -158,13 +177,18 @@ const PasswordReset = () => {
             role="status"
             aria-live="polite"
           >
-            <span>Reset link sent. You can request another in <strong>{cooldownSeconds}s</strong>.</span>
+            <span>
+              Reset link sent. You can request another in <strong>{cooldownSeconds}s</strong>.
+            </span>
           </motion.div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+            >
               Email address <sup className="ml-1 text-red-500">*</sup>
             </label>
             <input
@@ -181,20 +205,34 @@ const PasswordReset = () => {
             />
           </div>
 
-          {error && <div className="bg-red-50 dark:bg-red-900/40 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-3 rounded-md text-sm">{error}</div>}
-          {message && <div className="bg-green-50 dark:bg-green-900/40 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-300 px-4 py-3 rounded-md text-sm">{message}</div>}
+          {error && (
+            <div className="bg-red-50 dark:bg-red-900/40 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-3 rounded-md text-sm">
+              {error}
+            </div>
+          )}
+          {message && (
+            <div className="bg-green-50 dark:bg-green-900/40 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-300 px-4 py-3 rounded-md text-sm">
+              {message}
+            </div>
+          )}
 
           <button
             type="submit"
             disabled={isSubmitDisabled}
             className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition-colors disabled:bg-blue-400 disabled:cursor-not-allowed"
           >
-            {loading ? 'Sending...' : isCoolingDown() ? `Wait ${cooldownSeconds}s` : 'Send Reset Link'}
+            {loading
+              ? "Sending..."
+              : isCoolingDown()
+                ? `Wait ${cooldownSeconds}s`
+                : "Send Reset Link"}
           </button>
         </form>
 
         <div className="text-center">
-          <Link to="/login" className="text-blue-600 dark:text-blue-400 hover:underline">Back to Login</Link>
+          <Link to="/login" className="text-blue-600 dark:text-blue-400 hover:underline">
+            Back to Login
+          </Link>
         </div>
       </div>
     </div>

@@ -1,8 +1,5 @@
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
-import {
-  EVENTS_PER_PAGE_OPTIONS,
-  getVisiblePaginationPages,
-} from "./eventPaginationUtils.mjs";
+import { EVENTS_PER_PAGE_OPTIONS, getVisiblePaginationPages } from "./eventPaginationUtils.mjs";
 
 const PageButton = ({ children, isActive = false, onClick, ariaLabel }) => {
   return (
@@ -23,9 +20,7 @@ const PageButton = ({ children, isActive = false, onClick, ariaLabel }) => {
 };
 
 const PageGap = () => {
-  return (
-    <span className="px-1 text-sm text-gray-500 dark:text-gray-400">...</span>
-  );
+  return <span className="px-1 text-sm text-gray-500 dark:text-gray-400">...</span>;
 };
 
 const ArrowButton = ({ direction, disabled, onClick }) => {
@@ -68,8 +63,10 @@ const PageSizeSelector = ({ eventsPerPage, onPageSizeChange }) => {
 };
 
 const PageNumberControls = ({ currentPage, totalPages, onPageChange }) => {
-  const { firstVisiblePage, lastVisiblePage, pages } =
-    getVisiblePaginationPages(currentPage, totalPages);
+  const { firstVisiblePage, lastVisiblePage, pages } = getVisiblePaginationPages(
+    currentPage,
+    totalPages
+  );
 
   return (
     <>
@@ -117,18 +114,15 @@ const PaginationControls = ({
   onPageSizeChange,
 }) => {
   const safeTotalEvents = Number(totalEvents) || 0;
-const safeCurrentPage = Number(currentPage) || 1;
-const safeEventsPerPage = Number(eventsPerPage) || EVENTS_PER_PAGE_OPTIONS[0];
+  const safeCurrentPage = Number(currentPage) || 1;
+  const safeEventsPerPage = Number(eventsPerPage) || EVENTS_PER_PAGE_OPTIONS[0];
 
-if (safeTotalEvents === 0) {
-  return null;
-}
+  if (safeTotalEvents === 0) {
+    return null;
+  }
 
-const startEvent = (safeCurrentPage - 1) * safeEventsPerPage + 1;
-const endEvent = Math.min(
-  safeCurrentPage * safeEventsPerPage,
-  safeTotalEvents
-);
+  const startEvent = (safeCurrentPage - 1) * safeEventsPerPage + 1;
+  const endEvent = Math.min(safeCurrentPage * safeEventsPerPage, safeTotalEvents);
   return (
     <div className="mt-10 flex flex-col gap-4 border-t border-gray-200 pt-6 dark:border-gray-700 sm:flex-row sm:items-center sm:justify-between">
       <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -136,10 +130,7 @@ const endEvent = Math.min(
       </p>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <PageSizeSelector
-          eventsPerPage={eventsPerPage}
-          onPageSizeChange={onPageSizeChange}
-        />
+        <PageSizeSelector eventsPerPage={eventsPerPage} onPageSizeChange={onPageSizeChange} />
 
         <nav className="flex items-center gap-2" aria-label="Event pagination">
           <button

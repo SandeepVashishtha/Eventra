@@ -1,14 +1,14 @@
-import { useState, useMemo } from 'react';
-import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
-import { format, parse, startOfWeek, getDay } from 'date-fns';
-import enUS from 'date-fns/locale/en-US';
-import 'react-big-calendar/lib/css/react-big-calendar.css';
-import { Link } from 'react-router-dom';
-import { X, MapPin, Tag, Clock } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useMemo } from "react";
+import { Calendar, dateFnsLocalizer } from "react-big-calendar";
+import { format, parse, startOfWeek, getDay } from "date-fns";
+import enUS from "date-fns/locale/en-US";
+import "react-big-calendar/lib/css/react-big-calendar.css";
+import { Link } from "react-router-dom";
+import { X, MapPin, Tag, Clock } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const locales = {
-  'en-US': enUS,
+  "en-US": enUS,
 };
 
 const localizer = dateFnsLocalizer({
@@ -23,7 +23,10 @@ const EventPopover = ({ event, onClose }) => {
   if (!event) return null;
 
   return (
-    <div className="fixed inset-0 z-1000 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-1000 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
+      onClick={onClose}
+    >
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -39,7 +42,12 @@ const EventPopover = ({ event, onClose }) => {
         </button>
 
         <div className="relative h-48 w-full">
-          <img src={event.resource.image} alt={event.title} className="w-full h-full object-cover"   loading="lazy"/>
+          <img
+            src={event.resource.image}
+            alt={event.title}
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
           <div className="absolute inset-0 bg-linear-to-t from-black/80 to-transparent" />
           <div className="absolute bottom-4 left-4 right-4">
             <h3 className="text-xl font-bold text-white line-clamp-2">{event.title}</h3>
@@ -92,7 +100,7 @@ const EventCalendarView = ({ events }) => {
   const calendarEvents = useMemo(() => {
     return events.map((evt) => {
       const date = new Date(evt.date);
-      if (evt.time && evt.time !== 'TBA') {
+      if (evt.time && evt.time !== "TBA") {
         try {
           // Attempt basic time parsing, assuming 12-hour AM/PM format (e.g. "10:00 AM")
           const timeMatch = evt.time.match(/(\d+):?(\d*)\s*(am|pm)/i);
@@ -100,10 +108,10 @@ const EventCalendarView = ({ events }) => {
             let hours = parseInt(timeMatch[1], 10);
             const minutes = timeMatch[2] ? parseInt(timeMatch[2], 10) : 0;
             const period = timeMatch[3].toLowerCase();
-            
-            if (period === 'pm' && hours < 12) hours += 12;
-            if (period === 'am' && hours === 12) hours = 0;
-            
+
+            if (period === "pm" && hours < 12) hours += 12;
+            if (period === "am" && hours === 12) hours = 0;
+
             date.setHours(hours, minutes, 0, 0);
           }
         } catch (e) {
@@ -126,7 +134,8 @@ const EventCalendarView = ({ events }) => {
 
   const eventPropGetter = () => {
     return {
-      className: 'bg-indigo-600 border-none rounded-md text-xs font-semibold px-2 py-0.5 shadow-sm text-white !overflow-hidden !whitespace-nowrap !text-ellipsis',
+      className:
+        "bg-indigo-600 border-none rounded-md text-xs font-semibold px-2 py-0.5 shadow-sm text-white !overflow-hidden !whitespace-nowrap !text-ellipsis",
     };
   };
 
@@ -229,7 +238,7 @@ const EventCalendarView = ({ events }) => {
         style={{ height: 700 }}
         onSelectEvent={handleSelectEvent}
         eventPropGetter={eventPropGetter}
-        views={['month', 'week', 'day']}
+        views={["month", "week", "day"]}
         popup
       />
 

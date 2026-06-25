@@ -27,7 +27,10 @@ const HomePage = () => {
         {/* Primary Meta Tags */}
         <title>{SITE_TITLE}</title>
         <meta name="description" content={SITE_DESCRIPTION} />
-        <meta name="keywords" content="tech events, hackathons, workshops, developer community, open source" />
+        <meta
+          name="keywords"
+          content="tech events, hackathons, workshops, developer community, open source"
+        />
         <meta name="author" content="Eventra Team" />
         <link rel="canonical" href={SITE_URL} />
 

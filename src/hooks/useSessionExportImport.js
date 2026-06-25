@@ -5,10 +5,7 @@ import {
   resolveImportedSessions,
 } from "../utils/sessionExportImport.js";
 
-export const useSessionExportImport = ({
-  sessions = [],
-  onImportSessions,
-} = {}) => {
+export const useSessionExportImport = ({ sessions = [], onImportSessions } = {}) => {
   const [importPreview, setImportPreview] = useState(null);
   const [importError, setImportError] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
@@ -30,7 +27,7 @@ export const useSessionExportImport = ({
       try {
         const result = downloadSessionBackup({ sessions: exportable });
         setStatusMessage(
-          `Exported ${result.count} session${result.count === 1 ? "" : "s"} to ${result.filename}.`,
+          `Exported ${result.count} session${result.count === 1 ? "" : "s"} to ${result.filename}.`
         );
         return result;
       } catch (error) {
@@ -38,7 +35,7 @@ export const useSessionExportImport = ({
         return null;
       }
     },
-    [sessions],
+    [sessions]
   );
 
   const parseImportText = useCallback((rawJson) => {
@@ -65,7 +62,7 @@ export const useSessionExportImport = ({
       const selected =
         selectedSessionIds.length > 0
           ? importPreview.sessions.filter((session) =>
-              selectedSessionIds.includes(session.sessionId),
+              selectedSessionIds.includes(session.sessionId)
             )
           : importPreview.sessions;
 
@@ -77,13 +74,13 @@ export const useSessionExportImport = ({
 
       onImportSessions?.(result.sessions);
       setStatusMessage(
-        `Imported ${result.restored.length} session${result.restored.length === 1 ? "" : "s"}.`,
+        `Imported ${result.restored.length} session${result.restored.length === 1 ? "" : "s"}.`
       );
       setImportPreview(null);
       setImportError("");
       return result;
     },
-    [importPreview, onImportSessions, sessions],
+    [importPreview, onImportSessions, sessions]
   );
 
   const clearImportPreview = useCallback(() => {
@@ -109,7 +106,7 @@ export const useSessionExportImport = ({
       importSessions,
       parseImportText,
       statusMessage,
-    ],
+    ]
   );
 };
 

@@ -1,10 +1,11 @@
+import React, { Suspense, lazy } from "react";
 
-import React, { Suspense, lazy } from 'react';
-
-const LazyAnalyticsDashboard = lazy(() => import('./AnalyticsDashboard'));
+const LazyAnalyticsDashboard = lazy(() => import("./AnalyticsDashboard"));
 
 const AnalyticsDashboardLazy = (props) => (
-  <Suspense fallback={<div className="p-8 text-center text-slate-500">Loading Analytics Dashboard...</div>}>
+  <Suspense
+    fallback={<div className="p-8 text-center text-slate-500">Loading Analytics Dashboard...</div>}
+  >
     <LazyAnalyticsDashboard {...props} />
   </Suspense>
 );

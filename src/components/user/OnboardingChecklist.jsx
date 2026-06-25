@@ -3,15 +3,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import useReducedMotion from "../../hooks/useReducedMotion";
-import { 
-  CheckCircle2, 
-  Circle, 
-  Trophy, 
-  ArrowRight, 
-  Sparkles, 
+import {
+  CheckCircle2,
+  Circle,
+  Trophy,
+  ArrowRight,
+  Sparkles,
   Award,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
 } from "lucide-react";
 import { safeJsonParse } from "../../utils/safeJsonParse";
 import { syncSecureStorage } from "../../utils/secureStorage";
@@ -64,10 +64,10 @@ const OnboardingConfetti = () => {
 
 const OnboardingTaskItem = ({ task, setIsOpen }) => {
   return (
-    <div 
+    <div
       className={`p-3 rounded-xl border transition-all duration-300 flex items-start gap-3 ${
-        task.completed 
-          ? "bg-green-50/30 dark:bg-green-950/10 border-green-100/50 dark:border-green-900/20 opacity-80" 
+        task.completed
+          ? "bg-green-50/30 dark:bg-green-950/10 border-green-100/50 dark:border-green-900/20 opacity-80"
           : "bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-sm"
       }`}
     >
@@ -80,8 +80,8 @@ const OnboardingTaskItem = ({ task, setIsOpen }) => {
         className="sr-only"
         aria-describedby={`onboarding-desc-${task.id}`}
       />
-      
-      <label 
+
+      <label
         htmlFor={`onboarding-task-${task.id}`}
         className="flex-1 flex items-start gap-3 cursor-default"
       >
@@ -99,12 +99,17 @@ const OnboardingTaskItem = ({ task, setIsOpen }) => {
           <span className="sr-only">
             {task.completed ? "[Completed Quest] " : "[Active Quest] "}
           </span>
-          <p className={`text-xs font-bold leading-tight ${
-            task.completed ? "text-slate-500 line-through" : "text-slate-800 dark:text-white"
-          }`}>
+          <p
+            className={`text-xs font-bold leading-tight ${
+              task.completed ? "text-slate-500 line-through" : "text-slate-800 dark:text-white"
+            }`}
+          >
             {task.label}
           </p>
-          <p id={`onboarding-desc-${task.id}`} className="text-[10px] text-slate-500 mt-0.5 leading-snug">
+          <p
+            id={`onboarding-desc-${task.id}`}
+            className="text-[10px] text-slate-500 mt-0.5 leading-snug"
+          >
             {task.desc}
           </p>
         </div>
@@ -172,7 +177,7 @@ export default function OnboardingChecklist() {
   const triggerStateChange = useCallback(() => {
     let height = 0;
     if (!isDismissed) {
-      const activeElement = document.querySelector('[data-onboarding-checklist]');
+      const activeElement = document.querySelector("[data-onboarding-checklist]");
       if (activeElement) {
         const rect = activeElement.getBoundingClientRect();
         height = window.innerHeight - rect.top;
@@ -218,7 +223,7 @@ export default function OnboardingChecklist() {
         interestsDone = true;
       }
     }
-    
+
     const storedInterests = localStorage.getItem("user_interests");
     if (storedInterests) {
       const parsedInt = safeJsonParse(storedInterests, []);
@@ -243,8 +248,8 @@ export default function OnboardingChecklist() {
     // 4. Check AI recommendation generation
     const recsDone = localStorage.getItem("eventra_ai_recommendation_generated") === "true";
 
-    setTasks(prevTasks => {
-      const updated = prevTasks.map(t => {
+    setTasks((prevTasks) => {
+      const updated = prevTasks.map((t) => {
         if (t.id === "interests") return { ...t, completed: interestsDone };
         if (t.id === "bookmark") return { ...t, completed: bookmarkDone };
         if (t.id === "sandbox") return { ...t, completed: sandboxDone };
@@ -253,11 +258,12 @@ export default function OnboardingChecklist() {
       });
 
       // Detect 100% completion for celebration
-      const allDone = updated.every(t => t.completed);
-      const prevAllDone = prevTasks.every(t => t.completed);
-      
+      const allDone = updated.every((t) => t.completed);
+      const prevAllDone = prevTasks.every((t) => t.completed);
+
       if (allDone && !prevAllDone) {
-        const alreadyCelebrated = localStorage.getItem("eventra_onboarding_completed_fired") === "true";
+        const alreadyCelebrated =
+          localStorage.getItem("eventra_onboarding_completed_fired") === "true";
         if (!alreadyCelebrated) {
           setShowCelebration(true);
           setIsOpen(true);
@@ -276,7 +282,7 @@ export default function OnboardingChecklist() {
   // Perform checks periodically and on routing
   useEffect(() => {
     if (!user || isDismissed) return;
-    
+
     checkTaskStatus();
     const interval = setInterval(checkTaskStatus, 1500);
 
@@ -303,23 +309,20 @@ export default function OnboardingChecklist() {
     setIsOpen(false);
   };
 
-  
   // Render check
   if (!user || isDismissed) {
     // Hidden except if they want to reset it on settings page (can trigger reset)
     return null;
   }
 
-  const completedCount = tasks.filter(t => t.completed).length;
+  const completedCount = tasks.filter((t) => t.completed).length;
   const progressPercent = Math.round((completedCount / tasks.length) * 100);
   const isAllCompleted = completedCount === tasks.length;
 
   return (
     <>
       {/* Celebration Confetti */}
-      <AnimatePresence>
-        {showCelebration && <OnboardingConfetti />}
-      </AnimatePresence>
+      <AnimatePresence>{showCelebration && <OnboardingConfetti />}</AnimatePresence>
 
       {/* Floating Onboarding Toggle Badge */}
       <AnimatePresence>
@@ -390,8 +393,8 @@ export default function OnboardingChecklist() {
                   <p className="text-[10px] text-slate-500">Complete quests to level up profile</p>
                 </div>
               </div>
-              
-              <button 
+
+              <button
                 onClick={() => setIsOpen(false)}
                 className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
                 aria-label="Minimize panel"
@@ -404,9 +407,11 @@ export default function OnboardingChecklist() {
             <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900">
               <div className="flex justify-between items-center text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
                 <span>Quest Progress</span>
-                <span className="text-indigo-600 dark:text-indigo-400 font-bold">{progressPercent}%</span>
+                <span className="text-indigo-600 dark:text-indigo-400 font-bold">
+                  {progressPercent}%
+                </span>
               </div>
-              
+
               <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                 <motion.div
                   className="h-full bg-indigo-600 dark:bg-indigo-500 rounded-full"
@@ -432,11 +437,7 @@ export default function OnboardingChecklist() {
             {/* Task list items */}
             <div className="p-4 space-y-3 max-h-[300px] overflow-y-auto bg-slate-50/50 dark:bg-slate-900/30">
               {tasks.map((task) => (
-                <OnboardingTaskItem 
-                  key={task.id} 
-                  task={task} 
-                  setIsOpen={setIsOpen} 
-                />
+                <OnboardingTaskItem key={task.id} task={task} setIsOpen={setIsOpen} />
               ))}
             </div>
 
@@ -445,7 +446,8 @@ export default function OnboardingChecklist() {
               <button
                 onClick={handleDismiss}
                 className="text-[10px] font-bold text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors uppercase tracking-wider"
-               aria-label="button">
+                aria-label="button"
+              >
                 Dismiss Quest
               </button>
 

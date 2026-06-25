@@ -65,7 +65,7 @@ export const useEventScheduling = ({
 
       const previousEvents = events;
       const nextEvents = events.map((event) =>
-        String(getEventIdentity(event)) === String(eventId) ? updatedEvent : event,
+        String(getEventIdentity(event)) === String(eventId) ? updatedEvent : event
       );
 
       setEvents(nextEvents);
@@ -88,7 +88,7 @@ export const useEventScheduling = ({
         setIsSaving(false);
       }
     },
-    [events, onScheduleUpdated, persistSchedule],
+    [events, onScheduleUpdated, persistSchedule]
   );
 
   const scheduleEvent = useCallback(
@@ -98,7 +98,7 @@ export const useEventScheduling = ({
         start,
         overrideConflicts: options.overrideConflicts || false,
       }),
-    [commitScheduleChange],
+    [commitScheduleChange]
   );
 
   const overridePendingConflict = useCallback(() => {
@@ -121,7 +121,7 @@ export const useEventScheduling = ({
 
     const previousEvents = events;
     const restoredEvents = events.map((event) =>
-      String(getEventIdentity(event)) === String(lastChange.eventId) ? lastChange.before : event,
+      String(getEventIdentity(event)) === String(lastChange.eventId) ? lastChange.before : event
     );
 
     setEvents(restoredEvents);
@@ -134,7 +134,9 @@ export const useEventScheduling = ({
       await persistSchedule({
         eventId: lastChange.eventId,
         start: normalizedBefore?.start || start,
-        end: normalizedBefore?.end || new Date(start.getTime() + getEventDurationMinutes(lastChange.before) * 60000),
+        end:
+          normalizedBefore?.end ||
+          new Date(start.getTime() + getEventDurationMinutes(lastChange.before) * 60000),
         event: lastChange.before,
         isUndo: true,
       });

@@ -21,7 +21,7 @@ const FloorPlanDesignerPage = () => {
     location: "Bangalore Innovation Hub",
     attendees: 120,
     maxAttendees: 200,
-    type: "meetup"
+    type: "meetup",
   };
 
   const handleNavigate = (path) => {
@@ -36,7 +36,6 @@ const FloorPlanDesignerPage = () => {
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-6">
-        
         {/* Navigation Breadcrumbs and Back Button */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/40 dark:bg-gray-900/40 backdrop-blur-md border border-gray-200/50 dark:border-gray-800/50 rounded-2xl p-4 shadow-sm">
           <div className="flex items-center gap-3">
@@ -63,7 +62,9 @@ const FloorPlanDesignerPage = () => {
                   {event.title}
                 </button>
                 <span>/</span>
-                <span className="text-indigo-500 font-semibold uppercase tracking-wider">Floor Plan</span>
+                <span className="text-indigo-500 font-semibold uppercase tracking-wider">
+                  Floor Plan
+                </span>
               </div>
               <h2 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white leading-tight mt-0.5">
                 {event.title}
@@ -75,7 +76,12 @@ const FloorPlanDesignerPage = () => {
           <div className="flex flex-wrap items-center gap-3 text-xs bg-gray-50 dark:bg-black/40 border border-gray-200/80 dark:border-gray-800/80 p-2.5 rounded-xl">
             <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
               <Calendar size={14} className="text-indigo-500" />
-              <span className="font-bold">{new Date(event.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+              <span className="font-bold">
+                {new Date(event.date).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                })}
+              </span>
             </div>
             <span className="text-gray-300 dark:text-gray-700">|</span>
             <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
@@ -85,7 +91,9 @@ const FloorPlanDesignerPage = () => {
             <span className="text-gray-300 dark:text-gray-700">|</span>
             <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
               <Users size={14} className="text-green-500" />
-              <span className="font-bold">{event.attendees} / {event.maxAttendees}</span>
+              <span className="font-bold">
+                {event.attendees} / {event.maxAttendees}
+              </span>
             </div>
           </div>
         </div>
@@ -99,10 +107,12 @@ const FloorPlanDesignerPage = () => {
         <div className="flex items-start gap-2.5 p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl">
           <Info className="text-indigo-500 shrink-0 mt-0.5" size={16} />
           <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-            Layout data is synchronized dynamically with local storage. This is an advanced **Level-3 Feature** that provides dynamic grid snap, translation matrices for coordinates, elements grouping, rotation matrix trigonometry, and custom interactive seat mapping. Suitable for high-density event layout administration.
+            Layout data is synchronized dynamically with local storage. This is an advanced
+            **Level-3 Feature** that provides dynamic grid snap, translation matrices for
+            coordinates, elements grouping, rotation matrix trigonometry, and custom interactive
+            seat mapping. Suitable for high-density event layout administration.
           </p>
         </div>
-
       </div>
 
       <ConfirmationModal

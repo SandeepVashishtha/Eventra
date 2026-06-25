@@ -1,5 +1,10 @@
-import { useState, useEffect } from 'react';
-import { joinWaitlist, leaveWaitlist, getWaitlistStatus, getWaitlistCount } from '../../services/waitlistService';
+import { useState, useEffect } from "react";
+import {
+  joinWaitlist,
+  leaveWaitlist,
+  getWaitlistStatus,
+  getWaitlistCount,
+} from "../../services/waitlistService";
 
 // Custom hook - args grouped into single options object (fixes Excess Function Arguments)
 const useWaitlist = ({ eventId, isFullyBooked, waitlistEnabled, isAuthenticated, token }) => {
@@ -11,10 +16,10 @@ const useWaitlist = ({ eventId, isFullyBooked, waitlistEnabled, isAuthenticated,
   useEffect(() => {
     if (!isFullyBooked || !waitlistEnabled) return;
 
-    getWaitlistCount(eventId).then(data => setWaitlistCount(data.count));
+    getWaitlistCount(eventId).then((data) => setWaitlistCount(data.count));
 
     if (isAuthenticated && token) {
-      getWaitlistStatus(eventId, token).then(data => {
+      getWaitlistStatus(eventId, token).then((data) => {
         setOnWaitlist(data.onWaitlist);
         setPosition(data.position);
       });
@@ -23,7 +28,7 @@ const useWaitlist = ({ eventId, isFullyBooked, waitlistEnabled, isAuthenticated,
 
   const handleClick = async () => {
     if (!isAuthenticated) {
-      alert('Please log in to join the waitlist.');
+      alert("Please log in to join the waitlist.");
       return;
     }
     setLoading(true);
@@ -32,12 +37,12 @@ const useWaitlist = ({ eventId, isFullyBooked, waitlistEnabled, isAuthenticated,
         await leaveWaitlist(eventId, token);
         setOnWaitlist(false);
         setPosition(null);
-        setWaitlistCount(prev => prev - 1);
+        setWaitlistCount((prev) => prev - 1);
       } else {
         const data = await joinWaitlist(eventId, token);
         setOnWaitlist(true);
         setPosition(data.position);
-        setWaitlistCount(prev => prev + 1);
+        setWaitlistCount((prev) => prev + 1);
       }
     } catch (err) {
       alert(err.message);
@@ -52,7 +57,7 @@ const useWaitlist = ({ eventId, isFullyBooked, waitlistEnabled, isAuthenticated,
 const WaitlistInfo = ({ waitlistCount, position, onWaitlist }) => (
   <div>
     <span className="text-sm text-gray-500">
-      Event is full · {waitlistCount} {waitlistCount === 1 ? 'person' : 'people'} on waitlist
+      Event is full · {waitlistCount} {waitlistCount === 1 ? "person" : "people"} on waitlist
     </span>
     {onWaitlist && position && (
       <span className="block text-sm font-medium text-blue-600">
@@ -67,16 +72,21 @@ const WaitlistToggleButton = ({ onWaitlist, loading, onClick }) => (
     onClick={onClick}
     disabled={loading}
     className={`px-4 py-2 rounded-md font-medium text-white transition-colors ${
-      onWaitlist ? 'bg-gray-500 hover:bg-gray-600' : 'bg-yellow-500 hover:bg-yellow-600'
+      onWaitlist ? "bg-gray-500 hover:bg-gray-600" : "bg-yellow-500 hover:bg-yellow-600"
     } disabled:opacity-50`}
   >
-    {loading ? 'Please wait...' : onWaitlist ? 'Leave Waitlist' : 'Join Waitlist'}
+    {loading ? "Please wait..." : onWaitlist ? "Leave Waitlist" : "Join Waitlist"}
   </button>
 );
 
 const WaitlistButton = ({ eventId, isFullyBooked, waitlistEnabled, token, isAuthenticated }) => {
-  const { onWaitlist, position, waitlistCount, loading, handleClick } =
-    useWaitlist({ eventId, isFullyBooked, waitlistEnabled, isAuthenticated, token });
+  const { onWaitlist, position, waitlistCount, loading, handleClick } = useWaitlist({
+    eventId,
+    isFullyBooked,
+    waitlistEnabled,
+    isAuthenticated,
+    token,
+  });
 
   if (!isFullyBooked || !waitlistEnabled) return null;
 

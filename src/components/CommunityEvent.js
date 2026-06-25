@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
-import { useReducedMotion } from '../hooks/useReducedMotion';
+import { useReducedMotion } from "../hooks/useReducedMotion";
 import {
   CalendarDays,
   Users,
@@ -23,8 +23,7 @@ const events = [
     title: "Open Source Meetup",
     date: "28-09-2025",
     location: "Delhi, India",
-    description:
-      "A meetup for open-source enthusiasts to share, collaborate, and network.",
+    description: "A meetup for open-source enthusiasts to share, collaborate, and network.",
     icon: <Users size={20} />,
   },
   {
@@ -39,8 +38,7 @@ const events = [
     title: "Community Webinar",
     date: "20-10-2025",
     location: "Online",
-    description:
-      "Interactive session with industry experts on web development trends.",
+    description: "Interactive session with industry experts on web development trends.",
     icon: <MapPin size={20} />,
   },
   {
@@ -54,16 +52,14 @@ const events = [
     title: "Remote Dev Summit",
     date: "20-10-2025",
     location: "Online",
-    description:
-      "Conference about remote work, productivity, and building scalable products.",
+    description: "Conference about remote work, productivity, and building scalable products.",
     icon: <Laptop size={20} />,
   },
   {
     title: "Startup Networking",
     date: "02-12-2025",
     location: "Hyderabad, India",
-    description:
-      "Connect with startup founders, investors, and tech innovators.",
+    description: "Connect with startup founders, investors, and tech innovators.",
     icon: <Briefcase size={20} />,
   },
   {
@@ -77,16 +73,14 @@ const events = [
     title: "Coding Challenge 2026",
     date: "08-01-2026",
     location: "Chennai, India",
-    description:
-      "Competitive programming contest to test your problem-solving skills.",
+    description: "Competitive programming contest to test your problem-solving skills.",
     icon: <Code size={20} />,
   },
   {
     title: "Global Dev Conference",
     date: "15-02-2026",
     location: "Singapore",
-    description:
-      "An international event bringing developers and leaders together.",
+    description: "An international event bringing developers and leaders together.",
     icon: <Globe size={20} />,
   },
 ];
@@ -94,13 +88,13 @@ const events = [
 const CommunityEvent = () => {
   const prefersReducedMotion = useReducedMotion();
   const [selectedEvent, setSelectedEvent] = useState(null);
-  
+
   // 🔥 FIX: Safe scroll locking that caches and restores the original CSS value
   useEffect(() => {
     if (selectedEvent) {
       const originalStyle = window.getComputedStyle(document.body).overflow;
       document.body.style.overflow = "hidden";
-      
+
       return () => {
         document.body.style.overflow = originalStyle;
       };
@@ -165,14 +159,16 @@ const CommunityEvent = () => {
             `}
             style={{ fontFamily: '"Big Shoulders Display", sans-serif' }}
           >
-            Community{" "}
-            <span className="text-blue-600 dark:text-blue-500">Events</span>
+            Community <span className="text-blue-600 dark:text-blue-500">Events</span>
           </motion.h1>
 
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: prefersReducedMotion ? 0 : 0.2, duration: prefersReducedMotion ? 0 : 0.7 }}
+            transition={{
+              delay: prefersReducedMotion ? 0 : 0.2,
+              duration: prefersReducedMotion ? 0 : 0.7,
+            }}
             className={`
               text-base sm:text-lg
               max-w-2xl
@@ -183,8 +179,8 @@ const CommunityEvent = () => {
               ${darkTheme.textSecondary}
             `}
           >
-            Explore meetups, hackathons, webinars, and global conferences where
-            developers collaborate, innovate, and grow together.
+            Explore meetups, hackathons, webinars, and global conferences where developers
+            collaborate, innovate, and grow together.
           </motion.p>
         </motion.div>
 
@@ -278,33 +274,34 @@ const CommunityEvent = () => {
         </div>
       </div>
 
-      {selectedEvent && createPortal(
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="community-event-modal-title"
-          onClick={() => setSelectedEvent(null)}
-          onWheel={(e) => e.stopPropagation()}
-          onTouchMove={(e) => e.stopPropagation()}
-  >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-            className={`
+      {selectedEvent &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="community-event-modal-title"
+            onClick={() => setSelectedEvent(null)}
+            onWheel={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+              className={`
               ${darkTheme.card}
               relative w-full max-w-lg
               rounded-2xl
               p-6
               shadow-2xl
             `}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <button
-              type="button"
-              onClick={() => setSelectedEvent(null)}
-              className="
+              onClick={(event) => event.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => setSelectedEvent(null)}
+                className="
                 absolute right-4 top-4
                 rounded-full p-2
                 text-gray-500 dark:text-gray-300
@@ -312,61 +309,61 @@ const CommunityEvent = () => {
                 hover:bg-gray-100 dark:hover:bg-slate-800
                 hover:text-gray-900 dark:hover:text-white
               "
-              aria-label="Close event details"
-            >
-              <X size={20} />
-            </button>
+                aria-label="Close event details"
+              >
+                <X size={20} />
+              </button>
 
-            <div className="mb-5 flex items-center gap-3 pr-10">
-              <div
-                className="
+              <div className="mb-5 flex items-center gap-3 pr-10">
+                <div
+                  className="
                   rounded-xl
                   bg-indigo-100 dark:bg-slate-800
                   p-3
                   text-indigo-600 dark:text-indigo-400
                 "
-              >
-                {selectedEvent.icon}
-              </div>
+                >
+                  {selectedEvent.icon}
+                </div>
 
-              <h2
-                id="community-event-modal-title"
-                className={`
+                <h2
+                  id="community-event-modal-title"
+                  className={`
                   text-2xl font-bold
                   ${darkTheme.textPrimary}
                 `}
-              >
-                {selectedEvent.title}
-              </h2>
-            </div>
+                >
+                  {selectedEvent.title}
+                </h2>
+              </div>
 
-            <div
-              className={`
+              <div
+                className={`
                 space-y-3 text-sm
                 ${darkTheme.textSecondary}
               `}
-            >
-              <p>
-                <strong>Date:</strong> {selectedEvent.date}
-              </p>
+              >
+                <p>
+                  <strong>Date:</strong> {selectedEvent.date}
+                </p>
 
-              <p>
-                <strong>Location:</strong> {selectedEvent.location}
-              </p>
+                <p>
+                  <strong>Location:</strong> {selectedEvent.location}
+                </p>
 
-              <p
-                className={`
+                <p
+                  className={`
                   text-base leading-relaxed
                   ${darkTheme.textSecondary}
                 `}
-              >
-                {selectedEvent.description}
-              </p>
-            </div>
-          </motion.div>
-        </div>,
-        document.body
-      )}
+                >
+                  {selectedEvent.description}
+                </p>
+              </div>
+            </motion.div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 };

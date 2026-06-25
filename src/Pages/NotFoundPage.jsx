@@ -27,9 +27,9 @@ const floatVariants = {
 
 // ─── Quick-nav links shown below the primary CTA ─────────────────────────────
 const quickLinks = [
-  { to: "/events",     label: "Browse Events",     Icon: Calendar },
-  { to: "/hackathons", label: "Hackathons",         Icon: Zap      },
-  { to: "/explore",   label: "Explore",             Icon: Search   },
+  { to: "/events", label: "Browse Events", Icon: Calendar },
+  { to: "/hackathons", label: "Hackathons", Icon: Zap },
+  { to: "/explore", label: "Explore", Icon: Search },
 ];
 
 const NotFoundPage = () => {
@@ -99,14 +99,13 @@ const NotFoundPage = () => {
             className="flex h-16 w-16 items-center justify-center rounded-2xl
                        bg-white/10 backdrop-blur-sm ring-1 ring-white/20"
           >
-            <span className="text-4xl" role="img" aria-label="cancelled ticket">🎟️</span>
+            <span className="text-4xl" role="img" aria-label="cancelled ticket">
+              🎟️
+            </span>
           </motion.div>
 
           {/* ── Primary message ── */}
-          <motion.h2
-            variants={itemVariants}
-            className="text-2xl font-bold text-white sm:text-3xl"
-          >
+          <motion.h2 variants={itemVariants} className="text-2xl font-bold text-white sm:text-3xl">
             Looks like this event got cancelled!
           </motion.h2>
 
@@ -114,9 +113,8 @@ const NotFoundPage = () => {
             variants={itemVariants}
             className="max-w-sm text-base leading-relaxed text-indigo-200"
           >
-            The page you&apos;re looking for doesn&apos;t exist, may have been
-            moved, or the event was called off. Don&apos;t worry — there are
-            plenty more events waiting for you.
+            The page you&apos;re looking for doesn&apos;t exist, may have been moved, or the event
+            was called off. Don&apos;t worry — there are plenty more events waiting for you.
           </motion.p>
 
           {/* ── Primary CTA: Go to Homepage ── */}
@@ -182,8 +180,15 @@ const NotFoundPage = () => {
           {/* ── Inline event search hint ── */}
           <motion.div variants={itemVariants} className="w-full">
             <p className="mb-2 text-sm text-indigo-300">Looking for a specific event?</p>
-            <form onSubmit={handleSearch} className="flex gap-2" role="search" aria-label="Search events">
-              <label htmlFor="not-found-search" className="sr-only">Search events</label>
+            <form
+              onSubmit={handleSearch}
+              className="flex gap-2"
+              role="search"
+              aria-label="Search events"
+            >
+              <label htmlFor="not-found-search" className="sr-only">
+                Search events
+              </label>
               <input
                 id="not-found-search"
                 type="search"
@@ -206,7 +211,9 @@ const NotFoundPage = () => {
                 Search
               </button>
             </form>
-            <p id="search-hint" className="sr-only">Type an event name to be taken to the events page with results filtered.</p>
+            <p id="search-hint" className="sr-only">
+              Type an event name to be taken to the events page with results filtered.
+            </p>
           </motion.div>
         </motion.div>
       </section>

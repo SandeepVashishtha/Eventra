@@ -1,13 +1,13 @@
 /**
  * URL Utilities Module
- * 
+ *
  * Provides URL normalization and validation functions.
  */
 
 /**
  * Normalizes a backend URL by removing trailing slashes and /api suffix.
  * Ensures consistent URL format across the application.
- * 
+ *
  * @param {string} value - The URL to normalize
  * @returns {string} Normalized URL without trailing slashes or /api suffix
  */
@@ -34,7 +34,7 @@ export const normalizeBackendUrl = (value = "") => {
 
 /**
  * Validates that a URL string is properly formatted.
- * 
+ *
  * @param {string} value - The URL to validate
  * @returns {boolean} True if the URL is valid, false otherwise
  */

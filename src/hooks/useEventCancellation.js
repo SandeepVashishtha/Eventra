@@ -20,9 +20,9 @@ import { logger } from "../utils/logger";
  * Maps to backend enum values expected by POST /api/events/:id/cancel.
  */
 export const REFUND_POLICIES = {
-  FULL: "FULL",         // 100% refund to all paid registrants
-  PARTIAL: "PARTIAL",   // Partial refund (% defined by organizer)
-  NONE: "NONE",         // No refund issued
+  FULL: "FULL", // 100% refund to all paid registrants
+  PARTIAL: "PARTIAL", // Partial refund (% defined by organizer)
+  NONE: "NONE", // No refund issued
 };
 
 export const REFUND_POLICY_LABELS = {
@@ -95,15 +95,10 @@ const useEventCancellation = (eventId, onSuccess) => {
           cancelledAt: new Date().toISOString(),
         };
 
-        const res = await apiUtils.post(
-          API_ENDPOINTS.EVENTS.CANCEL(eventId),
-          payload
-        );
+        const res = await apiUtils.post(API_ENDPOINTS.EVENTS.CANCEL(eventId), payload);
 
         if (!res.ok) {
-          throw new Error(
-            res.data?.message || res.data?.error || "Failed to cancel the event."
-          );
+          throw new Error(res.data?.message || res.data?.error || "Failed to cancel the event.");
         }
 
         toast.success(

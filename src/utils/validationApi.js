@@ -14,11 +14,7 @@ const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
  * @param {Object} [extra={}] - Extra metadata such as API data, status, or error details.
  * @returns {{isValid: boolean, message: string, isLoading: boolean}} Normalized response.
  */
-export const createValidationResponse = (
-  isValid,
-  message = "",
-  extra = {},
-) => ({
+export const createValidationResponse = (isValid, message = "", extra = {}) => ({
   isValid: Boolean(isValid),
   message: isValid ? "" : message,
   isLoading: false,
@@ -52,11 +48,7 @@ export const validationLoadingResponse = (message = "Validating...") => ({
  */
 export const normalizeValidationApiResponse = (
   data,
-  {
-    validMessage = "",
-    invalidMessage = "Validation failed",
-    availabilityField = "available",
-  } = {},
+  { validMessage = "", invalidMessage = "Validation failed", availabilityField = "available" } = {}
 ) => {
   if (typeof data === "boolean") {
     return createValidationResponse(data, data ? validMessage : invalidMessage, {
@@ -78,7 +70,7 @@ export const normalizeValidationApiResponse = (
   return createValidationResponse(
     isValid,
     data?.message || (isValid ? validMessage : invalidMessage),
-    { data },
+    { data }
   );
 };
 
@@ -134,15 +126,12 @@ export const requestValidation = async (endpoint, options = {}) => {
         return value;
       });
     } catch (error) {
-      console.error(
-        "[validationApi] Failed to sanitize request payload",
-        {
-          endpoint,
-          method: method.toUpperCase(),
-          error: error.message,
-          stack: error.stack,
-        }
-      );
+      console.error("[validationApi] Failed to sanitize request payload", {
+        endpoint,
+        method: method.toUpperCase(),
+        error: error.message,
+        stack: error.stack,
+      });
       // Preserve original body if sanitization fails to maintain compatibility
       sanitizedBody = body;
     }
@@ -156,7 +145,7 @@ export const requestValidation = async (endpoint, options = {}) => {
       const config = { headers, signal: controller.signal };
       let response;
       const uppercaseMethod = method.toUpperCase();
-      
+
       if (uppercaseMethod === "GET") {
         response = await apiUtils.get(endpoint, config);
       } else if (uppercaseMethod === "POST") {
@@ -180,15 +169,12 @@ export const requestValidation = async (endpoint, options = {}) => {
       try {
         data = await response.json();
       } catch (error) {
-        console.error(
-          "[validationApi] Failed to parse JSON response",
-          {
-            endpoint,
-            method: method.toUpperCase(),
-            error: error.message,
-            stack: error.stack,
-          }
-        );
+        console.error("[validationApi] Failed to parse JSON response", {
+          endpoint,
+          method: method.toUpperCase(),
+          error: error.message,
+          stack: error.stack,
+        });
         data = null;
       }
 
@@ -206,19 +192,11 @@ export const requestValidation = async (endpoint, options = {}) => {
 
       // If the API explicitly returned an authentication or validation failure.
       if (status === 409) {
-        return createValidationResponse(
-          false,
-          invalidMessage,
-          { status, data }
-        );
+        return createValidationResponse(false, invalidMessage, { status, data });
       }
 
       if (status === 401 || status === 403) {
-        return createValidationResponse(
-          false,
-          networkMessage,
-          { status, data }
-        );
+        return createValidationResponse(false, networkMessage, { status, data });
       }
 
       // Retry on network errors, timeouts, or 5xx server errors
@@ -230,16 +208,12 @@ export const requestValidation = async (endpoint, options = {}) => {
   }
 
   const timedOut = lastError?.isTimeout || lastError?.name === "AbortError";
-  return createValidationResponse(
-    true,
-    "",
-    {
-      error: lastError,
-      isTimeout: timedOut,
-      isNetworkError: !timedOut,
-      skippedDueToError: true,
-    },
-  );
+  return createValidationResponse(true, "", {
+    error: lastError,
+    isTimeout: timedOut,
+    isNetworkError: !timedOut,
+    skippedDueToError: true,
+  });
 };
 
 /**
@@ -250,14 +224,11 @@ export const requestValidation = async (endpoint, options = {}) => {
  * @returns {Promise<{isValid: boolean, message: string, isLoading: boolean}>}
  */
 export const checkEmailAvailability = (email, options = {}) =>
-  requestValidation(
-    options.endpoint || `/api/validate/email/${encodeURIComponent(email)}`,
-    {
-      invalidMessage: "Email is already registered",
-      validMessage: "",
-      ...options,
-    },
-  );
+  requestValidation(options.endpoint || `/api/validate/email/${encodeURIComponent(email)}`, {
+    invalidMessage: "Email is already registered",
+    validMessage: "",
+    ...options,
+  });
 
 /**
  * Checks whether a username is available using the configured API endpoint.
@@ -267,15 +238,11 @@ export const checkEmailAvailability = (email, options = {}) =>
  * @returns {Promise<{isValid: boolean, message: string, isLoading: boolean}>}
  */
 export const checkUsernameAvailability = (username, options = {}) =>
-  requestValidation(
-    options.endpoint ||
-      `/api/validate/username/${encodeURIComponent(username)}`,
-    {
-      invalidMessage: "Username is already taken",
-      validMessage: "",
-      ...options,
-    },
-  );
+  requestValidation(options.endpoint || `/api/validate/username/${encodeURIComponent(username)}`, {
+    invalidMessage: "Username is already taken",
+    validMessage: "",
+    ...options,
+  });
 
 /**
  * Validates a phone number through the configured API endpoint.

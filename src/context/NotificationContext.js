@@ -1,7 +1,19 @@
-import { createContext, useContext, useCallback, useMemo, useEffect, useRef, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useCallback,
+  useMemo,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useAuth } from "./AuthContext";
 import useRealTimeConnection, { SSE_STATUS } from "../hooks/useRealTimeConnection";
-import { getNotificationCategory, getNotificationMessage, getNotificationTitle } from "../utils/notificationPreferences";
+import {
+  getNotificationCategory,
+  getNotificationMessage,
+  getNotificationTitle,
+} from "../utils/notificationPreferences";
 import { useNotificationPreferences } from "../hooks/useNotificationPreferences";
 import { usePushSubscription } from "../hooks/usePushSubscription";
 import { useNotificationDelivery } from "../hooks/useNotificationDelivery";
@@ -45,9 +57,15 @@ export const NotificationProvider = ({ children }) => {
   const { showBrowserNotification, deliverNew, markAsReadRef } =
     useNotificationDelivery(preferences);
   const {
-    notifications, unreadCount, loading,
-    fetchNotifications, markAsRead, markAllAsRead, deleteNotification,
-    applyList, seenIds,
+    notifications,
+    unreadCount,
+    loading,
+    fetchNotifications,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    applyList,
+    seenIds,
   } = useNotificationPoller(deliverNew, hasCompletedInitialFetch);
   const { achievements, fetchAchievements } = useAchievements();
 
@@ -61,15 +79,18 @@ export const NotificationProvider = ({ children }) => {
         deliverNew([n]);
       }
     },
-    [applyList, deliverNew, seenIds],
+    [applyList, deliverNew, seenIds]
   );
 
   const handleRealtimeMessage = useCallback(
     (data) => {
-      if (Array.isArray(data)) { data.forEach(ingestRealtime); return; }
+      if (Array.isArray(data)) {
+        data.forEach(ingestRealtime);
+        return;
+      }
       ingestRealtime(data?.notification || data);
     },
-    [ingestRealtime],
+    [ingestRealtime]
   );
 
   const { status: sseStatus } = useRealTimeConnection("/stream/notifications", {
@@ -87,19 +108,15 @@ export const NotificationProvider = ({ children }) => {
   }, [markAsRead, markAsReadRef]);
 
   const groupedNotifications = useMemo(
-    () => notifications.reduce((groups, n) => {
-      const cat = getNotificationCategory(n);
-      if (!groups[cat]) groups[cat] = [];
-      groups[cat].push(n);
-      return groups;
-    }, {}),
-    [notifications],
+    () =>
+      notifications.reduce((groups, n) => {
+        const cat = getNotificationCategory(n);
+        if (!groups[cat]) groups[cat] = [];
+        groups[cat].push(n);
+        return groups;
+      }, {}),
+    [notifications]
   );
-
-
-
-
-
 
   return (
     <NotificationContext.Provider

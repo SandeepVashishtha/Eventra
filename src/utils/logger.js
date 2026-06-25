@@ -9,12 +9,7 @@ export const isDevelopment = (() => {
     if (import.meta.env.DEV === true) return true;
     if (import.meta.env.PROD === true) return false;
   }
-  if (
-    typeof process !== "undefined" &&
-    process &&
-    process.env &&
-    process.env.NODE_ENV
-  ) {
+  if (typeof process !== "undefined" && process && process.env && process.env.NODE_ENV) {
     return process.env.NODE_ENV !== "production";
   }
   // In any other environment (SSR, edge runtime) default to true so logs surface.

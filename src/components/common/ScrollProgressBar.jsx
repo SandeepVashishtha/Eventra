@@ -26,7 +26,7 @@ const ScrollProgressBar = () => {
       }
 
       const progress = (scrollTop / scrollableHeight) * 100;
-      
+
       // Directly manipulate the DOM for zero-render performance
       progressBarRef.current.style.width = `${progress}%`;
       ticking = false;
@@ -44,7 +44,7 @@ const ScrollProgressBar = () => {
     window.addEventListener("scroll", handleUpdate, { passive: true });
     window.addEventListener("resize", handleUpdate, { passive: true });
 
-    // 🔥 FIX: Track internal layout shifts (accordions, lazy images) 
+    // 🔥 FIX: Track internal layout shifts (accordions, lazy images)
     // to ensure the math stays perfectly synced even if the user isn't scrolling
     const resizeObserver = new ResizeObserver(() => {
       handleUpdate();

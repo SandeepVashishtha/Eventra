@@ -61,7 +61,8 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
           Sign in to leave feedback
         </h3>
         <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
-          Your feedback helps event organizers improve future events. Please log in to share your experience.
+          Your feedback helps event organizers improve future events. Please log in to share your
+          experience.
         </p>
         <Link
           to="/login"
@@ -96,7 +97,8 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
       setSubmitted(true);
       toast.success("Feedback submitted! Thank you for sharing your thoughts.");
     } catch (err) {
-      const message = err?.data?.error || err?.message || "Failed to submit feedback. Please try again.";
+      const message =
+        err?.data?.error || err?.message || "Failed to submit feedback. Please try again.";
       toast.error(message);
     } finally {
       setIsSubmitting(false);
@@ -224,7 +226,8 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
                 Thank you for your feedback!
               </h4>
               <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto mt-2.5">
-                We&apos;ve received your submission. Your rating and comments have been shared with the event organizers.
+                We&apos;ve received your submission. Your rating and comments have been shared with
+                the event organizers.
               </p>
             </div>
           </motion.div>

@@ -9,8 +9,7 @@ const QUEUE_KEY = "eventra_form_retry_queue";
 // 🔥 FIX: single SSR guard, reused by every function. Previously each
 // accessor called localStorage directly without a typeof window check,
 // which crashed the module on any SSR import.
-const isStorageAvailable = () =>
-  typeof window !== "undefined" && Boolean(window.localStorage);
+const isStorageAvailable = () => typeof window !== "undefined" && Boolean(window.localStorage);
 
 export const saveFormData = (formId, data) => {
   if (!isStorageAvailable()) return false;

@@ -1,16 +1,9 @@
 const attempts = new Map();
 
-export const canAttempt = (
-  key,
-  limit = 5,
-  windowMs = 60_000
-) => {
+export const canAttempt = (key, limit = 5, windowMs = 60_000) => {
   const now = Date.now();
 
-  const previous =
-    attempts.get(key)?.filter(
-      (time) => now - time < windowMs
-    ) || [];
+  const previous = attempts.get(key)?.filter((time) => now - time < windowMs) || [];
 
   if (previous.length >= limit) {
     return false;
@@ -23,13 +16,8 @@ export const canAttempt = (
 };
 
 export const getBackoffDelay = (keyOrFailures) => {
-  const count = typeof keyOrFailures === 'string'
-    ? getFailureCount(keyOrFailures)
-    : keyOrFailures;
-  return Math.min(
-    1000 * Math.pow(2, count),
-    30_000
-  );
+  const count = typeof keyOrFailures === "string" ? getFailureCount(keyOrFailures) : keyOrFailures;
+  return Math.min(1000 * Math.pow(2, count), 30_000);
 };
 
 export const clearAttempts = (key) => {

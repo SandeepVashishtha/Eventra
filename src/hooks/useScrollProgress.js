@@ -33,7 +33,7 @@ export function useScrollProgress() {
 
   useEffect(() => {
     const update = () => {
-      if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+      if (typeof window !== "undefined" && typeof document !== "undefined") {
         const doc = document.documentElement;
         const scrollTop = window.scrollY || doc.scrollTop || 0;
         const height = doc.scrollHeight - window.innerHeight;
@@ -48,7 +48,7 @@ export function useScrollProgress() {
       rafRef.current = requestAnimationFrame(update);
     };
 
-    if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+    if (typeof window !== "undefined" && typeof document !== "undefined") {
       update();
       window.addEventListener("scroll", onScroll, { passive: true });
       window.addEventListener("resize", onScroll);
@@ -56,7 +56,7 @@ export function useScrollProgress() {
 
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         window.removeEventListener("scroll", onScroll);
         window.removeEventListener("resize", onScroll);
       }

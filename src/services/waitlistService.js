@@ -2,24 +2,24 @@ const API_URL = process.env.REACT_APP_API_URL;
 
 export const joinWaitlist = async (eventId, token) => {
   const response = await fetch(`${API_URL}/waitlist/join/${eventId}`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
   });
-  if (!response.ok) throw new Error('Failed to join waitlist');
+  if (!response.ok) throw new Error("Failed to join waitlist");
   return response.json();
 };
 
 export const leaveWaitlist = async (eventId, token) => {
   const response = await fetch(`${API_URL}/waitlist/leave/${eventId}`, {
-    method: 'DELETE',
+    method: "DELETE",
     headers: {
       Authorization: `Bearer ${token}`,
     },
   });
-  if (!response.ok) throw new Error('Failed to leave waitlist');
+  if (!response.ok) throw new Error("Failed to leave waitlist");
   return response.json();
 };
 

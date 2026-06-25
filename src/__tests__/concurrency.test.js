@@ -47,7 +47,13 @@ describe("createConcurrencyLimiter", () => {
 
   test("propagates errors from run", async () => {
     const limiter = createConcurrencyLimiter(5);
-    await assert.rejects(() => limiter.run(() => { throw new Error("test error"); }), /test error/);
+    await assert.rejects(
+      () =>
+        limiter.run(() => {
+          throw new Error("test error");
+        }),
+      /test error/
+    );
   });
 });
 
@@ -60,11 +66,7 @@ describe("runAll", () => {
   });
 
   test("runs all functions with concurrency limit", async () => {
-    const results = await runAll(2, [
-      () => 1,
-      () => 2,
-      () => 3,
-    ]);
+    const results = await runAll(2, [() => 1, () => 2, () => 3]);
     assert.deepStrictEqual(results, [1, 2, 3]);
   });
 
@@ -74,8 +76,14 @@ describe("runAll", () => {
   });
 
   test("propagates errors", async () => {
-    await assert.rejects(() => runAll(2, [
-      () => { throw new Error("fail"); },
-    ]), /fail/);
+    await assert.rejects(
+      () =>
+        runAll(2, [
+          () => {
+            throw new Error("fail");
+          },
+        ]),
+      /fail/
+    );
   });
 });

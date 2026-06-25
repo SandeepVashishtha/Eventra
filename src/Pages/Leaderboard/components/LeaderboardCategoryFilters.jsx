@@ -2,13 +2,26 @@ import { motion } from "framer-motion";
 
 const CATEGORY_FILTERS = [
   { id: "overall", label: "Overall Leaders", icon: "🏆", description: "All-time top contributors" },
-  { id: "monthly", label: "Monthly Stars", icon: "⭐", description: "This month's active contributors" },
-  { id: "mentors", label: "Project Mentors", icon: "🎓", description: "Guiding the next generation" },
+  {
+    id: "monthly",
+    label: "Monthly Stars",
+    icon: "⭐",
+    description: "This month's active contributors",
+  },
+  {
+    id: "mentors",
+    label: "Project Mentors",
+    icon: "🎓",
+    description: "Guiding the next generation",
+  },
 ];
 
 export default function LeaderboardCategoryFilters({ activeCategory, onCategoryChange }) {
   return (
-    <nav className="mb-8 flex flex-wrap items-center justify-center gap-3" aria-label="Leaderboard categories">
+    <nav
+      className="mb-8 flex flex-wrap items-center justify-center gap-3"
+      aria-label="Leaderboard categories"
+    >
       {CATEGORY_FILTERS.map((cat) => (
         <motion.button
           key={cat.id}

@@ -14,7 +14,7 @@ const ProgressStepper = ({ steps, currentStep }) => {
       <div className="relative mb-8">
         {/* Background Line */}
         <div className="absolute top-1/2 left-0 right-0 h-1 bg-gray-200 dark:bg-gray-700 rounded-full -translate-y-1/2" />
-        
+
         {/* Progress Fill */}
         <motion.div
           className="absolute top-1/2 left-0 h-1 bg-linear-to-r from-blue-600 to-indigo-600 rounded-full -translate-y-1/2"
@@ -28,7 +28,7 @@ const ProgressStepper = ({ steps, currentStep }) => {
         <div className="relative flex justify-between">
           {steps.map((step, index) => {
             const status = getStepStatus(index);
-            
+
             return (
               <div key={step.id} className="flex flex-col items-center">
                 {/* Step Circle */}
@@ -43,8 +43,8 @@ const ProgressStepper = ({ steps, currentStep }) => {
                       status === "completed"
                         ? "bg-green-500 border-green-500 text-white"
                         : status === "active"
-                        ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/30"
-                        : "bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-400"
+                          ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/30"
+                          : "bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-400"
                     }
                   `}
                 >
@@ -63,8 +63,8 @@ const ProgressStepper = ({ steps, currentStep }) => {
                       status === "active"
                         ? "text-blue-600 dark:text-blue-400"
                         : status === "completed"
-                        ? "text-green-600 dark:text-green-400"
-                        : "text-gray-500 dark:text-gray-400"
+                          ? "text-green-600 dark:text-green-400"
+                          : "text-gray-500 dark:text-gray-400"
                     }
                   `}
                 >
@@ -79,8 +79,7 @@ const ProgressStepper = ({ steps, currentStep }) => {
       {/* Progress Percentage */}
       <div className="text-center">
         <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-          Step {currentStep + 1} of {steps.length} -{" "}
-          {steps[currentStep]?.label}
+          Step {currentStep + 1} of {steps.length} - {steps[currentStep]?.label}
         </span>
       </div>
     </div>

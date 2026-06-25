@@ -1,7 +1,15 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
-import { ArrowRight, Pencil, CheckCircle, AlertCircle, Calendar, MapPin, Ticket as TicketIcon } from "lucide-react";
+import {
+  ArrowRight,
+  Pencil,
+  CheckCircle,
+  AlertCircle,
+  Calendar,
+  MapPin,
+  Ticket as TicketIcon,
+} from "lucide-react";
 import { API_ENDPOINTS, apiUtils } from "../config/api";
 
 import { useEventForm } from "../hooks/useEventForm";
@@ -108,7 +116,11 @@ const EventCreation = () => {
                 onSubmit={handlePreview}
                 // 🔥 FIX: Prevent the Enter key from prematurely submitting the form and throwing errors (except inside textareas or native buttons)
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'BUTTON') {
+                  if (
+                    e.key === "Enter" &&
+                    e.target.tagName !== "TEXTAREA" &&
+                    e.target.tagName !== "BUTTON"
+                  ) {
                     e.preventDefault();
                   }
                 }}
@@ -116,7 +128,9 @@ const EventCreation = () => {
               >
                 <section>
                   <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
-                    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 text-sm">1</span>
+                    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 text-sm">
+                      1
+                    </span>
                     Basic Information
                   </h2>
                   <EventBasicInfo
@@ -131,7 +145,9 @@ const EventCreation = () => {
 
                 <section>
                   <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
-                    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 text-sm">2</span>
+                    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 text-sm">
+                      2
+                    </span>
                     Media & Tags
                   </h2>
                   <EventMediaSection
@@ -150,7 +166,9 @@ const EventCreation = () => {
 
                 <section>
                   <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
-                    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 text-sm">3</span>
+                    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 text-sm">
+                      3
+                    </span>
                     Location & Time
                   </h2>
                   <EventLocationSection
@@ -166,7 +184,9 @@ const EventCreation = () => {
 
                 <section>
                   <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
-                    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 text-sm">4</span>
+                    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 text-sm">
+                      4
+                    </span>
                     Tickets
                   </h2>
                   <EventTicketSection
@@ -195,16 +215,19 @@ const EventCreation = () => {
                   </button>
                   {!isFormValid && (
                     <p className="text-center text-xs text-amber-600 dark:text-amber-400 mt-2 flex items-center justify-center gap-1">
-                      <span role="img" aria-label="info">ℹ️</span>
+                      <span role="img" aria-label="info">
+                        ℹ️
+                      </span>
                       Fill in all required fields to continue
                     </p>
                   )}
-                  <p
-                    className="text-center text-sm text-gray-500 mt-4 italic"
-                    aria-live="polite"
-                  >
+                  <p className="text-center text-sm text-gray-500 mt-4 italic" aria-live="polite">
                     Progress is auto-saved as you type ✨
-                    {lastSavedAt && <span className="block text-xs text-gray-400 mt-1">Last saved {formatDraftAge(lastSavedAt)}</span>}
+                    {lastSavedAt && (
+                      <span className="block text-xs text-gray-400 mt-1">
+                        Last saved {formatDraftAge(lastSavedAt)}
+                      </span>
+                    )}
                   </p>
                 </div>
               </form>
@@ -230,7 +253,12 @@ const EventCreation = () => {
                 {/* Banner Preview */}
                 <div className="relative h-72 bg-gray-200 dark:bg-gray-700">
                   {formData.bannerPreview ? (
-                    <img src={formData.bannerPreview} alt="Banner" className="w-full h-full object-cover"  loading="lazy"/>
+                    <img
+                      src={formData.bannerPreview}
+                      alt="Banner"
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-400">
                       No banner uploaded
@@ -238,7 +266,11 @@ const EventCreation = () => {
                   )}
                   <div className="absolute top-4 left-4">
                     <span className="px-4 py-1.5 bg-indigo-600 text-white text-sm font-bold rounded-full shadow-lg">
-                      {formData.category ? categories.find(c => (c.id === formData.category || c.value === formData.category))?.label : "General"}
+                      {formData.category
+                        ? categories.find(
+                            (c) => c.id === formData.category || c.value === formData.category
+                          )?.label
+                        : "General"}
                     </span>
                   </div>
                 </div>
@@ -250,8 +282,13 @@ const EventCreation = () => {
                     </h2>
                     <div className="flex flex-wrap gap-2">
                       {/* 🔥 FIX: Added fallback array to prevent .map TypeError crashes if data is missing */}
-                      {(formData.tags || []).map(tag => (
-                        <span key={tag} className="text-indigo-600 dark:text-indigo-400 text-sm font-medium">#{tag}</span>
+                      {(formData.tags || []).map((tag) => (
+                        <span
+                          key={tag}
+                          className="text-indigo-600 dark:text-indigo-400 text-sm font-medium"
+                        >
+                          #{tag}
+                        </span>
                       ))}
                     </div>
                   </div>
@@ -265,8 +302,12 @@ const EventCreation = () => {
                       <Calendar className="w-6 h-6 text-indigo-500 mt-1" />
                       <div>
                         <p className="text-sm text-gray-500">Date & Time</p>
-                        <p className="font-bold text-gray-900 dark:text-white">{formatDate(formData.date || formData.startDate)}</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">{formatTime(formData.startTime)} - {formatTime(formData.endTime)}</p>
+                        <p className="font-bold text-gray-900 dark:text-white">
+                          {formatDate(formData.date || formData.startDate)}
+                        </p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {formatTime(formData.startTime)} - {formatTime(formData.endTime)}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-2xl">
@@ -277,7 +318,11 @@ const EventCreation = () => {
                           {/* 🔥 FIX: Added optional chaining and fallback to prevent Cannot read property 'name' crashes */}
                           {formData.isVirtual ? "Virtual Event" : formData.location?.name || "TBD"}
                         </p>
-                        {!formData.isVirtual && <p className="text-sm text-gray-600 dark:text-gray-400">{formData.location?.city || formData.location?.address}</p>}
+                        {!formData.isVirtual && (
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {formData.location?.city || formData.location?.address}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -290,14 +335,19 @@ const EventCreation = () => {
                     <div className="space-y-3">
                       {/* 🔥 FIX: Added fallback array to prevent .map TypeError crashes if data is missing */}
                       {(formData.ticketTiers || []).map((tier, i) => (
-                        <div key={i} className="flex justify-between items-center p-4 border border-gray-100 dark:border-gray-700 rounded-xl">
+                        <div
+                          key={i}
+                          className="flex justify-between items-center p-4 border border-gray-100 dark:border-gray-700 rounded-xl"
+                        >
                           <div>
                             <p className="font-bold text-gray-900 dark:text-white">{tier.name}</p>
                             <p className="text-sm text-gray-500">{tier.description}</p>
                           </div>
                           <div className="text-right">
                             <p className="text-xl font-black text-indigo-600">₹{tier.price}</p>
-                            <p className="text-xs text-gray-400">{tier.capacity ? `${tier.capacity} spots` : "Unlimited"}</p>
+                            <p className="text-xs text-gray-400">
+                              {tier.capacity ? `${tier.capacity} spots` : "Unlimited"}
+                            </p>
                           </div>
                         </div>
                       ))}

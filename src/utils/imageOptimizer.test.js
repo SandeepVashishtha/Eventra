@@ -8,8 +8,7 @@ const HTTP_URL = "https://example.com/images/hero.jpg";
 const RELATIVE_URL = "/images/hero.jpg";
 const BLOB_URL = "blob:https://eventra.app/abc-123";
 const DATA_URI = "data:image/png;base64,abc123==";
-const CLOUDINARY_URL =
-  "https://res.cloudinary.com/demo/image/upload/v1/hero.jpg";
+const CLOUDINARY_URL = "https://res.cloudinary.com/demo/image/upload/v1/hero.jpg";
 
 // ---------------------------------------------------------------------------
 // getOptimizedImageUrl

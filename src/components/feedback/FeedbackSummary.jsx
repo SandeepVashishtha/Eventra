@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
-import { Star, Users, BarChart3 } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { Star, Users, BarChart3 } from "lucide-react";
 import {
   getAverageRating,
   getRecommendationStats,
   getTagStats,
   getRatingBreakdown,
-} from '../../utils/feedbackUtils';
+} from "../../utils/feedbackUtils";
 
 /**
  * FeedbackSummary Component
@@ -70,8 +70,8 @@ const FeedbackSummary = ({ eventId, compact = false }) => {
                   key={i}
                   className={`w-4 h-4 ${
                     i < Math.round(averageRating.average)
-                      ? 'fill-yellow-400 text-yellow-500'
-                      : 'fill-gray-300 text-gray-400'
+                      ? "fill-yellow-400 text-yellow-500"
+                      : "fill-gray-300 text-gray-400"
                   }`}
                 />
               ))}
@@ -80,22 +80,19 @@ const FeedbackSummary = ({ eventId, compact = false }) => {
 
           <div className="flex-1">
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-              Based on {averageRating.count} review{averageRating.count !== 1 ? 's' : ''}
+              Based on {averageRating.count} review{averageRating.count !== 1 ? "s" : ""}
             </p>
 
             {/* Rating Distribution */}
             <div className="space-y-2">
               {[5, 4, 3, 2, 1].map((stars) => {
                 const count = ratingBreakdown ? ratingBreakdown[stars] : 0;
-                const percentage = averageRating.count > 0
-                  ? Math.round((count / averageRating.count) * 100)
-                  : 0;
+                const percentage =
+                  averageRating.count > 0 ? Math.round((count / averageRating.count) * 100) : 0;
 
                 return (
                   <div key={stars} className="flex items-center gap-2">
-                    <span className="text-xs text-gray-600 dark:text-gray-400 w-8">
-                      {stars}★
-                    </span>
+                    <span className="text-xs text-gray-600 dark:text-gray-400 w-8">{stars}★</span>
                     <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-linear-to-r from-yellow-400 to-yellow-500 rounded-full transition-all"

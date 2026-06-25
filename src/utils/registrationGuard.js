@@ -7,8 +7,7 @@
 const REGISTRY_KEY = "eventra_registrations";
 
 // 🔥 FIX: single SSR guard, reused by getRegistry / saveRegistry.
-const isStorageAvailable = () =>
-  typeof window !== "undefined" && Boolean(window.localStorage);
+const isStorageAvailable = () => typeof window !== "undefined" && Boolean(window.localStorage);
 
 const getRegistry = () => {
   if (!isStorageAvailable()) return {};

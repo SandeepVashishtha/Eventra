@@ -21,11 +21,41 @@ import useAnalytics from "../../hooks/useAnalytics";
 // CONSTANTS & FALLBACK DATA
 // =========================================================================
 const MOCK_CHECKINS = [
-  { id: "c1", name: "Ananya Iyer", event: "Web Dev Workshop", time: "2 mins ago", status: "Verified" },
-  { id: "c2", name: "Kunal Sen", event: "AI & ML Bootcamp", time: "5 mins ago", status: "Verified" },
-  { id: "c3", name: "Sara Khan", event: "React Conference 2025", time: "12 mins ago", status: "Verified" },
-  { id: "c4", name: "Neil Verma", event: "Hack for Sustainability", time: "18 mins ago", status: "Flagged" },
-  { id: "c5", name: "Diya Roy", event: "Global AI Hackathon", time: "24 mins ago", status: "Verified" },
+  {
+    id: "c1",
+    name: "Ananya Iyer",
+    event: "Web Dev Workshop",
+    time: "2 mins ago",
+    status: "Verified",
+  },
+  {
+    id: "c2",
+    name: "Kunal Sen",
+    event: "AI & ML Bootcamp",
+    time: "5 mins ago",
+    status: "Verified",
+  },
+  {
+    id: "c3",
+    name: "Sara Khan",
+    event: "React Conference 2025",
+    time: "12 mins ago",
+    status: "Verified",
+  },
+  {
+    id: "c4",
+    name: "Neil Verma",
+    event: "Hack for Sustainability",
+    time: "18 mins ago",
+    status: "Flagged",
+  },
+  {
+    id: "c5",
+    name: "Diya Roy",
+    event: "Global AI Hackathon",
+    time: "24 mins ago",
+    status: "Verified",
+  },
 ];
 
 const INITIAL_HOURLY_DATA = [
@@ -100,7 +130,7 @@ const AnalyticsDashboard = () => {
   const [hourlyData, setHourlyData] = useState(INITIAL_HOURLY_DATA);
   const [liveCount, setLiveCount] = useState(getInitialLiveCount);
   const [activeCheckinsPerMinute, setActiveCheckinsPerMinute] = useState(5.4);
-  const [activeTab] = useState('analytics');
+  const [activeTab] = useState("analytics");
 
   const categoryData = analytics?.categoryBreakdown || FALLBACK_CATEGORY_DATA;
 
@@ -113,34 +143,42 @@ const AnalyticsDashboard = () => {
    * Unified Analytical State Consumer pipeline.
    * Maps ingested data contract structure cleanly to the UI state.
    */
-  const processIncomingCheckin = useCallback((checkinPayload) => {
-    const { meta, ...cleanCheckinData } = checkinPayload;
-    const hourlyIncrement = meta?.hourlyIncrement ?? 1;
-    const velocityDelta = meta?.velocityDelta ?? parseFloat((Math.random() * 0.4 - 0.2).toFixed(1));
+  const processIncomingCheckin = useCallback(
+    (checkinPayload) => {
+      const { meta, ...cleanCheckinData } = checkinPayload;
+      const hourlyIncrement = meta?.hourlyIncrement ?? 1;
+      const velocityDelta =
+        meta?.velocityDelta ?? parseFloat((Math.random() * 0.4 - 0.2).toFixed(1));
 
-    setCheckins((prev) => [cleanCheckinData, ...prev.slice(0, 4)]);
-    setLiveCount((prev) => prev + hourlyIncrement);
-    setActiveCheckinsPerMinute((prev) => parseFloat((prev + velocityDelta).toFixed(1)));
-    setHourlyData((prev) => {
-      const updated = [...prev];
-      const lastIndex = updated.length - 1;
-      if (lastIndex >= 0) {
-        updated[lastIndex] = {
-          ...updated[lastIndex],
-          checkins: updated[lastIndex].checkins + hourlyIncrement,
-        };
+      setCheckins((prev) => [cleanCheckinData, ...prev.slice(0, 4)]);
+      setLiveCount((prev) => prev + hourlyIncrement);
+      setActiveCheckinsPerMinute((prev) => parseFloat((prev + velocityDelta).toFixed(1)));
+      setHourlyData((prev) => {
+        const updated = [...prev];
+        const lastIndex = updated.length - 1;
+        if (lastIndex >= 0) {
+          updated[lastIndex] = {
+            ...updated[lastIndex],
+            checkins: updated[lastIndex].checkins + hourlyIncrement,
+          };
+        }
+        return updated;
+      });
+
+      if (cleanCheckinData.status === "Flagged") {
+        toast.warning(`⚠️ Security Alert: Flagged entry attempt from ${cleanCheckinData.name}`);
+      } else if (String(cleanCheckinData.id).includes("manual")) {
+        toast.success(
+          `🚀 Simulator: Successfully injected real-time check-in record for ${cleanCheckinData.name}!`
+        );
+      } else {
+        toast.info(
+          `🔔 Check-in Verified: ${cleanCheckinData.name} matched to ${cleanCheckinData.event}`
+        );
       }
-      return updated;
-    });
-
-    if (cleanCheckinData.status === "Flagged") {
-      toast.warning(`⚠️ Security Alert: Flagged entry attempt from ${cleanCheckinData.name}`);
-    } else if (String(cleanCheckinData.id).includes("manual")) {
-      toast.success(`🚀 Simulator: Successfully injected real-time check-in record for ${cleanCheckinData.name}!`);
-    } else {
-      toast.info(`🔔 Check-in Verified: ${cleanCheckinData.name} matched to ${cleanCheckinData.event}`);
-    }
-  }, [setCheckins]);
+    },
+    [setCheckins]
+  );
 
   // Process real-time SSE stream
   useEffect(() => {
@@ -158,12 +196,23 @@ const AnalyticsDashboard = () => {
   useEffect(() => {
     if (isStreamActive) return;
     const checkinNames = [
-      "Aditya Rao", "Ishaan Roy", "Meera Nair", "Rohan Das", "Zoya Ali",
-      "Aryan Joshi", "Tanya Sen", "Kabir Dutt", "Riya Pillai", "Aravind Swami",
+      "Aditya Rao",
+      "Ishaan Roy",
+      "Meera Nair",
+      "Rohan Das",
+      "Zoya Ali",
+      "Aryan Joshi",
+      "Tanya Sen",
+      "Kabir Dutt",
+      "Riya Pillai",
+      "Aravind Swami",
     ];
     const checkinEvents = [
-      "Web Dev Workshop", "Global AI Hackathon", "AI & ML Bootcamp",
-      "React Conference 2025", "Hack for Sustainability",
+      "Web Dev Workshop",
+      "Global AI Hackathon",
+      "AI & ML Bootcamp",
+      "React Conference 2025",
+      "Hack for Sustainability",
     ];
 
     const interval = setInterval(() => {
@@ -202,11 +251,7 @@ const AnalyticsDashboard = () => {
     }, 12000);
 
     return () => clearInterval(interval);
-  }, [isStreamActive,
-  setCheckins,
-  setLiveCount,
-  setActiveCheckinsPerMinute,
-  setHourlyData,]);
+  }, [isStreamActive, setCheckins, setLiveCount, setActiveCheckinsPerMinute, setHourlyData]);
 
   // Manual check-in trigger
   const triggerManualCheckin = () => {
@@ -233,7 +278,9 @@ const AnalyticsDashboard = () => {
       return updated;
     });
 
-    toast.success(`🚀 Simulator: Successfully injected real-time check-in record for ${randomName}!`);
+    toast.success(
+      `🚀 Simulator: Successfully injected real-time check-in record for ${randomName}!`
+    );
   };
 
   return (
@@ -243,7 +290,8 @@ const AnalyticsDashboard = () => {
         <button
           onClick={triggerManualCheckin}
           className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow-md transition self-start sm:self-auto"
-         aria-label="Trigger manual check-in scan">
+          aria-label="Trigger manual check-in scan"
+        >
           <Play className="w-3.5 h-3.5 fill-white" />
           Trigger Check-in Scan
         </button>
@@ -260,7 +308,8 @@ const AnalyticsDashboard = () => {
                 Simulate Attendee Traffic
               </h3>
               <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                Trigger simulated QR scans, face-matching credentials, and checked-in attendee counts instantly.
+                Trigger simulated QR scans, face-matching credentials, and checked-in attendee
+                counts instantly.
               </p>
             </div>
             <button
@@ -300,7 +349,10 @@ const AnalyticsDashboard = () => {
               {
                 label: "Security Health",
                 value: analytics?.securityHealth ?? "99.8%",
-                sub: analytics?.activeAlerts === 0 ? "Zero active alerts" : `${analytics?.activeAlerts} active alert(s)`,
+                sub:
+                  analytics?.activeAlerts === 0
+                    ? "Zero active alerts"
+                    : `${analytics?.activeAlerts} active alert(s)`,
                 icon: <CheckCircle2 className="w-5 h-5" />,
                 color: "text-rose-500 bg-rose-50 dark:bg-rose-950/40",
               },
@@ -338,7 +390,13 @@ const AnalyticsDashboard = () => {
                         <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <XAxis dataKey="hour" stroke="#888888" fontSize={11} tickLine={false} axisLine={false} />
+                    <XAxis
+                      dataKey="hour"
+                      stroke="#888888"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                    />
                     <YAxis stroke="#888888" fontSize={11} tickLine={false} axisLine={false} />
                     <Tooltip
                       contentStyle={{

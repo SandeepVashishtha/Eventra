@@ -8,15 +8,15 @@
  */
 
 /** sessionStorage key names for persisted rate-limit state. */
-export const STORAGE_KEY_ATTEMPTS = 'eventra:login:attempts';
-export const STORAGE_KEY_LOCKOUT_UNTIL = 'eventra:login:lockoutUntil';
+export const STORAGE_KEY_ATTEMPTS = "eventra:login:attempts";
+export const STORAGE_KEY_LOCKOUT_UNTIL = "eventra:login:lockoutUntil";
 
 /**
  * sessionStorage key for the last password-reset submission timestamp (ms).
  * Persisting this across page refreshes prevents the 60-second cooldown from
  * being bypassed by simply reloading the page (Issue #5720).
  */
-export const STORAGE_KEY_RESET_LAST_SUBMIT = 'eventra:resetPwd:lastSubmit';
+export const STORAGE_KEY_RESET_LAST_SUBMIT = "eventra:resetPwd:lastSubmit";
 
 /** Maximum number of failed login attempts before a lockout is imposed. */
 export const MAX_LOGIN_ATTEMPTS = 5;
@@ -39,9 +39,8 @@ export function readPersistedRateLimit() {
     if (!Number.isFinite(attempts) || attempts < 0) return { attempts: 0, lockoutUntil: 0 };
 
     // Discard expired lockouts — don't start with a stale "locked" state
-    const validLockout = Number.isFinite(lockoutUntil) && lockoutUntil > Date.now()
-      ? lockoutUntil
-      : 0;
+    const validLockout =
+      Number.isFinite(lockoutUntil) && lockoutUntil > Date.now() ? lockoutUntil : 0;
 
     return { attempts, lockoutUntil: validLockout };
   } catch {
@@ -137,7 +136,7 @@ export function getBackoffDelay(attempts) {
  * @returns {string} E.g. "29s", "1m 4s".
  */
 export function formatCountdown(remainingMs) {
-  if (remainingMs <= 0) return '0s';
+  if (remainingMs <= 0) return "0s";
   const totalSeconds = Math.ceil(remainingMs / 1000);
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;

@@ -15,9 +15,7 @@ const StatusFilter = ({ statuses, selectedStatuses, onStatusChange }) => {
 
   return (
     <div className="space-y-2">
-      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
-        Event Status
-      </h3>
+      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Event Status</h3>
       <div className="grid grid-cols-1 gap-2">
         {statuses.map((status) => (
           <button
@@ -36,9 +34,7 @@ const StatusFilter = ({ statuses, selectedStatuses, onStatusChange }) => {
                   : "border-gray-400 dark:border-gray-500"
               }`}
             >
-              {selectedStatuses.includes(status.id) && (
-                <Check size={12} className="text-white" />
-              )}
+              {selectedStatuses.includes(status.id) && <Check size={12} className="text-white" />}
             </div>
             <span className="flex-1">{status.label}</span>
           </button>

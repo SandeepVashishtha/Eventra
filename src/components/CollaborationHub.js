@@ -1,52 +1,87 @@
 import StatusBadge from "./common/StatusBadge";
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useReducedMotion } from '../hooks/useReducedMotion';
-import useDebounce from '../hooks/useDebounce.js';
-import { toast } from 'react-toastify';
-import './components.css';
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useReducedMotion } from "../hooks/useReducedMotion";
+import useDebounce from "../hooks/useDebounce.js";
+import { toast } from "react-toastify";
+import "./components.css";
 import CharacterCounter from "./common/CharacterCounter";
 import { sanitizeInputText } from "../utils/inputSanitization";
 import EventMaterials from "./common/EventMaterials";
-import { Plus, Search, Check, X, Briefcase as BriefcaseIcon, DollarSign, Calendar, Users, Send, MessageCircle } from 'lucide-react';
-import CollaborativeWhiteboard from './common/CollaborativeWhiteboard';
+import {
+  Plus,
+  Search,
+  Check,
+  X,
+  Briefcase as BriefcaseIcon,
+  DollarSign,
+  Calendar,
+  Users,
+  Send,
+  MessageCircle,
+} from "lucide-react";
+import CollaborativeWhiteboard from "./common/CollaborativeWhiteboard";
 import { safeJsonParse } from "../utils/safeJsonParse";
-
 
 const CollaborationHub = () => {
   const prefersReducedMotion = useReducedMotion();
-  const [activeSection, setActiveSection] = useState('opportunities');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [activeSection, setActiveSection] = useState("opportunities");
+  const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   const mockMaterials = [
-    { id: 'slides-1', title: 'Tech Summit 2025 Keynote Presentation', type: 'ppt', size: '14.2 MB', url: '#' },
-    { id: 'code-1', title: 'Collaboration Hub Prototype Core Source', type: 'doc', size: '42.5 MB', url: '#' },
-    { id: 'deps-1', title: 'Hackathon Node Modules Pre-packaged Bundle', type: 'pdf', size: '84.1 MB', url: '#' }
+    {
+      id: "slides-1",
+      title: "Tech Summit 2025 Keynote Presentation",
+      type: "ppt",
+      size: "14.2 MB",
+      url: "#",
+    },
+    {
+      id: "code-1",
+      title: "Collaboration Hub Prototype Core Source",
+      type: "doc",
+      size: "42.5 MB",
+      url: "#",
+    },
+    {
+      id: "deps-1",
+      title: "Hackathon Node Modules Pre-packaged Bundle",
+      type: "pdf",
+      size: "84.1 MB",
+      url: "#",
+    },
   ];
-  const [filterType, setFilterType] = useState('All');
+  const [filterType, setFilterType] = useState("All");
   const [selectedOpportunity, setSelectedOpportunity] = useState(null);
-  const [applicationText, setApplicationText] = useState('');
+  const [applicationText, setApplicationText] = useState("");
   const [proposalFile, setProposalFile] = useState(null);
 
   const [newRequest, setNewRequest] = useState({
-    title: '',
-    type: '',
-    description: '',
-    budget: '',
-    deadline: '',
-    skills: ''
+    title: "",
+    type: "",
+    description: "",
+    budget: "",
+    deadline: "",
+    skills: "",
   });
 
   const handleRequestChange = (e) => {
     const { name, value } = e.target;
-    setNewRequest(prev => ({ ...prev, [name]: value }));
+    setNewRequest((prev) => ({ ...prev, [name]: value }));
   };
 
   const OPPORTUNITY_SCHEMA = {
-    id: "number", title: "string", organizer: "string", type: "string",
-    description: "string", skills: "array", budget: "string",
-    deadline: "string", applicants: "number", status: "string",
+    id: "number",
+    title: "string",
+    organizer: "string",
+    type: "string",
+    description: "string",
+    skills: "array",
+    budget: "string",
+    deadline: "string",
+    applicants: "number",
+    status: "string",
   };
 
   const validateOpportunity = (item) => {
@@ -55,10 +90,16 @@ const CollaborationHub = () => {
     for (const [key, type] of Object.entries(OPPORTUNITY_SCHEMA)) {
       const val = item[key];
       if (val === undefined || val === null) continue;
-      if (type === "number") { valid[key] = Number(val); if (isNaN(valid[key])) valid[key] = 0; }
-      else if (type === "array") { valid[key] = Array.isArray(val) ? val : []; }
-      else if (type === "string") { valid[key] = String(val); }
-      else { valid[key] = val; }
+      if (type === "number") {
+        valid[key] = Number(val);
+        if (isNaN(valid[key])) valid[key] = 0;
+      } else if (type === "array") {
+        valid[key] = Array.isArray(val) ? val : [];
+      } else if (type === "string") {
+        valid[key] = String(val);
+      } else {
+        valid[key] = val;
+      }
     }
     return valid;
   };
@@ -66,7 +107,7 @@ const CollaborationHub = () => {
   const [collaborationOpportunities, setCollaborationOpportunities] = useState(() => {
     let saved;
     try {
-      saved = localStorage.getItem('eventra_collaboration_opportunities');
+      saved = localStorage.getItem("eventra_collaboration_opportunities");
     } catch {
       // localStorage unavailable (private browsing, quota exceeded, etc.)
     }
@@ -86,12 +127,13 @@ const CollaborationHub = () => {
         title: "Tech Summit 2025 Partnership",
         organizer: "TechCorp Inc.",
         type: "Sponsorship",
-        description: "Looking for event technology partners for our annual tech summit. Great exposure opportunity.",
+        description:
+          "Looking for event technology partners for our annual tech summit. Great exposure opportunity.",
         skills: ["Event Management", "Technology", "Marketing"],
         budget: "$10,000 - $25,000",
         deadline: "2025-08-15",
         applicants: 12,
-        status: "open"
+        status: "open",
       },
       {
         id: 2,
@@ -103,36 +145,42 @@ const CollaborationHub = () => {
         budget: "Revenue Share",
         deadline: "2025-08-20",
         applicants: 8,
-        status: "open"
+        status: "open",
       },
       {
         id: 3,
         title: "Startup Pitch Event",
         organizer: "Innovation Hub",
         type: "Venue Partnership",
-        description: "Partner with us to provide venue and networking space for monthly startup pitch events.",
+        description:
+          "Partner with us to provide venue and networking space for monthly startup pitch events.",
         skills: ["Venue Management", "Networking", "Startup Ecosystem"],
         budget: "$5,000 - $8,000",
         deadline: "2025-08-10",
         applicants: 15,
-        status: "urgent"
-      }
+        status: "urgent",
+      },
     ];
   });
 
   const handleRequestSubmit = (e) => {
     e.preventDefault();
     if (!newRequest.title.trim() || !newRequest.type || !newRequest.description.trim()) {
-      toast.error('Please fill in all required fields (Title, Type, and Description)');
+      toast.error("Please fill in all required fields (Title, Type, and Description)");
       return;
     }
 
     const sanitizedTitle = sanitizeInputText(newRequest.title);
     const sanitizedDescription = sanitizeInputText(newRequest.description);
-    const sanitizedBudget = newRequest.budget ? sanitizeInputText(newRequest.budget) : "Not Specified";
+    const sanitizedBudget = newRequest.budget
+      ? sanitizeInputText(newRequest.budget)
+      : "Not Specified";
 
     const skillsArray = newRequest.skills
-      ? newRequest.skills.split(',').map(s => sanitizeInputText(s)).filter(s => s.length > 0)
+      ? newRequest.skills
+          .split(",")
+          .map((s) => sanitizeInputText(s))
+          .filter((s) => s.length > 0)
       : [];
 
     const newOpp = {
@@ -143,37 +191,40 @@ const CollaborationHub = () => {
       description: sanitizedDescription,
       skills: skillsArray,
       budget: sanitizedBudget,
-      deadline: newRequest.deadline || new Date().toISOString().split('T')[0],
+      deadline: newRequest.deadline || new Date().toISOString().split("T")[0],
       applicants: 0,
-      status: "open"
+      status: "open",
     };
 
     const updatedOpportunities = [newOpp, ...collaborationOpportunities];
     setCollaborationOpportunities(updatedOpportunities);
-    localStorage.setItem('eventra_collaboration_opportunities', JSON.stringify(updatedOpportunities));
+    localStorage.setItem(
+      "eventra_collaboration_opportunities",
+      JSON.stringify(updatedOpportunities)
+    );
 
-    toast.success('Collaboration request created successfully!');
+    toast.success("Collaboration request created successfully!");
     setNewRequest({
-      title: '',
-      type: '',
-      description: '',
-      budget: '',
-      deadline: '',
-      skills: ''
+      title: "",
+      type: "",
+      description: "",
+      budget: "",
+      deadline: "",
+      skills: "",
     });
-    setActiveSection('opportunities');
+    setActiveSection("opportunities");
   };
 
   const handleApplySubmit = (e) => {
     e.preventDefault();
     if (!applicationText.trim()) {
-      toast.error('Please enter a proposal message.');
+      toast.error("Please enter a proposal message.");
       return;
     }
 
     // Sanitize user proposal pitch text
-    toast.success('Your partnership proposal has been submitted successfully!');
-    setApplicationText('');
+    toast.success("Your partnership proposal has been submitted successfully!");
+    setApplicationText("");
     setProposalFile(null);
     setSelectedOpportunity(null);
   };
@@ -186,7 +237,7 @@ const CollaborationHub = () => {
       status: "active",
       nextMeeting: "2025-08-05",
       progress: 75,
-      tasks: ["Finalize speakers", "Marketing campaign", "Venue setup"]
+      tasks: ["Finalize speakers", "Marketing campaign", "Venue setup"],
     },
     {
       id: 2,
@@ -195,8 +246,8 @@ const CollaborationHub = () => {
       status: "planning",
       nextMeeting: "2025-08-08",
       progress: 45,
-      tasks: ["Curriculum design", "Instructor recruitment", "Platform setup"]
-    }
+      tasks: ["Curriculum design", "Instructor recruitment", "Platform setup"],
+    },
   ];
 
   const networkingRequests = [
@@ -207,7 +258,7 @@ const CollaborationHub = () => {
       company: "Global Events Ltd.",
       message: "Hi! I'd love to connect and discuss potential collaboration opportunities.",
       skills: ["Project Management", "Corporate Events", "International Relations"],
-      avatar: "👩‍💼"
+      avatar: "👩‍💼",
     },
     {
       id: 2,
@@ -216,12 +267,12 @@ const CollaborationHub = () => {
       company: "StartupLab",
       message: "Interested in partnering for tech-focused events in the Asia-Pacific region.",
       skills: ["Technology", "Startups", "Innovation"],
-      avatar: "👨‍💻"
-    }
+      avatar: "👨‍💻",
+    },
   ];
 
   // 🔥 FIX: Added safe date formatter to prevent RangeError crashes
-  const safeFormatDate = (dateStr, options = { month: 'short', day: 'numeric' }) => {
+  const safeFormatDate = (dateStr, options = { month: "short", day: "numeric" }) => {
     if (!dateStr) return "TBD";
     const d = new Date(dateStr);
     return isNaN(d.getTime()) ? "TBD" : d.toLocaleDateString(undefined, options);
@@ -235,9 +286,10 @@ const CollaborationHub = () => {
       (opp.title?.toLowerCase() || "").includes(query) ||
       (opp.description?.toLowerCase() || "").includes(query) ||
       (opp.organizer?.toLowerCase() || "").includes(query) ||
-      (Array.isArray(opp.skills) && opp.skills.some(skill => skill?.toLowerCase().includes(query)));
+      (Array.isArray(opp.skills) &&
+        opp.skills.some((skill) => skill?.toLowerCase().includes(query)));
 
-    const matchesType = filterType === 'All' || opp.type === filterType;
+    const matchesType = filterType === "All" || opp.type === filterType;
     return matchesSearch && matchesType;
   });
 
@@ -247,7 +299,8 @@ const CollaborationHub = () => {
       (req.name?.toLowerCase() || "").includes(query) ||
       (req.role?.toLowerCase() || "").includes(query) ||
       (req.company?.toLowerCase() || "").includes(query) ||
-      (Array.isArray(req.skills) && req.skills.some(skill => skill?.toLowerCase().includes(query)))
+      (Array.isArray(req.skills) &&
+        req.skills.some((skill) => skill?.toLowerCase().includes(query)))
     );
   });
 
@@ -274,26 +327,26 @@ const CollaborationHub = () => {
         className="collaboration-tabs max-w-4xl mx-auto flex gap-2 justify-center mb-10 p-2 bg-slate-100 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-800"
       >
         {[
-          { id: 'opportunities', name: 'Opportunities', icon: '🎯' },
-          { id: 'my-collaborations', name: 'My Collaborations', icon: '🤝' },
-          { id: 'networking', name: 'Networking', icon: '🌐' },
-          { id: 'materials', name: 'Shared Materials', icon: '📚' },
-          { id: 'whiteboard', name: 'Collaborative Whiteboard', icon: '🎨' },
-          { id: 'create-request', name: 'Create Request', icon: '➕' }
-
+          { id: "opportunities", name: "Opportunities", icon: "🎯" },
+          { id: "my-collaborations", name: "My Collaborations", icon: "🤝" },
+          { id: "networking", name: "Networking", icon: "🌐" },
+          { id: "materials", name: "Shared Materials", icon: "📚" },
+          { id: "whiteboard", name: "Collaborative Whiteboard", icon: "🎨" },
+          { id: "create-request", name: "Create Request", icon: "➕" },
         ].map((tab) => (
           <button
             key={tab.id}
             role="tab"
             aria-selected={activeSection === tab.id}
             aria-label={`${tab.name} section`}
-            className={`tab-button flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeSection === tab.id
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
-              }`}
+            className={`tab-button flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+              activeSection === tab.id
+                ? "bg-indigo-600 text-white shadow-md"
+                : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+            }`}
             onClick={() => {
               setActiveSection(tab.id);
-              setSearchQuery('');
+              setSearchQuery("");
             }}
           >
             <span aria-hidden="true">{tab.icon}</span>
@@ -310,36 +363,56 @@ const CollaborationHub = () => {
         transition={{ duration: prefersReducedMotion ? 0 : 0.3 }}
         className="tab-content"
       >
-        {activeSection === 'materials' && (
-          <div className="materials-section max-w-4xl mx-auto px-4" style={{ width: "100%", maxWidth: "56rem", margin: "0 auto", paddingLeft: "1rem", paddingRight: "1rem" }}>
+        {activeSection === "materials" && (
+          <div
+            className="materials-section max-w-4xl mx-auto px-4"
+            style={{
+              width: "100%",
+              maxWidth: "56rem",
+              margin: "0 auto",
+              paddingLeft: "1rem",
+              paddingRight: "1rem",
+            }}
+          >
             <EventMaterials materials={mockMaterials} />
           </div>
         )}
 
-        {activeSection === 'whiteboard' && (
-          <div className="whiteboard-section max-w-4xl mx-auto px-4" style={{ width: "100%", maxWidth: "56rem", margin: "0 auto", paddingLeft: "1rem", paddingRight: "1rem" }}>
+        {activeSection === "whiteboard" && (
+          <div
+            className="whiteboard-section max-w-4xl mx-auto px-4"
+            style={{
+              width: "100%",
+              maxWidth: "56rem",
+              margin: "0 auto",
+              paddingLeft: "1rem",
+              paddingRight: "1rem",
+            }}
+          >
             <CollaborativeWhiteboard />
           </div>
         )}
 
-
-        {activeSection === 'opportunities' && (
+        {activeSection === "opportunities" && (
           <div className="opportunities-section">
             <div className="section-header flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white">Collaboration Opportunities</h2>
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                Collaboration Opportunities
+              </h2>
 
               {/* Dynamic Filter buttons */}
               <div className="filter-buttons flex gap-2 flex-wrap">
-                {['All', 'Sponsorship', 'Content Partnership', 'Venue Partnership'].map((type) => (
+                {["All", "Sponsorship", "Content Partnership", "Venue Partnership"].map((type) => (
                   <button
                     key={type}
                     aria-pressed={filterType === type}
                     aria-label={`Filter by ${type}`}
                     title={`Filter by ${type}`}
-                    className={`filter-btn px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${filterType === type
-                        ? 'bg-indigo-650 dark:bg-indigo-600 text-white'
-                        : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-350 hover:bg-slate-300'
-                      }`}
+                    className={`filter-btn px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      filterType === type
+                        ? "bg-indigo-650 dark:bg-indigo-600 text-white"
+                        : "bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-350 hover:bg-slate-300"
+                    }`}
                     onClick={() => setFilterType(type)}
                   >
                     {type}
@@ -366,14 +439,16 @@ const CollaborationHub = () => {
                   key={opportunity.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: prefersReducedMotion ? 0 : index * 0.1, duration: prefersReducedMotion ? 0 : 0.6 }}
+                  transition={{
+                    delay: prefersReducedMotion ? 0 : index * 0.1,
+                    duration: prefersReducedMotion ? 0 : 0.6,
+                  }}
                   className="opportunity-card"
                 >
                   <div className="opportunity-header">
                     <h3 className="opportunity-title">{opportunity.title}</h3>
 
                     <StatusBadge status={opportunity.status} />
-
                   </div>
 
                   <div className="opportunity-meta">
@@ -387,19 +462,28 @@ const CollaborationHub = () => {
                     <strong>Required Skills:</strong>
                     <div className="skills-tags">
                       {/* 🔥 FIX: Protected map */}
-                      {Array.isArray(opportunity.skills) && opportunity.skills.map((skill) => (
-                        <span key={`${skill}-${index}`} className="skill-tag">{skill}</span>
-                      ))}
+                      {Array.isArray(opportunity.skills) &&
+                        opportunity.skills.map((skill) => (
+                          <span key={`${skill}-${index}`} className="skill-tag">
+                            {skill}
+                          </span>
+                        ))}
                     </div>
                   </div>
 
                   <div className="opportunity-details grid grid-cols-2 gap-3 mb-5 border-t border-slate-100 dark:border-slate-800/60 pt-4">
                     <div className="detail-item">
-                      <span className="label block text-[10px] text-slate-400 font-bold uppercase">Budget</span>
-                      <span className="value text-xs font-black text-slate-800 dark:text-slate-200">{opportunity.budget}</span>
+                      <span className="label block text-[10px] text-slate-400 font-bold uppercase">
+                        Budget
+                      </span>
+                      <span className="value text-xs font-black text-slate-800 dark:text-slate-200">
+                        {opportunity.budget}
+                      </span>
                     </div>
                     <div className="detail-item text-right">
-                      <span className="label block text-[10px] text-slate-400 font-bold uppercase">Deadline</span>
+                      <span className="label block text-[10px] text-slate-400 font-bold uppercase">
+                        Deadline
+                      </span>
                       <span className="value text-xs font-black text-slate-800 dark:text-slate-200">
                         {/* 🔥 FIX: Replaced raw Date parse */}
                         {safeFormatDate(opportunity.deadline)}
@@ -428,12 +512,14 @@ const CollaborationHub = () => {
           </div>
         )}
 
-        {activeSection === 'my-collaborations' && (
+        {activeSection === "my-collaborations" && (
           <div className="my-collaborations-section">
             <div className="section-header flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white">My Active Collaborations</h2>
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                My Active Collaborations
+              </h2>
               <button
-                onClick={() => setActiveSection('create-request')}
+                onClick={() => setActiveSection("create-request")}
                 aria-label="Create a new collaboration request"
                 title="Create a new collaboration request"
                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5"
@@ -449,15 +535,22 @@ const CollaborationHub = () => {
                   key={collab.id}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: prefersReducedMotion ? 0 : index * 0.1, duration: prefersReducedMotion ? 0 : 0.6 }}
+                  transition={{
+                    delay: prefersReducedMotion ? 0 : index * 0.1,
+                    duration: prefersReducedMotion ? 0 : 0.6,
+                  }}
                   className="collaboration-card"
                 >
                   <div className="collaboration-header flex justify-between items-center mb-3">
-                    <h3 className="text-base font-bold text-slate-900 dark:text-white">{collab.title}</h3>
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                      {collab.title}
+                    </h3>
                     <StatusBadge status={collab.status} />
                   </div>
 
-                  <p className="partner text-xs text-slate-500 dark:text-slate-400 mb-4">🤝 Partner: {collab.partner}</p>
+                  <p className="partner text-xs text-slate-500 dark:text-slate-400 mb-4">
+                    🤝 Partner: {collab.partner}
+                  </p>
 
                   <div className="progress-section mb-4">
                     <div className="progress-header flex justify-between text-[11px] text-slate-500 dark:text-slate-400 mb-1.5">
@@ -474,10 +567,15 @@ const CollaborationHub = () => {
                   </div>
 
                   <div className="tasks-section mb-5">
-                    <strong className="block text-[10px] uppercase text-slate-400 mb-2">Upcoming Tasks:</strong>
+                    <strong className="block text-[10px] uppercase text-slate-400 mb-2">
+                      Upcoming Tasks:
+                    </strong>
                     <ul className="tasks-list space-y-1.5">
                       {collab.tasks.map((task, taskIndex) => (
-                        <li key={taskIndex} className="task-item text-xs text-slate-650 dark:text-slate-350 flex items-center gap-1.5">
+                        <li
+                          key={taskIndex}
+                          className="task-item text-xs text-slate-650 dark:text-slate-350 flex items-center gap-1.5"
+                        >
                           <span className="w-1 h-1 bg-indigo-500 rounded-full shrink-0" />
                           {task}
                         </li>
@@ -486,10 +584,18 @@ const CollaborationHub = () => {
                   </div>
 
                   <div className="collaboration-actions flex gap-2">
-                    <button className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-850 dark:text-slate-200 hover:bg-slate-200 rounded-xl text-xs font-bold transition-all" aria-label={`View details for ${collab.title}`} title={`View details for ${collab.title}`}>
+                    <button
+                      className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-850 dark:text-slate-200 hover:bg-slate-200 rounded-xl text-xs font-bold transition-all"
+                      aria-label={`View details for ${collab.title}`}
+                      title={`View details for ${collab.title}`}
+                    >
                       View Details
                     </button>
-                    <button className="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-xs font-bold transition-all" aria-label={`Schedule a meeting for ${collab.title}`} title={`Schedule a meeting for ${collab.title}`}>
+                    <button
+                      className="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-xs font-bold transition-all"
+                      aria-label={`Schedule a meeting for ${collab.title}`}
+                      title={`Schedule a meeting for ${collab.title}`}
+                    >
                       Schedule Meeting
                     </button>
                   </div>
@@ -499,10 +605,12 @@ const CollaborationHub = () => {
           </div>
         )}
 
-        {activeSection === 'networking' && (
+        {activeSection === "networking" && (
           <div className="networking-section">
             <div className="section-header flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white">Networking Requests</h2>
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                Networking Requests
+              </h2>
             </div>
 
             {/* Networking Search Bar */}
@@ -523,7 +631,10 @@ const CollaborationHub = () => {
                   key={request.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: prefersReducedMotion ? 0 : index * 0.1, duration: prefersReducedMotion ? 0 : 0.6 }}
+                  transition={{
+                    delay: prefersReducedMotion ? 0 : index * 0.1,
+                    duration: prefersReducedMotion ? 0 : 0.6,
+                  }}
                   className="networking-card"
                 >
                   <div className="networking-header">
@@ -531,15 +642,25 @@ const CollaborationHub = () => {
                       <span className="avatar">{request.avatar}</span>
                       <div className="name-role">
                         <h3>{request.name}</h3>
-                        <p>{request.role} at {request.company}</p>
+                        <p>
+                          {request.role} at {request.company}
+                        </p>
                       </div>
                     </div>
 
                     <div className="networking-actions flex gap-2">
-                      <button className="flex-1 py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1" aria-label={`Accept connection request from ${request.name}`} title={`Accept connection request from ${request.name}`}>
+                      <button
+                        className="flex-1 py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1"
+                        aria-label={`Accept connection request from ${request.name}`}
+                        title={`Accept connection request from ${request.name}`}
+                      >
                         <Check size={14} aria-hidden="true" /> Accept Connection
                       </button>
-                      <button className="px-3 py-2 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-xs font-bold transition-all" aria-label={`Send message to ${request.name}`} title={`Send message to ${request.name}`}>
+                      <button
+                        className="px-3 py-2 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-xs font-bold transition-all"
+                        aria-label={`Send message to ${request.name}`}
+                        title={`Send message to ${request.name}`}
+                      >
                         <MessageCircle size={14} aria-hidden="true" /> Message
                       </button>
                     </div>
@@ -555,12 +676,26 @@ const CollaborationHub = () => {
           </div>
         )}
 
-        {activeSection === 'create-request' && (
-          <div className="create-request-section max-w-2xl mx-auto" role="region" aria-labelledby="form-heading">
-            <h2 id="form-heading" className="text-xl font-bold text-slate-900 dark:text-white mb-6">Create Collaboration Request</h2>
-            <form onSubmit={handleRequestSubmit} className="request-form p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl space-y-5">
+        {activeSection === "create-request" && (
+          <div
+            className="create-request-section max-w-2xl mx-auto"
+            role="region"
+            aria-labelledby="form-heading"
+          >
+            <h2 id="form-heading" className="text-xl font-bold text-slate-900 dark:text-white mb-6">
+              Create Collaboration Request
+            </h2>
+            <form
+              onSubmit={handleRequestSubmit}
+              className="request-form p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl space-y-5"
+            >
               <div className="form-group flex flex-col gap-2">
-                <label htmlFor="collab-title" className="text-xs font-bold text-slate-700 dark:text-slate-300">Project Title *</label>
+                <label
+                  htmlFor="collab-title"
+                  className="text-xs font-bold text-slate-700 dark:text-slate-300"
+                >
+                  Project Title *
+                </label>
                 <input
                   id="collab-title"
                   type="text"
@@ -571,14 +706,21 @@ const CollaborationHub = () => {
                   className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-955 text-slate-900 dark:text-white text-xs outline-none focus:border-indigo-500"
                   required
                   aria-required="true"
-                  aria-invalid={newRequest.title.trim() === '' ? "true" : "false"}
+                  aria-invalid={newRequest.title.trim() === "" ? "true" : "false"}
                   aria-describedby="title-hint"
                 />
-                <span id="title-hint" className="sr-only">Please enter a descriptive title for your project</span>
+                <span id="title-hint" className="sr-only">
+                  Please enter a descriptive title for your project
+                </span>
               </div>
 
               <div className="form-group flex flex-col gap-2">
-                <label htmlFor="collab-type" className="text-xs font-bold text-slate-700 dark:text-slate-300">Collaboration Type *</label>
+                <label
+                  htmlFor="collab-type"
+                  className="text-xs font-bold text-slate-700 dark:text-slate-300"
+                >
+                  Collaboration Type *
+                </label>
                 <select
                   id="collab-type"
                   name="type"
@@ -587,7 +729,7 @@ const CollaborationHub = () => {
                   className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-955 text-slate-900 dark:text-white text-xs outline-none focus:border-indigo-500"
                   required
                   aria-required="true"
-                  aria-invalid={newRequest.type === '' ? "true" : "false"}
+                  aria-invalid={newRequest.type === "" ? "true" : "false"}
                   aria-describedby="type-hint"
                 >
                   <option value="">Select type</option>
@@ -596,11 +738,18 @@ const CollaborationHub = () => {
                   <option value="Venue Partnership">Venue Partnership</option>
                   <option value="Technical Support">Technical Support</option>
                 </select>
-                <span id="type-hint" className="sr-only">Select the type of collaboration partnership</span>
+                <span id="type-hint" className="sr-only">
+                  Select the type of collaboration partnership
+                </span>
               </div>
 
               <div className="form-group flex flex-col gap-2">
-                <label htmlFor="collab-desc" className="text-xs font-bold text-slate-700 dark:text-slate-300">Description *</label>
+                <label
+                  htmlFor="collab-desc"
+                  className="text-xs font-bold text-slate-700 dark:text-slate-300"
+                >
+                  Description *
+                </label>
                 <div className="space-y-2">
                   <textarea
                     id="collab-desc"
@@ -613,22 +762,26 @@ const CollaborationHub = () => {
                     required
                     className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
                     aria-required="true"
-                    aria-invalid={newRequest.description.trim() === '' ? "true" : "false"}
+                    aria-invalid={newRequest.description.trim() === "" ? "true" : "false"}
                     aria-describedby="desc-hint"
                   ></textarea>
                   <div className="flex justify-end">
-                    <CharacterCounter
-                      current={newRequest.description.length}
-                      max={300}
-                    />
+                    <CharacterCounter current={newRequest.description.length} max={300} />
                   </div>
                 </div>
-                <span id="desc-hint" className="sr-only">Provide context and objectives of the collaboration. Maximum 300 characters.</span>
+                <span id="desc-hint" className="sr-only">
+                  Provide context and objectives of the collaboration. Maximum 300 characters.
+                </span>
               </div>
 
               <div className="form-row grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="form-group flex flex-col gap-2">
-                  <label htmlFor="collab-budget" className="text-xs font-bold text-slate-700 dark:text-slate-300">Budget Range</label>
+                  <label
+                    htmlFor="collab-budget"
+                    className="text-xs font-bold text-slate-700 dark:text-slate-300"
+                  >
+                    Budget Range
+                  </label>
                   <select
                     id="collab-budget"
                     name="budget"
@@ -644,11 +797,18 @@ const CollaborationHub = () => {
                     <option value="$25,000+">$25,000+</option>
                     <option value="Revenue Share">Revenue Share</option>
                   </select>
-                  <span id="budget-hint" className="sr-only">Select the financial budget range if applicable</span>
+                  <span id="budget-hint" className="sr-only">
+                    Select the financial budget range if applicable
+                  </span>
                 </div>
 
                 <div className="form-group flex flex-col gap-2">
-                  <label htmlFor="collab-deadline" className="text-xs font-bold text-slate-700 dark:text-slate-300">Deadline</label>
+                  <label
+                    htmlFor="collab-deadline"
+                    className="text-xs font-bold text-slate-700 dark:text-slate-300"
+                  >
+                    Deadline
+                  </label>
                   <input
                     id="collab-deadline"
                     type="date"
@@ -658,12 +818,19 @@ const CollaborationHub = () => {
                     className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-955 text-slate-900 dark:text-white text-xs outline-none focus:border-indigo-500"
                     aria-describedby="deadline-hint"
                   />
-                  <span id="deadline-hint" className="sr-only">Select target completion date</span>
+                  <span id="deadline-hint" className="sr-only">
+                    Select target completion date
+                  </span>
                 </div>
               </div>
 
               <div className="form-group flex flex-col gap-2">
-                <label htmlFor="collab-skills" className="text-xs font-bold text-slate-700 dark:text-slate-300">Required Skills</label>
+                <label
+                  htmlFor="collab-skills"
+                  className="text-xs font-bold text-slate-700 dark:text-slate-300"
+                >
+                  Required Skills
+                </label>
                 <input
                   id="collab-skills"
                   type="text"
@@ -674,10 +841,16 @@ const CollaborationHub = () => {
                   className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-955 text-slate-900 dark:text-white text-xs outline-none focus:border-indigo-500"
                   aria-describedby="skills-hint"
                 />
-                <span id="skills-hint" className="sr-only">Comma separated list of required skills</span>
+                <span id="skills-hint" className="sr-only">
+                  Comma separated list of required skills
+                </span>
               </div>
 
-              <button type="submit" className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all" aria-label="Submit and create collaboration request">
+              <button
+                type="submit"
+                className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all"
+                aria-label="Submit and create collaboration request"
+              >
                 Create Collaboration Request
               </button>
             </form>
@@ -723,7 +896,9 @@ const CollaborationHub = () => {
 
               <div className="flex items-center gap-2 mb-4">
                 <StatusBadge status={selectedOpportunity.status} />
-                <span className="text-xs text-slate-400">By <strong>{selectedOpportunity.organizer}</strong></span>
+                <span className="text-xs text-slate-400">
+                  By <strong>{selectedOpportunity.organizer}</strong>
+                </span>
               </div>
 
               <div className="p-4 bg-slate-50 dark:bg-slate-950/50 rounded-2xl border border-slate-100 dark:border-slate-800/60 mb-5">
@@ -735,12 +910,18 @@ const CollaborationHub = () => {
               <div className="grid grid-cols-3 gap-3 mb-6">
                 <div className="p-3 bg-slate-50 dark:bg-slate-950/30 rounded-xl text-center">
                   <DollarSign className="w-4 h-4 text-indigo-500 mx-auto mb-1" />
-                  <span className="block text-[9px] uppercase font-bold text-slate-400">Budget</span>
-                  <span className="text-xs font-black text-slate-800 dark:text-white">{selectedOpportunity.budget}</span>
+                  <span className="block text-[9px] uppercase font-bold text-slate-400">
+                    Budget
+                  </span>
+                  <span className="text-xs font-black text-slate-800 dark:text-white">
+                    {selectedOpportunity.budget}
+                  </span>
                 </div>
                 <div className="p-3 bg-slate-50 dark:bg-slate-950/30 rounded-xl text-center">
                   <Calendar className="w-4 h-4 text-indigo-500 mx-auto mb-1" />
-                  <span className="block text-[9px] uppercase font-bold text-slate-400">Deadline</span>
+                  <span className="block text-[9px] uppercase font-bold text-slate-400">
+                    Deadline
+                  </span>
                   <span className="text-xs font-black text-slate-800 dark:text-white">
                     {/* 🔥 FIX: Replaced raw Date parse */}
                     {safeFormatDate(selectedOpportunity.deadline)}
@@ -748,32 +929,50 @@ const CollaborationHub = () => {
                 </div>
                 <div className="p-3 bg-slate-50 dark:bg-slate-950/30 rounded-xl text-center">
                   <Users className="w-4 h-4 text-indigo-500 mx-auto mb-1" />
-                  <span className="block text-[9px] uppercase font-bold text-slate-400">Applicants</span>
-                  <span className="text-xs font-black text-slate-800 dark:text-white">{selectedOpportunity.applicants}</span>
+                  <span className="block text-[9px] uppercase font-bold text-slate-400">
+                    Applicants
+                  </span>
+                  <span className="text-xs font-black text-slate-800 dark:text-white">
+                    {selectedOpportunity.applicants}
+                  </span>
                 </div>
               </div>
 
               <div className="mb-6">
-                <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">Required Core Skills</h4>
+                <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
+                  Required Core Skills
+                </h4>
                 <div className="flex flex-wrap gap-1.5">
                   {/* 🔥 FIX: Protected map */}
-                  {Array.isArray(selectedOpportunity.skills) && selectedOpportunity.skills.map((skill, index) => (
-                    <span key={`${skill}-${index}`} className="px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/10 text-indigo-500 dark:bg-indigo-900/20 dark:text-indigo-400 border border-indigo-500/10">
-                      {skill}
-                    </span>
-                  ))}
+                  {Array.isArray(selectedOpportunity.skills) &&
+                    selectedOpportunity.skills.map((skill, index) => (
+                      <span
+                        key={`${skill}-${index}`}
+                        className="px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/10 text-indigo-500 dark:bg-indigo-900/20 dark:text-indigo-400 border border-indigo-500/10"
+                      >
+                        {skill}
+                      </span>
+                    ))}
                 </div>
               </div>
 
               {/* Proposal Submission Form */}
-              <form onSubmit={handleApplySubmit} className="space-y-4 border-t border-slate-100 dark:border-slate-800/80 pt-5">
+              <form
+                onSubmit={handleApplySubmit}
+                className="space-y-4 border-t border-slate-100 dark:border-slate-800/80 pt-5"
+              >
                 <h4 className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5">
                   <Send className="w-4 h-4 text-indigo-500" />
                   <span>Submit Partnership Proposal</span>
                 </h4>
 
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor="proposal-message" className="text-[10px] font-bold text-slate-400 uppercase">Your Pitch / Proposal Message *</label>
+                  <label
+                    htmlFor="proposal-message"
+                    className="text-[10px] font-bold text-slate-400 uppercase"
+                  >
+                    Your Pitch / Proposal Message *
+                  </label>
                   <textarea
                     id="proposal-message"
                     rows="3"
@@ -786,15 +985,21 @@ const CollaborationHub = () => {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase">Attach Pitch Deck / Document (Optional)</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">
+                    Attach Pitch Deck / Document (Optional)
+                  </label>
                   <div className="relative border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl p-4 text-center hover:bg-slate-50 dark:hover:bg-slate-950/40 transition-colors cursor-pointer">
                     <input
                       type="file"
-                      onChange={(e) => setProposalFile(e.target.files[0] ? e.target.files[0].name : null)}
+                      onChange={(e) =>
+                        setProposalFile(e.target.files[0] ? e.target.files[0].name : null)
+                      }
                       className="absolute inset-0 opacity-0 cursor-pointer"
                     />
                     <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                      {proposalFile ? `Attached: ${proposalFile}` : "Drag and drop or click to upload PDF/PPTX"}
+                      {proposalFile
+                        ? `Attached: ${proposalFile}`
+                        : "Drag and drop or click to upload PDF/PPTX"}
                     </span>
                   </div>
                 </div>

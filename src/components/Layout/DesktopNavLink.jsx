@@ -11,11 +11,11 @@ const DesktopNavLink = ({ item, isActive }) => (
     style={
       isActive
         ? {
-            backgroundColor: 'rgba(99, 102, 241, 0.12)',
-            border: '1.5px solid rgba(99, 102, 241, 0.45)',
-            boxShadow: '0 0 0 3px rgba(99, 102, 241, 0.08)',
+            backgroundColor: "rgba(99, 102, 241, 0.12)",
+            border: "1.5px solid rgba(99, 102, 241, 0.45)",
+            boxShadow: "0 0 0 3px rgba(99, 102, 241, 0.08)",
           }
-        : { border: '1.5px solid transparent' }
+        : { border: "1.5px solid transparent" }
     }
   >
     {item.name}

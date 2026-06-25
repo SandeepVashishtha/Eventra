@@ -8,11 +8,11 @@ import { toast } from "react-toastify";
 import { showAuthToast } from "../../utils/toast";
 import { getPublicErrorMessage, AUTH_ERRORS } from "../../utils/errorMessages";
 import useReducedMotion from "../../hooks/useReducedMotion";
-import FieldError from '../common/FieldError';
-import useLoginRateLimit from '../../hooks/useLoginRateLimit';
-import { MAX_LOGIN_ATTEMPTS, parseRetryAfterMs } from '../../utils/rateLimitUtils';
-import '../../styles/auth.css';
-import { emailPattern } from '../../validation';
+import FieldError from "../common/FieldError";
+import useLoginRateLimit from "../../hooks/useLoginRateLimit";
+import { MAX_LOGIN_ATTEMPTS, parseRetryAfterMs } from "../../utils/rateLimitUtils";
+import "../../styles/auth.css";
+import { emailPattern } from "../../validation";
 import {
   canAttempt,
   clearAttempts,
@@ -80,16 +80,14 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  if (authRequest.loading) return;
+    if (authRequest.loading) return;
     if (isLockedOut()) return;
     if (!validate()) return;
 
     try {
       const sanitizedUsernameOrEmail = formData.usernameOrEmail.trim();
       if (!canAttempt("login")) {
-        toast.error(
-          "Too many login attempts. Please wait 30 seconds before trying again."
-        );
+        toast.error("Too many login attempts. Please wait 30 seconds before trying again.");
         return;
       }
       const ok = await login(sanitizedUsernameOrEmail, formData.password);
@@ -97,20 +95,15 @@ const Login = () => {
         clearAttempts("login");
         resetFailures("login");
 
-        showAuthToast(
-          "Login successful! Redirecting to dashboard...",
-          () => navigate("/dashboard", { replace: true })
+        showAuthToast("Login successful! Redirecting to dashboard...", () =>
+          navigate("/dashboard", { replace: true })
         );
-      } 
-      else {
+      } else {
         incrementFailures("login");
 
-        const delay =
-          getBackoffDelay("login") / 1000;
+        const delay = getBackoffDelay("login") / 1000;
 
-        toast.info(
-          `Security cooldown: Please wait ${delay} seconds before trying again.`
-        );
+        toast.info(`Security cooldown: Please wait ${delay} seconds before trying again.`);
       }
     } catch (err) {
       const errStatus = err?.status || err?.response?.status;
@@ -167,7 +160,7 @@ const Login = () => {
                 role="alert"
                 aria-live="polite"
               >
-                ⚠️ {t('auth.sessionExpired')}
+                ⚠️ {t("auth.sessionExpired")}
               </motion.div>
             )}
 
@@ -181,7 +174,7 @@ const Login = () => {
                 role="alert"
                 aria-live="assertive"
               >
-                {t('auth.lockedOut', { seconds: lockedOutSeconds })}
+                {t("auth.lockedOut", { seconds: lockedOutSeconds })}
               </motion.div>
             )}
 
@@ -196,16 +189,16 @@ const Login = () => {
                   role="status"
                   aria-live="polite"
                 >
-                  {t('auth.attemptsRemaining', { count: remainingAttempts })}
+                  {t("auth.attemptsRemaining", { count: remainingAttempts })}
                 </motion.div>
               )}
 
             {/* Logo / Title */}
             <motion.div className="text-center space-y-4">
               <motion.div className="mx-auto w-16 h-16...">{/* SVG Icon */}</motion.div>
-              <h1 className="text-2xl font-bold mt-2">{t('auth.welcomeBack')}</h1>
+              <h1 className="text-2xl font-bold mt-2">{t("auth.welcomeBack")}</h1>
               <p className="text-md" style={{ color: "var(--text-color-light)" }}>
-                {t('auth.signInSubtitle')}
+                {t("auth.signInSubtitle")}
               </p>
             </motion.div>
 
@@ -218,7 +211,7 @@ const Login = () => {
                   className="block text-sm font-semibold"
                   style={{ color: "var(--text-color)" }}
                 >
-                  {t('auth.usernameOrEmail')} <sup className="ml-1 text-sm text-red-500">*</sup>
+                  {t("auth.usernameOrEmail")} <sup className="ml-1 text-sm text-red-500">*</sup>
                 </label>
                 <div className="relative group">
                   <input
@@ -229,7 +222,7 @@ const Login = () => {
                     onChange={handleChange}
                     required
                     disabled={isSubmitDisabled}
-                    placeholder={t('auth.usernamePlaceholder')}
+                    placeholder={t("auth.usernamePlaceholder")}
                     aria-invalid={!!error.usernameOrEmail}
                     aria-describedby={error.usernameOrEmail ? "usernameOrEmail-error" : undefined}
                     className={`w-full pl-3 pr-4 py-3 bg-white dark:bg-gray-800 border ${
@@ -249,7 +242,7 @@ const Login = () => {
                   className="block text-sm font-semibold"
                   style={{ color: "var(--text-color)" }}
                 >
-                  {t('auth.password')} <sup className="ml-1 text-sm text-red-500">*</sup>
+                  {t("auth.password")} <sup className="ml-1 text-sm text-red-500">*</sup>
                 </label>
                 <div className="relative group">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -275,7 +268,7 @@ const Login = () => {
                     onChange={handleChange}
                     required
                     disabled={isSubmitDisabled}
-                    placeholder={t('auth.passwordPlaceholder')}
+                    placeholder={t("auth.passwordPlaceholder")}
                     aria-invalid={!!error.password}
                     aria-describedby={error.password ? "password-error" : undefined}
                     className={`w-full pl-10 pr-4 py-3 bg-white dark:bg-gray-800 border ${
@@ -287,7 +280,7 @@ const Login = () => {
                   <button
                     type="button"
                     onClick={() => setShowPassword((s) => !s)}
-                    aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
+                    aria-label={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
                   >
                     {showPassword ? (
@@ -330,7 +323,7 @@ const Login = () => {
                 <FieldError id="password-error" message={error.password} />
                 <div className="flex justify-end">
                   <Link to="/password-reset" className="text-blue-600 hover:underline text-sm">
-                    {t('auth.forgotPassword')}
+                    {t("auth.forgotPassword")}
                   </Link>
                 </div>
               </div>
@@ -355,14 +348,14 @@ const Login = () => {
                 className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-75 transition-all duration-300"
               >
                 {isLockedOut() ? (
-                  t('auth.lockedWait', { seconds: lockedOutSeconds })
+                  t("auth.lockedWait", { seconds: lockedOutSeconds })
                 ) : authRequest.loading ? (
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    {t('auth.signingIn')}
+                    {t("auth.signingIn")}
                   </div>
                 ) : (
-                  t('auth.signIn')
+                  t("auth.signIn")
                 )}
               </motion.button>
             </motion.form>
@@ -370,9 +363,9 @@ const Login = () => {
             {/* Sign up link */}
             <div className="text-center">
               <p style={{ color: "var(--text-color-light)" }}>
-                {t('auth.noAccount')} {" "}
+                {t("auth.noAccount")}{" "}
                 <Link to="/signup" className="text-blue-600 hover:underline font-semibold">
-                  {t('auth.createAccount')}
+                  {t("auth.createAccount")}
                 </Link>
               </p>
             </div>

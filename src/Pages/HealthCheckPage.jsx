@@ -13,8 +13,12 @@
 
 import { useEffect } from "react";
 
-const APP_VERSION = import.meta.env.VITE_APP_VERSION || import.meta.env.REACT_APP_VERSION || "1.0.0";
-const BUILD_TIME = import.meta.env.VITE_APP_BUILD_TIME || import.meta.env.REACT_APP_BUILD_TIME || new Date().toISOString();
+const APP_VERSION =
+  import.meta.env.VITE_APP_VERSION || import.meta.env.REACT_APP_VERSION || "1.0.0";
+const BUILD_TIME =
+  import.meta.env.VITE_APP_BUILD_TIME ||
+  import.meta.env.REACT_APP_BUILD_TIME ||
+  new Date().toISOString();
 
 const HealthCheckPage = () => {
   // Update the document title so monitor screenshots are unambiguous
@@ -48,9 +52,7 @@ const HealthCheckPage = () => {
             className="inline-block w-4 h-4 rounded-full bg-green-500 animate-pulse"
             aria-hidden="true"
           />
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            System Operational
-          </h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">System Operational</h1>
         </div>
 
         {/* Machine-readable JSON block (used by simple text-match monitors) */}

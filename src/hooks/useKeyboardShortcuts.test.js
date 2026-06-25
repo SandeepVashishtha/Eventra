@@ -5,7 +5,10 @@ import useKeyboardShortcuts from "./useKeyboardShortcuts";
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /** Fires a keydown event on document with the given key and optional modifiers. */
-const fireKey = (key, { shiftKey = false, ctrlKey = false, altKey = false, metaKey = false } = {}) => {
+const fireKey = (
+  key,
+  { shiftKey = false, ctrlKey = false, altKey = false, metaKey = false } = {}
+) => {
   const event = new KeyboardEvent("keydown", {
     key,
     shiftKey,
@@ -51,58 +54,46 @@ describe("useKeyboardShortcuts", () => {
   // ─── Modal shortcuts ───────────────────────────────────────────────────────
 
   it("opens the help modal when Shift+? is pressed and closes command palette", () => {
-    const dispatchSpy = jest.spyOn(window, 'dispatchEvent');
-    renderHook(
-      () => useKeyboardShortcuts({ onOpenHelp, onCloseHelp, isOpen: false }),
-      { wrapper }
-    );
+    const dispatchSpy = jest.spyOn(window, "dispatchEvent");
+    renderHook(() => useKeyboardShortcuts({ onOpenHelp, onCloseHelp, isOpen: false }), { wrapper });
 
     fireKey("?", { shiftKey: true });
     expect(onOpenHelp).toHaveBeenCalledTimes(1);
-    const eventTypes = dispatchSpy.mock.calls.map(call => call[0].type);
-    expect(eventTypes).toContain('closeCommandPalette');
+    const eventTypes = dispatchSpy.mock.calls.map((call) => call[0].type);
+    expect(eventTypes).toContain("closeCommandPalette");
     dispatchSpy.mockRestore();
   });
 
   it("opens the help modal when Shift+/ is pressed (same logical key)", () => {
-    const dispatchSpy = jest.spyOn(window, 'dispatchEvent');
-    renderHook(
-      () => useKeyboardShortcuts({ onOpenHelp, onCloseHelp, isOpen: false }),
-      { wrapper }
-    );
+    const dispatchSpy = jest.spyOn(window, "dispatchEvent");
+    renderHook(() => useKeyboardShortcuts({ onOpenHelp, onCloseHelp, isOpen: false }), { wrapper });
 
     fireKey("/", { shiftKey: true });
     expect(onOpenHelp).toHaveBeenCalledTimes(1);
-    const eventTypes = dispatchSpy.mock.calls.map(call => call[0].type);
-    expect(eventTypes).toContain('closeCommandPalette');
+    const eventTypes = dispatchSpy.mock.calls.map((call) => call[0].type);
+    expect(eventTypes).toContain("closeCommandPalette");
     dispatchSpy.mockRestore();
   });
 
   it("closes the help modal and command palette when Escape is pressed", () => {
-    const dispatchSpy = jest.spyOn(window, 'dispatchEvent');
-    renderHook(
-      () => useKeyboardShortcuts({ onOpenHelp, onCloseHelp, isOpen: true }),
-      { wrapper }
-    );
+    const dispatchSpy = jest.spyOn(window, "dispatchEvent");
+    renderHook(() => useKeyboardShortcuts({ onOpenHelp, onCloseHelp, isOpen: true }), { wrapper });
 
     fireKey("Escape");
     expect(onCloseHelp).toHaveBeenCalledTimes(1);
-    const eventTypes = dispatchSpy.mock.calls.map(call => call[0].type);
-    expect(eventTypes).toContain('closeCommandPalette');
+    const eventTypes = dispatchSpy.mock.calls.map((call) => call[0].type);
+    expect(eventTypes).toContain("closeCommandPalette");
     dispatchSpy.mockRestore();
   });
 
   it("toggles the command palette when Ctrl+K is pressed and closes help modal", () => {
-    const dispatchSpy = jest.spyOn(window, 'dispatchEvent');
-    renderHook(
-      () => useKeyboardShortcuts({ onOpenHelp, onCloseHelp, isOpen: true }),
-      { wrapper }
-    );
+    const dispatchSpy = jest.spyOn(window, "dispatchEvent");
+    renderHook(() => useKeyboardShortcuts({ onOpenHelp, onCloseHelp, isOpen: true }), { wrapper });
 
     fireKey("k", { ctrlKey: true });
     expect(onCloseHelp).toHaveBeenCalledTimes(1);
-    const eventTypes = dispatchSpy.mock.calls.map(call => call[0].type);
-    expect(eventTypes).toContain('toggleCommandPalette');
+    const eventTypes = dispatchSpy.mock.calls.map((call) => call[0].type);
+    expect(eventTypes).toContain("toggleCommandPalette");
     dispatchSpy.mockRestore();
   });
 
@@ -126,10 +117,9 @@ describe("useKeyboardShortcuts", () => {
   test.each(navCases)(
     "navigates to %s when '%s%s' sequence is pressed",
     (first, second, expectedRoute) => {
-      renderHook(
-        () => useKeyboardShortcuts({ onOpenHelp, onCloseHelp, isOpen: false }),
-        { wrapper }
-      );
+      renderHook(() => useKeyboardShortcuts({ onOpenHelp, onCloseHelp, isOpen: false }), {
+        wrapper,
+      });
 
       fireKey(first);
       fireKey(second);
@@ -139,10 +129,7 @@ describe("useKeyboardShortcuts", () => {
   );
 
   it("does NOT navigate when the help modal is open", () => {
-    renderHook(
-      () => useKeyboardShortcuts({ onOpenHelp, onCloseHelp, isOpen: true }),
-      { wrapper }
-    );
+    renderHook(() => useKeyboardShortcuts({ onOpenHelp, onCloseHelp, isOpen: true }), { wrapper });
 
     fireKey("g");
     fireKey("h");
@@ -151,10 +138,7 @@ describe("useKeyboardShortcuts", () => {
   });
 
   it("ignores modifier-key combos for navigation (Ctrl, Alt, Meta)", () => {
-    renderHook(
-      () => useKeyboardShortcuts({ onOpenHelp, onCloseHelp, isOpen: false }),
-      { wrapper }
-    );
+    renderHook(() => useKeyboardShortcuts({ onOpenHelp, onCloseHelp, isOpen: false }), { wrapper });
 
     fireKey("g");
     fireKey("h", { ctrlKey: true });
@@ -163,10 +147,7 @@ describe("useKeyboardShortcuts", () => {
   });
 
   it("clears the key buffer after 1 second of inactivity", () => {
-    renderHook(
-      () => useKeyboardShortcuts({ onOpenHelp, onCloseHelp, isOpen: false }),
-      { wrapper }
-    );
+    renderHook(() => useKeyboardShortcuts({ onOpenHelp, onCloseHelp, isOpen: false }), { wrapper });
 
     fireKey("g");
     jest.advanceTimersByTime(1001); // buffer should have been cleared
@@ -176,10 +157,7 @@ describe("useKeyboardShortcuts", () => {
   });
 
   it("does not fire navigation when keys are typed inside an input field", () => {
-    renderHook(
-      () => useKeyboardShortcuts({ onOpenHelp, onCloseHelp, isOpen: false }),
-      { wrapper }
-    );
+    renderHook(() => useKeyboardShortcuts({ onOpenHelp, onCloseHelp, isOpen: false }), { wrapper });
 
     // Simulate focus inside an <input>
     const input = document.createElement("input");
@@ -194,10 +172,7 @@ describe("useKeyboardShortcuts", () => {
   });
 
   it("does not fire navigation when keys are typed inside a textarea", () => {
-    renderHook(
-      () => useKeyboardShortcuts({ onOpenHelp, onCloseHelp, isOpen: false }),
-      { wrapper }
-    );
+    renderHook(() => useKeyboardShortcuts({ onOpenHelp, onCloseHelp, isOpen: false }), { wrapper });
 
     const textarea = document.createElement("textarea");
     document.body.appendChild(textarea);
@@ -222,9 +197,7 @@ describe("useKeyboardShortcuts", () => {
 
     unmount();
 
-    const keydownRemovals = removeSpy.mock.calls.filter(
-      (call) => call[0] === "keydown"
-    );
+    const keydownRemovals = removeSpy.mock.calls.filter((call) => call[0] === "keydown");
     expect(keydownRemovals.length).toBeGreaterThanOrEqual(1);
     removeSpy.mockRestore();
   });

@@ -1,8 +1,8 @@
 /**
  * @fileoverview Validation Utilities Unit Tests
  * @module tests/validation.test
- * 
- * Verifies all sync, async, formatting, survey sanitization, and legacy hook-adapter 
+ *
+ * Verifies all sync, async, formatting, survey sanitization, and legacy hook-adapter
  * functions exported by the centralized validation system in src/validation.js.
  * Utilizes Vitest mocks to intercept API utility calls and ensure isolated execution.
  */
@@ -36,7 +36,6 @@ vi.mock("./config/api.js", () => ({
 }));
 
 describe("Validation Utilities", () => {
-  
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -184,8 +183,12 @@ describe("Validation Utilities", () => {
       });
 
       it("fails invalid URLs or formats", () => {
-        expect(validate.url("ftp://example.com")).toBe("Invalid URL format (must start with http:// or https://)");
-        expect(validate.url("example.com")).toBe("Invalid URL format (must start with http:// or https://)");
+        expect(validate.url("ftp://example.com")).toBe(
+          "Invalid URL format (must start with http:// or https://)"
+        );
+        expect(validate.url("example.com")).toBe(
+          "Invalid URL format (must start with http:// or https://)"
+        );
       });
 
       it("fails URLs exceeding length limit", () => {
@@ -199,11 +202,15 @@ describe("Validation Utilities", () => {
       });
 
       it("fails when passwords do not match", () => {
-        expect(validate.confirmPassword("Password123!", { password: "Different!" })).toBe("Passwords do not match");
+        expect(validate.confirmPassword("Password123!", { password: "Different!" })).toBe(
+          "Passwords do not match"
+        );
       });
 
       it("fails when confirm password field is empty", () => {
-        expect(validate.confirmPassword("", { password: "Password123!" })).toBe("Please confirm your password");
+        expect(validate.confirmPassword("", { password: "Password123!" })).toBe(
+          "Please confirm your password"
+        );
       });
     });
 
@@ -255,7 +262,9 @@ describe("Validation Utilities", () => {
 
     describe("survey sanitization & HTML detection", () => {
       it("sanitizes survey prompts by stripping HTML and capping length", () => {
-        expect(validate.sanitizeSurveyPrompt("Select <b>all</b> options")).toBe("Select all options");
+        expect(validate.sanitizeSurveyPrompt("Select <b>all</b> options")).toBe(
+          "Select all options"
+        );
         expect(validate.sanitizeSurveyPrompt("a".repeat(200)).length).toBe(150);
       });
 
@@ -279,7 +288,9 @@ describe("Validation Utilities", () => {
 
       it("returns message or fallback for invalid responses", () => {
         expect(toHookValidationResult({ isValid: false, message: "Taken" })).toBe("Taken");
-        expect(toHookValidationResult({ isValid: false })).toBe(VALIDATION_MESSAGES.validationUnavailable);
+        expect(toHookValidationResult({ isValid: false })).toBe(
+          VALIDATION_MESSAGES.validationUnavailable
+        );
       });
     });
 
@@ -349,16 +360,12 @@ describe("Validation Utilities", () => {
     });
 
     it("validates username shape before checking uniqueness", async () => {
-      await expect(
-        validateUsernameUnique("ab")
-      ).resolves.toMatchObject({
+      await expect(validateUsernameUnique("ab")).resolves.toMatchObject({
         isValid: false,
         message: "Username must be at least 3 characters",
       });
 
-      await expect(
-        validateUsernameUnique("not valid")
-      ).resolves.toMatchObject({
+      await expect(validateUsernameUnique("not valid")).resolves.toMatchObject({
         isValid: false,
         message: "Username can only include letters, numbers, and underscores",
       });

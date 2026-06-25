@@ -1,11 +1,9 @@
-
 import { safeJsonParse } from "./safeJsonParse.js";
 import { apiUtils, API_ENDPOINTS } from "../config/api.js";
 import { logger } from "./logger.js";
 import { getOrMigrateKey } from "./storageKeyManager.js";
 
 const GLOBAL_WAITLIST_KEY = "eventra_global_waitlists";
-
 
 /**
  * Coerce an eventId value to a safe integer.
@@ -24,9 +22,7 @@ const GLOBAL_WAITLIST_KEY = "eventra_global_waitlists";
 const parseEventId = (eventId) => {
   const id = parseInt(eventId, 10);
   if (!Number.isFinite(id)) {
-    throw new TypeError(
-      `[WaitlistUtils] Invalid eventId "${eventId}": must be a finite integer.`
-    );
+    throw new TypeError(`[WaitlistUtils] Invalid eventId "${eventId}": must be a finite integer.`);
   }
   return id;
 };
@@ -38,9 +34,10 @@ export const addLocalNotification = async (title, message) => {
     const raw = localStorage.getItem(canonicalKey);
     const notifications = raw ? safeJsonParse(raw, []) : [];
     const newNotification = {
-      id: typeof crypto !== "undefined" && crypto.randomUUID
-        ? `local-${crypto.randomUUID()}`
-        : `local-${Date.now()}-${Math.floor(Math.random() * 1e9)}`,
+      id:
+        typeof crypto !== "undefined" && crypto.randomUUID
+          ? `local-${crypto.randomUUID()}`
+          : `local-${Date.now()}-${Math.floor(Math.random() * 1e9)}`,
       isRead: false,
       createdAt: new Date().toISOString(),
       timestamp: new Date().toISOString(),
@@ -85,7 +82,7 @@ export const syncWaitlistFromServer = async (eventId) => {
     const response = await apiUtils.get(`${API_ENDPOINTS.EVENTS.ALL}/${eventId}/waitlist`);
     if (response.ok && response.data) {
       const serverData = Array.isArray(response.data) ? response.data : response.data.entries || [];
-      const existing = getGlobalWaitlist().filter(r => r.eventId !== eventId);
+      const existing = getGlobalWaitlist().filter((r) => r.eventId !== eventId);
       saveGlobalWaitlist([...existing, ...serverData]);
       return serverData;
     }
@@ -167,7 +164,11 @@ export const joinWaitlist = async (eventId, user, registrationForm = {}) => {
   try {
     const response = await apiUtils.post(`${API_ENDPOINTS.EVENTS.ALL}/${id}/waitlist`, {
       userId,
-      name: user.fullName || `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.username || "Anonymous",
+      name:
+        user.fullName ||
+        `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
+        user.username ||
+        "Anonymous",
       email: user.email,
       phone: registrationForm.phone || "",
       eventTitle: registrationForm.eventTitle || "the event",
@@ -189,7 +190,10 @@ export const joinWaitlist = async (eventId, user, registrationForm = {}) => {
       const records = getGlobalWaitlist();
       records.push(newEntry);
       saveGlobalWaitlist(records);
-      await addLocalNotification("Waitlist Joined", `You have successfully joined the waitlist for ${registrationForm.eventTitle || "the event"}.`);
+      await addLocalNotification(
+        "Waitlist Joined",
+        `You have successfully joined the waitlist for ${registrationForm.eventTitle || "the event"}.`
+      );
       return newEntry;
     }
     throw new Error(response.data?.message || "Server rejected waitlist join");
@@ -255,7 +259,9 @@ export const leaveWaitlist = async (eventId, userId) => {
   const id = parseEventId(eventId);
 
   try {
-    const response = await apiUtils.post(`${API_ENDPOINTS.EVENTS.ALL}/${id}/waitlist/leave`, { userId });
+    const response = await apiUtils.post(`${API_ENDPOINTS.EVENTS.ALL}/${id}/waitlist/leave`, {
+      userId,
+    });
     if (response.ok) {
       const records = getGlobalWaitlist();
       const matchIndex = records.findIndex(
@@ -321,9 +327,12 @@ const checkIfOffline = (error) => {
 // Promote a specific record to a confirmed registration
 export const promoteRecord = async (record, event) => {
   try {
-    const response = await apiUtils.post(`${API_ENDPOINTS.EVENTS.ALL}/${event.id}/waitlist/promote`, {
-      userId: record.userId,
-    });
+    const response = await apiUtils.post(
+      `${API_ENDPOINTS.EVENTS.ALL}/${event.id}/waitlist/promote`,
+      {
+        userId: record.userId,
+      }
+    );
     if (response.ok) {
       await performLocalPromotion(record, event);
       return true;
@@ -371,9 +380,7 @@ export const promoteNextUser = async (eventId, eventData = null) => {
     return null;
   }
   const updatedRecord = getGlobalWaitlist().find(
-    (r) =>
-      r.userId === nextUserRecord.userId &&
-      r.eventId === nextUserRecord.eventId
+    (r) => r.userId === nextUserRecord.userId && r.eventId === nextUserRecord.eventId
   );
 
   return updatedRecord || null;
@@ -413,7 +420,10 @@ export const organizerRemoveUser = async (eventId, userId) => {
         records[matchIndex].removedAt = new Date().toISOString();
         saveGlobalWaitlist(records);
       }
-      await addLocalNotification("Removed from Waitlist", `You have been removed from the waitlist for Event #${id} by the organizer.`);
+      await addLocalNotification(
+        "Removed from Waitlist",
+        `You have been removed from the waitlist for Event #${id} by the organizer.`
+      );
       return true;
     }
   } catch {
@@ -446,54 +456,33 @@ export const getWaitlistAnalytics = (eventId) => {
   const id = parseEventId(eventId);
   const records = getGlobalWaitlist();
 
-  const eventRecords = records.filter(
-    (record) => record.eventId === id
-  );
+  const eventRecords = records.filter((record) => record.eventId === id);
 
-  const promotedUsers = eventRecords.filter(
-    (record) => record.status === "promoted"
-  );
+  const promotedUsers = eventRecords.filter((record) => record.status === "promoted");
 
   let averageWaitTime = 0;
 
   if (promotedUsers.length > 0) {
     const totalWaitTime = promotedUsers.reduce(
-      (sum, record) =>
-        sum +
-        (new Date(record.promotedAt) -
-          new Date(record.joinedAt)),
+      (sum, record) => sum + (new Date(record.promotedAt) - new Date(record.joinedAt)),
       0
     );
 
-    averageWaitTime =
-      totalWaitTime /
-      promotedUsers.length /
-      (1000 * 60 * 60);
+    averageWaitTime = totalWaitTime / promotedUsers.length / (1000 * 60 * 60);
   }
 
   return {
     totalWaitlisted: eventRecords.length,
 
-    waiting: eventRecords.filter(
-      (record) => record.status === "waiting"
-    ).length,
+    waiting: eventRecords.filter((record) => record.status === "waiting").length,
 
     promoted: promotedUsers.length,
 
-    removed: eventRecords.filter(
-      (record) => record.status === "removed"
-    ).length,
+    removed: eventRecords.filter((record) => record.status === "removed").length,
 
     promotionRate:
-      eventRecords.length > 0
-        ? (
-            (promotedUsers.length /
-              eventRecords.length) *
-            100
-          ).toFixed(1)
-        : 0,
+      eventRecords.length > 0 ? ((promotedUsers.length / eventRecords.length) * 100).toFixed(1) : 0,
 
-    averageWaitTime:
-      averageWaitTime.toFixed(1),
+    averageWaitTime: averageWaitTime.toFixed(1),
   };
 };

@@ -28,7 +28,7 @@ export const storageManager = {
       const parsed = safeJsonParse(raw, {});
 
       // 1. Check for expected structure
-      if (!parsed || typeof parsed !== 'object' || !('value' in parsed)) {
+      if (!parsed || typeof parsed !== "object" || !("value" in parsed)) {
         logger.warn(`[Storage] Invalid structure for key: ${key}`);
         localStorage.removeItem(key);
         return null;
@@ -56,7 +56,7 @@ export const storageManager = {
       return null;
     }
   },
-  
+
   remove(key) {
     try {
       localStorage.removeItem(key);

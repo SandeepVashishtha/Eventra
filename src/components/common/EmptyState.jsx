@@ -12,12 +12,12 @@ const EmptyState = ({
   icon,
   actionLabel,
   onAction,
-  actionPath,      // Support routing link for primary action
-  secondaryLabel,  // Optional second action label
-  onSecondary,     // Optional second action handler
-  secondaryPath,   // Optional second action route
-  onClearFilters,  // Legacy support
-  onBrowseAll,     // Legacy support
+  actionPath, // Support routing link for primary action
+  secondaryLabel, // Optional second action label
+  onSecondary, // Optional second action handler
+  secondaryPath, // Optional second action route
+  onClearFilters, // Legacy support
+  onBrowseAll, // Legacy support
   compact = false,
   children,
 }) => {
@@ -35,13 +35,13 @@ const EmptyState = ({
         return {
           icon: <FilterX size={48} className="text-gray-400" />,
           title: t("event.noEventsMatch"),
-        message: t("event.noEventsMatchDesc"),
+          message: t("event.noEventsMatchDesc"),
         };
       case "bookmarks":
         return {
           icon: <Inbox size={48} className="text-gray-400" />,
           title: t("event.noBookmarked"),
-        message: t("event.noBookmarkedDesc"),
+          message: t("event.noBookmarkedDesc"),
         };
       default:
         return {
@@ -64,7 +64,6 @@ const EmptyState = ({
     const IconComponent = rawIcon;
     return <IconComponent size={compact ? 32 : 48} className="text-gray-400 dark:text-gray-500" />;
   };
-
 
   // Resolve primary action
   const handleAction = onAction || onClearFilters || onBrowseAll;
@@ -94,13 +93,17 @@ const EmptyState = ({
       <div className="relative z-10">
         {/* Icon/Illustration */}
         <div className={`flex justify-center ${compact ? "mb-4" : "mb-6"}`}>
-          <div className={`${compact ? "p-3 rounded-xl" : "p-4 rounded-2xl"} bg-slate-50 dark:bg-slate-800`}>
+          <div
+            className={`${compact ? "p-3 rounded-xl" : "p-4 rounded-2xl"} bg-slate-50 dark:bg-slate-800`}
+          >
             {renderIcon()}
           </div>
         </div>
 
         {/* Title */}
-        <h3 className={`${compact ? "text-lg" : "text-xl"} font-bold text-slate-900 dark:text-white`}>
+        <h3
+          className={`${compact ? "text-lg" : "text-xl"} font-bold text-slate-900 dark:text-white`}
+        >
           {displayTitle}
         </h3>
 
@@ -135,8 +138,9 @@ const EmptyState = ({
             )}
 
             {/* Secondary action (optional) */}
-            {secondaryLabel && (secondaryPath || onSecondary) && (
-              secondaryPath ? (
+            {secondaryLabel &&
+              (secondaryPath || onSecondary) &&
+              (secondaryPath ? (
                 <Link
                   to={secondaryPath}
                   onClick={onSecondary}
@@ -154,8 +158,7 @@ const EmptyState = ({
                 >
                   {secondaryLabel}
                 </button>
-              )
-            )}
+              ))}
           </div>
         )}
       </div>

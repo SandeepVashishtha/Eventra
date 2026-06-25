@@ -29,7 +29,7 @@ const ProfileMenu = ({ user, logout }) => {
     if (!isOpen) return;
     const menuEl = menuRef.current;
     if (!menuEl) return;
-    const firstFocusable = menuEl.querySelector('a[href], button:not([aria-expanded])');
+    const firstFocusable = menuEl.querySelector("a[href], button:not([aria-expanded])");
     firstFocusable?.focus();
   }, [isOpen]);
 
@@ -96,7 +96,9 @@ const ProfileMenu = ({ user, logout }) => {
             <User className="text-text-light w-3.5 h-3.5" strokeWidth={1.5} />
           </div>
         )}
-        <span className="text-sm font-medium tracking-wide hidden sm:block text-text-light hover:text-text">{user?.name?.split(" ")[0] || "Profile"}</span>
+        <span className="text-sm font-medium tracking-wide hidden sm:block text-text-light hover:text-text">
+          {user?.name?.split(" ")[0] || "Profile"}
+        </span>
         <ChevronDown
           className={`w-3.5 h-3.5 text-text-light transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
           strokeWidth={1.5}
@@ -113,9 +115,7 @@ const ProfileMenu = ({ user, logout }) => {
             <p className="text-sm font-semibold text-text truncate">
               {user?.name || user?.username || "User"}
             </p>
-            <p className="text-xs text-text-light truncate">
-              {user?.email || "Logged in"}
-            </p>
+            <p className="text-xs text-text-light truncate">{user?.email || "Logged in"}</p>
           </div>
 
           <div className="space-y-1">

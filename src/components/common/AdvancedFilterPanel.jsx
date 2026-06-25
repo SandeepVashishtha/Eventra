@@ -76,17 +76,14 @@ const AdvancedFilterPanel = ({
     onFiltersChange({
       ...filters,
       priceRange:
-        priceRange.min > 0 || priceRange.max < (priceStats.max || 1500)
-          ? priceRange
-          : null,
+        priceRange.min > 0 || priceRange.max < (priceStats.max || 1500) ? priceRange : null,
     });
   };
 
   const handleDateRangeChange = (dateRangeData) => {
     onFiltersChange({
       ...filters,
-      dateRange:
-        dateRangeData.startDate || dateRangeData.endDate ? dateRangeData : null,
+      dateRange: dateRangeData.startDate || dateRangeData.endDate ? dateRangeData : null,
     });
   };
 
@@ -99,7 +96,7 @@ const AdvancedFilterPanel = ({
       normalizeAdvancedFilters({
         ...filters,
         ...presetFilters,
-      }),
+      })
     );
   };
 
@@ -129,7 +126,8 @@ const AdvancedFilterPanel = ({
   const initPriceMax = filters.priceRange?.max ?? (priceStats.max || 1500);
 
   return (
-    <div className="
+    <div
+      className="
    w-full
 bg-white dark:bg-gray-800
 rounded-3xl
@@ -137,7 +135,8 @@ border border-gray-200 dark:border-gray-700
 shadow-xl
 backdrop-blur-sm
 overflow-hidden
-  ">
+  "
+    >
       {/* Header */}
       <button
         onClick={onToggleOpen}
@@ -152,23 +151,25 @@ overflow-hidden
         dark:to-gray-800
         hover:from-indigo-100
         transition-all duration-300
-        "       aria-label="button">
-        <h2 className="
+        "
+        aria-label="button"
+      >
+        <h2
+          className="
 text-2xl md:text-3xl
 font-bold
 tracking-tight
 text-gray-900 dark:text-white
 flex items-center gap-3
-">
-        <SlidersHorizontal className="w-6 h-6 text-indigo-600" />
+"
+        >
+          <SlidersHorizontal className="w-6 h-6 text-indigo-600" />
           Advanced Filters
           {hasFilters && (
             <span className="inline-flex items-center justify-center w-7 h-7 text-xs font-bold text-white bg-indigo-600 rounded-full">
               {
                 Object.values(filters).filter(
-                  (v) =>
-                    (Array.isArray(v) && v.length > 0) ||
-                    (v && typeof v === "object"),
+                  (v) => (Array.isArray(v) && v.length > 0) || (v && typeof v === "object")
                 ).length
               }
             </span>
@@ -219,7 +220,8 @@ flex items-center gap-3
                   hover:scale-105
                   hover:shadow-md
                   transition-all duration-200
-                  "                >
+                  "
+                >
                   {preset.label}
                 </button>
               ))}
@@ -228,7 +230,7 @@ flex items-center gap-3
 
           {/* Category Filter Section */}
           <div
-className="
+            className="
 p-5
 rounded-2xl
 bg-gray-50
@@ -239,7 +241,9 @@ shadow-sm
 hover:shadow-md
 transition-all duration-300
 "
->            <button
+          >
+            {" "}
+            <button
               onClick={() => toggleSection("category")}
               className="
               w-full
@@ -252,11 +256,15 @@ transition-all duration-300
               hover:text-indigo-600
               dark:hover:text-indigo-400
               transition-colors
-              "            >
+              "
+            >
               <span className="flex items-center gap-2">
                 <span>Categories</span>
                 {isSectionActive("category") && (
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50 animate-pulse" aria-hidden="true" />
+                  <span
+                    className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50 animate-pulse"
+                    aria-hidden="true"
+                  />
                 )}
               </span>
               <ChevronDown
@@ -279,7 +287,7 @@ transition-all duration-300
 
           {/* Mode Filter Section */}
           <div
-className="
+            className="
 p-5
 rounded-2xl
 bg-gray-50
@@ -290,7 +298,9 @@ shadow-sm
 hover:shadow-md
 transition-all duration-300
 "
->            <button
+          >
+            {" "}
+            <button
               onClick={() => toggleSection("mode")}
               className="
               w-full
@@ -303,18 +313,20 @@ transition-all duration-300
               hover:text-indigo-600
               dark:hover:text-indigo-400
               transition-colors
-              "            >
+              "
+            >
               <span className="flex items-center gap-2">
                 <span>Event Mode</span>
                 {isSectionActive("mode") && (
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50 animate-pulse" aria-hidden="true" />
+                  <span
+                    className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50 animate-pulse"
+                    aria-hidden="true"
+                  />
                 )}
               </span>
               <ChevronDown
                 size={16}
-                className={`transition-transform ${
-                  expandedSections.mode ? "rotate-180" : ""
-                }`}
+                className={`transition-transform ${expandedSections.mode ? "rotate-180" : ""}`}
               />
             </button>
             {expandedSections.mode && (
@@ -330,7 +342,7 @@ transition-all duration-300
 
           {/* Status Filter Section */}
           <div
-className="
+            className="
 p-5
 rounded-2xl
 bg-gray-50
@@ -341,7 +353,7 @@ shadow-sm
 hover:shadow-md
 transition-all duration-300
 "
->
+          >
             <button
               onClick={() => toggleSection("status")}
               className="
@@ -355,18 +367,20 @@ transition-all duration-300
               hover:text-indigo-600
               dark:hover:text-indigo-400
               transition-colors
-              "            >
+              "
+            >
               <span className="flex items-center gap-2">
                 <span>Event Status</span>
                 {isSectionActive("status") && (
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50 animate-pulse" aria-hidden="true" />
+                  <span
+                    className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50 animate-pulse"
+                    aria-hidden="true"
+                  />
                 )}
               </span>
               <ChevronDown
                 size={16}
-                className={`transition-transform ${
-                  expandedSections.status ? "rotate-180" : ""
-                }`}
+                className={`transition-transform ${expandedSections.status ? "rotate-180" : ""}`}
               />
             </button>
             {expandedSections.status && (
@@ -418,7 +432,7 @@ transition-all duration-300
             {expandedSections.tags && (
               <div className="mt-3">
                 <CategoryFilter
-                  categories={EVENT_TAGS.map(t => ({ id: t, label: t }))}
+                  categories={EVENT_TAGS.map((t) => ({ id: t, label: t }))}
                   selectedCategories={filters.tags || []}
                   onCategoryChange={handleTagsChange}
                 />
@@ -428,7 +442,7 @@ transition-all duration-300
 
           {/* Location Filter Section */}
           <div
-className="
+            className="
 p-5
 rounded-2xl
 bg-gray-50
@@ -439,7 +453,7 @@ shadow-sm
 hover:shadow-md
 transition-all duration-300
 "
->
+          >
             <button
               onClick={() => toggleSection("location")}
               className="
@@ -453,18 +467,20 @@ transition-all duration-300
               hover:text-indigo-600
               dark:hover:text-indigo-400
               transition-colors
-              "            >
+              "
+            >
               <span className="flex items-center gap-2">
                 <span>Location</span>
                 {isSectionActive("location") && (
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50 animate-pulse" aria-hidden="true" />
+                  <span
+                    className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50 animate-pulse"
+                    aria-hidden="true"
+                  />
                 )}
               </span>
               <ChevronDown
                 size={16}
-                className={`transition-transform ${
-                  expandedSections.location ? "rotate-180" : ""
-                }`}
+                className={`transition-transform ${expandedSections.location ? "rotate-180" : ""}`}
               />
             </button>
             {expandedSections.location && (
@@ -493,7 +509,8 @@ transition-all duration-300
                     focus:ring-indigo-500
                     focus:border-indigo-500
                     transition-all
-                    "                  />
+                    "
+                  />
                 </div>
               </div>
             )}
@@ -501,7 +518,7 @@ transition-all duration-300
 
           {/* Price Range Section */}
           <div
-className="
+            className="
 p-5
 rounded-2xl
 bg-gray-50
@@ -512,7 +529,7 @@ shadow-sm
 hover:shadow-md
 transition-all duration-300
 "
->
+          >
             <button
               onClick={() => toggleSection("price")}
               className="
@@ -526,22 +543,25 @@ transition-all duration-300
               hover:text-indigo-600
               dark:hover:text-indigo-400
               transition-colors
-              "            >
+              "
+            >
               <span className="flex items-center gap-2">
                 <span>Price Range</span>
                 {isSectionActive("price") && (
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50 animate-pulse" aria-hidden="true" />
+                  <span
+                    className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50 animate-pulse"
+                    aria-hidden="true"
+                  />
                 )}
               </span>
               <ChevronDown
                 size={16}
-                className={`transition-transform ${
-                  expandedSections.price ? "rotate-180" : ""
-                }`}
+                className={`transition-transform ${expandedSections.price ? "rotate-180" : ""}`}
               />
             </button>
             {expandedSections.price && (
-              <div className="
+              <div
+                className="
               mt-4
               p-4
               rounded-xl
@@ -549,7 +569,8 @@ transition-all duration-300
               dark:bg-gray-700/40
               border border-gray-200
               dark:border-gray-600
-              ">
+              "
+              >
                 <PriceRangeSlider
                   minPrice={initPriceMin}
                   maxPrice={initPriceMax}
@@ -563,7 +584,7 @@ transition-all duration-300
 
           {/* Date Range Section */}
           <div
-className="
+            className="
 p-5
 rounded-2xl
 bg-gray-50
@@ -574,7 +595,7 @@ shadow-sm
 hover:shadow-md
 transition-all duration-300
 "
->
+          >
             <button
               onClick={() => toggleSection("date")}
               className="
@@ -588,18 +609,20 @@ transition-all duration-300
               hover:text-indigo-600
               dark:hover:text-indigo-400
               transition-colors
-              "            >
+              "
+            >
               <span className="flex items-center gap-2">
                 <span>Date Range</span>
                 {isSectionActive("date") && (
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50 animate-pulse" aria-hidden="true" />
+                  <span
+                    className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50 animate-pulse"
+                    aria-hidden="true"
+                  />
                 )}
               </span>
               <ChevronDown
                 size={16}
-                className={`transition-transform ${
-                  expandedSections.date ? "rotate-180" : ""
-                }`}
+                className={`transition-transform ${expandedSections.date ? "rotate-180" : ""}`}
               />
             </button>
             {expandedSections.date && (
@@ -636,7 +659,8 @@ transition-all duration-300
               hover:shadow-md
               transition-all duration-300
               "
-                           aria-label="button">
+              aria-label="button"
+            >
               Clear All Filters
             </button>
           )}

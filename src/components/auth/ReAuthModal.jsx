@@ -42,7 +42,7 @@ const ReAuthModal = ({ onSuccess }) => {
         className="bg-white dark:bg-gray-800 rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative overflow-hidden"
       >
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 to-orange-500"></div>
-        
+
         <div className="text-center mb-6">
           <div className="mx-auto bg-red-100 dark:bg-red-900/30 w-16 h-16 rounded-full flex items-center justify-center mb-4">
             <Lock className="w-8 h-8 text-red-600 dark:text-red-400" />
@@ -51,7 +51,8 @@ const ReAuthModal = ({ onSuccess }) => {
             Verify Your Session
           </h2>
           <p className="text-gray-500 dark:text-gray-400 text-sm">
-            For your security, we need to verify your identity. Your session has been flagged due to inactivity or a security rule.
+            For your security, we need to verify your identity. Your session has been flagged due to
+            inactivity or a security rule.
           </p>
         </div>
 

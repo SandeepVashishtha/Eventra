@@ -1,4 +1,13 @@
-import { Lock, ShieldCheck, Database, Globe, Mail, Shield, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Lock,
+  ShieldCheck,
+  Database,
+  Globe,
+  Mail,
+  Shield,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { motion, useAnimation } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -102,12 +111,8 @@ export const Privacy = () => {
           >
             Privacy Policy
           </motion.h1>
-          <motion.p
-            variants={item}
-            className="text-xl text-text-light"
-          >
-            Your privacy is important to us. Learn how we protect your data and
-            your rights.
+          <motion.p variants={item} className="text-xl text-text-light">
+            Your privacy is important to us. Learn how we protect your data and your rights.
           </motion.p>
         </motion.div>
         {/* Intro Section */}
@@ -118,18 +123,13 @@ export const Privacy = () => {
           className="bg-card-bg/80 backdrop-blur-lg rounded-2xl border border-border p-8 shadow-md"
         >
           <p className="text-lg text-text">
-            At{" "}
-            <span className="font-bold text-text">
-              Eventra
-            </span>
-            , we are committed to protecting your personal information and your
-            right to privacy. As an open-source event management platform, we
-            value transparency in how we handle your data.
+            At <span className="font-bold text-text">Eventra</span>, we are committed to protecting
+            your personal information and your right to privacy. As an open-source event management
+            platform, we value transparency in how we handle your data.
           </p>
           <p className="mt-4 text-text-light">
-            This Privacy Policy explains how we collect, use, disclose, and
-            safeguard your information when you use our event management
-            platform and services.
+            This Privacy Policy explains how we collect, use, disclose, and safeguard your
+            information when you use our event management platform and services.
           </p>
         </motion.div>
         {/* Policy Sections */}
@@ -156,9 +156,7 @@ export const Privacy = () => {
                     <div className="flex items-center justify-center w-12 h-12 bg-bg rounded-xl text-black dark:text-white text-2xl mr-4">
                       {section.icon}
                     </div>
-                    <h2 className="text-2xl font-bold text-text">
-                      {section.title}
-                    </h2>
+                    <h2 className="text-2xl font-bold text-text">{section.title}</h2>
                   </div>
                   <div className="flex-shrink-0 ml-4">
                     {openSections[index] ? (
@@ -199,13 +197,11 @@ export const Privacy = () => {
           animate={controls}
           className="bg-card-bg rounded-2xl border border-border p-8 shadow-md"
         >
-          <h3 className="text-2xl font-bold text-text mb-4">
-            Policy Updates
-          </h3>
+          <h3 className="text-2xl font-bold text-text mb-4">Policy Updates</h3>
           <p className="text-text-light mb-4">
-            We may update our privacy practices. Changes will be posted on this
-            page with a revised date. For significant changes, we will notify
-            you through email or a prominent notice on our website.
+            We may update our privacy practices. Changes will be posted on this page with a revised
+            date. For significant changes, we will notify you through email or a prominent notice on
+            our website.
           </p>
           <p className="text-text-light">
             <strong>Last updated:</strong>{" "}
@@ -224,12 +220,9 @@ export const Privacy = () => {
           className="bg-card-bg rounded-2xl p-8 text-center relative overflow-hidden shadow-md border border-border"
         >
           <div className="relative z-10">
-            <h3 className="text-2xl font-bold text-text mb-4">
-              Have Questions?
-            </h3>
+            <h3 className="text-2xl font-bold text-text mb-4">Have Questions?</h3>
             <p className="text-text-light mb-6">
-              If you have any questions or concerns about this policy, we&apos;re
-              here to help.
+              If you have any questions or concerns about this policy, we&apos;re here to help.
             </p>
             <Link
               to="/contact"

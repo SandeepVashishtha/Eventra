@@ -36,8 +36,8 @@ import LazyImage from "../common/LazyImage";
 // ─── Scoring weights ─────────────────────────────────────────────────────────
 
 const W_CATEGORY = 40;
-const W_TAG = 5;         // per shared tag
-const W_TAG_MAX = 30;    // cap at 6 shared tags
+const W_TAG = 5; // per shared tag
+const W_TAG_MAX = 30; // cap at 6 shared tags
 const W_TYPE = 15;
 const W_MODE = 10;
 const W_DIFFICULTY = 5;
@@ -158,17 +158,16 @@ const buildMatchReason = (current, candidate) => {
 // ─── Type color map ───────────────────────────────────────────────────────────
 
 const TYPE_STYLE = {
-  hackathon:   "bg-pink-50 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300",
-  conference:  "bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300",
-  workshop:    "bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
-  summit:      "bg-violet-50 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300",
-  networking:  "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
-  bootcamp:    "bg-cyan-50 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300",
+  hackathon: "bg-pink-50 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300",
+  conference: "bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300",
+  workshop: "bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
+  summit: "bg-violet-50 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300",
+  networking: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
+  bootcamp: "bg-cyan-50 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300",
 };
 
 const getTypeStyle = (type = "") =>
-  TYPE_STYLE[type.toLowerCase()] ||
-  "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400";
+  TYPE_STYLE[type.toLowerCase()] || "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400";
 
 // ─── Skeleton card ────────────────────────────────────────────────────────────
 
@@ -197,9 +196,7 @@ const SimilarEventCard = memo(({ event, score, matchReason }) => {
     : null;
 
   const spotsLeft =
-    event.maxAttendees && event.attendees != null
-      ? event.maxAttendees - event.attendees
-      : null;
+    event.maxAttendees && event.attendees != null ? event.maxAttendees - event.attendees : null;
 
   const scorePercent = Math.min(100, Math.round(score));
 
@@ -306,10 +303,7 @@ const SimilarEvents = ({ currentEvent }) => {
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
 
-  const similar = useMemo(
-    () => findSimilarEvents(currentEvent, mockEvents),
-    [currentEvent]
-  );
+  const similar = useMemo(() => findSimilarEvents(currentEvent, mockEvents), [currentEvent]);
 
   const updateScrollState = useCallback(() => {
     const el = scrollRef.current;
@@ -331,10 +325,7 @@ const SimilarEvents = ({ currentEvent }) => {
   if (!currentEvent || similar.length === 0) return null;
 
   return (
-    <section
-      aria-label="Similar events you might enjoy"
-      className="mt-14 mb-4"
-    >
+    <section aria-label="Similar events you might enjoy" className="mt-14 mb-4">
       {/* Section header */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
@@ -342,9 +333,7 @@ const SimilarEvents = ({ currentEvent }) => {
             <Layers size={16} className="text-indigo-500" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">
-              Similar Events
-            </h2>
+            <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">Similar Events</h2>
             <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
               Based on category, tags, and type
             </p>

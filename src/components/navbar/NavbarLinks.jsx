@@ -33,24 +33,15 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
     if (vertical) return;
 
     const handleOutsideClick = (event) => {
-      if (
-        navRef.current &&
-        !navRef.current.contains(event.target)
-      ) {
+      if (navRef.current && !navRef.current.contains(event.target)) {
         setOpenMenu(null);
       }
     };
 
-    document.addEventListener(
-      "mousedown",
-      handleOutsideClick
-    );
+    document.addEventListener("mousedown", handleOutsideClick);
 
     return () => {
-      document.removeEventListener(
-        "mousedown",
-        handleOutsideClick
-      );
+      document.removeEventListener("mousedown", handleOutsideClick);
     };
   }, [vertical]);
 
@@ -72,15 +63,11 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
   const handleClick = (href, e) => {
     try {
       if (href === "/events") {
-        sessionStorage.removeItem(
-          "eventra:event-filters:v1"
-        );
+        sessionStorage.removeItem("eventra:event-filters:v1");
       }
 
       if (href === "/hackathons") {
-        sessionStorage.removeItem(
-          "eventra:hackathon-filters:v1"
-        );
+        sessionStorage.removeItem("eventra:hackathon-filters:v1");
       }
     } catch {
       // ignore
@@ -123,24 +110,13 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
   return (
     <nav
       ref={navRef}
-      aria-label={
-        vertical
-          ? t("nav.mobilePrimaryLinks")
-          : t("nav.primaryLinks")
-      }
-      className={`flex ${
-        vertical
-          ? "flex-col w-full gap-2"
-          : "items-center gap-6"
-      }`}
+      aria-label={vertical ? t("nav.mobilePrimaryLinks") : t("nav.primaryLinks")}
+      className={`flex ${vertical ? "flex-col w-full gap-2" : "items-center gap-6"}`}
     >
       {NAV_ITEMS.map((item) => {
-        const isOpen =
-          openMenu === item.nameKey;
+        const isOpen = openMenu === item.nameKey;
 
-        const hasChildren =
-          item.subItems &&
-          item.subItems.length > 0;
+        const hasChildren = item.subItems && item.subItems.length > 0;
 
         const menuId = `menu-${item.nameKey}`;
 
@@ -148,26 +124,16 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
           return (
             <div
               key={item.nameKey}
-              className={`relative ${
-                vertical
-                  ? "w-full"
-                  : "flex items-center"
-              }`}
+              className={`relative ${vertical ? "w-full" : "flex items-center"}`}
             >
               <div className="flex items-center">
                 <NavLink
                   to={item.href}
-                  onClick={(e) =>
-                    handleClick(item.href, e)
-                  }
-                  className={({ isActive }) =>
-                    navLinkClasses(isActive)
-                  }
+                  onClick={(e) => handleClick(item.href, e)}
+                  className={({ isActive }) => navLinkClasses(isActive)}
                 >
                   {vertical && item.icon}
-                  <span>
-                    {t(item.nameKey)}
-                  </span>
+                  <span>{t(item.nameKey)}</span>
                 </NavLink>
 
                 {!vertical && (
@@ -176,30 +142,16 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                     aria-expanded={isOpen}
                     aria-haspopup="menu"
                     aria-controls={menuId}
-                    onClick={() =>
-                      setOpenMenu(
-                        isOpen
-                          ? null
-                          : item.nameKey
-                      )
-                    }
+                    onClick={() => setOpenMenu(isOpen ? null : item.nameKey)}
                     onKeyDown={(event) => {
                       if (event.key === "Enter") {
-                        setOpenMenu(
-                          isOpen
-                            ? null
-                            : item.nameKey
-                        );
+                        setOpenMenu(isOpen ? null : item.nameKey);
                       }
                     }}
                     className="ml-1 rounded p-1 hover:bg-bg-secondary"
                   >
                     <ChevronDown
-                      className={`h-4 w-4 transition-transform ${
-                        isOpen
-                          ? "rotate-180"
-                          : ""
-                      }`}
+                      className={`h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
                     />
                   </button>
                 )}
@@ -218,12 +170,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                     <NavLink
                       key={sub.nameKey}
                       to={sub.href}
-                      onClick={(e) =>
-                        handleClick(
-                          sub.href,
-                          e
-                        )
-                      }
+                      onClick={(e) => handleClick(sub.href, e)}
                       className={({ isActive }) =>
                         `
                           flex items-center gap-2
@@ -241,9 +188,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                     >
                       {sub.icon}
 
-                      <span>
-                        {t(sub.nameKey)}
-                      </span>
+                      <span>{t(sub.nameKey)}</span>
                     </NavLink>
                   ))}
                 </div>
@@ -256,15 +201,9 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
           <NavLink
             key={item.nameKey}
             to={item.href}
-            onMouseEnter={() =>
-              handlePrefetch(item.href)
-            }
-            onClick={(e) =>
-              handleClick(item.href, e)
-            }
-            className={({ isActive }) =>
-              navLinkClasses(isActive)
-            }
+            onMouseEnter={() => handlePrefetch(item.href)}
+            onClick={(e) => handleClick(item.href, e)}
+            className={({ isActive }) => navLinkClasses(isActive)}
           >
             {item.icon}
 
@@ -277,5 +216,3 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
 };
 
 export default NavbarLinks;
-
-

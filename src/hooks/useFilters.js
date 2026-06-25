@@ -60,12 +60,7 @@ export default function useFilters() {
       ) {
         params.delete(key);
       } else {
-        params.set(
-          key,
-          Array.isArray(value)
-            ? value.join(",")
-            : value,
-        );
+        params.set(key, Array.isArray(value) ? value.join(",") : value);
       }
     });
 

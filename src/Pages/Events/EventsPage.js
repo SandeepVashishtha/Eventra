@@ -48,7 +48,7 @@ const renderCardSection = (
   viewMode,
   searchQuery,
   onClearSearch,
-  filteredEvents,
+  filteredEvents
   // hasFilters
 ) => {
   if (isLoading) {
@@ -104,10 +104,11 @@ const renderCardSection = (
   }
   return (
     <div
-      className={`grid gap-6 ${viewMode === "grid"
-        ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-        : "grid-cols-1 max-w-4xl mx-auto"
-        }`}
+      className={`grid gap-6 ${
+        viewMode === "grid"
+          ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+          : "grid-cols-1 max-w-4xl mx-auto"
+      }`}
     >
       {paginatedEvents.map((event) => (
         <EventCard key={event.id} event={event} />
@@ -129,15 +130,12 @@ const EventsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   // SECURITY: Safely decode and sanitize search query from URL params
-  const rawSearchParam =
-    new URLSearchParams(location.search).get("search") || "";
+  const rawSearchParam = new URLSearchParams(location.search).get("search") || "";
 
   let routeSearchQuery = "";
 
   try {
-    routeSearchQuery = prepareSafeSearchQuery(
-      decodeURIComponent(rawSearchParam)
-    );
+    routeSearchQuery = prepareSafeSearchQuery(decodeURIComponent(rawSearchParam));
   } catch {
     // Malformed URI component
     routeSearchQuery = "";
@@ -168,28 +166,21 @@ const EventsPage = () => {
     let savedFilters = {};
 
     try {
-      savedFilters = safeJsonParse(
-        window.sessionStorage.getItem(FILTER_STORAGE_KEY) || "{}"
-      );
+      savedFilters = safeJsonParse(window.sessionStorage.getItem(FILTER_STORAGE_KEY) || "{}");
     } catch {
       savedFilters = {};
     }
 
     const page = parseInt(searchParams.get("page"), 10) || 1;
-    const perPage =
-      parseInt(searchParams.get("perPage"), 10) || savedFilters.perPage || 6;
-    const filter =
-      searchParams.get("filter") || savedFilters.filterType || "all";
-    const category =
-      searchParams.get("category") || savedFilters.categoryFilter || "all";
+    const perPage = parseInt(searchParams.get("perPage"), 10) || savedFilters.perPage || 6;
+    const filter = searchParams.get("filter") || savedFilters.filterType || "all";
+    const category = searchParams.get("category") || savedFilters.categoryFilter || "all";
     const sort = searchParams.get("sort") || savedFilters.sortType || "Newest";
     const view = searchParams.get("view") || savedFilters.viewMode || "grid";
     const urlAdvancedFilters = searchParams.get("filters");
     const advancedFilters = urlAdvancedFilters
       ? decodeAdvancedFilters(urlAdvancedFilters)
-      : normalizeAdvancedFilters(
-        savedFilters.advancedFilters || getDefaultFilters()
-      );
+      : normalizeAdvancedFilters(savedFilters.advancedFilters || getDefaultFilters());
     const initialSearch = routeSearchQuery || savedFilters.searchQuery || "";
 
     if (initialSearch) {
@@ -263,12 +254,7 @@ const EventsPage = () => {
       listing.setSearchQuery(safeQuery);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    rawSearchParam,
-    routeSearchQuery,
-    listing.searchQuery,
-    listing.setSearchQuery,
-  ]);
+  }, [rawSearchParam, routeSearchQuery, listing.searchQuery, listing.setSearchQuery]);
 
   const handleSearch = (query = "") => {
     const safeQuery = prepareSafeSearchQuery(query);
@@ -318,7 +304,7 @@ const EventsPage = () => {
       listing.sortType,
       listing.viewMode,
       listing.advancedFilters,
-    ],
+    ]
   );
 
   const applyFilterPreset = (filters) => {
@@ -349,12 +335,8 @@ const EventsPage = () => {
 
       <RecentlyViewedSection />
 
-      <div
-        ref={cardSectionRef}
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8"
-      >
+      <div ref={cardSectionRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="mb-5 sm:mb-6">
-
           <EventFiltersToolbar
             filterType={listing.filterType}
             onFilterChange={listing.setFilterType}

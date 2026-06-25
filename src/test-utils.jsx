@@ -28,9 +28,7 @@ export function renderWithProviders(ui, options = {}) {
       <BrowserRouter>
         <ThemeProvider>
           <AuthProvider>
-            <NotificationProvider>
-              {children}
-            </NotificationProvider>
+            <NotificationProvider>{children}</NotificationProvider>
           </AuthProvider>
         </ThemeProvider>
       </BrowserRouter>

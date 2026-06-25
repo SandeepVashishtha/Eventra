@@ -1,6 +1,6 @@
 /**
  * Environment Detection Module
- * 
+ *
  * Detects the current runtime environment (development/production)
  * and provides environment variable access.
  */

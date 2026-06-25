@@ -1,7 +1,12 @@
 import { motion } from "framer-motion";
 import { MapPin, Map, Navigation, Compass } from "lucide-react";
 
-export default function LocationFields({ formData, handleInputChange, errors, prefersReducedMotion }) {
+export default function LocationFields({
+  formData,
+  handleInputChange,
+  errors,
+  prefersReducedMotion,
+}) {
   if (formData.isVirtual) {
     return (
       <motion.div
@@ -21,7 +26,9 @@ export default function LocationFields({ formData, handleInputChange, errors, pr
           placeholder="https://zoom.us/j/..."
           className={`w-full border ${errors.virtualLink ? "border-red-500" : "border-gray-300 dark:border-gray-600"} rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
         />
-        {errors.virtualLink && <span className="text-red-500 text-sm mt-1">{errors.virtualLink}</span>}
+        {errors.virtualLink && (
+          <span className="text-red-500 text-sm mt-1">{errors.virtualLink}</span>
+        )}
       </motion.div>
     );
   }

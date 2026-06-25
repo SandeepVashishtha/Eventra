@@ -35,16 +35,12 @@ describe("buildEventJsonLd", () => {
 
   it("maps offline event to OfflineEventAttendanceMode", () => {
     const ld = buildEventJsonLd(BASE_EVENT, "");
-    expect(ld.eventAttendanceMode).toBe(
-      "https://schema.org/OfflineEventAttendanceMode"
-    );
+    expect(ld.eventAttendanceMode).toBe("https://schema.org/OfflineEventAttendanceMode");
   });
 
   it("maps virtual event to OnlineEventAttendanceMode", () => {
     const ld = buildEventJsonLd({ ...BASE_EVENT, isVirtual: true }, "");
-    expect(ld.eventAttendanceMode).toBe(
-      "https://schema.org/OnlineEventAttendanceMode"
-    );
+    expect(ld.eventAttendanceMode).toBe("https://schema.org/OnlineEventAttendanceMode");
   });
 
   it("includes offers when ticketTiers are provided", () => {
@@ -90,8 +86,6 @@ describe("mapAttendanceMode", () => {
     );
   });
   it("returns offline by default", () => {
-    expect(mapAttendanceMode({})).toBe(
-      "https://schema.org/OfflineEventAttendanceMode"
-    );
+    expect(mapAttendanceMode({})).toBe("https://schema.org/OfflineEventAttendanceMode");
   });
 });

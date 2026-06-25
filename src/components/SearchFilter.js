@@ -56,9 +56,7 @@ const SearchFilter = () => {
         params.delete("search");
       }
 
-      const newUrl =
-        window.location.pathname +
-        (params.toString() ? `?${params.toString()}` : "");
+      const newUrl = window.location.pathname + (params.toString() ? `?${params.toString()}` : "");
 
       window.history.replaceState(null, "", newUrl);
     }
@@ -115,22 +113,15 @@ const SearchFilter = () => {
     const term = debouncedSearchTerm.toLowerCase();
 
     const matchesSearch =
-      event.title.toLowerCase().includes(term) ||
-      event.description.toLowerCase().includes(term);
+      event.title.toLowerCase().includes(term) || event.description.toLowerCase().includes(term);
 
-    const matchesCategory =
-      selectedCategory === "all" || event.category === selectedCategory;
+    const matchesCategory = selectedCategory === "all" || event.category === selectedCategory;
 
-    const normalizedLocation = event.location
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, "-");
+    const normalizedLocation = event.location.toLowerCase().trim().replace(/\s+/g, "-");
 
-    const matchesLocation =
-      selectedLocation === "all" || normalizedLocation === selectedLocation;
+    const matchesLocation = selectedLocation === "all" || normalizedLocation === selectedLocation;
 
-    const matchesPrice =
-      priceFilter === "all" || event.price === priceFilter;
+    const matchesPrice = priceFilter === "all" || event.price === priceFilter;
 
     const today = new Date();
     const eventDate = new Date(event.date);
@@ -146,13 +137,7 @@ const SearchFilter = () => {
       matchesDate = day === 0 || day === 6;
     }
 
-    return (
-      matchesSearch &&
-      matchesCategory &&
-      matchesLocation &&
-      matchesPrice &&
-      matchesDate
-    );
+    return matchesSearch && matchesCategory && matchesLocation && matchesPrice && matchesDate;
   });
 
   const handleResetFilters = () => {
@@ -174,9 +159,7 @@ const SearchFilter = () => {
           Discover Amazing Events 🎯
         </motion.h1>
 
-        <p className="search-subtitle">
-          Find the perfect event for your interests
-        </p>
+        <p className="search-subtitle">Find the perfect event for your interests</p>
       </div>
 
       <motion.div
@@ -194,10 +177,7 @@ const SearchFilter = () => {
       </motion.div>
 
       <div className="filters-container">
-        <select
-          value={selectedCategory}
-          onChange={(e) => setSelectedCategory(e.target.value)}
-        >
+        <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
           {categories.map((c) => (
             <option key={c.value} value={c.value}>
               {c.label}
@@ -205,10 +185,7 @@ const SearchFilter = () => {
           ))}
         </select>
 
-        <select
-          value={selectedLocation}
-          onChange={(e) => setSelectedLocation(e.target.value)}
-        >
+        <select value={selectedLocation} onChange={(e) => setSelectedLocation(e.target.value)}>
           {locations.map((l) => (
             <option key={l.value} value={l.value}>
               {l.label}
@@ -216,19 +193,14 @@ const SearchFilter = () => {
           ))}
         </select>
 
-        <select
-          value={priceFilter}
-          onChange={(e) => setPriceFilter(e.target.value)}
-        >
+        <select value={priceFilter} onChange={(e) => setPriceFilter(e.target.value)}>
           <option value="all">All Prices</option>
           <option value="free">Free</option>
           <option value="paid">Paid</option>
         </select>
       </div>
 
-      <div className="results-count">
-        {filteredEvents.length} events found
-      </div>
+      <div className="results-count">{filteredEvents.length} events found</div>
 
       {filteredEvents.length === 0 ? (
         <EmptyState

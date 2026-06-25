@@ -56,7 +56,11 @@ function renderMarkdownToReact(text) {
       } else if (match[4]) {
         inlineParts.push(<em key={inlineKey++}>{match[4]}</em>);
       } else if (match[6]) {
-        inlineParts.push(<code key={inlineKey++} className="bg-slate-200 dark:bg-slate-700 px-1 rounded text-xs">{match[6]}</code>);
+        inlineParts.push(
+          <code key={inlineKey++} className="bg-slate-200 dark:bg-slate-700 px-1 rounded text-xs">
+            {match[6]}
+          </code>
+        );
       } else if (match[9]) {
         const rawUrl = match[9].trim();
         const hasScheme = /^[a-z][a-z0-9+.-]*:/i.test(rawUrl);
@@ -64,7 +68,13 @@ function renderMarkdownToReact(text) {
         const isSafeUrl = !hasScheme || isSafeScheme;
         const safeUrl = isSafeUrl ? rawUrl : "#";
         inlineParts.push(
-          <a key={inlineKey++} href={safeUrl} target="_blank" rel="noopener noreferrer" className="text-indigo-500 underline">
+          <a
+            key={inlineKey++}
+            href={safeUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-indigo-500 underline"
+          >
             {match[8]}
           </a>
         );
@@ -203,10 +213,7 @@ export default function Chatbot() {
   }, [clearReplyTimer]);
 
   // Trap keyboard focus inside the chat panel while it's expanded
-  const { containerRef: chatTrapRef } = useFocusTrap(
-    isOpen && !isMinimized,
-    handleClose
-  );
+  const { containerRef: chatTrapRef } = useFocusTrap(isOpen && !isMinimized, handleClose);
 
   // Listen for Escape key to close the chatbot (accessibility)
   useEffect(() => {
@@ -235,14 +242,17 @@ export default function Chatbot() {
     wasOpenRef.current = isOpen;
     wasMinimizedRef.current = isMinimized;
 
-    const timer = setTimeout(() => {
-      if (chatLogsRef.current) {
-        chatLogsRef.current.scrollTo({
-          top: chatLogsRef.current.scrollHeight,
-          behavior: isOpening ? "auto" : "smooth",
-        });
-      }
-    }, isOpening ? 250 : 50);
+    const timer = setTimeout(
+      () => {
+        if (chatLogsRef.current) {
+          chatLogsRef.current.scrollTo({
+            top: chatLogsRef.current.scrollHeight,
+            behavior: isOpening ? "auto" : "smooth",
+          });
+        }
+      },
+      isOpening ? 250 : 50
+    );
 
     return () => clearTimeout(timer);
   }, [messages, isTyping, isMinimized, isOpen]);
@@ -261,7 +271,9 @@ export default function Chatbot() {
     // Append User Message, pruning the oldest entries when the cap is exceeded.
     setMessages((prev) => {
       const next = [...prev, { role: "user", content: cleanMessage }];
-      return next.length > MAX_STORED_MESSAGES ? next.slice(next.length - MAX_STORED_MESSAGES) : next;
+      return next.length > MAX_STORED_MESSAGES
+        ? next.slice(next.length - MAX_STORED_MESSAGES)
+        : next;
     });
     setDraft("");
     setIsTyping(true);
@@ -271,8 +283,13 @@ export default function Chatbot() {
     replyTimerRef.current = setTimeout(() => {
       const reply = getAssistantReply(cleanMessage, t);
       setMessages((prev) => {
-        const next = [...prev, { role: "assistant", content: reply.answer, actions: reply.actions }];
-        return next.length > MAX_STORED_MESSAGES ? next.slice(next.length - MAX_STORED_MESSAGES) : next;
+        const next = [
+          ...prev,
+          { role: "assistant", content: reply.answer, actions: reply.actions },
+        ];
+        return next.length > MAX_STORED_MESSAGES
+          ? next.slice(next.length - MAX_STORED_MESSAGES)
+          : next;
       });
       setIsTyping(false);
       replyTimerRef.current = null;
@@ -493,7 +510,7 @@ export default function Chatbot() {
                   </motion.div>
                 </div>
               )}
-              
+
               {/* 🔥 FIX: Added the missing dummy div to act as the scroll target for messagesEndRef */}
               <div ref={messagesEndRef} />
             </div>

@@ -38,11 +38,9 @@ describe("registerForEvent", () => {
 
   test("rejects missing eventId", async () => {
     const { res, state } = mockRes();
-    await registerForEvent(
-      { method: "POST", user: { id: "user-1" } },
-      res,
-      { getEventId: () => null }
-    );
+    await registerForEvent({ method: "POST", user: { id: "user-1" } }, res, {
+      getEventId: () => null,
+    });
     assert.strictEqual(state.statusCode, 400);
   });
 
@@ -116,7 +114,9 @@ describe("registerForEvent", () => {
       getEventById: async () => ({ id: "event-1", maxAttendees: 100 }),
       getRegistrationCount: async () => 99,
       isAlreadyRegistered: async () => false,
-      registerAttendee: async () => { throw err; },
+      registerAttendee: async () => {
+        throw err;
+      },
     };
     await registerForEvent(
       { method: "POST", user: { id: "user-1" }, body: { eventId: "event-1" } },
@@ -134,7 +134,9 @@ describe("registerForEvent", () => {
       getEventById: async () => ({ id: "event-1", maxAttendees: 100 }),
       getRegistrationCount: async () => 50,
       isAlreadyRegistered: async () => false,
-      registerAttendee: async () => { throw err; },
+      registerAttendee: async () => {
+        throw err;
+      },
     };
     await registerForEvent(
       { method: "POST", user: { id: "user-1" }, body: { eventId: "event-1" } },
@@ -147,7 +149,9 @@ describe("registerForEvent", () => {
   test("handles unexpected errors gracefully", async () => {
     const { res, state } = mockRes();
     const deps = {
-      getEventById: async () => { throw new Error("db failure"); },
+      getEventById: async () => {
+        throw new Error("db failure");
+      },
       getRegistrationCount: async () => 0,
       isAlreadyRegistered: async () => false,
       registerAttendee: async () => {},

@@ -10,9 +10,9 @@ const NotFoundPage = () => {
 
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: { 
+    visible: {
       opacity: 1,
-      transition: { staggerChildren: 0.15, delayChildren: 0.3 }
+      transition: { staggerChildren: 0.15, delayChildren: 0.3 },
     },
   };
 
@@ -26,7 +26,9 @@ const NotFoundPage = () => {
     float: (i) => ({
       y: prefersReducedMotion ? 0 : [0, -20 - i * 3, 0],
       x: prefersReducedMotion ? 0 : [0, 20 + i * 5, 0],
-      transition: prefersReducedMotion ? {} : { duration: 6 + i, repeat: Infinity, ease: "easeInOut" },
+      transition: prefersReducedMotion
+        ? {}
+        : { duration: 6 + i, repeat: Infinity, ease: "easeInOut" },
     }),
   };
 
@@ -37,8 +39,7 @@ const NotFoundPage = () => {
     { name: "AI Expo", category: "Exhibition" },
     { name: "Startup Pitch Night", category: "Startup" },
     { name: "Cloud Computing Workshop", category: "Workshop" },
-];
-
+  ];
 
   // Predefined bubble positions along edges (top, bottom, left, right)
   const bubblePositions = [
@@ -91,10 +92,16 @@ const NotFoundPage = () => {
         >
           <span className="relative">
             {/* UPDATED: Glow/blur effect for light mode */}
-            <span className="absolute top-0 left-0 text-indigo-600/50 dark:text-blue-400 opacity-70 blur-sm" aria-hidden="true">
+            <span
+              className="absolute top-0 left-0 text-indigo-600/50 dark:text-blue-400 opacity-70 blur-sm"
+              aria-hidden="true"
+            >
               404
             </span>
-            <span className="absolute top-0 left-0 text-purple-600/50 dark:text-indigo-400 opacity-70 blur-sm" aria-hidden="true">
+            <span
+              className="absolute top-0 left-0 text-purple-600/50 dark:text-indigo-400 opacity-70 blur-sm"
+              aria-hidden="true"
+            >
               404
             </span>
             <span className="relative">404</span>
@@ -105,7 +112,7 @@ const NotFoundPage = () => {
         <motion.h2
           variants={itemVariants}
           // UPDATED: Text colors
-                    className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight px-4 text-gray-900 dark:text-white"
+          className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight px-4 text-gray-900 dark:text-white"
         >
           Lost in the <span className="text-indigo-600 dark:text-blue-400">Eventra</span> Space
         </motion.h2>
@@ -116,14 +123,12 @@ const NotFoundPage = () => {
           // UPDATED: Text color
           className="text-gray-600 dark:text-white/80 mb-8 md:text-lg"
         >
-          The page you’re looking for doesn’t exist. While you’re here, explore some of our popular events.
+          The page you’re looking for doesn’t exist. While you’re here, explore some of our popular
+          events.
         </motion.p>
 
         {/* Buttons (work on both themes) */}
-        <motion.div
-          variants={itemVariants}
-          className="flex flex-wrap justify-center gap-4 mb-12"
-        >
+        <motion.div variants={itemVariants} className="flex flex-wrap justify-center gap-4 mb-12">
           <Link
             to="/"
             className="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-full shadow-lg hover:bg-indigo-500 transition"
@@ -153,7 +158,9 @@ const NotFoundPage = () => {
               >
                 {/* UPDATED: Text colors */}
                 <div className="text-sm text-gray-500 dark:text-white/70">{event.category}</div>
-                <h4 title={event.name} className="font-semibold text-lg mt-1 break-words">{event.name}</h4>
+                <h4 title={event.name} className="font-semibold text-lg mt-1 break-words">
+                  {event.name}
+                </h4>
                 <Link
                   to="/events"
                   // UPDATED: Link color

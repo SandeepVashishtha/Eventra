@@ -43,7 +43,7 @@ const Tag = ({ tag, onRemove }) => (
 const CustomDropdown = ({ label, value, options, onChange, placeholder = "Select" }) => {
   const [open, setOpen] = useState(false);
   const [menuCoords, setMenuCoords] = useState({ top: 0, left: 0, width: 0, showAbove: false });
-  
+
   const buttonRef = useRef(null);
   const dropdownRef = useRef(null);
   // Safe ID generation compatible with all React versions
@@ -58,10 +58,10 @@ const CustomDropdown = ({ label, value, options, onChange, placeholder = "Select
       const rect = buttonRef.current.getBoundingClientRect();
       const spaceBelow = window.innerHeight - rect.bottom;
       const spaceAbove = rect.top;
-      
+
       // Smart positioning: Open above if not enough space below
       const showAbove = spaceBelow < 250 && spaceAbove > spaceBelow;
-      
+
       setMenuCoords({
         top: showAbove ? rect.top - 8 : rect.bottom + 8,
         left: rect.left,
@@ -137,7 +137,9 @@ const CustomDropdown = ({ label, value, options, onChange, placeholder = "Select
         >
           {displayText}
         </span>
-        <ChevronDown className={`text-slate-400 dark:text-slate-500 shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+        <ChevronDown
+          className={`text-slate-400 dark:text-slate-500 shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+        />
       </button>
 
       {open &&
@@ -224,14 +226,14 @@ const HackathonHub = () => {
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   const [selectedTags, setSelectedTags] = useState([]);
   const [availableTags, setAvailableTags] = useState([]);
-  
+
   // NEW: Sort state
   const [sortBy, setSortBy] = useState("default");
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [filtersHydrated, setFiltersHydrated] = useState(false);
   const hasHydratedFilters = useRef(false);
-  
+
   // FIX: Prevent state updates on unmounted component
   const isMountedRef = useRef(true);
   useEffect(() => {
@@ -303,7 +305,15 @@ const HackathonHub = () => {
     } catch {
       // Ignored
     }
-  }, [activeTab, debouncedSearchQuery, filters, selectedTags, sortBy, filtersHydrated, setSearchParams]);
+  }, [
+    activeTab,
+    debouncedSearchQuery,
+    filters,
+    selectedTags,
+    sortBy,
+    filtersHydrated,
+    setSearchParams,
+  ]);
 
   const cardsSectionRef = useRef(null);
   const searchInputRef = useRef(null);
@@ -433,22 +443,39 @@ const HackathonHub = () => {
   const sortedHackathons = useMemo(() => {
     const sorted = [...filteredHackathons];
     if (sortBy === "newest") {
-      sorted.sort((a, b) => new Date(b.startDate || b.date || b.createdAt || 0) - new Date(a.startDate || a.date || a.createdAt || 0));
+      sorted.sort(
+        (a, b) =>
+          new Date(b.startDate || b.date || b.createdAt || 0) -
+          new Date(a.startDate || a.date || a.createdAt || 0)
+      );
     } else if (sortBy === "oldest") {
-      sorted.sort((a, b) => new Date(a.startDate || a.date || a.createdAt || 0) - new Date(b.startDate || b.date || b.createdAt || 0));
+      sorted.sort(
+        (a, b) =>
+          new Date(a.startDate || a.date || a.createdAt || 0) -
+          new Date(b.startDate || b.date || b.createdAt || 0)
+      );
     } else if (sortBy === "prize_desc") {
       sorted.sort((a, b) => {
-        const prizeA = typeof a.prizePool === 'number' ? a.prizePool : (a.prize || 0);
-        const prizeB = typeof b.prizePool === 'number' ? b.prizePool : (b.prize || 0);
+        const prizeA = typeof a.prizePool === "number" ? a.prizePool : a.prize || 0;
+        const prizeB = typeof b.prizePool === "number" ? b.prizePool : b.prize || 0;
         return prizeB - prizeA;
       });
     }
     return sorted;
   }, [filteredHackathons, sortBy]);
 
-  const featuredHackathons = useMemo(() => [...hackathons].filter((h) => h.featured).slice(0, 3), [hackathons]);
-  const difficulties = useMemo(() => [...new Set(hackathons.map((h) => h.difficulty).filter(Boolean))], [hackathons]);
-  const locations = useMemo(() => [...new Set(hackathons.map((h) => h.location).filter(Boolean))], [hackathons]);
+  const featuredHackathons = useMemo(
+    () => [...hackathons].filter((h) => h.featured).slice(0, 3),
+    [hackathons]
+  );
+  const difficulties = useMemo(
+    () => [...new Set(hackathons.map((h) => h.difficulty).filter(Boolean))],
+    [hackathons]
+  );
+  const locations = useMemo(
+    () => [...new Set(hackathons.map((h) => h.location).filter(Boolean))],
+    [hackathons]
+  );
 
   const resetFilters = () => {
     setFilters({ difficulty: "", prize: "", location: "" });
@@ -477,7 +504,12 @@ const HackathonHub = () => {
           aria-label="Host a Hackathon"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+            />
           </svg>
         </Link>
       </motion.div>
@@ -553,7 +585,7 @@ const HackathonHub = () => {
                 </span>
               </h2>
             </div>
-            
+
             <div className="flex flex-wrap items-center gap-3">
               {/* NEW: Sort Dropdown */}
               <div className="w-36">
@@ -582,12 +614,21 @@ const HackathonHub = () => {
                 aria-expanded={showFilters}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                  />
                 </svg>
                 {showFilters ? "Hide Filters" : "Filters"}
               </button>
 
-              {(filters.difficulty || filters.prize || filters.location || selectedTags.length > 0 || sortBy !== "default") && (
+              {(filters.difficulty ||
+                filters.prize ||
+                filters.location ||
+                selectedTags.length > 0 ||
+                sortBy !== "default") && (
                 <button
                   type="button"
                   onClick={resetFilters}
@@ -663,10 +704,11 @@ const HackathonHub = () => {
                           key={tag}
                           type="button"
                           onClick={() => handleTagSelect(tag)}
-                          className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-all duration-200 border ${selectedTags.includes(tag)
-                            ? "bg-primary text-white border-primary shadow-glow-sm"
-                            : "bg-white dark:bg-white/5 text-text-light border-border hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/50 hover:text-primary shadow-sm dark:shadow-none"
-                            }`}
+                          className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-all duration-200 border ${
+                            selectedTags.includes(tag)
+                              ? "bg-primary text-white border-primary shadow-glow-sm"
+                              : "bg-white dark:bg-white/5 text-text-light border-border hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/50 hover:text-primary shadow-sm dark:shadow-none"
+                          }`}
                         >
                           {tag}
                         </button>
@@ -697,10 +739,11 @@ const HackathonHub = () => {
                 key={tab.key}
                 type="button"
                 onClick={() => setActiveTab(tab.key)}
-                className={`px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-300 border ${activeTab === tab.key
-                  ? "bg-linear-to-r from-primary via-primary to-secondary text-white border-primary/50 shadow-glow-sm scale-105"
-                  : "bg-white dark:bg-white/5 text-text-light border-border hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/30 hover:text-primary shadow-sm dark:shadow-none"
-                  }`}
+                className={`px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-300 border ${
+                  activeTab === tab.key
+                    ? "bg-linear-to-r from-primary via-primary to-secondary text-white border-primary/50 shadow-glow-sm scale-105"
+                    : "bg-white dark:bg-white/5 text-text-light border-border hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/30 hover:text-primary shadow-sm dark:shadow-none"
+                }`}
               >
                 {tab.label}
               </button>
@@ -775,18 +818,32 @@ const HackathonHub = () => {
                 <div className="absolute inset-0 z-0 overflow-hidden">
                   {[...Array(6)].map((_, i) => {
                     const positions = [
-                      { left: "10%", top: "20%" }, { left: "70%", top: "15%" },
-                      { left: "30%", top: "70%" }, { left: "80%", top: "60%" },
-                      { left: "50%", top: "40%" }, { left: "20%", top: "50%" },
+                      { left: "10%", top: "20%" },
+                      { left: "70%", top: "15%" },
+                      { left: "30%", top: "70%" },
+                      { left: "80%", top: "60%" },
+                      { left: "50%", top: "40%" },
+                      { left: "20%", top: "50%" },
                     ];
                     const size = 30 + Math.random() * 40;
                     return (
                       <motion.div
                         key={i}
                         className="absolute rounded-full bg-primary/20 dark:bg-primary/20"
-                        style={{ width: size, height: size, left: positions[i].left, top: positions[i].top, opacity: 0.3 }}
+                        style={{
+                          width: size,
+                          height: size,
+                          left: positions[i].left,
+                          top: positions[i].top,
+                          opacity: 0.3,
+                        }}
                         animate={{ y: [0, -30, 0], x: [0, 10, -10, 0], scale: [1, 1.2, 1] }}
-                        transition={{ duration: prefersReducedMotion ? 0 : 6 + i, repeat: Infinity, ease: "easeInOut", delay: i * 0.5 }}
+                        transition={{
+                          duration: prefersReducedMotion ? 0 : 6 + i,
+                          repeat: Infinity,
+                          ease: "easeInOut",
+                          delay: i * 0.5,
+                        }}
                       />
                     );
                   })}
@@ -795,7 +852,11 @@ const HackathonHub = () => {
                 <div className="mx-auto max-w-md relative z-10">
                   <motion.div
                     animate={{ y: [0, -8, 0] }}
-                    transition={{ duration: prefersReducedMotion ? 0 : 3, repeat: Infinity, ease: "easeInOut" }}
+                    transition={{
+                      duration: prefersReducedMotion ? 0 : 3,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
                     className="flex justify-center items-center w-24 h-24 rounded-full bg-indigo-50 dark:bg-indigo-950/30 shadow-sm mx-auto border border-indigo-100 dark:border-indigo-800/50"
                   >
                     <Rocket className="h-12 w-12 text-indigo-600 dark:text-indigo-400" />
@@ -806,7 +867,11 @@ const HackathonHub = () => {
                   </h3>
 
                   <p className="mt-3 text-sm text-gray-600 dark:text-gray-400 leading-relaxed max-w-sm mx-auto">
-                    {debouncedSearchQuery || filters.difficulty || filters.prize || filters.location || selectedTags.length > 0
+                    {debouncedSearchQuery ||
+                    filters.difficulty ||
+                    filters.prize ||
+                    filters.location ||
+                    selectedTags.length > 0
                       ? "No hackathons match your current filters. Try adjusting your search or clearing your filters."
                       : "Be the first to host one or check back later for upcoming opportunities."}
                   </p>
@@ -823,11 +888,8 @@ const HackathonHub = () => {
                       Explore Hackathons
                     </motion.button>
 
-                    <motion.div
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <Link 
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <Link
                         to="/host-hackathon"
                         className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium rounded-xl text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-gray-900 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 shadow-sm transition-all"
                       >
@@ -836,7 +898,11 @@ const HackathonHub = () => {
                       </Link>
                     </motion.div>
 
-                    {(debouncedSearchQuery || filters.difficulty || filters.prize || filters.location || selectedTags.length > 0) && (
+                    {(debouncedSearchQuery ||
+                      filters.difficulty ||
+                      filters.prize ||
+                      filters.location ||
+                      selectedTags.length > 0) && (
                       <motion.button
                         type="button"
                         whileHover={{ scale: 1.05 }}
@@ -855,7 +921,7 @@ const HackathonHub = () => {
           </AnimatePresence>
         </ErrorBoundary>
       </div>
-      
+
       <HackathonCTA />
       <BackToTopButton positionClass={positionClass} />
     </div>

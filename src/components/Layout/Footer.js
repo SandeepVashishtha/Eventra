@@ -40,17 +40,33 @@ const footerColumns = [
     heading: "footer.sections.community",
     links: [
       { nameKey: "footer.links.createEvent", href: "/create-event", icon: <FaPlus size={12} /> },
-      { nameKey: "footer.links.communityEvents", href: "/community-event", icon: <FaUsers size={12} /> },
+      {
+        nameKey: "footer.links.communityEvents",
+        href: "/community-event",
+        icon: <FaUsers size={12} />,
+      },
       { nameKey: "footer.links.contributors", href: "/contributors", icon: <FaCode size={12} /> },
-      { nameKey: "footer.links.contributorsGuide", href: "/contributorguide", icon: <FaBook size={12} /> },
+      {
+        nameKey: "footer.links.contributorsGuide",
+        href: "/contributorguide",
+        icon: <FaBook size={12} />,
+      },
       { nameKey: "footer.links.leaderboard", href: "/leaderBoard", icon: <FaTrophy size={12} /> },
     ],
   },
   {
     heading: "footer.sections.support",
     links: [
-      { nameKey: "footer.links.documentation", href: "/documentation", icon: <FaBookOpen size={12} /> },
-      { nameKey: "footer.links.helpCenter", href: "/helpcenter", icon: <FaQuestionCircle size={12} /> },
+      {
+        nameKey: "footer.links.documentation",
+        href: "/documentation",
+        icon: <FaBookOpen size={12} />,
+      },
+      {
+        nameKey: "footer.links.helpCenter",
+        href: "/helpcenter",
+        icon: <FaQuestionCircle size={12} />,
+      },
       { nameKey: "footer.links.faq", href: "/faq", icon: <FaQuestion size={12} /> },
       { nameKey: "footer.links.contactUs", href: "/contact", icon: <FaEnvelope size={12} /> },
       { nameKey: "footer.links.feedback", href: "/feedback", icon: <FaComments size={12} /> },
@@ -88,31 +104,19 @@ const externalLinkProps = {
   rel: "noopener noreferrer",
 };
 
-const ExternalLink = ({
-  href,
-  children,
-  className,
-  ...props
-}) => (
-  <a
-    href={href}
-    {...externalLinkProps}
-    className={className}
-    {...props}
-  >
+const ExternalLink = ({ href, children, className, ...props }) => (
+  <a href={href} {...externalLinkProps} className={className} {...props}>
     {children}
   </a>
 );
 
-const isValidEmail = (value) =>
-  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
 const Newsletter = () => {
   const { t } = useTranslation();
   const [email, setEmail] = useState("");
 
-  const [isSubmitting, setIsSubmitting] =
-    useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [feedback, setFeedback] = useState({
     type: "",
@@ -158,9 +162,7 @@ const Newsletter = () => {
     });
 
     try {
-      await new Promise((resolve) =>
-        setTimeout(resolve, 1000)
-      );
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // 🔥 FIX: Guard state updates
       if (isMounted.current) {
@@ -187,8 +189,7 @@ const Newsletter = () => {
     }
   };
 
-  const feedbackId =
-    "footer-newsletter-feedback";
+  const feedbackId = "footer-newsletter-feedback";
 
   const feedbackColor =
     feedback.type === "success"
@@ -209,10 +210,7 @@ const Newsletter = () => {
       </div>
 
       {/* Newsletter Form */}
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-3"
-      >
+      <form onSubmit={handleSubmit} className="space-y-3">
         <div className="relative">
           <FaEnvelope
             size={14}
@@ -234,9 +232,7 @@ const Newsletter = () => {
             }}
             placeholder={t("footer.newsletter.placeholder")}
             disabled={isSubmitting}
-            aria-describedby={
-              feedback.message ? feedbackId : undefined
-            }
+            aria-describedby={feedback.message ? feedbackId : undefined}
             aria-invalid={feedback.type === "error"}
             className="
                   w-full
@@ -257,7 +253,7 @@ const Newsletter = () => {
                 "
           />
         </div>
- 
+
         <button
           type="submit"
           disabled={isSubmitting}
@@ -278,22 +274,14 @@ const Newsletter = () => {
                 disabled:cursor-not-allowed
               "
         >
-          {isSubmitting
-            ? t("footer.newsletter.subscribing")
-            : t("footer.newsletter.subscribe")}
+          {isSubmitting ? t("footer.newsletter.subscribing") : t("footer.newsletter.subscribe")}
         </button>
       </form>
 
       {/* Feedback / Privacy */}
-      <div
-        className="mt-3 min-h-[20px]"
-        aria-live="polite"
-      >
+      <div className="mt-3 min-h-[20px]" aria-live="polite">
         {feedback.message ? (
-          <p
-            id={feedbackId}
-            className={`text-xs font-medium ${feedbackColor}`}
-          >
+          <p id={feedbackId} className={`text-xs font-medium ${feedbackColor}`}>
             {feedback.message}
           </p>
         ) : (
@@ -379,7 +367,6 @@ const Footer = () => {
   return (
     <footer className="relative z-50 bg-white dark:bg-gray-950 border-t border-gray-100 dark:border-gray-800 transition-colors duration-300 hover:border-indigo-100 dark:hover:border-indigo-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
         {/* ── Main grid ── */}
         <div className="py-10 grid grid-cols-3 lg:grid-cols-[1.8fr_1fr_1fr_1fr] gap-3 sm:gap-6 lg:gap-12">
           {/* Brand + newsletter */}
@@ -457,25 +444,18 @@ const Footer = () => {
         {/* ── Bottom bar ── */}
         <div className="py-5 border-t border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-gray-400 dark:text-gray-500 transition-colors duration-200 hover:text-gray-600 dark:hover:text-gray-300">
-            © {new Date().getFullYear()} Eventra.{" "}
-            <span>{t("footer.rights")}</span>
+            © {new Date().getFullYear()} Eventra. <span>{t("footer.rights")}</span>
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-gray-500 dark:text-gray-400">
             <span className="font-medium">10K+ Users</span>
 
-            <span className="text-gray-300 dark:text-gray-700">
-              •
-            </span>
+            <span className="text-gray-300 dark:text-gray-700">•</span>
 
             <span className="font-medium">500+ Events</span>
 
-            <span className="text-gray-300 dark:text-gray-700">
-              •
-            </span>
+            <span className="text-gray-300 dark:text-gray-700">•</span>
 
-            <span className="font-medium">
-              Privacy Focused
-            </span>
+            <span className="font-medium">Privacy Focused</span>
           </div>
 
           <div className="flex flex-wrap items-center justify-center sm:justify-end gap-x-3 gap-y-2 text-xs text-gray-400 dark:text-gray-500">
@@ -485,14 +465,18 @@ const Footer = () => {
             >
               {t("footer.privacy")}
             </Link>
-            <span className="text-gray-200 dark:text-gray-700" aria-hidden="true">|</span>
+            <span className="text-gray-200 dark:text-gray-700" aria-hidden="true">
+              |
+            </span>
             <Link
               to="/terms"
               className="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
             >
               {t("footer.terms")}
             </Link>
-            <span className="text-gray-200 dark:text-gray-700" aria-hidden="true">|</span>
+            <span className="text-gray-200 dark:text-gray-700" aria-hidden="true">
+              |
+            </span>
             <Link
               to="/api-docs"
               className="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
@@ -504,7 +488,6 @@ const Footer = () => {
       </div>
     </footer>
   );
-
 };
 
 export default Footer;

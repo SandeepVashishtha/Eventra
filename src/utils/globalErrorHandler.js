@@ -53,7 +53,7 @@ export const initializeGlobalErrorHandling = () => {
         url,
       });
     },
-    true,
+    true
   );
 
   window.onerror = (message, source, lineno, colno, error) => {

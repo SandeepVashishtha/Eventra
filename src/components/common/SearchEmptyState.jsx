@@ -2,11 +2,7 @@ import { Link } from "react-router-dom";
 import { Search, X } from "lucide-react";
 import EmptyState from "./EmptyState";
 
-const DEFAULT_SUGGESTIONS = [
-  "Check your spelling",
-  "Use fewer keywords",
-  "Try a broader topic",
-];
+const DEFAULT_SUGGESTIONS = ["Check your spelling", "Use fewer keywords", "Try a broader topic"];
 
 const SEARCH_LINKS = [
   { label: "Events", to: "/events" },
@@ -27,25 +23,17 @@ const SearchEmptyState = ({
   const hasQuery = Boolean(query?.trim());
 
   const title =
-    customTitle ||
-    (hasQuery
-      ? `No results found for "${query}"`
-      : `No ${itemLabel} found`);
+    customTitle || (hasQuery ? `No results found for "${query}"` : `No ${itemLabel} found`);
 
   const description =
-    customDescription ||
-    "Try adjusting your search or explore other sections on Eventra.";
+    customDescription || "Try adjusting your search or explore other sections on Eventra.";
 
   const suggestions = DEFAULT_SUGGESTIONS;
 
   const popularTags = [];
 
   return (
-    <EmptyState
-      title={title}
-      description={description}
-      icon={Search}
-    >
+    <EmptyState title={title} description={description} icon={Search}>
       {/* Suggestions */}
       <ul className="mt-6 grid gap-3 text-left text-sm text-slate-700 dark:text-slate-300 sm:grid-cols-3">
         {suggestions.map((suggestion) => (
@@ -99,11 +87,7 @@ const SearchEmptyState = ({
         {SEARCH_LINKS.map((link) => (
           <Link
             key={link.to}
-            to={
-              hasQuery
-                ? `${link.to}?search=${encodeURIComponent(query)}`
-                : link.to
-            }
+            to={hasQuery ? `${link.to}?search=${encodeURIComponent(query)}` : link.to}
             className="font-medium text-blue-600 hover:text-blue-700"
           >
             {link.label}

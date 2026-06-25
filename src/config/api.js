@@ -1,7 +1,11 @@
 import axios from "axios";
 import { logger } from "../utils/logger.js";
 import { ApiError, RateLimitError, normalizeApiError } from "./api/errors.js";
-import { setupRequestInterceptor, setupResponseInterceptor, setOnRequiresReauthHandler } from "./api/interceptors.js";
+import {
+  setupRequestInterceptor,
+  setupResponseInterceptor,
+  setOnRequiresReauthHandler,
+} from "./api/interceptors.js";
 import { API_BASE_URL, validateBackendConfig } from "./backendConfig.js";
 
 // ---------------------------------------------------------------------------
@@ -57,7 +61,12 @@ const getOnUnauthorized = () => onUnauthorized;
 const getOnRequiresReauth = () => onRequiresReauth;
 
 setupRequestInterceptor(API, { isDev, buildApiUrl, getAuthToken, getOnUnauthorized });
-setupResponseInterceptor(API, { isDev, timeoutMs: REQUEST_TIMEOUT_MS, getOnUnauthorized, getOnRequiresReauth });
+setupResponseInterceptor(API, {
+  isDev,
+  timeoutMs: REQUEST_TIMEOUT_MS,
+  getOnUnauthorized,
+  getOnRequiresReauth,
+});
 
 // ---------------------------------------------------------------------------
 // API Endpoints
@@ -116,8 +125,7 @@ export const API_ENDPOINTS = {
   },
   SESSION_RECOVERY: {
     BASE: buildApiUrl("/session-recovery"),
-    SESSION: (sessionId) =>
-      buildApiUrl(`/session-recovery/${encodeURIComponent(sessionId)}`),
+    SESSION: (sessionId) => buildApiUrl(`/session-recovery/${encodeURIComponent(sessionId)}`),
     RESTORE: (sessionId) =>
       buildApiUrl(`/session-recovery/${encodeURIComponent(sessionId)}/restore`),
     CLEANUP_EXPIRED: buildApiUrl("/session-recovery/expired"),
@@ -184,8 +192,7 @@ const wrapAxiosResponse = (response) => {
 };
 
 export const apiUtils = {
-  get: (url, config = {}) =>
-    API.get(url, normalizeRequestConfig(config)).then(wrapAxiosResponse),
+  get: (url, config = {}) => API.get(url, normalizeRequestConfig(config)).then(wrapAxiosResponse),
   post: (url, data = {}, config = {}) =>
     API.post(url, data, normalizeRequestConfig(config)).then(wrapAxiosResponse),
   put: (url, data = {}, config = {}) =>

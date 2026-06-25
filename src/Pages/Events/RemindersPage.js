@@ -59,14 +59,17 @@ const RemindersPage = () => {
   );
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-indigo-50 via-white to-white pt-12 pb-16 text-slate-900 dark:from-slate-950 dark:via-slate-950 dark:to-gray-950 dark:text-gray-100" style={{
-    backgroundImage: "url('/assets/bookmarkbg.png')",
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    backgroundRepeat: "no-repeat",
-    minHeight: "100vh",
-    width:"100%"
-  }}>
+    <div
+      className="min-h-screen bg-linear-to-b from-indigo-50 via-white to-white pt-12 pb-16 text-slate-900 dark:from-slate-950 dark:via-slate-950 dark:to-gray-950 dark:text-gray-100"
+      style={{
+        backgroundImage: "url('/assets/bookmarkbg.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        minHeight: "100vh",
+        width: "100%",
+      }}
+    >
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -100,7 +103,8 @@ const RemindersPage = () => {
               No active reminders
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-sm leading-7 text-gray-600 dark:text-gray-400 sm:text-base">
-              Bookmark or register for an upcoming event, then choose a reminder time from its event card or details page.
+              Bookmark or register for an upcoming event, then choose a reminder time from its event
+              card or details page.
             </p>
             <Link
               to="/events"
@@ -123,12 +127,17 @@ const RemindersPage = () => {
                     <img
                       src={event.image}
                       alt={event.title}
-                      className="h-44 w-full object-cover sm:h-full" loading="lazy"/>
+                      className="h-44 w-full object-cover sm:h-full"
+                      loading="lazy"
+                    />
 
                     <div className="p-5">
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                         <div>
-                          <h2 title={event.title} className="text-xl font-bold text-gray-950 dark:text-white line-clamp-2 break-words min-w-0">
+                          <h2
+                            title={event.title}
+                            className="text-xl font-bold text-gray-950 dark:text-white line-clamp-2 break-words min-w-0"
+                          >
                             {event.title}
                           </h2>
                           <div className="mt-3 space-y-2 text-sm text-gray-600 dark:text-gray-300">

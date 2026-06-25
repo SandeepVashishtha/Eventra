@@ -1,9 +1,4 @@
-
-const SectionHeader = ({
-  title,
-  subtitle,
-  center = true,
-}) => {
+const SectionHeader = ({ title, subtitle, center = true }) => {
   return (
     <div
       className={`

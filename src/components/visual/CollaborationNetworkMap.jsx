@@ -284,7 +284,7 @@ export default function CollaborationNetworkMap() {
     if (!hub) return {};
     const xPercent = (hub.x / 1000) * 100;
     const yPercent = (hub.y / 500) * 100;
-    
+
     // Prevent horizontal overflow
     let xTransform = "-50%";
     if (hub.x > 750) {
@@ -301,11 +301,11 @@ export default function CollaborationNetworkMap() {
       yOffset = 4;
     }
 
-    return { 
-      left: `${xPercent}%`, 
-      top: `${yPercent + yOffset}%`, 
+    return {
+      left: `${xPercent}%`,
+      top: `${yPercent + yOffset}%`,
       x: xTransform,
-      y: yTransform
+      y: yTransform,
     };
   }, []);
 
@@ -379,7 +379,10 @@ export default function CollaborationNetworkMap() {
             {/* Filters Row */}
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <div className="relative flex-1 min-w-[240px] md:flex-none">
-                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Search
+                  size={16}
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                />
                 <input
                   type="text"
                   placeholder="Search hubs or technologies..."
@@ -390,14 +393,19 @@ export default function CollaborationNetworkMap() {
               </div>
 
               <div className="relative">
-                <Filter size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Filter
+                  size={16}
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                />
                 <select
                   value={selectedActivity}
                   onChange={(e) => setSelectedActivity(e.target.value)}
                   className="appearance-none rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-2.5 pl-10 pr-8 text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:border-violet-500/60"
                 >
                   {["All", "Critical", "High", "Medium", "Low"].map((a) => (
-                    <option key={a} value={a}>{a} Activity</option>
+                    <option key={a} value={a}>
+                      {a} Activity
+                    </option>
                   ))}
                 </select>
               </div>
@@ -444,14 +452,34 @@ export default function CollaborationNetworkMap() {
           {/* Metrics Row Wrapper Panel */}
           <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4 p-4 rounded-3xl bg-violet-50/50 dark:bg-violet-950/20 border border-violet-100/60 dark:border-violet-900/30">
             {[
-              { label: "Developers", value: stats.totalDevs.toLocaleString(), icon: Users, color: "text-violet-600 dark:text-violet-400" },
-              { label: "Projects", value: stats.totalProjects, icon: Code, color: "text-violet-600 dark:text-violet-400" },
-              { label: "Connections", value: CONNECTIONS.length, icon: GitBranch, color: "text-violet-600 dark:text-violet-400" },
-              { label: "Active Hubs", value: `${stats.activeHubs}/${HUBS.length}`, icon: TrendingUp, color: "text-violet-600 dark:text-violet-400" }
+              {
+                label: "Developers",
+                value: stats.totalDevs.toLocaleString(),
+                icon: Users,
+                color: "text-violet-600 dark:text-violet-400",
+              },
+              {
+                label: "Projects",
+                value: stats.totalProjects,
+                icon: Code,
+                color: "text-violet-600 dark:text-violet-400",
+              },
+              {
+                label: "Connections",
+                value: CONNECTIONS.length,
+                icon: GitBranch,
+                color: "text-violet-600 dark:text-violet-400",
+              },
+              {
+                label: "Active Hubs",
+                value: `${stats.activeHubs}/${HUBS.length}`,
+                icon: TrendingUp,
+                color: "text-violet-600 dark:text-violet-400",
+              },
             ].map((stat, i) => (
               /* MODIFIED: Added premium uniform violet borders and soft shadows to ALL metric cards */
-              <div 
-                key={i} 
+              <div
+                key={i}
                 className="flex items-center gap-4 rounded-2xl p-5 transition-all duration-300 bg-white dark:bg-slate-900 border-2 border-violet-500 shadow-[0_0_15px_rgba(124,58,237,0.12)] dark:shadow-[0_0_20px_rgba(139,92,246,0.12)]"
               >
                 <div className="p-2.5 rounded-xl bg-violet-50 dark:bg-violet-950/60 metric-icon text-violet-600 dark:text-violet-400">
@@ -461,7 +489,9 @@ export default function CollaborationNetworkMap() {
                   <span className="block text-2xl font-black tracking-tight text-violet-600 dark:text-violet-400">
                     {stat.value}
                   </span>
-                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{stat.label}</span>
+                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                    {stat.label}
+                  </span>
                 </div>
               </div>
             ))}
@@ -470,7 +500,7 @@ export default function CollaborationNetworkMap() {
           {/* Interactive Map Canvas Window Frame */}
           {/* MODIFIED: Replaced standard slate border with a gorgeous thick 2px violet border & custom ambient glow to elevate the graph */}
           <div className="relative rounded-2xl border-2 border-violet-500/80 bg-slate-50 dark:bg-slate-950/40 overflow-hidden shadow-[0_0_25px_rgba(124,58,237,0.08)] backdrop-blur-sm">
-            <div 
+            <div
               className="transition-transform duration-300 ease-out"
               style={{ transform: `scale(${zoom})`, transformOrigin: "center" }}
             >
@@ -626,9 +656,11 @@ export default function CollaborationNetworkMap() {
                         {(activeHub || pinnedHub).name}
                       </h4>
                     </div>
-                    
+
                     <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
-                      <span>{(activeHub || pinnedHub).lat} • {(activeHub || pinnedHub).lng}</span>
+                      <span>
+                        {(activeHub || pinnedHub).lat} • {(activeHub || pinnedHub).lng}
+                      </span>
                       <span className="flex items-center gap-1">
                         <Clock size={12} className="text-slate-400" />
                         {formatTimeInZone((activeHub || pinnedHub).timezone)}
@@ -639,13 +671,17 @@ export default function CollaborationNetworkMap() {
                   {/* Micro Metric Stat Badges */}
                   <div className="grid grid-cols-2 gap-2 mb-3">
                     <div className="bg-slate-50 dark:bg-slate-800/40 rounded-xl p-2.5 border border-slate-100 dark:border-transparent">
-                      <span className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">Developers</span>
+                      <span className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                        Developers
+                      </span>
                       <span className="text-base font-bold text-slate-900 dark:text-white">
                         {(activeHub || pinnedHub).devs.toLocaleString()}
                       </span>
                     </div>
                     <div className="bg-slate-50 dark:bg-slate-800/40 rounded-xl p-2.5 border border-slate-100 dark:transparent">
-                      <span className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">Projects</span>
+                      <span className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                        Projects
+                      </span>
                       <span className="text-base font-bold text-slate-900 dark:text-white">
                         {(activeHub || pinnedHub).projects}
                       </span>
@@ -655,7 +691,10 @@ export default function CollaborationNetworkMap() {
                   {/* Core Tags array */}
                   <div className="flex flex-wrap gap-1.5 mb-3">
                     {(activeHub || pinnedHub).categories.map((cat) => (
-                      <span key={cat} className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                      <span
+                        key={cat}
+                        className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                      >
                         {cat}
                       </span>
                     ))}
@@ -664,8 +703,14 @@ export default function CollaborationNetworkMap() {
                   {/* Bottom Activity Status and View Info Anchor action triggers */}
                   <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-3 mt-1">
                     <div className="flex items-center gap-1.5">
-                      <Activity size={13} style={{ color: ACTIVITY_LEVELS[(activeHub || pinnedHub).activity].color }} />
-                      <span className="text-xs font-bold" style={{ color: ACTIVITY_LEVELS[(activeHub || pinnedHub).activity].color }}>
+                      <Activity
+                        size={13}
+                        style={{ color: ACTIVITY_LEVELS[(activeHub || pinnedHub).activity].color }}
+                      />
+                      <span
+                        className="text-xs font-bold"
+                        style={{ color: ACTIVITY_LEVELS[(activeHub || pinnedHub).activity].color }}
+                      >
                         {ACTIVITY_LEVELS[(activeHub || pinnedHub).activity].label}
                       </span>
                     </div>
@@ -683,7 +728,9 @@ export default function CollaborationNetworkMap() {
           {/* Bottom Interactive Scale Legends Footer metadata block */}
           <div className="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-xl border border-slate-100 dark:border-slate-900/60 p-4 text-xs font-medium text-slate-500 dark:text-slate-400">
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-              <span className="text-slate-400 uppercase tracking-wider font-bold text-[10px]">Activity Legend</span>
+              <span className="text-slate-400 uppercase tracking-wider font-bold text-[10px]">
+                Activity Legend
+              </span>
               {Object.entries(ACTIVITY_LEVELS).map(([key, config]) => (
                 <div key={key} className="flex items-center gap-2">
                   <span
@@ -696,13 +743,14 @@ export default function CollaborationNetworkMap() {
             </div>
 
             <div className="text-slate-400 dark:text-slate-500 shrink-0">
-              Canvas Frame Zoom State: <span className="font-bold text-slate-700 dark:text-slate-300">{Math.round(zoom * 100)}%</span>
+              Canvas Frame Zoom State:{" "}
+              <span className="font-bold text-slate-700 dark:text-slate-300">
+                {Math.round(zoom * 100)}%
+              </span>
             </div>
           </div>
         </div>
-
       </div>
-
     </section>
   );
 }

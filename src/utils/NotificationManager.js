@@ -1,25 +1,30 @@
 import { logger } from "./logger";
-import { writeNotificationPreferences, readNotificationPreferences } from "./notificationPreferences";
+import {
+  writeNotificationPreferences,
+  readNotificationPreferences,
+} from "./notificationPreferences";
 import { toast } from "react-toastify";
 
 export const requestNotificationPermission = async () => {
-  if (!('Notification' in window)) {
+  if (!("Notification" in window)) {
     toast.error("This browser does not support desktop notifications");
     return false;
   }
 
   try {
     const permission = await Notification.requestPermission();
-    if (permission === 'granted') {
+    if (permission === "granted") {
       const prefs = readNotificationPreferences();
       writeNotificationPreferences({ ...prefs, push: true });
       toast.success("Push notifications enabled!");
-      
+
       // Mock subscription for backend
-      logger.info("[NotificationManager] Push notifications permission granted. Mocking subscription.");
-      
+      logger.info(
+        "[NotificationManager] Push notifications permission granted. Mocking subscription."
+      );
+
       // Send a test notification
-      if ('serviceWorker' in navigator) {
+      if ("serviceWorker" in navigator) {
         navigator.serviceWorker.ready.then((registration) => {
           registration.showNotification("Eventra Notifications", {
             body: "You will now receive updates for your events.",

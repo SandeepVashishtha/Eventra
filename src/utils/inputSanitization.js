@@ -13,9 +13,9 @@ import createDOMPurify from "dompurify";
  * @param {string} query - The raw search query from user input
  * @returns {string} - Sanitized query safe for API transmission
  */
-export const sanitizeSearchQuery = (query = '') => {
-  if (typeof query !== 'string') {
-    return '';
+export const sanitizeSearchQuery = (query = "") => {
+  if (typeof query !== "string") {
+    return "";
   }
 
   const MAX_QUERY_LENGTH = 200;
@@ -23,22 +23,22 @@ export const sanitizeSearchQuery = (query = '') => {
   let sanitized = query.trim();
 
   // Strip script tags and their content (closed or open-ended)
-  sanitized = sanitized.replace(/<script\b[^>]*>(?:[\s\S]*?<\/script>|[\s\S]*)/gi, ' ');
+  sanitized = sanitized.replace(/<script\b[^>]*>(?:[\s\S]*?<\/script>|[\s\S]*)/gi, " ");
 
   // Strip img tags (closed or open-ended)
-  sanitized = sanitized.replace(/<img\b[^>]*>?/gi, ' ');
+  sanitized = sanitized.replace(/<img\b[^>]*>?/gi, " ");
 
   // Strip javascript: links
-  sanitized = sanitized.replace(/javascript:[^\s]*/gi, ' ');
+  sanitized = sanitized.replace(/javascript:[^\s]*/gi, " ");
 
   // Remove all other < and > characters
-  sanitized = sanitized.replace(/[<>]/g, '');
+  sanitized = sanitized.replace(/[<>]/g, "");
 
   // Remove other disallowed characters completely (replaced with empty string)
-  sanitized = sanitized.replace(/[${}\[\];'`|\\/\n\r]/g, '');
+  sanitized = sanitized.replace(/[${}\[\];'`|\\/\n\r]/g, "");
 
   // Collapse spaces
-  sanitized = sanitized.replace(/\s+/g, ' ').trim();
+  sanitized = sanitized.replace(/\s+/g, " ").trim();
 
   // Ensure max length to prevent ReDoS attacks
   if (sanitized.length > MAX_QUERY_LENGTH) {
@@ -54,9 +54,9 @@ export const sanitizeSearchQuery = (query = '') => {
  * @param {string} query - The search query to validate
  * @returns {object} - { isValid: boolean, error: string|null }
  */
-export const validateSearchQuery = (query = '') => {
-  if (typeof query !== 'string') {
-    return { isValid: false, error: 'Search query must be a string' };
+export const validateSearchQuery = (query = "") => {
+  if (typeof query !== "string") {
+    return { isValid: false, error: "Search query must be a string" };
   }
 
   const trimmed = query.trim();
@@ -66,13 +66,13 @@ export const validateSearchQuery = (query = '') => {
   }
 
   if (trimmed.length > 200) {
-    return { isValid: false, error: 'Search query must be less than 200 characters' };
+    return { isValid: false, error: "Search query must be less than 200 characters" };
   }
 
   // Check for obvious injection patterns
   const hasInjectionPatterns = /[\$\{\}\[\];'`|\\]/.test(trimmed);
   if (hasInjectionPatterns) {
-    return { isValid: false, error: 'Search query contains invalid characters' };
+    return { isValid: false, error: "Search query contains invalid characters" };
   }
 
   return { isValid: true, error: null };
@@ -85,16 +85,18 @@ export const validateSearchQuery = (query = '') => {
  * @param {string} rawQuery - Raw user input
  * @returns {string} - Safe query for API, or empty string if invalid
  */
-export const prepareSafeSearchQuery = (rawQuery = '') => {
-  if (typeof rawQuery === 'string' && rawQuery.length > 200) {
-    console.warn(`[Security] Invalid search query after sanitization: Search query must be less than 200 characters`);
-    return '';
+export const prepareSafeSearchQuery = (rawQuery = "") => {
+  if (typeof rawQuery === "string" && rawQuery.length > 200) {
+    console.warn(
+      `[Security] Invalid search query after sanitization: Search query must be less than 200 characters`
+    );
+    return "";
   }
 
   const validation = validateSearchQuery(rawQuery);
   if (!validation.isValid) {
     console.warn(`[Security] Invalid search query after sanitization: ${validation.error}`);
-    return '';
+    return "";
   }
 
   const sanitized = sanitizeSearchQuery(rawQuery);
@@ -108,19 +110,19 @@ export const prepareSafeSearchQuery = (rawQuery = '') => {
  * @param {string} text - Raw input text from the UI
  * @returns {string} - Clean, safe plain-text
  */
-export const sanitizeInputText = (text = '') => {
-  if (typeof text !== 'string') {
-    return '';
+export const sanitizeInputText = (text = "") => {
+  if (typeof text !== "string") {
+    return "";
   }
 
   // Escape HTML special characters for absolute safety
   const htmlEscapes = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#x27;',
-    '/': '&#x2F;'
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#x27;",
+    "/": "&#x2F;",
   };
 
   return text.replace(/[&<>"'\/]/g, (match) => htmlEscapes[match]);
@@ -133,9 +135,9 @@ export const sanitizeInputText = (text = '') => {
  * @param {string} text - Raw input text
  * @returns {string} - Text with HTML tags stripped
  */
-export const stripHtmlTags = (text = '') => {
-  if (typeof text !== 'string') {
-    return '';
+export const stripHtmlTags = (text = "") => {
+  if (typeof text !== "string") {
+    return "";
   }
-  return text.replace(/<[^>]*>?/gm, '');
+  return text.replace(/<[^>]*>?/gm, "");
 };

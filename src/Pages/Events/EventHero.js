@@ -51,12 +51,7 @@ const StatCounter = ({ stat, shouldAnimate }) => {
   );
 };
 
-function EventHero({
-  searchQuery,
-  handleSearch,
-  filteredEvents,
-  scrollToCard,
-}) {
+function EventHero({ searchQuery, handleSearch, filteredEvents, scrollToCard }) {
   const prefersReducedMotion = useReducedMotion();
   const navigate = useNavigate();
 
@@ -158,36 +153,35 @@ function EventHero({
         className="relative min-h-[60vh] md:min-h-[70vh] w-full overflow-hidden flex flex-col items-center justify-center"
         role="search"
         aria-label="Search events"
-        style={{zIndex: 1}} /*🔥 Kept low so Header dropdown stays on top */
+        style={{ zIndex: 1 }} /*🔥 Kept low so Header dropdown stays on top */
       >
         {/* Background + Overlay */}
         <div
-        className="absolute inset-0 bg-[url('/assets/eventbg.png')] bg-cover bg-center bg-no-repeat"
-        aria-hidden="true"
-      />
-      <div className="absolute inset-0 bg-gradient-to-b from-blue-50/80 via-indigo-50/40 to-white dark:from-slate-950/90 dark:via-slate-900/70 dark:to-slate-950/95" />
-      <div className="relative z-10 flex flex-col items-center justify-center px-4 py-12 sm:py-16 md:py-20 max-w-4xl mx-auto w-full">
-        <h1 
-          className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight text-slate-900 dark:text-white drop-shadow-sm text-center"
-          style={{fontFamily: '"Big Shoulders Display", sans-serif'}}
-        >
-          Discover{" "}
-          <span className="bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-            Events
-          </span>
-        </h1>
+          className="absolute inset-0 bg-[url('/assets/eventbg.png')] bg-cover bg-center bg-no-repeat"
+          aria-hidden="true"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-blue-50/80 via-indigo-50/40 to-white dark:from-slate-950/90 dark:via-slate-900/70 dark:to-slate-950/95" />
+        <div className="relative z-10 flex flex-col items-center justify-center px-4 py-12 sm:py-16 md:py-20 max-w-4xl mx-auto w-full">
+          <h1
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight text-slate-900 dark:text-white drop-shadow-sm text-center"
+            style={{ fontFamily: '"Big Shoulders Display", sans-serif' }}
+          >
+            Discover{" "}
+            <span className="bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              Events
+            </span>
+          </h1>
 
-        <p className="mt-4 text-sm sm:text-base md:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto text-center">
-          Discover exciting events, compete with talented participants, learn
-          new skills, and{" "}
-          <span className="font-semibold text-slate-900 dark:text-white">
-            win rewards
-          </span>
-          .
-        </p>
+          <p className="mt-4 text-sm sm:text-base md:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto text-center">
+            Discover exciting events, compete with talented participants, learn new skills, and{" "}
+            <span className="font-semibold text-slate-900 dark:text-white">win rewards</span>.
+          </p>
 
-        {/* Main Action Input Container */}
-        <div ref={searchContainerRef} className="w-full max-w-3xl mx-auto mt-8 px-4 sm:px-0 relative z-50">
+          {/* Main Action Input Container */}
+          <div
+            ref={searchContainerRef}
+            className="w-full max-w-3xl mx-auto mt-8 px-4 sm:px-0 relative z-50"
+          >
             <ModernSearchInput
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
@@ -217,7 +211,9 @@ function EventHero({
                   >
                     {searchQuery.trim().length > 0 && searchQuery.trim().length < 3 && (
                       <div className="border-b border-slate-100 dark:border-slate-800 p-4">
-                        <p className={`mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide ${darkTheme.textSecondary}`}>
+                        <p
+                          className={`mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide ${darkTheme.textSecondary}`}
+                        >
                           <Sparkles className="h-3.5 w-3.5" />
                           Searching...
                         </p>
@@ -225,7 +221,9 @@ function EventHero({
                           {[...Array(4)].map((_, i) => (
                             <div key={i} className="flex items-center gap-3 px-2 py-1.5">
                               <SkeletonBlock className="h-4 w-4 rounded" />
-                              <SkeletonBlock className={`h-4 rounded ${i % 2 === 0 ? "w-3/4" : "w-1/2"}`} />
+                              <SkeletonBlock
+                                className={`h-4 rounded ${i % 2 === 0 ? "w-3/4" : "w-1/2"}`}
+                              />
                             </div>
                           ))}
                         </div>
@@ -234,7 +232,9 @@ function EventHero({
                     {searchHistory.length > 0 && (
                       <div className="border-b border-slate-100 dark:border-slate-800 p-4">
                         <div className="mb-3 flex items-center justify-between gap-3">
-                          <p className={`flex items-center gap-2 text-xs font-semibold uppercase tracking-wide ${darkTheme.textSecondary}`}>
+                          <p
+                            className={`flex items-center gap-2 text-xs font-semibold uppercase tracking-wide ${darkTheme.textSecondary}`}
+                          >
                             <Clock className="h-3.5 w-3.5" />
                             Recent searches
                           </p>
@@ -263,7 +263,9 @@ function EventHero({
                       </div>
                     )}
                     <div className="p-4">
-                      <p className={`mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide ${darkTheme.textSecondary}`}>
+                      <p
+                        className={`mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide ${darkTheme.textSecondary}`}
+                      >
                         <TrendingUp className="h-3.5 w-3.5" />
                         Trending
                       </p>
@@ -314,7 +316,9 @@ function EventHero({
       <section className="border-y border-slate-100 dark:border-slate-900 bg-slate-50/50 dark:bg-slate-950 py-5">
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className={`text-xs sm:text-sm font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mr-1`}>
+            <span
+              className={`text-xs sm:text-sm font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 mr-1`}
+            >
               Popular:
             </span>
             {["AI", "Blockchain", "Web", "DevOps", "React", "UX", "Development"].map((tag) => (
@@ -328,7 +332,9 @@ function EventHero({
               </button>
             ))}
           </div>
-          <span className={`text-xs sm:text-sm font-bold whitespace-nowrap px-3 py-1.5 rounded-xl bg-blue-50/60 dark:bg-slate-900 ${darkTheme.textSecondary}`}>
+          <span
+            className={`text-xs sm:text-sm font-bold whitespace-nowrap px-3 py-1.5 rounded-xl bg-blue-50/60 dark:bg-slate-900 ${darkTheme.textSecondary}`}
+          >
             {filteredEvents.length} {filteredEvents.length === 1 ? "event" : "events"} found
           </span>
         </div>
@@ -354,14 +360,16 @@ function EventHero({
                 whileHover={{
                   y: -6,
                   scale: 1.02,
-                  transition: { duration: 0.2 }
+                  transition: { duration: 0.2 },
                 }}
                 className={`${darkTheme.card} rounded-3xl shadow-lg p-4 sm:p-6 flex flex-col items-center text-center border border-slate-100 dark:border-slate-900 transition-all duration-200`}
               >
                 <div className="mb-3 sm:mb-4 flex items-center justify-center h-10 w-10 sm:h-12 sm:w-12 rounded-2xl bg-blue-50 dark:bg-slate-800 border border-blue-100 dark:border-slate-700/50">
                   <stat.icon className={`h-5 w-5 sm:h-6 sm:w-6 ${darkTheme.textSecondary}`} />
                 </div>
-                <p className={`text-xl sm:text-2xl md:text-3xl font-bold tracking-tight ${darkTheme.textPrimary}`}>
+                <p
+                  className={`text-xl sm:text-2xl md:text-3xl font-bold tracking-tight ${darkTheme.textPrimary}`}
+                >
                   <StatCounter stat={stat} shouldAnimate={hasMounted && isStatsInView} />
                 </p>
                 <p className={`mt-1 text-xs sm:text-sm font-medium ${darkTheme.textSecondary}`}>

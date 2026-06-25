@@ -120,7 +120,9 @@ export const shouldDeliverNotification = (notification, preferences, channel) =>
 };
 
 export const getNotificationTitle = (notification = {}) =>
-  notification.title || notification.heading || NOTIFICATION_CATEGORIES[getNotificationCategory(notification)].label;
+  notification.title ||
+  notification.heading ||
+  NOTIFICATION_CATEGORIES[getNotificationCategory(notification)].label;
 
 export const getNotificationMessage = (notification = {}) =>
   notification.message || notification.body || notification.description || "You have a new update.";

@@ -1,6 +1,1 @@
-export {
-  VALIDATION_MESSAGES,
-  emailPattern,
-  phonePattern,
-  validate,
-} from "../validation";
+export { VALIDATION_MESSAGES, emailPattern, phonePattern, validate } from "../validation";

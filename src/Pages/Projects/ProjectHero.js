@@ -1,4 +1,15 @@
-import { Github, Twitter, Linkedin, MessageCircle, Code, Laptop, Brain, Code2, Plus, ArrowRight } from "lucide-react";
+import {
+  Github,
+  Twitter,
+  Linkedin,
+  MessageCircle,
+  Code,
+  Laptop,
+  Brain,
+  Code2,
+  Plus,
+  ArrowRight,
+} from "lucide-react";
 import React from "react";
 import { motion } from "framer-motion";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
@@ -19,9 +30,7 @@ const iconList = [
 
 const repeatedIcons = [...iconList, ...iconList, ...iconList];
 
-export default function ProjectHero({
-  scrollToCard,
-}) {
+export default function ProjectHero({ scrollToCard }) {
   const prefersReducedMotion = useReducedMotion();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -137,8 +146,8 @@ export default function ProjectHero({
                 leading-relaxed
               `}
             >
-              Explore, contribute to, and showcase innovative open-source
-              creations from developers worldwide.
+              Explore, contribute to, and showcase innovative open-source creations from developers
+              worldwide.
             </motion.p>
 
             {/* CTA Buttons */}
@@ -151,9 +160,7 @@ export default function ProjectHero({
               data-aos-delay="400"
             >
               <motion.button
-                onClick={() =>
-                  !user ? navigate("/login") : navigate("/submit-project")
-                }
+                onClick={() => (!user ? navigate("/login") : navigate("/submit-project"))}
                 className="
                   bg-pink-100 text-black
                   dark:bg-slate-800 dark:text-white
@@ -191,10 +198,7 @@ export default function ProjectHero({
                 data-aos-delay="550"
               >
                 Explore Projects
-                <motion.span
-                  whileHover={{ x: 4 }}
-                  className="flex items-center"
-                >
+                <motion.span whileHover={{ x: 4 }} className="flex items-center">
                   <ArrowRight className="text-base" />
                 </motion.span>
               </motion.button>
@@ -213,8 +217,7 @@ export default function ProjectHero({
                 {
                   number: "200+",
                   label: "Active Users",
-                  color:
-                    "from-sky-50 to-blue-50 dark:from-sky-900/30 dark:to-blue-900/20",
+                  color: "from-sky-50 to-blue-50 dark:from-sky-900/30 dark:to-blue-900/20",
                   accent: "bg-sky-400",
                 },
                 {
@@ -227,8 +230,7 @@ export default function ProjectHero({
                 {
                   number: "120+",
                   label: "Contributors",
-                  color:
-                    "from-pink-50 to-rose-50 dark:from-pink-900/30 dark:to-rose-900/20",
+                  color: "from-pink-50 to-rose-50 dark:from-pink-900/30 dark:to-rose-900/20",
                   accent: "bg-pink-400",
                 },
               ].map((stat, idx) => (

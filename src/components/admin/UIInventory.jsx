@@ -1,10 +1,9 @@
-
 import Tooltip from "../common/Tooltip";
 import { Info, Package, MessageCircle } from "lucide-react";
 
 /**
  * UIInventory Page
- * 
+ *
  * A technical registry to showcase and test foundational UI components.
  * Integrated into ProtectedRoutes to ensure "level:critical" classification.
  */
@@ -17,7 +16,8 @@ const UIInventory = () => {
           UI Component Inventory
         </h1>
         <p className="text-xl text-gray-500 max-w-2xl leading-relaxed">
-          Standardized foundation components for Eventra developers. Ensuring consistency and accessibility across the platform.
+          Standardized foundation components for Eventra developers. Ensuring consistency and
+          accessibility across the platform.
         </p>
       </div>
 
@@ -29,10 +29,14 @@ const UIInventory = () => {
         </div>
         <div className="flex flex-wrap gap-12 items-center">
           <Tooltip content="Tooltip at the top!" position="top">
-            <button className="px-6 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl font-bold shadow-sm">Top Hover</button>
+            <button className="px-6 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl font-bold shadow-sm">
+              Top Hover
+            </button>
           </Tooltip>
           <Tooltip content="Tooltip at the bottom!" position="bottom">
-            <button className="px-6 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl font-bold shadow-sm">Bottom Hover</button>
+            <button className="px-6 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl font-bold shadow-sm">
+              Bottom Hover
+            </button>
           </Tooltip>
           <Tooltip content="Informational context here" position="right">
             <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded-full cursor-help">

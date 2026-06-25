@@ -6,7 +6,10 @@ export const SkeletonBlock = ({ className = "", ...props }) => (
 );
 
 export const SkeletonEventCard = () => (
-  <div aria-hidden="true" className="group relative bg-white dark:bg-gray-900 rounded-3xl shadow-xl flex flex-col overflow-hidden border border-gray-100 dark:border-gray-800">
+  <div
+    aria-hidden="true"
+    className="group relative bg-white dark:bg-gray-900 rounded-3xl shadow-xl flex flex-col overflow-hidden border border-gray-100 dark:border-gray-800"
+  >
     <div className="flex items-center px-5 py-4 gap-4 bg-linear-to-r from-white/80 to-indigo-50/60 dark:from-gray-900/80 dark:to-indigo-950/60 border-b border-gray-100 dark:border-gray-800">
       <SkeletonBlock className="w-10 h-10 rounded-xl" />
       <SkeletonBlock className="h-6 flex-1" />
@@ -39,7 +42,10 @@ export const SkeletonEventCard = () => (
 export const EventCardSkeleton = SkeletonEventCard;
 
 export const HomeCardSkeleton = () => (
-  <div aria-hidden="true" className="flex flex-col rounded-xl overflow-hidden shadow-md bg-white dark:bg-black/60 min-h-[300px] sm:min-h-[360px] ring-2 ring-sky-200 dark:ring-sky-700/60 animate-pulse">
+  <div
+    aria-hidden="true"
+    className="flex flex-col rounded-xl overflow-hidden shadow-md bg-white dark:bg-black/60 min-h-[300px] sm:min-h-[360px] ring-2 ring-sky-200 dark:ring-sky-700/60 animate-pulse"
+  >
     <div className="p-4 sm:p-6 flex-1 flex flex-col">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 gap-2 sm:gap-0">
         <SkeletonBlock className="h-6 w-24 rounded-full" />
@@ -69,7 +75,11 @@ export const HomeCardSkeleton = () => (
 );
 
 export const ContributorCardSkeleton = ({ className = "", style = {} }) => (
-  <div style={style} aria-hidden="true" className={`relative bg-white/95 dark:bg-gray-800/90 backdrop-blur-xl p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 flex flex-col items-center text-center animate-pulse ${className}`}>
+  <div
+    style={style}
+    aria-hidden="true"
+    className={`relative bg-white/95 dark:bg-gray-800/90 backdrop-blur-xl p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 flex flex-col items-center text-center animate-pulse ${className}`}
+  >
     <div className="absolute -top-8 left-1/2 -translate-x-1/2">
       <SkeletonBlock className="w-20 h-20 rounded-full border-4 border-white dark:border-gray-800 shadow-xl" />
     </div>
@@ -104,7 +114,10 @@ export const ContributorCardSkeleton = ({ className = "", style = {} }) => (
 );
 
 export const GitHubStatCardSkeleton = () => (
-  <div aria-hidden="true" className="group flex flex-col items-center justify-center bg-white dark:bg-gray-800 rounded-2xl px-3 py-4 sm:px-6 sm:py-6 md:px-8 shadow-lg border border-gray-100 dark:border-gray-700 relative overflow-hidden animate-pulse">
+  <div
+    aria-hidden="true"
+    className="group flex flex-col items-center justify-center bg-white dark:bg-gray-800 rounded-2xl px-3 py-4 sm:px-6 sm:py-6 md:px-8 shadow-lg border border-gray-100 dark:border-gray-700 relative overflow-hidden animate-pulse"
+  >
     <div className="z-10 flex flex-col items-center space-y-2 sm:space-y-3 w-full">
       <SkeletonBlock className="p-2 sm:p-3 md:p-4 h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 rounded-full" />
       <SkeletonBlock className="h-6 w-16" />
@@ -114,7 +127,10 @@ export const GitHubStatCardSkeleton = () => (
 );
 
 export const LeaderboardStatCardSkeleton = () => (
-  <div aria-hidden="true" className="p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 bg-linear-to-br from-indigo-50 to-gray-50 dark:from-gray-800 dark:to-gray-900">
+  <div
+    aria-hidden="true"
+    className="p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 bg-linear-to-br from-indigo-50 to-gray-50 dark:from-gray-800 dark:to-gray-900"
+  >
     <div className="flex items-center">
       <SkeletonBlock className="h-12 w-12 rounded-xl mr-4" />
       <div className="flex-1">
@@ -195,10 +211,7 @@ export const SkeletonCalendar = ({ listItems = 3 }) => (
         </div>
         <div className="grid grid-cols-7 gap-2">
           {[...Array(35)].map((_, i) => (
-            <SkeletonBlock
-              key={i}
-              className="aspect-square rounded-xl sm:rounded-2xl"
-            />
+            <SkeletonBlock key={i} className="aspect-square rounded-xl sm:rounded-2xl" />
           ))}
         </div>
       </div>
@@ -225,7 +238,10 @@ export const SkeletonCalendar = ({ listItems = 3 }) => (
 );
 
 export const SkeletonProfileCard = () => (
-  <div aria-hidden="true" className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-6 shadow-sm">
+  <div
+    aria-hidden="true"
+    className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-6 shadow-sm"
+  >
     <div className="flex items-center gap-4">
       <SkeletonBlock className="h-16 w-16 rounded-full" />
       <div className="flex-1">
@@ -259,7 +275,10 @@ export const SkeletonTableRows = ({ rows = 5, columns = 4 }) => (
 );
 
 export const HackathonCardSkeleton = () => (
-  <div aria-hidden="true" className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-blue-200 dark:border-gray-700 overflow-hidden">
+  <div
+    aria-hidden="true"
+    className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-blue-200 dark:border-gray-700 overflow-hidden"
+  >
     <div className="p-6 flex flex-col gap-5">
       <div className="flex justify-between items-center">
         <div className="flex gap-2">
@@ -337,7 +356,10 @@ export const HackathonCardSkeleton = () => (
 );
 
 export const ProjectCardSkeleton = () => (
-  <div aria-hidden="true" className="bg-white dark:bg-indigo-950 rounded-xl shadow-md border border-blue-200 dark:border-gray-700 overflow-hidden flex flex-col">
+  <div
+    aria-hidden="true"
+    className="bg-white dark:bg-indigo-950 rounded-xl shadow-md border border-blue-200 dark:border-gray-700 overflow-hidden flex flex-col"
+  >
     <div className="flex items-center justify-between px-5 py-4 border-b border-gray-300 dark:border-gray-700">
       <SkeletonBlock className="w-10 h-10 rounded-full" />
       <SkeletonBlock className="h-5 flex-1 mx-3" />
@@ -383,7 +405,10 @@ export const ProjectCardSkeleton = () => (
 );
 
 export const DashboardStatCardSkeleton = () => (
-  <div aria-hidden="true" className="flex items-center p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 animate-pulse">
+  <div
+    aria-hidden="true"
+    className="flex items-center p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 animate-pulse"
+  >
     <SkeletonBlock className="h-14 w-14 rounded-xl flex-shrink-0" />
     <div className="flex-1 ml-4">
       <SkeletonBlock className="h-3 w-20 mb-2" />
@@ -438,9 +463,7 @@ export const DashboardProfileSkeleton = () => (
   </div>
 );
 
-export const DashboardSectionTitleSkeleton = () => (
-  <SkeletonBlock className="h-6 w-40 mb-4" />
-);
+export const DashboardSectionTitleSkeleton = () => <SkeletonBlock className="h-6 w-40 mb-4" />;
 
 export const AdminStatCardSkeleton = () => (
   <div aria-hidden="true" className="ad-stat-card">
@@ -492,11 +515,9 @@ export const DashboardTableSkeleton = ({ rows = 5 }) => (
     <table className="ud-table">
       <thead>
         <tr>
-          {["Type", "Title", "Date", "Location", "Status", "Participation"].map(
-            (col) => (
-              <th key={col}>{col}</th>
-            ),
-          )}
+          {["Type", "Title", "Date", "Location", "Status", "Participation"].map((col) => (
+            <th key={col}>{col}</th>
+          ))}
         </tr>
       </thead>
       <tbody>

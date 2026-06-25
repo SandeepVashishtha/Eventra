@@ -21,9 +21,19 @@ function generateErrorId() {
 }
 
 const SENSITIVE_URL_PARAMS = new Set([
-  "token", "code", "state", "key", "secret", "reset",
-  "id_token", "access_token", "refresh_token", "otp",
-  "password", "auth", "api_key",
+  "token",
+  "code",
+  "state",
+  "key",
+  "secret",
+  "reset",
+  "id_token",
+  "access_token",
+  "refresh_token",
+  "otp",
+  "password",
+  "auth",
+  "api_key",
 ]);
 
 function sanitizeUrl(url) {
@@ -45,7 +55,7 @@ function attemptStateRecovery() {
     const savedState = sessionStorage.getItem("eventra_component_state_backup");
     if (savedState) {
       const parsed = JSON.parse(savedState, (key, value) => {
-        if (key === '__proto__' || key === 'constructor' || key === 'prototype') return undefined;
+        if (key === "__proto__" || key === "constructor" || key === "prototype") return undefined;
         return value;
       });
       window.__EVENTRA_RECOVERED_STATE__ = parsed;
@@ -63,18 +73,32 @@ function saveAppStateSnapshot() {
       url: sanitizeUrl(window.location.href),
       localStorage: (() => {
         const snap = {};
-        const ALLOWED = ["my_events_", "bookmarks_", "eventra_theme", "eventra_language", "eventra_preferences"];
+        const ALLOWED = [
+          "my_events_",
+          "bookmarks_",
+          "eventra_theme",
+          "eventra_language",
+          "eventra_preferences",
+        ];
         for (let i = 0; i < localStorage.length; i++) {
           const k = localStorage.key(i);
           if (k && ALLOWED.some((safe) => k.startsWith(safe))) {
-            try { snap[k] = localStorage.getItem(k)?.slice(0, 100); } catch {}
+            try {
+              snap[k] = localStorage.getItem(k)?.slice(0, 100);
+            } catch {}
           }
         }
         return snap;
       })(),
       sessionStorage: (() => {
         const snap = {};
-        const ALLOWED = ["my_events_", "bookmarks_", "eventra_theme", "eventra_language", "eventra_preferences"];
+        const ALLOWED = [
+          "my_events_",
+          "bookmarks_",
+          "eventra_theme",
+          "eventra_language",
+          "eventra_preferences",
+        ];
         for (let i = 0; i < sessionStorage.length; i++) {
           const k = sessionStorage.key(i);
           if (k && ALLOWED.some((safe) => k.startsWith(safe))) {
@@ -97,8 +121,19 @@ function buildDiagnosticReport(errorId, error, errorInfo) {
       const snap = {};
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
-        if (k && !k.includes("token") && !k.includes("password") && !k.includes("eventra:key-material") && !k.includes("eventra:key-salt")) {
-          try { snap[k] = process.env.NODE_ENV === "production" ? "[redacted]" : (localStorage.getItem(k)?.slice(0, 200)); } catch {}
+        if (
+          k &&
+          !k.includes("token") &&
+          !k.includes("password") &&
+          !k.includes("eventra:key-material") &&
+          !k.includes("eventra:key-salt")
+        ) {
+          try {
+            snap[k] =
+              process.env.NODE_ENV === "production"
+                ? "[redacted]"
+                : localStorage.getItem(k)?.slice(0, 200);
+          } catch {}
         }
       }
       return JSON.stringify(snap, null, 2);
@@ -112,8 +147,19 @@ function buildDiagnosticReport(errorId, error, errorInfo) {
       const snap = {};
       for (let i = 0; i < sessionStorage.length; i++) {
         const k = sessionStorage.key(i);
-        if (k && !k.includes("token") && !k.includes("password") && !k.includes("eventra:key-material") && !k.includes("eventra:key-salt")) {
-          try { snap[k] = process.env.NODE_ENV === "production" ? "[redacted]" : (sessionStorage.getItem(k)?.slice(0, 200)); } catch {}
+        if (
+          k &&
+          !k.includes("token") &&
+          !k.includes("password") &&
+          !k.includes("eventra:key-material") &&
+          !k.includes("eventra:key-salt")
+        ) {
+          try {
+            snap[k] =
+              process.env.NODE_ENV === "production"
+                ? "[redacted]"
+                : sessionStorage.getItem(k)?.slice(0, 200);
+          } catch {}
         }
       }
       return JSON.stringify(snap, null, 2);
@@ -184,7 +230,8 @@ class ErrorBoundary extends React.Component {
   componentDidCatch(error, errorInfo) {
     const { level = "page", label } = this.props;
     const errorId = this.state.errorId ?? generateErrorId();
-    const errorLabel = label || (level === "page" ? "Page" : level === "section" ? "Section" : "Feature");
+    const errorLabel =
+      label || (level === "page" ? "Page" : level === "section" ? "Section" : "Feature");
     const category = categorizeError(error, { level, label: errorLabel, type: this.props.type });
     this.setState({ errorInfo, errorId, category });
 
@@ -192,19 +239,23 @@ class ErrorBoundary extends React.Component {
     logCategorizedError(error, errorInfo, { level, label: errorLabel, type: this.props.type });
 
     logSecurityEvent("SYSTEM_CRASH", { message: error?.toString() || "Unknown error", level });
-    persistErrors("error_log", {
-      errorId,
-      level,
-      label: errorLabel,
-      message: error?.toString() || "Unknown error",
-      timestamp: new Date().toISOString(),
-      url: sanitizeUrl(window.location.href),
-      userAgent: navigator.userAgent,
-      stack: error?.stack || "",
-      componentStack: errorInfo?.componentStack || "",
-      category,
-      recoverable: isRecoverableError(category, error),
-    }, 10);
+    persistErrors(
+      "error_log",
+      {
+        errorId,
+        level,
+        label: errorLabel,
+        message: error?.toString() || "Unknown error",
+        timestamp: new Date().toISOString(),
+        url: sanitizeUrl(window.location.href),
+        userAgent: navigator.userAgent,
+        stack: error?.stack || "",
+        componentStack: errorInfo?.componentStack || "",
+        category,
+        recoverable: isRecoverableError(category, error),
+      },
+      10
+    );
 
     console.error(`[ErrorBoundary:${errorLabel}]`, error, errorInfo);
 
@@ -312,8 +363,15 @@ class ErrorBoundary extends React.Component {
 
   renderPageFallback() {
     const {
-      error, errorInfo, errorId, copied,
-      showDiagnostics, retryCount, isRecovering, recoveryMessage, category,
+      error,
+      errorInfo,
+      errorId,
+      copied,
+      showDiagnostics,
+      retryCount,
+      isRecovering,
+      recoveryMessage,
+      category,
     } = this.state;
     const tooManyRetries = retryCount >= 3;
     const errorCategory = category || categorizeError(error, { type: this.props.type });
@@ -326,8 +384,19 @@ class ErrorBoundary extends React.Component {
         const snap = {};
         for (let i = 0; i < localStorage.length; i++) {
           const k = localStorage.key(i);
-          if (k && !k.includes("token") && !k.includes("password") && !k.includes("eventra:key-material") && !k.includes("eventra:key-salt")) {
-            try { snap[k] = process.env.NODE_ENV === "production" ? "[redacted]" : (localStorage.getItem(k)?.slice(0, 200)); } catch {}
+          if (
+            k &&
+            !k.includes("token") &&
+            !k.includes("password") &&
+            !k.includes("eventra:key-material") &&
+            !k.includes("eventra:key-salt")
+          ) {
+            try {
+              snap[k] =
+                process.env.NODE_ENV === "production"
+                  ? "[redacted]"
+                  : localStorage.getItem(k)?.slice(0, 200);
+            } catch {}
           }
         }
         return JSON.stringify(snap, null, 2);
@@ -397,8 +466,20 @@ class ErrorBoundary extends React.Component {
               disabled={isRecovering}
               aria-label={isAssetError ? "Reload app files" : "Retry recovery"}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
               </svg>
               {isRecovering ? "Recovering..." : isAssetError ? "Reload Files" : "Retry"}
             </button>
@@ -410,10 +491,18 @@ class ErrorBoundary extends React.Component {
               aria-label="Refresh the page"
             >
               {isRecovering ? (
-                <><span className="eb-spinner" aria-hidden="true" /> Recovering...</>
-              ) : tooManyRetries ? "Refresh Page" : "Refresh"}
+                <>
+                  <span className="eb-spinner" aria-hidden="true" /> Recovering...
+                </>
+              ) : tooManyRetries ? (
+                "Refresh Page"
+              ) : (
+                "Refresh"
+              )}
               {retryCount > 0 && !tooManyRetries && !isRecovering && (
-                <span className="eb-retry-badge" aria-hidden="true">{retryCount}/3</span>
+                <span className="eb-retry-badge" aria-hidden="true">
+                  {retryCount}/3
+                </span>
               )}
             </button>
           </div>
@@ -438,8 +527,20 @@ class ErrorBoundary extends React.Component {
               onClick={isRouteError ? this.handleReload : this.handleResetCache}
               disabled={isRecovering}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                />
               </svg>
               {isRecovering ? "Working..." : isRouteError ? "Refresh Route" : "Reset Cache"}
             </button>
@@ -451,9 +552,39 @@ class ErrorBoundary extends React.Component {
               aria-live="polite"
             >
               {copied ? (
-                <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg> Copied!</>
+                <>
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    aria-hidden="true"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>{" "}
+                  Copied!
+                </>
               ) : (
-                <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg> Copy Report</>
+                <>
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                    />
+                  </svg>{" "}
+                  Copy Report
+                </>
               )}
             </button>
           </div>
@@ -473,7 +604,12 @@ class ErrorBoundary extends React.Component {
             aria-controls="eb-diagnostics-panel"
           >
             <svg
-              width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
               className={`eb-diagnostics-chevron ${showDiagnostics ? "eb-diagnostics-chevron--open" : ""}`}
               aria-hidden="true"
             >
@@ -494,7 +630,9 @@ class ErrorBoundary extends React.Component {
               </div>
               <div className="eb-meta-item">
                 <span className="eb-meta-label">Recoverable</span>
-                <span className="eb-meta-value">{String(isRecoverableError(errorCategory, error))}</span>
+                <span className="eb-meta-value">
+                  {String(isRecoverableError(errorCategory, error))}
+                </span>
               </div>
               <div className="eb-meta-item">
                 <span className="eb-meta-label">URL</span>
@@ -560,18 +698,35 @@ class ErrorBoundary extends React.Component {
         }}
       >
         <svg
-          width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}
+          width="40"
+          height="40"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.5}
           style={{ color: "#f87171", marginBottom: "12px" }}
           aria-hidden="true"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.293 3.757L2.05 18.243A2 2 0 003.757 21h16.486a2 2 0 001.708-3.05L13.708 3.757a2 2 0 00-3.414 0z" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 9v4m0 4h.01M10.293 3.757L2.05 18.243A2 2 0 003.757 21h16.486a2 2 0 001.708-3.05L13.708 3.757a2 2 0 00-3.414 0z"
+          />
         </svg>
 
         <h2 style={{ fontSize: "1rem", fontWeight: "700", color: "#ef4444", marginBottom: "6px" }}>
           {label} failed to load
         </h2>
 
-        <p style={{ fontSize: "0.85rem", color: "#94a3b8", marginBottom: "20px", maxWidth: "300px", lineHeight: "1.5" }}>
+        <p
+          style={{
+            fontSize: "0.85rem",
+            color: "#94a3b8",
+            marginBottom: "20px",
+            maxWidth: "300px",
+            lineHeight: "1.5",
+          }}
+        >
           {error?.message || "An unexpected error occurred in this section."}
         </p>
 
@@ -590,10 +745,26 @@ class ErrorBoundary extends React.Component {
             fontWeight: "600",
             cursor: "pointer",
           }}
-          aria-label={tooManyRetries ? "Reload the full page" : `Try loading ${label} again (attempt ${retryCount + 1})`}
+          aria-label={
+            tooManyRetries
+              ? "Reload the full page"
+              : `Try loading ${label} again (attempt ${retryCount + 1})`
+          }
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} aria-hidden="true">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2.2}
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            />
           </svg>
           {tooManyRetries ? "Reload Page" : "Try Again"}
         </button>
@@ -611,28 +782,51 @@ class ErrorBoundary extends React.Component {
     }
 
     return (
-      <div
-        role="alert"
-        aria-live="assertive"
-        className="eb-feature-fallback"
-      >
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="eb-feature-icon" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.293 3.757L2.05 18.243A2 2 0 003.757 21h16.486a2 2 0 001.708-3.05L13.708 3.757a2 2 0 00-3.414 0z" />
+      <div role="alert" aria-live="assertive" className="eb-feature-fallback">
+        <svg
+          width="36"
+          height="36"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.5}
+          className="eb-feature-icon"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 9v4m0 4h.01M10.293 3.757L2.05 18.243A2 2 0 003.757 21h16.486a2 2 0 001.708-3.05L13.708 3.757a2 2 0 00-3.414 0z"
+          />
         </svg>
 
         <h2 className="eb-feature-title">{label} failed to load</h2>
 
-        <p className="eb-feature-message">
-          {error?.message || "An unexpected error occurred."}
-        </p>
+        <p className="eb-feature-message">{error?.message || "An unexpected error occurred."}</p>
 
         <button
           onClick={this.handleTryAgain}
           className="eb-feature-retry-btn"
-          aria-label={tooManyRetries ? "Reload the full page" : `Retry loading ${label} (attempt ${retryCount + 1})`}
+          aria-label={
+            tooManyRetries
+              ? "Reload the full page"
+              : `Retry loading ${label} (attempt ${retryCount + 1})`
+          }
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} aria-hidden="true">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2.2}
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            />
           </svg>
           {tooManyRetries ? "Reload Page" : "Retry"}
           {retryCount > 0 && !tooManyRetries && (

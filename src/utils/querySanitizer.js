@@ -6,7 +6,9 @@ export function sanitizeFilterQuery(queryObj) {
     if (typeof val === "string") {
       sanitized[key] = val.replace(/[$&<>]/g, ""); // strip sensitive characters
     } else if (Array.isArray(val)) {
-      sanitized[key] = val.map(item => (typeof item === "string" ? item.replace(/[$&<>]/g, "") : item));
+      sanitized[key] = val.map((item) =>
+        typeof item === "string" ? item.replace(/[$&<>]/g, "") : item
+      );
     } else {
       sanitized[key] = val;
     }

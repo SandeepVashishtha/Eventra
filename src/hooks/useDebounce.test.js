@@ -137,9 +137,7 @@ describe("useDebounce", () => {
     const clearTimeoutSpy = jest.spyOn(global, "clearTimeout");
 
     let value = "initial";
-    const { rerender, unmount } = renderHook(() =>
-      useDebounce(value, 400)
-    );
+    const { rerender, unmount } = renderHook(() => useDebounce(value, 400));
 
     value = "changed";
     rerender();
@@ -156,9 +154,7 @@ describe("useDebounce", () => {
     let value = "hello";
     let delay = 400;
 
-    const { result, rerender } = renderHook(() =>
-      useDebounce(value, delay)
-    );
+    const { result, rerender } = renderHook(() => useDebounce(value, delay));
 
     // Change value and delay together
     value = "world";

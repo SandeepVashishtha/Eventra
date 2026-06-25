@@ -5,16 +5,13 @@ import ValidationMessage from "../ValidationMessage";
 let container;
 let root;
 
- 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
- 
 
 const render = (element) => {
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
 
-   
   act(() => {
     root.render(element);
   });
@@ -24,7 +21,6 @@ const render = (element) => {
 
 afterEach(() => {
   if (root) {
-     
     act(() => {
       root.unmount();
     });
@@ -78,7 +74,7 @@ describe("ValidationMessage", () => {
         className="custom-message"
         state="info"
         message="We will never share your email"
-      />,
+      />
     );
 
     const message = container.querySelector("#email-message");

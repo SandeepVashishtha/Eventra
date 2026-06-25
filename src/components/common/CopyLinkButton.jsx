@@ -42,9 +42,7 @@ const CopyLinkButton = () => {
       type="button"
       onClick={handleCopy}
       className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-300 shadow-md hover:shadow-lg ${
-        copied
-          ? "bg-green-600 text-white"
-          : "bg-indigo-600 hover:bg-indigo-700 text-white"
+        copied ? "bg-green-600 text-white" : "bg-indigo-600 hover:bg-indigo-700 text-white"
       }`}
       aria-label="Copy event link"
     >

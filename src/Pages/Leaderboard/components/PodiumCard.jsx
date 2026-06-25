@@ -14,7 +14,10 @@ const PodiumCard = memo(({ contributor, position, orderClass, styling, isFirst =
       aria-label={`${position} place: ${contributor?.username || "Unknown"}`}
     >
       <div className="relative mb-4">
-        <span className={`absolute -inset-1 rounded-full bg-linear-to-r ${styling.ringClass} blur-sm opacity-80`} aria-hidden="true" />
+        <span
+          className={`absolute -inset-1 rounded-full bg-linear-to-r ${styling.ringClass} blur-sm opacity-80`}
+          aria-hidden="true"
+        />
         <img
           src={contributor.avatar}
           alt={`${contributor.username}'s avatar`}
@@ -23,11 +26,16 @@ const PodiumCard = memo(({ contributor, position, orderClass, styling, isFirst =
           width={styling.size.includes("22") ? 88 : 72}
           height={styling.size.includes("22") ? 88 : 72}
         />
-        <div className={`absolute -bottom-2 -right-1 flex h-6 w-6 items-center justify-center rounded-full ${styling.medalClass} text-[10px] font-black uppercase tracking-tight shadow`}>
+        <div
+          className={`absolute -bottom-2 -right-1 flex h-6 w-6 items-center justify-center rounded-full ${styling.medalClass} text-[10px] font-black uppercase tracking-tight shadow`}
+        >
           {position}
         </div>
         {isFirst && (
-          <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-2xl animate-bounce" aria-hidden="true">
+          <div
+            className="absolute -top-3 left-1/2 -translate-x-1/2 text-2xl animate-bounce"
+            aria-hidden="true"
+          >
             👑
           </div>
         )}
@@ -43,13 +51,17 @@ const PodiumCard = memo(({ contributor, position, orderClass, styling, isFirst =
         {contributor.username}
       </a>
 
-      <div className={`mt-2.5 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase ${styling.badgeClass}`}>
+      <div
+        className={`mt-2.5 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase ${styling.badgeClass}`}
+      >
         {styling.title}
       </div>
 
       <div className="mt-4 flex items-center justify-around w-full border-t border-slate-200/50 dark:border-slate-800/40 pt-4">
         <div className="text-center">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Points</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            Points
+          </span>
           <p className={`text-lg font-black mt-0.5 ${styling.pointsClass}`}>
             <AnimatedCounter value={contributor.points} />
           </p>

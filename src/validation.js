@@ -37,7 +37,6 @@ export const emailPattern = EMAIL_REGEX;
 export const phonePattern = PHONE_REGEX;
 
 export const validate = {
-
   /**
    * Email: uses anchored, non-backtracking character classes.
    * Input is length-capped before regex to guard against long-string attacks.
@@ -107,7 +106,7 @@ export const validate = {
   },
 
   minLength: (min) => (val) => (val && val.length >= min) || `Minimum ${min} characters`,
-  maxLength: (max) => (val) => (!val || val.length <= max) || `Maximum ${max} characters`,
+  maxLength: (max) => (val) => !val || val.length <= max || `Maximum ${max} characters`,
 
   // --- Event Specific Validations ---
   eventTitle: (val) => {
@@ -225,11 +224,7 @@ export const normalizeValidationResult = (result, fallbackMessage = "Validation 
  * @returns {Promise<{isValid: boolean, message: string, isLoading: boolean}>}
  */
 export const validateEmailAvailability = async (email, options = {}) => {
-  const {
-    messages = {},
-    skipEmpty = true,
-    apiOptions = {},
-  } = options;
+  const { messages = {}, skipEmpty = true, apiOptions = {} } = options;
 
   if (!email && skipEmpty) {
     return createValidationResponse(true);
@@ -238,7 +233,7 @@ export const validateEmailAvailability = async (email, options = {}) => {
   if (!emailPattern.test(email)) {
     return createValidationResponse(
       false,
-      messages.invalidFormat || VALIDATION_MESSAGES.invalidEmail,
+      messages.invalidFormat || VALIDATION_MESSAGES.invalidEmail
     );
   }
 
@@ -248,10 +243,7 @@ export const validateEmailAvailability = async (email, options = {}) => {
     ...apiOptions,
   });
 
-  return normalizeValidationResult(
-    result,
-    messages.unavailable || VALIDATION_MESSAGES.emailTaken,
-  );
+  return normalizeValidationResult(result, messages.unavailable || VALIDATION_MESSAGES.emailTaken);
 };
 
 /**
@@ -282,14 +274,14 @@ export const validateUsernameUnique = async (username, options = {}) => {
   if (username.length < minLength) {
     return createValidationResponse(
       false,
-      messages.tooShort || `Username must be at least ${minLength} characters`,
+      messages.tooShort || `Username must be at least ${minLength} characters`
     );
   }
 
   if (!pattern.test(username)) {
     return createValidationResponse(
       false,
-      messages.invalidFormat || "Username can only include letters, numbers, and underscores",
+      messages.invalidFormat || "Username can only include letters, numbers, and underscores"
     );
   }
 
@@ -301,7 +293,7 @@ export const validateUsernameUnique = async (username, options = {}) => {
 
   return normalizeValidationResult(
     result,
-    messages.unavailable || VALIDATION_MESSAGES.usernameTaken,
+    messages.unavailable || VALIDATION_MESSAGES.usernameTaken
   );
 };
 
@@ -334,18 +326,27 @@ export const validatePasswordStrength = async (password, options = {}) => {
   } = options;
 
   if (!password) {
-    return createValidationResponse(
-      false,
-      messages.required || VALIDATION_MESSAGES.required,
-    );
+    return createValidationResponse(false, messages.required || VALIDATION_MESSAGES.required);
   }
 
   const checks = [
-    [password.length >= minLength, messages.minLength || `Password must be at least ${minLength} characters`],
-    [!requireUppercase || /[A-Z]/.test(password), messages.uppercase || "Password must include an uppercase letter"],
-    [!requireLowercase || /[a-z]/.test(password), messages.lowercase || "Password must include a lowercase letter"],
+    [
+      password.length >= minLength,
+      messages.minLength || `Password must be at least ${minLength} characters`,
+    ],
+    [
+      !requireUppercase || /[A-Z]/.test(password),
+      messages.uppercase || "Password must include an uppercase letter",
+    ],
+    [
+      !requireLowercase || /[a-z]/.test(password),
+      messages.lowercase || "Password must include a lowercase letter",
+    ],
     [!requireNumber || /\d/.test(password), messages.number || "Password must include a number"],
-    [!requireSpecial || /[!@#$%^&*(),.?":{}|<>]/.test(password), messages.special || "Password must include a special character"],
+    [
+      !requireSpecial || /[!@#$%^&*(),.?":{}|<>]/.test(password),
+      messages.special || "Password must include a special character",
+    ],
   ];
 
   const failedCheck = checks.find(([passed]) => !passed);
@@ -368,12 +369,7 @@ export const validatePasswordStrength = async (password, options = {}) => {
  * @returns {Promise<{isValid: boolean, message: string, isLoading: boolean}>}
  */
 export const validatePhoneNumber = async (phone, options = {}) => {
-  const {
-    messages = {},
-    skipEmpty = true,
-    useApi = true,
-    apiOptions = {},
-  } = options;
+  const { messages = {}, skipEmpty = true, useApi = true, apiOptions = {} } = options;
 
   if (!phone && skipEmpty) {
     return createValidationResponse(true);
@@ -382,7 +378,7 @@ export const validatePhoneNumber = async (phone, options = {}) => {
   if (!phonePattern.test(phone)) {
     return createValidationResponse(
       false,
-      messages.invalidFormat || VALIDATION_MESSAGES.invalidPhone,
+      messages.invalidFormat || VALIDATION_MESSAGES.invalidPhone
     );
   }
 
@@ -396,10 +392,7 @@ export const validatePhoneNumber = async (phone, options = {}) => {
     ...apiOptions,
   });
 
-  return normalizeValidationResult(
-    result,
-    messages.invalid || VALIDATION_MESSAGES.invalidPhone,
-  );
+  return normalizeValidationResult(result, messages.invalid || VALIDATION_MESSAGES.invalidPhone);
 };
 
 /**
@@ -426,12 +419,7 @@ export const validatePhoneNumber = async (phone, options = {}) => {
  * });
  */
 export const createCustomAsyncValidator = (validatorOrEndpoint, options = {}) => {
-  const {
-    message = "Validation failed",
-    debounceMs,
-    mapResult,
-    toHookResult = false,
-  } = options;
+  const { message = "Validation failed", debounceMs, mapResult, toHookResult = false } = options;
 
   const validator = async (value, allValues) => {
     const rawResult =
@@ -444,10 +432,7 @@ export const createCustomAsyncValidator = (validatorOrEndpoint, options = {}) =>
             ...options.apiOptions,
           });
 
-    const result = normalizeValidationResult(
-      mapResult ? mapResult(rawResult) : rawResult,
-      message,
-    );
+    const result = normalizeValidationResult(mapResult ? mapResult(rawResult) : rawResult, message);
 
     return toHookResult ? toHookValidationResult(result) : result;
   };
@@ -475,4 +460,3 @@ export {
 };
 
 export default validate;
-

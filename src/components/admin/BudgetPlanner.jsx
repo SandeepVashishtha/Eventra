@@ -1,8 +1,19 @@
-import { useState, useMemo } from 'react';
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
-import { exportToCSV, exportToJSON } from '../../utils/exportUtils';
-import { Sparkles } from 'lucide-react';
-import { toast } from 'react-toastify'; 
+import { useState, useMemo } from "react";
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
+import { exportToCSV, exportToJSON } from "../../utils/exportUtils";
+import { Sparkles } from "lucide-react";
+import { toast } from "react-toastify";
 
 // Mock data for budgeting
 const initialBudget = {
@@ -17,15 +28,15 @@ const initialBudget = {
 };
 
 const breakEvenData = [
-  { month: 'Jan', revenue: 8000, costs: 7000 },
-  { month: 'Feb', revenue: 12000, costs: 9000 },
-  { month: 'Mar', revenue: 18000, costs: 13000 },
-  { month: 'Apr', revenue: 24000, costs: 17000 },
-  { month: 'May', revenue: 30000, costs: 21000 },
-  { month: 'Jun', revenue: 38000, costs: 25000 },
+  { month: "Jan", revenue: 8000, costs: 7000 },
+  { month: "Feb", revenue: 12000, costs: 9000 },
+  { month: "Mar", revenue: 18000, costs: 13000 },
+  { month: "Apr", revenue: 24000, costs: 17000 },
+  { month: "May", revenue: 30000, costs: 21000 },
+  { month: "Jun", revenue: 38000, costs: 25000 },
 ];
 
-const CATEGORY_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444'];
+const CATEGORY_COLORS = ["#6366f1", "#10b981", "#f59e0b", "#ef4444"];
 
 const BudgetPlanner = () => {
   const [budget] = useState(initialBudget);
@@ -36,28 +47,30 @@ const BudgetPlanner = () => {
     return Object.entries(budget.costs).map(([name, value], i) => ({
       name,
       value,
-      fill: CATEGORY_COLORS[i % CATEGORY_COLORS.length]
+      fill: CATEGORY_COLORS[i % CATEGORY_COLORS.length],
     }));
   }, [budget.costs]);
 
   const handleExportCSV = () => {
     // 🔥 FIX 2: Flattened the nested object so CSV parsers don't output [object Object]
-    const flatData = [{
-      revenue: budget.revenue,
-      profit: budget.profit,
-      ...budget.costs
-    }];
-    exportToCSV(flatData, 'budget_report');
+    const flatData = [
+      {
+        revenue: budget.revenue,
+        profit: budget.profit,
+        ...budget.costs,
+      },
+    ];
+    exportToCSV(flatData, "budget_report");
   };
 
   const handleExportJSON = () => {
     const data = [{ ...budget }];
-    exportToJSON(data, 'budget_report');
+    exportToJSON(data, "budget_report");
   };
 
   const handleOptimize = () => {
     // Placeholder for AI optimizer – currently just shows a toast
-    toast.info('AI optimizer is not yet implemented. Stay tuned!');
+    toast.info("AI optimizer is not yet implemented. Stay tuned!");
   };
 
   return (
@@ -75,30 +88,52 @@ const BudgetPlanner = () => {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {/* Ledger */}
         <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg">
-          <h3 className="mb-2 font-semibold text-slate-700 dark:text-slate-300">Operational Ledger</h3>
+          <h3 className="mb-2 font-semibold text-slate-700 dark:text-slate-300">
+            Operational Ledger
+          </h3>
           <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
-            <li>Revenue: <span className="font-medium">${budget.revenue.toLocaleString()}</span></li>
+            <li>
+              Revenue: <span className="font-medium">${budget.revenue.toLocaleString()}</span>
+            </li>
             {Object.entries(budget.costs).map(([k, v]) => (
-              <li key={k}>{k.charAt(0).toUpperCase() + k.slice(1)}: <span className="font-medium">${v.toLocaleString()}</span></li>
+              <li key={k}>
+                {k.charAt(0).toUpperCase() + k.slice(1)}:{" "}
+                <span className="font-medium">${v.toLocaleString()}</span>
+              </li>
             ))}
-            <li className="mt-2 font-bold">Profit: <span className="text-green-600">${budget.profit.toLocaleString()}</span></li>
+            <li className="mt-2 font-bold">
+              Profit: <span className="text-green-600">${budget.profit.toLocaleString()}</span>
+            </li>
           </ul>
         </div>
 
         {/* Break‑Even Chart */}
         {/* 🔥 FIX 3: Added text-slate-500 class so 'currentColor' adapts to Dark Mode */}
         <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg h-64 text-slate-500 dark:text-slate-400">
-          <h3 className="mb-2 font-semibold text-slate-700 dark:text-slate-300">Break‑Even Point</h3>
+          <h3 className="mb-2 font-semibold text-slate-700 dark:text-slate-300">
+            Break‑Even Point
+          </h3>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={breakEvenData}>
               {/* Swapped static hex colors for currentColor to support theme switching */}
               <CartesianGrid strokeDasharray="3 3" stroke="currentColor" opacity={0.2} />
               <XAxis dataKey="month" stroke="currentColor" />
               <YAxis stroke="currentColor" />
-              <Tooltip 
-                contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff' }}
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "#1e293b",
+                  border: "none",
+                  borderRadius: "8px",
+                  color: "#fff",
+                }}
               />
-              <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} name="Revenue" />
+              <Line
+                type="monotone"
+                dataKey="revenue"
+                stroke="#10b981"
+                strokeWidth={2}
+                name="Revenue"
+              />
               <Line type="monotone" dataKey="costs" stroke="#ef4444" strokeWidth={2} name="Costs" />
             </LineChart>
           </ResponsiveContainer>
@@ -123,8 +158,13 @@ const BudgetPlanner = () => {
                 <Cell key={`cell-${i}`} fill={entry.fill} />
               ))}
             </Pie>
-            <Tooltip 
-              contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff' }}
+            <Tooltip
+              contentStyle={{
+                backgroundColor: "#1e293b",
+                border: "none",
+                borderRadius: "8px",
+                color: "#fff",
+              }}
             />
           </PieChart>
         </ResponsiveContainer>
@@ -134,11 +174,15 @@ const BudgetPlanner = () => {
         <button
           onClick={handleExportCSV}
           className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
-        >Export CSV</button>
+        >
+          Export CSV
+        </button>
         <button
           onClick={handleExportJSON}
           className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
-        >Export JSON</button>
+        >
+          Export JSON
+        </button>
       </div>
     </section>
   );

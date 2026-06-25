@@ -3,51 +3,33 @@ import { createRateLimiter, withRateLimit } from "./rateLimiter";
 describe("createRateLimiter", () => {
   describe("construction validation", () => {
     it("throws RangeError when refillRate is 0", () => {
-      expect(() => createRateLimiter({ maxTokens: 5, refillRate: 0 })).toThrow(
-        RangeError
-      );
-      expect(() => createRateLimiter({ maxTokens: 5, refillRate: 0 })).toThrow(
-        /refillRate/
-      );
+      expect(() => createRateLimiter({ maxTokens: 5, refillRate: 0 })).toThrow(RangeError);
+      expect(() => createRateLimiter({ maxTokens: 5, refillRate: 0 })).toThrow(/refillRate/);
     });
 
     it("throws RangeError when refillRate is negative", () => {
-      expect(() =>
-        createRateLimiter({ maxTokens: 5, refillRate: -1 })
-      ).toThrow(RangeError);
+      expect(() => createRateLimiter({ maxTokens: 5, refillRate: -1 })).toThrow(RangeError);
     });
 
     it("throws RangeError when refillRate is Infinity", () => {
-      expect(() =>
-        createRateLimiter({ maxTokens: 5, refillRate: Infinity })
-      ).toThrow(RangeError);
+      expect(() => createRateLimiter({ maxTokens: 5, refillRate: Infinity })).toThrow(RangeError);
     });
 
     it("throws RangeError when refillRate is NaN", () => {
-      expect(() =>
-        createRateLimiter({ maxTokens: 5, refillRate: NaN })
-      ).toThrow(RangeError);
+      expect(() => createRateLimiter({ maxTokens: 5, refillRate: NaN })).toThrow(RangeError);
     });
 
     it("throws RangeError when maxTokens is 0", () => {
-      expect(() => createRateLimiter({ maxTokens: 0, refillRate: 1 })).toThrow(
-        RangeError
-      );
-      expect(() => createRateLimiter({ maxTokens: 0, refillRate: 1 })).toThrow(
-        /maxTokens/
-      );
+      expect(() => createRateLimiter({ maxTokens: 0, refillRate: 1 })).toThrow(RangeError);
+      expect(() => createRateLimiter({ maxTokens: 0, refillRate: 1 })).toThrow(/maxTokens/);
     });
 
     it("throws RangeError when maxTokens is negative", () => {
-      expect(() =>
-        createRateLimiter({ maxTokens: -5, refillRate: 1 })
-      ).toThrow(RangeError);
+      expect(() => createRateLimiter({ maxTokens: -5, refillRate: 1 })).toThrow(RangeError);
     });
 
     it("creates a limiter successfully with valid options", () => {
-      expect(() =>
-        createRateLimiter({ maxTokens: 10, refillRate: 2 })
-      ).not.toThrow();
+      expect(() => createRateLimiter({ maxTokens: 10, refillRate: 2 })).not.toThrow();
     });
   });
 
@@ -175,8 +157,6 @@ describe("withRateLimit", () => {
   });
 
   it("rejects construction when refillRate is 0", () => {
-    expect(() =>
-      withRateLimit(jest.fn(), { maxTokens: 5, refillRate: 0 })
-    ).toThrow(RangeError);
+    expect(() => withRateLimit(jest.fn(), { maxTokens: 5, refillRate: 0 })).toThrow(RangeError);
   });
 });

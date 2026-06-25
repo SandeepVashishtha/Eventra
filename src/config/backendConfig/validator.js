@@ -1,6 +1,6 @@
 /**
  * Configuration Validation Module
- * 
+ *
  * Validates backend configuration and provides actionable error messages.
  */
 
@@ -10,7 +10,7 @@ import { isProduction } from "./envDetector.js";
 
 /**
  * Validates the backend configuration and provides actionable error messages.
- * 
+ *
  * @returns {Object} Validation result with isValid flag and error message if invalid
  */
 export const validateBackendConfig = () => {

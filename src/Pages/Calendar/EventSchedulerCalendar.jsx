@@ -288,7 +288,13 @@ const EventSchedulerCalendar = () => {
       const normalized = normalizeScheduledEvents([source])[0];
       const targetStart =
         minutes === null
-          ? new Date(day.getFullYear(), day.getMonth(), day.getDate(), normalized?.start?.getHours() || 9, normalized?.start?.getMinutes() || 0)
+          ? new Date(
+              day.getFullYear(),
+              day.getMonth(),
+              day.getDate(),
+              normalized?.start?.getHours() || 9,
+              normalized?.start?.getMinutes() || 0
+            )
           : getSlotDateTime(day, minutes);
 
       const result = await scheduleEvent(eventId, targetStart);
@@ -297,7 +303,7 @@ const EventSchedulerCalendar = () => {
       }
       setDragOverKey("");
     },
-    [events, scheduleEvent],
+    [events, scheduleEvent]
   );
 
   const handleUndo = async () => {
@@ -329,7 +335,8 @@ const EventSchedulerCalendar = () => {
               Drag-and-Drop Event Scheduling
             </h1>
             <p className="mt-2 max-w-2xl text-sm text-slate-600 dark:text-slate-400">
-              Move events across dates and time slots, catch conflicts before saving, and undo the most recent change.
+              Move events across dates and time slots, catch conflicts before saving, and undo the
+              most recent change.
             </p>
           </div>
 
@@ -387,7 +394,9 @@ const EventSchedulerCalendar = () => {
 
         <section className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div>
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Current period</p>
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+              Current period
+            </p>
             <h2 className="text-xl font-black">{periodLabel}</h2>
           </div>
           <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
@@ -460,13 +469,23 @@ const EventSchedulerCalendar = () => {
               >
                 <div />
                 {days.map((day) => (
-                  <div key={toDateKey(day)} className="rounded-md bg-slate-100 p-2 text-center text-xs font-bold uppercase tracking-wide text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                    {day.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })}
+                  <div
+                    key={toDateKey(day)}
+                    className="rounded-md bg-slate-100 p-2 text-center text-xs font-bold uppercase tracking-wide text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                  >
+                    {day.toLocaleDateString([], {
+                      weekday: "short",
+                      month: "short",
+                      day: "numeric",
+                    })}
                   </div>
                 ))}
                 {timeSlots.map((slot) => (
                   <Fragment key={slot.minutes}>
-                    <div key={`label-${slot.minutes}`} className="py-3 text-right text-xs font-semibold text-slate-500">
+                    <div
+                      key={`label-${slot.minutes}`}
+                      className="py-3 text-right text-xs font-semibold text-slate-500"
+                    >
                       {slot.label}
                     </div>
                     {days.map((day) => {
@@ -475,7 +494,7 @@ const EventSchedulerCalendar = () => {
                       const slotEvents = scheduledEvents.filter(
                         (event) =>
                           toDateKey(event.start) === toDateKey(day) &&
-                          event.start.getHours() * 60 + event.start.getMinutes() === slot.minutes,
+                          event.start.getHours() * 60 + event.start.getMinutes() === slot.minutes
                       );
 
                       return (

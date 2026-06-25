@@ -78,7 +78,7 @@ export function fetchProfileWithCache(username, fetcher) {
 
   const controller = new AbortController();
   let timeoutId;
-  
+
   const timeoutPromise = new Promise((_, reject) => {
     timeoutId = setTimeout(() => {
       controller.abort(new Error(`Fetch timeout for profile: ${username}`));
@@ -91,7 +91,7 @@ export function fetchProfileWithCache(username, fetcher) {
       clearTimeout(timeoutId);
       return data;
     }),
-    timeoutPromise
+    timeoutPromise,
   ])
     .then((data) => {
       setCachedProfile(username, data);

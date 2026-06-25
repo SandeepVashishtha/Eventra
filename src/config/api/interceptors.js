@@ -13,9 +13,15 @@ let onUnauthorized = null;
 let onRequiresReauth = null;
 let _authToken = null;
 
-export const setOnUnauthorizedHandler = (handler) => { onUnauthorized = handler; };
-export const setOnRequiresReauthHandler = (handler) => { onRequiresReauth = handler; };
-export const setAuthToken = (token) => { _authToken = token; };
+export const setOnUnauthorizedHandler = (handler) => {
+  onUnauthorized = handler;
+};
+export const setOnRequiresReauthHandler = (handler) => {
+  onRequiresReauth = handler;
+};
+export const setAuthToken = (token) => {
+  _authToken = token;
+};
 
 export const createRequestInterceptor = (isDev) => (config) => {
   if (isDev) {
@@ -39,9 +45,9 @@ export const createRequestInterceptor = (isDev) => (config) => {
       config.headers["Idempotency-Key"] =
         typeof crypto !== "undefined" && crypto.randomUUID
           ? crypto.randomUUID()
-          : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-              const r = Math.random() * 16 | 0;
-              return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+          : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+              const r = (Math.random() * 16) | 0;
+              return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
             });
     }
   }
@@ -50,7 +56,12 @@ export const createRequestInterceptor = (isDev) => (config) => {
 
 export const createResponseInterceptor = (API) => {
   const fulfill = (response) => {
-    const headerValue = response.headers?.["x-server-time"] || response.headers?.["date"] || (typeof response.headers?.get === 'function' ? (response.headers.get("x-server-time") || response.headers.get("date")) : null);
+    const headerValue =
+      response.headers?.["x-server-time"] ||
+      response.headers?.["date"] ||
+      (typeof response.headers?.get === "function"
+        ? response.headers.get("x-server-time") || response.headers.get("date")
+        : null);
     if (headerValue) syncServerTimeFromHeader(headerValue);
     return response;
   };
@@ -105,31 +116,34 @@ const normalizeApiErrorWithTimeout = (error, timeoutMs) => {
   ) {
     return new ApiError(
       `Request timed out after ${timeoutMs / 1000}s: ${config.method?.toUpperCase()} ${config.url}`,
-      { status, isTimeout: true },
+      { status, isTimeout: true }
     );
   }
 
   if (!error.response) {
     return new ApiError(
       error.message || `Network error: ${config.method?.toUpperCase()} ${config.url}`,
-      { status, isNetworkError: true },
+      { status, isNetworkError: true }
     );
   }
 
   if (status === 429) {
     return new RateLimitError(
       error.response?.data?.message || "Too many requests, please try again later.",
-      { status, data: error.response?.data || null },
+      { status, data: error.response?.data || null }
     );
   }
 
   return new ApiError(
     error.response?.data?.message || error.message || `Request failed with status ${status}`,
-    { status, data: error.response?.data || null },
+    { status, data: error.response?.data || null }
   );
 };
 
-export function setupRequestInterceptor(api, { isDev, buildApiUrl, getAuthToken, getOnUnauthorized }) {
+export function setupRequestInterceptor(
+  api,
+  { isDev, buildApiUrl, getAuthToken, getOnUnauthorized }
+) {
   api.interceptors.request.use((config) => {
     if (isDev) {
       logger.info(`[API ${config.method?.toUpperCase()}]`, buildApiUrl(config.url || ""));
@@ -154,7 +168,7 @@ export function setupRequestInterceptor(api, { isDev, buildApiUrl, getAuthToken,
           });
           throw new CSRFError(
             `CSRF token required for ${method} request. Please ensure the CSRF token is available in the meta tag or cookie.`,
-            { status: 403 },
+            { status: 403 }
           );
         } else {
           logger.security("csrf_token_missing", {
@@ -168,13 +182,14 @@ export function setupRequestInterceptor(api, { isDev, buildApiUrl, getAuthToken,
       }
 
       if (!config.headers["Idempotency-Key"]) {
-        config.headers["Idempotency-Key"] = typeof crypto !== "undefined" && crypto.randomUUID
-          ? crypto.randomUUID()
-          : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-              const r = Math.random() * 16 | 0;
-              const v = c === "x" ? r : (r & 0x3 | 0x8);
-              return v.toString(16);
-            });
+        config.headers["Idempotency-Key"] =
+          typeof crypto !== "undefined" && crypto.randomUUID
+            ? crypto.randomUUID()
+            : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+                const r = (Math.random() * 16) | 0;
+                const v = c === "x" ? r : (r & 0x3) | 0x8;
+                return v.toString(16);
+              });
       }
     }
 
@@ -182,10 +197,18 @@ export function setupRequestInterceptor(api, { isDev, buildApiUrl, getAuthToken,
   });
 }
 
-export function setupResponseInterceptor(api, { isDev, timeoutMs, getOnUnauthorized, getOnRequiresReauth }) {
+export function setupResponseInterceptor(
+  api,
+  { isDev, timeoutMs, getOnUnauthorized, getOnRequiresReauth }
+) {
   api.interceptors.response.use(
     (response) => {
-      const headerValue = response.headers?.["x-server-time"] || response.headers?.["date"] || (typeof response.headers?.get === 'function' ? (response.headers.get("x-server-time") || response.headers.get("date")) : null);
+      const headerValue =
+        response.headers?.["x-server-time"] ||
+        response.headers?.["date"] ||
+        (typeof response.headers?.get === "function"
+          ? response.headers.get("x-server-time") || response.headers.get("date")
+          : null);
       if (headerValue) {
         syncServerTimeFromHeader(headerValue);
       }
@@ -198,7 +221,7 @@ export function setupResponseInterceptor(api, { isDev, timeoutMs, getOnUnauthori
 
       const onUnauthorized = getOnUnauthorized();
       const onRequiresReauth = getOnRequiresReauth ? getOnRequiresReauth() : null;
-      
+
       if (status === 401) {
         if (errorCode === "REQUIRES_REAUTH") {
           if (onRequiresReauth) onRequiresReauth();
@@ -239,7 +262,7 @@ export function setupResponseInterceptor(api, { isDev, timeoutMs, getOnUnauthori
 
         if (isDev) {
           logger.info(
-            `[API ${config.method?.toUpperCase()}] ${config.url} returned ${status}, retrying in ${delay}ms (attempt ${config._retryCount})...`,
+            `[API ${config.method?.toUpperCase()}] ${config.url} returned ${status}, retrying in ${delay}ms (attempt ${config._retryCount})...`
           );
         }
 
@@ -255,6 +278,6 @@ export function setupResponseInterceptor(api, { isDev, timeoutMs, getOnUnauthori
         retryCount,
       });
       throw normalized;
-    },
+    }
   );
 }

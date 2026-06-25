@@ -19,11 +19,7 @@ const SESSION_KEYS = [
   "eventra_form_retry_queue",
 ];
 
-const CACHE_KEYS_PREFIX = [
-  "eventra_",
-  "events_",
-  "hackathon_",
-];
+const CACHE_KEYS_PREFIX = ["eventra_", "events_", "hackathon_"];
 
 export const clearAuthStorage = () => {
   try {
@@ -76,9 +72,7 @@ export const invalidateSession = async () => {
     if ("caches" in window) {
       try {
         const cacheNames = await caches.keys();
-        await Promise.all(
-          cacheNames.map((name) => caches.delete(name))
-        );
+        await Promise.all(cacheNames.map((name) => caches.delete(name)));
       } catch {}
     }
   }

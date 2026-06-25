@@ -111,9 +111,7 @@ function buildEventJsonLd(event, url) {
       price: tier.price ?? 0,
       priceCurrency: "USD",
       availability:
-        event.status === "past"
-          ? "https://schema.org/SoldOut"
-          : "https://schema.org/InStock",
+        event.status === "past" ? "https://schema.org/SoldOut" : "https://schema.org/InStock",
       url,
     }));
   }
@@ -141,8 +139,7 @@ export default function EventStructuredData({ event }) {
   useEffect(() => {
     if (!event?.title) return;
 
-    const url =
-      typeof window !== "undefined" ? window.location.href : "";
+    const url = typeof window !== "undefined" ? window.location.href : "";
 
     const jsonLd = buildEventJsonLd(event, url);
     const script = document.createElement("script");

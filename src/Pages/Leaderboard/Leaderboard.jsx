@@ -1,7 +1,11 @@
 import { useMemo, useRef, useState, useEffect, useCallback } from "react";
 
 import ErrorBoundary from "../../components/common/ErrorBoundary";
-import { fetchLeaderboardData, getCacheTimestamp, clearLeaderboardCache } from "../../services/githubLeaderboardService";
+import {
+  fetchLeaderboardData,
+  getCacheTimestamp,
+  clearLeaderboardCache,
+} from "../../services/githubLeaderboardService";
 import confetti from "canvas-confetti";
 import GSSoCContribution from "./GSSoCContribution";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
@@ -48,7 +52,8 @@ const formatLastUpdated = (timestamp, t) => {
 
   if (diffMinutes < 1) return t("leaderboard.timeJustNow");
   if (diffMinutes < 60) return t("leaderboard.timeMinutesAgo", { minutes: diffMinutes });
-  if (diffMinutes < 1440) return t("leaderboard.timeHoursAgo", { hours: Math.floor(diffMinutes / 60) });
+  if (diffMinutes < 1440)
+    return t("leaderboard.timeHoursAgo", { hours: Math.floor(diffMinutes / 60) });
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 };
 
@@ -76,14 +81,17 @@ const useLocalStorage = (key, initialValue) => {
     }
   });
 
-  const setValue = useCallback((value) => {
-    try {
-      storageManager.set(key, value);
-      setStoredValue(value);
-    } catch (error) {
-      logger.error(`Error saving to localStorage (${key}):`, error);
-    }
-  }, [key]);
+  const setValue = useCallback(
+    (value) => {
+      try {
+        storageManager.set(key, value);
+        setStoredValue(value);
+      } catch (error) {
+        logger.error(`Error saving to localStorage (${key}):`, error);
+      }
+    },
+    [key]
+  );
 
   return [storedValue, setValue];
 };
@@ -92,11 +100,29 @@ export default function LeaderBoard() {
   const { t } = useTranslation();
   useDocumentTitle(t("leaderboard.pageTitle"));
 
-  const CATEGORY_FILTERS = useMemo(() => [
-    { id: "overall", label: t("leaderboard.filters.overall"), icon: "🏆", description: t("leaderboard.filters.overallDesc") },
-    { id: "monthly", label: t("leaderboard.filters.monthly"), icon: "⭐", description: t("leaderboard.filters.monthlyDesc") },
-    { id: "mentors", label: t("leaderboard.filters.mentors"), icon: "🎓", description: t("leaderboard.filters.mentorsDesc") },
-  ], [t]);
+  const CATEGORY_FILTERS = useMemo(
+    () => [
+      {
+        id: "overall",
+        label: t("leaderboard.filters.overall"),
+        icon: "🏆",
+        description: t("leaderboard.filters.overallDesc"),
+      },
+      {
+        id: "monthly",
+        label: t("leaderboard.filters.monthly"),
+        icon: "⭐",
+        description: t("leaderboard.filters.monthlyDesc"),
+      },
+      {
+        id: "mentors",
+        label: t("leaderboard.filters.mentors"),
+        icon: "🎓",
+        description: t("leaderboard.filters.mentorsDesc"),
+      },
+    ],
+    [t]
+  );
 
   const [contributors, setContributors] = useState([]);
   const [streaks, setStreaks] = useState({});
@@ -107,10 +133,10 @@ export default function LeaderBoard() {
     return ts ? t("leaderboard.statusCached", { time: formatLastUpdated(ts, t) }) : "";
   });
   const [search, setSearch] = useState("");
-  const [, setRecentSearches] = useLocalStorage(
-    STORAGE_KEYS.RECENT_SEARCHES,
-    { queries: [], lastUpdated: Date.now() }
-  );
+  const [, setRecentSearches] = useLocalStorage(STORAGE_KEYS.RECENT_SEARCHES, {
+    queries: [],
+    lastUpdated: Date.now(),
+  });
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState("points");
   const [activeCategory, setActiveCategory] = useState("overall");
@@ -148,15 +174,9 @@ export default function LeaderBoard() {
     [filteredContributors.length]
   );
 
-  const ranksMap = useMemo(
-    () => buildRanksMap(contributors),
-    [contributors]
-  );
+  const ranksMap = useMemo(() => buildRanksMap(contributors), [contributors]);
 
-  const stats = useMemo(
-    () => computeLeaderboardStats(contributors),
-    [contributors]
-  );
+  const stats = useMemo(() => computeLeaderboardStats(contributors), [contributors]);
 
   const top3 = useMemo(() => sortedContributors.slice(0, 3), [sortedContributors]);
 
@@ -193,7 +213,7 @@ export default function LeaderBoard() {
     } catch (err) {
       logger.warn("Failed to update leaderboard cache:", err);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [streamContributors, lastSynced]);
 
   useEffect(() => {
@@ -211,11 +231,20 @@ export default function LeaderBoard() {
         const username = c.username;
         const newRank = newIdx + 1;
         const prevRank = prevRanks.get(username);
-        const currentStreak = prevStreaks[username] || { consecutiveUp: 0, onFire: false, rankDifference: 0 };
+        const currentStreak = prevStreaks[username] || {
+          consecutiveUp: 0,
+          onFire: false,
+          rankDifference: 0,
+        };
 
         if (prevRank !== undefined) {
           const rankDifference = prevRank - newRank;
-          let consecutiveUp = rankDifference > 0 ? currentStreak.consecutiveUp + 1 : rankDifference < 0 ? 0 : currentStreak.consecutiveUp;
+          let consecutiveUp =
+            rankDifference > 0
+              ? currentStreak.consecutiveUp + 1
+              : rankDifference < 0
+                ? 0
+                : currentStreak.consecutiveUp;
           const onFire = rankDifference >= 3 || consecutiveUp >= 3;
           updatedStreaks[username] = { consecutiveUp, onFire, rankDifference };
         } else {
@@ -264,7 +293,7 @@ export default function LeaderBoard() {
     return () => {
       isMounted = false;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -276,7 +305,9 @@ export default function LeaderBoard() {
           const preparedData = prepareLeaderboardEntries(newData);
           const sorted = [...preparedData].sort((a, b) => b.points - a.points);
           setContributors(sorted);
-          setLastUpdated(t("leaderboard.statusUpdated", { time: formatLastUpdated(Date.now(), t) }));
+          setLastUpdated(
+            t("leaderboard.statusUpdated", { time: formatLastUpdated(Date.now(), t) })
+          );
 
           try {
             storageManager.set(STORAGE_KEYS.LEADERBOARD_CACHE, {
@@ -301,18 +332,21 @@ export default function LeaderBoard() {
     };
   }, [t]);
 
-  const handleSearchChange = useCallback((e) => {
-    const query = e.target.value;
-    setSearch(query);
-    setCurrentPage(1);
+  const handleSearchChange = useCallback(
+    (e) => {
+      const query = e.target.value;
+      setSearch(query);
+      setCurrentPage(1);
 
-    if (query.trim().length >= 2) {
-      setRecentSearches((prev) => {
-        const queries = [query, ...prev.queries.filter((q) => q !== query)].slice(0, 5);
-        return { queries, lastUpdated: Date.now() };
-      });
-    }
-  }, [setRecentSearches]);
+      if (query.trim().length >= 2) {
+        setRecentSearches((prev) => {
+          const queries = [query, ...prev.queries.filter((q) => q !== query)].slice(0, 5);
+          return { queries, lastUpdated: Date.now() };
+        });
+      }
+    },
+    [setRecentSearches]
+  );
 
   const handleRefresh = useCallback(async () => {
     if (isRefreshing) return;
@@ -331,7 +365,7 @@ export default function LeaderBoard() {
     } finally {
       setIsRefreshing(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRefreshing]);
 
   const handleExport = useCallback(() => {
@@ -367,18 +401,21 @@ export default function LeaderBoard() {
     setTimeout(() => URL.revokeObjectURL(objectUrl), 100);
   }, [sortedContributors, ranksMap]);
 
-  const handleKeyDown = useCallback((e) => {
-    if (e.key === "/" && !e.metaKey && !e.ctrlKey) {
-      e.preventDefault();
-      searchInputRef.current?.focus();
-    }
-    if (e.key === "ArrowLeft" && currentPage > 1) {
-      setCurrentPage((p) => p - 1);
-    }
-    if (e.key === "ArrowRight" && currentPage < totalPages) {
-      setCurrentPage((p) => p + 1);
-    }
-  }, [currentPage, totalPages]);
+  const handleKeyDown = useCallback(
+    (e) => {
+      if (e.key === "/" && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+      if (e.key === "ArrowLeft" && currentPage > 1) {
+        setCurrentPage((p) => p - 1);
+      }
+      if (e.key === "ArrowRight" && currentPage < totalPages) {
+        setCurrentPage((p) => p + 1);
+      }
+    },
+    [currentPage, totalPages]
+  );
 
   useEffect(() => {
     window.addEventListener("keydown", handleKeyDown);
@@ -398,51 +435,56 @@ export default function LeaderBoard() {
     setSortBy(value);
   }, []);
 
-  const podiumConfig = useMemo(() => [
-    {
-      position: t("leaderboard.podiumPositions.2nd"),
-      contributor: top3[1],
-      orderClass: "order-2 md:order-1",
-      styling: {
-        borderClass: "border-slate-300 dark:border-slate-700",
-        ringClass: "from-slate-200 to-zinc-400",
-        title: t("leaderboard.podiumTitles.2nd"),
-        badgeClass: "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300",
-        size: "h-18 w-18",
-        pointsClass: "text-slate-800 dark:text-slate-100",
-        medalClass: "bg-slate-300 text-slate-800",
-      },
-    },
-    {
-      position: t("leaderboard.podiumPositions.1st"),
-      contributor: top3[0],
-      orderClass: "order-1 md:order-2",
-      styling: {
-        borderClass: "border-yellow-400 dark:border-yellow-500",
-        ringClass: "from-yellow-300 via-amber-400 to-yellow-500",
-        title: t("leaderboard.podiumTitles.1st"),
-        badgeClass: "bg-yellow-400 text-yellow-950 shadow-[0_2px_10px_rgba(234,179,8,0.3)]",
-        size: "h-22 w-22",
-        pointsClass: "text-amber-500",
-        medalClass: "bg-linear-to-r from-yellow-400 to-amber-500 text-amber-950",
-      },
-      isFirst: true,
-    },
-    {
-      position: t("leaderboard.podiumPositions.3rd"),
-      contributor: top3[2],
-      orderClass: "order-3 md:order-3",
-      styling: {
-        borderClass: "border-amber-600 dark:border-orange-700",
-        ringClass: "from-amber-600 to-orange-500",
-        title: t("leaderboard.podiumTitles.3rd"),
-        badgeClass: "bg-orange-100 dark:bg-orange-950/30 text-orange-600 dark:text-orange-300 border border-orange-200/40",
-        size: "h-18 w-18",
-        pointsClass: "text-slate-800 dark:text-slate-100",
-        medalClass: "bg-amber-600 text-white",
-      },
-    },
-  ].filter((p) => p.contributor), [top3, t]);
+  const podiumConfig = useMemo(
+    () =>
+      [
+        {
+          position: t("leaderboard.podiumPositions.2nd"),
+          contributor: top3[1],
+          orderClass: "order-2 md:order-1",
+          styling: {
+            borderClass: "border-slate-300 dark:border-slate-700",
+            ringClass: "from-slate-200 to-zinc-400",
+            title: t("leaderboard.podiumTitles.2nd"),
+            badgeClass: "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300",
+            size: "h-18 w-18",
+            pointsClass: "text-slate-800 dark:text-slate-100",
+            medalClass: "bg-slate-300 text-slate-800",
+          },
+        },
+        {
+          position: t("leaderboard.podiumPositions.1st"),
+          contributor: top3[0],
+          orderClass: "order-1 md:order-2",
+          styling: {
+            borderClass: "border-yellow-400 dark:border-yellow-500",
+            ringClass: "from-yellow-300 via-amber-400 to-yellow-500",
+            title: t("leaderboard.podiumTitles.1st"),
+            badgeClass: "bg-yellow-400 text-yellow-950 shadow-[0_2px_10px_rgba(234,179,8,0.3)]",
+            size: "h-22 w-22",
+            pointsClass: "text-amber-500",
+            medalClass: "bg-linear-to-r from-yellow-400 to-amber-500 text-amber-950",
+          },
+          isFirst: true,
+        },
+        {
+          position: t("leaderboard.podiumPositions.3rd"),
+          contributor: top3[2],
+          orderClass: "order-3 md:order-3",
+          styling: {
+            borderClass: "border-amber-600 dark:border-orange-700",
+            ringClass: "from-amber-600 to-orange-500",
+            title: t("leaderboard.podiumTitles.3rd"),
+            badgeClass:
+              "bg-orange-100 dark:bg-orange-950/30 text-orange-600 dark:text-orange-300 border border-orange-200/40",
+            size: "h-18 w-18",
+            pointsClass: "text-slate-800 dark:text-slate-100",
+            medalClass: "bg-amber-600 text-white",
+          },
+        },
+      ].filter((p) => p.contributor),
+    [top3, t]
+  );
 
   return (
     <ErrorBoundary level="feature">
@@ -452,7 +494,11 @@ export default function LeaderBoard() {
         aria-labelledby="leaderboard-heading"
       >
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <LeaderboardHero stats={stats} loading={loading} currentContributors={currentContributors} />
+          <LeaderboardHero
+            stats={stats}
+            loading={loading}
+            currentContributors={currentContributors}
+          />
 
           <LeaderboardPodium top3={top3} podiumConfig={podiumConfig} />
 
@@ -474,11 +520,12 @@ export default function LeaderBoard() {
 
           <div className="mb-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/70 bg-white/70 px-4 py-3 text-sm text-slate-600 backdrop-blur-xl">
             <span>
-              {t("leaderboard.showingContributors", { count: currentContributors.length, total: sortedContributors.length })}
+              {t("leaderboard.showingContributors", {
+                count: currentContributors.length,
+                total: sortedContributors.length,
+              })}
             </span>
-            <span>
-              {t("leaderboard.pageOf", { current: currentPage, total: totalPages })}
-            </span>
+            <span>{t("leaderboard.pageOf", { current: currentPage, total: totalPages })}</span>
           </div>
 
           <LeaderboardStatsCards stats={stats} loading={loading} />
@@ -503,9 +550,17 @@ export default function LeaderBoard() {
 
           <div className="mt-6 text-center">
             <p className="text-xs text-slate-400 dark:text-slate-500">
-              <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono">/</kbd> to search &bull;{" "}
-              <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono">&larr;</kbd>{" "}
-              <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono">&rarr;</kbd> to navigate pages
+              <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono">
+                /
+              </kbd>{" "}
+              to search &bull;{" "}
+              <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono">
+                &larr;
+              </kbd>{" "}
+              <kbd className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 font-mono">
+                &rarr;
+              </kbd>{" "}
+              to navigate pages
             </p>
           </div>
         </div>

@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { X, CheckCircle, ThumbsUp, ThumbsDown } from 'lucide-react';
-import StarRating from './StarRating';
-import { saveFeedback, getUserFeedback } from '../../utils/feedbackUtils';
-import { toast } from 'react-toastify';
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { X, CheckCircle, ThumbsUp, ThumbsDown } from "lucide-react";
+import StarRating from "./StarRating";
+import { saveFeedback, getUserFeedback } from "../../utils/feedbackUtils";
+import { toast } from "react-toastify";
 
 /**
  * EventFeedbackModal Component
@@ -11,20 +11,20 @@ import { toast } from 'react-toastify';
  */
 const EventFeedbackModal = ({ isOpen, onClose, event }) => {
   const [rating, setRating] = useState(0);
-  const [comment, setComment] = useState('');
+  const [comment, setComment] = useState("");
   const [recommend, setRecommend] = useState(null);
   const [selectedTags, setSelectedTags] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
   const FEEDBACK_TAGS = [
-    'Well Organized',
-    'Great Speaker',
-    'Networking',
-    'Hands-on',
-    'Beginner Friendly',
-    'Too Fast',
-    'Too Long',
+    "Well Organized",
+    "Great Speaker",
+    "Networking",
+    "Hands-on",
+    "Beginner Friendly",
+    "Too Fast",
+    "Too Long",
   ];
 
   // Load existing feedback if editing
@@ -33,7 +33,7 @@ const EventFeedbackModal = ({ isOpen, onClose, event }) => {
       const existingFeedback = getUserFeedback(event.id);
       if (existingFeedback) {
         setRating(existingFeedback.rating || 0);
-        setComment(existingFeedback.comment || '');
+        setComment(existingFeedback.comment || "");
         setRecommend(existingFeedback.recommend || null);
         setSelectedTags(existingFeedback.tags || []);
         setIsEditing(true);
@@ -49,7 +49,7 @@ const EventFeedbackModal = ({ isOpen, onClose, event }) => {
 
   const handleSubmit = async () => {
     if (rating === 0) {
-      toast.warning('Please select a rating');
+      toast.warning("Please select a rating");
       return;
     }
 
@@ -67,25 +67,25 @@ const EventFeedbackModal = ({ isOpen, onClose, event }) => {
       const success = saveFeedback(event.id, feedbackData);
 
       if (success) {
-        toast.success(isEditing ? 'Feedback updated!' : 'Thank you for your feedback!', {
+        toast.success(isEditing ? "Feedback updated!" : "Thank you for your feedback!", {
           icon: <CheckCircle className="w-5 h-5" />,
         });
 
         // Reset form
         setTimeout(() => {
           setRating(0);
-          setComment('');
+          setComment("");
           setRecommend(null);
           setSelectedTags([]);
           setIsEditing(false);
           onClose();
         }, 1500);
       } else {
-        toast.error('Failed to submit feedback. Please try again.');
+        toast.error("Failed to submit feedback. Please try again.");
       }
     } catch (error) {
-      console.error('Error submitting feedback:', error);
-      toast.error('An error occurred. Please try again.');
+      console.error("Error submitting feedback:", error);
+      toast.error("An error occurred. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -93,7 +93,7 @@ const EventFeedbackModal = ({ isOpen, onClose, event }) => {
 
   const handleReset = () => {
     setRating(0);
-    setComment('');
+    setComment("");
     setRecommend(null);
     setSelectedTags([]);
     setIsEditing(false);
@@ -146,8 +146,8 @@ const EventFeedbackModal = ({ isOpen, onClose, event }) => {
                 onClick={() => setRecommend(true)}
                 className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg font-medium transition-all ${
                   recommend === true
-                    ? 'bg-green-500 text-white shadow-md'
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                    ? "bg-green-500 text-white shadow-md"
+                    : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
                 }`}
               >
                 <ThumbsUp className="w-5 h-5" />
@@ -157,8 +157,8 @@ const EventFeedbackModal = ({ isOpen, onClose, event }) => {
                 onClick={() => setRecommend(false)}
                 className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg font-medium transition-all ${
                   recommend === false
-                    ? 'bg-red-500 text-white shadow-md'
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                    ? "bg-red-500 text-white shadow-md"
+                    : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
                 }`}
               >
                 <ThumbsDown className="w-5 h-5" />
@@ -179,8 +179,8 @@ const EventFeedbackModal = ({ isOpen, onClose, event }) => {
                   onClick={() => handleTagToggle(tag)}
                   className={`px-3 py-2 rounded-full text-sm font-medium transition-all ${
                     selectedTags.includes(tag)
-                      ? 'bg-indigo-500 text-white shadow-md'
-                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                      ? "bg-indigo-500 text-white shadow-md"
+                      : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
                   }`}
                 >
                   {tag}
@@ -224,7 +224,7 @@ const EventFeedbackModal = ({ isOpen, onClose, event }) => {
             disabled={isSubmitting || rating === 0}
             className="flex-1 py-2.5 px-4 rounded-lg font-medium text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {isSubmitting ? 'Submitting...' : isEditing ? 'Update Feedback' : 'Submit Feedback'}
+            {isSubmitting ? "Submitting..." : isEditing ? "Update Feedback" : "Submit Feedback"}
           </button>
         </div>
       </motion.div>

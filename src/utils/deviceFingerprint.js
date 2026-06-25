@@ -79,7 +79,7 @@ export const getDeviceFingerprint = () => {
     // avoids salt collisions if two deployments share the same hostname root.
     // Remove daily time-based salt offset to maintain fingerprint stability across days
     const dayOffset = 0;
-const salt = dayOffset + `eventra:fingerprint:${window.location.origin}`;
+    const salt = dayOffset + `eventra:fingerprint:${window.location.origin}`;
 
     _memoizedFingerprint = CryptoJS.SHA256(fingerprintRaw + salt).toString();
     return _memoizedFingerprint;
@@ -88,7 +88,7 @@ const salt = dayOffset + `eventra:fingerprint:${window.location.origin}`;
     const fallbackSalt =
       typeof window !== "undefined" ? window.location.origin : "eventra-fallback";
     _memoizedFingerprint = CryptoJS.SHA256(
-      `eventra-fingerprint-fallback:${fallbackSalt}`,
+      `eventra-fingerprint-fallback:${fallbackSalt}`
     ).toString();
     return _memoizedFingerprint;
   }
@@ -117,11 +117,13 @@ export const getFastFingerprint = () => {
     const navInfo = `${window.navigator?.userAgent || ""}_${window.navigator?.language || ""}_${window.navigator?.hardwareConcurrency || 0}`;
     // Remove daily time-based salt offset to maintain fingerprint stability across days
     const dayOffset = 0;
-const salt = dayOffset + `eventra:fast-fingerprint:${window.location.origin}`;
+    const salt = dayOffset + `eventra:fast-fingerprint:${window.location.origin}`;
     _memoizedFastFingerprint = CryptoJS.SHA256(`${screenInfo}_${navInfo}_${salt}`).toString();
     return _memoizedFastFingerprint;
   } catch {
-    _memoizedFastFingerprint = CryptoJS.SHA256("eventra-fast-fingerprint-ultimate-fallback").toString();
+    _memoizedFastFingerprint = CryptoJS.SHA256(
+      "eventra-fast-fingerprint-ultimate-fallback"
+    ).toString();
     return _memoizedFastFingerprint;
   }
 };

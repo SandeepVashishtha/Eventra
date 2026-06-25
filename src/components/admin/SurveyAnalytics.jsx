@@ -1,15 +1,7 @@
 import { Users, Activity, Smile, Play, Star, Download } from "lucide-react";
 import { useState, useMemo } from "react";
 import { exportSurveyToCSV } from "../../utils/exportCsv";
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Cell,
-} from "recharts";
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from "recharts";
 import { toast } from "react-toastify";
 import { useSurveySimulator } from "./useSurveySimulator";
 
@@ -31,13 +23,8 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
   const [isActive] = useState(true);
 
   // Hook handles mock data generation - decoupled from UI components
-  const {
-    totalSubmissions,
-    completionRate,
-    simulatedData,
-    textFeed,
-    handleSimulateSubmission,
-  } = useSurveySimulator(questions, FEEDBACK_COMMENTS_POOL);
+  const { totalSubmissions, completionRate, simulatedData, textFeed, handleSimulateSubmission } =
+    useSurveySimulator(questions, FEEDBACK_COMMENTS_POOL);
 
   const choiceChartData = useMemo(() => {
     const chartData = {};
@@ -148,8 +135,6 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
     toast.success("Survey responses successfully exported to CSV file!");
   };
 
-
-
   return (
     <div className="space-y-8">
       {/* SIMULATOR TRAFFIC BAR */}
@@ -159,22 +144,25 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
             Simulate Attendee Feedback
           </h3>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            Generate synthetic survey submissions to test average calculations, option breakdowns, and scrolling log feeds.
+            Generate synthetic survey submissions to test average calculations, option breakdowns,
+            and scrolling log feeds.
           </p>
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <button
             onClick={handleExportCSV}
             className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-semibold hover:border-indigo-500 dark:hover:border-indigo-400 text-xs text-slate-700 dark:text-slate-350 hover:text-indigo-650 dark:hover:text-indigo-400 hover:shadow-md transition active:scale-95 cursor-pointer"
-           aria-label="button">
+            aria-label="button"
+          >
             <Download className="w-4 h-4 text-indigo-500" />
             Export Results to CSV
           </button>
-          
+
           <button
             onClick={handleSimulateSubmission}
             className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-xs font-bold text-white shadow-lg shadow-indigo-600/15 transition self-start sm:self-auto cursor-pointer"
-           aria-label="button">
+            aria-label="button"
+          >
             <Play className="w-4 h-4 fill-white" />
             Inject Survey Response
           </button>
@@ -189,14 +177,16 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
             value: totalSubmissions,
             sub: "+12 submissions today",
             icon: <Users className="w-5 h-5" />,
-            color: "text-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 border-indigo-100/50 dark:border-indigo-900/30",
+            color:
+              "text-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 border-indigo-100/50 dark:border-indigo-900/30",
           },
           {
             label: "Completion Rate",
             value: `${completionRate}%`,
             sub: "Average time: 2m 45s",
             icon: <Activity className="w-5 h-5" />,
-            color: "text-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-100/50 dark:border-emerald-900/30",
+            color:
+              "text-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-100/50 dark:border-emerald-900/30",
           },
           {
             label: "Survey Status",
@@ -208,14 +198,16 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
                 <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
               </span>
             ),
-            color: "text-amber-500 bg-amber-50 dark:bg-amber-950/40 border-amber-100/50 dark:border-amber-900/30",
+            color:
+              "text-amber-500 bg-amber-50 dark:bg-amber-950/40 border-amber-100/50 dark:border-amber-900/30",
           },
           {
             label: "Attendee Satisfaction",
             value: "4.4 / 5.0",
             sub: "Highly positive feedback",
             icon: <Smile className="w-5 h-5" />,
-            color: "text-rose-500 bg-rose-50 dark:bg-rose-950/40 border-rose-100/50 dark:border-rose-900/30",
+            color:
+              "text-rose-500 bg-rose-50 dark:bg-rose-950/40 border-rose-100/50 dark:border-rose-900/30",
           },
         ].map((stat, i) => (
           <div
@@ -244,7 +236,8 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
             No active questions found in your survey.
           </p>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 max-w-sm mx-auto">
-            Please add some questions in the **Survey Builder** tab to initialize submission analytics data streams!
+            Please add some questions in the **Survey Builder** tab to initialize submission
+            analytics data streams!
           </p>
         </div>
       ) : (
@@ -267,8 +260,8 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
                       {question.type === "rating"
                         ? "Rating Scale Analyzer"
                         : question.type === "choice"
-                        ? "Multiple Choice Breakdown"
-                        : "Open Text Feedback Stream"}
+                          ? "Multiple Choice Breakdown"
+                          : "Open Text Feedback Stream"}
                     </span>
                   </div>
                   <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-100 leading-tight">
@@ -313,7 +306,8 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
                           return (
                             <div key={star} className="flex items-center gap-3 text-xs">
                               <span className="w-10 font-bold text-slate-400 shrink-0 flex items-center gap-0.5">
-                                {star} <Star className="w-3 h-3 fill-slate-300 dark:fill-slate-650" />
+                                {star}{" "}
+                                <Star className="w-3 h-3 fill-slate-300 dark:fill-slate-650" />
                               </span>
                               <div className="flex-1 h-2.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                                 <div

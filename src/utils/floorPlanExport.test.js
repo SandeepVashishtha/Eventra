@@ -66,9 +66,7 @@ beforeEach(() => {
 
   jest.spyOn(document.body, "appendChild").mockImplementation(() => {});
   jest.spyOn(document.body, "removeChild").mockImplementation(() => {});
-  jest
-    .spyOn(window, "getComputedStyle")
-    .mockReturnValue({ backgroundColor: "#0b0b14" });
+  jest.spyOn(window, "getComputedStyle").mockReturnValue({ backgroundColor: "#0b0b14" });
 });
 
 afterEach(() => {
@@ -180,9 +178,7 @@ describe("exportAsPNG — blob URL timeout cleanup", () => {
     // At 10 s: cleanup fires
     jest.advanceTimersByTime(1);
     expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:mock-url");
-    expect(console.warn).toHaveBeenCalledWith(
-      expect.stringContaining("timed out")
-    );
+    expect(console.warn).toHaveBeenCalledWith(expect.stringContaining("timed out"));
   });
 
   it("clears the timeout when onload fires before 10 s", () => {
@@ -190,9 +186,7 @@ describe("exportAsPNG — blob URL timeout cleanup", () => {
     exportAsPNG(ref, "evt-1");
     jest.runAllTimers();
     // warn should NOT have been called (load fired before timeout)
-    expect(console.warn).not.toHaveBeenCalledWith(
-      expect.stringContaining("timed out")
-    );
+    expect(console.warn).not.toHaveBeenCalledWith(expect.stringContaining("timed out"));
   });
 
   it("revokes the blob URL immediately when onerror fires", () => {
@@ -200,7 +194,13 @@ describe("exportAsPNG — blob URL timeout cleanup", () => {
 
     jest.spyOn(document, "createElement").mockImplementation((tag) => {
       if (tag === "canvas") {
-        return { width: 0, height: 0, getContext: jest.fn(() => null), toBlob: jest.fn(), style: {} };
+        return {
+          width: 0,
+          height: 0,
+          getContext: jest.fn(() => null),
+          toBlob: jest.fn(),
+          style: {},
+        };
       }
       // img — fire onerror instead of onload
       const img = {
@@ -219,9 +219,7 @@ describe("exportAsPNG — blob URL timeout cleanup", () => {
     jest.runAllTimers();
 
     expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:mock-url");
-    expect(console.error).toHaveBeenCalledWith(
-      expect.stringContaining("SVG image failed to load")
-    );
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining("SVG image failed to load"));
   });
 });
 

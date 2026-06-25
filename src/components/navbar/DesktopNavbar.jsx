@@ -1,4 +1,3 @@
-
 import NavbarLinks from "./NavbarLinks";
 
 const DesktopNavbar = () => {
@@ -10,5 +9,3 @@ const DesktopNavbar = () => {
 };
 
 export default DesktopNavbar;
-
-

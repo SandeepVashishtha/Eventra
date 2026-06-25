@@ -41,19 +41,22 @@ export function useNotificationDelivery(preferences) {
         return false;
       }
     },
-    [preferences],
+    [preferences]
   );
 
   const showToastNotification = useCallback(
     (notification) => {
       if (!shouldDeliverNotification(notification, preferences, "inApp")) return;
-      toast.info(`${getNotificationTitle(notification)} — ${getNotificationMessage(notification)}`, {
-        toastId: `notif-${notification.id}`,
-        autoClose: 5000,
-        onClick: () => markAsReadRef.current?.(notification.id),
-      });
+      toast.info(
+        `${getNotificationTitle(notification)} — ${getNotificationMessage(notification)}`,
+        {
+          toastId: `notif-${notification.id}`,
+          autoClose: 5000,
+          onClick: () => markAsReadRef.current?.(notification.id),
+        }
+      );
     },
-    [preferences],
+    [preferences]
   );
 
   const deliverNew = useCallback(
@@ -66,7 +69,7 @@ export function useNotificationDelivery(preferences) {
         }
       }
     },
-    [preferences, showBrowserNotification, showToastNotification],
+    [preferences, showBrowserNotification, showToastNotification]
   );
 
   return { showBrowserNotification, showToastNotification, deliverNew, markAsReadRef };

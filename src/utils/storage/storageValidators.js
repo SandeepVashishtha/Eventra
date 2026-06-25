@@ -1,8 +1,5 @@
 export const validators = {
-  isObject: (value) =>
-    value !== null &&
-    typeof value === "object" &&
-    !Array.isArray(value),
+  isObject: (value) => value !== null && typeof value === "object" && !Array.isArray(value),
 
   isArray: (value) => Array.isArray(value),
 

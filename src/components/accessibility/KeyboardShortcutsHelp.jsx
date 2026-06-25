@@ -28,18 +28,29 @@ const KeyboardShortcutsHelp = () => {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="border-b border-slate-150 dark:border-slate-800">
-              <th className="py-3 text-xs font-bold uppercase tracking-wider text-slate-400">Shortcut</th>
-              <th className="py-3 text-xs font-bold uppercase tracking-wider text-slate-400">Action</th>
+              <th className="py-3 text-xs font-bold uppercase tracking-wider text-slate-400">
+                Shortcut
+              </th>
+              <th className="py-3 text-xs font-bold uppercase tracking-wider text-slate-400">
+                Action
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
             {shortcuts.map((s, idx) => (
-              <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-colors">
+              <tr
+                key={idx}
+                className="hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-colors"
+              >
                 <td className="py-3.5 pr-4">
                   <div className="flex items-center gap-1.5">
                     {s.keys.map((k, kIdx) => (
                       <React.Fragment key={kIdx}>
-                        {kIdx > 0 && <span className="text-slate-450 dark:text-slate-500 text-xs font-bold">+</span>}
+                        {kIdx > 0 && (
+                          <span className="text-slate-450 dark:text-slate-500 text-xs font-bold">
+                            +
+                          </span>
+                        )}
                         <kbd className="px-2.5 py-1 bg-slate-100 dark:bg-slate-850 border border-slate-200/80 dark:border-slate-700/80 text-slate-800 dark:text-slate-200 text-xs font-extrabold rounded-lg shadow-sm">
                           {k}
                         </kbd>
@@ -47,7 +58,9 @@ const KeyboardShortcutsHelp = () => {
                     ))}
                   </div>
                 </td>
-                <td className="py-3.5 text-sm font-semibold text-slate-700 dark:text-slate-300">{s.action}</td>
+                <td className="py-3.5 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  {s.action}
+                </td>
               </tr>
             ))}
           </tbody>

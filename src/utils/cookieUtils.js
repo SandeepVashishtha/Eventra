@@ -52,8 +52,7 @@ export function buildCookieString(name, value, options = {}) {
 
   // Add expires
   if (opts.expires) {
-    const expiresValue =
-      opts.expires instanceof Date ? opts.expires.toUTCString() : opts.expires;
+    const expiresValue = opts.expires instanceof Date ? opts.expires.toUTCString() : opts.expires;
     cookieString += `; expires=${expiresValue}`;
   }
 

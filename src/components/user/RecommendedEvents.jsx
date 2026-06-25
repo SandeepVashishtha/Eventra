@@ -6,58 +6,35 @@ import mockHackathons from "../../Pages/Hackathons/hackathonMockData.json";
 
 import useRecommendations from "../../hooks/useRecommendations";
 
-
 const RecommendedEvents = () => {
-
   const [recommendedHackathons, setRecommendedHackathons] = useState([]);
 
   // Intelligent recommendation engine
-  const recommendations =
-    useRecommendations(mockHackathons);
+  const recommendations = useRecommendations(mockHackathons);
 
   useEffect(() => {
-
     // Show top 3 recommendations
-    setRecommendedHackathons(
-      recommendations.slice(0, 3)
-    );
-
+    setRecommendedHackathons(recommendations.slice(0, 3));
   }, [recommendations]);
 
   return (
-
     <section className="bg-bg text-text py-12 border-b border-border">
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
         {/* Heading */}
         <div className="flex justify-between items-center mb-8">
-
           <div>
-
-            <h2 className="text-3xl font-bold text-text">
-
-              Recommended For You
-
-            </h2>
+            <h2 className="text-3xl font-bold text-text">Recommended For You</h2>
 
             <p className="text-text-light mt-2">
-
               Personalized hackathons based on your interests, activity, and recommendation score.
-
             </p>
-
           </div>
-
         </div>
 
         {/* Recommendations */}
         {recommendedHackathons.length > 0 ? (
-
           <div className="grid gap-10 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-
             {recommendedHackathons.map((hackathon, index) => (
-
               <div
                 key={hackathon.id}
                 className="
@@ -66,7 +43,6 @@ const RecommendedEvents = () => {
                   overflow-hidden
                 "
               >
-
                 {/* Recommendation Score Badge */}
                 <div
                   className="
@@ -110,13 +86,10 @@ const RecommendedEvents = () => {
                     rounded-b-2xl
                   "
                 >
-
-                  {hackathon.recommendationReasons?.map(
-                    (reason, reasonIndex) => (
-
-                      <span
-                        key={reasonIndex}
-                        className="
+                  {hackathon.recommendationReasons?.map((reason, reasonIndex) => (
+                    <span
+                      key={reasonIndex}
+                      className="
                           text-xs
                           bg-primary/10
                           text-primary
@@ -125,41 +98,22 @@ const RecommendedEvents = () => {
                           rounded-full
                           font-medium
                         "
-                      >
-                        {reason}
-                      </span>
-
-                    )
-                  )}
-
+                    >
+                      {reason}
+                    </span>
+                  ))}
                 </div>
-
               </div>
-
             ))}
-
           </div>
-
         ) : (
-
           <div className="text-center py-10">
-
-            <p className="text-text-light">
-
-              No recommendations available right now.
-
-            </p>
-
+            <p className="text-text-light">No recommendations available right now.</p>
           </div>
-
         )}
-
       </div>
-
     </section>
-
   );
-
 };
 
 export default RecommendedEvents;

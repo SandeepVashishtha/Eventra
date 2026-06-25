@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import FocusTrap from './FocusTrap';
+import { useEffect } from "react";
+import FocusTrap from "./FocusTrap";
 
 /**
  * Modal
@@ -26,20 +26,20 @@ const Modal = ({
   isOpen,
   onClose,
   title,
-  titleId = 'modal-title',
+  titleId = "modal-title",
   children,
-  className = '',
+  className = "",
   hideCloseBtn = false,
 }) => {
   // Lock background scroll while the modal is open.
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = '';
+      document.body.style.overflow = "";
     }
     return () => {
-      document.body.style.overflow = '';
+      document.body.style.overflow = "";
     };
   }, [isOpen]);
 
@@ -47,10 +47,7 @@ const Modal = ({
 
   return (
     /* Backdrop */
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      aria-hidden="false"
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center" aria-hidden="false">
       {/* Overlay */}
       <div
         className="absolute inset-0 bg-black bg-opacity-50"
@@ -70,10 +67,7 @@ const Modal = ({
           {(title || !hideCloseBtn) && (
             <div className="mb-4 flex items-center justify-between">
               {title && (
-                <h2
-                  id={titleId}
-                  className="text-lg font-semibold text-gray-900 dark:text-white"
-                >
+                <h2 id={titleId} className="text-lg font-semibold text-gray-900 dark:text-white">
                   {title}
                 </h2>
               )}

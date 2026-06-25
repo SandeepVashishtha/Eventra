@@ -929,187 +929,189 @@ function FAQSectionInner() {
         }
       `}</style>
       <div className="faq-page">
-      <div className="faq-container">
-      <div className="faq-section-root" ref={sectionRef}>
-        <div className="faq-background-pattern" />
+        <div className="faq-container">
+          <div className="faq-section-root" ref={sectionRef}>
+            <div className="faq-background-pattern" />
 
-        <div
-          ref={headerRef}
-          className={`faq-heading-block${isHeaderFixed ? " is-fixed" : ""}`}
-          style={isHeaderFixed ? { top: headerTop } : {}}
-        >
-          <div className="faq-heading-inner">
-            <h2>{t("faq.heading")}</h2>
-            <p>{t("faq.subtitle")}</p>
+            <div
+              ref={headerRef}
+              className={`faq-heading-block${isHeaderFixed ? " is-fixed" : ""}`}
+              style={isHeaderFixed ? { top: headerTop } : {}}
+            >
+              <div className="faq-heading-inner">
+                <h2>{t("faq.heading")}</h2>
+                <p>{t("faq.subtitle")}</p>
 
-            <div className="search-wrap">
-              <input
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setShowSuggestions(true);
-                }}
-                onFocus={() => setShowSuggestions(true)}
-                onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-                placeholder={t("faq.searchPlaceholder")}
-                className="search-input"
-                aria-label="Search FAQ"
-              />
-              <Search className="search-icon w-5 h-5" aria-hidden="true" />
-              {searchTerm && (
-                <button
-                  onClick={() => {
-                    setSearchTerm("");
-                    setShowSuggestions(false);
-                  }}
-                  className="clear-btn"
-                  aria-label="Clear search"
-                >
-                  <X size={18} />
-                </button>
-              )}
-              {showSuggestions && suggestions.length > 0 && (
-                <div className="suggestions" ref={suggestionsRef} role="listbox">
-                  {suggestions.map((s, i) => (
-                    <div
-                      key={i}
-                      className="suggestion-item"
-                      role="option"
+                <div className="search-wrap">
+                  <input
+                    value={searchTerm}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      setShowSuggestions(true);
+                    }}
+                    onFocus={() => setShowSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                    placeholder={t("faq.searchPlaceholder")}
+                    className="search-input"
+                    aria-label="Search FAQ"
+                  />
+                  <Search className="search-icon w-5 h-5" aria-hidden="true" />
+                  {searchTerm && (
+                    <button
                       onClick={() => {
-                        setSearchTerm(s.question);
+                        setSearchTerm("");
                         setShowSuggestions(false);
                       }}
+                      className="clear-btn"
+                      aria-label="Clear search"
                     >
-                      <Search size={14} aria-hidden="true" />
-                      {s.question}
+                      <X size={18} />
+                    </button>
+                  )}
+                  {showSuggestions && suggestions.length > 0 && (
+                    <div className="suggestions" ref={suggestionsRef} role="listbox">
+                      {suggestions.map((s, i) => (
+                        <div
+                          key={i}
+                          className="suggestion-item"
+                          role="option"
+                          onClick={() => {
+                            setSearchTerm(s.question);
+                            setShowSuggestions(false);
+                          }}
+                        >
+                          <Search size={14} aria-hidden="true" />
+                          {s.question}
+                        </div>
+                      ))}
                     </div>
+                  )}
+                </div>
+
+                <div className="category-filters" role="tablist" aria-label="Filter FAQ categories">
+                  {[
+                    { key: "All", label: t("faq.filterAll") },
+                    { key: "General", label: t("faq.filterGeneral") },
+                    { key: "Hackathons", label: t("faq.filterHackathons") },
+                    { key: "Account", label: t("faq.filterAccount") },
+                  ].map((c) => (
+                    <button
+                      key={c.key}
+                      onClick={() => setSelectedCategory(c.key)}
+                      className={`category-btn${selectedCategory === c.key ? " active" : ""}`}
+                      role="tab"
+                      aria-selected={selectedCategory === c.key}
+                      aria-controls="faq-list"
+                    >
+                      {c.label}
+                    </button>
                   ))}
                 </div>
-              )}
-            </div>
-
-            <div className="category-filters" role="tablist" aria-label="Filter FAQ categories">
-              {[
-                { key: "All", label: t("faq.filterAll") },
-                { key: "General", label: t("faq.filterGeneral") },
-                { key: "Hackathons", label: t("faq.filterHackathons") },
-                { key: "Account", label: t("faq.filterAccount") },
-              ].map((c) => (
-                <button
-                  key={c.key}
-                  onClick={() => setSelectedCategory(c.key)}
-                  className={`category-btn${selectedCategory === c.key ? " active" : ""}`}
-                  role="tab"
-                  aria-selected={selectedCategory === c.key}
-                  aria-controls="faq-list"
-                >
-                  {c.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {isHeaderFixed && <div style={{ height: headerHeight }} />}
-
-        <div className="faq-cards-container" id="faq-list" role="tabpanel">
-          {filteredFaqs.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-state-icon">
-                <HelpCircle className="w-10 h-10" />
               </div>
-              <h3>{t("faq.emptyTitle")}</h3>
-              <p>{t("faq.emptyDescription", { searchTerm, selectedCategory })}</p>
-              <button
-                onClick={() => {
-                  setSearchTerm("");
-                  setSelectedCategory("All");
-                }}
-                className="empty-state-btn"
-              >
-                {t("faq.emptyClearFilters")}
-              </button>
             </div>
-          ) : (
-            filteredFaqs.map((faq, index) => {
-              const isExpanded = expandedItems.has(index);
 
-              return (
-                <div
-                  key={index}
-                  className="card-pin-wrapper"
-                  ref={(el) => {
-                    if (el) wrapperRefs.current[index] = el;
-                  }}
-                >
-                  <div className={`faq-accordion-item${isExpanded ? " expanded" : ""}`}>
-                    <button
-                      className="faq-accordion-header"
-                      onClick={() => toggleAccordion(index)}
-                      aria-expanded={isExpanded}
-                      aria-controls={`faq-answer-${index}`}
-                    >
-                      <span className="faq-icon" aria-hidden="true">
-                        {faq.icon}
-                      </span>
-                      <div className="faq-accordion-title-group">
-                        <span className="faq-cat">{faq.category}</span>
-                        <h3>{faq.question}</h3>
-                      </div>
-                      <div className="faq-chevron" aria-hidden="true">
-                        <ChevronDown size={20} />
-                      </div>
-                    </button>
+            {isHeaderFixed && <div style={{ height: headerHeight }} />}
 
+            <div className="faq-cards-container" id="faq-list" role="tabpanel">
+              {filteredFaqs.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-state-icon">
+                    <HelpCircle className="w-10 h-10" />
+                  </div>
+                  <h3>{t("faq.emptyTitle")}</h3>
+                  <p>{t("faq.emptyDescription", { searchTerm, selectedCategory })}</p>
+                  <button
+                    onClick={() => {
+                      setSearchTerm("");
+                      setSelectedCategory("All");
+                    }}
+                    className="empty-state-btn"
+                  >
+                    {t("faq.emptyClearFilters")}
+                  </button>
+                </div>
+              ) : (
+                filteredFaqs.map((faq, index) => {
+                  const isExpanded = expandedItems.has(index);
+
+                  return (
                     <div
-                      className="faq-accordion-content"
-                      id={`faq-answer-${index}`}
-                      role="region"
-                      aria-labelledby={`faq-question-${index}`}
-                      style={{
-                        maxHeight: isExpanded ? "2000px" : "0px",
+                      key={index}
+                      className="card-pin-wrapper"
+                      ref={(el) => {
+                        if (el) wrapperRefs.current[index] = el;
                       }}
                     >
-                      <div className="faq-answer-wrapper">
-                        <p>{faq.answer}</p>
+                      <div className={`faq-accordion-item${isExpanded ? " expanded" : ""}`}>
+                        <button
+                          className="faq-accordion-header"
+                          onClick={() => toggleAccordion(index)}
+                          aria-expanded={isExpanded}
+                          aria-controls={`faq-answer-${index}`}
+                        >
+                          <span className="faq-icon" aria-hidden="true">
+                            {faq.icon}
+                          </span>
+                          <div className="faq-accordion-title-group">
+                            <span className="faq-cat">{faq.category}</span>
+                            <h3>{faq.question}</h3>
+                          </div>
+                          <div className="faq-chevron" aria-hidden="true">
+                            <ChevronDown size={20} />
+                          </div>
+                        </button>
 
-                        <div className="faq-helpfulness">
-                          <span className="faq-helpfulness-label">{t("faq.helpfulnessLabel")}</span>
-                          <div className="faq-vote-buttons">
-                            <button
-                              onClick={() => handleVote(faq.question, "yes")}
-                              className={`faq-vote-btn ${
-                                ratings[faq.question]?.voted === "yes" ? "voted-yes" : ""
-                              }`}
-                              aria-pressed={ratings[faq.question]?.voted === "yes"}
-                            >
-                              <ThumbsUp size={16} />
-                              {t("common.yes")} ({ratings[faq.question]?.yes || 0})
-                            </button>
-                            <button
-                              onClick={() => handleVote(faq.question, "no")}
-                              className={`faq-vote-btn ${
-                                ratings[faq.question]?.voted === "no" ? "voted-no" : ""
-                              }`}
-                              aria-pressed={ratings[faq.question]?.voted === "no"}
-                            >
-                              <ThumbsDown size={16} />
-                              {t("common.no")} ({ratings[faq.question]?.no || 0})
-                            </button>
+                        <div
+                          className="faq-accordion-content"
+                          id={`faq-answer-${index}`}
+                          role="region"
+                          aria-labelledby={`faq-question-${index}`}
+                          style={{
+                            maxHeight: isExpanded ? "2000px" : "0px",
+                          }}
+                        >
+                          <div className="faq-answer-wrapper">
+                            <p>{faq.answer}</p>
+
+                            <div className="faq-helpfulness">
+                              <span className="faq-helpfulness-label">
+                                {t("faq.helpfulnessLabel")}
+                              </span>
+                              <div className="faq-vote-buttons">
+                                <button
+                                  onClick={() => handleVote(faq.question, "yes")}
+                                  className={`faq-vote-btn ${
+                                    ratings[faq.question]?.voted === "yes" ? "voted-yes" : ""
+                                  }`}
+                                  aria-pressed={ratings[faq.question]?.voted === "yes"}
+                                >
+                                  <ThumbsUp size={16} />
+                                  {t("common.yes")} ({ratings[faq.question]?.yes || 0})
+                                </button>
+                                <button
+                                  onClick={() => handleVote(faq.question, "no")}
+                                  className={`faq-vote-btn ${
+                                    ratings[faq.question]?.voted === "no" ? "voted-no" : ""
+                                  }`}
+                                  aria-pressed={ratings[faq.question]?.voted === "no"}
+                                >
+                                  <ThumbsDown size={16} />
+                                  {t("common.no")} ({ratings[faq.question]?.no || 0})
+                                </button>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </div>
-              );
-            })
-          )}
-          {filteredFaqs.length > 0 && <div className="scroll-spacer" />}
+                  );
+                })
+              )}
+              {filteredFaqs.length > 0 && <div className="scroll-spacer" />}
+            </div>
+            <FAQCTA />
+          </div>
         </div>
-        <FAQCTA />
-      </div>
-      </div>
       </div>
     </>
   );

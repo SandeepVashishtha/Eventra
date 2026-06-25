@@ -1,10 +1,10 @@
-import PasswordStrengthIndicator from '../components/auth/PasswordStrengthIndicator';
+import PasswordStrengthIndicator from "../components/auth/PasswordStrengthIndicator";
 
 export default {
-  title: 'Forms/PasswordStrengthIndicator',
+  title: "Forms/PasswordStrengthIndicator",
   component: PasswordStrengthIndicator,
   argTypes: {
-    password: { control: 'text' },
+    password: { control: "text" },
   },
 };
 
@@ -16,20 +16,20 @@ const Template = (args) => (
 
 export const Empty = Template.bind({});
 Empty.args = {
-  password: '',
+  password: "",
 };
 
 export const Weak = Template.bind({});
 Weak.args = {
-  password: 'abc',
+  password: "abc",
 };
 
 export const Medium = Template.bind({});
 Medium.args = {
-  password: 'Password1',
+  password: "Password1",
 };
 
 export const Strong = Template.bind({});
 Strong.args = {
-  password: 'StrongPassword123!@#',
+  password: "StrongPassword123!@#",
 };

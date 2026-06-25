@@ -103,7 +103,11 @@ export const auditStorage = () => {
       const value = localStorage.getItem(key);
       BLOCKED_KEYS.forEach((blocked) => {
         if (value && value.toLowerCase().includes(`"${blocked.toLowerCase()}":`)) {
-          issues.push({ storage: "localStorage", key, risk: `contains sensitive field: ${blocked}` });
+          issues.push({
+            storage: "localStorage",
+            key,
+            risk: `contains sensitive field: ${blocked}`,
+          });
         }
       });
     });

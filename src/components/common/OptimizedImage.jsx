@@ -2,19 +2,13 @@ import { useState } from "react";
 import { getOptimizedImageUrl, generateSrcSet } from "../../utils/imageOptimizer";
 import { ImageIcon } from "lucide-react";
 
-const OptimizedImage = ({ 
-  src, 
-  alt, 
-  className = "", 
-  aspectRatio = "16/9",
-  priority = false 
-}) => {
+const OptimizedImage = ({ src, alt, className = "", aspectRatio = "16/9", priority = false }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
 
   if (!src || hasError) {
     return (
-      <div 
+      <div
         className={`bg-gray-100 dark:bg-gray-800 flex items-center justify-center ${className}`}
         style={{ aspectRatio }}
       >
@@ -24,13 +18,18 @@ const OptimizedImage = ({
   }
 
   return (
-    <div 
-      className={`relative overflow-hidden ${className}`}
-      style={{ aspectRatio }}
-    >
+    <div className={`relative overflow-hidden ${className}`} style={{ aspectRatio }}>
       <picture>
-        <source type="image/avif" srcSet={generateSrcSet(src, "avif")} sizes="(max-width: 768px) 100vw, 800px" />
-        <source type="image/webp" srcSet={generateSrcSet(src, "webp")} sizes="(max-width: 768px) 100vw, 800px" />
+        <source
+          type="image/avif"
+          srcSet={generateSrcSet(src, "avif")}
+          sizes="(max-width: 768px) 100vw, 800px"
+        />
+        <source
+          type="image/webp"
+          srcSet={generateSrcSet(src, "webp")}
+          sizes="(max-width: 768px) 100vw, 800px"
+        />
         <img
           src={getOptimizedImageUrl(src, { format: "auto" })}
           alt={alt}
@@ -42,9 +41,7 @@ const OptimizedImage = ({
           }`}
         />
       </picture>
-      {!isLoaded && (
-        <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 animate-pulse" />
-      )}
+      {!isLoaded && <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 animate-pulse" />}
     </div>
   );
 };

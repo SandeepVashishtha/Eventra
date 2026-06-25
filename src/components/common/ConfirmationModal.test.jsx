@@ -7,9 +7,7 @@ let root;
 let onClose;
 let onConfirm;
 
- 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
- 
 
 const renderModal = (props = {}) => {
   container = document.createElement("div");
@@ -18,7 +16,6 @@ const renderModal = (props = {}) => {
   onClose = jest.fn();
   onConfirm = jest.fn();
 
-   
   act(() => {
     root.render(
       <ConfirmationModal
@@ -28,7 +25,7 @@ const renderModal = (props = {}) => {
         title="Delete event"
         message="This action cannot be undone."
         {...props}
-      />,
+      />
     );
   });
 
@@ -43,14 +40,13 @@ const pressKey = (key, shiftKey = false) => {
         shiftKey,
         bubbles: true,
         cancelable: true,
-      }),
+      })
     );
   });
 };
 
 afterEach(() => {
   if (root) {
-     
     act(() => {
       root.unmount();
     });
@@ -70,7 +66,7 @@ describe("ConfirmationModal accessibility", () => {
     expect(dialog.getAttribute("aria-modal")).toBe("true");
     expect(document.getElementById(titleId).textContent).toBe("Delete event");
     expect(document.getElementById(descriptionId).textContent).toBe(
-      "This action cannot be undone.",
+      "This action cannot be undone."
     );
   });
 
@@ -84,11 +80,15 @@ describe("ConfirmationModal accessibility", () => {
     expect(document.activeElement).toBe(cancelButton);
 
     // Manually simulate focus trap: move focus to last element
-    act(() => { confirmButton.focus(); });
+    act(() => {
+      confirmButton.focus();
+    });
     expect(document.activeElement).toBe(confirmButton);
 
     // Manually simulate focus trap: move focus back to first element
-    act(() => { cancelButton.focus(); });
+    act(() => {
+      cancelButton.focus();
+    });
     expect(document.activeElement).toBe(cancelButton);
 
     // Verify both buttons are focusable and inside the modal
@@ -112,15 +112,8 @@ describe("ConfirmationModal accessibility", () => {
 
     renderModal();
 
-     
     act(() => {
-      root.render(
-        <ConfirmationModal
-          isOpen={false}
-          onClose={onClose}
-          onConfirm={onConfirm}
-        />,
-      );
+      root.render(<ConfirmationModal isOpen={false} onClose={onClose} onConfirm={onConfirm} />);
     });
 
     expect(document.activeElement).toBe(opener);

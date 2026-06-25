@@ -18,7 +18,9 @@ vi.mock("../../api/auth/_storage-config.js", () => ({
 
 vi.mock("../../api/_lib/rateLimiter.js", () => ({
   signupRateLimiter: {
-    checkAsync: vi.fn().mockResolvedValue({ allowed: true, remaining: 4, resetAt: Date.now() + 60000 }),
+    checkAsync: vi
+      .fn()
+      .mockResolvedValue({ allowed: true, remaining: 4, resetAt: Date.now() + 60000 }),
   },
 }));
 
@@ -124,7 +126,11 @@ describe("signup handler", () => {
   });
 
   test("returns 429 when rate limited", async () => {
-    signupRateLimiter.checkAsync.mockResolvedValue({ allowed: false, remaining: 0, resetAt: Date.now() + 60000 });
+    signupRateLimiter.checkAsync.mockResolvedValue({
+      allowed: false,
+      remaining: 0,
+      resetAt: Date.now() + 60000,
+    });
     await handler(req, res);
     expect(res.status).toHaveBeenCalledWith(429);
   });
@@ -147,10 +153,12 @@ describe("signup handler", () => {
 
   test("creates user with correct default roles", async () => {
     await handler(req, res);
-    expect(createUser).toHaveBeenCalledWith(expect.objectContaining({
-      roles: ["USER"],
-      permissions: expect.arrayContaining(["events:view", "events:register"]),
-    }));
+    expect(createUser).toHaveBeenCalledWith(
+      expect.objectContaining({
+        roles: ["USER"],
+        permissions: expect.arrayContaining(["events:view", "events:register"]),
+      })
+    );
   });
 
   test("creates user with hashed password (not plaintext)", async () => {
@@ -162,7 +170,7 @@ describe("signup handler", () => {
 
   test("sets auth cookie on successful signup", async () => {
     await handler(req, res);
-    const setCall = res.set.mock.calls.find(c => c[0] === "Set-Cookie" || c[0]["Set-Cookie"]);
+    const setCall = res.set.mock.calls.find((c) => c[0] === "Set-Cookie" || c[0]["Set-Cookie"]);
     if (setCall) {
       const cookie = setCall[0]["Set-Cookie"] || setCall[1];
       expect(cookie).toContain("token=");
@@ -185,7 +193,9 @@ describe("signup handler", () => {
     req.body.firstName = "A";
     await handler(req, res);
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: expect.stringContaining("First name") }));
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ error: expect.stringContaining("First name") })
+    );
   });
 
   test("validates firstName > 50 chars", async () => {
@@ -198,9 +208,11 @@ describe("signup handler", () => {
     req.body.firstName = "  Alice  ";
     req.body.lastName = "  Smith  ";
     await handler(req, res);
-    expect(createUser).toHaveBeenCalledWith(expect.objectContaining({
-      firstName: "Alice",
-      lastName: "Smith",
-    }));
+    expect(createUser).toHaveBeenCalledWith(
+      expect.objectContaining({
+        firstName: "Alice",
+        lastName: "Smith",
+      })
+    );
   });
 });

@@ -24,7 +24,7 @@ export default function UpdateAvailableBanner() {
     if (registration && registration.waiting) {
       registration.waiting.postMessage({ type: "SKIP_WAITING" });
     }
-    
+
     // Listen for the new active service worker and reload
     navigator.serviceWorker.addEventListener("controllerchange", () => {
       window.location.reload();

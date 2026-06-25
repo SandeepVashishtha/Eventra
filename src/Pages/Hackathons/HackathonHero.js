@@ -36,7 +36,7 @@ export default function HackathonHero({
   onSearchKeyDown,
   searchInputRef,
   availableTags = [],
-  onTagSelect
+  onTagSelect,
 }) {
   const prefersReducedMotion = useReducedMotion();
   const navigate = useNavigate();
@@ -44,22 +44,35 @@ export default function HackathonHero({
 
   return (
     <div className="relative overflow-hidden bg-linear-to-b from-slate-50 via-indigo-50/40 to-slate-50 dark:from-slate-950 dark:via-indigo-950/60 dark:to-slate-950 text-slate-900 dark:text-white py-16 sm:py-20 md:py-24 border-b border-slate-200 dark:border-indigo-900/40 transition-colors duration-300">
-
       {/* ── Animated mesh background blobs ── */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <motion.div
           animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.5, 0.3] }}
-          transition={{ duration: prefersReducedMotion ? 0 : 10, repeat: Infinity, ease: "easeInOut" }}
+          transition={{
+            duration: prefersReducedMotion ? 0 : 10,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
           className="absolute -top-32 -left-32 w-[600px] h-[600px] rounded-full bg-blue-400/20 dark:bg-blue-600/20 blur-[100px] dark:blur-[120px]"
         />
         <motion.div
           animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
-          transition={{ duration: prefersReducedMotion ? 0 : 13, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+          transition={{
+            duration: prefersReducedMotion ? 0 : 13,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 2,
+          }}
           className="absolute -bottom-32 -right-32 w-[500px] h-[500px] rounded-full bg-violet-400/20 dark:bg-violet-600/20 blur-[100px] dark:blur-[120px]"
         />
         <motion.div
           animate={{ scale: [1, 1.1, 1], opacity: [0.2, 0.35, 0.2] }}
-          transition={{ duration: prefersReducedMotion ? 0 : 8, repeat: Infinity, ease: "easeInOut", delay: 4 }}
+          transition={{
+            duration: prefersReducedMotion ? 0 : 8,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 4,
+          }}
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-cyan-400/20 dark:bg-cyan-500/10 blur-[80px] dark:blur-[100px]"
         />
         {/* Subtle grid overlay */}
@@ -75,7 +88,6 @@ export default function HackathonHero({
 
       {/* ======================= HERO SECTION ======================= */}
       <div className="relative px-4 min-h-[75vh] flex flex-col items-center justify-center text-center z-10">
-
         {/* Premium badge */}
         <motion.div
           initial={{ opacity: 0, y: -16 }}
@@ -113,8 +125,7 @@ export default function HackathonHero({
           transition={{ delay: 0.25, duration: prefersReducedMotion ? 0 : 0.7 }}
           className="mt-4 text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto mb-6 leading-relaxed"
         >
-          Find and join the most exciting hackathons, compete with the best,
-          and win prizes.
+          Find and join the most exciting hackathons, compete with the best, and win prizes.
         </motion.p>
 
         {/* Glassmorphism search wrapper */}
@@ -122,7 +133,7 @@ export default function HackathonHero({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35, duration: prefersReducedMotion ? 0 : 0.6 }}
-         className="w-full max-w-[700px] mx-auto mt-8"
+          className="w-full max-w-[700px] mx-auto mt-8"
         >
           <div className="rounded-2xl border border-white/60 dark:border-white/10 bg-white/60 dark:bg-white/5 px-2 py-2 shadow-lg dark:shadow-[0_8px_40px_rgba(99,102,241,0.15)] backdrop-blur-xl ring-1 ring-inset ring-slate-200/50 dark:ring-white/5">
             <ModernSearchInput
@@ -141,7 +152,7 @@ export default function HackathonHero({
               showClearButton={searchQuery || selectedTags.length > 0}
               onClear={() => {
                 setSearchQuery("");
-                selectedTags.forEach(tag => onTagRemove(tag));
+                selectedTags.forEach((tag) => onTagRemove(tag));
               }}
             />
           </div>
@@ -155,10 +166,11 @@ export default function HackathonHero({
                   whileHover={{ scale: 1.06 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => onTagSelect(tag)}
-                  className={`px-3.5 py-1.5 text-xs font-semibold rounded-full cursor-pointer transition-all duration-200 border ${selectedTags.includes(tag)
-                    ? "bg-indigo-600 text-white border-indigo-500 shadow-md dark:shadow-[0_0_12px_rgba(99,102,241,0.5)]"
-                    : "text-slate-600 bg-white/80 border-slate-200 hover:bg-white hover:border-indigo-300 hover:text-indigo-700 shadow-sm dark:text-slate-300 dark:bg-white/5 dark:border-white/10 dark:hover:bg-white/10 dark:hover:border-indigo-500/40 dark:hover:text-white dark:shadow-none backdrop-blur-sm"
-                    }`}
+                  className={`px-3.5 py-1.5 text-xs font-semibold rounded-full cursor-pointer transition-all duration-200 border ${
+                    selectedTags.includes(tag)
+                      ? "bg-indigo-600 text-white border-indigo-500 shadow-md dark:shadow-[0_0_12px_rgba(99,102,241,0.5)]"
+                      : "text-slate-600 bg-white/80 border-slate-200 hover:bg-white hover:border-indigo-300 hover:text-indigo-700 shadow-sm dark:text-slate-300 dark:bg-white/5 dark:border-white/10 dark:hover:bg-white/10 dark:hover:border-indigo-500/40 dark:hover:text-white dark:shadow-none backdrop-blur-sm"
+                  }`}
                 >
                   {tag}
                 </motion.span>
@@ -166,10 +178,10 @@ export default function HackathonHero({
             </div>
             {filteredCount > 0 ? (
               <span className="text-sm text-indigo-700 dark:text-indigo-300 font-semibold">
-                {filteredCount}{" "}{filteredCount === 1 ? "hackathon" : "hackathons"} found
+                {filteredCount} {filteredCount === 1 ? "hackathon" : "hackathons"} found
               </span>
             ) : (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="mt-4 flex flex-col items-center text-center p-6 bg-white/40 dark:bg-slate-900/40 rounded-2xl border border-indigo-100 dark:border-indigo-900/50 backdrop-blur-md w-full"
@@ -227,10 +239,35 @@ export default function HackathonHero({
         <ErrorBoundary level="section" label="Hackathon Statistics">
           <div className="relative max-w-6xl mx-auto px-4 sm:px-6 mt-14 sm:mt-20 mb-12 sm:mb-16 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {[
-              { label: "Hackathons Hosted", value: 120, suffix: "+", icon: Calendar, color: "from-blue-500 to-indigo-500" },
-              { label: "Participants", value: 50, suffix: "k+", icon: Users, color: "from-violet-500 to-purple-500" },
-              { label: "Projects Built", value: 8, suffix: "k+", icon: Code2, color: "from-cyan-500 to-blue-500" },
-              { label: "Prizes Awarded", value: 1, prefix: "$", suffix: "M+", icon: Award, color: "from-amber-500 to-orange-500" },
+              {
+                label: "Hackathons Hosted",
+                value: 120,
+                suffix: "+",
+                icon: Calendar,
+                color: "from-blue-500 to-indigo-500",
+              },
+              {
+                label: "Participants",
+                value: 50,
+                suffix: "k+",
+                icon: Users,
+                color: "from-violet-500 to-purple-500",
+              },
+              {
+                label: "Projects Built",
+                value: 8,
+                suffix: "k+",
+                icon: Code2,
+                color: "from-cyan-500 to-blue-500",
+              },
+              {
+                label: "Prizes Awarded",
+                value: 1,
+                prefix: "$",
+                suffix: "M+",
+                icon: Award,
+                color: "from-amber-500 to-orange-500",
+              },
             ].map((stat, idx) => (
               <motion.div
                 key={idx}
@@ -239,26 +276,30 @@ export default function HackathonHero({
                 viewport={{ once: true }}
                 transition={{
                   delay: 0.15 + idx * 0.12,
-                  duration: prefersReducedMotion ? 0 : 0.6
+                  duration: prefersReducedMotion ? 0 : 0.6,
                 }}
                 whileHover={{
                   scale: 1.06,
                   y: -8,
-                  rotateX: 5
+                  rotateX: 5,
                 }}
                 className="relative overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/5 p-6 flex flex-col items-center text-center backdrop-blur-md shadow-sm hover:shadow-xl hover:border-indigo-400 dark:hover:border-indigo-500 transition-all duration-300 group"
               >
                 {/* Gradient top border line */}
-                <div className={`absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r ${stat.color} opacity-80 group-hover:opacity-100 transition-opacity`} />
+                <div
+                  className={`absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r ${stat.color} opacity-80 group-hover:opacity-100 transition-opacity`}
+                />
 
                 {/* Icon */}
                 <motion.div
                   whileHover={{
                     rotate: 10,
-                    scale: 1.15
+                    scale: 1.15,
                   }}
                   className={`mb-4 flex items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br ${stat.color}`}
-                >                  <stat.icon className="h-6 w-6 text-white" />
+                >
+                  {" "}
+                  <stat.icon className="h-6 w-6 text-white" />
                 </motion.div>
 
                 <p className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
@@ -281,4 +322,3 @@ export default function HackathonHero({
     </div>
   );
 }
-

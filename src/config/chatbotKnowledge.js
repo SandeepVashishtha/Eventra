@@ -2,7 +2,9 @@ export const knowledgeBaseConfig = [
   {
     keywords: ["register", "join", "ticket", "attend", "participate"],
     answerKey: "chatbot.knowledge.register.answer",
-    actions: [{ labelKey: "chatbot.knowledge.register.browseEvents", to: "/events", icon: "CalendarDays" }],
+    actions: [
+      { labelKey: "chatbot.knowledge.register.browseEvents", to: "/events", icon: "CalendarDays" },
+    ],
   },
   {
     keywords: ["suggest", "recommend", "beginner", "interest", "location"],
@@ -85,9 +87,7 @@ export function getAssistantReply(input, t) {
 
   return {
     answer: t("chatbot.knowledge.default"),
-    actions: [
-      { label: t("chatbot.knowledge.exploreEvents"), to: "/events", icon: "CalendarDays" },
-    ],
+    actions: [{ label: t("chatbot.knowledge.exploreEvents"), to: "/events", icon: "CalendarDays" }],
   };
 }
 

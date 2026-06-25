@@ -5,14 +5,14 @@ export function acquireRegistrationLock(eventId) {
     const now = Date.now();
     const lockKey = `reg_lock_${eventId}`;
     const existing = localStorage.getItem(lockKey);
-    
+
     if (existing) {
       const lockTime = Number(existing);
       if (now - lockTime < LOCK_EXPIRY_MS) {
         return false; // Lock active
       }
     }
-    
+
     localStorage.setItem(lockKey, String(now));
     return true;
   } catch {
@@ -38,7 +38,7 @@ const registrationLocks = {
   },
   delete: (eventId) => {
     activeLocks.delete(eventId);
-  }
+  },
 };
 
 export default registrationLocks;

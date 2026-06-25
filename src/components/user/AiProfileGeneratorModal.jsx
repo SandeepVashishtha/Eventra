@@ -2,8 +2,14 @@ import { useState, useRef } from "react";
 import ReactDOM from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  X, Sparkles, FileText, Github,
-  CheckCircle2, AlertTriangle, ArrowRight, Copy
+  X,
+  Sparkles,
+  FileText,
+  Github,
+  CheckCircle2,
+  AlertTriangle,
+  ArrowRight,
+  Copy,
 } from "lucide-react";
 import { parseGithubProfile, parseResumePDF } from "../../utils/aiProfileParser";
 import { toast } from "react-toastify";
@@ -13,7 +19,7 @@ const AiProfileGeneratorModal = ({ isOpen, onClose, onApplyProfile }) => {
   const [inputMode, setInputMode] = useState("github"); // "github" | "resume"
   const [githubUrl, setGithubUrl] = useState("");
   const [resumeFile, setResumeFile] = useState(null);
-  
+
   const [error, setError] = useState("");
   const [parsedData, setParsedData] = useState(null);
   const fileInputRef = useRef(null);
@@ -56,7 +62,7 @@ const AiProfileGeneratorModal = ({ isOpen, onClose, onApplyProfile }) => {
         if (!resumeFile) throw new Error("Please upload a resume PDF.");
         data = await parseResumePDF(resumeFile);
       }
-      
+
       setParsedData(data);
       setStep("preview");
     } catch (err) {
@@ -67,13 +73,13 @@ const AiProfileGeneratorModal = ({ isOpen, onClose, onApplyProfile }) => {
   };
 
   const handlePreviewChange = (field, value) => {
-    setParsedData(prev => ({ ...prev, [field]: value }));
+    setParsedData((prev) => ({ ...prev, [field]: value }));
   };
 
   const removeSkill = (skillToRemove) => {
-    setParsedData(prev => ({
+    setParsedData((prev) => ({
       ...prev,
-      skills: prev.skills.filter(s => s !== skillToRemove)
+      skills: prev.skills.filter((s) => s !== skillToRemove),
     }));
   };
 
@@ -90,11 +96,11 @@ const AiProfileGeneratorModal = ({ isOpen, onClose, onApplyProfile }) => {
     } catch (err) {
       toast.error("Failed to copy bio");
     }
-};
+  };
 
   return ReactDOM.createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
@@ -107,11 +113,15 @@ const AiProfileGeneratorModal = ({ isOpen, onClose, onApplyProfile }) => {
               <Sparkles size={20} />
             </div>
             <div>
-              <h2 className="text-lg font-black text-slate-900 dark:text-white">AI Profile Auto-Fill</h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Extract skills and bio instantly</p>
+              <h2 className="text-lg font-black text-slate-900 dark:text-white">
+                AI Profile Auto-Fill
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Extract skills and bio instantly
+              </p>
             </div>
           </div>
-          <button 
+          <button
             onClick={handleClose}
             className="p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10 rounded-full transition-colors cursor-pointer"
           >
@@ -122,10 +132,9 @@ const AiProfileGeneratorModal = ({ isOpen, onClose, onApplyProfile }) => {
         {/* Content Body */}
         <div className="flex-1 overflow-y-auto p-6 md:p-8">
           <AnimatePresence mode="wait">
-            
             {/* STEP 1: INPUT */}
             {step === "input" && (
-              <motion.div 
+              <motion.div
                 key="input"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -137,8 +146,8 @@ const AiProfileGeneratorModal = ({ isOpen, onClose, onApplyProfile }) => {
                   <button
                     onClick={() => setInputMode("github")}
                     className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-bold rounded-lg transition-all ${
-                      inputMode === "github" 
-                        ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-white/10" 
+                      inputMode === "github"
+                        ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-white/10"
                         : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
                     }`}
                   >
@@ -148,8 +157,8 @@ const AiProfileGeneratorModal = ({ isOpen, onClose, onApplyProfile }) => {
                   <button
                     onClick={() => setInputMode("resume")}
                     className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-bold rounded-lg transition-all ${
-                      inputMode === "resume" 
-                        ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-white/10" 
+                      inputMode === "resume"
+                        ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-white/10"
                         : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300"
                     }`}
                   >
@@ -163,8 +172,10 @@ const AiProfileGeneratorModal = ({ isOpen, onClose, onApplyProfile }) => {
                   {inputMode === "github" ? (
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">GitHub Profile URL</label>
-                        <input 
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
+                          GitHub Profile URL
+                        </label>
+                        <input
                           type="url"
                           value={githubUrl}
                           onChange={(e) => setGithubUrl(e.target.value)}
@@ -175,34 +186,46 @@ const AiProfileGeneratorModal = ({ isOpen, onClose, onApplyProfile }) => {
                       <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-500/20 rounded-xl p-4 flex gap-3 text-sm text-blue-800 dark:text-blue-300">
                         <Sparkles size={16} className="shrink-0 mt-0.5" />
                         <p className="text-xs leading-relaxed">
-                          We will securely parse your public repositories, languages, and profile bio to generate a detailed Eventra developer snapshot.
+                          We will securely parse your public repositories, languages, and profile
+                          bio to generate a detailed Eventra developer snapshot.
                         </p>
                       </div>
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">Upload Resume (PDF)</label>
-                      <div 
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
+                        Upload Resume (PDF)
+                      </label>
+                      <div
                         onClick={() => fileInputRef.current?.click()}
                         className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-colors ${
-                          resumeFile 
-                            ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10" 
+                          resumeFile
+                            ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10"
                             : "border-slate-300 dark:border-slate-700 hover:border-indigo-400 hover:bg-slate-50 dark:hover:bg-white/5"
                         }`}
                       >
-                        <input 
-                          type="file" 
-                          ref={fileInputRef} 
+                        <input
+                          type="file"
+                          ref={fileInputRef}
                           onChange={handleFileChange}
-                          accept="application/pdf" 
-                          className="hidden" 
+                          accept="application/pdf"
+                          className="hidden"
                         />
-                        <FileText size={32} className={resumeFile ? "text-indigo-600 dark:text-indigo-400 mb-3" : "text-slate-400 mb-3"} />
+                        <FileText
+                          size={32}
+                          className={
+                            resumeFile
+                              ? "text-indigo-600 dark:text-indigo-400 mb-3"
+                              : "text-slate-400 mb-3"
+                          }
+                        />
                         <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1">
                           {resumeFile ? resumeFile.name : "Click to browse or drag PDF here"}
                         </h3>
                         <p className="text-xs text-slate-500">
-                          {resumeFile ? `${(resumeFile.size / 1024 / 1024).toFixed(2)} MB` : "Maximum file size 5MB. PDF format only."}
+                          {resumeFile
+                            ? `${(resumeFile.size / 1024 / 1024).toFixed(2)} MB`
+                            : "Maximum file size 5MB. PDF format only."}
                         </p>
                       </div>
                     </div>
@@ -220,7 +243,7 @@ const AiProfileGeneratorModal = ({ isOpen, onClose, onApplyProfile }) => {
 
             {/* STEP 2: PROCESSING */}
             {step === "processing" && (
-              <motion.div 
+              <motion.div
                 key="processing"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -235,9 +258,11 @@ const AiProfileGeneratorModal = ({ isOpen, onClose, onApplyProfile }) => {
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-lg font-black text-slate-900 dark:text-white mb-2">Analyzing Profile Data</h3>
+                  <h3 className="text-lg font-black text-slate-900 dark:text-white mb-2">
+                    Analyzing Profile Data
+                  </h3>
                   <p className="text-sm text-slate-500 max-w-sm mx-auto">
-                    {inputMode === "github" 
+                    {inputMode === "github"
                       ? "Fetching repositories, calculating primary languages, and structuring your developer bio..."
                       : "Extracting text, identifying technical skills, and summarizing your experience..."}
                   </p>
@@ -247,7 +272,7 @@ const AiProfileGeneratorModal = ({ isOpen, onClose, onApplyProfile }) => {
 
             {/* STEP 3: PREVIEW & EDIT */}
             {step === "preview" && parsedData && (
-              <motion.div 
+              <motion.div
                 key="preview"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -257,27 +282,30 @@ const AiProfileGeneratorModal = ({ isOpen, onClose, onApplyProfile }) => {
                   <CheckCircle2 size={18} className="shrink-0 mt-0.5" />
                   <div>
                     <p className="font-bold mb-1 text-sm">Extraction Successful!</p>
-                    <p className="text-xs opacity-90">Review and edit the extracted details below before applying them to your profile. Nothing is saved permanently yet.</p>
+                    <p className="text-xs opacity-90">
+                      Review and edit the extracted details below before applying them to your
+                      profile. Nothing is saved permanently yet.
+                    </p>
                   </div>
                 </div>
 
                 <div className="space-y-5 bg-slate-50 dark:bg-slate-950/50 p-5 rounded-2xl border border-slate-200 dark:border-white/5">
                   {/* Bio */}
                   <div>
-                    <div className = "flex items-center justify-between mb-2">
+                    <div className="flex items-center justify-between mb-2">
                       <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                        Generated Bio Summary 
+                        Generated Bio Summary
                       </label>
                       <button
-                      type = "button"
-                      onClick={handleCopyBio}
-                      className="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-700"
-                    >
-                      <Copy size={12} />
-                    </button>
+                        type="button"
+                        onClick={handleCopyBio}
+                        className="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-700"
+                      >
+                        <Copy size={12} />
+                      </button>
                     </div>
-                    
-                    <textarea 
+
+                    <textarea
                       value={parsedData.bio || ""}
                       onChange={(e) => handlePreviewChange("bio", e.target.value)}
                       rows={3}
@@ -292,9 +320,12 @@ const AiProfileGeneratorModal = ({ isOpen, onClose, onApplyProfile }) => {
                     </label>
                     <div className="flex flex-wrap gap-2 p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl min-h-15">
                       {parsedData.skills?.map((skill, idx) => (
-                        <div key={idx} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-500/30 rounded-lg text-xs font-bold">
+                        <div
+                          key={idx}
+                          className="flex items-center gap-1.5 px-2.5 py-1.5 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-500/30 rounded-lg text-xs font-bold"
+                        >
                           <span>{skill}</span>
-                          <button 
+                          <button
                             onClick={() => removeSkill(skill)}
                             className="text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 ml-1 transition-colors"
                           >
@@ -303,7 +334,9 @@ const AiProfileGeneratorModal = ({ isOpen, onClose, onApplyProfile }) => {
                         </div>
                       ))}
                       {(!parsedData.skills || parsedData.skills.length === 0) && (
-                        <span className="text-xs text-slate-500 py-1.5">No distinct skills identified.</span>
+                        <span className="text-xs text-slate-500 py-1.5">
+                          No distinct skills identified.
+                        </span>
                       )}
                     </div>
                   </div>
@@ -311,8 +344,10 @@ const AiProfileGeneratorModal = ({ isOpen, onClose, onApplyProfile }) => {
                   {/* Links */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">GitHub URL</label>
-                      <input 
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
+                        GitHub URL
+                      </label>
+                      <input
                         type="url"
                         value={parsedData.github || ""}
                         onChange={(e) => handlePreviewChange("github", e.target.value)}
@@ -320,8 +355,10 @@ const AiProfileGeneratorModal = ({ isOpen, onClose, onApplyProfile }) => {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">Portfolio / Website</label>
-                      <input 
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
+                        Portfolio / Website
+                      </label>
+                      <input
                         type="url"
                         value={parsedData.portfolio || ""}
                         onChange={(e) => handlePreviewChange("portfolio", e.target.value)}
@@ -351,7 +388,7 @@ const AiProfileGeneratorModal = ({ isOpen, onClose, onApplyProfile }) => {
           >
             Cancel
           </button>
-          
+
           {step === "input" && (
             <button
               onClick={handleProcess}

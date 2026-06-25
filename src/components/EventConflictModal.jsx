@@ -1,15 +1,15 @@
-import { useRef, useEffect } from 'react';
-import { AlertTriangle, Clock, Calendar, X, ArrowRight, Globe } from 'lucide-react';
-import { formatTimeRange } from '../utils/conflictDetection';
-import { getUserTimezone } from '../utils/timezoneUtils';
-import { useFocusTrap } from '../hooks/useFocusTrap';
+import { useRef, useEffect } from "react";
+import { AlertTriangle, Clock, Calendar, X, ArrowRight, Globe } from "lucide-react";
+import { formatTimeRange } from "../utils/conflictDetection";
+import { getUserTimezone } from "../utils/timezoneUtils";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 
 /**
  * EventConflictModal
- * 
+ *
  * A modal component that displays a warning when a user tries to register
  * for an event that conflicts with their existing registrations.
- * 
+ *
  * @param {object} props
  * @param {boolean} props.isOpen - Whether the modal is open
  * @param {object} props.newEvent - The event the user is trying to register for
@@ -70,26 +70,27 @@ const EventConflictModal = ({
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
+      if (e.key === "Escape") {
         onCancelRef.current();
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, [isOpen]);
-
 
   // 🔥 FIX: Safe date formatter to prevent RangeError crashes if event data is malformed
   const safeFormatDate = (dateStr) => {
     if (!dateStr) return "TBD";
     const d = new Date(dateStr);
-    return isNaN(d.getTime()) ? "TBD" : d.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-    });
+    return isNaN(d.getTime())
+      ? "TBD"
+      : d.toLocaleDateString("en-US", {
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+        });
   };
 
   if (!isOpen) return null;
@@ -97,17 +98,14 @@ const EventConflictModal = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onCancel}
-      />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onCancel} />
 
       {/* Modal Content */}
-      <div 
+      <div
         ref={(node) => {
           modalRef.current = node;
           // Merge refs so useFocusTrap can also track the container
-          if (typeof focusTrapRef === 'function') focusTrapRef(node);
+          if (typeof focusTrapRef === "function") focusTrapRef(node);
           else if (focusTrapRef) focusTrapRef.current = node;
         }}
         role="dialog"
@@ -176,7 +174,7 @@ const EventConflictModal = ({
           {/* Conflicting Events */}
           <div>
             <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
-              Conflicting Event{conflictingEvents.length > 1 ? 's' : ''}
+              Conflicting Event{conflictingEvents.length > 1 ? "s" : ""}
             </h3>
             <div className="space-y-3">
               {conflictingEvents.map((event) => (
@@ -256,14 +254,16 @@ const EventConflictModal = ({
           <button
             onClick={onCancel}
             className="flex-1 px-6 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
-           aria-label="Cancel registration">
+            aria-label="Cancel registration"
+          >
             Cancel Registration
           </button>
           {!strictMode && (
             <button
               onClick={onProceed}
               className="flex-1 px-6 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors font-medium"
-             aria-label="Proceed with registration despite conflict">
+              aria-label="Proceed with registration despite conflict"
+            >
               Proceed Anyway
             </button>
           )}

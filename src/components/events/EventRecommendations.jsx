@@ -91,8 +91,7 @@ RecommendationSkeleton.displayName = "RecommendationSkeleton";
 const handleImageLoadingError = (e) => {
   e.target.onerror = null;
   e.target.src = INLINE_SVG_PLACEHOLDER;
-  e.target.className =
-    "h-full w-full object-cover opacity-60 filter grayscale dark:brightness-75";
+  e.target.className = "h-full w-full object-cover opacity-60 filter grayscale dark:brightness-75";
 };
 
 const CardBannerImage = memo(({ src, alt }) => {
@@ -169,7 +168,10 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
           }
         }
       } catch (error) {
-        console.error("Failsafe tracking intercept: secureStorage parsing collapsed safely.", error);
+        console.error(
+          "Failsafe tracking intercept: secureStorage parsing collapsed safely.",
+          error
+        );
       }
 
       if (!active) return;
@@ -329,7 +331,10 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
                     )}
                   </div>
 
-                  <h4 title={event.title} className="font-extrabold text-sm tracking-tight text-slate-900 dark:text-slate-100 mt-3 line-clamp-2 break-words min-w-0">
+                  <h4
+                    title={event.title}
+                    className="font-extrabold text-sm tracking-tight text-slate-900 dark:text-slate-100 mt-3 line-clamp-2 break-words min-w-0"
+                  >
                     {event.title}
                   </h4>
 

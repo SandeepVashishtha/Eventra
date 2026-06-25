@@ -1,10 +1,15 @@
-import { TagIcon, Ticket, CheckCircleIcon, PencilIcon, CalendarIcon, MapPinIcon, UsersIcon } from "lucide-react";
+import {
+  TagIcon,
+  Ticket,
+  CheckCircleIcon,
+  PencilIcon,
+  CalendarIcon,
+  MapPinIcon,
+  UsersIcon,
+} from "lucide-react";
 import { motion } from "framer-motion";
 import { LoadingButton } from "../../../ui/LoadingButton";
-import {
-  formatDate,
-  formatTime,
-} from "../../../../utils/eventCreationUtils";
+import { formatDate, formatTime } from "../../../../utils/eventCreationUtils";
 import { CREATION_STEPS } from "../../../../constants/eventDefaults";
 
 const PreviewStep = ({
@@ -27,9 +32,7 @@ const PreviewStep = ({
           Preview Your Event
         </h1>
 
-        <p className="text-gray-600 dark:text-gray-400">
-          Review all details before publishing
-        </p>
+        <p className="text-gray-600 dark:text-gray-400">Review all details before publishing</p>
       </div>
 
       <div className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl overflow-hidden border border-indigo-300 dark:border-gray-700">
@@ -58,16 +61,10 @@ const PreviewStep = ({
               <TagIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mt-1" />
 
               <div>
-                <p className="font-semibold text-gray-700 dark:text-gray-300">
-                  Category
-                </p>
+                <p className="font-semibold text-gray-700 dark:text-gray-300">Category</p>
 
                 <p className="text-gray-600 dark:text-gray-400">
-                  {
-                    categories.find(
-                      (cat) => cat.value === formData.category
-                    )?.label
-                  }
+                  {categories.find((cat) => cat.value === formData.category)?.label}
                 </p>
               </div>
             </div>
@@ -76,21 +73,16 @@ const PreviewStep = ({
               <CalendarIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mt-1" />
 
               <div>
-                <p className="font-semibold text-gray-700 dark:text-gray-300">
-                  Date & Time
-                </p>
+                <p className="font-semibold text-gray-700 dark:text-gray-300">Date & Time</p>
 
                 <p className="text-gray-600 dark:text-gray-400">
                   {formData.isMultiDay
-                    ? `${formatDate(formData.startDate)} - ${formatDate(
-                        formData.endDate
-                      )}`
+                    ? `${formatDate(formData.startDate)} - ${formatDate(formData.endDate)}`
                     : formatDate(formData.date)}
                 </p>
 
                 <p className="text-gray-600 dark:text-gray-400">
-                  {formatTime(formData.startTime)} -{" "}
-                  {formatTime(formData.endTime)}
+                  {formatTime(formData.startTime)} - {formatTime(formData.endTime)}
                 </p>
               </div>
             </div>
@@ -99,14 +91,10 @@ const PreviewStep = ({
               <MapPinIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mt-1" />
 
               <div>
-                <p className="font-semibold text-gray-700 dark:text-gray-300">
-                  Location
-                </p>
+                <p className="font-semibold text-gray-700 dark:text-gray-300">Location</p>
 
                 <p className="text-gray-600 dark:text-gray-400">
-                  {formData.isVirtual
-                    ? "Virtual Event"
-                    : formData.location.name}
+                  {formData.isVirtual ? "Virtual Event" : formData.location.name}
                 </p>
 
                 {formData.location.address && !formData.isVirtual && (
@@ -121,14 +109,10 @@ const PreviewStep = ({
               <UsersIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mt-1" />
 
               <div>
-                <p className="font-semibold text-gray-700 dark:text-gray-300">
-                  Capacity
-                </p>
+                <p className="font-semibold text-gray-700 dark:text-gray-300">Capacity</p>
 
                 <p className="text-gray-600 dark:text-gray-400">
-                  {formData.capacity === ""
-                    ? "Unlimited"
-                    : `${formData.capacity} attendees`}
+                  {formData.capacity === "" ? "Unlimited" : `${formData.capacity} attendees`}
                 </p>
 
                 <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -138,57 +122,52 @@ const PreviewStep = ({
             </div>
           </div>
 
-          {formData.ticketTiers.length > 0 &&
-            formData.ticketTiers[0].name && (
-              <div className="mb-6">
-                <div className="flex items-center gap-2 mb-3">
-                  <Ticket className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+          {formData.ticketTiers.length > 0 && formData.ticketTiers[0].name && (
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-3">
+                <Ticket className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
 
-                  <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300">
-                    Ticket Tiers
-                  </h3>
-                </div>
-
-                <div className="space-y-3">
-                  {formData.ticketTiers.map((tier, index) => (
-                    <div
-                      key={index}
-                      className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
-                    >
-                      <div>
-                        <p className="font-semibold text-gray-900 dark:text-white">
-                          {tier.name}
-                        </p>
-
-                        {tier.description && (
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            {tier.description}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="text-right">
-                        <p className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
-                          ₹{Number(tier.price).toFixed(2)}
-                        </p>
-
-                        {tier.capacity && (
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {tier.capacity} available
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300">
+                  Ticket Tiers
+                </h3>
               </div>
-            )}
+
+              <div className="space-y-3">
+                {formData.ticketTiers.map((tier, index) => (
+                  <div
+                    key={index}
+                    className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                  >
+                    <div>
+                      <p className="font-semibold text-gray-900 dark:text-white">{tier.name}</p>
+
+                      {tier.description && (
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {tier.description}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="text-right">
+                      <p className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
+                        ₹{Number(tier.price).toFixed(2)}
+                      </p>
+
+                      {tier.capacity && (
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {tier.capacity} available
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {formData.tags.length > 0 && (
             <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                Tags
-              </h3>
+              <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-3">Tags</h3>
 
               <div className="flex flex-wrap gap-2">
                 {formData.tags.map((tag, index) => (

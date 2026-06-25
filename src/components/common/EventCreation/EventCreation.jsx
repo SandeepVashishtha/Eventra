@@ -27,9 +27,7 @@ import {
   initialFormData,
   todayString,
 } from "../../../constants/eventDefaults";
-import {
-  TagIcon,
-} from "@heroicons/react/24/solid";
+import { TagIcon } from "@heroicons/react/24/solid";
 import { API_ENDPOINTS, apiUtils } from "../../../config/api";
 import { useFormSubmit } from "../../../hooks/useFormSubmit";
 import { validateCoordinates, buildEventPayload } from "../../../utils/eventCreationUtils";
@@ -60,8 +58,7 @@ const EventCreation = () => {
     const result = response.data;
 
     if (!(response.status === 200 && result.success)) {
-      const errorMessage =
-        result.message || result.error || `Server error: ${response.status}`;
+      const errorMessage = result.message || result.error || `Server error: ${response.status}`;
       throw new Error(errorMessage);
     }
   });
@@ -128,13 +125,7 @@ const EventCreation = () => {
 
     if (!file) return;
 
-    const allowedTypes = [
-      "image/jpeg",
-      "image/jpg",
-      "image/png",
-      "image/webp",
-      "image/gif",
-    ];
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
 
     if (!allowedTypes.includes(file.type)) {
       setErrors((prev) => ({
@@ -806,7 +797,9 @@ const EventCreation = () => {
                   max="100000"
                   className={`w-full border ${errors.capacity ? "border-red-500" : "border-gray-300 dark:border-gray-600"} rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-300`}
                 />
-                {errors.capacity && <span className="text-red-500 text-sm mt-1">{errors.capacity}</span>}
+                {errors.capacity && (
+                  <span className="text-red-500 text-sm mt-1">{errors.capacity}</span>
+                )}
               </motion.div>
 
               <RegistrationDatesFields
@@ -954,4 +947,3 @@ const EventCreation = () => {
 };
 
 export default EventCreation;
-

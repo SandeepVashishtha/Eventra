@@ -76,16 +76,16 @@ export function getPublicErrorMessage(err, fallback = t("error.generic")) {
   // 1. HTTP Status Code Mapping Matrix
   // Explicitly mapping standardized client/server HTTP codes to clear localizable actions.
   const STATUS_MESSAGES = {
-    400: t("error.badRequest"),          // Bad request (invalid parameter structure)
-    401: t("error.unauthorized"),        // Token expired, missing headers, session invalid
-    403: t("error.forbidden"),           // Insufficient user permissions or access role
-    404: t("error.notFound"),            // Resource, entity, or page is unavailable
-    409: t("error.conflict"),            // Duplicate records (e.g. email or username already taken)
-    422: t("error.unprocessable"),       // Validation checks failed (e.g. bad format or invalid inputs)
-    429: t("error.tooManyRequests"),     // Rate limiter thresholds tripped
-    500: t("error.serverError"),         // Database exception or internal server crash
-    502: t("error.serviceUnavailable"),   // Proxy/gateway timeout or server is starting up
-    503: t("error.serviceUnavailable"),   // System overload or scheduled maintenance
+    400: t("error.badRequest"), // Bad request (invalid parameter structure)
+    401: t("error.unauthorized"), // Token expired, missing headers, session invalid
+    403: t("error.forbidden"), // Insufficient user permissions or access role
+    404: t("error.notFound"), // Resource, entity, or page is unavailable
+    409: t("error.conflict"), // Duplicate records (e.g. email or username already taken)
+    422: t("error.unprocessable"), // Validation checks failed (e.g. bad format or invalid inputs)
+    429: t("error.tooManyRequests"), // Rate limiter thresholds tripped
+    500: t("error.serverError"), // Database exception or internal server crash
+    502: t("error.serviceUnavailable"), // Proxy/gateway timeout or server is starting up
+    503: t("error.serviceUnavailable"), // System overload or scheduled maintenance
   };
 
   // 2. Regular Expression (Regex) Keyword Recognition Matrix

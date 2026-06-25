@@ -3,11 +3,11 @@ import { ChevronUp } from "lucide-react";
 
 const SCROLL_THRESHOLD = 400; // px — button appears after scrolling this far
 
-const BackToTop = ({ 
+const BackToTop = ({
   threshold = SCROLL_THRESHOLD,
   showProgress = true,
   avoidChatbot = true,
-  className = ""
+  className = "",
 }) => {
   const [visible, setVisible] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -33,8 +33,8 @@ const BackToTop = ({
     // Detect chatbot presence so we can avoid overlapping the FAB on mobile
     const handleChatbotState = () => {
       if (typeof document === "undefined") return;
-      setIsChatbotOpen(document.querySelector('[data-chatbot-open]') !== null);
-      setHasChatbot(document.querySelector('[data-chatbot-launcher]') !== null);
+      setIsChatbotOpen(document.querySelector("[data-chatbot-open]") !== null);
+      setHasChatbot(document.querySelector("[data-chatbot-launcher]") !== null);
     };
 
     handleChatbotState();
@@ -70,12 +70,14 @@ const BackToTop = ({
   const radius = 18;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
-  
+
   let positionClass = "";
   if (avoidChatbot && hasChatbot) {
-    positionClass = "fixed bottom-[calc(5.5rem+var(--safe-area-bottom))] right-[calc(1rem+var(--safe-area-right))] z-50 sm:bottom-24 sm:right-6";
+    positionClass =
+      "fixed bottom-[calc(5.5rem+var(--safe-area-bottom))] right-[calc(1rem+var(--safe-area-right))] z-50 sm:bottom-24 sm:right-6";
   } else {
-    positionClass = "fixed bottom-[calc(1rem+var(--safe-area-bottom))] right-[calc(1rem+var(--safe-area-right))] z-50 sm:bottom-6 sm:right-6";
+    positionClass =
+      "fixed bottom-[calc(1rem+var(--safe-area-bottom))] right-[calc(1rem+var(--safe-area-right))] z-50 sm:bottom-6 sm:right-6";
   }
 
   return (
@@ -96,40 +98,44 @@ const BackToTop = ({
         "focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2",
         "active:scale-95",
         "flex items-center justify-center",
-        (visible && !isChatbotOpen) ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none",
-        className
-      ].filter(Boolean).join(" ")}
+        visible && !isChatbotOpen
+          ? "opacity-100 translate-y-0"
+          : "opacity-0 translate-y-4 pointer-events-none",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
     >
       {/* Progress ring */}
       {showProgress && (
         <svg
-        className="absolute inset-0 w-full h-full -rotate-90"
-        viewBox="0 0 44 44"
-        aria-hidden="true"
-      >
-        {/* Track */}
-        <circle
-          cx="22"
-          cy="22"
-          r={radius}
-          fill="none"
-          stroke="rgba(255,255,255,0.2)"
-          strokeWidth="2.5"
-        />
-        {/* Progress arc */}
-        <circle
-          cx="22"
-          cy="22"
-          r={radius}
-          fill="none"
-          stroke="rgba(255,255,255,0.85)"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={strokeDashoffset}
-          style={{ transition: "stroke-dashoffset 0.2s ease" }}
-        />
-      </svg>
+          className="absolute inset-0 w-full h-full -rotate-90"
+          viewBox="0 0 44 44"
+          aria-hidden="true"
+        >
+          {/* Track */}
+          <circle
+            cx="22"
+            cy="22"
+            r={radius}
+            fill="none"
+            stroke="rgba(255,255,255,0.2)"
+            strokeWidth="2.5"
+          />
+          {/* Progress arc */}
+          <circle
+            cx="22"
+            cy="22"
+            r={radius}
+            fill="none"
+            stroke="rgba(255,255,255,0.85)"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeDashoffset}
+            style={{ transition: "stroke-dashoffset 0.2s ease" }}
+          />
+        </svg>
       )}
 
       {/* Up arrow icon */}

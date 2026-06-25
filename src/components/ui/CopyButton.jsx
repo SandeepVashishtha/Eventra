@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState } from "react";
 
 const CopyButton = ({ textToCopy }) => {
   const [copied, setCopied] = useState(false);
@@ -8,13 +8,13 @@ const CopyButton = ({ textToCopy }) => {
       // Uses native browser clipboard API
       await navigator.clipboard.writeText(textToCopy);
       setCopied(true);
-      
+
       // Reset the tooltip/state after 2 seconds
       setTimeout(() => {
         setCopied(false);
       }, 2000);
     } catch (err) {
-      console.error('Failed to copy text: ', err);
+      console.error("Failed to copy text: ", err);
     }
   };
 

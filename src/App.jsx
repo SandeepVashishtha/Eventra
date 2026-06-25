@@ -57,7 +57,6 @@ const SessionRecovery = lazy(() => import("./components/SessionRecovery"));
 const ThemeCustomizer = lazy(() => import("./components/Layout/ThemeCustomizer"));
 // const ComparativeAnalytics = lazy(() => import("./components/Analytics/ComparativeAnalyticsDashboard"));
 
-
 const OfflineSyncManager = () => {
   useOfflineSync();
   return null;
@@ -66,8 +65,7 @@ const OfflineSyncManager = () => {
 function App() {
   const { t } = useTranslation();
   const location = useLocation();
-  const isDashboardOrAdmin =
-    location?.pathname === "/dashboard" || location?.pathname === "/admin";
+  const isDashboardOrAdmin = location?.pathname === "/dashboard" || location?.pathname === "/admin";
   const pageLoader = (
     <div className="flex items-center justify-center min-h-screen text-gray-500">
       {t("app.loading")}
@@ -163,7 +161,6 @@ function App() {
   }, [t]);
 
   return (
-    
     <ErrorBoundary>
       <AuthProvider>
         <NotificationProvider>
@@ -174,7 +171,7 @@ function App() {
                 <ReminderChecker />
               </Suspense>
               <OfflineSyncManager />
-<ScrollRestoration />
+              <ScrollRestoration />
               <div className="App">
                 <SkipToContent />
                 <ErrorBoundary level="section" label="Navigation Bar">
@@ -232,20 +229,30 @@ function App() {
                             </Suspense>
                           }
                         />
-                        
+
                         <Route
                           path="/event-recommendation"
-                          element={<Suspense fallback={null}><EventRecommendation /></Suspense>}
+                          element={
+                            <Suspense fallback={null}>
+                              <EventRecommendation />
+                            </Suspense>
+                          }
                         />
                         <Route
                           path="/saved-events"
-                          element={<Suspense fallback={null}><SavedEventsPage /></Suspense>}
+                          element={
+                            <Suspense fallback={null}>
+                              <SavedEventsPage />
+                            </Suspense>
+                          }
                         />
                         <Route
                           path="/matchmaking"
                           element={
                             <ProtectedRoute>
-                              <Suspense fallback={null}><MatchmakingHub /></Suspense>
+                              <Suspense fallback={null}>
+                                <MatchmakingHub />
+                              </Suspense>
                             </ProtectedRoute>
                           }
                         />
@@ -257,13 +264,11 @@ function App() {
                             </Suspense>
                           }
                         />
-
                       </Routes>
                     </ErrorBoundary>
                   </PageTransition>
                 </main>
 
-                
                 {showChatbot && (
                   <ErrorBoundary level="section" label="Chatbot Assist" silent>
                     <Suspense fallback={null}>
@@ -273,9 +278,7 @@ function App() {
                 )}
 
                 <ErrorBoundary level="section" label="Footer">
-                  <Suspense fallback={null}>
-                    {!isDashboardOrAdmin && <Footer />}
-                  </Suspense>
+                  <Suspense fallback={null}>{!isDashboardOrAdmin && <Footer />}</Suspense>
                 </ErrorBoundary>
 
                 <Suspense fallback={null}>
@@ -296,10 +299,8 @@ function App() {
                     <Suspense fallback={null}>
                       <FluidCursor enabled={cursorEnabled} />
                     </Suspense>
-                </ErrorBoundary>
+                  </ErrorBoundary>
                 )}
-
-                
               </div>
               <Analytics />
             </SessionRecoveryProvider>

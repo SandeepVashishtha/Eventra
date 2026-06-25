@@ -90,20 +90,18 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
     try {
       const response = await projectService.submitProject(formData, {
         headers: {
-          Authorization: token
-        }
+          Authorization: token,
+        },
       });
 
       const result = response.data;
-      setSuccess(
-        "Project submitted successfully! It will be reviewed by administrators."
-      );
+      setSuccess("Project submitted successfully! It will be reviewed by administrators.");
       onSubmit && onSubmit(result);
       setTimeout(() => {
         onClose && onClose();
       }, 2000);
     } catch (err) {
-            setError(getPublicErrorMessage(err, FORM_ERRORS.submitFailed));
+      setError(getPublicErrorMessage(err, FORM_ERRORS.submitFailed));
     } finally {
       setIsSubmitting(false);
     }
@@ -111,25 +109,26 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
 
   if (!user) {
     return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      {/* UPDATED: "Please Login" modal styles */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-11/12 max-w-md p-8 text-center animate-fadeIn border border-transparent dark:border-gray-700">
-        <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100 mb-2">
-          Please Login
-        </h2>
-        <p className="text-gray-600 dark:text-gray-400 mb-6">
-          You need to be logged in to submit a project.
-        </p>
-        <button
-          onClick={onClose}
-          className="bg-linear-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white font-medium py-2.5 px-6 rounded-lg shadow-md transition-transform duration-200 hover:-translate-y-0.5"
-         aria-label="button">
-          Close
-        </button>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        {/* UPDATED: "Please Login" modal styles */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-11/12 max-w-md p-8 text-center animate-fadeIn border border-transparent dark:border-gray-700">
+          <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100 mb-2">
+            Please Login
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            You need to be logged in to submit a project.
+          </p>
+          <button
+            onClick={onClose}
+            className="bg-linear-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white font-medium py-2.5 px-6 rounded-lg shadow-md transition-transform duration-200 hover:-translate-y-0.5"
+            aria-label="button"
+          >
+            Close
+          </button>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
   return (
     <div className="project-submission-modal">
@@ -182,7 +181,11 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
               placeholder="Describe your project, its features, and purpose"
             />
             <div className="flex justify-end mt-1">
-              <CharacterCounter id="description-counter" value={formData.description} maxLength={1000} />
+              <CharacterCounter
+                id="description-counter"
+                value={formData.description}
+                maxLength={1000}
+              />
             </div>
           </div>
 
@@ -233,7 +236,8 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
                 type="button"
                 onClick={handleTechStackAdd}
                 className="add-tech-btn"
-               aria-label="button">
+                aria-label="button"
+              >
                 <Plus />
               </button>
             </div>
@@ -241,10 +245,7 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
               {formData.techStack.map((tech) => (
                 <span key={tech} className="tech-tag">
                   {tech}
-                  <button
-                    type="button"
-                    onClick={() => handleTechStackRemove(tech)}
-                  >
+                  <button type="button" onClick={() => handleTechStackRemove(tech)}>
                     <X />
                   </button>
                 </span>
@@ -370,9 +371,12 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || formData.title.length > 255 || formData.description.length > 1000}
+              disabled={
+                isSubmitting || formData.title.length > 255 || formData.description.length > 1000
+              }
               className="btn-primary"
-             aria-label="button">
+              aria-label="button"
+            >
               {isSubmitting ? "Submitting..." : "Submit Project"}
             </button>
           </div>

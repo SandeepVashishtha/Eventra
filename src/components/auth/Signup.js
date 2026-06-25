@@ -1,15 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Sparkles,
-  Check,
-  ArrowRight,
-  Eye,
-  EyeOff,
-  Lock,
-  X,
-} from "lucide-react";
+import { Sparkles, Check, ArrowRight, Eye, EyeOff, Lock, X } from "lucide-react";
 import SignupForm from "./SignupForm";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import useReducedMotion from "../../hooks/useReducedMotion";
@@ -320,7 +312,8 @@ const Signup = () => {
 
             <div className="relative z-10 border-t border-white/20 pt-6">
               <blockquote className="text-sm italic text-blue-100">
-                &quot;Eventra helped me find collaborators and ship faster for my last hackathon.&quot;
+                &quot;Eventra helped me find collaborators and ship faster for my last
+                hackathon.&quot;
               </blockquote>
               <cite className="mt-2 block text-xs not-italic text-blue-200">
                 - Priya S., Full-Stack Developer
@@ -332,17 +325,26 @@ const Signup = () => {
         <motion.section
           initial={{ x: prefersReducedMotion ? 0 : 20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
-          transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 0.1 }}
+          transition={{
+            duration: prefersReducedMotion ? 0 : 0.5,
+            delay: prefersReducedMotion ? 0 : 0.1,
+          }}
           className="rounded-3xl border border-gray-200/60 bg-white/90 p-6 shadow-2xl backdrop-blur-xl dark:border-gray-700/60 dark:bg-gray-800/85 md:p-8"
         >
           <SignupForm />
           <p className="mt-6 text-center text-xs text-gray-500 dark:text-gray-400">
             By creating an account, you agree to our{" "}
-            <Link to="/terms" className="font-medium text-blue-600 hover:underline dark:text-blue-400">
+            <Link
+              to="/terms"
+              className="font-medium text-blue-600 hover:underline dark:text-blue-400"
+            >
               Terms
             </Link>{" "}
             and{" "}
-            <Link to="/privacy" className="font-medium text-blue-600 hover:underline dark:text-blue-400">
+            <Link
+              to="/privacy"
+              className="font-medium text-blue-600 hover:underline dark:text-blue-400"
+            >
               Privacy Policy
             </Link>
             .

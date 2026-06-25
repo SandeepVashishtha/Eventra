@@ -12,9 +12,7 @@ export default function TagsInput({ tags, newTag, onNewTagChange, onAdd, onRemov
     >
       <div className="flex items-center gap-2 mb-2">
         <TagIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          Tags
-        </label>
+        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Tags</label>
       </div>
       <div className="flex gap-2 mb-3">
         <input

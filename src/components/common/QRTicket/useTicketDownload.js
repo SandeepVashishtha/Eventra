@@ -11,7 +11,7 @@ import { toast } from "react-toastify";
 
 export function useTicketDownload(ticketRef, ticketId = "ticket") {
   const [downloading, setDownloading] = useState(false);
-  
+
   // Deep Fix 1 & 2: Refs for unmounted leak protection and synchronous concurrency locking
   const isMounted = useRef(true);
   const isProcessingLock = useRef(false);
@@ -30,7 +30,7 @@ export function useTicketDownload(ticketRef, ticketId = "ticket") {
     if (!node) throw new Error("Ticket ref not attached");
 
     return html2canvas(node, {
-      scale: 3,           // 3× for crisp hi-DPI output
+      scale: 3, // 3× for crisp hi-DPI output
       useCORS: true,
       backgroundColor: null,
       logging: false,
@@ -41,23 +41,23 @@ export function useTicketDownload(ticketRef, ticketId = "ticket") {
   const downloadPNG = useCallback(async () => {
     // Deep Fix 2: Synchronous lock prevents double-click OOM crashes on mobile
     if (isProcessingLock.current) return;
-    
+
     isProcessingLock.current = true;
     if (isMounted.current) setDownloading(true);
-    
+
     try {
       const canvas = await captureCanvas();
-      
+
       // Use toBlob instead of toDataURL to prevent massive base64 memory allocation
       canvas.toBlob((blob) => {
         if (!blob) throw new Error("Canvas rendering failed");
-        
+
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.download = `eventra-ticket-${ticketId}.png`;
         link.href = url;
         link.click();
-        
+
         // Deep Fix 3: Defer revocation to prevent WebKit/Safari silent download failures
         setTimeout(() => URL.revokeObjectURL(url), 150);
       }, "image/png");
@@ -74,17 +74,17 @@ export function useTicketDownload(ticketRef, ticketId = "ticket") {
   /** Download ticket as PDF */
   const downloadPDF = useCallback(async () => {
     if (isProcessingLock.current) return;
-    
+
     isProcessingLock.current = true;
     if (isMounted.current) setDownloading(true);
-    
+
     try {
       const canvas = await captureCanvas();
       const { jsPDF } = await import("jspdf");
 
       // Ticket dimensions in mm (340px wide at 96dpi ≈ 90mm)
       const pxToMm = (px) => (px * 25.4) / 96;
-      const widthMm = pxToMm(canvas.width / 3);   // divide by scale
+      const widthMm = pxToMm(canvas.width / 3); // divide by scale
       const heightMm = pxToMm(canvas.height / 3);
 
       const pdf = new jsPDF({

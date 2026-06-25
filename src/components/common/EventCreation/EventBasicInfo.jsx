@@ -1,4 +1,3 @@
-
 import { motion } from "framer-motion";
 import { FileText, Tag, Users } from "lucide-react";
 import { categories } from "../../../constants/eventDefaults";
@@ -14,12 +13,14 @@ const FormField = ({ label, icon: Icon, error, children, required, hint }) => (
     {children}
     {hint && <p className="text-xs text-gray-500 dark:text-gray-400">{hint}</p>}
     {error && (
-      <motion.p 
+      <motion.p
         initial={{ opacity: 0, y: -5 }}
         animate={{ opacity: 1, y: 0 }}
         className="text-red-500 text-sm flex items-center gap-1"
       >
-        <span role="img" aria-label="error">⚠️</span>
+        <span role="img" aria-label="error">
+          ⚠️
+        </span>
         {error}
       </motion.p>
     )}

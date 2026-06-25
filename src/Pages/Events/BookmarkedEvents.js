@@ -1,13 +1,10 @@
-import { useEffect, useMemo, useState, useRef  } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { Bookmark, CalendarDays } from "lucide-react";
 import { Link } from "react-router-dom";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import EventCard from "./EventCard";
 import { getEventStatus } from "../../utils/eventUtils";
-import {
-  getBookmarkedEvents,
-  subscribeToBookmarkChanges,
-} from "../../utils/bookmarkUtils";
+import { getBookmarkedEvents, subscribeToBookmarkChanges } from "../../utils/bookmarkUtils";
 
 const BookmarkedEvents = () => {
   useDocumentTitle("Eventra | Bookmarked Events");
@@ -29,18 +26,18 @@ const BookmarkedEvents = () => {
 
   return (
     <div
-  className="min-h-screen bg-gray-50 dark:from-slate-950 dark:via-slate-950 dark:to-gray-950 text-slate-900 dark:text-gray-100 pt-12 pb-16"
-  style={{
-    backgroundImage: document.documentElement.classList.contains("dark")
-      ? "url('/assets/bookmarkbg.png')"
-      : "none",
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    backgroundRepeat: "no-repeat",
-    minHeight: "100vh",
-    width: "100%"
-  }}
->
+      className="min-h-screen bg-gray-50 dark:from-slate-950 dark:via-slate-950 dark:to-gray-950 text-slate-900 dark:text-gray-100 pt-12 pb-16"
+      style={{
+        backgroundImage: document.documentElement.classList.contains("dark")
+          ? "url('/assets/bookmarkbg.png')"
+          : "none",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        minHeight: "100vh",
+        width: "100%",
+      }}
+    >
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between mb-8">
           <div>

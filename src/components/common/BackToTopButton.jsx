@@ -28,9 +28,7 @@ const BackToTopButton = ({ threshold = 300, positionClass = "bottom-6 right-6" }
       aria-label="Back to top"
       title="Back to top"
       className={`fixed z-50 ${positionClass} p-3 rounded-full bg-indigo-600 text-white shadow-lg transition-all duration-300 ${
-        visible
-          ? "opacity-100 translate-y-0"
-          : "opacity-0 translate-y-10 pointer-events-none"
+        visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"
       }`}
     >
       <ChevronUp className="h-6 w-6" />

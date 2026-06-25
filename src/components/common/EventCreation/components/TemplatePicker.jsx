@@ -7,13 +7,7 @@ import { Trash2, Download } from "lucide-react";
  * Modal for browsing, loading, and deleting saved event templates.
  * Displays all available templates with action buttons.
  */
-export default function TemplatePicker({
-  isOpen,
-  templates,
-  onLoad,
-  onDelete,
-  onClose,
-}) {
+export default function TemplatePicker({ isOpen, templates, onLoad, onDelete, onClose }) {
   if (!isOpen) return null;
 
   const handleLoadClick = (templateId) => {
@@ -42,9 +36,7 @@ export default function TemplatePicker({
           >
             {/* Header */}
             <div className="px-8 py-6 border-b border-gray-200 dark:border-gray-700 bg-linear-to-r from-indigo-50 to-white dark:from-gray-800 dark:to-gray-900">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Event Templates
-              </h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Event Templates</h2>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                 {templates.length === 0
                   ? "No templates saved yet"

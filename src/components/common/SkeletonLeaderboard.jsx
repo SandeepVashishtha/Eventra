@@ -1,7 +1,4 @@
-import {
-  LeaderboardStatCardSkeleton,
-  SkeletonLeaderboard,
-} from "./SkeletonLoaders";
+import { LeaderboardStatCardSkeleton, SkeletonLeaderboard } from "./SkeletonLoaders";
 
 export default SkeletonLeaderboard;
 export { LeaderboardStatCardSkeleton, SkeletonLeaderboard };

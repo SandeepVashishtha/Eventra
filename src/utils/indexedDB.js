@@ -1,4 +1,4 @@
-import { get, set, del, clear } from 'idb-keyval';
+import { get, set, del, clear } from "idb-keyval";
 
 // In-memory cache fallback when IndexedDB is blocked (e.g., in private windows)
 const memoryCache = new Map();
@@ -12,7 +12,7 @@ const TRANSIENT_ERROR_NAMES = new Set([
   "AbortError",
   "TransactionInactiveError",
   "UnknownError",
-  "ConstraintError"
+  "ConstraintError",
 ]);
 
 /**
@@ -55,8 +55,10 @@ const executeWithRetry = async (operation, retries = 2, delayMs = 50) => {
       return await operation();
     } catch (err) {
       if (isTransientError(err) && attempt < retries) {
-        console.warn(`[IndexedDB] Transient error "${err.name}". Retrying in ${delayMs}ms (attempt ${attempt + 1}/${retries})...`);
-        await new Promise(resolve => setTimeout(resolve, delayMs));
+        console.warn(
+          `[IndexedDB] Transient error "${err.name}". Retrying in ${delayMs}ms (attempt ${attempt + 1}/${retries})...`
+        );
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
         delayMs *= 3; // exponential backoff
         continue;
       }
@@ -72,7 +74,7 @@ const pruneMemoryCache = () => {
   if (memoryCache.size > MAX_MEM_CACHE_SIZE) {
     // Evict oldest entries (Map keys maintain insertion order)
     const keysToPrune = Array.from(memoryCache.keys()).slice(0, 50);
-    keysToPrune.forEach(k => memoryCache.delete(k));
+    keysToPrune.forEach((k) => memoryCache.delete(k));
   }
 };
 
@@ -92,8 +94,8 @@ const runCacheOperation = async (idbOp, memoryOp, warningMsg) => {
 
 /**
  * Saves a serializable payload to IndexedDB securely, falling back to in-memory store if disabled.
- * @param {string} key 
- * @param {any} val 
+ * @param {string} key
+ * @param {any} val
  * @returns {Promise<void>}
  */
 export const saveToOfflineCache = async (key, val) => {
@@ -110,8 +112,8 @@ export const saveToOfflineCache = async (key, val) => {
 
 /**
  * Retrieves a payload from IndexedDB, falling back to in-memory store if disabled.
- * @param {string} key 
- * @param {any} fallback 
+ * @param {string} key
+ * @param {any} fallback
  * @returns {Promise<any>}
  */
 export const getFromOfflineCache = async (key, fallback = null) => {
@@ -130,7 +132,7 @@ export const getFromOfflineCache = async (key, fallback = null) => {
 
 /**
  * Deletes a specific key from IndexedDB, falling back to in-memory store if disabled.
- * @param {string} key 
+ * @param {string} key
  * @returns {Promise<void>}
  */
 export const removeFromOfflineCache = async (key) => {

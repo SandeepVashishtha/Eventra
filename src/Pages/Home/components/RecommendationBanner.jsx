@@ -7,7 +7,8 @@ const RecommendationBanner = () => {
       className="relative overflow-hidden px-4 md:px-8 py-16 text-slate-900 dark:text-white border-t border-slate-200/60 dark:border-slate-800/60 transition-colors duration-300"
       /* MODIFIED: Re-applied the identical matching background gradient flow from the events carousel */
       style={{
-        background: "linear-gradient(180deg, var(--bg-color, #F8FBFD) 0%, rgba(109, 40, 217, 0.02) 42%, rgba(109, 40, 217, 0.05) 100%)",
+        background:
+          "linear-gradient(180deg, var(--bg-color, #F8FBFD) 0%, rgba(109, 40, 217, 0.02) 42%, rgba(109, 40, 217, 0.05) 100%)",
       }}
     >
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
@@ -33,7 +34,7 @@ const RecommendationBanner = () => {
             shadow-[0_20px_60px_rgba(109,40,217,0.04)]
             dark:shadow-[0_20px_60px_rgba(0,0,0,0.2)]
           "
-          style={{ borderColor: 'rgba(139, 92, 246, 0.35)' }}
+          style={{ borderColor: "rgba(139, 92, 246, 0.35)" }}
         >
           <div className="max-w-3xl">
             {/* Badge */}
@@ -49,32 +50,32 @@ const RecommendationBanner = () => {
 
             {/* Description */}
             <p className="mt-4 text-base md:text-lg leading-relaxed text-slate-600 dark:text-slate-300 max-w-2xl">
-              Discover personalized hackathons, workshops, and tech events curated to your interests, skills, and past participation.
+              Discover personalized hackathons, workshops, and tech events curated to your
+              interests, skills, and past participation.
             </p>
 
             {/* Tags */}
             <div className="flex flex-wrap gap-3 mt-6">
               {[
-                'AI/ML',
-                'Frontend',
-                'Open Source',
-                'Cybersecurity',
-                'Hackathons',
-                'Beginner Friendly',
+                "AI/ML",
+                "Frontend",
+                "Open Source",
+                "Cybersecurity",
+                "Hackathons",
+                "Beginner Friendly",
               ].map((tag, index) => (
                 <button
-    key={index}
-    type="button"
-    onClick={() => setActiveFilter(tag)}
-    className={`px-3 py-1.5 rounded-full text-sm shadow-sm transition-all duration-300 border ${
-      activeFilter === tag
-        ? "bg-brand-violet text-white border-brand-violet shadow-[0_0_15px_rgba(139,92,246,0.35)] scale-105"
-        : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-brand-violet/50"
-    }`}
-  >
-    {tag}
-  </button>
-
+                  key={index}
+                  type="button"
+                  onClick={() => setActiveFilter(tag)}
+                  className={`px-3 py-1.5 rounded-full text-sm shadow-sm transition-all duration-300 border ${
+                    activeFilter === tag
+                      ? "bg-brand-violet text-white border-brand-violet shadow-[0_0_15px_rgba(139,92,246,0.35)] scale-105"
+                      : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-brand-violet/50"
+                  }`}
+                >
+                  {tag}
+                </button>
               ))}
             </div>
 

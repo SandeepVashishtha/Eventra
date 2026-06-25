@@ -37,7 +37,13 @@ function TimeField({ name, label, value, onChange, error }) {
   );
 }
 
-export default function DateTimeFields({ formData, handleInputChange, errors, prefersReducedMotion, todayString }) {
+export default function DateTimeFields({
+  formData,
+  handleInputChange,
+  errors,
+  prefersReducedMotion,
+  todayString,
+}) {
   const duration = prefersReducedMotion ? 0 : 0.5;
   const delay = prefersReducedMotion ? 0 : 0.1;
 
@@ -50,10 +56,36 @@ export default function DateTimeFields({ formData, handleInputChange, errors, pr
         viewport={{ once: true }}
         transition={{ duration, delay }}
       >
-        <DateField name="startDate" label="Start Date" value={formData.startDate} onChange={handleInputChange} min={todayString} error={errors.startDate} />
-        <DateField name="endDate" label="End Date" value={formData.endDate} onChange={handleInputChange} min={formData.startDate || todayString} error={errors.endDate} />
-        <TimeField name="startTime" label="Start Time" value={formData.startTime} onChange={handleInputChange} error={errors.startTime} />
-        <TimeField name="endTime" label="End Time" value={formData.endTime} onChange={handleInputChange} error={errors.endTime} />
+        <DateField
+          name="startDate"
+          label="Start Date"
+          value={formData.startDate}
+          onChange={handleInputChange}
+          min={todayString}
+          error={errors.startDate}
+        />
+        <DateField
+          name="endDate"
+          label="End Date"
+          value={formData.endDate}
+          onChange={handleInputChange}
+          min={formData.startDate || todayString}
+          error={errors.endDate}
+        />
+        <TimeField
+          name="startTime"
+          label="Start Time"
+          value={formData.startTime}
+          onChange={handleInputChange}
+          error={errors.startTime}
+        />
+        <TimeField
+          name="endTime"
+          label="End Time"
+          value={formData.endTime}
+          onChange={handleInputChange}
+          error={errors.endTime}
+        />
       </motion.div>
     );
   }
@@ -66,9 +98,28 @@ export default function DateTimeFields({ formData, handleInputChange, errors, pr
       viewport={{ once: true }}
       transition={{ duration, delay }}
     >
-      <DateField name="date" label="Event Date" value={formData.date} onChange={handleInputChange} min={todayString} error={errors.date} />
-      <TimeField name="startTime" label="Start Time" value={formData.startTime} onChange={handleInputChange} error={errors.startTime} />
-      <TimeField name="endTime" label="End Time" value={formData.endTime} onChange={handleInputChange} error={errors.endTime} />
+      <DateField
+        name="date"
+        label="Event Date"
+        value={formData.date}
+        onChange={handleInputChange}
+        min={todayString}
+        error={errors.date}
+      />
+      <TimeField
+        name="startTime"
+        label="Start Time"
+        value={formData.startTime}
+        onChange={handleInputChange}
+        error={errors.startTime}
+      />
+      <TimeField
+        name="endTime"
+        label="End Time"
+        value={formData.endTime}
+        onChange={handleInputChange}
+        error={errors.endTime}
+      />
     </motion.div>
   );
 }

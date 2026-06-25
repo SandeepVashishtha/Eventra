@@ -17,7 +17,7 @@ export const logAbuseAttempt = (type, details = {}) => {
     const now = Date.now();
     // Sliding window throttling: limit to 10 abuse logs per minute
     const oneMinuteAgo = now - 60000;
-    const recentLogs = existing.filter(log => log.timestamp > oneMinuteAgo);
+    const recentLogs = existing.filter((log) => log.timestamp > oneMinuteAgo);
     if (recentLogs.length >= 10) {
       console.warn("[ABUSE LOGGER] Throttling active. Log attempt rejected.");
       return;
@@ -29,10 +29,7 @@ export const logAbuseAttempt = (type, details = {}) => {
       details,
     });
 
-    safeLocalStorage.setItem(
-      "eventra_abuse_logs",
-      JSON.stringify(existing.slice(-100))
-    );
+    safeLocalStorage.setItem("eventra_abuse_logs", JSON.stringify(existing.slice(-100)));
   } catch {
     // ignore storage failures
   }

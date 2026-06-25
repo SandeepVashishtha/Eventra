@@ -48,7 +48,6 @@ const EventCancellationModal = ({ event, onClose, onSuccess }) => {
       aria-labelledby="cancel-event-title"
     >
       <div className="relative w-full max-w-lg rounded-2xl bg-white dark:bg-gray-900 shadow-2xl p-6">
-
         {/* Close button */}
         <button
           onClick={onClose}
@@ -65,21 +64,16 @@ const EventCancellationModal = ({ event, onClose, onSuccess }) => {
             <AlertTriangle className="text-red-600 dark:text-red-400" size={22} />
           </div>
           <div>
-            <h2
-              id="cancel-event-title"
-              className="text-lg font-bold text-gray-900 dark:text-white"
-            >
+            <h2 id="cancel-event-title" className="text-lg font-bold text-gray-900 dark:text-white">
               Cancel Event
             </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              {event?.title}
-            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{event?.title}</p>
           </div>
         </div>
 
         <p className="text-sm text-gray-600 dark:text-gray-300 mb-5">
-          This action will cancel the event, notify all registered attendees, and
-          process refunds according to the selected policy. This cannot be undone.
+          This action will cancel the event, notify all registered attendees, and process refunds
+          according to the selected policy. This cannot be undone.
         </p>
 
         {/* Cancellation reason */}
@@ -108,10 +102,7 @@ const EventCancellationModal = ({ event, onClose, onSuccess }) => {
           </label>
           <div className="flex flex-col gap-2">
             {Object.entries(REFUND_POLICY_LABELS).map(([value, label]) => (
-              <label
-                key={value}
-                className="flex items-center gap-3 cursor-pointer"
-              >
+              <label key={value} className="flex items-center gap-3 cursor-pointer">
                 <input
                   type="radio"
                   name="refund-policy"
@@ -121,9 +112,7 @@ const EventCancellationModal = ({ event, onClose, onSuccess }) => {
                   disabled={isCancelling}
                   className="accent-red-600"
                 />
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  {label}
-                </span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">{label}</span>
               </label>
             ))}
           </div>
@@ -158,9 +147,7 @@ const EventCancellationModal = ({ event, onClose, onSuccess }) => {
 
         {/* Error message */}
         {cancellationError && (
-          <p className="text-sm text-red-600 dark:text-red-400 mb-4">
-            {cancellationError}
-          </p>
+          <p className="text-sm text-red-600 dark:text-red-400 mb-4">{cancellationError}</p>
         )}
 
         {/* Actions */}

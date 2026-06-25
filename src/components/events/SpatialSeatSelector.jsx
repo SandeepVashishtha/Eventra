@@ -354,26 +354,32 @@ const SpatialSeatSelector = ({
     e.currentTarget.releasePointerCapture(e.pointerId);
   };
 
-  const isSeatSelected = useCallback((elId, idx) => {
-    return selectedSeat && selectedSeat.elementId === elId && selectedSeat.seatIndex === idx;
-  }, [selectedSeat]);
+  const isSeatSelected = useCallback(
+    (elId, idx) => {
+      return selectedSeat && selectedSeat.elementId === elId && selectedSeat.seatIndex === idx;
+    },
+    [selectedSeat]
+  );
 
   // Selection callback
-  const handleSeatClick = useCallback((el, seat, seatIdx) => {
-    if (readOnly) return;
-    const isOccupied = el.assignedAttendees[seatIdx];
-    if (isOccupied) return;
+  const handleSeatClick = useCallback(
+    (el, seat, seatIdx) => {
+      if (readOnly) return;
+      const isOccupied = el.assignedAttendees[seatIdx];
+      if (isOccupied) return;
 
-    const label = (el.seatLabels && el.seatLabels[seatIdx]) || `Seat ${seatIdx + 1}`;
-    const tier = el.tier || "General Seating";
+      const label = (el.seatLabels && el.seatLabels[seatIdx]) || `Seat ${seatIdx + 1}`;
+      const tier = el.tier || "General Seating";
 
-    onSelectSeat({
-      elementId: el.id,
-      seatIndex: seatIdx,
-      seatLabel: `${el.label} - ${label}`,
-      tier: tier,
-    });
-  }, [onSelectSeat, readOnly]);
+      onSelectSeat({
+        elementId: el.id,
+        seatIndex: seatIdx,
+        seatLabel: `${el.label} - ${label}`,
+        tier: tier,
+      });
+    },
+    [onSelectSeat, readOnly]
+  );
 
   return (
     <div className="ssp-container">
@@ -720,7 +726,9 @@ const Seat = ({ el, seat, allSeats, isSelected, readOnly, onSelect, onHover, con
       });
 
       if (bestSeat) {
-        const nextSeatEl = document.getElementById(`seat-element-${bestSeat.elementId}-${bestSeat.index}`);
+        const nextSeatEl = document.getElementById(
+          `seat-element-${bestSeat.elementId}-${bestSeat.index}`
+        );
         if (nextSeatEl) {
           nextSeatEl.focus();
         }
@@ -747,19 +755,22 @@ const Seat = ({ el, seat, allSeats, isSelected, readOnly, onSelect, onHover, con
     onHover(null);
   };
 
-  const handleMouseEnter = useCallback((e) => {
-    const bbox = e.currentTarget.getBoundingClientRect();
-    const vrect = containerRef.current.getBoundingClientRect();
-    onHover({
-      el,
-      seatIdx: seat.index,
-      label: seatLabel,
-      tier: seatTier,
-      occupiedBy: isOccupied || null,
-      x: bbox.left - vrect.left + bbox.width / 2,
-      y: bbox.top - vrect.top - 10,
-    });
-  }, [containerRef, el, onHover, seat.index, seatLabel, seatTier, isOccupied]);
+  const handleMouseEnter = useCallback(
+    (e) => {
+      const bbox = e.currentTarget.getBoundingClientRect();
+      const vrect = containerRef.current.getBoundingClientRect();
+      onHover({
+        el,
+        seatIdx: seat.index,
+        label: seatLabel,
+        tier: seatTier,
+        occupiedBy: isOccupied || null,
+        x: bbox.left - vrect.left + bbox.width / 2,
+        y: bbox.top - vrect.top - 10,
+      });
+    },
+    [containerRef, el, onHover, seat.index, seatLabel, seatTier, isOccupied]
+  );
 
   const handleMouseLeave = useCallback(() => {
     onHover(null);

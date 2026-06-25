@@ -1,4 +1,18 @@
-import { ArrowRightIcon, ChartBarIcon, UserGroupIcon, StarIcon, ClipboardDocumentListIcon, BuildingOffice2Icon, EnvelopeIcon, MapPinIcon, TrophyIcon, LinkIcon, CalendarDaysIcon, DocumentTextIcon, ComputerDesktopIcon } from "@heroicons/react/24/outline";
+import {
+  ArrowRightIcon,
+  ChartBarIcon,
+  UserGroupIcon,
+  StarIcon,
+  ClipboardDocumentListIcon,
+  BuildingOffice2Icon,
+  EnvelopeIcon,
+  MapPinIcon,
+  TrophyIcon,
+  LinkIcon,
+  CalendarDaysIcon,
+  DocumentTextIcon,
+  ComputerDesktopIcon,
+} from "@heroicons/react/24/outline";
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
@@ -88,12 +102,18 @@ const HostHackathon = () => {
     }
 
     // Hackathon Name validation
-    if (data.hackathonName && (data.hackathonName.trim().length < 3 || data.hackathonName.trim().length > 100)) {
+    if (
+      data.hackathonName &&
+      (data.hackathonName.trim().length < 3 || data.hackathonName.trim().length > 100)
+    ) {
       newErrors.hackathonName = "Hackathon Name must be between 3 and 100 characters long!";
     }
 
     // Organizer validation
-    if (data.organizerName && (data.organizerName.trim().length < 3 || data.organizerName.trim().length > 100)) {
+    if (
+      data.organizerName &&
+      (data.organizerName.trim().length < 3 || data.organizerName.trim().length > 100)
+    ) {
       newErrors.organizerName = "Organizer Name must be between 3 and 100 characters long!";
     }
 
@@ -127,9 +147,11 @@ const HostHackathon = () => {
     }
 
     // Description validation
-    if (data.description && (data.description.trim().length < 20 || data.description.trim().length > 2000)) {
-      newErrors.description =
-        "Description must be between 20 and 2000 characters long!";
+    if (
+      data.description &&
+      (data.description.trim().length < 20 || data.description.trim().length > 2000)
+    ) {
+      newErrors.description = "Description must be between 20 and 2000 characters long!";
     }
 
     // Participant Limit validation
@@ -156,8 +178,7 @@ const HostHackathon = () => {
       toast.error("Please fix the errors before submitting.");
 
       const firstErrorField =
-        requiredFields.find((field) => validationErrors[field]) ||
-        Object.keys(validationErrors)[0];
+        requiredFields.find((field) => validationErrors[field]) || Object.keys(validationErrors)[0];
 
       if (inputRefs[firstErrorField]?.current) {
         inputRefs[firstErrorField].current.scrollIntoView({
@@ -185,8 +206,8 @@ const HostHackathon = () => {
         },
         {
           headers: {
-            Authorization: `Bearer ${token}`
-          }
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
 
@@ -282,7 +303,7 @@ const HostHackathon = () => {
           Host Your Hackathon
         </h1>
         <p className="text-xs sm:text-base text-gray-600 dark:text-gray-400">
-         &quot;Fill in the details below and let&apos;s get your hackathon live!&quot;
+          &quot;Fill in the details below and let&apos;s get your hackathon live!&quot;
         </p>
       </motion.div>
 
@@ -298,60 +319,40 @@ const HostHackathon = () => {
       >
         <div className="flex items-center gap-2 mb-3">
           <ClipboardDocumentListIcon className="w-6 h-6 text-primary" />
-          <h2 className="text-xl font-semibold text-primary">
-            Guidelines
-          </h2>
+          <h2 className="text-xl font-semibold text-primary">Guidelines</h2>
         </div>
         <ul className="list-disc pl-6 space-y-3 text-gray-700 dark:text-gray-300 text-sm sm:text-base">
           <li>
-            Clearly define the{" "}
-            <span className="font-medium">objectives, theme, and rules</span> of
+            Clearly define the <span className="font-medium">objectives, theme, and rules</span> of
             your hackathon so participants know the purpose and scope.
           </li>
           <li>
-            Mention <span className="font-medium">eligibility criteria</span>{" "}
-            such as student status, professional background, or region to avoid
-            confusion later.
+            Mention <span className="font-medium">eligibility criteria</span> such as student
+            status, professional background, or region to avoid confusion later.
           </li>
           <li>
-            Ensure the{" "}
-            <span className="font-medium">timeline (start and end dates)</span>{" "}
-            is accurate and realistic, giving teams enough time to brainstorm
-            and build.
+            Ensure the <span className="font-medium">timeline (start and end dates)</span> is
+            accurate and realistic, giving teams enough time to brainstorm and build.
           </li>
           <li>
-            Highlight{" "}
-            <span className="font-medium">
-              prize distribution and judging criteria
-            </span>{" "}
+            Highlight <span className="font-medium">prize distribution and judging criteria</span>{" "}
             to motivate participants and maintain transparency in evaluation.
           </li>
           <li>
-            Provide clear{" "}
-            <span className="font-medium">
-              contact details or a support channel
-            </span>{" "}
+            Provide clear <span className="font-medium">contact details or a support channel</span>{" "}
             so participants can ask questions during the event.
           </li>
           <li>
-            Promote{" "}
-            <span className="font-medium">inclusivity and diversity</span> by
-            encouraging people from different backgrounds, genders, and skill
-            levels to participate.
+            Promote <span className="font-medium">inclusivity and diversity</span> by encouraging
+            people from different backgrounds, genders, and skill levels to participate.
           </li>
           <li>
-            Set{" "}
-            <span className="font-medium">
-              submission guidelines and deadlines
-            </span>{" "}
-            (format, platform, file types) to ensure smooth evaluation of
-            projects.
+            Set <span className="font-medium">submission guidelines and deadlines</span> (format,
+            platform, file types) to ensure smooth evaluation of projects.
           </li>
           <li>
-            Encourage{" "}
-            <span className="font-medium">collaboration and team spirit</span>{" "}
-            by promoting teamwork, idea-sharing, and peer learning during the
-            event.
+            Encourage <span className="font-medium">collaboration and team spirit</span> by
+            promoting teamwork, idea-sharing, and peer learning during the event.
           </li>
         </ul>
       </motion.div>
@@ -393,9 +394,7 @@ const HostHackathon = () => {
                 className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-bg text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all duration-300"
               />
               {errors[field.name] && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors[field.name]}
-                </p>
+                <p className="text-red-500 text-xs mt-1">{errors[field.name]}</p>
               )}
             </motion.div>
           ))}
@@ -428,9 +427,7 @@ const HostHackathon = () => {
         focus:ring-2 focus:ring-primary focus:border-primary
         transition duration-150 ease-in-out"
                 />
-                {errors[name] && (
-                  <p className="text-red-500 text-xs mt-1">{errors[name]}</p>
-                )}
+                {errors[name] && <p className="text-red-500 text-xs mt-1">{errors[name]}</p>}
               </div>
             ))}
           </motion.div>
@@ -503,12 +500,8 @@ const HostHackathon = () => {
           >
             {/* UPDATED: Icon and text colors */}
             <stat.icon className="w-10 h-10 text-primary mb-3 animate-bounce" />
-            <h3 className="text-3xl font-bold text-primary">
-              {stat.number}
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">
-              {stat.label}
-            </p>
+            <h3 className="text-3xl font-bold text-primary">{stat.number}</h3>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">{stat.label}</p>
           </motion.div>
         ))}
       </motion.div>
@@ -530,9 +523,8 @@ const HostHackathon = () => {
           </h2>
         </div>
         <p className="text-gray-300 mb-6 text-lg">
-          Hosting a hackathon is your chance to bring creative minds together,
-          solve real-world problems, and build impactful projects. Take the lead
-          today!
+          Hosting a hackathon is your chance to bring creative minds together, solve real-world
+          problems, and build impactful projects. Take the lead today!
         </p>
         <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mt-6">
           <motion.button

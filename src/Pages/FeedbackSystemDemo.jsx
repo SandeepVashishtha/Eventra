@@ -1,12 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
-import { RefreshCw, Download, Trash2 } from 'lucide-react';
+import { useState, useEffect, useCallback } from "react";
+import { motion } from "framer-motion";
+import { RefreshCw, Download, Trash2 } from "lucide-react";
 import {
   EventFeedbackModal,
   FeedbackButton,
   FeedbackSummary,
   StarRating,
-} from '../../components/feedback';
+} from "../../components/feedback";
 import {
   getEventFeedback,
   getAverageRating,
@@ -15,20 +15,20 @@ import {
   exportFeedbackAsCSV,
   clearAllFeedback,
   saveFeedback,
-} from '../../utils/feedbackUtils';
+} from "../../utils/feedbackUtils";
 
 // Demo event definition moved outside the component for a stable reference
 const demoEvent = {
-  id: 'demo-event-001',
-  title: 'React Best Practices Workshop',
+  id: "demo-event-001",
+  title: "React Best Practices Workshop",
   date: new Date(Date.now() - 86400000).toISOString(), // Yesterday (past event)
-  description: 'Learn advanced React patterns and hooks',
+  description: "Learn advanced React patterns and hooks",
 };
 
 /**
  * FeedbackSystemDemo
  * Demonstration page for the post-event feedback system
- * 
+ *
  * This page showcases all feedback components and utilities
  * Remove this file after confirming the feature works in production
  */
@@ -59,36 +59,36 @@ const FeedbackSystemDemo = () => {
     const samples = [
       {
         rating: 5,
-        comment: 'Excellent workshop! Very practical and well-organized.',
-        tags: ['Great Speaker', 'Well Organized'],
+        comment: "Excellent workshop! Very practical and well-organized.",
+        tags: ["Great Speaker", "Well Organized"],
         recommend: true,
         userId: generateDemoUserId(),
       },
       {
         rating: 4,
-        comment: 'Good content but could use more hands-on exercises.',
-        tags: ['Good Food', 'Needs More Time'],
+        comment: "Good content but could use more hands-on exercises.",
+        tags: ["Good Food", "Needs More Time"],
         recommend: true,
         userId: generateDemoUserId(),
       },
       {
         rating: 5,
-        comment: 'Perfect balance of theory and practice!',
-        tags: ['Great Speaker', 'Networking'],
+        comment: "Perfect balance of theory and practice!",
+        tags: ["Great Speaker", "Networking"],
         recommend: true,
         userId: generateDemoUserId(),
       },
       {
         rating: 3,
-        comment: 'Venue was a bit cold, but content was solid.',
-        tags: ['Better Venue'],
+        comment: "Venue was a bit cold, but content was solid.",
+        tags: ["Better Venue"],
         recommend: true,
         userId: generateDemoUserId(),
       },
       {
         rating: 4,
-        comment: 'Great networking opportunities!',
-        tags: ['Networking', 'Great Speaker'],
+        comment: "Great networking opportunities!",
+        tags: ["Networking", "Great Speaker"],
         recommend: true,
         userId: generateDemoUserId(),
       },
@@ -103,19 +103,19 @@ const FeedbackSystemDemo = () => {
 
   const handleExportCSV = () => {
     const csv = exportFeedbackAsCSV(demoEvent.id);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `feedback-${demoEvent.id}.csv`);
-    link.style.visibility = 'hidden';
+    link.setAttribute("href", url);
+    link.setAttribute("download", `feedback-${demoEvent.id}.csv`);
+    link.style.visibility = "hidden";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
   const handleClearAll = () => {
-    if (window.confirm('Clear all feedback? This cannot be undone.')) {
+    if (window.confirm("Clear all feedback? This cannot be undone.")) {
       clearAllFeedback();
       loadFeedback();
     }
@@ -133,12 +133,8 @@ const FeedbackSystemDemo = () => {
           animate={{ opacity: 1, y: 0 }}
           className="mb-12"
         >
-          <h1 className="text-4xl font-bold text-white mb-2">
-            📋 Feedback System Demo
-          </h1>
-          <p className="text-gray-400">
-            Showcase of the post-event feedback MVP implementation
-          </p>
+          <h1 className="text-4xl font-bold text-white mb-2">📋 Feedback System Demo</h1>
+          <p className="text-gray-400">Showcase of the post-event feedback MVP implementation</p>
         </motion.div>
 
         {/* Demo Event Card */}
@@ -148,9 +144,7 @@ const FeedbackSystemDemo = () => {
           className="bg-white dark:bg-gray-900 rounded-2xl p-8 mb-8 border border-gray-200 dark:border-gray-800"
         >
           <h2 className="text-2xl font-bold mb-2">{demoEvent.title}</h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
-            {demoEvent.description}
-          </p>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">{demoEvent.description}</p>
           <p className="text-sm text-gray-500 mb-6">
             📅 {new Date(demoEvent.date).toLocaleDateString()}
           </p>
@@ -173,9 +167,7 @@ const FeedbackSystemDemo = () => {
           </div>
 
           {/* Feedback Summary */}
-          {feedback.length > 0 && (
-            <FeedbackSummary eventId={demoEvent.id} />
-          )}
+          {feedback.length > 0 && <FeedbackSummary eventId={demoEvent.id} />}
 
           {feedback.length === 0 && (
             <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 text-center text-gray-600 dark:text-gray-400">
@@ -196,12 +188,8 @@ const FeedbackSystemDemo = () => {
               <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-4">
                 Average Rating
               </h3>
-              <div className="text-3xl font-bold text-indigo-600">
-                {stats?.average.toFixed(1)}
-              </div>
-              <p className="text-xs text-gray-500 mt-2">
-                based on {stats?.count} reviews
-              </p>
+              <div className="text-3xl font-bold text-indigo-600">{stats?.average.toFixed(1)}</div>
+              <p className="text-xs text-gray-500 mt-2">based on {stats?.count} reviews</p>
             </div>
 
             {/* Recommendation */}
@@ -213,8 +201,7 @@ const FeedbackSystemDemo = () => {
                 {recommendationStats?.percentage}%
               </div>
               <p className="text-xs text-gray-500 mt-2">
-                {recommendationStats?.recommendCount} of{' '}
-                {recommendationStats?.total} respondents
+                {recommendationStats?.recommendCount} of {recommendationStats?.total} respondents
               </p>
             </div>
 
@@ -275,12 +262,7 @@ const FeedbackSystemDemo = () => {
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex gap-1">
                       {[...Array(5)].map((_, i) => (
-                        <span
-                          key={i}
-                          className={`text-lg ${
-                            i < item.rating ? '⭐' : '☆'
-                          }`}
-                        />
+                        <span key={i} className={`text-lg ${i < item.rating ? "⭐" : "☆"}`} />
                       ))}
                     </div>
                     <span className="text-xs text-gray-500">
@@ -307,7 +289,7 @@ const FeedbackSystemDemo = () => {
 
                   {item.recommend !== undefined && (
                     <p className="text-xs text-gray-500">
-                      Would recommend: {item.recommend ? '✅ Yes' : '❌ No'}
+                      Would recommend: {item.recommend ? "✅ Yes" : "❌ No"}
                     </p>
                   )}
                 </motion.div>
@@ -331,7 +313,7 @@ const FeedbackSystemDemo = () => {
                 Star Rating - Different Sizes
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                {['sm', 'md', 'lg', 'xl'].map((size) => (
+                {["sm", "md", "lg", "xl"].map((size) => (
                   <div key={size} className="text-center">
                     <StarRating
                       rating={selectedRating}

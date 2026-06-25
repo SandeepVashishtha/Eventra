@@ -1,14 +1,13 @@
- 
 /**
  * Feedback Utilities
  * Handles localStorage-based feedback management for events
  */
 
-import { safeJsonParse } from './safeJsonParse';
-import { sanitizeHtml } from './sanitizeHtml';
-import { API_ENDPOINTS, apiUtils } from '../config/api';
+import { safeJsonParse } from "./safeJsonParse";
+import { sanitizeHtml } from "./sanitizeHtml";
+import { API_ENDPOINTS, apiUtils } from "../config/api";
 
-const FEEDBACK_STORAGE_KEY = 'eventra_feedback';
+const FEEDBACK_STORAGE_KEY = "eventra_feedback";
 
 export const fetchEventFeedback = async (eventId) => {
   const response = await apiUtils.get(API_ENDPOINTS.FEEDBACK.BY_EVENT(eventId));
@@ -34,9 +33,9 @@ export const getEventFeedback = (eventId) => {
   try {
     const allFeedback = safeJsonParse(localStorage.getItem(FEEDBACK_STORAGE_KEY), {});
     const rawFeedback = allFeedback[eventId] || [];
-    return rawFeedback.map(f => ({
+    return rawFeedback.map((f) => ({
       ...f,
-      comment: f.comment ? sanitizeHtml(f.comment) : f.comment
+      comment: f.comment ? sanitizeHtml(f.comment) : f.comment,
     }));
   } catch {
     //console.error('Error retrieving feedback:', error);
@@ -279,23 +278,23 @@ export const exportFeedbackAsCSV = (eventId) => {
     const feedback = getEventFeedback(eventId);
 
     if (feedback.length === 0) {
-      return '';
+      return "";
     }
 
-    const headers = ['Rating', 'Comment', 'Tags', 'Recommend', 'Submitted At'];
+    const headers = ["Rating", "Comment", "Tags", "Recommend", "Submitted At"];
     const rows = feedback.map((f) => [
-      f.rating || '',
-      `"${(f.comment || '').replace(/"/g, '""')}"`,
-      (f.tags || []).join(';'),
-      f.recommend !== undefined ? (f.recommend ? 'Yes' : 'No') : '',
+      f.rating || "",
+      `"${(f.comment || "").replace(/"/g, '""')}"`,
+      (f.tags || []).join(";"),
+      f.recommend !== undefined ? (f.recommend ? "Yes" : "No") : "",
       new Date(f.submittedAt).toLocaleString(),
     ]);
 
-    const csv = [headers, ...rows].map((row) => row.join(',')).join('\n');
+    const csv = [headers, ...rows].map((row) => row.join(",")).join("\n");
     return csv;
   } catch {
     //console.error('Error exporting feedback:', error);
-    return '';
+    return "";
   }
 };
 

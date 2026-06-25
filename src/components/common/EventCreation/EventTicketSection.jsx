@@ -1,4 +1,3 @@
-
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Trash2, Ticket } from "lucide-react";
 import CharacterCounter from "../CharacterCounter";
@@ -27,7 +26,11 @@ const TicketTierCard = ({ tier, index, onChange, onRemove, canRemove, errors }) 
       <div className="flex justify-between items-center">
         <h4 className="font-semibold text-gray-700 dark:text-gray-300">Tier {index + 1}</h4>
         {canRemove && (
-          <button type="button" onClick={() => onRemove(index)} className="text-red-500 hover:text-red-700 flex items-center gap-1 text-sm">
+          <button
+            type="button"
+            onClick={() => onRemove(index)}
+            className="text-red-500 hover:text-red-700 flex items-center gap-1 text-sm"
+          >
             <Trash2 className="w-4 h-4" /> Remove
           </button>
         )}
@@ -66,7 +69,9 @@ const TicketTierCard = ({ tier, index, onChange, onRemove, canRemove, errors }) 
         </div>
 
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Description
+          </label>
           <textarea
             value={tier.description}
             onChange={(e) => onChange(index, "description", e.target.value)}
@@ -83,7 +88,13 @@ const TicketTierCard = ({ tier, index, onChange, onRemove, canRemove, errors }) 
   );
 };
 
-const EventTicketSection = ({ formData, addTicketTier, removeTicketTier, updateTicketTier, errors }) => {
+const EventTicketSection = ({
+  formData,
+  addTicketTier,
+  removeTicketTier,
+  updateTicketTier,
+  errors,
+}) => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">

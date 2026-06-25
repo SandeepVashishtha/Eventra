@@ -15,29 +15,29 @@ const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 export const getCSRFEnforcementMode = () => {
   const validModes = ["strict", "warning", "disabled"];
-  
+
   const isProduction =
     (typeof process !== "undefined" && process.env?.NODE_ENV === "production") ||
     (typeof import.meta.env !== "undefined" && import.meta.env?.MODE === "production");
-  
+
   const defaultMode = isProduction ? "strict" : "warning";
-  
+
   let configuredMode;
   if (typeof import.meta.env !== "undefined" && import.meta.env.VITE_CSRF_ENFORCEMENT_MODE) {
     configuredMode = import.meta.env.VITE_CSRF_ENFORCEMENT_MODE;
   } else if (typeof process !== "undefined" && process.env?.VITE_CSRF_ENFORCEMENT_MODE) {
     configuredMode = process.env.VITE_CSRF_ENFORCEMENT_MODE;
   }
-  
+
   if (configuredMode && !validModes.includes(configuredMode)) {
     console.warn(
       `[CSRF] Invalid VITE_CSRF_ENFORCEMENT_MODE value: "${configuredMode}". ` +
-      `Valid values are: ${validModes.join(", ")}. ` +
-      `Falling back to environment default: "${defaultMode}".`
+        `Valid values are: ${validModes.join(", ")}. ` +
+        `Falling back to environment default: "${defaultMode}".`
     );
     return defaultMode;
   }
-  
+
   return configuredMode || defaultMode;
 };
 
@@ -129,9 +129,7 @@ export function csrfFetch(url, options = {}) {
 
     if (!token) {
       if (enforcementMode === "strict") {
-        return Promise.reject(
-          new Error(`CSRF token required for ${method} request to ${url}`),
-        );
+        return Promise.reject(new Error(`CSRF token required for ${method} request to ${url}`));
       }
     }
 

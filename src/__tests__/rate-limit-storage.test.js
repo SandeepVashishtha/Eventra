@@ -36,7 +36,7 @@ describe("Rate-Limit Storage (In-Memory)", () => {
     test("should reset counter after window expires", async () => {
       const { incrementWithExpiration } = await import("../../api/_lib/rate-limit-storage.js");
       await incrementWithExpiration("test-key", 100); // 100ms window
-      await new Promise(resolve => setTimeout(resolve, 150)); // Wait for expiration
+      await new Promise((resolve) => setTimeout(resolve, 150)); // Wait for expiration
       const result = await incrementWithExpiration("test-key", 100);
       assert.strictEqual(result.count, 1);
     });
@@ -60,7 +60,8 @@ describe("Rate-Limit Storage (In-Memory)", () => {
 
   describe("resetKey", () => {
     test("should reset a specific key", async () => {
-      const { incrementWithExpiration, resetKey } = await import("../../api/_lib/rate-limit-storage.js");
+      const { incrementWithExpiration, resetKey } =
+        await import("../../api/_lib/rate-limit-storage.js");
       await incrementWithExpiration("test-key", 60000);
       await incrementWithExpiration("test-key", 60000);
       await resetKey("test-key");
@@ -69,7 +70,8 @@ describe("Rate-Limit Storage (In-Memory)", () => {
     });
 
     test("should handle resetting non-existent key", async () => {
-      const { resetKey, incrementWithExpiration } = await import("../../api/_lib/rate-limit-storage.js");
+      const { resetKey, incrementWithExpiration } =
+        await import("../../api/_lib/rate-limit-storage.js");
       await assert.doesNotReject(resetKey("non-existent-key"));
       const result = await incrementWithExpiration("non-existent-key", 60000);
       assert.strictEqual(result.count, 1);
@@ -78,7 +80,8 @@ describe("Rate-Limit Storage (In-Memory)", () => {
 
   describe("clearAll", () => {
     test("should clear all keys", async () => {
-      const { incrementWithExpiration, clearAll } = await import("../../api/_lib/rate-limit-storage.js");
+      const { incrementWithExpiration, clearAll } =
+        await import("../../api/_lib/rate-limit-storage.js");
       await incrementWithExpiration("key1", 60000);
       await incrementWithExpiration("key2", 60000);
       await incrementWithExpiration("key3", 60000);
@@ -94,15 +97,18 @@ describe("Rate-Limit Storage (In-Memory)", () => {
 
   describe("Concurrent requests", () => {
     test("should handle concurrent increments correctly", async () => {
-      const { incrementWithExpiration, resetKey } = await import("../../api/_lib/rate-limit-storage.js");
+      const { incrementWithExpiration, resetKey } =
+        await import("../../api/_lib/rate-limit-storage.js");
       const key = "concurrent-key";
-      
+
       // Make 10 concurrent requests
-      const promises = Array(10).fill(null).map(() => incrementWithExpiration(key, 60000));
+      const promises = Array(10)
+        .fill(null)
+        .map(() => incrementWithExpiration(key, 60000));
       const results = await Promise.all(promises);
-      
+
       // All should succeed with counts 1-10
-      const counts = results.map(r => r.count);
+      const counts = results.map((r) => r.count);
       assert.ok(counts.includes(1));
       assert.ok(counts.includes(2));
       assert.ok(counts.includes(3));
@@ -113,7 +119,7 @@ describe("Rate-Limit Storage (In-Memory)", () => {
       assert.ok(counts.includes(8));
       assert.ok(counts.includes(9));
       assert.ok(counts.includes(10));
-      
+
       await resetKey(key);
     });
   });
@@ -151,7 +157,8 @@ describe("Rate-Limit Storage (Production Fail-Closed)", () => {
 
   test("should allow in-memory storage in test without distributed storage", async () => {
     process.env.NODE_ENV = "test";
-    const { incrementWithExpiration, clearAll } = await import("../../api/_lib/rate-limit-storage.js");
+    const { incrementWithExpiration, clearAll } =
+      await import("../../api/_lib/rate-limit-storage.js");
     await clearAll(); // Clear any existing state
     const result = await incrementWithExpiration("test-key", 60000);
     assert.strictEqual(result.count, 1);

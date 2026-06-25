@@ -1,6 +1,6 @@
 const LivePollPanel = ({ poll, onVote = () => {}, isSubmitting = false }) => {
   const activePoll = poll ?? {
-    question: 'No active poll',
+    question: "No active poll",
     options: [],
     duration: null,
   };

@@ -1,7 +1,16 @@
 import { useState, useEffect, useRef } from "react";
 import {
-  X, Briefcase, Mail, Globe, Linkedin, Twitter, Github,
-  Send, User, MessageSquare, ArrowLeft
+  X,
+  Briefcase,
+  Mail,
+  Globe,
+  Linkedin,
+  Twitter,
+  Github,
+  Send,
+  User,
+  MessageSquare,
+  ArrowLeft,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { safeJsonParse } from "../../utils/safeJsonParse";
@@ -22,10 +31,7 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
   /* ---------------- Lead Capture ---------------- */
   const captureLead = (action) => {
     try {
-      const existing = safeJsonParse(
-        localStorage.getItem("eventra_sponsor_leads"),
-        []
-      );
+      const existing = safeJsonParse(localStorage.getItem("eventra_sponsor_leads"), []);
 
       existing.push({
         name: user?.name || user?.email || "Guest",
@@ -37,10 +43,7 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
         }),
       });
 
-      localStorage.setItem(
-        "eventra_sponsor_leads",
-        JSON.stringify(existing)
-      );
+      localStorage.setItem("eventra_sponsor_leads", JSON.stringify(existing));
     } catch (e) {
       console.error("Lead capture failed", e);
     }
@@ -131,12 +134,11 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
   };
 
   const jobList = booth?.sponsorJobs
-    ? booth.sponsorJobs.split(",").map((j) => j.trim()).filter(Boolean)
-    : [
-        "Software Engineer Intern",
-        "Frontend Engineer (React)",
-        "Developer Advocate",
-      ];
+    ? booth.sponsorJobs
+        .split(",")
+        .map((j) => j.trim())
+        .filter(Boolean)
+    : ["Software Engineer Intern", "Frontend Engineer (React)", "Developer Advocate"];
 
   /* ================= UI ================= */
   return (
@@ -166,34 +168,38 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
           {!showChat ? (
             /* ================= INFO VIEW ================= */
             <div className="flex flex-col md:flex-row gap-6">
-
               {/* LEFT */}
               <div className="flex-1 space-y-4">
                 <h2 className="text-2xl font-bold">{booth.label}</h2>
 
-                <p className="text-sm text-gray-300">
-                  {booth.sponsorDescription}
-                </p>
+                <p className="text-sm text-gray-300">{booth.sponsorDescription}</p>
 
                 <div className="flex gap-3 text-gray-400">
                   {booth.sponsorWebsite && (
-                    <a href={booth.sponsorWebsite}><Globe size={16} /></a>
+                    <a href={booth.sponsorWebsite}>
+                      <Globe size={16} />
+                    </a>
                   )}
                   {booth.sponsorLinkedin && (
-                    <a href={booth.sponsorLinkedin}><Linkedin size={16} /></a>
+                    <a href={booth.sponsorLinkedin}>
+                      <Linkedin size={16} />
+                    </a>
                   )}
                   {booth.sponsorTwitter && (
-                    <a href={booth.sponsorTwitter}><Twitter size={16} /></a>
+                    <a href={booth.sponsorTwitter}>
+                      <Twitter size={16} />
+                    </a>
                   )}
                   {booth.sponsorGithub && (
-                    <a href={booth.sponsorGithub}><Github size={16} /></a>
+                    <a href={booth.sponsorGithub}>
+                      <Github size={16} />
+                    </a>
                   )}
                 </div>
               </div>
 
               {/* RIGHT */}
               <div className="w-full md:w-64 space-y-4">
-
                 <div className="bg-slate-900/60 p-4 rounded-xl">
                   <h3 className="text-xs uppercase text-gray-400 flex items-center gap-1">
                     <Briefcase size={12} /> Careers
@@ -201,10 +207,7 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
 
                   <div className="mt-2 space-y-2">
                     {jobList.map((job, i) => (
-                      <div
-                        key={i}
-                        className="flex justify-between text-xs bg-white/5 p-2 rounded"
-                      >
+                      <div key={i} className="flex justify-between text-xs bg-white/5 p-2 rounded">
                         {job}
                         <button
                           onClick={() => {
@@ -231,7 +234,6 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
           ) : (
             /* ================= CHAT VIEW ================= */
             <div className="flex flex-col bg-slate-950 border border-white/5 rounded-xl overflow-hidden">
-
               <div className="flex justify-between p-3 border-b border-white/5">
                 <button onClick={() => setShowChat(false)}>
                   <ArrowLeft size={14} /> Back
@@ -242,27 +244,18 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
                 {chatHistory.map((msg) => (
                   <div
                     key={msg.id}
-                    className={`flex gap-2 ${
-                      msg.sender === "user" ? "justify-end" : ""
-                    }`}
+                    className={`flex gap-2 ${msg.sender === "user" ? "justify-end" : ""}`}
                   >
-                    <div className="text-xs bg-white/5 p-2 rounded-xl">
-                      {msg.text}
-                    </div>
+                    <div className="text-xs bg-white/5 p-2 rounded-xl">{msg.text}</div>
                   </div>
                 ))}
 
-                {isTyping && (
-                  <p className="text-xs text-gray-400">Typing...</p>
-                )}
+                {isTyping && <p className="text-xs text-gray-400">Typing...</p>}
 
                 <div ref={chatEndRef} />
               </div>
 
-              <form
-                onSubmit={handleSendMessage}
-                className="flex gap-2 p-3 border-t border-white/5"
-              >
+              <form onSubmit={handleSendMessage} className="flex gap-2 p-3 border-t border-white/5">
                 <input
                   value={chatMessage}
                   onChange={(e) => setChatMessage(e.target.value)}

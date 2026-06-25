@@ -1,4 +1,13 @@
-import { ChevronDown, ChevronUp, MessageCircle, Github, Twitter, Youtube, Linkedin, Send } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  MessageCircle,
+  Github,
+  Twitter,
+  Youtube,
+  Linkedin,
+  Send,
+} from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, useAnimation } from "framer-motion";
 import useDocumentTitle from "../hooks/useDocumentTitle";
@@ -24,7 +33,7 @@ import {
   CalendarDays,
   GitMerge,
 } from "lucide-react";
- // ✅ Community icons
+// ✅ Community icons
 import { Link } from "react-router-dom"; // ✅ Import for navigation
 import { useTranslation } from "react-i18next";
 
@@ -182,7 +191,9 @@ const HelpCenter = () => {
 
       {/* Categories Section */}
       <section className="py-16 px-4 max-w-6xl mx-auto">
-        <h2 className="text-3xl font-semibold mb-8 text-center">{t("helpCenter.categoriesHeading")}</h2>
+        <h2 className="text-3xl font-semibold mb-8 text-center">
+          {t("helpCenter.categoriesHeading")}
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {categories.map((cat, idx) => (
             <motion.div key={idx} whileHover={{ scale: 1.05 }}>
@@ -248,7 +259,8 @@ const HelpCenter = () => {
             <a
               key={idx}
               href={item.link}
-              target="_blank" rel="noopener noreferrer"
+              target="_blank"
+              rel="noopener noreferrer"
               className="group bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 flex flex-col items-center text-center transition-transform transform hover:scale-105 hover:shadow-2xl"
             >
               <div
@@ -640,7 +652,15 @@ const HelpCenter = () => {
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link
                 to="/contact"
-                className="inline-flex items-center justify-center gap-2 bg-white text-black dark:bg-slate-900 dark:text-white" font-semibold px-8 py-4 rounded-full shadow-lg hover:bg-gray-100 transition-transform duration-300 
+                className="inline-flex items-center justify-center gap-2 bg-white text-black dark:bg-slate-900 dark:text-white"
+                font-semibold
+                px-8
+                py-4
+                rounded-full
+                shadow-lg
+                hover:bg-gray-100
+                transition-transform
+                duration-300
               >
                 <Mail size={20} /> {t("helpCenter.ctaContactUs")}
               </Link>

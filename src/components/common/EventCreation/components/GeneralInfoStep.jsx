@@ -21,7 +21,10 @@ const GeneralInfoStep = ({
         viewport={{ once: true }}
         transition={{ duration: prefersReducedMotion ? 0 : 0.5 }}
       >
-        <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <label
+          htmlFor="title"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+        >
           <FileText className="w-5 h-5 text-indigo-500 inline-block mr-2" aria-hidden="true" />
           Event Title <span className="text-red-600">*</span>
         </label>
@@ -50,7 +53,10 @@ const GeneralInfoStep = ({
         initial={{ opacity: 0, x: -20 }}
         whileInView={{ opacity: 1, x: 0 }}
         viewport={{ once: true }}
-        transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 0.1 }}
+        transition={{
+          duration: prefersReducedMotion ? 0 : 0.5,
+          delay: prefersReducedMotion ? 0 : 0.1,
+        }}
       >
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
           <Image className="w-5 h-5 text-indigo-500 inline-block mr-2" aria-hidden="true" />
@@ -58,15 +64,31 @@ const GeneralInfoStep = ({
         </label>
 
         <div className="relative flex flex-col items-start gap-3">
-          <input type="file" id="bannerUpload" accept="image/*" onChange={handleImageUpload} className="hidden" />
+          <input
+            type="file"
+            id="bannerUpload"
+            accept="image/*"
+            onChange={handleImageUpload}
+            className="hidden"
+          />
           {!formData.banner && (
-            <label htmlFor="bannerUpload" className="cursor-pointer inline-flex items-center justify-center gap-2 bg-black text-white px-4 py-2 rounded-2xl shadow-md hover:bg-zinc-800 transition-all text-sm">
+            <label
+              htmlFor="bannerUpload"
+              className="cursor-pointer inline-flex items-center justify-center gap-2 bg-black text-white px-4 py-2 rounded-2xl shadow-md hover:bg-zinc-800 transition-all text-sm"
+            >
               <Upload className="w-4 h-4" aria-hidden="true" /> Choose File
             </label>
           )}
 
           {formData.banner && (
-            <button type="button" onClick={() => setFormData(prev => ({ ...prev, banner: null, bannerPreview: null }))} className="text-red-500 text-sm flex items-center gap-2" aria-label="Remove uploaded banner">
+            <button
+              type="button"
+              onClick={() =>
+                setFormData((prev) => ({ ...prev, banner: null, bannerPreview: null }))
+              }
+              className="text-red-500 text-sm flex items-center gap-2"
+              aria-label="Remove uploaded banner"
+            >
               <X className="w-4 h-4" aria-hidden="true" /> Remove Banner
             </button>
           )}
@@ -88,7 +110,10 @@ const GeneralInfoStep = ({
 
       {/* Description */}
       <motion.div>
-        <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <label
+          htmlFor="description"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+        >
           <ClipboardList className="w-5 h-5 text-indigo-500 inline-block mr-2" aria-hidden="true" />
           Description <span className="text-red-600">*</span>
         </label>
@@ -110,7 +135,10 @@ const GeneralInfoStep = ({
 
       {/* Category */}
       <motion.div>
-        <label htmlFor="category" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <label
+          htmlFor="category"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+        >
           <Layers className="w-5 h-5 text-indigo-500 inline-block mr-2" aria-hidden="true" />
           Category <span className="text-red-600">*</span>
         </label>
@@ -125,10 +153,16 @@ const GeneralInfoStep = ({
         >
           <option value="">Select a category</option>
           {categories.map((cat) => (
-            <option key={cat.value} value={cat.value}>{cat.label}</option>
+            <option key={cat.value} value={cat.value}>
+              {cat.label}
+            </option>
           ))}
         </select>
-        {errors.category && <span id="category-error" className="text-red-500 text-sm mt-1">{errors.category}</span>}
+        {errors.category && (
+          <span id="category-error" className="text-red-500 text-sm mt-1">
+            {errors.category}
+          </span>
+        )}
       </motion.div>
     </>
   );

@@ -62,7 +62,7 @@ export function buildPaginatedUrl(baseUrl, page, size) {
   const [path, queryString] = urlWithoutHash.split("?");
 
   const params = new URLSearchParams(queryString || "");
-  
+
   // .set() explicitly overwrites existing keys, eliminating duplicate parameter pollution
   params.set("page", page);
   params.set("size", size);

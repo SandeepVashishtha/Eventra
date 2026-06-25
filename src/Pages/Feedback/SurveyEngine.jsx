@@ -28,7 +28,12 @@ const SurveyEngine = () => {
       type: "choice",
       questionText: "Which of the following topics did you find most valuable?",
       required: true,
-      options: ["Keynote Address", "Panel Discussions", "Hands-on Workshops", "Networking Sessions"],
+      options: [
+        "Keynote Address",
+        "Panel Discussions",
+        "Hands-on Workshops",
+        "Networking Sessions",
+      ],
     },
     {
       id: 3,
@@ -39,7 +44,6 @@ const SurveyEngine = () => {
     },
   ]);
 
-  
   const [activeTab, setActiveTab] = useState("builder"); // "builder" | "preview"
   const [confirmModal, setConfirmModal] = useState({
     open: false,
@@ -132,15 +136,11 @@ const SurveyEngine = () => {
       toast.warning("HTML elements detected. They will be automatically sanitized to prevent XSS.");
     }
     const sanitized = validate.sanitizeSurveyPrompt(text);
-    setQuestions(
-      questions.map((q) => (q.id === id ? { ...q, questionText: sanitized } : q))
-    );
+    setQuestions(questions.map((q) => (q.id === id ? { ...q, questionText: sanitized } : q)));
   };
 
   const toggleRequired = (id) => {
-    setQuestions(
-      questions.map((q) => (q.id === id ? { ...q, required: !q.required } : q))
-    );
+    setQuestions(questions.map((q) => (q.id === id ? { ...q, required: !q.required } : q)));
   };
 
   const deleteQuestion = (id) => {
@@ -211,7 +211,6 @@ const SurveyEngine = () => {
       return;
     }
 
-
     localStorage.removeItem("eventra_survey_builder_draft");
     toast.success("Survey published and active for attendees!");
   };
@@ -219,7 +218,6 @@ const SurveyEngine = () => {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
       <div className="max-w-5xl mx-auto">
-        
         {/* HEADER BAR */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
@@ -230,12 +228,13 @@ const SurveyEngine = () => {
               Build custom feedback forms, ratings, and questionnaires for your attendees.
             </p>
           </div>
-          
+
           <div className="flex items-center gap-3">
             <button
               onClick={handleSaveSurvey}
               className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 active:scale-95 transition-all cursor-pointer"
-             aria-label="button">
+              aria-label="button"
+            >
               <Save className="w-5 h-5" />
               Publish Survey
             </button>
@@ -286,20 +285,27 @@ const SurveyEngine = () => {
                       📝 Resume where you left off?
                     </h3>
                     <p className="text-xs text-indigo-700/80 dark:text-indigo-400/80 leading-relaxed">
-                      We found an unsaved survey template draft with {cachedDraft.questions?.length || 0} question(s) titled <strong className="font-semibold">&quot;{cachedDraft.title || "Untitled Survey"}&quot;</strong>.
+                      We found an unsaved survey template draft with{" "}
+                      {cachedDraft.questions?.length || 0} question(s) titled{" "}
+                      <strong className="font-semibold">
+                        &quot;{cachedDraft.title || "Untitled Survey"}&quot;
+                      </strong>
+                      .
                     </p>
                   </div>
                   <div className="flex gap-2.5 shrink-0 w-full sm:w-auto">
                     <button
                       onClick={handleRestoreDraft}
                       className="flex-1 sm:flex-none px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white rounded-xl shadow-sm transition"
-                     aria-label="button">
+                      aria-label="button"
+                    >
                       Restore Template
                     </button>
                     <button
                       onClick={handleDiscardDraft}
                       className="flex-1 sm:flex-none px-4 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-350 dark:hover:bg-slate-750 text-xs font-bold text-slate-700 dark:text-slate-300 rounded-xl transition"
-                     aria-label="button">
+                      aria-label="button"
+                    >
                       Discard
                     </button>
                   </div>
@@ -334,7 +340,8 @@ const SurveyEngine = () => {
                       Your survey is currently empty.
                     </p>
                     <p className="text-slate-500 dark:text-slate-400 text-sm max-w-sm mx-auto mb-6">
-                      Add your first question using the builder controls below to start collecting feedback.
+                      Add your first question using the builder controls below to start collecting
+                      feedback.
                     </p>
                   </div>
                 ) : (
@@ -354,7 +361,7 @@ const SurveyEngine = () => {
                               {questionTypes.find((t) => t.value === question.type)?.label}
                             </span>
                           </div>
-                          
+
                           <input
                             type="text"
                             value={question.questionText}
@@ -362,7 +369,7 @@ const SurveyEngine = () => {
                             placeholder="Type your question prompt here..."
                             className="w-full text-lg font-semibold bg-transparent border-b border-slate-200 dark:border-slate-800 focus:border-indigo-500 outline-none pb-1 transition-all"
                           />
-                          
+
                           {/* REAL-TIME VALIDATION WARNINGS & COUNTERS */}
                           <div className="flex justify-between items-center text-[10px] font-semibold pt-1">
                             <div className="text-rose-500 flex items-center gap-1">
@@ -370,7 +377,9 @@ const SurveyEngine = () => {
                                 <span>⚠️ Reached character boundary limit (150 max)</span>
                               )}
                             </div>
-                            <span className={`text-[10px] ${question.questionText.length >= 140 ? "text-rose-500 font-extrabold" : "text-slate-400"}`}>
+                            <span
+                              className={`text-[10px] ${question.questionText.length >= 140 ? "text-rose-500 font-extrabold" : "text-slate-400"}`}
+                            >
                               {question.questionText.length} / 150
                             </span>
                           </div>
@@ -389,7 +398,7 @@ const SurveyEngine = () => {
                           >
                             <ArrowUp className="w-4 h-4" />
                           </button>
-                          
+
                           <button
                             onClick={() => moveQuestion(index, "down")}
                             disabled={index === questions.length - 1}
@@ -402,14 +411,14 @@ const SurveyEngine = () => {
                           >
                             <ArrowDown className="w-4 h-4" />
                           </button>
-                          
+
                           <button
                             id="ymjlwm"
                             onClick={() =>
                               setConfirmModal({
                                 open: true,
                                 type: "question",
-                                questionId: question.id
+                                questionId: question.id,
                               })
                             }
                             className="p-2.5 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all cursor-pointer ml-1"
@@ -450,7 +459,14 @@ const SurveyEngine = () => {
                                   </div>
                                 </div>
                                 <button
-                                  onClick={() => setConfirmModal({ open: true, type: "option", questionId: question.id, optionIndex: optIdx }) }
+                                  onClick={() =>
+                                    setConfirmModal({
+                                      open: true,
+                                      type: "option",
+                                      questionId: question.id,
+                                      optionIndex: optIdx,
+                                    })
+                                  }
                                   className="text-slate-400 hover:text-red-500 p-1 self-start"
                                 >
                                   <Trash2 className="w-4 h-4" />
@@ -471,7 +487,8 @@ const SurveyEngine = () => {
                       {/* RATING SCALE EXPLANATION */}
                       {question.type === "rating" && (
                         <div className="pl-9 text-xs text-slate-400 dark:text-slate-500">
-                          Displays a responsive, screen-reader optimized 5-star rating matrix with hover animations.
+                          Displays a responsive, screen-reader optimized 5-star rating matrix with
+                          hover animations.
                         </div>
                       )}
 
@@ -584,7 +601,8 @@ const SurveyEngine = () => {
                 <button
                   disabled
                   className="px-6 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 font-semibold cursor-not-allowed text-sm"
-                 aria-label="button">
+                  aria-label="button"
+                >
                   Submit Survey Feedback
                 </button>
               </div>
@@ -601,63 +619,56 @@ const SurveyEngine = () => {
             </motion.div>
           )}
         </AnimatePresence>
-
       </div>
       {confirmModal.open && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-md p-6 animate-in fade-in zoom-in duration-200">
-      
-      <h2 className="text-xl font-bold text-slate-800 dark:text-white">
-        Confirm Delete
-      </h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-md p-6 animate-in fade-in zoom-in duration-200">
+            <h2 className="text-xl font-bold text-slate-800 dark:text-white">Confirm Delete</h2>
 
-      <p className="mt-3 text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-        {confirmModal.type === "question"
-          ? "Are you sure you want to delete this question? This action cannot be undone."
-          : "Are you sure you want to delete this option?"}
-      </p>
+            <p className="mt-3 text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+              {confirmModal.type === "question"
+                ? "Are you sure you want to delete this question? This action cannot be undone."
+                : "Are you sure you want to delete this option?"}
+            </p>
 
-      <div className="flex justify-end gap-3 mt-6">
-        <button
-          onClick={() =>
-            setConfirmModal({
-              open: false,
-              type: null,
-              questionId: null,
-              optionIndex: null
-            })
-          }
-          className="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-        >
-          Cancel
-        </button>
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() =>
+                  setConfirmModal({
+                    open: false,
+                    type: null,
+                    questionId: null,
+                    optionIndex: null,
+                  })
+                }
+                className="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                Cancel
+              </button>
 
-        <button
-          onClick={() => {
-            if (confirmModal.type === "question") {
-              deleteQuestion(confirmModal.questionId);
-            } else {
-              deleteOption(
-                confirmModal.questionId,
-                confirmModal.optionIndex
-              );
-            }
+              <button
+                onClick={() => {
+                  if (confirmModal.type === "question") {
+                    deleteQuestion(confirmModal.questionId);
+                  } else {
+                    deleteOption(confirmModal.questionId, confirmModal.optionIndex);
+                  }
 
-            setConfirmModal({
-              open: false,
-              type: null,
-              questionId: null,
-              optionIndex: null
-            });
-          }}
-          className="px-4 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white font-semibold transition-colors"
-        >
-          Delete
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+                  setConfirmModal({
+                    open: false,
+                    type: null,
+                    questionId: null,
+                    optionIndex: null,
+                  });
+                }}
+                className="px-4 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white font-semibold transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from "react";
 
 /**
  * Calculates the relative luminance of a color.
@@ -6,16 +6,19 @@ import { useState, useEffect, useMemo } from 'react';
  * @returns {number} The relative luminance.
  */
 function getLuminance(hex) {
-  let color = hex.replace(/^#/, '');
+  let color = hex.replace(/^#/, "");
   if (color.length === 3) {
-    color = color.split('').map(c => c + c).join('');
+    color = color
+      .split("")
+      .map((c) => c + c)
+      .join("");
   }
-  
+
   const r8bit = parseInt(color.substring(0, 2), 16);
   const g8bit = parseInt(color.substring(2, 4), 16);
   const b8bit = parseInt(color.substring(4, 6), 16);
 
-  const [r, g, b] = [r8bit, g8bit, b8bit].map(c => {
+  const [r, g, b] = [r8bit, g8bit, b8bit].map((c) => {
     c = c / 255;
     return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
   });
@@ -51,10 +54,10 @@ export function useContrastChecker(bgColor, fgColor) {
       const bgLum = getLuminance(bgColor);
       const fgLum = getLuminance(fgColor);
       const ratio = getContrastRatio(bgLum, fgLum);
-      
+
       return {
         contrastRatio: Number(ratio.toFixed(2)),
-        isAccessible: ratio >= 4.5
+        isAccessible: ratio >= 4.5,
       };
     } catch (e) {
       // In case of invalid hex

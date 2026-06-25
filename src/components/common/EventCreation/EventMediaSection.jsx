@@ -1,15 +1,9 @@
-
 import { motion, AnimatePresence } from "framer-motion";
 import { ImageIcon, Upload, X, Plus } from "lucide-react";
 import { logger } from "../../../utils/logger";
 
 const MAX_BANNER_SIZE = 5 * 1024 * 1024; // 5MB
-const allowedTypes = [
-  "image/jpeg",
-  "image/jpg",
-  "image/png",
-  "image/webp",
-];
+const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
 const TagInput = ({ tags, onAdd, onRemove, newTag, setNewTag, placeholder = "Add a tag" }) => {
   const handleKeyDown = (e) => {
@@ -43,7 +37,7 @@ const TagInput = ({ tags, onAdd, onRemove, newTag, setNewTag, placeholder = "Add
           Add
         </button>
       </div>
-      
+
       <AnimatePresence mode="popLayout">
         <div className="flex flex-wrap gap-2">
           {tags.map((tag, index) => (
@@ -67,14 +61,14 @@ const TagInput = ({ tags, onAdd, onRemove, newTag, setNewTag, placeholder = "Add
   );
 };
 
-const EventMediaSection = ({ 
-  formData, 
-  setFormData, 
-  newTag, 
-  setNewTag, 
-  addTag, 
-  removeTag, 
-  setIsUploading 
+const EventMediaSection = ({
+  formData,
+  setFormData,
+  newTag,
+  setNewTag,
+  addTag,
+  removeTag,
+  setIsUploading,
 }) => {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -112,15 +106,20 @@ const EventMediaSection = ({
           <ImageIcon className="w-5 h-5 text-indigo-500 inline-block mr-2" />
           Event Banner
         </label>
-        
+
         <div className="relative group cursor-pointer">
           {formData.bannerPreview ? (
             <div className="relative aspect-video rounded-xl overflow-hidden border-2 border-indigo-500">
-              <img src={formData.bannerPreview} alt="Preview" className="w-full h-full object-cover"  loading="lazy" />
+              <img
+                src={formData.bannerPreview}
+                alt="Preview"
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
               <button
                 type="button"
                 onClick={() => {
-                  setFormData(prev => {
+                  setFormData((prev) => {
                     if (prev.bannerPreview && prev.bannerPreview.startsWith("blob:")) {
                       URL.revokeObjectURL(prev.bannerPreview);
                     }
@@ -143,15 +142,13 @@ const EventMediaSection = ({
       </div>
 
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-          Tags
-        </label>
-        <TagInput 
-          tags={formData.tags} 
-          onAdd={addTag} 
-          onRemove={removeTag} 
-          newTag={newTag} 
-          setNewTag={setNewTag} 
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Tags</label>
+        <TagInput
+          tags={formData.tags}
+          onAdd={addTag}
+          onRemove={removeTag}
+          newTag={newTag}
+          setNewTag={setNewTag}
         />
       </div>
     </div>

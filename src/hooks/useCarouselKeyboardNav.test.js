@@ -81,31 +81,23 @@ describe("useCarouselKeyboardNav", () => {
       useCarouselKeyboardNav({ onPrev, onNext, onFirst, onLast, onTogglePlay })
     );
     act(() => {
-      result.current.containerProps.onKeyDown(
-        makeKeyEvent(" ", childButton, container)
-      );
+      result.current.containerProps.onKeyDown(makeKeyEvent(" ", childButton, container));
     });
     expect(onTogglePlay).not.toHaveBeenCalled();
   });
 
   it("returns containerProps with tabIndex=0", () => {
-    const { result } = renderHook(() =>
-      useCarouselKeyboardNav({ onPrev, onNext })
-    );
+    const { result } = renderHook(() => useCarouselKeyboardNav({ onPrev, onNext }));
     expect(result.current.containerProps.tabIndex).toBe(0);
   });
 
   it("returns containerProps with aria-label", () => {
-    const { result } = renderHook(() =>
-      useCarouselKeyboardNav({ onPrev, onNext })
-    );
+    const { result } = renderHook(() => useCarouselKeyboardNav({ onPrev, onNext }));
     expect(result.current.containerProps["aria-label"]).toBeTruthy();
   });
 
   it("calls preventDefault on arrow keys", () => {
-    const { result } = renderHook(() =>
-      useCarouselKeyboardNav({ onPrev, onNext })
-    );
+    const { result } = renderHook(() => useCarouselKeyboardNav({ onPrev, onNext }));
     const event = makeKeyEvent("ArrowLeft");
     act(() => {
       result.current.containerProps.onKeyDown(event);

@@ -1,4 +1,3 @@
-
 /**
  * Escapes all special RegExp metacharacters in a string so it can be used
  * safely inside `new RegExp(...)` without causing a SyntaxError or a

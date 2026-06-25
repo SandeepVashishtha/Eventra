@@ -26,19 +26,31 @@ function TableRow({ c, rank, badge, streak, index }) {
               rank === 1
                 ? "bg-yellow-400 text-yellow-950 shadow-md"
                 : rank === 2
-                ? "bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
-                : rank === 3
-                ? "bg-amber-600 text-white shadow-md"
-                : "bg-indigo-50/60 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400"
+                  ? "bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                  : rank === 3
+                    ? "bg-amber-600 text-white shadow-md"
+                    : "bg-indigo-50/60 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400"
             }`}
             aria-label={`Rank ${rank}`}
           >
             {rank}
           </span>
           <RankMovementIndicator liveDifference={streak?.rankDifference} />
-          {c.points > 1000 && <span className="ml-2 text-xs bg-linear-to-r from-blue-400 to-purple-500 text-white px-2 py-0.5 rounded-full font-bold shadow-sm">DIAMOND</span>}
-          {c.points > 500 && c.points <= 1000 && <span className="ml-2 text-xs bg-yellow-500 text-white px-2 py-0.5 rounded-full font-bold shadow-sm">GOLD</span>}
-          {c.points > 100 && c.points <= 500 && <span className="ml-2 text-xs bg-gray-400 text-white px-2 py-0.5 rounded-full font-bold shadow-sm">SILVER</span>}
+          {c.points > 1000 && (
+            <span className="ml-2 text-xs bg-linear-to-r from-blue-400 to-purple-500 text-white px-2 py-0.5 rounded-full font-bold shadow-sm">
+              DIAMOND
+            </span>
+          )}
+          {c.points > 500 && c.points <= 1000 && (
+            <span className="ml-2 text-xs bg-yellow-500 text-white px-2 py-0.5 rounded-full font-bold shadow-sm">
+              GOLD
+            </span>
+          )}
+          {c.points > 100 && c.points <= 500 && (
+            <span className="ml-2 text-xs bg-gray-400 text-white px-2 py-0.5 rounded-full font-bold shadow-sm">
+              SILVER
+            </span>
+          )}
         </div>
       </td>
 
@@ -51,8 +63,8 @@ function TableRow({ c, rank, badge, streak, index }) {
                   rank === 1
                     ? "from-yellow-400 to-amber-500"
                     : rank === 2
-                    ? "from-slate-200 to-zinc-400"
-                    : "from-amber-600 to-orange-500"
+                      ? "from-slate-200 to-zinc-400"
+                      : "from-amber-600 to-orange-500"
                 }`}
                 aria-hidden="true"
               />
@@ -64,13 +76,17 @@ function TableRow({ c, rank, badge, streak, index }) {
                 rank === 1
                   ? "border-yellow-400"
                   : rank === 2
-                  ? "border-slate-300"
-                  : rank === 3
-                  ? "border-amber-600"
-                  : "border-indigo-100 dark:border-slate-800"
+                    ? "border-slate-300"
+                    : rank === 3
+                      ? "border-amber-600"
+                      : "border-indigo-100 dark:border-slate-800"
               }`}
               src={c.avatar}
-              onError={(e) => { e.target.onerror = null; e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ccc'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/%3E%3C/svg%3E"; }}
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src =
+                  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ccc'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/%3E%3C/svg%3E";
+              }}
               alt={`${c.username}'s avatar`}
               width={40}
               height={40}
@@ -251,26 +267,24 @@ export default function LeaderboardTable({
         </thead>
         <tbody className="divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-900">
           <AnimatePresence mode="popLayout">
-            {currentContributors.length > 0 ? (
-              currentContributors.map((c, index) => {
-                const rank = ranksMap[c.username];
-                const badge = getAchievementBadge(rank, c.prs, c.points);
-                const streak = streaks[c.username];
+            {currentContributors.length > 0
+              ? currentContributors.map((c, index) => {
+                  const rank = ranksMap[c.username];
+                  const badge = getAchievementBadge(rank, c.prs, c.points);
+                  const streak = streaks[c.username];
 
-                return (
-                  <TableRow
-                    key={c.username}
-                    c={c}
-                    rank={rank}
-                    badge={badge}
-                    streak={streak}
-                    index={index}
-                  />
-                );
-              })
-            ) : (
-              renderEmpty()
-            )}
+                  return (
+                    <TableRow
+                      key={c.username}
+                      c={c}
+                      rank={rank}
+                      badge={badge}
+                      streak={streak}
+                      index={index}
+                    />
+                  );
+                })
+              : renderEmpty()}
           </AnimatePresence>
         </tbody>
       </table>
@@ -284,13 +298,18 @@ export default function LeaderboardTable({
       className="overflow-hidden rounded-4xl border border-slate-200/70 dark:border-slate-800/70 bg-white/90 dark:bg-slate-900/90 shadow-[0_24px_70px_rgba(15,23,42,0.08)] dark:shadow-[0_24px_70px_rgba(0,0,0,0.3)] backdrop-blur-xl"
       aria-labelledby="leaderboard-table-title"
     >
-      <h2 id="leaderboard-table-title" className="sr-only">Contributor Rankings</h2>
+      <h2 id="leaderboard-table-title" className="sr-only">
+        Contributor Rankings
+      </h2>
 
       {error ? renderError() : loading ? renderLoading() : renderTable()}
 
       <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/60 px-6 py-3">
         {lastUpdated && (
-          <time className="text-xs font-medium text-slate-500 dark:text-slate-400" dateTime={lastUpdated}>
+          <time
+            className="text-xs font-medium text-slate-500 dark:text-slate-400"
+            dateTime={lastUpdated}
+          >
             {lastUpdated}
           </time>
         )}

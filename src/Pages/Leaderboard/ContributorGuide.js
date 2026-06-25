@@ -30,7 +30,11 @@ import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 // Static data moved outside component to prevent re-creation on every render
 const COMMANDS = [
-  { id: "clone", title: "Clone Repository", cmd: "git clone https://github.com/sandeepvashishtha/Eventra.git" },
+  {
+    id: "clone",
+    title: "Clone Repository",
+    cmd: "git clone https://github.com/sandeepvashishtha/Eventra.git",
+  },
   { id: "branch", title: "Create Branch", cmd: "git checkout -b feature/your-feature" },
   { id: "add", title: "Stage Changes", cmd: "git add ." },
   { id: "commit", title: "Commit Changes", cmd: 'git commit -m "Describe your changes"' },
@@ -38,44 +42,234 @@ const COMMANDS = [
 ];
 
 const FAQS = [
-  { icon: GitBranch, color: "text-sky-400", bg: "bg-sky-500/10", question: "What is a fork?", answer: "A fork is your personal copy of the repository where you can safely make changes without affecting the original project." },
-  { icon: GitPullRequest, color: "text-emerald-400", bg: "bg-emerald-500/10", question: "What is a pull request?", answer: "A pull request is a way to propose your changes and request that they be reviewed and merged into the main project." },
-  { icon: FileText, color: "text-violet-400", bg: "bg-violet-500/10", question: "How should I name branches?", answer: "Use descriptive names like 'feature/login' or 'fix/header-bug' to indicate the purpose of the branch clearly." },
-  { icon: Users, color: "text-rose-400", bg: "bg-rose-500/10", question: "Can I contribute without coding?", answer: "Yes! Contributions can include improving documentation, design, accessibility, testing, or community support." },
-  { icon: HelpCircle, color: "text-amber-400", bg: "bg-amber-500/10", question: "Where can I ask for help?", answer: "You can open a discussion in the repository, raise an issue, or join our community chat to get assistance." },
-  { icon: HelpCircle, color: "text-orange-400", bg: "bg-orange-500/10", question: "Do I need prior open-source experience?", answer: "Not at all! Beginners are welcome — open-source is a great way to learn and grow your skills." },
-  { icon: FileText, color: "text-sky-400", bg: "bg-sky-500/10", question: "How do I report a bug?", answer: "You can report bugs by creating a new issue in the repository. Be sure to include steps to reproduce the problem and screenshots if possible." },
-  { icon: Users, color: "text-red-400", bg: "bg-red-500/10", question: "How do I find beginner-friendly issues?", answer: "Look for labels like 'good first issue' or 'beginner-friendly' in the issues tab of the repository." },
-  { icon: GitBranch, color: "text-teal-400", bg: "bg-teal-500/10", question: "Should I work on an issue without assignment?", answer: "It's best to comment on the issue and ask to be assigned before starting. This avoids duplicate efforts." },
-  { icon: GitPullRequest, color: "text-cyan-400", bg: "bg-cyan-500/10", question: "What happens after I open a pull request?", answer: "Your pull request will be reviewed by maintainers or contributors. They may suggest changes before it gets merged into the main branch." },
+  {
+    icon: GitBranch,
+    color: "text-sky-400",
+    bg: "bg-sky-500/10",
+    question: "What is a fork?",
+    answer:
+      "A fork is your personal copy of the repository where you can safely make changes without affecting the original project.",
+  },
+  {
+    icon: GitPullRequest,
+    color: "text-emerald-400",
+    bg: "bg-emerald-500/10",
+    question: "What is a pull request?",
+    answer:
+      "A pull request is a way to propose your changes and request that they be reviewed and merged into the main project.",
+  },
+  {
+    icon: FileText,
+    color: "text-violet-400",
+    bg: "bg-violet-500/10",
+    question: "How should I name branches?",
+    answer:
+      "Use descriptive names like 'feature/login' or 'fix/header-bug' to indicate the purpose of the branch clearly.",
+  },
+  {
+    icon: Users,
+    color: "text-rose-400",
+    bg: "bg-rose-500/10",
+    question: "Can I contribute without coding?",
+    answer:
+      "Yes! Contributions can include improving documentation, design, accessibility, testing, or community support.",
+  },
+  {
+    icon: HelpCircle,
+    color: "text-amber-400",
+    bg: "bg-amber-500/10",
+    question: "Where can I ask for help?",
+    answer:
+      "You can open a discussion in the repository, raise an issue, or join our community chat to get assistance.",
+  },
+  {
+    icon: HelpCircle,
+    color: "text-orange-400",
+    bg: "bg-orange-500/10",
+    question: "Do I need prior open-source experience?",
+    answer:
+      "Not at all! Beginners are welcome — open-source is a great way to learn and grow your skills.",
+  },
+  {
+    icon: FileText,
+    color: "text-sky-400",
+    bg: "bg-sky-500/10",
+    question: "How do I report a bug?",
+    answer:
+      "You can report bugs by creating a new issue in the repository. Be sure to include steps to reproduce the problem and screenshots if possible.",
+  },
+  {
+    icon: Users,
+    color: "text-red-400",
+    bg: "bg-red-500/10",
+    question: "How do I find beginner-friendly issues?",
+    answer:
+      "Look for labels like 'good first issue' or 'beginner-friendly' in the issues tab of the repository.",
+  },
+  {
+    icon: GitBranch,
+    color: "text-teal-400",
+    bg: "bg-teal-500/10",
+    question: "Should I work on an issue without assignment?",
+    answer:
+      "It's best to comment on the issue and ask to be assigned before starting. This avoids duplicate efforts.",
+  },
+  {
+    icon: GitPullRequest,
+    color: "text-cyan-400",
+    bg: "bg-cyan-500/10",
+    question: "What happens after I open a pull request?",
+    answer:
+      "Your pull request will be reviewed by maintainers or contributors. They may suggest changes before it gets merged into the main branch.",
+  },
 ];
 
 const CONTRIBUTION_TYPES = [
-  { title: "Bug Fixes", icon: Target, gradient: "from-rose-500 to-pink-500", description: "Identify bugs from issues tagged 'bug' and submit a PR with a clear explanation and test cases if possible.", example: "Fix header alignment issue in responsive view." },
-  { title: "Features", icon: Rocket, gradient: "from-blue-500 to-indigo-500", description: "Add a new feature or improve an existing one. Make sure to follow existing patterns and code structure.", example: "Add dark mode toggle button with smooth animation." },
-  { title: "Documentation", icon: FileText, gradient: "from-emerald-500 to-teal-500", description: "Improve README, add examples, or clarify instructions for contributors.", example: "Add step-by-step setup instructions with screenshots." },
-  { title: "Testing", icon: CheckCircle, gradient: "from-amber-500 to-orange-500", description: "Write unit or integration tests for existing code to ensure stability and prevent regressions.", example: "Add Jest tests for new login form components." },
-  { title: "Design & UI", icon: Sparkles, gradient: "from-violet-500 to-purple-500", description: "Improve the user interface, accessibility, or design consistency across the project.", example: "Update button styles for better contrast and hover effects." },
-  { title: "Code Refactoring", icon: Code2, gradient: "from-cyan-500 to-sky-500", description: "Improve existing code structure without changing functionality to make it cleaner, readable, and maintainable.", example: "Simplify a complex function or restructure components." },
+  {
+    title: "Bug Fixes",
+    icon: Target,
+    gradient: "from-rose-500 to-pink-500",
+    description:
+      "Identify bugs from issues tagged 'bug' and submit a PR with a clear explanation and test cases if possible.",
+    example: "Fix header alignment issue in responsive view.",
+  },
+  {
+    title: "Features",
+    icon: Rocket,
+    gradient: "from-blue-500 to-indigo-500",
+    description:
+      "Add a new feature or improve an existing one. Make sure to follow existing patterns and code structure.",
+    example: "Add dark mode toggle button with smooth animation.",
+  },
+  {
+    title: "Documentation",
+    icon: FileText,
+    gradient: "from-emerald-500 to-teal-500",
+    description: "Improve README, add examples, or clarify instructions for contributors.",
+    example: "Add step-by-step setup instructions with screenshots.",
+  },
+  {
+    title: "Testing",
+    icon: CheckCircle,
+    gradient: "from-amber-500 to-orange-500",
+    description:
+      "Write unit or integration tests for existing code to ensure stability and prevent regressions.",
+    example: "Add Jest tests for new login form components.",
+  },
+  {
+    title: "Design & UI",
+    icon: Sparkles,
+    gradient: "from-violet-500 to-purple-500",
+    description:
+      "Improve the user interface, accessibility, or design consistency across the project.",
+    example: "Update button styles for better contrast and hover effects.",
+  },
+  {
+    title: "Code Refactoring",
+    icon: Code2,
+    gradient: "from-cyan-500 to-sky-500",
+    description:
+      "Improve existing code structure without changing functionality to make it cleaner, readable, and maintainable.",
+    example: "Simplify a complex function or restructure components.",
+  },
 ];
 
 const IMPORTANT_FILES = [
-  { name: ".env", icon: Lock, color: "text-rose-400", bg: "bg-rose-500/10", purpose: "Stores environment variables like API keys. Do not commit this file." },
-  { name: ".env.example", icon: Lock, color: "text-amber-400", bg: "bg-amber-500/10", purpose: "Example environment file. Use it as a template to create your own .env file." },
-  { name: ".gitignore", icon: Code2, color: "text-sky-400", bg: "bg-sky-500/10", purpose: "Lists files/folders to ignore in Git commits, like node_modules or .env." },
-  { name: "LICENSE", icon: FileText, color: "text-emerald-400", bg: "bg-emerald-500/10", purpose: "Contains the license details for the project." },
-  { name: "README.md", icon: Clipboard, color: "text-violet-400", bg: "bg-violet-500/10", purpose: "Main documentation for the project. Explains setup, usage, and contribution guide." },
-  { name: "package.json", icon: Package, color: "text-indigo-400", bg: "bg-indigo-500/10", purpose: "Contains project metadata, scripts, and dependencies." },
-  { name: "package-lock.json", icon: CheckCircle, color: "text-teal-400", bg: "bg-teal-500/10", purpose: "Locks dependency versions for consistent installs across environments." },
-  { name: "vercel.json", icon: Server, color: "text-cyan-400", bg: "bg-cyan-500/10", purpose: "Configuration file for deployment on Vercel." },
-  { name: "CODE_OF_CONDUCT.md", icon: FileText, color: "text-pink-400", bg: "bg-pink-500/10", purpose: "Outlines expected behavior and guidelines for contributors." },
+  {
+    name: ".env",
+    icon: Lock,
+    color: "text-rose-400",
+    bg: "bg-rose-500/10",
+    purpose: "Stores environment variables like API keys. Do not commit this file.",
+  },
+  {
+    name: ".env.example",
+    icon: Lock,
+    color: "text-amber-400",
+    bg: "bg-amber-500/10",
+    purpose: "Example environment file. Use it as a template to create your own .env file.",
+  },
+  {
+    name: ".gitignore",
+    icon: Code2,
+    color: "text-sky-400",
+    bg: "bg-sky-500/10",
+    purpose: "Lists files/folders to ignore in Git commits, like node_modules or .env.",
+  },
+  {
+    name: "LICENSE",
+    icon: FileText,
+    color: "text-emerald-400",
+    bg: "bg-emerald-500/10",
+    purpose: "Contains the license details for the project.",
+  },
+  {
+    name: "README.md",
+    icon: Clipboard,
+    color: "text-violet-400",
+    bg: "bg-violet-500/10",
+    purpose: "Main documentation for the project. Explains setup, usage, and contribution guide.",
+  },
+  {
+    name: "package.json",
+    icon: Package,
+    color: "text-indigo-400",
+    bg: "bg-indigo-500/10",
+    purpose: "Contains project metadata, scripts, and dependencies.",
+  },
+  {
+    name: "package-lock.json",
+    icon: CheckCircle,
+    color: "text-teal-400",
+    bg: "bg-teal-500/10",
+    purpose: "Locks dependency versions for consistent installs across environments.",
+  },
+  {
+    name: "vercel.json",
+    icon: Server,
+    color: "text-cyan-400",
+    bg: "bg-cyan-500/10",
+    purpose: "Configuration file for deployment on Vercel.",
+  },
+  {
+    name: "CODE_OF_CONDUCT.md",
+    icon: FileText,
+    color: "text-pink-400",
+    bg: "bg-pink-500/10",
+    purpose: "Outlines expected behavior and guidelines for contributors.",
+  },
 ];
 
 const WORKFLOW_STEPS = [
-  { step: 1, icon: FileText, color: "from-sky-500 to-blue-500", title: "Pick an Issue", description: "Browse issues labeled 'good-first-issue' or 'bug'. Choose one you can work on." },
-  { step: 2, icon: GitBranch, color: "from-emerald-500 to-teal-500", title: "Create a Branch", description: "Use descriptive branch names like 'feature/add-login' or 'fix/navbar-bug'." },
-  { step: 3, icon: CheckCircle, color: "from-amber-500 to-orange-500", title: "Make Changes & Commit", description: "Make your code changes locally. Commit with clear messages like 'Add login form component'." },
-  { step: 4, icon: ArrowRightCircle, color: "from-rose-500 to-pink-500", title: "Open a Pull Request", description: "Push your branch to GitHub and open a PR following the project template." },
+  {
+    step: 1,
+    icon: FileText,
+    color: "from-sky-500 to-blue-500",
+    title: "Pick an Issue",
+    description: "Browse issues labeled 'good-first-issue' or 'bug'. Choose one you can work on.",
+  },
+  {
+    step: 2,
+    icon: GitBranch,
+    color: "from-emerald-500 to-teal-500",
+    title: "Create a Branch",
+    description: "Use descriptive branch names like 'feature/add-login' or 'fix/navbar-bug'.",
+  },
+  {
+    step: 3,
+    icon: CheckCircle,
+    color: "from-amber-500 to-orange-500",
+    title: "Make Changes & Commit",
+    description:
+      "Make your code changes locally. Commit with clear messages like 'Add login form component'.",
+  },
+  {
+    step: 4,
+    icon: ArrowRightCircle,
+    color: "from-rose-500 to-pink-500",
+    title: "Open a Pull Request",
+    description: "Push your branch to GitHub and open a PR following the project template.",
+  },
 ];
 
 // Reusable Terminal-style Command Block
@@ -149,7 +343,6 @@ const ContributorGuide = () => {
   return (
     <div className="min-h-screen bg-linear-to-br from-zinc-50 via-white to-blue-50/30 dark:from-zinc-950 dark:via-zinc-900 dark:to-blue-950/20 pt-24 pb-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto space-y-16">
-        
         {/* HERO SECTION */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -185,7 +378,7 @@ const ContributorGuide = () => {
             {/* Decorative glow */}
             <div className="absolute -top-20 -right-20 w-64 h-64 bg-violet-500/20 rounded-full blur-3xl"></div>
             <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl"></div>
-            
+
             <div className="relative">
               <div className="flex items-center justify-center gap-3 mb-3">
                 <Trophy className="text-amber-400" size={28} />
@@ -194,7 +387,8 @@ const ContributorGuide = () => {
                 </h2>
               </div>
               <p className="text-zinc-400 text-center max-w-xl mx-auto mb-10">
-                Every contribution earns you arena points, rank metrics, and elite profile achievements.
+                Every contribution earns you arena points, rank metrics, and elite profile
+                achievements.
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -206,11 +400,26 @@ const ContributorGuide = () => {
                   </h3>
                   <ul className="space-y-3">
                     {[
-                      { label: "Level 1 GSSoC PR", points: "3", color: "text-sky-400 bg-sky-500/10" },
-                      { label: "Level 2 GSSoC PR", points: "7", color: "text-violet-400 bg-violet-500/10" },
-                      { label: "Level 3 GSSoC PR", points: "10", color: "text-amber-400 bg-amber-500/10" },
+                      {
+                        label: "Level 1 GSSoC PR",
+                        points: "3",
+                        color: "text-sky-400 bg-sky-500/10",
+                      },
+                      {
+                        label: "Level 2 GSSoC PR",
+                        points: "7",
+                        color: "text-violet-400 bg-violet-500/10",
+                      },
+                      {
+                        label: "Level 3 GSSoC PR",
+                        points: "10",
+                        color: "text-amber-400 bg-amber-500/10",
+                      },
                     ].map((item, i) => (
-                      <li key={i} className="flex items-center justify-between py-2 border-b border-zinc-800/50 last:border-0">
+                      <li
+                        key={i}
+                        className="flex items-center justify-between py-2 border-b border-zinc-800/50 last:border-0"
+                      >
                         <span className="text-sm text-zinc-300">{item.label}</span>
                         <span className={`px-2.5 py-1 rounded-md text-xs font-bold ${item.color}`}>
                           +{item.points} pts
@@ -241,10 +450,30 @@ const ContributorGuide = () => {
                   </h3>
                   <div className="grid grid-cols-2 gap-3">
                     {[
-                      { title: "Grandmaster", sub: "Rank #1", emoji: "👑", gradient: "from-amber-500/20 to-orange-500/20 border-amber-500/30" },
-                      { title: "Champion", sub: "Rank #2", emoji: "⭐", gradient: "from-zinc-500/20 to-slate-500/20 border-zinc-500/30" },
-                      { title: "Elite", sub: "Rank #3", emoji: "🏅", gradient: "from-orange-500/20 to-red-500/20 border-orange-500/30" },
-                      { title: "PR Machine", sub: "10+ PRs", emoji: "🔥", gradient: "from-indigo-500/20 to-violet-500/20 border-indigo-500/30" },
+                      {
+                        title: "Grandmaster",
+                        sub: "Rank #1",
+                        emoji: "👑",
+                        gradient: "from-amber-500/20 to-orange-500/20 border-amber-500/30",
+                      },
+                      {
+                        title: "Champion",
+                        sub: "Rank #2",
+                        emoji: "⭐",
+                        gradient: "from-zinc-500/20 to-slate-500/20 border-zinc-500/30",
+                      },
+                      {
+                        title: "Elite",
+                        sub: "Rank #3",
+                        emoji: "🏅",
+                        gradient: "from-orange-500/20 to-red-500/20 border-orange-500/30",
+                      },
+                      {
+                        title: "PR Machine",
+                        sub: "10+ PRs",
+                        emoji: "🔥",
+                        gradient: "from-indigo-500/20 to-violet-500/20 border-indigo-500/30",
+                      },
                     ].map((badge, i) => (
                       <div
                         key={i}
@@ -284,7 +513,9 @@ const ContributorGuide = () => {
                   transition={{ duration, delay: index * 0.05 }}
                   className="group relative bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-xl hover:shadow-zinc-200/50 dark:hover:shadow-zinc-950/50 transition-all"
                 >
-                  <div className={`inline-flex p-3 rounded-xl bg-linear-to-br ${type.gradient} mb-4 shadow-lg`}>
+                  <div
+                    className={`inline-flex p-3 rounded-xl bg-linear-to-br ${type.gradient} mb-4 shadow-lg`}
+                  >
                     <Icon className="text-white" size={22} />
                   </div>
                   <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">
@@ -295,7 +526,9 @@ const ContributorGuide = () => {
                   </p>
                   <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800">
                     <p className="text-xs text-zinc-500 dark:text-zinc-500">
-                      <span className="font-semibold text-zinc-700 dark:text-zinc-300">💡 Example:</span>{" "}
+                      <span className="font-semibold text-zinc-700 dark:text-zinc-300">
+                        💡 Example:
+                      </span>{" "}
                       {type.example}
                     </p>
                   </div>
@@ -312,7 +545,7 @@ const ContributorGuide = () => {
               <File className="text-emerald-500" size={24} />
               <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 dark:text-white">
                 Important Files
-            </h2>
+              </h2>
             </div>
             <p className="text-zinc-600 dark:text-zinc-400">
               Key files you&apos;ll interact with during development
@@ -382,7 +615,9 @@ const ContributorGuide = () => {
                   >
                     {/* Timeline dot */}
                     <div className="relative z-10 shrink-0">
-                      <div className={`w-12 h-12 rounded-full bg-linear-to-br ${item.color} flex items-center justify-center shadow-lg ring-4 ring-white dark:ring-zinc-950`}>
+                      <div
+                        className={`w-12 h-12 rounded-full bg-linear-to-br ${item.color} flex items-center justify-center shadow-lg ring-4 ring-white dark:ring-zinc-950`}
+                      >
                         <span className="text-white font-bold text-lg">{item.step}</span>
                       </div>
                     </div>
@@ -421,10 +656,12 @@ const ContributorGuide = () => {
                 <div className="w-3 h-3 rounded-full bg-amber-500/70"></div>
                 <div className="w-3 h-3 rounded-full bg-emerald-500/70"></div>
               </div>
-              <span className="text-xs font-medium text-zinc-400 ml-2">pull-request-template.md</span>
+              <span className="text-xs font-medium text-zinc-400 ml-2">
+                pull-request-template.md
+              </span>
             </div>
             <pre className="p-5 text-sm text-zinc-300 font-mono overflow-x-auto leading-relaxed">
-{`### Description
+              {`### Description
 Explain what your PR does.
 
 ### Type of Change
@@ -551,9 +788,7 @@ Closes #<issue_number>`}
             <div className="inline-flex p-3 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10 mb-6">
               <Rocket className="text-white" size={28} />
             </div>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Ready to Contribute?
-            </h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Ready to Contribute?</h2>
             <p className="text-zinc-300 text-lg mb-8 max-w-xl mx-auto">
               Take the first step and submit your pull request today!
             </p>
@@ -571,7 +806,6 @@ Closes #<issue_number>`}
             </motion.a>
           </div>
         </motion.section>
-
       </div>
     </div>
   );

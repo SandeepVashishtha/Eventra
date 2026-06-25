@@ -250,8 +250,8 @@ const RegistrationsTab = ({
                             View Ticket
                           </button>
                         )}
-                      {(item.type === 'Event' || item.type === 'Hackathon') &&
-                        item.status === 'Completed' && (
+                      {(item.type === "Event" || item.type === "Hackathon") &&
+                        item.status === "Completed" && (
                           <CertificateDownload
                             eventName={item.title}
                             eventDate={item.date}

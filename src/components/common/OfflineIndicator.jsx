@@ -71,9 +71,7 @@ const OfflineIndicator = () => {
               border: isOffline
                 ? "1px solid rgba(239,68,68,0.3)"
                 : "1px solid rgba(16,185,129,0.3)",
-              background: isOffline
-                ? "rgba(30,0,0,0.82)"
-                : "rgba(0,30,18,0.82)",
+              background: isOffline ? "rgba(30,0,0,0.82)" : "rgba(0,30,18,0.82)",
               color: isOffline ? "#fca5a5" : "#6ee7b7",
               userSelect: "none",
             }}

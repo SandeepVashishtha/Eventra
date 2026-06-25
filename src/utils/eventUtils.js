@@ -88,9 +88,7 @@ export const isEventRegistrationClosed = (eventOrStatus) => {
   // closed-check. This prevents the caller from accidentally treating
   // "scheduled" or any other unknown backend value as "open" by default.
   const status =
-    typeof eventOrStatus === "string"
-      ? mapStatusKey(eventOrStatus)
-      : getEventStatus(eventOrStatus);
+    typeof eventOrStatus === "string" ? mapStatusKey(eventOrStatus) : getEventStatus(eventOrStatus);
 
   return status === "past" || status === "ended" || status === "cancelled";
 };

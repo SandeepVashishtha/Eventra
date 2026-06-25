@@ -4,11 +4,7 @@ import { Check } from "lucide-react";
  * CategoryFilter Component
  * Multi-select filter for event categories
  */
-const CategoryFilter = ({
-  categories,
-  selectedCategories,
-  onCategoryChange,
-}) => {
+const CategoryFilter = ({ categories, selectedCategories, onCategoryChange }) => {
   const toggleCategory = (categoryId) => {
     if (selectedCategories.includes(categoryId)) {
       onCategoryChange(selectedCategories.filter((id) => id !== categoryId));
@@ -19,9 +15,7 @@ const CategoryFilter = ({
 
   return (
     <div className="space-y-2">
-      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
-        Categories
-      </h3>
+      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Categories</h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {categories.map((category) => (
           <button

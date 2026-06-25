@@ -42,10 +42,7 @@ const pad = (n) => String(n).padStart(2, "0");
 
 // Compact version for EventCard
 export const CountdownBadge = ({ date, time, timezone }) => {
-  const deadline = useMemo(
-    () => resolveDeadline(date, time, timezone),
-    [date, time, timezone]
-  );
+  const deadline = useMemo(() => resolveDeadline(date, time, timezone), [date, time, timezone]);
   const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft(deadline));
 
   useEffect(() => {
@@ -80,10 +77,7 @@ export const CountdownBadge = ({ date, time, timezone }) => {
 
 // Large version for EventDetails
 const CountdownTimer = ({ date, time, timezone }) => {
-  const deadline = useMemo(
-    () => resolveDeadline(date, time, timezone),
-    [date, time, timezone]
-  );
+  const deadline = useMemo(() => resolveDeadline(date, time, timezone), [date, time, timezone]);
   const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft(deadline));
   // Announce time remaining every 60 seconds (not every second) to avoid spamming screen readers
   const [announceTime, setAnnounceTime] = useState(0);

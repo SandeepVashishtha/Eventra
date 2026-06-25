@@ -4,13 +4,13 @@ import { ROLES } from "../config/roles.js";
 /**
  * Normalizes user roles into a clean uppercase array format.
  * Maps legacy role names (such as "EVENT_MANAGER") to the canonical roles (such as "ORGANIZER").
- * 
+ *
  * @param {Array|string} roles - Raw roles list or single role string from user session.
  * @returns {string[]} Normalized uppercase roles list.
  */
 export const normalizeRoles = (roles = []) => {
   const rawList = Array.isArray(roles) ? roles : [roles];
-  
+
   return rawList
     .filter((r) => r !== null && r !== undefined)
     .map((role) => {
@@ -25,7 +25,7 @@ export const normalizeRoles = (roles = []) => {
 
 /**
  * Custom React hook that derives granular permission verification helpers from the user profile.
- * 
+ *
  * @param {Object|null} user - The authenticated user object containing roles and permission lists.
  * @returns {Object} A collection of authorization states and query functions.
  */
@@ -45,16 +45,14 @@ export function usePermissions(user) {
     if (!permissions) {
       return [];
     }
-    return Array.isArray(permissions)
-      ? permissions.map((p) => String(p))
-      : [String(permissions)];
+    return Array.isArray(permissions) ? permissions.map((p) => String(p)) : [String(permissions)];
   }, [permissions]);
 
   // 3. Compile and memoize final helper utility functions
   return useMemo(() => {
     /**
      * Checks if the user is assigned a specific role.
-     * 
+     *
      * @param {string} name - The role name (case-insensitive).
      * @returns {boolean} True if the user has the role.
      */
@@ -65,7 +63,7 @@ export function usePermissions(user) {
 
     /**
      * Checks if the user possesses an explicit permission.
-     * 
+     *
      * @param {string} perm - The permission identifier (e.g. 'event:write').
      * @returns {boolean} True if the user has the permission.
      */
@@ -76,7 +74,7 @@ export function usePermissions(user) {
 
     /**
      * Checks if the user has at least one of the specified roles.
-     * 
+     *
      * @param {...string} names - List of role names to check.
      * @returns {boolean} True if any role matches.
      */
@@ -87,7 +85,7 @@ export function usePermissions(user) {
 
     /**
      * Checks if the user has at least one of the specified permissions.
-     * 
+     *
      * @param {...string} perms - List of permission keys to check.
      * @returns {boolean} True if any permission matches.
      */

@@ -14,26 +14,14 @@
 import useWaitlist from "../../hooks/useWaitlist";
 import { Loader2, ListOrdered, X, Clock } from "lucide-react";
 
-export default function WaitlistButton({
-  eventId,
-  capacity,
-  attendees,
-  className = "",
-}) {
-  const {
-    isOnWaitlist,
-    position,
-    estimatedWait,
-    isLoading,
-    error,
-    join,
-    leave,
-  } = useWaitlist(eventId, { capacity, attendees });
+export default function WaitlistButton({ eventId, capacity, attendees, className = "" }) {
+  const { isOnWaitlist, position, estimatedWait, isLoading, error, join, leave } = useWaitlist(
+    eventId,
+    { capacity, attendees }
+  );
 
   const isFull =
-    typeof capacity === "number" &&
-    typeof attendees === "number" &&
-    attendees >= capacity;
+    typeof capacity === "number" && typeof attendees === "number" && attendees >= capacity;
 
   // Do not render if the event still has open slots
   if (!isFull && !isOnWaitlist) return null;
@@ -82,8 +70,8 @@ export default function WaitlistButton({
             ? "Leaving…"
             : "Joining…"
           : isOnWaitlist
-          ? "Leave Waitlist"
-          : "Join Waitlist"}
+            ? "Leave Waitlist"
+            : "Join Waitlist"}
       </button>
 
       {/* Error message */}

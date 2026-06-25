@@ -15,7 +15,6 @@ const readRegistrations = () => {
     }
     return migrated;
   } catch (error) {
-     
     console.warn("[RegisterUtils] Failed to read registrations:", error);
     return {};
   }
@@ -28,8 +27,6 @@ const writeRegistrations = (registrations) => {
     // localStorage may be unavailable or full; keep the UI functional.
   }
 };
-
-
 
 /**
  * localStorage is used here only for UX hints.

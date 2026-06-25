@@ -1,15 +1,7 @@
 import { memo } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import {
-  Bell,
-  Calendar,
-  Megaphone,
-  Shield,
-  UserPlus,
-  Trophy,
-  Trash2,
-} from "lucide-react";
+import { Bell, Calendar, Megaphone, Shield, UserPlus, Trophy, Trash2 } from "lucide-react";
 import { NOTIFICATION_CATEGORIES } from "../../utils/notificationPreferences";
 import { getRelativeTime } from "../../utils/relativeTime";
 
@@ -33,8 +25,7 @@ const NotificationItem = ({
   const category = notification.category || "system";
   const Icon = CATEGORY_ICONS[category] || Bell;
   const isUnread = !notification.isRead;
-  const categoryLabel =
-    NOTIFICATION_CATEGORIES[category]?.label || "Notification";
+  const categoryLabel = NOTIFICATION_CATEGORIES[category]?.label || "Notification";
 
   const content = (
     <>

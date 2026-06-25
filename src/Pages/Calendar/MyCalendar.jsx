@@ -23,12 +23,37 @@ import SkeletonCalendar from "../../components/common/SkeletonCalendar";
 
 // Category Configuration Map
 const CATEGORIES = [
-  { id: "all", label: "All Events", color: "from-indigo-500 to-indigo-600", glow: "shadow-indigo-500/20" },
+  {
+    id: "all",
+    label: "All Events",
+    color: "from-indigo-500 to-indigo-600",
+    glow: "shadow-indigo-500/20",
+  },
   { id: "gssoc", label: "GSSoC", color: "from-pink-500 to-rose-600", glow: "shadow-pink-500/20" },
-  { id: "ai/web3", label: "AI / Web3", color: "from-purple-500 to-violet-600", glow: "shadow-purple-500/20" },
-  { id: "workshops", label: "Workshops", color: "from-cyan-500 to-blue-600", glow: "shadow-cyan-500/20" },
-  { id: "hackathons", label: "Hackathons", color: "from-emerald-500 to-teal-600", glow: "shadow-emerald-500/20" },
-  { id: "community", label: "Community", color: "from-amber-500 to-orange-600", glow: "shadow-amber-500/20" },
+  {
+    id: "ai/web3",
+    label: "AI / Web3",
+    color: "from-purple-500 to-violet-600",
+    glow: "shadow-purple-500/20",
+  },
+  {
+    id: "workshops",
+    label: "Workshops",
+    color: "from-cyan-500 to-blue-600",
+    glow: "shadow-cyan-500/20",
+  },
+  {
+    id: "hackathons",
+    label: "Hackathons",
+    color: "from-emerald-500 to-teal-600",
+    glow: "shadow-emerald-500/20",
+  },
+  {
+    id: "community",
+    label: "Community",
+    color: "from-amber-500 to-orange-600",
+    glow: "shadow-amber-500/20",
+  },
 ];
 
 const MyCalendar = () => {
@@ -46,8 +71,18 @@ const MyCalendar = () => {
   const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
 
   const monthNames = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December",
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
 
   const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -68,13 +103,17 @@ const MyCalendar = () => {
   const prevMonth = () => {
     const newDate = new Date(currentYear, currentMonth - 1, 1);
     setCurrentDate(newDate);
-    setAnnouncement(`Switched to calendar view for ${monthNames[newDate.getMonth()]} ${newDate.getFullYear()}`);
+    setAnnouncement(
+      `Switched to calendar view for ${monthNames[newDate.getMonth()]} ${newDate.getFullYear()}`
+    );
   };
 
   const nextMonth = () => {
     const newDate = new Date(currentYear, currentMonth + 1, 1);
     setCurrentDate(newDate);
-    setAnnouncement(`Switched to calendar view for ${monthNames[newDate.getMonth()]} ${newDate.getFullYear()}`);
+    setAnnouncement(
+      `Switched to calendar view for ${monthNames[newDate.getMonth()]} ${newDate.getFullYear()}`
+    );
   };
 
   const handleDayKeyDown = (e, day) => {
@@ -120,11 +159,11 @@ const MyCalendar = () => {
 
   const getCategoryBorderColor = (theme) => {
     const colorMap = {
-      "gssoc": "#ec4899",
+      gssoc: "#ec4899",
       "ai/web3": "#a855f7",
-      "workshops": "#06b6d4",
-      "hackathons": "#10b981",
-      "community": "#f59e0b",
+      workshops: "#06b6d4",
+      hackathons: "#10b981",
+      community: "#f59e0b",
     };
     return colorMap[theme.id] || "#6366f1";
   };
@@ -193,7 +232,6 @@ const MyCalendar = () => {
       </div>
 
       <div className="max-w-6xl mx-auto space-y-8">
-
         {/* HEADER */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 border-b border-slate-200 dark:border-slate-800/80 pb-6">
           <div>
@@ -205,7 +243,8 @@ const MyCalendar = () => {
               Registrations Calendar
             </h1>
             <p className="text-slate-500 dark:text-slate-400 mt-2 text-xs sm:text-sm max-w-2xl leading-relaxed">
-              Organize, filter, and synchronize your GSSoC registrations. Switch between calendar matrices and interactive chronological timelines.
+              Organize, filter, and synchronize your GSSoC registrations. Switch between calendar
+              matrices and interactive chronological timelines.
             </p>
           </div>
 
@@ -333,7 +372,9 @@ const MyCalendar = () => {
                         className="grid grid-cols-7 gap-2.5 text-center text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest"
                       >
                         {daysOfWeek.map((day) => (
-                          <div key={day} role="columnheader">{day}</div>
+                          <div key={day} role="columnheader">
+                            {day}
+                          </div>
                         ))}
                       </div>
 
@@ -369,11 +410,13 @@ const MyCalendar = () => {
                                 selected
                                   ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-600/10"
                                   : isToday
-                                  ? "bg-indigo-50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-900 text-indigo-700 dark:text-indigo-400 font-extrabold"
-                                  : "bg-white dark:bg-slate-900 border-slate-200/60 dark:border-slate-800/70 hover:border-slate-300 dark:hover:border-slate-700"
+                                    ? "bg-indigo-50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-900 text-indigo-700 dark:text-indigo-400 font-extrabold"
+                                    : "bg-white dark:bg-slate-900 border-slate-200/60 dark:border-slate-800/70 hover:border-slate-300 dark:hover:border-slate-700"
                               }`}
                             >
-                              <span className={`text-[11px] font-black ${selected ? "text-white" : "text-slate-400 dark:text-slate-500"}`}>
+                              <span
+                                className={`text-[11px] font-black ${selected ? "text-white" : "text-slate-400 dark:text-slate-500"}`}
+                              >
                                 {day}
                               </span>
                               {dayEvents.length > 0 && (
@@ -423,16 +466,26 @@ const MyCalendar = () => {
                                 <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300">
                                   {item.event.category || "General"}
                                 </span>
-                                <h4 title={item.event.title} className="font-extrabold text-sm text-slate-900 dark:text-slate-100 mt-1 line-clamp-2 break-words min-w-0">
+                                <h4
+                                  title={item.event.title}
+                                  className="font-extrabold text-sm text-slate-900 dark:text-slate-100 mt-1 line-clamp-2 break-words min-w-0"
+                                >
                                   {item.event.title}
                                 </h4>
                                 <div className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500 mt-2">
                                   <Clock className="w-3.5 h-3.5" aria-hidden="true" />
-                                  <span>{new Date(item.event.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                                  <span>
+                                    {new Date(item.event.date).toLocaleTimeString([], {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })}
+                                  </span>
                                 </div>
                                 <div className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500 mt-1">
                                   <MapPin className="w-3.5 h-3.5" aria-hidden="true" />
-                                  <span className="truncate max-w-[200px]">{item.event.location || "Virtual / Online"}</span>
+                                  <span className="truncate max-w-[200px]">
+                                    {item.event.location || "Virtual / Online"}
+                                  </span>
                                 </div>
                               </div>
                               <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60 mt-3">
@@ -451,7 +504,10 @@ const MyCalendar = () => {
                                   rel="noopener noreferrer"
                                   className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-[11px] font-bold text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 transition"
                                 >
-                                  <ExternalLink className="w-3 h-3 text-indigo-500" aria-hidden="true" />
+                                  <ExternalLink
+                                    className="w-3 h-3 text-indigo-500"
+                                    aria-hidden="true"
+                                  />
                                   Google Calendar
                                 </a>
                               </div>
@@ -459,7 +515,10 @@ const MyCalendar = () => {
                           ))
                         ) : (
                           <div className="flex flex-col items-center justify-center py-10 text-center space-y-3">
-                            <AlertCircle className="w-8 h-8 text-slate-300 dark:text-slate-600" aria-hidden="true" />
+                            <AlertCircle
+                              className="w-8 h-8 text-slate-300 dark:text-slate-600"
+                              aria-hidden="true"
+                            />
                             <p className="text-slate-400 text-xs leading-relaxed max-w-[200px]">
                               No registrations scheduled for this date.
                             </p>
@@ -486,106 +545,135 @@ const MyCalendar = () => {
 
                       <div className="space-y-8">
                         {timelineEvents.map((item, index) => {
-                        const theme = getCategoryTheme(item.event?.category);
-                        const eventDate = new Date(item.event.date);
+                          const theme = getCategoryTheme(item.event?.category);
+                          const eventDate = new Date(item.event.date);
 
-                        return (
-                          <motion.div
-                            key={item.eventId}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: index * 0.08, type: "spring", stiffness: 150 }}
-                            className="relative flex flex-col md:flex-row gap-5 items-start"
-                          >
-                            {/* Timeline node */}
-                            <div
-                              className="absolute -left-[30px] sm:-left-[37px] top-1.5 w-5 h-5 rounded-full bg-white dark:bg-slate-950 border-4 flex items-center justify-center z-10"
-                              style={{ borderColor: getCategoryBorderColor(theme) }}
-                            >
-                              <span className={`w-1.5 h-1.5 rounded-full bg-linear-to-r ${theme.color} animate-ping`} />
-                            </div>
-
-                            {/* Date label */}
-                            <div className="w-[110px] shrink-0 text-left md:text-right pt-0.5">
-                              <span className="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                                {eventDate.toLocaleDateString("en-US", { weekday: "short" })}
-                              </span>
-                              <span className="block text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-none mt-1">
-                                {eventDate.getDate()} {eventDate.toLocaleDateString("en-US", { month: "short" })}
-                              </span>
-                              <span className="block text-[10px] font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-wider mt-1.5">
-                                {eventDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                              </span>
-                            </div>
-
-                            {/* Event card */}
+                          return (
                             <motion.div
-                              whileHover={{ y: -4, scale: 1.01 }}
-                              className="flex-1 w-full bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/40 p-5 rounded-3xl shadow-sm hover:shadow-lg hover:border-indigo-400/40 dark:hover:border-indigo-500/30 transition-all duration-300"
+                              key={item.eventId}
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: index * 0.08, type: "spring", stiffness: 150 }}
+                              className="relative flex flex-col md:flex-row gap-5 items-start"
                             >
-                              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                                <div className="space-y-1.5">
-                                  <div className="flex items-center gap-2.5">
-                                    <span className={`px-2.5 py-0.5 rounded-lg text-[9px] font-black uppercase bg-linear-to-r ${theme.color} text-white`}>
-                                      {item.event.category || "General"}
-                                    </span>
-                                    <span className="text-[11px] font-semibold text-slate-400">
-                                      Registered: {new Date(item.registeredAt).toLocaleDateString()}
-                                    </span>
-                                  </div>
-                                  <h4 title={item.event.title} className="font-extrabold text-base text-slate-900 dark:text-slate-100 line-clamp-2 break-words min-w-0">
-                                    {item.event.title}
-                                  </h4>
-                                  <p className="text-xs text-slate-500 max-w-xl truncate mt-1">
-                                    {item.event.description}
-                                  </p>
-                                  <div className="flex flex-wrap items-center gap-4 text-xs text-slate-400 mt-2">
-                                    <span className="flex items-center gap-1">
-                                      <CalendarIcon className="w-3.5 h-3.5 text-indigo-500" aria-hidden="true" />
-                                      {new Date(item.event.date).toLocaleDateString()}
-                                    </span>
-                                    <span className="flex items-center gap-1">
-                                      <Clock className="w-3.5 h-3.5 text-indigo-500" aria-hidden="true" />
-                                      {new Date(item.event.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                                    </span>
-                                    <span className="flex items-center gap-1">
-                                      <MapPin className="w-3.5 h-3.5 text-indigo-500" aria-hidden="true" />
-                                      {item.event.location || "Online"}
-                                    </span>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-2 mt-4 sm:mt-0">
-                                  <button
-                                    type="button"
-                                    onClick={() => downloadICSFile(item.event)}
-                                    aria-label={`Download ICS for ${item.event.title}`}
-                                    className="p-2.5 rounded-xl bg-white hover:bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 shadow-sm"
-                                    title="Download .ics file"
-                                  >
-                                    <Download className="w-4 h-4" aria-hidden="true" />
-                                  </button>
-                                  <a
-                                    href={generateGoogleCalendarLink(item.event)}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow-sm flex items-center gap-1.5"
-                                  >
-                                    <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
-                                    Sync Google
-                                  </a>
-                                </div>
+                              {/* Timeline node */}
+                              <div
+                                className="absolute -left-[30px] sm:-left-[37px] top-1.5 w-5 h-5 rounded-full bg-white dark:bg-slate-950 border-4 flex items-center justify-center z-10"
+                                style={{ borderColor: getCategoryBorderColor(theme) }}
+                              >
+                                <span
+                                  className={`w-1.5 h-1.5 rounded-full bg-linear-to-r ${theme.color} animate-ping`}
+                                />
                               </div>
+
+                              {/* Date label */}
+                              <div className="w-[110px] shrink-0 text-left md:text-right pt-0.5">
+                                <span className="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                                  {eventDate.toLocaleDateString("en-US", { weekday: "short" })}
+                                </span>
+                                <span className="block text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-none mt-1">
+                                  {eventDate.getDate()}{" "}
+                                  {eventDate.toLocaleDateString("en-US", { month: "short" })}
+                                </span>
+                                <span className="block text-[10px] font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-wider mt-1.5">
+                                  {eventDate.toLocaleTimeString([], {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </span>
+                              </div>
+
+                              {/* Event card */}
+                              <motion.div
+                                whileHover={{ y: -4, scale: 1.01 }}
+                                className="flex-1 w-full bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/40 p-5 rounded-3xl shadow-sm hover:shadow-lg hover:border-indigo-400/40 dark:hover:border-indigo-500/30 transition-all duration-300"
+                              >
+                                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                                  <div className="space-y-1.5">
+                                    <div className="flex items-center gap-2.5">
+                                      <span
+                                        className={`px-2.5 py-0.5 rounded-lg text-[9px] font-black uppercase bg-linear-to-r ${theme.color} text-white`}
+                                      >
+                                        {item.event.category || "General"}
+                                      </span>
+                                      <span className="text-[11px] font-semibold text-slate-400">
+                                        Registered:{" "}
+                                        {new Date(item.registeredAt).toLocaleDateString()}
+                                      </span>
+                                    </div>
+                                    <h4
+                                      title={item.event.title}
+                                      className="font-extrabold text-base text-slate-900 dark:text-slate-100 line-clamp-2 break-words min-w-0"
+                                    >
+                                      {item.event.title}
+                                    </h4>
+                                    <p className="text-xs text-slate-500 max-w-xl truncate mt-1">
+                                      {item.event.description}
+                                    </p>
+                                    <div className="flex flex-wrap items-center gap-4 text-xs text-slate-400 mt-2">
+                                      <span className="flex items-center gap-1">
+                                        <CalendarIcon
+                                          className="w-3.5 h-3.5 text-indigo-500"
+                                          aria-hidden="true"
+                                        />
+                                        {new Date(item.event.date).toLocaleDateString()}
+                                      </span>
+                                      <span className="flex items-center gap-1">
+                                        <Clock
+                                          className="w-3.5 h-3.5 text-indigo-500"
+                                          aria-hidden="true"
+                                        />
+                                        {new Date(item.event.date).toLocaleTimeString([], {
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                        })}
+                                      </span>
+                                      <span className="flex items-center gap-1">
+                                        <MapPin
+                                          className="w-3.5 h-3.5 text-indigo-500"
+                                          aria-hidden="true"
+                                        />
+                                        {item.event.location || "Online"}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2 mt-4 sm:mt-0">
+                                    <button
+                                      type="button"
+                                      onClick={() => downloadICSFile(item.event)}
+                                      aria-label={`Download ICS for ${item.event.title}`}
+                                      className="p-2.5 rounded-xl bg-white hover:bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 shadow-sm"
+                                      title="Download .ics file"
+                                    >
+                                      <Download className="w-4 h-4" aria-hidden="true" />
+                                    </button>
+                                    <a
+                                      href={generateGoogleCalendarLink(item.event)}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow-sm flex items-center gap-1.5"
+                                    >
+                                      <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
+                                      Sync Google
+                                    </a>
+                                  </div>
+                                </div>
+                              </motion.div>
                             </motion.div>
-                          </motion.div>
-                        );
-                      })}
-                    </div>
-                  </>
+                          );
+                        })}
+                      </div>
+                    </>
                   ) : (
                     <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-                      <CalendarIcon className="w-12 h-12 text-slate-300 dark:text-slate-700 animate-pulse" aria-hidden="true" />
+                      <CalendarIcon
+                        className="w-12 h-12 text-slate-300 dark:text-slate-700 animate-pulse"
+                        aria-hidden="true"
+                      />
                       <div>
-                        <h4 className="font-extrabold text-slate-800 dark:text-slate-200">No Active Registrations</h4>
+                        <h4 className="font-extrabold text-slate-800 dark:text-slate-200">
+                          No Active Registrations
+                        </h4>
                         <p className="text-slate-400 text-sm leading-relaxed max-w-sm mt-1 mx-auto">
                           Explore Eventra events and register to build your schedule!
                         </p>

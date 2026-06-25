@@ -1,7 +1,18 @@
 import { useState, useEffect } from "react";
 import {
-  BarChart, Users, Link as LinkIcon, MessageSquare,
-  Save, Layout, Shield, Mail, Briefcase, Info, Download, Trash2, CheckCircle2
+  BarChart,
+  Users,
+  Link as LinkIcon,
+  MessageSquare,
+  Save,
+  Layout,
+  Shield,
+  Mail,
+  Briefcase,
+  Info,
+  Download,
+  Trash2,
+  CheckCircle2,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { safeJsonParse } from "../../utils/safeJsonParse";
@@ -13,7 +24,7 @@ const DEFAULT_SETTINGS = {
   sponsorLogo: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=80",
   sponsorContact: "careers@mycompany.com",
   sponsorDescription: "We build the future of tech. Come join our amazing team of developers!",
-  sponsorJobs: "Senior Frontend Engineer, Backend Developer, UI/UX Designer"
+  sponsorJobs: "Senior Frontend Engineer, Backend Developer, UI/UX Designer",
 };
 
 const SponsorDashboard = () => {
@@ -21,10 +32,10 @@ const SponsorDashboard = () => {
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [leads, setLeads] = useState([]);
   const [analytics, setAnalytics] = useState({
-  boothVisits: 0,
-  qrScans: 0,
-  engagementRate: 0,
-});
+    boothVisits: 0,
+    qrScans: 0,
+    engagementRate: 0,
+  });
   const [isSaving, setIsSaving] = useState(false);
   const saveTimeoutRef = useRef(null);
 
@@ -41,58 +52,54 @@ const SponsorDashboard = () => {
     chatInitiations: Math.floor(Math.random() * 100) + 20,
   });
 
- useEffect(() => {
-  // Load custom settings
-  const saved = localStorage.getItem("eventra_sponsor_settings");
+  useEffect(() => {
+    // Load custom settings
+    const saved = localStorage.getItem("eventra_sponsor_settings");
 
-  if (saved) {
-    try {
-      setSettings(safeJsonParse(saved, {}));
-    } catch (e) {
-      console.error("Failed to parse sponsor settings", e);
+    if (saved) {
+      try {
+        setSettings(safeJsonParse(saved, {}));
+      } catch (e) {
+        console.error("Failed to parse sponsor settings", e);
+      }
     }
-  }
 
-  // Load captured leads
-  const savedLeads = localStorage.getItem("eventra_sponsor_leads");
+    // Load captured leads
+    const savedLeads = localStorage.getItem("eventra_sponsor_leads");
 
-  if (savedLeads) {
-    try {
-      const parsedLeads = safeJsonParse(savedLeads, []);
+    if (savedLeads) {
+      try {
+        const parsedLeads = safeJsonParse(savedLeads, []);
 
-      setLeads([...parsedLeads].reverse());
+        setLeads([...parsedLeads].reverse());
 
-      setAnalytics({
-        boothVisits: parsedLeads.length * 3,
-        qrScans: parsedLeads.length,
-        engagementRate:
-          parsedLeads.length > 0
-            ? (
-                (parsedLeads.length /
-                  (parsedLeads.length * 3)) *
-                100
-              ).toFixed(1)
-            : 0,
-      });
-    } catch (e) {
-      console.error(
-        "Failed to parse sponsor leads",
-        e
-      );
+        setAnalytics({
+          boothVisits: parsedLeads.length * 3,
+          qrScans: parsedLeads.length,
+          engagementRate:
+            parsedLeads.length > 0
+              ? ((parsedLeads.length / (parsedLeads.length * 3)) * 100).toFixed(1)
+              : 0,
+        });
+      } catch (e) {
+        console.error("Failed to parse sponsor leads", e);
+      }
     }
-  }
-}, []);
+  }, []);
 
   const handleSaveSettings = (e) => {
     e.preventDefault();
     setIsSaving(true);
-    
+
     saveTimeoutRef.current = setTimeout(() => {
       localStorage.setItem("eventra_sponsor_settings", JSON.stringify(settings));
       setIsSaving(false);
-      toast.success("Booth settings updated successfully! Changes will reflect in the Virtual Venue.", {
-        icon: <CheckCircle2 className="text-emerald-500" />
-      });
+      toast.success(
+        "Booth settings updated successfully! Changes will reflect in the Virtual Venue.",
+        {
+          icon: <CheckCircle2 className="text-emerald-500" />,
+        }
+      );
     }, 800);
   };
 
@@ -101,11 +108,12 @@ const SponsorDashboard = () => {
       toast.error("No leads available to export.");
       return;
     }
-    
-    const csvContent = "data:text/csv;charset=utf-8," 
-      + "Name,Action,Contact,Time\n"
-      + leads.map(l => `${l.name},${l.action},${l.contact},${l.time}`).join("\n");
-      
+
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      "Name,Action,Contact,Time\n" +
+      leads.map((l) => `${l.name},${l.action},${l.contact},${l.time}`).join("\n");
+
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -113,7 +121,7 @@ const SponsorDashboard = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
+
     toast.success(`Exported ${leads.length} leads successfully!`);
   };
 
@@ -133,7 +141,6 @@ const SponsorDashboard = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#07070c] text-slate-900 dark:text-white pb-12 transition-colors">
-      
       {/* Top Navigation / Header */}
       <div className="bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-white/10 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -144,23 +151,23 @@ const SponsorDashboard = () => {
               </div>
               <h1 className="text-xl font-extrabold tracking-tight">Sponsor Portal</h1>
             </div>
-            
+
             <div className="flex gap-2">
-              <button 
+              <button
                 onClick={() => setActiveTab("overview")}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                  activeTab === "overview" 
-                    ? "bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white" 
+                  activeTab === "overview"
+                    ? "bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white"
                     : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5"
                 }`}
               >
                 Overview & Leads
               </button>
-              <button 
+              <button
                 onClick={() => setActiveTab("customize")}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                  activeTab === "customize" 
-                    ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20" 
+                  activeTab === "customize"
+                    ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20"
                     : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5"
                 }`}
               >
@@ -172,7 +179,6 @@ const SponsorDashboard = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
-        
         {activeTab === "overview" && (
           <div className="space-y-8 animate-fade-in">
             {/* Analytics Cards */}
@@ -182,51 +188,49 @@ const SponsorDashboard = () => {
                 Real-Time Booth Analytics
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-3xl p-6 shadow-sm">
-    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
-      Booth Visits
-    </h3>
-    <p className="text-3xl font-black">
-      {analytics.boothVisits}
-    </p>
-  </div>
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-3xl p-6 shadow-sm">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+                    Booth Visits
+                  </h3>
+                  <p className="text-3xl font-black">{analytics.boothVisits}</p>
+                </div>
 
-  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-3xl p-6 shadow-sm">
-    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
-      QR Lead Scans
-    </h3>
-    <p className="text-3xl font-black">
-      {analytics.qrScans}
-    </p>
-  </div>
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-3xl p-6 shadow-sm">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+                    QR Lead Scans
+                  </h3>
+                  <p className="text-3xl font-black">{analytics.qrScans}</p>
+                </div>
 
-  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-3xl p-6 shadow-sm">
-    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
-      Engagement Rate
-    </h3>
-    <p className="text-3xl font-black">
-      {analytics.engagementRate}%
-    </p>
-  </div>
-</div>
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-3xl p-6 shadow-sm">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+                    Engagement Rate
+                  </h3>
+                  <p className="text-3xl font-black">{analytics.engagementRate}%</p>
+                </div>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-3xl p-6 shadow-sm relative overflow-hidden group">
                   <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl -mr-10 -mt-10" />
                   <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400 mb-4">
                     <Users size={16} />
-                    <span className="text-xs font-bold uppercase tracking-wider">Total Footfall</span>
+                    <span className="text-xs font-bold uppercase tracking-wider">
+                      Total Footfall
+                    </span>
                   </div>
                   <div className="text-4xl font-black">{stats.footfall}</div>
                   <div className="text-[10px] text-emerald-500 font-bold mt-2 flex items-center gap-1">
                     +12% from last hour
                   </div>
                 </div>
-                
+
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-3xl p-6 shadow-sm relative overflow-hidden group">
                   <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl -mr-10 -mt-10" />
                   <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400 mb-4">
                     <LinkIcon size={16} />
-                    <span className="text-xs font-bold uppercase tracking-wider">Job Links Clicked</span>
+                    <span className="text-xs font-bold uppercase tracking-wider">
+                      Job Links Clicked
+                    </span>
                   </div>
                   <div className="text-4xl font-black">{stats.jobClicks}</div>
                   <div className="text-[10px] text-emerald-500 font-bold mt-2 flex items-center gap-1">
@@ -238,7 +242,9 @@ const SponsorDashboard = () => {
                   <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl -mr-10 -mt-10" />
                   <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400 mb-4">
                     <MessageSquare size={16} />
-                    <span className="text-xs font-bold uppercase tracking-wider">Chat Initiations</span>
+                    <span className="text-xs font-bold uppercase tracking-wider">
+                      Chat Initiations
+                    </span>
                   </div>
                   <div className="text-4xl font-black">{stats.chatInitiations}</div>
                   <div className="text-[10px] text-slate-400 font-bold mt-2 flex items-center gap-1">
@@ -256,14 +262,14 @@ const SponsorDashboard = () => {
                   Collected Leads ({leads.length})
                 </h2>
                 <div className="flex gap-2">
-                  <button 
+                  <button
                     onClick={clearLeads}
                     className="px-3 py-1.5 rounded-xl border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors text-xs font-bold flex items-center gap-1.5"
                   >
                     <Trash2 size={12} />
                     Clear
                   </button>
-                  <button 
+                  <button
                     onClick={handleExportLeads}
                     className="px-3 py-1.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors text-xs font-bold flex items-center gap-1.5 shadow-sm"
                   >
@@ -287,7 +293,10 @@ const SponsorDashboard = () => {
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-white/5">
                         {leads.map((lead, idx) => (
-                          <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors">
+                          <tr
+                            key={idx}
+                            className="hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors"
+                          >
                             <td className="px-6 py-4 font-bold text-slate-900 dark:text-white flex items-center gap-3">
                               <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-black text-xs">
                                 {lead.name.substring(0, 2).toUpperCase()}
@@ -295,11 +304,13 @@ const SponsorDashboard = () => {
                               {lead.name}
                             </td>
                             <td className="px-6 py-4">
-                              <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                                lead.action.includes("Applied") 
-                                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20"
-                                  : "bg-purple-100 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400 border border-purple-200 dark:border-purple-500/20"
-                              }`}>
+                              <span
+                                className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                  lead.action.includes("Applied")
+                                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20"
+                                    : "bg-purple-100 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400 border border-purple-200 dark:border-purple-500/20"
+                                }`}
+                              >
                                 {lead.action}
                               </span>
                             </td>
@@ -319,9 +330,12 @@ const SponsorDashboard = () => {
                     <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500 mb-4">
                       <Users size={24} />
                     </div>
-                    <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1">No leads captured yet</h3>
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1">
+                      No leads captured yet
+                    </h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm">
-                      When attendees visit your virtual booth and apply for jobs or initiate chats, their information will appear here.
+                      When attendees visit your virtual booth and apply for jobs or initiate chats,
+                      their information will appear here.
                     </p>
                   </div>
                 )}
@@ -338,12 +352,15 @@ const SponsorDashboard = () => {
                 Booth Customization
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">
-                Update your virtual exhibition booth details. Changes will reflect instantly for all attendees visiting the Virtual Venue.
+                Update your virtual exhibition booth details. Changes will reflect instantly for all
+                attendees visiting the Virtual Venue.
               </p>
             </div>
 
-            <form onSubmit={handleSaveSettings} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
-              
+            <form
+              onSubmit={handleSaveSettings}
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-3xl p-6 md:p-8 shadow-sm space-y-6"
+            >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
@@ -354,7 +371,7 @@ const SponsorDashboard = () => {
                     type="text"
                     required
                     value={settings.label}
-                    onChange={(e) => setSettings({...settings, label: e.target.value})}
+                    onChange={(e) => setSettings({ ...settings, label: e.target.value })}
                     className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none transition-colors"
                   />
                 </div>
@@ -368,7 +385,7 @@ const SponsorDashboard = () => {
                     type="email"
                     required
                     value={settings.sponsorContact}
-                    onChange={(e) => setSettings({...settings, sponsorContact: e.target.value})}
+                    onChange={(e) => setSettings({ ...settings, sponsorContact: e.target.value })}
                     className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none transition-colors"
                   />
                 </div>
@@ -382,7 +399,11 @@ const SponsorDashboard = () => {
                 <div className="flex gap-4 items-center">
                   <div className="w-16 h-16 rounded-xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-white/10 overflow-hidden flex items-center justify-center shrink-0">
                     {settings.sponsorLogo ? (
-                      <img src={settings.sponsorLogo} alt="Logo Preview" className="w-full h-full object-contain" />
+                      <img
+                        src={settings.sponsorLogo}
+                        alt="Logo Preview"
+                        className="w-full h-full object-contain"
+                      />
                     ) : (
                       <span className="text-xs text-slate-400">N/A</span>
                     )}
@@ -391,7 +412,7 @@ const SponsorDashboard = () => {
                     type="url"
                     required
                     value={settings.sponsorLogo}
-                    onChange={(e) => setSettings({...settings, sponsorLogo: e.target.value})}
+                    onChange={(e) => setSettings({ ...settings, sponsorLogo: e.target.value })}
                     className="flex-1 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none transition-colors"
                     placeholder="https://..."
                   />
@@ -407,7 +428,7 @@ const SponsorDashboard = () => {
                   type="text"
                   required
                   value={settings.sponsorJobs}
-                  onChange={(e) => setSettings({...settings, sponsorJobs: e.target.value})}
+                  onChange={(e) => setSettings({ ...settings, sponsorJobs: e.target.value })}
                   className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none transition-colors"
                   placeholder="e.g. Frontend Engineer, Product Manager"
                 />
@@ -422,7 +443,7 @@ const SponsorDashboard = () => {
                   required
                   rows={4}
                   value={settings.sponsorDescription}
-                  onChange={(e) => setSettings({...settings, sponsorDescription: e.target.value})}
+                  onChange={(e) => setSettings({ ...settings, sponsorDescription: e.target.value })}
                   className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none transition-colors resize-none"
                 />
               </div>
@@ -446,7 +467,6 @@ const SponsorDashboard = () => {
                   )}
                 </button>
               </div>
-
             </form>
           </div>
         )}

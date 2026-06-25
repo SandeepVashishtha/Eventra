@@ -1,17 +1,17 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import './Auth.css';
-import { Eye, EyeOff } from 'lucide-react';
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import "./Auth.css";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function LoginForm() {
   const navigate = useNavigate();
   const { login, authRequest } = useAuth();
 
-  const [emailOrUsername, setEmailOrUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [emailOrUsername, setEmailOrUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
 
@@ -45,38 +45,32 @@ export default function LoginForm() {
 
     setErrors({});
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
       const success = await login(emailOrUsername.trim(), password);
       if (success) {
-        navigate('/dashboard', { replace: true });
+        navigate("/dashboard", { replace: true });
       } else {
-        setError(authRequest.error || 'Login failed. Please check your credentials.');
+        setError(authRequest.error || "Login failed. Please check your credentials.");
       }
     } catch (err) {
-      setError(
-        err.response?.data?.message ||
-        'Login failed. Please check your credentials.'
-      );
+      setError(err.response?.data?.message || "Login failed. Please check your credentials.");
     } finally {
       setLoading(false);
     }
   };
 
-  const isSubmitDisabled = loading || (authRequest?.loading || false);
+  const isSubmitDisabled = loading || authRequest?.loading || false;
 
   return (
     <div className="login-form-container">
       <form onSubmit={handleSubmit} className="auth-form">
-
         <h1 className="text-4xl font-extrabold bg-linear-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent text-center">
           Welcome Back
         </h1>
 
-        <p className="text-center text-gray-500 mt-2">
-          Sign in to continue your Eventra journey
-        </p>
+        <p className="text-center text-gray-500 mt-2">Sign in to continue your Eventra journey</p>
 
         {(error || authRequest.error) && (
           <div
@@ -103,11 +97,11 @@ export default function LoginForm() {
               py-3.5
               rounded-2xl
               border
-              ${errors.emailOrUsername ? 'border-red-500' : 'border-slate-300/20'}
+              ${errors.emailOrUsername ? "border-red-500" : "border-slate-300/20"}
               bg-white/5
               backdrop-blur-sm
               focus:ring-2
-              ${errors.emailOrUsername ? 'focus:ring-red-500/30' : 'focus:ring-indigo-500/30'}
+              ${errors.emailOrUsername ? "focus:ring-red-500/30" : "focus:ring-indigo-500/30"}
               focus:border-indigo-500
               transition-all
               duration-300
@@ -125,7 +119,7 @@ export default function LoginForm() {
           <div className="relative">
             <input
               id="login-password"
-              type={showPassword ? 'text' : 'password'}
+              type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={isSubmitDisabled}
@@ -159,10 +153,7 @@ export default function LoginForm() {
         </div>
 
         <div className="text-right mt-2">
-          <Link
-            to="/password-reset"
-            className="text-sm text-indigo-600 hover:text-indigo-500"
-          >
+          <Link to="/password-reset" className="text-sm text-indigo-600 hover:text-indigo-500">
             Forgot Password?
           </Link>
         </div>
@@ -187,19 +178,15 @@ export default function LoginForm() {
             duration-300
           "
         >
-          {isSubmitDisabled ? 'Authenticating...' : 'Login'}
+          {isSubmitDisabled ? "Authenticating..." : "Login"}
         </button>
 
         <p className="text-center text-sm text-gray-500 mt-6">
           Don&apos;t have an account?
-          <Link
-            to="/signup"
-            className="ml-1 font-semibold text-indigo-600 hover:text-indigo-500"
-          >
+          <Link to="/signup" className="ml-1 font-semibold text-indigo-600 hover:text-indigo-500">
             Create Account
           </Link>
         </p>
-
       </form>
     </div>
   );

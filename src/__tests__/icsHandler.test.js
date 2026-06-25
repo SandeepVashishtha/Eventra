@@ -19,11 +19,17 @@ describe("ics handler", () => {
       status(code) {
         state.statusCode = code;
         return {
-          json(body) { state.body = body; },
-          send(body) { state.body = body; },
+          json(body) {
+            state.body = body;
+          },
+          send(body) {
+            state.body = body;
+          },
         };
       },
-      setHeader(key, value) { state.headers[key] = value; },
+      setHeader(key, value) {
+        state.headers[key] = value;
+      },
     };
     return { req, res, state };
   }

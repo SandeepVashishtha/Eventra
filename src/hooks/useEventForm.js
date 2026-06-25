@@ -2,13 +2,8 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { toast } from "react-toastify";
 import { API_ENDPOINTS, apiUtils } from "../config/api.js";
 import { useFormSubmit } from "./useFormSubmit";
-import {
-  DRAFT_KEY,
-  initialFormData,
-} from "../constants/eventDefaults";
-import {
-  parseTimeToMinutes,
-} from "../utils/eventCreationUtils";
+import { DRAFT_KEY, initialFormData } from "../constants/eventDefaults";
+import { parseTimeToMinutes } from "../utils/eventCreationUtils";
 import { sanitizeHtml } from "../utils/sanitizeHtml";
 import { logger } from "../utils/logger";
 import { useAuth } from "../context/AuthContext";
@@ -293,7 +288,7 @@ export const useEventForm = () => {
     handleSubmit: submitEventForm,
     isSubmitting,
     error: submitError,
-    success: submitSuccess
+    success: submitSuccess,
   } = useFormSubmit(async (eventData) => {
     const sanitized = {
       ...eventData,
@@ -400,7 +395,11 @@ export const useEventForm = () => {
         newErrors.endDate = "End date is required";
       } else if (data.endDate < todayStr) {
         newErrors.endDate = "Event date cannot be in the past";
-      } else if (data.startDate && data.endDate && new Date(data.endDate) < new Date(data.startDate)) {
+      } else if (
+        data.startDate &&
+        data.endDate &&
+        new Date(data.endDate) < new Date(data.startDate)
+      ) {
         newErrors.endDate = "End date must be after start date";
       }
     } else {
@@ -450,7 +449,8 @@ export const useEventForm = () => {
 
         if (tier.capacity) {
           const cap = Number(tier.capacity);
-          if (cap <= 0) newErrors[`ticketTier_${index}_capacity`] = "Capacity must be greater than 0";
+          if (cap <= 0)
+            newErrors[`ticketTier_${index}_capacity`] = "Capacity must be greater than 0";
         }
       }
     });
@@ -549,10 +549,13 @@ export const useEventForm = () => {
    * <select> / <textarea>.  Reads the field name from `e.target.name` and
    * delegates to validateField.
    */
-  const handleFieldBlur = useCallback((e) => {
-    const { name, value } = e.target;
-    if (name) validateField(name, value);
-  }, [validateField]);
+  const handleFieldBlur = useCallback(
+    (e) => {
+      const { name, value } = e.target;
+      if (name) validateField(name, value);
+    },
+    [validateField]
+  );
 
   const handleInputChange = useCallback((e) => {
     const { name, value, type, checked } = e.target;
@@ -608,7 +611,10 @@ export const useEventForm = () => {
   }, []);
 
   const addTag = useCallback(() => {
-    const tag = newTag.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+    const tag = newTag
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
     if (!tag) return;
     setFormData((prev) => {
       if (prev.tags.includes(tag)) return prev;
@@ -654,7 +660,12 @@ export const useEventForm = () => {
     try {
       const saved = localStorage.getItem(scopedDraftKey);
       if (saved) {
-        setFormData((prev) => ({ ...prev, ...safeJsonParse(saved, {}), banner: null, bannerPreview: null }));
+        setFormData((prev) => ({
+          ...prev,
+          ...safeJsonParse(saved, {}),
+          banner: null,
+          bannerPreview: null,
+        }));
         toast.success("Draft restored successfully!");
       }
     } catch (error) {
@@ -687,7 +698,10 @@ export const useEventForm = () => {
 
     const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
     if (!allowedTypes.includes(file.type)) {
-      setErrors((prev) => ({ ...prev, banner: "Please upload a valid image file (JPG, PNG, GIF, or WebP)" }));
+      setErrors((prev) => ({
+        ...prev,
+        banner: "Please upload a valid image file (JPG, PNG, GIF, or WebP)",
+      }));
       e.target.value = "";
       return;
     }

@@ -70,24 +70,24 @@ describe("Session Validation Failure Modes", () => {
     test("should return true for valid JWT", async () => {
       const { performFallbackValidation } = await import("../../middleware/index.js");
       const { signJwt } = await import("../../middleware/jwt.js");
-      
+
       const payload = { userId: "test-user", sessionId: "test-session" };
       const token = await signJwt(payload, process.env.JWT_SECRET);
-      
+
       const result = await performFallbackValidation(token, process.env.JWT_SECRET);
       assert.strictEqual(result, true);
     });
 
     test("should return false for invalid JWT", async () => {
       const { performFallbackValidation } = await import("../../middleware/index.js");
-      
+
       const result = await performFallbackValidation("invalid-token", process.env.JWT_SECRET);
       assert.strictEqual(result, false);
     });
 
     test("should return false for malformed JWT", async () => {
       const { performFallbackValidation } = await import("../../middleware/index.js");
-      
+
       const result = await performFallbackValidation("not.a.valid.jwt", process.env.JWT_SECRET);
       assert.strictEqual(result, false);
     });
@@ -95,10 +95,10 @@ describe("Session Validation Failure Modes", () => {
     test("should return false for JWT with wrong secret", async () => {
       const { performFallbackValidation } = await import("../../middleware/index.js");
       const { signJwt } = await import("../../middleware/jwt.js");
-      
+
       const payload = { userId: "test-user", sessionId: "test-session" };
       const token = await signJwt(payload, "different-secret");
-      
+
       const result = await performFallbackValidation(token, process.env.JWT_SECRET);
       assert.strictEqual(result, false);
     });
@@ -109,18 +109,20 @@ describe("Session Validation Failure Modes", () => {
       process.env.KV_REST_API_URL = "https://api.kv.example.com";
       process.env.KV_REST_API_TOKEN = "test-token";
       process.env.RATE_LIMIT_REDIS_URL = "redis://localhost:6379";
-      
+
       global.fetch = async () => ({
         ok: true,
-        json: async () => ({ result: JSON.stringify({ status: "active", lastActive: Date.now() }) })
+        json: async () => ({
+          result: JSON.stringify({ status: "active", lastActive: Date.now() }),
+        }),
       });
 
       const { getSessionRiskState } = await import("../../middleware/index.js");
       const { signJwt } = await import("../../middleware/jwt.js");
-      
+
       const payload = { userId: "test-user", sessionId: "test-session" };
       const token = await signJwt(payload, process.env.JWT_SECRET);
-      
+
       const result = await getSessionRiskState("test-session", token, process.env.JWT_SECRET);
       assert.strictEqual(result, "active");
     });
@@ -129,18 +131,18 @@ describe("Session Validation Failure Modes", () => {
       process.env.KV_REST_API_URL = "https://api.kv.example.com";
       process.env.KV_REST_API_TOKEN = "test-token";
       process.env.RATE_LIMIT_REDIS_URL = "redis://localhost:6379";
-      
+
       global.fetch = async () => ({
         ok: true,
-        json: async () => ({ result: null })
+        json: async () => ({ result: null }),
       });
 
       const { getSessionRiskState } = await import("../../middleware/index.js");
       const { signJwt } = await import("../../middleware/jwt.js");
-      
+
       const payload = { userId: "test-user", sessionId: "test-session" };
       const token = await signJwt(payload, process.env.JWT_SECRET);
-      
+
       const result = await getSessionRiskState("test-session", token, process.env.JWT_SECRET);
       assert.strictEqual(result, "invalidated");
     });
@@ -149,19 +151,21 @@ describe("Session Validation Failure Modes", () => {
       process.env.KV_REST_API_URL = "https://api.kv.example.com";
       process.env.KV_REST_API_TOKEN = "test-token";
       process.env.RATE_LIMIT_REDIS_URL = "redis://localhost:6379";
-      
-      const threeHoursAgo = Date.now() - (3 * 60 * 60 * 1000);
+
+      const threeHoursAgo = Date.now() - 3 * 60 * 60 * 1000;
       global.fetch = async () => ({
         ok: true,
-        json: async () => ({ result: JSON.stringify({ status: "active", lastActive: threeHoursAgo }) })
+        json: async () => ({
+          result: JSON.stringify({ status: "active", lastActive: threeHoursAgo }),
+        }),
       });
 
       const { getSessionRiskState } = await import("../../middleware/index.js");
       const { signJwt } = await import("../../middleware/jwt.js");
-      
+
       const payload = { userId: "test-user", sessionId: "test-session" };
       const token = await signJwt(payload, process.env.JWT_SECRET);
-      
+
       const result = await getSessionRiskState("test-session", token, process.env.JWT_SECRET);
       assert.strictEqual(result, "requires_reauth");
     });
@@ -177,10 +181,10 @@ describe("Session Validation Failure Modes", () => {
 
       const { getSessionRiskState } = await import("../../middleware/index.js");
       const { signJwt } = await import("../../middleware/jwt.js");
-      
+
       const payload = { userId: "test-user", sessionId: "test-session" };
       const token = await signJwt(payload, process.env.JWT_SECRET);
-      
+
       const result = await getSessionRiskState("test-session", token, process.env.JWT_SECRET);
       assert.strictEqual(result, "fallback_active");
     });
@@ -193,8 +197,12 @@ describe("Session Validation Failure Modes", () => {
       process.env.RATE_LIMIT_REDIS_URL = "redis://localhost:6379";
 
       const { getSessionRiskState } = await import("../../middleware/index.js");
-      
-      const result = await getSessionRiskState("test-session", "invalid-token", process.env.JWT_SECRET);
+
+      const result = await getSessionRiskState(
+        "test-session",
+        "invalid-token",
+        process.env.JWT_SECRET
+      );
       assert.strictEqual(result, "requires_reauth");
     });
 
@@ -207,10 +215,10 @@ describe("Session Validation Failure Modes", () => {
 
       const { getSessionRiskState } = await import("../../middleware/index.js");
       const { signJwt } = await import("../../middleware/jwt.js");
-      
+
       const payload = { userId: "test-user", sessionId: "test-session" };
       const token = await signJwt(payload, process.env.JWT_SECRET);
-      
+
       const result = await getSessionRiskState("test-session", token, process.env.JWT_SECRET);
       assert.strictEqual(result, "fallback_active");
     });
@@ -224,10 +232,10 @@ describe("Session Validation Failure Modes", () => {
 
       const { getSessionRiskState } = await import("../../middleware/index.js");
       const { signJwt } = await import("../../middleware/jwt.js");
-      
+
       const payload = { userId: "test-user", sessionId: "test-session" };
       const token = await signJwt(payload, process.env.JWT_SECRET);
-      
+
       const result = await getSessionRiskState("test-session", token, process.env.JWT_SECRET);
       assert.strictEqual(result, "requires_reauth");
     });
@@ -241,10 +249,10 @@ describe("Session Validation Failure Modes", () => {
 
       const { getSessionRiskState } = await import("../../middleware/index.js");
       const { signJwt } = await import("../../middleware/jwt.js");
-      
+
       const payload = { userId: "test-user", sessionId: "test-session" };
       const token = await signJwt(payload, process.env.JWT_SECRET);
-      
+
       const result = await getSessionRiskState("test-session", token, process.env.JWT_SECRET);
       assert.strictEqual(result, "fallback_active");
     });
@@ -257,18 +265,18 @@ describe("Session Validation Failure Modes", () => {
       process.env.KV_REST_API_URL = "https://api.kv.example.com";
       process.env.KV_REST_API_TOKEN = "test-token";
       process.env.RATE_LIMIT_REDIS_URL = "redis://localhost:6379";
-      
+
       global.fetch = async () => ({
         ok: false,
-        status: 503
+        status: 503,
       });
 
       const { getSessionRiskState } = await import("../../middleware/index.js");
       const { signJwt } = await import("../../middleware/jwt.js");
-      
+
       const payload = { userId: "test-user", sessionId: "test-session" };
       const token = await signJwt(payload, process.env.JWT_SECRET);
-      
+
       const result = await getSessionRiskState("test-session", token, process.env.JWT_SECRET);
       assert.strictEqual(result, "fallback_active");
     });
@@ -279,15 +287,19 @@ describe("Session Validation Failure Modes", () => {
       process.env.KV_REST_API_URL = "https://api.kv.example.com";
       process.env.KV_REST_API_TOKEN = "test-token";
       process.env.RATE_LIMIT_REDIS_URL = "redis://localhost:6379";
-      
+
       global.fetch = async () => ({
         ok: false,
-        status: 503
+        status: 503,
       });
 
       const { getSessionRiskState } = await import("../../middleware/index.js");
-      
-      const result = await getSessionRiskState("test-session", "invalid-token", process.env.JWT_SECRET);
+
+      const result = await getSessionRiskState(
+        "test-session",
+        "invalid-token",
+        process.env.JWT_SECRET
+      );
       assert.strictEqual(result, "requires_reauth");
     });
 
@@ -297,18 +309,18 @@ describe("Session Validation Failure Modes", () => {
       process.env.KV_REST_API_URL = "https://api.kv.example.com";
       process.env.KV_REST_API_TOKEN = "test-token";
       process.env.RATE_LIMIT_REDIS_URL = "redis://localhost:6379";
-      
+
       global.fetch = async () => ({
         ok: false,
-        status: 503
+        status: 503,
       });
 
       const { getSessionRiskState } = await import("../../middleware/index.js");
       const { signJwt } = await import("../../middleware/jwt.js");
-      
+
       const payload = { userId: "test-user", sessionId: "test-session" };
       const token = await signJwt(payload, process.env.JWT_SECRET);
-      
+
       const result = await getSessionRiskState("test-session", token, process.env.JWT_SECRET);
       assert.strictEqual(result, "fallback_active");
     });
@@ -319,18 +331,18 @@ describe("Session Validation Failure Modes", () => {
       process.env.KV_REST_API_URL = "https://api.kv.example.com";
       process.env.KV_REST_API_TOKEN = "test-token";
       process.env.RATE_LIMIT_REDIS_URL = "redis://localhost:6379";
-      
+
       global.fetch = async () => ({
         ok: false,
-        status: 503
+        status: 503,
       });
 
       const { getSessionRiskState } = await import("../../middleware/index.js");
       const { signJwt } = await import("../../middleware/jwt.js");
-      
+
       const payload = { userId: "test-user", sessionId: "test-session" };
       const token = await signJwt(payload, process.env.JWT_SECRET);
-      
+
       const result = await getSessionRiskState("test-session", token, process.env.JWT_SECRET);
       assert.strictEqual(result, "requires_reauth");
     });
@@ -343,17 +355,17 @@ describe("Session Validation Failure Modes", () => {
       process.env.KV_REST_API_URL = "https://api.kv.example.com";
       process.env.KV_REST_API_TOKEN = "test-token";
       process.env.RATE_LIMIT_REDIS_URL = "redis://localhost:6379";
-      
+
       global.fetch = async () => {
         throw new Error("Network timeout");
       };
 
       const { getSessionRiskState } = await import("../../middleware/index.js");
       const { signJwt } = await import("../../middleware/jwt.js");
-      
+
       const payload = { userId: "test-user", sessionId: "test-session" };
       const token = await signJwt(payload, process.env.JWT_SECRET);
-      
+
       const result = await getSessionRiskState("test-session", token, process.env.JWT_SECRET);
       assert.strictEqual(result, "fallback_active");
     });
@@ -364,14 +376,18 @@ describe("Session Validation Failure Modes", () => {
       process.env.KV_REST_API_URL = "https://api.kv.example.com";
       process.env.KV_REST_API_TOKEN = "test-token";
       process.env.RATE_LIMIT_REDIS_URL = "redis://localhost:6379";
-      
+
       global.fetch = async () => {
         throw new Error("Network timeout");
       };
 
       const { getSessionRiskState } = await import("../../middleware/index.js");
-      
-      const result = await getSessionRiskState("test-session", "invalid-token", process.env.JWT_SECRET);
+
+      const result = await getSessionRiskState(
+        "test-session",
+        "invalid-token",
+        process.env.JWT_SECRET
+      );
       assert.strictEqual(result, "requires_reauth");
     });
 
@@ -381,17 +397,17 @@ describe("Session Validation Failure Modes", () => {
       process.env.KV_REST_API_URL = "https://api.kv.example.com";
       process.env.KV_REST_API_TOKEN = "test-token";
       process.env.RATE_LIMIT_REDIS_URL = "redis://localhost:6379";
-      
+
       global.fetch = async () => {
         throw new Error("Network timeout");
       };
 
       const { getSessionRiskState } = await import("../../middleware/index.js");
       const { signJwt } = await import("../../middleware/jwt.js");
-      
+
       const payload = { userId: "test-user", sessionId: "test-session" };
       const token = await signJwt(payload, process.env.JWT_SECRET);
-      
+
       const result = await getSessionRiskState("test-session", token, process.env.JWT_SECRET);
       assert.strictEqual(result, "fallback_active");
     });
@@ -402,17 +418,17 @@ describe("Session Validation Failure Modes", () => {
       process.env.KV_REST_API_URL = "https://api.kv.example.com";
       process.env.KV_REST_API_TOKEN = "test-token";
       process.env.RATE_LIMIT_REDIS_URL = "redis://localhost:6379";
-      
+
       global.fetch = async () => {
         throw new Error("Network timeout");
       };
 
       const { getSessionRiskState } = await import("../../middleware/index.js");
       const { signJwt } = await import("../../middleware/jwt.js");
-      
+
       const payload = { userId: "test-user", sessionId: "test-session" };
       const token = await signJwt(payload, process.env.JWT_SECRET);
-      
+
       const result = await getSessionRiskState("test-session", token, process.env.JWT_SECRET);
       assert.strictEqual(result, "requires_reauth");
     });
@@ -427,10 +443,10 @@ describe("Session Validation Failure Modes", () => {
 
       const { getSessionRiskState } = await import("../../middleware/index.js");
       const { signJwt } = await import("../../middleware/jwt.js");
-      
+
       const payload = { userId: "test-user", sessionId: "test-session" };
       const token = await signJwt(payload, process.env.JWT_SECRET);
-      
+
       const result = await getSessionRiskState("test-session", token, process.env.JWT_SECRET);
       assert.strictEqual(result, "active");
     });
@@ -440,18 +456,18 @@ describe("Session Validation Failure Modes", () => {
       process.env.KV_REST_API_URL = "https://api.kv.example.com";
       process.env.KV_REST_API_TOKEN = "test-token";
       process.env.RATE_LIMIT_REDIS_URL = "redis://localhost:6379";
-      
+
       global.fetch = async () => ({
         ok: false,
-        status: 503
+        status: 503,
       });
 
       const { getSessionRiskState } = await import("../../middleware/index.js");
       const { signJwt } = await import("../../middleware/jwt.js");
-      
+
       const payload = { userId: "test-user", sessionId: "test-session" };
       const token = await signJwt(payload, process.env.JWT_SECRET);
-      
+
       const result = await getSessionRiskState("test-session", token, process.env.JWT_SECRET);
       assert.strictEqual(result, "active");
     });
@@ -466,8 +482,12 @@ describe("Session Validation Failure Modes", () => {
       process.env.RATE_LIMIT_REDIS_URL = "redis://localhost:6379";
 
       const { getSessionRiskState } = await import("../../middleware/index.js");
-      
-      const result = await getSessionRiskState("test-session", "completely-invalid-jwt", process.env.JWT_SECRET);
+
+      const result = await getSessionRiskState(
+        "test-session",
+        "completely-invalid-jwt",
+        process.env.JWT_SECRET
+      );
       // Even in open mode, invalid JWT should be rejected
       assert.strictEqual(result, "requires_reauth");
     });
@@ -481,11 +501,15 @@ describe("Session Validation Failure Modes", () => {
 
       const { getSessionRiskState } = await import("../../middleware/index.js");
       const { signJwt } = await import("../../middleware/jwt.js");
-      
+
       // Create an expired JWT (expires in -1 hour)
-      const payload = { userId: "test-user", sessionId: "test-session", exp: Math.floor(Date.now() / 1000) - 3600 };
+      const payload = {
+        userId: "test-user",
+        sessionId: "test-session",
+        exp: Math.floor(Date.now() / 1000) - 3600,
+      };
       const token = await signJwt(payload, process.env.JWT_SECRET);
-      
+
       const result = await getSessionRiskState("test-session", token, process.env.JWT_SECRET);
       assert.strictEqual(result, "requires_reauth");
     });

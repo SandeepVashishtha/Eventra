@@ -136,14 +136,16 @@ export default function TicketQRCode({
           )}
 
           {eventDate && (
-            <p className="text-xs text-center text-gray-500 dark:text-gray-400">
-              {eventDate}
-            </p>
+            <p className="text-xs text-center text-gray-500 dark:text-gray-400">{eventDate}</p>
           )}
 
           {ticketId && (
-            <p className="text-xs text-center font-mono text-gray-400 dark:text-gray-500 truncate" title={ticketId}>
-              ID: {ticketId.length > 16 ? `${ticketId.slice(0, 8)}…${ticketId.slice(-6)}` : ticketId}
+            <p
+              className="text-xs text-center font-mono text-gray-400 dark:text-gray-500 truncate"
+              title={ticketId}
+            >
+              ID:{" "}
+              {ticketId.length > 16 ? `${ticketId.slice(0, 8)}…${ticketId.slice(-6)}` : ticketId}
             </p>
           )}
 

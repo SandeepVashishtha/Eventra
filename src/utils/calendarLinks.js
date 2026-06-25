@@ -12,11 +12,11 @@ export const formatICSDate = (dateString) => {
  */
 export const getGoogleCalendarUrl = (event) => {
   const baseUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE";
-  const text = `&text=${encodeURIComponent(event.title || '')}`;
+  const text = `&text=${encodeURIComponent(event.title || "")}`;
   const dates = `&dates=${formatICSDate(event.startDateTime)}/${formatICSDate(event.endDateTime)}`;
-  const details = `&details=${encodeURIComponent(event.description || '')}`;
-  const location = `&location=${encodeURIComponent(event.location || '')}`;
-  
+  const details = `&details=${encodeURIComponent(event.description || "")}`;
+  const location = `&location=${encodeURIComponent(event.location || "")}`;
+
   return `${baseUrl}${text}${dates}${details}${location}`;
 };
 
@@ -26,19 +26,19 @@ export const getGoogleCalendarUrl = (event) => {
  */
 export const generateRawICSContent = (event) => {
   return [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'PRODID:-//Eventra//Event Calendar 1.0//EN',
-    'CALSCALE:GREGORIAN',
-    'BEGIN:VEVENT',
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Eventra//Event Calendar 1.0//EN",
+    "CALSCALE:GREGORIAN",
+    "BEGIN:VEVENT",
     `UID:${event.id || Date.now()}@eventra.com`,
     `DTSTAMP:${formatICSDate(new Date().toISOString())}`,
     `DTSTART:${formatICSDate(event.startDateTime)}`,
     `DTEND:${formatICSDate(event.endDateTime)}`,
-    `SUMMARY:${(event.title || '').replace(/,/g, '\\,')}`,
-    `DESCRIPTION:${(event.description || '').replace(/,/g, '\\,')}`,
-    `LOCATION:${(event.location || '').replace(/,/g, '\\,')}`,
-    'END:VEVENT',
-    'END:VCALENDAR'
-  ].join('\r\n');
+    `SUMMARY:${(event.title || "").replace(/,/g, "\\,")}`,
+    `DESCRIPTION:${(event.description || "").replace(/,/g, "\\,")}`,
+    `LOCATION:${(event.location || "").replace(/,/g, "\\,")}`,
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].join("\r\n");
 };

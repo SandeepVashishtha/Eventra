@@ -25,7 +25,7 @@ const FeedbackButton = () => {
     window.addEventListener("eventraOnboardingStateChange", handleStateChange);
 
     // Initial check
-    const checklist = document.querySelector('[data-onboarding-checklist]');
+    const checklist = document.querySelector("[data-onboarding-checklist]");
     if (checklist) {
       const rect = checklist.getBoundingClientRect();
       setOnboardingHeight(window.innerHeight - rect.top);

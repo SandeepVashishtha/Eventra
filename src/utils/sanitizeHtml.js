@@ -6,13 +6,38 @@ import createDOMPurify from "dompurify";
  * <object>, <embed>, and all SVG/MathML elements that are common XSS vectors.
  */
 const ALLOWED_TAGS = [
-  "p", "br", "b", "strong", "i", "em", "u", "s", "del",
-  "h1", "h2", "h3", "h4", "h5", "h6",
-  "ul", "ol", "li",
-  "blockquote", "pre", "code",
-  "a", "img",
-  "table", "thead", "tbody", "tr", "th", "td",
-  "hr", "span", "div",
+  "p",
+  "br",
+  "b",
+  "strong",
+  "i",
+  "em",
+  "u",
+  "s",
+  "del",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "ul",
+  "ol",
+  "li",
+  "blockquote",
+  "pre",
+  "code",
+  "a",
+  "img",
+  "table",
+  "thead",
+  "tbody",
+  "tr",
+  "th",
+  "td",
+  "hr",
+  "span",
+  "div",
 ];
 
 /**
@@ -20,10 +45,18 @@ const ALLOWED_TAGS = [
  * href and src are further validated by DOMPurify's URL checks.
  */
 const ALLOWED_ATTR = [
-  "href", "src", "alt", "title", "target", "rel",
-  "class", "id",
-  "width", "height",
-  "colspan", "rowspan",
+  "href",
+  "src",
+  "alt",
+  "title",
+  "target",
+  "rel",
+  "class",
+  "id",
+  "width",
+  "height",
+  "colspan",
+  "rowspan",
 ];
 
 /**
@@ -107,14 +140,13 @@ const getDOMPurify = () => {
  * @param {string} dirty - Raw HTML from an untrusted source (API, user input)
  * @returns {string} Sanitised HTML safe for injection into the DOM
  */
-const stripAllHtml = (text) =>
-  text.replace(/<[^>]*>/g, '');
+const stripAllHtml = (text) => text.replace(/<[^>]*>/g, "");
 
 export function sanitizeHtml(dirty) {
   if (!dirty || typeof dirty !== "string") return "";
   const purifier = getDOMPurify();
   if (!purifier) {
-    console.warn('[sanitizeHtml] DOMPurify unavailable - falling back to HTML tag stripping');
+    console.warn("[sanitizeHtml] DOMPurify unavailable - falling back to HTML tag stripping");
     return stripAllHtml(dirty);
   }
   return purifier.sanitize(dirty, PURIFY_CONFIG);

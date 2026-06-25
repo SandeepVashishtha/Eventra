@@ -1,12 +1,7 @@
-
 const PageLoader = ({ text = "Loading..." }) => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
-      <div
-        className="flex flex-col items-center gap-4"
-        role="status"
-        aria-live="polite"
-      >
+      <div className="flex flex-col items-center gap-4" role="status" aria-live="polite">
         {/* Screen reader loading text */}
         <span className="sr-only">Loading content...</span>
 
@@ -17,9 +12,7 @@ const PageLoader = ({ text = "Loading..." }) => {
         ></div>
 
         {/* Loading Text */}
-        <p className="text-gray-600 dark:text-gray-400 font-medium">
-          {text}
-        </p>
+        <p className="text-gray-600 dark:text-gray-400 font-medium">{text}</p>
       </div>
     </div>
   );

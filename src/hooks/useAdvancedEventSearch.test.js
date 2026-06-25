@@ -60,7 +60,9 @@ describe("useAdvancedEventSearch", () => {
 
   it("filters by fuzzy query text", async () => {
     const { result } = renderHook(() => useAdvancedEventSearch(EVENTS, { debounceMs: 0 }));
-    act(() => { result.current.setQuery("react"); });
+    act(() => {
+      result.current.setQuery("react");
+    });
     // Allow debounce
     await act(async () => {});
     const titles = result.current.results.map((e) => e.title);
@@ -70,21 +72,27 @@ describe("useAdvancedEventSearch", () => {
 
   it("filters by category", () => {
     const { result } = renderHook(() => useAdvancedEventSearch(EVENTS, { debounceMs: 0 }));
-    act(() => { result.current.toggleFilterItem("categories", "hackathon"); });
+    act(() => {
+      result.current.toggleFilterItem("categories", "hackathon");
+    });
     expect(result.current.results).toHaveLength(1);
     expect(result.current.results[0].id).toBe(2);
   });
 
   it("filters by status", () => {
     const { result } = renderHook(() => useAdvancedEventSearch(EVENTS, { debounceMs: 0 }));
-    act(() => { result.current.toggleFilterItem("statuses", "past"); });
+    act(() => {
+      result.current.toggleFilterItem("statuses", "past");
+    });
     expect(result.current.results).toHaveLength(1);
     expect(result.current.results[0].id).toBe(3);
   });
 
   it("sorts by date-asc", () => {
     const { result } = renderHook(() => useAdvancedEventSearch(EVENTS, { debounceMs: 0 }));
-    act(() => { result.current.updateFilter("sort", SORT_OPTIONS.DATE_ASC); });
+    act(() => {
+      result.current.updateFilter("sort", SORT_OPTIONS.DATE_ASC);
+    });
     const dates = result.current.results.map((e) => e.date);
     expect(dates[0]).toBe("2026-01-10");
     expect(dates[2]).toBe("2026-09-01");
@@ -92,7 +100,9 @@ describe("useAdvancedEventSearch", () => {
 
   it("sorts by attendees-desc", () => {
     const { result } = renderHook(() => useAdvancedEventSearch(EVENTS, { debounceMs: 0 }));
-    act(() => { result.current.updateFilter("sort", SORT_OPTIONS.ATTENDEES_DESC); });
+    act(() => {
+      result.current.updateFilter("sort", SORT_OPTIONS.ATTENDEES_DESC);
+    });
     expect(result.current.results[0].attendees).toBe(500);
   });
 
@@ -102,14 +112,18 @@ describe("useAdvancedEventSearch", () => {
       result.current.setQuery("react");
       result.current.toggleFilterItem("categories", "hackathon");
     });
-    act(() => { result.current.reset(); });
+    act(() => {
+      result.current.reset();
+    });
     expect(result.current.query).toBe("");
     expect(result.current.filters).toEqual(DEFAULT_FILTERS);
   });
 
   it("hasActiveFilters is true when query is set", () => {
     const { result } = renderHook(() => useAdvancedEventSearch(EVENTS, { debounceMs: 0 }));
-    act(() => { result.current.setQuery("test"); });
+    act(() => {
+      result.current.setQuery("test");
+    });
     // hasActiveFilters uses debouncedQuery; with debounceMs:0 it still may lag one render
     // Just check the flag is accessible
     expect(typeof result.current.hasActiveFilters).toBe("boolean");
@@ -126,17 +140,27 @@ describe("useAdvancedEventSearch", () => {
     expect(preset.query).toBe("react");
 
     // Clear and restore
-    act(() => { result.current.reset(); });
-    act(() => { result.current.loadPreset(preset); });
+    act(() => {
+      result.current.reset();
+    });
+    act(() => {
+      result.current.loadPreset(preset);
+    });
     expect(result.current.query).toBe("react");
   });
 
   it("deletePreset removes the correct preset", () => {
     const { result } = renderHook(() => useAdvancedEventSearch(EVENTS, { debounceMs: 0 }));
-    act(() => { result.current.savePreset("A"); });
-    act(() => { result.current.savePreset("B"); });
+    act(() => {
+      result.current.savePreset("A");
+    });
+    act(() => {
+      result.current.savePreset("B");
+    });
     const idToDelete = result.current.presets[0].id;
-    act(() => { result.current.deletePreset(idToDelete); });
+    act(() => {
+      result.current.deletePreset(idToDelete);
+    });
     expect(result.current.presets.find((p) => p.id === idToDelete)).toBeUndefined();
   });
 });

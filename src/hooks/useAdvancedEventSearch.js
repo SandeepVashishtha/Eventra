@@ -111,10 +111,10 @@ function savePresetsToStorage(presets) {
 // ---------------------------------------------------------------------------
 
 export const DEFAULT_FILTERS = {
-  categories: [],   // string[]
-  statuses: [],     // ("upcoming" | "live" | "past")[]
-  dateFrom: "",     // "YYYY-MM-DD"
-  dateTo: "",       // "YYYY-MM-DD"
+  categories: [], // string[]
+  statuses: [], // ("upcoming" | "live" | "past")[]
+  dateFrom: "", // "YYYY-MM-DD"
+  dateTo: "", // "YYYY-MM-DD"
   sort: SORT_OPTIONS.RELEVANCE,
 };
 
@@ -137,7 +137,7 @@ export default function useAdvancedEventSearch(events = [], { debounceMs = 250 }
   // ---- Filter + sort pipeline ----
   const results = useMemo(() => {
     const from = filters.dateFrom ? new Date(filters.dateFrom) : null;
-    const to   = filters.dateTo   ? new Date(filters.dateTo)   : null;
+    const to = filters.dateTo ? new Date(filters.dateTo) : null;
 
     return events
       .filter((event) => {
@@ -156,17 +156,14 @@ export default function useAdvancedEventSearch(events = [], { debounceMs = 250 }
         }
 
         // Status filter
-        if (
-          filters.statuses.length > 0 &&
-          !filters.statuses.includes(event.status)
-        ) {
+        if (filters.statuses.length > 0 && !filters.statuses.includes(event.status)) {
           return false;
         }
 
         // Date range filter
         const eventDate = new Date(event.date || event.startDate);
         if (from && eventDate < from) return false;
-        if (to   && eventDate > to)   return false;
+        if (to && eventDate > to) return false;
 
         return true;
       })
