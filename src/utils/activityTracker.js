@@ -66,7 +66,6 @@ const processInterestQueue = () => {
     }
   } catch (error) {
     console.error("Failed to update user interests:", error);
-    interestQueue = []; // Clear the queue on persistent error to avoid infinite recursion
   } finally {
     isUpdating = false;
     if (interestQueue.length > 0) {
