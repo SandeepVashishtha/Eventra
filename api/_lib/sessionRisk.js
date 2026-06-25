@@ -31,26 +31,11 @@ async function kvFetch(endpoint, options = {}) {
       },
     });
     if (!res.ok) {
-      console.error(
-        "[sessionRisk] KV returned error",
-        {
-          endpoint,
-          status: res.status,
-          statusText: res.statusText
-        }
-      );
-      return null;
+      throw new Error(`KV returned error: ${res.status} ${res.statusText} for ${endpoint}`);
     }
     return await res.json();
   } catch (error) {
-    console.error(
-      "[sessionRisk] KV request failed",
-      {
-        endpoint,
-        error: error.message
-      }
-    );
-    return null;
+    throw new Error(`KV request failed: ${error.message}`);
   }
 }
 
