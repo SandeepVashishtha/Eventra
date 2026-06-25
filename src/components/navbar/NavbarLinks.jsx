@@ -99,8 +99,8 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
         transition-colors
         ${
           isActive
-            ? "bg-bg-secondary text-indigo-600 dark:text-indigo-400 font-semibold"
-            : "text-text-secondary hover:bg-bg hover:text-indigo-600 dark:hover:text-indigo-400"
+            ? "bg-bg-secondary text-primary font-semibold"
+            : "text-text-secondary hover:bg-bg hover:text-primary"
         }
       `
       : `
@@ -110,13 +110,13 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
         text-[13px]
         font-medium
         uppercase
-        tracking-wider
+        tracking-[0.04em]
         border-b-2
-        transition-all duration-200
+        transition-all duration-150 ease-out hover:scale-[1.02] active:scale-[0.98]
         ${
           isActive
-            ? "border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400 font-semibold"
-            : "border-transparent text-text-secondary hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-600/30 dark:hover:border-indigo-400/30"
+            ? "border-primary text-text dark:text-white font-semibold"
+            : "border-transparent text-text-secondary hover:text-text dark:hover:text-white hover:border-gray-300 dark:hover:border-zinc-700"
         }
       `;
 

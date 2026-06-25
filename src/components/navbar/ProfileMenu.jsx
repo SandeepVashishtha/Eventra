@@ -82,22 +82,24 @@ const ProfileMenu = ({ user, logout }) => {
         aria-label={isOpen ? "Close profile menu" : "Open profile menu"}
         aria-expanded={isOpen}
         aria-haspopup="true"
-        className="flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50/50 hover:bg-zinc-100 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900/40 dark:hover:bg-zinc-800 dark:hover:border-zinc-700 p-1 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+        className="flex items-center gap-2 rounded-full border border-gray-200/80 bg-white/80 hover:bg-white shadow-sm hover:shadow-md dark:border-zinc-700/80 dark:bg-zinc-900/80 dark:hover:bg-zinc-800 p-1 pr-3 backdrop-blur-md transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
       >
         {user?.profilePicture ? (
           <img
             loading="lazy"
             src={user.profilePicture}
             alt={`${user?.name || "User"} profile`}
-            className="w-8 h-8 rounded-full object-cover transition-colors"
+            className="w-7 h-7 rounded-full object-cover transition-colors ring-1 ring-border shadow-sm"
           />
         ) : (
-          <div className="w-8 h-8 rounded-full bg-card-bg flex items-center justify-center transition-colors">
-            <User className="text-text-light w-4 h-4" />
+          <div className="w-7 h-7 rounded-full bg-card-bg flex items-center justify-center transition-colors ring-1 ring-border shadow-sm">
+            <User className="text-text-light w-3.5 h-3.5" strokeWidth={1.5} />
           </div>
         )}
+        <span className="text-sm font-medium tracking-wide hidden sm:block text-text-light hover:text-text">{user?.name?.split(" ")[0] || "Profile"}</span>
         <ChevronDown
-          className={`w-4 h-4 text-text-light mr-1 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+          className={`w-3.5 h-3.5 text-text-light transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+          strokeWidth={1.5}
         />
       </button>
 
