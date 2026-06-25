@@ -281,7 +281,9 @@ async function handler(req, res) {
     };
 
     const isProd = process.env.NODE_ENV === "production";
-    const cookieValue = `token=${token}; HttpOnly; Path=/; Max-Age=${JWT_COOKIE_MAX_AGE_SECONDS}; SameSite=Strict${isProd ? '; Secure' : ''}`;
+    const sameSite = process.env.COOKIE_SAME_SITE || 'None';
+    const isSecure = isProd || sameSite.toLowerCase() === 'none';
+    const cookieValue = `token=${token}; HttpOnly; Path=/; Max-Age=${JWT_COOKIE_MAX_AGE_SECONDS}; SameSite=${sameSite}${isSecure ? '; Secure' : ''}`;
     // Set cookie compatibly across test mocks (which may provide `set` instead of `setHeader`)
     try {
       if (typeof res.setHeader === 'function') {
