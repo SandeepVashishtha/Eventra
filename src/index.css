@@ -1,4 +1,4 @@
-@import './styles/telemetryWidgets.css';
+@import "./styles/telemetryWidgets.css";
 @import "tailwindcss";
 @import url("https://fonts.googleapis.com/css2?family=Oxanium:wght@800&family=Inter:wght@300;400;500;600;700;800;900&display=swap");
 
@@ -91,7 +91,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  width: 100%;
+  width: 100vw;
   height: 100vh;
   background-color: rgba(15, 23, 42, 0.6);
   backdrop-filter: blur(8px);
@@ -210,27 +210,27 @@ body {
 
 /* Elevation and Glow utilities */
 .elevation-sm {
-  box-shadow: var(--shadow-premium-sm-val);
+  box-shadow: var(--shadow-premium-sm-val) !important;
 }
 
 .elevation-md {
-  box-shadow: var(--shadow-premium-md-val);
+  box-shadow: var(--shadow-premium-md-val) !important;
 }
 
 .elevation-lg {
-  box-shadow: var(--shadow-premium-lg-val);
+  box-shadow: var(--shadow-premium-lg-val) !important;
 }
 
 .shadow-glow {
-  box-shadow: var(--shadow-glow-md-val);
+  box-shadow: var(--shadow-glow-md-val) !important;
 }
 
 .shadow-glow-sm {
-  box-shadow: var(--shadow-glow-sm-val);
+  box-shadow: var(--shadow-glow-sm-val) !important;
 }
 
 .shadow-glow-lg {
-  box-shadow: var(--shadow-glow-lg-val);
+  box-shadow: var(--shadow-glow-lg-val) !important;
 }
 
 .sr-only {
@@ -551,14 +551,6 @@ html {
 /* Lenis smooth scrolling styles */
 html.lenis {
   height: auto;
-  overflow-x: hidden; /* Forces horizontal cutoff on html */
-}
-
-/* Overrides the dynamic inline body overflow: auto rules */
-body[style] {
-  overflow-x: hidden;
-  position: relative;
-  max-width: 100%;
 }
 
 .lenis.lenis-smooth {
@@ -657,7 +649,7 @@ aside {
      which remains visible otherwise. This ensures pages that use the pastel grid
      utility (like Contributors) render correctly in dark mode. */
   background-color: var(--bg-color);
-  background-image: none;
+  background-image: none !important;
   opacity: 1;
 }
 
@@ -892,7 +884,7 @@ code {
 
   .modal-content,
   [role="dialog"] {
-    max-width: calc(100% - 2rem);
+    max-width: calc(100vw - 2rem);
   }
 }
 
@@ -1002,7 +994,7 @@ input::-ms-reveal,
 input::-ms-clear,
 input::-webkit-clear-button,
 input::-webkit-password-toggle {
-  display: none;
+  display: none !important;
 }
 
 /* Shared pastel grid background used across static pages */
@@ -1016,7 +1008,7 @@ input::-webkit-password-toggle {
     ),
     linear-gradient(
       to bottom,
-      color-mix(in srgb, var(--evt-skip-focus) 32%, transparent) 1px,
+      color-mix(in srgb, var(--evt-brand-primary) 32%, transparent) 1px,
       transparent 1px
     ),
     linear-gradient(
@@ -1026,7 +1018,7 @@ input::-webkit-password-toggle {
     ),
     linear-gradient(
       -45deg,
-      color-mix(in srgb, var(--evt-skip-focus) 10%, transparent) 1px,
+      color-mix(in srgb, var(--evt-brand-primary) 10%, transparent) 1px,
       transparent 1px
     );
   background-size:
@@ -1161,7 +1153,7 @@ td {
 .no-transition *,
 .no-transition *::before,
 .no-transition *::after {
-  transition: none;
+  transition: none !important;
 }
 
 /* Smooth Scrolling */
@@ -1270,23 +1262,23 @@ select,
 /* WCAG AA Accessibility Contrast Overrides (Light Mode) */
 /* Overriding standard Tailwind light mode gray utilities that fail the 4.5:1 contrast check on white backgrounds */
 html:not(.dark) .text-gray-400 {
-  color: var(--evt-text-muted);
+  color: var(--evt-text-muted) !important;
   /* Gray 500/600 hybrid, passes WCAG AA 4.5:1 */
 }
 
 html:not(.dark) .text-gray-500 {
-  color: var(--evt-neutral-strong);
+  color: var(--evt-neutral-strong) !important;
   /* Gray 600, passes WCAG AA 4.5:1 */
 }
 
 html:not(.dark) .text-gray-600 {
-  color: var(--evt-neutral-strong);
+  color: var(--evt-neutral-strong) !important;
   /* Gray 700, passes WCAG AAA 7:1 */
 }
 
 html:not(.dark) .placeholder-gray-400::placeholder,
 html:not(.dark) ::placeholder {
-  color: var(--evt-text-muted);
+  color: var(--evt-text-muted) !important;
   /* Ensure accessible placeholder contrast */
 }
 
@@ -1305,12 +1297,12 @@ html:not(.dark) ::placeholder {
     box-shadow:
       0 20px 25px -5px rgba(0, 0, 0, 0.1),
       0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    border-color: #a5b4fc;
+    border-color: #a5b4fc !important;
     /* border-indigo-300 */
   }
 
   .dark .event-card-hoverable:hover {
-    border-color: #4338ca;
+    border-color: #4338ca !important;
     /* border-indigo-700 */
     box-shadow:
       0 20px 25px -5px rgba(0, 0, 0, 0.3),
@@ -1320,37 +1312,37 @@ html:not(.dark) ::placeholder {
 
 .project-card,
 .project-card * {
-  color: white;
+  color: white !important;
 }
 
 /* Custom react-toastify overrides for premium visual consistency */
 .Toastify__toast {
-  border-radius: 12px;
-  font-family: inherit;
+  border-radius: 12px !important;
+  font-family: inherit !important;
   box-shadow:
     0 10px 25px -5px rgba(0, 0, 0, 0.08),
-    0 8px 10px -6px rgba(0, 0, 0, 0.08);
+    0 8px 10px -6px rgba(0, 0, 0, 0.08) !important;
 }
 
 /* Light Theme Toast Styles */
 .Toastify__toast--theme-light {
-  background-color: #ffffff;
-  color: #0f172a;
-  border: 1px solid #e2e8f0;
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #e2e8f0 !important;
 }
 
 /* Dark Theme Toast Styles */
 .Toastify__toast--theme-dark {
-  background-color: #0b1120;
-  color: #f1f5f9;
-  border: 1px solid #1e293b;
+  background-color: #0b1120 !important;
+  color: #f1f5f9 !important;
+  border: 1px solid #1e293b !important;
 }
 
 /* Accessibility: Keyboard Outlines on Close Button */
 .Toastify__close-button:focus-visible {
-  outline: 2px solid #38bdf8;
-  outline-offset: 2px;
-  border-radius: 4px;
+  outline: 2px solid #38bdf8 !important;
+  outline-offset: 2px !important;
+  border-radius: 4px !important;
 }
 
 /* Fluid Cursor Styling & Glow Optimization */
