@@ -268,7 +268,7 @@ describe("CORS Protection", () => {
   describe("corsResponse", () => {
     it("should set CORS headers and send response", async () => {
       process.env.ALLOWED_ORIGINS = "https://eventra.com";
-      const { corsResponse } = await import("../../api/auth/cors.js");
+      const { corsResponse } = await import("../../api/_lib/cors.js");
       const req = { headers: { origin: "https://eventra.com" } };
       const res = {
         setHeader: vi.fn(),

@@ -14,7 +14,7 @@
  *   { valid: false }
  */
 
-import { corsResponse } from "../auth/_cors.js";
+import { corsResponse } from "../_lib/cors.js";
 import { verifyTicketJwt } from "../_lib/ticketToken.js";
 import { getTicketByToken } from "../_lib/ticketStorage.js";
 

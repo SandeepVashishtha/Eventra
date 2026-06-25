@@ -1,5 +1,5 @@
 import { getHealthReport } from "../_lib/health.js";
-import { buildCorsHeaders } from "../auth/_cors.js";
+import { buildCorsHeaders } from "./_lib/cors.js";
 
 export default async function healthHandler(req, res) {
   if (req.method === "OPTIONS") {
