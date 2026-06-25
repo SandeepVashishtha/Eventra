@@ -2,7 +2,7 @@ import { ArrowRightIcon, ChartBarIcon, UserGroupIcon, StarIcon, ClipboardDocumen
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 import { useAuth } from "../../context/AuthContext";
@@ -544,14 +544,14 @@ const HostHackathon = () => {
             Explore Hosting Options
           </motion.button>
 
-          <motion.a
-            href="/hackathons"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="inline-block bg-bg text-text border border-border px-8 py-3 rounded-xl shadow-lg hover:bg-card-bg transition-all duration-300"
-          >
-            Explore Hackathons
-          </motion.a>
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <Link
+              to="/hackathons"
+              className="inline-block bg-bg text-text border border-border px-8 py-3 rounded-xl shadow-lg hover:bg-card-bg transition-all duration-300"
+            >
+              Explore Hackathons
+            </Link>
+          </motion.div>
         </div>
       </motion.div>
     </div>
