@@ -494,6 +494,13 @@ const Footer = () => {
             </Link>
             <span className="text-gray-200 dark:text-gray-700" aria-hidden="true">|</span>
             <Link
+              to="/cookies"
+              className="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
+            >
+              Cookies Policy
+            </Link>
+            <span className="text-gray-200 dark:text-gray-700" aria-hidden="true">|</span>
+            <Link
               to="/api-docs"
               className="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
             >
