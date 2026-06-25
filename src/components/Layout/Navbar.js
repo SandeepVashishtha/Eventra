@@ -76,7 +76,7 @@ const NAV_ITEMS = [
 const DesktopNavLinks = ({ openDropdown, setOpenDropdown }) => {
   const location = useLocation();
   return (
-    <div className="hidden lg:flex items-center justify-center flex-1 min-w-0 pl-6">
+    <div className="hidden lg:flex items-center justify-center flex-1 gap-1 xl:gap-2 px-2 shrink-0 overflow-visible">
       {NAV_ITEMS.map((item) => {
         const isActive = item.href
           ? (item.href === "/" ? location.pathname === "/" : location.pathname.startsWith(item.href))
@@ -270,7 +270,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
         data-aos="fade-down"
         data-aos-once="true"
         data-aos-duration="1000"
-        className="fixed top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-4 max-w-7xl mx-auto z-90 shadow-lg shadow-indigo-500/5 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border border-gray-200/50 dark:border-slate-800/80 transition-all duration-300 overflow-visible rounded-2xl"
+        className="fixed top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-4 max-w-7xl mx-auto z-90 shadow-[0_4px_24px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)] backdrop-blur-md bg-white/70 dark:bg-black/70 border-b border-gray-200/50 dark:border-zinc-800/50 transition-all duration-300 overflow-visible rounded-2xl"
       >
         <div className="neon-navbar-border"></div>
 

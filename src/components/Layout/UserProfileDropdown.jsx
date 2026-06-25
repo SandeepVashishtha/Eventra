@@ -25,7 +25,7 @@ const UserProfileDropdown = ({
       aria-expanded={showProfileDropdown}
       aria-haspopup="menu"
       aria-controls="user-profile-menu"
-      className="flex items-center gap-2 text-sm font-medium text-black/90 dark:text-white/90 hover:text-black dark:hover:text-white transition-colors"
+      className="flex items-center gap-2 text-sm font-medium text-black/90 dark:text-white/90 hover:text-black dark:hover:text-white transition-all duration-200 px-2 py-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 hover:shadow-sm"
     >
       {user?.profilePicture ? (
         <img
