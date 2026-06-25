@@ -132,8 +132,8 @@ const HackathonLifecycle = () => {
       done: false,
     };
 
-    setPhasesList(
-      phasesList.map((phase) => {
+    setPhasesList((prevPhasesList) =>
+      prevPhasesList.map((phase) => {
         if (phase.id === selectedPhaseId) {
           return {
             ...phase,
@@ -149,8 +149,8 @@ const HackathonLifecycle = () => {
 
   // Toggle dynamic checklist tasks
   const toggleTask = (phaseId, taskId) => {
-    setPhasesList(
-      phasesList.map((phase) => {
+    setPhasesList((prevPhasesList) =>
+      prevPhasesList.map((phase) => {
         if (phase.id === phaseId) {
           return {
             ...phase,
@@ -167,8 +167,8 @@ const HackathonLifecycle = () => {
   // Change overall active phase (organizer simulation)
   const setGlobalActivePhase = (index) => {
     setActivePhaseIndex(index);
-    setPhasesList(
-      phasesList.map((phase, idx) => {
+    setPhasesList((prevPhasesList) =>
+      prevPhasesList.map((phase, idx) => {
         let status = "upcoming";
         if (idx < index) status = "completed";
         else if (idx === index) status = "active";
