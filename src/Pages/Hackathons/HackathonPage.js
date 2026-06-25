@@ -454,7 +454,10 @@ const HackathonHub = () => {
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div
+        ref={cardsSectionRef}
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+      >
         <div className="mb-8">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
             <h2 className={`text-3xl font-bold ${darkTheme.textPrimary}`}>
@@ -693,90 +696,7 @@ const HackathonHub = () => {
   )}
 </AnimatePresence>
 
-        <AnimatePresence mode="wait">
-          {isLoading ? (
-            <div className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <HackathonCardSkeleton key={i} />
-              ))}
-            </div>
-          ) : filteredHackathons.length > 0 ? (
-            <motion.div
-              className="grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-            >
-              {filteredHackathons.map((hackathon) => (
-                <HackathonCard key={hackathon.id} hackathon={hackathon} />
-              ))}
-            </motion.div>
-          ) : (
-            <motion.div
-              className={`
-                ${darkTheme.card}
-                rounded-3xl
-                p-12
-                text-center
-                shadow-xl
-              `}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <div className="mx-auto max-w-md">
-                <div
-                  className={`
-                    flex justify-center items-center
-                    w-20 h-20
-                    rounded-full
-                    ${darkTheme.cardSecondary}
-                    mx-auto
-                  `}
-                >
-                  <FiCode className="h-10 w-10 text-blue-500" />
-                </div>
-
-                <h3
-                  className={`mt-6 text-2xl font-bold ${darkTheme.textPrimary}`}
-                >
-                  No Hackathons Found
-                </h3>
-
-                <p
-                  className={`mt-3 text-sm leading-relaxed ${darkTheme.textSecondary}`}
-                >
-                  No hackathons match your current filters.
-                </p>
-
-                <div className="mt-8 flex gap-4 justify-center">
-                  <button
-                    onClick={resetFilters}
-                    className={`
-                      ${darkTheme.buttonPrimary}
-                      px-6 py-3
-                      rounded-xl
-                      flex items-center gap-2
-                    `}
-                  >
-                    <FiRotateCw />
-                    Reset Filters
-                  </button>
-
-                  <button
-                    className={`
-                      ${darkTheme.buttonSecondary}
-                      px-6 py-3
-                      rounded-xl
-                      flex items-center gap-2
-                    `}
-                  >
-                    Explore
-                    <FiCompass />
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+       
 
       </div>
 
