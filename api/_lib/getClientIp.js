@@ -26,19 +26,24 @@ export const getClientIp = (req) => {
 
   const headers = req.headers || {};
 
-  // Try X-Forwarded-For first (leftmost IP is the original client)
-  const xForwardedFor = headers["x-forwarded-for"];
-  if (xForwardedFor) {
-    const forwarded = xForwardedFor.split(",")[0]?.trim();
-    if (forwarded && net.isIP(forwarded)) {
-      return forwarded;
-    }
-  }
+  // Only trust client-supplied headers if explicitly configured or running on Vercel
+  const trustProxy = process.env.TRUST_PROXY === 'true' || process.env.VERCEL === '1';
 
-  // Try X-Real-IP as fallback
-  const xRealIP = headers["x-real-ip"];
-  if (xRealIP && net.isIP(xRealIP)) {
-    return xRealIP;
+  if (trustProxy) {
+    // Try X-Forwarded-For first (leftmost IP is the original client)
+    const xForwardedFor = headers["x-forwarded-for"];
+    if (xForwardedFor) {
+      const forwarded = xForwardedFor.split(",")[0]?.trim();
+      if (forwarded && net.isIP(forwarded)) {
+        return forwarded;
+      }
+    }
+
+    // Try X-Real-IP as fallback
+    const xRealIP = headers["x-real-ip"];
+    if (xRealIP && net.isIP(xRealIP)) {
+      return xRealIP;
+    }
   }
 
   // Fall back to socket.remoteAddress
