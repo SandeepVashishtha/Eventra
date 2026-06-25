@@ -14,13 +14,15 @@ const getStorageKey = () => {
   if (typeof process !== "undefined" && (process.env.NODE_ENV === "test" || process.env.VITE_TEST_MODE === "true")) {
     return "eventra_notification_inbox";
   }
-  try {
-    const userStr = window.localStorage.getItem('user');
-    if (userStr) {
-      const user = JSON.parse(userStr);
-      if (user && user.id) return 'eventra_notification_inbox_' + user.id;
-    }
-  } catch (e) {}
+  if (typeof window !== "undefined" && window.localStorage) {
+    try {
+      const userStr = window.localStorage.getItem('user');
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        if (user && user.id) return 'eventra_notification_inbox_' + user.id;
+      }
+    } catch (e) {}
+  }
   return 'eventra_notification_inbox_guest';
 };
 
@@ -31,16 +33,21 @@ const normalize = (n = {}) => ({
 });
 
 const persist = (items) => {
-  try { window.localStorage.setItem(getStorageKey(), JSON.stringify(items)); } catch {}
+  if (typeof window !== "undefined" && window.localStorage) {
+    try { window.localStorage.setItem(getStorageKey(), JSON.stringify(items)); } catch {}
+  }
 };
 
 const loadPersisted = () => {
-  try {
-    const raw = window.localStorage.getItem(getStorageKey());
-    if (!raw) return null;
-    const parsed = safeJsonParse(raw, []);
-    return Array.isArray(parsed) ? parsed.map(normalize) : null;
-  } catch { return null; }
+  if (typeof window !== "undefined" && window.localStorage) {
+    try {
+      const raw = window.localStorage.getItem(getStorageKey());
+      if (!raw) return null;
+      const parsed = safeJsonParse(raw, []);
+      return Array.isArray(parsed) ? parsed.map(normalize) : null;
+    } catch { return null; }
+  }
+  return null;
 };
 
 export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
