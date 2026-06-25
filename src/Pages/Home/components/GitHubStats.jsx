@@ -74,12 +74,11 @@ export default function GitHubStats() {
 
     (async () => {
       try {
-        const [repoResult, contributorsResult, prResult] =
-          await Promise.allSettled([
-            fetchStat(GITHUB_USER, GITHUB_REPO),
-            fetchStat(GITHUB_USER, GITHUB_REPO, 1, 1),
-            fetchStat(GITHUB_USER, GITHUB_REPO, { per_page: 1 }),
-          ]);
+        const [repoResult, contributorsResult, prResult] = await Promise.allSettled([
+          fetchStat(GITHUB_USER, GITHUB_REPO),
+          fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contributors?per_page=1`),
+          fetch(`https://api.github.com/search/issues?q=repo:${GITHUB_USER}/${GITHUB_REPO}+type:pr`),
+        ]);
 
         if (repoResult.status === "rejected") {
           const cached = readCache();
@@ -94,23 +93,28 @@ export default function GitHubStats() {
 
         let contribCount = "—";
         if (contributorsResult.status === "fulfilled") {
-          const contributors = contributorsResult.value;
-          if (Array.isArray(contributors) && contributors.length > 0) {
-            contribCount = contributors.length;
+          const res = contributorsResult.value;
+          if (res.ok) {
+            const linkHeader = res.headers.get("link");
+            if (linkHeader) {
+              const match = linkHeader.match(/page=(\d+)>; rel="last"/);
+              if (match) contribCount = parseInt(match[1], 10);
+            } else {
+              const data = await res.json().catch(() => []);
+              contribCount = data.length || 1;
+            }
           }
-        } else if (contributorsResult.status === "rejected") {
-          contribCount = "—";
         }
 
         let prCount = "—";
         if (prResult.status === "fulfilled") {
-          const pullRequests = prResult.value;
-          if (Array.isArray(pullRequests) && pullRequests.length > 0) {
-            prCount = pullRequests.length;
+          const res = prResult.value;
+          if (res.ok) {
+            const data = await res.json().catch(() => ({}));
+            if (data.total_count !== undefined) {
+              prCount = data.total_count;
+            }
           }
-        } else if (prResult.status === "rejected") {
-          prCount = "—";
-        } else {
         }
 
         const next = {
