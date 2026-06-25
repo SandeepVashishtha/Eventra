@@ -32,8 +32,8 @@ const cache = new Map(); // Map<storageKey, BookmarkEntry[]>
 
 const readStorage = (key) => {
   try {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem(key);
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const stored = window.localStorage.getItem(key);
       if (!stored) return [];
       const parsed = safeJsonParse(stored, []);
       return Array.isArray(parsed) ? parsed : [];
@@ -47,8 +47,8 @@ const readStorage = (key) => {
 
 const writeStorage = (key, value) => {
   try {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(key, JSON.stringify(value));
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.setItem(key, JSON.stringify(value));
     }
   } catch {
     // localStorage quota exceeded — in-memory state remains correct
@@ -183,7 +183,9 @@ const useBookmarks = (userId = "guest") => {
     setBookmarks([]);
     cache.set(storageKeyRef.current, []);
     try {
-      localStorage.removeItem(storageKeyRef.current);
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.removeItem(storageKeyRef.current);
+      }
     } catch {
       // ignore storage access blocks
     }
