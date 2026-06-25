@@ -82,6 +82,7 @@ const useLocalStorage = (key, initialValue) => {
   );
 
   const removeValue = useCallback(() => {
+    if (typeof window === "undefined") return;
     try {
       window.localStorage.removeItem(key);
       setStoredValue(initialValueRef.current);
@@ -126,6 +127,7 @@ const useLocalStorage = (key, initialValue) => {
 
 export default useLocalStorage;
 export const isLocalStorageAvailable = () => {
+  if (typeof window === "undefined") return false;
   try {
     const testKey = "__storage_test__";
     window.localStorage.setItem(testKey, testKey);
