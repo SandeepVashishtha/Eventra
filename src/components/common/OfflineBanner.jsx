@@ -15,7 +15,7 @@ import { motion, AnimatePresence } from "framer-motion";
  * - Decorative icons are aria-hidden.
  */
 const OfflineBanner = () => {
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [isOnline, setIsOnline] = useState(typeof navigator !== "undefined" ? navigator.onLine : true);
   const [showRestoredMsg, setShowRestoredMsg] = useState(false);
   const [liveMessage, setLiveMessage] = useState("");
 const [offlineSince, setOfflineSince] = useState(null);
