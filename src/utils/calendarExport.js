@@ -1,6 +1,7 @@
 import { createEvent } from "ics";
 
 export const downloadICS = (event) => {
+  if (typeof window === "undefined" || typeof document === "undefined") return;
   const startDate = new Date(event.date);
 
   const eventConfig = {
