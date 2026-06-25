@@ -1,8 +1,10 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { getJwtSecret, JWT_EXPIRES_IN, JWT_COOKIE_MAX_AGE_SECONDS } from "./jwt-config.js";
-import { createRateLimiter } from "../lib/rateLimiter.js";
+import { getClientIp } from "../lib/getClientIp.js";
+import { signupRateLimiter, enforceRateLimit } from "../lib/rateLimiter.js";
 import { buildCorsHeaders, corsResponse } from "./cors.js";
+import { setAuthCookie } from "../lib/cookieUtils.js";
 import { assertPersistentStorageConfigured, isInMemoryStorageAllowed } from "./storage-config.js";
 
 
@@ -41,12 +43,6 @@ if (isInMemoryStorageAllowed()) {
 // ---------------------------------------------------------------------------
 
 const JWT_SECRET = getJwtSecret();
-
-// ---------------------------------------------------------------------------
-// Rate Limiting (IP-based, 3 signups per minute)
-// ---------------------------------------------------------------------------
-
-const signupRateLimiter = createRateLimiter(60_000, 5);
 
 // ---------------------------------------------------------------------------
 // Validation Helpers
@@ -201,12 +197,9 @@ async function handler(req, res) {
     // Run after input validation so malformed requests don't burn the budget.
     // -----------------------------------------------------------------------
 
-    const clientIp = req.headers?.["x-forwarded-for"]?.split(",")[0]?.trim()
-      || req.headers?.["x-real-ip"]
-      || req.socket?.remoteAddress
-      || "unknown";
-
-    if (!signupRateLimiter.check(clientIp).allowed) {
+    const clientIp = getClientIp(req);
+    const rateLimit = enforceRateLimit(signupRateLimiter, clientIp);
+    if (!rateLimit.allowed) {
       return corsResponse(req, res, 429, {
         error: "Too many signup attempts. Please try again later.",
         retryAfter: 60,
@@ -280,21 +273,8 @@ async function handler(req, res) {
       createdAt: newUser.createdAt,
     };
 
-    const isProd = process.env.NODE_ENV === "production";
-    const sameSite = process.env.COOKIE_SAME_SITE || 'None';
-    const isSecure = isProd || sameSite.toLowerCase() === 'none';
-    const cookieValue = `token=${token}; HttpOnly; Path=/; Max-Age=${JWT_COOKIE_MAX_AGE_SECONDS}; SameSite=${sameSite}${isSecure ? '; Secure' : ''}`;
-    // Set cookie compatibly across test mocks (which may provide `set` instead of `setHeader`)
-    try {
-      if (typeof res.setHeader === 'function') {
-        res.setHeader('Set-Cookie', cookieValue);
-      } else if (typeof res.set === 'function') {
-        res.set({ 'Set-Cookie': cookieValue });
-      } else if (res.headers && typeof res.headers === 'object') {
-        res.headers['Set-Cookie'] = cookieValue;
-      }
-    } catch (e) {
-      // Ignore write errors on test response objects
+    if (token) {
+      setAuthCookie(res, token, JWT_COOKIE_MAX_AGE_SECONDS);
     }
 
     return corsResponse(req, res, 201, {

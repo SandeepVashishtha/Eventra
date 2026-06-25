@@ -23,6 +23,7 @@ import { getJwtSecret, JWT_EXPIRES_IN, JWT_COOKIE_MAX_AGE_SECONDS } from "./jwt-
 import { buildCorsHeaders, corsResponse } from "./cors.js";
 import { isPersistentStorageConfigured } from "./storage-config.js";
 import { users, usersByUsername } from "./signup.js";
+import { setAuthCookie } from "../lib/cookieUtils.js";
 
 /**
  * Validates the login request body.
@@ -136,21 +137,7 @@ export default async function login(req, res, deps = {}) {
     const token = typeof issueToken === "function" ? issueToken(user) : undefined;
 
     if (token) {
-      const isProd = process.env.NODE_ENV === "production";
-      const sameSite = process.env.COOKIE_SAME_SITE || 'None';
-      const isSecure = isProd || sameSite.toLowerCase() === 'none';
-      const cookieValue = `token=${token}; HttpOnly; Path=/; Max-Age=${JWT_COOKIE_MAX_AGE_SECONDS}; SameSite=${sameSite}${isSecure ? '; Secure' : ''}`;
-      try {
-        if (typeof res.setHeader === 'function') {
-          res.setHeader('Set-Cookie', cookieValue);
-        } else if (typeof res.set === 'function') {
-          res.set({ 'Set-Cookie': cookieValue });
-        } else if (res.headers && typeof res.headers === 'object') {
-          res.headers['Set-Cookie'] = cookieValue;
-        }
-      } catch (e) {
-        // Ignore write errors on test response objects
-      }
+      setAuthCookie(res, token, JWT_COOKIE_MAX_AGE_SECONDS);
     }
 
     const roles = user.roles || ["USER"];
