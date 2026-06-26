@@ -49,17 +49,18 @@ export default function LanguageSelector({ className = "", compact = false }) {
         aria-haspopup="listbox"
         aria-label={t("language.switch")}
         className={`
-          flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50/50 hover:bg-zinc-100 hover:border-zinc-300
-          dark:border-zinc-800 dark:bg-zinc-900/40 dark:hover:bg-zinc-800 dark:hover:border-zinc-700
-          text-text-light hover:text-text
+          flex items-center gap-2 rounded-full border border-gray-200/80 bg-white/80 hover:bg-white shadow-sm hover:shadow-md
+          dark:border-zinc-700/80 dark:bg-zinc-900/80 dark:hover:bg-zinc-800
+          text-text-light hover:text-text backdrop-blur-md
           transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary
-          ${compact ? "px-2 py-1 text-xs" : "px-3 py-1.5 text-sm"}
+          ${compact ? "px-3 py-1.5 text-xs" : "px-4 py-2 text-sm"}
         `}
       >
-        <Globe className={compact ? "h-3.5 w-3.5" : "h-4 w-4"} aria-hidden="true" />
-        <span className="font-medium">{currentLang.nativeLabel}</span>
+        <Globe className={compact ? "h-3.5 w-3.5" : "h-4 w-4"} strokeWidth={1.5} aria-hidden="true" />
+        <span className="font-medium tracking-wide">{currentLang.nativeLabel}</span>
         <ChevronDown
           className={`${compact ? "h-3.5 w-3.5" : "h-4 w-4"} transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+          strokeWidth={1.5}
           aria-hidden="true"
         />
       </button>

@@ -169,7 +169,7 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
         },
         (phase) => {
           setCurrentPhase(phase);
-          setDonePhases((prev) => {
+          setDonePhases((_prev) => {
             const phaseOrder = BOOTSTRAP_PHASES.map((p) => p.key);
             const idx = phaseOrder.indexOf(phase);
             return phaseOrder.slice(0, idx);

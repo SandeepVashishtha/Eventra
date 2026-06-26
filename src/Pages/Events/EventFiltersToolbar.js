@@ -37,33 +37,18 @@ const EventFiltersToolbar = ({
   searchQuery,
   onSearchChange,
   onResetFilters,
-  currentFilterConfig,
-  onApplyPreset,
   visibleEvents = [],
   // totalElements = 0,
 }) => {
   const [localQuery, setLocalQuery] = useState(searchQuery || "");
-  const [presetName, setPresetName] = useState("");
-  const [editingPresetId, setEditingPresetId] = useState("");
-  const [editingPresetName, setEditingPresetName] = useState("");
-  const [exportMessage, setExportMessage] = useState("");
-  const [exportError, setExportError] = useState("");
   const debounceRef = useRef(null);
   
-  const {
-    presets,
-    presetError,
-    clearPresetError,
-    savePreset,
-    renamePreset,
-    updatePreset,
-    deletePreset,
-  } = useEventFilterPresets();
-  
-  const { suggestions } = useFilterSuggestions({
+  const { clearPresetError: _clearPresetError } = useEventFilterPresets();
+
+  useFilterSuggestions({
     currentFilters: currentFilterConfig,
     visibleEvents,
-    presets,
+    presets: [],
   });
 
   useEffect(() => {
@@ -86,98 +71,12 @@ const EventFiltersToolbar = ({
     onSearchChange?.("");
   };
 
-  const handleSavePreset = () => {
-    const result = savePreset(presetName, currentFilterConfig);
-    if (!result.error) setPresetName("");
-  };
-
-  const handleStartRename = (preset) => {
-    clearPresetError();
-    setEditingPresetId(preset.id);
-    setEditingPresetName(preset.name);
-  };
-
-  const handleRenamePreset = (presetId) => {
-    const result = renamePreset(presetId, editingPresetName);
-    if (!result.error) {
-      setEditingPresetId("");
-      setEditingPresetName("");
-    }
-  };
-
-  const handleDeletePreset = (preset) => {
-    if (window.confirm(`Delete the "${preset.name}" filter preset? This cannot be undone.`)) {
-      deletePreset(preset.id);
-    }
-  };
-
-  const handleExport = (format) => {
-    setExportMessage("");
-    setExportError("");
-    try {
-      const result = exportEventsResultFile({ events: visibleEvents, filters: currentFilterConfig, format });
-      if (!result.ok) {
-        setExportError(result.error);
-        return;
-      }
-      setExportMessage(`Exported ${result.count} event${result.count === 1 ? "" : "s"} to ${result.filename}.`);
-    } catch {
-      setExportError("Unable to export events right now.");
-    }
-  };
-
-  const suggestionKindLabels = {
-    category: "Category", location: "Location", eventType: "Type",
-    dateRange: "Date", combination: "Combo", preset: "Preset",
-  };
-
   const hasAnyFilterActive =
     (searchQuery && searchQuery.trim() !== "") ||
     (filterType && filterType !== "all") ||
     (categoryFilter && categoryFilter !== "all");
 
-  // Refined, clean pill styles
-  const renderFilterTab = useCallback((tab) => {
-    const isActive = filterType === tab.key;
-    return (
-      <button
-        key={tab.key}
-        type="button"
-        onClick={() => onFilterChange(tab.key)}
-        className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-lg transition-all border cursor-pointer ${
-          isActive
-            ? "bg-blue-600 text-white border-blue-500 shadow-sm shadow-blue-600/20"
-            : "bg-zinc-800/50 hover:bg-zinc-700/50 text-zinc-400 hover:text-zinc-100 border-white/5 hover:border-white/10"
-        }`}
-      >
-        {tab.pulse && (
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-          </span>
-        )}
-        {tab.label}
-      </button>
-    );
-  }, [filterType, onFilterChange]);
 
-  const renderCategoryButton = useCallback((cat) => {
-    const isActive = categoryFilter === cat.id;
-    return (
-      <button
-        key={cat.id}
-        type="button"
-        onClick={() => onCategoryChange(cat.id)}
-        className={`px-3.5 py-1.5 text-xs font-medium rounded-lg border whitespace-nowrap transition-all cursor-pointer ${
-          isActive
-            ? "bg-zinc-100 text-zinc-900 border-zinc-200 shadow-sm font-semibold"
-            : "bg-zinc-800/50 hover:bg-zinc-700/50 text-zinc-400 hover:text-zinc-100 border-white/5 hover:border-white/10"
-        }`}
-      >
-        {cat.label}
-      </button>
-    );
-  }, [categoryFilter, onCategoryChange]);
 
   return (
     <div className="sticky top-0 z-30 w-full flex flex-col gap-6 bg-slate-950/80 backdrop-blur-md p-4 sm:p-6 rounded-3xl border border-slate-900 shadow-xl">
