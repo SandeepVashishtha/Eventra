@@ -43,7 +43,7 @@ const footerColumns = [
       { nameKey: "footer.links.communityEvents", href: "/community-event", icon: <FaUsers size={12} /> },
       { nameKey: "footer.links.contributors", href: "/contributors", icon: <FaCode size={12} /> },
       { nameKey: "footer.links.contributorsGuide", href: "/contributorguide", icon: <FaBook size={12} /> },
-      { nameKey: "footer.links.leaderboard", href: "/leaderBoard", icon: <FaTrophy size={12} /> },
+      { nameKey: "footer.links.leaderboard", href: "/leaderboard", icon: <FaTrophy size={12} /> },
     ],
   },
   {
