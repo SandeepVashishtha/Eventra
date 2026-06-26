@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import {
-  X, Briefcase, Mail, Globe, Linkedin, Twitter, Github,
-  Send, User, MessageSquare, ArrowLeft
+  X, Briefcase, Globe, Linkedin, Twitter, Github,
+  Send, MessageSquare, ArrowLeft
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { safeJsonParse } from "../../utils/safeJsonParse";

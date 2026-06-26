@@ -106,7 +106,7 @@ const EventCalendarView = ({ events }) => {
             
             date.setHours(hours, minutes, 0, 0);
           }
-        } catch (e) {
+        } catch (_e) {
           // Ignore time parsing errors
         }
       }
