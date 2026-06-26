@@ -57,7 +57,7 @@ const AuthButtons = ({ isLoggedIn = false }) => {
           aria-expanded={isOpen}
           aria-haspopup="menu"
           aria-controls={isOpen ? menuId : undefined}
-          className="flex items-center gap-2 rounded-full border border-gray-200/80 bg-white/80 hover:bg-white shadow-sm hover:shadow-md dark:border-zinc-700/80 dark:bg-zinc-900/80 dark:hover:bg-zinc-800 text-text-light hover:text-text backdrop-blur-md transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary px-3 py-1.5 text-sm font-medium tracking-wide"
+          className="flex items-center gap-1.5 rounded-full border border-gray-200/80 bg-white/80 hover:bg-white shadow-sm hover:shadow-md dark:border-zinc-700/80 dark:bg-zinc-900/80 dark:hover:bg-zinc-800 text-text-light hover:text-text backdrop-blur-md transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary px-3 py-1.5 text-sm font-medium tracking-wide"
         >
           <span>{isLoggedIn ? t("nav.profile") : t("nav.account")}</span>
           <ChevronDown
@@ -157,7 +157,7 @@ const AuthButtons = ({ isLoggedIn = false }) => {
       {isLoggedIn ? (
         <Link
           to="/events/create"
-          className="px-6 py-2.5 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary-hover transition-all duration-200 whitespace-nowrap shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2"
+          className="px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary-hover transition-all duration-200 whitespace-nowrap shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-1.5"
         >
           <PlusCircle className="w-4 h-4" />
           {t("nav.createEvent") || "Create Event"}
@@ -166,7 +166,7 @@ const AuthButtons = ({ isLoggedIn = false }) => {
         <Link
           to="/signup"
           onMouseEnter={() => prefetchSignup()}
-          className="px-6 py-2.5 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary-hover transition-all duration-200 whitespace-nowrap shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0"
+          className="px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary-hover transition-all duration-200 whitespace-nowrap shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0"
         >
           {t("nav.getStarted")}
         </Link>
