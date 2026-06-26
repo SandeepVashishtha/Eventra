@@ -32,39 +32,30 @@ const LiveInteractionHub = () => {
           </Tab.List>
           <Tab.Panels className="p-6">
             <AnimatePresence mode="wait">
-              {selectedIndex === 0 && (
-                <motion.div
-                  key="qa"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <QAPanel />
-                </motion.div>
-              )}
-              {selectedIndex === 1 && (
-                <motion.div
-                  key="poll"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <LivePollPanel poll={{ question: 'Sample poll?', options: [{ id: 1, text: 'Option A', votes: 0 }, { id: 2, text: 'Option B', votes: 0 }], duration: 60 }} onVote={() => {}} />
-                </motion.div>
-              )}
-              {selectedIndex === 2 && (
-                <motion.div
-                  key="quiz"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <QuizPanel quiz={{ questions: [{ id: 1, text: 'Sample question?', options: [{ id: 'a', text: 'Ans A' }, { id: 'b', text: 'Ans B' }], correctOptionId: 'a' }] }} onComplete={() => {}} />
-                </motion.div>
-              )}
+              <Tab.Panel key="qa" as={motion.div}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <QAPanel />
+              </Tab.Panel>
+              <Tab.Panel key="poll" as={motion.div}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <LivePollPanel poll={{ question: 'Sample poll?', options: [{ id: 1, text: 'Option A', votes: 0 }, { id: 2, text: 'Option B', votes: 0 }], duration: 60 }} onVote={() => { }} />
+              </Tab.Panel>
+              <Tab.Panel key="quiz" as={motion.div}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <QuizPanel quiz={{ questions: [{ id: 1, text: 'Sample question?', options: [{ id: 'a', text: 'Ans A' }, { id: 'b', text: 'Ans B' }], correctOptionId: 'a' }] }} onComplete={() => { }} />
+              </Tab.Panel>
             </AnimatePresence>
           </Tab.Panels>
         </Tab.Group>
