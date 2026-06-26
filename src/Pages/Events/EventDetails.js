@@ -575,7 +575,7 @@ const showClosingSoon =
 
                 {/* Event Countdown */}
                 <div className="sm:col-span-2">
-                  <CountdownTimer eventDate={event.date} />
+                  <CountdownTimer date={event.date} time={event.time} timezone={event.timezone} />
                 </div>
               </div>
 
