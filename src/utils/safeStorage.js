@@ -83,7 +83,7 @@ const createSafeStorage = (getStorage) => {
 
       try {
         return safeJsonParse(raw, {});
-      } catch (_) {
+      } catch {
         // Stored values can be user-edited or corrupted; callers should keep running.
         return fallback;
       }

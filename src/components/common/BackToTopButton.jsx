@@ -1,19 +1,19 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ChevronUp } from "lucide-react";
 
 const BackToTopButton = ({ threshold = 300, positionClass = "bottom-6 right-6" }) => {
   const [visible, setVisible] = useState(false);
 
-  const handleScroll = () => {
+  const handleScroll = useCallback(() => {
     setVisible(window.scrollY > threshold);
-  };
+  }, [threshold]);
 
   useEffect(() => {
     window.addEventListener("scroll", handleScroll);
     return () => {
       window.removeEventListener("scroll", handleScroll);
     };
-  }, [threshold]);
+  }, [handleScroll]);
 
   const scrollToTop = () => {
     window.scrollTo({

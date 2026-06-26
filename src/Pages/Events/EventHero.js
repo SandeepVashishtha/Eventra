@@ -36,10 +36,8 @@ const StatCounter = ({ stat, shouldAnimate }) => {
       <>
         {prefix}0{suffix}
       </>
-  );
-}
-
-export default memo(EventHero);
+    );
+  }
 
   return (
     <CountUp
@@ -377,3 +375,5 @@ function EventHero({
     </div>
   );
 }
+
+export default memo(EventHero);
