@@ -33,24 +33,15 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
     if (vertical) return;
 
     const handleOutsideClick = (event) => {
-      if (
-        navRef.current &&
-        !navRef.current.contains(event.target)
-      ) {
+      if (navRef.current && !navRef.current.contains(event.target)) {
         setOpenMenu(null);
       }
     };
 
-    document.addEventListener(
-      "mousedown",
-      handleOutsideClick
-    );
+    document.addEventListener("mousedown", handleOutsideClick);
 
     return () => {
-      document.removeEventListener(
-        "mousedown",
-        handleOutsideClick
-      );
+      document.removeEventListener("mousedown", handleOutsideClick);
     };
   }, [vertical]);
 
@@ -72,20 +63,14 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
   const handleClick = (href, e) => {
     try {
       if (href === "/events") {
-        sessionStorage.removeItem(
-          "eventra:event-filters:v1"
-        );
+        sessionStorage.removeItem("eventra:event-filters:v1");
       }
-
       if (href === "/hackathons") {
-        sessionStorage.removeItem(
-          "eventra:hackathon-filters:v1"
-        );
+        sessionStorage.removeItem("eventra:hackathon-filters:v1");
       }
     } catch {
       // ignore
     }
-
     onClick?.(e);
   };
 
@@ -93,13 +78,13 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
     vertical
       ? `
         flex items-center gap-2
-        w-full px-3 py-2
+        w-full px-3 py-2.5
         rounded-lg
         text-sm font-medium
-        transition-colors
+        transition-all duration-200
         ${
           isActive
-            ? "bg-bg-secondary text-primary font-semibold"
+            ? "bg-bg-secondary text-primary font-semibold border-l-4 border-primary font-semibold"
             : "text-text-secondary hover:bg-bg hover:text-primary"
         }
       `
@@ -115,59 +100,36 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
         transition-all duration-150 ease-out hover:scale-[1.02] active:scale-[0.98]
         ${
           isActive
-            ? "border-primary text-text dark:text-white font-semibold"
-            : "border-transparent text-text-secondary hover:text-text dark:hover:text-white hover:border-gray-300 dark:hover:border-zinc-700"
+            ? "border-primary text-text dark:text-white font-semibold font-semibold"
+            : "text-text-secondary hover:text-text dark:hover:text-white hover:border-gray-300 dark:hover:border-zinc-700"
         }
       `;
 
   return (
     <nav
       ref={navRef}
-      aria-label={
-        vertical
-          ? t("nav.mobilePrimaryLinks")
-          : t("nav.primaryLinks")
-      }
-      className={`flex ${
-        vertical
-          ? "flex-col w-full gap-2"
-          : "items-center gap-6"
-      }`}
+      aria-label={vertical ? t("nav.mobilePrimaryLinks") : t("nav.primaryLinks")}
+      className={`flex ${vertical ? "flex-col w-full gap-1" : "items-center gap-8"}`}
     >
       {NAV_ITEMS.map((item) => {
-        const isOpen =
-          openMenu === item.nameKey;
-
-        const hasChildren =
-          item.subItems &&
-          item.subItems.length > 0;
-
+        const isOpen = openMenu === item.nameKey;
+        const hasChildren = item.subItems && item.subItems.length > 0;
         const menuId = `menu-${item.nameKey}`;
 
         if (hasChildren) {
           return (
             <div
               key={item.nameKey}
-              className={`relative ${
-                vertical
-                  ? "w-full"
-                  : "flex items-center"
-              }`}
+              className={`relative ${vertical ? "w-full" : "flex items-center"}`}
             >
               <div className="flex items-center">
                 <NavLink
                   to={item.href}
-                  onClick={(e) =>
-                    handleClick(item.href, e)
-                  }
-                  className={({ isActive }) =>
-                    navLinkClasses(isActive)
-                  }
+                  onClick={(e) => handleClick(item.href, e)}
+                  className={({ isActive }) => navLinkClasses(isActive)}
                 >
                   {vertical && item.icon}
-                  <span>
-                    {t(item.nameKey)}
-                  </span>
+                  <span>{t(item.nameKey)}</span>
                 </NavLink>
 
                 {!vertical && (
@@ -176,13 +138,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                     aria-expanded={isOpen}
                     aria-haspopup="menu"
                     aria-controls={menuId}
-                    onClick={() =>
-                      setOpenMenu(
-                        isOpen
-                          ? null
-                          : item.nameKey
-                      )
-                    }
+                    onClick={() => setOpenMenu(isOpen ? null : item.nameKey)}
                     onKeyDown={(event) => {
                       if (event.key === "Enter") {
                         setOpenMenu(
@@ -192,38 +148,33 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                         );
                       }
                     }}
-                    className="ml-1 rounded p-1 hover:bg-bg-secondary"
+                    className="ml-0.5 rounded p-1.5 hover:bg-bg-secondary transition-colors"
+                    aria-label={`Toggle ${t(item.nameKey)} menu`}
                   >
                     <ChevronDown
-                      className={`h-4 w-4 transition-transform ${
-                        isOpen
-                          ? "rotate-180"
-                          : ""
+                      className={`h-4 w-4 transition-transform duration-200 ${
+                        isOpen ? "rotate-180" : ""
                       }`}
                     />
                   </button>
                 )}
               </div>
 
+              {/* Dropdown / Submenu */}
               {(vertical || isOpen) && (
                 <div
                   id={menuId}
                   className={
                     vertical
-                      ? "mt-2 ml-4 space-y-1"
-                      : "absolute left-0 top-full mt-3 min-w-[220px] rounded-lg border border-zinc-100 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md p-2 shadow-lg z-50"
+                      ? "mt-1 ml-6 space-y-1"
+                      : "absolute left-0 top-full mt-3 w-56 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md p-2 shadow-lg z-50 animate-in fade-in zoom-in-95"
                   }
                 >
                   {item.subItems.map((sub) => (
                     <NavLink
                       key={sub.nameKey}
                       to={sub.href}
-                      onClick={(e) =>
-                        handleClick(
-                          sub.href,
-                          e
-                        )
-                      }
+                      onClick={(e) => handleClick(sub.href, e)}
                       className={({ isActive }) =>
                         `
                           flex items-center gap-2
@@ -233,17 +184,14 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                           transition-all duration-200
                           ${
                             isActive
-                              ? "bg-bg-secondary text-indigo-600 dark:text-indigo-400 font-medium"
+                              ? "bg-bg-secondary text-indigo-600 dark:text-indigo-400 font-semibold"
                               : "text-text-secondary hover:bg-bg hover:text-indigo-600 dark:hover:text-indigo-400"
                           }
                         `
                       }
                     >
                       {sub.icon}
-
-                      <span>
-                        {t(sub.nameKey)}
-                      </span>
+                      <span>{t(sub.nameKey)}</span>
                     </NavLink>
                   ))}
                 </div>
@@ -252,22 +200,16 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
           );
         }
 
+        // Simple top-level link
         return (
           <NavLink
             key={item.nameKey}
             to={item.href}
-            onMouseEnter={() =>
-              handlePrefetch(item.href)
-            }
-            onClick={(e) =>
-              handleClick(item.href, e)
-            }
-            className={({ isActive }) =>
-              navLinkClasses(isActive)
-            }
+            onMouseEnter={() => handlePrefetch(item.href)}
+            onClick={(e) => handleClick(item.href, e)}
+            className={({ isActive }) => navLinkClasses(isActive)}
           >
             {item.icon}
-
             <span>{t(item.nameKey)}</span>
           </NavLink>
         );
@@ -277,5 +219,3 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
 };
 
 export default NavbarLinks;
-
-
