@@ -111,7 +111,7 @@ const MobileDrawer = ({
         role="dialog"
         aria-modal="true"
         aria-label="Mobile navigation"
-        className={`mobile-drawer-panel absolute right-0 top-0 flex w-[min(92vw,24rem)] max-w-drawer flex-col bg-navbar shadow-premium-lg transition-transform duration-200 ease-out ${
+        className={`mobile-drawer-panel absolute right-0 top-0 flex h-dvh w-[min(92vw,24rem)] flex-col bg-navbar shadow-premium-lg transition-transform duration-200 ease-out ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -140,38 +140,13 @@ const MobileDrawer = ({
           </button>
         </div>
 
-        <div className="flex h-[calc(100%-64px)] flex-col overflow-y-auto px-4 py-4">
-          {/* Main Navigation - Consistent with Desktop */}
-          <NavbarLinks vertical onClick={closeMenu} />
+        <div className="flex flex-1 flex-col overflow-y-auto px-4 py-5">
+          <NavbarLinks
+            vertical
+            onClick={closeMenu}
+          />
 
-          {/* Quick Actions (P3) */}
-          {isAuthenticated && (
-            <div className="mt-6 border-t border-border pt-4">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-text-light/80 mb-3 px-1">
-                Quick Actions
-              </h3>
-              <div className="flex flex-col gap-1.5">
-                <Link
-                  to="/events/create"
-                  onClick={closeMenu}
-                  className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-primary hover:bg-bg-secondary transition-colors"
-                >
-                  <PlusCircle className="w-5 h-5" />
-                  {t("nav.createEvent") || "Create Event"}
-                </Link>
-                <Link
-                  to="/hackathons"
-                  onClick={closeMenu}
-                  className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-text-light hover:bg-bg-secondary transition-colors"
-                >
-                  Join Hackathon
-                </Link>
-              </div>
-            </div>
-          )}
-
-          {/* Language Selector */}
-          <div className="mt-6 px-1">
+          <div className="mt-4 px-1">
             <LanguageSelector className="w-full" />
           </div>
 
