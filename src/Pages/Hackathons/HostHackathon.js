@@ -267,7 +267,7 @@ const HostHackathon = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-bg text-text flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 pt-20">
+    <div className="min-h-screen overflow-x-hidden bg-bg text-text flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 pt-20">
       {/* Heading Section */}
       <motion.div
         initial={{ opacity: 0, y: -30 }}
@@ -282,7 +282,7 @@ const HostHackathon = () => {
           Host Your Hackathon
         </h1>
         <p className="text-xs sm:text-base text-gray-600 dark:text-gray-400">
-         &quot;Fill in the details below and let&apos;s get your hackathon live!&quot;
+          &quot;Fill in the details below and let&apos;s get your hackathon live!&quot;
         </p>
       </motion.div>
 
@@ -361,7 +361,7 @@ const HostHackathon = () => {
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
-        className="w-full max-w-4xl bg-card-bg shadow-xl rounded-2xl p-8 border border-border"
+        className="w-full max-w-4xl overflow-x-hidden bg-card-bg shadow-xl rounded-2xl p-8 border border-border"
         data-aos="fade-up"
         data-aos-delay="400"
       >
@@ -369,11 +369,11 @@ const HostHackathon = () => {
           {formFields.map((field, index) => (
             <motion.div
               key={field.name}
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: prefersReducedMotion ? 0 : 0.5 }}
-              data-aos="fade-right"
+              data-aos="fade-up"
               data-aos-delay={index * 50 + 500}
             >
               <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
