@@ -84,6 +84,32 @@
       ]
     },
     {
+  "source": "/assets/(.*)\\.css",
+  "headers": [
+    {
+      "key": "Content-Type",
+      "value": "text/css"
+    },
+    {
+      "key": "Cache-Control",
+      "value": "public, max-age=31536000, immutable"
+    }
+  ]
+},
+{
+  "source": "/assets/(.*)\\.js",
+  "headers": [
+    {
+      "key": "Content-Type",
+      "value": "application/javascript"
+    },
+    {
+      "key": "Cache-Control",
+      "value": "public, max-age=31536000, immutable"
+    }
+  ]
+},
+    {
       "source": "/assets/(.*)",
       "headers": [
         {
