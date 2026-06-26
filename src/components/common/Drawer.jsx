@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import FocusTrap from './FocusTrap';
 
 /**
@@ -123,4 +123,3 @@ const Drawer = ({
 };
 
 export default Drawer;
-// Optimized for lazy loading

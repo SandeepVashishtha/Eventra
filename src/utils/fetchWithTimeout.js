@@ -32,6 +32,22 @@ export const fetchWithTimeout = async (
     }
   }
 
+  const method = (options.method || "GET").toUpperCase();
+  if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+    const headers = new Headers(options.headers || {});
+    if (!headers.has("Idempotency-Key")) {
+      const idempotencyKey = typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            const r = Math.random() * 16 | 0;
+            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+          });
+      headers.set("Idempotency-Key", idempotencyKey);
+    }
+    options.headers = headers;
+  }
+
   try {
     const response = await fetch(url, {
       ...options,
@@ -67,14 +83,22 @@ export const fetchWithTimeout = async (
       data,
     };
   } catch (error) {
+    if (error instanceof FetchError) {
+      // Already a FetchError (thrown by the !response.ok block above) — rethrow as-is
+      throw error;
+    }
+
     if (error.name === "AbortError") {
       logger.error("[fetchWithTimeout] Request aborted or timed out:", url);
       throw new FetchError(
         `Request timed out after ${timeout}ms or was manually aborted`
       );
     }
+
+    // Network-level failure (e.g. TypeError: Failed to fetch) — wrap in FetchError
+    // so all callers can rely on a single consistent error type
     logger.error("[fetchWithTimeout] Request failed:", error);
-    throw error;
+    throw new FetchError(error.message || "Network request failed");
   } finally {
     clearTimeout(timeoutId);
     if (options.signal) {

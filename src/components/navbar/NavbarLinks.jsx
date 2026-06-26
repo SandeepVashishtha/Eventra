@@ -1,233 +1,216 @@
-import { useRef, useState, useEffect} from "react";
+import { useState, useEffect, useRef } from "react";
 import { NavLink, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ChevronDown } from "lucide-react";
+
 import { NAV_ITEMS } from "./constants/navItems";
-import { prefetchRoute } from "../../utils/prefetchUtils";
+import { prefetchRoute } from "../../utils/routePrefetch";
 
 const NavbarLinks = ({ vertical = false, onClick }) => {
+  const { t } = useTranslation();
   const location = useLocation();
   const navRef = useRef(null);
 
-  const [openGroup, setOpenGroup] = useState(null);
-
-  const handleNavbarLinkClick = (href, e) => {
-    if (href === "/events") {
-      try {
-        window.sessionStorage.removeItem("eventra:event-filters:v1");
-      } catch (err) {
-        // Ignored
-      }
-    } else if (href === "/hackathons") {
-      try {
-        window.sessionStorage.removeItem("eventra:hackathon-filters:v1");
-      } catch (err) {
-        // Ignored
-      }
-    }
-    if (onClick) {
-      onClick(e);
-    }
-  };
-
-  const handlePrefetch = (href) => {
-    if (href === "/events")prefetchRoute(() => import("../../Pages/Events/EventsPage"), "explore");
-    if (href === "/events") prefetchRoute(() => import("../../Pages/Events/EventsPage"), "explore");
-    if (href === "/saved-events") prefetchRoute(() => import("../../Pages/SavedEventsPage"), "saved");
-  };
+  const [openMenu, setOpenMenu] = useState(null);
 
   useEffect(() => {
-    setOpenGroup(null);
+    setOpenMenu(null);
   }, [location.pathname]);
 
   useEffect(() => {
-    if (vertical) return undefined;
-
-    const handlePointerDown = (event) => {
-      if (navRef.current && !navRef.current.contains(event.target)) {
-        setOpenGroup(null);
-      }
-    };
-
     const handleKeyDown = (event) => {
       if (event.key === "Escape") {
-        setOpenGroup(null);
+        setOpenMenu(null);
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (vertical) return;
+
+    const handleOutsideClick = (event) => {
+      if (navRef.current && !navRef.current.contains(event.target)) {
+        setOpenMenu(null);
       }
     };
 
-    document.addEventListener("pointerdown", handlePointerDown);
-    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("mousedown", handleOutsideClick);
 
     return () => {
-      document.removeEventListener("pointerdown", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("mousedown", handleOutsideClick);
     };
   }, [vertical]);
 
-  const secondaryItemNames = ["Saved", "About", "FAQ", "Contact"];
+  const handlePrefetch = (href) => {
+    const routes = {
+      "/": "home",
+      "/events": "events",
+      "/hackathons": "hackathons",
+      "/projects": "projects",
+      "/profile": "profile",
+      "/dashboard": "dashboard",
+    };
 
-  const getNavLinkClasses = (active, isSecondary = false, isDropdown = false) => {
-    return vertical
-      ? `mobile-drawer-link flex min-h-[44px] gap-2 items-center text-sm font-medium transition-all duration-200 w-full py-2 px-3 border-l-2 rounded-lg focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 ${
-          active
-            ? "text-text border-primary font-semibold bg-bg-secondary"
-            : "text-text-light hover:text-text border-transparent hover:bg-bg"
-        }`
-      : `flex gap-1.5 items-center text-[12px] lg:text-[13px] font-normal uppercase tracking-[0.03em] transition-all duration-200 px-3 py-2 border-b-2 rounded-t-md whitespace-nowrap focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:rounded-lg ${
-          active
-            ? "text-text border-primary"
-            : isDropdown
-            ? "text-text-light/75 hover:text-text border-transparent hover:border-border"
-            : "text-text-light hover:text-text border-transparent hover:border-border"
-        }`;
+    if (routes[href]) {
+      prefetchRoute(routes[href]);
+    }
   };
+
+  const handleClick = (href, e) => {
+    try {
+      if (href === "/events") {
+        sessionStorage.removeItem("eventra:event-filters:v1");
+      }
+      if (href === "/hackathons") {
+        sessionStorage.removeItem("eventra:hackathon-filters:v1");
+      }
+    } catch {
+      // ignore
+    }
+    onClick?.(e);
+  };
+
+  const navLinkClasses = (isActive) =>
+    vertical
+      ? `
+        flex items-center gap-2
+        w-full px-3 py-2.5
+        rounded-lg
+        text-sm font-medium
+        transition-all duration-200
+        ${
+          isActive
+            ? "bg-bg-secondary text-primary font-semibold border-l-4 border-primary font-semibold"
+            : "text-text-secondary hover:bg-bg hover:text-primary"
+        }
+      `
+      : `
+        flex items-center gap-1
+        whitespace-nowrap
+        px-0.5 py-1
+        text-[12px]
+        font-medium
+        uppercase
+        tracking-[0.03em]
+        border-b-2
+        transition-all duration-150 ease-out hover:scale-[1.02] active:scale-[0.98]
+        ${
+          isActive
+            ? "border-primary text-text dark:text-white font-semibold"
+            : "text-text-secondary hover:text-text dark:hover:text-white hover:border-gray-300 dark:hover:border-zinc-700"
+        }
+      `;
 
   return (
     <nav
       ref={navRef}
-      className={`flex ${
-        vertical
-          ? "flex-col items-start w-full gap-2"
-          : "items-center gap-4 lg:gap-5 mx-2 lg:mx-4 min-w-0 flex-nowrap overflow-x-auto navbar-links-scroll"
-      }`}
-      aria-label={vertical ? "Mobile primary links" : "Primary links"}
+      aria-label={vertical ? t("nav.mobilePrimaryLinks") : t("nav.primaryLinks")}
+      className={`flex ${vertical ? "flex-col w-full gap-1" : "items-center gap-2"}`}
     >
       {NAV_ITEMS.map((item) => {
-        const isSubItemActive = item.subItems?.some(
-          (sub) => location.pathname === sub.href
-        );
+        const isOpen = openMenu === item.nameKey;
+        const hasChildren = item.subItems && item.subItems.length > 0;
+        const menuId = `menu-${item.nameKey}`;
 
-        const isOpen = openGroup === item.name;
-
-        if (item.subItems) {
+        if (hasChildren) {
           return (
             <div
-              key={item.name}
-              className={`relative group/nav flex items-center shrink-0 ${
-                vertical ? "w-full flex-col items-start" : "flex-none"
-              } ${!vertical && secondaryItemNames.includes(item.name) ? "hidden lg:flex" : ""}`}
+              key={item.nameKey}
+              className={`relative ${vertical ? "w-full" : "flex items-center"}`}
             >
-              <div className="flex w-full items-center gap-0.5">
+              <div className="flex items-center">
                 <NavLink
                   to={item.href}
-                  onClick={(e) => handleNavbarLinkClick(item.href, e)}
-                  aria-haspopup={!vertical ? "menu" : undefined}
-                  aria-expanded={!vertical ? isOpen : undefined}
-                  aria-controls={
-                    !vertical
-                      ? `navbar-links-menu-${item.name
-                          .toLowerCase()
-                          .replace(/\s+/g, "-")}`
-                      : undefined
-                  }
-                  className={({ isActive }) =>
-                    getNavLinkClasses(
-                      isActive || isSubItemActive,
-                      secondaryItemNames.includes(item.name),
-                      true
-                    )
-                  }
+                  onClick={(e) => handleClick(item.href, e)}
+                  className={({ isActive }) => navLinkClasses(isActive)}
                 >
-                  {vertical ? item.icon : null}
-                  <span>{item.name}</span>
+                  {vertical && item.icon}
+                  <span>{t(item.nameKey)}</span>
                 </NavLink>
 
                 {!vertical && (
                   <button
                     type="button"
-                    onClick={() =>
-                      setOpenGroup((current) =>
-                        current === item.name ? null : item.name
-                      )
-                    }
+                    aria-expanded={isOpen}
+                    aria-haspopup="menu"
+                    aria-controls={menuId}
+                    onClick={() => setOpenMenu(isOpen ? null : item.nameKey)}
                     onKeyDown={(event) => {
-                      if (
-                        event.key === "Enter" ||
-                        event.key === " "
-                      ) {
-                        event.preventDefault();
-
-                        setOpenGroup((current) =>
-                          current === item.name ? null : item.name
+                      if (event.key === "Enter") {
+                        setOpenMenu(
+                          isOpen
+                            ? null
+                            : item.nameKey
                         );
                       }
                     }}
-                    aria-expanded={isOpen}
-                    aria-controls={`navbar-links-menu-${item.name
-                      .toLowerCase()
-                      .replace(/\s+/g, "-")}`}
-                    aria-label={`${
-                      isOpen ? "Collapse" : "Expand"
-                    } ${item.name} submenu`}
-                    className={`ml-1 inline-flex h-7 w-7 items-center justify-center rounded-md p-1 transition-colors hover:bg-bg-secondary focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 ${
-                      isSubItemActive
-                        ? "text-text"
-                        : "text-text-light/75 hover:text-text"
-                    }`}
+                    className="ml-0.5 rounded p-1.5 hover:bg-bg-secondary transition-colors"
+                    aria-label={`Toggle ${t(item.nameKey)} menu`}
                   >
                     <ChevronDown
-                      className={`w-3 h-3 transition-transform duration-200 ${
-                        isOpen
-                          ? "rotate-180"
-                          : "group-hover/nav:rotate-180"
+                      className={`h-4 w-4 transition-transform duration-200 ${
+                        isOpen ? "rotate-180" : ""
                       }`}
                     />
                   </button>
                 )}
               </div>
 
-              <div
-                id={`navbar-links-menu-${item.name
-                  .toLowerCase()
-                  .replace(/\s+/g, "-")}`}
-                className={
-                  vertical
-                    ? "mt-1 block w-full space-y-1 rounded-lg bg-bg p-2"
-                    : `${
-                        isOpen
-                          ? "block"
-                          : "hidden group-hover/nav:block"
-                      } absolute top-full left-0 bg-navbar shadow-premium-md rounded-md p-2 min-w-55 z-50 border border-border mt-1 animate-in fade-in slide-in-from-top-1 duration-200`
-                }
-                role={!vertical ? "menu" : undefined}
-                aria-label={`${item.name} submenu`}
-              >
-                {item.subItems.map((sub) => (
-                  <NavLink
-                    key={sub.name}
-                    to={sub.href}
-                    onClick={(e) => handleNavbarLinkClick(sub.href, e)}
-                    role={!vertical ? "menuitem" : undefined}
-                    className={({ isActive }) =>
-                      `mobile-drawer-link flex min-h-11 items-center gap-2 rounded-lg p-2 text-sm font-medium transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:ring-offset-bg ${
-                        isActive
-                          ? "bg-bg-secondary text-text font-semibold"
-                          : "text-text-light hover:text-text hover:bg-bg"
-                      }`
-                    }
-                  >
-                    <span className="flex-none [&>svg]:w-4 [&>svg]:h-4 text-current">{sub.icon}</span>
-                    <span>{sub.name}</span>
-                  </NavLink>
-                ))}
-              </div>
+              {/* Dropdown / Submenu */}
+              {(vertical || isOpen) && (
+                <div
+                  id={menuId}
+                  className={
+                    vertical
+                      ? "mt-1 ml-6 space-y-1"
+                      : "absolute left-0 top-full mt-3 w-56 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md p-2 shadow-lg z-50 animate-in fade-in zoom-in-95"
+                  }
+                >
+                  {item.subItems.map((sub) => (
+                    <NavLink
+                      key={sub.nameKey}
+                      to={sub.href}
+                      onClick={(e) => handleClick(sub.href, e)}
+                      className={({ isActive }) =>
+                        `
+                          flex items-center gap-2
+                          rounded-md
+                          px-3 py-2
+                          text-sm
+                          transition-all duration-200
+                          ${
+                            isActive
+                              ? "bg-bg-secondary text-indigo-600 dark:text-indigo-400 font-semibold"
+                              : "text-text-secondary hover:bg-bg hover:text-indigo-600 dark:hover:text-indigo-400"
+                          }
+                        `
+                      }
+                    >
+                      {sub.icon}
+                      <span>{t(sub.nameKey)}</span>
+                    </NavLink>
+                  ))}
+                </div>
+              )}
             </div>
           );
         }
 
+        // Simple top-level link
         return (
           <NavLink
-            key={item.name}
+            key={item.nameKey}
             to={item.href}
-            onClick={(e) => handleNavbarLinkClick(item.href, e)}
             onMouseEnter={() => handlePrefetch(item.href)}
-            className={({ isActive }) =>
-              getNavLinkClasses(isActive, secondaryItemNames.includes(item.name))
-            }
+            onClick={(e) => handleClick(item.href, e)}
+            className={({ isActive }) => navLinkClasses(isActive)}
           >
-            <span className="flex-none [&>svg]:w-4 [&>svg]:h-4 text-current">
-              {item.icon}
-            </span>
-            <span>{item.name}</span>
+            {item.icon}
+            <span>{t(item.nameKey)}</span>
           </NavLink>
         );
       })}

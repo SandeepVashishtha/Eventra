@@ -1,3 +1,4 @@
+import { apiUtils, API_ENDPOINTS } from "../../config/api";
 import { Star, MessageSquare } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
@@ -29,7 +30,7 @@ const FloatingField = ({
   return (
     <div className="space-y-1">
       <div
-        className={`relative rounded-2xl border bg-white/80 dark:bg-slate-900/70 backdrop-blur-sm transition-all duration-300 ${error
+        className={`relative rounded-xl border bg-white/80 dark:bg-slate-900/70 backdrop-blur-sm transition-all duration-200 ${error
             ? "border-red-400 bg-red-50/40 dark:border-red-500 dark:bg-red-950/20"
             : hasValue && !isFocused
               ? "border-green-400 dark:border-green-500"
@@ -189,10 +190,13 @@ const ContactUsInner = () => {
 
     // Simulate API call
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      // Show success toast
-      toast.success(t("contactUs.toastSuccess"));
+  await apiUtils.post(API_ENDPOINTS.CONTACT, {
+    name: formData.name,
+    email: formData.email,
+    subject: formData.subject,
+    message: formData.message,
+  });
+  toast.success(t("contactUs.toastSuccess"));
 
       // Reset form
       setFormData({
@@ -201,7 +205,7 @@ const ContactUsInner = () => {
         subject: "",
         message: "",
       });
-    } catch (error) {
+    } catch {
       toast.error(t("contactUs.toastError"));
     } finally {
       setIsSubmitting(false);
@@ -209,7 +213,7 @@ const ContactUsInner = () => {
   };
 
   return (
-    <div className="pastel-grid-bg min-h-screen bg-white bg-gradient-to-r from-slate-900 to-black hover:from-black hover:to-slate-800 shadow-xl shadow-black/20 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+    <div className="pastel-grid-bg min-h-screen bg-white bg-linear-to-r from-slate-900 to-black hover:from-black hover:to-slate-800 shadow-xl shadow-black/20 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
       <div className="max-w-4xl w-full mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -224,7 +228,7 @@ const ContactUsInner = () => {
         >
           <div className="md:flex gap-0">
             <div
-              className="md:w-3/5 lg:w-2/5 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white p-12 flex flex-col justify-between rounded-3xl shadow-xl backdrop-blur-lg"
+              className="md:w-3/5 lg:w-2/5 bg-linear-to-r from-slate-950 via-slate-900 to-indigo-950 text-white p-12 flex flex-col justify-between rounded-3xl shadow-xl backdrop-blur-lg"
               data-aos="fade-right"
               data-aos-duration="1000"
               data-aos-anchor=".ContactUs"
@@ -385,7 +389,7 @@ const ContactUsInner = () => {
                     whileTap={{ scale: 0.98 }}
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full overflow-hidden rounded-xl border border-slate-300/25 bg-gradient-to-r from-slate-800 via-slate-900 to-indigo-900 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-slate-900/35 transition-all duration-300 hover:from-slate-700 hover:via-slate-800 hover:to-indigo-800 hover:shadow-slate-900/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-80 dark:border-slate-600/40 dark:focus-visible:ring-offset-gray-900"
+                    className="w-full overflow-hidden rounded-xl border border-slate-300/25 bg-linear-to-r from-slate-800 via-slate-900 to-indigo-900 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-slate-900/35 transition-all duration-300 hover:from-slate-700 hover:via-slate-800 hover:to-indigo-800 hover:shadow-slate-900/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-80 dark:border-slate-600/40 dark:focus-visible:ring-offset-gray-900"
                   >
                     {isSubmitting ? (
                       <svg

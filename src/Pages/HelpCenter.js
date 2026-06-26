@@ -252,7 +252,7 @@ const HelpCenter = () => {
               className="group bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 flex flex-col items-center text-center transition-transform transform hover:scale-105 hover:shadow-2xl"
             >
               <div
-                className={`w-16 h-16 mb-4 flex items-center justify-center text-white rounded-full bg-gradient-to-br ${item.color} shadow-lg group-hover:rotate-12 transition-transform`}
+                className={`w-16 h-16 mb-4 flex items-center justify-center text-white rounded-full bg-linear-to-br ${item.color} shadow-lg group-hover:rotate-12 transition-transform`}
               >
                 {item.icon}
               </div>
@@ -344,7 +344,7 @@ const HelpCenter = () => {
                 className="block h-full bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 dark:border-gray-700"
               >
                 {/* Gradient Header */}
-                <div className={`h-3 bg-gradient-to-r ${guide.gradient}`}></div>
+                <div className={`h-3 bg-linear-to-r ${guide.gradient}`}></div>
 
                 {/* Card Content */}
                 <div className="p-6">
@@ -357,7 +357,7 @@ const HelpCenter = () => {
 
                   {/* Icon Container */}
                   <div
-                    className={`relative z-10 w-16 h-16 mb-4 rounded-xl bg-gradient-to-br ${guide.gradient} flex items-center justify-center text-white shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}
+                    className={`relative z-10 w-16 h-16 mb-4 rounded-xl bg-linear-to-br ${guide.gradient} flex items-center justify-center text-white shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}
                   >
                     {guide.icon}
                   </div>
@@ -376,7 +376,7 @@ const HelpCenter = () => {
                   <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
                     <div className="flex items-center space-x-4">
                       <span
-                        className={`text-xs font-semibold px-3 py-1 rounded-full bg-gradient-to-r ${guide.gradient} text-white`}
+                        className={`text-xs font-semibold px-3 py-1 rounded-full bg-linear-to-r ${guide.gradient} text-white`}
                       >
                         {guide.difficulty}
                       </span>
@@ -405,7 +405,7 @@ const HelpCenter = () => {
 
                 {/* Hover Glow Effect */}
                 <div
-                  className={`absolute inset-0 opacity-0 group-hover:opacity-20 bg-gradient-to-br ${guide.gradient} transition-opacity duration-300 pointer-events-none`}
+                  className={`absolute inset-0 opacity-0 group-hover:opacity-20 bg-linear-to-br ${guide.gradient} transition-opacity duration-300 pointer-events-none`}
                 ></div>
               </Link>
             </motion.div>
@@ -483,12 +483,12 @@ const HelpCenter = () => {
               className="group relative bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-700"
             >
               <div
-                className={`absolute top-0 left-0 w-full h-1 rounded-t-2xl bg-gradient-to-r ${guideline.color}`}
+                className={`absolute top-0 left-0 w-full h-1 rounded-t-2xl bg-linear-to-r ${guideline.color}`}
               ></div>
 
               <div className="flex items-start space-x-4">
                 <div
-                  className={`flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br ${guideline.color} flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-300`}
+                  className={`flex-shrink-0 w-12 h-12 rounded-xl bg-linear-to-br ${guideline.color} flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-300`}
                 >
                   {guideline.icon}
                 </div>
@@ -526,7 +526,7 @@ const HelpCenter = () => {
       {/* FAQ Section */}
       <section className="py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-center mb-4 text-gray-900 dark:text-white">
+          <h2 className="text-3xl font-bold bg-linear-to-br from-slate-950 via-slate-900 to-indigo-950 text-center mb-4 text-gray-900 dark:text-white">
             {t("helpCenter.faqHeading")}
           </h2>
           <p className="text-center text-gray-600 dark:text-gray-300 mb-12 max-w-2xl mx-auto">
@@ -640,7 +640,7 @@ const HelpCenter = () => {
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link
                 to="/contact"
-                className="inline-flex items-center justify-center gap-2 bg-white text-black font-semibold px-8 py-4 rounded-full shadow-lg hover:bg-gray-100 transition-transform duration-300"
+                className="inline-flex items-center justify-center gap-2 bg-white text-black dark:bg-slate-900 dark:text-white" font-semibold px-8 py-4 rounded-full shadow-lg hover:bg-gray-100 transition-transform duration-300 
               >
                 <Mail size={20} /> {t("helpCenter.ctaContactUs")}
               </Link>
