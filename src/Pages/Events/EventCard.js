@@ -56,6 +56,51 @@ const getCapacityStyles = (ratio, isFull) => {
   };
 };
 
+const EventCapacity = ({ attendees, maxAttendees }) => {
+  const registered = Number(attendees) || 0;
+  const capacity = Number(maxAttendees);
+  const isFull = registered >= capacity;
+  const ratio = Math.min(registered / capacity, 1);
+  const percent = Math.round(ratio * 100);
+  const spotsLeft = Math.max(capacity - registered, 0);
+  const { barColor, textColor } = getCapacityStyles(ratio, isFull);
+
+  return (
+    <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+          Seats
+        </span>
+        {isFull ? (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300">
+            Full
+          </span>
+        ) : (
+          <span className={`text-xs font-semibold tabular-nums ${textColor}`}>
+            {spotsLeft} spot{spotsLeft === 1 ? "" : "s"} left
+          </span>
+        )}
+      </div>
+      <div
+        className="w-full h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden"
+        role="progressbar"
+        aria-valuenow={percent}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={`${registered} of ${capacity} seats filled`}
+      >
+        <div
+          className={`h-full ${barColor} transition-all duration-500 ease-out`}
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+      <div className="mt-1 text-[11px] text-gray-500 dark:text-gray-500 tabular-nums">
+        {registered} / {capacity} registered
+      </div>
+    </div>
+  );
+};
+
 const EventCard = ({ event }) => {
   const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
   const titleId = useId();
@@ -340,51 +385,9 @@ const durationText = getEventDuration(event);
         <ReminderControls event={event} canSetReminder={canSetReminder} compact />
       </div>
       {/* Seats / Capacity */}
-      {typeof event.maxAttendees === "number" && event.maxAttendees > 0 && (() => {
-        const registered = Number(event.attendees) || 0;
-        const capacity = Number(event.maxAttendees);
-        const isFull = registered >= capacity;
-        const ratio = Math.min(registered / capacity, 1);
-        const percent = Math.round(ratio * 100);
-        const spotsLeft = Math.max(capacity - registered, 0);
-
-        const { barColor, textColor } = getCapacityStyles(ratio, isFull);
-
-        return (
-          <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                Seats
-              </span>
-              {isFull ? (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300">
-                  Full
-                </span>
-              ) : (
-                <span className={`text-xs font-semibold tabular-nums ${textColor}`}>
-                  {spotsLeft} spot{spotsLeft === 1 ? "" : "s"} left
-                </span>
-              )}
-            </div>
-            <div
-              className="w-full h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden"
-              role="progressbar"
-              aria-valuenow={percent}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-label={`${registered} of ${capacity} seats filled`}
-            >
-              <div
-                className={`h-full ${barColor} transition-all duration-500 ease-out`}
-                style={{ width: `${percent}%` }}
-              />
-            </div>
-            <div className="mt-1 text-[11px] text-gray-500 dark:text-gray-500 tabular-nums">
-              {registered} / {capacity} registered
-            </div>
-          </div>
-        );
-      })()}
+      {typeof event.maxAttendees === "number" && event.maxAttendees > 0 && (
+        <EventCapacity attendees={event.attendees} maxAttendees={event.maxAttendees} />
+      )}
 
       {/* Social Sharing */}
       <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 flex justify-center">
