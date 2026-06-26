@@ -1,3 +1,5 @@
+import EventDuration from "../../components/common/EventDuration";
+import { getEventDuration } from "../../utils/eventDurationUtils";
 import { memo, useCallback, useEffect, useId, useState } from "react";
 import { logger } from "../../utils/logger";
 import { getUserTimezone } from "../../utils/timezoneUtils";
@@ -19,13 +21,14 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import { addEventToGoogleCalendar } from "../../utils/calendarUtils";
 import LazyImage from "../../components/common/LazyImage";
 import ShareModal from "../../components/common/ShareModal";
 import StatusBadge from "../../components/common/StatusBadge";
 import { getEventStatus } from "../../utils/eventUtils";
 import { useMyEvents } from "../../context/MyEventsContext";
 import ReminderControls from "../../components/reminders/ReminderControls";
+import AddToCalendar from "../../components/common/AddToCalendar";
+import SocialShareButtons from "../../components/common/SocialShareButtons";
 import {
   addBookmarkedEvent,
   isEventBookmarked,
@@ -97,8 +100,7 @@ const EventCard = ({ event }) => {
       });
   };
 
-  const computedStatus = getEventStatus(event);
-  const canSetReminder = isBookmarked || isRegistered(event.id);
+const durationText = getEventDuration(event);
 
   useEffect(() => {
     setIsBookmarked(isEventBookmarked(event.id));
@@ -108,37 +110,42 @@ const EventCard = ({ event }) => {
     });
   }, [event.id]);
 
-  const handleBookmarkToggle = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleBookmarkToggle = useCallback(
+    (e) => {
+      e.preventDefault();
+      e.stopPropagation();
 
-    if (isBookmarked) {
-      removeBookmarkedEvent(event.id);
-      toast.info("Removed from bookmarked events.", {
+      if (isBookmarked) {
+        removeBookmarkedEvent(event.id);
+        toast.info("Removed from bookmarked events.", {
+          toastId: `bookmark-${event.id}`,
+          autoClose: 1800,
+          className: "custom-toast",
+        });
+        return;
+      }
+
+      addBookmarkedEvent({
+        ...event,
+        status: computedStatus,
+      });
+      toast.success("Event bookmarked.", {
         toastId: `bookmark-${event.id}`,
         autoClose: 1800,
         className: "custom-toast",
       });
-      return;
-    }
-
-    addBookmarkedEvent({
-      ...event,
-      status: computedStatus,
-    });
-    toast.success("Event bookmarked.", {
-      toastId: `bookmark-${event.id}`,
-      autoClose: 1800,
-      className: "custom-toast",
-   });
-}, [computedStatus, event, isBookmarked]);
+    },
+    [isBookmarked, event, computedStatus]
+  );
 
   return (
-    <article
+    <motion.article
       data-aos="zoom-in"
       data-aos-duration="800"
       aria-labelledby={titleId}
-      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-lg backdrop-blur-sm transition-all duration-300 flex flex-col z-10 event-card-hoverable overflow-hidden border border-gray-100 dark:border-gray-800"
+      whileHover={{ scale: 1.02, y: -5, boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15)" }}
+      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-lg backdrop-blur-sm flex flex-col z-10 event-card-hoverable overflow-hidden border border-gray-100 dark:border-gray-800"
     >
       {/* Action buttons */}
       <div className="absolute top-3 right-3 z-200 flex space-x-1.5 items-center">
@@ -236,17 +243,7 @@ const EventCard = ({ event }) => {
           </svg>
         </button>
 
-        <a
-          href={addEventToGoogleCalendar(event)}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={(e) => e.stopPropagation()}
-          title="Add to Google Calendar"
-          aria-label={`Add ${event.title} to Google Calendar`}
-          className="rounded-full border border-gray-200 bg-white/90 p-2 shadow backdrop-blur-sm hover:border-indigo-200 dark:border-gray-700 dark:bg-gray-800/90 dark:hover:border-indigo-500 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-indigo-500"
-        >
-          <Calendar size={14} className="text-gray-600 dark:text-gray-300" aria-hidden="true" />
-        </a>
+        <AddToCalendar event={event} iconOnly={true} />
       </div>
 
       {/* Header */}
@@ -258,29 +255,25 @@ const EventCard = ({ event }) => {
         <h3 id={titleId} title={event.title} className="text-gray-900 dark:text-white font-bold text-lg tracking-tight line-clamp-2 break-words group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-300 flex-1 min-w-0">
           {event.title}
         </h3>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-1.5 shrink-0">
           {/* Conflict Indicator */}
           {hasConflict && !isUserRegistered && (
             <div
-              className="flex items-center gap-1 px-2 py-1 bg-amber-100 dark:bg-amber-900/30 rounded-full border border-amber-300 dark:border-amber-700"
+              className="inline-flex items-center gap-[5px] py-1 px-[10px] bg-amber-100 dark:bg-amber-900/30 rounded-[6px] border border-amber-300 dark:border-amber-700 shrink-0 text-[12px] font-medium leading-none text-amber-700 dark:text-amber-300"
               title="This event conflicts with your registered events"
             >
-              <AlertTriangle size={12} className="text-amber-600 dark:text-amber-400" />
-              <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">
-                Conflict
-              </span>
+              <AlertTriangle size={12} className="text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" />
+              <span>Conflict</span>
             </div>
           )}
           {/* Registered Indicator */}
           {isUserRegistered && (
             <div
-              className="flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 rounded-full border border-green-300 dark:border-green-700"
+              className="inline-flex items-center gap-[5px] py-1 px-[10px] bg-green-100 dark:bg-green-900/30 rounded-[6px] border border-green-300 dark:border-green-700 shrink-0 text-[12px] font-medium leading-none text-green-700 dark:text-green-300"
               title="You are registered for this event"
             >
-              <BookmarkCheck size={12} className="text-green-600 dark:text-green-400" />
-              <span className="text-xs font-semibold text-green-700 dark:text-green-300">
-                Registered
-              </span>
+              <BookmarkCheck size={12} className="text-green-600 dark:text-green-400 shrink-0" aria-hidden="true" />
+              <span>Registered</span>
             </div>
           )}
           <StatusBadge status={computedStatus} />
@@ -336,6 +329,7 @@ const EventCard = ({ event }) => {
               {new Date(event.date).toLocaleDateString("en-US", {
                 weekday: "short", day: "numeric", month: "short", year: "numeric",
               })}
+              <EventDuration duration={durationText} /><EventDuration duration={durationText} />
             </span>
           </div>
         </div>
@@ -390,6 +384,11 @@ const EventCard = ({ event }) => {
         );
       })()}
 
+      {/* Social Sharing */}
+      <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 flex justify-center">
+        <SocialShareButtons event={event} layout="inline" />
+      </div>
+
       {/* CTA */}
       <div className="px-5 py-4 flex gap-3 mt-auto">
         {isPastEvent ? (
@@ -410,7 +409,7 @@ const EventCard = ({ event }) => {
           </span>
         </Link>
       </div>
-    </article>
+    </motion.article>
   );
 };
 

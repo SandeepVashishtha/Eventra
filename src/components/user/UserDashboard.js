@@ -1,32 +1,41 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useReducedMotion } from '../../hooks/useReducedMotion';
-import useDebounce from "../../hooks/useDebounce.js";
 import { getSmartDateLabel } from "../../utils/relativeTime";
 import {
   Calendar, Trophy, FolderOpen, Users, Settings,
   Clock, Zap, Activity, Bell, ChevronRight,
-  LogOut, User, Plus, Search, X
+  LogOut, User, Plus, Search, X, CheckCircle2
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
 import ErrorBoundary from "../common/ErrorBoundary";
 import { useAuth } from "../../context/AuthContext";
+import { useMyEvents } from "../../context/MyEventsContext";
+import useBookmarks from "../../hooks/useBookmarks";
+import { getEventStatus } from "../../utils/eventUtils";
 import StatusBadge from "../common/StatusBadge";
+import { requestNotificationPermission, disableNotifications } from "../../utils/NotificationManager";
+import { readNotificationPreferences } from "../../utils/notificationPreferences";
 import EventsTab from "./EventsTab";
 import HackathonsTab from "./HackathonsTab";
 import ProjectsTab from "./ProjectsTab";
 import RegistrationsTab from "./RegistrationsTab";
+import AnalyticsTab from "./AnalyticsTab";
 import {
   DashboardListCardSkeleton,
   DashboardProfileSkeleton,
   DashboardQuickActionSkeleton,
   DashboardSectionTitleSkeleton,
   DashboardStatCardSkeleton,
-  } from "../common/SkeletonLoaders";
+  DashboardTableSkeleton,
+} from "../common/SkeletonLoaders";
+import useDashboardFilters from "../../hooks/useDashboardFilters";
 import "./UserDashboard.css";
 import EventTicket from "./EventTicket";
 import EmptyState from "../common/EmptyState";
+import DashboardEmptyState from "./DashboardEmptyState";
 import OfflineIndicator from "../common/OfflineIndicator";
+import RecentlyViewedEvents from "../common/RecentlyViewedEvents";
 
 const fadeUp = (prefersReducedMotion) => ({
   hidden: { opacity: 0, y: 24 },
@@ -40,6 +49,12 @@ const stagger = (prefersReducedMotion) => ({
   hidden: {},
   visible: { transition: { staggerChildren: prefersReducedMotion ? 0 : 0.08 } }
 });
+
+const RecentlyViewedWrapper = ({ prefersReducedMotion }) => (
+  <motion.section custom={1.5} variants={fadeUp(prefersReducedMotion)}>
+    <RecentlyViewedEvents />
+  </motion.section>
+);
 
 const MOCK_DATA = [
   { id: 1, type: "Event", title: "Tech Talk: AI in 2025", date: "2025-06-15", location: "Mumbai", status: "Completed", projectStatus: "Done", lastUpdate: "-", participationType: "Registered" },
@@ -68,13 +83,64 @@ export default function UserDashboard() {
 
   const [activeTab, setActiveTab] = useState("overview");
   const [searchQuery, setSearchQuery] = useState("");
-  const debouncedSearchQuery = useDebounce(searchQuery, 300);
-  const [filterType, setFilterType] = useState("All");
-  const [filterStatus, setFilterStatus] = useState("All");
   const [greeting, setGreeting] = useState("");
   const [notifOpen, setNotifOpen] = useState(false);
   const [selectedTicketEvent, setSelectedTicketEvent] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [pushEnabled, setPushEnabled] = useState(() => readNotificationPreferences().push);
+  const { myEvents, loading: myEventsLoading } = useMyEvents();
+  const { bookmarks } = useBookmarks(user?.id || user?.email || "guest");
+
+  const journeyStats = useMemo(() => {
+    const records = Array.isArray(myEvents) ? myEvents : [];
+    const registeredItems = records
+      .map((registration) => registration?.event || registration?.eventSummary || null)
+      .filter(Boolean);
+
+    const isHackathon = (item) => {
+      const type = String(item?.type || "").toLowerCase();
+      const category = String(item?.category || "").toLowerCase();
+      const title = String(item?.title || "").toLowerCase();
+      return type === "hackathon" || category.includes("hackathon") || title.includes("hackathon");
+    };
+
+    const eventRegistrations = registeredItems.filter((item) => !isHackathon(item));
+    const hackathonRegistrations = registeredItems.filter(isHackathon);
+
+    const eventsAttended = eventRegistrations.filter((event) => {
+      const status = getEventStatus(event);
+      return status === "past" || status === "ended";
+    }).length;
+
+    const upcomingEvents = registeredItems.filter((event) => {
+      const status = getEventStatus(event);
+      return status === "upcoming" || status === "live";
+    }).length;
+
+    const savedEvents = Array.isArray(bookmarks) ? bookmarks.length : 0;
+
+    return {
+      eventsRegistered: eventRegistrations.length,
+      eventsAttended,
+      hackathonsJoined: hackathonRegistrations.length,
+      upcomingEvents,
+      savedEvents,
+      totalRegistrations: registeredItems.length,
+    };
+  }, [myEvents, bookmarks]);
+
+  const togglePushNotifications = async () => {
+    if (pushEnabled) {
+      disableNotifications();
+      setPushEnabled(false);
+    } else {
+      const granted = await requestNotificationPermission();
+      setPushEnabled(granted);
+    }
+  };
+
+  // Debounced search + multi-select filters for Registrations tab
+  const dashboardFilters = useDashboardFilters(MOCK_DATA, { debounceMs: 300 });
 
   const firstName = user?.firstName || user?.username || "there";
 
@@ -86,9 +152,14 @@ export default function UserDashboard() {
   }, []);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setLoading(false), 700);
+    if (myEventsLoading) {
+      setLoading(true);
+      return undefined;
+    }
+
+    const timer = window.setTimeout(() => setLoading(false), 350);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [myEventsLoading]);
 
   const derivedData = useMemo(() => {
     let eventsTotal = 0;
@@ -138,23 +209,9 @@ export default function UserDashboard() {
     };
   }, []);
 
-  const { stats, upcomingEvents, upcomingHackathons, activeProjects } = derivedData;
+  const { upcomingEvents, upcomingHackathons, activeProjects } = derivedData;
 
-  const filteredData = useMemo(() =>
-    MOCK_DATA.filter(item => {
-      const matchSearch = (item.title || "").toLowerCase().includes(debouncedSearchQuery.toLowerCase());
-      const matchType = filterType === "All" || item.type === filterType;
-      const matchStatus = filterStatus === "All"
-        || item.status === filterStatus
-        || item.projectStatus === filterStatus;
-      return matchSearch && matchType && matchStatus;
-    }).sort((a, b) => {
-      if (!a.date && !b.date) return 0;
-      if (!a.date) return 1;
-      if (!b.date) return -1;
-      return new Date(b.date) - new Date(a.date);
-    }),
-  [debouncedSearchQuery, filterType, filterStatus]);
+  // filteredData is now computed inside useDashboardFilters
 
   const notifications = [
     { id: 1, text: "React Conference 2025 registration opens soon", time: "2h ago", unread: true },
@@ -180,6 +237,7 @@ export default function UserDashboard() {
             { id: "hackathons", icon: <Trophy size={18} />, label: "Hackathons" },
             { id: "projects", icon: <FolderOpen size={18} />, label: "Projects" },
             { id: "registrations", icon: <Users size={18} />, label: "Registrations" },
+            { id: "analytics", icon: <Activity size={18} />, label: "Analytics" },
           ].map(item => (
             <button
               key={item.id}
@@ -249,9 +307,20 @@ export default function UserDashboard() {
                     exit={{ opacity: 0, y: -8, scale: 0.97 }}
                     transition={{ duration: prefersReducedMotion ? 0 : 0.18 }}
                   >
-                    <div className="ud-notif-header">
+                    <div className="ud-notif-header flex items-center justify-between">
                       <span>Notifications</span>
-                      <button onClick={() => setNotifOpen(false)} aria-label="Close notification panel"><X size={14} /></button>
+                      <div className="flex items-center gap-3">
+                        <label className="flex items-center gap-2 text-xs cursor-pointer">
+                          <span className="text-gray-500">Push</span>
+                          <input 
+                            type="checkbox" 
+                            checked={pushEnabled} 
+                            onChange={togglePushNotifications}
+                            className="w-3 h-3 rounded text-indigo-600 focus:ring-indigo-500" 
+                          />
+                        </label>
+                        <button onClick={() => setNotifOpen(false)} aria-label="Close notification panel"><X size={14} /></button>
+                      </div>
                     </div>
                     {notifications.map(n => (
                       <div key={n.id} className={`ud-notif-item ${n.unread ? "ud-notif-unread" : ""}`}>
@@ -273,7 +342,7 @@ export default function UserDashboard() {
               {loading ? (
                 <>
                   <div className="ud-stats-grid">
-                    {[...Array(4)].map((_, i) => (
+                    {[...Array(5)].map((_, i) => (
                       <DashboardStatCardSkeleton key={i} />
                     ))}
                   </div>
@@ -295,14 +364,27 @@ export default function UserDashboard() {
                 </>
               ) : (
                 <>
+                  {journeyStats.totalRegistrations === 0 &&
+                    journeyStats.savedEvents === 0 ? (
+                    <DashboardEmptyState />
+                  ) : (
+                  <>
+                  <motion.section className="ud-journey-header" custom={0} variants={fadeUp(prefersReducedMotion)}>
+                    <div>
+                      <p className="ud-journey-label">My Event Journey</p>
+                      <p className="ud-journey-description">A centralized view of your event participation, attendance, saved events, hackathons joined, and upcoming schedule.</p>
+                    </div>
+                  </motion.section>
+
                   <motion.div variants={stagger(prefersReducedMotion)} className="ud-stats-grid">
                     {[
-                      { label: "Events", value: stats.eventsTotal, sub: `${stats.eventsCreated} hosted · ${stats.eventsJoined} joined`, icon: <Calendar size={20} />, accent: "#6366f1" },
-                      { label: "Hackathons", value: stats.hackathonsTotal, sub: `${stats.hackathonsHosted} hosted · ${stats.hackathonsJoined} joined`, icon: <Trophy size={20} />, accent: "#ec4899" },
-                      { label: "Projects", value: stats.projectsTotal, sub: `${stats.projectsDone} done · ${stats.projectsActive} active`, icon: <FolderOpen size={20} />, accent: "#8b5cf6" },
-                      { label: "Upcoming", value: upcomingEvents.length + upcomingHackathons.length, sub: `${upcomingEvents.length} events · ${upcomingHackathons.length} hackathons`, icon: <Clock size={20} />, accent: "#10b981" },
+                      { label: "Events Registered", value: journeyStats.eventsRegistered, sub: `${Math.max(journeyStats.eventsRegistered - journeyStats.eventsAttended, 0)} upcoming / registered`, icon: <Calendar size={20} />, accent: "#6366f1" },
+                      { label: "Events Attended", value: journeyStats.eventsAttended, sub: "Completed event participation", icon: <CheckCircle2 size={20} />, accent: "#10b981" },
+                      { label: "Hackathons Joined", value: journeyStats.hackathonsJoined, sub: "Hackathon registrations", icon: <Trophy size={20} />, accent: "#ec4899" },
+                      { label: "Saved Events", value: journeyStats.savedEvents, sub: "Events bookmarked to review", icon: <FolderOpen size={20} />, accent: "#f59e0b" },
+                      { label: "Upcoming Events", value: journeyStats.upcomingEvents, sub: "Next events on your schedule", icon: <Clock size={20} />, accent: "#0ea5e9" },
                     ].map((s, i) => (
-                      <motion.div key={s.label} custom={i} variants={fadeUp(prefersReducedMotion)} className="ud-stat-card">
+                      <motion.div key={s.label} custom={i} variants={fadeUp(prefersReducedMotion)} className="ud-stat-card backdrop-blur-md bg-white/10 border border-white/20 shadow-lg">
                         <div className="ud-stat-icon" style={{ background: s.accent + "18", color: s.accent }}>{s.icon}</div>
                         <div className="ud-stat-info">
                           <p className="ud-stat-label">{s.label}</p>
@@ -317,13 +399,13 @@ export default function UserDashboard() {
                     <h2 className="ud-section-title"><Zap size={17} /> Quick Actions</h2>
                     <div className="ud-quick-grid">
                       {QUICK_ACTIONS.map(a => (
-                        <Link key={a.label} to={a.to} className="ud-quick-card" style={{ "--qa-color": a.color }}>
+                        <Link key={a.label} to={a.to} className="ud-quick-card backdrop-blur-md bg-white/10 border border-white/20" style={{ "--qa-color": a.color }}>
                           <span className="ud-quick-icon" style={{ color: a.color, background: a.color + "18" }}>{a.icon}</span>
                           <span className="ud-quick-label">{a.label}</span>
                           <ChevronRight size={14} className="ud-quick-arrow" />
                         </Link>
                       ))}
-                      <Link to="/create-event" className="ud-quick-card ud-quick-new" style={{ "--qa-color": "#6366f1" }}>
+                      <Link to="/create-event" className="ud-quick-card ud-quick-new backdrop-blur-md bg-white/10 border border-indigo-500/30" style={{ "--qa-color": "#6366f1" }}>
                         <span className="ud-quick-icon" style={{ color: "#6366f1", background: "#6366f118" }}><Plus size={22} /></span>
                         <span className="ud-quick-label">New Event</span>
                         <ChevronRight size={14} className="ud-quick-arrow" />
@@ -331,9 +413,11 @@ export default function UserDashboard() {
                     </div>
                   </motion.section>
 
+                  <RecentlyViewedWrapper prefersReducedMotion={prefersReducedMotion} />
+
                   <div className="ud-three-col">
                     {/* Upcoming Events */}
-                    <motion.section custom={2} variants={fadeUp(prefersReducedMotion)} className="ud-card">
+                    <motion.section custom={2} variants={fadeUp(prefersReducedMotion)} className="ud-card backdrop-blur-md bg-white/10 border border-white/20 shadow-lg">
                       <div className="ud-card-head">
                         <span className="ud-card-icon" style={{ background: "#6366f118", color: "#6366f1" }}><Clock size={16} /></span>
                         <h3>Upcoming Events</h3>
@@ -345,12 +429,13 @@ export default function UserDashboard() {
                           icon={<Calendar size={32} className="text-indigo-500" />}
                           title="No Upcoming Events"
                           message="You haven't registered or joined any events yet. Check out the Events tab to find one!"
+                          onBrowseAll={() => navigate("/events")}
                         />
                       ) : (
                         upcomingEvents.map(ev => (
                           <div key={ev.id} className="ud-list-item">
                             <div className="min-w-0 flex-1">
-                              <p title={ev.title} className="ud-list-title">{ev.title}</p>
+                              <p className="ud-list-title" title={ev.title}>{ev.title}</p>
                               <p className="ud-list-meta"><Calendar size={12} /> {getSmartDateLabel(ev.date)}</p>
                             </div>
                             <StatusBadge status={ev.participationType} />
@@ -360,7 +445,7 @@ export default function UserDashboard() {
                     </motion.section>
  
                     {/* Upcoming Hackathons */}
-                    <motion.section custom={3} variants={fadeUp(prefersReducedMotion)} className="ud-card">
+                    <motion.section custom={3} variants={fadeUp(prefersReducedMotion)} className="ud-card backdrop-blur-md bg-white/10 border border-white/20 shadow-lg">
                       <div className="ud-card-head">
                         <span className="ud-card-icon" style={{ background: "#ec489918", color: "#ec4899" }} />
                         <h3>Upcoming Hackathons</h3>
@@ -372,12 +457,13 @@ export default function UserDashboard() {
                           icon={<Trophy size={32} className="text-pink-500" />}
                           title="No Active Hackathons"
                           message="There are currently no upcoming hackathons in your schedule."
+                          onBrowseAll={() => navigate("/hackathons")}
                         />
                       ) : (
                         upcomingHackathons.map(h => (
                           <div key={h.id} className="ud-list-item">
                             <div className="min-w-0 flex-1">
-                              <p title={h.title} className="ud-list-title">{h.title}</p>
+                              <p className="ud-list-title" title={h.title}>{h.title}</p>
                               <p className="ud-list-meta"><Calendar size={12} /> {getSmartDateLabel(h.date)}</p>
                             </div>
                             <StatusBadge status={h.participationType} />
@@ -387,7 +473,7 @@ export default function UserDashboard() {
                     </motion.section>
  
                     {/* Active Projects */}
-                    <motion.section custom={4} variants={fadeUp(prefersReducedMotion)} className="ud-card">
+                    <motion.section custom={4} variants={fadeUp(prefersReducedMotion)} className="ud-card backdrop-blur-md bg-white/10 border border-white/20 shadow-lg">
                       <div className="ud-card-head">
                         <span className="ud-card-icon" style={{ background: "#8b5cf618", color: "#8b5cf6" }} />
                         <h3>Active Projects</h3>
@@ -399,12 +485,13 @@ export default function UserDashboard() {
                           icon={<FolderOpen size={32} className="text-purple-500" />}
                           title="No Active Projects"
                           message="All your tracked development projects are currently completed or inactive."
+                          onBrowseAll={() => navigate("/projects")}
                         />
                       ) : (
                         activeProjects.map(p => (
                           <div key={p.id} className="ud-list-item">
                             <div className="min-w-0 flex-1">
-                              <p title={p.title} className="ud-list-title">{p.title}</p>
+                              <p className="ud-list-title" title={p.title}>{p.title}</p>
                               <p className="ud-list-meta">Updated: {p.lastUpdate}</p>
                             </div>
                             <StatusBadge status={p.projectStatus} />
@@ -413,6 +500,8 @@ export default function UserDashboard() {
                       )}
                     </motion.section>
                   </div>
+                  </>
+                  )} {/* end hasData ternary */}
                 </>
               )}
             </motion.div>
@@ -461,14 +550,28 @@ export default function UserDashboard() {
             <motion.div key="registrations" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <ErrorBoundary level="feature">
                 <RegistrationsTab
-                  filteredData={filteredData}
+                  filteredData={dashboardFilters.filteredData}
                   loading={loading}
-                  filterType={filterType}
-                  setFilterType={setFilterType}
-                  filterStatus={filterStatus}
-                  setFilterStatus={setFilterStatus}
+                  searchTerm={dashboardFilters.searchTerm}
+                  setSearchTerm={dashboardFilters.setSearchTerm}
+                  isDebouncing={dashboardFilters.isDebouncing}
+                  selectedTypes={dashboardFilters.selectedTypes}
+                  toggleType={dashboardFilters.toggleType}
+                  selectedStatuses={dashboardFilters.selectedStatuses}
+                  toggleStatus={dashboardFilters.toggleStatus}
+                  activeFilterCount={dashboardFilters.activeFilterCount}
+                  clearAll={dashboardFilters.clearAll}
                   setSelectedTicketEvent={setSelectedTicketEvent}
                 />
+              </ErrorBoundary>
+            </motion.div>
+          )}
+
+          {/* Analytics tab */}
+          {activeTab === "analytics" && (
+            <motion.div key="analytics" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <ErrorBoundary level="feature">
+                <AnalyticsTab loading={loading} />
               </ErrorBoundary>
             </motion.div>
           )}

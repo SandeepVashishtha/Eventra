@@ -7,6 +7,7 @@ import { ROLES, PERMISSIONS } from "../../config/roles";
 
 // 🔥 FIX: Removed all duplicate const declarations that were causing fatal SyntaxErrors
 const NotificationSettings = lazy(() => import("../../Pages/NotificationSettings"));
+const NotificationCenter = lazy(() => import("../../Pages/Notifications/NotificationCenter"));
 const EventCreation = lazy(() => import("../common/EventCreation/EventCreation"));
 const HostHackathon = lazy(() => import("../../Pages/Hackathons/HostHackathon"));
 const UserProfile = lazy(() => import("../user/UserProfile"));
@@ -139,6 +140,15 @@ export const getProtectedRoutes = () => [
       <ProtectedRoute>
         {/* 🔥 FIX: Wrapped previously naked component */}
         {withModuleBoundary(<NotificationSettings />, "Notification Settings")}
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/notifications"
+    path="/notifications"
+    element={
+      <ProtectedRoute>
+        {withModuleBoundary(<NotificationCenter />, "Notification Center")}
       </ProtectedRoute>
     }
   />,

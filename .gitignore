@@ -2,7 +2,7 @@
 .vscode
 
 node_modules
-build
+build/
 .DS_Store
 
 # Secret Files - DO NOT COMMIT
@@ -36,6 +36,10 @@ devserver.err.log
 *storybook.log
 storybook-static
 .storybook/cache/
+
+# Generated lint reports
+eslint-report.json
+lint_output.txt
 
 # Playwright
 playwright-report/
