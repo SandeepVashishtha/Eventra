@@ -14,7 +14,7 @@ const FloorPlanDesignerPage = () => {
   const [isExitModalOpen, setIsExitModalOpen] = useState(false);
 
   // Load the corresponding event info from mock data
-  const event = eventsMockData.find((e) => e.id === parseInt(eventId)) || {
+  const event = eventsMockData.find((e) => e.id === parseInt(eventId, 10)) || {
     id: eventId,
     title: "Community Meetup & Workshop",
     date: "2026-06-15",

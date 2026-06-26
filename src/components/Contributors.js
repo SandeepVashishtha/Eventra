@@ -92,7 +92,6 @@ const ContributorsInner = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [recentSearches, setRecentSearches] = useState([]);
   const fetchControllerRef = useRef(null);
   const isFetchingRef = useRef(false);
 

@@ -1,5 +1,5 @@
-import { useTranslation } from 'react-i18next';
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 /**
  * A theme-aware loading spinner component.
@@ -17,6 +17,8 @@ const Loading = ({
   size = "h-8 w-8",
   className = "",
 }) => {
+  const { t } = useTranslation();
+
   return (
     <div
       className={`flex flex-col items-center justify-center gap-4 py-8 ${className}`}
