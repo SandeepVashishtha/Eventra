@@ -111,6 +111,81 @@ npm run dev
 
 App runs at `http://localhost:3000` (configured in `vite.config.js`).
 
+## 🔧 Troubleshooting
+
+If you encounter issues while setting up or running Eventra locally, try the following solutions.
+
+### Missing Environment Variables
+
+If you see an error like:
+
+```text
+%VITE_GOOGLE_CLIENT_ID% is not defined
+```
+
+Ensure your `.env` file contains the required variables and restart the development server after making changes.
+
+---
+
+### Dependency Installation Issues
+
+If dependencies fail to install correctly:
+
+```bash
+rm -rf node_modules package-lock.json
+npm install
+```
+
+---
+
+### Vite Development Server Issues
+
+If the development server fails to start:
+
+```bash
+npm run dev
+```
+
+If problems persist, reinstall dependencies and clear the Vite cache if necessary.
+
+---
+
+### JSX Parse Errors
+
+Errors such as:
+
+- Unexpected token
+- Identifier has already been declared
+- Unterminated JSX
+
+are commonly caused by:
+
+- Duplicate imports
+- Duplicate variable declarations
+- Missing closing JSX tags
+- Unclosed braces or parentheses
+
+Review recent changes carefully before running the project again.
+
+---
+
+### Port Already in Use
+
+If port `3000` is occupied, start the development server on another port:
+
+```bash
+npm run dev -- --port 3001
+```
+
+---
+
+### Still Having Issues?
+
+- Pull the latest changes from the repository.
+- Reinstall dependencies.
+- Review terminal logs for detailed error messages.
+- Open a GitHub issue with reproduction steps if the problem persists.
+
 ## Environment Variables
 
 Use `.env.example` as the source of truth.
