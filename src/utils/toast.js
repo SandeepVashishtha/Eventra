@@ -45,7 +45,7 @@ export function dismissToastsByGroup(groupId) {
   // Clear category toast elements
   if (typeof window !== "undefined" && window.__EVENTRA_TOASTS__) {
     const list = window.__EVENTRA_TOASTS__[groupId] || [];
-    list.forEach(id => {
+    list.forEach(_id => {
       try {
         // trigger clear callbacks
       } catch {}

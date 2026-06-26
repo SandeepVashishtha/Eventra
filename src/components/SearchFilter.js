@@ -21,7 +21,7 @@ const SearchFilter = () => {
   const [priceFilter, setPriceFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
 
-  const [favorites, setFavorites] = useState(() => {
+  const [favorites] = useState(() => {
     const saved = localStorage.getItem("favoriteEvents");
     return saved ? JSON.parse(saved) : [];
   });
@@ -105,11 +105,6 @@ const SearchFilter = () => {
     },
   ];
 
-  const safeFormatDate = (dateStr) => {
-    if (!dateStr) return "TBD";
-    const d = new Date(dateStr);
-    return isNaN(d.getTime()) ? "TBD" : d.toLocaleDateString();
-  };
 
   const filteredEvents = mockEvents.filter((event) => {
     const term = debouncedSearchTerm.toLowerCase();

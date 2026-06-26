@@ -10,14 +10,12 @@ import {
   Trophy,
   Clock,
   Star,
-  ArrowRight,
   ExternalLink,
   Calendar,
   Award,
   MessageCircle,
   Zap,
   Target,
-  Copy,
   Bell,
   WifiOff,
 } from "lucide-react";
@@ -294,7 +292,8 @@ const GSSoCContribution = () => {
   const { toasts, addToast, removeToast } = useToast();
   
   const [searchQuery, setSearchQuery] = useState(() => localStorage.getItem("gssoc.search") || "");
-  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+  // eslint-disable-next-line no-unused-vars
+  const _debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [selectedDifficulty, setSelectedDifficulty] = useState(() => localStorage.getItem("gssoc.difficulty") || "all");
   
   const [userStats] = useState(() => {
