@@ -398,12 +398,13 @@ const GSSoCContribution = () => {
         )}
       </AnimatePresence>
       
-      <motion.main
+      <motion.section
         variants={containerVariants}
         initial="hidden"
         animate="visible"
         className="w-[95%] mx-auto my-10 min-h-screen pb-12"
-        role="main"
+        role="region"
+        aria-label="GSSoC Contribution Hub"
       >
         {/* 🎯 PROFESSIONAL HERO SECTION */}
         <motion.section
@@ -518,7 +519,7 @@ const GSSoCContribution = () => {
             ))}
           </div>
         </motion.section>
-      </motion.main>
+      </motion.section>
       
       <ToastContainer toasts={toasts} onClose={removeToast} />
     </>
