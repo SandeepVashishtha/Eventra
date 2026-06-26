@@ -105,40 +105,46 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           scrolled ? "shadow-sm" : ""
         }`}
       >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between gap-2 lg:gap-4">
+        <div className="mx-auto max-w-screen-2xl px-3 sm:px-4 lg:px-6">
+          <div className="flex h-16 items-center justify-between gap-2">
             {/* Logo */}
             <Link to="/" aria-label="Eventra Home" className="flex items-center shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg bg-card-bg p-1 shadow-premium-sm ring-1 ring-border">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-card-bg p-1 shadow-premium-sm ring-1 ring-border">
                   <img
                     src="/favicon.png"
                     alt="Eventra Logo"
                     className="h-full w-full object-contain"
-                    width="36"
-                    height="36"
+                    width="32"
+                    height="32"
                   />
                 </div>
 
-                <span className="font-heading text-lg font-semibold tracking-tight text-text lg:text-xl">
+                <span className="font-heading text-base font-semibold tracking-tight text-text">
                   Eventra
                 </span>
               </div>
             </Link>
 
-            {/* Desktop Navigation */}
-            <div className="hidden lg:flex flex-1 justify-center shrink-0 mx-2">
+            {/* Desktop Navigation — allowed to flex-shrink */}
+            <div className="hidden lg:flex flex-1 justify-center min-w-0 mx-1">
               <DesktopNavbar />
             </div>
 
             {/* Right Controls */}
-            <div className="flex items-center justify-end gap-3 lg:gap-4">
-              <div className="hidden lg:flex items-center gap-4">
+            <div className="flex items-center justify-end gap-1.5 shrink-0">
+              <div className="hidden lg:flex items-center gap-1.5">
+                <ThemeToggleButton
+                  isDarkMode={isDarkMode}
+                  toggleTheme={toggleTheme}
+                  isMobile={false}
+                  setIsCustomizerOpen={setIsCustomizerOpen}
+                />
                 {authenticated ? (
                   <>
                     <NotificationBell />
+                    <LanguageSelector compact />
                     <ProfileMenu user={user} logout={logout} />
-                    <LanguageSelector compact /> {/* Repositioned near Profile */}
                   </>
                 ) : (
                   <>
@@ -146,18 +152,15 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
                     <AuthButtons />
                   </>
                 )}
-
-                <CursorToggle cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
               </div>
 
-              <ThemeToggleButton
-                isDarkMode={isDarkMode}
-                toggleTheme={toggleTheme}
-                isMobile={false}
-                setIsCustomizerOpen={setIsCustomizerOpen}
-              />
-
               <div className="flex items-center gap-2 lg:hidden">
+                <ThemeToggleButton
+                  isDarkMode={isDarkMode}
+                  toggleTheme={toggleTheme}
+                  isMobile={false}
+                  setIsCustomizerOpen={setIsCustomizerOpen}
+                />
                 {authenticated && <NotificationBell />}
 
                 <MobileNavbar

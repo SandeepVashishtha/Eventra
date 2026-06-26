@@ -89,18 +89,18 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
         }
       `
       : `
-        flex items-center gap-1.5
+        flex items-center gap-1
         whitespace-nowrap
-        px-1 py-1
-        text-[13px]
+        px-0.5 py-1
+        text-[12px]
         font-medium
         uppercase
-        tracking-[0.04em]
+        tracking-[0.03em]
         border-b-2
         transition-all duration-150 ease-out hover:scale-[1.02] active:scale-[0.98]
         ${
           isActive
-            ? "border-primary text-text dark:text-white font-semibold font-semibold"
+            ? "border-primary text-text dark:text-white font-semibold"
             : "text-text-secondary hover:text-text dark:hover:text-white hover:border-gray-300 dark:hover:border-zinc-700"
         }
       `;
@@ -109,7 +109,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
     <nav
       ref={navRef}
       aria-label={vertical ? t("nav.mobilePrimaryLinks") : t("nav.primaryLinks")}
-      className={`flex ${vertical ? "flex-col w-full gap-1" : "items-center gap-8"}`}
+      className={`flex ${vertical ? "flex-col w-full gap-1" : "items-center gap-2"}`}
     >
       {NAV_ITEMS.map((item) => {
         const isOpen = openMenu === item.nameKey;
