@@ -19,12 +19,9 @@ import { safeJsonParse } from "../../../utils/safeJsonParse";
 import { ENV } from "../../../config/env";
 import {
   fetchRepository,
-
-  // fetchContributors,
-  // fetchPullRequests,
+  fetchContributors,
+  fetchPullRequests,
 } from "../../../utils/githubApiClient";
-
-const fetchStat = fetchRepository;
 
 const repoPath = ENV.GITHUB_REPO;
 const [GITHUB_USER, GITHUB_REPO] = repoPath.split("/");
@@ -76,9 +73,9 @@ export default function GitHubStats() {
       try {
         const [repoResult, contributorsResult, prResult] =
           await Promise.allSettled([
-            fetchStat(GITHUB_USER, GITHUB_REPO),
-            fetchStat(GITHUB_USER, GITHUB_REPO, 1, 1),
-            fetchStat(GITHUB_USER, GITHUB_REPO, { per_page: 1 }),
+            fetchRepository(GITHUB_USER, GITHUB_REPO),
+            fetchContributors(GITHUB_USER, GITHUB_REPO, 1, 1),
+            fetchPullRequests(GITHUB_USER, GITHUB_REPO, { per_page: 1 }),
           ]);
 
         if (repoResult.status === "rejected") {

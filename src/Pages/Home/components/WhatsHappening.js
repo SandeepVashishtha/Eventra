@@ -161,10 +161,11 @@ const WhatsHappening = () => {
       }));
   };
 
-  const upcomingEvents = [
+  const upcomingEvents = useMemo(() => [
     ...formatEventsData(eventsData),
     ...formatHackathonsData(hackathonsData),
-  ].sort((a, b) => new Date(a.rawDate) - new Date(b.rawDate));
+  ].sort((a, b) => new Date(a.rawDate) - new Date(b.rawDate)),
+  [eventsData]);
 
   const [cardsPerView, setCardsPerView] = useState(1);
 

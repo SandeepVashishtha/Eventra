@@ -215,6 +215,23 @@ class ErrorBoundary extends React.Component {
     }
   }
 
+  // Lock body scroll when the full-page error overlay is visible so the
+  // body scrollbar doesn't show through the fixed overlay (double scrollbar).
+  componentDidUpdate(_, prevState) {
+    const { level = "page" } = this.props;
+    if (level !== "page") return;
+    if (this.state.hasError && !prevState.hasError) {
+      document.body.style.overflow = "hidden";
+    } else if (!this.state.hasError && prevState.hasError) {
+      document.body.style.overflow = "";
+    }
+  }
+
+  componentWillUnmount() {
+    // Always restore body scroll when this boundary unmounts.
+    document.body.style.overflow = "";
+  }
+
   handleReload = () => {
     this.setState({ isRecovering: true, recoveryMessage: "Reloading page..." });
     saveAppStateSnapshot();

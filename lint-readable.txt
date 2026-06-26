@@ -1,0 +1,315 @@
+﻿
+C:\Users\sande\Music\GitHub\Eventra\src\App.jsx
+   4:13  warning  'Sentry' is defined but never used                        no-unused-vars
+  10:8   warning  'EnvironmentSecurityDashboard' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\Pages\Archive\EventArchivePage.jsx
+  1:8   warning  'React' is defined but never used        no-unused-vars
+  3:42  warning  'ChevronDown' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\Pages\Auth\Login.jsx
+  1:8  warning  'React' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\Pages\Auth\Signup.jsx
+  1:8  warning  'React' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\Pages\Dashboard\Dashboard.jsx
+  1:8  warning  'React' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\Pages\Events\BookmarkedEvents.js
+  1:40  warning  'useRef' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\Pages\Events\CountdownTimer.js
+  1:8  warning  'React' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\Pages\Events\EventCalendarView.jsx
+  109:18  warning  'e' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\Pages\Events\EventCard.js
+  138:5  warning  React Hook useCallback has an unnecessary dependency: 'computedStatus'. Either exclude it or remove the dependency array. Outer scope values like 'computedStatus' aren't valid dependencies because mutating them doesn't re-render the component  react-hooks/exhaustive-deps
+
+C:\Users\sande\Music\GitHub\Eventra\src\Pages\Events\EventDetails.js
+   17:8   warning  'CertificateDownload' is defined but never used  no-unused-vars
+   35:10  warning  'Share2' is defined but never used               no-unused-vars
+  258:14  warning  'err' is defined but never used                  no-unused-vars
+  455:40  warning  'error' is defined but never used                no-unused-vars
+  493:40  warning  'error' is defined but never used                no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\Pages\Events\EventFiltersToolbar.js
+   41:3   warning  'onApplyPreset' is defined but never used                  no-unused-vars
+   47:10  warning  'editingPresetId' is assigned a value but never used       no-unused-vars
+   49:10  warning  'exportMessage' is assigned a value but never used         no-unused-vars
+   50:10  warning  'exportError' is assigned a value but never used           no-unused-vars
+   55:5   warning  'presetError' is assigned a value but never used           no-unused-vars
+   59:5   warning  'updatePreset' is assigned a value but never used          no-unused-vars
+   63:11  warning  'suggestions' is assigned a value but never used           no-unused-vars
+   89:9   warning  'handleSavePreset' is assigned a value but never used      no-unused-vars
+   94:9   warning  'handleStartRename' is assigned a value but never used     no-unused-vars
+  100:9   warning  'handleRenamePreset' is assigned a value but never used    no-unused-vars
+  108:9   warning  'handleDeletePreset' is assigned a value but never used    no-unused-vars
+  114:9   warning  'handleExport' is assigned a value but never used          no-unused-vars
+  129:9   warning  'suggestionKindLabels' is assigned a value but never used  no-unused-vars
+  140:9   warning  'renderFilterTab' is assigned a value but never used       no-unused-vars
+  164:9   warning  'renderCategoryButton' is assigned a value but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\Pages\Events\EventRegistration.integration.test.jsx
+  53:13  warning  'mockContext' is assigned a value but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\Pages\Events\EventRegistration.js
+   1:31  warning  'useRef' is defined but never used                      no-unused-vars
+  48:7   warning  'isRequestCanceled' is assigned a value but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\Pages\Events\useEventListing.js
+  206:6  warning  React Hook useCallback has an unnecessary dependency: 'normalizeAdvancedFilters'. Either exclude it or remove the dependency array. Outer scope values like 'normalizeAdvancedFilters' aren't valid dependencies because mutating them doesn't re-render the component  react-hooks/exhaustive-deps
+
+C:\Users\sande\Music\GitHub\Eventra\src\Pages\Hackathons\HackathonPage.js
+    1:10  warning  'Code2' is defined but never used       no-unused-vars
+    1:17  warning  'RefreshCw' is defined but never used   no-unused-vars
+    1:28  warning  'Compass' is defined but never used     no-unused-vars
+    1:53  warning  'Rocket' is defined but never used      no-unused-vars
+    1:61  warning  'PlusCircle' is defined but never used  no-unused-vars
+  787:24  error    'FiRotateCw' is not defined             react/jsx-no-undef
+
+C:\Users\sande\Music\GitHub\Eventra\src\Pages\Home\components\Hero.js
+  1:8  warning  'React' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\Pages\Leaderboard\GSSoCContribution.js
+   13:3   warning  'ArrowRight' is defined but never used                      no-unused-vars
+   20:3   warning  'Copy' is defined but never used                            no-unused-vars
+   37:7   warning  'MENTORS' is assigned a value but never used                no-unused-vars
+   44:7   warning  'ACHIEVEMENTS' is assigned a value but never used           no-unused-vars
+   51:7   warning  'RESOURCES' is assigned a value but never used              no-unused-vars
+  296:23  warning  'setSearchQuery' is assigned a value but never used         no-unused-vars
+  297:9   warning  'debouncedSearchQuery' is assigned a value but never used   no-unused-vars
+  298:30  warning  'setSelectedDifficulty' is assigned a value but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\Pages\Leaderboard\Leaderboard.jsx
+   95:9  warning  'CATEGORY_FILTERS' is assigned a value but never used  no-unused-vars
+  163:9  warning  'sortOptions' is assigned a value but never used       no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\Pages\Leaderboard\components\LeaderboardTable.jsx
+  152:3  warning  'sortedContributors' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\Pages\Projects\ProjectCard.js
+    1:79  warning  'Layers' is defined but never used  no-unused-vars
+  179:18  warning  'e' is defined but never used       no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\Pages\SavedEventsPage.jsx
+  11:9  warning  'navigate' is assigned a value but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\Pages\Settings.js
+  33:10  warning  'isSaving' is assigned a value but never used      no-unused-vars
+  33:20  warning  'setIsSaving' is assigned a value but never used   no-unused-vars
+  34:10  warning  'activeTab' is assigned a value but never used     no-unused-vars
+  34:21  warning  'setActiveTab' is assigned a value but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\Pages\User\Profile.jsx
+  1:8  warning  'React' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\Pages\utils\logger.js
+  24:12  warning  'e' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\__tests__\capacityValidator.test.js
+  1:46  warning  'afterEach' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\__tests__\concurrency.test.js
+  5:7  warning  'runAll' is assigned a value but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\__tests__\cookieUtils.test.js
+  14:55  warning  'vi' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\__tests__\user-storage.test.js
+  22:14  warning  'e' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\components\BulkCertificateGenerator.jsx
+  32:14  warning  'err' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\components\CertificateDownload.jsx
+  88:14  warning  'err' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\components\Chatbot.jsx
+  137:6  warning  React Hook useEffect has a missing dependency: 'pathname'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\sande\Music\GitHub\Eventra\src\components\Contributors.js
+  95:10  warning  'recentSearches' is assigned a value but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\components\Layout\Footer.js
+  2:8  warning  'React' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\components\ScrollToTop.jsx
+  1:8  warning  'React' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\components\ScrollToTopButton.jsx
+  1:8  warning  'React' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\components\SearchFilter.js
+   24:21  warning  'setFavorites' is assigned a value but never used    no-unused-vars
+  108:9   warning  'safeFormatDate' is assigned a value but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\components\admin\AnalyticsDashboard.jsx
+  52:10  warning  'AnalyticsStreamBadge' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\components\admin\AnalyticsDashboardLazy.jsx
+  2:8  warning  'React' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\components\admin\CSPViolationDashboard.jsx
+  2:8  warning  'React' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\components\auth\Guard.test.jsx
+   77:25  warning  'roles' is defined but never used               no-unused-vars
+  157:31  warning  'perms' is defined but never used               no-unused-vars
+  335:15  warning  'container' is assigned a value but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\components\auth\Login.js
+  39:5  warning  'resetAttempts' is assigned a value but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\components\auth\ReAuthModal.jsx
+  1:8  warning  'React' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\components\common\BackToTopButton.jsx
+  16:6  warning  React Hook useEffect has a missing dependency: 'handleScroll'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\sande\Music\GitHub\Eventra\src\components\common\Drawer.jsx
+  1:8  warning  'React' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\components\common\EventCardSkeleton.jsx
+  1:8  warning  'React' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\components\common\EventCreation\EventCreation.jsx
+  35:10  warning  'validateCoordinates' is defined but never used   no-unused-vars
+  86:10  warning  'lastSavedAt' is assigned a value but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\components\common\EventCreation\EventMediaSection.jsx
+  4:10  warning  'logger' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\components\common\FocusTrap.jsx
+  1:8  warning  'React' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\components\common\Loading.jsx
+  1:10  warning  'useTranslation' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\components\common\PageTransition.jsx
+  53:7  warning  'reducedMotionVariants' is assigned a value but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\components\common\QRTicket\QRTicketModal.jsx
+  106:18  warning  The ref value 'modalRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'modalRef.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+  109:6   warning  React Hook useEffect has an unnecessary dependency: 'handleFocusTrap'. Either exclude it or remove the dependency array                                                                                                                                          react-hooks/exhaustive-deps
+
+C:\Users\sande\Music\GitHub\Eventra\src\components\common\SearchEmptyState.jsx
+  23:3  warning  'variant' is assigned a value but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\components\common\SocialShareButtons.jsx
+  1:8  warning  'React' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\components\events\FloorPlanDesigner.js
+  179:16  warning  'e' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\components\events\VirtualBoothModal.jsx
+  3:17  warning  'Mail' is defined but never used  no-unused-vars
+  4:9   warning  'User' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\components\hackathons\WorkspaceBootstrapModal.jsx
+  172:26  warning  'prev' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\components\navbar\MobileDrawer.jsx
+  13:3  warning  'PlusCircle' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\components\routes\RoleGuard.jsx
+  7:10  warning  'useEffect' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\components\user\AiProfileGeneratorModal.jsx
+  90:14  warning  'err' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\components\user\EditProfile.js
+  180:9  warning  The 'calculateCompletion' function makes the dependencies of useMemo Hook (at line 206) change on every render. Move it inside the useMemo callback. Alternatively, wrap the definition of 'calculateCompletion' in its own useCallback() Hook  react-hooks/exhaustive-deps
+
+C:\Users\sande\Music\GitHub\Eventra\src\components\user\EventsTab.js
+    1:8   warning  'React' is defined but never used                                                                                                                                                                                                                   no-unused-vars
+   86:11  warning  'handleCopyLink' is assigned a value but never used                                                                                                                                                                                                 no-unused-vars
+   93:12  warning  'error' is defined but never used                                                                                                                                                                                                                   no-unused-vars
+  330:6   warning  React Hook useEffect has an unnecessary dependency: 'waitlistUpdated'. Either exclude it or remove the dependency array. Outer scope values like 'waitlistUpdated' aren't valid dependencies because mutating them doesn't re-render the component  react-hooks/exhaustive-deps
+  342:10  warning  'collapsedSections' is assigned a value but never used                                                                                                                                                                                              no-unused-vars
+  430:6   warning  React Hook useMemo has a missing dependency: 'normalizedSearch'. Either include it or remove the dependency array                                                                                                                                   react-hooks/exhaustive-deps
+  439:16  warning  'e' is defined but never used                                                                                                                                                                                                                       no-unused-vars
+  460:7   warning  'recentActivities' is assigned a value but never used                                                                                                                                                                                               no-unused-vars
+  504:9   warning  'toggleSection' is assigned a value but never used                                                                                                                                                                                                  no-unused-vars
+  511:7   warning  'togglePinnedEvent' is assigned a value but never used                                                                                                                                                                                              no-unused-vars
+  532:9   warning  'handleCancelDismiss' is assigned a value but never used                                                                                                                                                                                            no-unused-vars
+  539:9   warning  'saveCurrentPreset' is assigned a value but never used                                                                                                                                                                                              no-unused-vars
+  571:7   warning  'applyPreset' is assigned a value but never used                                                                                                                                                                                                    no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\components\user\UserDashboard.js
+  30:3  warning  'DashboardTableSkeleton' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\config\api.js
+    2:10  warning  'logger' is defined but never used  no-unused-vars
+  175:18  warning  'e' is defined but never used       no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\config\api\interceptors.js
+   13:5   warning  'onRequiresReauth' is assigned a value but never used  no-unused-vars
+  132:82  warning  'getOnUnauthorized' is defined but never used          no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\context\AuthContext.js
+    4:10  warning  'userService' is defined but never used            no-unused-vars
+  321:22  warning  '_roles' is assigned a value but never used        no-unused-vars
+  321:43  warning  '_permissions' is assigned a value but never used  no-unused-vars
+  321:65  warning  '_scopes' is assigned a value but never used       no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\context\NotificationContext.js
+  1:78  warning  'useState' is defined but never used    no-unused-vars
+  3:33  warning  'SSE_STATUS' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\hooks\useContrastChecker.js
+   1:10  warning  'useState' is defined but never used   no-unused-vars
+   1:20  warning  'useEffect' is defined but never used  no-unused-vars
+  59:14  warning  'e' is defined but never used          no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\hooks\useFilterSuggestions.js
+   1:41  warning  'useRef' is defined but never used                                                                                                                                                                                                                     no-unused-vars
+  55:6   warning  React Hook useEffect has a missing dependency: 'currentFilters'. Either include it or remove the dependency array. Outer scope values like 'recordFilterActivity' aren't valid dependencies because mutating them doesn't re-render the component      react-hooks/exhaustive-deps
+  65:6   warning  React Hook useEffect has a missing dependency: 'visibleEvents'. Either include it or remove the dependency array. Outer scope values like 'recordVisibleEventSignals' aren't valid dependencies because mutating them doesn't re-render the component  react-hooks/exhaustive-deps
+
+C:\Users\sande\Music\GitHub\Eventra\src\hooks\useMultiSessionRecovery.js
+  34:6  warning  React Hook useEffect has an unnecessary dependency: 'readMultiSessions'. Either exclude it or remove the dependency array. Outer scope values like 'readMultiSessions' aren't valid dependencies because mutating them doesn't re-render the component  react-hooks/exhaustive-deps
+
+C:\Users\sande\Music\GitHub\Eventra\src\hooks\useNotificationPoller.js
+  23:12  warning  'e' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\hooks\useRoutePrefetch.js
+  29:34  warning  'config' is assigned a value but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\hooks\useWaitlist.js
+  59:48  warning  'capacity' is assigned a value but never used   no-unused-vars
+  59:58  warning  'attendees' is assigned a value but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\utils\calendarUrlUtils.test.js
+  32:33  warning  'blob' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\utils\floorPlanExport.test.js
+  13:21  warning  'content' is assigned a value but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\utils\inputSanitization.js
+  1:8  warning  'createDOMPurify' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\utils\p2pFileTransfer.js
+  53:7  warning  'attachIdbReadHandlers' is assigned a value but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\utils\safeStorage.js
+  86:16  warning  '_' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\utils\secureClientStorage.js
+  39:7  warning  'isAllowedKey' is assigned a value but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\utils\secureStorage.js
+  217:12  warning  '_e' is defined but never used                       no-unused-vars
+  232:12  warning  '_e' is defined but never used                       no-unused-vars
+  444:7   warning  'migratePayload' is assigned a value but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\utils\securityLogger.js
+  29:12  warning  'err' is defined but never used  no-unused-vars
+
+C:\Users\sande\Music\GitHub\Eventra\src\utils\toast.js
+  48:18  warning  'id' is defined but never used  no-unused-vars
+
+Γ£û 150 problems (1 error, 149 warnings)
+
