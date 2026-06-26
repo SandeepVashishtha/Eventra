@@ -134,7 +134,7 @@ export default function Chatbot() {
     } catch {
       console.warn("localStorage unavailable for Chatbot expiration check");
     }
-  }, [setMessages, t]);
+  }, [setMessages, t, pathname]);
 
   useEffect(() => {
     return () => {

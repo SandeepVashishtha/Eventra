@@ -1,4 +1,5 @@
-import { Code2, RefreshCw, Compass, ChevronDown, X, Rocket, PlusCircle } from "lucide-react";
+import { ChevronDown, X } from "lucide-react";
+import { FiRotateCw } from "react-icons/fi";
 import TeamMatchmaking from "./components/TeamMatchmaking";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -773,27 +774,26 @@ const HackathonHub = () => {
                   }}
                 />
 
-      {/* Reset Filters Button */}
-      {(searchQuery ||
-        filters.difficulty ||
-        filters.prize ||
-        filters.location ||
-        selectedTags.length > 0) && (
-        <div className="mt-6 flex justify-center">
-          <button
-            onClick={resetFilters}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-black hover:bg-zinc-800 text-white text-sm font-medium shadow-md transition-all duration-300"
-          >
-            <FiRotateCw className="w-4 h-4" />
-            Reset Filters
-          </button>
-        </div>
-      )}
-    </motion.div>
-  )}
-</AnimatePresence>
-
-       
+                {/* Reset Filters Button */}
+                {(searchQuery ||
+                  filters.difficulty ||
+                  filters.prize ||
+                  filters.location ||
+                  selectedTags.length > 0) && (
+                  <div className="mt-6 flex justify-center">
+                    <button
+                      onClick={resetFilters}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-black hover:bg-zinc-800 text-white text-sm font-medium shadow-md transition-all duration-300"
+                    >
+                      <FiRotateCw className="w-4 h-4" />
+                      Reset Filters
+                    </button>
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </ErrorBoundary>
 
       </div>
       

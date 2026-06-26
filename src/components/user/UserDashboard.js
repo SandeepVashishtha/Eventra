@@ -27,7 +27,6 @@ import {
   DashboardQuickActionSkeleton,
   DashboardSectionTitleSkeleton,
   DashboardStatCardSkeleton,
-  DashboardTableSkeleton,
 } from "../common/SkeletonLoaders";
 import useDashboardFilters from "../../hooks/useDashboardFilters";
 import "./UserDashboard.css";
