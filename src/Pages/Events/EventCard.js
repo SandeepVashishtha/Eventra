@@ -329,7 +329,7 @@ const durationText = getEventDuration(event);
               {new Date(event.date).toLocaleDateString("en-US", {
                 weekday: "short", day: "numeric", month: "short", year: "numeric",
               })}
-              <EventDuration duration={durationText} /><EventDuration duration={durationText} />
+              <EventDuration duration={durationText} />
             </span>
           </div>
         </div>
