@@ -95,7 +95,7 @@ Set at least one backend URL before starting the app. `VITE_API_URL` is preferre
 | `RATE_LIMIT_MODE` | No | Override rate limiting mode: "distributed" (default in prod) or "memory" (dev/test only) |
 | `DATABASE_URL` | Yes (server-side, production) | Database connection URL for persistent authentication storage |
 | `BLOCKED_COUNTRIES` | No (server-side) | Comma-separated ISO 3166-1 alpha-2 country codes to block |
-| `ALLOWED_ORIGINS` | No (server-side) | Comma-separated list of allowed CORS origins for API access |
+| `ALLOWED_ORIGINS` | Recommended (server-side) | Comma-separated list of allowed CORS origins for authentication endpoints |
 
 ## Geographic Access Restrictions
 
@@ -120,6 +120,35 @@ BLOCKED_COUNTRIES=
 - Blocked requests are logged with the country code for monitoring
 - Self-hosted deployments can configure this based on their requirements
 - No restrictions are applied when the variable is empty or unset
+
+## CORS Security Configuration
+
+Authentication endpoints (login, signup) use strict CORS origin validation instead of wildcard origins. This prevents cross-origin attacks while maintaining compatibility with configured frontend deployments.
+
+**Configuration:**
+- Set `ALLOWED_ORIGINS` to a comma-separated list of trusted frontend origins
+- If unset, the system auto-detects allowed origins from `BACKEND_URL`, `VITE_API_URL`, `REACT_APP_API_URL`, and `REACT_APP_PUBLIC_URL`
+- In development mode, common localhost ports (3000, 5173, 8080) are automatically allowed
+- In production, you MUST explicitly set allowed origins for security
+
+**Examples:**
+```env
+# Single origin
+ALLOWED_ORIGINS=https://yourdomain.com
+
+# Multiple origins
+ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
+
+# Development (localhost)
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
+```
+
+**Security Notes:**
+- Wildcard CORS (`Access-Control-Allow-Origin: *`) is completely removed from authentication endpoints
+- Only origins in the allowlist are reflected in `Access-Control-Allow-Origin` responses
+- Untrusted origins receive restrictive CORS headers and are denied
+- All CORS responses include `Vary: Origin` to prevent cache poisoning
+- Preflight OPTIONS requests use the same validation logic as other requests
 
 ## Content Security Policy (CSP) Backend Origin Configuration
 
