@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 
 /**
  * Calculates the relative luminance of a color.
@@ -56,7 +56,7 @@ export function useContrastChecker(bgColor, fgColor) {
         contrastRatio: Number(ratio.toFixed(2)),
         isAccessible: ratio >= 4.5
       };
-    } catch (e) {
+    } catch (_e) {
       // In case of invalid hex
       return { contrastRatio: null, isAccessible: true };
     }

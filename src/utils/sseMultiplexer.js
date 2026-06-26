@@ -117,6 +117,8 @@ class SseMultiplexer {
   }
 
   setupLocalStorageElection() {
+    if (this.localStorageInterval) clearInterval(this.localStorageInterval);
+
     const HEARTBEAT_INTERVAL = 3000;
     const HEARTBEAT_TIMEOUT = 7000;
 
@@ -482,7 +484,7 @@ class SseMultiplexer {
       let payload = evt.data;
       try {
         payload = JSON.parse(evt.data);
-      } catch {}
+      } catch { }
 
       // Dispatch locally
       this.dispatchLocalMessage(path, payload, evt.type);

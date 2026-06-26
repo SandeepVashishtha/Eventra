@@ -68,7 +68,8 @@ const processInterestQueue = async () => {
     }
   } catch (error) {
     logger.error("Failed to update user interests:", error);
-    interestQueue = []; // Clear the queue on persistent error to avoid infinite recursion
+    // Do not clear interestQueue — the isUpdating lock already prevents infinite recursion.
+    // Preserving the queue allows pending interests to be retried on the next call.
   } finally {
     isUpdating = false;
     if (interestQueue.length > 0) {

@@ -214,7 +214,7 @@ const initializeKeyMetadata = () => {
     if (stored) {
       return JSON.parse(stored);
     }
-  } catch (_e) {
+  } catch {
     // localStorage unavailable or corrupted
   }
 
@@ -229,7 +229,7 @@ const initializeKeyMetadata = () => {
 
   try {
     localStorage.setItem(KEY_METADATA_KEY, JSON.stringify(metadata));
-  } catch (_e) {
+  } catch {
     // Persistence failure - non-critical
   }
 
@@ -441,6 +441,7 @@ const decryptV1 = async (storageKey, payload, key, encoder) => {
  * @param {string} plaintext - The decrypted plaintext
  * @returns {Promise<string>} Re-encrypted value with new version
  */
+// eslint-disable-next-line no-unused-vars
 const migratePayload = async (fromVersion, toVersion, storageKey, plaintext) => {
   // Future migrations can be implemented here
   // For now, v1 is current, so no migration needed
