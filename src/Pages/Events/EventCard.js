@@ -79,7 +79,9 @@ const EventCard = ({ event }) => {
   const hasConflict = conflictCheck.hasConflict;
   const isUserRegistered = isRegistered(event.id);
 
-  const isPastEvent = getEventStatus(event) === "past" || getEventStatus(event) === "ended";
+  const computedStatus = getEventStatus(event);
+  const isPastEvent = computedStatus === "past" || computedStatus === "ended";
+  const canSetReminder = isEventBookmarked(event.id) || isUserRegistered;
 
   const handleCopyLink = (e) => {
     e.preventDefault();
@@ -329,7 +331,7 @@ const durationText = getEventDuration(event);
               {new Date(event.date).toLocaleDateString("en-US", {
                 weekday: "short", day: "numeric", month: "short", year: "numeric",
               })}
-              <EventDuration duration={durationText} /><EventDuration duration={durationText} />
+              <EventDuration duration={durationText} />
             </span>
           </div>
         </div>
