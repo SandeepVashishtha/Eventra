@@ -136,7 +136,7 @@ const CountdownTimer = memo(({ timeLeft }) => {
   const units = Object.entries(timeLeft).filter(([key]) => key !== 'ended');
   
   return (
-    <div className="grid grid-cols-4 gap-2 sm:gap-3 text-center" role="timer" aria-live="polite">
+    <div className="grid grid-cols-4 gap-2 sm:gap-3 text-center" role="timer" aria-live="off" aria-label="Countdown timer">
       {units.map(([unit, value]) => (
         <motion.div
           key={unit}
