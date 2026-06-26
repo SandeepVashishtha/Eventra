@@ -58,18 +58,23 @@ const RESOURCES = [
 // ============ UTILITY HOOKS ============
 const useCountdown = (endDate, onEnd) => {
   const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft(endDate));
-  
+  const onEndRef = useRef(onEnd);
+
+  useEffect(() => {
+    onEndRef.current = onEnd;
+  }, [onEnd]);
+
   useEffect(() => {
     if (timeLeft.ended) {
-      onEnd?.();
+      onEndRef.current?.();
       return;
     }
     const timer = setInterval(() => {
       setTimeLeft(calculateTimeLeft(endDate));
     }, 1000);
     return () => clearInterval(timer);
-  }, [timeLeft.ended, endDate, onEnd]);
-  
+  }, [timeLeft.ended, endDate]);
+
   return timeLeft;
 };
 
