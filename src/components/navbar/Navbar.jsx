@@ -101,16 +101,16 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
       <nav
         ref={navRef}
         aria-label="Primary navigation"
-        className={`sticky top-0 z-50 w-full transition-all duration-300 bg-white/70 backdrop-blur-md dark:bg-black/70 border-b border-gray-200/50 dark:border-zinc-800/50 ${
-          scrolled ? "shadow-sm" : ""
+        className={`sticky top-0 z-50 w-full transition-all duration-300 bg-white/85 dark:bg-slate-950/85 backdrop-blur-xl border-b border-slate-200/40 dark:border-slate-800/40 ${
+          scrolled ? "shadow-md shadow-primary/5 dark:shadow-blue-900/10" : "shadow-sm shadow-primary/2 dark:shadow-blue-900/5"
         }`}
       >
         <div className="mx-auto max-w-screen-2xl px-3 sm:px-4 lg:px-6">
           <div className="flex h-16 items-center justify-between gap-2">
             {/* Logo */}
-            <Link to="/" aria-label="Eventra Home" className="flex items-center shrink-0">
+            <Link to="/" aria-label="Eventra Home" className="flex items-center shrink-0 group">
               <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-card-bg p-1 shadow-premium-sm ring-1 ring-border">
+                <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-950 p-1 shadow-md shadow-primary/10 ring-1 ring-primary/20 dark:ring-blue-500/30 transition-transform duration-300 group-hover:scale-105">
                   <img
                     src="/favicon.png"
                     alt="Eventra Logo"
@@ -119,8 +119,8 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
                     height="32"
                   />
                 </div>
-
-                <span className="font-heading text-base font-semibold tracking-tight text-text">
+ 
+                <span className="font-heading text-base font-bold tracking-wider bg-gradient-to-r from-primary to-blue-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
                   Eventra
                 </span>
               </div>
