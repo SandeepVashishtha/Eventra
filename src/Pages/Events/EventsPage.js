@@ -32,6 +32,22 @@ import {
 } from "../../utils/advancedFilterUtils";
 const FILTER_STORAGE_KEY = "eventra:event-filters:v1";
 
+const EventsPagination = ({ listing }) => {
+  if (listing.isLoading || listing.totalPages <= 1) return null;
+  return (
+    <div className="mt-8 flex justify-center">
+      <PaginationControls
+        currentPage={listing.currentPage}
+        totalPages={listing.totalPages}
+        totalEvents={listing.totalElements}
+        eventsPerPage={listing.eventsPerPage}
+        onPageChange={listing.setSafePage}
+        onPageSizeChange={listing.setEventsPerPage}
+      />
+    </div>
+  );
+};
+
 const ExploreEventsSkeleton = () => (
   <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" aria-label="Loading events">
     {Array.from({ length: 6 }, (_, index) => (
@@ -414,16 +430,7 @@ const EventsPage = () => {
           )}
 
           {!listing.isLoading && listing.totalPages > 1 && (
-            <div className="mt-8 flex justify-center">
-              <PaginationControls
-                currentPage={listing.currentPage}
-                totalPages={listing.totalPages}
-                totalEvents={listing.totalElements}
-                eventsPerPage={listing.eventsPerPage}
-                onPageChange={listing.setSafePage}
-                onPageSizeChange={listing.setEventsPerPage}
-              />
-            </div>
+            <EventsPagination listing={listing} />
           )}
         </ErrorBoundary>
 
