@@ -80,28 +80,29 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
         flex items-center gap-2
         w-full px-3 py-2.5
         rounded-lg
-        text-sm font-medium
+        text-sm font-semibold
         transition-all duration-200
         ${
           isActive
-            ? "bg-bg-secondary text-primary font-semibold border-l-4 border-primary font-semibold"
+            ? "bg-primary/10 text-primary dark:bg-blue-500/15 dark:text-blue-400 border-l-4 border-primary font-bold"
             : "text-text-secondary hover:bg-bg hover:text-primary"
         }
       `
       : `
-        flex items-center gap-1
+        flex items-center gap-1.5
         whitespace-nowrap
-        px-0.5 py-1
+        px-3.5 py-1.5
+        rounded-full
         text-[12px]
-        font-medium
+        font-semibold
         uppercase
-        tracking-[0.03em]
-        border-b-2
-        transition-all duration-150 ease-out hover:scale-[1.02] active:scale-[0.98]
+        tracking-wider
+        border border-transparent
+        transition-all duration-300 ease-out hover:scale-[1.03] active:scale-[0.97]
         ${
           isActive
-            ? "border-primary text-text dark:text-white font-semibold"
-            : "text-text-secondary hover:text-text dark:hover:text-white hover:border-gray-300 dark:hover:border-zinc-700"
+            ? "bg-primary/10 text-primary dark:bg-blue-500/15 dark:text-blue-400 border-primary/20 dark:border-blue-500/20 shadow-sm shadow-primary/5"
+            : "text-text-secondary hover:text-primary dark:hover:text-blue-400 hover:bg-primary/5 dark:hover:bg-white/5"
         }
       `;
 
