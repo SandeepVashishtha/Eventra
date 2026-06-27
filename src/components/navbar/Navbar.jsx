@@ -1,4 +1,3 @@
-
 import { memo, useRef, useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 
@@ -27,11 +26,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const { user, isAuthenticated, logout } = useAuth();
   const authenticated = isAuthenticated();
 
-  const {
-    isDarkMode,
-    toggleTheme,
-    setIsCustomizerOpen,
-  } = useTheme();
+  const { isDarkMode, toggleTheme, setIsCustomizerOpen } = useTheme();
 
   useBodyScrollLock(isMobileMenuOpen);
 
@@ -40,9 +35,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   }, []);
 
   const handleSearchFocus = useCallback(() => {
-    const searchInput = navRef.current?.querySelector(
-      'input[type="text"], input[type="search"]'
-    );
+    const searchInput = navRef.current?.querySelector('input[type="text"], input[type="search"]');
 
     if (searchInput) {
       searchInput.focus();
@@ -76,14 +69,9 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
       window.requestAnimationFrame(() => {
         const scrollTop = window.scrollY;
 
-        const docHeight =
-          document.documentElement.scrollHeight -
-          window.innerHeight;
+        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
 
-        const progress =
-          docHeight > 0
-            ? (scrollTop / docHeight) * 100
-            : 0;
+        const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
 
         setScrollProgress(progress);
         setScrolled(scrollTop > 12);
@@ -113,76 +101,66 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
       <nav
         ref={navRef}
         aria-label="Primary navigation"
-        className={`sticky top-0 z-sticky w-full transition-all duration-300 ${
-          scrolled
-            ? "border-b border-border bg-navbar/95 backdrop-blur-md shadow-sm"
-            : "border-b border-transparent bg-transparent"
+        className={`sticky top-0 z-50 w-full transition-all duration-300 bg-white/70 backdrop-blur-md dark:bg-black/70 border-b border-gray-200/50 dark:border-zinc-800/50 ${
+          scrolled ? "shadow-sm" : ""
         }`}
       >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid h-16 grid-cols-[auto_1fr_auto] items-center gap-6">
-
+        <div className="mx-auto max-w-screen-2xl px-3 sm:px-4 lg:px-6">
+          <div className="flex h-16 items-center justify-between gap-2">
             {/* Logo */}
-            <Link
-              to="/"
-              aria-label="Eventra Home"
-              className="flex items-center shrink-0"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg bg-card-bg p-1 shadow-premium-sm ring-1 ring-border">
+            <Link to="/" aria-label="Eventra Home" className="flex items-center shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-card-bg p-1 shadow-premium-sm ring-1 ring-border">
                   <img
                     src="/favicon.png"
                     alt="Eventra Logo"
                     className="h-full w-full object-contain"
-                    width="36"
-                    height="36"
+                    width="32"
+                    height="32"
                   />
                 </div>
 
-                <span className="font-heading text-lg font-semibold tracking-tight text-text lg:text-xl">
+                <span className="font-heading text-base font-semibold tracking-tight text-text">
                   Eventra
                 </span>
               </div>
             </Link>
 
-            {/* Desktop Navigation */}
-            <div className="hidden lg:flex justify-center overflow-hidden">
+            {/* Desktop Navigation — allowed to flex-shrink */}
+            <div className="hidden lg:flex flex-1 justify-center min-w-0 mx-1">
               <DesktopNavbar />
             </div>
 
             {/* Right Controls */}
-            <div className="flex items-center justify-end gap-3 lg:gap-4">
-
-              <div className="hidden lg:flex items-center gap-4">
-                <LanguageSelector compact />
-
+            <div className="flex items-center justify-end gap-1.5 shrink-0">
+              <div className="hidden lg:flex items-center gap-1.5">
+                <ThemeToggleButton
+                  isDarkMode={isDarkMode}
+                  toggleTheme={toggleTheme}
+                  isMobile={false}
+                  setIsCustomizerOpen={setIsCustomizerOpen}
+                />
                 {authenticated ? (
                   <>
                     <NotificationBell />
-
-                    <ProfileMenu
-                      user={user}
-                      logout={logout}
-                    />
+                    <LanguageSelector compact />
+                    <ProfileMenu user={user} logout={logout} />
                   </>
                 ) : (
-                  <AuthButtons />
+                  <>
+                    <LanguageSelector compact />
+                    <AuthButtons />
+                  </>
                 )}
-
-                <CursorToggle
-                  cursorEnabled={cursorEnabled}
-                  toggleCursor={toggleCursor}
-                />
               </div>
 
-              <ThemeToggleButton
-                isDarkMode={isDarkMode}
-                toggleTheme={toggleTheme}
-                isMobile={false}
-                setIsCustomizerOpen={setIsCustomizerOpen}
-              />
-
               <div className="flex items-center gap-2 lg:hidden">
+                <ThemeToggleButton
+                  isDarkMode={isDarkMode}
+                  toggleTheme={toggleTheme}
+                  isMobile={false}
+                  setIsCustomizerOpen={setIsCustomizerOpen}
+                />
                 {authenticated && <NotificationBell />}
 
                 <MobileNavbar
@@ -194,14 +172,10 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
                 />
               </div>
             </div>
-
           </div>
         </div>
 
-        <div
-          aria-hidden="true"
-          className="absolute bottom-0 left-0 h-[2px] w-full"
-        >
+        <div aria-hidden="true" className="absolute bottom-0 left-0 h-[2px] w-full">
           <div
             className="h-full bg-primary transition-all duration-100 ease-out"
             style={{
@@ -215,6 +189,3 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
 };
 
 export default memo(Navbar);
-
-
-

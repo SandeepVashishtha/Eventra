@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useCallback, useRef, useState } from "react";
 import { setOnUnauthorizedHandler, setRequiresReauthHandler, setAuthToken, apiUtils } from "../config/api.js";
 import { authService } from "../services/authService.js";
-import { userService } from "../services/userService.js";
 import { syncSecureStorage } from "../utils/secureStorage.js";
 import { usePermissions, normalizeRoles } from "../hooks/usePermissions.js";
 import { useTokenExpiry } from "../hooks/useTokenExpiry.js";
@@ -41,10 +40,10 @@ const extractSession = (data, fallbackEmail) => {
   // Extract user details from raw API response payload structure
   const rawUser = data?.user ?? data?.data ?? data ?? null;
   const rawRoles = rawUser?.roles ?? (rawUser?.role ? [rawUser.role] : []);
-  
+
   // Normalize roles to ensure consistent uppercase format and organization names
   const resolvedRoles = normalizeRoles(rawRoles);
-  
+
   // Build user permissions by combining token-based and role-based permissions
   const tokenPermissions = Array.isArray(rawUser?.permissions)
     ? rawUser.permissions.map((p) => String(p))
@@ -88,10 +87,10 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [authRequest, setAuthRequest] = useState({ loading: false, error: null });
   const [requiresReauth, setRequiresReauth] = useState(false);
-  
+
   // Ref to track mounting status and prevent setting state on unmounted components
   const isMountedRef = useRef(true);
-  
+
   // Ref to track whether session expired toast has already been displayed to prevent spamming
   const expiryToastShownRef = useRef(false);
 
@@ -121,7 +120,7 @@ export const AuthProvider = ({ children }) => {
       secure: true,
       sameSite: "Strict",
     });
-    
+
     // Clear user metadata from secure/local storage manager
     syncSecureStorage.removeItem("user");
     return true;
@@ -171,9 +170,9 @@ export const AuthProvider = ({ children }) => {
     } catch (e) {
       console.warn("[AuthContext] Failed to read from secure storage during expiry check", e);
     }
-    
+
     clearSession();
-    
+
     if (!hadPreviousSession || expiryToastShownRef.current) return;
     expiryToastShownRef.current = true;
     toast.info(
@@ -183,12 +182,7 @@ export const AuthProvider = ({ children }) => {
         autoClose: 5000,
       }
     );
-    
-    toast.info("Session expired. Please log in again.", {
-      toastId: "session-expired",
-      autoClose: 4000,
-    });
-    
+
     setTimeout(() => {
       window.location.replace("/login");
     }, 1500);
@@ -204,7 +198,7 @@ export const AuthProvider = ({ children }) => {
         const res = await apiUtils.get("/api/auth/me");
         let activeToken = "cookie-managed";
         if (!isMountedRef.current) return;
-        
+
         if (res.ok && res.data) {
           const { sessionUser } = extractSession(res.data, null);
           if (!isMountedRef.current) return;
@@ -215,7 +209,7 @@ export const AuthProvider = ({ children }) => {
         }
       } catch (err) {
         if (!isMountedRef.current) return;
-        
+
         // If server returns unauthorized or forbidden, clear cached state
         if (err?.status === 401 || err?.status === 403) {
           clearSession();
@@ -242,7 +236,7 @@ export const AuthProvider = ({ children }) => {
         if (isMountedRef.current) setLoading(false);
       }
     };
-    
+
     validate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -272,10 +266,10 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     if (!token || token === "cookie-managed") return;
     expiryToastShownRef.current = false;
-    
+
     const expSeconds = user?.exp;
     let timerId;
-    
+
     if (typeof expSeconds === "number") {
       const msUntilExpiry = expSeconds * 1000 - Date.now() + 1000;
       timerId = setTimeout(() => {
@@ -286,7 +280,7 @@ export const AuthProvider = ({ children }) => {
         if (!isTokenValid(token)) clearExpiredSession();
       }, 60000);
     }
-    
+
     return () => {
       if (typeof expSeconds === "number") {
         clearTimeout(timerId);
@@ -308,7 +302,7 @@ export const AuthProvider = ({ children }) => {
     setToken(sessionToken);
     setUser(sessionUser);
     setAuthToken(sessionToken);
-    
+
     try {
       if (sessionToken && sessionToken !== "cookie-managed") {
         setCookie("token", sessionToken, {
@@ -323,6 +317,7 @@ export const AuthProvider = ({ children }) => {
 
     try {
       // Security Contract: Strip authorization keys from display profile object stored in localStorage
+      // eslint-disable-next-line no-unused-vars
       const { roles: _roles, permissions: _permissions, scopes: _scopes, ...displayProfile } = sessionUser;
       await syncSecureStorage.setItem("user", JSON.stringify(displayProfile));
     } catch (error) {

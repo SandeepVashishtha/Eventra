@@ -85,7 +85,7 @@ const CertificateDownload = ({ eventName, eventDate, eventType, organizerName, t
       const safeFileName = `${sanitizeText(eventName || "Event", 30).replace(/[^a-zA-Z0-9]/g, "_")}_Certificate.pdf`;
       doc.save(safeFileName);
       toast.update(toastId, { render: "Certificate downloaded!", type: "success", isLoading: false, autoClose: 3000 });
-    } catch (err) {
+    } catch (_err) {
       toast.update(toastId, { render: "Failed to generate certificate.", type: "error", isLoading: false, autoClose: 3000 });
     } finally {
       setIsGenerating(false);

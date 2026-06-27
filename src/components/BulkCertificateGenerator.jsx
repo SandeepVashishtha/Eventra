@@ -29,7 +29,7 @@ const BulkCertificateGenerator = ({ eventName, eventDate, eventType, organizerNa
         await new Promise(r => setTimeout(r, 100));
       }
       toast.update(toastId, { render: `✅ ${attendees.length} certificates generated!`, type: "success", isLoading: false, autoClose: 4000 });
-    } catch (err) {
+    } catch (_err) {
       toast.update(toastId, { render: "Bulk generation failed.", type: "error", isLoading: false, autoClose: 3000 });
     } finally {
       setIsGenerating(false);

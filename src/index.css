@@ -890,8 +890,7 @@ code {
     font-size: 0.875rem;
   }
 
-  .modal-content,
-  [role="dialog"] {
+  .modal-content {
     max-width: calc(100% - 2rem);
   }
 }

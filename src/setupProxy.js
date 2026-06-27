@@ -10,7 +10,7 @@ const resolveBackendTarget = () => {
   if (envUrl) {
     return envUrl.replace(/\/+$/, '').replace(/\/api$/, '');
   }
-  return 'http://localhost:5000';
+  return 'http://localhost:8080';
 };
 
 const backendTarget = resolveBackendTarget();
@@ -24,8 +24,8 @@ module.exports = function (app) {
       logLevel: isDev ? 'warn' : 'silent',
       onProxyReq: isDev
         ? (proxyReq, req) => {
-            console.log(`[Proxy] ${req.method} ${req.url} -> ${proxyReq.host}${proxyReq.path}`);
-          }
+          console.log(`[Proxy] ${req.method} ${req.url} -> ${proxyReq.host}${proxyReq.path}`);
+        }
         : undefined,
     })
   );
