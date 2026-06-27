@@ -14,15 +14,13 @@ const getSessionStorage = () => {
 };
 
 const createSessionId = () => {
-  if (typeof crypto !== "undefined") {
-    if (typeof crypto.randomUUID === "function") {
-      return crypto.randomUUID();
-    }
-    if (typeof crypto.getRandomValues === "function") {
-      const values = new Uint32Array(4);
-      crypto.getRandomValues(values);
-      return `session-${Date.now()}-${Array.from(values).join("-")}`;
-    }
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+    const values = new Uint32Array(4);
+    crypto.getRandomValues(values);
+    return `session-${Date.now()}-${Array.from(values).join("-")}`;
   }
   return `session-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 };
