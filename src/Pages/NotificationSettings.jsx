@@ -136,6 +136,7 @@ const NotificationSettings = () => {
       timestamp: new Date().toISOString(),
     });
     showStatusMessage(
+
       delivered
         ? "Test notification sent."
         : "Allow browser notifications to send a test notification."
