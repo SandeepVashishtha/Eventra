@@ -174,9 +174,8 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
     const savedLayout = localStorage.getItem(`eventra_floorplan_${eventId}`);
     let initialElements = [];
     if (savedLayout) {
-      try {
-        initialElements = safeJsonParse(savedLayout, {});
-      } catch (e) {
+      initialElements = safeJsonParse(savedLayout, []);
+      if (!Array.isArray(initialElements)) {
         toast.error("Invalid floor plan format");
         initialElements = PRESETS.banquet;
       }
