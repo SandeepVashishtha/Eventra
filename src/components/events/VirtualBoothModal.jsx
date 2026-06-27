@@ -177,16 +177,16 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
 
                 <div className="flex gap-3 text-gray-400">
                   {booth.sponsorWebsite && (
-                    <a href={booth.sponsorWebsite}><Globe size={16} /></a>
+                    <a href={booth.sponsorWebsite} target="_blank" rel="noopener noreferrer" aria-label={`${booth.label} website`}><Globe size={16} /></a>
                   )}
                   {booth.sponsorLinkedin && (
-                    <a href={booth.sponsorLinkedin}><Linkedin size={16} /></a>
+                    <a href={booth.sponsorLinkedin} target="_blank" rel="noopener noreferrer" aria-label={`${booth.label} LinkedIn`}><Linkedin size={16} /></a>
                   )}
                   {booth.sponsorTwitter && (
-                    <a href={booth.sponsorTwitter}><Twitter size={16} /></a>
+                    <a href={booth.sponsorTwitter} target="_blank" rel="noopener noreferrer" aria-label={`${booth.label} Twitter`}><Twitter size={16} /></a>
                   )}
                   {booth.sponsorGithub && (
-                    <a href={booth.sponsorGithub}><Github size={16} /></a>
+                    <a href={booth.sponsorGithub} target="_blank" rel="noopener noreferrer" aria-label={`${booth.label} GitHub`}><Github size={16} /></a>
                   )}
                 </div>
               </div>
