@@ -1,3 +1,4 @@
+import { getTrendingBadge } from "../../utils/trendingRankUtils";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { eventService } from "../../services/eventService";
@@ -270,17 +271,9 @@ const TrendingEvents = ({
                 key={event.id ?? event.title}
                 className="rounded-3xl overflow-hidden"
               >
-                <div className="px-5 pt-4">
-                  <span className="inline-flex items-center rounded-full bg-yellow-100 px-3 py-1 text-xs font-semibold text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
-                  {index === 0
-                  ? "🏆 #1 Trending"
-                  : index === 1
-                  ? "🥈 #2 Trending"
-                  : index === 2
-                  ? "🥉 #3 Trending"
-                  : `#${index + 1} Trending`}
-                  </span>
-                  </div>
+                <span className="inline-flex items-center rounded-full bg-yellow-100 px-3 py-1 text-xs font-semibold text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
+  {getTrendingBadge(index)}
+</span>
                 <EventCard
                   event={{
                     ...event,
