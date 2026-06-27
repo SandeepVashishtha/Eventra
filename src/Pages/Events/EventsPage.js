@@ -418,7 +418,10 @@ const EventsPage = () => {
               <PaginationControls
                 currentPage={listing.currentPage}
                 totalPages={listing.totalPages}
+                totalEvents={listing.totalElements}
+                eventsPerPage={listing.eventsPerPage}
                 onPageChange={listing.setSafePage}
+                onPageSizeChange={listing.setEventsPerPage}
               />
             </div>
           )}
