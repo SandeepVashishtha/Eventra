@@ -32,10 +32,14 @@ const cache = new Map(); // Map<storageKey, BookmarkEntry[]>
 
 const readStorage = (key) => {
   try {
-    const stored = localStorage.getItem(key);
-    if (!stored) return [];
-    const parsed = safeJsonParse(stored, []);
-    return Array.isArray(parsed) ? parsed : [];
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(key);
+      if (!stored) return [];
+      const parsed = safeJsonParse(stored, []);
+      return Array.isArray(parsed) ? parsed : [];
+    } else {
+      return [];
+    }
   } catch {
     return [];
   }
@@ -43,7 +47,9 @@ const readStorage = (key) => {
 
 const writeStorage = (key, value) => {
   try {
-    localStorage.setItem(key, JSON.stringify(value));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(key, JSON.stringify(value));
+    }
   } catch {
     // localStorage quota exceeded — in-memory state remains correct
   }

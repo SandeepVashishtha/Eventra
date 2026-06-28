@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, memo } from "react";
 import { Link } from "react-router-dom";
 import { useInView } from "react-intersection-observer";
 import { HomeCardSkeleton } from "../../../components/common/SkeletonLoaders";
@@ -161,10 +161,11 @@ const WhatsHappening = () => {
       }));
   };
 
-  const upcomingEvents = [
+  const upcomingEvents = useMemo(() => [
     ...formatEventsData(eventsData),
     ...formatHackathonsData(hackathonsData),
-  ].sort((a, b) => new Date(a.rawDate) - new Date(b.rawDate));
+  ].sort((a, b) => new Date(a.rawDate) - new Date(b.rawDate)),
+  [eventsData]);
 
   const [cardsPerView, setCardsPerView] = useState(1);
 
@@ -510,4 +511,4 @@ const WhatsHappening = () => {
   );
 };
 
-export default WhatsHappening;
+export default memo(WhatsHappening);
