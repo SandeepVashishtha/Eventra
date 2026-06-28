@@ -533,7 +533,7 @@ export default function UserAchievements() {
 
                         {/* Share section */}
                         {badge.earned && (
-                          <div className="pt-4 border-t border-dashed border-border space-y-2.5" onClick={(e) => e.stopPropagation()}>
+                          <div className="pt-4 border-t border-dashed border-border space-y-2.5" onClick={(e) => e.stopPropagation()} role="presentation" onKeyDown={(e) => e.stopPropagation()}>
                             <span className="block text-[9px] font-black uppercase tracking-widest text-text-light leading-none">
                               {t("userAchievements.badgesSectionShare")}
                             </span>

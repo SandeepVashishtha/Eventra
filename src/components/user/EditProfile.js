@@ -687,7 +687,7 @@ const ConfirmModal = ({ open, onCancel, onConfirm, loading }) => {
   if (!open) return null;
   return ReactDOM.createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50" onClick={onCancel} />
+      <div className="absolute inset-0 bg-black/50" onClick={onCancel} role="presentation" onKeyDown={(e) => e.key === 'Escape' && onCancel()} />
       <div className="relative w-full max-w-md mx-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl p-6 z-10">
         <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Save changes?</h4>
         <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">

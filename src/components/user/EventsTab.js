@@ -836,7 +836,7 @@ const applyPreset = (preset) => {
               className="backdrop"
               onClick={() => setCancelTarget(null)}
             >
-              <div onClick={(e) => e.stopPropagation()}>
+              <div onClick={(e) => e.stopPropagation()} role="presentation" onKeyDown={(e) => e.stopPropagation()}>
                 <h3>Cancel?</h3>
                 <button onClick={handleCancelConfirm}>
                   Yes

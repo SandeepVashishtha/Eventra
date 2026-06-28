@@ -23,7 +23,7 @@ const EventPopover = ({ event, onClose }) => {
   if (!event) return null;
 
   return (
-    <div className="fixed inset-0 z-1000 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-1000 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" onClick={onClose} role="presentation" onKeyDown={(e) => e.key === 'Escape' && onClose()}>
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}

@@ -611,7 +611,7 @@ const TeamWorkspace = () => {
       {isChatOpen && (
         <div className="fixed inset-0 z-50 flex justify-end bg-black/70 backdrop-blur-sm transition-all duration-350 animate-fade-in">
           {/* Backdrop closer */}
-          <div className="absolute inset-0 cursor-default" onClick={() => setIsChatOpen(false)} />
+          <div className="absolute inset-0 cursor-default" onClick={() => setIsChatOpen(false)} role="presentation" onKeyDown={(e) => e.key === 'Escape' && setIsChatOpen(false)} />
 
           {/* Drawer Panel Container */}
           <div className="relative w-full max-w-md h-full bg-[#07080e] border-l border-slate-800 shadow-2xl flex flex-col z-10 animate-slide-in">

@@ -132,7 +132,7 @@ const NotificationItem = ({
 
   const inner = (
     <div className="flex w-full items-start gap-2">
-      <div className="flex min-w-0 flex-1 gap-3" onClick={handleClick} role="presentation">
+      <div className="flex min-w-0 flex-1 gap-3" onClick={handleClick} role="presentation" onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handleClick(e)} tabIndex={0}>
         {content}
       </div>
       {actions}

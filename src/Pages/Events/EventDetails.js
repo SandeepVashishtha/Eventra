@@ -424,7 +424,7 @@ const showClosingSoon =
                     </button>
                     {showExportDropdown && (
                       <>
-                        <div className="fixed inset-0 z-10" onClick={() => setShowExportDropdown(false)} />
+                        <div className="fixed inset-0 z-10" onClick={() => setShowExportDropdown(false)} role="presentation" onKeyDown={(e) => e.key === 'Escape' && setShowExportDropdown(false)} />
                         <div className="absolute right-0 mt-2 w-40 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-lg py-1.5 z-20 animate-fadeIn text-left">
                           <button
                             onClick={async () => {
