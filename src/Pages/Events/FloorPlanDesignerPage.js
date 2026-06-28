@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Calendar, MapPin, Users, Info } from "lucide-react";
-import FloorPlanDesigner from "../../components/events/FloorPlanDesigner";
+const FloorPlanDesigner = lazy(() => import("../../components/events/FloorPlanDesigner"));
 import ConfirmationModal from "../../components/common/ConfirmationModal";
 import eventsMockData from "./eventsMockData.json";
 
@@ -92,7 +92,9 @@ const FloorPlanDesignerPage = () => {
 
         {/* Live Designer Component Mount */}
         <div className="bg-white/30 dark:bg-gray-900/30 backdrop-blur-md rounded-2xl shadow-lg border border-gray-200/40 dark:border-gray-800/40 overflow-hidden">
-          <FloorPlanDesigner eventId={event.id} onDirtyChange={setIsDirty} />
+          <Suspense fallback={<div className="p-8 text-center text-gray-500">Loading Floor Plan Designer...</div>}>
+            <FloorPlanDesigner eventId={event.id} onDirtyChange={setIsDirty} />
+          </Suspense>
         </div>
 
         {/* Info Helper Footer bar */}
