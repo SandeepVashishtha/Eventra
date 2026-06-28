@@ -179,24 +179,33 @@ export async function saveChunkToCache(fileId, fileName, chunkIndex, totalChunks
   }
 }
 
-// Mock large file generation and split into chunks to populate cache initially
-export async function simulateServerDownload(fileId, fileName, onProgress) {
-  // Simulate server latency
+// Mock large file generation and split into chunks to populate cache initially.
+//
+// @param {string} fileId - Unique identifier for the file being simulated.
+// @param {string} fileName - Display name of the file.
+// @param {function} [onProgress] - Called with progress percentage on each step.
+// @param {AbortController} [signal] - Optional abort signal to cancel the simulation early.
+// @returns {Promise<boolean>} Resolves true on completion, false if aborted or on error.
+export async function simulateServerDownload(fileId, fileName, onProgress, signal) {
   const steps = 10;
   const totalChunks = 5;
   const dummyChunkData = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-  
+
   for (let i = 1; i <= steps; i++) {
-    await new Promise(r => setTimeout(r, 250)); // Simulating transfer speed
+    if (signal?.aborted) return false;
+    await new Promise((r) => setTimeout(r, 250)); // Simulating transfer speed
     if (onProgress) onProgress(Math.round((i / steps) * 100));
   }
 
+  if (signal?.aborted) return false;
+
   // Once fully downloaded from "server", split and write to IndexedDB cache
   for (let c = 0; c < totalChunks; c++) {
+    if (signal?.aborted) return false;
     const chunkStr = Array(1000).fill(dummyChunkData).join("") + `[CHUNK_${c}]`;
     await saveChunkToCache(fileId, fileName, c, totalChunks, chunkStr);
   }
-  
+
   return true;
 }
 
