@@ -156,7 +156,6 @@ export function rotateCSRFToken(newToken) {
     setCookie(CSRF_COOKIE_NAME, newToken, {
       path: "/",
       secure: true,
-      sameSite: "Strict",
     });
   }
 }
