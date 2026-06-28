@@ -98,7 +98,7 @@ const _dispatchUpgradeEvent = (rescuedCount) => {
 // ---------------------------------------------------------------------------
 const openDB = () => {
   return new Promise((resolve, reject) => {
-    if (!window.indexedDB) {
+    if (typeof window === "undefined" || !window.indexedDB) {
       reject(new Error("IndexedDB is not supported in this environment"));
       return;
     }

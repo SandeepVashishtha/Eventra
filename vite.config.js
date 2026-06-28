@@ -119,7 +119,7 @@ export default defineConfig(({ mode }) => {
       sourcemap: false,
       minify: "esbuild",
       cssMinify: "esbuild",
-      chunkSizeWarningLimit: 1500,
+      chunkSizeWarningLimit: 500,
       modulePreload: {
         polyfill: true,
         resolveDependencies: (url, deps, { hostType }) => {
