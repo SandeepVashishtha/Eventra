@@ -559,7 +559,7 @@ Closes #<issue_number>`}
             </p>
             <motion.a
               href="https://github.com/SandeepVashishtha/Eventra"
-              target="_blank"
+              target="_blank" rel="noopener noreferrer"
               rel="noopener noreferrer"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}

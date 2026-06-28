@@ -57,7 +57,7 @@ const AddToCalendarDropdown = ({ event }) => {
           <li>
             <a 
               href={getGoogleCalendarUrl(event)} 
-              target="_blank" 
+              target="_blank" rel="noopener noreferrer" 
               rel="noopener noreferrer"
               style={{ display: 'block', padding: '8px 16px', color: '#374151', textDecoration: 'none', fontSize: '14px' }}
               onClick={() => setIsOpen(false)}

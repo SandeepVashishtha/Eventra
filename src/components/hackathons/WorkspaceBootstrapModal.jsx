@@ -286,7 +286,7 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
                       </p>
                       <a
                         href="https://github.com/settings/tokens/new?scopes=repo,read:user&description=Eventra+Workspace+Bootstrap"
-                        target="_blank"
+                        target="_blank" rel="noopener noreferrer"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 text-[11px] text-blue-600 dark:text-blue-400 hover:underline font-semibold mt-1"
                       >
@@ -347,7 +347,7 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
                       </p>
                       <a
                         href={ghUser.html_url}
-                        target="_blank"
+                        target="_blank" rel="noopener noreferrer"
                         rel="noopener noreferrer"
                         className="text-[11px] text-emerald-600 hover:underline"
                       >
@@ -615,7 +615,7 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
 
                     <a
                       href={result.repoUrl}
-                      target="_blank"
+                      target="_blank" rel="noopener noreferrer"
                       rel="noopener noreferrer"
                       className="flex w-full items-center justify-center gap-2 py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 text-sm font-black transition"
                     >

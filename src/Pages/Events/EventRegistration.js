@@ -665,7 +665,7 @@ const EventRegistration = () => {
             <div className="flex gap-3 justify-center flex-wrap">
               <a
                 href={googleCalendarUrl}
-                target="_blank"
+                target="_blank" rel="noopener noreferrer"
                 rel="noopener noreferrer"
                 className="flex-1 min-w-30 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
               >
@@ -676,7 +676,7 @@ const EventRegistration = () => {
               </a>
               <a
                 href={outlookCalendarUrl}
-                target="_blank"
+                target="_blank" rel="noopener noreferrer"
                 rel="noopener noreferrer"
                 className="flex-1 min-w-30 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
               >
@@ -687,7 +687,7 @@ const EventRegistration = () => {
               </a>
               <a
                 href={yahooCalendarUrl}
-                target="_blank"
+                target="_blank" rel="noopener noreferrer"
                 rel="noopener noreferrer"
                 className="flex-1 min-w-30 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
               >
@@ -719,7 +719,7 @@ const EventRegistration = () => {
             <div className="flex gap-3 justify-center">
               <a
                 href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`}
-                target="_blank"
+                target="_blank" rel="noopener noreferrer"
                 rel="noopener noreferrer"
                 className="w-10 h-10 inline-flex items-center justify-center bg-slate-900 hover:bg-slate-950 dark:bg-slate-950 dark:hover:bg-black rounded-2xl text-white hover:scale-110 transition-all duration-300 shadow"
                 title={t("eventRegistration.successShareTwitter")}
@@ -730,7 +730,7 @@ const EventRegistration = () => {
               </a>
               <a
                 href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`}
-                target="_blank"
+                target="_blank" rel="noopener noreferrer"
                 rel="noopener noreferrer"
                 className="w-10 h-10 inline-flex items-center justify-center bg-[#0077b5] hover:bg-[#006297] rounded-2xl text-white hover:scale-110 transition-all duration-300 shadow"
                 title={t("eventRegistration.successShareLinkedIn")}

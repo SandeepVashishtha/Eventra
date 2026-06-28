@@ -115,7 +115,7 @@ export default function EventShareButtons({ event }) {
         <motion.a
           variants={itemVariants}
           href={twitterUrl}
-          target="_blank"
+          target="_blank" rel="noopener noreferrer"
           rel="noopener noreferrer"
           aria-label={`Share "${event.title}" on Twitter`}
           className="share-btn inline-flex items-center gap-2 rounded-xl bg-black px-4 py-2 text-sm font-semibold text-white shadow transition-all hover:bg-neutral-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-neutral-400"
@@ -128,7 +128,7 @@ export default function EventShareButtons({ event }) {
         <motion.a
           variants={itemVariants}
           href={linkedinUrl}
-          target="_blank"
+          target="_blank" rel="noopener noreferrer"
           rel="noopener noreferrer"
           aria-label={`Share "${event.title}" on LinkedIn`}
           className="share-btn inline-flex items-center gap-2 rounded-xl bg-[#0077b5] px-4 py-2 text-sm font-semibold text-white shadow transition-all hover:bg-[#005f8d] focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300"
@@ -141,7 +141,7 @@ export default function EventShareButtons({ event }) {
         <motion.a
           variants={itemVariants}
           href={whatsappUrl}
-          target="_blank"
+          target="_blank" rel="noopener noreferrer"
           rel="noopener noreferrer"
           aria-label={`Share "${event.title}" on WhatsApp`}
           className="share-btn inline-flex items-center gap-2 rounded-xl bg-[#25d366] px-4 py-2 text-sm font-semibold text-white shadow transition-all hover:bg-[#1ebe59] focus-visible:outline focus-visible:outline-2 focus-visible:outline-green-300"
