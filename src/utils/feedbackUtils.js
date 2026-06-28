@@ -31,6 +31,7 @@ export const submitEventFeedback = async ({ eventId, rating, comment, tags = [] 
  * @returns {Array} Array of feedback objects
  */
 export const getEventFeedback = (eventId) => {
+  if (typeof window === "undefined") return [];
   try {
     const allFeedback = safeJsonParse(localStorage.getItem(FEEDBACK_STORAGE_KEY), {});
     const rawFeedback = allFeedback[eventId] || [];

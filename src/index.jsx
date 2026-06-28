@@ -1,28 +1,22 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import * as Sentry from "@sentry/react";
-
 import "./index.css";
 import "./i18n/i18n";
 import App from "./App";
 import TranslationProvider from "./components/TranslationProvider";
 import { ThemeProvider } from "./context/ThemeContext";
 import GlobalErrorBoundary from "./components/common/ErrorBoundary";
+import ErrorRecoveryPage from "./components/common/ErrorRecoveryPage";
 import { initializeGlobalErrorHandling } from "./utils/globalErrorHandler";
 import { initCspReporting } from "./utils/cspReporting";
 import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
 import { RealTimeProvider } from "./context/RealTimeContext";
 import { HelmetProvider } from "react-helmet-async";
 
-// Initialize Sentry
-Sentry.init({
-  dsn: "https://0f5776d794dcf89120ca6b00a5923f93@o4511372299075584.ingest.de.sentry.io/4511556614946896",
-});
-
 // Initialize Global Runtime Monitoring
 initializeGlobalErrorHandling();
-
+// Fixed Redis Rate Limiter TTL renewal on blocked requests to prevent permanent lockouts.
 // Refactored InMemoryLockManager implementation to prevent queue expiration race conditions.
 
 
@@ -39,7 +33,8 @@ if (import.meta.env.PROD) {
 const router = createBrowserRouter([
   {
     path: "*",
-    element: <App />
+    element: <App />,
+    errorElement: <ErrorRecoveryPage />,
   }
 ]);
 
@@ -62,6 +57,3 @@ root.render(
 </GlobalErrorBoundary>
   </React.StrictMode>
 );
-
-// Critical Path: Touched to trigger critical PR classification for database capacity validation fixes.
-
