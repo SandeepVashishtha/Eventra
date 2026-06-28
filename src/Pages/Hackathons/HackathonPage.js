@@ -44,7 +44,7 @@ const Tag = ({ tag, onRemove }) => (
 const CustomDropdown = ({ label, value, options, onChange, placeholder = "Select" }) => {
   const [open, setOpen] = useState(false);
   const [menuCoords, setMenuCoords] = useState({ top: 0, left: 0, width: 0, showAbove: false });
-  
+
   const buttonRef = useRef(null);
   const dropdownRef = useRef(null);
   // Safe ID generation compatible with all React versions
@@ -59,10 +59,10 @@ const CustomDropdown = ({ label, value, options, onChange, placeholder = "Select
       const rect = buttonRef.current.getBoundingClientRect();
       const spaceBelow = window.innerHeight - rect.bottom;
       const spaceAbove = rect.top;
-      
+
       // Smart positioning: Open above if not enough space below
       const showAbove = spaceBelow < 250 && spaceAbove > spaceBelow;
-      
+
       setMenuCoords({
         top: showAbove ? rect.top - 8 : rect.bottom + 8,
         left: rect.left,
@@ -119,9 +119,9 @@ const CustomDropdown = ({ label, value, options, onChange, placeholder = "Select
   return (
     <div className="relative">
       {label && (
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <span className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           {label}
-        </label>
+        </span>
       )}
 
       <button
@@ -186,9 +186,8 @@ const CustomDropdown = ({ label, value, options, onChange, placeholder = "Select
                   key={optValue}
                   role="option"
                   aria-selected={optValue === value}
-                  className={`px-4 py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-primary/10 text-text-light text-sm transition-colors ${
-                    optValue === value ? "font-semibold bg-primary/10 text-primary" : ""
-                  }`}
+                  className={`px-4 py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-primary/10 text-text-light text-sm transition-colors ${optValue === value ? "font-semibold bg-primary/10 text-primary" : ""
+                    }`}
                   onClick={() => {
                     onChange(optValue);
                     setOpen(false);
@@ -225,14 +224,14 @@ const HackathonHub = () => {
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   const [selectedTags, setSelectedTags] = useState([]);
   const [availableTags, setAvailableTags] = useState([]);
-  
+
   // NEW: Sort state
   const [sortBy, setSortBy] = useState("default");
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [filtersHydrated, setFiltersHydrated] = useState(false);
   const hasHydratedFilters = useRef(false);
-  
+
   // FIX: Prevent state updates on unmounted component
   const isMountedRef = useRef(true);
   useEffect(() => {
@@ -555,7 +554,7 @@ const HackathonHub = () => {
                 </span>
               </h2>
             </div>
-            
+
             <div className="flex flex-wrap items-center gap-3">
               {/* NEW: Sort Dropdown */}
               <div className="w-36">
@@ -576,12 +575,12 @@ const HackathonHub = () => {
               <button
                 type="button"
                 onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${
-                  showFilters
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${showFilters
                     ? "bg-primary text-white border-primary shadow-glow-sm"
                     : "bg-white dark:bg-white/5 text-text-light border-border hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/50 shadow-sm dark:shadow-none"
-                }`}
+                  }`}
                 aria-expanded={showFilters}
+                aria-controls="hackathon-filters-panel"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
@@ -624,6 +623,7 @@ const HackathonHub = () => {
           <AnimatePresence>
             {showFilters && (
               <motion.div
+                id="hackathon-filters-panel"
                 initial={{ opacity: 0, y: -12, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -12, scale: 0.98 }}
@@ -656,9 +656,9 @@ const HackathonHub = () => {
 
                 {availableTags.length > 0 && (
                   <div className="mt-8 pt-6 border-t border-border">
-                    <label className="block text-xs font-semibold uppercase tracking-widest text-text-light mb-4">
+                    <span className="block text-xs font-semibold uppercase tracking-widest text-text-light mb-4">
                       Filter by Technology
-                    </label>
+                    </span>
                     <div className="flex flex-wrap gap-2">
                       {availableTags.map((tag) => (
                         <button
@@ -780,23 +780,23 @@ const HackathonHub = () => {
                   filters.prize ||
                   filters.location ||
                   selectedTags.length > 0) && (
-                  <div className="mt-6 flex justify-center">
-                    <button
-                      onClick={resetFilters}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-black hover:bg-zinc-800 text-white text-sm font-medium shadow-md transition-all duration-300"
-                    >
-                      <FiRotateCw className="w-4 h-4" />
-                      Reset Filters
-                    </button>
-                  </div>
-                )}
+                    <div className="mt-6 flex justify-center">
+                      <button
+                        onClick={resetFilters}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-black hover:bg-zinc-800 text-white text-sm font-medium shadow-md transition-all duration-300"
+                      >
+                        <FiRotateCw className="w-4 h-4" />
+                        Reset Filters
+                      </button>
+                    </div>
+                  )}
               </motion.div>
             )}
           </AnimatePresence>
         </ErrorBoundary>
 
       </div>
-      
+
       <HackathonCTA />
       <BackToTopButton positionClass={positionClass} />
     </div>
