@@ -19,7 +19,7 @@
  *   { success: false, message: "Invalid ticket token" }
  */
 
-import { corsResponse } from "../auth/_cors.js";
+import { corsResponse } from "../_lib/_cors.js";
 import { verifyTicketJwt } from "../_lib/ticketToken.js";
 import { getTicketByToken, checkInTicket } from "../_lib/ticketStorage.js";
 

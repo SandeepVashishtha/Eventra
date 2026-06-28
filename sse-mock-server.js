@@ -373,16 +373,7 @@ const server = http.createServer(async (req, res) => {
           return jsonResponse(res, 400, { valid: false, message: "Security Alert: Ticket is valid, but registered for a different event." });
         }
       } catch (err) {
-        const decoded = decodeJwtPayload(ticketId);
-        if (decoded) {
-          decodedToken = decoded;
-          registrationId = decoded.registrationId;
-          if (String(decoded.eventId) !== String(eventId)) {
-            return jsonResponse(res, 400, { valid: false, message: "Security Alert: Ticket is valid, but registered for a different event." });
-          }
-        } else {
-          return jsonResponse(res, 400, { valid: false, message: "Security Alert: QR Code is invalid or has been tampered with!" });
-        }
+        return jsonResponse(res, 400, { valid: false, message: "Security Alert: QR Code is invalid or has been tampered with!" });
       }
     }
 
@@ -458,11 +449,7 @@ const server = http.createServer(async (req, res) => {
         decodedToken = jwt.verify(ticketId, JWT_SECRET);
         registrationId = decodedToken.registrationId;
       } catch (err) {
-        const decoded = decodeJwtPayload(ticketId);
-        if (decoded) {
-          decodedToken = decoded;
-          registrationId = decoded.registrationId;
-        }
+        return jsonResponse(res, 400, { error: "Security Alert: QR Code is invalid or has been tampered with!" });
       }
     }
 
