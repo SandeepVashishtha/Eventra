@@ -114,7 +114,7 @@ const ALLOWED_EXCEPTIONS = new Set([
 ]);
 
 const BACKEND_URL_VARS = ["BACKEND_URL", "VITE_API_URL", "REACT_APP_API_URL"];
-const REQUIRED_VARS = ["JWT_SECRET"];
+const REQUIRED_VARS = [];
 const PRODUCTION_REQUIRED_VARS = ["DATABASE_URL"];
 
 // Rate limiting configuration validation
