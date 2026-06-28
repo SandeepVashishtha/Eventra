@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { ENV } from "../config/env";
 import { motion } from "framer-motion";
 import useDocumentTitle from "../hooks/useDocumentTitle";
 import useReducedMotion from "../hooks/useReducedMotion.js";
@@ -554,7 +555,7 @@ const ApiDocs = () => {
 
               <div className="flex-1 flex items-center gap-2 px-3 py-1 bg-slate-950 border border-slate-850 rounded-lg text-[10px] font-mono text-slate-400 select-all overflow-x-auto whitespace-nowrap scrollbar-none">
                 <span className="text-emerald-500 font-bold uppercase shrink-0">GET</span>
-                <span>http://localhost:3000{selectedEndpoint}</span>
+                <span>{ENV.API_URL || window.location.origin}{selectedEndpoint}</span>
                 {selectedEndpoint === "/mock-api/hackathons" && (
                   <span className="text-indigo-400 shrink-0">?limit={params.limit}&status={params.status}</span>
                 )}
