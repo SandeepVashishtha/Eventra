@@ -190,21 +190,24 @@ const formatTimeInZone = (timezone) => {
 };
 
 // ============ PARTICLE ANIMATION COMPONENT ============
-const ConnectionParticle = ({ path, color, delay }) => (
-  <motion.circle
-    r="2.5"
-    fill={color}
-    initial={{ offsetDistance: "0%", opacity: 0.9 }}
-    animate={{ offsetDistance: "100%", opacity: 0.2 }}
-    transition={{
-      duration: 4 + Math.random() * 3,
-      repeat: Infinity,
-      ease: "linear",
-      delay,
-    }}
-    style={{ offsetPath: `path("${path}")` }}
-  />
-);
+const ConnectionParticle = ({ path, color, delay }) => {
+  const duration = useRef(4 + Math.random() * 3);
+  return (
+    <motion.circle
+      r="2.5"
+      fill={color}
+      initial={{ offsetDistance: "0%", opacity: 0.9 }}
+      animate={{ offsetDistance: "100%", opacity: 0.2 }}
+      transition={{
+        duration: duration.current,
+        repeat: Infinity,
+        ease: "linear",
+        delay,
+      }}
+      style={{ offsetPath: `path("${path}")` }}
+    />
+  );
+};
 
 // ============ MAIN COMPONENT ============
 export default function CollaborationNetworkMap() {

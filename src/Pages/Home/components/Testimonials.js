@@ -1,6 +1,7 @@
 import { Quote, Star, Play, Pause, ChevronLeft, ChevronRight, Share2, CheckCircle, ExternalLink } from "lucide-react";
-import { useRef, useEffect, useState, useMemo, useCallback } from "react";
+import { useRef, useEffect, useState, useMemo, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Link } from "react-router-dom";
 
 // 🎯 Enhanced testimonials data with more metadata
 const testimonials = [
@@ -439,12 +440,12 @@ const ModernTestimonialTrain = () => {
           <span className="text-sm text-gray-700 dark:text-gray-300">
             Have a story to share?
           </span>
-          <a
-            href="/submit-testimonial"
+          <Link
+            to="/submit-testimonial"
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition-colors shadow-md hover:shadow-lg"
           >
             Share Your Story <ExternalLink className="w-3.5 h-3.5" />
-          </a>
+          </Link>
         </div>
       </motion.div>
 
@@ -456,4 +457,4 @@ const ModernTestimonialTrain = () => {
   );
 };
 
-export default ModernTestimonialTrain;
+export default memo(ModernTestimonialTrain);

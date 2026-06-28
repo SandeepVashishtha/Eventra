@@ -87,7 +87,7 @@ const AiProfileGeneratorModal = ({ isOpen, onClose, onApplyProfile }) => {
     try {
       await navigator.clipboard.writeText(parsedData.bio || "");
       toast.success("Bio copied to clipboard!");
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to copy bio");
     }
 };

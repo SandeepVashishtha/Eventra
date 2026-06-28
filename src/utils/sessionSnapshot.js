@@ -40,7 +40,7 @@ export const rotateSessionSnapshot = (userId = null) => {
   if (!storage) return null;
 
   const sessionId = createSessionId();
-  const normalizedUserId = userId == null ? "" : String(userId);
+  const normalizedUserId = userId === null || userId === undefined ? "" : String(userId);
 
   try {
     storage.setItem(SESSION_ID_KEY, sessionId);
@@ -55,7 +55,7 @@ export const ensureSessionSnapshot = (userId = null) => {
   const storage = getSessionStorage();
   if (!storage) return null;
 
-  const normalizedUserId = userId == null ? "" : String(userId);
+  const normalizedUserId = userId === null || userId === undefined ? "" : String(userId);
 
   try {
     const existingSessionId = storage.getItem(SESSION_ID_KEY);
