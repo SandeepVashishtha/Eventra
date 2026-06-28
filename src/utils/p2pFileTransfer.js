@@ -49,22 +49,6 @@ const getDB = () => {
   });
 };
 
-// Helper to attach error/abort handlers to an IndexedDB transaction and request
-const attachIdbReadHandlers = (transaction, request, resolve, fallbackValue, functionName) => {
-  transaction.onerror = (err) => {
-    logger.error(`${functionName} transaction error:`, err);
-    resolve(fallbackValue);
-  };
-  transaction.onabort = (err) => {
-    logger.error(`${functionName} transaction aborted:`, err);
-    resolve(fallbackValue);
-  };
-  request.onerror = (err) => {
-    logger.error(`${functionName} request error:`, err);
-    resolve(fallbackValue);
-  };
-};
-
 // Check if all chunks for a file exist in IndexedDB
 export async function isFileCached(fileId) {
   try {
