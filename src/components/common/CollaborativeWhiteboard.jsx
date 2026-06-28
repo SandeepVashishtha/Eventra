@@ -327,7 +327,7 @@ export default function CollaborativeWhiteboard() {
         tool,
         color,
         lineWidth,
-        points: currentPointsRef.current,
+        points: [...currentPointsRef.current],  // ← copy, not the same reference
       };
 
       bcRef.current.postMessage({
