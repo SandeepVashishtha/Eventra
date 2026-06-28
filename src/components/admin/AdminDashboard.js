@@ -35,6 +35,7 @@ import AnalyticsDashboard from "./AnalyticsDashboard";
 import TicketScanner from "./TicketScanner";
 import ErrorBoundary from "../common/ErrorBoundary";
 import { toast } from "react-toastify";
+import { useTranslation } from "react-i18next";
 
 import { ROLES, PERMISSIONS } from "../../config/roles";
 import {
@@ -99,6 +100,7 @@ const normalizePaginatedData = (response) => {
 };
 
 const AdminDashboard = () => {
+  const { t } = useTranslation();
   const { user, logout, hasPermission } = useAuth();
   const userRoles = user?.roles || [];
   const navigate = useNavigate();
@@ -402,8 +404,8 @@ const AdminDashboard = () => {
       <main className="ad-main">
         <header className="ad-topbar">
           <div>
-            <p className="ad-greeting">Admin Panel</p>
-            <h1 className="ad-page-heading">{NAV_ITEMS.find((n) => n.id === activeTab)?.label || "Dashboard"}</h1>
+            <p className="ad-greeting">{t("adminDashboard.title", "Admin Panel")}</p>
+            <h1 className="ad-page-heading">{NAV_ITEMS.find((n) => n.id === activeTab)?.label || t("adminDashboard.title", "Dashboard")}</h1>
           </div>
           <div className="ad-topbar-right">
             {activeTab === "events" && hasPermission(PERMISSIONS.CREATE_EVENT) && (
@@ -427,10 +429,10 @@ const AdminDashboard = () => {
                     : statsError
                     ? <div className="ad-error-banner"><AlertCircle size={16} /> Failed to load stats. <button onClick={loadStats} className="ad-retry-btn">Retry</button></div>
                     : stats && [
-                        { label: "Total Users", value: stats.totalUsers ?? 0, sub: `${stats.activeUsers ?? 0} active`, icon: <Users size={20} />, color: "#6366f1" },
-                        { label: "Total Events", value: stats.totalEvents ?? 0, sub: `${stats.upcoming ?? 0} upcoming`, icon: <Calendar size={20} />, color: "#ec4899" },
-                        { label: "Participants", value: stats.totalParticipants ?? 0, sub: "across all events", icon: <TrendingUp size={20} />, color: "#10b981" },
-                        { label: "Inactive Users", value: (stats.totalUsers ?? 0) - (stats.activeUsers ?? 0), sub: "need attention", icon: <AlertCircle size={20} />, color: "#f59e0b" },
+                        { label: t("adminDashboard.totalUsers", "Total Users"), value: stats.totalUsers ?? 0, sub: `${stats.activeUsers ?? 0} active`, icon: <Users size={20} />, color: "#6366f1" },
+                        { label: t("adminDashboard.totalEvents", "Total Events"), value: stats.totalEvents ?? 0, sub: `${stats.upcoming ?? 0} upcoming`, icon: <Calendar size={20} />, color: "#ec4899" },
+                        { label: t("adminDashboard.participants", "Participants"), value: stats.totalParticipants ?? 0, sub: "across all events", icon: <TrendingUp size={20} />, color: "#10b981" },
+                        { label: t("adminDashboard.inactiveUsers", "Inactive Users"), value: (stats.totalUsers ?? 0) - (stats.activeUsers ?? 0), sub: "need attention", icon: <AlertCircle size={20} />, color: "#f59e0b" },
                       ].map((s, i) => (
                         <motion.div key={s.label} custom={i} variants={fadeUp} className="ad-stat-card">
                           <div className="ad-stat-icon" style={{ background: s.color + "18", color: s.color }}>{s.icon}</div>
@@ -454,7 +456,7 @@ const AdminDashboard = () => {
                       <motion.section custom={1} variants={fadeUp} className="ad-card">
                         <div className="ad-card-head">
                           <span className="ad-card-icon" style={{ background: "#6366f118", color: "#6366f1" }}><Users size={15} /></span>
-                          <h3>Recent Users</h3>
+                          <h3>{t("adminDashboard.recentUsers", "Recent Users")}</h3>
                           <button className="ad-card-link" onClick={() => setActiveTab("users")}>See all <ChevronRight size={13} /></button>
                         </div>
                         {usersLoading
@@ -478,7 +480,7 @@ const AdminDashboard = () => {
                       <motion.section custom={2} variants={fadeUp} className="ad-card">
                         <div className="ad-card-head">
                           <span className="ad-card-icon" style={{ background: "#ec489918", color: "#ec4899" }}><Calendar size={15} /></span>
-                          <h3>Recent Events</h3>
+                          <h3>{t("adminDashboard.recentEvents", "Recent Events")}</h3>
                           <button className="ad-card-link" onClick={() => setActiveTab("events")}>See all <ChevronRight size={13} /></button>
                         </div>
                         {eventsLoading
@@ -517,20 +519,20 @@ const AdminDashboard = () => {
                         onClick={() => setShowExportDropdown(!showExportDropdown)}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-bold text-slate-700 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer"
                       >
-                        <Download size={13} /> Export
+                        <Download size={13} /> {t("adminDashboard.export", "Export")}
                         <ChevronDown size={12} className={`transition-transform duration-200 ${showExportDropdown ? "rotate-180" : ""}`} />
                       </button>
                       {showExportDropdown && (
                         <>
                           <div className="fixed inset-0 z-10" onClick={() => setShowExportDropdown(false)} />
                           <div className="absolute right-0 mt-1.5 w-36 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg py-1 z-20 animate-fadeIn">
-                            <button onClick={() => { exportToCSV(users, "users_list"); setShowExportDropdown(false); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-850 transition">Export as CSV</button>
-                            <button onClick={() => { exportToJSON(users, "users_list"); setShowExportDropdown(false); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-850 transition">Export as JSON</button>
+                            <button onClick={() => { exportToCSV(users, "users_list"); setShowExportDropdown(false); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-850 transition">{t("adminDashboard.exportCsv", "Export as CSV")}</button>
+                            <button onClick={() => { exportToJSON(users, "users_list"); setShowExportDropdown(false); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-850 transition">{t("adminDashboard.exportJson", "Export as JSON")}</button>
                           </div>
                         </>
                       )}
                     </div>
-                    <span className="ad-count">{users.length} user{users.length !== 1 ? "s" : ""}</span>
+                    <span className="ad-count">{users.length} {t("adminDashboard.user", "user")}{users.length !== 1 ? "s" : ""}</span>
                   </div>
                 </div>
 
