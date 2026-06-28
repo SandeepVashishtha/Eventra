@@ -44,7 +44,6 @@ const Tag = ({ tag, onRemove }) => (
 const CustomDropdown = ({ label, value, options, onChange, placeholder = "Select" }) => {
   const [open, setOpen] = useState(false);
   const [menuCoords, setMenuCoords] = useState({ top: 0, left: 0, width: 0, showAbove: false });
-
   const buttonRef = useRef(null);
   const dropdownRef = useRef(null);
   // Safe ID generation compatible with all React versions
@@ -576,8 +575,8 @@ const HackathonHub = () => {
                 type="button"
                 onClick={() => setShowFilters(!showFilters)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${showFilters
-                    ? "bg-primary text-white border-primary shadow-glow-sm"
-                    : "bg-white dark:bg-white/5 text-text-light border-border hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/50 shadow-sm dark:shadow-none"
+                  ? "bg-primary text-white border-primary shadow-glow-sm"
+                  : "bg-white dark:bg-white/5 text-text-light border-border hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/50 shadow-sm dark:shadow-none"
                   }`}
                 aria-expanded={showFilters}
                 aria-controls="hackathon-filters-panel"
