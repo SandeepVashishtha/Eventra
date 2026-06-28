@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate, Navigate, useLocation, Link } from "react-router-dom";
@@ -31,8 +31,8 @@ import {
 } from "../common/SkeletonLoaders";
 import StatusBadge from "../common/StatusBadge";
 import "./AdminDashboard.css";
-import AnalyticsDashboard from "./AnalyticsDashboard";
-import TicketScanner from "./TicketScanner";
+const AnalyticsDashboard = lazy(() => import("./AnalyticsDashboard"));
+const TicketScanner = lazy(() => import("./TicketScanner"));
 import ErrorBoundary from "../common/ErrorBoundary";
 import { toast } from "react-toastify";
 
@@ -715,7 +715,9 @@ const AdminDashboard = () => {
                 </motion.div>
                 <div style={{ marginTop: "1.5rem" }}>
                   <ErrorBoundary level="section" label="Analytics Dashboard">
-                    <AnalyticsDashboard />
+                    <Suspense fallback={<div className="ad-loading-placeholder">Loading Analytics...</div>}>
+                      <AnalyticsDashboard />
+                    </Suspense>
                   </ErrorBoundary>
                 </div>
               </motion.div>
@@ -724,7 +726,9 @@ const AdminDashboard = () => {
             {activeTab === "scanner" && (
               <motion.div key="scanner" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="ad-section">
                 <ErrorBoundary level="section" label="Ticket Scanner">
-                  <TicketScanner />
+                  <Suspense fallback={<div className="ad-loading-placeholder">Loading Ticket Scanner...</div>}>
+                    <TicketScanner />
+                  </Suspense>
                 </ErrorBoundary>
               </motion.div>
             )}
