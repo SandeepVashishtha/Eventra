@@ -57,7 +57,7 @@ export const getOpaqueKey = (namespace, userId) => {
  */
 export const getOrMigrateKey = (namespace, userId, legacyKey) => {
   const newKey = getOpaqueKey(namespace, userId);
-  if (typeof window !== "undefined" && legacyKey && legacyKey !== newKey) {
+  if (typeof window !== "undefined" && window.localStorage && legacyKey && legacyKey !== newKey) {
     try {
       const oldData = localStorage.getItem(legacyKey);
       if (oldData !== null && localStorage.getItem(newKey) === null) {
