@@ -1,20 +1,13 @@
+import { storageManager } from "./storage/storageManager";
+
 export const saveToStorage = (key, value) => {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch (error) {
-    console.error("Storage save failed:", error);
-  }
+  storageManager.set(key, value);
 };
 
 export const loadFromStorage = (key, fallbackValue) => {
-  try {
-    const stored = localStorage.getItem(key);
-
-    if (!stored) return fallbackValue;
-
-    return JSON.parse(stored);
-  } catch (error) {
-    console.error("Storage load failed:", error);
+  const stored = storageManager.get(key);
+  if (stored === null || stored === undefined) {
     return fallbackValue;
   }
+  return stored;
 };

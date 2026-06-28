@@ -3,8 +3,8 @@
  * @module hooks/useLocalStorage
  */
 import { useState, useEffect, useCallback, useRef } from "react";
-import { safeJsonParse } from "../utils/safeJsonParse.js";
 import { logger } from "../utils/logger";
+import { storageManager } from "../utils/storage/storageManager.js";
 
 /**
  * A custom React hook that provides synchronized localStorage state
@@ -35,25 +35,14 @@ const useLocalStorage = (key, initialValue) => {
   const isInternalWrite = useRef(false);
   const readValue = useCallback(() => {
     if (typeof window === "undefined") return initialValueRef.current;
-    try {
-      const item = window.localStorage.getItem(key);
-      return safeJsonParse(item, initialValueRef.current);
-    } catch (error) {
-      logger.warn(`useLocalStorage: error reading key "${key}":`, error);
-      return initialValueRef.current;
-    }
+    const item = storageManager.get(key);
+    return item !== null ? item : initialValueRef.current;
   }, [key]);
 
   const [storedValue, setStoredValue] = useState(() => {
-  if (typeof window === "undefined") return initialValue;
-
-  try {
-    const item = window.localStorage.getItem(key);
-    return safeJsonParse(item, initialValue);
-  } catch (error) {
-    console.warn(`useLocalStorage: error reading key "${key}":`, error);
-    return initialValue;
-  }
+    if (typeof window === "undefined") return initialValue;
+    const item = storageManager.get(key);
+    return item !== null ? item : initialValue;
   });
 
   
@@ -67,7 +56,7 @@ const useLocalStorage = (key, initialValue) => {
             // SSR guard: queueMicrotask runs after the sync render phase.
             // In SSR (Node.js), window is unavailable even after the tick advances.
             if (typeof window === "undefined") return;
-            window.localStorage.setItem(key, JSON.stringify(newValue));
+            storageManager.set(key, newValue);
             isInternalWrite.current = true;
             window.dispatchEvent(new CustomEvent("local-storage", { detail: { key } }));
           });
@@ -83,7 +72,7 @@ const useLocalStorage = (key, initialValue) => {
 
   const removeValue = useCallback(() => {
     try {
-      window.localStorage.removeItem(key);
+      storageManager.remove(key);
       setStoredValue(initialValueRef.current);
 
       // 🔥 FIX: Mark as internal before dispatching
