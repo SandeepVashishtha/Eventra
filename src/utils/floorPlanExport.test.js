@@ -10,7 +10,7 @@ import {
 // Helpers
 // ---------------------------------------------------------------------------
 
-const makeSvgRef = (content = "<svg></svg>") => ({
+const makeSvgRef = () => ({
   current: {
     cloneNode: jest.fn(() => {
       const clone = document.createElementNS("http://www.w3.org/2000/svg", "svg");

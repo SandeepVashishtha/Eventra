@@ -29,7 +29,7 @@ if (typeof global.Blob === 'undefined') {
 }
 if (typeof global.URL === 'undefined' || typeof global.URL.createObjectURL === 'undefined') {
   global.URL = global.URL || class URL {};
-  global.URL.createObjectURL = (blob) => `blob:http://localhost/${Math.random().toString(36).substring(2)}`;
+  global.URL.createObjectURL = () => `blob:http://localhost/${Math.random().toString(36).substring(2)}`;
 }
 
 // ---------------------------------------------------------------------------

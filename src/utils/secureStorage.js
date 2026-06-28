@@ -214,7 +214,7 @@ const initializeKeyMetadata = () => {
     if (stored) {
       return JSON.parse(stored);
     }
-  } catch (_e) {
+  } catch {
     // localStorage unavailable or corrupted
   }
 
@@ -229,7 +229,7 @@ const initializeKeyMetadata = () => {
 
   try {
     localStorage.setItem(KEY_METADATA_KEY, JSON.stringify(metadata));
-  } catch (_e) {
+  } catch {
     // Persistence failure - non-critical
   }
 
@@ -428,32 +428,6 @@ const decryptV1 = async (storageKey, payload, key, encoder) => {
     ciphertext,
   );
   return new TextDecoder().decode(decrypted);
-};
-
-/**
- * Migration framework for future cryptographic upgrades.
- * This provides a structured way to migrate data from older versions to newer ones.
- *
- * @private
- * @param {number} fromVersion - Source version
- * @param {number} toVersion - Target version
- * @param {string} storageKey - The localStorage key
- * @param {string} plaintext - The decrypted plaintext
- * @returns {Promise<string>} Re-encrypted value with new version
- */
-const migratePayload = async (fromVersion, toVersion, storageKey, plaintext) => {
-  // Future migrations can be implemented here
-  // For now, v1 is current, so no migration needed
-  if (fromVersion === toVersion) {
-    return await encryptValue(storageKey, plaintext);
-  }
-  
-  // Example future migration:
-  // if (fromVersion === 1 && toVersion === 2) {
-  //   return await encryptV2(storageKey, plaintext);
-  // }
-  
-  throw new Error(`Migration from v${fromVersion} to v${toVersion} not implemented`);
 };
 
 /**
