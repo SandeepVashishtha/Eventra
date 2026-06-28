@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useCallback, useRef, useState } from "react";
 import { setOnUnauthorizedHandler, setRequiresReauthHandler, setAuthToken, apiUtils } from "../config/api.js";
 import { authService } from "../services/authService.js";
-import { userService } from "../services/userService.js";
 import { syncSecureStorage } from "../utils/secureStorage.js";
 import { usePermissions, normalizeRoles } from "../hooks/usePermissions.js";
 import { useTokenExpiry } from "../hooks/useTokenExpiry.js";
@@ -318,6 +317,7 @@ export const AuthProvider = ({ children }) => {
 
     try {
       // Security Contract: Strip authorization keys from display profile object stored in localStorage
+      // eslint-disable-next-line no-unused-vars
       const { roles: _roles, permissions: _permissions, scopes: _scopes, ...displayProfile } = sessionUser;
       await syncSecureStorage.setItem("user", JSON.stringify(displayProfile));
     } catch (error) {

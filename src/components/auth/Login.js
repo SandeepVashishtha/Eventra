@@ -36,7 +36,6 @@ const Login = () => {
     lockedOutSeconds,
     remainingAttempts,
     recordAttempt,
-    resetAttempts,
     isLockedOut,
     applyServerLockout,
   } = useLoginRateLimit();
