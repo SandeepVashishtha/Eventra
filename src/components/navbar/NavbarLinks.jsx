@@ -33,24 +33,15 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
     if (vertical) return;
 
     const handleOutsideClick = (event) => {
-      if (
-        navRef.current &&
-        !navRef.current.contains(event.target)
-      ) {
+      if (navRef.current && !navRef.current.contains(event.target)) {
         setOpenMenu(null);
       }
     };
 
-    document.addEventListener(
-      "mousedown",
-      handleOutsideClick
-    );
+    document.addEventListener("mousedown", handleOutsideClick);
 
     return () => {
-      document.removeEventListener(
-        "mousedown",
-        handleOutsideClick
-      );
+      document.removeEventListener("mousedown", handleOutsideClick);
     };
   }, [vertical]);
 
@@ -72,20 +63,14 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
   const handleClick = (href, e) => {
     try {
       if (href === "/events") {
-        sessionStorage.removeItem(
-          "eventra:event-filters:v1"
-        );
+        sessionStorage.removeItem("eventra:event-filters:v1");
       }
-
       if (href === "/hackathons") {
-        sessionStorage.removeItem(
-          "eventra:hackathon-filters:v1"
-        );
+        sessionStorage.removeItem("eventra:hackathon-filters:v1");
       }
     } catch {
       // ignore
     }
-
     onClick?.(e);
   };
 
@@ -93,80 +78,59 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
     vertical
       ? `
         flex items-center gap-2
-        w-full px-3 py-2
+        w-full px-3 py-2.5
         rounded-lg
-        text-sm font-medium
-        transition-colors
+        text-sm font-semibold
+        transition-all duration-200
         ${
           isActive
-            ? "bg-bg-secondary text-text"
-            : "text-text-secondary hover:bg-bg hover:text-text"
+            ? "bg-primary/10 text-primary dark:bg-blue-500/15 dark:text-blue-400 border-l-4 border-primary font-bold"
+            : "text-text-secondary hover:bg-bg hover:text-primary"
         }
       `
       : `
         flex items-center gap-1.5
         whitespace-nowrap
-        px-1 py-1
-        text-[13px]
+        px-3.5 py-1.5
+        rounded-full
+        text-[12px]
+        font-semibold
         uppercase
-        tracking-wide
-        border-b-2
-        transition-all
+        tracking-wider
+        border border-transparent
+        transition-all duration-300 ease-out hover:scale-[1.03] active:scale-[0.97]
         ${
           isActive
-            ? "border-primary text-text"
-            : "border-transparent text-text-secondary hover:text-text hover:border-border"
+            ? "bg-primary/10 text-primary dark:bg-blue-500/15 dark:text-blue-400 border-primary/20 dark:border-blue-500/20 shadow-sm shadow-primary/5"
+            : "text-text-secondary hover:text-primary dark:hover:text-blue-400 hover:bg-primary/5 dark:hover:bg-white/5"
         }
       `;
 
   return (
     <nav
       ref={navRef}
-      aria-label={
-        vertical
-          ? t("nav.mobilePrimaryLinks")
-          : t("nav.primaryLinks")
-      }
-      className={`flex ${
-        vertical
-          ? "flex-col w-full gap-2"
-          : "items-center gap-6"
-      }`}
+      aria-label={vertical ? t("nav.mobilePrimaryLinks") : t("nav.primaryLinks")}
+      className={`flex ${vertical ? "flex-col w-full gap-1" : "items-center gap-2"}`}
     >
       {NAV_ITEMS.map((item) => {
-        const isOpen =
-          openMenu === item.nameKey;
-
-        const hasChildren =
-          item.subItems &&
-          item.subItems.length > 0;
-
+        const isOpen = openMenu === item.nameKey;
+        const hasChildren = item.subItems && item.subItems.length > 0;
         const menuId = `menu-${item.nameKey}`;
 
         if (hasChildren) {
           return (
             <div
               key={item.nameKey}
-              className={`relative ${
-                vertical
-                  ? "w-full"
-                  : "flex items-center"
-              }`}
+              className={`relative ${vertical ? "w-full" : "flex items-center"}`}
             >
               <div className="flex items-center">
                 <NavLink
                   to={item.href}
-                  onClick={(e) =>
-                    handleClick(item.href, e)
-                  }
-                  className={({ isActive }) =>
-                    navLinkClasses(isActive)
-                  }
+                  onClick={(e) => handleClick(item.href, e)}
+                  className={({ isActive }) => navLinkClasses(isActive)}
                 >
                   {vertical && item.icon}
-                  <span>
-                    {t(item.nameKey)}
-                  </span>
+                  <span>{t(item.nameKey)}</span>
                 </NavLink>
 
                 {!vertical && (
@@ -175,13 +139,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                     aria-expanded={isOpen}
                     aria-haspopup="menu"
                     aria-controls={menuId}
-                    onClick={() =>
-                      setOpenMenu(
-                        isOpen
-                          ? null
-                          : item.nameKey
-                      )
-                    }
+                    onClick={() => setOpenMenu(isOpen ? null : item.nameKey)}
                     onKeyDown={(event) => {
                       if (event.key === "Enter") {
                         setOpenMenu(
@@ -191,58 +149,50 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                         );
                       }
                     }}
-                    className="ml-1 rounded p-1 hover:bg-bg-secondary"
+                    className="ml-0.5 rounded p-1.5 hover:bg-bg-secondary transition-colors"
+                    aria-label={`Toggle ${t(item.nameKey)} menu`}
                   >
                     <ChevronDown
-                      className={`h-4 w-4 transition-transform ${
-                        isOpen
-                          ? "rotate-180"
-                          : ""
+                      className={`h-4 w-4 transition-transform duration-200 ${
+                        isOpen ? "rotate-180" : ""
                       }`}
                     />
                   </button>
                 )}
               </div>
 
+              {/* Dropdown / Submenu */}
               {(vertical || isOpen) && (
                 <div
                   id={menuId}
                   className={
                     vertical
-                      ? "mt-2 ml-4 space-y-1"
-                      : "absolute left-0 top-full mt-3 min-w-[220px] rounded-lg border border-border bg-navbar p-2 shadow-lg z-50"
+                      ? "mt-1 ml-6 space-y-1"
+                      : "absolute left-0 top-full mt-3 w-56 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md p-2 shadow-lg z-50 animate-in fade-in zoom-in-95"
                   }
                 >
                   {item.subItems.map((sub) => (
                     <NavLink
                       key={sub.nameKey}
                       to={sub.href}
-                      onClick={(e) =>
-                        handleClick(
-                          sub.href,
-                          e
-                        )
-                      }
+                      onClick={(e) => handleClick(sub.href, e)}
                       className={({ isActive }) =>
                         `
                           flex items-center gap-2
                           rounded-md
                           px-3 py-2
                           text-sm
-                          transition-colors
+                          transition-all duration-200
                           ${
                             isActive
-                              ? "bg-bg-secondary text-text font-medium"
-                              : "text-text-secondary hover:bg-bg hover:text-text"
+                              ? "bg-bg-secondary text-indigo-600 dark:text-indigo-400 font-semibold"
+                              : "text-text-secondary hover:bg-bg hover:text-indigo-600 dark:hover:text-indigo-400"
                           }
                         `
                       }
                     >
                       {sub.icon}
-
-                      <span>
-                        {t(sub.nameKey)}
-                      </span>
+                      <span>{t(sub.nameKey)}</span>
                     </NavLink>
                   ))}
                 </div>
@@ -251,22 +201,16 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
           );
         }
 
+        // Simple top-level link
         return (
           <NavLink
             key={item.nameKey}
             to={item.href}
-            onMouseEnter={() =>
-              handlePrefetch(item.href)
-            }
-            onClick={(e) =>
-              handleClick(item.href, e)
-            }
-            className={({ isActive }) =>
-              navLinkClasses(isActive)
-            }
+            onMouseEnter={() => handlePrefetch(item.href)}
+            onClick={(e) => handleClick(item.href, e)}
+            className={({ isActive }) => navLinkClasses(isActive)}
           >
             {item.icon}
-
             <span>{t(item.nameKey)}</span>
           </NavLink>
         );
@@ -276,5 +220,3 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
 };
 
 export default NavbarLinks;
-
-

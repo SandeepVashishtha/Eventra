@@ -1,19 +1,20 @@
 import { syncServerTimeFromHeader } from "../../utils/timeSync.js";
-import { getCSRFToken, requiresCSRF } from "../../utils/csrfToken.js";
+import { getCSRFToken, requiresCSRF, getCSRFEnforcementMode } from "../../utils/csrfToken.js";
 import { logger } from "../../utils/logger.js";
 import { ApiError, RateLimitError, CSRFError } from "./errors.js";
+import { logCategorizedError } from "../../utils/errorRecovery.js";
 
-const RETRYABLE_STATUS_CODES = [500, 502, 503, 504];
+const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504];
 const RETRYABLE_METHODS = new Set(["GET", "HEAD", "OPTIONS", "TRACE"]);
-const MAX_RETRIES = 1;
+const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 1_000;
 
 let onUnauthorized = null;
-let onRequiresReauth = null;
+let _onRequiresReauth = null;
 let _authToken = null;
 
 export const setOnUnauthorizedHandler = (handler) => { onUnauthorized = handler; };
-export const setOnRequiresReauthHandler = (handler) => { onRequiresReauth = handler; };
+export const setOnRequiresReauthHandler = (handler) => { _onRequiresReauth = handler; };
 export const setAuthToken = (token) => { _authToken = token; };
 
 export const createRequestInterceptor = (isDev) => (config) => {
@@ -62,10 +63,15 @@ export const createResponseInterceptor = (API) => {
 
     const retryCount = config._retryCount || 0;
     const isNonMutating = RETRYABLE_METHODS.has(config.method?.toUpperCase() ?? "");
-    const isRetryableStatus = RETRYABLE_STATUS_CODES.includes(status);
+    const isNetworkFailure = !error.response;
+    const isRetryableStatus = RETRYABLE_STATUS_CODES.includes(status) || isNetworkFailure;
 
     if (isNonMutating && isRetryableStatus && retryCount < MAX_RETRIES) {
       config._retryCount = retryCount + 1;
+      config.headers = {
+        ...config.headers,
+        "X-Eventra-Recovery-Attempt": String(config._retryCount),
+      };
       const delay = RETRY_DELAY_MS * Math.pow(2, retryCount);
       if (process.env.NODE_ENV === "development") {
         logger.info(
@@ -75,7 +81,15 @@ export const createResponseInterceptor = (API) => {
       await new Promise((r) => setTimeout(r, delay));
       return API(config);
     }
-    throw normalizeApiError(error);
+    const normalized = normalizeApiError(error);
+    logCategorizedError(normalized, null, {
+      type: "api",
+      method: config.method?.toUpperCase(),
+      url: config.url,
+      status,
+      retryCount,
+    });
+    throw normalized;
   };
 
   return { fulfill, reject };
@@ -115,17 +129,7 @@ const normalizeApiErrorWithTimeout = (error, timeoutMs) => {
   );
 };
 
-const getCSRFEnforcementMode = () => {
-  if (typeof import.meta.env !== "undefined" && import.meta.env.VITE_CSRF_ENFORCEMENT_MODE) {
-    return import.meta.env.VITE_CSRF_ENFORCEMENT_MODE;
-  }
-  if (typeof process !== "undefined" && process.env?.VITE_CSRF_ENFORCEMENT_MODE) {
-    return process.env.VITE_CSRF_ENFORCEMENT_MODE;
-  }
-  return "warning";
-};
-
-export function setupRequestInterceptor(api, { isDev, buildApiUrl, getAuthToken, getOnUnauthorized }) {
+export function setupRequestInterceptor(api, { isDev, buildApiUrl, getAuthToken, getOnUnauthorized: _getOnUnauthorized }) {
   api.interceptors.request.use((config) => {
     if (isDev) {
       logger.info(`[API ${config.method?.toUpperCase()}]`, buildApiUrl(config.url || ""));
@@ -222,10 +226,15 @@ export function setupResponseInterceptor(api, { isDev, timeoutMs, getOnUnauthori
 
       const retryCount = config._retryCount || 0;
       const isNonMutating = RETRYABLE_METHODS.has(config.method?.toUpperCase() ?? "");
-      const isRetryableStatus = RETRYABLE_STATUS_CODES.includes(status);
+      const isNetworkFailure = !error.response;
+      const isRetryableStatus = RETRYABLE_STATUS_CODES.includes(status) || isNetworkFailure;
 
       if (isNonMutating && isRetryableStatus && retryCount < MAX_RETRIES) {
         config._retryCount = retryCount + 1;
+        config.headers = {
+          ...config.headers,
+          "X-Eventra-Recovery-Attempt": String(config._retryCount),
+        };
         const delay = RETRY_DELAY_MS * Math.pow(2, retryCount);
 
         if (isDev) {
@@ -237,7 +246,15 @@ export function setupResponseInterceptor(api, { isDev, timeoutMs, getOnUnauthori
         await new Promise((resolve) => setTimeout(resolve, delay));
         return api(config);
       }
-      throw normalizeApiErrorWithTimeout(error, timeoutMs);
+      const normalized = normalizeApiErrorWithTimeout(error, timeoutMs);
+      logCategorizedError(normalized, null, {
+        type: "api",
+        method: config.method?.toUpperCase(),
+        url: config.url,
+        status,
+        retryCount,
+      });
+      throw normalized;
     },
   );
 }

@@ -30,8 +30,6 @@ const Settings = () => {
   const [backupKey, setBackupKey] = useLocalStorage("backupKey", null);
   const [showKey, setShowKey] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState('profile');
   const saveTimeoutRef = useRef(null);
 
   useEffect(() => {
