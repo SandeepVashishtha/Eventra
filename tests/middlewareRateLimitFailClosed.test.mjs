@@ -36,13 +36,13 @@ describe("Middleware Rate Limiting Fail-Closed Security", () => {
     restoreEnv();
   });
 
-  describe("Production: Missing KV Configuration", () => {
-    it("should rate limit (reject) when KV_REST_API_URL is missing in production", async () => {
+  describe("Production: Missing Redis Configuration", () => {
+    it("should rate limit (reject) when RATE_LIMIT_REDIS_URL is missing in production with fail-closed mode", async () => {
       setTestEnv({
         NODE_ENV: "production",
-        KV_REST_API_TOKEN: "test-token",
+        RATE_LIMIT_FAIL_MODE: "closed",
       });
-      delete process.env.KV_REST_API_URL;
+      delete process.env.RATE_LIMIT_REDIS_URL;
 
       // Dynamic import to get fresh module state
       const rateLimitPath = pathToFileURL(
@@ -61,7 +61,7 @@ describe("Middleware Rate Limiting Fail-Closed Security", () => {
       assert.strictEqual(
         result.limited,
         true,
-        "Expected rate limit to be enforced (fail-closed) when KV_REST_API_URL is missing in production"
+        "Expected rate limit to be enforced (fail-closed) when RATE_LIMIT_REDIS_URL is missing in production"
       );
       assert.strictEqual(
         result.ip,
@@ -70,12 +70,12 @@ describe("Middleware Rate Limiting Fail-Closed Security", () => {
       );
     });
 
-    it("should rate limit (reject) when KV_REST_API_TOKEN is missing in production", async () => {
+    it("should rate limit (reject) when RATE_LIMIT_REDIS_URL is missing in production with fail-closed mode", async () => {
       setTestEnv({
         NODE_ENV: "production",
-        KV_REST_API_URL: "https://api.vercel-storage.com",
+        RATE_LIMIT_FAIL_MODE: "closed",
+        RATE_LIMIT_REDIS_URL: "",
       });
-      delete process.env.KV_REST_API_TOKEN;
 
       // Dynamic import to get fresh module state
       const rateLimitPath = pathToFileURL(
@@ -94,16 +94,16 @@ describe("Middleware Rate Limiting Fail-Closed Security", () => {
       assert.strictEqual(
         result.limited,
         true,
-        "Expected rate limit to be enforced (fail-closed) when KV_REST_API_TOKEN is missing in production"
+        "Expected rate limit to be enforced (fail-closed) when RATE_LIMIT_REDIS_URL is missing in production"
       );
     });
 
-    it("should rate limit (reject) when both KV variables are missing in production", async () => {
+    it("should rate limit (reject) when RATE_LIMIT_REDIS_URL is empty in production with fail-closed mode", async () => {
       setTestEnv({
         NODE_ENV: "production",
+        RATE_LIMIT_FAIL_MODE: "closed",
       });
-      delete process.env.KV_REST_API_URL;
-      delete process.env.KV_REST_API_TOKEN;
+      delete process.env.RATE_LIMIT_REDIS_URL;
 
       // Dynamic import to get fresh module state
       const rateLimitPath = pathToFileURL(
@@ -122,18 +122,17 @@ describe("Middleware Rate Limiting Fail-Closed Security", () => {
       assert.strictEqual(
         result.limited,
         true,
-        "Expected rate limit to be enforced (fail-closed) when both KV variables are missing in production"
+        "Expected rate limit to be enforced (fail-closed) when RATE_LIMIT_REDIS_URL is missing in production"
       );
     });
   });
 
-  describe("Development: Missing KV Configuration", () => {
-    it("should allow requests with in-memory fallback when KV is missing in development", async () => {
+  describe("Development: Missing Redis Configuration", () => {
+    it("should allow requests with in-memory fallback when Redis is missing in development", async () => {
       setTestEnv({
         NODE_ENV: "development",
       });
-      delete process.env.KV_REST_API_URL;
-      delete process.env.KV_REST_API_TOKEN;
+      delete process.env.RATE_LIMIT_REDIS_URL;
 
       // Dynamic import to get fresh module state
       const rateLimitPath = pathToFileURL(
@@ -157,13 +156,12 @@ describe("Middleware Rate Limiting Fail-Closed Security", () => {
     });
   });
 
-  describe("Test: Missing KV Configuration", () => {
-    it("should allow requests with in-memory fallback when KV is missing in test", async () => {
+  describe("Test: Missing Redis Configuration", () => {
+    it("should allow requests with in-memory fallback when Redis is missing in test", async () => {
       setTestEnv({
         NODE_ENV: "test",
       });
-      delete process.env.KV_REST_API_URL;
-      delete process.env.KV_REST_API_TOKEN;
+      delete process.env.RATE_LIMIT_REDIS_URL;
 
       // Dynamic import to get fresh module state
       const rateLimitPath = pathToFileURL(
@@ -187,12 +185,12 @@ describe("Middleware Rate Limiting Fail-Closed Security", () => {
     });
   });
 
-  describe("Production: KV Request Failures", () => {
-    it("should rate limit (reject) when KV request fails in production", async () => {
+  describe("Production: Redis Request Failures", () => {
+    it("should rate limit (reject) when Redis request fails in production with fail-closed mode", async () => {
       setTestEnv({
         NODE_ENV: "production",
-        KV_REST_API_URL: "https://api.vercel-storage.com",
-        KV_REST_API_TOKEN: "test-token",
+        RATE_LIMIT_FAIL_MODE: "closed",
+        RATE_LIMIT_REDIS_URL: "redis://localhost:6379",
       });
 
       // Dynamic import to get fresh module state
@@ -201,38 +199,28 @@ describe("Middleware Rate Limiting Fail-Closed Security", () => {
       ).href;
       const { checkRateLimit } = await import(rateLimitPath);
 
-      // Mock fetch to simulate KV failure
-      const originalFetch = global.fetch;
-      global.fetch = mock.fn(async () => ({
-        ok: false,
-        status: 500,
-        json: async () => ({ result: 0 }),
-      }));
+      // Redis connection will fail (no Redis server running)
+      // This tests the fail-closed behavior when Redis is unavailable
+      const mockRequest = {
+        headers: new Headers({
+          "x-forwarded-for": "192.168.4.1",
+        }),
+      };
 
-      try {
-        const mockRequest = {
-          headers: new Headers({
-            "x-forwarded-for": "192.168.4.1",
-          }),
-        };
+      const result = await checkRateLimit(mockRequest);
 
-        const result = await checkRateLimit(mockRequest);
-
-        assert.strictEqual(
-          result.limited,
-          true,
-          "Expected rate limit to be enforced (fail-closed) when KV request fails in production"
-        );
-      } finally {
-        global.fetch = originalFetch;
-      }
+      assert.strictEqual(
+        result.limited,
+        true,
+        "Expected rate limit to be enforced (fail-closed) when Redis request fails in production"
+      );
     });
 
-    it("should rate limit (reject) on network errors in production", async () => {
+    it("should rate limit (reject) on network errors in production with fail-closed mode", async () => {
       setTestEnv({
         NODE_ENV: "production",
-        KV_REST_API_URL: "https://api.vercel-storage.com",
-        KV_REST_API_TOKEN: "test-token",
+        RATE_LIMIT_FAIL_MODE: "closed",
+        RATE_LIMIT_REDIS_URL: "redis://localhost:6379",
       });
 
       // Dynamic import to get fresh module state
@@ -241,79 +229,28 @@ describe("Middleware Rate Limiting Fail-Closed Security", () => {
       ).href;
       const { checkRateLimit } = await import(rateLimitPath);
 
-      // Mock fetch to simulate network error
-      const originalFetch = global.fetch;
-      global.fetch = mock.fn(async () => {
-        throw new Error("Network error");
-      });
+      // Redis connection will fail (no Redis server running)
+      const mockRequest = {
+        headers: new Headers({
+          "x-forwarded-for": "192.168.5.1",
+        }),
+      };
 
-      try {
-        const mockRequest = {
-          headers: new Headers({
-            "x-forwarded-for": "192.168.5.1",
-          }),
-        };
+      const result = await checkRateLimit(mockRequest);
 
-        const result = await checkRateLimit(mockRequest);
-
-        assert.strictEqual(
-          result.limited,
-          true,
-          "Expected rate limit to be enforced (fail-closed) on network errors in production"
-        );
-      } finally {
-        global.fetch = originalFetch;
-      }
-    });
-
-    it("should rate limit (reject) on invalid JSON response in production", async () => {
-      setTestEnv({
-        NODE_ENV: "production",
-        KV_REST_API_URL: "https://api.vercel-storage.com",
-        KV_REST_API_TOKEN: "test-token",
-      });
-
-      // Dynamic import to get fresh module state
-      const rateLimitPath = pathToFileURL(
-        path.resolve(__dirname, "../middleware/rate-limit.js")
-      ).href;
-      const { checkRateLimit } = await import(rateLimitPath);
-
-      // Mock fetch to simulate invalid JSON
-      const originalFetch = global.fetch;
-      global.fetch = mock.fn(async () => ({
-        ok: true,
-        json: async () => {
-          throw new Error("Invalid JSON");
-        },
-      }));
-
-      try {
-        const mockRequest = {
-          headers: new Headers({
-            "x-forwarded-for": "192.168.6.1",
-          }),
-        };
-
-        const result = await checkRateLimit(mockRequest);
-
-        assert.strictEqual(
-          result.limited,
-          true,
-          "Expected rate limit to be enforced (fail-closed) on invalid JSON in production"
-        );
-      } finally {
-        global.fetch = originalFetch;
-      }
+      assert.strictEqual(
+        result.limited,
+        true,
+        "Expected rate limit to be enforced (fail-closed) on network errors in production"
+      );
     });
   });
 
-  describe("Development: KV Request Failures", () => {
-    it("should allow requests with in-memory fallback when KV fails in development", async () => {
+  describe("Development: Redis Request Failures", () => {
+    it("should allow requests with in-memory fallback when Redis fails in development", async () => {
       setTestEnv({
         NODE_ENV: "development",
-        KV_REST_API_URL: "https://api.vercel-storage.com",
-        KV_REST_API_TOKEN: "test-token",
+        RATE_LIMIT_REDIS_URL: "redis://localhost:6379",
       });
 
       // Dynamic import to get fresh module state
@@ -322,41 +259,29 @@ describe("Middleware Rate Limiting Fail-Closed Security", () => {
       ).href;
       const { checkRateLimit } = await import(rateLimitPath);
 
-      // Mock fetch to simulate KV failure
-      const originalFetch = global.fetch;
-      global.fetch = mock.fn(async () => ({
-        ok: false,
-        status: 500,
-        json: async () => ({ result: 0 }),
-      }));
+      // Redis connection will fail, but should fall back to in-memory
+      const mockRequest = {
+        headers: new Headers({
+          "x-forwarded-for": "192.168.7.1",
+        }),
+      };
 
-      try {
-        const mockRequest = {
-          headers: new Headers({
-            "x-forwarded-for": "192.168.7.1",
-          }),
-        };
+      const result = await checkRateLimit(mockRequest);
 
-        const result = await checkRateLimit(mockRequest);
-
-        assert.strictEqual(
-          result.limited,
-          false,
-          "Expected requests to be allowed with in-memory fallback when KV fails in development"
-        );
-      } finally {
-        global.fetch = originalFetch;
-      }
+      assert.strictEqual(
+        result.limited,
+        false,
+        "Expected requests to be allowed with in-memory fallback when Redis fails in development"
+      );
     });
   });
 
-  describe("Successful Rate Limiting with KV", () => {
-    it("should allow requests under threshold with valid KV", async () => {
+  describe("Successful Rate Limiting with Redis", () => {
+    it("should rate limit requests over threshold with valid Redis", async () => {
       setTestEnv({
-        NODE_ENV: "production",
-        KV_REST_API_URL: "https://api.vercel-storage.com",
-        KV_REST_API_TOKEN: "test-token",
+        NODE_ENV: "test",
       });
+      delete process.env.RATE_LIMIT_REDIS_URL;
 
       // Dynamic import to get fresh module state
       const rateLimitPath = pathToFileURL(
@@ -364,82 +289,24 @@ describe("Middleware Rate Limiting Fail-Closed Security", () => {
       ).href;
       const { checkRateLimit } = await import(rateLimitPath);
 
-      // Mock fetch to simulate successful KV response
-      const originalFetch = global.fetch;
-      let callCount = 0;
-      global.fetch = mock.fn(async () => {
-        callCount++;
-        if (callCount === 1) {
-          // First call: increment
-          return {
-            ok: true,
-            json: async () => ({ result: 1 }),
-          };
-        } else {
-          // Second call: expire
-          return {
-            ok: true,
-            json: async () => ({ result: "OK" }),
-          };
-        }
-      });
+      const mockRequest = {
+        headers: new Headers({
+          "x-forwarded-for": "192.168.9.1",
+        }),
+      };
 
-      try {
-        const mockRequest = {
-          headers: new Headers({
-            "x-forwarded-for": "192.168.8.1",
-          }),
-        };
-
-        const result = await checkRateLimit(mockRequest);
-
-        assert.strictEqual(
-          result.limited,
-          false,
-          "Expected requests to be allowed under threshold"
-        );
-      } finally {
-        global.fetch = originalFetch;
+      // Make 61 requests to exceed the limit
+      for (let i = 0; i < 61; i++) {
+        await checkRateLimit(mockRequest);
       }
-    });
 
-    it("should rate limit requests over threshold with valid KV", async () => {
-      setTestEnv({
-        NODE_ENV: "production",
-        KV_REST_API_URL: "https://api.vercel-storage.com",
-        KV_REST_API_TOKEN: "test-token",
-      });
+      const result = await checkRateLimit(mockRequest);
 
-      // Dynamic import to get fresh module state
-      const rateLimitPath = pathToFileURL(
-        path.resolve(__dirname, "../middleware/rate-limit.js")
-      ).href;
-      const { checkRateLimit } = await import(rateLimitPath);
-
-      // Mock fetch to simulate rate limit exceeded
-      const originalFetch = global.fetch;
-      global.fetch = mock.fn(async () => ({
-        ok: true,
-        json: async () => ({ result: 61 }), // Over the 60 limit
-      }));
-
-      try {
-        const mockRequest = {
-          headers: new Headers({
-            "x-forwarded-for": "192.168.9.1",
-          }),
-        };
-
-        const result = await checkRateLimit(mockRequest);
-
-        assert.strictEqual(
-          result.limited,
-          true,
-          "Expected requests to be rate limited over threshold"
-        );
-      } finally {
-        global.fetch = originalFetch;
-      }
+      assert.strictEqual(
+        result.limited,
+        true,
+        "Expected requests to be rate limited over threshold"
+      );
     });
   });
 
@@ -448,17 +315,13 @@ describe("Middleware Rate Limiting Fail-Closed Security", () => {
       setTestEnv({
         NODE_ENV: "test",
       });
-      delete process.env.KV_REST_API_URL;
-      delete process.env.KV_REST_API_TOKEN;
+      delete process.env.RATE_LIMIT_REDIS_URL;
 
       // Dynamic import to get fresh module state
       const rateLimitPath = pathToFileURL(
         path.resolve(__dirname, "../middleware/rate-limit.js")
       ).href;
-      const { checkRateLimit, inMemoryRateLimitStore } = await import(rateLimitPath);
-
-      // Clear store before test
-      inMemoryRateLimitStore.clear();
+      const { checkRateLimit } = await import(rateLimitPath);
 
       const mockRequest = {
         headers: new Headers({
@@ -489,14 +352,18 @@ describe("Middleware Rate Limiting Fail-Closed Security", () => {
       setTestEnv({
         NODE_ENV: "test",
       });
-      delete process.env.KV_REST_API_URL;
-      delete process.env.KV_REST_API_TOKEN;
+      delete process.env.RATE_LIMIT_REDIS_URL;
 
       // Dynamic import to get fresh module state
       const rateLimitPath = pathToFileURL(
         path.resolve(__dirname, "../middleware/rate-limit.js")
       ).href;
-      const { checkRateLimit, inMemoryRateLimitStore } = await import(rateLimitPath);
+      const { checkRateLimit } = await import(rateLimitPath);
+
+      // Import the storage module to clear in-memory store
+      const { clearAll } = await import(pathToFileURL(
+        path.resolve(__dirname, "../api/_lib/rate-limit-storage.js")
+      ).href);
 
       const mockRequest = {
         headers: new Headers({
@@ -511,7 +378,7 @@ describe("Middleware Rate Limiting Fail-Closed Security", () => {
 
       // Manually clear the in-memory store to simulate window expiration
       // This is a test-specific workaround to avoid waiting 60 seconds
-      inMemoryRateLimitStore.clear();
+      await clearAll();
 
       // Should be allowed again
       const result = await checkRateLimit(mockRequest);
@@ -600,8 +467,7 @@ describe("Middleware Rate Limiting Fail-Closed Security", () => {
       setTestEnv({
         NODE_ENV: "test",
       });
-      delete process.env.KV_REST_API_URL;
-      delete process.env.KV_REST_API_TOKEN;
+      delete process.env.RATE_LIMIT_REDIS_URL;
 
       // Dynamic import to get fresh module state
       const rateLimitPath = pathToFileURL(

@@ -32,7 +32,7 @@ import {
 } from "@heroicons/react/24/solid";
 import { API_ENDPOINTS, apiUtils } from "../../../config/api";
 import { useFormSubmit } from "../../../hooks/useFormSubmit";
-import { validateCoordinates, buildEventPayload } from "../../../utils/eventCreationUtils";
+import { buildEventPayload } from "../../../utils/eventCreationUtils";
 import { validateForm } from "../../../utils/eventFormValidation";
 import { safeJsonParse } from "../../../utils/safeJsonParse";
 
@@ -83,7 +83,6 @@ const EventCreation = () => {
   const [newTag, setNewTag] = useState("");
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
   const [showRestoreModal, setShowRestoreModal] = useState(false);
-  const [lastSavedAt, setLastSavedAt] = useState(null);
   const [restoreDraftMessage, setRestoreDraftMessage] = useState(
     "A previously saved event draft was found. Would you like to restore it?"
   );

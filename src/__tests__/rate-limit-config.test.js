@@ -15,125 +15,82 @@ describe("Rate-Limit Configuration Validation", () => {
   });
 
   describe("isDistributedRateLimitStorageConfigured", () => {
-    test("should return false when KV_REST_API_URL is missing", async () => {
-      delete process.env.KV_REST_API_URL;
-      process.env.KV_REST_API_TOKEN = "token";
+    test("should return false when RATE_LIMIT_REDIS_URL is missing", async () => {
+      delete process.env.RATE_LIMIT_REDIS_URL;
       const { isDistributedRateLimitStorageConfigured } = await import("../../api/_lib/rate-limit-config.js");
       assert.strictEqual(isDistributedRateLimitStorageConfigured(), false);
     });
 
-    test("should return false when KV_REST_API_TOKEN is missing", async () => {
-      process.env.KV_REST_API_URL = "https://redis.example.com";
-      delete process.env.KV_REST_API_TOKEN;
+    test("should return false when RATE_LIMIT_REDIS_URL is empty", async () => {
+      process.env.RATE_LIMIT_REDIS_URL = "";
       const { isDistributedRateLimitStorageConfigured } = await import("../../api/_lib/rate-limit-config.js");
       assert.strictEqual(isDistributedRateLimitStorageConfigured(), false);
     });
 
-    test("should return false when both are missing", async () => {
-      delete process.env.KV_REST_API_URL;
-      delete process.env.KV_REST_API_TOKEN;
+    test("should return false when RATE_LIMIT_REDIS_URL is whitespace-only", async () => {
+      process.env.RATE_LIMIT_REDIS_URL = "   ";
       const { isDistributedRateLimitStorageConfigured } = await import("../../api/_lib/rate-limit-config.js");
       assert.strictEqual(isDistributedRateLimitStorageConfigured(), false);
     });
 
-    test("should return false when KV_REST_API_URL is empty", async () => {
-      process.env.KV_REST_API_URL = "";
-      process.env.KV_REST_API_TOKEN = "token";
+    test("should return true when RATE_LIMIT_REDIS_URL is present and non-empty", async () => {
+      process.env.RATE_LIMIT_REDIS_URL = "redis://user:password@localhost:6379";
       const { isDistributedRateLimitStorageConfigured } = await import("../../api/_lib/rate-limit-config.js");
-      assert.strictEqual(isDistributedRateLimitStorageConfigured(), false);
+      assert.strictEqual(isDistributedRateLimitStorageConfigured(), true);
     });
 
-    test("should return false when KV_REST_API_TOKEN is empty", async () => {
-      process.env.KV_REST_API_URL = "https://redis.example.com";
-      process.env.KV_REST_API_TOKEN = "";
-      const { isDistributedRateLimitStorageConfigured } = await import("../../api/_lib/rate-limit-config.js");
-      assert.strictEqual(isDistributedRateLimitStorageConfigured(), false);
-    });
-
-    test("should return false when KV_REST_API_URL is whitespace-only", async () => {
-      process.env.KV_REST_API_URL = "   ";
-      process.env.KV_REST_API_TOKEN = "token";
-      const { isDistributedRateLimitStorageConfigured } = await import("../../api/_lib/rate-limit-config.js");
-      assert.strictEqual(isDistributedRateLimitStorageConfigured(), false);
-    });
-
-    test("should return false when KV_REST_API_TOKEN is whitespace-only", async () => {
-      process.env.KV_REST_API_URL = "https://redis.example.com";
-      process.env.KV_REST_API_TOKEN = "   ";
-      const { isDistributedRateLimitStorageConfigured } = await import("../../api/_lib/rate-limit-config.js");
-      assert.strictEqual(isDistributedRateLimitStorageConfigured(), false);
-    });
-
-    test("should return true when both are present and non-empty", async () => {
-      process.env.KV_REST_API_URL = "https://redis.example.com";
-      process.env.KV_REST_API_TOKEN = "secret-token";
+    test("should return true with rediss:// URL", async () => {
+      process.env.RATE_LIMIT_REDIS_URL = "rediss://user:password@localhost:6379";
       const { isDistributedRateLimitStorageConfigured } = await import("../../api/_lib/rate-limit-config.js");
       assert.strictEqual(isDistributedRateLimitStorageConfigured(), true);
     });
   });
 
   describe("assertDistributedRateLimitStorageConfigured", () => {
-    test("should throw error in production when KV_REST_API_URL is missing", async () => {
+    test("should throw error in production when RATE_LIMIT_REDIS_URL is missing", async () => {
       process.env.NODE_ENV = "production";
-      delete process.env.KV_REST_API_URL;
-      process.env.KV_REST_API_TOKEN = "token";
+      delete process.env.RATE_LIMIT_REDIS_URL;
       const { assertDistributedRateLimitStorageConfigured } = await import("../../api/_lib/rate-limit-config.js");
       assert.throws(
         () => assertDistributedRateLimitStorageConfigured(),
-        /KV_REST_API_URL and KV_REST_API_TOKEN are required in production/
+        /RATE_LIMIT_REDIS_URL is required in production/
       );
     });
 
-    test("should throw error in production when KV_REST_API_TOKEN is missing", async () => {
+    test("should throw error in production when RATE_LIMIT_REDIS_URL is empty", async () => {
       process.env.NODE_ENV = "production";
-      process.env.KV_REST_API_URL = "https://redis.example.com";
-      delete process.env.KV_REST_API_TOKEN;
+      process.env.RATE_LIMIT_REDIS_URL = "";
       const { assertDistributedRateLimitStorageConfigured } = await import("../../api/_lib/rate-limit-config.js");
       assert.throws(
         () => assertDistributedRateLimitStorageConfigured(),
-        /KV_REST_API_URL and KV_REST_API_TOKEN are required in production/
+        /RATE_LIMIT_REDIS_URL is required in production/
       );
     });
 
-    test("should throw error in production when both are missing", async () => {
+    test("should not throw error in production when RATE_LIMIT_REDIS_URL is valid", async () => {
       process.env.NODE_ENV = "production";
-      delete process.env.KV_REST_API_URL;
-      delete process.env.KV_REST_API_TOKEN;
-      const { assertDistributedRateLimitStorageConfigured } = await import("../../api/_lib/rate-limit-config.js");
-      assert.throws(
-        () => assertDistributedRateLimitStorageConfigured(),
-        /KV_REST_API_URL and KV_REST_API_TOKEN are required in production/
-      );
-    });
-
-    test("should not throw error in production when both are valid", async () => {
-      process.env.NODE_ENV = "production";
-      process.env.KV_REST_API_URL = "https://redis.example.com";
-      process.env.KV_REST_API_TOKEN = "secret-token";
+      process.env.RATE_LIMIT_REDIS_URL = "redis://user:password@localhost:6379";
       const { assertDistributedRateLimitStorageConfigured } = await import("../../api/_lib/rate-limit-config.js");
       assert.doesNotThrow(() => assertDistributedRateLimitStorageConfigured());
     });
 
-    test("should not throw error in development when both are missing", async () => {
+    test("should not throw error in development when RATE_LIMIT_REDIS_URL is missing", async () => {
       process.env.NODE_ENV = "development";
-      delete process.env.KV_REST_API_URL;
-      delete process.env.KV_REST_API_TOKEN;
+      delete process.env.RATE_LIMIT_REDIS_URL;
       const { assertDistributedRateLimitStorageConfigured } = await import("../../api/_lib/rate-limit-config.js");
       assert.doesNotThrow(() => assertDistributedRateLimitStorageConfigured());
     });
 
-    test("should not throw error in test when both are missing", async () => {
+    test("should not throw error in test when RATE_LIMIT_REDIS_URL is missing", async () => {
       process.env.NODE_ENV = "test";
-      delete process.env.KV_REST_API_URL;
-      delete process.env.KV_REST_API_TOKEN;
+      delete process.env.RATE_LIMIT_REDIS_URL;
       const { assertDistributedRateLimitStorageConfigured } = await import("../../api/_lib/rate-limit-config.js");
       assert.doesNotThrow(() => assertDistributedRateLimitStorageConfigured());
     });
 
     test("should not throw error when NODE_ENV is not set", async () => {
       delete process.env.NODE_ENV;
-      delete process.env.KV_REST_API_URL;
-      delete process.env.KV_REST_API_TOKEN;
+      delete process.env.RATE_LIMIT_REDIS_URL;
       const { assertDistributedRateLimitStorageConfigured } = await import("../../api/_lib/rate-limit-config.js");
       assert.doesNotThrow(() => assertDistributedRateLimitStorageConfigured());
     });
@@ -166,10 +123,9 @@ describe("Rate-Limit Configuration Validation", () => {
   });
 
   describe("Development workflow compatibility", () => {
-    test("should allow in-memory storage in development without KV credentials", async () => {
+    test("should allow in-memory storage in development without RATE_LIMIT_REDIS_URL", async () => {
       process.env.NODE_ENV = "development";
-      delete process.env.KV_REST_API_URL;
-      delete process.env.KV_REST_API_TOKEN;
+      delete process.env.RATE_LIMIT_REDIS_URL;
       
       const { isInMemoryRateLimitStorageAllowed, isDistributedRateLimitStorageConfigured } = await import("../../api/_lib/rate-limit-config.js");
       
@@ -177,10 +133,9 @@ describe("Rate-Limit Configuration Validation", () => {
       assert.strictEqual(isDistributedRateLimitStorageConfigured(), false);
     });
 
-    test("should allow in-memory storage in test mode without KV credentials", async () => {
+    test("should allow in-memory storage in test mode without RATE_LIMIT_REDIS_URL", async () => {
       process.env.NODE_ENV = "test";
-      delete process.env.KV_REST_API_URL;
-      delete process.env.KV_REST_API_TOKEN;
+      delete process.env.RATE_LIMIT_REDIS_URL;
       
       const { isInMemoryRateLimitStorageAllowed, isDistributedRateLimitStorageConfigured } = await import("../../api/_lib/rate-limit-config.js");
       

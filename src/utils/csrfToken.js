@@ -5,20 +5,40 @@
  * a helper to attach it to fetch requests.
  */
 
+import { setCookie } from "./cookieUtils.js";
+
 const CSRF_META_NAME = "csrf-token";
 const CSRF_COOKIE_NAME = "XSRF-TOKEN";
 const CSRF_HEADER_NAME = "X-CSRF-Token";
 
 const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
-const getCSRFEnforcementMode = () => {
+export const getCSRFEnforcementMode = () => {
+  const validModes = ["strict", "warning", "disabled"];
+  
+  const isProduction =
+    (typeof process !== "undefined" && process.env?.NODE_ENV === "production") ||
+    (typeof import.meta.env !== "undefined" && import.meta.env?.MODE === "production");
+  
+  const defaultMode = isProduction ? "strict" : "warning";
+  
+  let configuredMode;
   if (typeof import.meta.env !== "undefined" && import.meta.env.VITE_CSRF_ENFORCEMENT_MODE) {
-    return import.meta.env.VITE_CSRF_ENFORCEMENT_MODE;
+    configuredMode = import.meta.env.VITE_CSRF_ENFORCEMENT_MODE;
+  } else if (typeof process !== "undefined" && process.env?.VITE_CSRF_ENFORCEMENT_MODE) {
+    configuredMode = process.env.VITE_CSRF_ENFORCEMENT_MODE;
   }
-  if (typeof process !== "undefined" && process.env?.VITE_CSRF_ENFORCEMENT_MODE) {
-    return process.env.VITE_CSRF_ENFORCEMENT_MODE;
+  
+  if (configuredMode && !validModes.includes(configuredMode)) {
+    console.warn(
+      `[CSRF] Invalid VITE_CSRF_ENFORCEMENT_MODE value: "${configuredMode}". ` +
+      `Valid values are: ${validModes.join(", ")}. ` +
+      `Falling back to environment default: "${defaultMode}".`
+    );
+    return defaultMode;
   }
-  return "warning";
+  
+  return configuredMode || defaultMode;
 };
 
 /**
@@ -133,8 +153,10 @@ export function csrfFetch(url, options = {}) {
 export function rotateCSRFToken(newToken) {
   if (newToken && typeof newToken === "string") {
     // Update cookies
-    if (typeof document !== "undefined") {
-      document.cookie = `${CSRF_COOKIE_NAME}=${encodeURIComponent(newToken)}; path=/; SameSite=Strict; Secure`;
-    }
+    setCookie(CSRF_COOKIE_NAME, newToken, {
+      path: "/",
+      secure: true,
+      sameSite: "Strict",
+    });
   }
 }
