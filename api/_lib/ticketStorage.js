@@ -17,8 +17,11 @@
  * }
  */
 
+import fs from 'fs';
+import path from 'path';
+
 // ---------------------------------------------------------------------------
-// In-memory store (development / test)
+// File-backed store (development / test / simple deployment)
 // ---------------------------------------------------------------------------
 
 /** @type {Map<string, Object>} ticketToken → record */
@@ -26,6 +29,41 @@ const ticketsByToken = new Map();
 
 /** @type {Map<string, string>} registrationId → ticketToken */
 const tokenByRegistrationId = new Map();
+
+const DATA_FILE = process.env.TICKET_DATA_FILE || path.join(process.cwd(), '.data', 'tickets.json');
+
+// Initialize store from disk
+function initStore() {
+  try {
+    const dir = path.dirname(DATA_FILE);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    if (!fs.existsSync(DATA_FILE)) {
+      fs.writeFileSync(DATA_FILE, JSON.stringify([]));
+    } else {
+      const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+      for (const ticket of data) {
+        ticketsByToken.set(ticket.ticketToken, ticket);
+        if (ticket.registrationId) {
+          tokenByRegistrationId.set(ticket.registrationId, ticket.ticketToken);
+        }
+      }
+    }
+  } catch (e) {
+    console.error("Failed to initialize ticket storage", e);
+  }
+}
+
+initStore();
+
+function persistStore() {
+  try {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(Array.from(ticketsByToken.values()), null, 2));
+  } catch (e) {
+    console.error("Failed to persist ticket storage", e);
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -43,6 +81,7 @@ export async function saveTicket(ticket) {
   if (ticket.registrationId) {
     tokenByRegistrationId.set(ticket.registrationId, ticket.ticketToken);
   }
+  persistStore();
   return ticket;
 }
 
@@ -83,6 +122,7 @@ export async function checkInTicket(ticketToken) {
   }
   const updated = { ...ticket, checkedIn: true, checkedInAt: new Date().toISOString() };
   ticketsByToken.set(ticketToken, updated);
+  persistStore();
   return { success: true, ticket: updated };
 }
 
@@ -92,6 +132,7 @@ export async function checkInTicket(ticketToken) {
 export function resetTicketStorage() {
   ticketsByToken.clear();
   tokenByRegistrationId.clear();
+  persistStore();
 }
 
 /**

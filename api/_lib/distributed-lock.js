@@ -43,9 +43,12 @@ class InMemoryLockManager {
     // differently with proper ownership tracking.
 
     let released = false;
-    return () => {
+    let timeoutId = null;
+
+    const releaseFn = () => {
       if (released) return;
       released = true;
+      if (timeoutId) clearTimeout(timeoutId);
       
       // Release the lock
       lock.release();
@@ -56,6 +59,14 @@ class InMemoryLockManager {
         this.locks.delete(key);
       }
     };
+
+    if (ttlMs > 0) {
+      timeoutId = setTimeout(() => {
+        releaseFn();
+      }, ttlMs);
+    }
+
+    return releaseFn;
   }
 }
 

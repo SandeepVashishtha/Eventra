@@ -23,6 +23,10 @@ export const downloadICS = (event) => {
       return;
     }
 
+    if (typeof window === "undefined" || typeof document === "undefined") {
+      return;
+    }
+
     const blob = new Blob([value], {
       type: "text/calendar;charset=utf-8",
     });
