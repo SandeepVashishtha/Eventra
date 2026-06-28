@@ -554,7 +554,7 @@ const ApiDocs = () => {
 
               <div className="flex-1 flex items-center gap-2 px-3 py-1 bg-slate-950 border border-slate-850 rounded-lg text-[10px] font-mono text-slate-400 select-all overflow-x-auto whitespace-nowrap scrollbar-none">
                 <span className="text-emerald-500 font-bold uppercase shrink-0">GET</span>
-                <span>http://localhost:3000{selectedEndpoint}</span>
+                <span>{typeof window !== "undefined" ? window.location.origin : "http://localhost:3000"}{selectedEndpoint}</span>
                 {selectedEndpoint === "/mock-api/hackathons" && (
                   <span className="text-indigo-400 shrink-0">?limit={params.limit}&status={params.status}</span>
                 )}
