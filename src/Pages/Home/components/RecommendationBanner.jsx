@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 const RecommendationBanner = () => {
   const [activeFilter, setActiveFilter] = useState("AI/ML");
   return (
@@ -79,8 +80,8 @@ const RecommendationBanner = () => {
 
             {/* Buttons */}
             <div className="flex flex-wrap gap-4 mt-8">
-              <a
-                href="/event-recommendation"
+              <Link
+                to="/event-recommendation"
                 className="
     px-6 py-3
     rounded-full
@@ -93,14 +94,14 @@ const RecommendationBanner = () => {
   "
               >
                 Try Recommendation Assistant
-              </a>
+              </Link>
 
-              <a
-                href="/events"
+              <Link
+                to="/events"
                 className="px-6 py-3 rounded-full border border-slate-300 dark:border-slate-700 bg-white/40 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-200"
               >
                 Explore Events
-              </a>
+              </Link>
             </div>
           </div>
         </div>

@@ -410,10 +410,10 @@ const EventRecommendation = () => {
                 {/* Recommendations */}
                 <div className="grid md:grid-cols-2 gap-4">
 
-                  {recommendedEvents.map((event, index) => (
+                  {recommendedEvents.map((event) => (
 
                     <div
-                      key={index}
+                      key={event.id}
                       className="rounded-2xl border border-border p-5 hover:shadow-md transition-all bg-bg"
                     >
 
@@ -477,10 +477,10 @@ const EventRecommendation = () => {
 
                     <div className="grid md:grid-cols-2 gap-4">
 
-                      {otherEvents.map((event, index) => (
+                      {otherEvents.map((event) => (
 
                         <div
-                          key={index}
+                          key={event.id}
                           className="rounded-2xl border border-border p-5 bg-bg"
                         >
 
@@ -523,9 +523,9 @@ const EventRecommendation = () => {
 
                 {showOtherEvents && (
                   <div className="mt-8 w-full grid md:grid-cols-2 gap-4">
-                    {events.map((event, index) => (
+                    {events.map((event) => (
                       <div
-                        key={index}
+                        key={event.id}
                         className="rounded-2xl border border-border p-5 bg-bg text-left"
                       >
                         <h3 title={event.title} className="text-lg font-bold text-text line-clamp-2 break-words min-w-0">

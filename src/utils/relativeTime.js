@@ -46,7 +46,12 @@ export function getRelativeTime(dateInput) {
   if (diffDay < 30)
     return `In ${Math.floor(diffDay / 7)} week${Math.floor(diffDay / 7) !== 1 ? "s" : ""}`;
 
-  return null;
+  return new Date(dateInput).toLocaleDateString("en-US", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 export function getSmartDateLabel(dateInput, timeInput = "") {
