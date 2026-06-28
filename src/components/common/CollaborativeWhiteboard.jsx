@@ -191,6 +191,7 @@ export default function CollaborativeWhiteboard() {
     // Ping peers count check
     const interval = setInterval(() => {
       if (bcRef.current) {
+        setPeersCount(1); // reset to self before each ping cycle
         bcRef.current.postMessage({ type: "WHITEBOARD_PING", from: peerId.current });
       }
     }, 3000);
