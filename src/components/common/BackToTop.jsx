@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { ChevronUp } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const SCROLL_THRESHOLD = 400; // px — button appears after scrolling this far
 
@@ -13,6 +14,7 @@ const BackToTop = ({
   const [progress, setProgress] = useState(0);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   const [hasChatbot, setHasChatbot] = useState(false);
+  const { t } = useTranslation();
 
   const prefersReducedMotion =
     typeof window !== "undefined"
@@ -82,8 +84,8 @@ const BackToTop = ({
     <button
       onClick={scrollToTop}
       onKeyDown={handleKeyDown}
-      aria-label={`Back to top (${Math.round(progress)}% scrolled)`}
-      title="Back to top"
+      aria-label={t("common.backToTopProgress", { progress: Math.round(progress), defaultValue: `Back to top (${Math.round(progress)}% scrolled)` })}
+      title={t("common.backToTop", "Back to top")}
       tabIndex={visible ? 0 : -1}
       className={[
         positionClass,

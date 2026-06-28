@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { Download } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function InstallAppButton() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isInstallable, setIsInstallable] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const handler = (e) => {
@@ -34,10 +36,10 @@ export default function InstallAppButton() {
     <button
       onClick={handleInstall}
       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-semibold hover:opacity-90 transition-opacity"
-      aria-label="Install app"
+      aria-label={t("common.installApp", "Install app")}
     >
       <Download size={14} />
-      Install
+      {t("common.install", "Install")}
     </button>
   );
 }
