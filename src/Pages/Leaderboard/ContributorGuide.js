@@ -560,7 +560,6 @@ Closes #<issue_number>`}
             <motion.a
               href="https://github.com/SandeepVashishtha/Eventra"
               target="_blank" rel="noopener noreferrer"
-              rel="noopener noreferrer"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="inline-flex items-center gap-3 bg-white text-zinc-900 font-semibold px-8 py-3.5 rounded-full shadow-2xl hover:shadow-white/20 transition-all"

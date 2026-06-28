@@ -80,7 +80,6 @@ function TableRow({ c, rank, badge, streak, index }) {
             <a
               href={c.profile}
               target="_blank" rel="noopener noreferrer"
-              rel="noopener noreferrer"
               className="text-sm font-semibold text-slate-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded"
             >
               {c.username}

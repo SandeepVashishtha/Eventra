@@ -36,7 +36,6 @@ const PodiumCard = memo(({ contributor, position, orderClass, styling, isFirst =
       <a
         href={contributor.profile}
         target="_blank" rel="noopener noreferrer"
-        rel="noopener noreferrer"
         className={`text-base font-black ${isFirst ? "bg-linear-to-r from-slate-950 via-indigo-950 to-pink-950 dark:from-white dark:via-indigo-200 dark:to-pink-100 bg-clip-text text-transparent" : "text-slate-900 dark:text-white"} hover:text-indigo-500 transition-colors truncate max-w-[200px] text-center`}
         aria-label={`View ${contributor.username}'s GitHub profile`}
       >
