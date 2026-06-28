@@ -92,11 +92,7 @@ export default function LeaderBoard() {
   const { t } = useTranslation();
   useDocumentTitle(t("leaderboard.pageTitle"));
 
-  const CATEGORY_FILTERS = useMemo(() => [
-    { id: "overall", label: t("leaderboard.filters.overall"), icon: "🏆", description: t("leaderboard.filters.overallDesc") },
-    { id: "monthly", label: t("leaderboard.filters.monthly"), icon: "⭐", description: t("leaderboard.filters.monthlyDesc") },
-    { id: "mentors", label: t("leaderboard.filters.mentors"), icon: "🎓", description: t("leaderboard.filters.mentorsDesc") },
-  ], [t]);
+
 
   const [contributors, setContributors] = useState([]);
   const [streaks, setStreaks] = useState({});
@@ -160,14 +156,7 @@ export default function LeaderBoard() {
 
   const top3 = useMemo(() => sortedContributors.slice(0, 3), [sortedContributors]);
 
-  const sortOptions = useMemo(
-    () => [
-      { label: t("leaderboard.sortOptions.points"), value: "points" },
-      { label: t("leaderboard.sortOptions.prs"), value: "prs" },
-      { label: t("leaderboard.sortOptions.username"), value: "username" },
-    ],
-    [t]
-  );
+
 
   useEffect(() => {
     const timer = setTimeout(() => {
