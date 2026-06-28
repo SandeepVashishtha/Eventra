@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { safeJsonParse } from "../../utils/safeJsonParse";
+import ConfirmationModal from "../../components/common/ConfirmationModal";
 
 const DEFAULT_SETTINGS = {
   id: "sp-custom",
@@ -26,6 +27,7 @@ const SponsorDashboard = () => {
   engagementRate: 0,
 });
   const [isSaving, setIsSaving] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const saveTimeoutRef = useRef(null);
 
   useEffect(() => {
@@ -118,17 +120,20 @@ const SponsorDashboard = () => {
   };
 
   const clearLeads = () => {
-    if (window.confirm("Are you sure you want to clear all leads? This cannot be undone.")) {
-      localStorage.removeItem("eventra_sponsor_leads");
-      setLeads([]);
+    setIsConfirmModalOpen(true);
+  };
 
-      setAnalytics({
-        boothVisits: 0,
-        qrScans: 0,
-        engagementRate: 0,
-      });
-      toast.success("Leads cleared.");
-    }
+  const confirmClearLeads = () => {
+    localStorage.removeItem("eventra_sponsor_leads");
+    setLeads([]);
+
+    setAnalytics({
+      boothVisits: 0,
+      qrScans: 0,
+      engagementRate: 0,
+    });
+    toast.success("Leads cleared.");
+    setIsConfirmModalOpen(false);
   };
 
   return (
@@ -451,6 +456,13 @@ const SponsorDashboard = () => {
           </div>
         )}
       </div>
+      <ConfirmationModal 
+         isOpen={isConfirmModalOpen}
+         onClose={() => setIsConfirmModalOpen(false)}
+         onConfirm={confirmClearLeads}
+         title="Clear Leads"
+         message="Are you sure you want to clear all leads? This cannot be undone."
+      />
     </div>
   );
 };

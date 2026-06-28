@@ -106,26 +106,22 @@ export const useEventTemplates = () => {
         const template = templates.find((t) => t.id === templateId);
         const templateName = template?.name || "Template";
 
-        if (window.confirm(`Are you sure you want to delete "${templateName}"?`)) {
-          const deleted = deleteTemplate(templateId);
+        const deleted = deleteTemplate(templateId);
 
-          if (deleted) {
-            refreshTemplates();
-            toast.success(`Template "${templateName}" deleted.`);
-            logger.info(`[Templates] Deleted template: ${templateId}`);
+        if (deleted) {
+          refreshTemplates();
+          toast.success(`Template "${templateName}" deleted.`);
+          logger.info(`[Templates] Deleted template: ${templateId}`);
 
-            if (onConfirm) {
-              onConfirm();
-            }
-
-            return true;
-          } else {
-            toast.error("Failed to delete template. Please try again.");
-            return false;
+          if (onConfirm) {
+            onConfirm();
           }
-        }
 
-        return false;
+          return true;
+        } else {
+          toast.error("Failed to delete template. Please try again.");
+          return false;
+        }
       } catch (error) {
         logger.error("[Templates] Error deleting template:", error);
         toast.error("An error occurred while deleting the template.");

@@ -61,6 +61,8 @@ const getEventStatus = (event) => {
   return "Upcoming";
 };
 
+import ConfirmationModal from "../common/ConfirmationModal";
+
 /* ---------------- Event Card ---------------- */
 const EventCard = ({
   event,
@@ -357,6 +359,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   }
 });
   const [cancelTarget, setCancelTarget] = useState(null);
+  const [leaveWaitlistTarget, setLeaveWaitlistTarget] = useState(null);
 
   const [recentSearches, setRecentSearches] = useState([]);
 
@@ -576,6 +579,26 @@ const applyPreset = (preset) => {
 
   toast.success("Preset applied");
 };
+
+  const confirmLeaveWaitlist = async () => {
+    if (!leaveWaitlistTarget) return;
+    try {
+      const { leaveWaitlist } = await import("../../utils/waitlistUtils.js");
+      await leaveWaitlist(leaveWaitlistTarget.id, user.id || user.email);
+      toast.success("Left the waitlist successfully.");
+      // Assuming triggerWaitlistUpdate is available or relying on the effect dependency
+      // Wait, let's see if triggerWaitlistUpdate was used.
+      if (typeof triggerWaitlistUpdate === 'function') {
+        triggerWaitlistUpdate();
+      } else {
+        // Just reload the tab or remove from local state
+        setWaitlistEvents((prev) => prev.filter(e => e.id !== leaveWaitlistTarget.id));
+      }
+    } catch (err) {
+      toast.error(err.message || "Failed to leave waitlist.");
+    }
+    setLeaveWaitlistTarget(null);
+  };
 
   return (
     <motion.div className="ud-content">
@@ -806,17 +829,8 @@ const applyPreset = (preset) => {
                         key={event.id}
                         event={event}
                         index={index}
-                        onLeaveWaitlist={async (id) => {
-                          if (window.confirm(`Are you sure you want to leave the waitlist for "${event.title}"?`)) {
-                            try {
-                              const { leaveWaitlist } = await import("../../utils/waitlistUtils.js");
-                              await leaveWaitlist(id, user.id || user.email);
-                              toast.success("Left the waitlist successfully.");
-                              triggerWaitlistUpdate();
-                            } catch (err) {
-                              toast.error(err.message || "Failed to leave waitlist.");
-                            }
-                          }
+                        onLeaveWaitlist={(id) => {
+                          setLeaveWaitlistTarget(event);
                         }}
                       />
                     ))}
@@ -855,6 +869,14 @@ const applyPreset = (preset) => {
             document.body
           )}
       </AnimatePresence>
+
+      <ConfirmationModal 
+         isOpen={!!leaveWaitlistTarget}
+         onClose={() => setLeaveWaitlistTarget(null)}
+         onConfirm={confirmLeaveWaitlist}
+         title="Leave Waitlist"
+         message={`Are you sure you want to leave the waitlist for "${leaveWaitlistTarget?.title}"?`}
+      />
     </motion.div>
   );
 };

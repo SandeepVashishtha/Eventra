@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { joinWaitlist, leaveWaitlist, getWaitlistStatus, getWaitlistCount } from '../../services/waitlistService';
+import { toast } from 'react-toastify';
 
 // Custom hook - args grouped into single options object (fixes Excess Function Arguments)
 const useWaitlist = ({ eventId, isFullyBooked, waitlistEnabled, isAuthenticated, token }) => {
@@ -23,7 +24,7 @@ const useWaitlist = ({ eventId, isFullyBooked, waitlistEnabled, isAuthenticated,
 
   const handleClick = async () => {
     if (!isAuthenticated) {
-      alert('Please log in to join the waitlist.');
+      toast.error('Please log in to join the waitlist.');
       return;
     }
     setLoading(true);
@@ -40,7 +41,7 @@ const useWaitlist = ({ eventId, isFullyBooked, waitlistEnabled, isAuthenticated,
         setWaitlistCount(prev => prev + 1);
       }
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message);
     } finally {
       setLoading(false);
     }

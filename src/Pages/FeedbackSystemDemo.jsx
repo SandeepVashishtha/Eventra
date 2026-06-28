@@ -16,6 +16,7 @@ import {
   clearAllFeedback,
   saveFeedback,
 } from '../../utils/feedbackUtils';
+import ConfirmationModal from '../components/common/ConfirmationModal';
 
 // Demo event definition moved outside the component for a stable reference
 const demoEvent = {
@@ -37,6 +38,7 @@ const FeedbackSystemDemo = () => {
   const [selectedRating, setSelectedRating] = useState(0);
   const [feedback, setFeedback] = useState([]);
   const [stats, setStats] = useState(null);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
 
   const loadFeedback = useCallback(() => {
     const allFeedback = getEventFeedback(demoEvent.id);
@@ -115,10 +117,13 @@ const FeedbackSystemDemo = () => {
   };
 
   const handleClearAll = () => {
-    if (window.confirm('Clear all feedback? This cannot be undone.')) {
-      clearAllFeedback();
-      loadFeedback();
-    }
+    setIsConfirmModalOpen(true);
+  };
+
+  const confirmClearAll = () => {
+    clearAllFeedback();
+    loadFeedback();
+    setIsConfirmModalOpen(false);
   };
 
   const recommendationStats = getRecommendationStats(demoEvent.id);
@@ -376,6 +381,14 @@ const FeedbackSystemDemo = () => {
           loadFeedback();
         }}
         event={demoEvent}
+      />
+      
+      <ConfirmationModal 
+         isOpen={isConfirmModalOpen}
+         onClose={() => setIsConfirmModalOpen(false)}
+         onConfirm={confirmClearAll}
+         title="Clear Feedback"
+         message="Clear all feedback? This cannot be undone."
       />
     </div>
   );

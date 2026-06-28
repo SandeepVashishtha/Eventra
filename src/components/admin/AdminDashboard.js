@@ -71,7 +71,7 @@ function ConfirmModal({ open, title, message, onConfirm, onCancel }) {
   if (!open) return null;
 
   return (
-    <div className="ad-modal-overlay" onClick={onCancel} onKeyDown={(e) => { if (e.key === "Escape") onCancel(); }} tabIndex={0}>
+    <div className="ad-modal-overlay" onClick={onCancel} role="presentation" onKeyDown={(e) => { if (e.key === "Escape") onCancel(); }}>
       <motion.div
         className="ad-modal" tabIndex={0}
         initial={{ opacity: 0, scale: 0.95 }}
@@ -85,6 +85,49 @@ function ConfirmModal({ open, title, message, onConfirm, onCancel }) {
         <div className="ad-modal-actions">
           <button className="ad-btn-ghost" onClick={onCancel} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onCancel(); }}>Cancel</button>
           <button className="ad-btn-danger" onClick={onConfirm} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onConfirm(); }}>Confirm</button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+function PromptModal({ open, title, defaultValue, onConfirm, onCancel }) {
+  const [val, setVal] = useState(defaultValue);
+  
+  useEffect(() => {
+    setVal(defaultValue);
+  }, [defaultValue, open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleEsc = (e) => { if (e.key === "Escape") onCancel(); };
+    document.addEventListener("keydown", handleEsc);
+    return () => document.removeEventListener("keydown", handleEsc);
+  }, [open, onCancel]);
+
+  if (!open) return null;
+
+  return (
+    <div className="ad-modal-overlay" onClick={onCancel} role="presentation" onKeyDown={(e) => { if (e.key === "Escape") onCancel(); }}>
+      <motion.div
+        className="ad-modal" tabIndex={0}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 className="ad-modal-title">{title}</h3>
+        <input 
+           autoFocus
+           type="number"
+           className="w-full mt-4 p-2 border border-slate-300 dark:border-slate-700 rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" 
+           value={val} 
+           onChange={(e) => setVal(e.target.value)} 
+           onKeyDown={(e) => { if (e.key === 'Enter') onConfirm(val); }}
+        />
+        <div className="ad-modal-actions mt-4">
+          <button className="ad-btn-ghost" onClick={onCancel}>Cancel</button>
+          <button className="ad-btn-primary" onClick={() => onConfirm(val)}>Submit</button>
         </div>
       </motion.div>
     </div>
@@ -126,6 +169,7 @@ const AdminDashboard = () => {
   const [statsError, setStatsError] = useState(null);
 
   const [confirmModal, setConfirmModal] = useState({ open: false, type: "", id: null });
+  const [promptModal, setPromptModal] = useState({ open: false, title: "", defaultValue: "", payload: null });
   const [showExportDropdown, setShowExportDropdown] = useState(false);
 
   const [selectedWaitlistEvent, setSelectedWaitlistEvent] = useState(null);
@@ -162,21 +206,34 @@ const AdminDashboard = () => {
 
   const handleRemoveFromWaitlist = async (userId) => {
     if (!selectedWaitlistEvent) return;
-    if (window.confirm("Are you sure you want to remove this user from the waitlist?")) {
-      try {
-        const { organizerRemoveUser } = await import("../../utils/waitlistUtils.js");
-        await organizerRemoveUser(selectedWaitlistEvent.id, userId);
-        toast.success("User removed from waitlist.");
-        loadWaitlist(selectedWaitlistEvent.id);
-      } catch (err) {
-        toast.error(err.message || "Failed to remove user.");
-      }
+    setConfirmModal({ open: true, type: "remove_waitlist", id: userId });
+  };
+
+  const handleConfirmRemoveWaitlist = async () => {
+    const userId = confirmModal.id;
+    setConfirmModal({ open: false, type: "", id: null });
+    try {
+      const { organizerRemoveUser } = await import("../../utils/waitlistUtils.js");
+      await organizerRemoveUser(selectedWaitlistEvent.id, userId);
+      toast.success("User removed from waitlist.");
+      loadWaitlist(selectedWaitlistEvent.id);
+    } catch (err) {
+      toast.error(err.message || "Failed to remove user.");
     }
   };
 
-  const handleIncreaseCapacity = async () => {
+  const handleIncreaseCapacity = () => {
     if (!selectedWaitlistEvent) return;
-    const newCapStr = window.prompt("Enter new capacity for this event:", (Number(selectedWaitlistEvent.maxAttendees) || 0) + 10);
+    setPromptModal({ 
+       open: true, 
+       title: "Enter new capacity for this event:", 
+       defaultValue: (Number(selectedWaitlistEvent.maxAttendees) || 0) + 10,
+       payload: selectedWaitlistEvent
+    });
+  };
+
+  const submitCapacityIncrease = async (newCapStr) => {
+    setPromptModal({ open: false, title: "", defaultValue: "", payload: null });
     if (!newCapStr) return;
     const newCap = parseInt(newCapStr, 10);
     if (isNaN(newCap) || newCap <= (selectedWaitlistEvent.maxAttendees || 0)) {
@@ -198,30 +255,19 @@ const AdminDashboard = () => {
       const cacheKey = `event_detail_${selectedWaitlistEvent.id}`;
       const raw = localStorage.getItem(cacheKey);
       if (raw) {
-        const parsed = safeJsonParse(raw, null);
-        if (parsed?.event) {
-          parsed.event.maxAttendees = newCap;
-          parsed.event.attendees = (Number(parsed.event.attendees) || 0) + promotedCount;
-          localStorage.setItem(cacheKey, JSON.stringify(parsed));
+        const cached = safeJsonParse(raw, null);
+        if (cached) {
+          cached.maxAttendees = newCap;
+          localStorage.setItem(cacheKey, JSON.stringify(cached));
         }
       }
       
-      setSelectedWaitlistEvent(prev => ({
-        ...prev,
-        maxAttendees: newCap,
-        attendees: (Number(prev.attendees) || 0) + promotedCount
-      }));
-
-      loadEvents(eventsPage, searchEvent);
-
-      if (promotedCount > 0) {
-        toast.success(`Capacity increased to ${newCap}. Promoted ${promotedCount} user(s) from waitlist!`);
-      } else {
-        toast.success(`Capacity increased to ${newCap}. No users to promote.`);
-      }
+      toast.success(`Capacity increased to ${newCap}. ${promotedCount} users promoted.`);
       loadWaitlist(selectedWaitlistEvent.id);
+      setSelectedWaitlistEvent(prev => prev ? {...prev, maxAttendees: newCap} : null);
+      loadEvents(eventsPage, searchEvent);
     } catch (err) {
-      toast.error(err.message || "Failed to update capacity.");
+      toast.error(err.message || "Failed to increase capacity");
     }
   };
 
@@ -749,10 +795,30 @@ const AdminDashboard = () => {
         {confirmModal.open && (
           <ConfirmModal
             open={confirmModal.open}
-            title={confirmModal.type === "logout" ? "Logout?" : `Delete ${confirmModal.type}?`}
-            message={confirmModal.type === "logout" ? "You will be logged out of the admin panel." : "This action cannot be undone. Are you sure?"}
-            onConfirm={confirmModal.type === "logout" ? () => { setConfirmModal({ open: false, type: "", id: null }); logout(); navigate("/"); } : handleConfirmDelete}
+            title={
+              confirmModal.type === "logout" ? "Log Out" : 
+              confirmModal.type === "remove_waitlist" ? "Remove User" : "Confirm Deletion"
+            }
+            message={
+              confirmModal.type === "logout" ? "Are you sure you want to log out?" : 
+              confirmModal.type === "remove_waitlist" ? "Are you sure you want to remove this user from the waitlist?" : 
+              `Are you sure you want to delete this ${confirmModal.type}? This action cannot be undone.`
+            }
+            onConfirm={
+              confirmModal.type === "logout" ? () => { setConfirmModal({ open: false, type: "", id: null }); logout(); navigate("/"); } : 
+              confirmModal.type === "remove_waitlist" ? handleConfirmRemoveWaitlist : handleConfirmDelete
+            }
             onCancel={() => setConfirmModal({ open: false, type: "", id: null })}
+          />
+        )}
+        
+        {promptModal.open && (
+          <PromptModal 
+             open={promptModal.open}
+             title={promptModal.title}
+             defaultValue={promptModal.defaultValue}
+             onConfirm={submitCapacityIncrease}
+             onCancel={() => setPromptModal({ open: false, title: "", defaultValue: "", payload: null })}
           />
         )}
       </AnimatePresence>

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import useFormValidation from "../hooks/useFormValidation.enhanced";
 import useValidationState from "../hooks/useValidationState";
+import { toast } from "react-toastify";
 
 // =========================================================================
 // INTERFACE DESIGN CONSTANTS (PREVENTING INLINE REDECLARATIONS)
@@ -208,14 +209,14 @@ const SignupFormExample = ({ onSignupSuccess }) => {
       // Simulate underlying network delivery framework latency
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      alert("Registration process completed successfully! Logging data parameters.");
+      toast.success("Registration process completed successfully! Logging data parameters.");
       resetForm();
 
       if (onSignupSuccess) {
         onSignupSuccess(formValues);
       }
     } catch {
-      alert("Registration failed. Please audit inputs or try again later.");
+      toast.error("Registration failed. Please audit inputs or try again later.");
     }
   }), [handleSubmit, resetForm, onSignupSuccess,errors,]);
 

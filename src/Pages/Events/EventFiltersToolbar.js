@@ -5,6 +5,7 @@ import AdvancedFilterPanel from "../../components/common/AdvancedFilterPanel";
 import useEventFilterPresets from "../../hooks/useEventFilterPresets";
 import useFilterSuggestions from "../../hooks/useFilterSuggestions";
 import { exportEventsResultFile } from "../../utils/eventResultsExport";
+import ConfirmationModal from "../../components/common/ConfirmationModal";
 
 const CATEGORY_OPTIONS = [
   { id: "all", label: "All Categories" },
@@ -48,6 +49,7 @@ const EventFiltersToolbar = ({
   const [editingPresetName, setEditingPresetName] = useState("");
   const [exportMessage, setExportMessage] = useState("");
   const [exportError, setExportError] = useState("");
+  const [presetToDelete, setPresetToDelete] = useState(null);
   const debounceRef = useRef(null);
   
   const {
@@ -106,8 +108,13 @@ const EventFiltersToolbar = ({
   };
 
   const handleDeletePreset = (preset) => {
-    if (window.confirm(`Delete the "${preset.name}" filter preset? This cannot be undone.`)) {
-      deletePreset(preset.id);
+    setPresetToDelete(preset);
+  };
+
+  const confirmDeletePreset = () => {
+    if (presetToDelete) {
+      deletePreset(presetToDelete.id);
+      setPresetToDelete(null);
     }
   };
 
@@ -392,6 +399,14 @@ const EventFiltersToolbar = ({
           </button>
         </div>
       </div>
+      
+      <ConfirmationModal 
+         isOpen={!!presetToDelete}
+         onClose={() => setPresetToDelete(null)}
+         onConfirm={confirmDeletePreset}
+         title="Delete Filter Preset"
+         message={`Delete the "${presetToDelete?.name}" filter preset? This cannot be undone.`}
+      />
     </div>
   );
 };

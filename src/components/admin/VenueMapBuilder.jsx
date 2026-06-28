@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'react-toastify';
 
 const VenueMapBuilder = () => {
   const [elements, setElements] = useState([]);
@@ -16,7 +17,7 @@ const VenueMapBuilder = () => {
 
   const saveLayout = () => {
     localStorage.setItem('eventra_floorplan_default', JSON.stringify(elements));
-    alert('Layout saved successfully!');
+    toast.success('Layout saved successfully!');
   };
 
   return (

@@ -4,6 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { safeJsonParse } from "../../utils/safeJsonParse";
 import { syncSecureStorage } from "../../utils/secureStorage";
+import { toast } from "react-toastify";
 
 import {
   User as UserIcon,
@@ -228,7 +229,7 @@ const EditProfile = () => {
     // Enforce a strict 1MB limit. Base64 inflates sizes by ~33%, meaning
     // anything over 1MB risks exceeding the total ~5MB localStorage boundary.
     if (file.size > 1048576) {
-      alert("Image is too large. Please select an image under 1MB to prevent browser storage errors.");
+      toast.error("Image is too large. Please select an image under 1MB to prevent browser storage errors.");
       if (fileInputRef.current) {
         fileInputRef.current.value = null;
       }

@@ -2,6 +2,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { ImageIcon, Upload, X, Plus } from "lucide-react";
 import { logger } from "../../../utils/logger";
+import { toast } from "react-toastify";
 
 const MAX_BANNER_SIZE = 5 * 1024 * 1024; // 5MB
 const allowedTypes = [
@@ -81,12 +82,12 @@ const EventMediaSection = ({
     if (!file) return;
 
     if (!allowedTypes.includes(file.type)) {
-      alert("Please upload JPG, PNG, or WEBP images only.");
+      toast.error("Please upload JPG, PNG, or WEBP images only.");
       return;
     }
 
     if (file.size > MAX_BANNER_SIZE) {
-      alert("Image is too large (max 5MB)");
+      toast.error("Image is too large (max 5MB)");
       return;
     }
 

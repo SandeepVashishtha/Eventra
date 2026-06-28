@@ -6,10 +6,12 @@ import {
 } from "lucide-react";
 import { getQueueIndexedDB, setQueue, clearQueue } from "../../utils/offlineQueue";
 import { toast } from "react-toastify";
+import ConfirmationModal from "./ConfirmationModal";
 
 const OfflineManager = ({ isOpen, onClose }) => {
   const [pendingActions, setPendingActions] = useState([]);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
 
   const loadQueue = useCallback(async () => {
     const queue = await getQueueIndexedDB();
@@ -27,12 +29,15 @@ const OfflineManager = ({ isOpen, onClose }) => {
     toast.success("Action removed from queue");
   };
 
-  const handleClearAll = async () => {
-    if (window.confirm("Are you sure you want to clear all pending actions?")) {
-      await clearQueue();
-      setPendingActions([]);
-      toast.success("Queue cleared");
-    }
+  const handleClearAll = () => {
+    setIsConfirmModalOpen(true);
+  };
+
+  const confirmClearAll = async () => {
+    await clearQueue();
+    setPendingActions([]);
+    toast.success("Queue cleared");
+    setIsConfirmModalOpen(false);
   };
 
   const handleSyncNow = () => {
@@ -147,6 +152,13 @@ const OfflineManager = ({ isOpen, onClose }) => {
               </button>
             </div>
           </motion.div>
+          <ConfirmationModal 
+             isOpen={isConfirmModalOpen}
+             onClose={() => setIsConfirmModalOpen(false)}
+             onConfirm={confirmClearAll}
+             title="Clear Queue"
+             message="Are you sure you want to clear all pending actions?"
+          />
         </>
       )}
     </AnimatePresence>
