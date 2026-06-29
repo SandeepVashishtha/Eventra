@@ -223,7 +223,6 @@ const HackathonHub = () => {
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   const [selectedTags, setSelectedTags] = useState([]);
   const [availableTags, setAvailableTags] = useState([]);
-
   // NEW: Sort state
   const [sortBy, setSortBy] = useState("default");
 
