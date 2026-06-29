@@ -15,20 +15,20 @@ const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 export const getCSRFEnforcementMode = () => {
   const validModes = ["strict", "warning", "disabled"];
-  
+
   const isProduction =
     (typeof process !== "undefined" && process.env?.NODE_ENV === "production") ||
     (typeof import.meta.env !== "undefined" && import.meta.env?.MODE === "production");
-  
+
   const defaultMode = isProduction ? "strict" : "warning";
-  
+
   let configuredMode;
   if (typeof import.meta.env !== "undefined" && import.meta.env.VITE_CSRF_ENFORCEMENT_MODE) {
     configuredMode = import.meta.env.VITE_CSRF_ENFORCEMENT_MODE;
   } else if (typeof process !== "undefined" && process.env?.VITE_CSRF_ENFORCEMENT_MODE) {
     configuredMode = process.env.VITE_CSRF_ENFORCEMENT_MODE;
   }
-  
+
   if (configuredMode && !validModes.includes(configuredMode)) {
     console.warn(
       `[CSRF] Invalid VITE_CSRF_ENFORCEMENT_MODE value: "${configuredMode}". ` +
@@ -37,7 +37,7 @@ export const getCSRFEnforcementMode = () => {
     );
     return defaultMode;
   }
-  
+
   return configuredMode || defaultMode;
 };
 
@@ -47,6 +47,7 @@ export const getCSRFEnforcementMode = () => {
  * @returns {string|null}
  */
 export function getCSRFTokenFromMeta() {
+  if (typeof document === "undefined") return null;
   const meta = document.querySelector(`meta[name="${CSRF_META_NAME}"]`);
   return meta ? meta.getAttribute("content") : null;
 }
@@ -57,6 +58,7 @@ export function getCSRFTokenFromMeta() {
  * @returns {string|null}
  */
 export function getCSRFTokenFromCookie(name = CSRF_COOKIE_NAME) {
+  if (typeof document === "undefined") return null;
   const cookies = document.cookie.split(";").map((c) => c.trim());
   for (const cookie of cookies) {
     if (cookie.startsWith(`${name}=`)) {
@@ -71,6 +73,7 @@ export function getCSRFTokenFromCookie(name = CSRF_COOKIE_NAME) {
  * @returns {string|null}
  */
 export function getCSRFToken() {
+  if (typeof document === "undefined") return null;
   return getCSRFTokenFromMeta() || getCSRFTokenFromCookie();
 }
 
