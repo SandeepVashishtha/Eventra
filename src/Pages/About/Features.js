@@ -1,6 +1,16 @@
+import { useMemo } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Star, QrCode, TrendingUp, Users, Lock, Globe, ArrowRight } from "lucide-react";
+import {
+  ArrowRight,
+  CalendarCheck,
+  Code2,
+  Handshake,
+  QrCode,
+  Sparkles,
+  Trophy,
+} from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const ICON_CLASSES = "text-blue-400 w-6 h-6";
 
@@ -28,71 +38,60 @@ const item = {
   },
 };
 
-const features = [
+const FEATURE_CONFIG = [
   {
-    icon: <Star className={ICON_CLASSES} />,
-    title: "Smart Event Creation",
-    stat: "90% faster setup",
-    description:
-      "Launch events quickly using intelligent templates, streamlined workflows, and automated event management tools.",
-    cta: "Start Creating",
+    id: "events",
+    icon: <CalendarCheck className={ICON_CLASSES} />,
     link: "/events",
     enabled: true,
   },
   {
+    id: "hackathons",
+    icon: <Trophy className={ICON_CLASSES} />,
+    link: "/hackathons",
+    enabled: true,
+  },
+  {
+    id: "projects",
+    icon: <Code2 className={ICON_CLASSES} />,
+    link: "/projects",
+    enabled: true,
+  },
+  {
+    id: "connections",
+    icon: <Handshake className={ICON_CLASSES} />,
+    link: "/community-event",
+    enabled: true,
+  },
+  {
+    id: "manage",
     icon: <QrCode className={ICON_CLASSES} />,
-    title: "Instant QR Check-ins",
-    stat: "3 sec check-in",
-    description:
-      "Provide attendees with seamless check-ins using secure QR codes and real-time attendance tracking.",
-    cta: "See Demo",
-    link: "#",
-    enabled: false,
+    link: "/documentation",
+    enabled: true,
   },
   {
-    icon: <TrendingUp className={ICON_CLASSES} />,
-    title: "Live Analytics",
-    stat: "15+ metrics",
-    description:
-      "Monitor registrations, engagement, participation trends, and event performance through live dashboards.",
-    cta: "View Dashboard",
-    link: "#",
-    enabled: false,
-  },
-  {
-    icon: <Users className={ICON_CLASSES} />,
-    title: "Community Collaboration",
-    stat: "Unlimited teams",
-    description:
-      "Work together with organizers, contributors, and participants through collaborative event workflows.",
-    cta: "Add Team",
-    link: "#",
-    enabled: false,
-  },
-  {
-    icon: <Lock className={ICON_CLASSES} />,
-    title: "Secure by Design",
-    stat: "Enterprise-grade",
-    description:
-      "Advanced security controls, privacy-first architecture, and trusted authentication systems.",
-    cta: "Learn More",
-    link: "#",
-    enabled: false,
-  },
-  {
-    icon: <Globe className={ICON_CLASSES} />,
-    title: "Global Accessibility",
-    stat: "Worldwide",
-    description:
-      "Designed for communities, educational institutions, and organizations across the globe.",
-    cta: "Go Global",
-    link: "#",
-    enabled: false,
+    id: "benefits",
+    icon: <Sparkles className={ICON_CLASSES} />,
+    link: "/signup",
+    enabled: true,
   },
 ];
 
 export default function Features() {
+  const { t } = useTranslation();
   const shouldReduceMotion = useReducedMotion();
+
+  const features = useMemo(
+    () =>
+      FEATURE_CONFIG.map((feature) => ({
+        ...feature,
+        stat: t(`about.features.items.${feature.id}.stat`),
+        title: t(`about.features.items.${feature.id}.title`),
+        description: t(`about.features.items.${feature.id}.description`),
+        cta: t(`about.features.items.${feature.id}.cta`),
+      })),
+    [t],
+  );
 
   const animationProps = shouldReduceMotion
     ? { initial: false, animate: "visible" }
@@ -124,12 +123,11 @@ export default function Features() {
           className="text-center mb-20"
         >
           <motion.h2 variants={item} id="features-heading" className={HEADING_CLASSES}>
-            Features That Power Every Event
+            {t("about.features.heading")}
           </motion.h2>
 
           <motion.p variants={item} className={DESCRIPTION_CLASSES}>
-            Eventra provides everything needed to create, manage, scale, and grow successful events
-            while fostering stronger communities.
+            {t("about.features.description")}
           </motion.p>
         </motion.div>
 
@@ -141,9 +139,9 @@ export default function Features() {
           className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8"
           role="list"
         >
-          {features.map((feature, index) => (
+          {features.map((feature) => (
             <motion.article
-              key={index}
+              key={feature.id}
               variants={item}
               role="listitem"
               whileHover={shouldReduceMotion ? {} : { y: -6 }}
@@ -170,7 +168,10 @@ export default function Features() {
                   <Link
                     to={feature.link}
                     className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 font-medium"
-                    aria-label={`${feature.cta} - ${feature.title}`}
+                    aria-label={t("about.features.ctaAriaLabel", {
+                      cta: feature.cta,
+                      title: feature.title,
+                    })}
                   >
                     {feature.cta}
                     <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />

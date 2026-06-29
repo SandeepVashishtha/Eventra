@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { BookOpen, Mail, Users, Globe, ArrowRight, Sparkles } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const bubbles = [
   {
@@ -30,6 +31,8 @@ const bubbles = [
 ];
 
 const AboutCTA = () => {
+  const { t } = useTranslation();
+
   return (
     <motion.section
       className="relative overflow-hidden rounded-3xl mx-4 md:mx-8 my-16 border border-slate-800 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950"
@@ -83,7 +86,7 @@ const AboutCTA = () => {
           viewport={{ once: true }}
         >
           <Sparkles size={16} />
-          Join the Eventra Community
+          {t("about.cta.badge")}
         </motion.div>
 
         {/* Heading */}
@@ -93,9 +96,9 @@ const AboutCTA = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
         >
-          Build, Collaborate & Grow
+          {t("about.cta.heading")}
           <span className="block bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
-            Together with Eventra
+            {t("about.cta.subtitle")}
           </span>
         </motion.h2>
 
@@ -107,9 +110,7 @@ const AboutCTA = () => {
           viewport={{ once: true }}
           transition={{ delay: 0.2 }}
         >
-          Eventra empowers students, developers, organizers, and communities to discover
-          opportunities, collaborate on meaningful projects, and create impact through
-          technology-driven events.
+          {t("about.cta.description")}
         </motion.p>
 
         {/* Social Proof */}
@@ -122,17 +123,17 @@ const AboutCTA = () => {
         >
           <div className="flex items-center gap-2">
             <Users size={16} className="text-blue-400" />
-            Growing Community
+            {t("about.cta.socialProof.community")}
           </div>
 
           <div className="flex items-center gap-2">
             <Globe size={16} className="text-indigo-400" />
-            Open Source Driven
+            {t("about.cta.socialProof.openSource")}
           </div>
 
           <div className="flex items-center gap-2">
             <BookOpen size={16} className="text-purple-400" />
-            Learning & Collaboration
+            {t("about.cta.socialProof.learning")}
           </div>
         </motion.div>
 
@@ -149,7 +150,7 @@ const AboutCTA = () => {
             className="group inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-105 transition-all duration-300"
           >
             <Users size={20} />
-            Get Started Free
+            {t("about.cta.getStartedFree")}
             <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
           </Link>
 
@@ -158,7 +159,7 @@ const AboutCTA = () => {
             className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-semibold border border-slate-700 bg-slate-800/60 backdrop-blur-sm text-slate-200 hover:border-blue-500 hover:text-blue-400 transition-all duration-300"
           >
             <BookOpen size={20} />
-            Documentation
+            {t("about.cta.documentation")}
           </Link>
 
           <Link
@@ -166,7 +167,7 @@ const AboutCTA = () => {
             className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-semibold border border-slate-700 bg-slate-800/60 backdrop-blur-sm text-slate-200 hover:border-blue-500 hover:text-blue-400 transition-all duration-300"
           >
             <Mail size={20} />
-            Contact Us
+            {t("about.cta.contactUs")}
           </Link>
         </motion.div>
       </div>
