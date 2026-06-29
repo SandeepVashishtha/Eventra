@@ -8,6 +8,7 @@ let flushTimeout = null;
 
 export function useNotifications() {
   const [notifications, setNotifications] = useState(() => {
+    if (typeof window === "undefined") return [];
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
       return raw ? JSON.parse(raw) : [];
@@ -17,6 +18,7 @@ export function useNotifications() {
   });
 
   const load = useCallback(() => {
+    if (typeof window === "undefined") return;
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
       setNotifications(raw ? JSON.parse(raw) : []);
