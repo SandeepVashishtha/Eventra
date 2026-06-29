@@ -345,6 +345,8 @@ const EventsPage = () => {
 
       <div className="mt-6 sm:mt-8">
         <TrendingEvents title="Trending Events" limit={6} fetchSize={24} />
+
+<RecentlyViewedSection />
       </div>
 
       <RecentlyViewedSection />

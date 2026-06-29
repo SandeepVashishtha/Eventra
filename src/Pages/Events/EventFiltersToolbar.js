@@ -38,7 +38,9 @@ const EventFiltersToolbar = ({
   onSearchChange,
   onResetFilters,
   visibleEvents = [],
-  // totalElements = 0,
+currentFilterConfig,
+onApplyPreset,
+// totalElements = 0,
 }) => {
   const [localQuery, setLocalQuery] = useState(searchQuery || "");
   const debounceRef = useRef(null);
@@ -46,10 +48,17 @@ const EventFiltersToolbar = ({
   const { clearPresetError: _clearPresetError } = useEventFilterPresets();
 
   useFilterSuggestions({
-    currentFilters: currentFilterConfig,
-    visibleEvents,
-    presets: [],
-  });
+  currentFilters: {
+    searchQuery,
+    filterType,
+    categoryFilter,
+    sortType,
+    viewMode,
+    advancedFilters,
+  },
+  visibleEvents,
+  presets: [],
+});
 
   useEffect(() => {
     setLocalQuery(searchQuery || "");
