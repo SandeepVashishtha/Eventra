@@ -169,7 +169,7 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
         },
         (phase) => {
           setCurrentPhase(phase);
-          setDonePhases((prev) => {
+          setDonePhases((_prev) => {
             const phaseOrder = BOOTSTRAP_PHASES.map((p) => p.key);
             const idx = phaseOrder.indexOf(phase);
             return phaseOrder.slice(0, idx);
@@ -339,6 +339,7 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
                       src={ghUser.avatar_url}
                       alt={ghUser.login}
                       className="w-9 h-9 rounded-full border-2 border-emerald-200 dark:border-emerald-800"
+                       loading="lazy"
                     />
                     <div>
                       <p className="text-xs font-bold text-emerald-800 dark:text-emerald-300">

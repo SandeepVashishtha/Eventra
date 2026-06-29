@@ -1,12 +1,22 @@
 import { useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { LogIn, UserPlus, Info, HelpCircle, Sun, Moon, MousePointer, Bell } from "lucide-react";
+import {
+  LogIn,
+  UserPlus,
+  Info,
+  HelpCircle,
+  Sun,
+  Moon,
+  MousePointer,
+  Bell,
+  PlusCircle,
+  LayoutDashboard,
+} from "lucide-react";
 import { useNotification } from "../../context/NotificationContext";
 import NavbarLinks from "./NavbarLinks";
 import LanguageSelector from "../LanguageSelector";
 import { useTheme } from "../../context/ThemeContext";
-
 
 const MobileDrawer = ({
   isOpen,
@@ -60,7 +70,8 @@ const MobileDrawer = ({
       previouslyFocusedElement?.focus?.();
     };
   }, [closeMenu, isOpen]);
-  // Scroll lock: prevent background scroll when drawer is open
+
+  // Scroll lock
   useEffect(() => {
     if (!isOpen) return;
 
@@ -77,7 +88,8 @@ const MobileDrawer = ({
       document.body.style.width = "";
       window.scrollTo(0, scrollY);
     };
-  }, [isOpen]);   
+  }, [isOpen]);
+
   return (
     <div
       className={`fixed inset-0 z-50 lg:hidden ${
@@ -99,11 +111,12 @@ const MobileDrawer = ({
         role="dialog"
         aria-modal="true"
         aria-label="Mobile navigation"
-        className={`mobile-drawer-panel absolute right-0 top-0 flex w-[min(92vw,24rem)] max-w-drawer flex-col bg-navbar shadow-premium-lg transition-transform duration-200 ease-out ${
+        className={`mobile-drawer-panel fixed right-0 top-0 flex max-h-dvh w-full max-w-sm flex-col bg-navbar shadow-premium-lg transition-transform duration-200 ease-out overflow-y-auto ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        <div className="mobile-landscape-compact flex min-h-[64px] items-center justify-between gap-3 border-b border-border px-4 py-3">
+        {/* Header */}
+        <div className="sticky top-0 z-10 flex min-h-[64px] items-center justify-between gap-3 border-b border-border bg-navbar px-4 py-3">
           <div className="flex min-w-0 items-center gap-2">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-card-bg p-1 ring-1 ring-border">
               <img
@@ -111,11 +124,10 @@ const MobileDrawer = ({
                 alt=""
                 aria-hidden="true"
                 className="block h-full w-full object-contain"
+                loading="lazy"
               />
             </div>
-            <h2 className="truncate text-xl font-bold text-text xs:text-2xl">
-              Eventra
-            </h2>
+            <h2 className="truncate text-xl font-bold text-text xs:text-2xl">Eventra</h2>
           </div>
           <button
             ref={closeButtonRef}
@@ -128,7 +140,7 @@ const MobileDrawer = ({
           </button>
         </div>
 
-        <div className="flex h-[calc(100%-73px)] flex-col overflow-y-auto px-4 py-5">
+        <div className="flex flex-col px-4 py-5">
           <NavbarLinks
             vertical
             onClick={closeMenu}
@@ -138,97 +150,87 @@ const MobileDrawer = ({
             <LanguageSelector className="w-full" />
           </div>
 
+          {/* User Section */}
           <div className="mt-6 border-t border-border pt-4">
             {isAuthenticated ? (
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1">
                 <Link
                   to="/dashboard"
                   onClick={closeMenu}
-                  className={`mobile-drawer-link flex min-h-[48px] w-full items-center gap-2 rounded-lg border-l-2 px-3 py-2 text-sm font-medium transition-all duration-200 ${
+                  className={`flex min-h-[48px] w-full items-center gap-3 rounded-lg border-l-4 px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                     isActive("/dashboard")
-                      ? "border-primary bg-bg-secondary text-text"
+                      ? "border-primary bg-bg-secondary text-text font-semibold"
                       : "border-transparent text-text-light hover:bg-bg hover:text-text"
                   }`}
                 >
+                  <LayoutDashboard className="w-5 h-5" />
                   {t("nav.dashboard")}
                 </Link>
                 <Link
                   to="/dashboard/profile"
                   onClick={closeMenu}
-                  className={`mobile-drawer-link flex min-h-[48px] w-full items-center gap-2 rounded-lg border-l-2 px-3 py-2 text-sm font-medium transition-all duration-200 ${
+                  className={`flex min-h-[48px] w-full items-center gap-3 rounded-lg border-l-4 px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                     isActive("/dashboard/profile")
-                      ? "border-primary bg-bg-secondary text-text"
+                      ? "border-primary bg-bg-secondary text-text font-semibold"
                       : "border-transparent text-text-light hover:bg-bg hover:text-text"
                   }`}
                 >
-                  {t("nav.viewProfile")}
+                  <UserPlus className="w-5 h-5" /> {/* You can change icon if needed */}
+                  {t("nav.viewProfile") || "My Profile"}
                 </Link>
+
                 <Link
-                   to="/notifications"
-                   onClick={closeMenu}
-                   className={`mobile-drawer-link flex min-h-[48px] w-full items-center gap-2 rounded-lg border-l-2 px-3 py-2 text-sm font-medium transition-all duration-200 ${
-                     isActive("/notifications")
-                       ? "border-primary bg-bg-secondary text-text"
-                       : "border-transparent text-text-light hover:bg-bg hover:text-text"
-                   }`}
-                   aria-current={isActive("/notifications") ? "page" : undefined}
-                 >
-                   <Bell className="w-5 h-5" aria-hidden="true" />
-                   Notifications
-                   {unreadCount > 0 && (
-                     <span
-                       className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white"
-                       aria-label={`${unreadCount > 99 ? "99 or more" : unreadCount} unread notifications`}
-                     >
-                       {unreadCount > 99 ? "99+" : unreadCount}
-                     </span>
-                   )}
-                 </Link>
+                  to="/notifications"
+                  onClick={closeMenu}
+                  className={`flex min-h-[48px] w-full items-center gap-3 rounded-lg border-l-4 px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+                    isActive("/notifications")
+                      ? "border-primary bg-bg-secondary text-text font-semibold"
+                      : "border-transparent text-text-light hover:bg-bg hover:text-text"
+                  }`}
+                >
+                  <Bell className="w-5 h-5" />
+                  Notifications
+                  {unreadCount > 0 && (
+                    <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
+                </Link>
+
                 <Link
                   to="/about"
                   onClick={closeMenu}
-                  className={`mobile-drawer-link flex min-h-[48px] w-full items-center gap-2 rounded-lg border-l-2 px-3 py-2 text-sm font-medium transition-all duration-200 ${
+                  className={`flex min-h-[48px] w-full items-center gap-3 rounded-lg border-l-4 px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                     isActive("/about")
-                      ? "border-primary bg-bg-secondary text-text"
+                      ? "border-primary bg-bg-secondary text-text font-semibold"
                       : "border-transparent text-text-light hover:bg-bg hover:text-text"
                   }`}
                 >
                   <Info className="w-5 h-5" />
                   {t("nav.about")}
                 </Link>
-                <Link
-                  to="/faq"
-                  onClick={closeMenu}
-                  className={`mobile-drawer-link flex min-h-[48px] w-full items-center gap-2 rounded-lg border-l-2 px-3 py-2 text-sm font-medium transition-all duration-200 ${
-                    isActive("/faq")
-                      ? "border-primary bg-bg-secondary text-text"
-                      : "border-transparent text-text-light hover:bg-bg hover:text-text"
-                  }`}
-                >
-                  <HelpCircle className="w-5 h-5" />
-                  {t("nav.faqFull")}
-                </Link>
+
                 <button
                   type="button"
                   onClick={() => {
                     logout();
                     closeMenu();
                   }}
-                  className="mobile-drawer-link flex min-h-[48px] w-full items-center gap-2 rounded-lg border-l-2 border-transparent px-3 py-2 text-left text-sm font-medium text-text-light transition-all duration-200 hover:bg-bg hover:text-text"
+                  className="flex min-h-[48px] w-full items-center gap-3 rounded-lg border-l-4 border-transparent px-3 py-2.5 text-sm font-medium text-red-500 hover:bg-bg hover:text-red-600 transition-all"
                 >
                   <LogIn className="w-5 h-5" />
                   {t("nav.signOut")}
                 </button>
               </div>
             ) : (
-              <div className="flex flex-col gap-4 mt-4">
+              <div className="flex flex-col gap-1">
                 <Link
                   to="/about"
                   onClick={closeMenu}
-                  className={`flex items-center gap-1.5 py-2 text-sm font-medium transition-all duration-200 pl-3 border-l-2 w-full ${
+                  className={`flex min-h-[48px] w-full items-center gap-3 rounded-lg border-l-4 px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                     isActive("/about")
-                      ? "text-text border-primary font-semibold"
-                      : "text-text-light hover:text-text border-transparent"
+                      ? "border-primary text-text font-semibold"
+                      : "border-transparent text-text-light hover:text-text"
                   }`}
                 >
                   <Info className="w-5 h-5" />
@@ -237,10 +239,10 @@ const MobileDrawer = ({
                 <Link
                   to="/faq"
                   onClick={closeMenu}
-                  className={`flex items-center gap-1.5 py-2 text-sm font-medium transition-all duration-200 pl-3 border-l-2 w-full ${
+                  className={`flex min-h-[48px] w-full items-center gap-3 rounded-lg border-l-4 px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                     isActive("/faq")
-                      ? "text-text border-primary font-semibold"
-                      : "text-text-light hover:text-text border-transparent"
+                      ? "border-primary text-text font-semibold"
+                      : "border-transparent text-text-light hover:text-text"
                   }`}
                 >
                   <HelpCircle className="w-5 h-5" />
@@ -249,10 +251,10 @@ const MobileDrawer = ({
                 <Link
                   to="/login"
                   onClick={closeMenu}
-                  className={`flex items-center gap-1.5 py-2 text-sm font-medium transition-all duration-200 pl-3 border-l-2 w-full ${
+                  className={`flex min-h-[48px] w-full items-center gap-3 rounded-lg border-l-4 px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                     isActive("/login")
-                      ? "text-text border-primary font-semibold"
-                      : "text-text-light hover:text-text border-transparent"
+                      ? "border-primary text-text font-semibold"
+                      : "border-transparent text-text-light hover:text-text"
                   }`}
                 >
                   <LogIn className="w-5 h-5" />
@@ -261,10 +263,10 @@ const MobileDrawer = ({
                 <Link
                   to="/signup"
                   onClick={closeMenu}
-                  className={`flex items-center gap-1.5 py-2 text-sm font-medium transition-all duration-200 pl-3 border-l-2 w-full ${
+                  className={`flex min-h-[48px] w-full items-center gap-3 rounded-lg border-l-4 px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                     isActive("/signup")
-                      ? "text-text border-primary font-semibold"
-                      : "text-text-light hover:text-text border-transparent"
+                      ? "border-primary text-text font-semibold"
+                      : "border-transparent text-text-light hover:text-text"
                   }`}
                 >
                   <UserPlus className="w-5 h-5" />
@@ -274,35 +276,33 @@ const MobileDrawer = ({
             )}
           </div>
 
-          {/* Preferences Section (Theme & Cursor Toggles) - Unified Semantic Classes */}
-          <div className="mt-6 border-t border-border pt-4 sm:hidden">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-text-light/80 mb-3 px-3">
+          {/* Preferences */}
+          <div className="mt-6 border-t border-border pt-4">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-text-light/80 mb-3 px-1">
               Preferences
             </h3>
-            <div className="flex items-center gap-3 px-3">
+            <div className="flex gap-3 px-1">
               <button
                 type="button"
                 onClick={toggleTheme}
                 aria-pressed={isDarkMode}
-                aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
-                className="flex flex-1 items-center justify-center gap-2 py-2.5 px-3 rounded-xl border border-border text-sm font-medium text-text-light hover:bg-bg-secondary transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border border-border text-sm font-medium hover:bg-bg-secondary transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
-                {isDarkMode ? <Sun size={16} aria-hidden="true" /> : <Moon size={16} aria-hidden="true" />}
+                {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
                 <span>{isDarkMode ? "Light" : "Dark"}</span>
               </button>
               <button
                 type="button"
                 onClick={toggleCursor}
                 aria-pressed={cursorEnabled}
-                aria-label={cursorEnabled ? "Disable custom cursor" : "Enable custom cursor"}
-                className={`flex flex-1 items-center justify-center gap-2 py-2.5 px-3 rounded-xl border text-sm font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                   cursorEnabled
                     ? "border-primary/40 bg-primary/10 text-primary"
-                    : "border-border text-text-light hover:bg-bg-secondary"
+                    : "border-border hover:bg-bg-secondary"
                 }`}
               >
-                <MousePointer size={16} aria-hidden="true" />
-                <span>Cursor: {cursorEnabled ? "On" : "Off"}</span>
+                <MousePointer size={18} />
+                <span>Cursor {cursorEnabled ? "On" : "Off"}</span>
               </button>
             </div>
           </div>

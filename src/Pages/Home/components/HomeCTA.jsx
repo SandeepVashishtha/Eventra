@@ -38,7 +38,7 @@ export default function CTASection() {
             className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 dark:text-white mb-6 tracking-tight leading-[1.1] drop-shadow-sm"
           >
             <span className="inline-block text-black dark:text-white">Ignite Ideas, </span>
-            <span className="inline-block bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400">
+            <span className="inline-block bg-clip-text text-transparent bg-linear-to-r from-indigo-600 via-purple-600 to-pink-600 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400">
               Connect Innovators
             </span>
           </motion.h2>

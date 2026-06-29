@@ -36,7 +36,6 @@ const Login = () => {
     lockedOutSeconds,
     remainingAttempts,
     recordAttempt,
-    resetAttempts,
     isLockedOut,
     applyServerLockout,
   } = useLoginRateLimit();
@@ -113,6 +112,7 @@ const Login = () => {
         );
       }
     } catch (err) {
+      const errStatus = err?.status || err?.response?.status;
       toast.error(getPublicErrorMessage(err, AUTH_ERRORS.loginFailed));
       const retryAfterHeader =
         err?.response?.headers?.["retry-after"] ||
@@ -126,7 +126,7 @@ const Login = () => {
         toast.error(
           `Too many requests. Please wait ${Math.ceil(serverDelayMs / 1000)} seconds before trying again.`
         );
-      } else {
+      } else if (!errStatus || errStatus < 500) {
         recordAttempt();
         toast.error(err.message || "Login failed. Please check your credentials.");
       }

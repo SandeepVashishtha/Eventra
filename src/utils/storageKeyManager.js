@@ -11,7 +11,9 @@ const getSalt = () => {
   try {
     let salt = localStorage.getItem("eventra:storage-key-salt");
     if (!salt) {
-      salt = Math.random().toString(36).substring(2) + Date.now().toString(36);
+      salt = typeof crypto !== "undefined" && crypto.randomUUID 
+        ? crypto.randomUUID() 
+        : Math.random().toString(36).substring(2) + Date.now().toString(36);
       localStorage.setItem("eventra:storage-key-salt", salt);
     }
     return salt;
@@ -33,7 +35,7 @@ export const getOpaqueKey = (namespace, userId) => {
   }
 
   const isTest = typeof process !== "undefined" &&
-    (process.env.NODE_ENV === "test" || process.env.JWT_SECRET === "test_secret") &&
+    (process.env.NODE_ENV === "test" || process.env.VITE_TEST_MODE === "true") &&
     process.env.TEST_OPACITY !== "true";
 
   if (isTest) {

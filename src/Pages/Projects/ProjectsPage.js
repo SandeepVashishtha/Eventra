@@ -1,6 +1,7 @@
 import { AlertCircle, ChevronDown, Search, X, Filter, Bookmark, RefreshCw } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Link } from "react-router-dom";
 import SEOHead from "../../components/SEOHead";
 
 import ProjectHero from "./ProjectHero";
@@ -333,7 +334,7 @@ const InnerGallery = () => {
   const hasActiveFilters = searchQuery || filterCategory !== "all" || sortBy !== "recent";
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-zinc-50 via-white to-blue-50/30 dark:from-zinc-950 dark:via-zinc-900 dark:to-blue-950/20">
+    <div className="flex flex-col min-h-screen bg-linear-to-br from-zinc-50 via-white to-blue-50/30 dark:from-zinc-950 dark:via-zinc-900 dark:to-blue-950/20">
       {/* HERO */}
       <ProjectHero scrollToCard={scrollToCard} />
 
@@ -504,12 +505,12 @@ const InnerGallery = () => {
                     Clear All Filters
                   </button>
                 ) : (
-                  <a
-                    href="/submit-project"
+                  <Link
+                    to="/submit-project"
                     className="px-6 py-2.5 text-sm font-medium rounded-xl text-white bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors shadow-lg inline-flex items-center justify-center gap-2"
                   >
                     Submit a Project
-                  </a>
+                  </Link>
                 )}
               </div>
             </motion.div>

@@ -1,5 +1,6 @@
 import { safeJsonParse } from "./safeJsonParse.js";
 import { logger } from "./logger.js";
+import { syncSecureStorage } from "./secureStorage.js";
 // 🔥 FIX: In-memory queue and lock to prevent localStorage race conditions
 let isUpdating = false;
 let interestQueue = [];
@@ -22,7 +23,7 @@ const isStorageAvailable = () => {
   }
 };
 
-const processInterestQueue = () => {
+const processInterestQueue = async () => {
   if (isUpdating || interestQueue.length === 0) return;
   if (!isStorageAvailable()) {
     // If localStorage is unavailable, clear the queue to prevent memory leak
@@ -34,7 +35,7 @@ const processInterestQueue = () => {
   try {
     let existing = {};
     try {
-      const raw = localStorage.getItem("eventra_user_profile");
+      const raw = await syncSecureStorage.getItemAsync("eventra_user_profile");
       if (raw) {
         existing = safeJsonParse(raw, {}) || {};
       }
@@ -60,36 +61,39 @@ const processInterestQueue = () => {
     }
 
     if (modified) {
-      localStorage.setItem(
+      await syncSecureStorage.setItem(
         "eventra_user_profile",
         JSON.stringify({ ...existing, interests })
       );
     }
   } catch (error) {
     logger.error("Failed to update user interests:", error);
-    interestQueue = []; // Clear the queue on persistent error to avoid infinite recursion
+    // Do not clear interestQueue — the isUpdating lock already prevents infinite recursion.
+    // Preserving the queue allows pending interests to be retried on the next call.
   } finally {
     isUpdating = false;
     if (interestQueue.length > 0) {
-      processInterestQueue();
+      await processInterestQueue();
     }
   }
 };
 
 export const trackUserInterest = (interest) => {
-  if (typeof interest !== "string" || !interest.trim() || interest.length > 100) return;
+  if (typeof interest !== "string" || !interest.trim() || interest.length > 100) {
+    return Promise.resolve();
+  }
   if (interestQueue.length >= MAX_QUEUE_SIZE) {
     interestQueue.shift(); // Evict oldest entry
   }
   interestQueue.push(interest.trim());
-  processInterestQueue();
+  return processInterestQueue();
 };
 
 export const clearActivityHistory = () => {
   try {
     interestQueue = [];
     if (isStorageAvailable()) {
-      localStorage.removeItem("eventra_user_profile");
+      syncSecureStorage.removeItem("eventra_user_profile");
     }
   } catch (error) {
     logger.error("Failed to clear activity history:", error);

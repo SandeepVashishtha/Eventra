@@ -9,6 +9,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import jwt from "jsonwebtoken";
+import { validateJwtSecretOrExit } from "./api/_lib/jwtSecret.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -115,9 +116,7 @@ const log = (...args) => {
   }
 };
 
-let notificationStore = [];
-
-const LIVE_NOTIFICATION_TEMPLATES = [
+const MOCK_CONTRIBUTORS = [
   { username: "alice", name: "Alice Dev", avatar: "https://avatars.githubusercontent.com/u/1?v=4", profile: "https://github.com/alice", points: 42, prs: 6 },
   { username: "bob", name: "Bob Coder", avatar: "https://avatars.githubusercontent.com/u/2?v=4", profile: "https://github.com/bob", points: 35, prs: 5 },
   { username: "carol", name: "Carol Builder", avatar: "https://avatars.githubusercontent.com/u/3?v=4", profile: "https://github.com/carol", points: 28, prs: 4 },
@@ -130,11 +129,11 @@ const MOCK_EVENTS = [
   { id: "event-3", title: "Web Dev Workshop" }
 ];
 
-const JWT_SECRET = process.env.JWT_SECRET;
-
-if (!JWT_SECRET || !JWT_SECRET.trim()) {
-  console.error("FATAL: JWT_SECRET environment variable is required and must not be empty or whitespace-only.");
-  console.error("Generate a secure secret using: openssl rand -base64 32");
+let JWT_SECRET;
+try {
+  JWT_SECRET = validateJwtSecretOrExit();
+} catch (error) {
+  console.error(error.message);
   process.exit(1);
 }
 

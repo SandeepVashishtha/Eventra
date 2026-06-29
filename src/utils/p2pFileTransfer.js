@@ -49,22 +49,6 @@ const getDB = () => {
   });
 };
 
-// Helper to attach error/abort handlers to an IndexedDB transaction and request
-const attachIdbReadHandlers = (transaction, request, resolve, fallbackValue, functionName) => {
-  transaction.onerror = (err) => {
-    logger.error(`${functionName} transaction error:`, err);
-    resolve(fallbackValue);
-  };
-  transaction.onabort = (err) => {
-    logger.error(`${functionName} transaction aborted:`, err);
-    resolve(fallbackValue);
-  };
-  request.onerror = (err) => {
-    logger.error(`${functionName} request error:`, err);
-    resolve(fallbackValue);
-  };
-};
-
 // Check if all chunks for a file exist in IndexedDB
 export async function isFileCached(fileId) {
   try {
@@ -240,6 +224,11 @@ const getSignalingChannel = () => {
  */
 export class P2PFileTransferCoordinator {
   constructor(fileId, fileName, onStateChange, expectedTotalChunks = null) {
+    // Guard against SSR environments where browser APIs are unavailable
+    if (typeof window === "undefined") {
+      throw new Error("P2PFileTransferCoordinator requires a browser environment");
+    }
+
     this.fileId = fileId;
     this.fileName = fileName;
     this.onStateChange = onStateChange;
@@ -369,23 +358,32 @@ export class P2PFileTransferCoordinator {
 
     // We wait 2.5 seconds to discover nearby peers. If none answer, we fail and trigger fallback.
     return new Promise((resolve) => {
-      const searchTimeout = setTimeout(() => {
+      let searchTimeout;
+      let connectionSafetyTimeout;
+      let checkInterval;
+
+      const clearAllTimers = () => {
+        clearTimeout(searchTimeout);
+        clearTimeout(connectionSafetyTimeout);
+        clearInterval(checkInterval);
+      };
+
+      searchTimeout = setTimeout(() => {
         if (!this.pc || this.currentState === "searching") {
           this.cleanup();
+          clearAllTimers();
           resolve(false); // No peers found, trigger server fallback
         }
       }, 2500);
 
-      let checkInterval;
-
       // Add a secondary connection safety timer of 5 seconds total
-      const connectionSafetyTimeout = setTimeout(() => {
+      connectionSafetyTimeout = setTimeout(() => {
         if (this.currentState === "connecting" || this.currentState === "searching") {
           this.cleanup();
-          clearInterval(checkInterval);
+          clearAllTimers();
           resolve(false); // WebRTC connection handshakes timed out, fallback to server
         } else if (this.currentState === "completed" || this.currentState === "transferring") {
-          clearInterval(checkInterval);
+          clearAllTimers();
           resolve(true);
         }
       }, 5000);
@@ -393,14 +391,10 @@ export class P2PFileTransferCoordinator {
       // Attach state listener check to resolve immediately if completed
       checkInterval = setInterval(() => {
         if (this.currentState === "completed") {
-          clearTimeout(searchTimeout);
-          clearTimeout(connectionSafetyTimeout);
-          clearInterval(checkInterval);
+          clearAllTimers();
           resolve(true);
         } else if (this.currentState === "failed") {
-          clearTimeout(searchTimeout);
-          clearTimeout(connectionSafetyTimeout);
-          clearInterval(checkInterval);
+          clearAllTimers();
           resolve(false);
         }
       }, 200);

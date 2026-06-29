@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import {
-  X, Briefcase, Mail, Globe, Linkedin, Twitter, Github,
-  Send, User, MessageSquare, ArrowLeft
+  X, Briefcase, Globe, Linkedin, Twitter, Github,
+  Send, MessageSquare, ArrowLeft
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { safeJsonParse } from "../../utils/safeJsonParse";
@@ -143,10 +143,10 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
       <div
         ref={modalRef}
-        className="w-full max-w-2xl rounded-2xl bg-gradient-to-b from-gray-900 to-slate-950 text-white shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        className="w-full max-w-2xl rounded-2xl bg-linear-to-b from-gray-900 to-slate-950 text-white shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
       >
         {/* Header */}
-        <div className="relative h-32 bg-gradient-to-r from-indigo-900/60 to-purple-900/60 p-6 flex items-end">
+        <div className="relative h-32 bg-linear-to-r from-indigo-900/60 to-purple-900/60 p-6 flex items-end">
           <button
             onClick={onClose}
             className="absolute top-4 right-4 p-2 hover:bg-white/10 rounded-full"

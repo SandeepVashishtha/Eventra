@@ -145,7 +145,7 @@ overflow-hidden
         w-full
         px-8 py-6
         flex items-center justify-between
-        bg-gradient-to-r
+        bg-linear-to-r
         from-indigo-50
         to-white
         dark:from-gray-800

@@ -5,10 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { useReducedMotion } from "../../hooks/useReducedMotion";
-import CountUpLib from "react-countup";
 import ErrorBoundary from "../../components/common/ErrorBoundary";
-
-const CountUp = CountUpLib.default || CountUpLib;
 
 const container = {
   hidden: { opacity: 0 },
@@ -205,18 +202,8 @@ export default function ModernAbout() {
                     </div>
 
                     <h3 className="text-3xl font-bold text-white mb-2">
-                      {typeof stat.value === "number" ? (
-                        <CountUp
-                          start={0}
-                          end={stat.value}
-                          duration={3}
-                          suffix={stat.suffix}
-                          enableScrollSpy
-                          scrollSpyOnce
-                        />
-                      ) : (
-                        stat.value
-                      )}
+                      {stat.value}
+                      {stat.suffix}
                     </h3>
 
                     <p className="text-slate-400 text-sm">{stat.label}</p>

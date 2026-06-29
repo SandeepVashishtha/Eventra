@@ -8,12 +8,14 @@ const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile, setIsCustomizerO
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={toggleTheme}
+          aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+          aria-pressed={isDarkMode}
           className="flex items-center justify-center gap-1 px-2 py-2 w-full rounded-xl bg-zinc-100 dark:bg-zinc-800/80 text-zinc-900 dark:text-zinc-100 font-semibold border border-zinc-200 dark:border-zinc-700/50 hover:bg-zinc-200 dark:hover:bg-zinc-700/80 transition-all cursor-pointer"
         >
           {isDarkMode ? (
-            <Sun className="w-5 h-5 text-amber-500" />
+            <Sun className="w-5 h-5 text-amber-500" aria-hidden="true" />
           ) : (
-            <Moon className="w-5 h-5 text-indigo-500" />
+            <Moon className="w-5 h-5 text-indigo-500" aria-hidden="true" />
           )}
           <span>{isDarkMode ? "Switch to Light" : "Switch to Dark"}</span>
         </motion.button>
@@ -22,9 +24,10 @@ const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile, setIsCustomizerO
           onClick={() => {
              setIsCustomizerOpen(true);
             }}       
-   className="flex items-center justify-center gap-1 px-2 py-2 w-full rounded-xl bg-gradient-to-r from-indigo-500 to-pink-500 text-white font-semibold border-none shadow-md hover:shadow-lg transition-all cursor-pointer"
+          aria-label="Open Theme Customizer"
+   className="flex items-center justify-center gap-1 px-2 py-2 w-full rounded-xl bg-linear-to-r from-indigo-500 to-pink-500 text-white font-semibold border-none shadow-md hover:shadow-lg transition-all cursor-pointer"
         >
-          <Palette className="w-5 h-5" />
+          <Palette className="w-5 h-5" aria-hidden="true" />
           <span>THEME Customizer</span>
         </motion.button>
       </div>
@@ -56,9 +59,10 @@ const ThemeToggleButton = ({ isDarkMode, toggleTheme, isMobile, setIsCustomizerO
   whileTap={{ scale: 0.92 }}
   onClick={() => setIsCustomizerOpen(true)}
   title="Open Theme Customizer"
-        className="flex items-center justify-center w-9 h-9 rounded-full transition-all duration-300 focus:outline-none bg-gradient-to-r from-indigo-500/10 to-pink-500/10 hover:from-indigo-500/20 hover:to-pink-500/20 border border-indigo-200/50 dark:border-indigo-800/40 hover:shadow-[0_0_12px_rgba(236,72,153,0.3)] text-indigo-550 dark:text-indigo-400 cursor-pointer"
+  aria-label="Open Theme Customizer"
+        className="flex items-center justify-center w-9 h-9 rounded-full transition-all duration-300 focus:outline-none bg-linear-to-r from-indigo-500/10 to-pink-500/10 hover:from-indigo-500/20 hover:to-pink-500/20 border border-indigo-200/50 dark:border-indigo-800/40 hover:shadow-[0_0_12px_rgba(236,72,153,0.3)] text-indigo-550 dark:text-indigo-400 cursor-pointer"
       >
-        <Palette className="w-4 h-4 animate-pulse text-indigo-500 dark:text-indigo-400" />
+        <Palette className="w-4 h-4 animate-pulse text-indigo-500 dark:text-indigo-400" aria-hidden="true" />
       </motion.button>
     </div>
   );

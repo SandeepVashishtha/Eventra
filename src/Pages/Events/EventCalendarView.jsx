@@ -39,7 +39,7 @@ const EventPopover = ({ event, onClose }) => {
         </button>
 
         <div className="relative h-48 w-full">
-          <img src={event.resource.image} alt={event.title} className="w-full h-full object-cover" />
+          <img src={event.resource.image} alt={event.title} className="w-full h-full object-cover"   loading="lazy"/>
           <div className="absolute inset-0 bg-linear-to-t from-black/80 to-transparent" />
           <div className="absolute bottom-4 left-4 right-4">
             <h3 className="text-xl font-bold text-white line-clamp-2">{event.title}</h3>
@@ -106,7 +106,7 @@ const EventCalendarView = ({ events }) => {
             
             date.setHours(hours, minutes, 0, 0);
           }
-        } catch (e) {
+        } catch (_e) {
           // Ignore time parsing errors
         }
       }
@@ -132,7 +132,8 @@ const EventCalendarView = ({ events }) => {
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-800 p-4 sm:p-6 mb-8 overflow-hidden calendar-container">
-      <style dangerouslySetInnerHTML={{__html: `
+      <style>
+        {`
         .calendar-container .rbc-calendar {
           font-family: inherit;
           min-height: 700px;
@@ -218,7 +219,8 @@ const EventCalendarView = ({ events }) => {
         .dark .calendar-container .rbc-timeslot-group {
             border-bottom-color: #334155;
         }
-      `}} />
+        `}
+      </style>
       <Calendar
         localizer={localizer}
         events={calendarEvents}

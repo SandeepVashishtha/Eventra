@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Archive, Calendar, Users, Star, ChevronDown, Search, ExternalLink, Trophy, Clock } from 'lucide-react';
+import { Archive, Calendar, Users, Star, Search, ExternalLink, Trophy, Clock } from 'lucide-react';
 
 // Mock archived events data - in production this comes from API
 const ARCHIVED_EVENTS = [
@@ -104,7 +104,7 @@ function EventDetailModal({ event, onClose }) {
         onClick={e => e.stopPropagation()}
       >
         <div className="relative h-52 overflow-hidden rounded-t-2xl">
-          <img src={event.image} alt={event.title} className="w-full h-full object-cover" />
+          <img src={event.image} alt={event.title} className="w-full h-full object-cover"  loading="lazy" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
           <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-white hover:bg-white/40 transition-colors">✕</button>
           <div className="absolute bottom-4 left-4">

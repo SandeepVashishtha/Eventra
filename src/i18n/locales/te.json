@@ -20,6 +20,7 @@
     "signUp": "సైన్ అప్",
     "signOut": "సైన్ అవుట్",
     "profile": "ప్రొఫైల్",
+    "account": "ఖాతా",
     "settings": "సెట్టింగ్‌లు",
     "projects": "ప్రాజెక్ట్‌లు",
     "networking": "నెట్‌వర్కింగ్",
@@ -92,7 +93,12 @@
     "feedbackTypeRequired": "Please select a feedback type",
     "feedbackMessageRequired": "Message is required",
     "feedbackMessageMinLength": "Message must be at least 20 characters",
-    "feedbackRatingRequired": "Please provide a rating"
+    "feedbackRatingRequired": "Please provide a rating",
+    "featureTitleRequired": "Feature title is required",
+    "featureTitleMinLength": "Feature title must be at least 5 characters",
+    "featureProblemRequired": "Please describe the problem this feature would solve",
+    "featureProblemMinLength": "Problem description must be at least 20 characters",
+    "featurePriorityRequired": "Please select a priority level"
   },
   "error": {
     "generic": "An unexpected error occurred. Please try again.",

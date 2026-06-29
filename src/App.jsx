@@ -1,14 +1,12 @@
 import { useState, useEffect, lazy, Suspense } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import * as Sentry from "@sentry/react";
 import { Analytics } from "@vercel/analytics/react";
 import "./App.css";
 import "./styles/reduced-motion.css";
 import "./styles/print.css";
 import { toast } from "react-toastify";
-import EnvironmentSecurityDashboard from "./components/dev/EnvironmentSecurityDashboard";
-
+import ScrollRestoration from "./components/ScrollRestoration";
 // Critical path - loaded eagerly (needed before first paint)
 import Navbar from "./components/navbar/Navbar";
 import SkipToContent from "./components/accessibility/SkipToContent";
@@ -27,6 +25,7 @@ import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
 import { useRoutePrefetch } from "./hooks/useRoutePrefetch";
 import PageTransition from "./components/common/PageTransition";
 import Breadcrumbs from "./components/common/Breadcrumbs";
+import { getAuthRoutes, getProtectedRoutes } from "./components/routes/ProtectedRoutes";
 import {
   AuthFormSkeleton,
   ExploreEventsSkeleton,
@@ -162,6 +161,7 @@ function App() {
   }, [t]);
 
   return (
+    
     <ErrorBoundary>
       <AuthProvider>
         <NotificationProvider>
@@ -172,7 +172,7 @@ function App() {
                 <ReminderChecker />
               </Suspense>
               <OfflineSyncManager />
-
+<ScrollRestoration />
               <div className="App">
                 <SkipToContent />
                 <ErrorBoundary level="section" label="Navigation Bar">
@@ -202,6 +202,8 @@ function App() {
                   <PageTransition>
                     <ErrorBoundary>
                       <Routes location={location} key={location?.pathname || "default"}>
+                        {getAuthRoutes()}
+                        {getProtectedRoutes()}
                         <Route
                           path="/register/:id"
                           element={
@@ -228,14 +230,7 @@ function App() {
                             </Suspense>
                           }
                         />
-                        {/* TODO: Implement missing auth/dashboard routes
-                          Pages do not exist:
-                          - ./Pages/auth/Login
-                          - ./Pages/auth/Signup
-                          - ./Pages/dashboard/Dashboard
-                          - ./Pages/Admin/AdminPanel
-                          - ./Pages/user/Profile
-                        */}
+                        
                         <Route
                           path="/event-recommendation"
                           element={<Suspense fallback={null}><EventRecommendation /></Suspense>}
@@ -301,6 +296,8 @@ function App() {
                     </Suspense>
                 </ErrorBoundary>
                 )}
+
+                
               </div>
               <Analytics />
             </SessionRecoveryProvider>
@@ -310,4 +307,5 @@ function App() {
     </ErrorBoundary>
   );
 }
+
 export default App;
