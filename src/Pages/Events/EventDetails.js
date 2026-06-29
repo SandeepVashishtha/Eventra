@@ -31,8 +31,6 @@ import { RecentlyViewedTracker } from "../../components/common/RecentlyViewedEve
 import { apiUtils, API_ENDPOINTS } from "../../config/api";
 import mockEvents from "./eventsMockData.json";
 import CopyButton from '../../components/ui/CopyButton';
-import LiveQABoard from "../../components/events/LiveQABoard";
-import LivePollController from "../../components/admin/LivePollController";
 const isRequestCanceled = (error, signal) =>
   signal?.aborted ||
   error?.name === "AbortError" ||
@@ -586,6 +584,10 @@ const showClosingSoon =
                 <div className="text-sm text-gray-600 dark:text-gray-300 space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <p><span className="font-semibold">Attendees:</span> {event.attendees}/{event.maxAttendees}</p>
+                    <EventRegistrationProgress
+    attendees={event.attendees}
+    maxAttendees={event.maxAttendees}
+/>
                     {/* "Almost Full!" urgency badge — shown when ≥ 80% capacity and not yet sold out (#7665) */}
                     {event.maxAttendees > 0 &&
                       event.attendees / event.maxAttendees >= 0.8 &&
