@@ -244,21 +244,22 @@ export default function CollaborativeWhiteboard() {
           });
           break;
 
-        case "WHITEBOARD_STROKE_END":
+        case "WHITEBOARD_STROKE_END": {
+          const finishedRemote = remoteActiveStrokes[msg.id];
+          if (finishedRemote) {
+            setLocalStrokes((l) => {
+              const updated = [...l, finishedRemote];
+              saveHistory(updated);
+              return updated;
+            });
+          }
           setRemoteActiveStrokes((prev) => {
-            const finished = prev[msg.id];
-            if (finished) {
-              setLocalStrokes((l) => {
-                const updated = [...l, finished];
-                saveHistory(updated);
-                return updated;
-              });
-            }
             const copy = { ...prev };
             delete copy[msg.id];
             return copy;
           });
           break;
+        }
 
         case "WHITEBOARD_COMPLETE_STROKE":
           setLocalStrokes((l) => {
@@ -429,39 +430,39 @@ export default function CollaborativeWhiteboard() {
         from: peerId.current,
       });
 
+      const finishedId = currentStrokeIdRef.current;
       setRemoteActiveStrokes(prev => {
-        const finished = prev[currentStrokeIdRef.current];
-        if (finished) {
-          setLocalStrokes(l => {
-            const updated = [...l, finished];
-            saveHistory(updated);
-            return updated;
-          });
-        }
         const copy = { ...prev };
-        delete copy[currentStrokeIdRef.current];
+        delete copy[finishedId];
         return copy;
+      });
+      setLocalStrokes(prev => {
+        const finished = remoteActiveStrokes[finishedId];
+        if (!finished) return prev;
+        const updated = [...prev, finished];
+        saveHistory(updated);
+        return updated;
       });
     } else {
       // Shape drawing finished
+      const finishedId = currentStrokeIdRef.current;
+      const finished = remoteActiveStrokes[finishedId];
+      if (finished) {
+        bcRef.current.postMessage({
+          type: "WHITEBOARD_COMPLETE_STROKE",
+          id: finishedId,
+          stroke: finished,
+          from: peerId.current
+        });
+        setLocalStrokes(l => {
+          const updated = [...l, finished];
+          saveHistory(updated);
+          return updated;
+        });
+      }
       setRemoteActiveStrokes(prev => {
-        const finished = prev[currentStrokeIdRef.current];
-        if (finished) {
-          bcRef.current.postMessage({
-            type: "WHITEBOARD_COMPLETE_STROKE",
-            id: currentStrokeIdRef.current,
-            stroke: finished,
-            from: peerId.current
-          });
-
-          setLocalStrokes(l => {
-            const updated = [...l, finished];
-            saveHistory(updated);
-            return updated;
-          });
-        }
         const copy = { ...prev };
-        delete copy[currentStrokeIdRef.current];
+        delete copy[finishedId];
         return copy;
       });
     }
