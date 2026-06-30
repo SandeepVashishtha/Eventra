@@ -5,6 +5,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { safeJsonParse } from "../utils/safeJsonParse";
 import { getOrMigrateKey } from "../utils/storageKeyManager";
+import { getServerNow } from "../utils/timeSync.js";
 
 // Simple synchronous hash to avoid exposing raw userId (email) in localStorage keys.
 const hashUserId = (userId) => {
@@ -70,7 +71,7 @@ const toBookmarkEntry = (event) => ({
   type: event?.type ?? event?.category ?? "",
   image: event?.image ?? event?.imageUrl ?? "",
   status: event?.status ?? "",
-  savedAt: Date.now(),
+  savedAt: getServerNow(),
 });
 
 /**
@@ -180,6 +181,7 @@ const useBookmarks = (userId = "guest") => {
    * Removes all bookmarks for the current user from both state and localStorage.
    */
   const clearBookmarks = useCallback(() => {
+    if (typeof window === "undefined") return;
     setBookmarks([]);
     cache.set(storageKeyRef.current, []);
     try {

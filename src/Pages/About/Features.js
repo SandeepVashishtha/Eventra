@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
@@ -9,6 +10,7 @@ import {
   Sparkles,
   Trophy,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const ICON_CLASSES = "text-blue-400 w-6 h-6";
 
@@ -36,71 +38,60 @@ const item = {
   },
 };
 
-const features = [
+const FEATURE_CONFIG = [
   {
+    id: "events",
     icon: <CalendarCheck className={ICON_CLASSES} />,
-    title: "Event Discovery and Registration",
-    stat: "Events",
-    description:
-      "Browse upcoming programs, understand the details, save interesting opportunities, and register through a clear user flow.",
-    cta: "Explore Events",
     link: "/events",
     enabled: true,
   },
   {
+    id: "hackathons",
     icon: <Trophy className={ICON_CLASSES} />,
-    title: "Hackathon Participation",
-    stat: "Hackathons",
-    description:
-      "Find hackathons, follow schedules, collaborate with teams, and move from ideas to submissions with community support.",
-    cta: "View Hackathons",
     link: "/hackathons",
     enabled: true,
   },
   {
+    id: "projects",
     icon: <Code2 className={ICON_CLASSES} />,
-    title: "Project Showcase",
-    stat: "Projects",
-    description:
-      "Share work, discover community projects, and keep building after events through visible project spaces.",
-    cta: "Browse Projects",
     link: "/projects",
     enabled: true,
   },
   {
+    id: "connections",
     icon: <Handshake className={ICON_CLASSES} />,
-    title: "Networking and Community",
-    stat: "Connections",
-    description:
-      "Meet organizers, mentors, contributors, and peers through community surfaces built around participation.",
-    cta: "Join Community",
     link: "/community-event",
     enabled: true,
   },
   {
+    id: "manage",
     icon: <QrCode className={ICON_CLASSES} />,
-    title: "Organizer Tools",
-    stat: "Manage",
-    description:
-      "Support event operations with registration handling, ticket-friendly check-ins, dashboards, and feedback workflows.",
-    cta: "Read Docs",
     link: "/documentation",
     enabled: true,
   },
   {
+    id: "benefits",
     icon: <Sparkles className={ICON_CLASSES} />,
-    title: "Beginner-Friendly Experience",
-    stat: "Benefits",
-    description:
-      "Help new users quickly understand what to attend, how to participate, and where to continue learning.",
-    cta: "Get Started",
     link: "/signup",
     enabled: true,
   },
 ];
 
 export default function Features() {
+  const { t } = useTranslation();
   const shouldReduceMotion = useReducedMotion();
+
+  const features = useMemo(
+    () =>
+      FEATURE_CONFIG.map((feature) => ({
+        ...feature,
+        stat: t(`about.features.items.${feature.id}.stat`),
+        title: t(`about.features.items.${feature.id}.title`),
+        description: t(`about.features.items.${feature.id}.description`),
+        cta: t(`about.features.items.${feature.id}.cta`),
+      })),
+    [t],
+  );
 
   const animationProps = shouldReduceMotion
     ? { initial: false, animate: "visible" }
@@ -132,13 +123,11 @@ export default function Features() {
           className="text-center mb-20"
         >
           <motion.h2 variants={item} id="features-heading" className={HEADING_CLASSES}>
-            What You Can Do with Eventra
+            {t("about.features.heading")}
           </motion.h2>
 
           <motion.p variants={item} className={DESCRIPTION_CLASSES}>
-            Eventra combines discovery, event operations, hackathon workflows, project visibility,
-            and community engagement so new users can move from interest to participation with
-            confidence.
+            {t("about.features.description")}
           </motion.p>
         </motion.div>
 
@@ -150,9 +139,9 @@ export default function Features() {
           className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8"
           role="list"
         >
-          {features.map((feature, index) => (
+          {features.map((feature) => (
             <motion.article
-              key={index}
+              key={feature.id}
               variants={item}
               role="listitem"
               whileHover={shouldReduceMotion ? {} : { y: -6 }}
@@ -179,7 +168,10 @@ export default function Features() {
                   <Link
                     to={feature.link}
                     className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 font-medium"
-                    aria-label={`${feature.cta} - ${feature.title}`}
+                    aria-label={t("about.features.ctaAriaLabel", {
+                      cta: feature.cta,
+                      title: feature.title,
+                    })}
                   >
                     {feature.cta}
                     <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />

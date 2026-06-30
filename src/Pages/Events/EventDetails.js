@@ -14,7 +14,6 @@ import { DRAFT_KEY } from "../../constants/eventDefaults";
 import { useMyEvents } from "../../context/MyEventsContext";
 import { logger } from "../../utils/logger";
 import ReminderControls from "../../components/reminders/ReminderControls";
-import CertificateDownload from "../../components/CertificateDownload";
 import EventRecommendations from "../../components/events/EventRecommendations";
 import EventCancellationModal from "../../components/events/EventCancellationModal";
 import SimilarEvents from "../../components/events/SimilarEvents";
@@ -32,7 +31,6 @@ import { RecentlyViewedTracker } from "../../components/common/RecentlyViewedEve
 import { apiUtils, API_ENDPOINTS } from "../../config/api";
 import mockEvents from "./eventsMockData.json";
 import CopyButton from '../../components/ui/CopyButton';
-import { Share2 } from "lucide-react";
 const isRequestCanceled = (error, signal) =>
   signal?.aborted ||
   error?.name === "AbortError" ||
@@ -255,7 +253,7 @@ ${window.location.href}
       toast.success("Event link copied to clipboard!");
       setLinkCopied(true);
       setTimeout(() => setLinkCopied(false), 2000);
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to copy link. Please copy the URL from your browser's address bar.");
     }
   };
@@ -452,7 +450,7 @@ const showClosingSoon =
                                   }
                                 }
                                 exportToCSV(allRegistrants, `${event.title}_registrants`);
-                              } catch (error) {
+                              } catch (_error) {
                                 toast.error("Failed to fetch registrants");
                               } finally {
                                 setExportingRegistrants(false);
@@ -490,7 +488,7 @@ const showClosingSoon =
                                   }
                                 }
                                 exportToJSON(allRegistrants, `${event.title}_registrants`);
-                              } catch (error) {
+                              } catch (_error) {
                                 toast.error("Failed to fetch registrants");
                               } finally {
                                 setExportingRegistrants(false);
@@ -577,7 +575,7 @@ const showClosingSoon =
 
                 {/* Event Countdown */}
                 <div className="sm:col-span-2">
-                  <CountdownTimer eventDate={event.date} />
+                  <CountdownTimer date={event.date} time={event.time} timezone={event.timezone} />
                 </div>
               </div>
 

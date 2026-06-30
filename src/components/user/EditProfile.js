@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactDOM from "react-dom"; // 🔥 FIX: Required for Modal Portal
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -177,7 +177,7 @@ const EditProfile = () => {
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: undefined }));
   };
 
-  const calculateCompletion = () => {
+  const calculateCompletion = useCallback(() => {
     const fields = [
       "username",
       "email",
@@ -201,7 +201,7 @@ const EditProfile = () => {
     if (form.skills && form.skills.length > 0) filled++;
 
     return Math.round((filled / 10) * 100);
-  };
+  }, [form, user]);
 
   const completionPercentage = useMemo(() => calculateCompletion(), [calculateCompletion]);
 
