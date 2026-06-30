@@ -43,7 +43,9 @@ jobs:
         env:
           NODE_ENV: production
           CI: true
-          VITE_API_URL: /api
+          VITE_API_URL: https://api.example.com
+          DATABASE_URL: postgresql://ci.example.com/eventra
+          RATE_LIMIT_REDIS_URL: redis://ci.example.com:6379
 
       - name: Analyze bundle size
         id: analyze
