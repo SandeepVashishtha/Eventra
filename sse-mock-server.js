@@ -426,69 +426,7 @@ async function handleLiveAudienceRequests(req, res, pathname) {
   return false;
 }
 
-const server = http.createServer(async (req, res) => {
-  // Handle Preflight OPTIONS requests for regular API calls
-  if (req.method === "OPTIONS") {
-    res.writeHead(204, {
-      "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
-      "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
-      "Access-Control-Allow-Credentials": "true",
-    });
-    res.end();
-    return;
-  }
-
-  const parsedUrl = new URL(req.url, `http://localhost:${PORT}`);
-  const pathname = parsedUrl.pathname;
-  const searchParams = parsedUrl.searchParams;
-
-  // Mock Profile Endpoint Handler - Stops AuthProvider context crashes
-  if (pathname === "/api/users/profile" || pathname === "/users/profile") {
-    res.writeHead(200, {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
-      "Access-Control-Allow-Credentials": "true",
-    });
-    res.end(JSON.stringify({
-      success: true,
-      user: { id: "mock-dev-123", name: "Sadwika", role: "developer" }
-    }));
-    return;
-  }
-
-  // Get all events (paginated Spring-style response)
-  if ((pathname === "/api/events" || pathname === "/events") && req.method === "GET") {
-    const page = Math.max(0, parseInt(searchParams.get("page") || "0", 10));
-    const size = Math.max(1, parseInt(searchParams.get("size") || "12", 10));
-    const start = page * size;
-    const content = MOCK_EVENT_CATALOG.slice(start, start + size);
-    const totalElements = MOCK_EVENT_CATALOG.length;
-    const totalPages = Math.max(1, Math.ceil(totalElements / size));
-
-    return jsonResponse(res, 200, {
-      content,
-      totalElements,
-      totalPages,
-      size,
-      number: page,
-      first: page === 0,
-      last: page >= totalPages - 1,
-    });
-  }
-
-  // Projects list for local development
-  if ((pathname === "/api/projects" || pathname === "/projects") && req.method === "GET") {
-    return jsonResponse(res, 200, MOCK_PROJECT_CATALOG);
-  }
-
-  if (pathname === "/api/projects/categories" && req.method === "GET") {
-    const categories = [
-      ...new Set(MOCK_PROJECT_CATALOG.map((project) => project.category).filter(Boolean)),
-    ];
-    return jsonResponse(res, 200, categories);
-  }
-
+async function handleTicketRequests(req, res, pathname, searchParams) {
   // Get statistics
   if (pathname === "/api/tickets/stats" && req.method === "GET") {
     const eventId = searchParams.get("eventId");
@@ -722,6 +660,10 @@ const server = http.createServer(async (req, res) => {
     });
   }
 
+  return false;
+}
+
+async function handleNotificationRequests(req, res, pathname) {
   // Notifications REST API
   if (pathname === "/api/notifications" && req.method === "GET") {
     return jsonResponse(res, 200, notificationStore);
@@ -774,8 +716,82 @@ const server = http.createServer(async (req, res) => {
       notificationSseClients.delete(res);
       log("[SSE] notifications client disconnected");
     });
+    return true;
+  }
+
+  return false;
+}
+
+const server = http.createServer(async (req, res) => {
+  // Handle Preflight OPTIONS requests for regular API calls
+  if (req.method === "OPTIONS") {
+    res.writeHead(204, {
+      "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
+      "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Access-Control-Allow-Credentials": "true",
+    });
+    res.end();
     return;
   }
+
+  const parsedUrl = new URL(req.url, `http://localhost:${PORT}`);
+  const pathname = parsedUrl.pathname;
+  const searchParams = parsedUrl.searchParams;
+
+  // Mock Profile Endpoint Handler - Stops AuthProvider context crashes
+  if (pathname === "/api/users/profile" || pathname === "/users/profile") {
+    res.writeHead(200, {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
+      "Access-Control-Allow-Credentials": "true",
+    });
+    res.end(JSON.stringify({
+      success: true,
+      user: { id: "mock-dev-123", name: "Sadwika", role: "developer" }
+    }));
+    return;
+  }
+
+  // Get all events (paginated Spring-style response)
+  if ((pathname === "/api/events" || pathname === "/events") && req.method === "GET") {
+    const page = Math.max(0, parseInt(searchParams.get("page") || "0", 10));
+    const size = Math.max(1, parseInt(searchParams.get("size") || "12", 10));
+    const start = page * size;
+    const content = MOCK_EVENT_CATALOG.slice(start, start + size);
+    const totalElements = MOCK_EVENT_CATALOG.length;
+    const totalPages = Math.max(1, Math.ceil(totalElements / size));
+
+    return jsonResponse(res, 200, {
+      content,
+      totalElements,
+      totalPages,
+      size,
+      number: page,
+      first: page === 0,
+      last: page >= totalPages - 1,
+    });
+  }
+
+  // Projects list for local development
+  if ((pathname === "/api/projects" || pathname === "/projects") && req.method === "GET") {
+    return jsonResponse(res, 200, MOCK_PROJECT_CATALOG);
+  }
+
+  if (pathname === "/api/projects/categories" && req.method === "GET") {
+    const categories = [
+      ...new Set(MOCK_PROJECT_CATALOG.map((project) => project.category).filter(Boolean)),
+    ];
+    return jsonResponse(res, 200, categories);
+  }
+
+  // Tickets REST & check-in endpoints
+  const handledTickets = await handleTicketRequests(req, res, pathname, searchParams);
+  if (handledTickets !== false) return;
+
+  // Notifications REST & stream endpoints
+  const handledNotifs = await handleNotificationRequests(req, res, pathname);
+  if (handledNotifs !== false) return;
 
   if (pathname === "/stream/leaderboard" || pathname === "/api/stream/leaderboard") {
     sseHeaders(res);
