@@ -18,6 +18,7 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
 
   const modalRef = useRef(null);
   const chatEndRef = useRef(null);
+  const replyTimerRef = useRef(null);
 
   /* ---------------- Lead Capture ---------------- */
   const captureLead = (action) => {
@@ -77,6 +78,10 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
 
     return () => {
       document.body.style.overflow = "unset";
+      if (replyTimerRef.current) {
+        clearTimeout(replyTimerRef.current);
+        replyTimerRef.current = null;
+      }
     };
   }, [isOpen, booth]);
 
@@ -106,11 +111,13 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
     setChatMessage("");
     setIsTyping(true);
 
-    setTimeout(() => {
+    if (replyTimerRef.current) clearTimeout(replyTimerRef.current);
+    replyTimerRef.current = setTimeout(() => {
+      replyTimerRef.current = null;
       setIsTyping(false);
 
       const replies = [
-        "We’re hiring! Check our careers section.",
+        "We're hiring! Check our careers section.",
         "Feel free to reach out via email or LinkedIn.",
         "Our team works with React, Node.js, and TypeScript.",
       ];
