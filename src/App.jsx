@@ -225,7 +225,7 @@ function App() {
                           }
                         />
                         <Route
-                          path="/events/:id"
+                          path="/events/:eventId"
                           element={
                             <Suspense fallback={<EventDetailSkeleton />}>
                               <EventDetails />
