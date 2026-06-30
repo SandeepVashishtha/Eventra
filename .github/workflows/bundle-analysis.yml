@@ -62,9 +62,7 @@ jobs:
       - name: Extract report for PR comment
         id: extract
         run: |
-          echo "report<<DELIM" >> $GITHUB_OUTPUT
-          cat build/bundle-size-report.json >> $GITHUB_OUTPUT
-          echo "DELIM" >> $GITHUB_OUTPUT
+          node -e "const fs=require('fs'); const report=JSON.parse(fs.readFileSync('build/bundle-size-report.json','utf8')); fs.appendFileSync(process.env.GITHUB_OUTPUT, 'report=' + JSON.stringify(report) + '\n');"
         shell: bash
 
       - name: Find previous bundle size (base branch)
