@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { useLiveAudienceStream } from "../context/RealTimeContext.js";
 import { apiUtils, API_ENDPOINTS } from "../config/api.js";
 
-// Helper functions declared outside the hook to keep code health at 10.00
+// Standalone REST request actions
 export async function submitQuestion(eventId, text) {
   if (!text || !text.trim()) return;
   try {
@@ -67,6 +67,37 @@ export async function submitVote(eventId, pollId, option) {
   }
 }
 
+export async function fetchLiveAudienceInitial(eventId, loadInitialData, setLoading, setError, getIsMounted) {
+  setLoading(true);
+  setError(null);
+  try {
+    const res = await apiUtils.get(API_ENDPOINTS.LIVE_AUDIENCE.BASE(eventId));
+    if (!res.ok) throw new Error("Failed to load initial live audience data");
+    const data = await res.json();
+    if (getIsMounted()) {
+      loadInitialData(eventId, data);
+    }
+  } catch (err) {
+    if (getIsMounted()) {
+      setError(err.message || "An error occurred");
+    }
+  } finally {
+    if (getIsMounted()) {
+      setLoading(false);
+    }
+  }
+}
+
+export function sortQuestionsList(questions) {
+  if (!questions) return [];
+  return [...questions].sort((a, b) => {
+    if (b.upvotes !== a.upvotes) {
+      return b.upvotes - a.upvotes;
+    }
+    return new Date(b.createdAt) - new Date(a.createdAt);
+  });
+}
+
 /**
  * Hook for live audience interaction (Q&A and Polls).
  */
@@ -80,50 +111,14 @@ export default function useLiveAudience(eventId) {
 
   useEffect(() => {
     if (!eventId || hasLoaded) return;
-
     let isMounted = true;
-    const fetchInitial = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await apiUtils.get(API_ENDPOINTS.LIVE_AUDIENCE.BASE(eventId));
-        if (res.ok) {
-          const data = await res.json();
-          if (isMounted) {
-            loadInitialData(eventId, data);
-          }
-        } else {
-          throw new Error("Failed to load initial live audience data");
-        }
-      } catch (err) {
-        if (isMounted) {
-          setError(err.message || "An error occurred");
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchInitial();
-
+    fetchLiveAudienceInitial(eventId, loadInitialData, setLoading, setError, () => isMounted);
     return () => {
       isMounted = false;
     };
   }, [eventId, hasLoaded, loadInitialData]);
 
-  // Sort by upvotes (descending), then by creation date (descending)
-  const questions = useMemo(() => {
-    if (!eventData?.questions) return [];
-    return [...eventData.questions].sort((a, b) => {
-      if (b.upvotes !== a.upvotes) {
-        return b.upvotes - a.upvotes;
-      }
-      return new Date(b.createdAt) - new Date(a.createdAt);
-    });
-  }, [eventData?.questions]);
-
+  const questions = useMemo(() => sortQuestionsList(eventData?.questions), [eventData?.questions]);
   const activePoll = eventData?.activePoll || null;
 
   const submitQuestionCall = useCallback((text) => submitQuestion(eventId, text), [eventId]);
