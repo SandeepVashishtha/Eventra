@@ -22,7 +22,11 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
   const [announcement, setAnnouncement] = useState("");
   const announce = useCallback((message) => {
     setAnnouncement("");
-    setTimeout(() => { setAnnouncement(message); }, 50);
+    if (announceTimerRef.current) clearTimeout(announceTimerRef.current);
+    announceTimerRef.current = setTimeout(() => {
+      setAnnouncement(message);
+      announceTimerRef.current = null;
+    }, 50);
   }, []);
 
   const [zoom, setZoom] = useState(0.8);
@@ -32,6 +36,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
 
   const canvasRef = useRef(null);
   const rafRef = useRef(null);
+  const announceTimerRef = useRef(null);
   const zoomRef = useRef(zoom);
   const snapToGridRef = useRef(snapToGrid);
   const selectedIdRef = useRef(selectedId);
@@ -436,6 +441,10 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
       if (rafRef.current !== null) {
         cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
+      }
+      if (announceTimerRef.current !== null) {
+        clearTimeout(announceTimerRef.current);
+        announceTimerRef.current = null;
       }
     };
   }, [handleMouseMove, handleMouseUp]);
