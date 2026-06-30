@@ -4,6 +4,20 @@ import useLiveAudience from "../../hooks/useLiveAudience.js";
 import { ThumbsUp, Trash, Flag, Send, AlertTriangle, HelpCircle, Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function formatTime(isoString) {
+  try {
+    return new Date(isoString).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  } catch {
+    return "Just now";
+  }
+}
+
+function isMod(user) {
+  return user?.role === "admin" || user?.role === "organizer" || user?.role === "developer";
+}
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
 function QuestionInputForm({ onSubmit, questionText, setQuestionText, submitting }) {
   return (
     <form onSubmit={onSubmit} className="relative flex flex-col gap-2">
@@ -36,16 +50,30 @@ function QuestionInputForm({ onSubmit, questionText, setQuestionText, submitting
   );
 }
 
-function QuestionCard({ q, isModerator, onUpvote, onFlag, onDelete }) {
-  const formatTime = (isoString) => {
-    try {
-      const date = new Date(isoString);
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } catch {
-      return "Just now";
-    }
-  };
+function ModeratorButtons({ q, onFlag, onDelete }) {
+  return (
+    <>
+      {!q.flagged && (
+        <button
+          onClick={() => onFlag(q.id)}
+          title="Flag inappropriate"
+          className="p-1.5 rounded-lg border border-slate-800 hover:border-amber-500/30 hover:bg-amber-500/5 text-slate-500 hover:text-amber-400 transition-all duration-200 cursor-pointer"
+        >
+          <Flag className="h-4 w-4" />
+        </button>
+      )}
+      <button
+        onClick={() => onDelete(q.id)}
+        title="Delete question"
+        className="p-1.5 rounded-lg border border-slate-800 hover:border-rose-500/30 hover:bg-rose-500/5 text-slate-500 hover:text-rose-400 transition-all duration-200 cursor-pointer"
+      >
+        <Trash className="h-4 w-4" />
+      </button>
+    </>
+  );
+}
 
+function QuestionCard({ q, isModerator, onUpvote, onFlag, onDelete }) {
   return (
     <div
       className={`flex justify-between items-start gap-4 p-4 rounded-xl bg-slate-950/20 border transition-all duration-300 hover:border-slate-700/60 ${
@@ -58,12 +86,8 @@ function QuestionCard({ q, isModerator, onUpvote, onFlag, onDelete }) {
             <AlertTriangle className="h-3 w-3" /> Flagged for moderation
           </span>
         )}
-        <p className="text-sm text-slate-200 break-words leading-relaxed font-sans">
-          {q.text}
-        </p>
-        <span className="text-[10px] text-slate-500 font-medium">
-          {formatTime(q.createdAt)}
-        </span>
+        <p className="text-sm text-slate-200 break-words leading-relaxed font-sans">{q.text}</p>
+        <span className="text-[10px] text-slate-500 font-medium">{formatTime(q.createdAt)}</span>
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
@@ -75,98 +99,100 @@ function QuestionCard({ q, isModerator, onUpvote, onFlag, onDelete }) {
           <span className="text-xs font-semibold">{q.upvotes}</span>
         </button>
 
-        {isModerator && (
-          <>
-            {!q.flagged && (
-              <button
-                onClick={() => onFlag(q.id)}
-                title="Flag inappropriate"
-                className="p-1.5 rounded-lg border border-slate-800 hover:border-amber-500/30 hover:bg-amber-500/5 text-slate-500 hover:text-amber-400 transition-all duration-200 cursor-pointer"
-              >
-                <Flag className="h-4 w-4" />
-              </button>
-            )}
-            <button
-              onClick={() => onDelete(q.id)}
-              title="Delete question"
-              className="p-1.5 rounded-lg border border-slate-800 hover:border-rose-500/30 hover:bg-rose-500/5 text-slate-500 hover:text-rose-400 transition-all duration-200 cursor-pointer"
-            >
-              <Trash className="h-4 w-4" />
-            </button>
-          </>
-        )}
+        {isModerator && <ModeratorButtons q={q} onFlag={onFlag} onDelete={onDelete} />}
       </div>
     </div>
   );
 }
 
+function QuestionList({ loading, visibleQuestions, isModerator, handlers }) {
+  if (loading && visibleQuestions.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-slate-500">
+        <Loader2 className="h-8 w-8 animate-spin text-primary mb-3" />
+        <p className="text-sm">Loading questions...</p>
+      </div>
+    );
+  }
+
+  if (visibleQuestions.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-slate-500 text-center border-2 border-dashed border-slate-800 rounded-xl">
+        <HelpCircle className="h-10 w-10 text-slate-600 mb-2" />
+        <p className="text-sm font-medium">No questions asked yet.</p>
+        <p className="text-xs text-slate-600 mt-1">Be the first to ask a question!</p>
+      </div>
+    );
+  }
+
+  return visibleQuestions.map((q) => (
+    <QuestionCard key={q.id} q={q} isModerator={isModerator} {...handlers} />
+  ));
+}
+
+// ─── Action helpers (outside component to reduce hook body complexity) ─────────
+async function sendQuestion(submitQuestion, text, setSubmitting, setQuestionText) {
+  setSubmitting(true);
+  try {
+    await submitQuestion(text);
+    setQuestionText("");
+    toast.success("Question submitted successfully!");
+  } catch {
+    toast.error("Failed to submit question. Please try again.");
+  } finally {
+    setSubmitting(false);
+  }
+}
+
+async function sendUpvote(upvoteQuestion, qId) {
+  try {
+    await upvoteQuestion(qId);
+  } catch {
+    toast.error("Failed to upvote question.");
+  }
+}
+
+async function sendFlag(flagQuestion, qId) {
+  try {
+    await flagQuestion(qId);
+    toast.info("Question flagged for moderation.");
+  } catch {
+    toast.error("Failed to flag question.");
+  }
+}
+
+async function sendDelete(deleteQuestion, qId) {
+  if (!window.confirm("Are you sure you want to delete this question?")) return;
+  try {
+    await deleteQuestion(qId);
+    toast.success("Question deleted successfully.");
+  } catch {
+    toast.error("Failed to delete question.");
+  }
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
 export default function LiveQABoard({ eventId }) {
   const { user } = useAuth();
-  const {
-    questions,
-    status,
-    loading,
-    error,
-    submitQuestion,
-    upvoteQuestion,
-    deleteQuestion,
-    flagQuestion,
-  } = useLiveAudience(eventId);
+  const { questions, status, loading, error, submitQuestion, upvoteQuestion, deleteQuestion, flagQuestion } =
+    useLiveAudience(eventId);
 
   const [questionText, setQuestionText] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const isModerator =
-    user?.role === "admin" ||
-    user?.role === "organizer" ||
-    user?.role === "developer";
+  const moderator = isMod(user);
+  const visibleQuestions = questions.filter((q) => !q.flagged || moderator);
 
-  const handleSend = async (e) => {
+  const handleSend = (e) => {
     e.preventDefault();
-    if (!questionText.trim()) return;
-
-    setSubmitting(true);
-    try {
-      await submitQuestion(questionText);
-      setQuestionText("");
-      toast.success("Question submitted successfully!");
-    } catch (err) {
-      toast.error("Failed to submit question. Please try again.");
-    } finally {
-      setSubmitting(false);
-    }
+    if (questionText.trim()) sendQuestion(submitQuestion, questionText, setSubmitting, setQuestionText);
   };
 
-  const handleUpvote = async (qId) => {
-    try {
-      await upvoteQuestion(qId);
-    } catch (err) {
-      toast.error("Failed to upvote question.");
-    }
+  const handlers = {
+    onUpvote: (qId) => sendUpvote(upvoteQuestion, qId),
+    onFlag: (qId) => sendFlag(flagQuestion, qId),
+    onDelete: (qId) => sendDelete(deleteQuestion, qId),
   };
-
-  const handleFlag = async (qId) => {
-    try {
-      await flagQuestion(qId);
-      toast.info("Question flagged for moderation.");
-    } catch (err) {
-      toast.error("Failed to flag question.");
-    }
-  };
-
-  const handleDelete = async (qId) => {
-    if (!window.confirm("Are you sure you want to delete this question?")) return;
-    try {
-      await deleteQuestion(qId);
-      toast.success("Question deleted successfully.");
-    } catch (err) {
-      toast.error("Failed to delete question.");
-    }
-  };
-
-  const visibleQuestions = questions.filter(
-    (q) => !q.flagged || isModerator
-  );
 
   return (
     <div className="w-full flex flex-col gap-6 p-6 rounded-2xl bg-slate-900/30 backdrop-blur-xl border border-slate-800 shadow-premium-lg">
@@ -206,29 +232,12 @@ export default function LiveQABoard({ eventId }) {
       />
 
       <div className="flex flex-col gap-3 max-h-[400px] overflow-y-auto pr-1">
-        {loading && visibleQuestions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-slate-500">
-            <Loader2 className="h-8 w-8 animate-spin text-primary mb-3" />
-            <p className="text-sm">Loading questions...</p>
-          </div>
-        ) : visibleQuestions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-slate-500 text-center border-2 border-dashed border-slate-800 rounded-xl">
-            <HelpCircle className="h-10 w-10 text-slate-600 mb-2" />
-            <p className="text-sm font-medium">No questions asked yet.</p>
-            <p className="text-xs text-slate-600 mt-1">Be the first to ask a question!</p>
-          </div>
-        ) : (
-          visibleQuestions.map((q) => (
-            <QuestionCard
-              key={q.id}
-              q={q}
-              isModerator={isModerator}
-              onUpvote={handleUpvote}
-              onFlag={handleFlag}
-              onDelete={handleDelete}
-            />
-          ))
-        )}
+        <QuestionList
+          loading={loading}
+          visibleQuestions={visibleQuestions}
+          isModerator={moderator}
+          handlers={handlers}
+        />
       </div>
     </div>
   );
