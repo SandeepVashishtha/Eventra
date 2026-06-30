@@ -48,8 +48,8 @@ export const generateCertificatePDF = ({ participantName, eventName, eventDate, 
 
   doc.setFontSize(12);
   doc.setTextColor(...t.text);
-  doc.text(`Event Type: ${eventType || "Event"}`, 148, 150, { align: "center", maxWidth: 240 });
-  doc.text(`Date: ${eventDate || ""}`, 148, 162, { align: "center", maxWidth: 240 });
+  doc.text(`Event Type: ${sanitizeText(eventType || "Event", 40)}`, 148, 150, { align: "center", maxWidth: 240 });
+  doc.text(`Date: ${sanitizeText(eventDate || "", 30)}`, 148, 162, { align: "center", maxWidth: 240 });
 
   if (organizerName) {
     doc.text(`Organized by: ${sanitizeText(organizerName, 40)}`, 148, 174, { align: "center", maxWidth: 240 });
