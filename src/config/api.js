@@ -85,6 +85,16 @@ export const API_ENDPOINTS = {
     // URL manually rather than going through eventFetchUtils.buildPaginatedUrl.
     PAGINATED: (page, size) => buildApiUrl(`/events?page=${page}&size=${size}`),
   },
+  LIVE_AUDIENCE: {
+    BASE: (eventId) => buildApiUrl(`/events/${eventId}/live-audience`),
+    QUESTIONS: (eventId) => buildApiUrl(`/events/${eventId}/live-audience/questions`),
+    UPVOTE: (eventId, questionId) => buildApiUrl(`/events/${eventId}/live-audience/questions/${questionId}/upvote`),
+    FLAG: (eventId, questionId) => buildApiUrl(`/events/${eventId}/live-audience/questions/${questionId}/flag`),
+    QUESTION_DETAIL: (eventId, questionId) => buildApiUrl(`/events/${eventId}/live-audience/questions/${questionId}`),
+    POLLS: (eventId) => buildApiUrl(`/events/${eventId}/live-audience/polls`),
+    POLL_STATUS: (eventId, pollId) => buildApiUrl(`/events/${eventId}/live-audience/polls/${pollId}/status`),
+    POLL_VOTE: (eventId, pollId) => buildApiUrl(`/events/${eventId}/live-audience/polls/${pollId}/vote`),
+  },
   PROJECTS: {
     ALL: buildApiUrl("/projects"),
     LIST: buildApiUrl("/projects"),

@@ -1,11 +1,11 @@
 import { pushToNotificationQueue, syncNotificationQueue } from "../utils/notificationQueue.js";
 import { useState, useCallback, useRef, useEffect } from "react";
-import { apiUtils, API_ENDPOINTS } from "../config/api";
-import { useAuth } from "../context/AuthContext";
-import usePageVisibility from "./usePageVisibility";
+import { apiUtils, API_ENDPOINTS } from "../config/api.js";
+import { useAuth } from "../context/AuthContext.js";
+import usePageVisibility from "./usePageVisibility.js";
 import seedNotifications from "../data/mockNotifications.json";
-import { safeJsonParse } from "../utils/safeJsonParse";
-import { getNotificationMessage } from "../utils/notificationPreferences";
+import { safeJsonParse } from "../utils/safeJsonParse.js";
+import { getNotificationMessage } from "../utils/notificationPreferences.js";
 import { get as idbGet, del as idbDel } from "idb-keyval";
 
 const POLLING_INTERVAL_MS = 60_000;

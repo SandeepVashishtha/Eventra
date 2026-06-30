@@ -12,7 +12,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "react-toastify";
-import { apiUtils, API_ENDPOINTS } from "../config/api";
+import { apiUtils, API_ENDPOINTS } from "../config/api.js";
 import { safeLocalStorage } from "../utils/safeStorage";
 
 const STORAGE_KEY = "eventra_waitlist_positions";
