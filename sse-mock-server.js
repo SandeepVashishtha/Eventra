@@ -144,6 +144,55 @@ const mockRegistrations = new Map([
   ["reg-3", { registrationId: "reg-3", eventId: "event-2", userId: "user-3", userName: "Karan Patel", attendanceStatus: "Checked In", checkedInAt: new Date().toISOString() }]
 ]);
 
+const liveAudienceStore = new Map([
+  [
+    "event-1",
+    {
+      questions: [
+        { id: "q-1", eventId: "event-1", text: "How do we deploy the SSE server in production?", upvotes: 12, flagged: false, createdAt: new Date(Date.now() - 600000).toISOString() },
+        { id: "q-2", eventId: "event-1", text: "Is there any rate limiting on the Q&A endpoints?", upvotes: 8, flagged: false, createdAt: new Date(Date.now() - 300000).toISOString() }
+      ],
+      activePoll: {
+        id: "poll-1",
+        question: "Which framework do you prefer for production?",
+        type: "single_choice",
+        options: ["React", "Vue", "Angular", "Svelte"],
+        results: { "React": 15, "Vue": 5, "Angular": 2, "Svelte": 4 },
+        status: "active"
+      }
+    }
+  ],
+  [
+    "event-2",
+    {
+      questions: [
+        { id: "q-3", eventId: "event-2", text: "What are the performance benefits of Lenis?", upvotes: 5, flagged: false, createdAt: new Date(Date.now() - 200000).toISOString() }
+      ],
+      activePoll: null
+    }
+  ]
+]);
+
+const liveAudienceClients = new Set();
+
+const getLiveAudienceData = (eventId) => {
+  if (!liveAudienceStore.has(eventId)) {
+    liveAudienceStore.set(eventId, { questions: [], activePoll: null });
+  }
+  return liveAudienceStore.get(eventId);
+};
+
+const broadcastLiveAudience = (eventId, actionType, payload) => {
+  const packet = JSON.stringify({ eventId, type: actionType, payload });
+  for (const client of liveAudienceClients) {
+    try {
+      client.write(`data: ${packet}\n\n`);
+    } catch {
+      liveAudienceClients.delete(client);
+    }
+  }
+};
+
 const mockScanLogs = [
   { logId: "log-initial-1", registrationId: "reg-3", eventId: "event-2", userId: "user-3", userName: "Karan Patel", scannedBy: "mock-dev-123", timestamp: new Date().toISOString(), status: "Checked In", eventName: "React Conference 2025" }
 ];
@@ -612,6 +661,164 @@ const server = http.createServer(async (req, res) => {
       log("[SSE] analytics client disconnected");
     });
     return;
+  }
+
+  // Live Audience SSE Stream
+  if (pathname === "/stream/live-audience" || pathname === "/api/stream/live-audience") {
+    sseHeaders(res);
+    log("[SSE] live-audience client connected");
+    liveAudienceClients.add(res);
+
+    req.on("close", () => {
+      liveAudienceClients.delete(res);
+      log("[SSE] live-audience client disconnected");
+    });
+    return;
+  }
+
+  // GET /api/events/:eventId/live-audience
+  const liveAudienceMatch = pathname.match(/^\/api\/events\/([^/]+)\/live-audience$/);
+  if (liveAudienceMatch && req.method === "GET") {
+    const eventId = decodeURIComponent(liveAudienceMatch[1]);
+    const data = getLiveAudienceData(eventId);
+    return jsonResponse(res, 200, data);
+  }
+
+  // POST /api/events/:eventId/live-audience/questions
+  const createQuestionMatch = pathname.match(/^\/api\/events\/([^/]+)\/live-audience\/questions$/);
+  if (createQuestionMatch && req.method === "POST") {
+    const eventId = decodeURIComponent(createQuestionMatch[1]);
+    const body = await getRequestBody(req, res);
+    if (!body.text) {
+      return jsonResponse(res, 400, { error: "Missing question text" });
+    }
+    const data = getLiveAudienceData(eventId);
+    const newQuestion = {
+      id: `q-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      eventId,
+      text: body.text,
+      upvotes: 0,
+      flagged: false,
+      createdAt: new Date().toISOString()
+    };
+    data.questions.push(newQuestion);
+    broadcastLiveAudience(eventId, "NEW_QUESTION", newQuestion);
+    return jsonResponse(res, 201, { success: true, question: newQuestion });
+  }
+
+  // POST /api/events/:eventId/live-audience/questions/:questionId/upvote
+  const upvoteQuestionMatch = pathname.match(/^\/api\/events\/([^/]+)\/live-audience\/questions\/([^/]+)\/upvote$/);
+  if (upvoteQuestionMatch && req.method === "POST") {
+    const eventId = decodeURIComponent(upvoteQuestionMatch[1]);
+    const questionId = decodeURIComponent(upvoteQuestionMatch[2]);
+    const data = getLiveAudienceData(eventId);
+    const question = data.questions.find(q => q.id === questionId);
+    if (!question) {
+      return jsonResponse(res, 404, { error: "Question not found" });
+    }
+    question.upvotes += 1;
+    broadcastLiveAudience(eventId, "UPDATE_QUESTION", question);
+    return jsonResponse(res, 200, { success: true, question });
+  }
+
+  // POST /api/events/:eventId/live-audience/questions/:questionId/flag
+  const flagQuestionMatch = pathname.match(/^\/api\/events\/([^/]+)\/live-audience\/questions\/([^/]+)\/flag$/);
+  if (flagQuestionMatch && req.method === "POST") {
+    const eventId = decodeURIComponent(flagQuestionMatch[1]);
+    const questionId = decodeURIComponent(flagQuestionMatch[2]);
+    const data = getLiveAudienceData(eventId);
+    const question = data.questions.find(q => q.id === questionId);
+    if (!question) {
+      return jsonResponse(res, 404, { error: "Question not found" });
+    }
+    question.flagged = true;
+    broadcastLiveAudience(eventId, "UPDATE_QUESTION", question);
+    return jsonResponse(res, 200, { success: true, question });
+  }
+
+  // DELETE /api/events/:eventId/live-audience/questions/:questionId
+  const deleteQuestionMatch = pathname.match(/^\/api\/events\/([^/]+)\/live-audience\/questions\/([^/]+)$/);
+  if (deleteQuestionMatch && req.method === "DELETE") {
+    const eventId = decodeURIComponent(deleteQuestionMatch[1]);
+    const questionId = decodeURIComponent(deleteQuestionMatch[2]);
+    const data = getLiveAudienceData(eventId);
+    const initialLength = data.questions.length;
+    data.questions = data.questions.filter(q => q.id !== questionId);
+    if (data.questions.length === initialLength) {
+      return jsonResponse(res, 404, { error: "Question not found" });
+    }
+    broadcastLiveAudience(eventId, "DELETE_QUESTION", questionId);
+    return jsonResponse(res, 200, { success: true });
+  }
+
+  // POST /api/events/:eventId/live-audience/polls
+  const createPollMatch = pathname.match(/^\/api\/events\/([^/]+)\/live-audience\/polls$/);
+  if (createPollMatch && req.method === "POST") {
+    const eventId = decodeURIComponent(createPollMatch[1]);
+    const body = await getRequestBody(req, res);
+    if (!body.question || !body.type || !body.options) {
+      return jsonResponse(res, 400, { error: "Missing required poll fields" });
+    }
+    const data = getLiveAudienceData(eventId);
+    const initialResults = {};
+    for (const option of body.options) {
+      initialResults[option] = 0;
+    }
+    const newPoll = {
+      id: `poll-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      question: body.question,
+      type: body.type,
+      options: body.options,
+      results: initialResults,
+      status: "active"
+    };
+    data.activePoll = newPoll;
+    broadcastLiveAudience(eventId, "SET_POLL", newPoll);
+    return jsonResponse(res, 201, { success: true, poll: newPoll });
+  }
+
+  // POST /api/events/:eventId/live-audience/polls/:pollId/status
+  const pollStatusMatch = pathname.match(/^\/api\/events\/([^/]+)\/live-audience\/polls\/([^/]+)\/status$/);
+  if (pollStatusMatch && req.method === "POST") {
+    const eventId = decodeURIComponent(pollStatusMatch[1]);
+    const pollId = decodeURIComponent(pollStatusMatch[2]);
+    const body = await getRequestBody(req, res);
+    if (!body.status) {
+      return jsonResponse(res, 400, { error: "Missing status" });
+    }
+    const data = getLiveAudienceData(eventId);
+    const poll = data.activePoll;
+    if (!poll || poll.id !== pollId) {
+      return jsonResponse(res, 404, { error: "Poll not found" });
+    }
+    poll.status = body.status;
+    broadcastLiveAudience(eventId, "UPDATE_POLL", poll);
+    return jsonResponse(res, 200, { success: true, poll });
+  }
+
+  // POST /api/events/:eventId/live-audience/polls/:pollId/vote
+  const pollVoteMatch = pathname.match(/^\/api\/events\/([^/]+)\/live-audience\/polls\/([^/]+)\/vote$/);
+  if (pollVoteMatch && req.method === "POST") {
+    const eventId = decodeURIComponent(pollVoteMatch[1]);
+    const pollId = decodeURIComponent(pollVoteMatch[2]);
+    const body = await getRequestBody(req, res);
+    if (!body.option) {
+      return jsonResponse(res, 400, { error: "Missing selected option" });
+    }
+    const data = getLiveAudienceData(eventId);
+    const poll = data.activePoll;
+    if (!poll || poll.id !== pollId) {
+      return jsonResponse(res, 404, { error: "Poll not found" });
+    }
+    if (poll.status !== "active") {
+      return jsonResponse(res, 400, { error: "Poll is not active" });
+    }
+    if (poll.results[body.option] === undefined) {
+      poll.results[body.option] = 0;
+    }
+    poll.results[body.option] += 1;
+    broadcastLiveAudience(eventId, "UPDATE_POLL", poll);
+    return jsonResponse(res, 200, { success: true, poll });
   }
 
   // Fallback 404 with safety CORS headers included to protect browser channel
