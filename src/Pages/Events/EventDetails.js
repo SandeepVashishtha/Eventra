@@ -228,7 +228,7 @@ const EventDetails = () => {
 
   const handleCopy = async () => {
     const link = `
-🎉 Check out this event!
+Check out this event!
 
 Event: ${event.title}
 Date: ${new Date(event.date).toLocaleDateString()}
@@ -356,7 +356,7 @@ const showClosingSoon =
 
   {showClosingSoon && (
     <span className="inline-flex items-center rounded-full bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
-      ⚠ Registration closes {hoursLeft <= 24 ? "today" : `in ${hoursLeft} hours`}
+      Registration closes {hoursLeft <= 24 ? "today" : `in ${hoursLeft} hours`}
     </span>
   )}
 
@@ -402,7 +402,7 @@ const showClosingSoon =
                 className="print-hide inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
                 aria-label="Print or save as PDF"
               >
-                {isPrinting ? "Preparing..." : "≡ƒû¿∩╕Å Print / Save as PDF"}
+                {isPrinting ? "Preparing..." : "Print / Save as PDF"}
               </button>
 
               {isOrganizer && (
@@ -420,7 +420,7 @@ const showClosingSoon =
                       className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800 cursor-pointer"
                       aria-label="Export registrant data"
                     >
-                      ≡ƒôÑ Export Registrants
+                      Export Registrants
                     </button>
                     {showExportDropdown && (
                       <>
