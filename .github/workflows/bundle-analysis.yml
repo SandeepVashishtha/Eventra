@@ -1,0 +1,146 @@
+name: Bundle Analysis
+
+on:
+  pull_request:
+    branches: [master, main]
+  push:
+    branches: [master, main]
+
+concurrency:
+  group: bundle-analysis-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+env:
+  NODE_VERSION: "22"
+
+jobs:
+  analyze:
+    name: Analyze Bundle Size
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          NODE_ENV: development
+
+      - name: Build production bundle
+        run: npm run build
+        env:
+          NODE_ENV: production
+          CI: true
+          VITE_API_URL: /api
+
+      - name: Analyze bundle size
+        id: analyze
+        run: node .github/scripts/bundle-size.js
+        continue-on-error: true
+
+      - name: Upload bundle report as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-size-report
+          path: build/bundle-size-report.json
+          retention-days: 30
+
+      - name: Extract report for PR comment
+        id: extract
+        run: |
+          echo "report<<DELIM" >> $GITHUB_OUTPUT
+          cat build/bundle-size-report.json >> $GITHUB_OUTPUT
+          echo "DELIM" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Find previous bundle size (base branch)
+        id: base-report
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { data: checks } = await github.rest.checks.listForRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: context.payload.pull_request.base.sha,
+              check_name: 'Bundle Analysis / Analyze Bundle Size',
+            });
+            const artifactCheck = checks.check_runs.find(
+              (c) => c.conclusion === 'success'
+            );
+            if (!artifactCheck) {
+              console.log('No previous bundle analysis found for base branch');
+              return { found: false };
+            }
+            return { found: true, checkId: artifactCheck.id };
+          registerResult: true
+
+      - name: Comment PR with bundle diff
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const current = ${{ steps.extract.outputs.report }};
+            const totalSize = current.totalSizeFormatted;
+            const jsSize = (current.jsSize / 1024).toFixed(1) + ' KB';
+            const cssSize = (current.cssSize / 1024).toFixed(1) + ' KB';
+            const chunkCount = current.chunkCount;
+            const largest = current.largestChunk
+              ? current.largestChunk.name + ' (' + current.largestChunk.sizeFormatted + ')'
+              : 'N/A';
+
+            const body = [
+              '## Bundle Size Analysis',
+              '',
+              '| Metric | Value |',
+              '|--------|-------|',
+              '| **Total size** | ' + totalSize + ' |',
+              '| **JavaScript** | ' + jsSize + ' |',
+              '| **CSS** | ' + cssSize + ' |',
+              '| **Chunks** | ' + chunkCount + ' |',
+              '| **Largest chunk** | ' + largest + ' |',
+              '',
+              '> Report generated from commit ' + context.sha.slice(0, 7),
+            ].join('\n');
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(
+              (c) =>
+                c.user.type === 'Bot' &&
+                c.body.startsWith('## Bundle Size Analysis')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
