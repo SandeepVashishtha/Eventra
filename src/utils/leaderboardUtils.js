@@ -128,8 +128,8 @@ export function computeLeaderboardStats(contributors) {
 
   return {
     totalContributors: contributors.length,
-    flooredTotalPRs: Math.floor(totalPRs),
-    flooredTotalPoints: Math.floor(totalPoints),
+    totalPRs,
+    totalPoints,
   };
 }
 

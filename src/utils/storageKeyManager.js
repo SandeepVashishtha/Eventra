@@ -35,7 +35,7 @@ export const getOpaqueKey = (namespace, userId) => {
   }
 
   const isTest = typeof process !== "undefined" &&
-    (process.env.NODE_ENV === "test" || process.env.JWT_SECRET === "test_secret") &&
+    (process.env.NODE_ENV === "test" || process.env.VITE_TEST_MODE === "true") &&
     process.env.TEST_OPACITY !== "true";
 
   if (isTest) {
@@ -57,7 +57,7 @@ export const getOpaqueKey = (namespace, userId) => {
  */
 export const getOrMigrateKey = (namespace, userId, legacyKey) => {
   const newKey = getOpaqueKey(namespace, userId);
-  if (typeof window !== "undefined" && legacyKey && legacyKey !== newKey) {
+  if (typeof window !== "undefined" && window.localStorage && legacyKey && legacyKey !== newKey) {
     try {
       const oldData = localStorage.getItem(legacyKey);
       if (oldData !== null && localStorage.getItem(newKey) === null) {

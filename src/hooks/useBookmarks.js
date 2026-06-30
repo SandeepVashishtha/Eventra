@@ -5,6 +5,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { safeJsonParse } from "../utils/safeJsonParse";
 import { getOrMigrateKey } from "../utils/storageKeyManager";
+import { getServerNow } from "../utils/timeSync.js";
 
 // Simple synchronous hash to avoid exposing raw userId (email) in localStorage keys.
 const hashUserId = (userId) => {
@@ -32,10 +33,14 @@ const cache = new Map(); // Map<storageKey, BookmarkEntry[]>
 
 const readStorage = (key) => {
   try {
-    const stored = localStorage.getItem(key);
-    if (!stored) return [];
-    const parsed = safeJsonParse(stored, []);
-    return Array.isArray(parsed) ? parsed : [];
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(key);
+      if (!stored) return [];
+      const parsed = safeJsonParse(stored, []);
+      return Array.isArray(parsed) ? parsed : [];
+    } else {
+      return [];
+    }
   } catch {
     return [];
   }
@@ -43,7 +48,9 @@ const readStorage = (key) => {
 
 const writeStorage = (key, value) => {
   try {
-    localStorage.setItem(key, JSON.stringify(value));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(key, JSON.stringify(value));
+    }
   } catch {
     // localStorage quota exceeded — in-memory state remains correct
   }
@@ -64,7 +71,7 @@ const toBookmarkEntry = (event) => ({
   type: event?.type ?? event?.category ?? "",
   image: event?.image ?? event?.imageUrl ?? "",
   status: event?.status ?? "",
-  savedAt: Date.now(),
+  savedAt: getServerNow(),
 });
 
 /**
@@ -174,6 +181,7 @@ const useBookmarks = (userId = "guest") => {
    * Removes all bookmarks for the current user from both state and localStorage.
    */
   const clearBookmarks = useCallback(() => {
+    if (typeof window === "undefined") return;
     setBookmarks([]);
     cache.set(storageKeyRef.current, []);
     try {

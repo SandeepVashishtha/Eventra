@@ -20,6 +20,7 @@
     "signUp": "Sign Up",
     "signOut": "Sign Out",
     "profile": "Profile",
+    "account": "Account",
     "settings": "Settings",
     "projects": "Projects",
     "networking": "Networking",
@@ -92,7 +93,12 @@
     "feedbackTypeRequired": "Please select a feedback type",
     "feedbackMessageRequired": "Message is required",
     "feedbackMessageMinLength": "Message must be at least 20 characters",
-    "feedbackRatingRequired": "Please provide a rating"
+    "feedbackRatingRequired": "Please provide a rating",
+    "featureTitleRequired": "Feature title is required",
+    "featureTitleMinLength": "Feature title must be at least 5 characters",
+    "featureProblemRequired": "Please describe the problem this feature would solve",
+    "featureProblemMinLength": "Problem description must be at least 20 characters",
+    "featurePriorityRequired": "Please select a priority level"
   },
   "error": {
     "generic": "An unexpected error occurred. Please try again.",
@@ -785,5 +791,99 @@
     "toastValidationError": "Please fill in all required fields correctly",
     "toastSuccess": "Thank you for your feedback! We appreciate your input.",
     "toastError": "There was an error submitting your feedback. Please try again."
+  },
+  "about": {
+    "pageTitle": "About Us",
+    "pageDescription": "Learn about Eventra — the open-source event management platform for communities, colleges, and organizations worldwide.",
+    "documentTitle": "Eventra | About",
+    "errorBoundaryLabel": "Statistics",
+    "hero": {
+      "tagline": "Open Source • Community Driven • Free Forever",
+      "title": "Building Better Events",
+      "subtitle": "Together",
+      "description": "Eventra empowers communities, colleges, organizations, and open-source teams to create, manage, and grow impactful events through accessible, modern, and collaborative event management tools."
+    },
+    "stats": {
+      "events": "Events Hosted",
+      "builders": "Community Members",
+      "partners": "Community Reach"
+    },
+    "values": {
+      "heading": "What Drives Eventra",
+      "description": "Our values guide every decision we make, ensuring Eventra remains accessible, community-focused, and built for long-term impact.",
+      "eventManagement": {
+        "title": "Open Source",
+        "description": "Built transparently and freely available for communities worldwide."
+      },
+      "hackathonGrowth": {
+        "title": "Community First",
+        "description": "Designed around collaboration, inclusion, and meaningful connections."
+      },
+      "projectCollaboration": {
+        "title": "Innovation",
+        "description": "Continuously evolving through community feedback and modern technology."
+      },
+      "networking": {
+        "title": "Accessibility",
+        "description": "Simple, intuitive, and accessible for organizers of every skill level."
+      }
+    },
+    "cta": {
+      "badge": "Join the Eventra Community",
+      "heading": "Build, Collaborate & Grow",
+      "subtitle": "Together with Eventra",
+      "description": "Eventra empowers students, developers, organizers, and communities to discover opportunities, collaborate on meaningful projects, and create impact through technology-driven events.",
+      "socialProof": {
+        "community": "Growing Community",
+        "openSource": "Open Source Driven",
+        "learning": "Learning & Collaboration"
+      },
+      "getStartedFree": "Get Started Free",
+      "documentation": "Documentation",
+      "contactUs": "Contact Us"
+    },
+    "features": {
+      "heading": "Features That Power Every Event",
+      "description": "Eventra provides everything needed to create, manage, scale, and grow successful events while fostering stronger communities.",
+      "ctaAriaLabel": "{{cta}} - {{title}}",
+      "items": {
+        "events": {
+          "stat": "90% faster setup",
+          "title": "Smart Event Creation",
+          "description": "Launch events quickly using intelligent templates, streamlined workflows, and automated event management tools.",
+          "cta": "Start Creating"
+        },
+        "hackathons": {
+          "stat": "3 sec check-in",
+          "title": "Instant QR Check-ins",
+          "description": "Provide attendees with seamless check-ins using secure QR codes and real-time attendance tracking.",
+          "cta": "See Demo"
+        },
+        "projects": {
+          "stat": "15+ metrics",
+          "title": "Live Analytics",
+          "description": "Monitor registrations, engagement, participation trends, and event performance through live dashboards.",
+          "cta": "View Dashboard"
+        },
+        "connections": {
+          "stat": "Unlimited teams",
+          "title": "Community Collaboration",
+          "description": "Work together with organizers, contributors, and participants through collaborative event workflows.",
+          "cta": "Add Team"
+        },
+        "manage": {
+          "stat": "Enterprise-grade",
+          "title": "Secure by Design",
+          "description": "Advanced security controls, privacy-first architecture, and trusted authentication systems.",
+          "cta": "Learn More"
+        },
+        "benefits": {
+          "stat": "Worldwide",
+          "title": "Global Accessibility",
+          "description": "Designed for communities, educational institutions, and organizations across the globe.",
+          "cta": "Go Global"
+        }
+      }
+    }
   }
 }

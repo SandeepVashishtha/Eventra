@@ -181,6 +181,9 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
               aria-describedby="description-counter"
               placeholder="Describe your project, its features, and purpose"
             />
+            <p className="text-xs text-gray-500 mt-1 text-right">
+  {description.length}/500 characters
+</p>
             <div className="flex justify-end mt-1">
               <CharacterCounter id="description-counter" value={formData.description} maxLength={1000} />
             </div>

@@ -19,8 +19,7 @@ import { logger } from "../../utils/logger";
 
 // Initial constants removed to support real-time sync database values
 
-const TEAM_MEMBERS = [
-  { name: "Sricharan (You)", role: "Frontend Developer", status: "online" },
+const MY_SENDER_ID = "Sricharan (You)";
   { name: "Alex Rivera", role: "Backend Developer", status: "online" },
   { name: "Sophia Chen", role: "UI/UX Designer", status: "online" },
   { name: "Marcus Dupont", role: "Product Manager", status: "away" },
@@ -305,7 +304,7 @@ const TeamWorkspace = () => {
       const response = await fetch("/api/hackathons/team/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: messageText, sender: "Sricharan (You)" }),
+        body: JSON.stringify({ text: messageText, sender: MY_SENDER_ID }),
       });
       if (response.ok) {
         const data = await response.json();
@@ -640,7 +639,7 @@ const TeamWorkspace = () => {
             {/* Chat History Panel */}
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
               {chatHistory.map((msg, i) => {
-                const isMe = msg.sender.includes("You");
+                const isMe = msg.sender === MY_SENDER_ID;
                 return (
                   <div
                     key={i}
