@@ -301,11 +301,51 @@ async function doStatusChange(updatePollStatus, activePoll, newStatus) {
   }
 }
 
+// ─── Extracted helpers to keep LivePollController complexity ≤ 10 ─────────────
+function getPollStatusClass(status) {
+  if (status === "active") return "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+  if (status === "paused") return "bg-amber-500/10 text-amber-400 border border-amber-500/20";
+  return "bg-rose-500/10 text-rose-400 border border-rose-500/20";
+}
+
+function computeTotalVotes(activePoll) {
+  return activePoll ? Object.values(activePoll.results || {}).reduce((a, b) => a + b, 0) : 0;
+}
+
+function addPollOption(options, setOptions) {
+  if (options.length >= 6) { toast.warn("Maximum of 6 options allowed."); return; }
+  setOptions([...options, ""]);
+}
+
+function removePollOption(options, setOptions, i) {
+  if (options.length <= 2) { toast.warn("Minimum of 2 options required."); return; }
+  setOptions(options.filter((_, j) => j !== i));
+}
+
+function syncActivePoll(activePoll, eventId, setHasVoted, setSelectedOption) {
+  if (activePoll) {
+    setHasVoted(getVotedPolls(eventId).includes(activePoll.id));
+    setSelectedOption("");
+  } else {
+    setHasVoted(false);
+  }
+}
+
+function buildHandlers(createPoll, updatePollStatus, submitVote, activePoll, eventId, pollState, setSubmitting, setVotingLoading, setHasVoted, options, setOptions) {
+  return {
+    launch: (e) => { e.preventDefault(); doLaunchPoll(createPoll, { ...pollState, setSubmitting }); },
+    addOption: () => addPollOption(options, setOptions),
+    removeOption: (i) => removePollOption(options, setOptions, i),
+    optionChange: (i, v) => { const u = [...options]; u[i] = v; setOptions(u); },
+    statusChange: (s) => doStatusChange(updatePollStatus, activePoll, s),
+    voteSubmit: (e) => { e.preventDefault(); doVoteSubmit(submitVote, activePoll, eventId, pollState.selectedOption, setVotingLoading, setHasVoted); },
+  };
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function LivePollController({ eventId }) {
   const { user } = useAuth();
   const { activePoll, submitVote, createPoll, updatePollStatus } = useLiveAudience(eventId);
-
   const moderator = isMod(user);
 
   const [newQuestion, setNewQuestion] = useState("");
@@ -316,33 +356,15 @@ export default function LivePollController({ eventId }) {
   const [votingLoading, setVotingLoading] = useState(false);
 
   useEffect(() => {
-    if (activePoll) {
-      setHasVoted(getVotedPolls(eventId).includes(activePoll.id));
-      setSelectedOption("");
-    } else {
-      setHasVoted(false);
-    }
+    syncActivePoll(activePoll, eventId, setHasVoted, setSelectedOption);
   }, [activePoll, eventId]);
 
-  const totalVotes = activePoll
-    ? Object.values(activePoll.results || {}).reduce((a, b) => a + b, 0)
-    : 0;
-
-  const pollState = { newQuestion, setNewQuestion, options, setOptions, submitting };
-
-  const handlers = {
-    launch: (e) => { e.preventDefault(); doLaunchPoll(createPoll, { ...pollState, setSubmitting }); },
-    addOption: () => options.length < 6 ? setOptions([...options, ""]) : toast.warn("Maximum of 6 options allowed."),
-    removeOption: (i) => options.length > 2 ? setOptions(options.filter((_, j) => j !== i)) : toast.warn("Minimum of 2 options required."),
-    optionChange: (i, v) => { const u = [...options]; u[i] = v; setOptions(u); },
-    statusChange: (s) => doStatusChange(updatePollStatus, activePoll, s),
-  };
-
-  const statusBadgeClass = activePoll?.status === "active"
-    ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-    : activePoll?.status === "paused"
-    ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-    : "bg-rose-500/10 text-rose-400 border border-rose-500/20";
+  const totalVotes = computeTotalVotes(activePoll);
+  const pollState = { newQuestion, setNewQuestion, options, setOptions, submitting, selectedOption };
+  const handlers = buildHandlers(
+    createPoll, updatePollStatus, submitVote, activePoll, eventId,
+    pollState, setSubmitting, setVotingLoading, setHasVoted, options, setOptions
+  );
 
   return (
     <div className="w-full flex flex-col gap-6 p-6 rounded-2xl bg-slate-900/30 backdrop-blur-xl border border-slate-800 shadow-premium-lg">
@@ -354,7 +376,7 @@ export default function LivePollController({ eventId }) {
           </h2>
         </div>
         {moderator && activePoll && (
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider ${statusBadgeClass}`}>
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider ${getPollStatusClass(activePoll.status)}`}>
             {activePoll.status}
           </span>
         )}
@@ -373,7 +395,7 @@ export default function LivePollController({ eventId }) {
           hasVoted={hasVoted}
           selectedOption={selectedOption}
           setSelectedOption={setSelectedOption}
-          handleVoteSubmit={(e) => { e.preventDefault(); doVoteSubmit(submitVote, activePoll, eventId, selectedOption, setVotingLoading, setHasVoted); }}
+          handleVoteSubmit={handlers.voteSubmit}
           votingLoading={votingLoading}
           totalVotes={totalVotes}
         />
