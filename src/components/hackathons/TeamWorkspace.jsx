@@ -20,6 +20,7 @@ import { logger } from "../../utils/logger";
 // Initial constants removed to support real-time sync database values
 
 const MY_SENDER_ID = "Sricharan (You)";
+const TEAM_MEMBERS = [
   { name: "Alex Rivera", role: "Backend Developer", status: "online" },
   { name: "Sophia Chen", role: "UI/UX Designer", status: "online" },
   { name: "Marcus Dupont", role: "Product Manager", status: "away" },
