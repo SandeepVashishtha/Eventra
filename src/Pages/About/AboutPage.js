@@ -2,13 +2,16 @@ import ModernAbout from "./ModernAbout";
 import Features from "./Features";
 import AboutCTA from "./AboutCTA";
 import SEOHead from "../../components/SEOHead";
+import { useTranslation } from "react-i18next";
 
 const AboutPage = () => {
+  const { t } = useTranslation();
+
   return (
     <>
       <SEOHead
-        title="About Us"
-        description="Learn how Eventra helps people discover events, manage hackathons, build projects, grow networks, and participate in community-driven programs."
+        title={t("about.pageTitle")}
+        description={t("about.pageDescription")}
         url={window.location.href}
       />
 

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import Lenis from "lenis";
+import Lenis from "@studio-freight/lenis";
 
 /**
  * Custom React hook to initialize, configure, and manage a Lenis smooth scrolling instance.
