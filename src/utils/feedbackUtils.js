@@ -289,7 +289,7 @@ export const exportFeedbackAsCSV = (eventId) => {
       `"${(f.comment || '').replace(/"/g, '""')}"`,
       (f.tags || []).join(';'),
       f.recommend !== undefined ? (f.recommend ? 'Yes' : 'No') : '',
-      new Date(f.submittedAt).toLocaleString(),
+      f.submittedAt ? new Date(f.submittedAt).toLocaleString() : '',
     ]);
 
     const csv = [headers, ...rows].map((row) => row.join(',')).join('\n');
