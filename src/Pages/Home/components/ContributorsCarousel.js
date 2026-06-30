@@ -501,7 +501,7 @@ const Contributors = () => {
               <FaExternalLinkAlt className="text-sm" />
             </Link>
             <Link
-              to="/ContributorGuide"
+              to="/contributorguide"
               className="inline-flex items-center justify-center gap-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-8 py-3 w-full sm:w-auto rounded-full font-semibold shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-105 transition-all duration-300 ease-out"
             >
               <span>Guide</span>
