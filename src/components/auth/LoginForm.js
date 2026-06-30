@@ -19,11 +19,25 @@ export default function LoginForm() {
     if (!value.trim()) {
       return "Username or Email is required.";
     }
-    // Allow letters, numbers, @, ., _, - only
-    const validChars = /^[a-zA-Z0-9@._-]+$/;
-    if (!validChars.test(value)) {
-      return "Only letters, numbers, @, ., _, - are allowed.";
+
+    // Check if the input is intended to be an email (contains '@')
+    if (value.includes('@')) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(value)) {
+        return "Please enter a valid email address.";
+      }
+    } else {
+      // It is intended to be a username, so validate length
+      if (value.trim().length < 3) {
+        return "Username must be at least 3 characters long.";
+      }
+      // Check for valid characters for usernames (removed @ since that makes it an email)
+      const validChars = /^[a-zA-Z0-9._-]+$/;
+      if (!validChars.test(value)) {
+        return "Only letters, numbers, ., _, - are allowed in usernames.";
+      }
     }
+
     return "";
   };
 
