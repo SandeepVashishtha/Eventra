@@ -14,6 +14,9 @@ const getStorageKey = () => {
   if (typeof process !== "undefined" && (process.env.NODE_ENV === "test" || process.env.VITE_TEST_MODE === "true")) {
     return "eventra_notification_inbox";
   }
+  if (typeof window === "undefined" || !window.localStorage) {
+    return 'eventra_notification_inbox_guest';
+  }
   try {
     const userStr = window.localStorage.getItem('user');
     if (userStr) {
@@ -31,10 +34,12 @@ const normalize = (n = {}) => ({
 });
 
 const persist = (items) => {
+  if (typeof window === "undefined" || !window.localStorage) return;
   try { window.localStorage.setItem(getStorageKey(), JSON.stringify(items)); } catch {}
 };
 
 const loadPersisted = () => {
+  if (typeof window === "undefined" || !window.localStorage) return null;
   try {
     const raw = window.localStorage.getItem(getStorageKey());
     if (!raw) return null;
@@ -226,6 +231,7 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
 
   // Same-tab sync listener
   useEffect(() => {
+    if (typeof window === "undefined") return;
     const handleUpdate = () => {
       const persisted = loadPersisted();
       if (persisted) {
