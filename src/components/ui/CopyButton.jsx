@@ -2,12 +2,33 @@ import { useState } from 'react';
 
 const CopyButton = ({ textToCopy }) => {
   const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
 
   const handleCopy = async () => {
     try {
-      // Uses native browser clipboard API
-      await navigator.clipboard.writeText(textToCopy);
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(textToCopy);
+      } else if (typeof document !== 'undefined') {
+        const textArea = document.createElement('textarea');
+        textArea.value = textToCopy;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '0';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        const copiedWithFallback = document.execCommand('copy');
+        document.body.removeChild(textArea);
+
+        if (!copiedWithFallback) {
+          throw new Error('Fallback copy command failed.');
+        }
+      } else {
+        throw new Error('Clipboard is unavailable.');
+      }
+
       setCopied(true);
+      setCopyFailed(false);
       
       // Reset the tooltip/state after 2 seconds
       setTimeout(() => {
@@ -15,6 +36,11 @@ const CopyButton = ({ textToCopy }) => {
       }, 2000);
     } catch (err) {
       console.error('Failed to copy text: ', err);
+      setCopied(false);
+      setCopyFailed(true);
+      setTimeout(() => {
+        setCopyFailed(false);
+      }, 2000);
     }
   };
 
@@ -47,6 +73,11 @@ const CopyButton = ({ textToCopy }) => {
       {copied && (
         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-black bg-opacity-80 rounded shadow-md pointer-events-none transition-opacity duration-200 animate-fade-in">
           Copied!
+        </div>
+      )}
+      {copyFailed && (
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-red-700 rounded shadow-md pointer-events-none transition-opacity duration-200 animate-fade-in">
+          Copy failed
         </div>
       )}
     </div>
