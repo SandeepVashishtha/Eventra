@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import ReactDOM from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -17,6 +17,10 @@ const AiProfileGeneratorModal = ({ isOpen, onClose, onApplyProfile }) => {
   const [error, setError] = useState("");
   const [parsedData, setParsedData] = useState(null);
   const fileInputRef = useRef(null);
+  const resumeCleanupRef = useRef(null);
+
+  // Clean up any pending resume parse on unmount
+  useEffect(() => () => { if (resumeCleanupRef.current) resumeCleanupRef.current(); }, []);
 
   if (!isOpen) return null;
 
@@ -54,7 +58,12 @@ const AiProfileGeneratorModal = ({ isOpen, onClose, onApplyProfile }) => {
         data = await parseGithubProfile(githubUrl);
       } else {
         if (!resumeFile) throw new Error("Please upload a resume PDF.");
-        data = await parseResumePDF(resumeFile);
+        const { promise, cleanup } = parseResumePDF(resumeFile);
+        // Cancel any pending parse from a previous attempt before starting a new one
+        if (resumeCleanupRef.current) resumeCleanupRef.current();
+        resumeCleanupRef.current = cleanup;
+        data = await promise;
+        resumeCleanupRef.current = null;
       }
       
       setParsedData(data);
