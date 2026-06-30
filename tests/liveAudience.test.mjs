@@ -63,27 +63,26 @@ describe("Q&A Sorting Logic", () => {
     });
   };
 
+  const verifySorting = (list, expectedIds) => {
+    const sorted = sortQuestions(list);
+    expectedIds.forEach((id, index) => {
+      assert.strictEqual(sorted[index].id, id);
+    });
+  };
+
   it("sorts questions by upvotes in descending order", () => {
-    const list = [
+    verifySorting([
       { id: "q-1", upvotes: 2, createdAt: "2026-06-30T10:00:00Z" },
       { id: "q-2", upvotes: 10, createdAt: "2026-06-30T10:05:00Z" },
       { id: "q-3", upvotes: 5, createdAt: "2026-06-30T10:10:00Z" }
-    ];
-    const sorted = sortQuestions(list);
-    assert.strictEqual(sorted[0].id, "q-2");
-    assert.strictEqual(sorted[1].id, "q-3");
-    assert.strictEqual(sorted[2].id, "q-1");
+    ], ["q-2", "q-3", "q-1"]);
   });
 
   it("sorts questions by creation time (newest first) when upvotes are equal", () => {
-    const list = [
+    verifySorting([
       { id: "q-1", upvotes: 5, createdAt: "2026-06-30T10:00:00Z" },
       { id: "q-2", upvotes: 5, createdAt: "2026-06-30T10:10:00Z" },
       { id: "q-3", upvotes: 5, createdAt: "2026-06-30T10:05:00Z" }
-    ];
-    const sorted = sortQuestions(list);
-    assert.strictEqual(sorted[0].id, "q-2"); // 10:10:00
-    assert.strictEqual(sorted[1].id, "q-3"); // 10:05:00
-    assert.strictEqual(sorted[2].id, "q-1"); // 10:00:00
+    ], ["q-2", "q-3", "q-1"]);
   });
 });
