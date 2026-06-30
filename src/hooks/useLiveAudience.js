@@ -2,98 +2,83 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { useLiveAudienceStream } from "../context/RealTimeContext.js";
 import { apiUtils, API_ENDPOINTS } from "../config/api.js";
 
+// Shared error-handling wrapper — eliminates repeated try/catch branches
+async function apiCall(label, fn) {
+  try {
+    return await fn();
+  } catch (err) {
+    console.error(label, err);
+    throw err;
+  }
+}
+
 // Standalone REST request actions
 export async function submitQuestion(eventId, text) {
   if (!text || !text.trim()) return;
-  try {
-    await apiUtils.post(API_ENDPOINTS.LIVE_AUDIENCE.QUESTIONS(eventId), { text });
-  } catch (err) {
-    console.error("Failed to submit question:", err);
-    throw err;
-  }
+  return apiCall("Failed to submit question:", () =>
+    apiUtils.post(API_ENDPOINTS.LIVE_AUDIENCE.QUESTIONS(eventId), { text })
+  );
 }
 
 export async function upvoteQuestion(eventId, questionId) {
-  try {
-    await apiUtils.post(API_ENDPOINTS.LIVE_AUDIENCE.UPVOTE(eventId, questionId));
-  } catch (err) {
-    console.error("Failed to upvote question:", err);
-    throw err;
-  }
+  return apiCall("Failed to upvote question:", () =>
+    apiUtils.post(API_ENDPOINTS.LIVE_AUDIENCE.UPVOTE(eventId, questionId))
+  );
 }
 
 export async function deleteQuestion(eventId, questionId) {
-  try {
-    await apiUtils.delete(API_ENDPOINTS.LIVE_AUDIENCE.QUESTION_DETAIL(eventId, questionId));
-  } catch (err) {
-    console.error("Failed to delete question:", err);
-    throw err;
-  }
+  return apiCall("Failed to delete question:", () =>
+    apiUtils.delete(API_ENDPOINTS.LIVE_AUDIENCE.QUESTION_DETAIL(eventId, questionId))
+  );
 }
 
 export async function flagQuestion(eventId, questionId) {
-  try {
-    await apiUtils.post(API_ENDPOINTS.LIVE_AUDIENCE.FLAG(eventId, questionId));
-  } catch (err) {
-    console.error("Failed to flag question:", err);
-    throw err;
-  }
+  return apiCall("Failed to flag question:", () =>
+    apiUtils.post(API_ENDPOINTS.LIVE_AUDIENCE.FLAG(eventId, questionId))
+  );
 }
 
 export async function createPoll(eventId, question, type, options) {
-  try {
-    await apiUtils.post(API_ENDPOINTS.LIVE_AUDIENCE.POLLS(eventId), { question, type, options });
-  } catch (err) {
-    console.error("Failed to create poll:", err);
-    throw err;
-  }
+  return apiCall("Failed to create poll:", () =>
+    apiUtils.post(API_ENDPOINTS.LIVE_AUDIENCE.POLLS(eventId), { question, type, options })
+  );
 }
 
 export async function updatePollStatus(eventId, pollId, status) {
-  try {
-    await apiUtils.post(API_ENDPOINTS.LIVE_AUDIENCE.POLL_STATUS(eventId, pollId), { status });
-  } catch (err) {
-    console.error("Failed to update poll status:", err);
-    throw err;
-  }
+  return apiCall("Failed to update poll status:", () =>
+    apiUtils.post(API_ENDPOINTS.LIVE_AUDIENCE.POLL_STATUS(eventId, pollId), { status })
+  );
 }
 
 export async function submitVote(eventId, pollId, option) {
-  try {
-    await apiUtils.post(API_ENDPOINTS.LIVE_AUDIENCE.POLL_VOTE(eventId, pollId), { option });
-  } catch (err) {
-    console.error("Failed to submit vote:", err);
-    throw err;
-  }
+  return apiCall("Failed to submit vote:", () =>
+    apiUtils.post(API_ENDPOINTS.LIVE_AUDIENCE.POLL_VOTE(eventId, pollId), { option })
+  );
+}
+
+async function applyInitialData(eventId, loadInitialData, setError, getIsMounted) {
+  const res = await apiUtils.get(API_ENDPOINTS.LIVE_AUDIENCE.BASE(eventId));
+  if (!res.ok) throw new Error("Failed to load initial live audience data");
+  const data = await res.json();
+  if (getIsMounted()) loadInitialData(eventId, data);
 }
 
 export async function fetchLiveAudienceInitial(eventId, loadInitialData, setLoading, setError, getIsMounted) {
   setLoading(true);
   setError(null);
   try {
-    const res = await apiUtils.get(API_ENDPOINTS.LIVE_AUDIENCE.BASE(eventId));
-    if (!res.ok) throw new Error("Failed to load initial live audience data");
-    const data = await res.json();
-    if (getIsMounted()) {
-      loadInitialData(eventId, data);
-    }
+    await applyInitialData(eventId, loadInitialData, setError, getIsMounted);
   } catch (err) {
-    if (getIsMounted()) {
-      setError(err.message || "An error occurred");
-    }
+    if (getIsMounted()) setError(err.message || "An error occurred");
   } finally {
-    if (getIsMounted()) {
-      setLoading(false);
-    }
+    if (getIsMounted()) setLoading(false);
   }
 }
 
 export function sortQuestionsList(questions) {
   if (!questions) return [];
   return [...questions].sort((a, b) => {
-    if (b.upvotes !== a.upvotes) {
-      return b.upvotes - a.upvotes;
-    }
+    if (b.upvotes !== a.upvotes) return b.upvotes - a.upvotes;
     return new Date(b.createdAt) - new Date(a.createdAt);
   });
 }
@@ -113,9 +98,7 @@ export default function useLiveAudience(eventId) {
     if (!eventId || hasLoaded) return;
     let isMounted = true;
     fetchLiveAudienceInitial(eventId, loadInitialData, setLoading, setError, () => isMounted);
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [eventId, hasLoaded, loadInitialData]);
 
   const questions = useMemo(() => sortQuestionsList(eventData?.questions), [eventData?.questions]);
