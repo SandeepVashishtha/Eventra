@@ -56,7 +56,9 @@ export const getSeatPositions = (el) => {
     const cY = el.y + halfH - projOffset;
 
     const seatsPerSide = Math.ceil(count / 2);
-    const spacingX = width / (seatsPerSide + 1);
+    const bottomCount = count - seatsPerSide;
+    const topSpacingX = width / (seatsPerSide + 1);
+    const bottomSpacingX = bottomCount > 0 ? width / (bottomCount + 1) : 0;
 
     const rad = (rotation * Math.PI) / 180;
 
@@ -70,12 +72,13 @@ export const getSeatPositions = (el) => {
     };
 
     for (let i = 0; i < count; i++) {
-      const side = i < seatsPerSide ? "top" : "bottom";
-      const sideIndex = i % seatsPerSide;
-      const relativeX = spacingX * (sideIndex + 1) - halfW;
+      const isTop = i < seatsPerSide;
+      const sideIndex = isTop ? i : i - seatsPerSide;
+      const spacing = isTop ? topSpacingX : bottomSpacingX;
+      const relativeX = spacing * (sideIndex + 1) - halfW;
 
       let p;
-      if (side === "top") {
+      if (isTop) {
         p = rotatePt(el.x - projOffset + halfW + relativeX, el.y - projOffset - 18);
       } else {
         p = rotatePt(el.x - projOffset + halfW + relativeX, el.y - projOffset + height + 18);
