@@ -4,6 +4,102 @@ import useLiveAudience from "../../hooks/useLiveAudience.js";
 import { ThumbsUp, Trash, Flag, Send, AlertTriangle, HelpCircle, Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
 
+function QuestionInputForm({ onSubmit, questionText, setQuestionText, submitting }) {
+  return (
+    <form onSubmit={onSubmit} className="relative flex flex-col gap-2">
+      <textarea
+        value={questionText}
+        onChange={(e) => setQuestionText(e.target.value.slice(0, 250))}
+        placeholder="Ask a question..."
+        rows={3}
+        disabled={submitting}
+        className="w-full px-4 py-3 rounded-xl bg-slate-950/40 border border-slate-800 text-slate-200 placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300 resize-none"
+      />
+      <div className="flex justify-between items-center px-1">
+        <span className="text-xs text-slate-500 font-medium">
+          {questionText.length}/250 characters
+        </span>
+        <button
+          type="submit"
+          disabled={submitting || !questionText.trim()}
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-400 to-primary hover:brightness-110 active:scale-95 disabled:opacity-50 disabled:scale-100 disabled:brightness-100 transition-all duration-300 shadow-glow-sm cursor-pointer"
+        >
+          {submitting ? (
+            <Loader2 className="h-4 w-4 animate-spin text-slate-950" />
+          ) : (
+            <Send className="h-4 w-4 text-slate-950" />
+          )}
+          <span>Send</span>
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function QuestionCard({ q, isModerator, onUpvote, onFlag, onDelete }) {
+  const formatTime = (isoString) => {
+    try {
+      const date = new Date(isoString);
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return "Just now";
+    }
+  };
+
+  return (
+    <div
+      className={`flex justify-between items-start gap-4 p-4 rounded-xl bg-slate-950/20 border transition-all duration-300 hover:border-slate-700/60 ${
+        q.flagged ? "border-rose-950 bg-rose-950/5" : "border-slate-800/80"
+      }`}
+    >
+      <div className="flex flex-col gap-1.5 min-w-0">
+        {q.flagged && (
+          <span className="inline-flex items-center gap-1 w-fit px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-rose-500/10 text-rose-400 border border-rose-500/20">
+            <AlertTriangle className="h-3 w-3" /> Flagged for moderation
+          </span>
+        )}
+        <p className="text-sm text-slate-200 break-words leading-relaxed font-sans">
+          {q.text}
+        </p>
+        <span className="text-[10px] text-slate-500 font-medium">
+          {formatTime(q.createdAt)}
+        </span>
+      </div>
+
+      <div className="flex items-center gap-2 shrink-0">
+        <button
+          onClick={() => onUpvote(q.id)}
+          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-800 hover:border-slate-700 hover:bg-slate-800/30 text-slate-400 hover:text-primary transition-all duration-200 cursor-pointer"
+        >
+          <ThumbsUp className="h-4 w-4" />
+          <span className="text-xs font-semibold">{q.upvotes}</span>
+        </button>
+
+        {isModerator && (
+          <>
+            {!q.flagged && (
+              <button
+                onClick={() => onFlag(q.id)}
+                title="Flag inappropriate"
+                className="p-1.5 rounded-lg border border-slate-800 hover:border-amber-500/30 hover:bg-amber-500/5 text-slate-500 hover:text-amber-400 transition-all duration-200 cursor-pointer"
+              >
+                <Flag className="h-4 w-4" />
+              </button>
+            )}
+            <button
+              onClick={() => onDelete(q.id)}
+              title="Delete question"
+              className="p-1.5 rounded-lg border border-slate-800 hover:border-rose-500/30 hover:bg-rose-500/5 text-slate-500 hover:text-rose-400 transition-all duration-200 cursor-pointer"
+            >
+              <Trash className="h-4 w-4" />
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function LiveQABoard({ eventId }) {
   const { user } = useAuth();
   const {
@@ -68,16 +164,6 @@ export default function LiveQABoard({ eventId }) {
     }
   };
 
-  const formatTime = (isoString) => {
-    try {
-      const date = new Date(isoString);
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } catch {
-      return "Just now";
-    }
-  };
-
-  // Attendees shouldn't see flagged questions. Moderators see all of them with a warning badge.
   const visibleQuestions = questions.filter(
     (q) => !q.flagged || isModerator
   );
@@ -112,36 +198,13 @@ export default function LiveQABoard({ eventId }) {
         </div>
       )}
 
-      {/* Question submission form */}
-      <form onSubmit={handleSend} className="relative flex flex-col gap-2">
-        <textarea
-          value={questionText}
-          onChange={(e) => setQuestionText(e.target.value.slice(0, 250))}
-          placeholder="Ask a question..."
-          rows={3}
-          disabled={submitting}
-          className="w-full px-4 py-3 rounded-xl bg-slate-950/40 border border-slate-800 text-slate-200 placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300 resize-none"
-        />
-        <div className="flex justify-between items-center px-1">
-          <span className="text-xs text-slate-500 font-medium">
-            {questionText.length}/250 characters
-          </span>
-          <button
-            type="submit"
-            disabled={submitting || !questionText.trim()}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-400 to-primary hover:brightness-110 active:scale-95 disabled:opacity-50 disabled:scale-100 disabled:brightness-100 transition-all duration-300 shadow-glow-sm cursor-pointer"
-          >
-            {submitting ? (
-              <Loader2 className="h-4 w-4 animate-spin text-slate-950" />
-            ) : (
-              <Send className="h-4 w-4 text-slate-950" />
-            )}
-            <span>Send</span>
-          </button>
-        </div>
-      </form>
+      <QuestionInputForm
+        onSubmit={handleSend}
+        questionText={questionText}
+        setQuestionText={setQuestionText}
+        submitting={submitting}
+      />
 
-      {/* Questions list */}
       <div className="flex flex-col gap-3 max-h-[400px] overflow-y-auto pr-1">
         {loading && visibleQuestions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-slate-500">
@@ -156,61 +219,14 @@ export default function LiveQABoard({ eventId }) {
           </div>
         ) : (
           visibleQuestions.map((q) => (
-            <div
+            <QuestionCard
               key={q.id}
-              className={`flex justify-between items-start gap-4 p-4 rounded-xl bg-slate-950/20 border transition-all duration-300 hover:border-slate-700/60 ${
-                q.flagged
-                  ? "border-rose-950 bg-rose-950/5"
-                  : "border-slate-800/80"
-              }`}
-            >
-              <div className="flex flex-col gap-1.5 min-w-0">
-                {q.flagged && (
-                  <span className="inline-flex items-center gap-1 w-fit px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-rose-500/10 text-rose-400 border border-rose-500/20">
-                    <AlertTriangle className="h-3 w-3" /> Flagged for moderation
-                  </span>
-                )}
-                <p className="text-sm text-slate-200 break-words leading-relaxed font-sans">
-                  {q.text}
-                </p>
-                <span className="text-[10px] text-slate-500 font-medium">
-                  {formatTime(q.createdAt)}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2 shrink-0">
-                {/* Attendee/Moderator Upvote Button */}
-                <button
-                  onClick={() => handleUpvote(q.id)}
-                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-800 hover:border-slate-700 hover:bg-slate-800/30 text-slate-400 hover:text-primary transition-all duration-200 cursor-pointer"
-                >
-                  <ThumbsUp className="h-4 w-4" />
-                  <span className="text-xs font-semibold">{q.upvotes}</span>
-                </button>
-
-                {/* Moderator Controls */}
-                {isModerator && (
-                  <>
-                    {!q.flagged && (
-                      <button
-                        onClick={() => handleFlag(q.id)}
-                        title="Flag inappropriate"
-                        className="p-1.5 rounded-lg border border-slate-800 hover:border-amber-500/30 hover:bg-amber-500/5 text-slate-500 hover:text-amber-400 transition-all duration-200 cursor-pointer"
-                      >
-                        <Flag className="h-4 w-4" />
-                      </button>
-                    )}
-                    <button
-                      onClick={() => handleDelete(q.id)}
-                      title="Delete question"
-                      className="p-1.5 rounded-lg border border-slate-800 hover:border-rose-500/30 hover:bg-rose-500/5 text-slate-500 hover:text-rose-400 transition-all duration-200 cursor-pointer"
-                    >
-                      <Trash className="h-4 w-4" />
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
+              q={q}
+              isModerator={isModerator}
+              onUpvote={handleUpvote}
+              onFlag={handleFlag}
+              onDelete={handleDelete}
+            />
           ))
         )}
       </div>
