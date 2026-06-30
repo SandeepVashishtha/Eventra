@@ -426,240 +426,255 @@ async function handleLiveAudienceRequests(req, res, pathname) {
   return false;
 }
 
-async function handleTicketRequests(req, res, pathname, searchParams) {
-  // Get statistics
-  if (pathname === "/api/tickets/stats" && req.method === "GET") {
-    const eventId = searchParams.get("eventId");
-    if (!eventId) {
-      return jsonResponse(res, 400, { error: "Missing required parameter: eventId" });
-    }
-    const eventRegs = Array.from(mockRegistrations.values()).filter(
-      r => String(r.eventId) === String(eventId)
+function handleTicketStats(req, res, pathname, searchParams) {
+  if (pathname !== "/api/tickets/stats" || req.method !== "GET") return false;
+  const eventId = searchParams.get("eventId");
+  if (!eventId) {
+    return jsonResponse(res, 400, { error: "Missing required parameter: eventId" });
+  }
+  const eventRegs = Array.from(mockRegistrations.values()).filter(
+    r => String(r.eventId) === String(eventId)
+  );
+  const totalRegistrations = eventRegs.length;
+  const checkedInAttendees = eventRegs.filter(r => r.attendanceStatus === "Checked In").length;
+  const remainingAttendees = totalRegistrations - checkedInAttendees;
+  const attendancePercentage = totalRegistrations > 0
+    ? Math.round((checkedInAttendees / totalRegistrations) * 100)
+    : 0;
+
+  return jsonResponse(res, 200, {
+    totalRegistrations,
+    checkedInAttendees,
+    attendancePercentage,
+    remainingAttendees
+  });
+}
+
+function handleTicketCheckins(req, res, pathname, searchParams) {
+  if (pathname !== "/api/tickets/checkins" || req.method !== "GET") return false;
+  const eventId = searchParams.get("eventId");
+  let filtered = mockScanLogs;
+  if (eventId) {
+    filtered = mockScanLogs.filter(log => String(log.eventId) === String(eventId));
+  }
+  const history = filtered.map(log => ({
+    id: log.logId,
+    ticketId: log.registrationId,
+    name: log.userName,
+    event: log.eventName || `Event #${log.eventId}`,
+    status: log.status === "Checked In" ? "Verified" : "Flagged",
+    time: log.timestamp
+  }));
+  return jsonResponse(res, 200, history.slice().reverse());
+}
+
+async function handleTicketToken(req, res, pathname) {
+  if (pathname !== "/api/tickets/token" || req.method !== "POST") return false;
+  const body = await getRequestBody(req, res);
+  const { registrationId, eventId } = body;
+  if (!registrationId || !eventId) {
+    return jsonResponse(res, 400, { error: "Missing required fields: registrationId and eventId" });
+  }
+
+  let reg = mockRegistrations.get(registrationId);
+  if (!reg) {
+    reg = {
+      registrationId,
+      eventId: eventId,
+      userId: "mock-dev-123",
+      userName: "Sadwika",
+      registeredAt: new Date().toISOString(),
+      attendanceStatus: "Registered"
+    };
+    mockRegistrations.set(registrationId, reg);
+  }
+
+  try {
+    const token = jwt.sign(
+      { registrationId: reg.registrationId, eventId: reg.eventId, userId: reg.userId, userName: reg.userName },
+      JWT_SECRET,
+      { expiresIn: "7d" }
     );
-    const totalRegistrations = eventRegs.length;
-    const checkedInAttendees = eventRegs.filter(r => r.attendanceStatus === "Checked In").length;
-    const remainingAttendees = totalRegistrations - checkedInAttendees;
-    const attendancePercentage = totalRegistrations > 0
-      ? Math.round((checkedInAttendees / totalRegistrations) * 100)
-      : 0;
+    reg.qrToken = token;
+    return jsonResponse(res, 200, { success: true, token, registrationId: reg.registrationId });
+  } catch (err) {
+    return jsonResponse(res, 500, { error: "Failed to sign mock token" });
+  }
+}
 
-    return jsonResponse(res, 200, {
-      totalRegistrations,
-      checkedInAttendees,
-      attendancePercentage,
-      remainingAttendees
-    });
+async function handleTicketValidate(req, res, pathname) {
+  if (pathname !== "/api/tickets/validate" || req.method !== "POST") return false;
+  const body = await getRequestBody(req, res);
+  const { ticketId, eventId } = body;
+  if (!ticketId || !eventId) {
+    return jsonResponse(res, 400, { error: "Missing ticketId or eventId" });
   }
 
-  // Get check-in history log
-  if (pathname === "/api/tickets/checkins" && req.method === "GET") {
-    const eventId = searchParams.get("eventId");
-    let filtered = mockScanLogs;
-    if (eventId) {
-      filtered = mockScanLogs.filter(log => String(log.eventId) === String(eventId));
-    }
-    const history = filtered.map(log => ({
-      id: log.logId,
-      ticketId: log.registrationId,
-      name: log.userName,
-      event: log.eventName || `Event #${log.eventId}`,
-      status: log.status === "Checked In" ? "Verified" : "Flagged",
-      time: log.timestamp
-    }));
-    return jsonResponse(res, 200, history.slice().reverse());
-  }
-
-  // Token generation
-  if (pathname === "/api/tickets/token" && req.method === "POST") {
-    const body = await getRequestBody(req, res);
-    const { registrationId, eventId } = body;
-    if (!registrationId || !eventId) {
-      return jsonResponse(res, 400, { error: "Missing required fields: registrationId and eventId" });
-    }
-
-    let reg = mockRegistrations.get(registrationId);
-    if (!reg) {
-      reg = {
-        registrationId,
-        eventId: eventId,
-        userId: "mock-dev-123",
-        userName: "Sadwika",
-        registeredAt: new Date().toISOString(),
-        attendanceStatus: "Registered"
-      };
-      mockRegistrations.set(registrationId, reg);
-    }
-
+  let registrationId = ticketId;
+  let decodedToken = null;
+  if (ticketId.startsWith("eyJ")) {
     try {
-      const token = jwt.sign(
-        { registrationId: reg.registrationId, eventId: reg.eventId, userId: reg.userId, userName: reg.userName },
-        JWT_SECRET,
-        { expiresIn: "7d" }
-      );
-      reg.qrToken = token;
-      return jsonResponse(res, 200, { success: true, token, registrationId: reg.registrationId });
+      decodedToken = jwt.verify(ticketId, JWT_SECRET);
+      registrationId = decodedToken.registrationId;
+      if (String(decodedToken.eventId) !== String(eventId)) {
+        return jsonResponse(res, 400, { valid: false, message: "Security Alert: Ticket is valid, but registered for a different event." });
+      }
     } catch (err) {
-      return jsonResponse(res, 500, { error: "Failed to sign mock token" });
-    }
-  }
-
-  // Validate ticket code / JWT token
-  if (pathname === "/api/tickets/validate" && req.method === "POST") {
-    const body = await getRequestBody(req, res);
-    const { ticketId, eventId } = body;
-    if (!ticketId || !eventId) {
-      return jsonResponse(res, 400, { error: "Missing ticketId or eventId" });
-    }
-
-    let registrationId = ticketId;
-    let decodedToken = null;
-    if (ticketId.startsWith("eyJ")) {
-      try {
-        decodedToken = jwt.verify(ticketId, JWT_SECRET);
-        registrationId = decodedToken.registrationId;
-        if (String(decodedToken.eventId) !== String(eventId)) {
+      const decoded = decodeJwtPayload(ticketId);
+      if (decoded) {
+        decodedToken = decoded;
+        registrationId = decoded.registrationId;
+        if (String(decoded.eventId) !== String(eventId)) {
           return jsonResponse(res, 400, { valid: false, message: "Security Alert: Ticket is valid, but registered for a different event." });
         }
-      } catch (err) {
-        const decoded = decodeJwtPayload(ticketId);
-        if (decoded) {
-          decodedToken = decoded;
-          registrationId = decoded.registrationId;
-          if (String(decoded.eventId) !== String(eventId)) {
-            return jsonResponse(res, 400, { valid: false, message: "Security Alert: Ticket is valid, but registered for a different event." });
-          }
-        } else {
-          return jsonResponse(res, 400, { valid: false, message: "Security Alert: QR Code is invalid or has been tampered with!" });
-        }
+      } else {
+        return jsonResponse(res, 400, { valid: false, message: "Security Alert: QR Code is invalid or has been tampered with!" });
       }
     }
-
-    let reg = mockRegistrations.get(registrationId);
-    if (!reg && decodedToken) {
-      reg = {
-        registrationId,
-        eventId: eventId,
-        userId: decodedToken.userId || "unknown",
-        userName: decodedToken.userName || "Attendee",
-        attendanceStatus: "Registered",
-        registeredAt: new Date().toISOString(),
-        qrToken: ticketId
-      };
-      mockRegistrations.set(registrationId, reg);
-    }
-
-    if (!reg) {
-      return jsonResponse(res, 404, { valid: false, message: "Ticket registration not found." });
-    }
-
-    if (String(reg.eventId) !== String(eventId)) {
-      return jsonResponse(res, 400, { valid: false, message: "Ticket is registered for a different event." });
-    }
-
-    if (reg.attendanceStatus === "Checked In") {
-      const duplicateLog = {
-        logId: `log-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-        registrationId: reg.registrationId,
-        eventId: reg.eventId,
-        userId: reg.userId,
-        userName: reg.userName,
-        scannedBy: "mock-dev-123",
-        timestamp: new Date().toISOString(),
-        status: "Duplicate Attempt",
-        eventName: MOCK_EVENTS.find(e => String(e.id) === String(eventId))?.title || "Active Event"
-      };
-      mockScanLogs.push(duplicateLog);
-
-      return jsonResponse(res, 200, {
-        valid: true,
-        alreadyCheckedIn: true,
-        registrationId: reg.registrationId,
-        userName: reg.userName,
-        eventId: reg.eventId,
-        message: "This ticket has already been checked in!"
-      });
-    }
-
-    return jsonResponse(res, 200, {
-      valid: true,
-      alreadyCheckedIn: false,
-      registrationId: reg.registrationId,
-      userName: reg.userName,
-      eventId: reg.eventId,
-      attendanceStatus: reg.attendanceStatus,
-      message: "Ticket verified successfully."
-    });
   }
 
-  // Record check-in
-  if (pathname === "/api/tickets/checkin" && req.method === "POST") {
-    const body = await getRequestBody(req, res);
-    const { ticketId, eventId } = body;
-    if (!ticketId || !eventId) {
-      return jsonResponse(res, 400, { error: "Missing ticketId or eventId" });
-    }
+  let reg = mockRegistrations.get(registrationId);
+  if (!reg && decodedToken) {
+    reg = {
+      registrationId,
+      eventId: eventId,
+      userId: decodedToken.userId || "unknown",
+      userName: decodedToken.userName || "Attendee",
+      attendanceStatus: "Registered",
+      registeredAt: new Date().toISOString(),
+      qrToken: ticketId
+    };
+    mockRegistrations.set(registrationId, reg);
+  }
 
-    let registrationId = ticketId;
-    let decodedToken = null;
-    if (ticketId.startsWith("eyJ")) {
-      try {
-        decodedToken = jwt.verify(ticketId, JWT_SECRET);
-        registrationId = decodedToken.registrationId;
-      } catch (err) {
-        const decoded = decodeJwtPayload(ticketId);
-        if (decoded) {
-          decodedToken = decoded;
-          registrationId = decoded.registrationId;
-        }
-      }
-    }
+  if (!reg) {
+    return jsonResponse(res, 404, { valid: false, message: "Ticket registration not found." });
+  }
 
-    let reg = mockRegistrations.get(registrationId);
-    if (!reg && decodedToken) {
-      reg = {
-        registrationId,
-        eventId: eventId,
-        userId: decodedToken.userId || "unknown",
-        userName: decodedToken.userName || "Attendee",
-        attendanceStatus: "Registered",
-        registeredAt: new Date().toISOString(),
-        qrToken: ticketId
-      };
-      mockRegistrations.set(registrationId, reg);
-    }
+  if (String(reg.eventId) !== String(eventId)) {
+    return jsonResponse(res, 400, { valid: false, message: "Ticket is registered for a different event." });
+  }
 
-    if (!reg) {
-      return jsonResponse(res, 404, { error: "Ticket registration not found." });
-    }
-
-    if (reg.attendanceStatus === "Checked In") {
-      return jsonResponse(res, 409, { error: "Attendee is already checked in" });
-    }
-
-    reg.attendanceStatus = "Checked In";
-    reg.checkedInAt = new Date().toISOString();
-    reg.checkedInBy = "mock-dev-123";
-
-    const checkInLog = {
+  if (reg.attendanceStatus === "Checked In") {
+    const duplicateLog = {
       logId: `log-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       registrationId: reg.registrationId,
       eventId: reg.eventId,
       userId: reg.userId,
       userName: reg.userName,
       scannedBy: "mock-dev-123",
-      timestamp: reg.checkedInAt,
-      status: "Checked In",
+      timestamp: new Date().toISOString(),
+      status: "Duplicate Attempt",
       eventName: MOCK_EVENTS.find(e => String(e.id) === String(eventId))?.title || "Active Event"
     };
-    mockScanLogs.push(checkInLog);
+    mockScanLogs.push(duplicateLog);
 
     return jsonResponse(res, 200, {
-      success: true,
-      message: "Attendee check-in recorded successfully",
-      registration: reg
+      valid: true,
+      alreadyCheckedIn: true,
+      registrationId: reg.registrationId,
+      userName: reg.userName,
+      eventId: reg.eventId,
+      message: "This ticket has already been checked in!"
     });
   }
 
+  return jsonResponse(res, 200, {
+    valid: true,
+    alreadyCheckedIn: false,
+    registrationId: reg.registrationId,
+    userName: reg.userName,
+    eventId: reg.eventId,
+    attendanceStatus: reg.attendanceStatus,
+    message: "Ticket verified successfully."
+  });
+}
+
+async function handleTicketCheckin(req, res, pathname) {
+  if (pathname !== "/api/tickets/checkin" || req.method !== "POST") return false;
+  const body = await getRequestBody(req, res);
+  const { ticketId, eventId } = body;
+  if (!ticketId || !eventId) {
+    return jsonResponse(res, 400, { error: "Missing ticketId or eventId" });
+  }
+
+  let registrationId = ticketId;
+  let decodedToken = null;
+  if (ticketId.startsWith("eyJ")) {
+    try {
+      decodedToken = jwt.verify(ticketId, JWT_SECRET);
+      registrationId = decodedToken.registrationId;
+    } catch (err) {
+      const decoded = decodeJwtPayload(ticketId);
+      if (decoded) {
+        decodedToken = decoded;
+        registrationId = decoded.registrationId;
+      }
+    }
+  }
+
+  let reg = mockRegistrations.get(registrationId);
+  if (!reg && decodedToken) {
+    reg = {
+      registrationId,
+      eventId: eventId,
+      userId: decodedToken.userId || "unknown",
+      userName: decodedToken.userName || "Attendee",
+      attendanceStatus: "Registered",
+      registeredAt: new Date().toISOString(),
+      qrToken: ticketId
+    };
+    mockRegistrations.set(registrationId, reg);
+  }
+
+  if (!reg) {
+    return jsonResponse(res, 404, { error: "Ticket registration not found." });
+  }
+
+  if (reg.attendanceStatus === "Checked In") {
+    return jsonResponse(res, 409, { error: "Attendee is already checked in" });
+  }
+
+  reg.attendanceStatus = "Checked In";
+  reg.checkedInAt = new Date().toISOString();
+  reg.checkedInBy = "mock-dev-123";
+
+  const checkInLog = {
+    logId: `log-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    registrationId: reg.registrationId,
+    eventId: reg.eventId,
+    userId: reg.userId,
+    userName: reg.userName,
+    scannedBy: "mock-dev-123",
+    timestamp: reg.checkedInAt,
+    status: "Checked In",
+    eventName: MOCK_EVENTS.find(e => String(e.id) === String(eventId))?.title || "Active Event"
+  };
+  mockScanLogs.push(checkInLog);
+
+  return jsonResponse(res, 200, {
+    success: true,
+    message: "Attendee check-in recorded successfully",
+    registration: reg
+  });
+}
+
+async function handleTicketRequests(req, res, pathname, searchParams) {
+  if (pathname === "/api/tickets/stats") {
+    return handleTicketStats(req, res, pathname, searchParams);
+  }
+  if (pathname === "/api/tickets/checkins") {
+    return handleTicketCheckins(req, res, pathname, searchParams);
+  }
+  if (pathname === "/api/tickets/token") {
+    return await handleTicketToken(req, res, pathname);
+  }
+  if (pathname === "/api/tickets/validate") {
+    return await handleTicketValidate(req, res, pathname);
+  }
+  if (pathname === "/api/tickets/checkin") {
+    return await handleTicketCheckin(req, res, pathname);
+  }
   return false;
 }
 
