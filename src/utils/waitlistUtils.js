@@ -1,4 +1,3 @@
-
 import { safeJsonParse } from "./safeJsonParse.js";
 import { apiUtils, API_ENDPOINTS } from "../config/api.js";
 import { logger } from "./logger.js";
@@ -37,7 +36,6 @@ export const addLocalNotification = async (title, message) => {
   if (typeof window === "undefined" || typeof localStorage === "undefined") {
     return;
   }
-
   try {
     const canonicalKey = "eventra_notification_inbox";
     const raw = localStorage.getItem(canonicalKey);
@@ -64,6 +62,7 @@ export const addLocalNotification = async (title, message) => {
 
 // Retrieve all waitlist entries across all events and users
 export const getGlobalWaitlist = () => {
+  if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(GLOBAL_WAITLIST_KEY);
     return raw ? safeJsonParse(raw, []) : [];
@@ -77,6 +76,7 @@ export const getGlobalWaitlist = () => {
 
 // Persist waitlist entries globally (offline cache only)
 export const saveGlobalWaitlist = (records) => {
+  if (typeof window === "undefined") return;
   try {
     localStorage.setItem(GLOBAL_WAITLIST_KEY, JSON.stringify(records));
   } catch (error) {
@@ -102,6 +102,7 @@ export const syncWaitlistFromServer = async (eventId) => {
 
 // Get waitlist entries for a specific event with 'waiting' status
 export const getEventWaitlist = (eventId) => {
+  if (typeof window === "undefined") return [];
   const id = parseEventId(eventId);
   const records = getGlobalWaitlist();
   return records
@@ -118,6 +119,7 @@ export const getQueuePosition = (eventId, userId) => {
 
 // Add registration to specific user's localStorage registered events
 export const addRegistrationToUserStorage = (userId, event) => {
+  if (typeof window === "undefined") return;
   const legacyKey = `my_events_${userId}`;
   const storageKey = getOrMigrateKey("my_events", userId, legacyKey);
   try {
@@ -147,6 +149,7 @@ export const addRegistrationToUserStorage = (userId, event) => {
 
 // Add registration to event's attendees count
 export const incrementEventAttendees = (eventId) => {
+  if (typeof window === "undefined") return;
   // If event availability caches exist, update them
   try {
     const cacheKey = `event_detail_${eventId}`;
