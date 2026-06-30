@@ -181,6 +181,7 @@ const useBookmarks = (userId = "guest") => {
    * Removes all bookmarks for the current user from both state and localStorage.
    */
   const clearBookmarks = useCallback(() => {
+    if (typeof window === "undefined") return;
     setBookmarks([]);
     cache.set(storageKeyRef.current, []);
     try {
