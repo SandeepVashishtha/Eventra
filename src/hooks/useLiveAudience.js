@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { useLiveAudienceStream } from "../context/RealTimeContext.js";
 import { apiUtils, API_ENDPOINTS } from "../config/api.js";
 
-// Shared error-handling wrapper — eliminates repeated try/catch branches
+// ─── Shared error-handling wrapper ───────────────────────────────────────────
 async function apiCall(label, fn) {
   try {
     return await fn();
@@ -12,62 +12,63 @@ async function apiCall(label, fn) {
   }
 }
 
-// Standalone REST request actions
-export async function submitQuestion(eventId, text) {
-  if (!text || !text.trim()) return;
-  return apiCall("Failed to submit question:", () =>
-    apiUtils.post(API_ENDPOINTS.LIVE_AUDIENCE.QUESTIONS(eventId), { text })
-  );
-}
+// ─── Standalone REST actions (exported for reuse / testing) ──────────────────
+export const submitQuestion = (eventId, text) =>
+  text && text.trim()
+    ? apiCall("Failed to submit question:", () =>
+        apiUtils.post(API_ENDPOINTS.LIVE_AUDIENCE.QUESTIONS(eventId), { text })
+      )
+    : Promise.resolve();
 
-export async function upvoteQuestion(eventId, questionId) {
-  return apiCall("Failed to upvote question:", () =>
+export const upvoteQuestion = (eventId, questionId) =>
+  apiCall("Failed to upvote question:", () =>
     apiUtils.post(API_ENDPOINTS.LIVE_AUDIENCE.UPVOTE(eventId, questionId))
   );
-}
 
-export async function deleteQuestion(eventId, questionId) {
-  return apiCall("Failed to delete question:", () =>
+export const deleteQuestion = (eventId, questionId) =>
+  apiCall("Failed to delete question:", () =>
     apiUtils.delete(API_ENDPOINTS.LIVE_AUDIENCE.QUESTION_DETAIL(eventId, questionId))
   );
-}
 
-export async function flagQuestion(eventId, questionId) {
-  return apiCall("Failed to flag question:", () =>
+export const flagQuestion = (eventId, questionId) =>
+  apiCall("Failed to flag question:", () =>
     apiUtils.post(API_ENDPOINTS.LIVE_AUDIENCE.FLAG(eventId, questionId))
   );
-}
 
-export async function createPoll(eventId, question, type, options) {
-  return apiCall("Failed to create poll:", () =>
+export const createPoll = (eventId, question, type, options) =>
+  apiCall("Failed to create poll:", () =>
     apiUtils.post(API_ENDPOINTS.LIVE_AUDIENCE.POLLS(eventId), { question, type, options })
   );
-}
 
-export async function updatePollStatus(eventId, pollId, status) {
-  return apiCall("Failed to update poll status:", () =>
+export const updatePollStatus = (eventId, pollId, status) =>
+  apiCall("Failed to update poll status:", () =>
     apiUtils.post(API_ENDPOINTS.LIVE_AUDIENCE.POLL_STATUS(eventId, pollId), { status })
   );
-}
 
-export async function submitVote(eventId, pollId, option) {
-  return apiCall("Failed to submit vote:", () =>
+export const submitVote = (eventId, pollId, option) =>
+  apiCall("Failed to submit vote:", () =>
     apiUtils.post(API_ENDPOINTS.LIVE_AUDIENCE.POLL_VOTE(eventId, pollId), { option })
   );
-}
 
-async function applyInitialData(eventId, loadInitialData, setError, getIsMounted) {
+// ─── Initial data loader ──────────────────────────────────────────────────────
+async function loadFromApi(eventId, loadInitialData, getIsMounted) {
   const res = await apiUtils.get(API_ENDPOINTS.LIVE_AUDIENCE.BASE(eventId));
   if (!res.ok) throw new Error("Failed to load initial live audience data");
   const data = await res.json();
   if (getIsMounted()) loadInitialData(eventId, data);
 }
 
-export async function fetchLiveAudienceInitial(eventId, loadInitialData, setLoading, setError, getIsMounted) {
+export async function fetchLiveAudienceInitial(
+  eventId,
+  loadInitialData,
+  setLoading,
+  setError,
+  getIsMounted
+) {
   setLoading(true);
   setError(null);
   try {
-    await applyInitialData(eventId, loadInitialData, setError, getIsMounted);
+    await loadFromApi(eventId, loadInitialData, getIsMounted);
   } catch (err) {
     if (getIsMounted()) setError(err.message || "An error occurred");
   } finally {
@@ -75,12 +76,27 @@ export async function fetchLiveAudienceInitial(eventId, loadInitialData, setLoad
   }
 }
 
+// ─── Sort helper ─────────────────────────────────────────────────────────────
+function compareQuestions(a, b) {
+  if (b.upvotes !== a.upvotes) return b.upvotes - a.upvotes;
+  return new Date(b.createdAt) - new Date(a.createdAt);
+}
+
 export function sortQuestionsList(questions) {
-  if (!questions) return [];
-  return [...questions].sort((a, b) => {
-    if (b.upvotes !== a.upvotes) return b.upvotes - a.upvotes;
-    return new Date(b.createdAt) - new Date(a.createdAt);
-  });
+  return questions ? [...questions].sort(compareQuestions) : [];
+}
+
+// ─── Bound action factory (keeps hook body flat) ──────────────────────────────
+function bindActions(eventId) {
+  return {
+    submitQuestion: (text) => submitQuestion(eventId, text),
+    upvoteQuestion: (qId) => upvoteQuestion(eventId, qId),
+    deleteQuestion: (qId) => deleteQuestion(eventId, qId),
+    flagQuestion: (qId) => flagQuestion(eventId, qId),
+    createPoll: (q, t, o) => createPoll(eventId, q, t, o),
+    updatePollStatus: (pId, s) => updatePollStatus(eventId, pId, s),
+    submitVote: (pId, o) => submitVote(eventId, pId, o),
+  };
 }
 
 /**
@@ -92,38 +108,28 @@ export default function useLiveAudience(eventId) {
   const [error, setError] = useState(null);
 
   const eventData = state.events[eventId];
-  const hasLoaded = !!eventData;
 
   useEffect(() => {
-    if (!eventId || hasLoaded) return;
+    if (!eventId || eventData) return;
     let isMounted = true;
     fetchLiveAudienceInitial(eventId, loadInitialData, setLoading, setError, () => isMounted);
     return () => { isMounted = false; };
-  }, [eventId, hasLoaded, loadInitialData]);
+  }, [eventId, eventData, loadInitialData]);
 
-  const questions = useMemo(() => sortQuestionsList(eventData?.questions), [eventData?.questions]);
-  const activePoll = eventData?.activePoll || null;
+  const questions = useMemo(
+    () => sortQuestionsList(eventData?.questions),
+    [eventData?.questions]
+  );
 
-  const submitQuestionCall = useCallback((text) => submitQuestion(eventId, text), [eventId]);
-  const upvoteQuestionCall = useCallback((qId) => upvoteQuestion(eventId, qId), [eventId]);
-  const deleteQuestionCall = useCallback((qId) => deleteQuestion(eventId, qId), [eventId]);
-  const flagQuestionCall = useCallback((qId) => flagQuestion(eventId, qId), [eventId]);
-  const createPollCall = useCallback((q, t, o) => createPoll(eventId, q, t, o), [eventId]);
-  const updatePollStatusCall = useCallback((pId, s) => updatePollStatus(eventId, pId, s), [eventId]);
-  const submitVoteCall = useCallback((pId, o) => submitVote(eventId, pId, o), [eventId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const actions = useMemo(() => bindActions(eventId), [eventId]);
 
   return {
     questions,
-    activePoll,
+    activePoll: eventData?.activePoll ?? null,
     status: state.status,
     loading,
     error,
-    submitQuestion: submitQuestionCall,
-    upvoteQuestion: upvoteQuestionCall,
-    deleteQuestion: deleteQuestionCall,
-    flagQuestion: flagQuestionCall,
-    createPoll: createPollCall,
-    updatePollStatus: updatePollStatusCall,
-    submitVote: submitVoteCall,
+    ...actions,
   };
 }
