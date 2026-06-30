@@ -93,7 +93,7 @@ const AuthButtons = ({ isLoggedIn = false }) => {
                     {t("nav.myProfile") || "My Profile"}
                   </Link>
                   <Link
-                    to="/events/create"
+                    to="/create-event"
                     role="menuitem"
                     onClick={closeMenu}
                     className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-text-light hover:bg-bg hover:text-text transition-colors"
@@ -156,7 +156,7 @@ const AuthButtons = ({ isLoggedIn = false }) => {
       {/* Context-Aware Primary CTA */}
       {isLoggedIn ? (
         <Link
-          to="/events/create"
+          to="/create-event"
           className="px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary-hover transition-all duration-200 whitespace-nowrap shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-1.5"
         >
           <PlusCircle className="w-4 h-4" />
