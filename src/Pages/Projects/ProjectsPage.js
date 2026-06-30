@@ -267,8 +267,15 @@ const InnerGallery = () => {
       }
     } catch (err) {
       console.error("Failed to fetch projects:", err);
-      setError("Unable to load projects. Please try again later.");
-      setProjects([]);
+      
+     
+      if (err?.response?.status === 404 || err?.status === 404) {
+        setProjects([]);
+        setError("");
+      } else {
+        setError("Unable to load projects. Please try again later.");
+        setProjects([]);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -523,4 +530,4 @@ const InnerGallery = () => {
   );
 };
 
-export default ProjectGallery;
+export default Project
