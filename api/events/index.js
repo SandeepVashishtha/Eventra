@@ -1,16 +1,22 @@
-import express from 'express';
 import { validateEventFilters } from '../_lib/eventFilterValidator.js';
 
-const router = express.Router();
+const sendJson = (res, statusCode, payload) => {
+    res.statusCode = statusCode;
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify(payload));
+};
 
-// Existing endpoints
-router.get('/', (req, res) => {
+const getRequestPath = (req) => {
+    const url = new URL(req.url || '/', 'http://localhost');
+    return url.pathname.replace(/^\/api\/events/, '') || '/';
+};
+
+const listEvents = (_req, res) => {
     // Placeholder for listEvents - returns empty array for now
-    res.status(200).json([]);
-});
+    sendJson(res, 200, []);
+};
 
-// New advanced filtering and sorting logic with validation
-router.get('/filter', (req, res) => {
+const filterEvents = (req, res) => {
     const {
         category,
         type,
@@ -32,7 +38,7 @@ router.get('/filter', (req, res) => {
 
     // Return validation errors if any
     if (!validation.isValid) {
-        return res.status(400).json({
+        return sendJson(res, 400, {
             error: 'Validation failed',
             details: validation.errors
         });
@@ -57,7 +63,24 @@ router.get('/filter', (req, res) => {
 
     // Placeholder for filterAndSortEvents - returns empty array for now
     // In production, this would call: eventsController.filterAndSortEvents(filters)
-    res.status(200).json([]);
-});
+    return sendJson(res, 200, []);
+};
 
-export default router;
+export default function handler(req, res) {
+    if (req.method !== 'GET') {
+        res.setHeader('Allow', 'GET');
+        return sendJson(res, 405, { error: 'Method not allowed' });
+    }
+
+    const path = getRequestPath(req);
+
+    if (path === '/' || path === '') {
+        return listEvents(req, res);
+    }
+
+    if (path === '/filter') {
+        return filterEvents(req, res);
+    }
+
+    return sendJson(res, 404, { error: 'Not found' });
+}
