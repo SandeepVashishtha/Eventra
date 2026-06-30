@@ -21,6 +21,11 @@ const ASSETS_TO_CACHE = [
   '/sun.svg'
 ];
 
+const PRECACHE_MANIFEST_URLS = [
+  '/asset-manifest.json',
+  '/.vite/manifest.json',
+];
+
 /**
  * SECURITY: List of API endpoints that contain sensitive, authenticated,
  * or session-specific data and should NEVER be cached.
@@ -148,16 +153,67 @@ const addAllSafely = async (cache, assets) => {
   );
 };
 
+const shouldPrecacheManifestAsset = (path) => {
+  return (
+    typeof path === 'string' &&
+    (path.endsWith('.js') ||
+      path.endsWith('.css') ||
+      path.endsWith('.png') ||
+      path.endsWith('.svg') ||
+      path.endsWith('.jpg') ||
+      path.endsWith('.json')) &&
+    !path.endsWith('.map') &&
+    !path.includes('service-worker.js') &&
+    !path.includes('manifest.json')
+  );
+};
+
+const addManifestAsset = (assets, path) => {
+  if (!shouldPrecacheManifestAsset(path)) return;
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  if (!assets.includes(cleanPath)) {
+    assets.push(cleanPath);
+  }
+};
+
+const addManifestAssets = (assets, manifest) => {
+  if (!manifest || typeof manifest !== 'object') return;
+
+  if (manifest.files) {
+    Object.values(manifest.files).forEach((path) => addManifestAsset(assets, path));
+  }
+
+  Object.values(manifest).forEach((entry) => {
+    if (!entry || typeof entry !== 'object') return;
+    addManifestAsset(assets, entry.file);
+    if (Array.isArray(entry.css)) {
+      entry.css.forEach((path) => addManifestAsset(assets, path));
+    }
+    if (Array.isArray(entry.assets)) {
+      entry.assets.forEach((path) => addManifestAsset(assets, path));
+    }
+  });
+};
+
+const fetchPrecacheManifest = async () => {
+  for (const manifestUrl of PRECACHE_MANIFEST_URLS) {
+    try {
+      const response = await fetch(manifestUrl, { cache: 'no-store' });
+      if (response.ok) {
+        return response.json();
+      }
+    } catch {
+      // Try the next known manifest location.
+    }
+  }
+
+  throw new Error('No precache manifest found');
+};
+
 // Install Service Worker and cache core static assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    fetch('/asset-manifest.json')
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Failed to fetch asset-manifest.json');
-        }
-        return response.json();
-      })
+    fetchPrecacheManifest()
       .then((manifest) => {
         const assets = [
           '/',
@@ -168,23 +224,9 @@ self.addEventListener('install', (event) => {
           '/moon.svg',
           '/sun.svg',
         ];
-        if (manifest && manifest.files) {
-          Object.values(manifest.files).forEach((path) => {
-            if (
-              (path.endsWith('.js') || path.endsWith('.css') || path.endsWith('.png') || path.endsWith('.svg') || path.endsWith('.jpg') || path.endsWith('.json')) &&
-              !path.endsWith('.map') &&
-              !path.includes('service-worker.js') &&
-              !path.includes('manifest.json')
-            ) {
-              const cleanPath = path.startsWith('/') ? path : `/${path}`;
-              if (!assets.includes(cleanPath)) {
-                assets.push(cleanPath);
-              }
-            }
-          });
-        }
+        addManifestAssets(assets, manifest);
         return caches.open(CACHE_NAME).then((cache) => {
-          log('[Service Worker] Precaching hashed assets from manifest:', assets);
+          log('[Service Worker] Precaching build assets from manifest:', assets);
           return addAllSafely(cache, assets);
         });
       })
