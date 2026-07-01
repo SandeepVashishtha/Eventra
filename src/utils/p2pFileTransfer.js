@@ -184,28 +184,26 @@ export async function saveChunkToCache(fileId, fileName, chunkIndex, totalChunks
 // @param {string} fileId - Unique identifier for the file being simulated.
 // @param {string} fileName - Display name of the file.
 // @param {function} [onProgress] - Called with progress percentage on each step.
-// @param {AbortController} [signal] - Optional abort signal to cancel the simulation early.
+// @param {AbortSignal} [signal] - Optional AbortSignal to cancel the simulation early. Pass controller.signal, not the controller itself.
 // @returns {Promise<boolean>} Resolves true on completion, false if aborted or on error.
 export async function simulateServerDownload(fileId, fileName, onProgress, signal) {
   const steps = 10;
   const totalChunks = 5;
   const dummyChunkData = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-
+  // Normalise: accept either an AbortSignal or an AbortController (defensive)
+  const abortSignal = signal instanceof AbortController ? signal.signal : signal;
   for (let i = 1; i <= steps; i++) {
-    if (signal?.aborted) return false;
+    if (abortSignal?.aborted) return false;
     await new Promise((r) => setTimeout(r, 250)); // Simulating transfer speed
     if (onProgress) onProgress(Math.round((i / steps) * 100));
   }
-
-  if (signal?.aborted) return false;
-
+  if (abortSignal?.aborted) return false;
   // Once fully downloaded from "server", split and write to IndexedDB cache
   for (let c = 0; c < totalChunks; c++) {
-    if (signal?.aborted) return false;
+    if (abortSignal?.aborted) return false;
     const chunkStr = Array(1000).fill(dummyChunkData).join("") + `[CHUNK_${c}]`;
     await saveChunkToCache(fileId, fileName, c, totalChunks, chunkStr);
   }
-
   return true;
 }
 
