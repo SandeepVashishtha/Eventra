@@ -49,7 +49,6 @@ onApplyPreset,
   const { clearPresetError: _clearPresetError } = useEventFilterPresets();
 
   useFilterSuggestions({
-<<<<<<< HEAD
   currentFilters: {
     searchQuery,
     filterType,
@@ -61,7 +60,6 @@ onApplyPreset,
   visibleEvents,
   presets: [],
 });
-=======
     currentFilters: {
   searchQuery,
   filterType,
@@ -73,7 +71,6 @@ onApplyPreset,
     visibleEvents,
     presets: [],
   });
->>>>>>> 4bae66c7 ( feat(events) : add registration progress indicator to event details)
 
   useEffect(() => {
     setLocalQuery(searchQuery || "");

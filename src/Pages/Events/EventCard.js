@@ -1,5 +1,6 @@
 import EventDuration from "../../components/common/EventDuration";
 import { getEventDuration } from "../../utils/eventDurationUtils";
+import { getReadingTime } from "../../utils/readingTimeUtils";
 import { memo, useCallback, useEffect, useId, useState } from "react";
 import { logger } from "../../utils/logger";
 import { getUserTimezone } from "../../utils/timezoneUtils";
@@ -148,6 +149,7 @@ const EventCard = ({ event }) => {
   };
 
 const durationText = getEventDuration(event);
+const readingTimeText = getReadingTime(event.description);
 
   useEffect(() => {
     setIsBookmarked(isEventBookmarked(event.id));
@@ -342,8 +344,12 @@ const durationText = getEventDuration(event);
       {/* Description */}
       <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
         <p className="text-gray-500 dark:text-gray-400 text-sm leading-6 line-clamp-2">
-          {event.description}
-        </p>
+    {event.description}
+</p>
+
+<div className="mt-2 flex items-center gap-2 text-xs text-indigo-600 dark:text-indigo-400 font-medium">
+    📖 {readingTime}
+</div>
       </div>
 
       {/* Info Grid */}
