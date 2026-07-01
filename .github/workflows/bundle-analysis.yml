@@ -44,6 +44,9 @@ jobs:
           NODE_ENV: production
           CI: true
           VITE_API_URL: /api
+          JWT_SECRET: dummy-secret-for-bundle-analysis
+          DATABASE_URL: postgres://dummy:dummy@localhost:5432/dummy
+          RATE_LIMIT_REDIS_URL: redis://localhost:6379
 
       - name: Analyze bundle size
         id: analyze
