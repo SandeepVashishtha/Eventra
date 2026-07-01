@@ -664,7 +664,11 @@ const showClosingSoon =
         </div>
 
         {showShareModal && (
-          <ShareModal event={event} onClose={() => setShowShareModal(false)} />
+          <ShareModal
+            isOpen={showShareModal}
+            event={event}
+            onClose={() => setShowShareModal(false)}
+          />
         )}
       </div>
     </>
