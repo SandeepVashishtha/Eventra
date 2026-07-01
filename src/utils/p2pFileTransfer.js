@@ -279,7 +279,11 @@ export class P2PFileTransferCoordinator {
 
   handleP2PAvailable(msg) {
     if (msg.to === peerId && !this.pc) {
-      this.connectToPeer(msg.from);
+      this.connectToPeer(msg.from).catch((err) => {
+        logger.error("handleP2PAvailable: connectToPeer rejected unexpectedly:", err);
+        this.updateState("failed");
+        this.cleanup();
+      });
     }
   }
 
@@ -418,36 +422,42 @@ export class P2PFileTransferCoordinator {
     }
     this.isInitiator = true;
     this.updateState("connecting", 0, "-", targetPeerId, 1);
-    
-    this.pc = new RTCPeerConnection();
-    this.queuedRemoteCandidates = [];
-    
-    // Create data channel
-    this.channel = this.pc.createDataChannel("file-transfer");
-    this.setupDataChannel();
 
-    this.pc.onicecandidate = (e) => {
-      if (e.candidate) {
-        this.bc.postMessage({
-          type: "P2P_ICE",
-          fileId: this.fileId,
-          from: peerId,
-          to: targetPeerId,
-          candidate: e.candidate
-        });
-      }
-    };
+    try {
+      this.pc = new RTCPeerConnection();
+      this.queuedRemoteCandidates = [];
 
-    const offer = await this.pc.createOffer();
-    await this.pc.setLocalDescription(offer);
+      // Create data channel
+      this.channel = this.pc.createDataChannel("file-transfer");
+      this.setupDataChannel();
 
-    this.bc.postMessage({
-      type: "P2P_OFFER",
-      fileId: this.fileId,
-      from: peerId,
-      to: targetPeerId,
-      offer: offer
-    });
+      this.pc.onicecandidate = (e) => {
+        if (e.candidate) {
+          this.bc.postMessage({
+            type: "P2P_ICE",
+            fileId: this.fileId,
+            from: peerId,
+            to: targetPeerId,
+            candidate: e.candidate
+          });
+        }
+      };
+
+      const offer = await this.pc.createOffer();
+      await this.pc.setLocalDescription(offer);
+
+      this.bc.postMessage({
+        type: "P2P_OFFER",
+        fileId: this.fileId,
+        from: peerId,
+        to: targetPeerId,
+        offer: offer
+      });
+    } catch (err) {
+      logger.error("connectToPeer: WebRTC negotiation failed:", err);
+      this.updateState("failed");
+      this.cleanup();
+    }
   }
 
   // Target peer receives connection offer and replies with answer
