@@ -20,6 +20,7 @@
     "signUp": "साइन अप",
     "signOut": "साइन आउट",
     "profile": "प्रोफ़ाइल",
+    "account": "खाता",
     "settings": "सेटिंग्स",
     "projects": "प्रोजेक्ट्स",
     "networking": "नेटवर्किंग",
@@ -679,18 +680,100 @@
     "charCountDisplay": "{{current}} / {{max}}",
     "toastValidationError": "Please fill in all required fields correctly",
     "toastSuccess": "Thank you for your feedback! We appreciate your input.",
-    "toastError": "There was an error submitting your feedback. Please try again.",
-    "featureRequest": {
-      "sectionTitle": "Feature Request Details",
-      "titleLabel": "Feature Title",
-      "problemLabel": "Problem it solves",
-      "alternativesLabel": "Alternatives considered",
-      "optionalBadge": "optional",
-      "priorityLabel": "Priority",
-      "priorityLow": "Low",
-      "priorityMedium": "Medium",
-      "priorityHigh": "High",
-      "priorityCritical": "Critical"
+    "toastError": "There was an error submitting your feedback. Please try again."
+  },
+  "about": {
+    "pageTitle": "हमारे बारे में",
+    "pageDescription": "इवेंट्रा के बारे में जानें — दुनिया भर में समुदायों, कॉलेजों और संगठनों के लिए खुला स्रोत (open-source) इवेंट प्रबंधन मंच।",
+    "documentTitle": "इवेंट्रा | हमारे बारे में",
+    "errorBoundaryLabel": "आंकड़े",
+    "hero": {
+      "tagline": "ओपन सोर्स • समुदाय संचालित • हमेशा के लिए मुफ्त",
+      "title": "बेहतर इवेंट्स का निर्माण",
+      "subtitle": "एक साथ",
+      "description": "इवेंट्रा समुदायों, कॉलेजों, संगठनों और ओपन-सोर्स टीमों को सुलभ, आधुनिक और सहयोगी इवेंट प्रबंधन टूल के माध्यम से प्रभावशाली इवेंट बनाने, प्रबंधित करने और विकसित करने के लिए सशक्त बनाता है।"
+    },
+    "stats": {
+      "events": "आयोजित इवेंट्स",
+      "builders": "समुदाय के सदस्य",
+      "partners": "समुदाय की पहुंच"
+    },
+    "values": {
+      "heading": "क्या इवेंट्रा को प्रेरित करता है",
+      "description": "हमारे मूल्य हमारे हर निर्णय का मार्गदर्शन करते हैं, यह सुनिश्चित करते हुए कि इवेंट्रा सुलभ, समुदाय-केंद्रित और दीर्घकालिक प्रभाव के लिए निर्मित रहे।",
+      "eventManagement": {
+        "title": "ओपन सोर्स",
+        "description": "दुनिया भर के समुदायों के लिए पारदर्शी रूप से निर्मित और स्वतंत्र रूप से उपलब्ध।"
+      },
+      "hackathonGrowth": {
+        "title": "समुदाय पहले",
+        "description": "सहयोग, समावेश और सार्थक संबंधों के इर्द-गिर्द डिज़ाइन किया गया।"
+      },
+      "projectCollaboration": {
+        "title": "नवाचार (Innovation)",
+        "description": "सामुदायिक प्रतिक्रिया और आधुनिक तकनीक के माध्यम से लगातार विकसित हो रहा है।"
+      },
+      "networking": {
+        "title": "सुलभता (Accessibility)",
+        "description": "हर कौशल स्तर के आयोजकों के लिए सरल, सहज और सुलभ।"
+      }
+    },
+    "cta": {
+      "badge": "इवेंट्रा समुदाय में शामिल हों",
+      "heading": "निर्माण करें, सहयोग करें और बढ़ें",
+      "subtitle": "इवेंट्रा के साथ मिलकर",
+      "description": "इवेंट्रा छात्रों, डेवलपर्स, आयोजकों और समुदायों को अवसरों की खोज करने, सार्थक परियोजनाओं पर सहयोग करने और प्रौद्योगिकी संचालित इवेंट्स के माध्यम से प्रभाव पैदा करने के लिए सशक्त बनाता है।",
+      "socialProof": {
+        "community": "बढ़ता समुदाय",
+        "openSource": "ओपन सोर्स संचालित",
+        "learning": "सीखना और सहयोग"
+      },
+      "getStartedFree": "मुफ्त में शुरू करें",
+      "documentation": "दस्तावेज़ (Docs)",
+      "contactUs": "संपर्क करें"
+    },
+    "features": {
+      "heading": "सुविधाएं जो हर इवेंट को शक्ति प्रदान करती हैं",
+      "description": "इवेंट्रा मजबूत समुदायों को बढ़ावा देने के साथ-साथ सफल इवेंट्स बनाने, प्रबंधित करने, स्केल करने और बढ़ाने के लिए आवश्यक सब कुछ प्रदान करता है।",
+      "ctaAriaLabel": "{{cta}} - {{title}}",
+      "items": {
+        "events": {
+          "stat": "90% तेज़ सेटअप",
+          "title": "स्मार्ट इवेंट निर्माण",
+          "description": "इंटेलिजेंट टेम्प्लेट, सुव्यवस्थित वर्कफ़्लो और स्वचालित टूल का उपयोग करके इवेंट्स को तेज़ी से लॉन्च करें।",
+          "cta": "बनाना शुरू करें"
+        },
+        "hackathons": {
+          "stat": "त्वरित पंजीकरण",
+          "title": "हैकाथॉन और चुनौतियां",
+          "description": "हैकाथॉन में शामिल हों, टीमें बनाएं, प्रोजेक्ट बनाएं और पुरस्कार जीतने के लिए अपने कौशल का प्रदर्शन करें।",
+          "cta": "हैकाथॉन देखें"
+        },
+        "projects": {
+          "stat": "साथ मिलकर बनाएं",
+          "title": "परियोजना सहयोग",
+          "description": "ओपन-सोर्स परियोजनाओं पर सहयोग करें, वास्तविक कोड में योगदान करें, और अपना पोर्टफोलियो बनाएं।",
+          "cta": "परियोजनाएं खोजें"
+        },
+        "connections": {
+          "stat": "नेटवर्क बढ़ाएं",
+          "title": "सामुदायिक नेटवर्किंग",
+          "description": "दुनिया भर के डेवलपर्स, डिज़ाइनरों, उत्पाद प्रबंधकों और निर्माताओं से जुड़ें।",
+          "cta": "समुदाय में शामिल हों"
+        },
+        "manage": {
+          "stat": "एंटरप्राइज-ग्रेड",
+          "title": "सुरक्षित डिज़ाइन",
+          "description": "सुरक्षित क्यूआर कोड और वास्तविक समय में उपस्थिति ट्रैकिंग का उपयोग करके उपस्थित लोगों को निर्बाध चेक-इन प्रदान करें।",
+          "cta": "अधिक जानें"
+        },
+        "benefits": {
+          "stat": "विश्वव्यापी पहुंच",
+          "title": "डेवलपर लाभ",
+          "description": "सत्यापित प्रमाण पत्र प्राप्त करें, अपनी प्रोफ़ाइल का स्तर बढ़ाएं और अपने योगदान के लिए बैज अर्जित करें।",
+          "cta": "अभी साइन अप करें"
+        }
+      }
     }
   }
 }

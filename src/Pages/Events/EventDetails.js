@@ -14,7 +14,6 @@ import { DRAFT_KEY } from "../../constants/eventDefaults";
 import { useMyEvents } from "../../context/MyEventsContext";
 import { logger } from "../../utils/logger";
 import ReminderControls from "../../components/reminders/ReminderControls";
-import CertificateDownload from "../../components/CertificateDownload";
 import EventRecommendations from "../../components/events/EventRecommendations";
 import EventCancellationModal from "../../components/events/EventCancellationModal";
 import SimilarEvents from "../../components/events/SimilarEvents";
@@ -32,7 +31,8 @@ import { RecentlyViewedTracker } from "../../components/common/RecentlyViewedEve
 import { apiUtils, API_ENDPOINTS } from "../../config/api";
 import mockEvents from "./eventsMockData.json";
 import CopyButton from '../../components/ui/CopyButton';
-import { Share2 } from "lucide-react";
+import LiveQABoard from "../../components/events/LiveQABoard";
+import LivePollController from "../../components/admin/LivePollController";
 const isRequestCanceled = (error, signal) =>
   signal?.aborted ||
   error?.name === "AbortError" ||
@@ -255,7 +255,7 @@ ${window.location.href}
       toast.success("Event link copied to clipboard!");
       setLinkCopied(true);
       setTimeout(() => setLinkCopied(false), 2000);
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to copy link. Please copy the URL from your browser's address bar.");
     }
   };
@@ -452,7 +452,7 @@ const showClosingSoon =
                                   }
                                 }
                                 exportToCSV(allRegistrants, `${event.title}_registrants`);
-                              } catch (error) {
+                              } catch (_error) {
                                 toast.error("Failed to fetch registrants");
                               } finally {
                                 setExportingRegistrants(false);
@@ -490,7 +490,7 @@ const showClosingSoon =
                                   }
                                 }
                                 exportToJSON(allRegistrants, `${event.title}_registrants`);
-                              } catch (error) {
+                              } catch (_error) {
                                 toast.error("Failed to fetch registrants");
                               } finally {
                                 setExportingRegistrants(false);
@@ -577,7 +577,7 @@ const showClosingSoon =
 
                 {/* Event Countdown */}
                 <div className="sm:col-span-2">
-                  <CountdownTimer eventDate={event.date} />
+                  <CountdownTimer date={event.date} time={event.time} timezone={event.timezone} />
                 </div>
               </div>
 
@@ -630,13 +630,23 @@ const showClosingSoon =
                   )}
                 </div>
               </div>
-
               <div className="rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
                 <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Summary</h3>
                 <div
                   className="mt-3 text-gray-700 dark:text-gray-300 text-sm leading-6 prose prose-indigo dark:prose-invert"
                   dangerouslySetInnerHTML={{ __html: sanitizeMarkdown(event.description, marked.parse) }}
                 />
+              </div>
+
+              {/* Live Audience Engagement Section (Q&A and Polls) */}
+              <div className="space-y-4 pt-6 border-t border-gray-100 dark:border-gray-800">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 font-sans tracking-wide">
+                  Live Session Interaction
+                </h3>
+                <div className="grid gap-6 md:grid-cols-2">
+                  <LiveQABoard eventId={event.id} />
+                  <LivePollController eventId={event.id} />
+                </div>
               </div>
             </div>
           </div>
@@ -654,7 +664,11 @@ const showClosingSoon =
         </div>
 
         {showShareModal && (
-          <ShareModal event={event} onClose={() => setShowShareModal(false)} />
+          <ShareModal
+            isOpen={showShareModal}
+            event={event}
+            onClose={() => setShowShareModal(false)}
+          />
         )}
       </div>
     </>

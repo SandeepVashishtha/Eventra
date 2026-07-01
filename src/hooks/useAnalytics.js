@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
-import { apiUtils } from "../config/api";
+import { apiUtils } from "../config/api.js";
 import { logError } from "../utils/errorLogger";
 import { toast } from "react-toastify";
 

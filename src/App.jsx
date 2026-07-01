@@ -1,19 +1,18 @@
 import { useState, useEffect, lazy, Suspense } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import * as Sentry from "@sentry/react";
 import { Analytics } from "@vercel/analytics/react";
 import "./App.css";
 import "./styles/reduced-motion.css";
 import "./styles/print.css";
 import { toast } from "react-toastify";
-import EnvironmentSecurityDashboard from "./components/dev/EnvironmentSecurityDashboard";
 import ScrollRestoration from "./components/ScrollRestoration";
 // Critical path - loaded eagerly (needed before first paint)
 import Navbar from "./components/navbar/Navbar";
 import SkipToContent from "./components/accessibility/SkipToContent";
 import OfflineBanner from "./components/common/OfflineBanner";
 import OfflineConflictModal from "./components/common/OfflineConflictModal";
+import UpdateAvailableBanner from "./components/common/UpdateAvailableBanner";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import NotificationToastContainer from "./components/common/NotificationProvider";
@@ -183,6 +182,7 @@ function App() {
 
                 <OfflineBanner />
                 <OfflineConflictModal />
+                <UpdateAvailableBanner />
 
                 <Suspense fallback={null}>
                   <KeyboardShortcutsModal
@@ -225,7 +225,7 @@ function App() {
                           }
                         />
                         <Route
-                          path="/events/:id"
+                          path="/events/:eventId"
                           element={
                             <Suspense fallback={<EventDetailSkeleton />}>
                               <EventDetails />

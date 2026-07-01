@@ -25,8 +25,8 @@ const ScrollProgressBar = () => {
         return;
       }
 
-      const progress = (scrollTop / scrollableHeight) * 100;
-      
+      const progress = Math.min(100, Math.max(0, (scrollTop / scrollableHeight) * 100));
+
       // Directly manipulate the DOM for zero-render performance
       progressBarRef.current.style.width = `${progress}%`;
       ticking = false;
