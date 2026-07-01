@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Keyboard, Sparkles, X } from "lucide-react";
+import { useFocusTrap } from "../../hooks/useFocusTrap";
+import { useModalStack } from "../../hooks/useModalStack";
 
 const shortcutData = [
   {
@@ -18,11 +20,81 @@ const shortcutData = [
     workflow: "Navigation"
   },
   {
+    action: "Open Command Palette",
+    shortcut: "Ctrl + K / ⌘ + K",
+    keys: ["control", "k"],
+    category: "General",
+    workflow: "Quick Search"
+  },
+  {
     action: "Navigate to Home",
     shortcut: "g + h",
     keys: ["g", "h"],
     category: "Navigation",
     workflow: "Dashboard"
+  },
+  {
+    action: "Navigate to Events",
+    shortcut: "g + e",
+    keys: ["g", "e"],
+    category: "Navigation",
+    workflow: "Events"
+  },
+  {
+    action: "Navigate to Calendar",
+    shortcut: "g + c",
+    keys: ["g", "c"],
+    category: "Navigation",
+    workflow: "Events"
+  },
+  {
+    action: "Navigate to Bookmarks",
+    shortcut: "g + b",
+    keys: ["g", "b"],
+    category: "Navigation",
+    workflow: "User"
+  },
+  {
+    action: "Navigate to Reminders",
+    shortcut: "g + r",
+    keys: ["g", "r"],
+    category: "Navigation",
+    workflow: "User"
+  },
+  {
+    action: "Navigate to Hackathons",
+    shortcut: "g + k",
+    keys: ["g", "k"],
+    category: "Navigation",
+    workflow: "Events"
+  },
+  {
+    action: "Navigate to Projects",
+    shortcut: "g + p",
+    keys: ["g", "p"],
+    category: "Navigation",
+    workflow: "Developer"
+  },
+  {
+    action: "Navigate to Leaderboard",
+    shortcut: "g + a",
+    keys: ["g", "a"],
+    category: "Navigation",
+    workflow: "Community"
+  },
+  {
+    action: "Navigate to FAQ",
+    shortcut: "g + f",
+    keys: ["g", "f"],
+    category: "Navigation",
+    workflow: "Help & Guidance"
+  },
+  {
+    action: "Navigate to Dashboard",
+    shortcut: "g + d",
+    keys: ["g", "d"],
+    category: "Navigation",
+    workflow: "User"
   },
   {
     action: "Navigate to Login",
@@ -37,6 +109,34 @@ const shortcutData = [
     keys: ["g", "s"],
     category: "Navigation",
     workflow: "Auth"
+  },
+  {
+    action: "Register for Event",
+    shortcut: "R",
+    keys: ["r"],
+    category: "Event Detail",
+    workflow: "Registration"
+  },
+  {
+    action: "Copy Event Link",
+    shortcut: "C",
+    keys: ["c"],
+    category: "Event Detail",
+    workflow: "Sharing"
+  },
+  {
+    action: "Open Share Modal",
+    shortcut: "S",
+    keys: ["s"],
+    category: "Event Detail",
+    workflow: "Sharing"
+  },
+  {
+    action: "Print / Save as PDF",
+    shortcut: "P",
+    keys: ["p"],
+    category: "Event Detail",
+    workflow: "Export"
   }
 ];
 
@@ -46,15 +146,24 @@ const virtualKeys = [
   { label: "Ctrl", id: "control" },
   { label: "Alt", id: "alt" },
   { label: "Cmd / Win", id: "meta" },
+  { label: "a", id: "a" },
+  { label: "b", id: "b" },
+  { label: "c", id: "c" },
+  { label: "d", id: "d" },
+  { label: "e", id: "e" },
+  { label: "f", id: "f" },
   { label: "g", id: "g" },
   { label: "h", id: "h" },
+  { label: "k", id: "k" },
   { label: "l", id: "l" },
+  { label: "p", id: "p" },
+  { label: "r", id: "r" },
   { label: "s", id: "s" },
   { label: "? / /", id: "/" },
   { label: "Spacebar", id: " " }
 ];
 
-const ShortcutRow = ({ action, shortcut, keys, isPressed }) => (
+const ShortcutRow = ({ action, keys, isPressed }) => (
   <motion.div
     layout
     initial={{ opacity: 0, y: 10 }}
@@ -80,7 +189,7 @@ const ShortcutRow = ({ action, shortcut, keys, isPressed }) => (
             className={`
               px-2.5 py-1.5 rounded-lg border text-xs font-black uppercase tracking-tight shadow-sm transition-all duration-150
               ${active
-                ? "bg-gradient-to-r from-indigo-500 to-pink-500 text-white border-transparent scale-95 shadow-[0_0_12px_rgba(99,102,241,0.4)]"
+                ? "bg-linear-to-r from-indigo-500 to-pink-500 text-white border-transparent scale-95 shadow-[0_0_12px_rgba(99,102,241,0.4)]"
                 : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
               }
             `}
@@ -94,6 +203,8 @@ const ShortcutRow = ({ action, shortcut, keys, isPressed }) => (
 );
 
 const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
+  const { containerRef: trapRef } = useFocusTrap(isOpen, onClose);
+  const { isTopmost } = useModalStack(isOpen);
   const [pressedKeys, setPressedKeys] = useState(new Set());
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -101,12 +212,16 @@ const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
     if (!isOpen) return;
 
     const handleKeyDown = (e) => {
+      if (!isTopmost()) return;
+
       // Bypass tracking if editing standard forms/inputs
       if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") {
         return;
       }
       
-      const key = e.key.toLowerCase();
+      let key = e.key.toLowerCase();
+      if (key === "?") key = "/";
+
       setPressedKeys((prev) => {
         const next = new Set(prev);
         next.add(key);
@@ -120,7 +235,11 @@ const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
     };
 
     const handleKeyUp = (e) => {
-      const key = e.key.toLowerCase();
+      if (!isTopmost()) return;
+
+      let key = e.key.toLowerCase();
+      if (key === "?") key = "/";
+
       setPressedKeys((prev) => {
         const next = new Set(prev);
         next.delete(key);
@@ -145,6 +264,13 @@ const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
       window.removeEventListener("keyup", handleKeyUp);
       window.removeEventListener("blur", handleBlur);
     };
+  }, [isOpen, isTopmost]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setSearchQuery("");
+      setPressedKeys(new Set());
+    }
   }, [isOpen]);
 
   const isKeyPressed = (keyId) => {
@@ -164,18 +290,25 @@ const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-modal flex items-center justify-center p-4">
           {/* Backdrop Blur Overlay */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
+            aria-hidden="true"
             className="absolute inset-0 bg-slate-950/60 backdrop-blur-md"
           />
 
           {/* Interactive Modal Sheet */}
           <motion.div
+            ref={trapRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="keyboard-shortcuts-title"
+            tabIndex={-1}
+            onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
             initial={{ opacity: 0, scale: 0.9, y: 30 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 30 }}
@@ -186,13 +319,13 @@ const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
             <div className="flex items-center justify-between mb-6 flex-shrink-0">
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <span className="absolute -inset-0.5 rounded-full bg-gradient-to-r from-indigo-500 to-pink-500 blur opacity-70 animate-pulse" />
+                  <span className="absolute -inset-0.5 rounded-full bg-linear-to-r from-indigo-500 to-pink-500 blur opacity-70 animate-pulse" />
                   <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-indigo-400 border border-white/10">
                     <Keyboard className="h-5 w-5" />
                   </div>
                 </div>
                 <div>
-                  <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-800 dark:text-white">
+                  <h2 id="keyboard-shortcuts-title" className="text-xl sm:text-2xl font-black tracking-tight text-slate-800 dark:text-white">
                     Keyboard Shortcuts
                   </h2>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -203,9 +336,10 @@ const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
 
               <button
                 onClick={onClose}
+                aria-label="Close keyboard shortcuts"
                 className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-300 transition-colors shadow-sm"
               >
-                <X className="w-4 h-4" />
+                <X className="w-4 h-4" aria-hidden="true" />
               </button>
             </div>
 
@@ -228,7 +362,7 @@ const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
                       className={`
                         px-3.5 py-2.5 rounded-xl text-xs font-black uppercase tracking-tight transition-all duration-150 select-none
                         ${active
-                          ? "bg-gradient-to-r from-indigo-500 to-pink-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.5)] border-transparent"
+                          ? "bg-linear-to-r from-indigo-500 to-pink-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.5)] border-transparent"
                           : "bg-white dark:bg-slate-800 border-b-4 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 border-l border-r border-t border-slate-200/30 dark:border-slate-700/10"
                         }
                       `}
