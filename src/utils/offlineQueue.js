@@ -66,9 +66,10 @@ const DB_VERSION = 2;
 // Internal: rescue items from localStorage mirror before schema wipe
 // ---------------------------------------------------------------------------
 const _rescueFromLocalStorage = () => {
+  if (typeof localStorage === "undefined") return [];
   try {
-          const raw = localStorage.getItem(QUEUE_KEY);
-          return safeJsonParse(raw, []);
+    const raw = localStorage.getItem(QUEUE_KEY);
+    return safeJsonParse(raw, []);
   } catch {
     return [];
   }
@@ -98,7 +99,7 @@ const _dispatchUpgradeEvent = (rescuedCount) => {
 // ---------------------------------------------------------------------------
 const openDB = () => {
   return new Promise((resolve, reject) => {
-    if (!window.indexedDB) {
+    if (typeof window === "undefined" || !window.indexedDB) {
       reject(new Error("IndexedDB is not supported in this environment"));
       return;
     }
@@ -175,6 +176,7 @@ const openDB = () => {
  * Read the current offline queue from localStorage (Synchronous fallback).
  */
 export const getQueue = () => {
+  if (typeof localStorage === "undefined") return [];
   try {
     const raw = localStorage.getItem(QUEUE_KEY);
     return safeJsonParse(raw, []);
@@ -381,14 +383,16 @@ queue.push(actionItem);
  */
 export const setQueue = async (newQueue) => {
   // 1. Sync mirror updates immediately
-  try {
-    if (newQueue.length === 0) {
-      localStorage.removeItem(QUEUE_KEY);
-    } else {
-      localStorage.setItem(QUEUE_KEY, JSON.stringify(newQueue));
+  if (typeof localStorage !== "undefined") {
+    try {
+      if (newQueue.length === 0) {
+        localStorage.removeItem(QUEUE_KEY);
+      } else {
+        localStorage.setItem(QUEUE_KEY, JSON.stringify(newQueue));
+      }
+    } catch (error) {
+      logger.error("Error setting localStorage backup:", error);
     }
-  } catch (error) {
-    logger.error("Error setting localStorage backup:", error);
   }
 
   // 2. Sync IndexedDB in background
@@ -424,10 +428,12 @@ export const setQueue = async (newQueue) => {
  */
 export const clearQueue = async () => {
   // 1. Sync mirror
-  try {
-    localStorage.removeItem(QUEUE_KEY);
-  } catch (error) {
-    logger.error("Error clearing localStorage backup:", error);
+  if (typeof localStorage !== "undefined") {
+    try {
+      localStorage.removeItem(QUEUE_KEY);
+    } catch (error) {
+      logger.error("Error clearing localStorage backup:", error);
+    }
   }
 
   // 2. Sync IndexedDB

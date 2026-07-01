@@ -149,7 +149,8 @@ export default function LeaderboardTable({
   loading,
   error,
   currentContributors,
-  sortedContributors,
+  // eslint-disable-next-line no-unused-vars
+  sortedContributors: _sortedContributors,
   ranksMap,
   streaks,
   currentPage,
@@ -208,7 +209,7 @@ export default function LeaderboardTable({
 
     return (
       <div className="flex justify-between items-center py-4 px-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-        <span className="text-xs font-medium text-slate-500">
+        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
           Page {currentPage} of {totalPages}
         </span>
         <div className="flex items-center gap-2" role="navigation" aria-label="Pagination">
@@ -235,21 +236,21 @@ export default function LeaderboardTable({
 
   const renderTable = () => (
     <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-slate-100">
-        <thead className="bg-slate-50/90">
+      <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800">
+        <thead className="bg-slate-50/90 dark:bg-slate-800/90">
           <tr>
             {["Rank", "Contributor", "Achievement", "Points", "PRs"].map((header) => (
               <th
                 key={header}
                 scope="col"
-                className="px-6 py-4 text-left text-xs font-bold uppercase tracking-[0.18em] text-slate-500"
+                className="px-6 py-4 text-left text-xs font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400"
               >
                 {header}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100 bg-white">
+        <tbody className="divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-900">
           <AnimatePresence mode="popLayout">
             {currentContributors.length > 0 ? (
               currentContributors.map((c, index) => {
@@ -281,16 +282,16 @@ export default function LeaderboardTable({
 
   return (
     <section
-      className="overflow-hidden rounded-4xl border border-slate-200/70 bg-white/90 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-xl"
+      className="overflow-hidden rounded-4xl border border-slate-200/70 dark:border-slate-800/70 bg-white/90 dark:bg-slate-900/90 shadow-[0_24px_70px_rgba(15,23,42,0.08)] dark:shadow-[0_24px_70px_rgba(0,0,0,0.3)] backdrop-blur-xl"
       aria-labelledby="leaderboard-table-title"
     >
       <h2 id="leaderboard-table-title" className="sr-only">Contributor Rankings</h2>
 
       {error ? renderError() : loading ? renderLoading() : renderTable()}
 
-      <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50/60 px-6 py-3">
+      <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/60 px-6 py-3">
         {lastUpdated && (
-          <time className="text-xs font-medium text-slate-500" dateTime={lastUpdated}>
+          <time className="text-xs font-medium text-slate-500 dark:text-slate-400" dateTime={lastUpdated}>
             {lastUpdated}
           </time>
         )}

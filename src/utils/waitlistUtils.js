@@ -33,6 +33,11 @@ const parseEventId = (eventId) => {
 
 // Helper to add local notifications using localStorage
 export const addLocalNotification = async (title, message) => {
+  // SSR guard: localStorage and window are not available in Node.js/SSR environments
+  if (typeof window === "undefined" || typeof localStorage === "undefined") {
+    return;
+  }
+
   try {
     const canonicalKey = "eventra_notification_inbox";
     const raw = localStorage.getItem(canonicalKey);

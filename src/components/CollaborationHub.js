@@ -171,7 +171,11 @@ const CollaborationHub = () => {
       return;
     }
 
-    // Sanitize user proposal pitch text
+    const sanitizedProposal = sanitizeInputText(applicationText);
+    if (!sanitizedProposal.trim()) {
+      toast.error('Proposal message contains invalid content.');
+      return;
+    }
     toast.success('Your partnership proposal has been submitted successfully!');
     setApplicationText('');
     setProposalFile(null);

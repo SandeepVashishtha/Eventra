@@ -50,15 +50,35 @@ export function getQuickPromptKeys() {
   ];
 }
 
-export function getQuickPrompts(t) {
+export function getQuickPrompts(t, pathname = "") {
+  if (pathname.includes("/hackathons/matchmaking")) {
+    return [
+      t("chatbot.prompts.matchmaking_network", "How do I network here?"),
+      t("chatbot.prompts.matchmaking_team", "How to find a team?"),
+      t("chatbot.prompts.matchmaking_tips", "Give me networking tips"),
+    ];
+  } else if (pathname.includes("/events")) {
+    return [
+      t("chatbot.prompts.events_filter", "How to filter events?"),
+      t("chatbot.prompts.events_host", "How to host an event?"),
+      t("chatbot.prompts.events_recommend", "Recommend an event"),
+    ];
+  }
   return getQuickPromptKeys().map((key) => t(key));
 }
 
-export function getInitialMessages(t) {
+export function getInitialMessages(t, pathname = "") {
+  let content = t("chatbot.welcome");
+  if (pathname.includes("/hackathons/matchmaking")) {
+    content = t("chatbot.welcome_matchmaking", "Welcome to the Matchmaking Hub! Need help finding a team or networking with other participants?");
+  } else if (pathname.includes("/events")) {
+    content = t("chatbot.welcome_events", "Exploring events? Let me know if you need recommendations or help with filtering.");
+  }
+  
   return [
     {
       role: "assistant",
-      content: t("chatbot.welcome"),
+      content,
       actions: [
         { label: t("chatbot.actions.events"), to: "/events", icon: "CalendarDays" },
         { label: t("chatbot.actions.faq"), to: "/faq", icon: "HelpCircle" },
