@@ -402,17 +402,16 @@ export const setQueue = async (newQueue) => {
       const tx = db.transaction(STORE_NAME, "readwrite");
       const store = tx.objectStore(STORE_NAME);
 
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () =>
+        reject(tx.error || new Error("IndexedDB setQueue transaction aborted"));
+
       const clearReq = store.clear();
       clearReq.onsuccess = () => {
-        if (newQueue.length === 0) {
-          resolve();
-          return;
+        if (newQueue.length > 0) {
+          newQueue.forEach((item) => store.put(item));
         }
-
-        newQueue.forEach((item) => store.put(item));
-
-        tx.oncomplete = () => resolve();
-        tx.onerror = (e) => reject(e.target?.error || new Error('IndexedDB transaction failed'));
       };
       clearReq.onerror = () => reject(clearReq.error);
     });
