@@ -39,7 +39,6 @@ const EventFiltersToolbar = ({
   onSearchChange,
   onResetFilters,
   visibleEvents = [],
-currentFilterConfig,
 onApplyPreset,
 // totalElements = 0,
 }) => {
@@ -49,7 +48,6 @@ onApplyPreset,
   const { clearPresetError: _clearPresetError } = useEventFilterPresets();
 
   useFilterSuggestions({
-<<<<<<< HEAD
   currentFilters: {
     searchQuery,
     filterType,
@@ -61,19 +59,8 @@ onApplyPreset,
   visibleEvents,
   presets: [],
 });
-=======
-    currentFilters: {
-  searchQuery,
-  filterType,
-  categoryFilter,
-  sortType,
-  viewMode,
-  advancedFilters,
-},
-    visibleEvents,
-    presets: [],
-  });
->>>>>>> 4bae66c7 ( feat(events) : add registration progress indicator to event details)
+    
+
 
   useEffect(() => {
     setLocalQuery(searchQuery || "");
@@ -210,6 +197,7 @@ onApplyPreset,
             { key: "live", label: "Live Now" },
             { key: "upcoming", label: "Upcoming" },
             { key: "past", label: "Past Events" },
+            { key: "bookmarked", label: "⭐Bookmarked" },
           ].map((tab) => {
             const isActive = filterType === tab.key;
 
