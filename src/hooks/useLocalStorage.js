@@ -89,7 +89,10 @@ const useLocalStorage = (key, initialValue) => {
 
       // 🔥 FIX: Mark as internal before dispatching
       isInternalWrite.current = true;
-      window.dispatchEvent(new CustomEvent("local-storage", { detail: { key } }));
+      queueMicrotask(() => {
+        if (typeof window === "undefined") return;
+        window.dispatchEvent(new CustomEvent("local-storage", { detail: { key } }));
+      });
     } catch (error) {
       logger.warn(`useLocalStorage: error removing key "${key}":`, error);
     }
