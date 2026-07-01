@@ -415,6 +415,10 @@ const GSSoCContribution = () => {
           <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
             <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-50 dark:bg-indigo-900/20 rounded-full blur-3xl" />
             <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-50 dark:bg-blue-900/20 rounded-full blur-3xl" />
+          {/* Decorative background */}
+          <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+            <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-50 dark:bg-indigo-900/20 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-50 dark:bg-blue-900/20 rounded-full blur-3xl" />
           </div>
           
           <div className="relative z-10 grid md:grid-cols-2 gap-6 sm:gap-8 items-center">
@@ -427,10 +431,12 @@ const GSSoCContribution = () => {
               </div>
               
               <h1 id="hero-heading" className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 tracking-tight leading-tight text-gray-900 dark:text-white">
+              <h1 id="hero-heading" className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 leading-tight text-gray-900 dark:text-white">
                 Contribute to Eventra & <br className="hidden sm:block"/>
                 <span className="text-indigo-600 dark:text-indigo-400">Level Up Your Skills</span>
               </h1>
               
+              <p className="text-gray-600 dark:text-gray-300 text-base sm:text-lg mb-4 sm:mb-6 leading-relaxed max-w-xl">
               <p className="text-gray-600 dark:text-gray-300 text-base sm:text-lg mb-4 sm:mb-6 leading-relaxed max-w-xl">
                 Join 500+ contributors building real-world features. Earn points, 
                 badges, and recognition while making an impact.
@@ -442,6 +448,24 @@ const GSSoCContribution = () => {
                 <HeroStatCard label="PRs" value={userStats.prsMerged} icon={GitBranch} />
                 <HeroStatCard label="Points" value={userStats.points} icon={Star} />
                 <HeroStatCard label="Rank" value={userStats.rank.split(' ')[0]} icon={Award} />
+              {/* User Stats */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                {[
+                  { label: "Issues", value: userStats.issuesClaimed, icon: Target },
+                  { label: "PRs", value: userStats.prsMerged, icon: GitBranch },
+                  { label: "Points", value: userStats.points, icon: Star },
+                  { label: "Rank", value: userStats.rank.split(' ')[0], icon: Award },
+                ].map(({ label, value, icon: Icon }) => (
+                  <motion.div 
+                    key={label} 
+                    className="text-center p-3 sm:p-4 bg-white dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600 shadow-sm"
+                    whileHover={{ scale: 1.03, y: -2 }}
+                  >
+                    <Icon className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1.5 text-indigo-500 dark:text-indigo-400" aria-hidden="true" />
+                    <div className="text-lg sm:text-xl font-bold tabular-nums text-gray-900 dark:text-white">{formatNumber(value)}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">{label}</div>
+                  </motion.div>
+                ))}
               </div>
             </div>
             
@@ -473,6 +497,7 @@ const GSSoCContribution = () => {
                 whileTap={{ scale: 0.98 }}
                 onClick={() => window.open("https://gssoc.girlscript.tech", "_blank", "noopener,noreferrer")}
                 className="w-full mt-3 sm:mt-4 py-2.5 bg-indigo-600 text-white font-semibold rounded-xl flex items-center justify-center gap-2 hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 shadow-sm text-sm"
+                className="w-full mt-3 sm:mt-4 py-2.5 bg-indigo-600 text-white font-semibold rounded-xl flex items-center justify-center gap-2 hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 shadow-sm"
                 aria-label="View GSSoC leaderboard (opens in new tab)"
               >
                 <span>View Leaderboard</span>
