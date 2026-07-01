@@ -148,6 +148,9 @@ export const playNotificationSound = (soundKey) => {
     gain.connect(audioContext.destination);
     oscillator.start();
     oscillator.stop(audioContext.currentTime + 0.3);
+    // Safety net: always close the AudioContext, even if onended never fires
+    // (e.g., tab closed, navigation, scheduling miss)
+    setTimeout(() => { audioContext.close(); }, 500);
     oscillator.onended = () => audioContext.close();
   } catch {
     // Audio playback can be blocked until the user interacts with the page.
