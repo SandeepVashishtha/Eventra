@@ -12,7 +12,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "react-toastify";
-import { apiUtils, API_ENDPOINTS } from "../config/api";
+import { apiUtils, API_ENDPOINTS } from "../config/api.js";
 import { safeLocalStorage } from "../utils/safeStorage";
 
 const STORAGE_KEY = "eventra_waitlist_positions";
@@ -30,15 +30,30 @@ function readPersistedWaitlist() {
   }
 }
 
+let persistTimeout = null;
+
 /**
  * Persist the waitlist map.
  */
 function persistWaitlist(map) {
-  try {
-    safeLocalStorage.setItem(STORAGE_KEY, JSON.stringify(map));
-  } catch {
-    // ignore quota errors
+  if (typeof window === "undefined") return;
+  if (persistTimeout) {
+    clearTimeout(persistTimeout);
   }
+  persistTimeout = setTimeout(() => {
+    const runWrite = () => {
+      try {
+        safeLocalStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+      } catch {
+        // ignore quota errors
+      }
+    };
+    if (typeof window.requestIdleCallback === "function") {
+      window.requestIdleCallback(() => runWrite(), { timeout: 100 });
+    } else {
+      runWrite();
+    }
+  }, 100);
 }
 
 /**

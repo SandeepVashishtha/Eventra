@@ -19,12 +19,29 @@ export default function LoginForm() {
     if (!value.trim()) {
       return "Username or Email is required.";
     }
-    // Allow letters, numbers, @, ., _, - only
-    const validChars = /^[a-zA-Z0-9@._-]+$/;
-    if (!validChars.test(value)) {
-      return "Only letters, numbers, @, ., _, - are allowed.";
+
+    const isEmail = value.includes('@');
+
+    // Handle Email Validation
+    if (isEmail) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(value)) {
+        return "Please enter a valid email address.";
+      }
+      return ""; // Valid email
     }
-    return "";
+
+    // Handle Username Validation
+    if (value.trim().length < 3) {
+      return "Username must be at least 3 characters long.";
+    }
+
+    const validChars = /^[a-zA-Z0-9._-]+$/;
+    if (!validChars.test(value)) {
+      return "Only letters, numbers, ., _, - are allowed in usernames.";
+    }
+
+    return ""; // Valid username
   };
 
   const handleEmailOrUsernameChange = (e) => {

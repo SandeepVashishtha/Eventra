@@ -7,6 +7,9 @@ const DEFAULT_EXPIRY = 1000 * 60 * 60; // 1 hour
 
 export const storageManager = {
   set(key, value, expiry = DEFAULT_EXPIRY) {
+    if (typeof window === "undefined" || !window.localStorage) {
+      return;
+    }
     try {
       const payload = {
         value,
@@ -21,6 +24,9 @@ export const storageManager = {
   },
 
   get(key, validator = null) {
+    if (typeof window === "undefined" || !window.localStorage) {
+      return null;
+    }
     try {
       const raw = localStorage.getItem(key);
       if (!raw) return null;

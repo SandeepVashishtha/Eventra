@@ -132,5 +132,99 @@
     "noBookmarked": "No hay eventos guardados",
     "noBookmarkedDesc": "¡Empieza a explorar y guarda los eventos que te interesen!",
     "noEventsMatchDesc": "Intenta ajustar o limpiar tus filtros para ver todos los eventos disponibles."
+  },
+  "about": {
+    "pageTitle": "Acerca de nosotros",
+    "pageDescription": "Conozca Eventra: la plataforma de gestión de eventos de código abierto para comunidades, universidades y organizaciones de todo el mundo.",
+    "documentTitle": "Eventra | Acerca de",
+    "errorBoundaryLabel": "Estadísticas",
+    "hero": {
+      "tagline": "Código Abierto • Impulsado por la Comunidad • Gratis para Siempre",
+      "title": "Construyendo Mejores Eventos",
+      "subtitle": "Juntos",
+      "description": "Eventra empodera a comunidades, universidades, organizaciones y equipos de código abierto para crear, gestionar y hacer crecer eventos de gran impacto a través de herramientas de gestión de eventos accesibles, modernas y colaborativas."
+    },
+    "stats": {
+      "events": "Eventos Organizados",
+      "builders": "Miembros de la Comunidad",
+      "partners": "Alcance Comunitario"
+    },
+    "values": {
+      "heading": "Qué Impulsa a Eventra",
+      "description": "Nuestros valores guían cada decisión que tomamos, asegurando que Eventra siga siendo accesible, centrada en la comunidad y construida para un impacto a largo plazo.",
+      "eventManagement": {
+        "title": "Código Abierto",
+        "description": "Construido de manera transparente y disponible libremente para comunidades de todo el mundo."
+      },
+      "hackathonGrowth": {
+        "title": "La Comunidad Primero",
+        "description": "Diseñado en torno a la colaboración, la inclusión y las conexiones significativas."
+      },
+      "projectCollaboration": {
+        "title": "Innovación",
+        "description": "Evolucionando continuamente a través de los comentarios de la comunidad y la tecnología moderna."
+      },
+      "networking": {
+        "title": "Accesibilidad",
+        "description": "Simple, intuitivo y accesible para organizadores de todos los niveles."
+      }
+    },
+    "cta": {
+      "badge": "Únete a la Comunidad de Eventra",
+      "heading": "Construye, Colabora y Crece",
+      "subtitle": "Juntos con Eventra",
+      "description": "Eventra capacita a estudiantes, desarrolladores, organizadores y comunidades para descubrir oportunidades, colaborar en proyectos significativos y crear impacto a través de eventos tecnológicos.",
+      "socialProof": {
+        "community": "Comunidad Creciente",
+        "openSource": "Impulsado por Código Abierto",
+        "learning": "Aprendizaje y Colaboración"
+      },
+      "getStartedFree": "Comenzar Gratis",
+      "documentation": "Documentación",
+      "contactUs": "Contáctenos"
+    },
+    "features": {
+      "heading": "Características que Potencian Cada Evento",
+      "description": "Eventra proporciona todo lo necesario para crear, gestionar, escalar y hacer crecer eventos exitosos mientras fomenta comunidades más fuertes.",
+      "ctaAriaLabel": "{{cta}} - {{title}}",
+      "items": {
+        "events": {
+          "stat": "Configuración 90% más rápida",
+          "title": "Creación Inteligente de Eventos",
+          "description": "Lance eventos rápidamente utilizando plantillas inteligentes, flujos de trabajo optimizados y herramientas automatizadas.",
+          "cta": "Comenzar a Crear"
+        },
+        "hackathons": {
+          "stat": "Registro rápido",
+          "title": "Hackathones y Desafíos",
+          "description": "Únete a hackathones, forma equipos, construye proyectos y demuestra tus habilidades para ganar premios.",
+          "cta": "Ver Hackathones"
+        },
+        "projects": {
+          "stat": "Construir juntos",
+          "title": "Colaboración de Proyectos",
+          "description": "Colabora en proyectos de código abierto, contribuye al código real y construye tu portafolio.",
+          "cta": "Explorar Proyectos"
+        },
+        "connections": {
+          "stat": "Crece tu red",
+          "title": "Red de Contactos",
+          "description": "Conéctate con desarrolladores, diseñadores y creadores de todo el mundo.",
+          "cta": "Unirse a la Comunidad"
+        },
+        "manage": {
+          "stat": "Grado empresarial",
+          "title": "Gestión Segura",
+          "description": "Gestione sus eventos con total tranquilidad mediante check-ins automáticos con códigos QR y control de acceso.",
+          "cta": "Leer Documentación"
+        },
+        "benefits": {
+          "stat": "Acceso global",
+          "title": "Beneficios para Desarrolladores",
+          "description": "Obtén certificados, insignias por tus contribuciones y sube de nivel en el ranking global.",
+          "cta": "Registrarse Ahora"
+        }
+      }
+    }
   }
 }

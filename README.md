@@ -90,6 +90,29 @@ Eventra brings together event discovery, hackathon management, and community col
 - **Notifications** — Real-time and offline-friendly notification system with SSE support.
 - **Feedback System** — Rate and review events with rich feedback forms and moderation.
 
+## 🚀 Quick Links
+
+| Resource | Link |
+|----------|------|
+| 🤝 Contributing Guide | [CONTRIBUTING.md](CONTRIBUTING.md) |
+| 📜 Code of Conduct | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) |
+| ⚙️ Environment Setup | [docs/ENV_SETUP_GUIDE.md](docs/ENV_SETUP_GUIDE.md) |
+| 🏗️ Architecture | [docs/ARCHITECTURE_AND_ROLES.md](docs/ARCHITECTURE_AND_ROLES.md) |
+| 💻 Frontend Onboarding | [docs/frontend-onboarding.md](docs/frontend-onboarding.md) |
+| 🔒 Security Migration | [docs/SECURITY_MIGRATION.md](docs/SECURITY_MIGRATION.md) |
+| 📘 API Documentation | [docs/API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md) |
+
+---
+
+💡 **New contributor?**
+
+Start here:
+
+1. Read the Contributing Guide.
+2. Complete the Environment Setup.
+3. Follow the Frontend Onboarding guide.
+4. Run the project locally using `npm run dev`.
+
 ## Key Features
 
 - Event and hackathon discovery, filtering, and registration flows

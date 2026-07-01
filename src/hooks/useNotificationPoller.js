@@ -1,11 +1,11 @@
 import { pushToNotificationQueue, syncNotificationQueue } from "../utils/notificationQueue.js";
 import { useState, useCallback, useRef, useEffect } from "react";
-import { apiUtils, API_ENDPOINTS } from "../config/api";
-import { useAuth } from "../context/AuthContext";
-import usePageVisibility from "./usePageVisibility";
+import { apiUtils, API_ENDPOINTS } from "../config/api.js";
+import { useAuth } from "../context/AuthContext.js";
+import usePageVisibility from "./usePageVisibility.js";
 import seedNotifications from "../data/mockNotifications.json";
-import { safeJsonParse } from "../utils/safeJsonParse";
-import { getNotificationMessage } from "../utils/notificationPreferences";
+import { safeJsonParse } from "../utils/safeJsonParse.js";
+import { getNotificationMessage } from "../utils/notificationPreferences.js";
 import { get as idbGet, del as idbDel } from "idb-keyval";
 
 const POLLING_INTERVAL_MS = 60_000;
@@ -13,6 +13,9 @@ const MAX_SEEN_IDS = 500;
 const getStorageKey = () => {
   if (typeof process !== "undefined" && (process.env.NODE_ENV === "test" || process.env.VITE_TEST_MODE === "true")) {
     return "eventra_notification_inbox";
+  }
+  if (typeof window === "undefined" || !window.localStorage) {
+    return 'eventra_notification_inbox_guest';
   }
   try {
     const userStr = window.localStorage.getItem('user');
@@ -31,10 +34,12 @@ const normalize = (n = {}) => ({
 });
 
 const persist = (items) => {
+  if (typeof window === "undefined" || !window.localStorage) return;
   try { window.localStorage.setItem(getStorageKey(), JSON.stringify(items)); } catch {}
 };
 
 const loadPersisted = () => {
+  if (typeof window === "undefined" || !window.localStorage) return null;
   try {
     const raw = window.localStorage.getItem(getStorageKey());
     if (!raw) return null;
@@ -226,6 +231,7 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
 
   // Same-tab sync listener
   useEffect(() => {
+    if (typeof window === "undefined") return;
     const handleUpdate = () => {
       const persisted = loadPersisted();
       if (persisted) {

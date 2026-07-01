@@ -1,12 +1,14 @@
 import { renderHook, act } from "@testing-library/react";
 import useBookmarks from "./useBookmarks";
 import { safeJsonParse } from "../utils/safeJsonParse";
+import { getServerNow, setServerClockOffsetMs } from "../utils/timeSync";
 
 const makeEvent = (id, title = `Event ${id}`) => ({ id, title, date: "2025-10-01" });
 
 describe("useBookmarks", () => {
   beforeEach(() => {
     localStorage.clear();
+    setServerClockOffsetMs(0);
   });
 
   // ─── Initial state ──────────────────────────────────────────────────────────
@@ -62,7 +64,7 @@ describe("useBookmarks", () => {
   });
 
   it("toggleBookmark stamps a savedAt timestamp on newly added bookmarks", () => {
-    const before = Date.now();
+    const before = getServerNow();
     const { result } = renderHook(() => useBookmarks("user-5"));
 
     act(() => {
@@ -71,7 +73,22 @@ describe("useBookmarks", () => {
 
     const { savedAt } = result.current.bookmarks[0];
     expect(savedAt).toBeGreaterThanOrEqual(before);
-    expect(savedAt).toBeLessThanOrEqual(Date.now());
+    expect(savedAt).toBeLessThanOrEqual(getServerNow());
+  });
+
+  it("toggleBookmark uses server-synced clock offset for savedAt", () => {
+    setServerClockOffsetMs(15_000);
+    const before = getServerNow();
+    const { result } = renderHook(() => useBookmarks("user-5b"));
+
+    act(() => {
+      result.current.toggleBookmark(makeEvent(31));
+    });
+
+    const { savedAt } = result.current.bookmarks[0];
+    expect(savedAt).toBeGreaterThanOrEqual(before);
+    expect(savedAt).toBeLessThanOrEqual(getServerNow());
+    expect(savedAt).toBeGreaterThanOrEqual(Date.now() + 14_000);
   });
 
   it("toggleBookmark does not mutate other bookmarks when removing one", () => {
