@@ -65,6 +65,7 @@ jobs:
         run: |
           echo "report<<DELIM" >> $GITHUB_OUTPUT
           cat build/bundle-size-report.json >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
           echo "DELIM" >> $GITHUB_OUTPUT
         shell: bash
 
