@@ -37,6 +37,19 @@
   margin: 0 auto;
   line-height: 1.6;
 }
+/* ===== CONTRIBUTORS DARK MODE FIX ===== */
+
+.dark .contributors-section {
+  background: linear-gradient(135deg, #0f172a 0%, #111827 100%);
+}
+
+.dark .contributors-header h2 {
+  color: #f9fafb;
+}
+
+.dark .contributors-header p {
+  color: #d1d5db;
+}
 
 .contributors-grid {
   overflow: hidden;
@@ -294,6 +307,51 @@
 .loading-state p {
   font-size: 1.1rem;
   color: #64748b;
+}
+.dark .contributor-card {
+  background: #1f2937;
+  border: 1px solid #374151;
+}
+
+.dark .contributor-info h3 {
+  color: #f9fafb;
+}
+
+.dark .contributor-bio {
+  color: #d1d5db;
+}
+
+.dark .contributor-role {
+  color: #a5b4fc;
+}
+.dark .contribute-cta {
+  background: #1f2937;
+  border: 1px solid #374151;
+}
+
+.dark .contribute-cta h3 {
+  color: #f9fafb;
+}
+
+.dark .contribute-cta p {
+  color: #d1d5db;
+}
+.dark .btn-secondary {
+  border-color: #818cf8;
+  color: #c7d2fe;
+}
+
+.dark .btn-secondary:hover {
+  background: #6366f1;
+  color: #ffffff;
+}
+.dark .github-link {
+  background: #111827;
+  border: 1px solid #374151;
+}
+
+.dark .github-link:hover {
+  background: #1f2937;
 }
 
 /* Responsive Design */

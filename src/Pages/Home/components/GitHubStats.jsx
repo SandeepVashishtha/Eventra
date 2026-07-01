@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { GitHubStatCardSkeleton } from "../../../components/common/SkeletonLoaders";
 import {
@@ -15,10 +15,17 @@ import {
   Languages,
 } from "lucide-react";
 
-const GITHUB_USER = "SandeepVashishtha";
-const GITHUB_REPO = "Eventra";
+import { safeJsonParse } from "../../../utils/safeJsonParse";
+import { ENV } from "../../../config/env";
+import {
+  fetchRepository,
+  fetchContributors,
+  fetchPullRequests,
+} from "../../../utils/githubApiClient";
 
-const TOKEN = process.env.REACT_APP_GITHUB_TOKEN || ""; // optional
+const repoPath = ENV.GITHUB_REPO;
+const [GITHUB_USER, GITHUB_REPO] = repoPath.split("/");
+
 const LS_KEY = "eventra:repoStats";
 const CACHE_MS = 30 * 60 * 1000; // 30 min
 
@@ -26,7 +33,7 @@ const readCache = () => {
   try {
     const raw = localStorage.getItem(LS_KEY);
     if (!raw) return null;
-    const { data, ts } = JSON.parse(raw);
+    const { data, ts } = safeJsonParse(raw, {});
     return Date.now() - ts > CACHE_MS ? null : data;
   } catch {
     return null;
@@ -64,44 +71,44 @@ export default function GitHubStats() {
 
     (async () => {
       try {
-        const headers = {
-          Accept: "application/vnd.github+json",
-          "X-GitHub-Api-Version": "2022-11-28",
-          ...(TOKEN ? { Authorization: `Bearer ${TOKEN}` } : {}),
-        };
+        const [repoResult, contributorsResult, prResult] =
+          await Promise.allSettled([
+            fetchRepository(GITHUB_USER, GITHUB_REPO),
+            fetchContributors(GITHUB_USER, GITHUB_REPO, 1, 1),
+            fetchPullRequests(GITHUB_USER, GITHUB_REPO, { per_page: 1 }),
+          ]);
 
-        const repoRes = await fetch(
-          `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}`,
-          { headers },
-        );
-        if (!repoRes.ok) throw new Error(`Repo ${repoRes.status}`);
-        const repoData = await repoRes.json();
+        if (repoResult.status === "rejected") {
+          const cached = readCache();
+          if (cached) {
+            setStats(cached);
+            setIsLoading(false);
+            return;
+          }
+          throw repoResult.reason;
+        }
+        const repoData = repoResult.value;
 
-        // contributors
         let contribCount = "—";
-        try {
-          const cRes = await fetch(
-            `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contributors?per_page=100`,
-            { headers },
-          );
-          if (cRes.ok) {
-            const cData = await cRes.json();
-            if (Array.isArray(cData)) contribCount = cData.length;
+        if (contributorsResult.status === "fulfilled") {
+          const contributors = contributorsResult.value;
+          if (Array.isArray(contributors) && contributors.length > 0) {
+            contribCount = contributors.length;
           }
-        } catch {}
+        } else if (contributorsResult.status === "rejected") {
+          contribCount = "—";
+        }
 
-        // pull requests
         let prCount = "—";
-        try {
-          const pRes = await fetch(
-            `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/pulls?state=open`,
-            { headers },
-          );
-          if (pRes.ok) {
-            const pData = await pRes.json();
-            if (Array.isArray(pData)) prCount = pData.length;
+        if (prResult.status === "fulfilled") {
+          const pullRequests = prResult.value;
+          if (Array.isArray(pullRequests) && pullRequests.length > 0) {
+            prCount = pullRequests.length;
           }
-        } catch {}
+        } else if (prResult.status === "rejected") {
+          prCount = "—";
+        } else {
+        }
 
         const next = {
           stars: repoData.stargazers_count || 0,
@@ -124,10 +131,9 @@ export default function GitHubStats() {
           writeCache(next);
           setIsLoading(false);
         }
-      } catch (err) {
-        console.warn("GitHub stats fetch failed", err);
+      } catch {
         if (!cached && mounted) {
-          setStats({ ...stats, stars: "—", forks: "—", issues: "—" });
+          setStats((s) => ({ ...s, stars: "—", forks: "—", issues: "—" }));
           setIsLoading(false);
         }
       }
@@ -138,7 +144,7 @@ export default function GitHubStats() {
     };
   }, []);
 
-  const statCards = [
+  const statCards = useMemo(() => [
     {
       label: "Stars",
       value: stats.stars,
@@ -202,17 +208,15 @@ export default function GitHubStats() {
       icon: <Languages className="text-amber-600" size={40} />,
       link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}`,
     },
-  ];
+  ], [stats]);
 
   return (
-    // UPDATED: Section background
     <section className="py-16 bg-white dark:bg-black ">
       <div className="max-w-7xl mx-auto px-6">
         <motion.h2
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          // UPDATED: Title text color with responsive sizing
           className="text-3xl sm:text-4xl font-extrabold text-center text-gray-900 dark:text-gray-100 mb-8 sm:mb-10 px-4"
         >
           Project Statistics
@@ -224,31 +228,23 @@ export default function GitHubStats() {
           className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6 max-w-6xl mx-auto"
         >
           {isLoading
-            ? [...Array(10)].map((_, i) => (
-                <GitHubStatCardSkeleton key={`skeleton-${i}`} />
-              ))
-            : statCards.map(({ label, value, icon, link }, index) => (
+            ? [...Array(10)].map((_, i) => <GitHubStatCardSkeleton key={`skeleton-${i}`} />)
+            : statCards.map(({ label, value, icon, link }) => (
                 <motion.a
                   key={label}
                   href={link}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  target="_blank" rel="noopener noreferrer"
                   whileHover={{ scale: 1.1, rotate: 1 }}
                   whileTap={{ scale: 0.95 }}
-                  // UPDATED: Card background, border, and responsive sizing
                   className="group flex flex-col items-center justify-center bg-white dark:bg-gray-800 rounded-2xl px-3 py-4 sm:px-6 sm:py-6 md:px-8 shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-700 relative overflow-hidden"
                 >
-                  {/* Glow effect */}
-                  {/* UPDATED: Glow effect for dark mode */}
                   <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition duration-700 blur-3xl rounded-2xl"></div>
 
                   <div className="z-10 flex flex-col items-center space-y-2 sm:space-y-3">
-                    {/* UPDATED: Icon wrapper background with responsive sizing */}
                     <div className="p-2 sm:p-3 md:p-4 bg-gray-50 dark:bg-gray-700 rounded-full shadow-inner [&>svg]:w-7 [&>svg]:h-7 sm:[&>svg]:w-9 sm:[&>svg]:h-9 md:[&>svg]:w-10 md:[&>svg]:h-10">
                       {icon}
                     </div>
-                    {/* UPDATED: Text colors with responsive sizing */}
-                    <p className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100 text-center break-words px-1">
+                    <p className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100 text-center wrap-break-word px-1">
                       {value}
                     </p>
                     <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 text-center px-1">
@@ -256,7 +252,6 @@ export default function GitHubStats() {
                     </p>
                   </div>
 
-                  {/* UPDATED: Icon color */}
                   <ExternalLink
                     size={16}
                     className="absolute top-3 right-3 text-gray-400 dark:text-gray-500 opacity-0 group-hover:opacity-100 transition duration-300"

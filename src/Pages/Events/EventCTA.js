@@ -1,12 +1,13 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { CalendarDays, Users } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const EventCTA = () => {
   const [showModal, setShowModal] = useState(false);
 
   return (
     <section 
-      className="relative py-16 px-8 m-8 rounded-3xl bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white shadow-xl overflow-hidden"
+      className="relative py-16 px-8 m-8 rounded-3xl bg-linear-to-r from-slate-950 via-slate-900 to-indigo-950 text-white shadow-xl overflow-hidden"
       // AOS Implementation
       data-aos="zoom-in-up"
       data-aos-duration="1000"
@@ -43,12 +44,12 @@ const EventCTA = () => {
 
         {/* Buttons */}
         <div className="flex flex-col md:flex-row gap-4">
-          <a
-            href="/events"
+          <Link
+            to="/events"
             className="inline-flex items-center justify-center gap-2 bg-blue-600 text-white font-semibold px-8 py-4 rounded-lg shadow-lg hover:scale-105 hover:bg-blue-700 transition-transform duration-300"
           >
             Explore Events <CalendarDays size={20} />
-          </a>
+          </Link>
 
           {/* UPDATED: The secondary button needs dark mode styles for when the main page is dark. */}
           <button
