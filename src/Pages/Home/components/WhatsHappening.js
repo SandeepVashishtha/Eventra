@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useCallback, useMemo, memo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useInView } from "react-intersection-observer";
 import { HomeCardSkeleton } from "../../../components/common/SkeletonLoaders";
