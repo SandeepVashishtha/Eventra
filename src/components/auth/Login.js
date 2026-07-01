@@ -15,9 +15,7 @@ import '../../styles/auth.css';
 import { emailPattern } from '../../validation';
 import {
   canAttempt,
-  clearAttempts,
   incrementFailures,
-  resetFailures,
   getBackoffDelay,
 } from "../../utils/authRateLimiter";
 
@@ -93,9 +91,6 @@ const Login = () => {
       }
       const ok = await login(sanitizedUsernameOrEmail, formData.password);
       if (ok) {
-        clearAttempts("login");
-        resetFailures("login");
-
         showAuthToast(
           "Login successful! Redirecting to dashboard...",
           () => navigate("/dashboard", { replace: true })
