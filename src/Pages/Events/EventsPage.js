@@ -20,6 +20,7 @@ import ErrorBoundary from "../../components/common/ErrorBoundary";
 import ErrorMessage from "../../components/common/ErrorMessage";
 import { EventTimeline } from "../../components/EventTimeline";
 import TrendingEvents from "../../components/TrendingEvents/TrendingEvents";
+import RecentlyViewedEvents from "../../components/common/RecentlyViewedEvents";
 import { safeJsonParse } from "../../utils/safeJsonParse";
 import {
   decodeAdvancedFilters,
@@ -30,6 +31,22 @@ import {
   serializeAdvancedFilters,
 } from "../../utils/advancedFilterUtils";
 const FILTER_STORAGE_KEY = "eventra:event-filters:v1";
+
+const EventsPagination = ({ listing }) => {
+  if (listing.isLoading || listing.totalPages <= 1) return null;
+  return (
+    <div className="mt-8 flex justify-center">
+      <PaginationControls
+        currentPage={listing.currentPage}
+        totalPages={listing.totalPages}
+        totalEvents={listing.totalElements}
+        eventsPerPage={listing.eventsPerPage}
+        onPageChange={listing.setSafePage}
+        onPageSizeChange={listing.setEventsPerPage}
+      />
+    </div>
+  );
+};
 
 const ExploreEventsSkeleton = () => (
   <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" aria-label="Loading events">
@@ -114,6 +131,12 @@ const renderCardSection = (
     </div>
   );
 };
+
+const RecentlyViewedSection = () => (
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+    <RecentlyViewedEvents />
+  </div>
+);
 
 const EventsPage = () => {
   useDocumentTitle("Eventra | Events");
@@ -338,7 +361,11 @@ const EventsPage = () => {
 
       <div className="mt-6 sm:mt-8">
         <TrendingEvents title="Trending Events" limit={6} fetchSize={24} />
+
+<RecentlyViewedSection />
       </div>
+
+      <RecentlyViewedSection />
 
       <div
         ref={cardSectionRef}
@@ -405,13 +432,7 @@ const EventsPage = () => {
           )}
 
           {!listing.isLoading && listing.totalPages > 1 && (
-            <div className="mt-8 flex justify-center">
-              <PaginationControls
-                currentPage={listing.currentPage}
-                totalPages={listing.totalPages}
-                onPageChange={listing.setSafePage}
-              />
-            </div>
+            <EventsPagination listing={listing} />
           )}
         </ErrorBoundary>
 

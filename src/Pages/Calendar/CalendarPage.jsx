@@ -397,7 +397,7 @@ const CalendarPage = () => {
                         <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500 transition-transform group-hover:translate-x-0.5" />
                       </div>
 
-                      <h4 className="mt-2 text-[15px] font-bold text-slate-900 dark:text-white line-clamp-2 wrap-break-word leading-snug">
+                      <h4 title={event.title} className="mt-2 text-[15px] font-bold text-slate-900 dark:text-white line-clamp-2 break-words leading-snug">
                         {event.title}
                       </h4>
 

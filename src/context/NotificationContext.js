@@ -1,6 +1,6 @@
-import { createContext, useContext, useCallback, useMemo, useEffect, useRef, useState } from "react";
+import { createContext, useContext, useCallback, useMemo, useEffect, useRef } from "react";
 import { useAuth } from "./AuthContext";
-import useRealTimeConnection, { SSE_STATUS } from "../hooks/useRealTimeConnection";
+import useRealTimeConnection from "../hooks/useRealTimeConnection";
 import { getNotificationCategory, getNotificationMessage, getNotificationTitle } from "../utils/notificationPreferences";
 import { useNotificationPreferences } from "../hooks/useNotificationPreferences";
 import { usePushSubscription } from "../hooks/usePushSubscription";

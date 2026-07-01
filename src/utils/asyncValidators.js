@@ -18,11 +18,17 @@ import { logger } from "./logger.js";
 export const createAsyncValidator = (asyncValidatorFn, debounceMs = 300) => {
   let timeoutId;
 
-  return async function asyncValidator(value, ...args) {
-    return new Promise((resolve) => {
-      clearTimeout(timeoutId);
+  let resolvePrev;
 
+  return async function asyncValidator(value, ...args) {
+    if (resolvePrev) resolvePrev(null);
+
+    clearTimeout(timeoutId);
+
+    return new Promise((resolve) => {
+      resolvePrev = resolve;
       timeoutId = setTimeout(async () => {
+        resolvePrev = null;
         try {
           const result = await asyncValidatorFn(value, ...args);
           resolve(result);

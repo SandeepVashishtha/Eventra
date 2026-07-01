@@ -7,8 +7,7 @@ describe("Rate-Limit Storage (In-Memory)", () => {
 
   beforeEach(() => {
     process.env = { ...originalEnv };
-    delete process.env.KV_REST_API_URL;
-    delete process.env.KV_REST_API_TOKEN;
+    delete process.env.RATE_LIMIT_REDIS_URL;
     process.env.NODE_ENV = "test";
   });
 
@@ -126,8 +125,7 @@ describe("Rate-Limit Storage (Production Fail-Closed)", () => {
 
   beforeEach(() => {
     process.env = { ...originalEnv };
-    delete process.env.KV_REST_API_URL;
-    delete process.env.KV_REST_API_TOKEN;
+    delete process.env.RATE_LIMIT_REDIS_URL;
   });
 
   afterEach(() => {

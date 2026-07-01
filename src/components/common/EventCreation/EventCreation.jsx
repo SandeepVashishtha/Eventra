@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
@@ -32,7 +32,7 @@ import {
 } from "@heroicons/react/24/solid";
 import { API_ENDPOINTS, apiUtils } from "../../../config/api";
 import { useFormSubmit } from "../../../hooks/useFormSubmit";
-import { validateCoordinates } from "../../../utils/eventCreationUtils";
+import { buildEventPayload } from "../../../utils/eventCreationUtils";
 import { validateForm } from "../../../utils/eventFormValidation";
 import { safeJsonParse } from "../../../utils/safeJsonParse";
 
@@ -83,7 +83,6 @@ const EventCreation = () => {
   const [newTag, setNewTag] = useState("");
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
   const [showRestoreModal, setShowRestoreModal] = useState(false);
-  const [lastSavedAt, setLastSavedAt] = useState(null);
   const [restoreDraftMessage, setRestoreDraftMessage] = useState(
     "A previously saved event draft was found. Would you like to restore it?"
   );
@@ -216,61 +215,7 @@ const EventCreation = () => {
 
   const createEvent = () => {
     try {
-      let coordinates = null;
-      if (formData.location?.coordinates?.latitude && formData.location?.coordinates?.longitude) {
-        coordinates = validateCoordinates(
-          formData.location?.coordinates?.latitude,
-          formData.location?.coordinates?.longitude
-        );
-      }
-
-      const eventStartDate = new Date(
-        `${formData.isMultiDay ? formData.startDate : formData.date}T${formData.startTime}`
-      );
-      const eventEndDate = new Date(
-        `${formData.isMultiDay ? formData.endDate : formData.date}T${formData.endTime}`
-      );
-
-      if (isNaN(eventStartDate.getTime()) || isNaN(eventEndDate.getTime())) {
-        throw new Error("Invalid date or time format");
-      }
-
-      const eventData = {
-        title: formData.title.trim(),
-        description: formData.description.trim(),
-        startDate: eventStartDate.toISOString(),
-        endDate: eventEndDate.toISOString(),
-        timezone: formData.timezone,
-        location: formData.isVirtual
-          ? null
-          : {
-              name: formData.location.name.trim(),
-              address: formData.location.address?.trim() || "",
-              coordinates: coordinates,
-            },
-        isVirtual: formData.isVirtual,
-        virtualLink: formData.isVirtual ? formData.virtualLink.trim() : null,
-        capacity: formData.capacity ? Number(formData.capacity) : null,
-        isPublic: formData.isPublic,
-        requiresApproval: formData.requiresApproval,
-        registrationStart: formData.registrationStart
-          ? new Date(formData.registrationStart).toISOString()
-          : null,
-        registrationEnd: formData.registrationEnd
-          ? new Date(formData.registrationEnd).toISOString()
-          : null,
-        category: formData.category,
-        tags: formData.tags.filter((tag) => tag.trim()),
-        ticketTiers: formData.ticketTiers
-          .filter((tier) => tier.name.trim())
-          .map((tier) => ({
-            name: tier.name.trim(),
-            price: Number(tier.price) || 0,
-            capacity: tier.capacity ? Number(tier.capacity) : null,
-            description: tier.description?.trim() || "",
-          })),
-      };
-
+      const eventData = buildEventPayload(formData);
       submitEventForm(eventData);
     } catch (error) {
       logger.error("Error creating event:", error);
