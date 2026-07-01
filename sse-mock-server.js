@@ -9,6 +9,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import jwt from "jsonwebtoken";
+import { validateJwtSecretOrExit } from "./api/_lib/jwtSecret.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -115,9 +116,7 @@ const log = (...args) => {
   }
 };
 
-let notificationStore = [];
-
-const LIVE_NOTIFICATION_TEMPLATES = [
+const MOCK_CONTRIBUTORS = [
   { username: "alice", name: "Alice Dev", avatar: "https://avatars.githubusercontent.com/u/1?v=4", profile: "https://github.com/alice", points: 42, prs: 6 },
   { username: "bob", name: "Bob Coder", avatar: "https://avatars.githubusercontent.com/u/2?v=4", profile: "https://github.com/bob", points: 35, prs: 5 },
   { username: "carol", name: "Carol Builder", avatar: "https://avatars.githubusercontent.com/u/3?v=4", profile: "https://github.com/carol", points: 28, prs: 4 },
@@ -130,11 +129,11 @@ const MOCK_EVENTS = [
   { id: "event-3", title: "Web Dev Workshop" }
 ];
 
-const JWT_SECRET = process.env.JWT_SECRET;
-
-if (!JWT_SECRET || !JWT_SECRET.trim()) {
-  console.error("FATAL: JWT_SECRET environment variable is required and must not be empty or whitespace-only.");
-  console.error("Generate a secure secret using: openssl rand -base64 32");
+let JWT_SECRET;
+try {
+  JWT_SECRET = validateJwtSecretOrExit();
+} catch (error) {
+  console.error(error.message);
   process.exit(1);
 }
 
@@ -144,6 +143,55 @@ const mockRegistrations = new Map([
   ["reg-2", { registrationId: "reg-2", eventId: "event-1", userId: "user-2", userName: "Priyanshu Ranjan", attendanceStatus: "Registered", registeredAt: new Date().toISOString() }],
   ["reg-3", { registrationId: "reg-3", eventId: "event-2", userId: "user-3", userName: "Karan Patel", attendanceStatus: "Checked In", checkedInAt: new Date().toISOString() }]
 ]);
+
+const liveAudienceStore = new Map([
+  [
+    "event-1",
+    {
+      questions: [
+        { id: "q-1", eventId: "event-1", text: "How do we deploy the SSE server in production?", upvotes: 12, flagged: false, createdAt: new Date(Date.now() - 600000).toISOString() },
+        { id: "q-2", eventId: "event-1", text: "Is there any rate limiting on the Q&A endpoints?", upvotes: 8, flagged: false, createdAt: new Date(Date.now() - 300000).toISOString() }
+      ],
+      activePoll: {
+        id: "poll-1",
+        question: "Which framework do you prefer for production?",
+        type: "single_choice",
+        options: ["React", "Vue", "Angular", "Svelte"],
+        results: { "React": 15, "Vue": 5, "Angular": 2, "Svelte": 4 },
+        status: "active"
+      }
+    }
+  ],
+  [
+    "event-2",
+    {
+      questions: [
+        { id: "q-3", eventId: "event-2", text: "What are the performance benefits of Lenis?", upvotes: 5, flagged: false, createdAt: new Date(Date.now() - 200000).toISOString() }
+      ],
+      activePoll: null
+    }
+  ]
+]);
+
+const liveAudienceClients = new Set();
+
+const getLiveAudienceData = (eventId) => {
+  if (!liveAudienceStore.has(eventId)) {
+    liveAudienceStore.set(eventId, { questions: [], activePoll: null });
+  }
+  return liveAudienceStore.get(eventId);
+};
+
+const broadcastLiveAudience = (eventId, actionType, payload) => {
+  const packet = JSON.stringify({ eventId, type: actionType, payload });
+  for (const client of liveAudienceClients) {
+    try {
+      client.write(`data: ${packet}\n\n`);
+    } catch {
+      liveAudienceClients.delete(client);
+    }
+  }
+};
 
 const mockScanLogs = [
   { logId: "log-initial-1", registrationId: "reg-3", eventId: "event-2", userId: "user-3", userName: "Karan Patel", scannedBy: "mock-dev-123", timestamp: new Date().toISOString(), status: "Checked In", eventName: "React Conference 2025" }
@@ -217,6 +265,478 @@ function send(res, data) {
   res.write(`data: ${JSON.stringify(data)}\n\n`);
 }
 
+async function handleLiveAudienceRequests(req, res, pathname) {
+  // GET /api/events/:eventId/live-audience
+  const baseMatch = pathname.match(/^\/api\/events\/([^/]+)\/live-audience$/);
+  if (baseMatch && req.method === "GET") {
+    const eventId = decodeURIComponent(baseMatch[1]);
+    const data = getLiveAudienceData(eventId);
+    return jsonResponse(res, 200, data);
+  }
+
+  // GET /api/stream/live-audience or /stream/live-audience
+  if (pathname === "/stream/live-audience" || pathname === "/api/stream/live-audience") {
+    sseHeaders(res);
+    log("[SSE] live-audience client connected");
+    liveAudienceClients.add(res);
+    req.on("close", () => {
+      liveAudienceClients.delete(res);
+      log("[SSE] live-audience client disconnected");
+    });
+    return true;
+  }
+
+  // POST /api/events/:eventId/live-audience/questions
+  const createQuestionMatch = pathname.match(/^\/api\/events\/([^/]+)\/live-audience\/questions$/);
+  if (createQuestionMatch && req.method === "POST") {
+    const eventId = decodeURIComponent(createQuestionMatch[1]);
+    const body = await getRequestBody(req, res);
+    if (!body.text) {
+      return jsonResponse(res, 400, { error: "Missing question text" });
+    }
+    const data = getLiveAudienceData(eventId);
+    const newQuestion = {
+      id: `q-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      eventId,
+      text: body.text,
+      upvotes: 0,
+      flagged: false,
+      createdAt: new Date().toISOString()
+    };
+    data.questions.push(newQuestion);
+    broadcastLiveAudience(eventId, "NEW_QUESTION", newQuestion);
+    return jsonResponse(res, 201, { success: true, question: newQuestion });
+  }
+
+  // POST /api/events/:eventId/live-audience/questions/:questionId/upvote
+  const upvoteQuestionMatch = pathname.match(/^\/api\/events\/([^/]+)\/live-audience\/questions\/([^/]+)\/upvote$/);
+  if (upvoteQuestionMatch && req.method === "POST") {
+    const eventId = decodeURIComponent(upvoteQuestionMatch[1]);
+    const questionId = decodeURIComponent(upvoteQuestionMatch[2]);
+    const data = getLiveAudienceData(eventId);
+    const question = data.questions.find(q => q.id === questionId);
+    if (!question) {
+      return jsonResponse(res, 404, { error: "Question not found" });
+    }
+    question.upvotes += 1;
+    broadcastLiveAudience(eventId, "UPDATE_QUESTION", question);
+    return jsonResponse(res, 200, { success: true, question });
+  }
+
+  // POST /api/events/:eventId/live-audience/questions/:questionId/flag
+  const flagQuestionMatch = pathname.match(/^\/api\/events\/([^/]+)\/live-audience\/questions\/([^/]+)\/flag$/);
+  if (flagQuestionMatch && req.method === "POST") {
+    const eventId = decodeURIComponent(flagQuestionMatch[1]);
+    const questionId = decodeURIComponent(flagQuestionMatch[2]);
+    const data = getLiveAudienceData(eventId);
+    const question = data.questions.find(q => q.id === questionId);
+    if (!question) {
+      return jsonResponse(res, 404, { error: "Question not found" });
+    }
+    question.flagged = true;
+    broadcastLiveAudience(eventId, "UPDATE_QUESTION", question);
+    return jsonResponse(res, 200, { success: true, question });
+  }
+
+  // DELETE /api/events/:eventId/live-audience/questions/:questionId
+  const deleteQuestionMatch = pathname.match(/^\/api\/events\/([^/]+)\/live-audience\/questions\/([^/]+)$/);
+  if (deleteQuestionMatch && req.method === "DELETE") {
+    const eventId = decodeURIComponent(deleteQuestionMatch[1]);
+    const questionId = decodeURIComponent(deleteQuestionMatch[2]);
+    const data = getLiveAudienceData(eventId);
+    const initialLength = data.questions.length;
+    data.questions = data.questions.filter(q => q.id !== questionId);
+    if (data.questions.length === initialLength) {
+      return jsonResponse(res, 404, { error: "Question not found" });
+    }
+    broadcastLiveAudience(eventId, "DELETE_QUESTION", questionId);
+    return jsonResponse(res, 200, { success: true });
+  }
+
+  // POST /api/events/:eventId/live-audience/polls
+  const createPollMatch = pathname.match(/^\/api\/events\/([^/]+)\/live-audience\/polls$/);
+  if (createPollMatch && req.method === "POST") {
+    const eventId = decodeURIComponent(createPollMatch[1]);
+    const body = await getRequestBody(req, res);
+    if (!body.question || !body.type || !body.options) {
+      return jsonResponse(res, 400, { error: "Missing required poll fields" });
+    }
+    const data = getLiveAudienceData(eventId);
+    const initialResults = {};
+    for (const option of body.options) {
+      initialResults[option] = 0;
+    }
+    const newPoll = {
+      id: `poll-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      question: body.question,
+      type: body.type,
+      options: body.options,
+      results: initialResults,
+      status: "active"
+    };
+    data.activePoll = newPoll;
+    broadcastLiveAudience(eventId, "SET_POLL", newPoll);
+    return jsonResponse(res, 201, { success: true, poll: newPoll });
+  }
+
+  // POST /api/events/:eventId/live-audience/polls/:pollId/status
+  const pollStatusMatch = pathname.match(/^\/api\/events\/([^/]+)\/live-audience\/polls\/([^/]+)\/status$/);
+  if (pollStatusMatch && req.method === "POST") {
+    const eventId = decodeURIComponent(pollStatusMatch[1]);
+    const pollId = decodeURIComponent(pollStatusMatch[2]);
+    const body = await getRequestBody(req, res);
+    if (!body.status) {
+      return jsonResponse(res, 400, { error: "Missing status" });
+    }
+    const data = getLiveAudienceData(eventId);
+    const poll = data.activePoll;
+    if (!poll || poll.id !== pollId) {
+      return jsonResponse(res, 404, { error: "Poll not found" });
+    }
+    poll.status = body.status;
+    broadcastLiveAudience(eventId, "UPDATE_POLL", poll);
+    return jsonResponse(res, 200, { success: true, poll });
+  }
+
+  // POST /api/events/:eventId/live-audience/polls/:pollId/vote
+  const pollVoteMatch = pathname.match(/^\/api\/events\/([^/]+)\/live-audience\/polls\/([^/]+)\/vote$/);
+  if (pollVoteMatch && req.method === "POST") {
+    const eventId = decodeURIComponent(pollVoteMatch[1]);
+    const pollId = decodeURIComponent(pollVoteMatch[2]);
+    const body = await getRequestBody(req, res);
+    if (!body.option) {
+      return jsonResponse(res, 400, { error: "Missing selected option" });
+    }
+    const data = getLiveAudienceData(eventId);
+    const poll = data.activePoll;
+    if (!poll || poll.id !== pollId) {
+      return jsonResponse(res, 404, { error: "Poll not found" });
+    }
+    if (poll.status !== "active") {
+      return jsonResponse(res, 400, { error: "Poll is not active" });
+    }
+    if (poll.results[body.option] === undefined) {
+      poll.results[body.option] = 0;
+    }
+    poll.results[body.option] += 1;
+    broadcastLiveAudience(eventId, "UPDATE_POLL", poll);
+    return jsonResponse(res, 200, { success: true, poll });
+  }
+
+  return false;
+}
+
+function handleTicketStats(req, res, pathname, searchParams) {
+  if (pathname !== "/api/tickets/stats" || req.method !== "GET") return false;
+  const eventId = searchParams.get("eventId");
+  if (!eventId) {
+    return jsonResponse(res, 400, { error: "Missing required parameter: eventId" });
+  }
+  const eventRegs = Array.from(mockRegistrations.values()).filter(
+    r => String(r.eventId) === String(eventId)
+  );
+  const totalRegistrations = eventRegs.length;
+  const checkedInAttendees = eventRegs.filter(r => r.attendanceStatus === "Checked In").length;
+  const remainingAttendees = totalRegistrations - checkedInAttendees;
+  const attendancePercentage = totalRegistrations > 0
+    ? Math.round((checkedInAttendees / totalRegistrations) * 100)
+    : 0;
+
+  return jsonResponse(res, 200, {
+    totalRegistrations,
+    checkedInAttendees,
+    attendancePercentage,
+    remainingAttendees
+  });
+}
+
+function handleTicketCheckins(req, res, pathname, searchParams) {
+  if (pathname !== "/api/tickets/checkins" || req.method !== "GET") return false;
+  const eventId = searchParams.get("eventId");
+  let filtered = mockScanLogs;
+  if (eventId) {
+    filtered = mockScanLogs.filter(log => String(log.eventId) === String(eventId));
+  }
+  const history = filtered.map(log => ({
+    id: log.logId,
+    ticketId: log.registrationId,
+    name: log.userName,
+    event: log.eventName || `Event #${log.eventId}`,
+    status: log.status === "Checked In" ? "Verified" : "Flagged",
+    time: log.timestamp
+  }));
+  return jsonResponse(res, 200, history.slice().reverse());
+}
+
+async function handleTicketToken(req, res, pathname) {
+  if (pathname !== "/api/tickets/token" || req.method !== "POST") return false;
+  const body = await getRequestBody(req, res);
+  const { registrationId, eventId } = body;
+  if (!registrationId || !eventId) {
+    return jsonResponse(res, 400, { error: "Missing required fields: registrationId and eventId" });
+  }
+
+  let reg = mockRegistrations.get(registrationId);
+  if (!reg) {
+    reg = {
+      registrationId,
+      eventId: eventId,
+      userId: "mock-dev-123",
+      userName: "Sadwika",
+      registeredAt: new Date().toISOString(),
+      attendanceStatus: "Registered"
+    };
+    mockRegistrations.set(registrationId, reg);
+  }
+
+  try {
+    const token = jwt.sign(
+      { registrationId: reg.registrationId, eventId: reg.eventId, userId: reg.userId, userName: reg.userName },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+    reg.qrToken = token;
+    return jsonResponse(res, 200, { success: true, token, registrationId: reg.registrationId });
+  } catch (err) {
+    return jsonResponse(res, 500, { error: "Failed to sign mock token" });
+  }
+}
+
+async function handleTicketValidate(req, res, pathname) {
+  if (pathname !== "/api/tickets/validate" || req.method !== "POST") return false;
+  const body = await getRequestBody(req, res);
+  const { ticketId, eventId } = body;
+  if (!ticketId || !eventId) {
+    return jsonResponse(res, 400, { error: "Missing ticketId or eventId" });
+  }
+
+  let registrationId = ticketId;
+  let decodedToken = null;
+  if (ticketId.startsWith("eyJ")) {
+    try {
+      decodedToken = jwt.verify(ticketId, JWT_SECRET);
+      registrationId = decodedToken.registrationId;
+      if (String(decodedToken.eventId) !== String(eventId)) {
+        return jsonResponse(res, 400, { valid: false, message: "Security Alert: Ticket is valid, but registered for a different event." });
+      }
+    } catch (err) {
+      const decoded = decodeJwtPayload(ticketId);
+      if (decoded) {
+        decodedToken = decoded;
+        registrationId = decoded.registrationId;
+        if (String(decoded.eventId) !== String(eventId)) {
+          return jsonResponse(res, 400, { valid: false, message: "Security Alert: Ticket is valid, but registered for a different event." });
+        }
+      } else {
+        return jsonResponse(res, 400, { valid: false, message: "Security Alert: QR Code is invalid or has been tampered with!" });
+      }
+    }
+  }
+
+  let reg = mockRegistrations.get(registrationId);
+  if (!reg && decodedToken) {
+    reg = {
+      registrationId,
+      eventId: eventId,
+      userId: decodedToken.userId || "unknown",
+      userName: decodedToken.userName || "Attendee",
+      attendanceStatus: "Registered",
+      registeredAt: new Date().toISOString(),
+      qrToken: ticketId
+    };
+    mockRegistrations.set(registrationId, reg);
+  }
+
+  if (!reg) {
+    return jsonResponse(res, 404, { valid: false, message: "Ticket registration not found." });
+  }
+
+  if (String(reg.eventId) !== String(eventId)) {
+    return jsonResponse(res, 400, { valid: false, message: "Ticket is registered for a different event." });
+  }
+
+  if (reg.attendanceStatus === "Checked In") {
+    const duplicateLog = {
+      logId: `log-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      registrationId: reg.registrationId,
+      eventId: reg.eventId,
+      userId: reg.userId,
+      userName: reg.userName,
+      scannedBy: "mock-dev-123",
+      timestamp: new Date().toISOString(),
+      status: "Duplicate Attempt",
+      eventName: MOCK_EVENTS.find(e => String(e.id) === String(eventId))?.title || "Active Event"
+    };
+    mockScanLogs.push(duplicateLog);
+
+    return jsonResponse(res, 200, {
+      valid: true,
+      alreadyCheckedIn: true,
+      registrationId: reg.registrationId,
+      userName: reg.userName,
+      eventId: reg.eventId,
+      message: "This ticket has already been checked in!"
+    });
+  }
+
+  return jsonResponse(res, 200, {
+    valid: true,
+    alreadyCheckedIn: false,
+    registrationId: reg.registrationId,
+    userName: reg.userName,
+    eventId: reg.eventId,
+    attendanceStatus: reg.attendanceStatus,
+    message: "Ticket verified successfully."
+  });
+}
+
+async function handleTicketCheckin(req, res, pathname) {
+  if (pathname !== "/api/tickets/checkin" || req.method !== "POST") return false;
+  const body = await getRequestBody(req, res);
+  const { ticketId, eventId } = body;
+  if (!ticketId || !eventId) {
+    return jsonResponse(res, 400, { error: "Missing ticketId or eventId" });
+  }
+
+  let registrationId = ticketId;
+  let decodedToken = null;
+  if (ticketId.startsWith("eyJ")) {
+    try {
+      decodedToken = jwt.verify(ticketId, JWT_SECRET);
+      registrationId = decodedToken.registrationId;
+    } catch (err) {
+      const decoded = decodeJwtPayload(ticketId);
+      if (decoded) {
+        decodedToken = decoded;
+        registrationId = decoded.registrationId;
+      }
+    }
+  }
+
+  let reg = mockRegistrations.get(registrationId);
+  if (!reg && decodedToken) {
+    reg = {
+      registrationId,
+      eventId: eventId,
+      userId: decodedToken.userId || "unknown",
+      userName: decodedToken.userName || "Attendee",
+      attendanceStatus: "Registered",
+      registeredAt: new Date().toISOString(),
+      qrToken: ticketId
+    };
+    mockRegistrations.set(registrationId, reg);
+  }
+
+  if (!reg) {
+    return jsonResponse(res, 404, { error: "Ticket registration not found." });
+  }
+
+  if (reg.attendanceStatus === "Checked In") {
+    return jsonResponse(res, 409, { error: "Attendee is already checked in" });
+  }
+
+  reg.attendanceStatus = "Checked In";
+  reg.checkedInAt = new Date().toISOString();
+  reg.checkedInBy = "mock-dev-123";
+
+  const checkInLog = {
+    logId: `log-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    registrationId: reg.registrationId,
+    eventId: reg.eventId,
+    userId: reg.userId,
+    userName: reg.userName,
+    scannedBy: "mock-dev-123",
+    timestamp: reg.checkedInAt,
+    status: "Checked In",
+    eventName: MOCK_EVENTS.find(e => String(e.id) === String(eventId))?.title || "Active Event"
+  };
+  mockScanLogs.push(checkInLog);
+
+  return jsonResponse(res, 200, {
+    success: true,
+    message: "Attendee check-in recorded successfully",
+    registration: reg
+  });
+}
+
+async function handleTicketRequests(req, res, pathname, searchParams) {
+  if (pathname === "/api/tickets/stats") {
+    return handleTicketStats(req, res, pathname, searchParams);
+  }
+  if (pathname === "/api/tickets/checkins") {
+    return handleTicketCheckins(req, res, pathname, searchParams);
+  }
+  if (pathname === "/api/tickets/token") {
+    return await handleTicketToken(req, res, pathname);
+  }
+  if (pathname === "/api/tickets/validate") {
+    return await handleTicketValidate(req, res, pathname);
+  }
+  if (pathname === "/api/tickets/checkin") {
+    return await handleTicketCheckin(req, res, pathname);
+  }
+  return false;
+}
+
+async function handleNotificationRequests(req, res, pathname) {
+  // Notifications REST API
+  if (pathname === "/api/notifications" && req.method === "GET") {
+    return jsonResponse(res, 200, notificationStore);
+  }
+
+  const readMatch = pathname.match(/^\/api\/notifications\/([^/]+)\/read$/);
+  if (readMatch && (req.method === "PUT" || req.method === "PATCH")) {
+    const id = decodeURIComponent(readMatch[1]);
+    notificationStore = notificationStore.map((item) =>
+      item.id === id ? { ...item, isRead: true } : item
+    );
+    return jsonResponse(res, 200, {
+      message: "Notification marked as read",
+      notificationId: id,
+    });
+  }
+
+  if (pathname === "/api/notifications/read-all" && (req.method === "PUT" || req.method === "PATCH")) {
+    notificationStore = notificationStore.map((item) => ({ ...item, isRead: true }));
+    return jsonResponse(res, 200, { message: "All notifications marked as read" });
+  }
+
+  const deleteMatch = pathname.match(/^\/api\/notifications\/([^/]+)$/);
+  if (deleteMatch && req.method === "DELETE") {
+    const id = decodeURIComponent(deleteMatch[1]);
+    notificationStore = notificationStore.filter((item) => item.id !== id);
+    return jsonResponse(res, 200, { message: "Notification deleted", notificationId: id });
+  }
+
+  if (pathname === "/stream/notifications" || pathname === "/api/stream/notifications") {
+    sseHeaders(res);
+    log("[SSE] notifications client connected");
+
+    notificationSseClients.add(res);
+
+    // Send current unread snapshot
+    const unread = notificationStore.filter((item) => !item.isRead).slice(0, 5);
+    if (unread.length > 0) {
+      send(res, { notifications: unread });
+    }
+
+    const interval = setInterval(() => {
+      const notification = pushLiveNotification();
+      send(res, { notification });
+      log(`[SSE] notification pushed: ${notification.title}`);
+    }, 20000);
+
+    req.on("close", () => {
+      clearInterval(interval);
+      notificationSseClients.delete(res);
+      log("[SSE] notifications client disconnected");
+    });
+    return true;
+  }
+
+  return false;
+}
+
 const server = http.createServer(async (req, res) => {
   // Handle Preflight OPTIONS requests for regular API calls
   if (req.method === "OPTIONS") {
@@ -280,293 +800,13 @@ const server = http.createServer(async (req, res) => {
     return jsonResponse(res, 200, categories);
   }
 
-  // Get statistics
-  if (pathname === "/api/tickets/stats" && req.method === "GET") {
-    const eventId = searchParams.get("eventId");
-    if (!eventId) {
-      return jsonResponse(res, 400, { error: "Missing required parameter: eventId" });
-    }
-    const eventRegs = Array.from(mockRegistrations.values()).filter(
-      r => String(r.eventId) === String(eventId)
-    );
-    const totalRegistrations = eventRegs.length;
-    const checkedInAttendees = eventRegs.filter(r => r.attendanceStatus === "Checked In").length;
-    const remainingAttendees = totalRegistrations - checkedInAttendees;
-    const attendancePercentage = totalRegistrations > 0
-      ? Math.round((checkedInAttendees / totalRegistrations) * 100)
-      : 0;
+  // Tickets REST & check-in endpoints
+  const handledTickets = await handleTicketRequests(req, res, pathname, searchParams);
+  if (handledTickets !== false) return;
 
-    return jsonResponse(res, 200, {
-      totalRegistrations,
-      checkedInAttendees,
-      attendancePercentage,
-      remainingAttendees
-    });
-  }
-
-  // Get check-in history log
-  if (pathname === "/api/tickets/checkins" && req.method === "GET") {
-    const eventId = searchParams.get("eventId");
-    let filtered = mockScanLogs;
-    if (eventId) {
-      filtered = mockScanLogs.filter(log => String(log.eventId) === String(eventId));
-    }
-    const history = filtered.map(log => ({
-      id: log.logId,
-      ticketId: log.registrationId,
-      name: log.userName,
-      event: log.eventName || `Event #${log.eventId}`,
-      status: log.status === "Checked In" ? "Verified" : "Flagged",
-      time: log.timestamp
-    }));
-    return jsonResponse(res, 200, history.slice().reverse());
-  }
-
-  // Token generation
-  if (pathname === "/api/tickets/token" && req.method === "POST") {
-    const body = await getRequestBody(req, res);
-    const { registrationId, eventId } = body;
-    if (!registrationId || !eventId) {
-      return jsonResponse(res, 400, { error: "Missing required fields: registrationId and eventId" });
-    }
-
-    let reg = mockRegistrations.get(registrationId);
-    if (!reg) {
-      reg = {
-        registrationId,
-        eventId: eventId,
-        userId: "mock-dev-123",
-        userName: "Sadwika",
-        registeredAt: new Date().toISOString(),
-        attendanceStatus: "Registered"
-      };
-      mockRegistrations.set(registrationId, reg);
-    }
-
-    try {
-      const token = jwt.sign(
-        { registrationId: reg.registrationId, eventId: reg.eventId, userId: reg.userId, userName: reg.userName },
-        JWT_SECRET,
-        { expiresIn: "7d" }
-      );
-      reg.qrToken = token;
-      return jsonResponse(res, 200, { success: true, token, registrationId: reg.registrationId });
-    } catch (err) {
-      return jsonResponse(res, 500, { error: "Failed to sign mock token" });
-    }
-  }
-
-  // Validate ticket code / JWT token
-  if (pathname === "/api/tickets/validate" && req.method === "POST") {
-    const body = await getRequestBody(req, res);
-    const { ticketId, eventId } = body;
-    if (!ticketId || !eventId) {
-      return jsonResponse(res, 400, { error: "Missing ticketId or eventId" });
-    }
-
-    let registrationId = ticketId;
-    let decodedToken = null;
-    if (ticketId.startsWith("eyJ")) {
-      try {
-        decodedToken = jwt.verify(ticketId, JWT_SECRET);
-        registrationId = decodedToken.registrationId;
-        if (String(decodedToken.eventId) !== String(eventId)) {
-          return jsonResponse(res, 400, { valid: false, message: "Security Alert: Ticket is valid, but registered for a different event." });
-        }
-      } catch (err) {
-        const decoded = decodeJwtPayload(ticketId);
-        if (decoded) {
-          decodedToken = decoded;
-          registrationId = decoded.registrationId;
-          if (String(decoded.eventId) !== String(eventId)) {
-            return jsonResponse(res, 400, { valid: false, message: "Security Alert: Ticket is valid, but registered for a different event." });
-          }
-        } else {
-          return jsonResponse(res, 400, { valid: false, message: "Security Alert: QR Code is invalid or has been tampered with!" });
-        }
-      }
-    }
-
-    let reg = mockRegistrations.get(registrationId);
-    if (!reg && decodedToken) {
-      reg = {
-        registrationId,
-        eventId: eventId,
-        userId: decodedToken.userId || "unknown",
-        userName: decodedToken.userName || "Attendee",
-        attendanceStatus: "Registered",
-        registeredAt: new Date().toISOString(),
-        qrToken: ticketId
-      };
-      mockRegistrations.set(registrationId, reg);
-    }
-
-    if (!reg) {
-      return jsonResponse(res, 404, { valid: false, message: "Ticket registration not found." });
-    }
-
-    if (String(reg.eventId) !== String(eventId)) {
-      return jsonResponse(res, 400, { valid: false, message: "Ticket is registered for a different event." });
-    }
-
-    if (reg.attendanceStatus === "Checked In") {
-      const duplicateLog = {
-        logId: `log-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-        registrationId: reg.registrationId,
-        eventId: reg.eventId,
-        userId: reg.userId,
-        userName: reg.userName,
-        scannedBy: "mock-dev-123",
-        timestamp: new Date().toISOString(),
-        status: "Duplicate Attempt",
-        eventName: MOCK_EVENTS.find(e => String(e.id) === String(eventId))?.title || "Active Event"
-      };
-      mockScanLogs.push(duplicateLog);
-
-      return jsonResponse(res, 200, {
-        valid: true,
-        alreadyCheckedIn: true,
-        registrationId: reg.registrationId,
-        userName: reg.userName,
-        eventId: reg.eventId,
-        message: "This ticket has already been checked in!"
-      });
-    }
-
-    return jsonResponse(res, 200, {
-      valid: true,
-      alreadyCheckedIn: false,
-      registrationId: reg.registrationId,
-      userName: reg.userName,
-      eventId: reg.eventId,
-      attendanceStatus: reg.attendanceStatus,
-      message: "Ticket verified successfully."
-    });
-  }
-
-  // Record check-in
-  if (pathname === "/api/tickets/checkin" && req.method === "POST") {
-    const body = await getRequestBody(req, res);
-    const { ticketId, eventId } = body;
-    if (!ticketId || !eventId) {
-      return jsonResponse(res, 400, { error: "Missing ticketId or eventId" });
-    }
-
-    let registrationId = ticketId;
-    let decodedToken = null;
-    if (ticketId.startsWith("eyJ")) {
-      try {
-        decodedToken = jwt.verify(ticketId, JWT_SECRET);
-        registrationId = decodedToken.registrationId;
-      } catch (err) {
-        const decoded = decodeJwtPayload(ticketId);
-        if (decoded) {
-          decodedToken = decoded;
-          registrationId = decoded.registrationId;
-        }
-      }
-    }
-
-    let reg = mockRegistrations.get(registrationId);
-    if (!reg && decodedToken) {
-      reg = {
-        registrationId,
-        eventId: eventId,
-        userId: decodedToken.userId || "unknown",
-        userName: decodedToken.userName || "Attendee",
-        attendanceStatus: "Registered",
-        registeredAt: new Date().toISOString(),
-        qrToken: ticketId
-      };
-      mockRegistrations.set(registrationId, reg);
-    }
-
-    if (!reg) {
-      return jsonResponse(res, 404, { error: "Ticket registration not found." });
-    }
-
-    if (reg.attendanceStatus === "Checked In") {
-      return jsonResponse(res, 409, { error: "Attendee is already checked in" });
-    }
-
-    reg.attendanceStatus = "Checked In";
-    reg.checkedInAt = new Date().toISOString();
-    reg.checkedInBy = "mock-dev-123";
-
-    const checkInLog = {
-      logId: `log-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-      registrationId: reg.registrationId,
-      eventId: reg.eventId,
-      userId: reg.userId,
-      userName: reg.userName,
-      scannedBy: "mock-dev-123",
-      timestamp: reg.checkedInAt,
-      status: "Checked In",
-      eventName: MOCK_EVENTS.find(e => String(e.id) === String(eventId))?.title || "Active Event"
-    };
-    mockScanLogs.push(checkInLog);
-
-    return jsonResponse(res, 200, {
-      success: true,
-      message: "Attendee check-in recorded successfully",
-      registration: reg
-    });
-  }
-
-  // Notifications REST API
-  if (pathname === "/api/notifications" && req.method === "GET") {
-    return jsonResponse(res, 200, notificationStore);
-  }
-
-  const readMatch = pathname.match(/^\/api\/notifications\/([^/]+)\/read$/);
-  if (readMatch && (req.method === "PUT" || req.method === "PATCH")) {
-    const id = decodeURIComponent(readMatch[1]);
-    notificationStore = notificationStore.map((item) =>
-      item.id === id ? { ...item, isRead: true } : item
-    );
-    return jsonResponse(res, 200, {
-      message: "Notification marked as read",
-      notificationId: id,
-    });
-  }
-
-  if (pathname === "/api/notifications/read-all" && (req.method === "PUT" || req.method === "PATCH")) {
-    notificationStore = notificationStore.map((item) => ({ ...item, isRead: true }));
-    return jsonResponse(res, 200, { message: "All notifications marked as read" });
-  }
-
-  const deleteMatch = pathname.match(/^\/api\/notifications\/([^/]+)$/);
-  if (deleteMatch && req.method === "DELETE") {
-    const id = decodeURIComponent(deleteMatch[1]);
-    notificationStore = notificationStore.filter((item) => item.id !== id);
-    return jsonResponse(res, 200, { message: "Notification deleted", notificationId: id });
-  }
-
-  if (pathname === "/stream/notifications" || pathname === "/api/stream/notifications") {
-    sseHeaders(res);
-    log("[SSE] notifications client connected");
-
-    notificationSseClients.add(res);
-
-    // Send current unread snapshot
-    const unread = notificationStore.filter((item) => !item.isRead).slice(0, 5);
-    if (unread.length > 0) {
-      send(res, { notifications: unread });
-    }
-
-    const interval = setInterval(() => {
-      const notification = pushLiveNotification();
-      send(res, { notification });
-      log(`[SSE] notification pushed: ${notification.title}`);
-    }, 20000);
-
-    req.on("close", () => {
-      clearInterval(interval);
-      notificationSseClients.delete(res);
-      log("[SSE] notifications client disconnected");
-    });
-    return;
-  }
+  // Notifications REST & stream endpoints
+  const handledNotifs = await handleNotificationRequests(req, res, pathname);
+  if (handledNotifs !== false) return;
 
   if (pathname === "/stream/leaderboard" || pathname === "/api/stream/leaderboard") {
     sseHeaders(res);
@@ -613,6 +853,12 @@ const server = http.createServer(async (req, res) => {
       log("[SSE] analytics client disconnected");
     });
     return;
+  }
+
+  // Live Audience endpoints
+  if (pathname.includes("/live-audience")) {
+    const handled = await handleLiveAudienceRequests(req, res, pathname);
+    if (handled !== false) return;
   }
 
   // Fallback 404 with safety CORS headers included to protect browser channel

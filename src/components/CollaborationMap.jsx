@@ -202,10 +202,9 @@ export default function CollaborationMap() {
               })}
             </svg>
 
-            {/* Structured Hub Card Popup */}
             {hoveredCity && (
               <div
-                className="absolute z-30 pointer-events-none"
+                className="absolute z-30 pointer-events-none bg-white dark:bg-slate-900 border border-[#c7d7fd] dark:border-slate-800"
                 style={{
                   left: `${(hoveredCity.x / 1000) * 100}%`,
                   top: `${(hoveredCity.y / 500) * 100}%`,
@@ -213,9 +212,7 @@ export default function CollaborationMap() {
                   minWidth: "210px",
                   borderRadius: "14px",
                   boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
-                  border: "1px solid #c7d7fd",
                   overflow: "hidden",
-                  background: "#fff",
                 }}
               >
                 <div style={{ background: "#2563eb", padding: "10px 14px 8px" }}>
@@ -225,16 +222,16 @@ export default function CollaborationMap() {
                   </div>
                   <div style={{ color: "#bfdbfe", fontSize: "9px", marginTop: "3px" }}>📍 {hoveredCity.x}° N · {hoveredCity.y}° E</div>
                 </div>
-                <div style={{ padding: "10px 14px 12px", background: "#fff" }}>
+                <div className="bg-white dark:bg-slate-900" style={{ padding: "10px 14px 12px" }}>
                   <div style={{ fontSize: "9px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "6px" }}>Hub Stats</div>
                   <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
-                    <div style={{ flex: 1, border: "1px solid #e5e7eb", borderRadius: "8px", padding: "5px 8px" }}>
+                    <div className="border border-gray-200 dark:border-slate-700" style={{ flex: 1, borderRadius: "8px", padding: "5px 8px" }}>
                       <div style={{ fontSize: "9px", color: "#9ca3af", fontWeight: 700, textTransform: "uppercase" }}>Developers</div>
-                      <div style={{ fontSize: "16px", fontWeight: 800, color: "#1e293b" }}>{hoveredCity.contributors}</div>
+                      <div className="text-slate-800 dark:text-slate-100" style={{ fontSize: "16px", fontWeight: 800 }}>{hoveredCity.contributors}</div>
                     </div>
-                    <div style={{ flex: 1, border: "1px solid #e5e7eb", borderRadius: "8px", padding: "5px 8px" }}>
+                    <div className="border border-gray-200 dark:border-slate-700" style={{ flex: 1, borderRadius: "8px", padding: "5px 8px" }}>
                       <div style={{ fontSize: "9px", color: "#9ca3af", fontWeight: 700, textTransform: "uppercase" }}>Projects</div>
-                      <div style={{ fontSize: "16px", fontWeight: 800, color: "#1e293b" }}>{hoveredCity.projects}</div>
+                      <div className="text-slate-800 dark:text-slate-100" style={{ fontSize: "16px", fontWeight: 800 }}>{hoveredCity.projects}</div>
                     </div>
                   </div>
                   <div style={{ fontSize: "9px", fontWeight: 700, color: "#9ca3af", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "5px" }}>Focus Areas</div>
@@ -244,9 +241,9 @@ export default function CollaborationMap() {
                       return <span key={tag} style={{ ...styles[i], fontSize: "10px", fontWeight: 700, borderRadius: "20px", padding: "2px 8px" }}>{tag}</span>;
                     })}
                   </div>
-                  <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div className="border-t border-slate-100 dark:border-slate-800" style={{ paddingTop: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <span style={{ fontSize: "9px", color: "#9ca3af" }}>🌏 {hoveredCity.region} region</span>
-                    <span style={{ fontSize: "10px", color: "#2563eb", fontWeight: 700 }}>View details →</span>
+                    <span className="text-blue-600 dark:text-blue-400" style={{ fontSize: "10px", fontWeight: 700 }}>View details →</span>
                   </div>
                 </div>
               </div>

@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 const children = [
-  spawn("node", ["sse-mock-server.js"], {
+  spawn("node", ["--env-file=.env", "sse-mock-server.js"], {
     cwd: root,
     stdio: "inherit",
     shell: true,

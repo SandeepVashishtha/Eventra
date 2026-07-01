@@ -1,3 +1,4 @@
+import StatusBadge from "../../components/common/StatusBadge";
 import "./EventDetails.print.css";
 import CountdownTimer from "../../components/common/CountdownTimer";
 import { useEffect, useState, useCallback, useRef } from "react";
@@ -13,7 +14,6 @@ import { DRAFT_KEY } from "../../constants/eventDefaults";
 import { useMyEvents } from "../../context/MyEventsContext";
 import { logger } from "../../utils/logger";
 import ReminderControls from "../../components/reminders/ReminderControls";
-import CertificateDownload from "../../components/CertificateDownload";
 import EventRecommendations from "../../components/events/EventRecommendations";
 import EventCancellationModal from "../../components/events/EventCancellationModal";
 import SimilarEvents from "../../components/events/SimilarEvents";
@@ -27,11 +27,10 @@ import ShareModal from "../../components/common/ShareModal";
 import SocialShareButtons from "../../components/common/SocialShareButtons";
 // import { generateEventSharingData } from "../../utils/shareUtils";
 import { downloadICSFile, generateGoogleCalendarLink, generateOutlookLink } from "../../utils/calendarExporter";
-import useRecentlyViewed from "../../hooks/useRecentlyViewed";
+import { RecentlyViewedTracker } from "../../components/common/RecentlyViewedEvents";
 import { apiUtils, API_ENDPOINTS } from "../../config/api";
 import mockEvents from "./eventsMockData.json";
 import CopyButton from '../../components/ui/CopyButton';
-import { Share2 } from "lucide-react";
 const isRequestCanceled = (error, signal) =>
   signal?.aborted ||
   error?.name === "AbortError" ||
@@ -42,7 +41,6 @@ const EventDetails = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { addRecentlyViewed } = useRecentlyViewed();
 
   const isOrganizer = user?.roles?.includes(ROLES.ORGANIZER) || user?.roles?.includes(ROLES.ADMIN);
 
@@ -120,12 +118,6 @@ const EventDetails = () => {
       abortControllerRef.current?.abort();
     };
   }, [loadEvent]);
-
-  // Safely handle localStorage cache updates via hook
-  useEffect(() => {
-    if (!event) return;
-    addRecentlyViewed(event);
-  }, [event, addRecentlyViewed]);
 
   const handlePrint = () => {
     setIsPrinting(true);
@@ -233,7 +225,7 @@ const EventDetails = () => {
   };
 
   const handleCopy = async () => {
-   const link = `
+    const link = `
 🎉 Check out this event!
 
 Event: ${event.title}
@@ -258,11 +250,11 @@ ${window.location.href}
           textArea.remove();
         }
       }
-           toast.success("Event link copied to clipboard!");   
-           setLinkCopied(true);                                
-           setTimeout(() => setLinkCopied(false), 2000);
-    } catch (err) {
-       toast.error("Failed to copy link. Please copy the URL from your browser's address bar.");
+      toast.success("Event link copied to clipboard!");
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch (_err) {
+      toast.error("Failed to copy link. Please copy the URL from your browser's address bar.");
     }
   };
 
@@ -304,9 +296,22 @@ ${window.location.href}
 
   const canSetReminder = isEventBookmarked(event.id) || isRegistered(event.id);
   const isRegistrationClosed = isEventRegistrationClosed(event);
+  const registrationEnd = event.registrationEnd
+  ? new Date(event.registrationEnd)
+  : null;
+
+const hoursLeft = registrationEnd
+  ? Math.ceil((registrationEnd - new Date()) / (1000 * 60 * 60))
+  : null;
+
+const showClosingSoon =
+  hoursLeft !== null &&
+  hoursLeft > 0 &&
+  hoursLeft <= 48;
 
   return (
     <>
+      <RecentlyViewedTracker event={event} />
       <Helmet>
         <title>{event.title} | Eventra</title>
         <meta property="og:title" content={event.title} />
@@ -326,17 +331,17 @@ ${window.location.href}
                 {event.type}
               </p>
               <div className="mt-4 flex items-center gap-3">
-                <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight wrap-break-word" title={event.title}>{event.title}</h1>
+                <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight break-words" title={event.title}>{event.title}</h1>
                 <button
                   onClick={handleCopy}
-                  className={`p-2 rounded-full transition-colors ${linkCopied 
-                    ? "text-green-600 bg-green-50 dark:bg-green-900/30" 
+                  className={`p-2 rounded-full transition-colors ${linkCopied
+                    ? "text-green-600 bg-green-50 dark:bg-green-900/30"
                     : "text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
-                  }`}
-               aria-label={linkCopied ? "Link copied!" : "Copy event link"}
-              title={linkCopied ? "Copied!" : "Copy link"}
-             >
-                {linkCopied ? <Check size={28} /> : <Link2 size={28} />}
+                    }`}
+                  aria-label={linkCopied ? "Link copied!" : "Copy event link"}
+                  title={linkCopied ? "Copied!" : "Copy link"}
+                >
+                  {linkCopied ? <Check size={28} /> : <Link2 size={28} />}
                 </button>
               </div>
               <div
@@ -345,21 +350,26 @@ ${window.location.href}
               />
             </div>
 
-            <div className="flex flex-wrap gap-3">
-              {isRegistrationClosed ? (
-                <>
-                  <span className="inline-flex items-center justify-center rounded-full bg-gray-200 px-6 py-3 text-sm font-semibold text-gray-600 shadow-sm cursor-not-allowed dark:bg-gray-800 dark:text-gray-300">
-                    Event Ended
-                  </span>
-                  {event.status === "past" && (
-                    <CertificateDownload eventName={event.title} eventDate={event.date} eventType={event.type} />
-                  )}
-                </>
-              ) : (
-                <Link to={`/events/${event.id}/register`} className="inline-flex items-center justify-center rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-slate-800 transition">
-                  Register Now
-                </Link>
-              )}
+           <div className="flex flex-wrap gap-3">
+
+  {showClosingSoon && (
+    <span className="inline-flex items-center rounded-full bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+      ⚠ Registration closes {hoursLeft <= 24 ? "today" : `in ${hoursLeft} hours`}
+    </span>
+  )}
+
+  {isRegistrationClosed ? (
+    <>
+      ...
+    </>
+  ) : (
+    <Link
+      to={`/events/${event.id}/register`}
+      className="inline-flex items-center justify-center rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-slate-800 transition"
+    >
+      Register Now
+    </Link>
+  )}
 
               <button
                 onClick={() => setShowShareModal(true)}
@@ -440,7 +450,7 @@ ${window.location.href}
                                   }
                                 }
                                 exportToCSV(allRegistrants, `${event.title}_registrants`);
-                              } catch (error) {
+                              } catch (_error) {
                                 toast.error("Failed to fetch registrants");
                               } finally {
                                 setExportingRegistrants(false);
@@ -478,7 +488,7 @@ ${window.location.href}
                                   }
                                 }
                                 exportToJSON(allRegistrants, `${event.title}_registrants`);
-                              } catch (error) {
+                              } catch (_error) {
                                 toast.error("Failed to fetch registrants");
                               } finally {
                                 setExportingRegistrants(false);
@@ -557,13 +567,15 @@ ${window.location.href}
                   <Tag className="h-5 w-5 text-indigo-600" />
                   <div>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Status</p>
-                    <p className="font-semibold capitalize">{event.status}</p>
-                  </div>
+                    <div className="mt-1">
+                      <StatusBadge status={event.status} />
+                      </div>
+                      </div>
                 </div>
 
                 {/* Event Countdown */}
                 <div className="sm:col-span-2">
-                  <CountdownTimer eventDate={event.date} />
+                  <CountdownTimer date={event.date} time={event.time} timezone={event.timezone} />
                 </div>
               </div>
 
@@ -572,14 +584,18 @@ ${window.location.href}
                 <div className="text-sm text-gray-600 dark:text-gray-300 space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <p><span className="font-semibold">Attendees:</span> {event.attendees}/{event.maxAttendees}</p>
+                    <EventRegistrationProgress
+    attendees={event.attendees}
+    maxAttendees={event.maxAttendees}
+/>
                     {/* "Almost Full!" urgency badge — shown when ≥ 80% capacity and not yet sold out (#7665) */}
                     {event.maxAttendees > 0 &&
                       event.attendees / event.maxAttendees >= 0.8 &&
                       event.attendees < event.maxAttendees && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-700 ring-1 ring-inset ring-red-600/20 dark:bg-red-900/40 dark:text-red-300 dark:ring-red-500/30">
-                        🔥 Almost Full!
-                      </span>
-                    )}
+                        <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-700 ring-1 ring-inset ring-red-600/20 dark:bg-red-900/40 dark:text-red-300 dark:ring-red-500/30">
+                          🔥 Almost Full!
+                        </span>
+                      )}
                   </div>
                   <p><span className="font-semibold">Type:</span> {event.type}</p>
                   <p><span className="font-semibold">Tags:</span> {(event.tags ?? []).join(", ")}</p>
@@ -616,13 +632,23 @@ ${window.location.href}
                   )}
                 </div>
               </div>
-
               <div className="rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
                 <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Summary</h3>
                 <div
                   className="mt-3 text-gray-700 dark:text-gray-300 text-sm leading-6 prose prose-indigo dark:prose-invert"
                   dangerouslySetInnerHTML={{ __html: sanitizeMarkdown(event.description, marked.parse) }}
                 />
+              </div>
+
+              {/* Live Audience Engagement Section (Q&A and Polls) */}
+              <div className="space-y-4 pt-6 border-t border-gray-100 dark:border-gray-800">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 font-sans tracking-wide">
+                  Live Session Interaction
+                </h3>
+                <div className="grid gap-6 md:grid-cols-2">
+                  <LiveQABoard eventId={event.id} />
+                  <LivePollController eventId={event.id} />
+                </div>
               </div>
             </div>
           </div>
@@ -640,7 +666,11 @@ ${window.location.href}
         </div>
 
         {showShareModal && (
-          <ShareModal event={event} onClose={() => setShowShareModal(false)} />
+          <ShareModal
+            isOpen={showShareModal}
+            event={event}
+            onClose={() => setShowShareModal(false)}
+          />
         )}
       </div>
     </>
