@@ -29,6 +29,7 @@ import SocialShareButtons from "../../components/common/SocialShareButtons";
 import { downloadICSFile, generateGoogleCalendarLink, generateOutlookLink } from "../../utils/calendarExporter";
 import { RecentlyViewedTracker } from "../../components/common/RecentlyViewedEvents";
 import { apiUtils, API_ENDPOINTS } from "../../config/api";
+import { getLastUpdated } from "../../utils/lastUpdatedUtils";
 import mockEvents from "./eventsMockData.json";
 import CopyButton from '../../components/ui/CopyButton';
 const isRequestCanceled = (error, signal) =>
@@ -308,6 +309,7 @@ const showClosingSoon =
   hoursLeft !== null &&
   hoursLeft > 0 &&
   hoursLeft <= 48;
+const lastUpdated = getLastUpdated(event.updatedAt);  
 
   return (
     <>
@@ -572,6 +574,20 @@ const showClosingSoon =
                       </div>
                       </div>
                 </div>
+                {/* Last Updated */}
+<div className="flex items-center gap-3 rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
+  <Clock className="h-5 w-5 text-indigo-600" />
+
+  <div>
+    <p className="text-sm text-gray-500 dark:text-gray-400">
+      Last Updated
+    </p>
+
+    <p className="font-semibold">
+      {lastUpdated}
+    </p>
+  </div>
+</div>
 
                 {/* Event Countdown */}
                 <div className="sm:col-span-2">
