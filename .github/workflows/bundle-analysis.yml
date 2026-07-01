@@ -43,7 +43,9 @@ jobs:
         env:
           NODE_ENV: production
           CI: true
-          VITE_API_URL: /api
+          VITE_API_URL: https://api.example.com
+          DATABASE_URL: postgresql://ci.example.com/eventra
+          RATE_LIMIT_REDIS_URL: redis://ci.example.com:6379
 
       - name: Analyze bundle size
         id: analyze
@@ -60,9 +62,7 @@ jobs:
       - name: Extract report for PR comment
         id: extract
         run: |
-          echo "report<<DELIM" >> $GITHUB_OUTPUT
-          cat build/bundle-size-report.json >> $GITHUB_OUTPUT
-          echo "DELIM" >> $GITHUB_OUTPUT
+          node -e "const fs=require('fs'); const report=JSON.parse(fs.readFileSync('build/bundle-size-report.json','utf8')); fs.appendFileSync(process.env.GITHUB_OUTPUT, 'report=' + JSON.stringify(report) + '\n');"
         shell: bash
 
       - name: Find previous bundle size (base branch)
@@ -89,7 +89,7 @@ jobs:
           registerResult: true
 
       - name: Comment PR with bundle diff
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
