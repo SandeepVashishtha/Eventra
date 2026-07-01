@@ -1,4 +1,5 @@
 import StatusBadge from "../../components/common/StatusBadge";
+import ReadingProgressBar from "../../components/common/ReadingProgressBar";
 import "./EventDetails.print.css";
 import CountdownTimer from "../../components/common/CountdownTimer";
 import { useEffect, useState, useCallback, useRef } from "react";
@@ -310,8 +311,9 @@ const showClosingSoon =
   hoursLeft <= 48;
 
   return (
-    <>
-      <RecentlyViewedTracker event={event} />
+  <>
+    <ReadingProgressBar />
+    <RecentlyViewedTracker event={event} />
       <Helmet>
         <title>{event.title} | Eventra</title>
         <meta property="og:title" content={event.title} />
