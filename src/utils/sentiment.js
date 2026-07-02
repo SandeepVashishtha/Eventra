@@ -51,20 +51,22 @@ export const analyzeSentiment = (text) => {
       value = -1.5;
     }
     
-    if (value !== 0) {
-      if (negateNext && negateWindow > 0) {
-        score -= value; // Invert the sentiment score change
-        negateNext = false;
-        negateWindow = 0;
-      } else {
-        score += value;
-      }
-    } else if (negateNext) {
-      negateWindow -= 1;
+  if (value !== 0) {
+    if (negateNext && negateWindow > 0) {
+      score -= value; // Invert the sentiment score change
+      negateWindow -= 1; // consume one window slot, same as a neutral word
       if (negateWindow <= 0) {
         negateNext = false;
       }
+    } else {
+      score += value;
     }
+  } else if (negateNext) {
+    negateWindow -= 1;
+    if (negateWindow <= 0) {
+      negateNext = false;
+    }
+  }
   });
 
   // Clamp the score between -5 and +5
