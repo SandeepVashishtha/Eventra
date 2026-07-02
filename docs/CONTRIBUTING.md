@@ -157,3 +157,11 @@ You do not need to set these manually.
 Do not commit secrets, tokens, or private keys.
 
 If you discover a security issue, follow [SECURITY.md](SECURITY.md).
+
+## Secure Deployments
+
+Contributors working on deployment-related features should review the Secure Deployment Checklist before submitting production-related changes.
+
+See:
+
+- docs/SECURE_DEPLOYMENT_CHECKLIST.md

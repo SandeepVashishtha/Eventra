@@ -199,6 +199,12 @@ Licensed under Apache 2.0. See [LICENSE](LICENSE).
   </a>
 </p>
 
+## Deployment Security
+
+Before deploying Eventra, review the deployment checklist:
+
+- docs/SECURE_DEPLOYMENT_CHECKLIST.md
+
 ### Maintainers
 
 <table>

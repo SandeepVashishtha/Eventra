@@ -16,3 +16,9 @@ If you discover a security vulnerability within this project, please do not open
 
 ### JWT Refresh Token Expiration Rules
 - Enforce secure cookie attributes for persistent auth sessions.
+
+## Deployment Checklist
+
+Before every production deployment, review:
+
+- docs/SECURE_DEPLOYMENT_CHECKLIST.md
