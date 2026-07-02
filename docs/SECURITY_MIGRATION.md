@@ -20,3 +20,20 @@ This PR implements frontend support for HttpOnly cookie-based authentication.
 - Cookies are automatically sent with withCredentials: true
 - Falls back to localStorage if cookies unavailable
 - Session restores without manual token retrieval
+
+## Security Headers Verification
+
+To verify that the application is serving the required HTTP security headers during local development, run:
+
+```bash
+npm run security:headers
+```
+
+The verification utility checks the following response headers:
+
+- Content-Security-Policy
+- Strict-Transport-Security
+- X-Content-Type-Options
+- Referrer-Policy
+
+If any required header is missing, the script reports it and exits with a non-zero status code, making it suitable for local validation and CI workflows.
