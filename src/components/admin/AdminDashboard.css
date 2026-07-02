@@ -112,26 +112,26 @@
 }
 
 .ad-nav-active {
-  background: linear-gradient(135deg, #6366f115, #8b5cf615) !important;
-  color: #6366f1 !important;
+  background: linear-gradient(135deg, #6366f115, #8b5cf615);
+  color: #6366f1;
   font-weight: 600;
-  border: 1px solid #c7d2fe !important;
+  border: 1px solid #c7d2fe;
 }
 
 .dark .ad-nav-active {
-  background: linear-gradient(135deg, #6366f122, #8b5cf622) !important;
-  color: #818cf8 !important;
-  border-color: #4f46e5 !important;
+  background: linear-gradient(135deg, #6366f122, #8b5cf622);
+  color: #818cf8;
+  border-color: #4f46e5;
 }
 
 .ad-nav-logout {
-  color: #ef4444 !important;
+  color: #ef4444;
 }
 
 .ad-nav-logout:hover {
-  background: #fee2e215 !important;
-  color: #ef4444 !important;
-  border-color: #fca5a5 !important;
+  background: #fee2e215;
+  color: #ef4444;
+  border-color: #fca5a5;
 }
 
 .ad-sidebar-bottom {
@@ -735,8 +735,8 @@
 }
 
 .ad-icon-danger { color: #ef4444; }
-.ad-icon-danger:hover { background: #fee2e2 !important; color: #ef4444 !important; }
-.dark .ad-icon-danger:hover { background: #7f1d1d30 !important; }
+.ad-icon-danger:hover { background: #fee2e2; color: #ef4444; }
+.dark .ad-icon-danger:hover { background: #7f1d1d30; }
 
 /* ── Badges ── */
 .ad-badge {

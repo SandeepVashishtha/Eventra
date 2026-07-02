@@ -8,7 +8,7 @@ import {
   ChevronRight,
   FilterX,
 } from "lucide-react";
-import toast, { Toaster } from "react-hot-toast";
+import { showSuccessToast } from "../../utils/toast";
 import {
   generateAIInsights
 } from "../../services/aiRecommendationService";
@@ -410,10 +410,10 @@ const EventRecommendation = () => {
                 {/* Recommendations */}
                 <div className="grid md:grid-cols-2 gap-4">
 
-                  {recommendedEvents.map((event, index) => (
+                  {recommendedEvents.map((event) => (
 
                     <div
-                      key={index}
+                      key={event.id}
                       className="rounded-2xl border border-border p-5 hover:shadow-md transition-all bg-bg"
                     >
 
@@ -429,7 +429,7 @@ const EventRecommendation = () => {
 
                       </div>
 
-                      <h3 className="text-lg font-bold text-text">
+                      <h3 title={event.title} className="text-lg font-bold text-text line-clamp-2 break-words min-w-0">
                         {event.title}
                       </h3>
 
@@ -477,14 +477,14 @@ const EventRecommendation = () => {
 
                     <div className="grid md:grid-cols-2 gap-4">
 
-                      {otherEvents.map((event, index) => (
+                      {otherEvents.map((event) => (
 
                         <div
-                          key={index}
+                          key={event.id}
                           className="rounded-2xl border border-border p-5 bg-bg"
                         >
 
-                          <h3 className="text-lg font-bold text-text">
+                          <h3 title={event.title} className="text-lg font-bold text-text line-clamp-2 break-words min-w-0">
                             {event.title}
                           </h3>
 
@@ -523,12 +523,12 @@ const EventRecommendation = () => {
 
                 {showOtherEvents && (
                   <div className="mt-8 w-full grid md:grid-cols-2 gap-4">
-                    {events.map((event, index) => (
+                    {events.map((event) => (
                       <div
-                        key={index}
+                        key={event.id}
                         className="rounded-2xl border border-border p-5 bg-bg text-left"
                       >
-                        <h3 className="text-lg font-bold text-text">
+                        <h3 title={event.title} className="text-lg font-bold text-text line-clamp-2 break-words min-w-0">
                           {event.title}
                         </h3>
                         <p className="mt-2 text-sm text-text-light">
@@ -693,7 +693,7 @@ const EventRecommendation = () => {
               <button
                 onClick={() => {
                   addRegistration(selectedEvent, { source: "recommendation" });
-                  toast.success(`Successfully registered for ${selectedEvent.title}! Check your email for confirmation.`);
+                  showSuccessToast(`Successfully registered for ${selectedEvent.title}! Check your email for confirmation.`);
                   setSelectedEvent(null);
                 }}
                 className="flex-1 px-4 py-2.5 rounded-xl bg-primary hover:opacity-90 text-white text-xs font-bold transition-all shadow-md cursor-pointer"
@@ -705,7 +705,6 @@ const EventRecommendation = () => {
         </div>
       )}
       
-      <Toaster position="bottom-right" />
     </div>
   );
 };
