@@ -487,14 +487,7 @@ Vercel configuration is checked in via [`vercel.json`](vercel.json):
 - [Frontend Onboarding](docs/frontend-onboarding.md)
 - [Security Migration Notes](docs/SECURITY_MIGRATION.md)
 - [API Documentation Notes](docs/API_DOCUMENTATION.md)
-
-## Security Documentation
-
-Additional security resources are available:
-
-- SECURITY.md
-- docs/SECURITY_TROUBLESHOOTING.md
-
+- Client-side authentication audit logging utilities for development and debugging.
 ## Contributing
 
 We welcome contributions from the community! Please follow our guidelines to keep the project maintainable.

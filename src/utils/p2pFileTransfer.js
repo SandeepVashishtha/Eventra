@@ -557,12 +557,18 @@ export class P2PFileTransferCoordinator {
 
     this.channel.onopen = async () => {
       this.updateState("transferring", 0, "15.4 MB/s");
-      
+
       // If we already have the file cached, we act as the sender!
       if (!this.isInitiator) {
         const fileChunks = await getCachedFile(this.fileId);
         if (fileChunks) {
-          this.sendChunks(fileChunks);
+          try {
+            await this.sendChunks(fileChunks);
+          } catch (err) {
+            logger.error("sendChunks failed during P2P transfer:", err);
+            this.updateState("failed");
+            this.cleanup();
+          }
         }
       }
     };

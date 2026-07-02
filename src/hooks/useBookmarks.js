@@ -56,9 +56,52 @@ const writeStorage = (key, value) => {
   }
 };
 
+const LEGACY_BOOKMARKS_KEY = "eventra_bookmarked_events";
+
+const normalizeLegacyEntry = (entry) => ({
+  id: entry?.id,
+  title: entry?.title ?? "",
+  date: entry?.date ?? "",
+  location: entry?.location ?? "",
+  type: entry?.type ?? entry?.category ?? "",
+  image: entry?.image ?? entry?.imageUrl ?? "",
+  status: entry?.status ?? "",
+  savedAt: entry?.savedAt ?? entry?.bookmarkedAt ?? getServerNow(),
+});
+
+const migrateLegacyBookmarks = (bookmarks) => {
+  if (typeof window === "undefined") return bookmarks;
+
+  try {
+    const legacyRaw = localStorage.getItem(LEGACY_BOOKMARKS_KEY);
+    if (!legacyRaw) return bookmarks;
+
+    const legacyParsed = safeJsonParse(legacyRaw, []);
+    const legacy = Array.isArray(legacyParsed) ? legacyParsed : [];
+    localStorage.removeItem(LEGACY_BOOKMARKS_KEY);
+
+    if (legacy.length === 0) return bookmarks;
+
+    const merged = new Map(bookmarks.map((bookmark) => [bookmark.id, bookmark]));
+    legacy.forEach((entry) => {
+      if (!entry?.id || merged.has(entry.id)) return;
+      merged.set(entry.id, normalizeLegacyEntry(entry));
+    });
+
+    return Array.from(merged.values());
+  } catch {
+    return bookmarks;
+  }
+};
+
 const getOrPopulateCache = (key) => {
   if (!cache.has(key)) {
-    cache.set(key, readStorage(key));
+    const stored = readStorage(key);
+    const migrated = migrateLegacyBookmarks(stored);
+    if (migrated !== stored) {
+      writeStorage(key, migrated);
+    }
+    cache.set(key, migrated);
   }
   return cache.get(key);
 };

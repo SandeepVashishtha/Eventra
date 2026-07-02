@@ -95,6 +95,10 @@ npm run test:e2e
 - Update docs when behavior or setup changes.
 - Use ESLint and Prettier conventions used in the repo.
 
+### Authentication Audit Logging
+
+When modifying authentication-related functionality, use the shared authentication audit utility instead of creating custom logging logic. This keeps authentication events consistent throughout the application.
+
 ## Testing Expectations
 
 - Add or update tests for meaningful behavior changes.

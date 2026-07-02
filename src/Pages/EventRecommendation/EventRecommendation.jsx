@@ -25,10 +25,6 @@ import { useAuth } from "../../context/AuthContext";
 import { useMyEvents } from "../../context/MyEventsContext";
 import useBookmarks from "../../hooks/useBookmarks";
 import useRecentlyViewed from "../../hooks/useRecentlyViewed";
-import {
-  getBookmarkedEvents,
-  subscribeToBookmarkChanges,
-} from "../../utils/bookmarkUtils";
 import mockEvents from "../Events/eventsMockData.json";
 import { EventCardSkeleton, SkeletonBlock } from "../../components/common/SkeletonLoaders";
 
@@ -38,7 +34,6 @@ const EventRecommendation = () => {
   const { myEvents, addRegistration } = useMyEvents();
   const { bookmarks } = useBookmarks(user?.id || user?.email || "guest");
   const { recentlyViewed } = useRecentlyViewed();
-  const [globalBookmarks, setGlobalBookmarks] = useState(() => getBookmarkedEvents());
 
   const events = useMemo(
     () =>
@@ -76,8 +71,6 @@ const EventRecommendation = () => {
 
   const [insightLoading, setInsightLoading] = useState(false);
 
-  useEffect(() => subscribeToBookmarkChanges(setGlobalBookmarks), []);
-
   useEffect(() => {
 
   const loadInsights = async () => {
@@ -107,12 +100,12 @@ const EventRecommendation = () => {
 
   const userProfile = useMemo(() => getUserProfile(), []);
   const preferredLocation = useMemo(() => {
-    const sources = [...myEvents, ...bookmarks, ...globalBookmarks, ...recentlyViewed]
+    const sources = [...myEvents, ...bookmarks, ...recentlyViewed]
       .map((entry) => entry?.event?.location || entry?.eventSummary?.location || entry?.location)
       .filter((locationValue) => locationValue && locationValue !== "Online");
 
     return sources[0] || user?.location || "";
-  }, [bookmarks, globalBookmarks, myEvents, recentlyViewed, user]);
+  }, [bookmarks, myEvents, recentlyViewed, user]);
 
   const trendingNearby = useMemo(
     () => getTrendingEventsForArea(events, preferredLocation, 4),
@@ -139,7 +132,7 @@ const EventRecommendation = () => {
         events,
         userProfile: selectedProfile,
         registeredEvents: myEvents,
-        bookmarkedEvents: [...bookmarks, ...globalBookmarks],
+        bookmarkedEvents: bookmarks,
         viewedEvents: recentlyViewed,
         location: preferredLocation,
         limit: events.length,
