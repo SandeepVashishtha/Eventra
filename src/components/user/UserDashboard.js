@@ -55,17 +55,7 @@ const RecentlyViewedWrapper = ({ prefersReducedMotion }) => (
   </motion.section>
 );
 
-const MOCK_DATA = [
-  { id: 1, type: "Event", title: "Tech Talk: AI in 2025", date: "2025-06-15", location: "Mumbai", status: "Completed", projectStatus: "Done", lastUpdate: "-", participationType: "Registered" },
-  { id: 2, type: "Event", title: "Web Dev Workshop", date: "2025-09-10", location: "Online", status: "Upcoming", projectStatus: "Upcoming", lastUpdate: "-", participationType: "Registered" },
-  { id: 3, type: "Hackathon", title: "Hack for Sustainability", date: "2025-07-20", location: "Bangalore", status: "Completed", projectStatus: "Done", lastUpdate: "-", participationType: "Hosted" },
-  { id: 4, type: "Hackathon", title: "AI Hackathon", date: "2025-09-05", location: "Online", status: "Completed", projectStatus: "Done", lastUpdate: "-", participationType: "Registered" },
-  { id: 5, type: "Event", title: "React Conference 2025", date: "2025-12-15", location: "San Francisco, CA", status: "Upcoming", projectStatus: "Upcoming", lastUpdate: "-", participationType: "Hosted" },
-  { id: 6, type: "Hackathon", title: "Global AI Hackathon", date: "2025-10-10", location: "Online", status: "Upcoming", projectStatus: "Upcoming", lastUpdate: "-", participationType: "Registered" },
-  { id: 7, type: "Hackathon", title: "Blockchain Builders Hack", date: "2025-11-05", location: "New York, USA", status: "Upcoming", projectStatus: "Upcoming", lastUpdate: "-", participationType: "Hosted" },
-  { id: 8, type: "Project", title: "Online Pizza Shop", date: null, location: null, status: "-", projectStatus: "Done", lastUpdate: "2025-08-30", participationType: "Submitted" },
-  { id: 9, type: "Project", title: "Student Gradesheet App", date: null, location: null, status: "-", projectStatus: "In Progress", lastUpdate: "2025-09-08", participationType: "Contributed" },
-];
+// ❌ REMOVED: MOCK_DATA - No longer needed
 
 const QUICK_ACTIONS = [
   { label: "Events", icon: <Calendar size={22} />, to: "/events", color: "#6366f1" },
@@ -87,9 +77,37 @@ export default function UserDashboard() {
   const [selectedTicketEvent, setSelectedTicketEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [pushEnabled, setPushEnabled] = useState(() => readNotificationPreferences().push);
+  
+  // ✅ Get real user data from contexts
   const { myEvents, loading: myEventsLoading } = useMyEvents();
   const { bookmarks } = useBookmarks(user?.id || user?.email || "guest");
 
+  // ✅ Transform real data into registrations format
+  const userRegistrations = useMemo(() => {
+    if (!myEvents || myEvents.length === 0) return [];
+    
+    return myEvents
+      .map(registration => {
+        // Extract event data from registration
+        const event = registration?.event || registration?.eventSummary;
+        if (!event) return null;
+        
+        return {
+          id: registration.id || event.id || Math.random().toString(36).substr(2, 9),
+          type: event.type || "Event",
+          title: event.title || "Untitled Event",
+          date: event.startDate || event.date || new Date().toISOString().split('T')[0],
+          location: event.location || event.venue || "Online",
+          status: getEventStatus(event) || "Upcoming",
+          participationType: registration.participationType || "Registered",
+          projectStatus: event.projectStatus || "In Progress",
+          lastUpdate: event.updatedAt || event.lastUpdate || new Date().toISOString().split('T')[0],
+        };
+      })
+      .filter(Boolean);
+  }, [myEvents]);
+
+  // ✅ Calculate journey stats from real data
   const journeyStats = useMemo(() => {
     const records = Array.isArray(myEvents) ? myEvents : [];
     const registeredItems = records
@@ -128,39 +146,10 @@ export default function UserDashboard() {
     };
   }, [myEvents, bookmarks]);
 
-  const togglePushNotifications = async () => {
-    if (pushEnabled) {
-      disableNotifications();
-      setPushEnabled(false);
-    } else {
-      const granted = await requestNotificationPermission();
-      setPushEnabled(granted);
-    }
-  };
-
-  // Debounced search + multi-select filters for Registrations tab
-  const dashboardFilters = useDashboardFilters(MOCK_DATA, { debounceMs: 300 });
-
-  const firstName = user?.firstName || user?.username || "there";
-
-  useEffect(() => {
-    const h = new Date().getHours();
-    if (h < 12) setGreeting("Good morning");
-    else if (h < 17) setGreeting("Good afternoon");
-    else setGreeting("Good evening");
-  }, []);
-
-  useEffect(() => {
-    if (myEventsLoading) {
-      setLoading(true);
-      return undefined;
-    }
-
-    const timer = window.setTimeout(() => setLoading(false), 350);
-    return () => window.clearTimeout(timer);
-  }, [myEventsLoading]);
-
+  // ✅ Calculate derived data from real user registrations
   const derivedData = useMemo(() => {
+    const records = userRegistrations;
+    
     let eventsTotal = 0;
     let eventsCreated = 0;
     let eventsJoined = 0;
@@ -174,20 +163,20 @@ export default function UserDashboard() {
     const upcomingHackathons = [];
     const activeProjects = [];
 
-    for (const d of MOCK_DATA) {
+    for (const d of records) {
       if (d && d.type === "Event") {
         eventsTotal++;
         if (d.participationType === "Hosted") eventsCreated++;
         if (d.participationType === "Registered") eventsJoined++;
-        if (d.status === "Upcoming") upcomingEvents.push(d);
+        if (d.status === "Upcoming" || d.status === "upcoming") upcomingEvents.push(d);
       } else if (d && d.type === "Hackathon") {
         hackathonsTotal++;
         if (d.participationType === "Hosted") hackathonsHosted++;
         if (d.participationType === "Registered") hackathonsJoined++;
-        if (d.status === "Upcoming") upcomingHackathons.push(d);
+        if (d.status === "Upcoming" || d.status === "upcoming") upcomingHackathons.push(d);
       } else if (d && d.type === "Project") {
         projectsTotal++;
-        if (d.projectStatus !== "Done") {
+        if (d.projectStatus !== "Done" && d.projectStatus !== "done") {
           projectsActive++;
           activeProjects.push(d);
         } else {
@@ -206,11 +195,41 @@ export default function UserDashboard() {
       upcomingHackathons,
       activeProjects,
     };
+  }, [userRegistrations]);
+
+  // ✅ Use real data for filters
+  const dashboardFilters = useDashboardFilters(userRegistrations, { debounceMs: 300 });
+
+  const togglePushNotifications = async () => {
+    if (pushEnabled) {
+      disableNotifications();
+      setPushEnabled(false);
+    } else {
+      const granted = await requestNotificationPermission();
+      setPushEnabled(granted);
+    }
+  };
+
+  const firstName = user?.firstName || user?.username || "there";
+
+  useEffect(() => {
+    const h = new Date().getHours();
+    if (h < 12) setGreeting("Good morning");
+    else if (h < 17) setGreeting("Good afternoon");
+    else setGreeting("Good evening");
   }, []);
 
-  const { upcomingEvents, upcomingHackathons, activeProjects } = derivedData;
+  useEffect(() => {
+    if (myEventsLoading) {
+      setLoading(true);
+      return;
+    }
 
-  // filteredData is now computed inside useDashboardFilters
+    const timer = window.setTimeout(() => setLoading(false), 350);
+    return () => window.clearTimeout(timer);
+  }, [myEventsLoading]);
+
+  const { upcomingEvents, upcomingHackathons, activeProjects } = derivedData;
 
   const notifications = [
     { id: 1, text: "React Conference 2025 registration opens soon", time: "2h ago", unread: true },
@@ -334,7 +353,7 @@ export default function UserDashboard() {
           </div>
         </header>
 
-        {/* ✅ FIX 2: Single AnimatePresence wrapping all tab content correctly */}
+        {/* ✅ FIX: Single AnimatePresence wrapping all tab content correctly */}
         <AnimatePresence mode="wait">
           {activeTab === "overview" && (
             <motion.div key="overview" variants={stagger(prefersReducedMotion)} initial="hidden" animate="visible" exit={{ opacity: 0 }} className="ud-content">
@@ -363,8 +382,8 @@ export default function UserDashboard() {
                 </>
               ) : (
                 <>
-                  {journeyStats.totalRegistrations === 0 &&
-                    journeyStats.savedEvents === 0 ? (
+                  {/* ✅ FIX: Show empty state if no registrations */}
+                  {journeyStats.totalRegistrations === 0 && journeyStats.savedEvents === 0 ? (
                     <DashboardEmptyState />
                   ) : (
                   <>
@@ -506,24 +525,24 @@ export default function UserDashboard() {
             </motion.div>
           )}
 
-          {/* Events tab */}
+          {/* Events tab - ✅ Using real data */}
           {activeTab === "events" && (
             <motion.div key="events" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <ErrorBoundary level="feature">
                 <EventsTab
-                  hostedEvents={MOCK_DATA.filter(d => d.type === "Event" && d.participationType)}
+                  hostedEvents={userRegistrations.filter(d => d.type === "Event")}
                   onViewTicket={setSelectedTicketEvent}
                 />
               </ErrorBoundary>
             </motion.div>
           )}
 
-          {/* Hackathons tab */}
+          {/* Hackathons tab - ✅ Using real data */}
           {activeTab === "hackathons" && (
             <motion.div key="hackathons" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <ErrorBoundary level="feature">
                 <HackathonsTab
-                  hackathons={MOCK_DATA.filter(d => d.type === "Hackathon")}
+                  hackathons={userRegistrations.filter(d => d.type === "Hackathon")}
                   loading={loading}
                   fadeUp={fadeUp(prefersReducedMotion)}
                 />
@@ -531,12 +550,12 @@ export default function UserDashboard() {
             </motion.div>
           )}
 
-          {/* Projects tab */}
+          {/* Projects tab - ✅ Using real data */}
           {activeTab === "projects" && (
             <motion.div key="projects" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <ErrorBoundary level="feature">
                 <ProjectsTab
-                  projects={MOCK_DATA.filter(d => d.type === "Project")}
+                  projects={userRegistrations.filter(d => d.type === "Project")}
                   loading={loading}
                   fadeUp={fadeUp(prefersReducedMotion)}
                 />
@@ -544,7 +563,7 @@ export default function UserDashboard() {
             </motion.div>
           )}
 
-          {/* Registrations tab */}
+          {/* Registrations tab - ✅ Using real data */}
           {activeTab === "registrations" && (
             <motion.div key="registrations" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <ErrorBoundary level="feature">
