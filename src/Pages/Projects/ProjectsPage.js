@@ -530,4 +530,4 @@ const InnerGallery = () => {
   );
 };
 
-export default Project
+export default ProjectGallery;
