@@ -179,7 +179,7 @@ Vercel configuration is checked in via [`vercel.json`](vercel.json):
 - [Frontend Onboarding](docs/frontend-onboarding.md)
 - [Security Migration Notes](docs/SECURITY_MIGRATION.md)
 - [API Documentation Notes](docs/API_DOCUMENTATION.md)
-
+- Client-side authentication audit logging utilities for development and debugging.
 ## Contributing
 
 - Read [CONTRIBUTING.md](CONTRIBUTING.md)
