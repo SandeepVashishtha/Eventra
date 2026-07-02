@@ -139,6 +139,8 @@ const Hero = () => {
         transition={{ duration: 0.6 }}
         className="w-full max-w-4xl mx-auto px-4 flex flex-col gap-10"
       >
+    <section ref={containerRef} className="relative overflow-hidden py-16 sm:py-20 md:py-24">
+      <motion.div style={{ y: isTouch ? 0 : yText, opacity: opacityHero }}>
         <motion.h1 className="text-4xl font-bold text-center">
           <RespawningText texts={TAGLINE_TEXTS} />
           <div>{HEADLINE_PHRASES[phraseIndex]}</div>
@@ -147,6 +149,7 @@ const Hero = () => {
         <div className="text-xl text-violet-700 text-center">Discover hackathons, workshops, projects, and networking opportunities designed to help you learn, build, and connect.</div>
 
         <motion.div className="w-full max-w-2xl mx-auto">
+        <motion.div className="mt-8 sm:mt-10 max-w-2xl mx-auto">
           <ModernSearchInput
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
