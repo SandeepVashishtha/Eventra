@@ -256,7 +256,7 @@ ${window.location.href}
       toast.success("Event link copied to clipboard!");
       setLinkCopied(true);
       setTimeout(() => setLinkCopied(false), 2000);
-    } catch (_err) {
+    } catch {
       toast.error("Failed to copy link. Please copy the URL from your browser's address bar.");
     }
   };
@@ -336,7 +336,7 @@ const lastUpdated = getLastUpdated(event.updatedAt);
                 {event.type}
               </p>
               <div className="mt-4 flex items-center gap-3">
-                <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight break-words" title={event.title}>{event.title}</h1>
+                <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight wrap-break-word" title={event.title}>{event.title}</h1>
                 <button
                   onClick={handleCopy}
                   className={`p-2 rounded-full transition-colors ${linkCopied
@@ -455,7 +455,7 @@ const lastUpdated = getLastUpdated(event.updatedAt);
                                   }
                                 }
                                 exportToCSV(allRegistrants, `${event.title}_registrants`);
-                              } catch (_error) {
+                              } catch  {
                                 toast.error("Failed to fetch registrants");
                               } finally {
                                 setExportingRegistrants(false);
@@ -493,7 +493,7 @@ const lastUpdated = getLastUpdated(event.updatedAt);
                                   }
                                 }
                                 exportToJSON(allRegistrants, `${event.title}_registrants`);
-                              } catch (_error) {
+                              } catch {
                                 toast.error("Failed to fetch registrants");
                               } finally {
                                 setExportingRegistrants(false);
