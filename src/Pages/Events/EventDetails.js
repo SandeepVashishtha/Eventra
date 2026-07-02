@@ -4,6 +4,7 @@ import CountdownTimer from "../../components/common/CountdownTimer";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Helmet } from "react-helmet-async";
 import { sanitizeMarkdown } from "../../utils/sanitizeHtml";
+import { getReadingTime } from "../../utils/readingTimeUtils";
 import { toast } from "react-toastify";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
@@ -308,7 +309,7 @@ const showClosingSoon =
   hoursLeft !== null &&
   hoursLeft > 0 &&
   hoursLeft <= 48;
-
+const readingTime= getReadingTime(event.description);
   return (
     <>
       <RecentlyViewedTracker event={event} />
@@ -639,6 +640,9 @@ const showClosingSoon =
                   dangerouslySetInnerHTML={{ __html: sanitizeMarkdown(event.description, marked.parse) }}
                 />
               </div>
+              <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-indigo-100 dark:bg-indigo-900/30 px-3 py-1 text-sm font-medium text-indigo-700 dark:text-indigo-300">
+  📖 {readingTime}
+</div>
 
               {/* Live Audience Engagement Section (Q&A and Polls) */}
               <div className="space-y-4 pt-6 border-t border-gray-100 dark:border-gray-800">
