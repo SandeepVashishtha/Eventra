@@ -51,7 +51,6 @@ App runs at `http://localhost:3000`.
 - [Environment Variables](#environment-variables)
 - [Available Scripts](#available-scripts)
 - [Testing and Quality](#testing-and-quality)
-- [SSE Mock Server (Optional)](#sse-mock-server-optional)
 - [Deployment](#deployment)
 - [Roadmap](#roadmap)
 - [Documentation](#documentation)
@@ -71,7 +70,7 @@ App runs at `http://localhost:3000`.
 
 Eventra is an open-source frontend application built with React and Vite. It supports event discovery, registration, dashboards, hackathons, collaboration features, feedback flows, and role-based access experiences.
 
-This repository contains the frontend application. The Spring Boot backend is maintained in a separate repository — all API traffic is proxied to it both in production (via Vercel rewrites) and in local development (via Vite proxy).
+This repository contains the frontend application only. The Spring Boot backend is maintained in a separate repository, and all API traffic is proxied to that backend in production via Vercel rewrites and in local development via the Vite proxy.
 
 - Frontend repo: <https://github.com/SandeepVashishtha/Eventra>
 - Backend repo: <https://github.com/SandeepVashishtha/Eventra-Backend>
@@ -141,7 +140,7 @@ Below is the high-level architecture of Eventra:
 graph TD
     Client[Client: React/Vite] --> Assets[Assets: public/]
     Client --> State[State: Context/Hooks]
-    Client --> Backend[Backend: Spring Boot API]
+    Client --> Backend[Separate Spring Boot API]
     Backend --> Azure[Azure Spring Boot]
     Client -.-> VercelRewrite[Vercel /api/* Rewrite]
     VercelRewrite --> Backend
@@ -154,7 +153,7 @@ graph TD
 
 ### Frontend–Backend Communication
 
-- The React app communicates with the Spring Boot backend via REST API calls.
+- The React app communicates with the separate Spring Boot backend via REST API calls.
 - In production, `/api/*` requests are rewritten to the Azure-hosted backend via Vercel rewrites.
 - In development, Vite proxies API calls to `http://localhost:8080` (see `vite.config.js`).
 - Backend URL resolution priority: `BACKEND_URL` → `VITE_API_URL` → `REACT_APP_API_URL` (configured in `src/config/backendConfig.js`).
@@ -171,7 +170,7 @@ graph TD
 - Route-level guards in `src/components/` enforce authentication and role requirements.
 - Public routes (home, events, hackathons) are accessible without authentication.
 - Protected routes (dashboards, organizer panels) require a valid JWT and optionally specific roles.
-- Middleware runs at the edge for production builds, validating tokens before requests reach the app.
+- Production deployment uses Vercel rewrites and headers for routing and security; there is no local middleware implementation in this repository.
 
 ## Project Structure
 
@@ -452,32 +451,14 @@ npm run test
 npm run test:e2e
 ```
 
-## SSE Mock Server (Optional)
-
-For local realtime testing:
-
-```bash
-node sse-mock-server.js
-```
-
-Required environment variables:
-
-- `JWT_SECRET` - JWT signing secret for token generation and validation. Generate with: `openssl rand -base64 32`
-
-Optional environment flags:
-
-- `SSE_MOCK_PORT` (default `8080`)
-- `ALLOWED_ORIGIN` (default `http://localhost:3000`)
-- `SSE_DEBUG` (`true` or `false`)
-
 ## Deployment
 
 Vercel configuration is checked in via [`vercel.json`](vercel.json):
 
 - Build command: `npm run lint && GENERATE_SOURCEMAP=false npm run build`
 - Output directory: `build`
-- `/api/*` is rewritten to the hosted Spring Boot backend (the sole API provider)
-- No serverless functions are deployed — the `api/` directory was removed as dead code
+- `/api/*` is rewritten to the hosted Spring Boot backend
+- The repository does not contain a local serverless API or middleware implementation
 
 ## Roadmap
 
