@@ -15,6 +15,9 @@ import useEventCancellation, {
 } from "../../hooks/useEventCancellation";
 import FocusTrap from "../common/FocusTrap";
 
+// Restores focus to a previously-focused element, if it's still focusable.
+const restoreFocusTo = (el) => el?.focus?.();
+
 /**
  * EventCancellationModal
  *
@@ -34,11 +37,7 @@ const EventCancellationModal = ({ event, onClose, onSuccess }) => {
   const previouslyFocusedRef = useRef(null);
   useEffect(() => {
     previouslyFocusedRef.current = document.activeElement;
-    return () => {
-      if (previouslyFocusedRef.current?.focus) {
-        previouslyFocusedRef.current.focus();
-      }
-    };
+    return () => restoreFocusTo(previouslyFocusedRef.current);
   }, []);
 
   const { cancel, isCancelling, cancellationError } = useEventCancellation(
