@@ -31,7 +31,7 @@ const OnboardingConfetti = () => {
   }));
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden">
+    <div className="fixed inset-0 pointer-events-none z-top overflow-hidden">
       {pieces.map((p) => (
         <motion.div
           key={p.id}
@@ -58,6 +58,70 @@ const OnboardingConfetti = () => {
           }}
         />
       ))}
+    </div>
+  );
+};
+
+const OnboardingTaskItem = ({ task, setIsOpen }) => {
+  return (
+    <div 
+      className={`p-3 rounded-xl border transition-all duration-300 flex items-start gap-3 ${
+        task.completed 
+          ? "bg-green-50/30 dark:bg-green-950/10 border-green-100/50 dark:border-green-900/20 opacity-80" 
+          : "bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-sm"
+      }`}
+    >
+      {/* Semantic visually-hidden checkbox with dynamic description */}
+      <input
+        type="checkbox"
+        id={`onboarding-task-${task.id}`}
+        checked={task.completed}
+        disabled
+        className="sr-only"
+        aria-describedby={`onboarding-desc-${task.id}`}
+      />
+      
+      <label 
+        htmlFor={`onboarding-task-${task.id}`}
+        className="flex-1 flex items-start gap-3 cursor-default"
+      >
+        {/* Status Checkbox Indicator */}
+        <div className="mt-0.5 shrink-0" aria-hidden="true">
+          {task.completed ? (
+            <CheckCircle2 className="w-5 h-5 text-green-500 dark:text-green-400 fill-current" />
+          ) : (
+            <Circle className="w-5 h-5 text-slate-300 dark:text-slate-700" />
+          )}
+        </div>
+
+        {/* Task details */}
+        <div className="flex-1 min-w-0">
+          <span className="sr-only">
+            {task.completed ? "[Completed Quest] " : "[Active Quest] "}
+          </span>
+          <p className={`text-xs font-bold leading-tight ${
+            task.completed ? "text-slate-500 line-through" : "text-slate-800 dark:text-white"
+          }`}>
+            {task.label}
+          </p>
+          <p id={`onboarding-desc-${task.id}`} className="text-[10px] text-slate-500 mt-0.5 leading-snug">
+            {task.desc}
+          </p>
+        </div>
+      </label>
+
+      {/* Arrow Action link */}
+      {!task.completed && (
+        <Link
+          to={task.path}
+          onClick={() => setIsOpen(false)}
+          className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-indigo-500 hover:text-indigo-600 shrink-0 self-center focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+          title={`Go to ${task.label}`}
+          aria-label={`Go to ${task.label}`}
+        >
+          <ArrowRight className="w-4 h-4" />
+        </Link>
+      )}
     </div>
   );
 };
@@ -105,6 +169,36 @@ export default function OnboardingChecklist() {
     },
   ]);
 
+  const triggerStateChange = useCallback(() => {
+    let height = 0;
+    if (!isDismissed) {
+      const activeElement = document.querySelector('[data-onboarding-checklist]');
+      if (activeElement) {
+        const rect = activeElement.getBoundingClientRect();
+        height = window.innerHeight - rect.top;
+      }
+    }
+    window.dispatchEvent(
+      new CustomEvent("eventraOnboardingStateChange", {
+        detail: { height, isOpen, isDismissed },
+      })
+    );
+  }, [isOpen, isDismissed]);
+
+  // Trigger on state change or updates
+  useEffect(() => {
+    triggerStateChange();
+    // Schedule a small delay to handle mount/render completion
+    const timer = setTimeout(triggerStateChange, 50);
+    return () => clearTimeout(timer);
+  }, [isOpen, isDismissed, tasks, triggerStateChange]);
+
+  // Trigger on window resize
+  useEffect(() => {
+    window.addEventListener("resize", triggerStateChange);
+    return () => window.removeEventListener("resize", triggerStateChange);
+  }, [triggerStateChange]);
+
   // Check storage values and update task statuses
   const checkTaskStatus = useCallback(async () => {
     // 1. Check user profile / skills in local storage or state
@@ -119,7 +213,7 @@ export default function OnboardingChecklist() {
       } else if (user?.skills && user.skills.length > 0) {
         interestsDone = true;
       }
-    } catch (e) {
+    } catch {
       if (user?.skills && user.skills.length > 0) {
         interestsDone = true;
       }
@@ -236,7 +330,8 @@ export default function OnboardingChecklist() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: 50 }}
             onClick={() => setIsOpen(true)}
-            className="fixed bottom-6 left-6 z-40 flex items-center gap-2.5 px-4 py-3 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-semibold shadow-2xl border border-slate-800 dark:border-slate-200 cursor-pointer group"
+            data-onboarding-checklist="badge"
+            className="fixed bottom-24 left-6 z-40 flex items-center gap-2.5 px-4 py-3 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-semibold shadow-2xl border border-slate-800 dark:border-slate-200 cursor-pointer group"
           >
             <div className="relative flex items-center justify-center w-6 h-6">
               <svg className="w-6 h-6 transform -rotate-90">
@@ -278,10 +373,11 @@ export default function OnboardingChecklist() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 100 }}
             transition={{ duration: prefersReducedMotion ? 0 : 0.25, ease: "easeOut" }}
-            className="fixed bottom-6 left-6 z-40 w-full max-w-sm bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden"
+            data-onboarding-checklist="panel"
+            className="fixed bottom-6 left-6 z-fixed w-full max-w-sm bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden"
           >
             {/* Header */}
-            <div className="p-4 bg-slate-50 dark:bg-slate-850 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+            <div className="p-4 bg-slate-50 dark:bg-slate-800 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="p-1 bg-indigo-500/10 rounded-lg text-indigo-600 dark:text-indigo-400">
                   <Award className="w-5 h-5 animate-bounce" />
@@ -336,71 +432,16 @@ export default function OnboardingChecklist() {
             {/* Task list items */}
             <div className="p-4 space-y-3 max-h-[300px] overflow-y-auto bg-slate-50/50 dark:bg-slate-900/30">
               {tasks.map((task) => (
-                <div 
-                  key={task.id}
-                  className={`p-3 rounded-xl border transition-all duration-300 flex items-start gap-3 ${
-                    task.completed 
-                      ? "bg-green-50/30 dark:bg-green-950/10 border-green-100/50 dark:border-green-900/20 opacity-80" 
-                      : "bg-white dark:bg-slate-850 border-slate-100 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-sm"
-                  }`}
-                >
-                  {/* Semantic visually-hidden checkbox with dynamic description */}
-                  <input
-                    type="checkbox"
-                    id={`onboarding-task-${task.id}`}
-                    checked={task.completed}
-                    disabled
-                    className="sr-only"
-                    aria-describedby={`onboarding-desc-${task.id}`}
-                  />
-                  
-                  <label 
-                    htmlFor={`onboarding-task-${task.id}`}
-                    className="flex-1 flex items-start gap-3 cursor-default"
-                  >
-                    {/* Status Checkbox Indicator */}
-                    <div className="mt-0.5 shrink-0" aria-hidden="true">
-                      {task.completed ? (
-                        <CheckCircle2 className="w-5 h-5 text-green-500 dark:text-green-400 fill-current" />
-                      ) : (
-                        <Circle className="w-5 h-5 text-slate-300 dark:text-slate-700" />
-                      )}
-                    </div>
-
-                    {/* Task details */}
-                    <div className="flex-1 min-w-0">
-                      <span className="sr-only">
-                        {task.completed ? "[Completed Quest] " : "[Active Quest] "}
-                      </span>
-                      <p className={`text-xs font-bold leading-tight ${
-                        task.completed ? "text-slate-500 line-through" : "text-slate-850 dark:text-white"
-                      }`}>
-                        {task.label}
-                      </p>
-                      <p id={`onboarding-desc-${task.id}`} className="text-[10px] text-slate-500 mt-0.5 leading-snug">
-                        {task.desc}
-                      </p>
-                    </div>
-                  </label>
-
-                  {/* Arrow Action link */}
-                  {!task.completed && (
-                    <Link
-                      to={task.path}
-                      onClick={() => setIsOpen(false)}
-                      className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-indigo-500 hover:text-indigo-600 shrink-0 self-center focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                      title={`Go to ${task.label}`}
-                      aria-label={`Go to ${task.label}`}
-                    >
-                      <ArrowRight className="w-4 h-4" />
-                    </Link>
-                  )}
-                </div>
+                <OnboardingTaskItem 
+                  key={task.id} 
+                  task={task} 
+                  setIsOpen={setIsOpen} 
+                />
               ))}
             </div>
 
             {/* Bottom Panel Actions */}
-            <div className="p-3 bg-slate-50 dark:bg-slate-850 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-4">
+            <div className="p-3 bg-slate-50 dark:bg-slate-800 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-4">
               <button
                 onClick={handleDismiss}
                 className="text-[10px] font-bold text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors uppercase tracking-wider"
@@ -410,7 +451,7 @@ export default function OnboardingChecklist() {
 
               <button
                 onClick={() => setIsOpen(false)}
-                className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-850 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 rounded-lg text-xs font-bold transition-all shadow-md"
+                className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 rounded-lg text-xs font-bold transition-all shadow-md"
               >
                 Hide Panel
               </button>

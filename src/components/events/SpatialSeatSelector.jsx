@@ -10,6 +10,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import "./SpatialSeatSelector.css";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 // Fallback presets if no venue layout is stored yet
 const DEFAULT_PRESETS = {
@@ -24,6 +25,19 @@ const DEFAULT_PRESETS = {
       height: 120,
       rotation: 0,
       seatsCount: 0,
+      assignedAttendees: {},
+    },
+    {
+      id: "accessible-1",
+      type: "round-table",
+      label: "Accessible Seating",
+      x: 50,
+      y: 500,
+      width: 120,
+      height: 120,
+      rotation: 0,
+      seatsCount: 4,
+      tier: "Accessible",
       assignedAttendees: {},
     },
     {
@@ -140,7 +154,7 @@ const SpatialSeatSelector = ({
     let initialElements = [];
     if (savedLayout) {
       try {
-        const parsed = JSON.parse(savedLayout);
+        const parsed = safeJsonParse(savedLayout, {});
         if (Array.isArray(parsed)) {
           // Strict schema validation and sanitization
           initialElements = parsed.map((el) => ({
@@ -168,7 +182,7 @@ const SpatialSeatSelector = ({
         } else {
           initialElements = DEFAULT_PRESETS.banquet;
         }
-      } catch (e) {
+      } catch {
         initialElements = DEFAULT_PRESETS.banquet;
       }
     } else {
@@ -278,6 +292,11 @@ const SpatialSeatSelector = ({
     return list;
   }, [elements, elementSeatPositions]);
 
+  const allSeatsRef = useRef(allSeats);
+  useEffect(() => {
+    allSeatsRef.current = allSeats;
+  }, [allSeats]);
+
   // Auto-center and zoom to highlighted seat in read-only dashboard view
   useEffect(() => {
     if (readOnly && selectedSeat && elements.length > 0) {
@@ -359,7 +378,7 @@ const SpatialSeatSelector = ({
       seatLabel: `${el.label} - ${label}`,
       tier: tier,
     });
-  };
+  }, [onSelectSeat, readOnly]);
 
   return (
     <div className="ssp-container">
@@ -531,7 +550,7 @@ const SpatialSeatSelector = ({
                     key={`seat-${el.id}-${seat.index}`}
                     el={el}
                     seat={seat}
-                    allSeats={allSeats}
+                    allSeatsRef={allSeatsRef}
                     isSelected={isSeatSelected(el.id, seat.index)}
                     readOnly={readOnly}
                     onSelect={handleSeatClick}
@@ -647,11 +666,13 @@ const SpatialSeatSelector = ({
   );
 };
 
-export default SpatialSeatSelector;
+// Export at end to ensure helper components are defined first
+// (avoids potential parser issues in some linting environments)
+// export will be moved to file end.
 
 // ── Optimized Seat Component ────────────────────────────────────────────────
 
-const Seat = ({ el, seat, allSeats, isSelected, readOnly, onSelect, onHover, containerRef }) => {
+const Seat = ({ el, seat, allSeatsRef, isSelected, readOnly, onSelect, onHover, containerRef }) => {
   const isVIP = el.tier && el.tier.toLowerCase().includes("vip");
   const isOccupied = el.assignedAttendees[seat.index];
   const seatLabel = (el.seatLabels && el.seatLabels[seat.index]) || `Seat ${seat.index + 1}`;
@@ -683,7 +704,7 @@ const Seat = ({ el, seat, allSeats, isSelected, readOnly, onSelect, onHover, con
       let bestSeat = null;
       let minScore = Infinity;
 
-      (allSeats || []).forEach((s) => {
+      (allSeatsRef.current || []).forEach((s) => {
         if (s.elementId === el.id && s.index === seat.index) return;
         const dx = s.x - seat.x;
         const dy = s.y - seat.y;
@@ -802,3 +823,5 @@ const Seat = ({ el, seat, allSeats, isSelected, readOnly, onSelect, onHover, con
 };
 
 const MemoizedSeat = memo(Seat);
+
+export default SpatialSeatSelector;

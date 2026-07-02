@@ -1,4 +1,5 @@
 export function sanitizeFilename(name) {
+  if (!name || typeof name !== "string") return "file";
   return name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
 }
 

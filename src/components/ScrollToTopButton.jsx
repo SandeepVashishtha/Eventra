@@ -1,59 +1,40 @@
 import { useState, useEffect } from "react";
-import BackToTopButton from "./common/BackToTopButton";
-import ScrollToBottomButton from "./common/ScrollToBottomButton";
+import { ChevronUp } from "lucide-react";
 
-export default function ScrollToTopButton() {
-  const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+/**
+ * ScrollToTopButton component with safe-area aware positioning.
+ * Placements configured for when chatbot is open/closed on mobile screens.
+ */
+const ScrollToTopButton = ({ chatbotOpen = false }) => {
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    // Listen for chatbot state changes
-    const handleChatbotState = () => {
-      setIsChatbotOpen(document.querySelector('[data-chatbot-open]') !== null);
+    const handleScroll = () => {
+      setVisible(window.scrollY > 300);
     };
-
-    // Check initially and set up observer
-    handleChatbotState();
-
-    // Only observe direct body children — avoids CPU thrashing on every React render
-    const observer = new MutationObserver(handleChatbotState);
-    observer.observe(document.body, { childList: true });
-
-    return () => {
-      observer.disconnect();
-    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Scroll-to-top sits at bottom-24; scroll-to-bottom stacks above it at bottom-36
-  const upPositionClass = isChatbotOpen
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const positionClass = chatbotOpen
     ? "bottom-[calc(1rem+var(--safe-area-bottom))] left-[calc(1rem+var(--safe-area-left))] sm:bottom-24 sm:left-6"
     : "bottom-[calc(1rem+var(--safe-area-bottom))] right-[calc(1rem+var(--safe-area-right))] sm:bottom-24 sm:right-6";
 
-  const downPositionClass = isChatbotOpen
-    ? "bottom-[calc(1rem+var(--safe-area-bottom))] left-[calc(1rem+var(--safe-area-left))] sm:bottom-36 sm:left-6"
-    : "bottom-[calc(1rem+var(--safe-area-bottom))] right-[calc(1rem+var(--safe-area-right))] sm:bottom-36 sm:right-6";
-
   return (
-    <>
-      <ScrollToBottomButton threshold={50} positionClass={downPositionClass} />
-      <BackToTopButton threshold={50} positionClass={upPositionClass} />
-    </>
+    <button
+      onClick={scrollToTop}
+      className={`fixed z-50 p-3 rounded-full bg-indigo-600 text-white shadow-lg transition-all duration-300 ${positionClass} ${
+        visible ? "opacity-100 scale-100" : "opacity-0 scale-75 pointer-events-none"
+      }`}
+      aria-label="Scroll to top"
+    >
+      <ChevronUp className="h-6 w-6" />
+    </button>
   );
-}
-
-// Accessible landmark container router focus shifting utility helper
-export const shiftLandmarkFocus = (elementId) => {
-  // SSR guard to prevent ReferenceError crashes in Node/Next.js/Testing environments
-  if (typeof document === "undefined") return;
-
-  const container = document.getElementById(elementId);
-  if (container) {
-    container.setAttribute("tabindex", "-1");
-    container.focus();
-
-    // Clean up the tabindex after focus is lost so we don't permanently pollute the DOM
-    container.addEventListener("blur", function cleanup() {
-      container.removeAttribute("tabindex");
-      container.removeEventListener("blur", cleanup);
-    });
-  }
 };
+
+export default ScrollToTopButton;

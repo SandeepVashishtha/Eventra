@@ -3,9 +3,9 @@ import { ArrowRightIcon, LightBulbIcon, FolderOpenIcon, CodeBracketIcon, CheckCi
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { API_ENDPOINTS } from "../../config/api";
+
 import { projectService } from "../../services/projectService";
 import { sanitizeInputText } from "../../utils/inputSanitization";
 
@@ -205,9 +205,13 @@ const handleSubmit = async (e) => {
 
     setIsSubmitting(true);
     try {
-      // Sanitize text fields before sending
+      // Sanitize and map text fields before sending
       const sanitizedData = {
         ...formData,
+        title: sanitizeInputText(formData.projectName),
+        category: formData.projectCategory || formData.projectType || "Other",
+        thumbnailUrl: formData.projectImage || "",
+        githubUrl: formData.githubLink || "",
         projectName: sanitizeInputText(formData.projectName),
         teamName: sanitizeInputText(formData.teamName),
         description: sanitizeInputText(formData.description),
@@ -479,14 +483,15 @@ const handleSubmit = async (e) => {
                         src={formData.projectImage}
                         alt="Project Preview"
                         className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                         loading="lazy"
                       />
                       <button
                         type="button"
                         onClick={handleRemoveImage}
                         className="absolute top-2 right-2 p-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-full shadow-md transition-all duration-200 cursor-pointer"
                         title="Remove image"
-                       aria-label="button">
-                        <XMarkIcon className="w-3.5 h-3.5" />
+                        aria-label="Remove uploaded project image">
+                        <XMarkIcon className="w-3.5 h-3.5" aria-hidden="true" />
                       </button>
                     </div>
                   ) : (
@@ -637,15 +642,15 @@ const handleSubmit = async (e) => {
             <ArrowUpTrayIcon className="w-5 h-5" /> Submit Another Project
           </motion.button>
           
-          <motion.a
-            href="/projects"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="inline-flex items-center justify-center gap-2 bg-bg text-text border border-border px-8 py-3 rounded-xl shadow-lg hover:bg-card-bg transition-all duration-300"
-          >
-            <ClipboardDocumentCheckIcon className="w-5 h-5" />
-            Explore Projects
-          </motion.a>
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <Link
+              to="/projects"
+              className="inline-flex items-center justify-center gap-2 bg-bg text-text border border-border px-8 py-3 rounded-xl shadow-lg hover:bg-card-bg transition-all duration-300"
+            >
+              <ClipboardDocumentCheckIcon className="w-5 h-5" />
+              Explore Projects
+            </Link>
+          </motion.div>
         </div>
       </motion.div>
     </div>

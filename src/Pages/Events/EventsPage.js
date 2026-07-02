@@ -1,13 +1,15 @@
 import { useRef, useEffect, useMemo, useState } from "react";
 import { useSearchParams, useLocation } from "react-router-dom";
-import VirtualizedEventGrid from "../../components/common/VirtualizedEventGrid"; 
+import VirtualizedEventGrid from "../../components/common/VirtualizedEventGrid";
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
+import EventCalendarView from "./EventCalendarView";
 import FeedbackButton from "../../components/FeedbackButton";
 import EventCTA from "./EventCTA";
 import EventFiltersToolbar from "./EventFiltersToolbar";
 import { EventCardSkeleton } from "../../components/common/SkeletonLoaders";
 import SearchEmptyState from "../../components/common/SearchEmptyState";
+import EmptyState from "../../components/common/EmptyState";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import ActiveFilters from "./ActiveFilters";
 import PaginationControls from "./PaginationControls";
@@ -17,16 +19,34 @@ import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
 import ErrorBoundary from "../../components/common/ErrorBoundary";
 import ErrorMessage from "../../components/common/ErrorMessage";
 import { EventTimeline } from "../../components/EventTimeline";
+import TrendingEvents from "../../components/TrendingEvents/TrendingEvents";
+import RecentlyViewedEvents from "../../components/common/RecentlyViewedEvents";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 import {
   decodeAdvancedFilters,
   encodeAdvancedFilters,
   getDefaultFilters,
-  hasActiveFilters as hasActiveAdvancedFilters,
+  hasActiveAdvancedFilters,
   normalizeAdvancedFilters,
   serializeAdvancedFilters,
 } from "../../utils/advancedFilterUtils";
-
 const FILTER_STORAGE_KEY = "eventra:event-filters:v1";
+
+const EventsPagination = ({ listing }) => {
+  if (listing.isLoading || listing.totalPages <= 1) return null;
+  return (
+    <div className="mt-8 flex justify-center">
+      <PaginationControls
+        currentPage={listing.currentPage}
+        totalPages={listing.totalPages}
+        totalEvents={listing.totalElements}
+        eventsPerPage={listing.eventsPerPage}
+        onPageChange={listing.setSafePage}
+        onPageSizeChange={listing.setEventsPerPage}
+      />
+    </div>
+  );
+};
 
 const ExploreEventsSkeleton = () => (
   <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" aria-label="Loading events">
@@ -43,11 +63,13 @@ const renderCardSection = (
   paginatedEvents,
   viewMode,
   searchQuery,
-  onClearSearch
+  onClearSearch,
+  filteredEvents,
+  // hasFilters
 ) => {
   if (isLoading) {
-  return <ExploreEventsSkeleton />;
-}
+    return <ExploreEventsSkeleton />;
+  }
 
   if (loadError) {
     return (
@@ -64,29 +86,44 @@ const renderCardSection = (
   }
 
   if (paginatedEvents.length === 0) {
-    return (
-      <div className="relative overflow-hidden rounded-3xl p-10 text-center border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-[0_10px_25px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)]">
-        <SearchEmptyState
-          query={searchQuery}
-          itemLabel="events"
-          browseLabel="Browse All Events"
-          browsePath="/events"
-          onClear={onClearSearch}
-          popularTags={["AI", "Blockchain", "Web", "DevOps", "React", "UX"]}
+    const hasSearch = searchQuery && searchQuery.trim() !== "";
+    if (hasSearch) {
+      return (
+        <div className="relative overflow-hidden rounded-3xl p-10 text-center border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-[0_10px_25px_rgba(0,0,0,0.05)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)]">
+          <SearchEmptyState
+            query={searchQuery}
+            itemLabel="events"
+            browseLabel="Browse All Events"
+            browsePath="/events"
+            onClear={onClearSearch}
+            popularTags={["AI", "Blockchain", "Web", "DevOps", "React", "UX"]}
+          />
+        </div>
+      );
+    } else {
+      return (
+        <EmptyState
+          type="filters"
+          title="No events match your filters"
+          description="Try adjusting your sliders, removing location parameters, or resetting categories."
+          actionLabel="Clear Filters"
+          onAction={onClearSearch}
         />
-      </div>
-    );
+      );
+    }
   }
-  if (viewMode === "grid" && paginatedEvents.length > 20) {
+  if (viewMode === "grid" && paginatedEvents.length > 50) {
     return <VirtualizedEventGrid events={paginatedEvents} />;
+  }
+  if (viewMode === "calendar") {
+    return <EventCalendarView events={filteredEvents} />;
   }
   return (
     <div
-      className={`grid gap-6 ${
-        viewMode === "grid"
-          ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-          : "grid-cols-1 max-w-4xl mx-auto"
-      }`}
+      className={`grid gap-6 ${viewMode === "grid"
+        ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+        : "grid-cols-1 max-w-4xl mx-auto"
+        }`}
     >
       {paginatedEvents.map((event) => (
         <EventCard key={event.id} event={event} />
@@ -94,6 +131,12 @@ const renderCardSection = (
     </div>
   );
 };
+
+const RecentlyViewedSection = () => (
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+    <RecentlyViewedEvents />
+  </div>
+);
 
 const EventsPage = () => {
   useDocumentTitle("Eventra | Events");
@@ -141,7 +184,7 @@ const EventsPage = () => {
     let savedFilters = {};
 
     try {
-      savedFilters = JSON.parse(
+      savedFilters = safeJsonParse(
         window.sessionStorage.getItem(FILTER_STORAGE_KEY) || "{}"
       );
     } catch {
@@ -161,8 +204,8 @@ const EventsPage = () => {
     const advancedFilters = urlAdvancedFilters
       ? decodeAdvancedFilters(urlAdvancedFilters)
       : normalizeAdvancedFilters(
-          savedFilters.advancedFilters || getDefaultFilters()
-        );
+        savedFilters.advancedFilters || getDefaultFilters()
+      );
     const initialSearch = routeSearchQuery || savedFilters.searchQuery || "";
 
     if (initialSearch) {
@@ -307,7 +350,7 @@ const EventsPage = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 text-slate-900 dark:text-gray-100 overflow-x-hidden">
+    <div className="flex flex-col min-h-screen bg-linear-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 text-slate-900 dark:text-gray-100 overflow-x-hidden">
       <EventHero
         searchQuery={localSearchInput}
         setSearchQuery={setLocalSearchInput}
@@ -315,6 +358,14 @@ const EventsPage = () => {
         handleSearch={handleSearch}
         scrollToCard={scrollToCard}
       />
+
+      <div className="mt-6 sm:mt-8">
+        <TrendingEvents title="Trending Events" limit={6} fetchSize={24} />
+
+<RecentlyViewedSection />
+      </div>
+
+      <RecentlyViewedSection />
 
       <div
         ref={cardSectionRef}
@@ -343,6 +394,7 @@ const EventsPage = () => {
             currentFilterConfig={currentFilterConfig}
             onApplyPreset={applyFilterPreset}
             visibleEvents={listing.paginatedEvents}
+            totalElements={listing.totalElements}
           />
         </div>
 
@@ -365,24 +417,22 @@ const EventsPage = () => {
         />
 
         <ErrorBoundary level="section" label="Events">
-     {renderCardSection(
-  isLoading,
-  listing.loadError,
-  listing.fetchEvents,
-  listing.paginatedEvents,
-  listing.viewMode,
-  listing.searchQuery,
-  clearSearchAndFilters
-)}
+          {renderCardSection(
+            isLoading,
+            listing.loadError,
+            listing.fetchEvents,
+            listing.paginatedEvents,
+            listing.viewMode,
+            listing.searchQuery,
+            clearSearchAndFilters,
+            listing.filteredEvents,
+            hasActiveAdvancedFilters(listing.advancedFilters) ||
+              listing.filterType !== "all" ||
+              listing.categoryFilter !== "all"
+          )}
 
           {!listing.isLoading && listing.totalPages > 1 && (
-            <div className="mt-8 flex justify-center">
-              <PaginationControls
-                currentPage={listing.currentPage}
-                totalPages={listing.totalPages}
-                onPageChange={listing.setSafePage}
-              />
-            </div>
+            <EventsPagination listing={listing} />
           )}
         </ErrorBoundary>
 

@@ -140,14 +140,16 @@ const FormFieldWrapper = ({
         "aria-busy": loading ? "true" : undefined,
         "aria-required": required ? "true" : child.props["aria-required"],
         className: joinClasses(
-          "w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition-colors placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:placeholder:text-gray-500",
+          "w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition-all duration-200 placeholder:text-gray-400 hover:shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:placeholder:text-gray-500",
           invalid && "border-red-500 focus:border-red-500 focus:ring-red-500/20 dark:border-red-400",
           // 🔥 FIX 1: Support both success AND valid states for the styling
           (validationState === "success" || validationState === "valid") && "border-green-500 focus:border-green-500 focus:ring-green-500/20 dark:border-green-400",
           loading && "border-blue-500 dark:border-blue-400",
           prefix && "pl-10",
-          (showStatusIcon || suffix) && "pr-10",
-          showStatusIcon && suffix && "pr-16",
+          // Reserve right padding to match the icons actually rendered: 80px for
+          // both the status icon and a suffix, 40px for just one, none otherwise.
+          showStatusIcon && suffix && "pr-20",
+          (showStatusIcon || suffix) && !(showStatusIcon && suffix) && "pr-10",
           child.props.className,
         ),
       })
@@ -183,21 +185,19 @@ const FormFieldWrapper = ({
           </span>
         )}
         {enhancedChild}
-        {suffix && (
-          <span className="absolute inset-y-0 right-3 flex items-center">
-            {suffix}
-          </span>
-        )}
-        {showStatusIcon && (
-          <span
-            className={joinClasses(
-              "pointer-events-none absolute inset-y-0 flex items-center",
-              suffix ? "right-10" : "right-3",
-            )}
-          >
-            <ValidationStatusIcon state={validationState} />
-          </span>
-        )}
+        <div className="absolute inset-y-0 right-3 flex items-center gap-2">
+  {showStatusIcon && (
+    <span className="pointer-events-none">
+      <ValidationStatusIcon state={validationState} />
+    </span>
+  )}
+
+  {suffix && (
+    <span className="flex items-center">
+      {suffix}
+    </span>
+  )}
+</div>
       </div>
 
       {hasMessage(helperText) && (
