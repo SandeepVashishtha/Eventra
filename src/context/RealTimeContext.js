@@ -304,7 +304,6 @@ export const useLiveAudienceStream = () => {
   if (typeof globalThis !== "undefined" && typeof globalThis.mockLiveAudienceStream === "function") {
     return globalThis.mockLiveAudienceStream();
   }
-  const ctx = useContext(LiveAudienceContext);
   if (!ctx) throw new Error("useLiveAudienceStream must be used inside RealTimeProvider");
   return ctx;
 };
