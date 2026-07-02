@@ -1,6 +1,8 @@
+import React from "react";
+import { Link } from "react-router-dom";
 import { Search, FilterX, Inbox } from "lucide-react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const EmptyState = ({
   type = "search",
@@ -10,31 +12,36 @@ const EmptyState = ({
   icon,
   actionLabel,
   onAction,
-  onClearFilters, // Legacy support
-  onBrowseAll, // Legacy support
-  actionPath, // Support routing link
+  actionPath,      // Support routing link for primary action
+  secondaryLabel,  // Optional second action label
+  onSecondary,     // Optional second action handler
+  secondaryPath,   // Optional second action route
+  onClearFilters,  // Legacy support
+  onBrowseAll,     // Legacy support
   compact = false,
   children,
 }) => {
+  const { t } = useTranslation();
   const getDefaultConfig = () => {
     switch (type) {
       case "search":
         return {
-          icon: Search,
-          title: "No results found",
+          icon: <Search size={48} className="text-gray-400" />,
+          title: t("common.noResults"),
           message: "Try adjusting your search terms or filters to find what you're looking for.",
+          actionLabel: "Clear search",
         };
       case "filters":
         return {
-          icon: FilterX,
-          title: "No events match your filters",
-          message: "Try adjusting your filters or clearing them to see all available events.",
+          icon: <FilterX size={48} className="text-gray-400" />,
+          title: t("event.noEventsMatch"),
+        message: t("event.noEventsMatchDesc"),
         };
       case "bookmarks":
         return {
-          icon: Inbox,
-          title: "No bookmarked events",
-          message: "Start exploring and bookmark events you're interested in!",
+          icon: <Inbox size={48} className="text-gray-400" />,
+          title: t("event.noBookmarked"),
+        message: t("event.noBookmarkedDesc"),
         };
       default:
         return {
@@ -49,22 +56,23 @@ const EmptyState = ({
   const displayTitle = title || defaultConfig.title;
   const displayDescription = description || message || defaultConfig.message;
   const rawIcon = icon || defaultConfig.icon;
-
   const renderIcon = () => {
     if (!rawIcon) return null;
-    if (typeof rawIcon === "function") {
-      const IconComponent = rawIcon;
-      return <IconComponent size={compact ? 32 : 48} className="text-gray-400 dark:text-gray-500" />;
+    if (React.isValidElement(rawIcon)) {
+      return rawIcon;
     }
-    // If it's already a rendered react element or something else, return as-is
-    return rawIcon;
+    const IconComponent = rawIcon;
+    return <IconComponent size={compact ? 32 : 48} className="text-gray-400 dark:text-gray-500" />;
   };
 
-  // Determine main action handler
+
+  // Resolve primary action
   const handleAction = onAction || onClearFilters || onBrowseAll;
-  
-  // Determine main action label
-  const displayActionLabel = actionLabel || (onBrowseAll ? "Browse All Events" : onClearFilters ? "Clear Filters" : null);
+  const resolvedActionPath = actionPath || defaultConfig.defaultActionPath;
+  const displayActionLabel =
+    actionLabel ||
+    defaultConfig.actionLabel ||
+    (onBrowseAll ? "Browse All Events" : onClearFilters ? "Clear Filters" : null);
 
   return (
     <motion.div
@@ -78,8 +86,8 @@ const EmptyState = ({
       {/* Background decoration */}
       {!compact && (
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-10 -right-10 w-40 h-40 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-indigo-900/10 rounded-full blur-3xl" />
-          <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-gradient-to-tr from-purple-50 to-pink-50 dark:from-purple-900/10 dark:to-pink-900/10 rounded-full blur-3xl" />
+          <div className="absolute -top-10 -right-10 w-40 h-40 bg-linear-to-br from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-indigo-900/10 rounded-full blur-3xl" />
+          <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-linear-to-tr from-purple-50 to-pink-50 dark:from-purple-900/10 dark:to-pink-900/10 rounded-full blur-3xl" />
         </div>
       )}
 
@@ -103,14 +111,14 @@ const EmptyState = ({
 
         {children}
 
-        {/* Action Button/Link */}
-        {displayActionLabel && (actionPath || handleAction) && (
+        {/* Action Button(s) */}
+        {displayActionLabel && (resolvedActionPath || handleAction) && (
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            {actionPath ? (
+            {/* Primary action */}
+            {resolvedActionPath && !handleAction ? (
               <Link
-                to={actionPath}
-                onClick={handleAction}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                to={resolvedActionPath}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30"
                 aria-label={displayActionLabel}
               >
                 {displayActionLabel}
@@ -119,11 +127,34 @@ const EmptyState = ({
               <button
                 type="button"
                 onClick={handleAction}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30"
                 aria-label={displayActionLabel}
               >
                 {displayActionLabel}
               </button>
+            )}
+
+            {/* Secondary action (optional) */}
+            {secondaryLabel && (secondaryPath || onSecondary) && (
+              secondaryPath ? (
+                <Link
+                  to={secondaryPath}
+                  onClick={onSecondary}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all focus:outline-none focus:ring-2 focus:ring-slate-400/30"
+                  aria-label={secondaryLabel}
+                >
+                  {secondaryLabel}
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onSecondary}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all focus:outline-none focus:ring-2 focus:ring-slate-400/30"
+                  aria-label={secondaryLabel}
+                >
+                  {secondaryLabel}
+                </button>
+              )
             )}
           </div>
         )}

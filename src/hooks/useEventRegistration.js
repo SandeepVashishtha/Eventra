@@ -1,4 +1,4 @@
-import { createRateLimiter } from "../../utils/rateLimiter";
+import { createRateLimiter } from "../utils/rateLimiter";
 /**
  * @file useEventRegistration.js
  * @module hooks/useEventRegistration
@@ -31,8 +31,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useFormValidation } from "../../hooks/useFormValidation";
-import { getEventStatus } from "../../utils/eventUtils";
-import { checkRegistrationConflict, suggestAlternativeEvents } from "../../utils/conflictDetection";
+import { getEventStatus } from "../utils/eventUtils";
+import { checkRegistrationConflict, suggestAlternativeEvents } from "../utils/conflictDetection";
 import { useAuth } from "../../context/AuthContext";
 import { useMyEvents } from "../../context/MyEventsContext";
 // Removed unused API_ENDPOINTS import
@@ -43,24 +43,18 @@ import {
   getCacheAgeLabel,
   getCachedEventDetail,
   saveCachedEventDetail,
-} from "../../utils/offlineEventCache";
-import { pushToQueue } from "../../utils/offlineQueue";
-import { logError } from "../../utils/errorLogger";
+} from "../utils/offlineEventCache";
+import { pushToQueue } from "../utils/offlineQueue";
+import { logError } from "../utils/errorLogger";
+import { logAbuseAttempt } from "../utils/abuseLogger";
 import hackathonsData from "../../Pages/Hackathons/hackathonMockData.json";
-import registrationLocks from "../../utils/registrationLocks";
-
-export const MAX_NOTES_CHARS = 500;
-
-import { logAbuseAttempt } from "../../utils/abuseLogger";
+import registrationLocks from "../utils/registrationLocks";
 
 export const MAX_NOTES_CHARS = 500;
 
 // Registration lock map to prevent concurrent registrations for the same event
-const registrationLocks = new Map();
-const registrationLimiter = createRateLimiter({
-  maxTokens: 3,
-  refillRate: 0.2, // roughly 1 token every 5 seconds
-});
+// const registrationLocks = new Map();
+// registrationLimiterRef initialized at hook scope with 3 tokens, 0.3/sec refill
 
 /**
  * Derives a user-facing error message from a failed registration API response.
@@ -103,6 +97,7 @@ const useEventRegistration = (eventIdParam) => {
   const [submitting, setSubmitting] = useState(false);
   const [registered, setRegistered] = useState(false);
   const isSubmittingRef = useRef(false);
+  const registrationLimiterRef = useRef(createRateLimiter({ maxTokens: 3, refillRate: 0.3 }));
 
   // Conflict detection state
   const [showConflictModal, setShowConflictModal] = useState(false);
@@ -265,12 +260,19 @@ const useEventRegistration = (eventIdParam) => {
       const freshRes = await eventService.getEventDetails(id);
       if (freshRes.status === 200) {
         const freshEvent = freshRes.data;
-        return freshEvent.attendees >= freshEvent.maxAttendees;
+        const capacity = freshEvent.maxAttendees ?? 0;
+        const attendees = freshEvent.attendees ?? 0;
+        return capacity > 0 && attendees >= capacity;
       }
-    } catch {
-      return currentEvent.attendees >= currentEvent.maxAttendees;
+      const capacity = currentEvent?.maxAttendees ?? 0;
+      const attendees = currentEvent?.attendees ?? 0;
+      return capacity > 0 && attendees >= capacity;
+    } catch (error) {
+      console.error("[checkEventCapacity] Failed to check capacity:", error);
+      const capacity = currentEvent?.maxAttendees ?? 0;
+      const attendees = currentEvent?.attendees ?? 0;
+      return capacity > 0 && attendees >= capacity;
     }
-    return false;
   }, []);
 
   const checkAndHandleConflicts = useCallback(async () => {
@@ -301,8 +303,8 @@ const useEventRegistration = (eventIdParam) => {
 
   // Proceed with registration after conflict check or user confirmation
   const proceedWithRegistration = useCallback(async () => {
-    if (!registrationLimiter.tryConsume()) {
-      const retryMs = registrationLimiter.getRetryAfterMs();
+    if (!registrationLimiterRef.current.tryConsume()) {
+      const retryMs = registrationLimiterRef.current.getRetryAfterMs();
 
       logAbuseAttempt("event-registration-rate-limit", {
         eventId,
@@ -318,7 +320,9 @@ const useEventRegistration = (eventIdParam) => {
       return;
     }
     if (!isAuthenticated() || !user?.id) {
-      toast.error("Please log in to register for events.");
+      toast.error(
+        "Authentication required. Please log in to register for events."
+      );
       navigate("/login", {
         state: { from: registrationPath },
       });
@@ -402,7 +406,7 @@ const useEventRegistration = (eventIdParam) => {
       setSubmitting(false);
     }
     // Fixed: Added isEventFull to dependency array
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId, event, formData, isAuthenticated, user, token, navigate, registrationPath, addRegistration, clearSession, isEventFull]);
 
   // Handle form submission
@@ -437,7 +441,7 @@ const useEventRegistration = (eventIdParam) => {
       toast.info("This event is full. You will be added to the waitlist.");
     }
 
-      if (await checkAndHandleConflicts()) return;
+    if (await checkAndHandleConflicts()) return;
 
     await proceedWithRegistration();
   }, [isAuthenticated, user, navigate, registrationPath, validateAll, eventId, event, checkEventCapacity, checkAndHandleConflicts, proceedWithRegistration]);

@@ -1,127 +1,71 @@
 import { Trophy, Award, Star, Zap } from "lucide-react";
 
-/**
- * Pure utility functions for leaderboard data processing.
- *
- * WHY THIS EXISTS
- * ───────────────
- * Leaderboard.jsx previously computed filteredContributors, sortedContributors,
- * currentContributors, ranksMap, and aggregate stats on every render cycle with
- * no memoization guards. For a 200-contributor dataset each of these operations
- * iterates the full array, meaning a single keystroke in the search box or a
- * state update from the SSE stream triggered six sequential O(N) passes before
- * anything was painted.
- *
- * Extracting the logic here enables each derived value to be wrapped in useMemo
- * in the component, so only the computations whose inputs actually changed are
- * re-run. Pure functions with no side effects are also straightforward to unit
- * test without mounting a React component.
- */
-
-
-// ─── Scoring constants ────────────────────────────────────────────────────────
-
-/** Points awarded per GSSoC label level. */
-export const LABEL_POINTS = {
-  gssoclevel1: 3,
-  gssoclevel2: 7,
-  gssoclevel3: 10,
+export const DIFFICULTY_POINTS = {
+  "level:beginner":     20,
+  "level:intermediate": 35,
+  "level:advanced":     55,
+  "level:critical":     80,
 };
 
-/** Fallback points for merged PRs with no recognised level label. */
+export const QUALITY_MULTIPLIERS = {
+  "quality:clean":       1.2,
+  "quality:exceptional": 1.5,
+};
+
+export const TYPE_BONUSES = {
+  "type:security":    10,
+  "type:performance": 5,
+};
+
 export const DEFAULT_MERGED_PR_POINTS = 1;
 
-/** Bonus points thresholds for volume-based achievement badges. */
 export const ACHIEVEMENT_THRESHOLDS = [
-  { minPrs: 10, bonus: 10 },
+  { minPrs: 20, bonus: 30 },
+  { minPrs: 10, bonus: 15 },
   { minPrs: 5,  bonus: 5  },
 ];
 
-// ─── Label normalisation ──────────────────────────────────────────────────────
-
-/**
- * Strips non-alphanumeric characters and lowercases a label string so that
- * "GSSoC Level1", "gssoc-level-1", and "gssoclevel1" all normalise to the
- * same key.
- *
- * @param {string} label
- * @returns {string}
- */
 export function normalizeLabel(label = "") {
-  return label.toLowerCase().replace(/[^a-z0-9]/g, "");
+  return label.toLowerCase().trim();
 }
 
-// ─── PR point calculation ─────────────────────────────────────────────────────
-
-/**
- * Calculates the point value of a merged pull request from its labels.
- * Returns the sum of all recognised GSSoC level labels, or
- * DEFAULT_MERGED_PR_POINTS when no level label is present.
- *
- * @param {string[]} labels - Raw label names from the GitHub API
- * @returns {number}
- */
 export function calculatePrPoints(labels) {
-  // 🔥 FIX: Prevent fatal TypeError crash if API omits the labels array
   if (!Array.isArray(labels)) return DEFAULT_MERGED_PR_POINTS;
 
-  const levelPoints = labels.reduce((total, label) => {
-    const normalized = normalizeLabel(label);
-    return total + (LABEL_POINTS[normalized] || 0);
+  const normalised = labels.map(normalizeLabel);
+
+  const difficultyValues = Object.entries(DIFFICULTY_POINTS)
+    .filter(([key]) => normalised.includes(key))
+    .map(([, pts]) => pts);
+
+  const difficultyPts =
+    difficultyValues.length > 0
+      ? Math.min(...difficultyValues)
+      : DEFAULT_MERGED_PR_POINTS;
+
+  const multiplier = normalised.reduce((best, label) => {
+    return Math.max(best, QUALITY_MULTIPLIERS[label] || 1.0);
+  }, 1.0);
+
+  const typeBonus = normalised.reduce((sum, label) => {
+    return sum + (TYPE_BONUSES[label] || 0);
   }, 0);
 
-  return levelPoints || DEFAULT_MERGED_PR_POINTS;
+  return Math.floor(difficultyPts * multiplier) + typeBonus;
 }
 
-/**
- * Returns a new contributor object with the highest applicable volume-based
- * achievement bonus added to the point total.
- *
- * The function is intentionally immutable: it always returns a new object so
- * that callers can safely use the return value without worrying about aliasing
- * bugs, and so that React state comparisons based on object identity work
- * correctly.
- *
- * Previous JSDoc incorrectly stated "mutates in-place" while the implementation
- * already returned a spread copy for the bonus case and the original reference
- * for the no-bonus case. The inconsistent return type caused callers who
- * discarded the return value to silently lose achievement bonuses.
- *
- * @param {{ prs: number, points: number, username: string }} contributor
- * @returns {{ prs: number, points: number, username: string }} New contributor
- *   object with bonus applied (or unchanged copy if no bonus threshold is met).
- */
 export function applyAchievementBonus(contributor) {
   for (const { minPrs, bonus } of ACHIEVEMENT_THRESHOLDS) {
     if (contributor.prs >= minPrs) {
       return { ...contributor, points: contributor.points + bonus };
     }
   }
-  // Always return a new object for consistent reference semantics regardless
-  // of whether a bonus was applied. This prevents callers from relying on
-  // identity equality to detect "no bonus" while accidentally holding a stale
-  // reference to the original object.
   return { ...contributor };
 }
 
-// ─── Filtering ────────────────────────────────────────────────────────────────
-
-/**
- * Filters the full contributor list according to the active category and
- * search query.
- *
- * @param {Array}  contributors   - Full sorted contributor array
- * @param {string} search         - Raw search string (trimmed internally)
- * @param {string} activeCategory - One of "overall" | "monthly" | "mentors"
- * @returns {Array}
- */
 export function filterContributors(contributors, search, activeCategory) {
-  // 🔥 FIX: Prevent fatal TypeError crash if search is null/undefined
   const q = (search || "").trim().toLowerCase();
 
-  // 🔥 FIX: Hoisted the threshold calculation OUTSIDE the filter loop.
-  // Previously, this math was executing on every single iteration of the filter, 
-  // causing a massive O(N) performance bottleneck on large contributor datasets.
   let monthlyThreshold = 0;
   if (activeCategory === "monthly" && contributors.length > 0) {
     monthlyThreshold = contributors[Math.floor(contributors.length * 0.4)]?.points || 0;
@@ -147,59 +91,24 @@ export function filterContributors(contributors, search, activeCategory) {
   });
 }
 
-// ─── Sorting ──────────────────────────────────────────────────────────────────
-
-/**
- * Returns a new sorted copy of `contributors`.
- *
- * @param {Array}  contributors
- * @param {string} sortBy - One of "points" | "prs" | "username"
- * @returns {Array}
- */
 export function sortContributors(contributors, sortBy) {
   return [...contributors].sort((a, b) => {
     if (sortBy === "prs")      return b.prs - a.prs;
     if (sortBy === "username") return a.username.localeCompare(b.username);
-    return b.points - a.points; // default: "points"
+    return b.points - a.points;
   });
 }
 
-// ─── Pagination ───────────────────────────────────────────────────────────────
-
-/**
- * Slices a sorted contributor array to a single page.
- *
- * @param {Array}  sorted           - Sorted+filtered contributor array
- * @param {number} currentPage      - 1-based current page
- * @param {number} perPage          - Items per page
- * @returns {Array}
- */
 export function paginateContributors(sorted, currentPage, perPage) {
   const indexOfLast  = currentPage * perPage;
   const indexOfFirst = indexOfLast - perPage;
   return sorted.slice(indexOfFirst, indexOfLast);
 }
 
-/**
- * Calculates the total number of pages.
- *
- * @param {number} totalItems
- * @param {number} perPage
- * @returns {number}
- */
 export function totalLeaderboardPages(totalItems, perPage) {
   return Math.max(1, Math.ceil(totalItems / perPage));
 }
 
-// ─── Rank map ─────────────────────────────────────────────────────────────────
-
-/**
- * Builds a lookup table mapping username → 1-based rank, derived from the
- * full (unfiltered, unsliced) contributor array as it arrived from the API.
- *
- * @param {Array} contributors - Full sorted contributor array
- * @returns {Object.<string, number>}
- */
 export function buildRanksMap(contributors) {
   const map = {};
   contributors.forEach((c, i) => {
@@ -208,15 +117,6 @@ export function buildRanksMap(contributors) {
   return map;
 }
 
-// ─── Aggregate statistics ─────────────────────────────────────────────────────
-
-/**
- * Computes the three summary statistics shown in the stats cards row.
- * Kept as a pure function so the useMemo dependency array is just [contributors].
- *
- * @param {Array} contributors - Full contributor array
- * @returns {{ totalContributors: number, flooredTotalPRs: number, flooredTotalPoints: number }}
- */
 export function computeLeaderboardStats(contributors) {
   let totalPRs = 0;
   let totalPoints = 0;
@@ -228,8 +128,8 @@ export function computeLeaderboardStats(contributors) {
 
   return {
     totalContributors: contributors.length,
-    flooredTotalPRs: Math.floor(totalPRs),
-    flooredTotalPoints: Math.floor(totalPoints),
+    totalPRs,
+    totalPoints,
   };
 }
 

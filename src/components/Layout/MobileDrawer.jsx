@@ -57,6 +57,7 @@ const MobileDrawerFooter = ({
   handleLogoutClick,
   isDarkMode,
   toggleTheme,
+  setIsCustomizerOpen,
   cursorEnabled,
   toggleCursor,
 }) => (
@@ -75,7 +76,7 @@ const MobileDrawerFooter = ({
         <AuthButtons isMobile={true} closeAllMenus={closeAllMenus} />
       )}
       <div className="flex gap-3 mt-4">
-        <ThemeToggleButton isDarkMode={isDarkMode} toggleTheme={toggleTheme} isMobile={true} />
+        <ThemeToggleButton isDarkMode={isDarkMode} toggleTheme={toggleTheme} isMobile={true} setIsCustomizerOpen={setIsCustomizerOpen} />
         <CursorToggleButton
           cursorEnabled={cursorEnabled}
           toggleCursor={toggleCursor}
@@ -88,7 +89,7 @@ const MobileDrawerFooter = ({
 
 const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeAllMenus, handleTouchStart, handleTouchMove, handleTouchEnd, closeBtnRef, handleLogoutClick, primaryLine, secondaryLine, cursorEnabled, toggleCursor, navItems }) => {
   const location = useLocation();
-  const { isDarkMode, toggleTheme } = useTheme();
+  const { isDarkMode, toggleTheme, setIsCustomizerOpen } = useTheme();
   const { user, isAuthenticated } = useAuth();
 
   return (
@@ -100,7 +101,7 @@ const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeA
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
-          className="fixed inset-y-0 right-0 h-dvh overflow-y-auto w-[88vw] max-w-[20rem] sm:max-w-sm shadow-2xl z-[110] flex flex-col bg-white/95 backdrop-blur-xl dark:bg-slate-900/95"
+          className="fixed inset-y-0 right-0 h-dvh overflow-y-auto w-[88vw] max-w-[20rem] sm:max-w-sm shadow-2xl z-modal flex flex-col bg-white/95 backdrop-blur-xl dark:bg-slate-900/95"
           role="dialog"
           aria-modal="true"
           // 🔥 FIX 3: Added aria-label to the modal dialog so screen readers announce it properly
@@ -132,6 +133,7 @@ const MobileDrawer = ({ isOpen, drawerRef, openDropdown, setOpenDropdown, closeA
             handleLogoutClick={handleLogoutClick}
             isDarkMode={isDarkMode}
             toggleTheme={toggleTheme}
+            setIsCustomizerOpen={setIsCustomizerOpen}
             cursorEnabled={cursorEnabled}
             toggleCursor={toggleCursor}
           />

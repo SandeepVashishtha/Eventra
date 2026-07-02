@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import mockEvents from "./eventsMockData.json";
+// import mockEvents from "./eventsMockData.json";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
 import { getEventStatus } from "../../utils/eventUtils";
 import useDebounce from "../../hooks/useDebounce";
@@ -7,12 +7,12 @@ import { useStableFilters } from "../../hooks/useStableFilters";
 import {
   applyAdvancedFilters,
   getDateRange,
-  getDefaultFilters,
+  // getDefaultFilters,
   getPriceStats,
   normalizeAdvancedFilters,
 } from "../../utils/advancedFilterUtils";
 import { getRouteSearchResults } from "../../utils/searchUtils.mjs";
-
+import { getBookmarkedEvents } from "../../utils/bookmarkUtils";
 
 const DEFAULT_EVENTS_PER_PAGE = 12;
 
@@ -81,6 +81,18 @@ const useEventListing = () => {
     if (advancedFilters?.statuses?.length) {
       advancedFilters.statuses.forEach((status) => {
         params.append("status", status.toUpperCase());
+      });
+    }
+
+    if (advancedFilters?.skillLevels?.length) {
+      advancedFilters.skillLevels.forEach((level) => {
+        params.append("skillLevel", level.toLowerCase());
+      });
+    }
+
+    if (advancedFilters?.tags?.length) {
+      advancedFilters.tags.forEach((tag) => {
+        params.append("tag", tag);
       });
     }
 
@@ -191,8 +203,7 @@ const useEventListing = () => {
 
   const setAdvancedFilters = useCallback((filters) => {
     setAdvancedFiltersState(normalizeAdvancedFilters(filters));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [setAdvancedFiltersState, normalizeAdvancedFilters]);
 
   const priceStats = useMemo(() => getPriceStats(events), [events]);
   const dateRangeStats = useMemo(() => getDateRange(events), [events]);
@@ -215,13 +226,25 @@ const useEventListing = () => {
       : [...events];
 
     // 2. Status timing filter
-    filtered = filtered.filter((event) => {
-      const status = getEventStatus(event);
-      if (filterType === "live" && status !== "live") return false;
-      if (filterType === "upcoming" && status !== "upcoming") return false;
-      if (filterType === "past" && status !== "past" && status !== "ended") return false;
-      return true;
-    });
+filtered = filtered.filter((event) => {
+  const status = getEventStatus(event);
+
+  if (filterType === "live" && status !== "live") return false;
+
+  if (filterType === "upcoming" && status !== "upcoming") return false;
+
+  if (filterType === "past" && status !== "past" && status !== "ended") return false;
+
+  if (filterType === "bookmarked") {
+    const bookmarks = getBookmarkedEvents();
+
+    return bookmarks.some(
+      (bookmark) => String(bookmark.id) === String(event.id)
+    );
+  }
+
+  return true;
+});
 
     // 3. Category filter
     const target = categoryFilter && categoryFilter !== "all"
@@ -259,12 +282,30 @@ const useEventListing = () => {
 
   const sortedEvents = useMemo(() => {
     return [...filteredEvents].sort((a, b) => {
+      if (sortType === "Title A-Z") {
+        return (a.title || "").localeCompare(b.title || "");
+      }
+      if (sortType === "Title Z-A") {
+        return (b.title || "").localeCompare(a.title || "");
+      }
+      if (sortType === "Price Low to High") {
+        const priceA = a.price === "Free" || !a.price ? 0 : parseFloat(a.price);
+        const priceB = b.price === "Free" || !b.price ? 0 : parseFloat(b.price);
+        return priceA - priceB;
+      }
+      if (sortType === "Price High to Low") {
+        const priceA = a.price === "Free" || !a.price ? 0 : parseFloat(a.price);
+        const priceB = b.price === "Free" || !b.price ? 0 : parseFloat(b.price);
+        return priceB - priceA;
+      }
+
       const dateA = new Date(a.date || a.startDate);
       const dateB = new Date(b.date || b.startDate);
 
-      if (sortType === "Upcoming") {
+      if (sortType === "Upcoming" || sortType === "Oldest") {
         return dateA - dateB;
       }
+      // Default / Newest
       return dateB - dateA;
     });
   }, [filteredEvents, sortType]);

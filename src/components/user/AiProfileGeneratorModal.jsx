@@ -1,9 +1,9 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import ReactDOM from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  X, Sparkles, FileText, Github, Loader2,
-  CheckCircle2, AlertTriangle, ArrowRight, User
+  X, Sparkles, FileText, Github,
+  CheckCircle2, AlertTriangle, ArrowRight, Copy
 } from "lucide-react";
 import { parseGithubProfile, parseResumePDF } from "../../utils/aiProfileParser";
 import { toast } from "react-toastify";
@@ -17,6 +17,10 @@ const AiProfileGeneratorModal = ({ isOpen, onClose, onApplyProfile }) => {
   const [error, setError] = useState("");
   const [parsedData, setParsedData] = useState(null);
   const fileInputRef = useRef(null);
+  const resumeCleanupRef = useRef(null);
+
+  // Clean up any pending resume parse on unmount
+  useEffect(() => () => { if (resumeCleanupRef.current) resumeCleanupRef.current(); }, []);
 
   if (!isOpen) return null;
 
@@ -54,7 +58,12 @@ const AiProfileGeneratorModal = ({ isOpen, onClose, onApplyProfile }) => {
         data = await parseGithubProfile(githubUrl);
       } else {
         if (!resumeFile) throw new Error("Please upload a resume PDF.");
-        data = await parseResumePDF(resumeFile);
+        const { promise, cleanup } = parseResumePDF(resumeFile);
+        // Cancel any pending parse from a previous attempt before starting a new one
+        if (resumeCleanupRef.current) resumeCleanupRef.current();
+        resumeCleanupRef.current = cleanup;
+        data = await promise;
+        resumeCleanupRef.current = null;
       }
       
       setParsedData(data);
@@ -82,6 +91,15 @@ const AiProfileGeneratorModal = ({ isOpen, onClose, onApplyProfile }) => {
     handleClose();
     toast.success("Profile fields populated! You can now review and save.");
   };
+
+  const handleCopyBio = async () => {
+    try {
+      await navigator.clipboard.writeText(parsedData.bio || "");
+      toast.success("Bio copied to clipboard!");
+    } catch (_err) {
+      toast.error("Failed to copy bio");
+    }
+};
 
   return ReactDOM.createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -255,7 +273,19 @@ const AiProfileGeneratorModal = ({ isOpen, onClose, onApplyProfile }) => {
                 <div className="space-y-5 bg-slate-50 dark:bg-slate-950/50 p-5 rounded-2xl border border-slate-200 dark:border-white/5">
                   {/* Bio */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">Generated Bio Summary</label>
+                    <div className = "flex items-center justify-between mb-2">
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                        Generated Bio Summary 
+                      </label>
+                      <button
+                      type = "button"
+                      onClick={handleCopyBio}
+                      className="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-700"
+                    >
+                      <Copy size={12} />
+                    </button>
+                    </div>
+                    
                     <textarea 
                       value={parsedData.bio || ""}
                       onChange={(e) => handlePreviewChange("bio", e.target.value)}
@@ -269,7 +299,7 @@ const AiProfileGeneratorModal = ({ isOpen, onClose, onApplyProfile }) => {
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
                       Detected Skills ({parsedData.skills?.length || 0})
                     </label>
-                    <div className="flex flex-wrap gap-2 p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl min-h-[60px]">
+                    <div className="flex flex-wrap gap-2 p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl min-h-15">
                       {parsedData.skills?.map((skill, idx) => (
                         <div key={idx} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-500/30 rounded-lg text-xs font-bold">
                           <span>{skill}</span>
