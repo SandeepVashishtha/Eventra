@@ -276,6 +276,8 @@ const InnerGallery = () => {
         setError("Unable to load projects. Please try again later.");
         setProjects([]);
       }
+      setError("Unable to load projects. Please try again later.");
+      setProjects([]);
     } finally {
       setIsLoading(false);
     }
