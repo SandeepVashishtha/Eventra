@@ -12,7 +12,7 @@ import {
   normalizeAdvancedFilters,
 } from "../../utils/advancedFilterUtils";
 import { getRouteSearchResults } from "../../utils/searchUtils.mjs";
-
+import { getBookmarkedEvents } from "../../utils/bookmarkUtils";
 
 const DEFAULT_EVENTS_PER_PAGE = 12;
 
@@ -226,13 +226,25 @@ const useEventListing = () => {
       : [...events];
 
     // 2. Status timing filter
-    filtered = filtered.filter((event) => {
-      const status = getEventStatus(event);
-      if (filterType === "live" && status !== "live") return false;
-      if (filterType === "upcoming" && status !== "upcoming") return false;
-      if (filterType === "past" && status !== "past" && status !== "ended") return false;
-      return true;
-    });
+filtered = filtered.filter((event) => {
+  const status = getEventStatus(event);
+
+  if (filterType === "live" && status !== "live") return false;
+
+  if (filterType === "upcoming" && status !== "upcoming") return false;
+
+  if (filterType === "past" && status !== "past" && status !== "ended") return false;
+
+  if (filterType === "bookmarked") {
+    const bookmarks = getBookmarkedEvents();
+
+    return bookmarks.some(
+      (bookmark) => String(bookmark.id) === String(event.id)
+    );
+  }
+
+  return true;
+});
 
     // 3. Category filter
     const target = categoryFilter && categoryFilter !== "all"
