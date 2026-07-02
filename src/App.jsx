@@ -12,6 +12,7 @@ import Navbar from "./components/navbar/Navbar";
 import SkipToContent from "./components/accessibility/SkipToContent";
 import OfflineBanner from "./components/common/OfflineBanner";
 import OfflineConflictModal from "./components/common/OfflineConflictModal";
+import UpdateAvailableBanner from "./components/common/UpdateAvailableBanner";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import NotificationToastContainer from "./components/common/NotificationProvider";
@@ -181,6 +182,7 @@ function App() {
 
                 <OfflineBanner />
                 <OfflineConflictModal />
+                <UpdateAvailableBanner />
 
                 <Suspense fallback={null}>
                   <KeyboardShortcutsModal
@@ -223,7 +225,7 @@ function App() {
                           }
                         />
                         <Route
-                          path="/events/:id"
+                          path="/events/:eventId"
                           element={
                             <Suspense fallback={<EventDetailSkeleton />}>
                               <EventDetails />

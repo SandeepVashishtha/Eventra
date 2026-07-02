@@ -72,6 +72,9 @@ assert.ok(getTokenTTL(nearExpiryToken) <= 0, `TTL should be <= 0 with skew buffe
 // --- Session Risk Tests ---
 
 async function runSessionRiskTests() {
+  // Set NODE_ENV to test to allow in-memory storage
+  process.env.NODE_ENV = "test";
+  
   const username = "testuser";
   
   // Clean start

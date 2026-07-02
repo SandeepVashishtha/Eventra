@@ -6,8 +6,9 @@ import { useTheme } from "../../context/ThemeContext";
 
 import DesktopNavbar from "./DesktopNavbar";
 import MobileNavbar from "./MobileNavbar";
-import CursorToggle from "./CursorToggle";
+import CursorToggle from "./CursorToggle"; 
 import ThemeToggleButton from "../Layout/ThemeToggleButton";
+import InstallAppButton from "../common/InstallAppButton";
 import AuthButtons from "./AuthButtons";
 import LanguageSelector from "../LanguageSelector";
 import ProfileMenu from "./ProfileMenu";
@@ -68,9 +69,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
 
       window.requestAnimationFrame(() => {
         const scrollTop = window.scrollY;
-
         const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-
         const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
 
         setScrollProgress(progress);
@@ -89,6 +88,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
     };
   }, []);
 
+  
   return (
     <>
       <a
@@ -119,14 +119,14 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
                     height="32"
                   />
                 </div>
- 
+
                 <span className="font-heading text-base font-bold tracking-wider bg-gradient-to-r from-primary to-blue-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
                   Eventra
                 </span>
               </div>
             </Link>
 
-            {/* Desktop Navigation — allowed to flex-shrink */}
+            {/* Desktop Navigation */}
             <div className="hidden lg:flex flex-1 justify-center min-w-0 mx-1">
               <DesktopNavbar />
             </div>
@@ -134,6 +134,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             {/* Right Controls */}
             <div className="flex items-center justify-end gap-1.5 shrink-0">
               <div className="hidden lg:flex items-center gap-1.5">
+                <InstallAppButton />
                 <ThemeToggleButton
                   isDarkMode={isDarkMode}
                   toggleTheme={toggleTheme}
@@ -155,6 +156,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
               </div>
 
               <div className="flex items-center gap-2 lg:hidden">
+                <InstallAppButton />
                 <ThemeToggleButton
                   isDarkMode={isDarkMode}
                   toggleTheme={toggleTheme}

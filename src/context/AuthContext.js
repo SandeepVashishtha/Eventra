@@ -21,6 +21,9 @@ const AuthContext = createContext();
  * @returns {Object} Authentication context state and helper functions.
  */
 export const useAuth = () => {
+  if (typeof globalThis !== "undefined" && typeof globalThis.mockAuth === "function") {
+    return globalThis.mockAuth();
+  }
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
@@ -118,7 +121,6 @@ export const AuthProvider = ({ children }) => {
     deleteCookie("auth_token", {
       path: "/",
       secure: true,
-      sameSite: "Strict",
     });
 
     // Clear user metadata from secure/local storage manager
@@ -308,7 +310,6 @@ export const AuthProvider = ({ children }) => {
         setCookie("token", sessionToken, {
           path: "/",
           secure: window.location.protocol === "https:",
-          sameSite: "Strict",
         });
       }
     } catch (err) {
@@ -372,7 +373,6 @@ export const AuthProvider = ({ children }) => {
         deleteCookie("token", {
           path: "/",
           secureVariants: true,
-          sameSite: "Strict",
         });
 
         const status = error?.status || error?.response?.status;

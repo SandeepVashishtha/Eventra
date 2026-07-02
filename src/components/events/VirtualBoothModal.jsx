@@ -18,6 +18,7 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
 
   const modalRef = useRef(null);
   const chatEndRef = useRef(null);
+  const replyTimerRef = useRef(null);
 
   /* ---------------- Lead Capture ---------------- */
   const captureLead = (action) => {
@@ -77,6 +78,10 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
 
     return () => {
       document.body.style.overflow = "unset";
+      if (replyTimerRef.current) {
+        clearTimeout(replyTimerRef.current);
+        replyTimerRef.current = null;
+      }
     };
   }, [isOpen, booth]);
 
@@ -106,11 +111,13 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
     setChatMessage("");
     setIsTyping(true);
 
-    setTimeout(() => {
+    if (replyTimerRef.current) clearTimeout(replyTimerRef.current);
+    replyTimerRef.current = setTimeout(() => {
+      replyTimerRef.current = null;
       setIsTyping(false);
 
       const replies = [
-        "We’re hiring! Check our careers section.",
+        "We're hiring! Check our careers section.",
         "Feel free to reach out via email or LinkedIn.",
         "Our team works with React, Node.js, and TypeScript.",
       ];
@@ -177,16 +184,16 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
 
                 <div className="flex gap-3 text-gray-400">
                   {booth.sponsorWebsite && (
-                    <a href={booth.sponsorWebsite}><Globe size={16} /></a>
+                    <a href={booth.sponsorWebsite} target="_blank" rel="noopener noreferrer" aria-label={`${booth.label} website`}><Globe size={16} /></a>
                   )}
                   {booth.sponsorLinkedin && (
-                    <a href={booth.sponsorLinkedin}><Linkedin size={16} /></a>
+                    <a href={booth.sponsorLinkedin} target="_blank" rel="noopener noreferrer" aria-label={`${booth.label} LinkedIn`}><Linkedin size={16} /></a>
                   )}
                   {booth.sponsorTwitter && (
-                    <a href={booth.sponsorTwitter}><Twitter size={16} /></a>
+                    <a href={booth.sponsorTwitter} target="_blank" rel="noopener noreferrer" aria-label={`${booth.label} Twitter`}><Twitter size={16} /></a>
                   )}
                   {booth.sponsorGithub && (
-                    <a href={booth.sponsorGithub}><Github size={16} /></a>
+                    <a href={booth.sponsorGithub} target="_blank" rel="noopener noreferrer" aria-label={`${booth.label} GitHub`}><Github size={16} /></a>
                   )}
                 </div>
               </div>

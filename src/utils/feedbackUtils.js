@@ -1,4 +1,4 @@
- 
+
 /**
  * Feedback Utilities
  * Handles localStorage-based feedback management for events
@@ -52,6 +52,7 @@ export const getEventFeedback = (eventId) => {
  * @returns {boolean} Success status
  */
 export const saveFeedback = (eventId, feedback) => {
+  if (typeof window === "undefined") return false;
   try {
     const allFeedback = safeJsonParse(localStorage.getItem(FEEDBACK_STORAGE_KEY), {});
     const rawList = allFeedback[eventId] || [];
@@ -252,6 +253,7 @@ export const getTagStats = (eventId) => {
  * @returns {boolean} Success status
  */
 export const deleteFeedback = (eventId, userId = null) => {
+  if (typeof window === "undefined") return false;
   try {
     const allFeedback = safeJsonParse(localStorage.getItem(FEEDBACK_STORAGE_KEY), {});
     const eventFeedback = allFeedback[eventId] || [];
@@ -289,7 +291,7 @@ export const exportFeedbackAsCSV = (eventId) => {
       `"${(f.comment || '').replace(/"/g, '""')}"`,
       (f.tags || []).join(';'),
       f.recommend !== undefined ? (f.recommend ? 'Yes' : 'No') : '',
-      new Date(f.submittedAt).toLocaleString(),
+      f.submittedAt ? new Date(f.submittedAt).toLocaleString() : '',
     ]);
 
     const csv = [headers, ...rows].map((row) => row.join(',')).join('\n');
@@ -304,6 +306,7 @@ export const exportFeedbackAsCSV = (eventId) => {
  * Clear all feedback (for testing)
  */
 export const clearAllFeedback = () => {
+  if (typeof window === "undefined") return false;
   try {
     localStorage.removeItem(FEEDBACK_STORAGE_KEY);
     return true;

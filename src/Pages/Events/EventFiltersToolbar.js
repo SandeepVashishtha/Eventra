@@ -20,6 +20,7 @@ const CATEGORY_OPTIONS = [
 ];
 
 const EventFiltersToolbar = ({
+  currentFilterConfig,
   filterType,
   onFilterChange,
   categoryFilter = "all",
@@ -38,7 +39,9 @@ const EventFiltersToolbar = ({
   onSearchChange,
   onResetFilters,
   visibleEvents = [],
-  // totalElements = 0,
+currentFilterConfig,
+onApplyPreset,
+// totalElements = 0,
 }) => {
   const [localQuery, setLocalQuery] = useState(searchQuery || "");
   const debounceRef = useRef(null);
@@ -46,10 +49,31 @@ const EventFiltersToolbar = ({
   const { clearPresetError: _clearPresetError } = useEventFilterPresets();
 
   useFilterSuggestions({
-    currentFilters: currentFilterConfig,
+<<<<<<< HEAD
+  currentFilters: {
+    searchQuery,
+    filterType,
+    categoryFilter,
+    sortType,
+    viewMode,
+    advancedFilters,
+  },
+  visibleEvents,
+  presets: [],
+});
+=======
+    currentFilters: {
+  searchQuery,
+  filterType,
+  categoryFilter,
+  sortType,
+  viewMode,
+  advancedFilters,
+},
     visibleEvents,
     presets: [],
   });
+>>>>>>> 4bae66c7 ( feat(events) : add registration progress indicator to event details)
 
   useEffect(() => {
     setLocalQuery(searchQuery || "");

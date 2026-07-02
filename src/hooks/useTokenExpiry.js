@@ -3,6 +3,20 @@ import { toast } from "react-toastify";
 import { isTokenValid, decodeTokenPayload } from "../utils/tokenUtils";
 import { syncSecureStorage } from "../utils/secureStorage";
 
+export const MAX_TOKEN_EXPIRY_TIMEOUT_MS = 2_147_483_647;
+const TOKEN_EXPIRY_BUFFER_MS = 1_000;
+
+export function getTokenExpiryDelayMs(expSeconds, nowMs = Date.now()) {
+  return Math.max(expSeconds * 1000 - nowMs + TOKEN_EXPIRY_BUFFER_MS, 0);
+}
+
+export function getSafeTokenExpiryDelayMs(expSeconds, nowMs = Date.now()) {
+  return Math.min(
+    getTokenExpiryDelayMs(expSeconds, nowMs),
+    MAX_TOKEN_EXPIRY_TIMEOUT_MS
+  );
+}
+
 export function useTokenExpiry({ token, user, onExpired }) {
   const expiryToastShownRef = useRef(false);
 
@@ -37,22 +51,36 @@ export function useTokenExpiry({ token, user, onExpired }) {
     }
 
     let timeoutId;
+    let cancelled = false;
+
     if (typeof expSeconds === "number") {
-      let delayMs = Math.max(expSeconds * 1000 - Date.now() + 1000, 0);
-      if (delayMs > 2147483647) delayMs = 2147483647;
-      timeoutId = setTimeout(() => {
-        if (token === "cookie-managed" ? Date.now() >= expSeconds * 1000 : !isTokenValid(token)) {
-          clearExpiredSession();
-        }
-      }, delayMs);
+      const scheduleExpiryCheck = () => {
+        const delayMs = getSafeTokenExpiryDelayMs(expSeconds);
+
+        timeoutId = setTimeout(() => {
+          if (cancelled) return;
+
+          if (token === "cookie-managed" ? Date.now() >= expSeconds * 1000 : !isTokenValid(token)) {
+            clearExpiredSession();
+            return;
+          }
+
+          scheduleExpiryCheck();
+        }, delayMs);
+      };
+
+      scheduleExpiryCheck();
     } else if (token !== "cookie-managed") {
       timeoutId = setInterval(() => {
-        if (!isTokenValid(token)) clearExpiredSession();
+        if (!isTokenValid(token)) {
+          clearExpiredSession();
+        }
       }, 60_000);
       if (!isTokenValid(token)) clearExpiredSession();
     }
 
     return () => {
+      cancelled = true;
       if (timeoutId) {
         if (typeof expSeconds === "number") clearTimeout(timeoutId);
         else clearInterval(timeoutId);

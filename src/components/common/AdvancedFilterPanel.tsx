@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { ChevronDown, ChevronUp, MapPin, RotateCcw } from "lucide-react";
 import CategoryFilter from "./CategoryFilter";
 import ModeFilter from "./ModeFilter";
@@ -18,11 +18,48 @@ import {
   normalizeAdvancedFilters,
 } from "../../utils/advancedFilterUtils";
 
+interface PriceRange {
+  min: number;
+  max: number;
+}
+
+interface DateRange {
+  startDate?: string | null;
+  endDate?: string | null;
+  earliest?: string;
+  latest?: string;
+}
+
+interface Filters {
+  categories?: string[];
+  modes?: string[];
+  statuses?: string[];
+  skillLevels?: string[];
+  tags?: string[];
+  location?: string;
+  priceRange?: PriceRange | null;
+  dateRange?: DateRange | null;
+}
+
+interface PriceStats {
+  min?: number;
+  max?: number;
+}
+
+interface AdvancedFilterPanelProps {
+  filters?: Filters;
+  onFiltersChange: (filters: Filters) => void;
+  priceStats?: PriceStats;
+  dateRange?: DateRange;
+  isOpen?: boolean;
+  onToggleOpen?: () => void;
+}
+
 /**
  * AdvancedFilterPanel Component
  * Comprehensive filter panel with all available filters
  */
-const AdvancedFilterPanel = ({
+const AdvancedFilterPanel: React.FC<AdvancedFilterPanelProps> = ({
   filters = {},
   onFiltersChange,
   priceStats = { min: 0, max: 1500 },
@@ -41,38 +78,38 @@ const AdvancedFilterPanel = ({
     date: false,
   });
 
-  const toggleSection = (section) => {
+  const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections((prev) => ({
       ...prev,
-      [section]: !prev[section],
+      [section]: !prev[section as keyof typeof expandedSections],
     }));
   };
 
-  const handleCategoryChange = (categories) => {
+  const handleCategoryChange = (categories: string[]) => {
     onFiltersChange({ ...filters, categories });
   };
 
-  const handleModeChange = (modes) => {
+  const handleModeChange = (modes: string[]) => {
     onFiltersChange({ ...filters, modes });
   };
 
-  const handleStatusChange = (statuses) => {
+  const handleStatusChange = (statuses: string[]) => {
     onFiltersChange({ ...filters, statuses });
   };
 
-  const handleSkillLevelChange = (skillLevels) => {
+  const handleSkillLevelChange = (skillLevels: string[]) => {
     onFiltersChange({ ...filters, skillLevels });
   };
 
-  const handleTagsChange = (tags) => {
+  const handleTagsChange = (tags: string[]) => {
     onFiltersChange({ ...filters, tags });
   };
 
-  const handleLocationChange = (event) => {
+  const handleLocationChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     onFiltersChange({ ...filters, location: event.target.value });
   };
 
-  const handlePriceChange = (priceRange) => {
+  const handlePriceChange = (priceRange: PriceRange) => {
     onFiltersChange({
       ...filters,
       priceRange:
@@ -82,7 +119,7 @@ const AdvancedFilterPanel = ({
     });
   };
 
-  const handleDateRangeChange = (dateRangeData) => {
+  const handleDateRangeChange = (dateRangeData: DateRange) => {
     onFiltersChange({
       ...filters,
       dateRange:
@@ -94,7 +131,7 @@ const AdvancedFilterPanel = ({
     onFiltersChange(getDefaultFilters());
   };
 
-  const handlePresetApply = (presetFilters) => {
+  const handlePresetApply = (presetFilters: Partial<Filters>) => {
     onFiltersChange(
       normalizeAdvancedFilters({
         ...filters,
@@ -103,7 +140,7 @@ const AdvancedFilterPanel = ({
     );
   };
 
-  const isSectionActive = (section) => {
+  const isSectionActive = (section: string) => {
     switch (section) {
       case "category":
         return Array.isArray(filters.categories) && filters.categories.length > 0;

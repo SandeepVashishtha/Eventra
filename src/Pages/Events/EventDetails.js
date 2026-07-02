@@ -584,6 +584,10 @@ const showClosingSoon =
                 <div className="text-sm text-gray-600 dark:text-gray-300 space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <p><span className="font-semibold">Attendees:</span> {event.attendees}/{event.maxAttendees}</p>
+                    <EventRegistrationProgress
+    attendees={event.attendees}
+    maxAttendees={event.maxAttendees}
+/>
                     {/* "Almost Full!" urgency badge — shown when ≥ 80% capacity and not yet sold out (#7665) */}
                     {event.maxAttendees > 0 &&
                       event.attendees / event.maxAttendees >= 0.8 &&
@@ -628,13 +632,23 @@ const showClosingSoon =
                   )}
                 </div>
               </div>
-
               <div className="rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
                 <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Summary</h3>
                 <div
                   className="mt-3 text-gray-700 dark:text-gray-300 text-sm leading-6 prose prose-indigo dark:prose-invert"
                   dangerouslySetInnerHTML={{ __html: sanitizeMarkdown(event.description, marked.parse) }}
                 />
+              </div>
+
+              {/* Live Audience Engagement Section (Q&A and Polls) */}
+              <div className="space-y-4 pt-6 border-t border-gray-100 dark:border-gray-800">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 font-sans tracking-wide">
+                  Live Session Interaction
+                </h3>
+                <div className="grid gap-6 md:grid-cols-2">
+                  <LiveQABoard eventId={event.id} />
+                  <LivePollController eventId={event.id} />
+                </div>
               </div>
             </div>
           </div>
@@ -652,7 +666,11 @@ const showClosingSoon =
         </div>
 
         {showShareModal && (
-          <ShareModal event={event} onClose={() => setShowShareModal(false)} />
+          <ShareModal
+            isOpen={showShareModal}
+            event={event}
+            onClose={() => setShowShareModal(false)}
+          />
         )}
       </div>
     </>

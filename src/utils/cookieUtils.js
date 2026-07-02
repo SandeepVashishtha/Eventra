@@ -13,7 +13,7 @@
  */
 const DEFAULT_OPTIONS = {
   path: "/",
-  sameSite: "Strict",
+  sameSite: import.meta.env?.VITE_COOKIE_SAME_SITE || "Strict",
   secure: false,
 };
 
@@ -113,6 +113,11 @@ export function setCookie(name, value, options = {}) {
     // Auto-detect secure flag based on protocol if not specified
     if (options.secure === undefined && typeof window !== "undefined") {
       options.secure = window.location.protocol === "https:";
+    }
+
+    const sameSite = options.sameSite || import.meta.env?.VITE_COOKIE_SAME_SITE || "Strict";
+    if (sameSite === "None") {
+      options.secure = true;
     }
 
     const cookieString = buildCookieString(name, value, options);
