@@ -188,17 +188,12 @@ const WhatsHappening = () => {
 
   const nextSlide = useCallback(() => {
     setDirection(1);
-    setCurrent((prev) => (prev + cardsPerView) % upcomingEvents.length);
+    setCurrent((prev) => Math.min(prev + 1, upcomingEvents.length - cardsPerView));
   }, [upcomingEvents.length, cardsPerView]);
 
   const prevSlide = () => {
     setDirection(-1);
-    setCurrent((prev) => {
-      const newIndex = prev - cardsPerView;
-      return newIndex < 0
-        ? Math.max(0, upcomingEvents.length - cardsPerView)
-        : newIndex;
-    });
+    setCurrent((prev) => Math.max(prev - 1, 0));
     setIsAutoPlaying(false);
   };
 
@@ -207,7 +202,7 @@ const WhatsHappening = () => {
     if (isAutoPlaying) {
       timer = setInterval(() => {
         nextSlide();
-      }, 2500);
+      }, 4000);
     }
     return () => {
       if (timer) clearInterval(timer);
@@ -228,12 +223,9 @@ const WhatsHappening = () => {
     exit: (dir) => ({ opacity: 0, x: prefersReducedMotion ? 0 : dir > 0 ? -300 : 300 }),
   };
 
-  const activeDotIndex =
-    Math.floor(current / cardsPerView) %
-    Math.ceil(upcomingEvents.length / cardsPerView);
-
-  // Announce current slide group to screen readers
   const totalGroups = Math.ceil(upcomingEvents.length / cardsPerView);
+  const activeDotIndex =
+    Math.floor(current / cardsPerView) % totalGroups;
   const currentGroup = Math.floor(current / cardsPerView) + 1;
   const liveMessage = `Showing slide group ${currentGroup} of ${totalGroups}`;
 
@@ -321,7 +313,7 @@ const WhatsHappening = () => {
           <button
             onClick={() => {
               setDirection(1);
-              setCurrent((prev) => (prev + cardsPerView) % upcomingEvents.length);
+              setCurrent((prev) => Math.min(prev + 1, upcomingEvents.length - cardsPerView));
               setIsAutoPlaying(false);
             }}
             className="absolute right-0 sm:-right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/95 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg hover:bg-white dark:hover:bg-slate-700 hover:shadow-xl z-10 text-slate-700 dark:text-slate-300 transition-all duration-200 hover:-translate-y-1"
@@ -340,7 +332,7 @@ const WhatsHappening = () => {
           >
             <AnimatePresence mode="wait" custom={direction}>
               <motion.div
-                key={Math.floor(current / cardsPerView)}
+                key={current}
                 variants={cardVariants}
                 custom={direction}
                 initial="enter"
@@ -356,7 +348,7 @@ const WhatsHappening = () => {
                     prevSlide();
                   } else if (info.offset.x < -100) {
                     setDirection(1);
-                    setCurrent((prev) => (prev + cardsPerView) % upcomingEvents.length);
+                    setCurrent((prev) => Math.min(prev + 1, upcomingEvents.length - cardsPerView));
                     setIsAutoPlaying(false);
                   }
                 }}
@@ -489,8 +481,9 @@ const WhatsHappening = () => {
               <button
                 key={index}
                 onClick={() => {
-                  setCurrent(index * cardsPerView);
-                  setDirection(index * cardsPerView > current ? 1 : -1);
+                  const target = index * cardsPerView;
+                  setCurrent(target);
+                  setDirection(target > current ? 1 : -1);
                   setIsAutoPlaying(false);
                 }}
                 className="relative group focus:outline-none"
