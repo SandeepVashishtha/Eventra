@@ -556,25 +556,31 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
     return <EventsLoading />;
   }
 
-  // Show empty state
-  if (registeredCount === 0 && hostedCount === 0 && waitlistEvents.length === 0) {
-    return (
-      <motion.div className="ud-content">
-        <div className="ud-tab-header">
-          <h2><Calendar /> Events</h2>
-        </div>
-        <EmptyState
-          title="No Events Yet"
-          description="You haven't registered for, hosted, or joined any events yet. Explore upcoming events to get started on your event journey!"
-          icon={Ticket}
-          actionLabel="Explore Events"
-          actionPath="/events"
-          secondaryActionLabel="Host an Event"
-          secondaryActionPath="/create-event"
-        />
-      </motion.div>
-    );
-  }
+  // Add this BEFORE the EventsTab component (around line 400-415)
+/* ---------------- Empty State Component ---------------- */
+const EventsEmptyState = () => (
+  <motion.div className="ud-content">
+    <div className="ud-tab-header">
+      <h2><Calendar /> Events</h2>
+    </div>
+    <EmptyState
+      title="No Events Yet"
+      description="You haven't registered for, hosted, or joined any events yet. Explore upcoming events to get started on your event journey!"
+      icon={Ticket}
+      actionLabel="Explore Events"
+      actionPath="/events"
+      secondaryActionLabel="Host an Event"
+      secondaryActionPath="/create-event"
+    />
+  </motion.div>
+);
+
+// Then find the empty state check (around line 555-560) and REPLACE with:
+const hasNoEvents = registeredCount === 0 && hostedCount === 0 && waitlistEvents.length === 0;
+
+if (hasNoEvents) {
+  return <EventsEmptyState />;
+}
 
   return (
     <motion.div className="ud-content">
