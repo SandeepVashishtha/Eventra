@@ -36,7 +36,7 @@ function QuestionInputForm({ onSubmit, questionText, setQuestionText, submitting
         <button
           type="submit"
           disabled={submitting || !questionText.trim()}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-400 to-primary hover:brightness-110 active:scale-95 disabled:opacity-50 disabled:scale-100 disabled:brightness-100 transition-all duration-300 shadow-glow-sm cursor-pointer"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-slate-950 bg-linear-to-r from-cyan-400 to-primary hover:brightness-110 active:scale-95 disabled:opacity-50 disabled:scale-100 disabled:brightness-100 transition-all duration-300 shadow-glow-sm cursor-pointer"
         >
           {submitting ? (
             <Loader2 className="h-4 w-4 animate-spin text-slate-950" />
@@ -86,7 +86,7 @@ function QuestionCard({ q, isModerator, onUpvote, onFlag, onDelete }) {
             <AlertTriangle className="h-3 w-3" /> Flagged for moderation
           </span>
         )}
-        <p className="text-sm text-slate-200 break-words leading-relaxed font-sans">{q.text}</p>
+        <p className="text-sm text-slate-200 wrap-break-word leading-relaxed font-sans">{q.text}</p>
         <span className="text-[10px] text-slate-500 font-medium">{formatTime(q.createdAt)}</span>
       </div>
 
@@ -231,7 +231,7 @@ export default function LiveQABoard({ eventId }) {
         submitting={submitting}
       />
 
-      <div className="flex flex-col gap-3 max-h-[400px] overflow-y-auto pr-1">
+      <div className="flex flex-col gap-3 max-h-100 overflow-y-auto pr-1">
         <QuestionList
           loading={loading}
           visibleQuestions={visibleQuestions}
@@ -242,3 +242,5 @@ export default function LiveQABoard({ eventId }) {
     </div>
   );
 }
+
+export default LiveQABoard;
