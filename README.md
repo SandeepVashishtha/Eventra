@@ -180,6 +180,13 @@ Vercel configuration is checked in via [`vercel.json`](vercel.json):
 - [Security Migration Notes](docs/SECURITY_MIGRATION.md)
 - [API Documentation Notes](docs/API_DOCUMENTATION.md)
 
+## Security Documentation
+
+Additional security resources are available:
+
+- SECURITY.md
+- docs/SECURITY_TROUBLESHOOTING.md
+
 ## Contributing
 
 - Read [CONTRIBUTING.md](CONTRIBUTING.md)

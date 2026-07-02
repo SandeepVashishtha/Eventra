@@ -16,3 +16,9 @@ If you discover a security vulnerability within this project, please do not open
 
 ### JWT Refresh Token Expiration Rules
 - Enforce secure cookie attributes for persistent auth sessions.
+
+## Troubleshooting
+
+For common security configuration issues, deployment problems, and local development guidance, refer to:
+
+- docs/SECURITY_TROUBLESHOOTING.md
