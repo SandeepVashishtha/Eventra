@@ -135,7 +135,7 @@ export const useValidationState = (
    * Check if field should show error message
    */
   const shouldShowError = useMemo(() => {
-    return touched && validationState === "error" && error;
+    return Boolean(touched && validationState === "error" && error);
   }, [touched, validationState, error]);
 
   /**

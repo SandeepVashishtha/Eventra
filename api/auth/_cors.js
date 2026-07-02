@@ -1,91 +1,131 @@
 /**
- * Parses the ALLOWED_ORIGINS environment variable into an array of trusted origins.
- * Handles comma-separated values, trims whitespace, and filters empty entries.
- * 
- * @returns {string[]} Array of allowed origin URLs
+ * CORS Utilities for Eventra API
+ *
+ * Provides consistent CORS handling across all API endpoints.
+ * Uses explicit allowlist from environment configuration.
  */
-export const getAllowedOrigins = () => {
-  const envOrigins = process.env.ALLOWED_ORIGINS || "";
-  
-  if (!envOrigins || typeof envOrigins !== "string") {
-    return [];
-  }
 
-  return envOrigins
-    .split(",")
-    .map((origin) => origin.trim())
-    .filter((origin) => origin.length > 0);
-};
+const DEFAULT_ALLOWED_ORIGINS = [
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'https://eventra.sandeepvashishtha.in',
+];
 
 /**
- * Checks if a given origin is allowed based on the allowlist and development mode.
- * In non-production environments, common localhost origins are automatically allowed.
- * 
- * @param {string} origin - The origin URL to validate
- * @returns {boolean} True if the origin is allowed, false otherwise
+ * Parses comma-separated allowed origins from environment variable.
+ * Falls back to defaults if not set.
+ * @returns {string[]} Array of allowed origin strings
  */
-export const isAllowedOrigin = (origin) => {
-  if (!origin || typeof origin !== "string") {
+export function getAllowedOrigins() {
+  const envOrigins = process.env.CORS_ALLOWED_ORIGINS;
+  if (!envOrigins) {
+    return DEFAULT_ALLOWED_ORIGINS;
+  }
+  return envOrigins
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+}
+
+/**
+ * Checks if an origin is in the allowed list.
+ * Supports exact match and wildcard subdomain matching.
+ * @param {string} origin - The Origin header value
+ * @returns {boolean} True if origin is allowed
+ */
+export function isAllowedOrigin(origin) {
+  if (!origin) return false;
+  const allowed = getAllowedOrigins();
+
+  // Exact match
+  if (allowed.includes(origin)) return true;
+
+  // Wildcard subdomain matching (e.g., *.eventra.com)
+  try {
+    const originUrl = new URL(origin);
+    const originHost = originUrl.hostname;
+    return allowed.some((allowedOrigin) => {
+      if (allowedOrigin.startsWith('*.')) {
+        const allowedDomain = allowedOrigin.slice(2);
+        return originHost === allowedDomain || originHost.endsWith('.' + allowedDomain);
+      }
+      return false;
+    });
+  } catch {
     return false;
   }
-
-  const allowedOrigins = getAllowedOrigins();
-
-  // Check against explicit allowlist
-  if (allowedOrigins.includes(origin)) {
-    return true;
-  }
-
-  // Allow common development origins in non-production environments
-  const isDevelopment = process.env.NODE_ENV !== "production";
-  if (isDevelopment) {
-    const developmentOrigins = [
-      "http://localhost:3000",
-      "http://localhost:5173",
-      "http://127.0.0.1:3000",
-      "http://127.0.0.1:5173",
-    ];
-    return developmentOrigins.includes(origin);
-  }
-
-  // Fail closed: reject untrusted origins in production
-  return false;
-};
+}
 
 /**
- * Builds CORS headers for a given request.
- * Validates the Origin header against the allowlist and returns appropriate headers.
- * 
- * Security decisions:
- * - No wildcard origin (*) is ever returned
- * - Origin is only reflected after validation against allowlist
- * - Exact string matching is used (no regex)
- * - Vary: Origin is always returned to prevent caching issues
- * - Untrusted origins receive no ACAO header (fail closed)
- * 
- * @param {Object} req - The HTTP request object
- * @returns {Object} CORS headers object
+ * Builds CORS headers for a given request origin.
+ * Returns empty headers if origin is not allowed.
+ * @param {string} origin - The Origin header value
+ * @param {object} [options] - Additional options
+ * @param {boolean} [options.allowCredentials] - Include credentials header
+ * @returns {Headers} CORS headers
  */
-export const buildCorsHeaders = (req) => {
-  const requestOrigin = req.headers?.origin;
-  const isOriginAllowed = isAllowedOrigin(requestOrigin);
+export function buildCorsHeaders(origin, options = {}) {
+  const headers = new Headers();
+  const allowed = isAllowedOrigin(origin);
 
-  const headers = {
-    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    "Vary": "Origin",
-  };
-
-  // Only set ACAO for validated, trusted origins
-  if (isOriginAllowed && requestOrigin) {
-    headers["Access-Control-Allow-Origin"] = requestOrigin;
+  if (!allowed) {
+    return headers;
   }
 
-  return headers;
-};
+  headers.set('Access-Control-Allow-Origin', origin);
+  if (options.allowCredentials) {
+    headers.set('Access-Control-Allow-Credentials', 'true');
+  }
+  headers.set('Vary', 'Origin');
 
-export const corsResponse = (req, res, status, body) => {
-  const headers = buildCorsHeaders(req);
-  Object.entries(headers).forEach(([k, v]) => res.setHeader(k, v));
-  res.status(status).json(body);
-};
+  return headers;
+}
+
+/**
+ * Creates a standard CORS preflight response.
+ * @param {string} origin - The Origin header value
+ * @param {object} [options] - Additional options
+ * @returns {Response} CORS preflight response
+ */
+export function corsResponse(origin, options = {}) {
+  const headers = buildCorsHeaders(origin, { allowCredentials: true, ...options });
+
+  // Always allow these methods and headers
+  headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-CSRF-Token, X-Requested-With');
+  headers.set('Access-Control-Max-Age', '86400'); // 24 hours
+
+  return new Response(null, {
+    status: 204,
+    headers,
+  });
+}
+
+/**
+ * Middleware helper to handle CORS for API routes.
+ * Handles OPTIONS preflight and adds CORS headers to all responses.
+ * @param {Request} request - Incoming request
+ * @param {Function} handler - Route handler function
+ * @returns {Promise<Response>} Response with CORS headers
+ */
+export async function withCors(request, handler) {
+  const origin = request.headers.get('origin');
+
+  // Handle preflight
+  if (request.method === 'OPTIONS') {
+    return corsResponse(origin);
+  }
+
+  const response = await handler(request);
+
+  // Add CORS headers to actual response
+  const corsHeaders = buildCorsHeaders(origin, { allowCredentials: true });
+  const newHeaders = new Headers(response.headers);
+  corsHeaders.forEach((value, key) => newHeaders.set(key, value));
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: newHeaders,
+  });
+}

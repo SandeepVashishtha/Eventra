@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, UserPlus, X, Rocket } from "lucide-react";
+import { Link } from "react-router-dom";
 
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 const HackathonCTA = () => {
@@ -86,14 +87,14 @@ const HackathonCTA = () => {
           </motion.p>
 
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <motion.a
-              href="/hackathons"
-              className="inline-flex items-center justify-center gap-2 bg-linear-to-r from-blue-600 via-indigo-600 to-violet-600 text-white font-semibold px-8 py-3.5 rounded-xl shadow-lg dark:shadow-[0_0_24px_rgba(99,102,241,0.4)] hover:shadow-xl dark:hover:shadow-[0_0_36px_rgba(99,102,241,0.6)] transition-all duration-300 border border-indigo-500/30"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              Explore Hackathons <ArrowRight className="w-5 h-5" />
-            </motion.a>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Link
+                to="/hackathons"
+                className="inline-flex items-center justify-center gap-2 bg-linear-to-r from-blue-600 via-indigo-600 to-violet-600 text-white font-semibold px-8 py-3.5 rounded-xl shadow-lg dark:shadow-[0_0_24px_rgba(99,102,241,0.4)] hover:shadow-xl dark:hover:shadow-[0_0_36px_rgba(99,102,241,0.6)] transition-all duration-300 border border-indigo-500/30"
+              >
+                Explore Hackathons <ArrowRight className="w-5 h-5" />
+              </Link>
+            </motion.div>
 
             <motion.button
               onClick={() => setShowModal(true)}

@@ -1,7 +1,10 @@
 const RELATIVE_TIME_FALLBACK = "—";
 
 export function getRelativeTime(dateInput) {
-  if (typeof dateInput === "number") return null;
+  // Handle numeric Unix timestamps (milliseconds since epoch)
+  if (typeof dateInput === "number") {
+    dateInput = new Date(dateInput).toISOString();
+  }
   if (dateInput === null || dateInput === undefined) {
     return RELATIVE_TIME_FALLBACK;
   }
@@ -43,7 +46,12 @@ export function getRelativeTime(dateInput) {
   if (diffDay < 30)
     return `In ${Math.floor(diffDay / 7)} week${Math.floor(diffDay / 7) !== 1 ? "s" : ""}`;
 
-  return null;
+  return new Date(dateInput).toLocaleDateString("en-US", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 export function getSmartDateLabel(dateInput, timeInput = "") {

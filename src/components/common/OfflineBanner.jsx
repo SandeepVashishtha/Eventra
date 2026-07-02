@@ -20,6 +20,24 @@ const OfflineBanner = () => {
   const [liveMessage, setLiveMessage] = useState("");
 const [offlineSince, setOfflineSince] = useState(null);
 const [offlineDuration, setOfflineDuration] = useState("0s");
+  const [syncSummary, setSyncSummary] = useState(null);
+
+  useEffect(() => {
+    const handleQueueProcessed = (e) => {
+      const summary = e?.detail || {};
+      setSyncSummary(summary);
+      if (summary.succeeded !== undefined) {
+        let msg = `Sync completed: ${summary.succeeded} succeeded.`;
+        if (summary.dropped > 0) {
+          msg += ` ${summary.dropped} queued action(s) could not be synced.`;
+        }
+        setLiveMessage(msg);
+      }
+    };
+    window.addEventListener("eventra-offline-queue-processed", handleQueueProcessed);
+    return () => window.removeEventListener("eventra-offline-queue-processed", handleQueueProcessed);
+  }, []);
+
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
@@ -115,9 +133,19 @@ useEffect(() => {
           aria-live="polite"
           className="fixed top-20 left-0 right-0 z-toast flex justify-center px-4"
         >
-          <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-green-600 text-white shadow-lg text-sm font-semibold max-w-md w-full">
-            <Wifi size={16} className="shrink-0" aria-hidden="true" />
-            <span>You&apos;re back online!</span>
+          <div className="flex flex-col gap-1 px-5 py-3 rounded-2xl bg-green-600 text-white shadow-lg text-sm font-semibold max-w-md w-full">
+            <div className="flex items-center gap-3">
+              <Wifi size={16} className="shrink-0" aria-hidden="true" />
+              <span>You&apos;re back online!</span>
+            </div>
+            {syncSummary && (
+              <div className="text-xs opacity-90 pl-7">
+                Sync completed: {syncSummary.succeeded} succeeded
+                {syncSummary.dropped > 0 && (
+                  <span>, {syncSummary.dropped} queued action(s) could not be synced</span>
+                )}
+              </div>
+            )}
           </div>
         </motion.div>
       )}
