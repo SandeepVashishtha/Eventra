@@ -191,6 +191,12 @@ Vercel configuration is checked in via [`vercel.json`](vercel.json):
 
 Licensed under Apache 2.0. See [LICENSE](LICENSE).
 
+## Environment Security
+
+See the following guide for securely managing environment variables:
+
+- docs/ENVIRONMENT_SECURITY.md
+
 ## Contributors
 
 <p align="left">

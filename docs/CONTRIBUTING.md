@@ -157,3 +157,15 @@ You do not need to set these manually.
 Do not commit secrets, tokens, or private keys.
 
 If you discover a security issue, follow [SECURITY.md](SECURITY.md).
+
+## Environment Variables
+
+Before submitting a pull request, ensure:
+
+- No secrets are committed.
+- `.env.example` contains placeholder values only.
+- Sensitive configuration follows the Environment Security Guide.
+
+See:
+
+- docs/ENVIRONMENT_SECURITY.md
