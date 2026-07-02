@@ -1,3 +1,5 @@
+import { getServerNow } from "./timeSync.js";
+
 const RELATIVE_TIME_FALLBACK = "—";
 
 export function getRelativeTime(dateInput) {
@@ -78,12 +80,12 @@ export function isPast(dateInput) {
   if (!dateInput) return false;
   const parsed = new Date(dateInput);
   if (isNaN(parsed.getTime())) return false;
-  return parsed.getTime() < Date.now();
+  return parsed.getTime() < getServerNow();
 }
 
 export function isFuture(dateInput) {
   if (!dateInput) return false;
   const parsed = new Date(dateInput);
   if (isNaN(parsed.getTime())) return false;
-  return parsed.getTime() > Date.now();
+  return parsed.getTime() > getServerNow();
 }
