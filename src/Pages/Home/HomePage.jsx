@@ -4,13 +4,14 @@ import Hero from "./components/Hero";
 import WhatsHappening from "./components/WhatsHappening";
 import HomeCTA from "./components/HomeCTA";
 import RecommendationBanner from "./components/RecommendationBanner";
+import TrendingEvents from "../../components/TrendingEvents/TrendingEvents";
 import CollaborationNetworkMap from "../../components/visual/CollaborationNetworkMap";
 import CollaborationMap from "../../components/CollaborationMap";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 // ─── CONSTANTS ──────────────────────────────────────────────────────────────
 const SITE_URL = "https://eventra.vercel.app";
-const SITE_IMAGE = `${SITE_URL}/Eventra.png`;
+const SITE_IMAGE = "https://eventra.sandeepvashishtha.in/logo_transparent.png";
 const SITE_TITLE = "Eventra | Discover & Join Tech Events";
 const SITE_DESCRIPTION =
   "Eventra is an open-source platform to discover, join, and host tech events, hackathons, and workshops in your community.";
@@ -57,6 +58,7 @@ const HomePage = () => {
       {/* ─── PAGE CONTENT ───────────────────────────────────────────────── */}
       <Hero />
       <WhatsHappening />
+      <TrendingEvents title="Trending Events" limit={6} fetchSize={24} />
       <RecommendationBanner />
       <CollaborationNetworkMap />
       <CollaborationMap />

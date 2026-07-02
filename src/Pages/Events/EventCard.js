@@ -1,4 +1,6 @@
-import { memo, useCallback, useEffect, useId, useState } from "react";
+import EventDuration from "../../components/common/EventDuration";
+import { getEventDuration } from "../../utils/eventDurationUtils";
+import { memo, useCallback, useId, useState } from "react";
 import { logger } from "../../utils/logger";
 import { getUserTimezone } from "../../utils/timezoneUtils";
 import { Link } from "react-router-dom";
@@ -19,19 +21,16 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import { addEventToGoogleCalendar } from "../../utils/calendarUtils";
 import LazyImage from "../../components/common/LazyImage";
 import ShareModal from "../../components/common/ShareModal";
 import StatusBadge from "../../components/common/StatusBadge";
 import { getEventStatus } from "../../utils/eventUtils";
 import { useMyEvents } from "../../context/MyEventsContext";
+import { useAuth } from "../../context/AuthContext";
+import useBookmarks from "../../hooks/useBookmarks";
 import ReminderControls from "../../components/reminders/ReminderControls";
-import {
-  addBookmarkedEvent,
-  isEventBookmarked,
-  removeBookmarkedEvent,
-  subscribeToBookmarkChanges,
-} from "../../utils/bookmarkUtils";
+import AddToCalendar from "../../components/common/AddToCalendar";
+import SocialShareButtons from "../../components/common/SocialShareButtons";
 import { checkRegistrationConflict } from "../../utils/conflictDetection";
 
 const getCapacityStyles = (ratio, isFull) => {
@@ -53,8 +52,56 @@ const getCapacityStyles = (ratio, isFull) => {
   };
 };
 
+const EventCapacity = ({ attendees, maxAttendees }) => {
+  const registered = Number(attendees) || 0;
+  const capacity = Number(maxAttendees);
+  const isFull = registered >= capacity;
+  const ratio = Math.min(registered / capacity, 1);
+  const percent = Math.round(ratio * 100);
+  const spotsLeft = Math.max(capacity - registered, 0);
+  const { barColor, textColor } = getCapacityStyles(ratio, isFull);
+
+  return (
+    <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+          Seats
+        </span>
+        {isFull ? (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300">
+            Full
+          </span>
+        ) : (
+          <span className={`text-xs font-semibold tabular-nums ${textColor}`}>
+            {spotsLeft} spot{spotsLeft === 1 ? "" : "s"} left
+          </span>
+        )}
+      </div>
+      <div
+        className="w-full h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden"
+        role="progressbar"
+        aria-valuenow={percent}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={`${registered} of ${capacity} seats filled`}
+      >
+        <div
+          className={`h-full ${barColor} transition-all duration-500 ease-out`}
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+      <div className="mt-1 text-[11px] text-gray-500 dark:text-gray-500 tabular-nums">
+        {registered} / {capacity} registered
+      </div>
+    </div>
+  );
+};
+
 const EventCard = ({ event }) => {
-  const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
+  const { user } = useAuth();
+  const userId = user?.id || user?.email || "guest";
+  const { isBookmarked: checkBookmarked, toggleBookmark } = useBookmarks(userId);
+  const isBookmarked = checkBookmarked(event.id);
   const titleId = useId();
   const { myEvents, isRegistered } = useMyEvents();
   const [showBookmarkTooltip, setShowBookmarkTooltip] = useState(false);
@@ -76,7 +123,9 @@ const EventCard = ({ event }) => {
   const hasConflict = conflictCheck.hasConflict;
   const isUserRegistered = isRegistered(event.id);
 
-  const isPastEvent = getEventStatus(event) === "past" || getEventStatus(event) === "ended";
+  const computedStatus = getEventStatus(event);
+  const isPastEvent = computedStatus === "past" || computedStatus === "ended";
+  const canSetReminder = isBookmarked || isUserRegistered;
 
   const handleCopyLink = (e) => {
     e.preventDefault();
@@ -97,48 +146,44 @@ const EventCard = ({ event }) => {
       });
   };
 
-  const computedStatus = getEventStatus(event);
-  const canSetReminder = isBookmarked || isRegistered(event.id);
+const durationText = getEventDuration(event);
 
-  useEffect(() => {
-    setIsBookmarked(isEventBookmarked(event.id));
+  const handleBookmarkToggle = useCallback(
+    (e) => {
+      e.preventDefault();
+      e.stopPropagation();
 
-    return subscribeToBookmarkChanges(() => {
-      setIsBookmarked(isEventBookmarked(event.id));
-    });
-  }, [event.id]);
+      if (isBookmarked) {
+        toggleBookmark(event);
+        toast.info("Removed from bookmarked events.", {
+          toastId: `bookmark-${event.id}`,
+          autoClose: 1800,
+          className: "custom-toast",
+        });
+        return;
+      }
 
-  const handleBookmarkToggle = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (isBookmarked) {
-      removeBookmarkedEvent(event.id);
-      toast.info("Removed from bookmarked events.", {
+      toggleBookmark({
+        ...event,
+        status: computedStatus,
+      });
+      toast.success("Event bookmarked.", {
         toastId: `bookmark-${event.id}`,
         autoClose: 1800,
         className: "custom-toast",
       });
-      return;
-    }
-
-    addBookmarkedEvent({
-      ...event,
-      status: computedStatus,
-    });
-    toast.success("Event bookmarked.", {
-      toastId: `bookmark-${event.id}`,
-      autoClose: 1800,
-      className: "custom-toast",
-   });
-}, [computedStatus, event, isBookmarked]);
+    },
+    [isBookmarked, event, computedStatus, toggleBookmark]
+  );
 
   return (
-    <article
+    <motion.article
       data-aos="zoom-in"
       data-aos-duration="800"
       aria-labelledby={titleId}
-      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-lg backdrop-blur-sm transition-all duration-300 flex flex-col z-10 event-card-hoverable overflow-hidden border border-gray-100 dark:border-gray-800"
+      whileHover={{ scale: 1.02, y: -5, boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15)" }}
+      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-lg backdrop-blur-sm flex flex-col z-10 event-card-hoverable overflow-hidden border border-gray-100 dark:border-gray-800"
     >
       {/* Action buttons */}
       <div className="absolute top-3 right-3 z-200 flex space-x-1.5 items-center">
@@ -236,17 +281,7 @@ const EventCard = ({ event }) => {
           </svg>
         </button>
 
-        <a
-          href={addEventToGoogleCalendar(event)}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={(e) => e.stopPropagation()}
-          title="Add to Google Calendar"
-          aria-label={`Add ${event.title} to Google Calendar`}
-          className="rounded-full border border-gray-200 bg-white/90 p-2 shadow backdrop-blur-sm hover:border-indigo-200 dark:border-gray-700 dark:bg-gray-800/90 dark:hover:border-indigo-500 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-indigo-500"
-        >
-          <Calendar size={14} className="text-gray-600 dark:text-gray-300" aria-hidden="true" />
-        </a>
+        <AddToCalendar event={event} iconOnly={true} />
       </div>
 
       {/* Header */}
@@ -255,32 +290,28 @@ const EventCard = ({ event }) => {
           {randomIcon}
         </div>
 
-        <h3 id={titleId} className="text-gray-900 dark:text-white font-bold text-lg tracking-tight line-clamp-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-300 flex-1">
+        <h3 id={titleId} title={event.title} className="text-gray-900 dark:text-white font-bold text-lg tracking-tight line-clamp-2 break-words group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-300 flex-1 min-w-0">
           {event.title}
         </h3>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-1.5 shrink-0">
           {/* Conflict Indicator */}
           {hasConflict && !isUserRegistered && (
             <div
-              className="flex items-center gap-1 px-2 py-1 bg-amber-100 dark:bg-amber-900/30 rounded-full border border-amber-300 dark:border-amber-700"
+              className="inline-flex items-center gap-[5px] py-1 px-[10px] bg-amber-100 dark:bg-amber-900/30 rounded-[6px] border border-amber-300 dark:border-amber-700 shrink-0 text-[12px] font-medium leading-none text-amber-700 dark:text-amber-300"
               title="This event conflicts with your registered events"
             >
-              <AlertTriangle size={12} className="text-amber-600 dark:text-amber-400" />
-              <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">
-                Conflict
-              </span>
+              <AlertTriangle size={12} className="text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" />
+              <span>Conflict</span>
             </div>
           )}
           {/* Registered Indicator */}
           {isUserRegistered && (
             <div
-              className="flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 rounded-full border border-green-300 dark:border-green-700"
+              className="inline-flex items-center gap-[5px] py-1 px-[10px] bg-green-100 dark:bg-green-900/30 rounded-[6px] border border-green-300 dark:border-green-700 shrink-0 text-[12px] font-medium leading-none text-green-700 dark:text-green-300"
               title="You are registered for this event"
             >
-              <BookmarkCheck size={12} className="text-green-600 dark:text-green-400" />
-              <span className="text-xs font-semibold text-green-700 dark:text-green-300">
-                Registered
-              </span>
+              <BookmarkCheck size={12} className="text-green-600 dark:text-green-400 shrink-0" aria-hidden="true" />
+              <span>Registered</span>
             </div>
           )}
           <StatusBadge status={computedStatus} />
@@ -292,9 +323,9 @@ const EventCard = ({ event }) => {
         <LazyImage
           src={event.image}
           alt={event.imageAlt || `${event.title} event thumbnail`}
-          width={800}
-          height={160}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          aspectRatio="5/1"
+          className="w-full h-full"
+          imgClassName="object-cover transition-transform duration-500 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent" />
       </div>
@@ -336,6 +367,7 @@ const EventCard = ({ event }) => {
               {new Date(event.date).toLocaleDateString("en-US", {
                 weekday: "short", day: "numeric", month: "short", year: "numeric",
               })}
+              <EventDuration duration={durationText} />
             </span>
           </div>
         </div>
@@ -344,51 +376,14 @@ const EventCard = ({ event }) => {
         <ReminderControls event={event} canSetReminder={canSetReminder} compact />
       </div>
       {/* Seats / Capacity */}
-      {typeof event.maxAttendees === "number" && event.maxAttendees > 0 && (() => {
-        const registered = Number(event.attendees) || 0;
-        const capacity = Number(event.maxAttendees);
-        const isFull = registered >= capacity;
-        const ratio = Math.min(registered / capacity, 1);
-        const percent = Math.round(ratio * 100);
-        const spotsLeft = Math.max(capacity - registered, 0);
+      {typeof event.maxAttendees === "number" && event.maxAttendees > 0 && (
+        <EventCapacity attendees={event.attendees} maxAttendees={event.maxAttendees} />
+      )}
 
-        const { barColor, textColor } = getCapacityStyles(ratio, isFull);
-
-        return (
-          <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                Seats
-              </span>
-              {isFull ? (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300">
-                  Full
-                </span>
-              ) : (
-                <span className={`text-xs font-semibold tabular-nums ${textColor}`}>
-                  {spotsLeft} spot{spotsLeft === 1 ? "" : "s"} left
-                </span>
-              )}
-            </div>
-            <div
-              className="w-full h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden"
-              role="progressbar"
-              aria-valuenow={percent}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-label={`${registered} of ${capacity} seats filled`}
-            >
-              <div
-                className={`h-full ${barColor} transition-all duration-500 ease-out`}
-                style={{ width: `${percent}%` }}
-              />
-            </div>
-            <div className="mt-1 text-[11px] text-gray-500 dark:text-gray-500 tabular-nums">
-              {registered} / {capacity} registered
-            </div>
-          </div>
-        );
-      })()}
+      {/* Social Sharing */}
+      <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 flex justify-center">
+        <SocialShareButtons event={event} layout="inline" />
+      </div>
 
       {/* CTA */}
       <div className="px-5 py-4 flex gap-3 mt-auto">
@@ -410,7 +405,7 @@ const EventCard = ({ event }) => {
           </span>
         </Link>
       </div>
-    </article>
+    </motion.article>
   );
 };
 

@@ -1,19 +1,25 @@
 import ModernAbout from "./ModernAbout";
+import Features from "./Features";
 import AboutCTA from "./AboutCTA";
 import SEOHead from "../../components/SEOHead";
+import { useTranslation } from "react-i18next";
+
 const AboutPage = () => {
+  const { t } = useTranslation();
+
   return (
     <>
       <SEOHead
-        title="About Us"
-        description="Learn about Eventra — the open-source event management platform for communities, colleges, and organizations worldwide."
+        title={t("about.pageTitle")}
+        description={t("about.pageDescription")}
         url={window.location.href}
       />
-      <div className="flex flex-col min-h-screen bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 text-slate-900 dark:text-gray-100">
+
+      <main className="min-h-screen bg-slate-950 text-slate-100">
         <ModernAbout />
-        {/* 💡 NOTE: This CTA Section is already dark by design and works well in both modes. No changes are needed. */}
-        <AboutCTA></AboutCTA>
-      </div>
+        <Features />
+        <AboutCTA />
+      </main>
     </>
   );
 };
