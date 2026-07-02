@@ -42,7 +42,7 @@ function PollResultsList({ activePoll, totalVotes }) {
             <div className="w-full h-3 rounded-full bg-slate-950/60 overflow-hidden border border-slate-900">
               <div
                 style={{ width: `${percentage}%` }}
-                className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-primary transition-all duration-1000 ease-out"
+                className="h-full rounded-full bg-linear-to-r from-cyan-500 to-primary transition-all duration-1000 ease-out"
               />
             </div>
           </div>
@@ -85,7 +85,7 @@ function PollStatusButtons({ activePoll, handleStatusChange }) {
       )}
       <button
         onClick={() => handleStatusChange("closed")}
-        className="ml-auto flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-400 to-primary hover:brightness-110 active:scale-95 transition-all duration-300 shadow-glow-sm cursor-pointer"
+        className="ml-auto flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-950 bg-linear-to-r from-cyan-400 to-primary hover:brightness-110 active:scale-95 transition-all duration-300 shadow-glow-sm cursor-pointer"
       >
         <RefreshCw className="h-4 w-4 text-slate-950" /><span>Create New Poll</span>
       </button>
@@ -142,7 +142,7 @@ function PollCreateForm({ newQuestion, setNewQuestion, options, handlers, submit
       <button
         type="submit"
         disabled={submitting}
-        className="mt-2 w-full flex items-center justify-center gap-1.5 py-3 rounded-xl text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-400 to-primary hover:brightness-110 active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all duration-300 shadow-glow-sm cursor-pointer"
+        className="mt-2 w-full flex items-center justify-center gap-1.5 py-3 rounded-xl text-sm font-semibold text-slate-950 bg-linear-to-r from-cyan-400 to-primary hover:brightness-110 active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all duration-300 shadow-glow-sm cursor-pointer"
       >
         {submitting ? <Loader2 className="h-5 w-5 animate-spin text-slate-950" /> : <Play className="h-4 w-4 text-slate-950" />}
         <span>Launch Poll</span>
@@ -249,7 +249,7 @@ function PollAttendeeView({ activePoll, hasVoted, selectedOption, setSelectedOpt
       <button
         type="submit"
         disabled={votingLoading || !selectedOption}
-        className="w-full flex items-center justify-center gap-1.5 py-3 rounded-xl text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-400 to-primary hover:brightness-110 active:scale-95 disabled:opacity-50 disabled:scale-100 disabled:brightness-100 transition-all duration-300 shadow-glow-sm cursor-pointer"
+        className="w-full flex items-center justify-center gap-1.5 py-3 rounded-xl text-sm font-semibold text-slate-950 bg-linear-to-r from-cyan-400 to-primary hover:brightness-110 active:scale-95 disabled:opacity-50 disabled:scale-100 disabled:brightness-100 transition-all duration-300 shadow-glow-sm cursor-pointer"
       >
         {votingLoading ? <Loader2 className="h-5 w-5 animate-spin text-slate-950" /> : <Vote className="h-4 w-4 text-slate-950" />}
         <span>Submit Vote</span>

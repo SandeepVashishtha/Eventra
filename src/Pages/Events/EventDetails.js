@@ -17,6 +17,8 @@ import ReminderControls from "../../components/reminders/ReminderControls";
 import EventRecommendations from "../../components/events/EventRecommendations";
 import EventCancellationModal from "../../components/events/EventCancellationModal";
 import SimilarEvents from "../../components/events/SimilarEvents";
+import LiveQABoard from "../../components/events/LiveQABoard";
+import LivePollController from "../../components/events/LivePollController";
 import { EventDetailSkeleton } from "../../components/common/SkeletonLoaders";
 import LazyImage from "../../components/common/LazyImage";
 import { useAuth } from "../../context/AuthContext";
