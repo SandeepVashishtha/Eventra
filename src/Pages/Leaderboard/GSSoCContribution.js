@@ -489,9 +489,10 @@ const GSSoCContribution = () => {
         <motion.section
           variants={itemVariants}
           className="p-6 sm:p-8 rounded-3xl shadow-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 mb-6 sm:mb-8"
+          className="p-4 sm:p-6 rounded-2xl shadow-sm bg-card-bg border border-gray-200 dark:border-gray-700 mb-6 sm:mb-8"
           aria-labelledby="guidelines-heading"
         >
-          <div className="text-center mb-6 sm:mb-8">
+          <div className="text-center mb-5 sm:mb-6">
             <h2 id="guidelines-heading" className="text-xl sm:text-2xl font-bold text-indigo-700 dark:text-indigo-400 mb-2">
               🌟 Contribution Guidelines
             </h2>
@@ -500,7 +501,7 @@ const GSSoCContribution = () => {
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {[
               { icon: Lightbulb, title: "Explore Issues", desc: "Start with beginner-friendly tasks", color: "text-yellow-500" },
               { icon: Code2, title: "Clean PRs", desc: "Tested, documented, well-structured", color: "text-green-500" },
@@ -511,6 +512,8 @@ const GSSoCContribution = () => {
                 key={title}
                 whileHover={{ y: -4 }}
                 className="p-5 rounded-2xl border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/20"
+                whileHover={{ y: -3 }}
+                className="p-4 sm:p-5 rounded-2xl border border-gray-200 dark:border-gray-600 bg-card-bg text-center transition-shadow hover:shadow-sm"
               >
                 <Icon className={`w-8 h-8 mb-3 ${color}`} />
                 <h3 className="font-bold text-gray-900 dark:text-white mb-1">{title}</h3>
@@ -520,6 +523,238 @@ const GSSoCContribution = () => {
           </div>
         </motion.section>
       </motion.section>
+
+        {/* 🎮 Achievements & Resources */}
+        <motion.section variants={itemVariants} className="grid md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+          {/* Achievements */}
+          <article className="p-4 sm:p-6 rounded-2xl bg-card-bg border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-2 mb-4">
+              <Award className="w-5 h-5 text-yellow-500" aria-hidden="true" />
+              <h3 className="font-semibold text-gray-900 dark:text-white">Your Achievements</h3>
+            </div>
+            <div className="grid grid-cols-4 gap-2 sm:gap-3">
+              {ACHIEVEMENTS.map(achievement => (
+                <AchievementBadge 
+                  key={achievement.id} 
+                  achievement={achievement} 
+                  onUnlock={handleAchievementUnlock} 
+                />
+              ))}
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
+              {ACHIEVEMENTS.filter(a => a.unlocked).length}/{ACHIEVEMENTS.length} unlocked
+            </p>
+          </article>
+
+          {/* Resources with Search & Filter */}
+          <article className="p-4 sm:p-6 rounded-2xl bg-card-bg border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-blue-500" aria-hidden="true" />
+                <h3 className="font-semibold text-gray-900 dark:text-white">Quick Resources</h3>
+              </div>
+              <span className="text-xs px-2 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full">
+                {filteredResources.length} items
+              </span>
+            </div>
+            
+            {/* Search + Filter */}
+            <div className="space-y-3 mb-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" aria-hidden="true" />
+                <input
+                  ref={searchInputRef}
+                  type="search"
+                  placeholder="Search tutorials, guides... (Press / to focus)"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:text-white placeholder-gray-400"
+                  aria-label="Search resources"
+                />
+              </div>
+              <div className="flex gap-2">
+                {["all", "beginner", "intermediate", "advanced"].map(level => (
+                  <button
+                    key={level}
+                    onClick={() => setSelectedDifficulty(level)}
+                    className={`px-3 py-1 text-xs rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                      selectedDifficulty === level
+                        ? "bg-indigo-600 text-white"
+                        : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                    }`}
+                    aria-pressed={selectedDifficulty === level}
+                  >
+                    {level.charAt(0).toUpperCase() + level.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            {/* Resource List */}
+            <div className="space-y-2 max-h-48 overflow-y-auto pr-2" role="list" aria-label="Resource list">
+              <AnimatePresence mode="popLayout">
+                {filteredResources.map((resource) => (
+                  <ResourceItem 
+                    key={resource.title} 
+                    resource={resource} 
+                    onCopy={handleResourceCopy}
+                  />
+                ))}
+              </AnimatePresence>
+              {filteredResources.length === 0 && (
+                <p className="text-sm text-gray-500 text-center py-4" role="status">No resources found. Try different keywords.</p>
+              )}
+            </div>
+          </article>
+        </motion.section>
+
+        {/* 👥 Mentors */}
+        <motion.section variants={itemVariants} className="p-4 sm:p-6 rounded-2xl bg-card-bg border border-gray-200 dark:border-gray-700 mb-6 sm:mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-indigo-500" aria-hidden="true" />
+              <h3 className="font-semibold text-gray-900 dark:text-white">Meet Your Mentors</h3>
+            </div>
+            <button className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded" aria-label="button">
+              View All <ArrowRight className="w-3 h-3" aria-hidden="true" />
+            </button>
+          </div>
+          
+          <div className="grid sm:grid-cols-2 gap-3">
+            {MENTORS.map(mentor => (
+              <MentorCard key={mentor.name} mentor={mentor} onConnect={handleMentorConnect} />
+            ))}
+          </div>
+        </motion.section>
+
+        {/* 📅 Timeline */}
+        <motion.section variants={itemVariants} className="p-4 sm:p-6 rounded-2xl bg-card-bg border border-gray-200 dark:border-gray-700 mb-6 sm:mb-8">
+          <div className="flex items-center gap-2 mb-4 sm:mb-6">
+            <Calendar className="w-5 h-5 text-purple-500" aria-hidden="true" />
+            <h3 className="font-semibold text-gray-900 dark:text-white">Program Timeline</h3>
+          </div>
+          
+          <div className="relative pl-2" role="list" aria-label="Program timeline">
+            {GSSOC_TIMELINE.map((item, idx) => (
+              <TimelineItem key={item.phase} item={item} isLast={idx === GSSOC_TIMELINE.length - 1} />
+            ))}
+          </div>
+        </motion.section>
+
+        {/* Getting Started & Best Practices */}
+        <motion.section className="grid md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8" variants={itemVariants}>
+          {/* Getting Started */}
+          <article className="p-4 sm:p-6 rounded-2xl bg-card-bg border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
+                <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" aria-hidden="true" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Getting Started</h3>
+            </div>
+            <ol className="space-y-2 sm:space-y-3">
+              {[
+                "Sign up on GSSoC platform",
+                "Join Eventra's Discord community",
+                "Browse issues labeled 'good first issue'",
+                "Comment on an issue to claim it",
+                "Fork, code, and submit your PR!",
+              ].map((step, idx) => (
+                <li key={step} className="flex items-start gap-3">
+                  <span className="flex-shrink-0 w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                    {idx + 1}
+                  </span>
+                  <span className="text-gray-700 dark:text-gray-300 text-sm">{step}</span>
+                </li>
+              ))}
+            </ol>
+          </article>
+
+          {/* Best Practices */}
+          <article className="p-4 sm:p-6 rounded-2xl bg-card-bg border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
+                <CheckCircle className="w-5 h-5 text-purple-600 dark:text-purple-400" aria-hidden="true" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Best Practices</h3>
+            </div>
+            <ul className="space-y-2 sm:space-y-3">
+              {[
+                "Be respectful & inclusive in all discussions",
+                "Write clear PR titles and descriptions",
+                "Test your changes locally before pushing",
+                "Ask for help early if you're stuck",
+                "Review others' PRs to learn and give back",
+              ].map((tip) => (
+                <li key={tip} className="flex items-start gap-3">
+                  <CheckCircle className="flex-shrink-0 w-5 h-5 text-green-500 mt-0.5" aria-hidden="true" />
+                  <span className="text-gray-700 dark:text-gray-300 text-sm">{tip}</span>
+                </li>
+              ))}
+            </ul>
+          </article>
+        </motion.section>
+
+        {/* 🚀 Action Buttons */}
+        <motion.nav variants={itemVariants} className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mb-8 sm:mb-12" aria-label="Primary actions">
+          <motion.button
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => navigate("/contributorguide")}
+            className="px-6 sm:px-8 py-3 rounded-full font-semibold text-white bg-gray-900 hover:bg-gray-800 shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-black"
+          >
+            <BookOpen className="w-4 h-4" aria-hidden="true" />
+            Contributor&apos;s Guide
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => window.open("https://github.com/SandeepVashishtha/Eventra", "_blank", "noopener,noreferrer")}
+            className="px-6 sm:px-8 py-3 rounded-full font-semibold text-white bg-linear-to-r from-pink-500 to-orange-500 hover:from-pink-600 hover:to-orange-600 shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 dark:focus:ring-offset-black"
+          >
+            <GitBranch className="w-4 h-4" aria-hidden="true" />
+            Start Contributing
+            <ExternalLink className="w-4 h-4" aria-hidden="true" />
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => window.open("https://discord.gg/6MQ9r5nHT", "_blank", "noopener,noreferrer")}
+            className="px-6 sm:px-8 py-3 rounded-full font-semibold text-white bg-[#5865F2] hover:bg-[#4752C4] shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-[#5865F2] focus:ring-offset-2 dark:focus:ring-offset-black"
+          >
+            <MessageCircle className="w-4 h-4" aria-hidden="true" />
+            Join Discord
+          </motion.button>
+        </motion.nav>
+
+        {/* 📊 Footer Stats */}
+        <motion.section
+          ref={statsRef}
+          variants={itemVariants}
+          className="p-4 sm:p-6 rounded-2xl bg-card-bg border border-gray-200 dark:border-gray-700"
+          aria-labelledby="stats-heading"
+        >
+          <h3 id="stats-heading" className="sr-only">Community Statistics</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 text-center">
+            {[
+              { label: "Active Contributors", value: 500, suffix: "+", icon: Users, color: "text-blue-500" },
+              { label: "Issues Solved", value: 1200, icon: CheckCircle, color: "text-green-500" },
+              { label: "PRs Merged", value: 850, suffix: "+", icon: GitBranch, color: "text-purple-500" },
+              { label: "Countries", value: 45, suffix: "+", icon: Globe, color: "text-orange-500" },
+            ].map(({ label, value, suffix, icon: Icon, color }) => (
+              <StatCard 
+                key={label} 
+                label={label} 
+                value={value} 
+                suffix={suffix}
+                icon={Icon} 
+                color={color} 
+              />
+            ))}
+          </div>
+        </motion.section>
+      </motion.main>
       
       <ToastContainer toasts={toasts} onClose={removeToast} />
     </>
