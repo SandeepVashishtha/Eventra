@@ -1,6 +1,6 @@
 import EventDuration from "../../components/common/EventDuration";
 import { getEventDuration } from "../../utils/eventDurationUtils";
-import { memo, useCallback, useEffect, useId, useState } from "react";
+import { memo, useCallback, useId, useState } from "react";
 import { logger } from "../../utils/logger";
 import { getUserTimezone } from "../../utils/timezoneUtils";
 import { Link } from "react-router-dom";
@@ -26,15 +26,11 @@ import ShareModal from "../../components/common/ShareModal";
 import StatusBadge from "../../components/common/StatusBadge";
 import { getEventStatus } from "../../utils/eventUtils";
 import { useMyEvents } from "../../context/MyEventsContext";
+import { useAuth } from "../../context/AuthContext";
+import useBookmarks from "../../hooks/useBookmarks";
 import ReminderControls from "../../components/reminders/ReminderControls";
 import AddToCalendar from "../../components/common/AddToCalendar";
 import SocialShareButtons from "../../components/common/SocialShareButtons";
-import {
-  addBookmarkedEvent,
-  isEventBookmarked,
-  removeBookmarkedEvent,
-  subscribeToBookmarkChanges,
-} from "../../utils/bookmarkUtils";
 import { checkRegistrationConflict } from "../../utils/conflictDetection";
 
 const getCapacityStyles = (ratio, isFull) => {
@@ -102,7 +98,10 @@ const EventCapacity = ({ attendees, maxAttendees }) => {
 };
 
 const EventCard = ({ event }) => {
-  const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
+  const { user } = useAuth();
+  const userId = user?.id || user?.email || "guest";
+  const { isBookmarked: checkBookmarked, toggleBookmark } = useBookmarks(userId);
+  const isBookmarked = checkBookmarked(event.id);
   const titleId = useId();
   const { myEvents, isRegistered } = useMyEvents();
   const [showBookmarkTooltip, setShowBookmarkTooltip] = useState(false);
@@ -126,7 +125,7 @@ const EventCard = ({ event }) => {
 
   const computedStatus = getEventStatus(event);
   const isPastEvent = computedStatus === "past" || computedStatus === "ended";
-  const canSetReminder = isEventBookmarked(event.id) || isUserRegistered;
+  const canSetReminder = isBookmarked || isUserRegistered;
 
   const handleCopyLink = (e) => {
     e.preventDefault();
@@ -149,21 +148,13 @@ const EventCard = ({ event }) => {
 
 const durationText = getEventDuration(event);
 
-  useEffect(() => {
-    setIsBookmarked(isEventBookmarked(event.id));
-
-    return subscribeToBookmarkChanges(() => {
-      setIsBookmarked(isEventBookmarked(event.id));
-    });
-  }, [event.id]);
-
   const handleBookmarkToggle = useCallback(
     (e) => {
       e.preventDefault();
       e.stopPropagation();
 
       if (isBookmarked) {
-        removeBookmarkedEvent(event.id);
+        toggleBookmark(event);
         toast.info("Removed from bookmarked events.", {
           toastId: `bookmark-${event.id}`,
           autoClose: 1800,
@@ -172,7 +163,7 @@ const durationText = getEventDuration(event);
         return;
       }
 
-      addBookmarkedEvent({
+      toggleBookmark({
         ...event,
         status: computedStatus,
       });
@@ -182,7 +173,7 @@ const durationText = getEventDuration(event);
         className: "custom-toast",
       });
     },
-    [isBookmarked, event, computedStatus]
+    [isBookmarked, event, computedStatus, toggleBookmark]
   );
 
   return (

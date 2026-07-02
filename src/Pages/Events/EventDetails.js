@@ -9,7 +9,8 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
 import { Calendar, MapPin, Clock, Tag, CalendarPlus, Link2, Check } from "lucide-react";
 import { getEventStatus, isEventRegistrationClosed } from "../../utils/eventUtils";
-import { isEventBookmarked } from "../../utils/bookmarkUtils";
+import { useAuth } from "../../context/AuthContext";
+import useBookmarks from "../../hooks/useBookmarks";
 import { DRAFT_KEY } from "../../constants/eventDefaults";
 import { useMyEvents } from "../../context/MyEventsContext";
 import { logger } from "../../utils/logger";
@@ -19,7 +20,6 @@ import EventCancellationModal from "../../components/events/EventCancellationMod
 import SimilarEvents from "../../components/events/SimilarEvents";
 import { EventDetailSkeleton } from "../../components/common/SkeletonLoaders";
 import LazyImage from "../../components/common/LazyImage";
-import { useAuth } from "../../context/AuthContext";
 import { exportToCSV, exportToJSON } from "../../utils/exportUtils";
 import { ROLES } from "../../config/roles";
 import { marked } from "marked";
@@ -41,6 +41,7 @@ const EventDetails = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isBookmarked } = useBookmarks(user?.id || user?.email || "guest");
 
   const isOrganizer = user?.roles?.includes(ROLES.ORGANIZER) || user?.roles?.includes(ROLES.ADMIN);
 
@@ -294,7 +295,7 @@ ${window.location.href}
     );
   }
 
-  const canSetReminder = isEventBookmarked(event.id) || isRegistered(event.id);
+  const canSetReminder = isBookmarked(event.id) || isRegistered(event.id);
   const isRegistrationClosed = isEventRegistrationClosed(event);
   const registrationEnd = event.registrationEnd
   ? new Date(event.registrationEnd)

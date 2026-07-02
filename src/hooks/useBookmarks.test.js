@@ -169,4 +169,24 @@ describe("useBookmarks", () => {
     const { result } = renderHook(() => useBookmarks("corrupt-user"));
     expect(result.current.bookmarks).toEqual([]);
   });
+
+  it("migrates legacy eventra_bookmarked_events into per-user bookmark storage", () => {
+    localStorage.setItem(
+      "eventra_bookmarked_events",
+      JSON.stringify([
+        {
+          id: "legacy-1",
+          title: "Legacy Event",
+          date: "2026-07-01",
+          location: "Online",
+          bookmarkedAt: "2026-06-01T10:00:00.000Z",
+        },
+      ]),
+    );
+
+    const { result } = renderHook(() => useBookmarks("legacy-user"));
+    expect(result.current.bookmarks).toHaveLength(1);
+    expect(result.current.bookmarks[0].id).toBe("legacy-1");
+    expect(localStorage.getItem("eventra_bookmarked_events")).toBeNull();
+  });
 });
