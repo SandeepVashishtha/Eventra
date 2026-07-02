@@ -6,6 +6,7 @@ import {
 import useReducedMotion from "../../hooks/useReducedMotion";
 import VirtualBoothModal from "../../components/events/VirtualBoothModal";
 import { toast } from "react-toastify";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 // Default premium developer sponsor booths (fallback if none loaded from designer)
 const DEFAULT_SPONSORS = [
@@ -131,22 +132,39 @@ const VirtualVenueWalkthrough = () => {
 
   // Load custom sponsor booths from local storage
   useEffect(() => {
+    let baseSponsors = [...DEFAULT_SPONSORS];
     const savedLayout = localStorage.getItem("eventra_floorplan_default");
+    
+    // Check if the floorplan designer has overriding sponsors
     if (savedLayout) {
       try {
-        const elements = JSON.parse(savedLayout);
+        const elements = safeJsonParse(savedLayout, {});
         const sponsors = elements.filter(el => el.isSponsorBooth);
         if (sponsors.length > 0) {
-          setSponsorBooths(sponsors);
-        } else {
-          setSponsorBooths(DEFAULT_SPONSORS);
+          baseSponsors = sponsors;
         }
       } catch (e) {
-        setSponsorBooths(DEFAULT_SPONSORS);
+        console.error("Failed to parse floorplan", e);
       }
-    } else {
-      setSponsorBooths(DEFAULT_SPONSORS);
     }
+    
+    // Check if the Dedicated Sponsor Dashboard has updated the booth
+    const dashboardSettings = localStorage.getItem("eventra_sponsor_settings");
+    if (dashboardSettings) {
+      try {
+        const customSponsor = safeJsonParse(dashboardSettings, {});
+        // Ensure it's in the array (replace the first sponsor for demo purposes, or push it)
+        if (baseSponsors.length > 0) {
+          baseSponsors[0] = customSponsor;
+        } else {
+          baseSponsors.push(customSponsor);
+        }
+      } catch (e) {
+        console.error("Failed to parse sponsor dashboard settings", e);
+      }
+    }
+    
+    setSponsorBooths(baseSponsors);
   }, []);
 
   const handleMouseMove = (e) => {
@@ -176,7 +194,7 @@ const VirtualVenueWalkthrough = () => {
         <div>
           <div className="flex items-center gap-2">
             <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
-            <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-500 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-extrabold tracking-tight bg-linear-to-r from-indigo-400 via-purple-400 to-pink-500 bg-clip-text text-transparent">
               Eventra 3D Virtual Venue
             </h1>
           </div>
@@ -244,7 +262,7 @@ const VirtualVenueWalkthrough = () => {
                   <button
                     key={room.id}
                     onClick={() => setSelectedRoom(room)}
-                    className="absolute bg-gradient-to-tr text-white p-3 rounded-2xl flex flex-col justify-between border select-none transition-all duration-300 transform active:scale-95 cursor-pointer outline-none group/item"
+                    className="absolute bg-linear-to-tr text-white p-3 rounded-2xl flex flex-col justify-between border select-none transition-all duration-300 transform active:scale-95 cursor-pointer outline-none group/item"
                     style={{
                       left: room.coordinates.x,
                       top: room.coordinates.y,
@@ -330,7 +348,7 @@ const VirtualVenueWalkthrough = () => {
             <div className="text-[10px] font-bold tracking-widest text-indigo-400 uppercase">Currently Exploring</div>
             <div className="space-y-2">
               <h2 className="text-2xl font-extrabold flex items-center gap-2">
-                <span className="w-1.5 h-6 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-full" />
+                <span className="w-1.5 h-6 bg-linear-to-b from-indigo-500 to-purple-500 rounded-full" />
                 {selectedRoom.label}
               </h2>
               <p className="text-xs text-gray-400 leading-relaxed bg-white/5 border border-white/5 p-3 rounded-xl">
@@ -368,7 +386,7 @@ const VirtualVenueWalkthrough = () => {
                     <button
                       key={booth.id}
                       onClick={() => handleOpenBooth(booth)}
-                      className="p-3.5 bg-gradient-to-r from-slate-900 to-indigo-950/30 hover:to-indigo-950/60 border border-white/5 hover:border-indigo-500/30 rounded-xl transition-all duration-300 text-left flex items-center justify-between group cursor-pointer"
+                      className="p-3.5 bg-linear-to-r from-slate-900 to-indigo-950/30 hover:to-indigo-950/60 border border-white/5 hover:border-indigo-500/30 rounded-xl transition-all duration-300 text-left flex items-center justify-between group cursor-pointer"
                     >
                       <div className="flex items-center gap-3">
                         {/* Mock logo shape */}
@@ -376,12 +394,13 @@ const VirtualVenueWalkthrough = () => {
                           {booth.sponsorLogo ? (
                             <img
                               src={booth.sponsorLogo}
-                              alt=""
+                              alt={booth.label ? `${booth.label} logo` : "Sponsor logo"}
                               className="w-5 h-5 object-contain"
                               onError={(e) => {
                                 e.target.onerror = null;
                                 e.target.src = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=40";
                               }}
+                               loading="lazy"
                             />
                           ) : (
                             booth.label?.substring(0, 2).toUpperCase() || "SP"
