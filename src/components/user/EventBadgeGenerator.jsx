@@ -200,7 +200,7 @@ export default function EventBadgeGenerator({ onClose, userStats = {} }) {
               {/* Progress bar */}
               <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
                 <motion.div 
-                  className="h-full bg-gradient-to-r from-indigo-500 to-purple-500" 
+                  className="h-full bg-linear-to-r from-indigo-500 to-purple-500" 
                   animate={{ width: `${(completedCount / 3) * 100}%` }}
                 />
               </div>
@@ -320,7 +320,7 @@ export default function EventBadgeGenerator({ onClose, userStats = {} }) {
           {/* Badge element to snapshot */}
           <div 
             ref={badgeRef}
-            className={`w-[260px] h-[400px] bg-gradient-to-b ${currentTemplate.bgGradient} border-2 ${currentTemplate.borderClass} rounded-3xl relative overflow-hidden flex flex-col justify-between items-center p-5 select-none`}
+            className={`w-[260px] h-[400px] bg-linear-to-b ${currentTemplate.bgGradient} border-2 ${currentTemplate.borderClass} rounded-3xl relative overflow-hidden flex flex-col justify-between items-center p-5 select-none`}
             style={{ fontFamily: "Inter, sans-serif" }}
           >
             {/* Template Ambient Glow Overlay */}
@@ -339,7 +339,7 @@ export default function EventBadgeGenerator({ onClose, userStats = {} }) {
             <div className="flex flex-col items-center space-y-3 z-10 mt-3">
               <div className="relative">
                 {/* Aura border */}
-                <span className={`absolute -inset-1 rounded-full bg-gradient-to-r ${currentTemplate.ringClass} blur-xs opacity-80 animate-pulse`} />
+                <span className={`absolute -inset-1 rounded-full bg-linear-to-r ${currentTemplate.ringClass} blur-xs opacity-80 animate-pulse`} />
                 <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-slate-800 bg-slate-900 flex items-center justify-center">
                   {avatar ? (
                     <img src={avatar} alt="Avatar" className="w-full h-full object-cover" loading="lazy" />

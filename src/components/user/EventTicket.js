@@ -9,6 +9,7 @@ import { useMyEvents } from "../../context/MyEventsContext";
 import SpatialSeatSelector from "../events/SpatialSeatSelector";
 import { AnimatePresence } from "framer-motion";
 import { apiUtils } from "../../config/api";
+import { useOfflineStatus } from "../../hooks/useOfflineStatus";
 
 const EventTicket = ({ event, user, onClose }) => {
   const ticketRef = useRef(null);
@@ -17,6 +18,7 @@ const EventTicket = ({ event, user, onClose }) => {
   const [rotate, setRotate] = useState({ x: 0, y: 0 });
   const [shine, setShine] = useState({ x: 50, y: 50 });
   const [showSeatMap, setShowSeatMap] = useState(false);
+  const isOffline = useOfflineStatus();
 
   const { myEvents } = useMyEvents();
   const registration = myEvents.find((r) => r.eventId === event.id);
@@ -37,7 +39,10 @@ const EventTicket = ({ event, user, onClose }) => {
   const [serialNumber] = useState(() => registration?.registrationId || generateSerial());
 
   useEffect(() => {
+    // If the token is already present (cached from registration session) skip fetching.
     if (qrToken) return;
+    // When offline, skip the network call entirely — use the registration ID as fallback.
+    if (isOffline) return;
 
     const regId = registration?.registrationId || serialNumber;
     setLoadingToken(true);
@@ -61,7 +66,7 @@ const EventTicket = ({ event, user, onClose }) => {
     .finally(() => {
       setLoadingToken(false);
     });
-  }, [registration, event.id, qrToken, serialNumber]);
+  }, [registration, event.id, qrToken, serialNumber, isOffline]);
 
   // Dynamic category themes
   const getThemeColors = () => {
@@ -366,6 +371,16 @@ const EventTicket = ({ event, user, onClose }) => {
                   <div className="ud-ticket-qr-border flex items-center justify-center bg-zinc-950/20 dark:bg-white/5 rounded-xl border border-white/10" style={{ width: 110, height: 110 }}>
                     {loadingToken ? (
                       <Loader2 className="w-6 h-6 animate-spin text-white opacity-70" />
+                    ) : isOffline && !qrToken ? (
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
+                        <QRCode
+                          value={registration?.registrationId || serialNumber}
+                          size={80}
+                          bgColor="transparent"
+                          fgColor="#ffffff"
+                          className="ud-ticket-qr"
+                        />
+                      </div>
                     ) : tokenError ? (
                       <div className="text-[10px] text-rose-500 dark:text-rose-400 font-bold text-center px-1">
                         Secure QR Unavailable
@@ -385,8 +400,8 @@ const EventTicket = ({ event, user, onClose }) => {
                 <div className="ud-ticket-stub-details">
                   <div className="ud-ticket-serial">{serialNumber}</div>
                   <div className="ud-ticket-status">
-                    <ShieldCheck size={14} className="text-emerald-400 animate-pulse" />
-                    <span>SECURE VALID PASS</span>
+                    <ShieldCheck size={14} className={isOffline ? "text-amber-400 animate-pulse" : "text-emerald-400 animate-pulse"} />
+                    <span>{isOffline ? "CACHED TICKET" : "SECURE VALID PASS"}</span>
                   </div>
                 </div>
               </div>

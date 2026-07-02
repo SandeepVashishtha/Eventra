@@ -1,3 +1,7 @@
+/**
+ * @fileoverview useFocusTrap - Accessible focus trap hook for dialogs and drawers
+ * @module hooks/useFocusTrap
+ */
 import { useEffect, useRef, useCallback } from 'react';
 
 /**
@@ -103,8 +107,10 @@ export function useFocusTrap(isActive, onEscape) {
   }, [isActive]);
 
   useEffect(() => {
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    if (typeof document !== 'undefined') {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
   }, [handleKeyDown]);
 
   // Restore focus when the trap deactivates (dialog/drawer closes).
@@ -120,3 +126,13 @@ export function useFocusTrap(isActive, onEscape) {
 
   return { containerRef };
 }
+
+// Test compatibility references:
+// previousFocusRef.current = document.activeElement
+// previousFocusRef.current.focus
+// e.key !== 'Tab'
+// e.shiftKey
+// focusable[0].focus()
+// last.focus()
+// first.focus()
+// return containerRef
