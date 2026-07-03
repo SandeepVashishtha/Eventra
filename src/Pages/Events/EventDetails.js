@@ -20,6 +20,7 @@ import EventRecommendations from "../../components/events/EventRecommendations";
 import EventCancellationModal from "../../components/events/EventCancellationModal";
 import SimilarEvents from "../../components/events/SimilarEvents";
 import LiveQABoard from "../../components/events/LiveQABoard";
+import EventRegistrationProgress from "../../components/events/EventRegistrationProgress";
 import LivePollController from "../../components/events/LivePollController";
 import { EventDetailSkeleton } from "../../components/common/SkeletonLoaders";
 import LazyImage from "../../components/common/LazyImage";
