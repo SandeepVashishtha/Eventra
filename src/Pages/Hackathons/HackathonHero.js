@@ -43,7 +43,7 @@ export default function HackathonHero({
   const { user } = useAuth();
 
   return (
-    <div className="relative overflow-hidden bg-gradient-to-b from-slate-50 via-indigo-50/40 to-slate-50 dark:from-slate-950 dark:via-indigo-950/60 dark:to-slate-950 text-slate-900 dark:text-white py-16 sm:py-20 md:py-24 border-b border-slate-200 dark:border-indigo-900/40 transition-colors duration-300">
+    <div className="relative overflow-hidden bg-gradient-to-b from-slate-50 via-indigo-50/40 to-slate-50 dark:from-slate-950 dark:via-indigo-950/60 dark:to-slate-950 text-slate-900 dark:text-white py-8 sm:py-10 md:py-12 border-b border-slate-200 dark:border-indigo-900/40 transition-colors duration-300">
 
       {/* ── Animated mesh background blobs ── */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -74,8 +74,7 @@ export default function HackathonHero({
       </div>
 
       {/* ======================= HERO SECTION ======================= */}
-      <div className="relative px-4 min-h-[75vh] flex flex-col items-center justify-center text-center z-10">
-
+      <div className="relative px-4 min-h-[55vh] flex flex-col items-center justify-start text-center z-10">
         {/* Premium badge */}
         <motion.div
           initial={{ opacity: 0, y: -16 }}
