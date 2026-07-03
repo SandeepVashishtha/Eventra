@@ -40,6 +40,21 @@ const getDB = () => {
     };
     request.onsuccess = (e) => {
       dbInstance = e.target.result;
+
+      // Reset the singleton if another tab upgrades the DB version.
+      // Failing to close here blocks the other tab's upgrade indefinitely.
+      dbInstance.onversionchange = () => {
+        dbInstance.close();
+        dbInstance = null;
+        logger.warn("[P2P Cache] IndexedDB version change detected. Connection closed — will reopen on next access.");
+      };
+
+      // Reset the singleton if the connection is closed for any other reason.
+      dbInstance.onclose = () => {
+        dbInstance = null;
+        logger.warn("[P2P Cache] IndexedDB connection closed unexpectedly. Will reopen on next access.");
+      };
+
       resolve(dbInstance);
     };
     request.onerror = (e) => {
