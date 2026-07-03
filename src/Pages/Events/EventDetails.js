@@ -20,6 +20,8 @@ import EventRecommendations from "../../components/events/EventRecommendations";
 import EventCancellationModal from "../../components/events/EventCancellationModal";
 import SimilarEvents from "../../components/events/SimilarEvents";
 import LiveQABoard from "../../components/events/LiveQABoard";
+import EventRegistrationProgress from "../../components/common/EventRegistrationProgress";
+import LivePollController from "../../components/admin/LivePollController";
 import { EventDetailSkeleton } from "../../components/common/SkeletonLoaders";
 import LazyImage from "../../components/common/LazyImage";
 import { exportToCSV, exportToJSON } from "../../utils/exportUtils";
@@ -27,7 +29,6 @@ import { ROLES } from "../../config/roles";
 import { marked } from "marked";
 import ShareModal from "../../components/common/ShareModal";
 import SocialShareButtons from "../../components/common/SocialShareButtons";
-// import { generateEventSharingData } from "../../utils/shareUtils";
 import { downloadICSFile, generateGoogleCalendarLink, generateOutlookLink } from "../../utils/calendarExporter";
 import { RecentlyViewedTracker } from "../../components/common/RecentlyViewedEvents";
 import { apiUtils, API_ENDPOINTS } from "../../config/api";
@@ -91,7 +92,6 @@ const EventDetails = () => {
       if (!isLatestRequest()) return;
       if (isRequestCanceled(error, controller.signal)) return;
 
-      // Fall back to bundled mock data when the API is unreachable
       const fallback = mockEvents.find((item) => String(item.id) === eventId);
       if (fallback) {
         setEvent({ ...fallback, status: getEventStatus(fallback) });
@@ -262,10 +262,6 @@ ${window.location.href}
     }
   };
 
-  // For test compatibility with older spec expecting animate-spin spinner:
-  // {fetchLoading && <div className="animate-spin" style={{ display: 'none' }} />}
-
-  // Keyboard shortcuts for Event Detail page
   useKeyboardShortcuts({
     r: () => { if (event && !isEventRegistrationClosed(event)) navigate(`/events/${event.id}/register`); },
     c: handleCopy,
