@@ -4,7 +4,6 @@ import useLiveAudience from "../../hooks/useLiveAudience.js";
 import { ThumbsUp, Trash, Flag, Send, AlertTriangle, HelpCircle, Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 function formatTime(isoString) {
   try {
     return new Date(isoString).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -17,7 +16,6 @@ function isMod(user) {
   return user?.role === "admin" || user?.role === "organizer" || user?.role === "developer";
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
 function QuestionInputForm({ onSubmit, questionText, setQuestionText, submitting }) {
   return (
     <form onSubmit={onSubmit} className="relative flex flex-col gap-2">
@@ -130,7 +128,6 @@ function QuestionList({ loading, visibleQuestions, isModerator, handlers }) {
   ));
 }
 
-// ─── Action helpers (outside component to reduce hook body complexity) ─────────
 async function sendQuestion(submitQuestion, text, setSubmitting, setQuestionText) {
   setSubmitting(true);
   try {
@@ -171,7 +168,6 @@ async function sendDelete(deleteQuestion, qId) {
   }
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
 export default function LiveQABoard({ eventId }) {
   const { user } = useAuth();
   const { questions, status, loading, error, submitQuestion, upvoteQuestion, deleteQuestion, flagQuestion } =
@@ -242,5 +238,3 @@ export default function LiveQABoard({ eventId }) {
     </div>
   );
 }
-
-export default LiveQABoard;

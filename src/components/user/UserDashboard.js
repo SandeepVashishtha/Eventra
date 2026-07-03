@@ -1,8 +1,8 @@
 // src/hooks/useDashboardData.js
 import { useMemo } from 'react';
-import { useMyEvents } from '../context/MyEventsContext';
-import useBookmarks from '../hooks/useBookmarks';
-import { getEventStatus } from '../utils/eventUtils';
+import { useMyEvents } from '../../context/MyEventsContext';
+import useBookmarks from '../../hooks/useBookmarks';
+import { getEventStatus } from '../../utils/eventUtils';
 
 /* ---------------- Helper Functions ---------------- */
 
