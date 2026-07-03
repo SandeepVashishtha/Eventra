@@ -639,11 +639,11 @@ const TeamWorkspace = () => {
 
             {/* Chat History Panel */}
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
-              {chatHistory.map((msg, i) => {
+              {chatHistory.map((msg) => {
                 const isMe = msg.sender === MY_SENDER_ID;
                 return (
                   <div
-                    key={i}
+                    key={msg.id}
                     className={`flex gap-3 max-w-[85%] ${isMe ? "ml-auto flex-row-reverse" : ""}`}
                   >
                     {/* Member Avatar */}
