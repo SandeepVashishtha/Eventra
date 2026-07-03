@@ -2,7 +2,7 @@ import {
   getCleanExportSvgString,
   exportAsSVG,
   exportAsPNG,
-  downloadLayoutJSON,
+  // downloadLayoutJSON,
   importLayoutJSON,
 } from "./floorPlanExport";
 
@@ -10,7 +10,7 @@ import {
 // Helpers
 // ---------------------------------------------------------------------------
 
-const makeSvgRef = (content = "<svg></svg>") => ({
+const makeSvgRef = (_content = "<svg></svg>") => ({
   current: {
     cloneNode: jest.fn(() => {
       const clone = document.createElementNS("http://www.w3.org/2000/svg", "svg");

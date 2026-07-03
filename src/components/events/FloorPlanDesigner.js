@@ -9,6 +9,7 @@ import { PRESETS } from "../../constants/floorPlanPresets";
 import { checkCollision, getSeatPositions } from "../../utils/floorPlanGeometry";
 import { exportAsSVG, exportAsPNG, downloadLayoutJSON, importLayoutJSON } from "../../utils/floorPlanExport";
 import "./FloorPlanDesigner.css";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
   const navigate = useNavigate();
@@ -21,7 +22,11 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
   const [announcement, setAnnouncement] = useState("");
   const announce = useCallback((message) => {
     setAnnouncement("");
-    setTimeout(() => { setAnnouncement(message); }, 50);
+    if (announceTimerRef.current) clearTimeout(announceTimerRef.current);
+    announceTimerRef.current = setTimeout(() => {
+      setAnnouncement(message);
+      announceTimerRef.current = null;
+    }, 50);
   }, []);
 
   const [zoom, setZoom] = useState(0.8);
@@ -31,6 +36,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
 
   const canvasRef = useRef(null);
   const rafRef = useRef(null);
+  const announceTimerRef = useRef(null);
   const zoomRef = useRef(zoom);
   const snapToGridRef = useRef(snapToGrid);
   const selectedIdRef = useRef(selectedId);
@@ -141,20 +147,31 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
     const currentSelectedId = selectedIdRef.current;
     commitElementsChange((currentElements) => currentElements.map(el => {
       const nextAssignments = { ...el.assignedAttendees };
-      Object.keys(nextAssignments).forEach(k => {
-        if (nextAssignments[k] === attendeeName) {
-          delete nextAssignments[k];
-        }
-      });
       if (el.id === currentSelectedId) {
         if (attendeeName !== "") {
+          Object.keys(nextAssignments).forEach(k => {
+            if (nextAssignments[k] === attendeeName) {
+              delete nextAssignments[k];
+            }
+          });
           nextAssignments[seatIndex] = attendeeName;
         } else {
           delete nextAssignments[seatIndex];
         }
         return { ...el, assignedAttendees: nextAssignments };
       }
-      return { ...el, assignedAttendees: nextAssignments };
+      
+      // Clear duplicate attendee assignments from other tables
+      let changed = false;
+      if (attendeeName !== "") {
+        Object.keys(nextAssignments).forEach(k => {
+          if (nextAssignments[k] === attendeeName) {
+            delete nextAssignments[k];
+            changed = true;
+          }
+        });
+      }
+      return changed ? { ...el, assignedAttendees: nextAssignments } : el;
     }));
   };
 
@@ -162,9 +179,8 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
     const savedLayout = localStorage.getItem(`eventra_floorplan_${eventId}`);
     let initialElements = [];
     if (savedLayout) {
-      try {
-        initialElements = JSON.parse(savedLayout);
-      } catch (e) {
+      initialElements = safeJsonParse(savedLayout, []);
+      if (!Array.isArray(initialElements)) {
         toast.error("Invalid floor plan format");
         initialElements = PRESETS.banquet;
       }
@@ -425,6 +441,10 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
       if (rafRef.current !== null) {
         cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
+      }
+      if (announceTimerRef.current !== null) {
+        clearTimeout(announceTimerRef.current);
+        announceTimerRef.current = null;
       }
     };
   }, [handleMouseMove, handleMouseUp]);
