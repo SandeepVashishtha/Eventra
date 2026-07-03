@@ -32,7 +32,7 @@ import SocialShareButtons from "../../components/common/SocialShareButtons";
 import { downloadICSFile, generateGoogleCalendarLink, generateOutlookLink } from "../../utils/calendarExporter";
 import { RecentlyViewedTracker } from "../../components/common/RecentlyViewedEvents";
 import { apiUtils, API_ENDPOINTS } from "../../config/api";
-import { getLastUpdated } from "../../utils/lastUpdatedUtils";
+import { getLastUpdated } from "../../utils/LastUpdatedUtils";
 import mockEvents from "./eventsMockData.json";
 import CopyButton from '../../components/ui/CopyButton';
 const isRequestCanceled = (error, signal) =>
