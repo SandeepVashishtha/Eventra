@@ -17,17 +17,26 @@ import {
 
 import { safeJsonParse } from "../../../utils/safeJsonParse";
 import { ENV } from "../../../config/env";
-import {
-  fetchRepository,
-  fetchContributors,
-  fetchPullRequests,
-} from "../../../utils/githubApiClient";
+import { fetchGitHubJson } from "../../../utils/githubApiClient";
 
 const repoPath = ENV.GITHUB_REPO;
 const [GITHUB_USER, GITHUB_REPO] = repoPath.split("/");
 
 const LS_KEY = "eventra:repoStats";
 const CACHE_MS = 30 * 60 * 1000; // 30 min
+const PULL_REQUESTS_PAGE_SIZE = 100;
+
+const fetchRepository = (owner, repo) =>
+  fetchGitHubJson(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`);
+
+const fetchContributors = (owner, repo, page, perPage) =>
+  fetchGitHubJson(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contributors`, {
+    page,
+    per_page: perPage,
+  });
+
+const fetchPullRequests = (owner, repo, params) =>
+  fetchGitHubJson(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pulls`, params);
 
 const readCache = () => {
   try {
@@ -75,7 +84,10 @@ export default function GitHubStats() {
           await Promise.allSettled([
             fetchRepository(GITHUB_USER, GITHUB_REPO),
             fetchContributors(GITHUB_USER, GITHUB_REPO, 1, 1),
-            fetchPullRequests(GITHUB_USER, GITHUB_REPO, { per_page: 1 }),
+            fetchPullRequests(GITHUB_USER, GITHUB_REPO, {
+              state: "all",
+              per_page: PULL_REQUESTS_PAGE_SIZE,
+            }),
           ]);
 
         if (repoResult.status === "rejected") {
@@ -103,7 +115,10 @@ export default function GitHubStats() {
         if (prResult.status === "fulfilled") {
           const pullRequests = prResult.value;
           if (Array.isArray(pullRequests) && pullRequests.length > 0) {
-            prCount = pullRequests.length;
+            prCount =
+              pullRequests.length === PULL_REQUESTS_PAGE_SIZE
+                ? `${PULL_REQUESTS_PAGE_SIZE}+`
+                : pullRequests.length;
           }
         } else if (prResult.status === "rejected") {
           prCount = "—";
