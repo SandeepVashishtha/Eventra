@@ -23,7 +23,7 @@ export default function InstallAppButton() {
     if (!deferredPrompt) return;
 
     deferredPrompt.prompt();
-    const result = await deferredPrompt.userChoice;
+
     setDeferredPrompt(null);
     setIsInstallable(false);
   };

@@ -3,7 +3,7 @@
 ## Supported Versions
 
 | Version | Supported |
-|---------|-----------|
+| --- | --- |
 | Latest (`master`) | ✅ |
 | Older releases | ❌ |
 
