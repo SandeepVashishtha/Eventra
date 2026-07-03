@@ -47,8 +47,8 @@ const asEndOfDay = (date) => {
 };
 
 export const computeDateStatus = (event) => {
-  const startDate = parseEventDate(event.startDate || event.date);
-  const endDate = asEndOfDay(parseEventDate(event.endDate || event.date));
+  const startDate = parseEventDate(event.startDate || event.date || event.eventDate);
+  const endDate = asEndOfDay(parseEventDate(event.endDate || event.date || event.eventDate));
   const now = getServerTime();
 
   if (!startDate) return "upcoming";
@@ -95,7 +95,18 @@ export const isEventRegistrationClosed = (eventOrStatus) => {
   return status === "past" || status === "ended" || status === "cancelled";
 };
 
-export const normalizeEvent = (event) => ({
-  ...event,
-  status: getEventStatus(event),
-});
+export const normalizeEvent = (event) => {
+  if (!event) return event;
+  const mapped = {
+    ...event,
+    date: event.date || event.startDate || event.eventDate || null,
+    startDate: event.startDate || event.date || event.eventDate || null,
+    image: event.image || event.imageUrl || event.banner || null,
+    maxAttendees: event.maxAttendees ?? event.capacity ?? null,
+    attendees: event.attendees ?? event.registeredCount ?? event.participants ?? 0,
+  };
+  return {
+    ...mapped,
+    status: getEventStatus(mapped),
+  };
+};
