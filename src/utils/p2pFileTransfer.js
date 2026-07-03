@@ -488,38 +488,44 @@ export class P2PFileTransferCoordinator {
     this.isInitiator = false;
     this.updateState("connecting", 0, "-", senderId, 1);
 
-    this.pc = new RTCPeerConnection();
-    this.queuedRemoteCandidates = [];
+    try {
+      this.pc = new RTCPeerConnection();
+      this.queuedRemoteCandidates = [];
 
-    this.pc.ondatachannel = (e) => {
-      this.channel = e.channel;
-      this.setupDataChannel();
-    };
+      this.pc.ondatachannel = (e) => {
+        this.channel = e.channel;
+        this.setupDataChannel();
+      };
 
-    this.pc.onicecandidate = (e) => {
-      if (e.candidate) {
-        this.bc.postMessage({
-          type: "P2P_ICE",
-          fileId: this.fileId,
-          from: peerId,
-          to: senderId,
-          candidate: e.candidate
-        });
-      }
-    };
+      this.pc.onicecandidate = (e) => {
+        if (e.candidate) {
+          this.bc.postMessage({
+            type: "P2P_ICE",
+            fileId: this.fileId,
+            from: peerId,
+            to: senderId,
+            candidate: e.candidate
+          });
+        }
+      };
 
-    await this.pc.setRemoteDescription(new RTCSessionDescription(offer));
-    await this.processQueuedCandidates();
-    const answer = await this.pc.createAnswer();
-    await this.pc.setLocalDescription(answer);
+      await this.pc.setRemoteDescription(new RTCSessionDescription(offer));
+      await this.processQueuedCandidates();
+      const answer = await this.pc.createAnswer();
+      await this.pc.setLocalDescription(answer);
 
-    this.bc.postMessage({
-      type: "P2P_ANSWER",
-      fileId: this.fileId,
-      from: peerId,
-      to: senderId,
-      answer: answer
-    });
+      this.bc.postMessage({
+        type: "P2P_ANSWER",
+        fileId: this.fileId,
+        from: peerId,
+        to: senderId,
+        answer: answer
+      });
+    } catch (err) {
+      logger.error("handleOffer: WebRTC answer negotiation failed:", err);
+      this.updateState("failed");
+      this.cleanup();
+    }
   }
 
   // Initiator sets target's answer description
