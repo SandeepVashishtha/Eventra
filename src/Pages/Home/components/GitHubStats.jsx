@@ -17,17 +17,26 @@ import {
 
 import { safeJsonParse } from "../../../utils/safeJsonParse";
 import { ENV } from "../../../config/env";
-import {
-  fetchRepository,
-  fetchContributors,
-  fetchPullRequests,
-} from "../../../utils/githubApiClient";
+import { fetchGitHubJson } from "../../../utils/githubApiClient";
 
 const repoPath = ENV.GITHUB_REPO;
 const [GITHUB_USER, GITHUB_REPO] = repoPath.split("/");
 
 const LS_KEY = "eventra:repoStats";
 const CACHE_MS = 30 * 60 * 1000; // 30 min
+const CONTRIBUTORS_PAGE_SIZE = 100;
+
+const fetchRepository = (owner, repo) =>
+  fetchGitHubJson(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`);
+
+const fetchContributors = (owner, repo) =>
+  fetchGitHubJson(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contributors`, {
+    per_page: CONTRIBUTORS_PAGE_SIZE,
+    anon: 1,
+  });
+
+const fetchPullRequests = (owner, repo, params) =>
+  fetchGitHubJson(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pulls`, params);
 
 const readCache = () => {
   try {
@@ -74,7 +83,7 @@ export default function GitHubStats() {
         const [repoResult, contributorsResult, prResult] =
           await Promise.allSettled([
             fetchRepository(GITHUB_USER, GITHUB_REPO),
-            fetchContributors(GITHUB_USER, GITHUB_REPO, 1, 1),
+            fetchContributors(GITHUB_USER, GITHUB_REPO),
             fetchPullRequests(GITHUB_USER, GITHUB_REPO, { per_page: 1 }),
           ]);
 
@@ -93,7 +102,10 @@ export default function GitHubStats() {
         if (contributorsResult.status === "fulfilled") {
           const contributors = contributorsResult.value;
           if (Array.isArray(contributors) && contributors.length > 0) {
-            contribCount = contributors.length;
+            contribCount =
+              contributors.length === CONTRIBUTORS_PAGE_SIZE
+                ? `${CONTRIBUTORS_PAGE_SIZE}+`
+                : contributors.length;
           }
         } else if (contributorsResult.status === "rejected") {
           contribCount = "—";
