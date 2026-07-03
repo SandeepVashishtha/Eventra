@@ -31,7 +31,7 @@ const MESSAGE_REQUIRED_FIELDS = {
   UNSUBSCRIBE_ALL: ["tabId", "paths"],
   QUERY_SUBSCRIBERS: ["tabId"],
   SUBSCRIBERS_RESPONSE: ["tabId", "paths"],
-  SSE_MESSAGE: ["path", "data"],
+  SSE_MESSAGE: ["path", "data", "tabId"],
   SSE_STATUS: ["path", "status", "tabId"],
   RECONNECT_REQUEST: ["path"],
   PING: ["tabId"],
@@ -495,6 +495,7 @@ class SseMultiplexer {
         path,
         data: payload,
         eventType: evt.type,
+        tabId: this.tabId,
       });
     };
 
