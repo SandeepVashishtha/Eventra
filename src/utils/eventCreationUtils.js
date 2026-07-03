@@ -1,4 +1,4 @@
-import { parseTimeString } from "./timezoneUtils";
+import { parseTimeString } from "./timezoneUtils.js";
 
 export const parseTimeToMinutes = (timeStr) => {
   if (!timeStr) return 0;

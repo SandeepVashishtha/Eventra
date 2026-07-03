@@ -1,6 +1,6 @@
-import { API_ENDPOINTS, apiUtils } from "../config/api";
-import { sanitizeSessionState } from "../utils/sessionSanitization";
-import { safeJsonParse } from "../utils/safeJsonParse";
+import { API_ENDPOINTS, apiUtils } from "../config/api.js";
+import { sanitizeSessionState } from "../utils/sessionSanitization.js";
+import { safeJsonParse } from "../utils/safeJsonParse.js";
 
 export const CLOUD_RECOVERY_PENDING_KEY = "eventra:cloud-session-recovery:pending:v1";
 export const CLOUD_RECOVERY_CACHE_KEY = "eventra:cloud-session-recovery:cache:v1";
