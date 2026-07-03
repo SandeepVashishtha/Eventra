@@ -111,7 +111,6 @@ export function getAssistantReply(input, t) {
   };
 }
 
-// Backward-compatible exports for tests or legacy imports
 export const quickPrompts = getQuickPromptKeys();
 export const knowledgeBase = knowledgeBaseConfig;
 export const defaultAnswer = "chatbot.knowledge.default";

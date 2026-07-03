@@ -1,7 +1,3 @@
-/**
- * Centralized Backend Configuration (Vite Optimized)
- */
-
 import { resolveBackendUrl, DEV_FALLBACK_URL } from "./backendConfig/envResolver.js";
 import { normalizeBackendUrl } from "./backendConfig/urlUtils.js";
 import { validateBackendConfig, logValidationErrors } from "./backendConfig/validator.js";

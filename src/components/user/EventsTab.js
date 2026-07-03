@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import ReactDOM from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useReducedMotion } from "../../hooks/useReducedMotion";
@@ -49,14 +49,6 @@ const formatShortDate = (date) => {
     day: "numeric",
     month: "short",
   });
-};
-
-// Check if item is hackathon
-const isHackathon = (item) => {
-  const type = String(item?.type || "").toLowerCase();
-  const category = String(item?.category || "").toLowerCase();
-  const title = String(item?.title || "").toLowerCase();
-  return type === "hackathon" || category.includes("hackathon") || title.includes("hackathon");
 };
 
 // Filter events by search, status, type
@@ -354,6 +346,24 @@ const EventStats = ({ registeredCount, hostedCount, upcomingCount, completedCoun
   );
 };
 
+/* ---------------- Empty State Component ---------------- */
+const EventsEmptyState = () => (
+  <motion.div className="ud-content">
+    <div className="ud-tab-header">
+      <h2><Calendar /> Events</h2>
+    </div>
+    <EmptyState
+      title="No Events Yet"
+      description="You haven't registered for, hosted, or joined any events yet. Explore upcoming events to get started on your event journey!"
+      icon={Ticket}
+      actionLabel="Explore Events"
+      actionPath="/events"
+      secondaryActionLabel="Host an Event"
+      secondaryActionPath="/create-event"
+    />
+  </motion.div>
+);
+
 /* ---------------- Main EventsTab Component ---------------- */
 const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const prefersReducedMotion = useReducedMotion();
@@ -367,11 +377,6 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [cancelTarget, setCancelTarget] = useState(null);
   const [recentSearches, setRecentSearches] = useState([]);
-  const [pinnedEvents, setPinnedEvents] = useState([]);
-  const [recentPresets, setRecentPresets] = useState(() => {
-    const saved = localStorage.getItem("recentEventPresets");
-    return saved ? JSON.parse(saved) : [];
-  });
 
   const [filterStatus, setFilterStatus] = useState("All");
   const [filterType, setFilterType] = useState("All");
@@ -468,7 +473,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
         const raw = localStorage.getItem("recentSearches");
         saved = raw ? JSON.parse(raw) : [];
         if (!Array.isArray(saved)) saved = [];
-      } catch (e) {
+      } catch {
         saved = [];
       }
       const updatedHistory = [
@@ -520,7 +525,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
       const eventLink = `${window.location.origin}/events/${event.id || event.eventId}`;
       await navigator.clipboard.writeText(eventLink);
       toast.success("Link copied successfully");
-    } catch (error) {
+    } catch {
       toast.error("Failed to copy link");
     }
   };
@@ -556,31 +561,11 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
     return <EventsLoading />;
   }
 
-  // Add this BEFORE the EventsTab component (around line 400-415)
-/* ---------------- Empty State Component ---------------- */
-const EventsEmptyState = () => (
-  <motion.div className="ud-content">
-    <div className="ud-tab-header">
-      <h2><Calendar /> Events</h2>
-    </div>
-    <EmptyState
-      title="No Events Yet"
-      description="You haven't registered for, hosted, or joined any events yet. Explore upcoming events to get started on your event journey!"
-      icon={Ticket}
-      actionLabel="Explore Events"
-      actionPath="/events"
-      secondaryActionLabel="Host an Event"
-      secondaryActionPath="/create-event"
-    />
-  </motion.div>
-);
+  const hasNoEvents = registeredCount === 0 && hostedCount === 0 && waitlistEvents.length === 0;
 
-// Then find the empty state check (around line 555-560) and REPLACE with:
-const hasNoEvents = registeredCount === 0 && hostedCount === 0 && waitlistEvents.length === 0;
-
-if (hasNoEvents) {
-  return <EventsEmptyState />;
-}
+  if (hasNoEvents) {
+    return <EventsEmptyState />;
+  }
 
   return (
     <motion.div className="ud-content">
@@ -812,7 +797,7 @@ if (hasNoEvents) {
                 Cancel Registration?
               </h3>
               <p className="text-gray-600 dark:text-gray-300 mb-6">
-                Are you sure you want to cancel your registration for "{cancelTarget?.title}"?
+                Are you sure you want to cancel your registration for &quot;{cancelTarget?.title}&quot;?
               </p>
               <div className="flex gap-3 justify-end">
                 <button

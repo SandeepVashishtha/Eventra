@@ -21,10 +21,10 @@ const AuthContext = createContext();
  * @returns {Object} Authentication context state and helper functions.
  */
 export const useAuth = () => {
+  const context = useContext(AuthContext);
   if (typeof globalThis !== "undefined" && typeof globalThis.mockAuth === "function") {
     return globalThis.mockAuth();
   }
-  const context = useContext(AuthContext);
   if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
