@@ -404,7 +404,7 @@ const WhatsHappening = () => {
                               </span>
                             </div>
 
-                            <h3 title={event.title} className="text-lg sm:text-xl font-semibold text-slate-900 dark:text-white mb-2 leading-snug group-hover:text-brand-violet dark:group-hover:text-brand-violet transition-colors line-clamp-2 wrap-break-word min-w-0">
+                            <h3 title={event.title} className="text-lg sm:text-xl font-semibold text-slate-900 dark:text-white mb-2 leading-snug group-hover:text-brand-violet dark:group-hover:text-brand-violet transition-colors line-clamp-2 break-words min-w-0">
                               {event.title}
                             </h3>
                             
