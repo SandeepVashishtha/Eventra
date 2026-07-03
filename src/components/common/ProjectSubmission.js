@@ -3,7 +3,7 @@ import { getPublicErrorMessage, FORM_ERRORS } from "../../utils/errorMessages";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
-import { API_ENDPOINTS } from "../../config/api";
+
 import { projectService } from "../../services/projectService";
 import { getUserFullName } from "../../utils/userNameUtils.mjs";
 import CharacterCounter from "./CharacterCounter";
@@ -122,7 +122,7 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
         </p>
         <button
           onClick={onClose}
-          className="bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white font-medium py-2.5 px-6 rounded-lg shadow-md transition-transform duration-200 hover:-translate-y-0.5"
+          className="bg-linear-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white font-medium py-2.5 px-6 rounded-lg shadow-md transition-transform duration-200 hover:-translate-y-0.5"
          aria-label="button">
           Close
         </button>
@@ -181,6 +181,9 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
               aria-describedby="description-counter"
               placeholder="Describe your project, its features, and purpose"
             />
+            <p className="text-xs text-gray-500 mt-1 text-right">
+  {description.length}/500 characters
+</p>
             <div className="flex justify-end mt-1">
               <CharacterCounter id="description-counter" value={formData.description} maxLength={1000} />
             </div>

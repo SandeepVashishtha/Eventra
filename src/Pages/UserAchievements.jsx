@@ -88,9 +88,9 @@ export default function UserAchievements() {
       name: 'GSSoC Contributor',
       description: 'Register for GSSoC specialized repository hackathons.',
       icon: '💻',
-      currentProgress: Math.min(achievements.totalEvents || 0, 2),
+      currentProgress: Math.min(achievements.gssocEvents || 0, 2),
       targetProgress: 2,
-      earned: (achievements.totalEvents || 0) >= 2,
+      earned: (achievements.gssocEvents || 0) >= 2,
       rewardXP: 200,
       details: 'Collaborate with global open-source developers and sync your GSSoC progress boards.',
       log: ['+200 XP awarded', 'GSSoC Specialist badge enabled'],
@@ -107,7 +107,7 @@ export default function UserAchievements() {
       details: 'Dive deep into AI integrations, blockchain, and next-generation Web3 protocols.',
       log: ['+400 XP awarded', 'AI Specialist badge enabled'],
     },
-  ], [achievements.totalEvents, achievements.currentStreak]);
+  ], [achievements.totalEvents, achievements.currentStreak, achievements.gssocEvents]);
 
   const operationalBadges = achievements.badges && achievements.badges.length > 0
     ? achievements.badges.map((b, idx) => ({
@@ -178,8 +178,8 @@ export default function UserAchievements() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    // Free browser memory after download triggers (100ms ensures download starts first)
-    setTimeout(() => URL.revokeObjectURL(url), 100);
+    // Free browser memory immediately to prevent SPA memory leaks
+    URL.revokeObjectURL(url);
     toast.success(t("userAchievements.toastCertificateDownloaded"));
   };
 
@@ -201,7 +201,7 @@ export default function UserAchievements() {
               <Trophy className="w-4.5 h-4.5 animate-pulse" />
               {t("userAchievements.progressionStudio")}
             </div>
-            <h1 className="text-3xl sm:text-4xl font-black tracking-tight mt-1.5 bg-clip-text text-transparent bg-gradient-to-r from-text to-primary">
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tight mt-1.5 bg-clip-text text-transparent bg-linear-to-r from-text to-primary">
               {t("userAchievements.heading")}
             </h1>
             <p className="text-text-light mt-2 text-xs sm:text-sm max-w-2xl leading-relaxed">
@@ -211,7 +211,7 @@ export default function UserAchievements() {
           <div className="shrink-0">
             <button
               onClick={() => setIsBadgeModalOpen(true)}
-              className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-primary via-primary/80 to-secondary hover:opacity-90 text-white font-extrabold text-xs uppercase tracking-wider transition-all shadow-premium-md hover:shadow-glow-sm active:scale-[0.98] cursor-pointer"
+              className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-linear-to-r from-primary via-primary/80 to-secondary hover:opacity-90 text-white font-extrabold text-xs uppercase tracking-wider transition-all shadow-premium-md hover:shadow-glow-sm active:scale-[0.98] cursor-pointer"
             >
               <Sparkles className="w-4 h-4 text-amber-300 animate-spin-slow" />
               <span>{t("userAchievements.attendeeBadgeCenter")}</span>
@@ -385,7 +385,7 @@ export default function UserAchievements() {
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-gradient-to-br from-primary/20 via-primary/10 to-card-bg/60 border border-primary/20 backdrop-blur-xl rounded-3xl p-6 shadow-premium-lg space-y-4"
+            className="bg-linear-to-br from-primary/20 via-primary/10 to-card-bg/60 border border-primary/20 backdrop-blur-xl rounded-3xl p-6 shadow-premium-lg space-y-4"
           >
             <div className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-yellow-450 animate-bounce" />
@@ -511,7 +511,7 @@ export default function UserAchievements() {
                             <motion.div
                               initial={{ width: 0 }}
                               animate={{ width: `${Math.min(100, (badge.currentProgress / badge.targetProgress) * 100)}%` }}
-                              className={`h-full rounded-full bg-gradient-to-r ${badge.earned ? 'from-emerald-500 to-teal-500' : 'from-primary/60 to-primary'}`}
+                              className={`h-full rounded-full bg-linear-to-r ${badge.earned ? 'from-emerald-500 to-teal-500' : 'from-primary/60 to-primary'}`}
                             />
                           </div>
                         </div>
@@ -540,7 +540,7 @@ export default function UserAchievements() {
                             <div className="flex flex-wrap gap-2 pt-0.5">
                               <button
                                 onClick={() => setActiveShareBadge(badge)}
-                                className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-extrabold rounded-xl bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-white transition-all cursor-pointer shadow-premium-sm hover:shadow-glow-sm hover:scale-[1.03]"
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-extrabold rounded-xl bg-linear-to-r from-primary to-secondary hover:opacity-90 text-white transition-all cursor-pointer shadow-premium-sm hover:shadow-glow-sm hover:scale-[1.03]"
                               >
                                 <Share2 className="w-3.5 h-3.5" />
                                 <span>{t("userAchievements.badgesSectionShareCertificate")}</span>
@@ -569,6 +569,7 @@ export default function UserAchievements() {
         <QuestCenter
           totalEvents={achievements.totalEvents}
           currentStreak={achievements.currentStreak}
+          gssocEvents={achievements.gssocEvents}
         />
 
       </div>
@@ -678,7 +679,7 @@ export default function UserAchievements() {
 
                     <button
                       onClick={() => handleDownloadSVG(activeShareBadge)}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-xs font-black uppercase tracking-wider text-white transition cursor-pointer shadow-premium-md hover:shadow-glow-sm"
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-linear-to-r from-primary to-secondary hover:opacity-90 text-xs font-black uppercase tracking-wider text-white transition cursor-pointer shadow-premium-md hover:shadow-glow-sm"
                     >
                       <Award size={13} className="text-yellow-350" />
                       <span>{t("userAchievements.modalDownloadCertificate")}</span>
@@ -731,7 +732,7 @@ export default function UserAchievements() {
                       
                       {/* Attached Card Mockup */}
                       <div className="border border-slate-850 rounded-2xl overflow-hidden bg-slate-950/70">
-                        <div className="p-5 bg-gradient-to-br from-indigo-950/50 to-slate-950 text-center border-b border-slate-850">
+                        <div className="p-5 bg-linear-to-br from-indigo-950/50 to-slate-950 text-center border-b border-slate-850">
                           <span className="inline-block p-3 rounded-2xl bg-indigo-900/30 border border-indigo-500/25 text-3xl mx-auto shadow-none">
                             {activeShareBadge.icon}
                           </span>
@@ -763,7 +764,7 @@ export default function UserAchievements() {
                       
                       {/* Attached Article Mockup */}
                       <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-bg/80">
-                        <div className="p-5 bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/20 dark:to-slate-950 text-center border-b border-slate-200 dark:border-slate-800">
+                        <div className="p-5 bg-linear-to-br from-indigo-50 to-white dark:from-indigo-950/20 dark:to-slate-950 text-center border-b border-slate-200 dark:border-slate-800">
                           <span className="inline-block p-3 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 border border-indigo-300/30 dark:border-indigo-500/25 text-3xl mx-auto shadow-none">
                             {activeShareBadge.icon}
                           </span>

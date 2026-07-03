@@ -15,5 +15,13 @@ export const projectService = {
   
   submitProject: async (projectData, config) => {
     return apiUtils.post(API_ENDPOINTS.PROJECTS.SUBMIT, projectData, config);
+  },
+  
+  upvoteProject: async (projectId, config) => {
+    return apiUtils.post(API_ENDPOINTS.PROJECTS.UPVOTE(projectId), {}, config);
+  },
+  
+  forkProject: async (projectId, config) => {
+    return apiUtils.post(API_ENDPOINTS.PROJECTS.FORK(projectId), {}, config);
   }
 };

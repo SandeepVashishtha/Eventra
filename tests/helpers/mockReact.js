@@ -18,7 +18,12 @@ export const useEffect = (fn, deps) => {
   }
 };
 
-export const useCallback = (fn, deps) => fn;
+export const useCallback = (fn, deps) => {
+  if (globalThis.React?.useCallback) {
+    return globalThis.React.useCallback(fn, deps);
+  }
+  return fn;
+};
 
 export const useRef = (initial) => {
   if (globalThis.React?.useRef) {
@@ -27,7 +32,12 @@ export const useRef = (initial) => {
   return { current: initial };
 };
 
-export const useMemo = (fn, deps) => fn();
+export const useMemo = (fn, deps) => {
+  if (globalThis.React?.useMemo) {
+    return globalThis.React.useMemo(fn, deps);
+  }
+  return fn();
+};
 
 export const useReducer = (reducer, initialArg, init) => {
   const initial = init ? init(initialArg) : initialArg;
@@ -77,6 +87,12 @@ export class Component {
 
 export const Fragment = Symbol.for("react.fragment");
 export const forwardRef = (fn) => fn;
+export const useSyncExternalStore = (subscribe, getSnapshot, getServerSnapshot) => {
+  if (globalThis.React?.useSyncExternalStore) {
+    return globalThis.React.useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  }
+  return getSnapshot();
+};
 
 export default {
   useState,
@@ -95,4 +111,5 @@ export default {
   Component,
   Fragment,
   forwardRef,
+  useSyncExternalStore,
 };

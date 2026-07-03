@@ -9,6 +9,7 @@ This guide explains how to properly handle sensitive environment variables in Ev
 **NEVER use `REACT_APP_*` prefix for sensitive secrets like API tokens, database credentials, or authentication keys.**
 
 In Create React App, any environment variable prefixed with `REACT_APP_` is embedded directly into the frontend bundle and is publicly accessible to anyone who:
+
 - Downloads the built JavaScript files
 - Inspects the web browser's resources
 - Reads the source map (if not disabled in production)
@@ -18,6 +19,7 @@ In Create React App, any environment variable prefixed with `REACT_APP_` is embe
 ### Frontend-Safe Variables (REACT_APP_*)
 
 These are okay to expose in the frontend bundle:
+
 - Public API URLs (without credentials)
 - Public third-party service IDs (Google, Facebook public IDs)
 - Feature flags / configuration
@@ -34,6 +36,7 @@ REACT_APP_ENVIRONMENT=production
 ### Backend-Only Variables (NO prefix)
 
 These must NEVER be exposed to the frontend:
+
 - API tokens and authentication keys
 - Database credentials and connection strings
 - Private API keys
@@ -73,6 +76,7 @@ GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxxx
 ```
 
 **Backend (`/api/github-proxy`):**
+
 ```javascript
 // Server code - TOKEN REMAINS SECRET
 router.get('/github-proxy', (req, res) => {
@@ -88,6 +92,7 @@ router.get('/github-proxy', (req, res) => {
 ```
 
 **Frontend (`/api/github-proxy?path=/repos/...`):**
+
 ```javascript
 // Frontend code - NO TOKEN NEEDED
 const response = await fetch(`/api/github-proxy?path=/repos/owner/repo`);
@@ -114,7 +119,7 @@ const data = await response.json();
 
 ## Auditing Your Bundle
 
-### Check for exposed secrets:
+### Check for exposed secrets
 
 ```bash
 # Build the frontend
@@ -127,7 +132,7 @@ grep -r "ghp_\|password\|secret\|token" build/
 npm install -D webpack-bundle-analyzer
 ```
 
-### Example audit in package.json:
+### Example audit in package.json
 
 ```json
 {
