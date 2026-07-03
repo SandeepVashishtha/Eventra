@@ -234,6 +234,10 @@ class SseMultiplexer {
     };
     writeHeartbeat();
 
+    // Leadership may have been revoked inside writeHeartbeat if a competing
+    // leader was detected. Guard before starting any leader-only infrastructure.
+    if (!this.isLeader) return;
+
     // Heartbeat loop — keep the entry fresh while leadership is held
     if (this.heartbeatInterval) {
       clearInterval(this.heartbeatInterval);
