@@ -494,9 +494,7 @@ export default function Chatbot() {
                   </motion.div>
                 </div>
               )}
-              
-              {/* 🔥 FIX: Added the missing dummy div to act as the scroll target for messagesEndRef */}
-              <div ref={messagesEndRef} />
+               <div ref={messagesEndRef} />
             </div>
 
             {/* Footer controls */}
