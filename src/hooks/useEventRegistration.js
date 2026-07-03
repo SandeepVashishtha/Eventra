@@ -16,8 +16,8 @@ import { createRateLimiter } from "../utils/rateLimiter";
  * - Validates the registration form via `useFormValidation` (300 ms debounce).
  * - Detects scheduling conflicts against the user's existing registrations
  *   and opens a conflict-resolution modal when one is found.
- * - Checks live event capacity immediately before submission and routes the
- *   request to the waitlist endpoint when the event is full.
+ * - Checks live event capacity immediately before submission and notifies the
+ *   user when the event is at full capacity.
  * - Uses a shared module-level `Map` lock (`registrationLocks` from
  *   `utils/registrationLocks`) and a ref
  *   (`isSubmittingRef`) to guard against duplicate concurrent submissions.
@@ -343,11 +343,7 @@ const useEventRegistration = (eventIdParam) => {
     };
 
     try {
-      if (event && event.attendees >= event.maxAttendees) {
-        await eventService.waitlistForEvent(eventId, payload);
-      } else {
-        await eventService.registerForEvent(eventId, payload);
-      }
+      await eventService.registerForEvent(eventId, payload);
 
       setRegistered(true);
       toast.success("Registration successful!");
@@ -367,7 +363,7 @@ const useEventRegistration = (eventIdParam) => {
 
         const success = await pushToQueue(
           {
-            actionType: isEventFull ? "JOIN_WAITLIST" : "REGISTER_EVENT",
+            actionType: "REGISTER_EVENT",
             // Fixed: Removed undefined 'endpoint' variable which would cause a crash
             eventId: parseInt(eventId),
             payload: queuePayload,
@@ -392,7 +388,7 @@ const useEventRegistration = (eventIdParam) => {
 
       if (isAlreadyRegistered) {
         setRegistered(true);
-        toast.success(isEventFull ? "Successfully joined waitlist!" : "Registration successful!");
+        toast.success("Registration successful!");
         addRegistration(event, formData);
         clearSession();
         toast.info(failureMessage);
@@ -438,7 +434,7 @@ const useEventRegistration = (eventIdParam) => {
 
     const isFull = await checkEventCapacity(eventId, event);
     if (isFull) {
-      toast.info("This event is full. You will be added to the waitlist.");
+      toast.info("This event is at full capacity.");
     }
 
     if (await checkAndHandleConflicts()) return;
