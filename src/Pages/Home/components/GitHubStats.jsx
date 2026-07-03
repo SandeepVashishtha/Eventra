@@ -17,17 +17,28 @@ import {
 
 import { safeJsonParse } from "../../../utils/safeJsonParse";
 import { ENV } from "../../../config/env";
-import {
-  fetchRepository,
-  fetchContributors,
-  fetchPullRequests,
-} from "../../../utils/githubApiClient";
+import { fetchGitHubJson } from "../../../utils/githubApiClient";
 
 const repoPath = ENV.GITHUB_REPO;
 const [GITHUB_USER, GITHUB_REPO] = repoPath.split("/");
 
 const LS_KEY = "eventra:repoStats";
 const CACHE_MS = 30 * 60 * 1000; // 30 min
+
+const fetchRepository = (owner, repo) =>
+  fetchGitHubJson(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`);
+
+const fetchContributors = (owner, repo, page, perPage) =>
+  fetchGitHubJson(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contributors`, {
+    page,
+    per_page: perPage,
+  });
+
+const fetchPullRequests = (owner, repo, params) =>
+  fetchGitHubJson(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pulls`, params);
+
+const fetchLanguages = (owner, repo) =>
+  fetchGitHubJson(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/languages`);
 
 const readCache = () => {
   try {
@@ -71,11 +82,12 @@ export default function GitHubStats() {
 
     (async () => {
       try {
-        const [repoResult, contributorsResult, prResult] =
+        const [repoResult, contributorsResult, prResult, languagesResult] =
           await Promise.allSettled([
             fetchRepository(GITHUB_USER, GITHUB_REPO),
             fetchContributors(GITHUB_USER, GITHUB_REPO, 1, 1),
             fetchPullRequests(GITHUB_USER, GITHUB_REPO, { per_page: 1 }),
+            fetchLanguages(GITHUB_USER, GITHUB_REPO),
           ]);
 
         if (repoResult.status === "rejected") {
@@ -110,6 +122,13 @@ export default function GitHubStats() {
         } else {
         }
 
+        const languages =
+          languagesResult.status === "fulfilled" &&
+          languagesResult.value &&
+          typeof languagesResult.value === "object"
+            ? languagesResult.value
+            : {};
+
         const next = {
           stars: repoData.stargazers_count || 0,
           forks: repoData.forks_count || 0,
@@ -123,7 +142,7 @@ export default function GitHubStats() {
           releases: "—",
           license: repoData.license?.spdx_id || "N/A",
           watchers: repoData.subscribers_count || 0,
-          languages: {},
+          languages,
         };
 
         if (mounted) {
