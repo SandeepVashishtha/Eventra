@@ -114,12 +114,6 @@ const CustomDropdown = ({ label, value, options, onChange, placeholder = "Select
 
   const selectedOption = options.find((o) => getOptionValue(o) === value);
   const displayText = selectedOption ? getOptionLabel(selectedOption) : placeholder;
-const activeFilterCount =
-  Number(!!filters.difficulty) +
-  Number(!!filters.prize) +
-  Number(!!filters.location) +
-  selectedTags.length +
-  Number(sortBy !== "default");
   return (
     <div className="relative">
       {label && (

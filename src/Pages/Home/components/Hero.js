@@ -1,6 +1,6 @@
 
 import { motion, useAnimation, AnimatePresence, MotionConfig } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, memo } from "react";
 import { Link } from "react-router-dom";
 import Fuse from "fuse.js";
 import { Calendar, Handshake, Users } from "lucide-react";
@@ -19,6 +19,11 @@ import { useNavigate } from "react-router-dom";
 
 
 const CountUp = CountUpLib.default || CountUpLib;
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
+};
 
 const HEADLINE_PHRASES = [
   "Amazing Tech Events",
@@ -76,7 +81,6 @@ const HeroStats = ({ stats, statsReady }) => (
 // MAIN HERO COMPONENT
 // =========================================================================
 const Hero = () => {
-  const { t } = useTranslation();
   useDocumentTitle("Eventra | Home");
   const navigate = useNavigate();
 
@@ -160,9 +164,11 @@ const Hero = () => {
         </div>
 
           {/* Animated Stats Cards */}
-          {!searchQuery.trim() && (
+          {!searchTerm.trim() && (
             <motion.div
               variants={fadeUp}
+              initial="hidden"
+              animate="visible"
               className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6"
             >
              {stats.map((stat, i) => (

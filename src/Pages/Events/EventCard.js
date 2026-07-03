@@ -181,7 +181,7 @@ const EventCard = ({ event }) => {
   // Resolve the event date — API may use eventDate, date, or startDate
   const eventDate = event.date || event.eventDate || event.startDate || null;
   const dateInfo = formatEventDate(eventDate);
-  const categoryIcon = getCategoryIcon(event);
+  const CategoryIcon = getCategoryIcon(event);
   const gradient = getCardGradient(event.id);
 
   const handleCopyLink = useCallback((e) => {
@@ -221,20 +221,20 @@ const EventCard = ({ event }) => {
       className="group relative flex flex-col rounded-2xl overflow-hidden bg-[#0f1117] border border-white/[0.07] shadow-xl shadow-black/40 hover:shadow-2xl hover:shadow-black/60 hover:border-white/[0.14] transition-all duration-300"
     >
       {/* ── Banner Image with gradient overlay ── */}
-      <div className="relative h-44 overflow-hidden">
-        {/* Gradient accent background (shown when no image) */}
-        <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-80`} />
+      <div className="relative h-44 overflow-hidden bg-slate-900">
+        {/* Gradient accent background (subtle backdrop behind the image, or full gradient fallback) */}
+        <div className={`absolute inset-0 bg-gradient-to-br ${gradient} ${eventImage ? "opacity-25" : "opacity-80"}`} />
 
         {eventImage ? (
           <LazyImage
             src={eventImage}
             alt={`${event.title} event banner`}
             className="absolute inset-0 w-full h-full"
-            imgClassName="object-cover w-full h-full mix-blend-overlay opacity-60 group-hover:scale-105 transition-transform duration-700"
+            imgClassName="object-cover w-full h-full opacity-90 group-hover:scale-105 transition-transform duration-700"
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
-            {categoryIcon && categoryIcon({ size: 52, className: "text-white/20" })}
+            {CategoryIcon && <CategoryIcon size={52} className="text-white/20" />}
           </div>
         )}
 
@@ -244,7 +244,7 @@ const EventCard = ({ event }) => {
         {/* Category icon badge */}
         <div className="absolute top-3 left-3">
           <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md border border-white/10 rounded-full px-3 py-1.5">
-            {categoryIcon && categoryIcon({ size: 12, className: "text-white/80" })}
+            {CategoryIcon && <CategoryIcon size={12} className="text-white/80" />}
             <span className="text-[11px] font-semibold text-white/80 uppercase tracking-wide">
               {event.type || event.category || "Event"}
             </span>
