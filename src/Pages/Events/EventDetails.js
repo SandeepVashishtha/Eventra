@@ -19,6 +19,9 @@ import ReminderControls from "../../components/reminders/ReminderControls";
 import EventRecommendations from "../../components/events/EventRecommendations";
 import EventCancellationModal from "../../components/events/EventCancellationModal";
 import SimilarEvents from "../../components/events/SimilarEvents";
+import LiveQABoard from "../../components/events/LiveQABoard";
+import EventRegistrationProgress from "../../components/events/EventRegistrationProgress";
+import LivePollController from "../../components/events/LivePollController";
 import { EventDetailSkeleton } from "../../components/common/SkeletonLoaders";
 import LazyImage from "../../components/common/LazyImage";
 import { exportToCSV, exportToJSON } from "../../utils/exportUtils";
@@ -229,7 +232,7 @@ const EventDetails = () => {
 
   const handleCopy = async () => {
     const link = `
-🎉 Check out this event!
+Check out this event!
 
 Event: ${event.title}
 Date: ${new Date(event.date).toLocaleDateString()}
@@ -256,7 +259,7 @@ ${window.location.href}
       toast.success("Event link copied to clipboard!");
       setLinkCopied(true);
       setTimeout(() => setLinkCopied(false), 2000);
-    } catch (_err) {
+    } catch {
       toast.error("Failed to copy link. Please copy the URL from your browser's address bar.");
     }
   };
@@ -336,7 +339,7 @@ const lastUpdated = getLastUpdated(event.updatedAt);
                 {event.type}
               </p>
               <div className="mt-4 flex items-center gap-3">
-                <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight break-words" title={event.title}>{event.title}</h1>
+                <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight wrap-break-word" title={event.title}>{event.title}</h1>
                 <button
                   onClick={handleCopy}
                   className={`p-2 rounded-full transition-colors ${linkCopied
@@ -359,7 +362,7 @@ const lastUpdated = getLastUpdated(event.updatedAt);
 
   {showClosingSoon && (
     <span className="inline-flex items-center rounded-full bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
-      ⚠ Registration closes {hoursLeft <= 24 ? "today" : `in ${hoursLeft} hours`}
+      Registration closes {hoursLeft <= 24 ? "today" : `in ${hoursLeft} hours`}
     </span>
   )}
 
@@ -405,7 +408,7 @@ const lastUpdated = getLastUpdated(event.updatedAt);
                 className="print-hide inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
                 aria-label="Print or save as PDF"
               >
-                {isPrinting ? "Preparing..." : "≡ƒû¿∩╕Å Print / Save as PDF"}
+                {isPrinting ? "Preparing..." : "Print / Save as PDF"}
               </button>
 
               {isOrganizer && (
@@ -423,7 +426,7 @@ const lastUpdated = getLastUpdated(event.updatedAt);
                       className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800 cursor-pointer"
                       aria-label="Export registrant data"
                     >
-                      ≡ƒôÑ Export Registrants
+                      Export Registrants
                     </button>
                     {showExportDropdown && (
                       <>
@@ -455,7 +458,7 @@ const lastUpdated = getLastUpdated(event.updatedAt);
                                   }
                                 }
                                 exportToCSV(allRegistrants, `${event.title}_registrants`);
-                              } catch (_error) {
+                              } catch  {
                                 toast.error("Failed to fetch registrants");
                               } finally {
                                 setExportingRegistrants(false);
@@ -493,7 +496,7 @@ const lastUpdated = getLastUpdated(event.updatedAt);
                                   }
                                 }
                                 exportToJSON(allRegistrants, `${event.title}_registrants`);
-                              } catch (_error) {
+                              } catch {
                                 toast.error("Failed to fetch registrants");
                               } finally {
                                 setExportingRegistrants(false);

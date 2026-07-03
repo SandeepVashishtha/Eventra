@@ -173,14 +173,10 @@ Do not commit secrets, tokens, or private keys.
 
 If you discover a security issue, follow [SECURITY.md](SECURITY.md).
 
-## Environment Variables
+## Secure Deployments
 
-Before submitting a pull request, ensure:
-
-- No secrets are committed.
-- `.env.example` contains placeholder values only.
-- Sensitive configuration follows the Environment Security Guide.
+Contributors working on deployment-related features should review the Secure Deployment Checklist before submitting production-related changes.
 
 See:
 
-- docs/ENVIRONMENT_SECURITY.md
+- docs/SECURE_DEPLOYMENT_CHECKLIST.md

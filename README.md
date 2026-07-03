@@ -558,6 +558,12 @@ See the following guide for securely managing environment variables:
   </a>
 </p>
 
+## Deployment Security
+
+Before deploying Eventra, review the deployment checklist:
+
+- docs/SECURE_DEPLOYMENT_CHECKLIST.md
+
 ### Maintainers
 
 <table>
