@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 // Under the hood, password reset requests are sent to API_ENDPOINTS.AUTH.RESET_PASSWORD via authService.
 import { authService } from '../../services/authService';
+import { apiUtils, API_ENDPOINTS } from '../../config/api';
 import { motion } from "framer-motion";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { RESET_COOLDOWN_SECONDS, secondsUntilUnlock, STORAGE_KEY_RESET_LAST_SUBMIT } from '../../utils/rateLimitUtils';
@@ -118,7 +119,7 @@ const PasswordReset = () => {
 
     setLoading(true);
     try {
-      const response = await authService.resetPassword(email);
+      const response = await apiUtils.post(API_ENDPOINTS.AUTH.RESET_PASSWORD, { email });
       setMessage(response.data?.message || 'Password reset link sent! Check your email.');
       lastSubmitRef.current = Date.now();
       writeLastSubmit(lastSubmitRef.current); // FIX (Issue #5720): persist so refresh can't bypass cooldown

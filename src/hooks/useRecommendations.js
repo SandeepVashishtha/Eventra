@@ -56,7 +56,7 @@ const useRecommendations = (events = []) => {
             recommendationScore: Number.isFinite(result?.score) ? result.score : 0,
             recommendationReasons: Array.isArray(result?.reasons) ? result.reasons : [],
           };
-        } catch {
+        } catch (e) {
           return {
             ...event,
             recommendationScore: 0,

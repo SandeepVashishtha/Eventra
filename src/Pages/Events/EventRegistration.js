@@ -386,7 +386,7 @@ const EventRegistration = () => {
 
         if (success) {
           const offlineRegId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `reg-offline-${Date.now()}`;
-          addRegistration(event, formData, offlineRegId, "");
+          addRegistration(event, formData);
           clearSession();
           toast.warning(t("eventRegistration.toastNetworkQueued"), {
             autoClose: 4000,

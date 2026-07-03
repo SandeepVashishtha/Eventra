@@ -1,9 +1,9 @@
-
-import { motion, useAnimation, AnimatePresence, MotionConfig } from "framer-motion";
-import { useEffect, useState, useMemo, memo } from "react";
+import { motion, useAnimation, AnimatePresence, MotionConfig, useScroll, useTransform } from "framer-motion";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import Fuse from "fuse.js";
-import { Calendar, Handshake, Users } from "lucide-react";
+
+import { Calendar, Code, ExternalLink, Handshake, Search, Trophy, Users } from "lucide-react";
 import CountUpLib from "react-countup";
 
 import ModernSearchInput from "../../../components/common/ModernSearchInput";
@@ -125,16 +125,67 @@ const Hero = () => {
   }, []);
 
   useEffect(() => {
-    const trimmed = debouncedTerm.trim();
-    setSearchResults(trimmed ? searchIndex.search(trimmed).slice(0, SEARCH_RESULT_LIMIT) : []);
-    setShowResults(!!trimmed);
-  }, [debouncedTerm, searchIndex]);
+    if (debouncedTerm.trim()) {
+      setSearchResults(searchIndex.search(debouncedTerm.trim()).slice(0, SEARCH_RESULT_LIMIT));
+      setShowResults(true);
+      return;
+    }
 
- const stats = [
-  { value: "1500+", label: "Developers Joined" },
-  { value: "75", label: "Events Organized" },
-  { value: "30+", label: "Partners & Sponsors" },
-];
+    setSearchResults([]);
+    setShowResults(false);
+  }, [debouncedTerm]);
+
+  const handleSearch = useCallback((query) => setSearchTerm(query), [setSearchTerm]);
+
+  const clearSearch = useCallback(() => {
+    setShowResults(false);
+    clearSearchTerm();
+  }, [clearSearchTerm]);
+
+
+  const getResultIcon = (type) => {
+    const icons = { event: Calendar, hackathon: Trophy, project: Code };
+    const Icon = icons[type] || Search;
+    return <Icon className="w-4 h-4 flex-shrink-0" aria-hidden="true" />;
+  };
+
+
+  // ─── ANIMATION VARIANTS ────────────────────────────────────────────────────
+
+  const floatShape = (i) => ({
+    y: [0, -15 - i * 4, 0],
+    x: [0, 12 + i * 3, 0],
+    rotate: [0, 8, -8, 0],
+    transition: {
+      duration: prefersReducedMotion ? 0 : 5 + i * 0.5,
+      repeat: Infinity,
+      ease: "easeInOut",
+      delay: i * 0.2,
+    },
+  });
+
+  // ─── CONFIG ────────────────────────────────────────────────────────────────
+  const shapes = [
+    { size: 42, pos: { top: "10%", left: "5%" }, light: "#3b82f6", dark: "#60a5fa" },
+    { size: 54, pos: { top: "14%", left: "20%" }, light: "#f59e0b", dark: "#fbbf24" },
+    { size: 30, pos: { top: "24%", left: "42%" }, light: "#22c55e", dark: "#4ade80" },
+    { size: 50, pos: { top: "30%", left: "70%" }, light: "#0ea5e9", dark: "#38bdf8" },
+    { size: 40, pos: { top: "52%", left: "10%" }, light: "#ec4899", dark: "#f472b6" },
+    { size: 26, pos: { top: "42%", left: "32%" }, light: "#8b5cf6", dark: "#a78bfa" },
+    { size: 68, pos: { top: "68%", left: "24%" }, light: "#f43f5e", dark: "#fb7185" },
+    { size: 50, pos: { top: "72%", left: "64%" }, light: "#10b981", dark: "#34d399" },
+    { size: 34, pos: { top: "48%", left: "80%" }, light: "#eab308", dark: "#fcd34d" },
+  ];
+
+  const stats = [
+    { value: 1500, label: "Developers Joined", suffix: "+" },
+    { value: 75, label: "Events Organized", suffix: "+" },
+    { value: 30, label: "Partners & Sponsors", suffix: "+" },
+  ];
+
+  const primaryBtn = "relative inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full font-semibold transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-slate-900";
+  const secondaryBtn = `${primaryBtn} border border-transparent`;
+
   return (
     <section className="min-h-[80vh] flex items-center justify-center relative overflow-hidden py-16 sm:py-20 md:py-24">
       <motion.div 

@@ -470,14 +470,52 @@ export default function CollaborationNetworkMap() {
             ))}
           </div>
 
-          {/* Interactive Map Canvas Window Frame */}
-          {/* MODIFIED: Replaced standard slate border with a gorgeous thick 2px violet border & custom ambient glow to elevate the graph */}
-          <div className="relative rounded-2xl border-2 border-violet-500/80 bg-slate-50 dark:bg-slate-950/40 overflow-hidden shadow-[0_0_25px_rgba(124,58,237,0.08)] backdrop-blur-sm">
-            <div 
-              className="transition-transform duration-300 ease-out"
-              style={{ transform: `scale(${zoom})`, transformOrigin: "center" }}
-            >
-              <svg
+          {/* Stats Summary */}
+          <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:shadow-md p-6 shadow-lg">
+              <Users size={18} />
+              <div>
+                <span className="block text-2xl font-bold text-emerald-400">
+                  {stats.totalDevs.toLocaleString()}
+                </span>
+                <span className="mt-1 block text-sm text-slate-600">Developers</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white hover:shadow-md p-6 shadow-lg">
+              <Code size={18} />
+              <div>
+                <span className="block text-2xl font-bold text-emerald-400">
+                  {stats.totalProjects}
+                </span>
+                <span className="mt-1 block text-sm text-slate-600">Projects</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white hover:shadow-md p-6 shadow-lg">
+              <GitBranch size={18} />
+              <div>
+                <span className="block text-2xl font-bold text-emerald-400">
+                  {CONNECTIONS.length}
+                </span>
+                <span className="mt-1 block text-sm text-slate-600">Connections</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white hover:shadow-md p-6 shadow-lg">
+              <TrendingUp size={18} />
+              <div>
+                <span className="block text-2xl font-bold text-emerald-400">
+                  {stats.activeHubs}/{HUBS.length}
+                </span>
+                <span className="mt-1 block text-sm text-slate-600">Active Hubs</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Map Frame */}
+          <div
+            className="relative mt-2 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900"
+            style={{ transform: `scale(${zoom})`, transformOrigin: "center" }}
+          >
+            <svg
                 className="h-[440px] w-full mix-blend-multiply dark:mix-blend-normal"
                 viewBox="0 0 1000 500"
                 preserveAspectRatio="xMidYMid meet"
@@ -703,8 +741,6 @@ export default function CollaborationNetworkMap() {
             </div>
           </div>
         </div>
-
-      </div>
 
     </section>
   );
