@@ -1,4 +1,4 @@
-import { memo, useCallback, useId, useState } from "react";
+import React, { memo, useCallback, useId, useState } from "react";
 import { logger } from "../../utils/logger";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";

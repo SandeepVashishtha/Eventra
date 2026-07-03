@@ -10,7 +10,6 @@ import { safeParseJson } from "../../utils/jsonUtils";
 import { SkeletonBlock } from "../../components/common/SkeletonLoaders";
 const CountUp = CountUpLib.default || CountUpLib;
 
-// 🔥 THE FIX: Single, clean declarations placed in the correct order 🔥
 const SEARCH_HISTORY_KEY = "eventra.events.searchHistory";
 
 const getStoredSearchHistory = () => {
@@ -110,11 +109,9 @@ function EventHero({
   const selectSearchQuery = (query) => {
     handleSearch(query);
     saveSearchQuery(query);
-    // Note: Assuming saveRecentSearch is handled upstream or passed correctly in full context
   };
 
   useEffect(() => {
-    // Preload hero background image for better LCP
     const preloadLink = document.createElement("link");
     preloadLink.rel = "preload";
     preloadLink.as = "image";
@@ -151,16 +148,12 @@ function EventHero({
 
   return (
     <div className="w-full bg-white dark:bg-slate-950">
-      {/* ========================================================================= */}
-      {/* 1. HERO SECTION (Clean, Lower Z-Index Context, Reduced Height)             */}
-      {/* ========================================================================= */}
       <section
         className="relative min-h-[60vh] md:min-h-[70vh] w-full overflow-hidden flex flex-col items-center justify-center"
         role="search"
         aria-label="Search events"
-        style={{zIndex: 1}} /*🔥 Kept low so Header dropdown stays on top */
+        style={{zIndex: 1}} 
       >
-        {/* Background + Overlay */}
         <div
         className="absolute inset-0 bg-[url('/assets/eventbg.png')] bg-cover bg-center bg-no-repeat"
         aria-hidden="true"
@@ -308,9 +301,6 @@ function EventHero({
           </div>
         </div>
       </section>
-      {/* ========================================================================= */}
-      {/* 2. TRENDING TAGS ROW (Moved below the fold into its own clean layout)      */}
-      {/* ========================================================================= */}
       <section className="border-y border-slate-100 dark:border-slate-900 bg-slate-50/50 dark:bg-slate-950 py-5">
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-2 flex-wrap">
@@ -334,9 +324,6 @@ function EventHero({
         </div>
       </section>
 
-      {/* ========================================================================= */}
-      {/* 3. STATISTICS SECTION (Repositioned below the Hero section elements)       */}
-      {/* ========================================================================= */}
       {searchQuery.trim() === "" && (
         <section ref={statsRef} className="max-w-7xl mx-auto px-4 sm:px-6 py-12 md:py-16">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8">

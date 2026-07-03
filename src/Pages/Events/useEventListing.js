@@ -14,7 +14,7 @@ import {
 import { getRouteSearchResults } from "../../utils/searchUtils.mjs";
 import { getBookmarkedEvents } from "../../utils/bookmarkUtils";
 
-const DEFAULT_EVENTS_PER_PAGE = 12;
+const DEFAULT_EVENTS_PER_PAGE = 20;
 
 const SORT_MAPPING = {
   Newest: "date,desc",
