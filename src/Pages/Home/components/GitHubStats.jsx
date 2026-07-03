@@ -56,6 +56,7 @@ export default function GitHubStats() {
     pullRequests: 0,
     releases: 0,
     license: "N/A",
+    defaultBranch: "master",
     watchers: 0,
     languages: {},
   });
@@ -122,6 +123,7 @@ export default function GitHubStats() {
           pullRequests: prCount,
           releases: "—",
           license: repoData.license?.spdx_id || "N/A",
+          defaultBranch: repoData.default_branch || "master",
           watchers: repoData.subscribers_count || 0,
           languages: {},
         };
@@ -186,7 +188,7 @@ export default function GitHubStats() {
       label: "License",
       value: stats.license,
       icon: <Scale className="text-gray-600 dark:text-gray-400" size={40} />,
-      link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/blob/main/LICENSE`,
+      link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/blob/${stats.defaultBranch || "master"}/LICENSE`,
     },
     {
       label: "Last Update",
