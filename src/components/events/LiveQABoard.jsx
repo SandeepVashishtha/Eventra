@@ -84,7 +84,7 @@ function QuestionCard({ q, isModerator, onUpvote, onFlag, onDelete }) {
             <AlertTriangle className="h-3 w-3" /> Flagged for moderation
           </span>
         )}
-        <p className="text-sm text-slate-200 wrap-break-word leading-relaxed font-sans">{q.text}</p>
+        <p className="text-sm text-slate-200 break-words leading-relaxed font-sans">{q.text}</p>
         <span className="text-[10px] text-slate-500 font-medium">{formatTime(q.createdAt)}</span>
       </div>
 
