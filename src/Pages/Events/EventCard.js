@@ -1,24 +1,26 @@
-import EventDuration from "../../components/common/EventDuration";
-import { getEventDuration } from "../../utils/eventDurationUtils";
 import { memo, useCallback, useId, useState } from "react";
 import { logger } from "../../utils/logger";
-import { getUserTimezone } from "../../utils/timezoneUtils";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { getSmartDateLabel } from "../../utils/relativeTime";
 import {
   Bookmark,
   BookmarkCheck,
   Calendar,
   MapPin,
-  Tag,
-  Star,
-  Heart,
-  Zap,
-  BookOpen,
-  Gift,
+  Users,
   Share2,
   AlertTriangle,
+  Clock,
+  ArrowRight,
+  Zap,
+  Star,
+  Award,
+  Cpu,
+  Globe,
+  Music,
+  Briefcase,
+  Code,
+  Heart,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import LazyImage from "../../components/common/LazyImage";
@@ -28,69 +30,131 @@ import { getEventStatus } from "../../utils/eventUtils";
 import { useMyEvents } from "../../context/MyEventsContext";
 import { useAuth } from "../../context/AuthContext";
 import useBookmarks from "../../hooks/useBookmarks";
-import ReminderControls from "../../components/reminders/ReminderControls";
 import AddToCalendar from "../../components/common/AddToCalendar";
 import SocialShareButtons from "../../components/common/SocialShareButtons";
 import { checkRegistrationConflict } from "../../utils/conflictDetection";
 
-const getCapacityStyles = (ratio, isFull) => {
-  if (isFull || ratio >= 0.85) {
-    return {
-      barColor: "bg-red-500",
-      textColor: "text-red-600 dark:text-red-400",
-    };
-  }
-  if (ratio >= 0.6) {
-    return {
-      barColor: "bg-amber-500",
-      textColor: "text-amber-600 dark:text-amber-400",
-    };
-  }
-  return {
-    barColor: "bg-emerald-500",
-    textColor: "text-emerald-600 dark:text-emerald-400",
-  };
+// Vibrant gradient palettes for event cards
+const CARD_GRADIENTS = [
+  "from-violet-600 via-purple-600 to-indigo-700",
+  "from-rose-500 via-pink-600 to-purple-700",
+  "from-cyan-500 via-blue-600 to-indigo-700",
+  "from-emerald-500 via-teal-600 to-cyan-700",
+  "from-orange-500 via-amber-500 to-yellow-500",
+  "from-fuchsia-600 via-pink-600 to-rose-600",
+  "from-sky-500 via-blue-500 to-violet-600",
+  "from-green-500 via-emerald-600 to-teal-700",
+];
+
+const CATEGORY_ICONS = {
+  ai: Cpu,
+  tech: Code,
+  technology: Code,
+  music: Music,
+  business: Briefcase,
+  global: Globe,
+  summit: Award,
+  conference: Award,
+  hackathon: Zap,
+  bootcamp: Star,
+  networking: Globe,
+  cultural: Heart,
+  default: Star,
 };
 
-const EventCapacity = ({ attendees, maxAttendees }) => {
+const getCategoryIcon = (event) => {
+  const titleLower = (event.title || "").toLowerCase();
+  const typeLower = (event.type || event.category || "").toLowerCase();
+  const text = `${titleLower} ${typeLower}`;
+  for (const [key, Icon] of Object.entries(CATEGORY_ICONS)) {
+    if (key !== "default" && text.includes(key)) return Icon;
+  }
+  return CATEGORY_ICONS.default;
+};
+
+const getCardGradient = (id) => {
+  const index = (parseInt(id, 10) || 0) % CARD_GRADIENTS.length;
+  return CARD_GRADIENTS[index];
+};
+
+const formatEventDate = (dateValue) => {
+  if (!dateValue) return { short: "TBD", full: "Date TBD", relative: "" };
+  const d = new Date(dateValue);
+  if (isNaN(d.getTime())) return { short: "TBD", full: "Date TBD", relative: "" };
+
+  const now = new Date();
+  const diffMs = d - now;
+  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+  let relative = "";
+  if (diffMs < 0) {
+    relative = "Past";
+  } else if (diffDays === 0) {
+    relative = "Today";
+  } else if (diffDays === 1) {
+    relative = "Tomorrow";
+  } else if (diffDays < 7) {
+    relative = `In ${diffDays} days`;
+  } else if (diffDays < 30) {
+    relative = `In ${Math.round(diffDays / 7)} week${Math.round(diffDays / 7) !== 1 ? "s" : ""}`;
+  } else {
+    relative = `In ${Math.round(diffDays / 30)} month${Math.round(diffDays / 30) !== 1 ? "s" : ""}`;
+  }
+
+  const short = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const full = d.toLocaleDateString("en-US", {
+    weekday: "short",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+  const time = d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+
+  return { short, full, relative, time };
+};
+
+const CapacityBar = ({ attendees, maxAttendees }) => {
   const registered = Number(attendees) || 0;
   const capacity = Number(maxAttendees);
+  if (!capacity) return null;
+
   const isFull = registered >= capacity;
   const ratio = Math.min(registered / capacity, 1);
   const percent = Math.round(ratio * 100);
   const spotsLeft = Math.max(capacity - registered, 0);
-  const { barColor, textColor } = getCapacityStyles(ratio, isFull);
+
+  const barColor = isFull || ratio >= 0.85
+    ? "from-red-500 to-rose-600"
+    : ratio >= 0.6
+    ? "from-amber-400 to-orange-500"
+    : "from-emerald-400 to-teal-500";
 
   return (
-    <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
-      <div className="flex items-center justify-between mb-1.5">
-        <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
-          Seats
-        </span>
+    <div className="px-5 py-3 border-t border-white/10">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-1.5">
+          <Users size={12} className="text-slate-400" />
+          <span className="text-xs text-slate-400 font-medium">Capacity</span>
+        </div>
         {isFull ? (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300">
-            Full
+          <span className="text-xs font-bold text-red-400 bg-red-400/10 px-2 py-0.5 rounded-full border border-red-400/30">
+            SOLD OUT
           </span>
         ) : (
-          <span className={`text-xs font-semibold tabular-nums ${textColor}`}>
-            {spotsLeft} spot{spotsLeft === 1 ? "" : "s"} left
+          <span className="text-xs font-semibold text-slate-300">
+            {spotsLeft} spot{spotsLeft !== 1 ? "s" : ""} left
           </span>
         )}
       </div>
-      <div
-        className="w-full h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden"
-        role="progressbar"
-        aria-valuenow={percent}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-label={`${registered} of ${capacity} seats filled`}
-      >
-        <div
-          className={`h-full ${barColor} transition-all duration-500 ease-out`}
-          style={{ width: `${percent}%` }}
+      <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${percent}%` }}
+          transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+          className={`h-full bg-gradient-to-r ${barColor} rounded-full`}
         />
       </div>
-      <div className="mt-1 text-[11px] text-gray-500 dark:text-gray-500 tabular-nums">
+      <div className="mt-1.5 text-[11px] text-slate-500 font-mono">
         {registered} / {capacity} registered
       </div>
     </div>
@@ -104,310 +168,266 @@ const EventCard = ({ event }) => {
   const isBookmarked = checkBookmarked(event.id);
   const titleId = useId();
   const { myEvents, isRegistered } = useMyEvents();
-  const [showBookmarkTooltip, setShowBookmarkTooltip] = useState(false);
+  const [showShare, setShowShare] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [randomIcon] = useState(() => {
-    const icons = [
-      <Star key="star" size={16} className="text-yellow-500" />,
-      <Heart key="heart" size={16} className="text-red-500" />,
-      <Zap key="zap" size={16} className="text-pink-500" />,
-      <BookOpen key="book-open" size={16} className="text-indigo-500" />,
-      <Gift key="gift" size={16} className="text-pink-500" />,
-    ];
 
-    return icons[Math.floor(Math.random() * icons.length)];
-  });
-
-  // Check if this event conflicts with registered events
   const conflictCheck = checkRegistrationConflict(event, myEvents);
   const hasConflict = conflictCheck.hasConflict;
   const isUserRegistered = isRegistered(event.id);
-
   const computedStatus = getEventStatus(event);
   const isPastEvent = computedStatus === "past" || computedStatus === "ended";
-  const canSetReminder = isBookmarked || isUserRegistered;
 
-  const handleCopyLink = (e) => {
+  // Resolve the event image — API may use imageUrl or image
+  const eventImage = event.image || event.imageUrl || null;
+  // Resolve the event date — API may use eventDate, date, or startDate
+  const eventDate = event.date || event.eventDate || event.startDate || null;
+  const dateInfo = formatEventDate(eventDate);
+  const CategoryIcon = getCategoryIcon(event);
+  const gradient = getCardGradient(event.id);
+
+  const handleCopyLink = useCallback((e) => {
     e.preventDefault();
-    const shareUrl = `${window.location.origin}/events/${event.id}`;
-
+    e.stopPropagation();
     navigator.clipboard
-      .writeText(shareUrl)
-      .then(() => {
-        toast.success("Event link copied to clipboard!", {
-          autoClose: 2000,
-        });
-      })
+      .writeText(`${window.location.origin}/events/${event.id}`)
+      .then(() => toast.success("Link copied!", { autoClose: 1800 }))
       .catch((err) => {
-        logger.error("Failed to copy: ", err);
-        toast.error("Could not copy link. Please try again.", {
-          autoClose: 2500,
-        });
+        logger.error("Copy failed:", err);
+        toast.error("Could not copy link.", { autoClose: 2000 });
       });
-  };
-
-const durationText = getEventDuration(event);
+  }, [event.id]);
 
   const handleBookmarkToggle = useCallback(
     (e) => {
       e.preventDefault();
       e.stopPropagation();
-
       if (isBookmarked) {
         toggleBookmark(event);
-        toast.info("Removed from bookmarked events.", {
-          toastId: `bookmark-${event.id}`,
-          autoClose: 1800,
-          className: "custom-toast",
-        });
-        return;
+        toast.info("Removed from saved events.", { toastId: `bookmark-${event.id}`, autoClose: 1800 });
+      } else {
+        toggleBookmark({ ...event, status: computedStatus });
+        toast.success("Event saved!", { toastId: `bookmark-${event.id}`, autoClose: 1800 });
       }
-
-      toggleBookmark({
-        ...event,
-        status: computedStatus,
-      });
-      toast.success("Event bookmarked.", {
-        toastId: `bookmark-${event.id}`,
-        autoClose: 1800,
-        className: "custom-toast",
-      });
     },
     [isBookmarked, event, computedStatus, toggleBookmark]
   );
 
   return (
     <motion.article
-      data-aos="zoom-in"
-      data-aos-duration="800"
       aria-labelledby={titleId}
-      whileHover={{ scale: 1.02, y: -5, boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15)" }}
-      transition={{ type: "spring", stiffness: 300, damping: 20 }}
-      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-lg backdrop-blur-sm flex flex-col z-10 event-card-hoverable overflow-hidden border border-gray-100 dark:border-gray-800"
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -6, scale: 1.015 }}
+      transition={{ type: "spring", stiffness: 280, damping: 22 }}
+      className="group relative flex flex-col rounded-2xl overflow-hidden bg-[#0f1117] border border-white/[0.07] shadow-xl shadow-black/40 hover:shadow-2xl hover:shadow-black/60 hover:border-white/[0.14] transition-all duration-300"
     >
-      {/* Action buttons */}
-      <div className="absolute top-3 right-3 z-200 flex space-x-1.5 items-center">
-        <div className="relative flex items-center">
+      {/* ── Banner Image with gradient overlay ── */}
+      <div className="relative h-44 overflow-hidden">
+        {/* Gradient accent background (shown when no image) */}
+        <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-80`} />
+
+        {eventImage ? (
+          <LazyImage
+            src={eventImage}
+            alt={`${event.title} event banner`}
+            className="absolute inset-0 w-full h-full"
+            imgClassName="object-cover w-full h-full mix-blend-overlay opacity-60 group-hover:scale-105 transition-transform duration-700"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <CategoryIcon size={52} className="text-white/20" />
+          </div>
+        )}
+
+        {/* Bottom gradient fade */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0f1117] via-[#0f1117]/40 to-transparent" />
+
+        {/* Category icon badge */}
+        <div className="absolute top-3 left-3">
+          <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md border border-white/10 rounded-full px-3 py-1.5">
+            <CategoryIcon size={12} className="text-white/80" />
+            <span className="text-[11px] font-semibold text-white/80 uppercase tracking-wide">
+              {event.type || event.category || "Event"}
+            </span>
+          </div>
+        </div>
+
+        {/* Action buttons */}
+        <div className="absolute top-3 right-3 flex gap-1.5">
           <motion.button
             whileHover={{ scale: 1.12 }}
             whileTap={{ scale: 0.88 }}
-            type="button"
             onClick={handleBookmarkToggle}
-            onMouseEnter={() => setShowBookmarkTooltip(true)}
-            onMouseLeave={() => setShowBookmarkTooltip(false)}
-            aria-label={isBookmarked ? "Remove event bookmark" : "Bookmark event"}
+            aria-label={isBookmarked ? "Remove bookmark" : "Bookmark event"}
             aria-pressed={isBookmarked}
-            className={`rounded-full p-2 shadow cursor-pointer border transition-all duration-300 relative flex items-center justify-center ${
+            className={`rounded-full p-2 backdrop-blur-md border transition-all duration-200 ${
               isBookmarked
-                ? "border-indigo-400 dark:border-indigo-500 text-white bg-linear-to-r from-indigo-500 to-indigo-600 shadow-[0_0_12px_rgba(99,102,241,0.45)]"
-                : "border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 bg-white/90 dark:bg-gray-900/90 hover:border-indigo-500 hover:text-indigo-600 dark:hover:border-indigo-400 dark:hover:text-indigo-400 hover:shadow-[0_0_12px_rgba(99,102,241,0.35)]"
+                ? "bg-indigo-500/80 border-indigo-400/60 text-white"
+                : "bg-black/40 border-white/10 text-white/70 hover:bg-white/10 hover:text-white"
             }`}
           >
-            <motion.div
-              key={isBookmarked ? "bookmarked" : "unbookmarked"}
-              initial={{ scale: 0.65, rotate: isBookmarked ? 15 : -15 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ type: "spring", stiffness: 350, damping: 15 }}
-              className="flex items-center justify-center"
-            >
-              {isBookmarked ? (
-                <BookmarkCheck size={14} className="stroke-[2.5]" />
-              ) : (
-                <Bookmark size={14} className="stroke-2" />
-              )}
-            </motion.div>
+            {isBookmarked ? <BookmarkCheck size={14} /> : <Bookmark size={14} />}
           </motion.button>
 
-          <AnimatePresence>
-            {showBookmarkTooltip && (
-              <motion.div
-                initial={{ opacity: 0, y: 4, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 4, scale: 0.95 }}
-                transition={{ duration: 0.15, ease: "easeOut" }}
-                className="absolute bottom-full right-0 mb-2 px-2.5 py-1 text-[10px] font-bold text-white bg-slate-900 dark:bg-slate-950 border border-slate-800 rounded-lg shadow-xl whitespace-nowrap pointer-events-none z-300"
-              >
-                {isBookmarked ? "Remove Bookmark" : "Save to Bookmarks"}
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <motion.button
+            whileHover={{ scale: 1.12 }}
+            whileTap={{ scale: 0.88 }}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsShareModalOpen(true); }}
+            className="rounded-full p-2 bg-black/40 backdrop-blur-md border border-white/10 text-white/70 hover:bg-white/10 hover:text-white transition-all duration-200"
+            aria-label={`Share ${event.title}`}
+          >
+            <Share2 size={14} />
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.12 }}
+            whileTap={{ scale: 0.88 }}
+            onClick={handleCopyLink}
+            className="rounded-full p-2 bg-black/40 backdrop-blur-md border border-white/10 text-white/70 hover:bg-white/10 hover:text-white transition-all duration-200"
+            title="Copy event link"
+            aria-label={`Copy link for ${event.title}`}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+              <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+            </svg>
+          </motion.button>
         </div>
 
-        <button
-          type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setIsShareModalOpen(true);
-          }}
-          className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow cursor-pointer hover:shadow-md border border-gray-200 group/share transition-all duration-200"
-          aria-label={`Share ${event.title}`}
-        >
-          <Share2 size={14} className="text-gray-600" aria-hidden="true" />
-        </button>
+        {/* Status badge */}
+        <div className="absolute bottom-3 right-3">
+          <StatusBadge status={computedStatus} />
+        </div>
 
-        <AnimatePresence>
-          {isShareModalOpen && (
-            <ShareModal
-              isOpen={isShareModalOpen}
-              onClose={() => setIsShareModalOpen(false)}
-              event={event}
-            />
+        {/* Registered / Conflict badges */}
+        {(isUserRegistered || (hasConflict && !isUserRegistered)) && (
+          <div className="absolute bottom-3 left-3">
+            {isUserRegistered ? (
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-500/20 border border-green-500/40 rounded-full text-[11px] font-semibold text-green-400">
+                <BookmarkCheck size={10} />
+                Registered
+              </div>
+            ) : (
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/20 border border-amber-500/40 rounded-full text-[11px] font-semibold text-amber-400">
+                <AlertTriangle size={10} />
+                Conflict
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ── Card body ── */}
+      <div className="flex flex-col flex-1 p-5 gap-4">
+        {/* Title */}
+        <h3
+          id={titleId}
+          title={event.title}
+          className="text-white font-bold text-base leading-snug line-clamp-2 group-hover:text-indigo-300 transition-colors duration-200"
+        >
+          {event.title}
+        </h3>
+
+        {/* Description */}
+        <p className="text-slate-400 text-sm leading-relaxed line-clamp-2 -mt-1">
+          {event.description}
+        </p>
+
+        {/* Meta info grid */}
+        <div className="flex flex-col gap-2.5">
+          {/* Location */}
+          {event.location && (
+            <div className="flex items-center gap-2.5">
+              <div className="flex-shrink-0 w-7 h-7 rounded-lg bg-pink-500/10 border border-pink-500/20 flex items-center justify-center">
+                <MapPin size={13} className="text-pink-400" />
+              </div>
+              <span className="text-sm text-slate-300 font-medium truncate">{event.location}</span>
+            </div>
           )}
-        </AnimatePresence>
 
-        <button
-          type="button"
-          onClick={handleCopyLink}
-          className="rounded-full border border-gray-200 bg-white/90 p-2 shadow backdrop-blur-sm hover:border-indigo-200 dark:border-gray-700 dark:bg-gray-800/90 dark:hover:border-indigo-500 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-indigo-500"
-          title="Copy Event Link"
-          aria-label={`Copy link for ${event.title}`}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="text-gray-600 dark:text-gray-300"
-            aria-hidden="true"
-          >
-            <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
-            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
-          </svg>
-        </button>
+          {/* Date */}
+          <div className="flex items-center gap-2.5">
+            <div className="flex-shrink-0 w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+              <Calendar size={13} className="text-indigo-400" />
+            </div>
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-sm text-slate-300 font-medium">
+                {dateInfo.full !== "Date TBD" ? dateInfo.full : "Date TBD"}
+              </span>
+              {dateInfo.time && dateInfo.full !== "Date TBD" && (
+                <>
+                  <span className="text-slate-600">·</span>
+                  <Clock size={11} className="text-slate-500 flex-shrink-0" />
+                  <span className="text-xs text-slate-500">{dateInfo.time}</span>
+                </>
+              )}
+            </div>
+          </div>
 
+          {/* Relative time chip */}
+          {dateInfo.relative && (
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7" />
+              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${
+                dateInfo.relative === "Past"
+                  ? "bg-slate-500/10 border-slate-500/20 text-slate-400"
+                  : dateInfo.relative === "Today"
+                  ? "bg-green-500/10 border-green-500/20 text-green-400"
+                  : "bg-indigo-500/10 border-indigo-500/20 text-indigo-400"
+              }`}>
+                {dateInfo.relative}
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Capacity bar ── */}
+      {typeof event.maxAttendees === "number" && event.maxAttendees > 0 && (
+        <CapacityBar attendees={event.attendees} maxAttendees={event.maxAttendees} />
+      )}
+
+      {/* ── Social share + add to calendar row ── */}
+      <div className="px-5 py-2.5 border-t border-white/[0.06] flex items-center justify-between">
+        <SocialShareButtons event={event} layout="inline" />
         <AddToCalendar event={event} iconOnly={true} />
       </div>
 
-      {/* Header */}
-      <div className="flex items-center px-5 py-4 gap-4 bg-linear-to-r from-white/80 to-indigo-50/60 dark:from-gray-900/80 dark:to-indigo-950/60 border-b border-gray-100 dark:border-gray-800 rounded-t-3xl">
-        <div className="p-2 bg-linear-to-br from-gray-100 to-white dark:from-gray-800 dark:to-gray-700 rounded-xl shadow-inner shrink-0">
-          {randomIcon}
-        </div>
-
-        <h3 id={titleId} title={event.title} className="text-gray-900 dark:text-white font-bold text-lg tracking-tight line-clamp-2 break-words group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-300 flex-1 min-w-0">
-          {event.title}
-        </h3>
-        <div className="ml-auto flex items-center gap-1.5 shrink-0">
-          {/* Conflict Indicator */}
-          {hasConflict && !isUserRegistered && (
-            <div
-              className="inline-flex items-center gap-[5px] py-1 px-[10px] bg-amber-100 dark:bg-amber-900/30 rounded-[6px] border border-amber-300 dark:border-amber-700 shrink-0 text-[12px] font-medium leading-none text-amber-700 dark:text-amber-300"
-              title="This event conflicts with your registered events"
-            >
-              <AlertTriangle size={12} className="text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" />
-              <span>Conflict</span>
-            </div>
-          )}
-          {/* Registered Indicator */}
-          {isUserRegistered && (
-            <div
-              className="inline-flex items-center gap-[5px] py-1 px-[10px] bg-green-100 dark:bg-green-900/30 rounded-[6px] border border-green-300 dark:border-green-700 shrink-0 text-[12px] font-medium leading-none text-green-700 dark:text-green-300"
-              title="You are registered for this event"
-            >
-              <BookmarkCheck size={12} className="text-green-600 dark:text-green-400 shrink-0" aria-hidden="true" />
-              <span>Registered</span>
-            </div>
-          )}
-          <StatusBadge status={computedStatus} />
-        </div>
-      </div>
-
-      {/* Image */}
-      <div className="relative h-40 overflow-hidden">
-        <LazyImage
-          src={event.image}
-          alt={event.imageAlt || `${event.title} event thumbnail`}
-          aspectRatio="5/1"
-          className="w-full h-full"
-          imgClassName="object-cover transition-transform duration-500 group-hover:scale-105"
-        />
-        <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent" />
-      </div>
-
-      {/* Description */}
-      <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
-        <p className="text-gray-500 dark:text-gray-400 text-sm leading-6 line-clamp-2">
-          {event.description}
-        </p>
-      </div>
-
-      {/* Info Grid */}
-      <div className="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4 text-gray-600 dark:text-gray-400 text-sm bg-gray-50/50 dark:bg-gray-800/30">
-        {/* Location */}
-        <div className="flex items-start gap-2 sm:col-span-2">
-          <MapPin size={14} className="text-pink-500 shrink-0" />
-          <div className="flex flex-col min-w-0">
-            <span className="truncate">{event.location}</span>
-            <span className="text-[11px] text-gray-500 dark:text-gray-400">
-              {getUserTimezone()}
-            </span>
-          </div>
-        </div>
-
-        {/* Event Type */}
-        <div className="flex items-center gap-2">
-          <Tag size={14} className="text-green-500 shrink-0" aria-hidden="true" />
-          <span className="truncate">{event.type}</span>
-        </div>
-
-        {/* Event Date */}
-        <div className="flex items-start gap-2">
-          <Calendar size={14} className="text-indigo-500 shrink-0 mt-0.5" />
-          <div className="flex flex-col">
-            <span className="truncate">
-              {getSmartDateLabel(event.date, event.time)}
-            </span>
-            <span className="text-[11px] text-gray-500 dark:text-gray-400">
-              {new Date(event.date).toLocaleDateString("en-US", {
-                weekday: "short", day: "numeric", month: "short", year: "numeric",
-              })}
-              <EventDuration duration={durationText} />
-            </span>
-          </div>
-        </div>
-      </div>
-      <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
-        <ReminderControls event={event} canSetReminder={canSetReminder} compact />
-      </div>
-      {/* Seats / Capacity */}
-      {typeof event.maxAttendees === "number" && event.maxAttendees > 0 && (
-        <EventCapacity attendees={event.attendees} maxAttendees={event.maxAttendees} />
-      )}
-
-      {/* Social Sharing */}
-      <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 flex justify-center">
-        <SocialShareButtons event={event} layout="inline" />
-      </div>
-
-      {/* CTA */}
-      <div className="px-5 py-4 flex gap-3 mt-auto">
+      {/* ── CTA buttons ── */}
+      <div className="px-4 py-4 flex gap-2.5 border-t border-white/[0.06]">
         {isPastEvent ? (
-          <div className="flex-1 inline-flex items-center justify-center rounded-2xl bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-4 py-3 text-sm font-semibold shadow-md cursor-not-allowed">
+          <div className="flex-1 inline-flex items-center justify-center rounded-xl bg-slate-800 text-slate-500 px-4 py-2.5 text-sm font-semibold cursor-not-allowed select-none">
             Event Ended
           </div>
         ) : (
-          <Link to={`/events/${event.id}/register`} className="flex-1 inline-flex items-center justify-center rounded-2xl bg-linear-to-r from-indigo-600 via-indigo-700 to-slate-900 hover:from-indigo-500 hover:via-indigo-600 hover:to-slate-800 text-white px-4 py-3 text-sm font-semibold shadow-lg transition-all duration-300 hover:scale-[1.03] hover:shadow-xl">
-            <span>
-              Register Now
-            </span>
+          <Link
+            to={`/events/${event.id}/register`}
+            className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white px-4 py-2.5 text-sm font-bold shadow-lg shadow-indigo-900/40 hover:shadow-indigo-900/60 transition-all duration-200 hover:scale-[1.02]"
+          >
+            Register Now
           </Link>
         )}
-
-        <Link to={`/events/${event.id}`} className="flex-1 inline-flex items-center justify-center rounded-2xl bg-slate-50/80 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 px-4 py-3 text-sm font-semibold shadow-md hover:bg-slate-100 dark:hover:bg-slate-700/80 hover:scale-[1.03] hover:shadow-lg transition-all duration-300">
-          <span>
-            View Details
-          </span>
+        <Link
+          to={`/events/${event.id}`}
+          className="inline-flex items-center justify-center gap-1 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-slate-300 hover:text-white px-4 py-2.5 text-sm font-semibold transition-all duration-200 hover:scale-[1.02]"
+        >
+          Details
+          <ArrowRight size={13} />
         </Link>
       </div>
+
+      {/* Share Modal */}
+      <AnimatePresence>
+        {isShareModalOpen && (
+          <ShareModal
+            isOpen={isShareModalOpen}
+            onClose={() => setIsShareModalOpen(false)}
+            event={event}
+          />
+        )}
+      </AnimatePresence>
     </motion.article>
   );
 };
 
 export default memo(EventCard);
-// OPTIMIZATION: Implemented image lazy-loading, decoding='async' and standard aspect-ratio styles to minimize Cumulative Layout Shift (CLS).

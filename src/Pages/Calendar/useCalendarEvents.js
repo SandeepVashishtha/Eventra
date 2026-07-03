@@ -1,13 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { eventService } from "../../services/eventService";
-import { getEventStatus } from "../../utils/eventUtils";
+import { normalizeEvent } from "../../utils/eventUtils";
 
-const normalizeEvents = (events = []) =>
-  events.map((event) => ({
-    ...event,
-    status: getEventStatus(event),
-  }));
+const normalizeEvents = (events = []) => events.map(normalizeEvent);
 
 const useCalendarEvents = () => {
   const [events, setEvents] = useState([]);
