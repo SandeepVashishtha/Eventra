@@ -8,6 +8,7 @@ import { useAuth } from "../../context/AuthContext";
 
 import { projectService } from "../../services/projectService";
 import { sanitizeInputText } from "../../utils/inputSanitization";
+import { REQUIRED_FIELDS, validateSubmitProjectForm } from "../../utils/submitProjectValidation";
 
 const SubmitProject = () => {
   const navigate = useNavigate();
@@ -101,72 +102,13 @@ const SubmitProject = () => {
     additionalNotes: useRef(null),
   };
 
-  const requiredFields = [
-    "projectName",
-    "teamName",
-    "email",
-    "githubLink",
-    "projectType",
-    "techStack",
-    "description",
-  ];
+  const requiredFields = REQUIRED_FIELDS;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
-
-const validateForm = (data) => {
-  const newErrors = {};
-
-  const formatFieldName = (fieldName) => {
-    const result = fieldName.replace(/([A-Z])/g, " $1");
-    return result.charAt(0).toUpperCase() + result.slice(1);
-  };
-
-  // Required fields
-  for (const field of requiredFields) {
-    if (!data[field]?.trim()) {
-      const formattedName = formatFieldName(field);
-      newErrors[field] = `${formattedName} is required.`;
-    }
-  }
-
-  // Length validations
-  if (data.projectName && (data.projectName.trim().length < 3 || data.projectName.trim().length > 100)) {
-    newErrors.projectName = "Project Name must be between 3 and 100 characters.";
-  }
-  if (data.teamName && (data.teamName.trim().length < 3 || data.teamName.trim().length > 100)) {
-    newErrors.teamName = "Team Name must be between 3 and 100 characters.";
-  }
-  if (data.description && (data.description.trim().length < 20 || data.description.trim().length > 2000)) {
-    newErrors.description = "Description must be between 20 and 2000 characters.";
-  }
-
-  // Existing validation logic
-  if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) {
-    newErrors.email = "Please enter a valid email address.";
-  }
-  if (
-    data.githubLink &&
-    !/^(https?:\/\/)?(www\.)?github\.com\/[\w-]+\/[\w-]+(\/)?$/i.test(data.githubLink.trim())
-  ) {
-    newErrors.githubLink = "Please enter a valid GitHub repository URL.";
-  }
-  const urlRegex = /^(https?:\/\/)?([\w-]+(\.[\w-]+)+)(\/[\w-./?%&=]*)?$/i;
-  if (data.liveDemoLink?.trim() && !urlRegex.test(data.liveDemoLink)) {
-    newErrors.liveDemoLink = "Please enter a valid URL.";
-  }
-  if (data.projectImage?.trim()) {
-    const isBase64 = data.projectImage.startsWith("data:image/");
-    if (!isBase64 && !urlRegex.test(data.projectImage)) {
-      newErrors.projectImage = "Please enter a valid image URL.";
-    }
-  }
-
-  return newErrors;
-};
 
 const handleSubmit = async (e) => {
     e.preventDefault();
@@ -177,7 +119,7 @@ const handleSubmit = async (e) => {
       return;
     }
 
-    const validationErrors = validateForm(formData);
+    const validationErrors = validateSubmitProjectForm(formData);
 
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
