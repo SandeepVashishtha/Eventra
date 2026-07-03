@@ -181,7 +181,7 @@ const EventCard = ({ event }) => {
   // Resolve the event date — API may use eventDate, date, or startDate
   const eventDate = event.date || event.eventDate || event.startDate || null;
   const dateInfo = formatEventDate(eventDate);
-  const CategoryIcon = getCategoryIcon(event);
+  const categoryIcon = getCategoryIcon(event);
   const gradient = getCardGradient(event.id);
 
   const handleCopyLink = useCallback((e) => {
@@ -234,7 +234,7 @@ const EventCard = ({ event }) => {
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
-            {CategoryIcon && <CategoryIcon size={52} className="text-white/20" />}
+            {categoryIcon && React.createElement(categoryIcon, { size: 52, className: "text-white/20" })}
           </div>
         )}
 
@@ -244,7 +244,7 @@ const EventCard = ({ event }) => {
         {/* Category icon badge */}
         <div className="absolute top-3 left-3">
           <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md border border-white/10 rounded-full px-3 py-1.5">
-            {CategoryIcon && <CategoryIcon size={12} className="text-white/80" />}
+            {categoryIcon && React.createElement(categoryIcon, { size: 12, className: "text-white/80" })}
             <span className="text-[11px] font-semibold text-white/80 uppercase tracking-wide">
               {event.type || event.category || "Event"}
             </span>
