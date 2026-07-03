@@ -688,7 +688,7 @@ this.channel.onmessage = async (e) => {
     };
 
     this.channel.onclose = () => {
-      if (this.currentState !== "completed") {
+      if (this.currentState !== "completed" && this.currentState !== "failed") {
         this.updateState("failed");
       }
       this.cleanup();
