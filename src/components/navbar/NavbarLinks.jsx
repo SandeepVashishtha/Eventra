@@ -89,19 +89,20 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
         }
       `
       : `
-        flex items-center gap-1
+        flex items-center gap-1 shrink-0
+        min-w-max
         whitespace-nowrap
-        px-0.5 py-1
+        rounded-full px-3 py-2
         text-[12px]
         font-medium
         uppercase
         tracking-[0.03em]
-        border-b-2
+        border border-transparent
         transition-all duration-150 ease-out hover:scale-[1.02] active:scale-[0.98]
         ${
           isActive
-            ? "border-primary text-text dark:text-white font-semibold"
-            : "text-text-secondary hover:text-text dark:hover:text-white hover:border-gray-300 dark:hover:border-zinc-700"
+            ? "bg-bg-secondary text-text dark:text-white font-semibold shadow-sm border-border"
+            : "text-text-secondary hover:text-text dark:hover:text-white hover:bg-bg-secondary/70 hover:border-gray-300/70 dark:hover:border-zinc-700/70"
         }
       `;
 
@@ -148,7 +149,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                         );
                       }
                     }}
-                    className="ml-0.5 rounded p-1.5 hover:bg-bg-secondary transition-colors"
+                    className="ml-0.5 shrink-0 rounded-full p-1.5 hover:bg-bg-secondary transition-colors"
                     aria-label={`Toggle ${t(item.nameKey)} menu`}
                   >
                     <ChevronDown

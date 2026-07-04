@@ -127,13 +127,13 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             </Link>
 
             {/* Desktop Navigation — allowed to flex-shrink */}
-            <div className="hidden lg:flex flex-1 justify-center min-w-0 mx-1">
+            <div className="hidden lg:flex flex-1 justify-center min-w-0 mx-1 overflow-visible">
               <DesktopNavbar />
             </div>
 
             {/* Right Controls */}
             <div className="flex items-center justify-end gap-1.5 shrink-0">
-              <div className="hidden lg:flex items-center gap-1.5">
+              <div className="hidden lg:flex items-center gap-1.5 shrink-0">
                 <ThemeToggleButton
                   isDarkMode={isDarkMode}
                   toggleTheme={toggleTheme}
