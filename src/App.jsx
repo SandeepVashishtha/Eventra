@@ -9,15 +9,18 @@ import { toast } from "react-toastify";
 import ScrollRestoration from "./components/ScrollRestoration";
 // Critical path - loaded eagerly (needed before first paint)
 import Navbar from "./components/navbar/Navbar";
-import SkipToContent from "./components/accessibility/SkipToContent";
 import OfflineBanner from "./components/common/OfflineBanner";
 import OfflineConflictModal from "./components/common/OfflineConflictModal";
 import UpdateAvailableBanner from "./components/common/UpdateAvailableBanner";
+import ScrollToTop from "./components/ScrollToTop";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import NotificationToastContainer from "./components/common/NotificationProvider";
 import { NotificationProvider } from "./context/NotificationContext";
 import { AuthProvider } from "./context/AuthContext";
+// FIX (#7653): ThemeProvider moved here (inside AuthProvider) so useAuth()
+// is available for cross-device theme sync via validateSession().
+import { ThemeProvider } from "./context/ThemeContext";
 import { MyEventsProvider } from "./context/MyEventsContext";
 import { SessionRecoveryProvider } from "./context/SessionRecoveryContext";
 import useOfflineSync from "./hooks/useOfflineSync";
@@ -30,20 +33,15 @@ import { getAuthRoutes, getProtectedRoutes } from "./components/routes/Protected
 import {
   AuthFormSkeleton,
   ExploreEventsSkeleton,
-  EventDetailSkeleton,
 } from "./components/common/SkeletonLoaders";
 
 // Route-level lazy splits - loaded only when route is visited
 const Footer = lazy(() => import("./components/Layout/Footer"));
 const Chatbot = lazy(() => import("./components/Chatbot"));
 const AppRoutes = lazy(() => import("./components/AppRoutes"));
-const EventRegistration = lazy(() => import("./Pages/Events/EventRegistration"));
 const SavedEventsPage = lazy(() => import("./Pages/SavedEventsPage"));
 const EventRecommendation = lazy(() => import("./Pages/EventRecommendation/EventRecommendation"));
-const MatchmakingHub = lazy(() => import("./Pages/Networking/MatchmakingHub"));
-const EventDetails = lazy(() => import("./Pages/Events/EventDetails"));
-// const ExploreEvents = lazy(() => import("./Pages/Events/EventsPage"));
-const EventsPage = lazy(() => import("./Pages/Events/EventsPage"));
+const ExploreEvents = lazy(() => import("./Pages/Events/EventsPage"));
 
 // Non-critical UI - deferred after first paint
 const FluidCursor = lazy(() => import("./components/visual/FluidCursor"));
@@ -53,8 +51,6 @@ const FeedbackButton = lazy(() => import("./components/FeedbackButton"));
 const BackToTop = lazy(() => import("./components/common/BackToTop"));
 const ReminderChecker = lazy(() => import("./components/reminders/ReminderChecker"));
 const SessionRecovery = lazy(() => import("./components/SessionRecovery"));
-const ThemeCustomizer = lazy(() => import("./components/Layout/ThemeCustomizer"));
-// const ComparativeAnalytics = lazy(() => import("./components/Analytics/ComparativeAnalyticsDashboard"));
 
 
 const OfflineSyncManager = () => {
@@ -165,6 +161,7 @@ function App() {
     
     <ErrorBoundary>
       <AuthProvider>
+        <ThemeProvider>
         <NotificationProvider>
           <MyEventsProvider>
             <SessionRecoveryProvider>
@@ -175,7 +172,6 @@ function App() {
               <OfflineSyncManager />
 <ScrollRestoration />
               <div className="App">
-                <SkipToContent />
                 <ErrorBoundary level="section" label="Navigation Bar">
                   <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
                 </ErrorBoundary>
@@ -204,43 +200,41 @@ function App() {
                   <PageTransition>
                     <ErrorBoundary>
                       <Routes location={location} key={location?.pathname || "default"}>
-                        {getAuthRoutes()}
-                        {getProtectedRoutes()}
-                        <Route
-                          path="/register/:id"
-                          element={
-                            <ProtectedRoute>
-                              <Suspense fallback={<AuthFormSkeleton />}>
-                                <EventRegistration />
-                              </Suspense>
-                            </ProtectedRoute>
-                          }
-                        />
+                        {/* /explore is a legacy alias for the Events page */}
                         <Route
                           path="/explore"
                           element={
                             <Suspense fallback={<ExploreEventsSkeleton />}>
-                              <EventsPage />
+                              <ExploreEvents />
                             </Suspense>
                           }
                         />
                         <Route
-                          path="/events/:eventId"
+                          path="/event-recommendation"
                           element={
-                            <Suspense fallback={<EventDetailSkeleton />}>
-                              <EventDetails />
+                            <Suspense fallback={null}>
+                              <EventRecommendation />
                             </Suspense>
                           }
                         />
-                        
+                        {getAuthRoutes()}
+                        {getProtectedRoutes()}
                         <Route
                           path="/event-recommendation"
                           element={<Suspense fallback={null}><EventRecommendation /></Suspense>}
                         />
                         <Route
                           path="/saved-events"
-                          element={<Suspense fallback={null}><SavedEventsPage /></Suspense>}
+                          element={
+                            <ProtectedRoute>
+                              <Suspense fallback={<AuthFormSkeleton />}>
+                                <SavedEventsPage />
+                              </Suspense>
+                            </ProtectedRoute>
+                          }
                         />
+                        {/* All other routes (auth, dashboard, admin, profile, events, etc.)
+                            are handled by AppRoutes → PublicRoutes / ProtectedRoutes */}
                         <Route
                           path="/matchmaking"
                           element={
@@ -257,7 +251,6 @@ function App() {
                             </Suspense>
                           }
                         />
-
                       </Routes>
                     </ErrorBoundary>
                   </PageTransition>
@@ -296,15 +289,16 @@ function App() {
                     <Suspense fallback={null}>
                       <FluidCursor enabled={cursorEnabled} />
                     </Suspense>
-                </ErrorBoundary>
+                  </ErrorBoundary>
                 )}
 
                 
               </div>
-              <Analytics />
+              <UpdateAvailableBanner />
             </SessionRecoveryProvider>
           </MyEventsProvider>
         </NotificationProvider>
+        </ThemeProvider>
       </AuthProvider>
     </ErrorBoundary>
   );
