@@ -149,6 +149,11 @@ npm run lint
 npm run test
 npm run test:e2e
 ```
+## Dependency Security
+
+For dependency management and security best practices, see:
+
+- docs/DEPENDENCY_SECURITY.md
 
 ## SSE Mock Server (Optional)
 

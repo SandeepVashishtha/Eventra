@@ -157,3 +157,11 @@ You do not need to set these manually.
 Do not commit secrets, tokens, or private keys.
 
 If you discover a security issue, follow [SECURITY.md](SECURITY.md).
+
+## Dependency Management
+
+Contributors should review the Dependency Security Guide before introducing or updating project dependencies.
+
+See:
+
+- docs/DEPENDENCY_SECURITY.md

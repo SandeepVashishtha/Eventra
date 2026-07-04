@@ -16,3 +16,9 @@ If you discover a security vulnerability within this project, please do not open
 
 ### JWT Refresh Token Expiration Rules
 - Enforce secure cookie attributes for persistent auth sessions.
+
+## Dependency Security
+
+For guidance on securely managing project dependencies, vulnerability monitoring, and package updates, refer to:
+
+- docs/DEPENDENCY_SECURITY.md
