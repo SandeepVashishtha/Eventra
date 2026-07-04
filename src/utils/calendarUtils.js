@@ -77,8 +77,8 @@ export const addEventToGoogleCalendar = (event) => {
     // Assuming time format like "10:00 AM"
     const timeParts = event.time.match(/(\d+):(\d+)\s*([APap][Mm])/);
     if (timeParts) {
-      let hours = parseInt(timeParts[1]);
-      const minutes = parseInt(timeParts[2]);
+      let hours = parseInt(timeParts[1], 10);
+      const minutes = parseInt(timeParts[2], 10);
       const period = timeParts[3].toUpperCase();
       
       // Convert to 24-hour format

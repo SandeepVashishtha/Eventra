@@ -1,9 +1,42 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { API_ENDPOINTS, apiUtils } from '../../config/api';
+// Under the hood, password reset requests are sent to API_ENDPOINTS.AUTH.RESET_PASSWORD via authService.
+import { authService } from '../../services/authService';
 import { motion } from "framer-motion";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
-import { RESET_COOLDOWN_SECONDS, secondsUntilUnlock } from '../../utils/rateLimitUtils';
+import { RESET_COOLDOWN_SECONDS, secondsUntilUnlock, STORAGE_KEY_RESET_LAST_SUBMIT } from '../../utils/rateLimitUtils';
+
+// ---------------------------------------------------------------------------
+// sessionStorage helpers — persist cooldown across page refreshes (Issue #5720)
+// ---------------------------------------------------------------------------
+
+/**
+ * Read the last submit timestamp from sessionStorage.
+ * Returns 0 if missing or corrupt so the cooldown is treated as expired.
+ */
+const readLastSubmit = () => {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY_RESET_LAST_SUBMIT);
+    if (raw === null) return 0;
+    const parsed = parseInt(raw, 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+  } catch {
+    return 0;
+  }
+};
+
+/**
+ * Persist the last submit timestamp to sessionStorage.
+ * Fails silently (privacy mode / storage full) — the in-memory ref is the
+ * authoritative source within the same page lifecycle.
+ */
+const writeLastSubmit = (ts) => {
+  try {
+    sessionStorage.setItem(STORAGE_KEY_RESET_LAST_SUBMIT, String(ts));
+  } catch {
+    // best-effort
+  }
+};
 
 const PasswordReset = () => {
   useDocumentTitle("Reset Password | Eventra");
@@ -13,7 +46,10 @@ const PasswordReset = () => {
   const [error, setError] = useState('');
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
 
-  const lastSubmitRef = useRef(0);
+  // FIX (Issue #5720): Seed from sessionStorage so cooldown survives page refresh.
+  // useRef is still used as the authoritative in-memory source within the lifecycle;
+  // sessionStorage provides durability across remounts/refreshes.
+  const lastSubmitRef = useRef(readLastSubmit());
   const intervalRef = useRef(null);
   const navTimerRef = useRef(null);
   const emailInputRef = useRef(null);
@@ -49,6 +85,18 @@ const PasswordReset = () => {
     return () => clearAllTimers(); // Safely clean up everything on unmount
   }, [clearAllTimers]);
 
+  // FIX (Issue #5720): On mount, if a persisted cooldown is still active,
+  // start the countdown timer so the UI reflects the correct remaining time.
+  useEffect(() => {
+    if (lastSubmitRef.current > 0) {
+      const remaining = secondsUntilUnlock(lastSubmitRef.current + RESET_COOLDOWN_SECONDS * 1000);
+      if (remaining > 0) {
+        startCooldownTimer();
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // intentionally runs once on mount
+
   const isCoolingDown = () => {
     return Date.now() - lastSubmitRef.current < RESET_COOLDOWN_SECONDS * 1000;
   };
@@ -70,9 +118,10 @@ const PasswordReset = () => {
 
     setLoading(true);
     try {
-      const response = await apiUtils.post(API_ENDPOINTS.AUTH.RESET_PASSWORD, { email });
+      const response = await authService.resetPassword(email);
       setMessage(response.data?.message || 'Password reset link sent! Check your email.');
       lastSubmitRef.current = Date.now();
+      writeLastSubmit(lastSubmitRef.current); // FIX (Issue #5720): persist so refresh can't bypass cooldown
       startCooldownTimer();
       navTimerRef.current = setTimeout(() => navigate('/login'), 3000);
     } catch (err) {
@@ -91,7 +140,7 @@ const PasswordReset = () => {
         <motion.div
           whileHover={{ scale: 1.05, rotate: 5 }}
           whileTap={{ scale: 0.95 }}
-          className="mx-auto w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg transform transition-transform duration-200"
+          className="mx-auto w-16 h-16 bg-linear-to-r from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg transform transition-transform duration-200"
         >
           <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />

@@ -1,11 +1,12 @@
 name: PR Size Labeler
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, synchronize, reopened]
 
 permissions:
   pull-requests: write
+  contents: read
 
 jobs:
   label:
@@ -15,6 +16,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
+          ref: refs/pull/${{ github.event.pull_request.number }}/merge
           fetch-depth: 0
 
       - name: Calculate PR Size

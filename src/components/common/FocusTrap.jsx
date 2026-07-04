@@ -1,4 +1,3 @@
-import React from 'react';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 /**
