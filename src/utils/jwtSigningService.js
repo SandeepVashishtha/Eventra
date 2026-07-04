@@ -1,0 +1,344 @@
+/**
+ * jwtSigningService.js
+ *
+ * Secure JWT token signing and validation service.
+ * Implements proper key management, algorithm whitelisting, and cryptographic security.
+ */
+
+import crypto from 'node:crypto';
+
+/**
+ * Allowed JWT signing algorithms
+ * Restricted to secure algorithms that prevent algorithm confusion attacks
+ */
+const ALLOWED_ALGORITHMS = [
+  'HS256', // HMAC with SHA-256
+  'HS384', // HMAC with SHA-384
+  'HS512', // HMAC with SHA-512
+  'RS256', // RSA with SHA-256
+  'RS384', // RSA with SHA-384
+  'RS512', // RSA with SHA-512
+  'ES256', // ECDSA with SHA-256
+  'ES384', // ECDSA with SHA-384
+  'ES512', // ECDSA with SHA-512
+];
+
+/**
+ * Algorithm families for validation
+ */
+const ALGORITHM_FAMILIES = {
+  HS: 'symmetric',
+  RS: 'asymmetric',
+  ES: 'asymmetric',
+};
+
+class JWTSigningService {
+  constructor(options = {}) {
+    this.secret = options.secret || process.env.JWT_SECRET;
+    this.privateKey = options.privateKey;
+    this.publicKey = options.publicKey;
+    this.algorithm = options.algorithm || 'HS256';
+    this.expiresIn = options.expiresIn || 3600;
+
+    this.validateConfiguration();
+  }
+
+  /**
+   * Validate service configuration for security
+   */
+  validateConfiguration() {
+    // Symmetric algorithms require a secret
+    if (this.algorithm.startsWith('HS')) {
+      if (!this.secret) {
+        throw new Error('JWT_SECRET is required for HMAC algorithms');
+      }
+
+      if (this.secret.length < 32) {
+        console.warn('[SECURITY WARNING] JWT_SECRET is too short. Minimum 32 bytes recommended.');
+      }
+    }
+
+    // Asymmetric algorithms require keys
+    if (this.algorithm.startsWith('RS') || this.algorithm.startsWith('ES')) {
+      if (!this.privateKey) {
+        throw new Error('Private key is required for asymmetric algorithms');
+      }
+      if (!this.publicKey) {
+        throw new Error('Public key is required for asymmetric algorithms');
+      }
+    }
+
+    // Validate algorithm is whitelisted
+    if (!ALLOWED_ALGORITHMS.includes(this.algorithm)) {
+      throw new Error(`Algorithm ${this.algorithm} is not whitelisted. Allowed: ${ALLOWED_ALGORITHMS.join(', ')}`);
+    }
+  }
+
+  /**
+   * Sign a JWT token with payload
+   */
+  signToken(payload, options = {}) {
+    if (!payload || typeof payload !== 'object') {
+      throw new Error('Payload must be an object');
+    }
+
+    // Create header
+    const header = {
+      alg: this.algorithm,
+      typ: 'JWT',
+    };
+
+    // Add kid (key ID) if provided - useful for key rotation
+    if (options.keyId) {
+      header.kid = options.keyId;
+    }
+
+    // Create payload with standard claims
+    const now = Math.floor(Date.now() / 1000);
+    const tokenPayload = {
+      iat: now,
+      ...payload,
+    };
+
+    // Add expiration unless explicitly disabled
+    if (options.expiresIn !== null) {
+      const expiresIn = options.expiresIn || this.expiresIn;
+      tokenPayload.exp = now + expiresIn;
+    }
+
+    // Add not-before if specified
+    if (options.notBefore) {
+      tokenPayload.nbf = now + options.notBefore;
+    }
+
+    // Encode header and payload
+    const encodedHeader = this.base64UrlEncode(JSON.stringify(header));
+    const encodedPayload = this.base64UrlEncode(JSON.stringify(tokenPayload));
+
+    const message = `${encodedHeader}.${encodedPayload}`;
+
+    // Sign message
+    let signature;
+    if (this.algorithm.startsWith('HS')) {
+      signature = this.signHMAC(message);
+    } else if (this.algorithm.startsWith('RS')) {
+      signature = this.signRSA(message);
+    } else if (this.algorithm.startsWith('ES')) {
+      signature = this.signECDSA(message);
+    } else {
+      throw new Error(`Unsupported algorithm: ${this.algorithm}`);
+    }
+
+    return `${message}.${signature}`;
+  }
+
+  /**
+   * Sign message with HMAC
+   */
+  signHMAC(message) {
+    const hash = crypto
+      .createHmac(this.getHashAlgorithm(), this.secret)
+      .update(message)
+      .digest();
+
+    return this.base64UrlEncode(hash);
+  }
+
+  /**
+   * Sign message with RSA
+   */
+  signRSA(message) {
+    const signer = crypto.createSign(this.getHashAlgorithm());
+    signer.update(message);
+    const signature = signer.sign(this.privateKey);
+    return this.base64UrlEncode(signature);
+  }
+
+  /**
+   * Sign message with ECDSA
+   */
+  signECDSA(message) {
+    const signer = crypto.createSign(this.getHashAlgorithm());
+    signer.update(message);
+    const signature = signer.sign(this.privateKey);
+    return this.base64UrlEncode(signature);
+  }
+
+  /**
+   * Verify a JWT token
+   */
+  verifyToken(token, options = {}) {
+    if (!token || typeof token !== 'string') {
+      throw new Error('Token must be a string');
+    }
+
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      throw new Error('Invalid token format');
+    }
+
+    const [encodedHeader, encodedPayload, encodedSignature] = parts;
+
+    // Decode and parse header
+    let header;
+    try {
+      header = JSON.parse(this.base64UrlDecode(encodedHeader));
+    } catch {
+      throw new Error('Invalid token header');
+    }
+
+    // Validate header
+    if (!header.alg) {
+      throw new Error('Missing algorithm in token header');
+    }
+
+    // Prevent algorithm confusion attack
+    if (header.alg !== this.algorithm) {
+      throw new Error(`Algorithm mismatch: token uses ${header.alg}, expected ${this.algorithm}`);
+    }
+
+    // Validate algorithm is whitelisted
+    if (!ALLOWED_ALGORITHMS.includes(header.alg)) {
+      throw new Error(`Algorithm ${header.alg} is not whitelisted`);
+    }
+
+    // Verify signature
+    const message = `${encodedHeader}.${encodedPayload}`;
+    let isSignatureValid = false;
+
+    if (header.alg.startsWith('HS')) {
+      isSignatureValid = this.verifyHMACSignature(message, encodedSignature);
+    } else if (header.alg.startsWith('RS')) {
+      isSignatureValid = this.verifyRSASignature(message, encodedSignature);
+    } else if (header.alg.startsWith('ES')) {
+      isSignatureValid = this.verifyECDSASignature(message, encodedSignature);
+    }
+
+    if (!isSignatureValid) {
+      throw new Error('Invalid token signature');
+    }
+
+    // Decode and parse payload
+    let payload;
+    try {
+      payload = JSON.parse(this.base64UrlDecode(encodedPayload));
+    } catch {
+      throw new Error('Invalid token payload');
+    }
+
+    // Validate standard claims
+    const now = Math.floor(Date.now() / 1000);
+
+    // Check expiration
+    if (payload.exp && payload.exp < now) {
+      throw new Error('Token expired');
+    }
+
+    // Check not-before
+    if (payload.nbf && payload.nbf > now) {
+      throw new Error('Token not yet valid');
+    }
+
+    // Check issued-at clock skew
+    if (payload.iat && payload.iat > now + 60) {
+      throw new Error('Token issued in the future (clock skew)');
+    }
+
+    return payload;
+  }
+
+  /**
+   * Verify HMAC signature
+   */
+  verifyHMACSignature(message, encodedSignature) {
+    const expected = this.signHMAC(message);
+    return crypto.timingSafeEqual(
+      Buffer.from(encodedSignature),
+      Buffer.from(expected)
+    );
+  }
+
+  /**
+   * Verify RSA signature
+   */
+  verifyRSASignature(message, encodedSignature) {
+    const verifier = crypto.createVerify(this.getHashAlgorithm());
+    verifier.update(message);
+    const signature = this.base64UrlDecode(encodedSignature);
+    return verifier.verify(this.publicKey, signature);
+  }
+
+  /**
+   * Verify ECDSA signature
+   */
+  verifyECDSASignature(message, encodedSignature) {
+    const verifier = crypto.createVerify(this.getHashAlgorithm());
+    verifier.update(message);
+    const signature = this.base64UrlDecode(encodedSignature);
+    return verifier.verify(this.publicKey, signature);
+  }
+
+  /**
+   * Get hash algorithm name from JWT algorithm
+   */
+  getHashAlgorithm() {
+    const lastThreeChars = this.algorithm.slice(-3);
+    if (lastThreeChars === '256') return 'sha256';
+    if (lastThreeChars === '384') return 'sha384';
+    if (lastThreeChars === '512') return 'sha512';
+    throw new Error(`Unknown hash algorithm for ${this.algorithm}`);
+  }
+
+  /**
+   * Base64URL encode
+   */
+  base64UrlEncode(data) {
+    const buffer = typeof data === 'string'
+      ? Buffer.from(data, 'utf-8')
+      : Buffer.from(data);
+
+    return buffer
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '');
+  }
+
+  /**
+   * Base64URL decode
+   */
+  base64UrlDecode(str) {
+    const padded = str + '='.repeat((4 - (str.length % 4)) % 4);
+    return Buffer.from(
+      padded
+        .replace(/-/g, '+')
+        .replace(/_/g, '/'),
+      'base64'
+    ).toString('utf-8');
+  }
+
+  /**
+   * Generate secure random secret
+   */
+  static generateSecureSecret(length = 32) {
+    return crypto.randomBytes(length).toString('hex');
+  }
+
+  /**
+   * Get algorithm family
+   */
+  static getAlgorithmFamily(algorithm) {
+    const firstTwoChars = algorithm.slice(0, 2);
+    return ALGORITHM_FAMILIES[firstTwoChars];
+  }
+
+  /**
+   * List allowed algorithms
+   */
+  static getAllowedAlgorithms() {
+    return [...ALLOWED_ALGORITHMS];
+  }
+}
+
+export const jwtSigningService = new JWTSigningService();
+export { JWTSigningService };
