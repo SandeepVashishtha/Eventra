@@ -40,7 +40,7 @@
 
 The frontend calls all APIs via an Axios instance configured with:
 
-- Base URL: `process.env.REACT_APP_API_URL` (defaults to `http://localhost:8080`)
+- Base URL: an explicitly configured backend URL (`BACKEND_URL`, `VITE_API_URL`, or `REACT_APP_API_URL`)
 - `Content-Type: application/json`
 - `withCredentials: true`
 - Request timeout: 15 seconds
@@ -52,7 +52,7 @@ The frontend calls all APIs via an Axios instance configured with:
 
 📖 **See [Environment Setup Guide](ENV_SETUP_GUIDE.md)** for:
 
-- How to configure `REACT_APP_API_URL` in frontend
+- How to configure `BACKEND_URL`, `VITE_API_URL`, or `REACT_APP_API_URL` in frontend
 - Running the backend locally
 - Troubleshooting backend connection issues
 - Development vs production API endpoints
@@ -1292,7 +1292,7 @@ GET /api/feedback/event/{eventId}
 
 ## 16. Real-Time / SSE APIs
 
-The frontend has a `RealTimeContext.js` referencing real-time updates. The `sse-mock-server.js` file at the project root simulates SSE events.
+The frontend consumes real-time updates from the separate backend service; local mock-server helpers are no longer part of this repository.
 
 ### 16.1 Server-Sent Events Stream
 

@@ -194,7 +194,7 @@ export const EventTimeline: React.FC = () => {
   };
 
   return (
-    <section className="w-full py-12 px-4 sm:px-6 lg:px-8 bg-slate-950 text-slate-100 rounded-3xl border border-slate-800 shadow-[0_20px_50px_rgba(0,0,0,0.4)] my-12 relative overflow-hidden">
+    <section className="w-full py-12 px-4 sm:px-6 lg:px-8 dark:bg-slate-950 dark:text-slate-100 text-slate-950 bg-slate-100 rounded-3xl border border-slate-800 shadow-[0_20px_50px_rgba(0,0,0,0.4)] my-12 relative overflow-hidden">
       {/* Absolute Decorative Background Elements */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/5 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-600/5 rounded-full blur-3xl pointer-events-none" />
@@ -209,7 +209,7 @@ export const EventTimeline: React.FC = () => {
                 Interactive Schedule
               </span>
             </div>
-            <h2 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl bg-gradient-to-r from-white via-slate-100 to-indigo-300 bg-clip-text text-transparent">
+            <h2 className="text-3xl font-extrabold tracking-tight dark:text-white sm:text-4xl bg-linear-to-r from-white via-slate-100 to-indigo-300 bg-clip-text text-slate-950">
               My Timeline Planner
             </h2>
             <p className="mt-2 text-sm text-slate-400 max-w-xl">

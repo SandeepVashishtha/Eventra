@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Bell, BellOff, Check, Mail, Monitor, Save, Volume2 } from "lucide-react";
 import useDocumentTitle from "../hooks/useDocumentTitle";
 import { useNotification } from "../context/NotificationContext";
@@ -78,11 +78,11 @@ const NotificationSettings = () => {
     [preferences.categories]
   );
 
-  const setPreference = (key, value) => {
+  const setPreference = useCallback((key, value) => {
     updatePreferences((current) => ({ ...current, [key]: value }));
-  };
+  }, [updatePreferences]);
 
-  const setCategoryPreference = (category, channel, value) => {
+  const setCategoryPreference = useCallback((category, channel, value) => {
     updatePreferences((current) => ({
       ...current,
       categories: {
@@ -93,7 +93,7 @@ const NotificationSettings = () => {
         },
       },
     }));
-  };
+  }, [updatePreferences]);
 
   const showStatusMessage = (message) => {
     setStatusMessage(message);
