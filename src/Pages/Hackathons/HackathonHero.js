@@ -74,8 +74,7 @@ export default function HackathonHero({
       </div>
 
       {/* ======================= HERO SECTION ======================= */}
-      <div className="relative px-4 min-h-[75vh] flex flex-col items-center justify-center text-center z-10">
-
+      <div className="relative px-4 min-h-[55vh] flex flex-col items-center justify-start text-center z-10">
         {/* Premium badge */}
         <motion.div
           initial={{ opacity: 0, y: -16 }}
