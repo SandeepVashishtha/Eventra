@@ -106,11 +106,11 @@ export default function AddToCalendar({ event, className = '', iconOnly = false 
             </button>
           </div>
           <button onClick={handleGoogle} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left">
-            <img src="https://www.google.com/favicon.ico" alt="" className="w-4 h-4" loading="lazy" />
+            <img src="https://www.google.com/favicon.ico" alt="Google Calendar icon" className="w-4 h-4" loading="lazy" />
             Google Calendar
           </button>
           <button onClick={handleOutlook} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left border-t border-gray-100 dark:border-gray-800">
-            <img src="https://outlook.live.com/favicon.ico" alt="" className="w-4 h-4" loading="lazy" />
+            <img src="https://outlook.live.com/favicon.ico" alt="Outlook Calendar icon" className="w-4 h-4" loading="lazy" />
             Outlook Calendar
           </button>
           <button onClick={handleIcal} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left border-t border-gray-100 dark:border-gray-800">
