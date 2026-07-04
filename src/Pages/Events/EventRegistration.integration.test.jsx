@@ -50,11 +50,11 @@ describe('EventRegistration with Conflict Resolution - Integration', () => {
       const user = userEvent.setup();
       
       // Mock: User has no existing registrations
-      const mockContext = {
-        myEvents: [],
-        user: { id: 'user1', email: 'test@example.com' },
-        isAuthenticated: () => true,
-      };
+      // const mockContext = {
+      //   myEvents: [],
+      //   user: { id: 'user1', email: 'test@example.com' },
+      //   isAuthenticated: () => true,
+      // };
 
       // Mock API
       vi.mock('../config/api', () => ({

@@ -1,10 +1,10 @@
 import { Grid, List, Search, X, RotateCcw, Sparkles, Filter } from "lucide-react";
-import { useState, useEffect, useRef, memo, useCallback } from "react";
+import { useState, useEffect, useRef, memo } from "react";
 import StyledDropdown from "../../components/StyledDropdown";
 import AdvancedFilterPanel from "../../components/common/AdvancedFilterPanel";
-import useEventFilterPresets from "../../hooks/useEventFilterPresets";
+// import useEventFilterPresets from "../../hooks/useEventFilterPresets";
 import useFilterSuggestions from "../../hooks/useFilterSuggestions";
-import { exportEventsResultFile } from "../../utils/eventResultsExport";
+// import { exportEventsResultFile } from "../../utils/eventResultsExport";
 
 const CATEGORY_OPTIONS = [
   { id: "all", label: "All Categories" },
@@ -20,7 +20,7 @@ const CATEGORY_OPTIONS = [
 ];
 
 const EventFiltersToolbar = ({
-  currentFilterConfig,
+  // currentFilterConfig,
   filterType,
   onFilterChange,
   categoryFilter = "all",
@@ -39,13 +39,13 @@ const EventFiltersToolbar = ({
   onSearchChange,
   onResetFilters,
   visibleEvents = [],
-onApplyPreset,
+// onApplyPreset,
 // totalElements = 0,
 }) => {
   const [localQuery, setLocalQuery] = useState(searchQuery || "");
   const debounceRef = useRef(null);
   
-  const { clearPresetError: _clearPresetError } = useEventFilterPresets();
+  // const { clearPresetError } = useEventFilterPresets();
 
   useFilterSuggestions({
   currentFilters: {
@@ -208,7 +208,7 @@ onApplyPreset,
                 onClick={() => onFilterChange(tab.key)}
                 className={`min-w-max flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl transition duration-300 border ${
                   isActive
-                    ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white border-indigo-500"
+                    ? "bg-linear-to-r from-indigo-600 to-purple-600 text-white border-indigo-500"
                     : "bg-slate-900/40 text-slate-400 border-slate-800/80 hover:text-slate-200"
                 }`}
               >
