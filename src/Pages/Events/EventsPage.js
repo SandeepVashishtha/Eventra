@@ -347,18 +347,14 @@ const EventsPage = () => {
 
       <div className="mt-6 sm:mt-8">
         <TrendingEvents title="Trending Events" limit={6} fetchSize={24} />
-
-<RecentlyViewedSection />
+        <RecentlyViewedSection />
       </div>
-
-      <RecentlyViewedSection />
 
       <div
         ref={cardSectionRef}
         className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8"
       >
         <div className="mb-5 sm:mb-6">
-
           <EventFiltersToolbar
             filterType={listing.filterType}
             onFilterChange={listing.setFilterType}

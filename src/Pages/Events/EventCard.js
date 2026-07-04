@@ -34,7 +34,6 @@ import AddToCalendar from "../../components/common/AddToCalendar";
 import SocialShareButtons from "../../components/common/SocialShareButtons";
 import { checkRegistrationConflict } from "../../utils/conflictDetection";
 
-// Vibrant gradient palettes for event cards
 const CARD_GRADIENTS = [
   "from-violet-600 via-purple-600 to-indigo-700",
   "from-rose-500 via-pink-600 to-purple-700",
@@ -176,9 +175,7 @@ const EventCard = ({ event }) => {
   const computedStatus = getEventStatus(event);
   const isPastEvent = computedStatus === "past" || computedStatus === "ended";
 
-  // Resolve the event image — API may use imageUrl or image
   const eventImage = event.image || event.imageUrl || null;
-  // Resolve the event date — API may use eventDate, date, or startDate
   const eventDate = event.date || event.eventDate || event.startDate || null;
   const dateInfo = formatEventDate(eventDate);
   const categoryIcon = getCategoryIcon(event);
@@ -220,9 +217,7 @@ const EventCard = ({ event }) => {
       transition={{ type: "spring", stiffness: 280, damping: 22 }}
       className="group relative flex flex-col rounded-2xl overflow-hidden bg-[#0f1117] border border-white/[0.07] shadow-xl shadow-black/40 hover:shadow-2xl hover:shadow-black/60 hover:border-white/[0.14] transition-all duration-300"
     >
-      {/* ── Banner Image with gradient overlay ── */}
       <div className="relative h-44 overflow-hidden bg-slate-900">
-        {/* Gradient accent background (subtle backdrop behind the image, or full gradient fallback) */}
         <div className={`absolute inset-0 bg-gradient-to-br ${gradient} ${eventImage ? "opacity-25" : "opacity-80"}`} />
 
         {eventImage ? (
@@ -238,10 +233,8 @@ const EventCard = ({ event }) => {
           </div>
         )}
 
-        {/* Bottom gradient fade */}
         <div className="absolute inset-0 bg-gradient-to-t from-[#0f1117] via-[#0f1117]/40 to-transparent" />
 
-        {/* Category icon badge */}
         <div className="absolute top-3 left-3">
           <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md border border-white/10 rounded-full px-3 py-1.5">
             {categoryIcon && React.createElement(categoryIcon, { size: 12, className: "text-white/80" })}
@@ -251,7 +244,6 @@ const EventCard = ({ event }) => {
           </div>
         </div>
 
-        {/* Action buttons */}
         <div className="absolute top-3 right-3 flex gap-1.5">
           <motion.button
             whileHover={{ scale: 1.12 }}
@@ -293,12 +285,10 @@ const EventCard = ({ event }) => {
           </motion.button>
         </div>
 
-        {/* Status badge */}
         <div className="absolute bottom-3 right-3">
           <StatusBadge status={computedStatus} />
         </div>
 
-        {/* Registered / Conflict badges */}
         {(isUserRegistered || (hasConflict && !isUserRegistered)) && (
           <div className="absolute bottom-3 left-3">
             {isUserRegistered ? (
@@ -316,9 +306,7 @@ const EventCard = ({ event }) => {
         )}
       </div>
 
-      {/* ── Card body ── */}
       <div className="flex flex-col flex-1 p-5 gap-4">
-        {/* Title */}
         <h3
           id={titleId}
           title={event.title}
@@ -327,14 +315,11 @@ const EventCard = ({ event }) => {
           {event.title}
         </h3>
 
-        {/* Description */}
         <p className="text-slate-400 text-sm leading-relaxed line-clamp-2 -mt-1">
           {event.description}
         </p>
 
-        {/* Meta info grid */}
         <div className="flex flex-col gap-2.5">
-          {/* Location */}
           {event.location && (
             <div className="flex items-center gap-2.5">
               <div className="flex-shrink-0 w-7 h-7 rounded-lg bg-pink-500/10 border border-pink-500/20 flex items-center justify-center">
@@ -344,7 +329,6 @@ const EventCard = ({ event }) => {
             </div>
           )}
 
-          {/* Date */}
           <div className="flex items-center gap-2.5">
             <div className="flex-shrink-0 w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
               <Calendar size={13} className="text-indigo-400" />
@@ -363,7 +347,6 @@ const EventCard = ({ event }) => {
             </div>
           </div>
 
-          {/* Relative time chip */}
           {dateInfo.relative && (
             <div className="flex items-center gap-2.5">
               <div className="w-7 h-7" />
@@ -381,18 +364,15 @@ const EventCard = ({ event }) => {
         </div>
       </div>
 
-      {/* ── Capacity bar ── */}
       {typeof event.maxAttendees === "number" && event.maxAttendees > 0 && (
         <CapacityBar attendees={event.attendees} maxAttendees={event.maxAttendees} />
       )}
 
-      {/* ── Social share + add to calendar row ── */}
       <div className="px-5 py-2.5 border-t border-white/[0.06] flex items-center justify-between">
         <SocialShareButtons event={event} layout="inline" />
         <AddToCalendar event={event} iconOnly={true} />
       </div>
 
-      {/* ── CTA buttons ── */}
       <div className="px-4 py-4 flex gap-2.5 border-t border-white/[0.06]">
         {isPastEvent ? (
           <div className="flex-1 inline-flex items-center justify-center rounded-xl bg-slate-800 text-slate-500 px-4 py-2.5 text-sm font-semibold cursor-not-allowed select-none">
@@ -415,7 +395,6 @@ const EventCard = ({ event }) => {
         </Link>
       </div>
 
-      {/* Share Modal */}
       <AnimatePresence>
         {isShareModalOpen && (
           <ShareModal
