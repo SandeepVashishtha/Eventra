@@ -47,6 +47,7 @@ import {
 import { pushToQueue } from "../utils/offlineQueue";
 import { logError } from "../utils/errorLogger";
 import { logAbuseAttempt } from "../utils/abuseLogger";
+import { getRegistrationFailureMessage as formatRegistrationFailureMessage } from "../utils/registrationFailureMessage";
 import hackathonsData from "../../Pages/Hackathons/hackathonMockData.json";
 import registrationLocks from "../utils/registrationLocks";
 
@@ -55,32 +56,6 @@ export const MAX_NOTES_CHARS = 500;
 // Registration lock map to prevent concurrent registrations for the same event
 // const registrationLocks = new Map();
 // registrationLimiterRef initialized at hook scope with 3 tokens, 0.3/sec refill
-
-/**
- * Derives a user-facing error message from a failed registration API response.
- */
-const getRegistrationFailureMessage = (error) => {
-  const message = error?.data?.message || error?.data?.error || error?.message || "";
-  const normalizedMessage = message.toLowerCase();
-
-  if (error?.status === 409 && /already registered|duplicate/.test(normalizedMessage)) {
-    return "You are already registered for this event.";
-  }
-
-  if (
-    error?.status === 409 ||
-    error?.status === 423 ||
-    /capacity|full|sold out|max(?:imum)? capacity/.test(normalizedMessage)
-  ) {
-    return "This event has reached maximum capacity. Please choose another event.";
-  }
-
-  if (/conflict/.test(normalizedMessage)) {
-    return "Registration could not be completed because the server reported a conflict.";
-  }
-
-  return message || "Registration failed. Please try again.";
-};
 
 const useEventRegistration = (eventIdParam) => {
   const { eventId: routeEventId, id: routeId } = useParams();
@@ -354,7 +329,7 @@ const useEventRegistration = (eventIdParam) => {
       addRegistration(event, formData);
       clearSession();
     } catch (error) {
-      const failureMessage = getRegistrationFailureMessage(error);
+      const failureMessage = formatRegistrationFailureMessage(error);
       const isOfflineFailure = error?.isNetworkError || error?.isTimeout;
       const isAlreadyRegistered = failureMessage === "You are already registered for this event.";
 
