@@ -1,86 +1,131 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import { apiUtils, API_ENDPOINTS } from '../config/api';
+import { createContext, useContext, useCallback, useMemo, useEffect, useRef } from "react";
+import { useAuth } from "./AuthContext";
+import useRealTimeConnection from "../hooks/useRealTimeConnection";
+import { getNotificationCategory, getNotificationMessage, getNotificationTitle } from "../utils/notificationPreferences";
+import { useNotificationPreferences } from "../hooks/useNotificationPreferences";
+import { usePushSubscription } from "../hooks/usePushSubscription";
+import { useNotificationDelivery } from "../hooks/useNotificationDelivery";
+import { useNotificationPoller } from "../hooks/useNotificationPoller";
+import { useAchievements } from "../hooks/useAchievements";
 
 const NotificationContext = createContext();
 
+const normalizeNotification = (n = {}) => ({
+  ...n,
+  id: n.id || n._id || `${n.timestamp || n.createdAt || Date.now()}-${getNotificationMessage(n)}`,
+  title: getNotificationTitle(n),
+  message: getNotificationMessage(n),
+  category: getNotificationCategory(n),
+  timestamp: n.timestamp || n.createdAt || n.updatedAt || new Date().toISOString(),
+});
+
+// 🟢 This helper function handles your assigned interval cleanup task
+const useBackgroundInterval = (realtimeStatus, fetchNotifications) => {
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      if (realtimeStatus === "IDLE") {
+        fetchNotifications?.();
+      }
+    }, 30000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [realtimeStatus, fetchNotifications]);
+};
+
 export const NotificationProvider = ({ children }) => {
-  const [notifications, setNotifications] = useState([]);
-  const [achievements, setAchievements] = useState({
-    totalEvents: 0,
-    currentStreak: 0,
-    badges: []
+  const { token } = useAuth();
+  const hasCompletedInitialFetch = useRef(false);
+
+  const { preferences, defaultPreferences, updatePreferences, savePreferences } =
+    useNotificationPreferences();
+  const { pushStatus, requestPushPermission, subscribeToPush, unsubscribeFromPush } =
+    usePushSubscription(updatePreferences);
+  const { showBrowserNotification, deliverNew, markAsReadRef } =
+    useNotificationDelivery(preferences);
+  const {
+    notifications, unreadCount, loading,
+    fetchNotifications, markAsRead, markAllAsRead, deleteNotification,
+    applyList, seenIds,
+  } = useNotificationPoller(deliverNew, hasCompletedInitialFetch);
+  const { achievements, fetchAchievements } = useAchievements();
+
+  const ingestRealtime = useCallback(
+    (payload) => {
+      if (!payload || typeof payload !== "object") return;
+      const n = normalizeNotification(payload);
+      const isNewUnread = !n.isRead && !seenIds.current.has(n.id);
+      applyList([n], { deliverNew: false });
+      if (isNewUnread) {
+        deliverNew([n]);
+      }
+    },
+    [applyList, deliverNew, seenIds],
+  );
+
+  const handleRealtimeMessage = useCallback(
+    (data) => {
+      if (Array.isArray(data)) { data.forEach(ingestRealtime); return; }
+      ingestRealtime(data?.notification || data);
+    },
+    [ingestRealtime],
+  );
+
+  const { status: sseStatus } = useRealTimeConnection("/stream/notifications", {
+    onMessage: handleRealtimeMessage,
+    enabled: Boolean(token),
   });
-  const [unreadCount, setUnreadCount] = useState(0);
 
-  // Helper to get JWT token from storage
-  const getAuthToken = () => localStorage.getItem('token');
-
-  const fetchNotifications = async () => {
-    const token = getAuthToken();
-    if (!token) return;
-    
-    try {
-      const response = await apiUtils.get(API_ENDPOINTS.NOTIFICATIONS.BASE, token);
-      if (response.ok) {
-        const data = await response.json();
-        setNotifications(data);
-        setUnreadCount(data.filter(n => !n.isRead).length);
-      }
-    } catch (error) {
-      console.error("Error fetching notifications:", error);
-    }
-  };
-
-  const fetchAchievements = async () => {
-    const token = getAuthToken();
-    if (!token) return;
-    
-    try {
-      const response = await apiUtils.get(API_ENDPOINTS.USERS.ACHIEVEMENTS, token);
-      if (response.ok) {
-        const data = await response.json();
-        setAchievements(data);
-      }
-    } catch (error) {
-      console.error("Error fetching achievements:", error);
-    }
-  };
-
-  const markAsRead = async (notificationId) => {
-    const token = getAuthToken();
-    if (!token) return;
-    
-    try {
-      const response = await apiUtils.put(API_ENDPOINTS.NOTIFICATIONS.READ(notificationId), {}, token);
-      if (response.ok) {
-        setNotifications(prev =>
-          prev.map(n => n.id === notificationId ? { ...n, isRead: true } : n)
-        );
-        setUnreadCount(prev => Math.max(0, prev - 1));
-      }
-    } catch (error) {
-      console.error("Error marking notification as read:", error);
-    }
-  };
+  // 🟢 FIXED: Removed the old 'realtimeStatus' state variable & its redundant useEffect entirely.
+  // 🟢 Added your required background interval function call here instead.
+  useBackgroundInterval(sseStatus, fetchNotifications);
 
   useEffect(() => {
-    // Initial fetch if user token exists
-    if (getAuthToken()) {
-      fetchNotifications();
-      fetchAchievements();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (!markAsReadRef) return;
+    markAsReadRef.current = markAsRead;
+  }, [markAsRead, markAsReadRef]);
+
+  const groupedNotifications = useMemo(
+    () => notifications.reduce((groups, n) => {
+      const cat = getNotificationCategory(n);
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(n);
+      return groups;
+    }, {}),
+    [notifications],
+  );
+
+
+
+
+
 
   return (
-    <NotificationContext.Provider value={{ 
-      notifications, 
-      achievements, 
-      unreadCount, 
-      fetchNotifications, 
-      fetchAchievements, 
-      markAsRead 
-    }}>
+    <NotificationContext.Provider
+      value={{
+        notifications,
+        groupedNotifications,
+        achievements,
+        unreadCount,
+        loading,
+        realtimeStatus: sseStatus, // Passing sseStatus directly simplifies the logic!
+        preferences,
+        pushStatus,
+        defaultPreferences,
+        fetchNotifications,
+        fetchAchievements,
+        markAsRead,
+        markAllAsRead,
+        deleteNotification,
+        updatePreferences,
+        savePreferences,
+        requestPushPermission,
+        subscribeToPush,
+        unsubscribeFromPush,
+        showBrowserNotification,
+      }}
+    >
       {children}
     </NotificationContext.Provider>
   );

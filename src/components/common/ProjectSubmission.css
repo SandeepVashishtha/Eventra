@@ -106,6 +106,9 @@
   z-index: 1000;
   padding: 20px;
 }
+.dark .project-submission-modal {
+  background-color: rgba(0, 0, 0, 0.7);
+}
 
 .project-submission-content {
   background: white;
@@ -115,6 +118,18 @@
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+.dark .project-submission-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.dark .project-submission-content::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+.dark .project-submission-content::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 4px;
 }
 
 .submission-header {
@@ -290,6 +305,9 @@
   padding-top: 20px;
   border-top: 1px solid #e5e7eb;
 }
+.dark .form-actions {
+  border-top-color: #374151;
+}
 
 .btn-primary,
 .btn-secondary {
@@ -317,7 +335,11 @@
   border-color: #9ca3af;
   cursor: not-allowed;
 }
-
+.dark .btn-primary:disabled {
+  background-color: #4b5563;
+  border-color: #4b5563;
+  color: #d1d5db;
+}
 .btn-secondary {
   background-color: white;
   color: #6b7280;
@@ -327,6 +349,13 @@
 .btn-secondary:hover {
   background-color: #f9fafb;
   color: #374151;
+}
+.btn-primary:focus,
+.btn-secondary:focus,
+.add-tech-btn:focus,
+.close-btn:focus {
+  outline: 2px solid #818cf8;
+  outline-offset: 2px;
 }
 
 /* Alerts */

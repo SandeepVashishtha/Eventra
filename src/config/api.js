@@ -1,131 +1,246 @@
-// API Configuration
-// Uses relative paths in development so the CRA proxy (package.json "proxy" field)
-// forwards requests to the backend — no CORS issues.
-// In production, REACT_APP_API_URL should be set to the backend base URL.
-const AUTH_API_BASE_PATH = process.env.REACT_APP_API_URL
-  ? `${process.env.REACT_APP_API_URL}/api/auth`
-  : '/api/auth'; // ← goes through CRA proxy in dev
+import axios from "axios";
+import { ApiError, RateLimitError, normalizeApiError } from "./api/errors.js";
+import { setupRequestInterceptor, setupResponseInterceptor, setOnRequiresReauthHandler } from "./api/interceptors.js";
+import { API_BASE_URL, validateBackendConfig } from "./backendConfig.js";
 
-const API_BASE_PATH = process.env.REACT_APP_API_URL || '';
+// ---------------------------------------------------------------------------
+// Base API URL
+// ---------------------------------------------------------------------------
 
-// API endpoints — auth, events, projects, notifications, and users
+const isDev = process.env.NODE_ENV === "development";
+
+// Validate backend configuration on module load
+const configValidation = validateBackendConfig();
+if (!configValidation.isValid && isDev) {
+  console.warn(`[API Config] ${configValidation.error}`);
+}
+
+const buildApiUrl = (path = "") => {
+  if (!path) return "";
+  if (/^https?:\/\//i.test(path)) return path;
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  if (!API_BASE_URL) return normalizedPath;
+  return `${API_BASE_URL}${normalizedPath}`;
+};
+
+// ---------------------------------------------------------------------------
+// Axios Instance
+// ---------------------------------------------------------------------------
+
+const REQUEST_TIMEOUT_MS = 15_000;
+
+const API = axios.create({
+  baseURL: API_BASE_URL || undefined,
+  timeout: REQUEST_TIMEOUT_MS,
+  headers: { "Content-Type": "application/json" },
+  withCredentials: true,
+});
+
+let onUnauthorized = null;
+let onRequiresReauth = null;
+let _authToken = null;
+
+export const setOnUnauthorizedHandler = (handler) => {
+  onUnauthorized = handler;
+};
+export const setRequiresReauthHandler = (handler) => {
+  onRequiresReauth = handler;
+  setOnRequiresReauthHandler(handler);
+};
+export const setAuthToken = (token) => {
+  _authToken = token;
+};
+
+const getAuthToken = () => _authToken;
+const getOnUnauthorized = () => onUnauthorized;
+const getOnRequiresReauth = () => onRequiresReauth;
+
+setupRequestInterceptor(API, { isDev, buildApiUrl, getAuthToken, getOnUnauthorized });
+setupResponseInterceptor(API, { isDev, timeoutMs: REQUEST_TIMEOUT_MS, getOnUnauthorized, getOnRequiresReauth });
+
+// ---------------------------------------------------------------------------
+// API Endpoints
+// ---------------------------------------------------------------------------
+
 export const API_ENDPOINTS = {
   AUTH: {
-    LOGIN: `${AUTH_API_BASE_PATH}/login`,
-    REGISTER: `${AUTH_API_BASE_PATH}/signup`,
+    LOGIN: buildApiUrl("/auth/login"),
+    REGISTER: buildApiUrl("/auth/signup"),
+    SIGNUP: buildApiUrl("/auth/signup"),
+    LOGOUT: buildApiUrl("/auth/logout"),
+    RESET_PASSWORD: buildApiUrl("/auth/reset-password"),
+    REFRESH: buildApiUrl("/auth/refresh"),
   },
   EVENTS: {
-    CREATE: `${API_BASE_PATH}/api/events`,
-    REGISTER: (id) => `${API_BASE_PATH}/api/events/${id}/register`,
-    LIST: `${API_BASE_PATH}/api/events`,
+    CREATE: buildApiUrl("/events/create"),
+    ALL: buildApiUrl("/events"),
+    LIST: buildApiUrl("/events"),
+    DETAIL: (id) => buildApiUrl(`/events/${id}`),
+    SCHEDULE: (id) => buildApiUrl(`/events/${id}/schedule`),
+    REGISTER: (id) => buildApiUrl(`/events/${id}/register`),
+    AVAILABILITY: (id) => buildApiUrl(`/events/${id}/availability`),
+    CANCEL: (id) => buildApiUrl(`/events/${id}/cancel`),
+    REGISTRANTS: (id) => buildApiUrl(`/events/${id}/registrants`),
+    // Convenience helper — appends ?page=&size= for callers that build the
+    // URL manually rather than going through eventFetchUtils.buildPaginatedUrl.
+    PAGINATED: (page, size) => buildApiUrl(`/events?page=${page}&size=${size}`),
+  },
+  LIVE_AUDIENCE: {
+    BASE: (eventId) => buildApiUrl(`/events/${eventId}/live-audience`),
+    QUESTIONS: (eventId) => buildApiUrl(`/events/${eventId}/live-audience/questions`),
+    UPVOTE: (eventId, questionId) => buildApiUrl(`/events/${eventId}/live-audience/questions/${questionId}/upvote`),
+    FLAG: (eventId, questionId) => buildApiUrl(`/events/${eventId}/live-audience/questions/${questionId}/flag`),
+    QUESTION_DETAIL: (eventId, questionId) => buildApiUrl(`/events/${eventId}/live-audience/questions/${questionId}`),
+    POLLS: (eventId) => buildApiUrl(`/events/${eventId}/live-audience/polls`),
+    POLL_STATUS: (eventId, pollId) => buildApiUrl(`/events/${eventId}/live-audience/polls/${pollId}/status`),
+    POLL_VOTE: (eventId, pollId) => buildApiUrl(`/events/${eventId}/live-audience/polls/${pollId}/vote`),
   },
   PROJECTS: {
-    SUBMIT: `${API_BASE_PATH}/api/projects`,
-    LIST: `${API_BASE_PATH}/api/projects`,
-    CATEGORIES: `${API_BASE_PATH}/api/projects/categories`,
+    ALL: buildApiUrl("/projects"),
+    LIST: buildApiUrl("/projects"),
+    DETAIL: (id) => buildApiUrl(`/projects/${id}`),
+    CATEGORIES: buildApiUrl("/projects/categories"),
+    SUBMIT: buildApiUrl("/projects"),
+    UPVOTE: (id) => buildApiUrl(`/projects/${id}/upvote`),
+    FORK: (id) => buildApiUrl(`/projects/${id}/fork`),
+  },
+  HACKATHONS: {
+    LIST: buildApiUrl("/hackathons"),
+    DETAIL: (id) => buildApiUrl(`/hackathons/${id}`),
+    HOST: buildApiUrl("/hackathons"),
   },
   NOTIFICATIONS: {
-    BASE: `${API_BASE_PATH}/api/notifications`,
-    READ: (id) => `${API_BASE_PATH}/api/notifications/${id}/read`,
+    BASE: buildApiUrl("/notifications"),
+    ALL: buildApiUrl("/notifications"),
+    READ: (id) => (id ? buildApiUrl(`/notifications/${id}/read`) : ""),
+    DELETE: (id) => (id ? buildApiUrl(`/notifications/${id}`) : ""),
+    READ_ALL: buildApiUrl("/notifications/read-all"),
+    PREFERENCES: buildApiUrl("/notifications/preferences"),
+    PUSH_SUBSCRIBE: buildApiUrl("/notifications/push-subscriptions"),
+    PUSH_UNSUBSCRIBE: buildApiUrl("/notifications/push-subscriptions/unsubscribe"),
   },
   USERS: {
-    ACHIEVEMENTS: `${API_BASE_PATH}/api/users/achievements`,
+    PROFILE: buildApiUrl("/users/profile"),
+    ACHIEVEMENTS: buildApiUrl("/users/achievements"),
+  },
+  SESSION_RECOVERY: {
+    BASE: buildApiUrl("/session-recovery"),
+    SESSION: (sessionId) =>
+      buildApiUrl(`/session-recovery/${encodeURIComponent(sessionId)}`),
+    RESTORE: (sessionId) =>
+      buildApiUrl(`/session-recovery/${encodeURIComponent(sessionId)}/restore`),
+    CLEANUP_EXPIRED: buildApiUrl("/session-recovery/expired"),
+  },
+  TICKETS: {
+    VALIDATE: buildApiUrl("/tickets/validate"),
+    CHECK_IN: buildApiUrl("/tickets/checkin"),
+    HISTORY: buildApiUrl("/tickets/checkins"),
+  },
+  FEEDBACK: {
+    BASE: buildApiUrl("/feedback"),
+    BY_EVENT: (eventId) => {
+      const params = new URLSearchParams({ eventId: String(eventId) });
+      return buildApiUrl(`/feedback?${params.toString()}`);
+    },
+  },
+  ADMIN: {
+    USERS: buildApiUrl("/admin/users"),
+    USER: (id) => buildApiUrl(`/admin/users/${id}`),
+    EVENTS: buildApiUrl("/admin/events"),
+    EVENT: (id) => buildApiUrl(`/admin/events/${id}`),
+    STATS: buildApiUrl("/admin/stats"),
+  },
+  VALIDATION: {
+    EMAIL: (email) => buildApiUrl(`/validate/email/${encodeURIComponent(email)}`),
+    USERNAME: (username) => buildApiUrl(`/validate/username/${encodeURIComponent(username)}`),
+    PHONE: buildApiUrl("/validate/phone"),
+    CONTACT: buildApiUrl("/contact"),
+  },
+  WAITLIST: {
+    JOIN: (eventId) => buildApiUrl(`/waitlist/join/${eventId}`),
+    LEAVE: (eventId) => buildApiUrl(`/waitlist/leave/${eventId}`),
+    STATUS: (eventId) => buildApiUrl(`/waitlist/status/${eventId}`),
+    COUNT: (eventId) => buildApiUrl(`/waitlist/count/${eventId}`),
   },
 };
 
-// Helper function to get authorization headers
-export const getAuthHeaders = (token) => {
-  const headers = { 'Content-Type': 'application/json' };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-  return headers;
+const normalizeRequestConfig = (configOrToken = {}) => {
+  const config = typeof configOrToken === "string" ? {} : { ...configOrToken };
+  if ("skipAuth" in config) delete config.skipAuth;
+  return config;
 };
 
-// ---------------------------------------------------------------------------
-// Global 401 Unauthorized handler
-// ---------------------------------------------------------------------------
-// AuthContext registers a callback here so that any API call receiving a 401
-// can trigger a centralized logout + redirect without circular imports.
-let _onUnauthorized = null;
-
-/**
- * Register a callback that will be invoked whenever an API response returns
- * HTTP 401 Unauthorized. AuthContext sets this during initialization.
- *
- * @param {Function} callback - A function to call on 401 responses.
- */
-export const setOnUnauthorizedHandler = (callback) => {
-  _onUnauthorized = callback;
+const wrapHeaders = (headers) => {
+  if (!headers) return { get: () => null };
+  if (typeof headers.get === "function") return headers;
+  return { get: (key) => headers[key] || headers[key.toLowerCase()] || null };
 };
 
-/**
- * Process an API response and trigger the unauthorized handler if the
- * server responds with 401, indicating an expired or invalid token.
- *
- * @param {Response} response - The fetch Response object.
- * @returns {Response} The same response (pass-through for chaining).
- */
-const handleUnauthorized = (response) => {
-  if (response.status === 401 && typeof _onUnauthorized === 'function') {
-    _onUnauthorized();
-  }
-  return response;
+const wrapAxiosResponse = (response) => {
+  const wrappedHeaders = wrapHeaders(response.headers);
+  return {
+    ...response,
+    headers: wrappedHeaders,
+    ok: response.status >= 200 && response.status < 300,
+    json: async () => {
+      // Guard against non-JSON responses (e.g. 502 HTML) evaluating incorrectly
+      if (typeof response.data === "string") {
+        try {
+          return JSON.parse(response.data);
+        } catch (_e) {
+          throw new Error("Received non-JSON response from server");
+        }
+      }
+      return response.data || {};
+    },
+    text: async () =>
+      typeof response.data === "string" ? response.data : JSON.stringify(response.data),
+  };
 };
 
-// API utility functions
 export const apiUtils = {
-  get: async (url, token = null) => {
-    try {
-      console.log('Making GET request to:', url);
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: getAuthHeaders(token),
-      });
-      return handleUnauthorized(response);
-    } catch (error) {
-      console.error('API GET Error:', error);
-      throw error;
-    }
+  get: (url, config = {}) =>
+    API.get(url, normalizeRequestConfig(config)).then(wrapAxiosResponse),
+  post: (url, data = {}, config = {}) =>
+    API.post(url, data, normalizeRequestConfig(config)).then(wrapAxiosResponse),
+  put: (url, data = {}, config = {}) =>
+    API.put(url, data, normalizeRequestConfig(config)).then(wrapAxiosResponse),
+  patch: (url, data = {}, config = {}) =>
+    API.patch(url, data, normalizeRequestConfig(config)).then(wrapAxiosResponse),
+  delete: (url, config = {}) =>
+    API.delete(url, normalizeRequestConfig(config)).then(wrapAxiosResponse),
+  request: async (method, url, data = null, options = {}) => {
+    const config = normalizeRequestConfig(options);
+    if (options.signal) config.signal = options.signal;
+    if (options.headers) config.headers = { ...config.headers, ...options.headers };
+    config.method = method.toLowerCase();
+    const axiosResponse = await API.request({ url, method: config.method, data, ...config });
+    const wrappedHeaders = wrapHeaders(axiosResponse.headers);
+    return {
+      response: {
+        status: axiosResponse.status,
+        ok: axiosResponse.status >= 200 && axiosResponse.status < 300,
+        headers: wrappedHeaders,
+      },
+      data: axiosResponse.data,
+    };
   },
+};
 
-  post: async (url, data, token = null) => {
-    try {
-      console.log('Making POST request to:', url);
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: getAuthHeaders(token),
-        body: JSON.stringify(data)
-      });
-      return handleUnauthorized(response);
-    } catch (error) {
-      console.error('API POST Error:', error);
-      throw error;
-    }
+export default API;
+
+export { ApiError, RateLimitError, normalizeApiError };
+
+// Centralized configuration cache store for fallback endpoints
+export const apiConfigCache = {
+  store: new Map(),
+  get(key) {
+    return this.store.get(key);
   },
-
-  put: async (url, data = {}, token = null) => {
-    try {
-      const response = await fetch(url, {
-        method: 'PUT',
-        headers: getAuthHeaders(token),
-        body: JSON.stringify(data),
-      });
-      return handleUnauthorized(response);
-    } catch (error) {
-      console.error('API PUT Error:', error);
-      throw error;
-    }
+  set(key, val) {
+    this.store.set(key, val);
   },
-
-  delete: async (url, token = null) => {
-    try {
-      const response = await fetch(url, {
-        method: 'DELETE',
-        headers: getAuthHeaders(token),
-      });
-      return handleUnauthorized(response);
-    } catch (error) {
-      console.error('API DELETE Error:', error);
-      throw error;
-    }
+  clear() {
+    this.store.clear();
   },
 };

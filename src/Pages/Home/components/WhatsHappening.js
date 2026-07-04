@@ -1,12 +1,17 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo, memo } from "react";
+import { Link } from "react-router-dom";
 import { useInView } from "react-intersection-observer";
+import { HomeCardSkeleton } from "../../../components/common/SkeletonLoaders";
+import { CheckCircle2, Hourglass } from "lucide-react";
 
-// Import mock data
-import eventsData from "../../Events/eventsMockData.json";
+import useReducedMotion from "../../../hooks/useReducedMotion.js";
+// Fetch events from backend API instead of static mock data
+import { eventService } from "../../../services/eventService";
 import hackathonsData from "../../Hackathons/hackathonMockData.json";
 
 const WhatsHappening = () => {
+  const prefersReducedMotion = useReducedMotion();
   const [ref, inView] = useInView({
     triggerOnce: true,
     threshold: 0.1,
@@ -14,11 +19,77 @@ const WhatsHappening = () => {
 
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(1);
-  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(!prefersReducedMotion);
+  const [eventsData, setEventsData] = useState([]);
+
+  useEffect(() => {
+    if (prefersReducedMotion) {
+      setIsAutoPlaying(false);
+    }
+  }, [prefersReducedMotion]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    eventService.getAllEvents().then((res) => {
+      if (cancelled) return;
+      const raw = Array.isArray(res.data) ? res.data : res.data?.content ?? [];
+      // Normalize backend shape (eventDate, capacity) to the shape formatEventsData expects
+      const normalized = raw.map((e) => ({
+        ...e,
+        date: e.date || e.eventDate,
+        startDate: e.startDate || e.eventDate,
+        type: e.type || "conference",
+        status: e.status || "upcoming",
+        attendees: e.attendees ?? e.registeredCount ?? 0,
+        description: e.description || "",
+        location: e.location || "",
+      }));
+      setEventsData(normalized);
+      setIsLoading(false);
+    }).catch(() => {
+      if (!cancelled) setIsLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   const formatEventsData = (events) => {
+    const now = new Date();
+    const dayMs = 1000 * 60 * 60 * 24;
+
+    const getEventTimeLeft = (event) => {
+      // Always derive the start instant from startDate first, then date as fallback.
+      // Never reference 'event.rawDate' which is a display-only field set later in .map().
+      const rawStart = event.startDate || event.date;
+      if (!rawStart) return "TBA";
+
+      const startDate = new Date(rawStart);
+      if (isNaN(startDate.getTime())) return "TBA";
+
+      const endDate = event.endDate
+        ? new Date(event.endDate)
+        : new Date(new Date(rawStart).setHours(23, 59, 59, 999));
+
+      if (now < startDate) {
+        const daysUntilStart = Math.ceil((startDate - now) / dayMs);
+        // Guard against 0 or negative values from timezone rounding
+        if (daysUntilStart <= 0) return "Starting today";
+        return `${daysUntilStart} day${daysUntilStart === 1 ? "" : "s"}`;
+      }
+      if (now <= endDate) {
+        return "Live Now";
+      }
+      return "Ended";
+    };
+
+
     return events
-      .filter((event) => new Date(event.date) >= new Date())
+      .filter((event) => {
+        const endDate = event.endDate
+          ? new Date(event.endDate)
+          : new Date(new Date(event.date).setHours(23, 59, 59, 999));
+        return endDate >= now;
+      })
       .map((event) => ({
         id: `event-${event.id}`,
         title: event.title,
@@ -28,23 +99,47 @@ const WhatsHappening = () => {
           day: "numeric",
           year: "numeric",
         }),
+        rawDate: event.startDate || event.date,
         type: event.type.charAt(0).toUpperCase() + event.type.slice(1),
         status:
           event.status === "upcoming" ? "Registration Open" : "Live Event",
-        link: "/events",
+        link: `/events/${event.id}`,
         featured: event.attendees > 200,
         location: event.location,
         attendees: event.attendees,
+        timeLeft: getEventTimeLeft(event),
       }));
   };
 
   const formatHackathonsData = (hackathons) => {
+    const now = new Date();
+    const dayMs = 1000 * 60 * 60 * 24;
+
+    const getHackathonTimeLeft = (hackathon) => {
+      const startDate = new Date(hackathon.startDate);
+      const endDate = new Date(hackathon.endDate);
+
+      if (now < startDate) {
+        const daysUntilStart = Math.ceil((startDate - now) / dayMs);
+        return `${daysUntilStart} day${daysUntilStart === 1 ? "" : "s"}`;
+      }
+      if (now <= endDate) {
+        return "Live Now";
+      }
+      return "Ended";
+    };
+
     return hackathons
-      .filter((hackathon) => hackathon.status !== "ended")
+      .filter(
+        (hackathon) =>
+          hackathon.status !== "ended" &&
+          new Date(hackathon.endDate) >= now
+      )
       .map((hackathon) => ({
         id: `hackathon-${hackathon.id}`,
         title: hackathon.title,
         description: hackathon.description,
+        timeLeft: getHackathonTimeLeft(hackathon),
         date: `${new Date(hackathon.startDate).toLocaleDateString("en-US", {
           month: "short",
           day: "numeric",
@@ -53,35 +148,24 @@ const WhatsHappening = () => {
           day: "numeric",
           year: "numeric",
         })}`,
+        rawDate: hackathon.startDate,
         type: "Hackathon",
         status: hackathon.status === "live" ? "Live Now" : "Registration Open",
-        link: "/hackathons",
+        link: `/hackathons/${hackathon.id}`,
         featured:
           hackathon.prize &&
-          parseInt(hackathon.prize.replace(/[$,]/g, "")) > 30000,
+          parseInt(hackathon.prize.replace(/[$,]/g, ""), 10) > 30000,
         location: hackathon.location,
         prize: hackathon.prize,
         participants: hackathon.participants,
       }));
   };
 
-  const upcomingEvents = [
+  const upcomingEvents = useMemo(() => [
     ...formatEventsData(eventsData),
     ...formatHackathonsData(hackathonsData),
-  ].sort((a, b) => new Date(a.date) - new Date(b.date));
-
-  const statusColors = {
-    "Registration Open":
-      "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300",
-    "Coming Soon":
-      "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300",
-    "Live Now":
-      "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300",
-    "Live Event":
-      "bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300",
-    Planning:
-      "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300",
-  };
+  ].sort((a, b) => new Date(a.rawDate) - new Date(b.rawDate)),
+  [eventsData]);
 
   const [cardsPerView, setCardsPerView] = useState(1);
 
@@ -138,69 +222,98 @@ const WhatsHappening = () => {
   }, [isAutoPlaying]);
 
   const cardVariants = {
-    enter: (dir) => ({ opacity: 0, x: dir > 0 ? 300 : -300 }),
+    enter: (dir) => ({ opacity: 0, x: prefersReducedMotion ? 0 : dir > 0 ? 300 : -300 }),
     center: { opacity: 1, x: 0 },
-    exit: (dir) => ({ opacity: 0, x: dir > 0 ? -300 : 300 }),
+    exit: (dir) => ({ opacity: 0, x: prefersReducedMotion ? 0 : dir > 0 ? -300 : 300 }),
   };
 
   const activeDotIndex =
     Math.floor(current / cardsPerView) %
     Math.ceil(upcomingEvents.length / cardsPerView);
 
+  // Announce current slide group to screen readers
+  const totalGroups = Math.ceil(upcomingEvents.length / cardsPerView);
+  const currentGroup = Math.floor(current / cardsPerView) + 1;
+  const liveMessage = `Showing slide group ${currentGroup} of ${totalGroups}`;
+
   return (
     <section
       ref={ref}
-      className="py-12 sm:py-16 bg-gradient-to-t from-sky-50 via-pink-50 to-amber-50 dark:from-gray-900 dark:via-gray-800 dark:to-black"
-      data-aos="fade-up"
-      data-aos-duration="1000"
-      data-aos-offset="150"
+      role="region"
+      aria-label="What's Happening Now — Upcoming events carousel"
+      className="relative overflow-hidden py-16 sm:py-20 text-slate-900 dark:text-white border-t border-slate-200/60 dark:border-slate-800/60 transition-colors duration-300"
+      style={{
+        background: "linear-gradient(180deg, var(--bg-color, #F8FBFD) 0%, rgba(109, 40, 217, 0.02) 42%, rgba(109, 40, 217, 0.05) 100%)",
+      }}
     >
-      <div className="relative z-[50] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Screen-reader live region for slide position announcements */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      >
+        {liveMessage}
+      </div>
+
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-28 bg-linear-to-b from-white/80 dark:from-slate-950/40 to-transparent" />
+        <div className="absolute top-10 left-8 h-40 w-40 rounded-full bg-white/35 dark:bg-slate-800/10 blur-3xl" />
+        <div className="absolute top-24 right-8 h-52 w-52 rounded-full bg-sky-100/35 dark:bg-brand-violet/5 blur-3xl" />
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Heading */}
         <motion.div
-          className="text-center mb-8 sm:mb-12"
+          className="text-center mb-12"
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
         >
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-black dark:text-gray-100">
-            What's Happening Now
+          <h2 className="mt-4 text-3xl sm:text-4xl font-semibold tracking-tight text-slate-900 dark:text-white">
+            What&apos;s Happening Now
           </h2>
-          <p className="mt-2 sm:mt-3 max-w-xl mx-auto text-sm sm:text-lg text-black dark:text-gray-400">
+          <p className="mt-4 max-w-2xl mx-auto text-base sm:text-lg leading-relaxed text-slate-600 dark:text-slate-300">
             Stay updated with {upcomingEvents.length} upcoming events, community
             programs, and opportunities to contribute to Eventra
           </p>
         </motion.div>
 
-        {/* Carousel */}
-        <div className="relative w-full max-w-7xl mx-auto">
-
-          {/* FIX 1: Auto-play button — moved closer to edge on mobile */}
-          <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-20">
+        {/* MODIFIED: The Carousel Outside Container now has a rich border-2 violet framing and tint */}
+        <div 
+          className="relative w-full max-w-7xl mx-auto rounded-[28px] border-2 border-brand-violet/30 dark:border-brand-violet/40 bg-white/80 dark:bg-slate-900/70 shadow-[0_20px_60px_rgba(109,40,217,0.05)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.3)] backdrop-blur-md px-3 sm:px-5 py-4 sm:py-5"
+          style={{ borderColor: 'rgba(139, 92, 246, 0.35)' }}
+        >
+          
+          {/* Play/Pause Button */}
+          <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20">
             <button
               onClick={() => setIsAutoPlaying(!isAutoPlaying)}
-              className="p-2 rounded-full bg-white/20 dark:bg-gray-700/90 shadow-lg hover:bg-white dark:hover:bg-gray-700 transition-colors"
+              className="p-2.5 rounded-full bg-white/90 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm backdrop-blur-md hover:bg-white dark:hover:bg-slate-700 hover:shadow-md text-slate-600 dark:text-slate-300 transition-all duration-200"
+              aria-label={isAutoPlaying ? "Pause automatic slide rotation" : "Resume automatic slide rotation"}
+              aria-pressed={isAutoPlaying}
               title={isAutoPlaying ? "Pause auto-play" : "Resume auto-play"}
             >
               {isAutoPlaying ? (
-                <svg className="w-4 h-4 text-gray-600 dark:text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M6 4h2v12H6V4zm6 0h2v12h-2V4z" />
                 </svg>
               ) : (
-                <svg className="w-4 h-4 text-gray-600 dark:text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M6.3 4.1l8.4 5.4c.4.3.4.8 0 1l-8.4 5.4c-.5.3-1.1-.1-1.1-.6V4.7c0-.5.6-.9 1.1-.6z" />
                 </svg>
               )}
             </button>
           </div>
 
-          {/* FIX 2: Nav buttons flush to edge on mobile */}
+          {/* Navigation Controls */}
           <button
             onClick={prevSlide}
-            className="absolute left-0 sm:left-2 top-1/2 -translate-y-1/2 p-2 sm:p-3 rounded-full bg-white dark:bg-gray-700 shadow-lg hover:bg-gray-100 dark:hover:bg-gray-600 z-10 text-gray-700 dark:text-gray-200 transition-all hover:scale-105"
+            className="absolute left-0 sm:-left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/95 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg hover:bg-white dark:hover:bg-slate-700 hover:shadow-xl z-10 text-slate-700 dark:text-slate-300 transition-all duration-200 hover:-translate-y-1"
+            aria-label="Previous events"
           >
-            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
             </svg>
           </button>
 
@@ -210,16 +323,17 @@ const WhatsHappening = () => {
               setCurrent((prev) => (prev + cardsPerView) % upcomingEvents.length);
               setIsAutoPlaying(false);
             }}
-            className="absolute right-0 sm:right-2 top-1/2 -translate-y-1/2 p-2 sm:p-3 rounded-full bg-white dark:bg-gray-700 shadow-lg hover:bg-gray-100 dark:hover:bg-gray-600 z-10 text-gray-700 dark:text-gray-200 transition-all hover:scale-105"
+            className="absolute right-0 sm:-right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/95 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg hover:bg-white dark:hover:bg-slate-700 hover:shadow-xl z-10 text-slate-700 dark:text-slate-300 transition-all duration-200 hover:-translate-y-1"
+            aria-label="Next events"
           >
-            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
             </svg>
           </button>
 
-          {/* FIX 3: px-16 → px-8 sm:px-16 — was crushing cards on mobile */}
+          {/* Content Area */}
           <div
-            className="overflow-hidden px-8 sm:px-16 py-5 pointer-events-none"
+            className="overflow-hidden px-4 sm:px-8 py-6"
             onMouseEnter={() => setIsAutoPlaying(false)}
             onMouseLeave={() => setIsAutoPlaying(true)}
           >
@@ -231,8 +345,8 @@ const WhatsHappening = () => {
                 initial="enter"
                 animate="center"
                 exit="exit"
-                transition={{ duration: 0.4, ease: "easeInOut" }}
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pointer-events-auto relative z-[50]"
+                transition={{ duration: prefersReducedMotion ? 0 : 0.4, ease: "easeInOut" }}
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pointer-events-auto relative z-10"
                 drag="x"
                 dragConstraints={{ left: 0, right: 0 }}
                 dragElastic={0.2}
@@ -246,101 +360,128 @@ const WhatsHappening = () => {
                   }
                 }}
               >
-                {upcomingEvents
-                  .slice(current, current + cardsPerView)
-                  .concat(
-                    current + cardsPerView > upcomingEvents.length
-                      ? upcomingEvents.slice(0, (current + cardsPerView) % upcomingEvents.length)
-                      : []
-                  )
-                  .slice(0, cardsPerView)
-                  .map((event) => (
-                    // FIX 4: min-h-[360px] → min-h-[300px] sm:min-h-[360px]
-                    <div
-                      key={event.id}
-                      className="flex flex-col rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 bg-white dark:bg-black/60 transform hover:scale-105 min-h-[300px] sm:min-h-[360px] ring-2 ring-sky-200 dark:ring-sky-700/60"
-                    >
-                      <div className="p-4 sm:p-6 flex-1 flex flex-col">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 gap-2 sm:gap-0">
-                          <span
-                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs sm:text-sm font-medium ${
-                              statusColors[event.status] ||
-                              "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300"
-                            }`}
-                          >
-                            {event.status}
-                          </span>
-                          <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                            {event.type}
-                          </span>
-                        </div>
-
-                        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                          {event.title}
-                        </h3>
-                        <p className="text-gray-600 dark:text-gray-400 flex-1 mb-3 sm:mb-4 text-sm sm:text-base line-clamp-3">
-                          {event.description}
-                        </p>
-
-                        {event.prize && (
-                          <div className="flex items-center text-xs sm:text-sm text-rose-500 dark:text-rose-300 mb-2">
-                            <svg className="w-4 h-4 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 00.951-.69l1.07-3.292z" />
-                            </svg>
-                            {event.prize}
-                          </div>
-                        )}
-
-                        {(event.participants || event.attendees) && (
-                          <div className="flex items-center text-xs sm:text-sm text-blue-600 dark:text-blue-400 mb-2">
-                            <svg className="w-4 h-4 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
-                            </svg>
-                            {event.participants
-                              ? `${event.participants} participants`
-                              : `${event.attendees} attendees`}
-                          </div>
-                        )}
-
-                        <div className="flex items-center text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-2 sm:mt-4">
-                          <svg
-                            className="flex-shrink-0 mr-1.5 h-4 w-4 sm:h-5 sm:w-5 text-gray-400 dark:text-gray-500"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
-                          {event.date}
-                        </div>
+                {isLoading
+                  ? [...Array(cardsPerView)].map((_, i) => (
+                      <div key={`skeleton-wrap-${i}`} className="p-1 rounded-3xl border-2 border-brand-violet/20" style={{ borderColor: 'rgba(139, 92, 246, 0.2)' }}>
+                        <HomeCardSkeleton />
                       </div>
-
-                      <div className="bg-gray-50 dark:bg-gray-700/50 px-4 sm:px-6 py-3 sm:py-4">
-                        <a
-                          href={event.link}
-                          className={`w-full inline-flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 border border-transparent rounded-md shadow-sm text-xs sm:text-sm font-medium transition-colors ${
-                            event.featured
-                              ? "bg-black text-white hover:bg-sky-100 hover:text-black"
-                              : "bg-black text-white hover:bg-emerald-100 hover:text-black"
-                          }`}
-                          target={event.link.startsWith("http") ? "_blank" : "_self"}
-                          rel={event.link.startsWith("http") ? "noopener noreferrer" : ""}
+                    ))
+                  : upcomingEvents
+                      .slice(current, current + cardsPerView)
+                      .concat(
+                        current + cardsPerView > upcomingEvents.length
+                          ? upcomingEvents.slice(0, (current + cardsPerView) % upcomingEvents.length)
+                          : []
+                      )
+                      .slice(0, cardsPerView)
+                      .map((event) => (
+                        <motion.div
+                          key={event.id}
+                          whileHover={prefersReducedMotion ? {} : { scale: 1.02, y: -6 }}
+                          whileTap={prefersReducedMotion ? {} : { scale: 0.995 }}
+                          transition={{ type: "spring", stiffness: 300, damping: 24 }}
+                          className="group relative w-full flex flex-col rounded-3xl overflow-hidden bg-white dark:bg-slate-900 border-2 border-brand-violet/50 dark:border-brand-violet/60 p-5 sm:p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_18px_40px_rgba(109,40,217,0.25)] hover:border-brand-violet dark:hover:border-brand-violet transition-all duration-300 flex-1 min-h-85 pointer-events-auto"
+                          style={{ borderColor: 'rgba(139, 92, 246, 0.55)' }}
+                          onMouseEnter={() => setIsAutoPlaying(false)}
+                          onMouseLeave={() => setIsAutoPlaying(true)}
                         >
-                          {event.featured ? "Join Now" : "Learn More"}
-                          <svg className="ml-1 sm:ml-2 -mr-1 w-3 h-3 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
-                          </svg>
-                        </a>
-                      </div>
-                    </div>
-                  ))}
+                          {/* Card Content */}
+                          <div className="flex flex-col flex-1">
+                            <div className="flex items-center justify-between mb-4 gap-2">
+                              <span
+                                className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${
+                                  event.status === "Live Now" || event.status === "Live Event"
+                                    ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"
+                                    : event.status === "Registration Open"
+                                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                                    : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+                                }`}
+                              >
+                                {event.status}
+                              </span>
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/70 dark:border-slate-700/60">
+                                {event.type}
+                              </span>
+                            </div>
+
+                            <h3 title={event.title} className="text-lg sm:text-xl font-semibold text-slate-900 dark:text-white mb-2 leading-snug group-hover:text-brand-violet dark:group-hover:text-brand-violet transition-colors line-clamp-2 break-words min-w-0">
+                              {event.title}
+                            </h3>
+                            
+                            <p className="text-slate-600 dark:text-slate-400 text-sm mb-4 line-clamp-3 leading-relaxed flex-1">
+                              {event.description}
+                            </p>
+
+                            <div className="flex flex-wrap gap-2.5 mb-4">
+                              {event.prize && (
+                                <div className="inline-flex items-center text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-500/5 px-2.5 py-1.5 rounded-xl border border-rose-500/10">
+                                  <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.251-.11a3.375 3.375 0 000-6.166l-.251-.1a3.375 3.375 0 000 6.166zm6 0l.251-.11a3.375 3.375 0 000-6.166l-.251-.1a3.375 3.375 0 000 6.166z" />
+                                  </svg>
+                                  {event.prize}
+                                </div>
+                              )}
+
+                              {(event.participants || event.attendees) && (
+                                <div className="inline-flex items-center text-xs font-semibold text-sky-700 dark:text-sky-400 bg-sky-500/5 px-2.5 py-1.5 rounded-xl border border-sky-500/10">
+                                  <svg className="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.109A2.25 2.25 0 0112.75 21.5h-1.5a2.25 2.25 0 01-2.25-2.263V19.13m-2.625.372A9.336 9.336 0 011.5 18.552a4.125 4.125 0 017.533-2.493m0 0a9.38 9.38 0 012.625.372 9.336 9.336 0 004.121-.952m-4.121.952v-.002c0-1.113-.285-2.16-.786-3.07M9 10.125c0 .621.504 1.125 1.125 1.125h1.75c.621 0 1.125-.504 1.125-1.125V8.875c0-.621-.504-1.125-1.125-1.125h-1.75C9.504 7.75 9 8.254 9 8.875v1.25z" />
+                                  </svg>
+                                  {event.participants ? `${event.participants} participants` : `${event.attendees} attendees`}
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-100 dark:border-slate-800">
+                              <div className="flex items-center text-xs font-medium text-slate-500 dark:text-slate-400">
+                                <svg className="w-4 h-4 mr-1.5 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                                </svg>
+                                {event.date}
+                              </div>
+
+                              <div className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-semibold border ${
+                                event.timeLeft === "Ended"
+                                  ? "bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/20"
+                                  : event.timeLeft === "Live Now"
+                                  ? "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20"
+                                  : "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20"
+                              }`}>
+                                {event.timeLeft === "Ended" ? (
+                                  <>
+                                    <CheckCircle2 className="w-3.5 h-3.5" /> Ended
+                                  </>
+                                ) : event.timeLeft === "Live Now" ? (
+                                  <>
+                                    <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" /> Live Now
+                                  </>
+                                ) : (
+                                  <>
+                                    <Hourglass className="w-3.5 h-3.5" /> {event.timeLeft}
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <Link
+                            to={event.link}
+                            className="mt-4 inline-flex items-center justify-center w-full px-4 py-2.5 rounded-xl bg-slate-900 dark:bg-slate-800 hover:bg-brand-violet dark:hover:bg-brand-violet text-white text-sm font-semibold transition-all duration-200 border border-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-violet/50"
+                          >
+                            {event.featured ? "Register Now" : "Learn More"}
+                            <svg className="ml-2 w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                            </svg>
+                          </Link>
+                        </motion.div>
+                      ))}
               </motion.div>
             </AnimatePresence>
           </div>
         </div>
 
-        {/* FIX 5: Dots — increased mobile tap target from w-3 to w-5 */}
-        <div className="flex justify-center items-center mt-4 space-x-1 sm:space-x-2">
+        {/* Carousel Dots */}
+        <div className="flex justify-center items-center mt-6 space-x-2">
           {Array.from(
             { length: Math.ceil(upcomingEvents.length / cardsPerView) },
             (_, index) => (
@@ -351,31 +492,23 @@ const WhatsHappening = () => {
                   setDirection(index * cardsPerView > current ? 1 : -1);
                   setIsAutoPlaying(false);
                 }}
-                className="relative group"
+                className="relative group focus:outline-none"
+                aria-label={`Go to slide group ${index + 1}`}
               >
                 <div
-                  className={`w-5 h-2.5 sm:w-8 sm:h-2.5 rounded-full transition-colors duration-300 ${
+                  className={`w-6 h-1.5 sm:w-8 sm:h-1.5 rounded-full transition-colors duration-300 ${
                     activeDotIndex === index
-                      ? "bg-gradient-to-r from-sky-300 via-emerald-300 to-rose-300 dark:from-sky-500 dark:via-emerald-500 dark:to-rose-500"
-                      : "bg-gray-300 dark:bg-gray-600 group-hover:bg-sky-200 dark:group-hover:bg-sky-500"
+                      ? "bg-slate-900 dark:bg-brand-violet"
+                      : "bg-slate-300 dark:bg-slate-700 group-hover:bg-slate-400 dark:group-hover:bg-slate-500"
                   }`}
                 />
-                {activeDotIndex === index && isAutoPlaying && (
-                  <div className="absolute inset-0 rounded-full border-2 border-sky-300 dark:border-sky-400">
-                    <div
-                      className="w-full h-full rounded-full bg-sky-200/20 dark:bg-sky-400/20"
-                      style={{ animation: "progress 2.5s linear infinite" }}
-                    />
-                  </div>
-                )}
               </button>
             )
           )}
         </div>
-
       </div>
     </section>
   );
 };
 
-export default WhatsHappening;
+export default memo(WhatsHappening);

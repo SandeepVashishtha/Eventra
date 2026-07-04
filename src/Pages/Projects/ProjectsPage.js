@@ -1,161 +1,313 @@
-import React, { useState, useEffect, useRef } from "react"; // React hooks for state and lifecycle
-import { motion, AnimatePresence } from "framer-motion"; // Framer Motion for animations
-import { FiAlertCircle, FiSearch, FiX } from "react-icons/fi"; // Feather icons
+import { AlertCircle, ChevronDown, Search, X, Filter, Bookmark, RefreshCw } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Link } from "react-router-dom";
+import SEOHead from "../../components/SEOHead";
 
-import ProjectHero from "./ProjectHero"; // Hero section component
-import ProjectCard from "./ProjectCard"; // Individual project card component
-import FeedbackButton from "../../components/FeedbackButton"; // Feedback floating button
+import ProjectHero from "./ProjectHero";
+import ProjectCard from "./ProjectCard";
 import ProjectCTA from "./ProjectCTA";
-// Import mock data directly (assuming it's named mockProjectsData.json in the same folder as ProjectsPage.js)
-import mockProjects from "./mockProjectsData.json";
 
-import ModernSearchInput from "../../components/common/ModernSearchInput";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
+import { projectService } from "../../services/projectService";
+import { safeJsonParse } from "../../utils/safeJsonParse";
+import useDebounce from "../../hooks/useDebounce.js";
 
-// Skeleton loader for project cards while data is loading
-const SkeletonCard = () => (
-  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden animate-pulse">
-    <div className="h-40 bg-gray-100 dark:bg-gray-700"></div>
-    <div className="p-6">
-      <div className="h-6 bg-gray-200 dark:bg-gray-600 rounded w-3/4 mb-4"></div>
-      <div className="h-4 bg-gray-100 dark:bg-gray-600 rounded w-full mb-2"></div>
-      <div className="h-4 w-5/6 bg-gray-100 dark:bg-gray-600 rounded mb-4"></div>
-      <div className="flex flex-wrap gap-2 mb-4">
-        <div className="h-6 bg-gray-100 dark:bg-gray-600 rounded-full w-16"></div>
-        <div className="h-6 bg-gray-100 dark:bg-gray-600 rounded-full w-24"></div>
+// Reusable Custom Dropdown Component
+const CustomDropdown = ({ value, options, onChange, placeholder, icon: Icon }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleKeyDown = (event, onSelect) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onSelect();
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      setIsOpen(false);
+    }
+  };
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        onKeyDown={(e) => e.key === "Escape" && setIsOpen(false)}
+        className="flex items-center justify-between gap-2 px-4 py-2.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm font-medium text-zinc-700 dark:text-zinc-200 hover:border-zinc-300 dark:hover:border-zinc-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all min-w-[160px] shadow-sm"
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+      >
+        <span className="flex items-center gap-2 truncate">
+          {Icon && <Icon size={16} className="text-zinc-500 dark:text-zinc-400 shrink-0" />}
+          <span className="truncate">{value || placeholder}</span>
+        </span>
+        <ChevronDown
+          size={16}
+          className={`text-zinc-400 transition-transform duration-200 shrink-0 ${isOpen ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.ul
+            initial={{ opacity: 0, y: -8, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.95 }}
+            transition={{ duration: 0.15 }}
+            className="absolute z-50 mt-2 w-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-xl overflow-hidden"
+            role="listbox"
+          >
+            {options.map((option) => {
+              const isSelected = value === option.value;
+              return (
+                <li
+                  key={option.value}
+                  role="option"
+                  tabIndex={0}
+                  aria-selected={isSelected}
+                  onClick={() => {
+                    onChange(option.value);
+                    setIsOpen(false);
+                  }}
+                  onKeyDown={(e) =>
+                    handleKeyDown(e, () => {
+                      onChange(option.value);
+                      setIsOpen(false);
+                    })
+                  }
+                  className={`px-4 py-2.5 text-sm cursor-pointer transition-colors ${
+                    isSelected
+                      ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium"
+                      : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700/50"
+                  }`}
+                >
+                  {option.label}
+                </li>
+              );
+            })}
+          </motion.ul>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+// Modern Search Input
+const SearchInput = ({ value, onChange, placeholder }) => (
+  <div className="relative flex-1 group">
+    <Search
+      size={18}
+      className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-blue-500 transition-colors pointer-events-none"
+    />
+    <input
+      type="text"
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      className="w-full pl-11 pr-10 py-2.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm"
+    />
+    {value && (
+      <button
+        onClick={() => onChange({ target: { value: "" } })}
+        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-lg transition-all"
+        aria-label="Clear search"
+      >
+        <X size={14} />
+      </button>
+    )}
+  </div>
+);
+
+// Skeleton Loader
+const ProjectCardSkeleton = () => (
+  <div className="bg-white dark:bg-zinc-800 rounded-2xl border border-zinc-200 dark:border-zinc-700 overflow-hidden animate-pulse">
+    <div className="h-48 bg-zinc-100 dark:bg-zinc-700"></div>
+    <div className="p-5 space-y-3">
+      <div className="h-5 bg-zinc-100 dark:bg-zinc-700 rounded w-3/4"></div>
+      <div className="h-4 bg-zinc-100 dark:bg-zinc-700 rounded w-full"></div>
+      <div className="h-4 bg-zinc-100 dark:bg-zinc-700 rounded w-5/6"></div>
+      <div className="flex gap-2 pt-2">
+        <div className="h-6 bg-zinc-100 dark:bg-zinc-700 rounded-full w-16"></div>
+        <div className="h-6 bg-zinc-100 dark:bg-zinc-700 rounded-full w-20"></div>
+        <div className="h-6 bg-zinc-100 dark:bg-zinc-700 rounded-full w-14"></div>
       </div>
-      <div className="flex items-center justify-between mb-4">
-        <div className="h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-700"></div>
-        <div className="h-4 bg-gray-100 dark:bg-gray-600 rounded w-1/3"></div>
-      </div>
-      <div className="flex flex-wrap gap-2 mb-4">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="h-6 bg-gray-100 dark:bg-gray-600 rounded-full w-16"></div>
-        ))}
-      </div>
-      <div className="flex items-center justify-between mt-4">
-        <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-lg w-1/3"></div>
-        <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-lg w-1/3"></div>
+      <div className="flex items-center justify-between pt-3">
+        <div className="h-8 w-8 rounded-full bg-zinc-100 dark:bg-zinc-700"></div>
+        <div className="h-8 bg-zinc-100 dark:bg-zinc-700 rounded-lg w-24"></div>
       </div>
     </div>
   </div>
 );
 
-// Main ProjectGallery component
 const ProjectGallery = () => {
-  useDocumentTitle("Eventra | Projects")
-  const initialSearchQuery = new URLSearchParams(window.location.search).get("search") || "";
-  // State variables
-  const [projects, setProjects] = useState([]); // Stores all fetched projects
-  const [isLoading, setIsLoading] = useState(true); // Loading state
-  const [selectedCategories, setSelectedCategories] = useState([]); // Current category filter
-  const [sortBy, setSortBy] = useState("recent"); // Sorting option
-  const [searchQuery, setSearchQuery] = useState(initialSearchQuery); // Search input
-  const [categories, setCategories] = useState(["all"]); // Categories available
-  const [error, setError] = useState(""); // Error message
-  const [categoryOpen, setCategoryOpen] = useState(false); // Category dropdown state
-  const [sortOpen, setSortOpen] = useState(false); // Sort dropdown state
-  const cardSectionRef = useRef() // Refer to card section
-  const toggleCategory = (category) => {
-    setSelectedCategories((prev) => {
-      if (prev.includes(category)) {
-        return prev.filter((c) => c !== category);
-      }
-      return [...prev, category];
-    });
-  };
-  // Labels for sorting options
-  const sortByLabels = {
-    recent: "Recently Updated",
-    stars: "Most Stars",
-    forks: "Most Forks",
-    issues: "Most Issues",
-  };
+  return (
+    <>
+      <SEOHead
+        title="Projects"
+        description="Explore community-built projects from hackathons, events, and open-source contributions on Eventra."
+        url={window.location.href}
+      />
+      <InnerGallery />
+    </>
+  );
+};
 
-  // Fetch projects and categories from API (or mock data)
+const InnerGallery = () => {
+  const [projects, setProjects] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [filterCategory, setFilterCategory] = useState("all");
+  const [sortBy, setSortBy] = useState("recent");
+  const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+  const [categories, setCategories] = useState(["all"]);
+  const [error, setError] = useState("");
+  const [bookmarks, setBookmarks] = useState([]);
+
+  const cardSectionRef = useRef(null);
+
+  const sortByOptions = [
+    { value: "recent", label: "Recently Updated" },
+    { value: "stars", label: "Most Stars" },
+    { value: "forks", label: "Most Forks" },
+    { value: "issues", label: "Most Issues" },
+  ];
+
+  // Load bookmarks from localStorage
   useEffect(() => {
-    const fetchProjects = async () => {
+    const saved = localStorage.getItem("eventra_bookmarked_projects");
+    if (saved) {
+      setBookmarks(safeJsonParse(saved, []));
+    }
+  }, []);
+
+  const handleBookmarkToggle = useCallback((projectId) => {
+    setBookmarks((prev) => {
+      const updated = prev.includes(projectId)
+        ? prev.filter((id) => id !== projectId)
+        : [...prev, projectId];
+      localStorage.setItem("eventra_bookmarked_projects", JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  const fetchProjects = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError("");
+
+      const publicRequestConfig = { skipAuth: true, withCredentials: false };
+
+      const response = await projectService.getAllProjects(publicRequestConfig);
+      const projectsData = response.data;
+      const projectsList = Array.isArray(projectsData)
+        ? projectsData
+        : projectsData?.content || projectsData?.projects || [];
+
+      const normalizedProjects = projectsList.map((p) => ({
+        ...p,
+        id: p.id ?? p._id ?? null,
+        title:
+          typeof p.title === "string"
+            ? p.title
+            : p.title?.name ?? p.title?.title ?? "Untitled Project",
+        description:
+          typeof p.description === "string"
+            ? p.description
+            : p.description?.text ?? p.description?.summary ?? "",
+        image: p.thumbnailUrl || p.image || "/Eventra.png",
+        stars: p.upvotes !== undefined ? p.upvotes : p.stars || 0,
+        techStack: Array.isArray(p.techStack)
+          ? p.techStack.map((t) =>
+              typeof t === "string" ? t : t?.name ?? t?.label ?? String(t)
+            )
+          : [],
+        author:
+          typeof p.author === "string"
+            ? p.author
+            : p.author?.name ?? p.author?.username ?? "Anonymous",
+        status:
+          typeof p.status === "string"
+            ? p.status
+            : p.status?.name ?? "Active",
+        difficulty:
+          typeof p.difficulty === "string"
+            ? p.difficulty
+            : p.difficulty?.name ?? "Intermediate",
+        category:
+          typeof p.category === "string"
+            ? p.category
+            : p.category?.name ?? p.category?.label ?? "General",
+        githubUrl:
+          typeof p.githubUrl === "string"
+            ? p.githubUrl
+            : p.githubUrl?.url ?? p.repoUrl ?? "",
+        liveDemo:
+          typeof p.liveDemo === "string" ? p.liveDemo : p.liveDemo?.url ?? "",
+      }));
+
+      setProjects(normalizedProjects);
+
       try {
-        setIsLoading(true); // Set loading before fetching
-        setError(""); // Reset error
-
-        // --- PRODUCTION LOGIC (Commented out for reliable local run) ---
-        /*
-        const response = await apiUtils.get(API_ENDPOINTS.PROJECTS.LIST);
-        if (response.ok) {
-          const projectsData = await response.json();
-          setProjects(projectsData);
-          const categoriesResponse = await apiUtils.get(
-            API_ENDPOINTS.PROJECTS.CATEGORIES
-          );
-          if (categoriesResponse.ok) {
-            const categoriesData = await categoriesResponse.json();
-            setCategories(["all", ...categoriesData]);
-          }
-        } else {
-          throw new Error("Failed to fetch projects from API");
-        }
-        */
-
-        // --- MOCK DATA FALLBACK/REPLACEMENT ---
-        // Load mock data and simulate network delay
-        setTimeout(() => {
-          const projectsData = mockProjects;
-          setProjects(projectsData);
-
-          // Extract unique categories from mock data
-          const uniqueCategories = [...new Set(projectsData.map(p => p.category))];
-          setCategories(["all", ...uniqueCategories]);
-          setIsLoading(false);
-        }, 500);
-
-      } catch (error) {
-        console.error("Error fetching projects:", error);
-        setError("Failed to load projects. Please try again later.");
-        setIsLoading(false);
+        const categoriesResponse = await projectService.getCategories(publicRequestConfig);
+        const categoriesData = categoriesResponse.data;
+        setCategories(["all", ...(Array.isArray(categoriesData) ? categoriesData : [])]);
+      } catch {
+        const uniqueCategories = [...new Set(normalizedProjects.map((p) => p?.category).filter(Boolean))];
+        setCategories(["all", ...uniqueCategories]);
       }
-    };
-
-    fetchProjects(); // Trigger data fetch
+    } catch (err) {
+      console.error("Failed to fetch projects:", err);
+      
+     
+      if (err?.response?.status === 404 || err?.status === 404) {
+        setProjects([]);
+        setError("");
+      } else {
+        setError("Unable to load projects. Please try again later.");
+        setProjects([]);
+      }
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   useEffect(() => {
-    if (!isLoading && initialSearchQuery) {
-      setTimeout(() => {
-        cardSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 100);
-    }
-  }, [isLoading, initialSearchQuery]);
+    fetchProjects();
+  }, [fetchProjects]);
 
-  // Filter, search, and sort projects dynamically
-  const filteredAndSortedProjects = projects
+  const filteredAndSortedProjects = (Array.isArray(projects) ? projects : [])
     .filter((project) => {
-      // Filter by selected category 
-      if (
-        selectedCategories.length > 0 &&
-        !selectedCategories.includes(project.category)
-      ) {
+      if (filterCategory === "bookmarked") {
+        return bookmarks.includes(project.id);
+      } else if (filterCategory !== "all" && project.category !== filterCategory) {
         return false;
       }
 
-      // Filter by search query
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
+      if (debouncedSearchQuery) {
+        const query = debouncedSearchQuery.toLowerCase();
         return (
-          project.title.toLowerCase().includes(query) ||
-          project.description.toLowerCase().includes(query) ||
-          (project.techStack && project.techStack.some((tech) =>
-            tech.toLowerCase().includes(query)
-          )) ||
-          project.category.toLowerCase().includes(query) ||
-          project.author.toLowerCase().includes(query)
+          project?.title?.toLowerCase()?.includes(query) ||
+          project?.description?.toLowerCase()?.includes(query) ||
+          project?.category?.toLowerCase()?.includes(query) ||
+          project?.author?.toLowerCase()?.includes(query) ||
+          (Array.isArray(project?.techStack) &&
+            project.techStack.some((tech) => tech?.toLowerCase()?.includes(query)))
         );
       }
 
-      return true; // Include project if no filters applied
+      return true;
     })
     .sort((a, b) => {
-      // Sort projects based on selected option
       switch (sortBy) {
         case "recent":
           return new Date(b.lastUpdated) - new Date(a.lastUpdated);
@@ -171,352 +323,209 @@ const ProjectGallery = () => {
     });
 
   const scrollToCard = () => {
-    cardSectionRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
+    cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const clearAllFilters = () => {
+    setFilterCategory("all");
+    setSearchQuery("");
+    setSortBy("recent");
+  };
+
+  const categoryOptions = [
+    { value: "all", label: "All Categories" },
+    { value: "bookmarked", label: "★ Saved Projects" },
+    ...categories.filter((c) => c !== "all").map((cat) => ({ value: cat, label: cat })),
+  ];
+
+  const hasActiveFilters = searchQuery || filterCategory !== "all" || sortBy !== "recent";
 
   return (
-    // UPDATED: Main page background
-    <div className="flex flex-col min-h-screen bg-gradient-to-l from-sky-50 via-white to-white dark:from-gray-900 dark:to-black">
-      {/* Hero Section with CTA */}
+    <div className="flex flex-col min-h-screen bg-linear-to-br from-zinc-50 via-white to-blue-50/30 dark:from-zinc-950 dark:via-zinc-900 dark:to-blue-950/20">
+      {/* HERO */}
       <ProjectHero scrollToCard={scrollToCard} />
-      {/* Main Container */}
-      <div ref={cardSectionRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Search and Filter Panel */}
+
+      {/* MAIN CONTENT */}
+      <div ref={cardSectionRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        {/* FILTER BAR */}
         <motion.div
-          // UPDATED: Panel background and border
-          className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 mb-8"
-          style={{ boxShadow: "0 10px 25px rgba(59, 130, 246, 0.08)", fontFamily: '"Big Shoulders Display", sans-seri'}}
+          className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl p-4 sm:p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 mb-8 shadow-lg shadow-zinc-200/50 dark:shadow-zinc-950/50"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          // AOS Implementation
-          data-aos="fade-up"
-          data-aos-duration="800"
+          transition={{ duration: 0.5, delay: 0.1 }}
         >
-          <div className="flex flex-col md:flex-row gap-4 md:items-center">
-            {/* Search Input Box */}
-            <div className="flex-1">
-              <ModernSearchInput
+          <div className="flex flex-col gap-4">
+            {/* Top Row: Search + Clear */}
+            <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+              <SearchInput
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search projects by name, tech stack, or category..."
               />
+
+              {hasActiveFilters && (
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  onClick={clearAllFilters}
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-sm font-medium rounded-xl transition-all shrink-0"
+                >
+                  <X size={16} />
+                  Clear Filters
+                </motion.button>
+              )}
             </div>
 
-            {/* Filters and Sort Controls */}
-            <div className="flex flex-row flex-wrap items-center gap-3 md:gap-4 w-full">
-              {/* Category Dropdown */}
-              <div className="relative flex-1  min-w-[140px] sm:flex-none">
-                <motion.div
-                  className="cursor-pointer relative"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  data-aos="zoom-in"
-                  data-aos-delay="200"
-                >
-                  <button
-                    type="button"
-                    className="flex items-center justify-between px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-800 hover:ring-2 hover:ring-black/20 transition-all"
-                    onClick={() => setCategoryOpen((prev) => !prev)}
-                    aria-expanded={categoryOpen}
-                  >
-                    <span className="text-gray-700 dark:text-gray-200">
-                     {selectedCategories.length === 0 ? "All Categories" : `${selectedCategories.length} Selected`}
-                    </span>
-                    <FiX className="ml-2 text-gray-400 dark:text-gray-500" />
-                  </button>
-                  <AnimatePresence>
-                    {categoryOpen && (
-                      <motion.ul
-                        // UPDATED: Dropdown menu styles
-                        className="absolute z-10 mt-2 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
-                      >
-                        {categories.filter((cat) => cat !== "all").map((cat) => (
-                        <li
-                          key={cat}
-                          onClick={() => toggleCategory(cat)}
-                          className={`px-4 py-2 cursor-pointer text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 ${
-                            selectedCategories.includes(cat)
-                              ? "bg-blue-100 dark:bg-blue-900"
-                              : ""
-                          }`}
-                        >
-                          {cat}
-                        </li>
-                        ))}
-                      </motion.ul>
-                    )}
-                  </AnimatePresence>
-                </motion.div>
+            {/* Bottom Row: Dropdowns + Result Count */}
+            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+              <div className="flex flex-wrap gap-3">
+                <CustomDropdown
+                  value={filterCategory}
+                  options={categoryOptions}
+                  onChange={setFilterCategory}
+                  placeholder="Category"
+                  icon={Filter}
+                />
+
+                <CustomDropdown
+                  value={sortBy}
+                  options={sortByOptions}
+                  onChange={setSortBy}
+                  placeholder="Sort by"
+                />
               </div>
 
-              {/* Sort Dropdown */}
-              <div className="relative flex-1  min-w-[140px] sm:flex-none">
-                <motion.div
-                  className="cursor-pointer relative"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  data-aos="zoom-in"
-                  data-aos-delay="300"
+              {!isLoading && (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-sm text-zinc-500 dark:text-zinc-400"
                 >
-                  <button
-                    type="button"
-                    className="flex items-center justify-between px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm bg-white dark:bg-gray-700 hover:ring-2 hover:ring-black/20 transition-all"
-                    onClick={() => setSortOpen((prev) => !prev)}
-                    aria-expanded={sortOpen}
-                  >
-                    <span className="text-gray-700 dark:text-gray-300">
-                      {sortByLabels[sortBy]}
-                    </span>
-                    <FiX className="ml-2 text-gray-400 dark:text-gray-500" />
-                  </button>
-
-                  {/* Sort Dropdown Menu */}
-                  <AnimatePresence>
-                    {sortOpen && (
-                      <motion.ul
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        // UPDATED: Dropdown menu styles
-                        className="absolute z-10 mt-2 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden"
-                      >
-                      
-                        {Object.entries(sortByLabels).map(([key, label]) => (
-                          <li
-                            key={key}
-                            onClick={() => {
-                              setSortBy(key);
-                              setSortOpen(false);
-                            }}
-                            className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer text-gray-700 dark:text-gray-300"
-                          >
-                            {label}
-                          </li>
-                        ))}
-                      </motion.ul>
-                    )}
-                  </AnimatePresence>
-                </motion.div>
-              </div>
-
-              {/* Clear Filters Button */}
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                className="whitespace-nowrap flex-shrink-0 px-4 py-3 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white text-sm font-semibold rounded-xl flex items-center gap-2 hover:from-blue-500 hover:to-cyan-500 transition-all shadow-lg"
-                onClick={() => {
-                  setSelectedCategories([]);// Reset category
-                  setSearchQuery(""); // Clear search
-                  setSortBy("recent"); // Reset sort
-                }}
-                data-aos="zoom-in"
-                data-aos-delay="400"
-              >
-                <FiX className="w-4 h-4 animate-pulse" />
-                Clear Filters
-              </motion.button>
+                  <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                    {filteredAndSortedProjects.length}
+                  </span>{" "}
+                  project{filteredAndSortedProjects.length !== 1 ? "s" : ""} found
+                </motion.p>
+              )}
             </div>
           </div>
         </motion.div>
-        <div className="flex flex-wrap gap-2 mt-3 mb-3 ">
-          {selectedCategories.map((cat) => (
-            <div
-              key={cat}
-              className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-sm rounded-full flex items-center gap-2"
-            >
-              {cat}
 
-              <button onClick={() => toggleCategory(cat)}>
-                <FiX size={14} />
-              </button>
-            </div>
-          ))}
-        </div>
-        {/* Projects Grid Section */}
+        {/* CONTENT */}
         <AnimatePresence mode="wait">
           {isLoading ? (
-            // Show skeleton loaders while fetching
-            <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <SkeletonCard key={`skeleton-${i}`} />
-              ))}
-            </div>
-          ) : error ? (
-            // Show error message if fetch fails
             <motion.div
-              // UPDATED: Error message styles
-              className="bg-red-50 dark:bg-red-900/40 border border-red-200 dark:border-red-700 rounded-xl p-8 text-center"
+              key="skeleton"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+            >
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <ProjectCardSkeleton key={`skeleton-${i}`} />
+              ))}
+            </motion.div>
+          ) : error ? (
+            <motion.div
+              key="error"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              data-aos="zoom-in"
+              exit={{ opacity: 0, y: -20 }}
+              className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/30 rounded-2xl p-8 text-center max-w-lg mx-auto"
             >
-              <div className="mx-auto max-w-md">
-                <FiAlertCircle className="mx-auto h-12 w-12 text-red-400" />
-                <h3 className="mt-2 text-lg font-medium text-red-900 dark:text-red-200">
-                  Error loading projects
-                </h3>
-                <p className="mt-1 text-sm text-red-700 dark:text-red-300">{error}</p>
-                <div className="mt-6">
-                  <button
-                    onClick={() => window.location.reload()}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                  >
-                    Try Again
-                  </button>
-                </div>
+              <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertCircle className="h-8 w-8 text-red-500 dark:text-red-400" />
               </div>
+              <h3 className="text-lg font-semibold text-red-900 dark:text-red-200 mb-2">
+                Error loading projects
+              </h3>
+              <p className="text-sm text-red-700 dark:text-red-300 mb-6">{error}</p>
+              <button
+                type="button"
+                onClick={fetchProjects}
+                disabled={isLoading}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
+                Try Again
+              </button>
             </motion.div>
           ) : filteredAndSortedProjects.length > 0 ? (
-            // Render actual projects
             <motion.div
-              className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr"
+              key="projects"
               initial="hidden"
               animate="show"
+              exit={{ opacity: 0 }}
               variants={{
                 hidden: { opacity: 0 },
                 show: {
                   opacity: 1,
-                  transition: {
-                    staggerChildren: 0.1, // Stagger animation for each card
-                  },
+                  transition: { staggerChildren: 0.08 },
                 },
               }}
-              // AOS Implementation on the grid container
-              data-aos="fade-up"
-              data-aos-delay="500"
+              className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr"
             >
               {filteredAndSortedProjects.map((project, index) => (
-                <ProjectCard key={project.id} project={project} index={index} />
+                <ProjectCard
+                  key={project.id}
+                  project={project}
+                  index={index}
+                  isBookmarked={bookmarks.includes(project.id)}
+                  onBookmarkToggle={handleBookmarkToggle}
+                />
               ))}
             </motion.div>
           ) : (
-            // No projects found placeholder
             <motion.div
-              // UPDATED: Main container styles
-              className="relative overflow-hidden rounded-3xl p-10 text-center shadow-xl border border-gray-100 dark:border-gray-900 bg-white dark:bg-gray-800"
+              key="empty"
               initial={{ opacity: 0, y: 30, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-              data-aos="zoom-in"
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.4 }}
+              className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl p-10 text-center max-w-lg mx-auto shadow-lg"
             >
-              {/* UPDATED: Glowing gradient background */}
-              <motion.div
-                className="absolute inset-0 -z-10 bg-black/10 dark:bg-black/30 blur-3xl"
-                animate={{
-                  opacity: [0.3, 0.6, 0.3],
-                  scale: [1, 1.1, 1],
-                  rotate: [0, 10, -10, 0],
-                }}
-                transition={{
-                  duration: 8,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-              />
-
-              {/* Floating bubbles */}
-              <div className="absolute inset-0 z-0 overflow-hidden">
-                {[...Array(6)].map((_, i) => {
-                  const positions = [
-                    { left: "10%", top: "20%" },
-                    { left: "70%", top: "15%" },
-                    { left: "30%", top: "70%" },
-                    { left: "80%", top: "60%" },
-                    { left: "50%", top: "40%" },
-                    { left: "20%", top: "50%" },
-                  ];
-                  const size = 30 + Math.random() * 40;
-                  return (
-                    <motion.div
-                      key={i}
-                      className="absolute rounded-full bg-sky-200 dark:bg-sky-500/40"
-                      style={{
-                        width: size,
-                        height: size,
-                        left: positions[i].left,
-                        top: positions[i].top,
-                        opacity: 0.6, // Increased from 0.3
-                        filter: "blur(2px)",
-                      }}
-                      animate={{
-                        y: [0, -30, 0],
-                        x: [0, 10, -10, 0],
-                        scale: [1, 1.2, 1],
-                      }}
-                      transition={{
-                        duration: 6 + i,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                        delay: i * 0.5,
-                      }}
-                    />
-                  );
-                })}
+              <div className="w-20 h-20 bg-zinc-100 dark:bg-zinc-700 rounded-full flex items-center justify-center mx-auto mb-6">
+                {hasActiveFilters ? (
+                  <Search className="h-10 w-10 text-zinc-400 dark:text-zinc-500" />
+                ) : (
+                  <Bookmark className="h-10 w-10 text-zinc-400 dark:text-zinc-500" />
+                )}
               </div>
 
-              {/* No projects icon */}
-              <div className="mx-auto max-w-sm relative z-10">
-                <motion.div
-                  animate={{ y: [0, -8, 0] }}
-                  transition={{
-                    duration: 3,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                  className="flex justify-center items-center w-20 h-20 rounded-full bg-white dark:bg-gray-700 shadow-lg mx-auto border border-sky-100 dark:border-gray-600"
-                >
-                  <FiSearch className="h-10 w-10 text-black dark:text-white" />
-                </motion.div>
+              <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mb-3">
+                {hasActiveFilters ? "No Projects Found" : "No Projects Yet"}
+              </h3>
 
-                {/* UPDATED: Text colors */}
-                <h3 className="mt-6 text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
-                  No Projects Found
-                </h3>
-                <p className="mt-3 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                  {searchQuery || selectedCategories.length > 0
-                    ? "We couldn’t find any projects with your filters. Try exploring all projects!"
-                    : "Looks like there are no projects yet. Stay tuned for exciting updates!"}
-                </p>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-8 max-w-sm mx-auto">
+                {hasActiveFilters
+                  ? "We couldn't find any projects matching your filters. Try adjusting your search or filters."
+                  : "No projects available right now. Be the first to share your creation with the community!"}
+              </p>
 
-                {/* Action Buttons */}
-                <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => {
-                      setSelectedCategories([]);
-                      setSearchQuery("");
-                      setSortBy("recent");
-                    }}
-                    className="px-6 py-2.5 text-sm font-medium rounded-lg text-white bg-black hover:bg-zinc-800 shadow-lg transition-all"
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                {hasActiveFilters ? (
+                  <button
+                    onClick={clearAllFilters}
+                    className="px-6 py-2.5 text-sm font-medium rounded-xl text-white bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors shadow-lg"
                   >
-                    Clear Filters
-                  </motion.button>
-
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => {
-                      setSelectedCategories([]);
-                      setSearchQuery("");
-                      setSortBy("recent");
-                    }}
-                    className="px-6 py-2.5 text-sm font-medium rounded-lg text-black dark:text-white border border-black/15 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 shadow-md transition-all"
+                    Clear All Filters
+                  </button>
+                ) : (
+                  <Link
+                    to="/submit-project"
+                    className="px-6 py-2.5 text-sm font-medium rounded-xl text-white bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors shadow-lg inline-flex items-center justify-center gap-2"
                   >
-                    Explore Projects
-                  </motion.button>
-                </div>
+                    Submit a Project
+                  </Link>
+                )}
               </div>
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Project Submission Modal would go here */}
       </div>
-      <ProjectCTA></ProjectCTA>
 
-      {/* Floating Feedback Button */}
-      <FeedbackButton />
+      <ProjectCTA />
     </div>
   );
 };

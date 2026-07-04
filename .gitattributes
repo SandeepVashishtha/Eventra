@@ -1,2 +1,1 @@
-# Auto-resolve conflicts in package-lock.json using the custom merge driver
-package-lock.json merge=ours-then-install
+* text=auto eol=lf

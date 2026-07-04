@@ -1,117 +1,106 @@
 import { motion } from "framer-motion";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles, Users } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function CTASection() {
   return (
-    <div className="bg-white dark:bg-black py-12 px-6 lg:px-16">
+    <div className="relative bg-white dark:bg-slate-950 py-16 sm:py-24 px-4 sm:px-6 lg:px-8 border-t border-slate-200 dark:border-slate-800 overflow-hidden">
       {/* Main CTA Section */}
-      <section className="relative py-16 bg-white dark:bg-gray-900 rounded-3xl overflow-hidden shadow-2xl border border-gray-200 dark:border-gray-800">
-        {/* ------------------------------
-            Large breathing & rotating background circle (top-left)
-        ------------------------------ */}
-        <motion.div
-          className="absolute top-[-100px] left-[-100px] w-96 h-96 bg-blue-100/90 dark:bg-blue-900/50 rounded-full"
-          animate={{ rotate: [0, 360], scale: [1, 1.1, 1] }}
-          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-        />
+      <section className="relative max-w-6xl mx-auto py-16 sm:py-20 px-6 sm:px-12 rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-2xl shadow-indigo-500/10 dark:shadow-black/50">
+        {/* Increased background opacity to keep text readable */}
+        <div className="absolute inset-0 bg-white/90 dark:bg-slate-900/95 backdrop-blur-md -z-10" />
 
-        {/* ------------------------------
-            Large breathing & rotating background circle (bottom-right)
-        ------------------------------ */}
-        <motion.div
-          className="absolute bottom-[-120px] right-[-80px] w-72 h-72 bg-pink-100/90 dark:bg-pink-900/50 rounded-full"
-          animate={{ rotate: [0, -360], scale: [1, 1.05, 1] }}
-          transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
-        />
+        {/* Soft Background Orbs */}
+        <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-indigo-500/20 dark:bg-indigo-500/15 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -right-24 w-96 h-96 rounded-full bg-pink-500/20 dark:bg-pink-500/15 blur-3xl pointer-events-none" />
 
-        {/* ------------------------------
-            New small breathing circle (top-right)
-        ------------------------------ */}
-        <motion.div
-          className="absolute top-[-60px] right-[-60px] w-36 h-36 bg-yellow-100/90 dark:bg-yellow-900/50 rounded-full"
-          animate={{ rotate: [0, 360], scale: [1, 1.08, 1] }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-        />
-
-        {/* ------------------------------
-            New small breathing circle (bottom-left)
-        ------------------------------ */}
-        <motion.div
-          className="absolute bottom-[-60px] left-[-60px] w-28 h-28 bg-green-100/90 dark:bg-green-900/50 rounded-full"
-          animate={{ rotate: [0, -360], scale: [1, 1.05, 1] }}
-          transition={{ duration: 11, repeat: Infinity, ease: "easeInOut" }}
-        />
-
-        {/* ------------------------------
-            CTA Content Wrapper
-        ------------------------------ */}
-        <div className="relative z-[50] max-w-7xl mx-auto text-center px-6">
-          {/* ------------------------------
-              Tag-style subheading
-              Shows event tagline with icon
-          ------------------------------ */}
-          <motion.div className="inline-flex items-center gap-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-full px-4 py-1 justify-center mx-auto mb-6 shadow-sm">
-            <Sparkles className="w-5 h-5 text-black dark:text-white" />
-            <span className="text-black dark:text-white text-sm">
+        {/* CTA Content Wrapper */}
+        <div className="relative z-10 max-w-3xl mx-auto text-center">
+          {/* Tag-style subheading */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            className="inline-flex items-center gap-2 border border-indigo-200 dark:border-indigo-500/50 bg-indigo-50 dark:bg-indigo-950/80 rounded-full px-4 py-1.5 justify-center mx-auto mb-6 shadow-sm"
+          >
+            <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
+            <div className="text-indigo-800 dark:text-indigo-200 text-xs sm:text-sm font-bold tracking-wide uppercase">
               Innovate Ideas, Build Projects, Join Events
-            </span>
+            </div>
           </motion.div>
 
-          {/* ------------------------------
-              Main heading
-              Large title for the CTA
-          ------------------------------ */}
-          <motion.h2 className="text-4xl sm:text-5xl font-extrabold text-black dark:text-white mb-4">
-            Ignite Ideas, Connect Innovators
+          {/* Main heading - FIXED: Changed inner divs to spans */}
+          <motion.h2
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 dark:text-white mb-6 tracking-tight leading-[1.1] drop-shadow-sm"
+          >
+            <span className="inline-block text-black dark:text-white">Ignite Ideas, </span>
+            <span className="inline-block bg-clip-text text-transparent bg-linear-to-r from-indigo-600 via-purple-600 to-pink-600 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400">
+              Connect Innovators
+            </span>
           </motion.h2>
 
-          {/* ------------------------------
-              Description paragraph
-              Explains the CTA in more detail
-          ------------------------------ */}
-          <motion.p className="text-black/70 dark:text-gray-300 max-w-2xl mx-auto text-xm mb-10">
-            Participate in hackathons, showcase your projects, and collaborate
-            with creators around the world. Eventra makes it effortless, fun,
-            and inspiring.
-          </motion.p>
-
-          {/* ------------------------------
-              Buttons container
-              Side by side buttons for Explore & Host Event
-          ------------------------------ */}
-          <motion.div className="flex flex-col sm:flex-row justify-center gap-6 mb-10">
-            {/* --------------------------
-                Explore Events Button
-                Uses ArrowRight icon
-            -------------------------- */}
-            <a
-              href="#hackathons"
-              className="inline-flex items-center gap-2 z-[50] bg-blue-100 dark:bg-blue-900 text-black dark:text-white px-8 py-3 rounded-full font-semibold shadow-lg border border-blue-200 dark:border-blue-700 hover:bg-blue-200 dark:hover:bg-blue-800 hover:scale-105 transition-all duration-300 ease-out"
-            >
-              Explore Hackathons
-              <ArrowRight className="w-5 h-5" />
-            </a>
-
-            {/* --------------------------
-                Host Your Event Button
-              Uses Sparkles icon
-            -------------------------- */}
-            <a
-              href="about"
-              className="inline-flex items-center z-[50] gap-2 bg-yellow-100 dark:bg-yellow-900 text-black dark:text-white px-8 py-3 rounded-full font-semibold shadow-lg border border-yellow-200 dark:border-yellow-700 hover:bg-yellow-200 dark:hover:bg-yellow-800 hover:scale-105 transition-all duration-300 ease-out"
-            >
-              Know us better
-              <Sparkles className="w-5 h-5" />
-            </a>
+          {/* Description - FIXED: Changed motion.p to motion.div */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            className="text-slate-700 dark:text-slate-200 max-w-2xl mx-auto text-base sm:text-lg mb-10 leading-relaxed font-medium"
+          >
+            <div className="text-slate-600 dark:text-slate-400">
+              Participate in hackathons, showcase your projects, and collaborate with creators
+              around the world. Eventra makes it effortless, fun, and inspiring.
+            </div>
           </motion.div>
 
-          {/* ------------------------------
-              Last line
-              Encouraging text below buttons
-          ------------------------------ */}
-          <motion.p className="text-black/70 dark:text-gray-400 text-sm">
-            Connect, create, and grow with your community today.
-          </motion.p>
+          {/* Buttons container */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.3 }}
+            className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6 mb-10"
+          >
+            <Link
+              to="/hackathons"
+              className="group inline-flex items-center justify-center gap-2 px-8 py-4 w-full sm:w-auto rounded-xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white font-bold shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 ease-out"
+            >
+              <Users className="w-5 h-5" aria-hidden="true" />
+              Explore Hackathons
+              <ArrowRight
+                className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1"
+                aria-hidden="true"
+              />
+            </Link>
+
+            <Link
+              to="/about"
+              className="group inline-flex items-center justify-center gap-2 px-8 py-4 w-full sm:w-auto rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-900 dark:text-white font-bold border border-slate-200 dark:border-slate-600 shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 ease-out"
+            >
+              Know us better
+              <Sparkles
+                className="w-5 h-5 text-indigo-500 dark:text-indigo-400 transition-transform duration-300 group-hover:rotate-12"
+                aria-hidden="true"
+              />
+            </Link>
+          </motion.div>
+
+          {/* Footer text - FIXED: Changed motion.p to motion.div */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.4 }}
+            className="text-slate-600 dark:text-slate-300 text-xs sm:text-sm font-semibold"
+          >
+            <div className="text-slate-500 dark:text-slate-500">
+              Connect, create, and grow with your community today.
+            </div>
+          </motion.div>
         </div>
       </section>
     </div>

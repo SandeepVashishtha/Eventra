@@ -1,29 +1,28 @@
+import {
+  BookOpen,
+  Layers,
+  Cpu,
+  Code2,
+  Play,
+  GitBranch,
+  Users,
+  Info,
+  PlayCircle,
+  CheckCircle,
+  Smartphone,
+  AlertCircle,
+  PlusCircle,
+  Bell,
+  Lock,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 // src/Pages/Documentation/DocumentationPage.jsx
-import React from "react";
-import {
-  FiBookOpen,
-  FiLayers,
-  FiCpu,
-  FiCode,
-  FiPlay,
-  FiGitBranch,
-  FiUsers,
-} from "react-icons/fi";
-import {
-  FiInfo,
-  FiPlayCircle,
-  FiCheckCircle,
-  FiSmartphone,
-  FiAlertCircle,
-  FiPlusCircle,
-  FiBell,
-  FiLock,
-} from "react-icons/fi";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, ChevronUp } from "lucide-react"; // make sure these are imported
-
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 export default function DocumentationPage() {
+  useDocumentTitle("Documentation | Eventra");
   const sectionVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
@@ -33,61 +32,61 @@ export default function DocumentationPage() {
       question: "What is Eventra?",
       answer:
         "Eventra is a platform that provides information about projects, hackathons, events, and more. It helps users stay updated and participate in opportunities that match their interests.",
-      icon: <FiInfo className="w-6 h-6 text-blue-500" />,
+      icon: <Info className="w-6 h-6 text-blue-500" />,
     },
     {
       question: "How do I get started with Eventra?",
       answer:
         "1. Sign up or log in to Eventra.\n2. Explore the latest projects, hackathons, and events.\n3. Participate or bookmark events that interest you.",
-      icon: <FiPlayCircle className="w-6 h-6 text-green-500" />,
+      icon: <PlayCircle className="w-6 h-6 text-green-500" />,
     },
     {
       question: "Is Eventra free to use?",
       answer:
         "Yes, Eventra is free to use for browsing and accessing basic event information. Some premium features may require a subscription in the future.",
-      icon: <FiCheckCircle className="w-6 h-6 text-yellow-500" />,
+      icon: <CheckCircle className="w-6 h-6 text-yellow-500" />,
     },
     {
       question: "What platforms does Eventra support?",
       answer:
         "Eventra is accessible on Web and Mobile platforms, ensuring you can check events anytime, anywhere.",
-      icon: <FiSmartphone className="w-6 h-6 text-black" />,
+      icon: <Smartphone className="w-6 h-6 text-slate-400" />,
     },
     {
       question: "How can I suggest an event or report an issue?",
       answer:
         "You can submit suggestions or report issues via our Contact Form or by reaching out to our support email. Please provide detailed information to help us improve Eventra.",
-      icon: <FiAlertCircle className="w-6 h-6 text-red-500" />,
+      icon: <AlertCircle className="w-6 h-6 text-red-500" />,
     },
     {
       question: "Can I create my own events on Eventra?",
       answer:
         "Yes! Eventra allows registered users to create and manage their own events, hackathons, or project showcases directly from the platform.",
-      icon: <FiPlusCircle className="w-6 h-6 text-black" />,
+      icon: <PlusCircle className="w-6 h-6 text-slate-400" />,
     },
     {
       question: "How do I stay updated about upcoming events?",
       answer:
         "You can subscribe to notifications, follow specific categories, or bookmark events to get timely updates and reminders.",
-      icon: <FiBell className="w-6 h-6 text-pink-500" />,
+      icon: <Bell className="w-6 h-6 text-pink-500" />,
     },
     {
       question: "Does Eventra support team collaborations?",
       answer:
         "Absolutely. Users can form teams, collaborate on projects, and participate in hackathons together through Eventra's Collaboration Hub.",
-      icon: <FiUsers className="w-6 h-6 text-teal-500" />,
+      icon: <Users className="w-6 h-6 text-teal-500" />,
     },
     {
       question: "Is my personal information safe on Eventra?",
       answer:
         "Yes. Eventra prioritizes user privacy and security. All personal information is stored securely and is never shared without consent.",
-      icon: <FiLock className="w-6 h-6 text-gray-700" />,
+      icon: <Lock className="w-6 h-6 text-slate-400" />,
     },
   ];
 
   // UPDATED: Code block styles for dark mode
   const codeBlockClass =
-    "bg-gray-100 p-6 rounded-xl overflow-x-auto shadow text-black text-lg font-mono";
+    "bg-slate-950 border border-slate-800 p-6 rounded-2xl overflow-x-auto text-slate-200 text-sm md:text-base font-mono";
   const [openIndex, setOpenIndex] = useState(null);
 
   const toggleFAQ = (index) => {
@@ -110,11 +109,7 @@ export default function DocumentationPage() {
         >
           Eventra Documentation
         </motion.h1>
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-black text-xl"
-        >
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-black text-xl">
           Modern Event Management Platform for Builders & Communities
         </motion.p>
       </header>
@@ -132,45 +127,44 @@ export default function DocumentationPage() {
         data-aos-delay="0"
       >
         <div className="relative z-10">
-        {/* UPDATED: Title icon and text colors */}
-        <div className="flex items-center mb-6 text-black">
-          <FiBookOpen className="mr-3 text-3xl" />
-          <h2 className="text-3xl font-bold">Features</h2>
-        </div>
-        <div className="grid md:grid-cols-2 gap-6 text-black">
-          <div className="space-y-2">
-            <h3 className="font-semibold text-xl">Core Features</h3>
-            <ul className="list-disc list-inside space-y-1">
-              <li>Create and manage hackathons</li>
-              <li>Register participants and teams</li>
-              <li>Project submission and tracking</li>
-              <li>Event schedule and agenda management</li>
-              <li>Real-time updates and notifications</li>
-              <li>Judging and scoring system</li>
-              <li>Winner announcement and certificates</li>
-              <li>Discussion forums for participants</li>
-              <li>Resource sharing (guides, datasets, APIs)</li>
-              <li>Customizable hackathon branding</li>
-            </ul>
+          {/* UPDATED: Title icon and text colors */}
+          <div className="flex items-center mb-6 text-black">
+            <BookOpen className="mr-3 text-3xl" />
+            <h2 className="text-3xl font-bold">Features</h2>
           </div>
-          <div className="space-y-2">
-            <h3 className="font-semibold text-xl">Platform Features</h3>
-            <ul className="list-disc list-inside space-y-1">
-              <li>User authentication and profiles</li>
-              <li>Dark mode and theme support</li>
-              <li>Responsive and mobile-friendly design</li>
-              <li>Search and filter events/projects</li>
-              <li>Integration with calendar apps</li>
-              <li>Notifications for upcoming deadlines</li>
-              <li>Team collaboration tools</li>
-              <li>Analytics dashboard for organizers</li>
-              <li>Social media sharing and promotion</li>
-              <li>Cloud storage for project files</li>
-            </ul>
+          <div className="grid md:grid-cols-2 gap-6 text-black">
+            <div className="space-y-2">
+              <h3 className="font-semibold text-xl">Core Features</h3>
+              <ul className="list-disc list-inside space-y-1">
+                <li>Create and manage hackathons</li>
+                <li>Register participants and teams</li>
+                <li>Project submission and tracking</li>
+                <li>Event schedule and agenda management</li>
+                <li>Real-time updates and notifications</li>
+                <li>Judging and scoring system</li>
+                <li>Winner announcement and certificates</li>
+                <li>Discussion forums for participants</li>
+                <li>Resource sharing (guides, datasets, APIs)</li>
+                <li>Customizable hackathon branding</li>
+              </ul>
+            </div>
+            <div className="space-y-2">
+              <h3 className="font-semibold text-xl">Platform Features</h3>
+              <ul className="list-disc list-inside space-y-1">
+                <li>User authentication and profiles</li>
+                <li>Dark mode and theme support</li>
+                <li>Responsive and mobile-friendly design</li>
+                <li>Search and filter events/projects</li>
+                <li>Integration with calendar apps</li>
+                <li>Notifications for upcoming deadlines</li>
+                <li>Team collaboration tools</li>
+                <li>Analytics dashboard for organizers</li>
+                <li>Social media sharing and promotion</li>
+                <li>Cloud storage for project files</li>
+              </ul>
+            </div>
           </div>
         </div>
-        </div>
-
       </motion.section>
 
       {/* Tech Stack Section */}
@@ -187,7 +181,7 @@ export default function DocumentationPage() {
       >
         {/* UPDATED: Title icon and text colors */}
         <div className="flex items-center mb-6 text-black">
-          <FiCpu className="mr-3 text-3xl" />
+          <Cpu className="mr-3 text-3xl" />
           <h2 className="text-3xl font-bold">Tech Stack</h2>
         </div>
         <div className="grid md:grid-cols-2 gap-6 text-black text-lg">
@@ -227,7 +221,7 @@ export default function DocumentationPage() {
       >
         {/* UPDATED: Title icon and text colors */}
         <div className="flex items-center mb-6 text-black">
-          <FiLayers className="mr-3 text-3xl" />
+          <Layers className="mr-3 text-3xl" />
           <h2 className="text-3xl font-bold">Architecture</h2>
         </div>
         <pre className={codeBlockClass}>
@@ -273,7 +267,8 @@ export default function DocumentationPage() {
 │   │   ├── Contributors.js           # Contributors display
 │   │   ├── Dashboard.js              # Main dashboard
 │   │   ├── NotFound.js               # 404 page
-│   │   ├── ScrollToTop.js            # Scroll to top button
+│   │   ├── ScrollToTop.jsx           # Route scroll restorer utility
+│   │   ├── ScrollToTopButton.jsx     # Floating scroll to top button
 │   │   └── SearchFilter.js           # Search and filter
 │   ├── config/                # Configuration files
 │   │   └── api.js                    # API endpoints and utilities
@@ -338,7 +333,7 @@ export default function DocumentationPage() {
       >
         {/* UPDATED: Title icon and text colors */}
         <div className="flex items-center mb-6 text-black">
-          <FiPlay className="mr-3 text-3xl" />
+          <Play className="mr-3 text-3xl" />
           <h2 className="text-3xl font-bold">Quick Start</h2>
         </div>
         <p className="text-black text-lg mb-3">
@@ -364,7 +359,7 @@ npm start`}
         data-aos-delay="400"
       >
         <div className="flex items-center mb-6 text-black">
-          <FiGitBranch className="mr-3 text-3xl" />
+          <GitBranch className="mr-3 text-3xl" />
           <h2 className="text-3xl font-bold">Deployment</h2>
         </div>
         <ul className="list-disc list-inside text-black text-lg space-y-1">
@@ -385,12 +380,10 @@ npm start`}
         data-aos-delay="500"
       >
         <div className="flex items-center mb-6 text-black">
-          <FiCode className="mr-3 text-3xl" />
+          <Code2 className="mr-3 text-3xl" />
           <h2 className="text-3xl font-bold">License</h2>
         </div>
-        <p className="text-black text-lg">
-          Apache License 2.0 - see the LICENSE file for details.
-        </p>
+        <p className="text-black text-lg">Apache License 2.0 - see the LICENSE file for details.</p>
       </motion.section>
 
       {/* Contributing Section */}
@@ -405,7 +398,7 @@ npm start`}
         data-aos-delay="600"
       >
         <div className="flex items-center mb-6 text-black">
-          <FiUsers className="mr-3 text-3xl" />
+          <Users className="mr-3 text-3xl" />
           <h2 className="text-3xl font-bold">Contributing</h2>
         </div>
         <ol className="list-decimal list-inside space-y-2 text-black text-lg">
@@ -419,7 +412,7 @@ npm start`}
           <li>
             Commit changes:{" "}
             <code className="bg-gray-100 px-2 py-1 rounded">
-              git commit -m "Add feature"
+              git commit -m &quot;Add feature&quot;
             </code>
           </li>
           <li>Push branch and open a Pull Request</li>
@@ -427,7 +420,7 @@ npm start`}
       </motion.section>
 
       {/* FAQ Section */}
-      <section 
+      <section
         className="max-w-5xl mx-auto p-6 bg-gray-50 rounded-2xl shadow-lg"
         // AOS Implementation
         data-aos="fade-up"
@@ -448,9 +441,7 @@ npm start`}
               <div className="flex justify-between items-center">
                 <div className="flex items-center space-x-6">
                   {faq.icon}
-                  <h3 className="text-lg font-semibold text-black">
-                    {faq.question}
-                  </h3>
+                  <h3 className="text-lg font-semibold text-black">{faq.question}</h3>
                 </div>
                 {openIndex === index ? (
                   <ChevronUp className="w-5 h-5 text-black" />
@@ -477,14 +468,13 @@ npm start`}
       </section>
 
       {/* UPDATED: Footer text, border, and link colors */}
-      <footer 
+      <footer
         className="text-center text-black mt-24 border-t border-gray-300 pt-8 pb-6"
         data-aos="fade-up"
         data-aos-offset="50"
       >
         <p className="text-black text-lg font-medium">
-          Built with <span className="text-black">❤️</span> by the Eventra
-          Team.
+          Built with <span className="text-black">❤️</span> by the Eventra Team.
         </p>
         <p className="mt-2 text-black text-base">
           Visit{" "}

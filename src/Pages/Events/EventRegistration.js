@@ -1,186 +1,508 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useState, useEffect, useCallback, useMemo, useActionState } from "react";
+import { useTranslation } from "react-i18next";
+// Calendar URL helpers — import from the timezone-aware utility instead of
+// using the old inline implementations (which were UTC-blind and hardcoded
+// a 1-hour event duration — fixed in issue #2015).
+import { getGoogleCalendarUrl, getOutlookCalendarUrl, getYahooCalendarUrl, generateIcsFileBlobUrl, getWebcalSubscriptionUrl } from "../../utils/calendarUrlUtils";
+import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
+import hackathonsData from "../Hackathons/hackathonMockData.json";
+import { motion } from "framer-motion";
+import { toast } from "react-toastify";
 import {
-  Calendar,
-  MapPin,
-  Clock,
-  User,
-  Mail,
-  Phone,
-  Briefcase,
   ArrowLeft,
+  Briefcase,
+  Calendar,
   CheckCircle,
+  Clock,
   Loader2,
+  Mail,
+  MapPin,
+  Phone,
+  User,
 } from "lucide-react";
+import {
+  isCapacityConflictError,
+  isEventAtCapacity,
+  mergeAvailabilityIntoEvent,
+  normalizeEventAvailability,
+} from "../../utils/eventAvailabilityUtils.mjs";
+import { useFormValidation } from "../../hooks/useFormValidation";
+import SpatialSeatSelector from "../../components/events/SpatialSeatSelector";
+import { getEventStatus, isEventRegistrationClosed } from "../../utils/eventUtils";
+import { checkRegistrationConflict, suggestAlternativeEvents } from "../../utils/conflictDetection";
 import { useAuth } from "../../context/AuthContext";
 import { useMyEvents } from "../../context/MyEventsContext";
-import { API_ENDPOINTS } from "../../config/api";
-import { toast } from "react-toastify";
-import mockEvents from "./eventsMockData.json";
+import { API_ENDPOINTS, apiUtils } from "../../config/api";
+import { useSessionRecovery } from "../../context/SessionRecoveryContext";
+import CalendarView from "../../components/CalendarView";
+import EventConflictModal from "../../components/EventConflictModal";
+import ConfettiCanvas from "../../components/common/ConfettiCanvas";
+import { SkeletonEventCard, WaitlistSkeleton, WaitlistPositionSkeleton } from "../../components/common/SkeletonLoaders";
+import { logger } from "../../utils/logger";
+import { validate } from "../../validation";
+import { getCacheAgeLabel, getCachedEventDetail, saveCachedEventDetail } from "../../utils/offlineEventCache";
+import { pushToQueue } from "../../utils/offlineQueue";
+
+const MAX_NOTES_CHARS = 500;
+
+// const isRequestCanceled = (error, signal) =>
+//   signal?.aborted ||
+//   error?.name === "AbortError" ||
+//   error?.name === "CanceledError" ||
+//   error?.code === "ERR_CANCELED";
+
+const generateSecureUUID = () => {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+    return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+      (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+    );
+  }
+  throw new Error("Secure random number generation is not supported in this browser.");
+};
+
+const getRegistrationFailureMessage = (error) => {
+  const message = error?.data?.message || error?.data?.error || error?.message || "";
+  const normalizedMessage = message.toLowerCase();
+
+  if (error?.status === 409 && /already registered|duplicate/.test(normalizedMessage)) {
+    return "You are already registered for this event.";
+  }
+
+  if (
+    error?.status === 409 ||
+    error?.status === 423 ||
+    /capacity|full|sold out|max(?:imum)? capacity/.test(normalizedMessage)
+  ) {
+    return "This event has reached maximum capacity. Please choose another event.";
+  }
+
+  if (/conflict/.test(normalizedMessage)) {
+    return "Registration could not be completed because the server reported a conflict.";
+  }
+
+  return message || "Registration failed. Please try again.";
+};
 
 const EventRegistration = () => {
-  const { eventId } = useParams();
+  const { t } = useTranslation();
+  const { eventId: routeEventId, id: routeId } = useParams();
+  const eventId = routeEventId || routeId;
+  const location = useLocation();
   const navigate = useNavigate();
-  const { user, isAuthenticated, token } = useAuth();
-  const { addRegistration } = useMyEvents();
+  const { user, token, isAuthenticated } = useAuth();
+  const { addRegistration, myEvents } = useMyEvents();
+  const { clearSession } = useSessionRecovery();
+  const isHackathonPath = location.pathname.startsWith("/register");
+  const registrationPath = location.pathname;
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [registered, setRegistered] = useState(false);
 
-  const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    phone: "",
-    organization: "",
-    designation: "",
-    additionalInfo: "",
+  // Conflict detection state
+  const [showConflictModal, setShowConflictModal] = useState(false);
+  const [selectedSeat, setSelectedSeat] = useState(null);
+  const [showSeatSelector, setShowSeatSelector] = useState(false);
+  const [conflictData, setConflictData] = useState({
+    conflicts: [],
+    suggestions: [],
   });
 
-  const [errors, setErrors] = useState({});
+  const validationRules = useMemo(() => ({
+    fullName: validate.fullName,
+    email: validate.email,
+    phone: validate.phone,
+  }), []);
 
-  // Load event data
+  const {
+    values: formData,
+    errors,
+    touched,
+    isValid: isFormValid,
+    handleChange,
+    handleBlur,
+    validateAll,
+    setValues,
+  } = useFormValidation(
+    {
+      fullName: "",
+      email: "",
+      phone: "",
+      organization: "",
+      designation: "",
+      additionalInfo: "",
+      priority: "Medium",
+    },
+    validationRules,
+    { debounceMs: 300 }
+  );
+
+  // Load event data from backend API
   useEffect(() => {
-    const loadEvent = () => {
+    let isCancelled = false;
+
+    const applyLoadedEvent = (nextEvent) => {
+      if (!isCancelled) {
+        setEvent(nextEvent);
+      }
+    };
+
+    const prefillAuthenticatedUser = () => {
+      if (!isCancelled && isAuthenticated() && user) {
+        setValues((prev) => ({
+          ...prev,
+          fullName: user.fullName || `${user.firstName || ""} ${user.lastName || ""}`.trim() || "",
+          email: user.email || "",
+        }));
+      }
+    };
+
+    const loadEvent = async () => {
       setLoading(true);
-      // Find event from mock data
-      const foundEvent = mockEvents.find((e) => e.id === parseInt(eventId));
-      
-      if (foundEvent) {
-        setEvent(foundEvent);
-        
-        // Pre-fill form if user is authenticated
-        if (isAuthenticated() && user) {
-          setFormData((prev) => ({
-            ...prev,
-            fullName: user.fullName || `${user.firstName || ""} ${user.lastName || ""}`.trim() || "",
-            email: user.email || "",
-          }));
+
+      const isHackathonPath = location.pathname.startsWith("/register");
+      if (isHackathonPath) {
+        const foundMock = hackathonsData.find((item) => String(item.id) === String(eventId));
+        if (foundMock) {
+          applyLoadedEvent({
+            ...foundMock,
+            date: foundMock.startDate,
+            time: "10:00 AM",
+            image:
+              "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80&w=800",
+            attendees: foundMock.participants,
+            maxAttendees: 1500,
+            status: foundMock.status,
+          });
+          if (!isCancelled) setLoading(false);
+          prefillAuthenticatedUser();
+          return;
         }
       }
-      setLoading(false);
+
+      try {
+        const response = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId));
+
+        if (response.status === 200 && response.data) {
+          if (isCancelled) return;
+
+          const fetchedEvent = {
+            ...response.data,
+            status: getEventStatus(response.data),
+          };
+          applyLoadedEvent(fetchedEvent);
+          saveCachedEventDetail(fetchedEvent);
+
+          prefillAuthenticatedUser();
+        }
+      } catch (error) {
+        if (isCancelled) return;
+        console.error("Failed to load event details:", error);
+        const cached = getCachedEventDetail(eventId);
+        if (cached?.event) {
+          applyLoadedEvent({
+            ...cached.event,
+            status: getEventStatus(cached.event),
+            cacheInfo: {
+              cachedAt: cached.cachedAt,
+              label: getCacheAgeLabel(cached.cachedAt),
+            },
+          });
+
+          toast.warning(t("eventRegistration.toastShowingCached", { label: getCacheAgeLabel(cached.cachedAt) }));
+          return;
+        }
+
+        const foundMock = hackathonsData.find((item) => String(item.id) === String(eventId));
+        if (foundMock) {
+          applyLoadedEvent({
+            ...foundMock,
+            date: foundMock.startDate,
+            time: "10:00 AM",
+            image:
+              "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80&w=800",
+            attendees: foundMock.participants,
+            maxAttendees: 1500,
+            status: foundMock.status,
+          });
+        }
+      } finally {
+        if (!isCancelled) setLoading(false);
+      }
     };
 
     loadEvent();
-  }, [eventId, user, isAuthenticated]);
+    return () => {
+      isCancelled = true;
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventId, user, isAuthenticated, setValues, location.pathname]);
 
-  // Validate form
-  const validateForm = () => {
-    const newErrors = {};
-
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = "Full name is required";
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Email is invalid";
-    }
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = "Phone number is required";
-    } else if (!/^\+?[\d\s-()]{10,}$/.test(formData.phone)) {
-      newErrors.phone = "Phone number is invalid";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  // Handle input change
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    // Clear error for this field
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: "",
-      }));
-    }
-  };
-
-  // Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!validateForm()) {
-      toast.error("Please fill in all required fields correctly");
-      return;
-    }
-
-    setSubmitting(true);
-
+  const refreshEventAvailability = useCallback(async (id) => {
     try {
-      // API call to register for event
-      const response = await fetch(API_ENDPOINTS.EVENTS.REGISTER(eventId), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-        body: JSON.stringify({
-          ...formData,
-          eventId: parseInt(eventId),
-          userId: user?.id || null,
-        }),
-      });
+      const response = await apiUtils.get(API_ENDPOINTS.EVENTS.AVAILABILITY(id));
 
-      if (response.ok) {
-        setRegistered(true);
-        toast.success("Registration successful!");
-        // ── Save to My Events ──
-        addRegistration(event, formData);
-        // Redirect to event details after 2 seconds
-        setTimeout(() => {
-          navigate(`/events/${eventId}`);
-        }, 2000);
-      } else {
-        const errorData = await response.json();
-        toast.error(errorData.message || "Registration failed. Please try again.");
+      if (response.status === 200 && response.data) {
+        const normalized = normalizeEventAvailability(response.data);
+
+        setEvent((prev) =>
+          prev ? mergeAvailabilityIntoEvent(prev, response.data) : prev
+        );
+
+        return normalized;
       }
     } catch (error) {
-      console.error("Registration error:", error);
-      
-      // ── Offline Sync Queue Fallback ──
-      const payload = {
-        ...formData,
-        eventId: parseInt(eventId),
-        userId: user?.id || null,
-      };
-      
-      const QUEUE_KEY = 'eventra_offline_queue';
-      let queue = [];
-      try {
-        const queueStr = localStorage.getItem(QUEUE_KEY);
-        if (queueStr) queue = JSON.parse(queueStr);
-      } catch (e) {
-        queue = [];
-      }
-      
-      queue.push({ eventId: parseInt(eventId), payload });
-      localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
-
-      setRegistered(true);
-      addRegistration(event, formData);
-      toast.warning("Network error. Registration queued and will sync when you are online.", { autoClose: 4000 });
-      setTimeout(() => {
-        navigate(`/events/${eventId}`);
-      }, 3000);
-    } finally {
-      setSubmitting(false);
+      logger.error("Failed to refresh event availability", error);
     }
-  };
+    return null;
+  }, []);
+
+  const checkEventCapacity = useCallback(async (id, currentEvent) => {
+    const latestAvailability = await refreshEventAvailability(id);
+
+    if (latestAvailability) {
+      return latestAvailability.isFull;
+    }
+
+    return isEventAtCapacity(currentEvent);
+  }, [refreshEventAvailability]);
+
+  const checkAndHandleConflicts = useCallback(async () => {
+    const conflictCheck = checkRegistrationConflict(event, myEvents);
+    if (conflictCheck.hasConflict) {
+      try {
+        const res = await apiUtils.get(API_ENDPOINTS.EVENTS.LIST);
+        const realEvents = res.status === 200 ? res.data : [];
+        const suggestions = suggestAlternativeEvents(event, realEvents, myEvents);
+        setConflictData({
+          conflicts: conflictCheck.conflicts,
+          suggestions,
+        });
+      } catch (err) {
+        logger.error("Failed to fetch alternative events", err);
+        setConflictData({
+          conflicts: conflictCheck.conflicts,
+          suggestions: [],
+        });
+      }
+      setShowConflictModal(true);
+      return true;
+    }
+    return false;
+  }, [event, myEvents]);
+
+  // Proceed with registration after conflict check or user confirmation
+  const proceedWithRegistration = useCallback(async () => {
+    if (!isAuthenticated() || !user?.id) {
+      toast.error(t("eventRegistration.toastLoginRequired"));
+      navigate("/login", {
+        state: { from: registrationPath },
+      });
+      return { success: false, error: "Login required", waitlistPosition: -1 };
+    }
+
+    setShowConflictModal(false);
+
+    // Re-check capacity immediately before the POST (TOCTOU)
+    let isFreshlyFull = false;
+    try {
+      const latestAvailability = await refreshEventAvailability(eventId);
+      isFreshlyFull = latestAvailability != null
+        ? latestAvailability.isFull
+        : (event ? event.attendees >= event.maxAttendees : false);
+    } catch {
+      isFreshlyFull = event ? event.attendees >= event.maxAttendees : false;
+    }
+
+    if (isFreshlyFull) {
+      try {
+        const { joinWaitlist, getQueuePosition } = await import("../../utils/waitlistUtils");
+        await joinWaitlist(eventId, user, { ...formData, eventTitle: event?.title || "the event" });
+        const pos = getQueuePosition(eventId, user.id);
+        toast.success(t("eventRegistration.toastWaitlistSuccess"));
+        clearSession();
+        return { success: true, error: null, waitlistPosition: pos };
+      } catch (err) {
+        toast.error(err.message || t("eventRegistration.toastRegistrationError"));
+        return { success: false, error: err.message, waitlistPosition: -1 };
+      }
+    }
+
+    const endpoint = API_ENDPOINTS.EVENTS?.REGISTER
+        ? API_ENDPOINTS.EVENTS.REGISTER(eventId)
+        : `/api/events/${eventId}/register`;
+
+    const idempotencyKey = generateSecureUUID();
+
+    try {
+      const response = await apiUtils.post(
+        endpoint,
+        {
+          ...formData,
+          priority: formData.priority,
+          eventId: parseInt(eventId),
+          idempotencyKey,
+        },
+        token
+      );
+
+      const regData = response.data || {};
+      const registrationId = regData.registrationId || generateSecureUUID();
+      const qrToken = regData.qrToken || "";
+
+      toast.success(t("eventRegistration.toastRegistrationSuccess"));
+      addRegistration(event, formData, registrationId, qrToken);
+      clearSession();
+      return { success: true, error: null, waitlistPosition: -1 };
+    } catch (error) {
+      const failureMessage = getRegistrationFailureMessage(error);
+
+      if (isCapacityConflictError(error)) {
+        await refreshEventAvailability(eventId);
+      }
+
+      const isOfflineFailure = error?.isNetworkError || error?.isTimeout;
+      const isAlreadyRegistered = failureMessage === "You are already registered for this event.";
+
+      if (isOfflineFailure) {
+        const payload = {
+          ...formData,
+          eventId: parseInt(eventId),
+          idempotencyKey,
+        };
+
+        const success = await pushToQueue(
+          {
+            actionType: isFreshlyFull ? "JOIN_WAITLIST" : "REGISTER_EVENT",
+            endpoint,
+            eventId: parseInt(eventId),
+            idempotencyKey,
+            payload,
+          },
+          user.id
+        );
+
+        if (success) {
+          const offlineRegId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `reg-offline-${Date.now()}`;
+          addRegistration(event, formData, offlineRegId, "");
+          clearSession();
+          toast.warning(t("eventRegistration.toastNetworkQueued"), {
+            autoClose: 4000,
+          });
+          return { success: true, error: null, waitlistPosition: -1 };
+        } else {
+          toast.error(
+            t("eventRegistration.toastOfflineQueueFull")
+          );
+          return { success: false, error: t("eventRegistration.toastOfflineQueueFull"), waitlistPosition: -1 };
+        }
+      }
+
+      if (isAlreadyRegistered) {
+        toast.success(isFreshlyFull ? t("eventRegistration.toastWaitlistSuccess") : t("eventRegistration.toastRegistrationSuccess"));
+        const existingRegId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `reg-existing-${Date.now()}`;
+        addRegistration(event, {}, existingRegId, "");
+        clearSession();
+        toast.info(failureMessage);
+        return { success: true, error: null, waitlistPosition: -1 };
+      }
+
+      toast.error(failureMessage);
+      return { success: false, error: failureMessage, waitlistPosition: -1 };
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    eventId,
+    event,
+    formData,
+    isAuthenticated,
+    user,
+    token,
+    navigate,
+    registrationPath,
+    addRegistration,
+    clearSession,
+    refreshEventAvailability,
+  ]);
+
+  // React 19 Action for handling form submissions safely and race-free
+  const [actionState, formAction, isPending] = useActionState(
+    async (prevState, payload) => {
+      const bypassConflict = payload && !(payload instanceof FormData) && payload.bypassConflict;
+
+      if (!isAuthenticated() || !user?.id) {
+        toast.error(t("eventRegistration.toastLoginRequired"));
+        navigate("/login", {
+          state: { from: registrationPath },
+        });
+        return { success: false, error: "Login required", waitlistPosition: -1 };
+      }
+
+      if (!validateAll()) {
+        toast.error(t("eventRegistration.toastValidationError"));
+        return { success: false, error: "Validation failed", waitlistPosition: -1 };
+      }
+
+      if (!bypassConflict) {
+        try {
+          const isFull = await checkEventCapacity(eventId, event);
+          if (isFull) {
+            const { getGlobalWaitlist } = await import("../../utils/waitlistUtils");
+            const records = getGlobalWaitlist();
+            const onWaitlist = records.some(
+              (r) => r.userId === user.id && r.eventId === parseInt(eventId) && r.status === "waiting"
+            );
+            if (onWaitlist) {
+              toast.error(t("eventRegistration.toastAlreadyWaitlisted"));
+              return { success: false, error: "Already waitlisted", waitlistPosition: -1 };
+            }
+          }
+          const conflictDetected = await checkAndHandleConflicts();
+          if (conflictDetected) {
+            return { success: false, error: "Conflict detected", waitlistPosition: -1 };
+          }
+        } catch (err) {
+          return { success: false, error: err.message, waitlistPosition: -1 };
+        }
+      }
+
+      return await proceedWithRegistration();
+    },
+    { success: false, error: null, waitlistPosition: -1 }
+  );
+
+  const waitlistPosition = actionState?.waitlistPosition !== undefined ? actionState.waitlistPosition : -1;
+
+  // Handle conflict modal actions
+  const handleConflictCancel = useCallback(() => {
+    setShowConflictModal(false);
+    toast.info(t("eventRegistration.toastConflictCancelled"));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleConflictProceed = useCallback(() => {
+    formAction({ bypassConflict: true });
+  }, [formAction]);
+
+  const handleSelectAlternative = useCallback((alternativeEvent) => {
+    setShowConflictModal(false);
+    navigate(`/events/${alternativeEvent.id}/register`);
+    toast.info(t("eventRegistration.toastRedirectingTo", { title: alternativeEvent.title }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigate]);
+
+  const isEventFull = event ? event.attendees >= event.maxAttendees : false;
+  const status = getEventStatus(event);
+  // const isPastEvent = status === "past" || status === "ended";
+  const isCancelledEvent = status === "cancelled";
+  const isRegistrationBlocked = isEventRegistrationClosed(event);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
-        <Loader2 className="w-8 h-8 animate-spin text-black" />
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900 py-12 px-4">
+        <SkeletonEventCard />
       </div>
     );
   }
@@ -188,39 +510,270 @@ const EventRegistration = () => {
   if (!event) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-900 px-4">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-          Event Not Found
-        </h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">{t("eventRegistration.notFoundTitle")}</h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-6 text-center max-w-md">
+          {t("eventRegistration.notFoundDescription")}
+        </p>
         <Link
           to="/events"
-          className="text-black hover:text-gray-700 dark:text-white flex items-center gap-2"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-black text-white rounded-lg hover:bg-zinc-800 transition-colors font-medium"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Events
+          {t("eventRegistration.notFoundBackToEvents")}
         </Link>
       </div>
     );
   }
 
-  if (registered) {
+  if (isRegistrationBlocked) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900 px-4">
-        <div className="text-center">
-          <CheckCircle className="w-20 h-20 text-green-500 mx-auto mb-4" />
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Registration Successful!
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
-            You have successfully registered for {event.title}
-          </p>
-          <Link
-            to="/events"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-black text-white rounded-lg hover:bg-zinc-800 transition-colors"
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-gray-900 px-4">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+          {t("eventRegistration.pastEventTitle")}
+        </h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-6 text-center max-w-md">
+          {isCancelledEvent
+            ? "This event has been cancelled."
+            : t("eventRegistration.pastEventDescription")}
+        </p>
+        <Link
+          to={isHackathonPath ? `/hackathons/${event.id}` : `/events/${event.id}`}
+          className="inline-flex items-center gap-2 px-6 py-3 bg-black text-white rounded-lg hover:bg-zinc-800 transition-colors font-medium"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          {t("eventRegistration.pastEventBackToDetails")}
+        </Link>
+      </div>
+    );
+  }
+
+
+  // Show skeleton while joining the waitlist specifically
+  if (submitting && isEventFull) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 px-4 py-12 gap-4">
+        <WaitlistSkeleton />
+        <WaitlistPositionSkeleton />
+        <p className="sr-only" role="status" aria-live="polite">
+          Joining the waitlist, please wait…
+        </p>
+      </div>
+    );
+  }
+
+  if (actionState?.success) {
+    const googleCalendarUrl = getGoogleCalendarUrl(event);
+    const outlookCalendarUrl = getOutlookCalendarUrl(event);
+    const yahooCalendarUrl = getYahooCalendarUrl(event);
+    const webcalUrl = event.id ? getWebcalSubscriptionUrl(event.id) : generateIcsFileBlobUrl(event);
+    const shareText = `I'm attending ${event.title} on Eventra! Join me there!`;
+    const shareUrl = `${window.location.origin}/events/${event.id}`;
+
+    const handleNativeShare = () => {
+      if (navigator.share) {
+        navigator
+          .share({
+            title: event.title,
+            text: shareText,
+            url: shareUrl,
+          })
+          .catch((err) => {
+            if (err.name !== "AbortError") {
+              toast.error(t("eventRegistration.toastShareError"));
+            }
+          });
+      } else {
+        navigator.clipboard
+          .writeText(shareUrl)
+          .then(() => {
+            toast.success(t("eventRegistration.toastLinkCopied"));
+          })
+          .catch((err) => {
+            logger.error("Failed to copy link:", err);
+            toast.error(t("eventRegistration.toastCopyLinkError"));
+          });
+      }
+    };
+
+    return (
+      <div className="min-h-screen relative flex items-center justify-center bg-slate-50 dark:bg-slate-950 px-4 py-12 overflow-hidden">
+        <ConfettiCanvas />
+
+        <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-indigo-500/10 blur-[100px] pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-96 h-96 rounded-full bg-pink-500/10 blur-[100px] pointer-events-none" />
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9, y: 30 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ type: "spring", stiffness: 260, damping: 25 }}
+          className="relative max-w-lg w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/40 rounded-[2.5rem] shadow-2xl p-8 sm:p-10 text-center z-10"
+        >
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.2, type: "spring", stiffness: 300, damping: 15 }}
+            className="w-24 h-24 rounded-full bg-linear-to-br from-indigo-500 to-emerald-500 p-0.5 mx-auto mb-6 shadow-[0_0_20px_rgba(99,102,241,0.3)]"
           >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Events
+            <div className="w-full h-full rounded-full bg-white dark:bg-slate-900 flex items-center justify-center">
+              <CheckCircle className="w-12 h-12 text-indigo-500 dark:text-indigo-400 stroke-[2.5]" />
+            </div>
+          </motion.div>
+
+          <h2 className="text-3xl font-extrabold text-transparent bg-clip-text bg-linear-to-t from-indigo-600 to-pink-600 dark:from-indigo-400 dark:to-pink-400 mb-2">
+            {isEventFull ? t("eventRegistration.successWaitlistTitle") : t("eventRegistration.successConfirmedTitle")}
+          </h2>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mb-6 max-w-md mx-auto leading-relaxed">
+            {isEventFull 
+              ? t("eventRegistration.successWaitlistDesc", { position: waitlistPosition })
+              : t("eventRegistration.successConfirmedDesc")}
+          </p>
+
+          <div className="bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200/40 dark:border-slate-800/50 rounded-3xl p-5 mb-8 text-left">
+            <h3 title={event.title} className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-3 line-clamp-2 wrap-break-word min-w-0">
+              {event.title}
+            </h3>
+
+            <div className="space-y-2.5 text-xs text-gray-600 dark:text-gray-400">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-indigo-500" />
+                <span>
+                  {new Date(event.date).toLocaleDateString("en-US", {
+                    weekday: "long",
+                    month: "long",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-pink-500" />
+                <span>{event.time}</span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-emerald-500" />
+                <span className="truncate">{event.location}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mb-6">
+            <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">
+              {t("eventRegistration.successAddToCalendar")}
+            </p>
+            <div className="flex gap-3 justify-center flex-wrap">
+              <a
+                href={googleCalendarUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 min-w-30 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
+              >
+                <svg className="w-4 h-4 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z" />
+                </svg>
+                {t("eventRegistration.successCalendarGoogle")}
+              </a>
+              <a
+                href={outlookCalendarUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 min-w-30 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
+              >
+                <svg className="w-4 h-4 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
+                </svg>
+                {t("eventRegistration.successCalendarOutlook")}
+              </a>
+              <a
+                href={yahooCalendarUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 min-w-30 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
+              >
+                <svg className="w-4 h-4 text-purple-600" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+                </svg>
+                Yahoo
+              </a>
+              <a
+                href={webcalUrl || '#'}
+                {...(event.id
+                  ? {}
+                  : { download: event.title ? `${event.title}.ics` : 'event.ics' }
+                )}
+                className="flex-1 min-w-30 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
+              >
+                <svg className="w-4 h-4 text-slate-600 dark:text-slate-400" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19 3h-14c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14h-4v-4h-2l4-4 4 4h-2v4z" />
+                </svg>
+                Apple / ICS
+              </a>
+            </div>
+          </div>
+
+          <div className="mb-8">
+            <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">
+              {t("eventRegistration.successShareEvent")}
+            </p>
+            <div className="flex gap-3 justify-center">
+              <a
+                href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 inline-flex items-center justify-center bg-slate-900 hover:bg-slate-950 dark:bg-slate-950 dark:hover:bg-black rounded-2xl text-white hover:scale-110 transition-all duration-300 shadow"
+                title={t("eventRegistration.successShareTwitter")}
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                </svg>
+              </a>
+              <a
+                href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 inline-flex items-center justify-center bg-[#0077b5] hover:bg-[#006297] rounded-2xl text-white hover:scale-110 transition-all duration-300 shadow"
+                title={t("eventRegistration.successShareLinkedIn")}
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.779-1.75-1.75s.784-1.75 1.75-1.75 1.75.779 1.75 1.75-.784 1.75-1.75 1.75zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
+                </svg>
+              </a>
+              <button
+                type="button"
+                onClick={handleNativeShare}
+                className="w-10 h-10 inline-flex items-center justify-center bg-emerald-500 hover:bg-emerald-600 rounded-2xl text-white hover:scale-110 transition-all duration-300 shadow"
+                title={t("eventRegistration.successShareCopyLink")}
+              >
+                <svg
+                  className="w-4.5 h-4.5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                  <polyline points="16 6 12 2 8 6" />
+                  <line x1="12" y1="2" x2="12" y2="15" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <Link
+            to={isHackathonPath ? `/hackathons/${event.id}` : `/events/${event.id}`}
+            className="block"
+          >
+            <button
+              type="button"
+              className="w-full py-3.5 px-6 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold hover:bg-slate-800 dark:hover:bg-slate-100 hover:scale-[1.02] active:scale-[0.98] shadow-lg transition-all duration-300"
+            >
+              {t("eventRegistration.pastEventBackToDetails")}
+            </button>
           </Link>
-        </div>
+        </motion.div>
       </div>
     );
   }
@@ -228,26 +781,25 @@ const EventRegistration = () => {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
-        {/* Back Button */}
         <Link
-          to="/events"
+          to={isHackathonPath ? "/hackathons" : "/events"}
           className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Events
+          {isHackathonPath ? t("eventRegistration.backToHackathons") : t("eventRegistration.backToEvents")}
         </Link>
 
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden">
-          {/* Event Header */}
           <div className="relative h-64 overflow-hidden">
-            <img loading="lazy"
+            <img
+              loading="lazy"
               src={event.image}
               alt={event.title}
               className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+            <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent"></div>
             <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-              <h1 className="text-3xl font-bold mb-2">{event.title}</h1>
+              <h1 title={event.title} className="text-3xl font-bold mb-2 wrap-break-word">{event.title}</h1>
               <div className="flex flex-wrap gap-4 text-sm">
                 <span className="flex items-center gap-1">
                   <Calendar className="w-4 h-4" />
@@ -270,20 +822,44 @@ const EventRegistration = () => {
             </div>
           </div>
 
-          {/* Registration Form */}
           <div className="p-8">
+            <CalendarView events={myEvents} />
+
+            {event?.hasSeatSelection && (
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">🪑 Select Your Seat</h3>
+                  {selectedSeat && <span className="text-sm text-emerald-600 font-medium">✓ Seat selected</span>}
+                </div>
+                {showSeatSelector ? (
+                  <SpatialSeatSelector
+                    eventId={event.id}
+                    currentUser={user?.firstName + " " + user?.lastName}
+                    onSeatSelect={(seat) => { setSelectedSeat(seat); setShowSeatSelector(false); }}
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowSeatSelector(true)}
+                    className="w-full py-3 border-2 border-dashed border-indigo-300 dark:border-indigo-700 rounded-xl text-indigo-600 dark:text-indigo-400 font-medium hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all"
+                  >
+                    {selectedSeat ? `Change seat (currently: ${selectedSeat.label || "Selected"}` : "Browse & Select a Seat →"}
+                  </button>
+                )}
+              </div>
+            )}
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-              Register for this Event
+              {t("eventRegistration.formTitle")}
             </h2>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form action={formAction} className="space-y-6">
               {/* Full Name */}
               <div>
                 <label
                   htmlFor="fullName"
                   className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                 >
-                  Full Name *
+                  {t("eventRegistration.formFullName")}
                 </label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -293,16 +869,19 @@ const EventRegistration = () => {
                     name="fullName"
                     value={formData.fullName}
                     onChange={handleChange}
+                    onBlur={handleBlur}
                     className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${
-                      errors.fullName
+                      errors.fullName && touched.fullName
                         ? "border-red-500"
                         : "border-gray-300 dark:border-gray-600"
                     }`}
-                    placeholder="Enter your full name"
+                    placeholder={t("eventRegistration.formFullNamePlaceholder")}
                   />
                 </div>
-                {errors.fullName && (
-                  <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>
+                {errors.fullName && touched.fullName && (
+                  <p id="registration-fullName-error" role="alert" className="text-red-500 text-sm mt-1">
+                    {errors.fullName}
+                  </p>
                 )}
               </div>
 
@@ -312,7 +891,7 @@ const EventRegistration = () => {
                   htmlFor="email"
                   className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                 >
-                  Email Address *
+                  {t("eventRegistration.formEmail")}
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -322,16 +901,19 @@ const EventRegistration = () => {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
+                    onBlur={handleBlur}
                     className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${
-                      errors.email
+                      errors.email && touched.email
                         ? "border-red-500"
                         : "border-gray-300 dark:border-gray-600"
                     }`}
-                    placeholder="your.email@example.com"
+                    placeholder={t("eventRegistration.formEmailPlaceholder")}
                   />
                 </div>
-                {errors.email && (
-                  <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+                {errors.email && touched.email && (
+                  <p id="registration-email-error" role="alert" className="text-red-500 text-sm mt-1">
+                    {errors.email}
+                  </p>
                 )}
               </div>
 
@@ -341,7 +923,7 @@ const EventRegistration = () => {
                   htmlFor="phone"
                   className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                 >
-                  Phone Number *
+                  {t("eventRegistration.formPhone")}
                 </label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -351,16 +933,19 @@ const EventRegistration = () => {
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
+                    onBlur={handleBlur}
                     className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${
-                      errors.phone
+                      errors.phone && touched.phone
                         ? "border-red-500"
                         : "border-gray-300 dark:border-gray-600"
                     }`}
-                    placeholder="+1 (555) 123-4567"
+                    placeholder={t("eventRegistration.formPhonePlaceholder")}
                   />
                 </div>
-                {errors.phone && (
-                  <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
+                {errors.phone && touched.phone && (
+                  <p id="registration-phone-error" role="alert" className="text-red-500 text-sm mt-1">
+                    {errors.phone}
+                  </p>
                 )}
               </div>
 
@@ -370,7 +955,7 @@ const EventRegistration = () => {
                   htmlFor="organization"
                   className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                 >
-                  Organization (Optional)
+                  {t("eventRegistration.formOrganization")}
                 </label>
                 <div className="relative">
                   <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -381,7 +966,7 @@ const EventRegistration = () => {
                     value={formData.organization}
                     onChange={handleChange}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                    placeholder="Your company or institution"
+                    placeholder={t("eventRegistration.formOrganizationPlaceholder")}
                   />
                 </div>
               </div>
@@ -392,17 +977,41 @@ const EventRegistration = () => {
                   htmlFor="designation"
                   className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                 >
-                  Designation (Optional)
+                  {t("eventRegistration.formDesignation")}
                 </label>
-                <input
-                  type="text"
-                  id="designation"
-                  name="designation"
-                  value={formData.designation}
+                <div className="relative">
+                  <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    id="designation"
+                    name="designation"
+                    value={formData.designation}
+                    onChange={handleChange}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                    placeholder={t("eventRegistration.formDesignationPlaceholder")}
+                  />
+                </div>
+              </div>
+
+              {/* Priority */}
+              <div>
+                <label
+                  htmlFor="priority"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                >
+                  {t("eventRegistration.formPriority")}
+                </label>
+                <select
+                  id="priority"
+                  name="priority"
+                  value={formData.priority}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                  placeholder="Your job title or role"
-                />
+                  className="w-full pl-3 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                >
+                  <option value="High">{t("eventRegistration.formPriorityHigh")}</option>
+                  <option value="Medium">{t("eventRegistration.formPriorityMedium")}</option>
+                  <option value="Low">{t("eventRegistration.formPriorityLow")}</option>
+                </select>
               </div>
 
               {/* Additional Info */}
@@ -411,40 +1020,55 @@ const EventRegistration = () => {
                   htmlFor="additionalInfo"
                   className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                 >
-                  Additional Information (Optional)
+                  {t("eventRegistration.formAdditionalInfo") /* Additional Information (Optional) */}
                 </label>
                 <textarea
                   id="additionalInfo"
                   name="additionalInfo"
                   value={formData.additionalInfo}
                   onChange={handleChange}
+                  maxLength={MAX_NOTES_CHARS}
                   rows="4"
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none"
-                  placeholder="Any special requirements or questions?"
-                ></textarea>
+                  placeholder={t("eventRegistration.formAdditionalInfoPlaceholder")}
+                />
+                <div className="flex justify-end text-xs mt-1 text-gray-400 dark:text-gray-500">
+                  <span
+                    className={
+                      (formData.additionalInfo?.length || 0) >= MAX_NOTES_CHARS - 20
+                        ? "text-red-500 font-medium animate-pulse"
+                        : ""
+                    }
+                  >
+                    {formData.additionalInfo?.length || 0} / {MAX_NOTES_CHARS} characters
+                  </span>
+                </div>
               </div>
 
               {/* Submit Button */}
               <div className="flex gap-4">
                 <button
                   type="button"
-                  onClick={() => navigate(-1)}
+                  onClick={() => window.history.back()}
                   className="flex-1 px-6 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
                 >
-                  Cancel
+                  {t("eventRegistration.formCancel")}
                 </button>
                 <button
                   type="submit"
-                  disabled={submitting}
+                  disabled={isPending || !isFormValid}
                   className="flex-1 px-6 py-3 bg-black text-white rounded-lg hover:bg-zinc-800 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  aria-label={t("eventRegistration.formSubmitAriaLabel")}
                 >
-                  {submitting ? (
+                  {isPending ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      Registering...
+                      {isEventFull ? t("eventRegistration.formJoiningWaitlist") : t("eventRegistration.formRegistering")}
                     </>
+                  ) : isEventFull ? (
+                    t("eventRegistration.formJoinWaitlist")
                   ) : (
-                    "Complete Registration"
+                    t("eventRegistration.formCompleteRegistration")
                   )}
                 </button>
               </div>
@@ -452,6 +1076,17 @@ const EventRegistration = () => {
           </div>
         </div>
       </div>
+
+      <EventConflictModal
+        isOpen={showConflictModal}
+        newEvent={event}
+        conflictingEvents={conflictData.conflicts}
+        suggestedEvents={conflictData.suggestions}
+        onCancel={handleConflictCancel}
+        onProceed={handleConflictProceed}
+        onSelectAlternative={handleSelectAlternative}
+        strictMode={false}
+      />
     </div>
   );
 };

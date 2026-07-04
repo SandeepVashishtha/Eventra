@@ -1,19 +1,47 @@
-import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { useAuth } from '../../context/AuthContext';
-
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
+import { useAuth } from "../../context/AuthContext";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { toast } from "react-toastify";
 import { showAuthToast } from "../../utils/toast";
+import { getPublicErrorMessage, AUTH_ERRORS } from "../../utils/errorMessages";
+import useReducedMotion from "../../hooks/useReducedMotion";
+import FieldError from '../common/FieldError';
+import useLoginRateLimit from '../../hooks/useLoginRateLimit';
+import { MAX_LOGIN_ATTEMPTS, parseRetryAfterMs } from '../../utils/rateLimitUtils';
+import '../../styles/auth.css';
+import { emailPattern } from '../../validation';
+import {
+  canAttempt,
+  clearAttempts,
+  incrementFailures,
+  resetFailures,
+  getBackoffDelay,
+} from "../../utils/authRateLimiter";
 
 const Login = () => {
+  useDocumentTitle("Login | Eventra");
+  const { t } = useTranslation();
+  const prefersReducedMotion = useReducedMotion();
   const [formData, setFormData] = useState({ usernameOrEmail: "", password: "" });
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState({});
   const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
-  const { login, isAuthenticated } = useAuth();
+  const location = useLocation();
+  const { login, isAuthenticated, user, token, authRequest } = useAuth();
+  const {
+    lockedOutSeconds,
+    remainingAttempts,
+    recordAttempt,
+    isLockedOut,
+    applyServerLockout,
+  } = useLoginRateLimit();
+
+  // If ProtectedRoute redirected here because the JWT expired, show a notice.
+  const sessionExpired = location.state?.sessionExpired ?? false;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -23,185 +51,247 @@ const Login = () => {
 
   const validate = () => {
     const newErrors = {};
-    if (!formData.usernameOrEmail) newErrors.usernameOrEmail = "Email or username is required";
 
-    if (!formData.password) newErrors.password = "Password is required";
-    else if (formData.password.length < 8)
-      newErrors.password = "Password must be at least 8 characters";
+    if (!formData.usernameOrEmail.trim()) {
+      newErrors.usernameOrEmail = "Email or username is required";
+    } else if (
+      formData.usernameOrEmail.includes("@") &&
+      !emailPattern.test(formData.usernameOrEmail)
+    ) {
+      newErrors.usernameOrEmail = "Invalid email format";
+    }
+
+    if (!formData.password.trim()) {
+      newErrors.password = "Password is required";
+    } else if (formData.password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters long";
+    }
 
     setError(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-
   useEffect(() => {
     if (isAuthenticated()) {
-      navigate('/dashboard', { replace: true });
+      navigate("/dashboard", { replace: true });
     }
-  }, [navigate, isAuthenticated]);
-
+  }, [navigate, isAuthenticated, user, token]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+  if (authRequest.loading) return;
+    if (isLockedOut()) return;
     if (!validate()) return;
-    setLoading(true);
-
 
     try {
-      const ok = await login(formData.usernameOrEmail, formData.password);
+      const sanitizedUsernameOrEmail = formData.usernameOrEmail.trim();
+      if (!canAttempt("login")) {
+        toast.error(
+          "Too many login attempts. Please wait 30 seconds before trying again."
+        );
+        return;
+      }
+      const ok = await login(sanitizedUsernameOrEmail, formData.password);
       if (ok) {
-        showAuthToast("Login successful! Redirecting to dashboard...", () =>
-          navigate("/dashboard", { replace: true })
+        clearAttempts("login");
+        resetFailures("login");
+
+        showAuthToast(
+          "Login successful! Redirecting to dashboard...",
+          () => navigate("/dashboard", { replace: true })
+        );
+      } 
+      else {
+        incrementFailures("login");
+
+        const delay =
+          getBackoffDelay("login") / 1000;
+
+        toast.info(
+          `Security cooldown: Please wait ${delay} seconds before trying again.`
         );
       }
     } catch (err) {
-      console.error("Login error:", err);
-      setError({ general: err.message || "Invalid email or password" });
-      // Show error toast
-      toast.error(err.message || 'Login failed. Please check your credentials.');
-    } finally {
-      setLoading(false);
+      const errStatus = err?.status || err?.response?.status;
+      toast.error(getPublicErrorMessage(err, AUTH_ERRORS.loginFailed));
+      const retryAfterHeader =
+        err?.response?.headers?.["retry-after"] ||
+        err?.response?.headers?.["Retry-After"] ||
+        err?.retryAfter ||
+        null;
+
+      const serverDelayMs = parseRetryAfterMs(retryAfterHeader);
+      if (serverDelayMs > 0) {
+        applyServerLockout(serverDelayMs / 1000);
+        toast.error(
+          `Too many requests. Please wait ${Math.ceil(serverDelayMs / 1000)} seconds before trying again.`
+        );
+      } else if (!errStatus || errStatus < 500) {
+        recordAttempt();
+        toast.error(err.message || "Login failed. Please check your credentials.");
+      }
     }
   };
+
+  const isSubmitDisabled = authRequest.loading || isLockedOut();
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.6 }}
-      className="pastel-grid-bg min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-pink-50 dark:from-gray-950 dark:via-gray-900 dark:to-black py-12 px-4 sm:px-6 lg:px-8"
+      transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
+      className="pastel-grid-bg min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 section-theme"
     >
-
-      <div className="max-w-5xl w-full mx-auto">
+      <div className="max-w-4xl w-full mx-auto">
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="w-full pl-3 pr-4 py-3 
-bg-white dark:bg-gray-800 
-border border-gray-200 dark:border-gray-600 
-rounded-xl placeholder:text-gray-400 
-focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 
-transition-all duration-200 hover:shadow-md 
-text-gray-900 dark:text-white"
+          transition={{
+            duration: prefersReducedMotion ? 0 : 0.6,
+            delay: prefersReducedMotion ? 0 : 0.2,
+          }}
+          className="relative w-full my-8 sm:my-12 overflow-hidden rounded-2xl border p-4 sm:p-6 lg:p-8 shadow-lg backdrop-blur-sm transition-all duration-200 hover:shadow-xl card-theme"
         >
-          <div className="absolute top-8 left-10 w-16 h-16 bg-blue-100 rounded-full blur-sm opacity-60"></div>
-          <div className="absolute bottom-10 left-32 w-20 h-20 bg-pink-100 rounded-full blur-sm opacity-60"></div>
-          <div className="absolute top-20 right-20 w-14 h-14 bg-yellow-100 rounded-full blur-sm opacity-60"></div>
-          <div className="md:flex">
-
-            {/* LEFT PANEL */}
-            <div className="relative z-10 md:w-[38%] bg-gradient-to-br from-blue-100 via-yellow-50 to-pink-100 
-dark:from-gray-800 dark:via-gray-900 dark:to-black 
-text-gray-900 dark:text-white p-12 flex flex-col justify-between rounded-3xl">
-              <div>
-                <h2 className="text-4xl font-extrabold mb-4" style={{ fontFamily: '"Anton", sans-serif' }}>
-                  Welcome Back
-                </h2>
-                <p className="mb-8 text-lg opacity-90 leading-relaxed">
-                  Sign in to your Eventra account and pick up where you left off.
-                </p>
-              </div>
-            </div>
-
-            {/* RIGHT PANEL */}
-            <div className="md:w-3/5 p-10 space-y-6 
-bg-white/70 dark:bg-gray-900/90 
-backdrop-blur-xl">
-              {/* Logo / Title */}
+          <div className="pointer-events-none absolute top-8 left-6 h-16 w-16 rounded-full bg-blue-100 opacity-60 blur-sm"></div>
+          <div className="pointer-events-none absolute bottom-10 left-20 h-20 w-20 rounded-full bg-pink-100 opacity-60 blur-sm"></div>
+          <div className="pointer-events-none absolute top-16 right-10 h-14 w-14 rounded-full bg-yellow-100 opacity-60 blur-sm"></div>
+          <div className="relative z-10 w-full p-10 space-y-6 backdrop-blur-xl section-theme">
+            {/* Session-expired banner */}
+            {sessionExpired && (
               <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ duration: 0.5, delay: 0.3, type: "spring", stiffness: 200 }}
-                className="text-center space-y-4"
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: prefersReducedMotion ? 0 : 0.4 }}
+                className="session-expired-banner"
+                role="alert"
+                aria-live="polite"
               >
-                <motion.div
-                  whileHover={{ scale: 1.05, rotate: 5 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-100 to-yellow-100 rounded-3xl flex items-center justify-center shadow-md border border-blue-100"
-                >
-                  <svg
-                    className="w-8 h-8 text-blue-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 10V3L4 14h7v7l9-11h-7z"
-                    />
-                  </svg>
-                </motion.div>
-                <h1 className="text-gray-900 dark:text-white text-2xl font-bold mt-2">
-                  Welcome Back
-                </h1>
-                <p className="text-md text-gray-600 dark:text-gray-400">
-                  Sign in to your Eventra account
-                </p>
+                ⚠️ {t('auth.sessionExpired')}
               </motion.div>
+            )}
 
-              {/* Login Form */}
-              <motion.form
-                onSubmit={handleSubmit}
-                className="space-y-6"
-                noValidate
+            {/* Lockout banner */}
+            {isLockedOut() && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: prefersReducedMotion ? 0 : 0.3 }}
+                className="bg-red-50 dark:bg-red-900/40 border border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-3 rounded-xl text-sm font-medium"
+                role="alert"
+                aria-live="assertive"
               >
-                {/* Email */}
-                <div className="space-y-2">
-                  <label
-                    htmlFor="usernameOrEmail"
-                    className="block text-sm font-semibold text-gray-700 dark:text-gray-300"
-                  >
-                    Email or username <sup className='ml-1 text-sm text-red-500'>*</sup>
-                  </label>
-                  <div className="relative group">
+                {t('auth.lockedOut', { seconds: lockedOutSeconds })}
+              </motion.div>
+            )}
 
-                    <input
-                      id="usernameOrEmail"
-                      name="usernameOrEmail"
-                      type="text"
-                      value={formData.usernameOrEmail}
-                      onChange={handleChange}
-                      required
-                      disabled={loading}
-                      placeholder="Enter your email address or username"
-                      className="w-full pl-3 pr-4 py-3 
-bg-white dark:bg-gray-800
-border border-gray-200 dark:border-gray-600
-rounded-xl 
-placeholder:text-gray-400 dark:placeholder:text-gray-500
-focus:ring-2 focus:ring-blue-500/20 
-focus:border-blue-500
-transition-all duration-200 
-hover:shadow-md 
-text-gray-900 dark:text-white"
-                    />
-                  </div>
-                  {error.usernameOrEmail && (
-                    <motion.p
-                      initial={{ opacity: 0, y: -5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="text-red-500 text-sm mt-1"
-                    >
-                      {error.usernameOrEmail}
-                    </motion.p>
-                  )}
+            {/* Remaining attempts warning */}
+            {!isLockedOut() &&
+              remainingAttempts <= MAX_LOGIN_ATTEMPTS - 3 &&
+              remainingAttempts > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-amber-50 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 px-4 py-3 rounded-xl text-sm"
+                  role="status"
+                  aria-live="polite"
+                >
+                  {t('auth.attemptsRemaining', { count: remainingAttempts })}
+                </motion.div>
+              )}
+
+            {/* Logo / Title */}
+            <motion.div className="text-center space-y-4">
+              <motion.div className="mx-auto w-16 h-16...">{/* SVG Icon */}</motion.div>
+              <h1 className="text-2xl font-bold mt-2">{t('auth.welcomeBack')}</h1>
+              <p className="text-md" style={{ color: "var(--text-color-light)" }}>
+                {t('auth.signInSubtitle')}
+              </p>
+            </motion.div>
+
+            {/* Login Form */}
+            <motion.form onSubmit={handleSubmit} className="space-y-6" noValidate>
+              {/* Email / Username */}
+              <div className="space-y-2">
+                <label
+                  htmlFor="usernameOrEmail"
+                  className="block text-sm font-semibold"
+                  style={{ color: "var(--text-color)" }}
+                >
+                  {t('auth.usernameOrEmail')} <sup className="ml-1 text-sm text-red-500">*</sup>
+                </label>
+                <div className="relative group">
+                  <input
+                    id="usernameOrEmail"
+                    name="usernameOrEmail"
+                    type="text"
+                    value={formData.usernameOrEmail}
+                    onChange={handleChange}
+                    required
+                    disabled={isSubmitDisabled}
+                    placeholder={t('auth.usernamePlaceholder')}
+                    aria-invalid={!!error.usernameOrEmail}
+                    aria-describedby={error.usernameOrEmail ? "usernameOrEmail-error" : undefined}
+                    className={`w-full pl-3 pr-4 py-3 bg-white dark:bg-gray-800 border ${
+                      error.usernameOrEmail
+                        ? "border-red-500 dark:border-red-500"
+                        : "border-gray-200 dark:border-gray-600"
+                    } rounded-xl placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white`}
+                  />
                 </div>
+                <FieldError id="usernameOrEmail-error" message={error.usernameOrEmail} />
+              </div>
 
-                {/* Password */}
-                <div className="space-y-2">
-                  <label
-                    htmlFor="password"
-                    className="block text-sm font-semibold text-gray-700 dark:text-gray-300"
+              {/* Password */}
+              <div className="space-y-2">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-semibold"
+                  style={{ color: "var(--text-color)" }}
+                >
+                  {t('auth.password')} <sup className="ml-1 text-sm text-red-500">*</sup>
+                </label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg
+                      className="h-5 w-5 text-gray-400 group-focus-within:text-blue-500 transition-colors"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                      />
+                    </svg>
+                  </div>
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                    disabled={isSubmitDisabled}
+                    placeholder={t('auth.passwordPlaceholder')}
+                    aria-invalid={!!error.password}
+                    aria-describedby={error.password ? "password-error" : undefined}
+                    className={`w-full pl-10 pr-4 py-3 bg-white dark:bg-gray-800 border ${
+                      error.password
+                        ? "border-red-500 dark:border-red-500"
+                        : "border-gray-200 dark:border-gray-600"
+                    } rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((s) => !s)}
+                    aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
                   >
-                    Password <sup className='ml-1 text-sm text-red-500'>*</sup>
-                  </label>
-                  <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    {showPassword ? (
                       <svg
-                        className="h-5 w-5 text-gray-400 dark:text-gray-500 group-focus-within:text-blue-500 transition-colors"
+                        className="h-5 w-5"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -210,115 +300,78 @@ text-gray-900 dark:text-white"
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth={2}
-                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                          d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"
                         />
                       </svg>
-                    </div>
-
-                    <input
-                      id="password"
-                      name="password"
-                      type={showPassword ? "text" : "password"}
-                      value={formData.password}
-                      onChange={handleChange}
-                      required
-                      disabled={loading}
-                      placeholder="Enter your password"
-                      className="w-full pl-10 pr-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white"
-                    />
-
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((s) => !s)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
-                    >
-                      {showPassword ? (
-                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
-                        </svg>
-                      ) : (
-                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                      )}
-                    </button>
-                  </div>
-
-                  {error.password && (
-                    <motion.p
-                      initial={{ opacity: 0, y: -5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="text-red-500 text-sm mt-1"
-                    >
-                      {error.password}
-                    </motion.p>
-                  )}
-                  <div className="flex justify-end">
-                    <Link
-                      to="/password-reset"
-                      className="text-blue-600 hover:underline text-sm"
-                    >
-                      Forgot Password?
-                    </Link>
-                  </div>
+                    ) : (
+                      <svg
+                        className="h-5 w-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                        />
+                      </svg>
+                    )}
+                  </button>
                 </div>
-
-                {/* Error message */}
-                {error.general && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm"
-                  >
-                    {error.general}
-                  </motion.div>
-                )}
-
-                {/* Sign in button */}
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  type="submit"
-                  disabled={loading}
-                  className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-500 dark:bg-blue-600 
-hover:bg-blue-600 dark:hover:bg-blue-500 
-text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-75 transition-all duration-300"
-                >
-                  {loading ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Signing In...
-                    </div>
-                  ) : (
-                    "Sign In"
-                  )}
-                </motion.button>
-
-              </motion.form>
-
-              {/* Sign up link */}
-              <div className="text-center">
-                <p className="text-gray-600">
-                  Don't have an account?{' '}
-                  <Link
-                    to="/signup"
-                    className="text-blue-600 hover:underline font-semibold"
-                  >
-                    Create one here
+                <FieldError id="password-error" message={error.password} />
+                <div className="flex justify-end">
+                  <Link to="/password-reset" className="text-blue-600 hover:underline text-sm">
+                    {t('auth.forgotPassword')}
                   </Link>
-                </p>
+                </div>
               </div>
 
-              {/* Terms */}
-              <p className="text-xs text-center text-gray-500">
-                By signing in, you agree to our{' '}
-                <Link to="/terms" className="hover:underline text-blue-600 font-semibold">
-                  Terms of Service
-                </Link>{' '}
-                and{' '}
-                <Link to="/privacy" className="hover:underline text-blue-600 font-semibold">
-                  Privacy Policy
+              {/* Auth error */}
+              {authRequest.error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm"
+                >
+                  {authRequest.error}
+                </motion.div>
+              )}
+
+              {/* Sign in button */}
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                type="submit"
+                disabled={isSubmitDisabled}
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-75 transition-all duration-300"
+              >
+                {isLockedOut() ? (
+                  t('auth.lockedWait', { seconds: lockedOutSeconds })
+                ) : authRequest.loading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    {t('auth.signingIn')}
+                  </div>
+                ) : (
+                  t('auth.signIn')
+                )}
+              </motion.button>
+            </motion.form>
+
+            {/* Sign up link */}
+            <div className="text-center">
+              <p style={{ color: "var(--text-color-light)" }}>
+                {t('auth.noAccount')} {" "}
+                <Link to="/signup" className="text-blue-600 hover:underline font-semibold">
+                  {t('auth.createAccount')}
                 </Link>
               </p>
             </div>
