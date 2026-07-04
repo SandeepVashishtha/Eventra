@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Sun, MousePointer, Bell, ShieldCheck, ArrowRight, Key, Eye, EyeOff, Clipboard, Download, ShieldAlert, RefreshCw, SlidersHorizontal } from "lucide-react";
 import useLocalStorage from "../hooks/useLocalStorage";
 import useDocumentTitle from "../hooks/useDocumentTitle";
-import { toast } from "react-hot-toast";
+import { toast } from "react-toastify";
 import KeyboardShortcutsHelp from "../components/accessibility/KeyboardShortcutsHelp";
 
 const Settings = () => {
@@ -30,10 +30,17 @@ const Settings = () => {
   const [backupKey, setBackupKey] = useLocalStorage("backupKey", null);
   const [showKey, setShowKey] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const saveTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    };
+  }, []);
 
   const generateBackupKey = () => {
     setIsGenerating(true);
-    setTimeout(() => {
+    saveTimeoutRef.current = setTimeout(() => {
       const words = [
         "alpha", "bravo", "charlie", "delta", "echo", "foxtrot", "golf", "hotel", "india", 
         "juliet", "kilo", "lima", "mike", "november", "oscar", "papa", "quebec", "romeo", 
@@ -83,6 +90,7 @@ const Settings = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
     toast.success("Backup key file downloaded!");
   };
 

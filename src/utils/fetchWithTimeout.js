@@ -32,9 +32,27 @@ export const fetchWithTimeout = async (
     }
   }
 
+  const method = (options.method || "GET").toUpperCase();
+  let requestHeaders = options.headers;
+  if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+    const headers = new Headers(options.headers || {});
+    if (!headers.has("Idempotency-Key")) {
+      const idempotencyKey = typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            const r = Math.random() * 16 | 0;
+            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+          });
+      headers.set("Idempotency-Key", idempotencyKey);
+    }
+    requestHeaders = headers;
+  }
+
   try {
     const response = await fetch(url, {
       ...options,
+      headers: requestHeaders,
       signal: controller.signal,
     });
 

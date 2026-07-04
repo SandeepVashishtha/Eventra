@@ -10,16 +10,16 @@ globalThis.localStorage = {
 
 const { trackUserInterest } = await import("../src/utils/activityTracker.js");
 
-assert.doesNotThrow(() => trackUserInterest(null));
-assert.doesNotThrow(() => trackUserInterest(undefined));
-assert.doesNotThrow(() => trackUserInterest(""));
+await trackUserInterest(null);
+await trackUserInterest(undefined);
+await trackUserInterest("");
 assert.equal(store["eventra_user_profile"], undefined, "invalid interests should not write profile");
 
-trackUserInterest("design");
+await trackUserInterest("design");
 assert.ok(JSON.parse(store["eventra_user_profile"]).interests.includes("design"));
 
 store["eventra_user_profile"] = "[]";
-assert.doesNotThrow(() => trackUserInterest("coding"));
+await trackUserInterest("coding");
 assert.deepEqual(JSON.parse(store["eventra_user_profile"]).interests, ["coding"]);
 
 console.log("activityTracker edge-case tests passed ✓");

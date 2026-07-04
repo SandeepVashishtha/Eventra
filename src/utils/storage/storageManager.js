@@ -1,13 +1,15 @@
- 
-import { STORAGE_KEYS } from "./storageKeys";
-import { validators } from "./storageValidators";
-import { safeJsonParse } from "../../utils/safeJsonParse";
-import { logger } from "../logger";
+import { STORAGE_KEYS } from "./storageKeys.js";
+import { validators } from "./storageValidators.js";
+import { safeJsonParse } from "../../utils/safeJsonParse.js";
+import { logger } from "../logger.js";
 
 const DEFAULT_EXPIRY = 1000 * 60 * 60; // 1 hour
 
 export const storageManager = {
   set(key, value, expiry = DEFAULT_EXPIRY) {
+    if (typeof window === "undefined" || !window.localStorage) {
+      return;
+    }
     try {
       const payload = {
         value,
@@ -22,6 +24,9 @@ export const storageManager = {
   },
 
   get(key, validator = null) {
+    if (typeof window === "undefined" || !window.localStorage) {
+      return null;
+    }
     try {
       const raw = localStorage.getItem(key);
       if (!raw) return null;
@@ -50,14 +55,10 @@ export const storageManager = {
 
       return parsed.value;
     } catch (error) {
-      // 4. Detailed logging instead of silent deletion
-      logger.error(`[Storage] Corruption error for key "${key}":`, error);
-      
-      // Only remove if it's a parse error (definitely corrupted)
-      if (error instanceof SyntaxError) {
-        logger.warn(`[Storage] Removing corrupted key: ${key}`);
-        localStorage.removeItem(key);
-      }
+      // safeJsonParse never re-throws SyntaxError — only localStorage access
+      // errors (SecurityError, QuotaExceededError) reach here. Log and return
+      // null; do not attempt removeItem since the access error would repeat.
+      logger.error(`[Storage] Access error for key "${key}":`, error);
       return null;
     }
   },

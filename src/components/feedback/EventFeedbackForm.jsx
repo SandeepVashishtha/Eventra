@@ -6,10 +6,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
 import { useAuth } from "../../context/AuthContext";
+import { fetchEventFeedback, submitEventFeedback } from "../../utils/feedbackUtils";
 
 const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
   const { user, isAuthenticated } = useAuth();
   const authenticated = isAuthenticated();
+  const userId = user?.id || user?.email || "";
 
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
@@ -18,17 +20,35 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
   const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
-    if (!authenticated) return;
-    const key = `feedback-submitted-${eventId}-${user?.id || "anon"}`;
-    if (localStorage.getItem(key)) {
-      setSubmitted(true);
-    } else {
-      setSubmitted(false);
-      setRating(0);
-      setHoveredRating(0);
-      setComment("");
+    let isActive = true;
+
+    setSubmitted(false);
+    setRating(0);
+    setHoveredRating(0);
+    setComment("");
+
+    if (!eventId || !userId) {
+      return () => {
+        isActive = false;
+      };
     }
-  }, [eventId, authenticated, user?.id]);
+
+    fetchEventFeedback(eventId)
+      .then((data) => {
+        if (isActive) {
+          setSubmitted(Boolean(data?.submitted));
+        }
+      })
+      .catch(() => {
+        if (isActive) {
+          setSubmitted(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [eventId, userId]);
 
   // Render a login prompt for unauthenticated visitors
   if (!authenticated) {
@@ -67,12 +87,17 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
 
     setIsSubmitting(true);
     try {
-      const storageKey = `feedback-submitted-${eventId}-${user?.id || "anon"}`;
-      localStorage.setItem(storageKey, "true");
+      await submitEventFeedback({
+        eventId,
+        rating,
+        comment: comment.trim(),
+      });
+
       setSubmitted(true);
       toast.success("Feedback submitted! Thank you for sharing your thoughts.");
-    } catch {
-      toast.error("Failed to submit feedback. Please try again.");
+    } catch (err) {
+      const message = err?.data?.error || err?.message || "Failed to submit feedback. Please try again.";
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
