@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import useReducedMotion from "../../hooks/useReducedMotion";
 import {
@@ -148,17 +148,17 @@ const CONNECTIONS = [
 ];
 
 const ACTIVITY_LEVELS = {
-  Critical: { color: "#E0E9F2", pulse: "rgba(224,233,242,0.36)", label: "Critical" },
-  High: { color: "#E0E9F2", pulse: "rgba(224,233,242,0.32)", label: "High" },
-  Medium: { color: "#E0E9F2", pulse: "rgba(224,233,242,0.28)", label: "Medium" },
-  Low: { color: "#E0E9F2", pulse: "rgba(224,233,242,0.18)", label: "Low" },
+  Critical: { color: "#8B5CF6", pulse: "rgba(139, 92, 246, 0.4)", label: "Critical" },
+  High: { color: "#A78BFA", pulse: "rgba(167, 139, 250, 0.3)", label: "High" },
+  Medium: { color: "#38BDF8", pulse: "rgba(56, 189, 248, 0.25)", label: "Medium" },
+  Low: { color: "#34D399", pulse: "rgba(52, 211, 153, 0.2)", label: "Low" },
 };
 
 const REGIONS = ["All", "North America", "Europe", "Asia", "Oceania"];
 
 // ============ UTILITY FUNCTIONS ============
-const getHubSize = (devs) => Math.max(4, Math.min(12, devs / 200));
-const getConnectionWidth = (intensity) => 1.5 + intensity * 2;
+const getHubSize = (devs) => Math.max(5, Math.min(13, devs / 220));
+const getConnectionWidth = (intensity) => 1.2 + intensity * 2;
 const formatTimeInZone = (timezone) => {
   try {
     return new Date().toLocaleTimeString("en-US", {
@@ -190,22 +190,24 @@ const formatTimeInZone = (timezone) => {
 };
 
 // ============ PARTICLE ANIMATION COMPONENT ============
-const ConnectionParticle = ({ path, color, delay }) => (
-  <motion.circle
-    r="2"
-    fill={color}
-    initial={{ offsetDistance: "0%", opacity: 0.7 }}
-    animate={{ offsetDistance: "100%", opacity: 0.45 }}
-    transition={{
-      duration: 5 + Math.random() * 3,
-      repeat: Infinity,
-      ease: "linear",
-      delay,
-    }}
-    style={{ offsetPath: `path("${path}")` }}
-    opacity="0.65"
-  />
-);
+const ConnectionParticle = ({ path, color, delay }) => {
+  const duration = useRef(4 + Math.random() * 3);
+  return (
+    <motion.circle
+      r="2.5"
+      fill={color}
+      initial={{ offsetDistance: "0%", opacity: 0.9 }}
+      animate={{ offsetDistance: "100%", opacity: 0.2 }}
+      transition={{
+        duration: duration.current,
+        repeat: Infinity,
+        ease: "linear",
+        delay,
+      }}
+      style={{ offsetPath: `path("${path}")` }}
+    />
+  );
+};
 
 // ============ MAIN COMPONENT ============
 export default function CollaborationNetworkMap() {
@@ -218,6 +220,7 @@ export default function CollaborationNetworkMap() {
   const [zoom, setZoom] = useState(1);
   const [showConnections, setShowConnections] = useState(true);
   const [particlesEnabled, setParticlesEnabled] = useState(false);
+  const hoverTimeoutRef = useRef(null);
 
   // Memoized computations
   const hubCoordinates = useMemo(() => {
@@ -269,7 +272,10 @@ export default function CollaborationNetworkMap() {
       if (e.key === "-" || e.key === "_") setZoom((z) => Math.max(z - 0.2, 0.5));
     };
     window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
+    return () => {
+      window.removeEventListener("keydown", handleKey);
+      if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    };
   }, []);
 
   const getCoordinates = useCallback(
@@ -278,9 +284,32 @@ export default function CollaborationNetworkMap() {
   );
 
   const getPopupStyle = useCallback((hub) => {
-    let leftPercent = 0;
-    let topPercent = 0;
-    return { left: `${leftPercent}%`, top: `${topPercent}%`, transform: "translate(-50%, -100%)" };
+    if (!hub) return {};
+    const xPercent = (hub.x / 1000) * 100;
+    const yPercent = (hub.y / 500) * 100;
+    
+    // Prevent horizontal overflow
+    let xTransform = "-50%";
+    if (hub.x > 750) {
+      xTransform = "-90%";
+    } else if (hub.x < 250) {
+      xTransform = "-10%";
+    }
+
+    // Prevent vertical overflow for nodes near the top
+    let yTransform = "-100%";
+    let yOffset = -4;
+    if (hub.y < 250) {
+      yTransform = "0%";
+      yOffset = 4;
+    }
+
+    return { 
+      left: `${xPercent}%`, 
+      top: `${yPercent + yOffset}%`, 
+      x: xTransform,
+      y: yTransform
+    };
   }, []);
 
   const handleHubClick = useCallback(
@@ -298,10 +327,21 @@ export default function CollaborationNetworkMap() {
 
   const handleHubHover = useCallback(
     (hub) => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
       if (!pinnedHub) setActiveHub(hub);
     },
     [pinnedHub]
   );
+
+  const handleHubMouseLeave = useCallback(() => {
+    if (!pinnedHub) {
+      hoverTimeoutRef.current = setTimeout(() => {
+        setActiveHub(null);
+      }, 150);
+    }
+  }, [pinnedHub]);
 
   return (
     <section className="bg-white dark:bg-slate-950 py-12 text-slate-900 dark:text-slate-100">
@@ -458,7 +498,7 @@ export default function CollaborationNetworkMap() {
                 </span>
                 <span className="mt-0.5 block text-xs uppercase tracking-wider text-slate-400">Active Hubs</span>
               </div>
-            </div>
+            ))}
           </div>
 
           {/* ── Map Frame — z-0 keeps the SVG canvas below the filter/popup layer ── */}
@@ -627,7 +667,7 @@ export default function CollaborationNetworkMap() {
                         setPinnedHub(null);
                         setActiveHub(null);
                       }}
-                      aria-label="Close popup"
+                      aria-label="Close panel"
                     >
                       <X size={14} />
                     </button>
@@ -713,7 +753,7 @@ export default function CollaborationNetworkMap() {
                     className="h-2.5 w-2.5 rounded-full"
                     style={{ backgroundColor: config.color, boxShadow: `0 0 6px ${config.pulse}` }}
                   />
-                  <span>{config.label}</span>
+                  <span className="text-slate-700 dark:text-slate-300">{config.label}</span>
                 </div>
               ))}
             </div>
@@ -726,6 +766,7 @@ export default function CollaborationNetworkMap() {
 
         </div>{/* end glass card */}
       </div>
+
     </section>
   );
 }

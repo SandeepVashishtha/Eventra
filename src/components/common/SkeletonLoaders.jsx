@@ -1,5 +1,5 @@
 const shimmer =
-  "animate-pulse bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 bg-[length:200%_100%]";
+  "animate-pulse bg-linear-to-r from-gray-200 via-gray-100 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 bg-[length:200%_100%]";
 
 export const SkeletonBlock = ({ className = "", ...props }) => (
   <div className={`${shimmer} rounded ${className}`} {...props} />
@@ -7,7 +7,7 @@ export const SkeletonBlock = ({ className = "", ...props }) => (
 
 export const SkeletonEventCard = () => (
   <div aria-hidden="true" className="group relative bg-white dark:bg-gray-900 rounded-3xl shadow-xl flex flex-col overflow-hidden border border-gray-100 dark:border-gray-800">
-    <div className="flex items-center px-5 py-4 gap-4 bg-gradient-to-r from-white/80 to-indigo-50/60 dark:from-gray-900/80 dark:to-indigo-950/60 border-b border-gray-100 dark:border-gray-800">
+    <div className="flex items-center px-5 py-4 gap-4 bg-linear-to-r from-white/80 to-indigo-50/60 dark:from-gray-900/80 dark:to-indigo-950/60 border-b border-gray-100 dark:border-gray-800">
       <SkeletonBlock className="w-10 h-10 rounded-xl" />
       <SkeletonBlock className="h-6 flex-1" />
       <SkeletonBlock className="h-6 w-16 rounded-full" />
@@ -114,7 +114,7 @@ export const GitHubStatCardSkeleton = () => (
 );
 
 export const LeaderboardStatCardSkeleton = () => (
-  <div aria-hidden="true" className="p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-indigo-50 to-gray-50 dark:from-gray-800 dark:to-gray-900">
+  <div aria-hidden="true" className="p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 bg-linear-to-br from-indigo-50 to-gray-50 dark:from-gray-800 dark:to-gray-900">
     <div className="flex items-center">
       <SkeletonBlock className="h-12 w-12 rounded-xl mr-4" />
       <div className="flex-1">
@@ -140,7 +140,7 @@ export const SkeletonLeaderboard = ({ rows = 10 }) => (
           ))}
         </tr>
       </thead>
-      <tbody className="bg-gradient-to-b from-indigo-50 to-white dark:from-gray-900 dark:to-black divide-y divide-gray-400 dark:divide-gray-500">
+      <tbody className="bg-linear-to-b from-indigo-50 to-white dark:from-gray-900 dark:to-black divide-y divide-gray-400 dark:divide-gray-500">
         {[...Array(rows)].map((_, i) => (
           <tr key={i} className="animate-pulse">
             <td className="px-6 py-4 whitespace-nowrap">
@@ -383,9 +383,9 @@ export const ProjectCardSkeleton = () => (
 );
 
 export const DashboardStatCardSkeleton = () => (
-  <div aria-hidden="true" className="ud-stat-card">
-    <SkeletonBlock className="ud-stat-icon h-11 w-11 rounded-xl" />
-    <div className="ud-stat-info flex-1">
+  <div aria-hidden="true" className="flex items-center p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 animate-pulse">
+    <SkeletonBlock className="h-14 w-14 rounded-xl flex-shrink-0" />
+    <div className="flex-1 ml-4">
       <SkeletonBlock className="h-3 w-20 mb-2" />
       <SkeletonBlock className="h-8 w-14 mb-2" />
       <SkeletonBlock className="h-3 w-32" />
@@ -616,7 +616,8 @@ export const ExploreEventsSkeleton = () => (
  */
 export const WaitlistSkeleton = () => (
   <div
-    aria-hidden="true"
+    role="status"
+    aria-live="polite"
     aria-label="Loading waitlist information…"
     className="animate-pulse rounded-2xl border border-amber-100 dark:border-amber-900/40 bg-amber-50/60 dark:bg-amber-950/20 p-6 space-y-4 w-full max-w-md"
   >

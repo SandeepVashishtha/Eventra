@@ -3,10 +3,12 @@ import { ArrowRightIcon, LightBulbIcon, FolderOpenIcon, CodeBracketIcon, CheckCi
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { API_ENDPOINTS, apiUtils } from "../../config/api";
+
+import { projectService } from "../../services/projectService";
 import { sanitizeInputText } from "../../utils/inputSanitization";
+import { REQUIRED_FIELDS, validateSubmitProjectForm } from "../../utils/submitProjectValidation";
 
 const SubmitProject = () => {
   const navigate = useNavigate();
@@ -100,72 +102,13 @@ const SubmitProject = () => {
     additionalNotes: useRef(null),
   };
 
-  const requiredFields = [
-    "projectName",
-    "teamName",
-    "email",
-    "githubLink",
-    "projectType",
-    "techStack",
-    "description",
-  ];
+  const requiredFields = REQUIRED_FIELDS;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
-
-const validateForm = (data) => {
-  const newErrors = {};
-
-  const formatFieldName = (fieldName) => {
-    const result = fieldName.replace(/([A-Z])/g, " $1");
-    return result.charAt(0).toUpperCase() + result.slice(1);
-  };
-
-  // Required fields
-  for (const field of requiredFields) {
-    if (!data[field]?.trim()) {
-      const formattedName = formatFieldName(field);
-      newErrors[field] = `${formattedName} is required.`;
-    }
-  }
-
-  // Length validations
-  if (data.projectName && (data.projectName.trim().length < 3 || data.projectName.trim().length > 100)) {
-    newErrors.projectName = "Project Name must be between 3 and 100 characters.";
-  }
-  if (data.teamName && (data.teamName.trim().length < 3 || data.teamName.trim().length > 100)) {
-    newErrors.teamName = "Team Name must be between 3 and 100 characters.";
-  }
-  if (data.description && (data.description.trim().length < 20 || data.description.trim().length > 2000)) {
-    newErrors.description = "Description must be between 20 and 2000 characters.";
-  }
-
-  // Existing validation logic
-  if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) {
-    newErrors.email = "Please enter a valid email address.";
-  }
-  if (
-    data.githubLink &&
-    !/^(https?:\/\/)?(www\.)?github\.com\/[\w-]+\/[\w-]+(\/)?$/i.test(data.githubLink.trim())
-  ) {
-    newErrors.githubLink = "Please enter a valid GitHub repository URL.";
-  }
-  const urlRegex = /^(https?:\/\/)?([\w-]+(\.[\w-]+)+)(\/[\w-./?%&=]*)?$/i;
-  if (data.liveDemoLink?.trim() && !urlRegex.test(data.liveDemoLink)) {
-    newErrors.liveDemoLink = "Please enter a valid URL.";
-  }
-  if (data.projectImage?.trim()) {
-    const isBase64 = data.projectImage.startsWith("data:image/");
-    if (!isBase64 && !urlRegex.test(data.projectImage)) {
-      newErrors.projectImage = "Please enter a valid image URL.";
-    }
-  }
-
-  return newErrors;
-};
 
 const handleSubmit = async (e) => {
     e.preventDefault();
@@ -176,7 +119,7 @@ const handleSubmit = async (e) => {
       return;
     }
 
-    const validationErrors = validateForm(formData);
+    const validationErrors = validateSubmitProjectForm(formData);
 
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
@@ -204,24 +147,24 @@ const handleSubmit = async (e) => {
 
     setIsSubmitting(true);
     try {
-      // Sanitize text fields before sending
+      // Sanitize and map text fields before sending
       const sanitizedData = {
         ...formData,
+        title: sanitizeInputText(formData.projectName),
+        category: formData.projectCategory || formData.projectType || "Other",
+        thumbnailUrl: formData.projectImage || "",
+        githubUrl: formData.githubLink || "",
         projectName: sanitizeInputText(formData.projectName),
         teamName: sanitizeInputText(formData.teamName),
         description: sanitizeInputText(formData.description),
         additionalNotes: sanitizeInputText(formData.additionalNotes),
         submittedBy: user?.id,
       };
-      await apiUtils.post(
-        API_ENDPOINTS.PROJECTS.SUBMIT,
-        sanitizedData,
-        {
-          headers: {
-            Authorization: token
-          }
+      await projectService.submitProject(sanitizedData, {
+        headers: {
+          Authorization: token
         }
-      );
+      });
 
       toast.success("Project submitted successfully!");
       setFormData({
@@ -482,14 +425,15 @@ const handleSubmit = async (e) => {
                         src={formData.projectImage}
                         alt="Project Preview"
                         className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                         loading="lazy"
                       />
                       <button
                         type="button"
                         onClick={handleRemoveImage}
                         className="absolute top-2 right-2 p-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-full shadow-md transition-all duration-200 cursor-pointer"
                         title="Remove image"
-                       aria-label="button">
-                        <XMarkIcon className="w-3.5 h-3.5" />
+                        aria-label="Remove uploaded project image">
+                        <XMarkIcon className="w-3.5 h-3.5" aria-hidden="true" />
                       </button>
                     </div>
                   ) : (
@@ -640,15 +584,15 @@ const handleSubmit = async (e) => {
             <ArrowUpTrayIcon className="w-5 h-5" /> Submit Another Project
           </motion.button>
           
-          <motion.a
-            href="/projects"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="inline-flex items-center justify-center gap-2 bg-bg text-text border border-border px-8 py-3 rounded-xl shadow-lg hover:bg-card-bg transition-all duration-300"
-          >
-            <ClipboardDocumentCheckIcon className="w-5 h-5" />
-            Explore Projects
-          </motion.a>
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <Link
+              to="/projects"
+              className="inline-flex items-center justify-center gap-2 bg-bg text-text border border-border px-8 py-3 rounded-xl shadow-lg hover:bg-card-bg transition-all duration-300"
+            >
+              <ClipboardDocumentCheckIcon className="w-5 h-5" />
+              Explore Projects
+            </Link>
+          </motion.div>
         </div>
       </motion.div>
     </div>

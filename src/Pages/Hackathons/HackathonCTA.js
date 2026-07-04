@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, UserPlus, X, Rocket } from "lucide-react";
+import { Link } from "react-router-dom";
 
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 const HackathonCTA = () => {
@@ -19,7 +20,7 @@ const HackathonCTA = () => {
     <>
       <section
         className="relative mx-6 sm:mx-8 my-10 py-16 sm:py-20 px-6 sm:px-12 rounded-3xl overflow-hidden
-          bg-gradient-to-br from-indigo-50/50 via-white to-blue-50/50 dark:from-slate-950 dark:via-indigo-950/80 dark:to-slate-950
+          bg-linear-to-br from-indigo-50/50 via-white to-blue-50/50 dark:from-slate-950 dark:via-indigo-950/80 dark:to-slate-950
           border border-indigo-100 dark:border-white/10
           shadow-[0_8px_30px_rgba(99,102,241,0.08)] dark:shadow-[0_0_80px_rgba(99,102,241,0.15)]
           text-center transition-colors duration-300"
@@ -69,7 +70,7 @@ const HackathonCTA = () => {
             transition={{ duration: prefersReducedMotion ? 0 : 0.6, delay: 0.1 }}
           >
             Join Our{" "}
-            <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 dark:from-blue-400 dark:via-indigo-400 dark:to-violet-400 bg-clip-text text-transparent">
+            <span className="bg-linear-to-r from-blue-600 via-indigo-600 to-violet-600 dark:from-blue-400 dark:via-indigo-400 dark:to-violet-400 bg-clip-text text-transparent">
               Hackathon Community
             </span>
           </motion.h2>
@@ -86,14 +87,14 @@ const HackathonCTA = () => {
           </motion.p>
 
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <motion.a
-              href="/hackathons"
-              className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white font-semibold px-8 py-3.5 rounded-xl shadow-lg dark:shadow-[0_0_24px_rgba(99,102,241,0.4)] hover:shadow-xl dark:hover:shadow-[0_0_36px_rgba(99,102,241,0.6)] transition-all duration-300 border border-indigo-500/30"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              Explore Hackathons <ArrowRight className="w-5 h-5" />
-            </motion.a>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Link
+                to="/hackathons"
+                className="inline-flex items-center justify-center gap-2 bg-linear-to-r from-blue-600 via-indigo-600 to-violet-600 text-white font-semibold px-8 py-3.5 rounded-xl shadow-lg dark:shadow-[0_0_24px_rgba(99,102,241,0.4)] hover:shadow-xl dark:hover:shadow-[0_0_36px_rgba(99,102,241,0.6)] transition-all duration-300 border border-indigo-500/30"
+              >
+                Explore Hackathons <ArrowRight className="w-5 h-5" />
+              </Link>
+            </motion.div>
 
             <motion.button
               onClick={() => setShowModal(true)}
@@ -133,7 +134,7 @@ const HackathonCTA = () => {
                 <X className="w-4 h-4 text-slate-500 dark:text-slate-300" />
               </button>
 
-              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center mx-auto mb-5 shadow-[0_8px_16px_rgba(99,102,241,0.25)] dark:shadow-[0_0_24px_rgba(99,102,241,0.4)]">
+              <div className="w-14 h-14 rounded-full bg-linear-to-br from-blue-600 to-violet-600 flex items-center justify-center mx-auto mb-5 shadow-[0_8px_16px_rgba(99,102,241,0.25)] dark:shadow-[0_0_24px_rgba(99,102,241,0.4)]">
                 <UserPlus className="w-6 h-6 text-white" />
               </div>
 
@@ -144,7 +145,7 @@ const HackathonCTA = () => {
               </p>
 
               <button
-                className="mt-6 px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 text-white font-semibold text-sm shadow-md hover:shadow-lg dark:shadow-none dark:hover:shadow-[0_0_20px_rgba(99,102,241,0.4)] transition-all"
+                className="mt-6 px-6 py-2.5 rounded-xl bg-linear-to-r from-blue-600 to-violet-600 text-white font-semibold text-sm shadow-md hover:shadow-lg dark:shadow-none dark:hover:shadow-[0_0_20px_rgba(99,102,241,0.4)] transition-all"
                 onClick={() => setShowModal(false)}
               >
                 Got it

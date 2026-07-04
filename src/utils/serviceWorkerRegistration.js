@@ -1,7 +1,7 @@
 import { logger } from "./logger";
 
 export const registerServiceWorker = () => {
-  if ('serviceWorker' in navigator) {
+  if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker
         .register('/service-worker.js')
@@ -16,7 +16,7 @@ export const registerServiceWorker = () => {
 };
 
 export const unregisterServiceWorker = () => {
-  if ('serviceWorker' in navigator) {
+  if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
     navigator.serviceWorker.ready
       .then((registration) => {
         registration.unregister();
