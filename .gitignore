@@ -37,6 +37,10 @@ devserver.err.log
 storybook-static
 .storybook/cache/
 
+# Generated lint reports
+eslint-report.json
+lint_output.txt
+
 # Playwright
 playwright-report/
 test-results/

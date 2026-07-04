@@ -129,6 +129,47 @@ describe('EventDetails — no duplicate React import', () => {
   });
 });
 
+describe('EventDetails — stale request cancellation', () => {
+  it('tracks the active event detail request with an AbortController ref', () => {
+    assert.ok(
+      src.includes('abortControllerRef') && src.includes('new AbortController()'),
+      'Must create and retain an AbortController for the active event detail request',
+    );
+  });
+
+  it('passes the AbortSignal into apiUtils.get', () => {
+    assert.ok(
+      src.includes('apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId),') &&
+        src.includes('signal: controller.signal'),
+      'Must pass controller.signal to apiUtils.get so stale requests can be canceled',
+    );
+  });
+
+  it('aborts stale requests before starting a new event detail load', () => {
+    assert.ok(
+      src.includes('abortControllerRef.current?.abort();') &&
+        src.indexOf('abortControllerRef.current?.abort();') < src.indexOf('new AbortController()'),
+      'Must abort the previous request before creating a new controller',
+    );
+  });
+
+  it('ignores canceled request errors instead of falling back to stale mock data', () => {
+    assert.ok(
+      src.includes('isRequestCanceled(error, controller.signal)') &&
+        src.includes('return;') &&
+        src.indexOf('isRequestCanceled(error, controller.signal)') < src.indexOf('mockEvents.find('),
+      'Must return early for canceled requests before mock fallback or error state updates',
+    );
+  });
+
+  it('aborts the active request when EventDetails unmounts or the route param changes', () => {
+    assert.ok(
+      src.includes('return () =>') && src.includes('abortControllerRef.current?.abort();'),
+      'Must abort the active request in the load effect cleanup',
+    );
+  });
+});
+
 describe('EventDetails — API fetch logic unit tests', () => {
   // Simulate the core loadEvent logic in isolation
   const buildFetchResult = (ok, status, data) => ({

@@ -24,6 +24,7 @@ import {
   Cell,
   Legend
 } from "recharts";
+import EventTimelineReplay from "../../components/Analytics/EventTimelineReplay";
 
 // Mock Data for Charts
 const registrationData = [
@@ -52,7 +53,7 @@ const StatCard = ({ title, value, change, icon: Icon, colorClass, index }) => (
     transition={{ delay: index * 0.1 }}
     className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden"
   >
-    <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${colorClass} opacity-10 rounded-bl-[100px] pointer-events-none`} />
+    <div className={`absolute top-0 right-0 w-24 h-24 bg-linear-to-br ${colorClass} opacity-10 rounded-bl-[100px] pointer-events-none`} />
     <div className="flex items-start justify-between">
       <div>
         <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-1">{title}</p>
@@ -62,7 +63,7 @@ const StatCard = ({ title, value, change, icon: Icon, colorClass, index }) => (
           {change} from last week
         </p>
       </div>
-      <div className={`p-3 rounded-2xl bg-gradient-to-br ${colorClass} text-white shadow-lg`}>
+      <div className={`p-3 rounded-2xl bg-linear-to-br ${colorClass} text-white shadow-lg`}>
         <Icon size={24} />
       </div>
     </div>
@@ -72,6 +73,7 @@ const StatCard = ({ title, value, change, icon: Icon, colorClass, index }) => (
 const EventAnalyticsDashboard = () => {
   const { eventId } = useParams();
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("overview");
 
   useEffect(() => {
     // Simulate loading data
@@ -120,162 +122,192 @@ const EventAnalyticsDashboard = () => {
           </button>
         </div>
 
-        {/* Top KPIs */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard 
-            title="Total Registrations" 
-            value="1,248" 
-            change="+12.5%" 
-            icon={Users} 
-            colorClass="from-indigo-500 to-indigo-600" 
-            index={0} 
-          />
-          <StatCard 
-            title="Page Views" 
-            value="8,405" 
-            change="+24.1%" 
-            icon={Eye} 
-            colorClass="from-pink-500 to-pink-600" 
-            index={1} 
-          />
-          <StatCard 
-            title="Check-in Rate" 
-            value="68%" 
-            change="+5.2%" 
-            icon={CheckCircle} 
-            colorClass="from-emerald-500 to-emerald-600" 
-            index={2} 
-          />
-          <StatCard 
-            title="Est. Ticket Revenue" 
-            value="$12,400" 
-            change="+18.0%" 
-            icon={CreditCard} 
-            colorClass="from-amber-500 to-orange-500" 
-            index={3} 
-          />
-        </div>
-
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          {/* Main Area Chart */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-3xl p-6 shadow-sm"
-          >
-            <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
-              <TrendingUp className="text-indigo-500" size={20} />
-              Registration Trends (Last 7 Days)
-            </h3>
-            <div className="h-80 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={registrationData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorReg" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
-                  <Tooltip 
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                    itemStyle={{ fontWeight: 'bold' }}
-                  />
-                  <Area type="monotone" dataKey="registrations" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorReg)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </motion.div>
-
-          {/* Demographics Pie Chart */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-3xl p-6 shadow-sm flex flex-col"
-          >
-            <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
-              <Users className="text-pink-500" size={20} />
-              Attendee Breakdown
-            </h3>
-            <div className="flex-1 w-full min-h-[250px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={demographicsData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {demographicsData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                    itemStyle={{ fontWeight: 'bold', color: '#1e293b' }}
-                  />
-                  <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '12px', fontWeight: '500' }}/>
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Recent Activity Table */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-3xl overflow-hidden shadow-sm"
+      {/* Tab Selection */}
+      <div className="flex border-b border-slate-200 dark:border-white/10 gap-6">
+        <button
+          onClick={() => setActiveTab("overview")}
+          className={`pb-4 text-sm font-bold border-b-2 transition-all cursor-pointer ${
+            activeTab === "overview"
+              ? "border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400"
+              : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+          }`}
         >
-          <div className="p-6 border-b border-slate-200 dark:border-white/10">
-            <h3 className="text-lg font-bold">Recent Registrations</h3>
+          Analytics Overview
+        </button>
+        <button
+          onClick={() => setActiveTab("timeline")}
+          className={`pb-4 text-sm font-bold border-b-2 transition-all cursor-pointer ${
+            activeTab === "timeline"
+              ? "border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400"
+              : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+          }`}
+        >
+          Activity Timeline Playback
+        </button>
+      </div>
+
+      {activeTab === "overview" ? (
+        <>
+          {/* Top KPIs */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <StatCard 
+              title="Total Registrations" 
+              value="1,248" 
+              change="+12.5%" 
+              icon={Users} 
+              colorClass="from-indigo-500 to-indigo-600" 
+              index={0} 
+            />
+            <StatCard 
+              title="Page Views" 
+              value="8,405" 
+              change="+24.1%" 
+              icon={Eye} 
+              colorClass="from-pink-500 to-pink-600" 
+              index={1} 
+            />
+            <StatCard 
+              title="Check-in Rate" 
+              value="68%" 
+              change="+5.2%" 
+              icon={CheckCircle} 
+              colorClass="from-emerald-500 to-emerald-600" 
+              index={2} 
+            />
+            <StatCard 
+              title="Est. Ticket Revenue" 
+              value="$12,400" 
+              change="+18.0%" 
+              icon={CreditCard} 
+              colorClass="from-amber-500 to-orange-500" 
+              index={3} 
+            />
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50 dark:bg-slate-950/50 text-xs uppercase tracking-wider text-slate-500 font-bold">
-                  <th className="px-6 py-4">Attendee</th>
-                  <th className="px-6 py-4">Ticket Type</th>
-                  <th className="px-6 py-4">Date</th>
-                  <th className="px-6 py-4">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-white/5 text-sm">
-                {[
-                  { name: "Alice Chen", role: "Developer", type: "Early Bird", date: "2 mins ago", status: "Confirmed" },
-                  { name: "Bob Smith", role: "Designer", type: "General Admission", date: "15 mins ago", status: "Confirmed" },
-                  { name: "Charlie Davis", role: "Product Manager", type: "VIP", date: "1 hour ago", status: "Checked In" },
-                  { name: "Diana Prince", role: "Developer", type: "General Admission", date: "3 hours ago", status: "Pending" },
-                ].map((row, idx) => (
-                  <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
-                    <td className="px-6 py-4 font-semibold">{row.name} <span className="block text-xs font-normal text-slate-500">{row.role}</span></td>
-                    <td className="px-6 py-4">{row.type}</td>
-                    <td className="px-6 py-4 text-slate-500">{row.date}</td>
-                    <td className="px-6 py-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                        row.status === "Confirmed" ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400" :
-                        row.status === "Checked In" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" :
-                        "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                      }`}>
-                        {row.status}
-                      </span>
-                    </td>
+
+          {/* Charts Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            {/* Main Area Chart */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-3xl p-6 shadow-sm"
+            >
+              <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
+                <TrendingUp className="text-indigo-500" size={20} />
+                Registration Trends (Last 7 Days)
+              </h3>
+              <div className="h-80 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={registrationData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorReg" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} dy={10} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
+                    <Tooltip 
+                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                      itemStyle={{ fontWeight: 'bold' }}
+                    />
+                    <Area type="monotone" dataKey="registrations" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorReg)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </motion.div>
+
+            {/* Demographics Pie Chart */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-3xl p-6 shadow-sm flex flex-col"
+            >
+              <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
+                <Users className="text-pink-500" size={20} />
+                Attendee Breakdown
+              </h3>
+              <div className="flex-1 w-full min-h-[250px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={demographicsData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {demographicsData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                      itemStyle={{ fontWeight: 'bold', color: '#1e293b' }}
+                    />
+                    <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '12px', fontStyle: 'normal' }}/>
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Recent Activity Table */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-3xl overflow-hidden shadow-sm"
+          >
+            <div className="p-6 border-b border-slate-200 dark:border-white/10">
+              <h3 className="text-lg font-bold">Recent Registrations</h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 dark:bg-slate-950/50 text-xs uppercase tracking-wider text-slate-500 font-bold">
+                    <th className="px-6 py-4">Attendee</th>
+                    <th className="px-6 py-4">Ticket Type</th>
+                    <th className="px-6 py-4">Date</th>
+                    <th className="px-6 py-4">Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </motion.div>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-white/5 text-sm">
+                  {[
+                    { name: "Alice Chen", role: "Developer", type: "Early Bird", date: "2 mins ago", status: "Confirmed" },
+                    { name: "Bob Smith", role: "Designer", type: "General Admission", date: "15 mins ago", status: "Confirmed" },
+                    { name: "Charlie Davis", role: "Product Manager", type: "VIP", date: "1 hour ago", status: "Checked In" },
+                    { name: "Diana Prince", role: "Developer", type: "General Admission", date: "3 hours ago", status: "Pending" },
+                  ].map((row, idx) => (
+                    <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                      <td className="px-6 py-4 font-semibold">{row.name} <span className="block text-xs font-normal text-slate-500">{row.role}</span></td>
+                      <td className="px-6 py-4">{row.type}</td>
+                      <td className="px-6 py-4 text-slate-500">{row.date}</td>
+                      <td className="px-6 py-4">
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                          row.status === "Confirmed" ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400" :
+                          row.status === "Checked In" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" :
+                          "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                        }`}>
+                          {row.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </motion.div>
+        </>
+      ) : (
+        <EventTimelineReplay eventId={eventId} />
+      )}
 
       </div>
     </div>

@@ -9,7 +9,8 @@ import '../../styles/lazy-image.css';
  *   - low opacity preview fallback
  *   - fade-in transition on load
  *   - layout shift prevention via width, height, and aspectRatio support
- *   - accessibility (a11y) compliance
+ *   - accessibility (a11y) compliance — pass a descriptive `alt` for content images;
+ *     use `alt=""` only for decorative images
  *   - broken image fallback error handling
  */
 const LazyImage = ({
@@ -45,6 +46,12 @@ const LazyImage = ({
       setLoaded(true);
     }
   }, [src]);
+
+  useEffect(() => {
+    if (import.meta.env?.DEV && src && alt === '') {
+      console.warn('[LazyImage] Provide descriptive alt text for content images:', src);
+    }
+  }, [src, alt]);
 
   const handleLoad = () => {
     setLoaded(true);
@@ -117,10 +124,10 @@ const imgElement = (
   return (
     <div className={`lazy-img-container ${className}`} style={containerStyle}>
       {/* Shimmer skeleton layer */}
-      {!loaded && <div className="lazy-img-skeleton" />}
+      {!loaded && !error && <div className="lazy-img-skeleton" />}
 
       {/* Optional low-opacity blurred preview */}
-      {!loaded && previewSrc && (
+      {!loaded && !error && previewSrc && (
         <img
           src={previewSrc}
           alt=""
@@ -129,7 +136,11 @@ const imgElement = (
         />
       )}
 
-      {webpSrc ? (
+      {error ? (
+        <div className="lazy-img-error" role="img" aria-label="Image not available">
+          <ImageIcon className="lazy-img-error-icon" aria-hidden="true" />
+        </div>
+      ) : webpSrc ? (
         <picture>
           <source srcSet={webpSrc} type="image/webp" />
           {imgElement}

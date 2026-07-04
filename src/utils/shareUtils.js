@@ -125,7 +125,7 @@ export const generateEventSharingData = (event, baseUrl = null) => {
   }
 
   // Determine the correct base URL for sharing
-  const rawPublicUrl = ENV.PUBLIC_URL || "eventra.sandeepvashishtha.tech";
+  const rawPublicUrl = ENV.PUBLIC_URL || "sandeepvashishtha.tech";
   const deployedOrigin = rawPublicUrl.startsWith("http")
     ? rawPublicUrl.replace(/\/$/, "")
     : `https://${rawPublicUrl}`;
@@ -175,6 +175,10 @@ export const generateEventSharingData = (event, baseUrl = null) => {
  * @returns {Promise<boolean>} Success status
  */
 export const copyToClipboard = async (text) => {
+  if (typeof window === "undefined" || typeof document === "undefined") {
+    return false;
+  }
+
   try {
     if (navigator.clipboard) {
       await navigator.clipboard.writeText(text);
@@ -192,7 +196,6 @@ export const copyToClipboard = async (text) => {
       return successful;
     }
   } catch (err) {
-     
     console.error("Failed to copy text: ", err);
     return false;
   }

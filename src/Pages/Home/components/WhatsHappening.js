@@ -1,13 +1,13 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo, memo } from "react";
 import { Link } from "react-router-dom";
 import { useInView } from "react-intersection-observer";
 import { HomeCardSkeleton } from "../../../components/common/SkeletonLoaders";
 import { CheckCircle2, Hourglass } from "lucide-react";
 
 import useReducedMotion from "../../../hooks/useReducedMotion.js";
-// Import mock data
-import eventsData from "../../Events/eventsMockData.json";
+// Fetch events from backend API instead of static mock data
+import { eventService } from "../../../services/eventService";
 import hackathonsData from "../../Hackathons/hackathonMockData.json";
 
 const WhatsHappening = () => {
@@ -20,6 +20,7 @@ const WhatsHappening = () => {
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(1);
   const [isAutoPlaying, setIsAutoPlaying] = useState(!prefersReducedMotion);
+  const [eventsData, setEventsData] = useState([]);
 
   useEffect(() => {
     if (prefersReducedMotion) {
@@ -29,17 +30,66 @@ const WhatsHappening = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
+    let cancelled = false;
+    eventService.getAllEvents().then((res) => {
+      if (cancelled) return;
+      const raw = Array.isArray(res.data) ? res.data : res.data?.content ?? [];
+      // Normalize backend shape (eventDate, capacity) to the shape formatEventsData expects
+      const normalized = raw.map((e) => ({
+        ...e,
+        date: e.date || e.eventDate,
+        startDate: e.startDate || e.eventDate,
+        type: e.type || "conference",
+        status: e.status || "upcoming",
+        attendees: e.attendees ?? e.registeredCount ?? 0,
+        description: e.description || "",
+        location: e.location || "",
+      }));
+      setEventsData(normalized);
       setIsLoading(false);
-    }, 1200);
-    return () => clearTimeout(timer);
+    }).catch(() => {
+      if (!cancelled) setIsLoading(false);
+    });
+    return () => { cancelled = true; };
   }, []);
 
   const formatEventsData = (events) => {
     const now = new Date();
     const dayMs = 1000 * 60 * 60 * 24;
+
+    const getEventTimeLeft = (event) => {
+      // Always derive the start instant from startDate first, then date as fallback.
+      // Never reference 'event.rawDate' which is a display-only field set later in .map().
+      const rawStart = event.startDate || event.date;
+      if (!rawStart) return "TBA";
+
+      const startDate = new Date(rawStart);
+      if (isNaN(startDate.getTime())) return "TBA";
+
+      const endDate = event.endDate
+        ? new Date(event.endDate)
+        : new Date(new Date(rawStart).setHours(23, 59, 59, 999));
+
+      if (now < startDate) {
+        const daysUntilStart = Math.ceil((startDate - now) / dayMs);
+        // Guard against 0 or negative values from timezone rounding
+        if (daysUntilStart <= 0) return "Starting today";
+        return `${daysUntilStart} day${daysUntilStart === 1 ? "" : "s"}`;
+      }
+      if (now <= endDate) {
+        return "Live Now";
+      }
+      return "Ended";
+    };
+
+
     return events
-      .filter((event) => new Date(event.date) >= now)
+      .filter((event) => {
+        const endDate = event.endDate
+          ? new Date(event.endDate)
+          : new Date(new Date(event.date).setHours(23, 59, 59, 999));
+        return endDate >= now;
+      })
       .map((event) => ({
         id: `event-${event.id}`,
         title: event.title,
@@ -49,7 +99,7 @@ const WhatsHappening = () => {
           day: "numeric",
           year: "numeric",
         }),
-        rawDate: event.date,
+        rawDate: event.startDate || event.date,
         type: event.type.charAt(0).toUpperCase() + event.type.slice(1),
         status:
           event.status === "upcoming" ? "Registration Open" : "Live Event",
@@ -57,15 +107,28 @@ const WhatsHappening = () => {
         featured: event.attendees > 200,
         location: event.location,
         attendees: event.attendees,
-        timeLeft: `${Math.ceil(
-          (new Date(event.rawDate || event.date) - now) / dayMs
-        )} days`,
+        timeLeft: getEventTimeLeft(event),
       }));
   };
 
   const formatHackathonsData = (hackathons) => {
     const now = new Date();
     const dayMs = 1000 * 60 * 60 * 24;
+
+    const getHackathonTimeLeft = (hackathon) => {
+      const startDate = new Date(hackathon.startDate);
+      const endDate = new Date(hackathon.endDate);
+
+      if (now < startDate) {
+        const daysUntilStart = Math.ceil((startDate - now) / dayMs);
+        return `${daysUntilStart} day${daysUntilStart === 1 ? "" : "s"}`;
+      }
+      if (now <= endDate) {
+        return "Live Now";
+      }
+      return "Ended";
+    };
+
     return hackathons
       .filter(
         (hackathon) =>
@@ -76,12 +139,7 @@ const WhatsHappening = () => {
         id: `hackathon-${hackathon.id}`,
         title: hackathon.title,
         description: hackathon.description,
-        timeLeft:
-          new Date(hackathon.endDate) < now
-            ? "Ended"
-            : `${Math.ceil(
-                (new Date(hackathon.startDate) - now) / dayMs
-              )} days`,
+        timeLeft: getHackathonTimeLeft(hackathon),
         date: `${new Date(hackathon.startDate).toLocaleDateString("en-US", {
           month: "short",
           day: "numeric",
@@ -103,10 +161,11 @@ const WhatsHappening = () => {
       }));
   };
 
-  const upcomingEvents = [
+  const upcomingEvents = useMemo(() => [
     ...formatEventsData(eventsData),
     ...formatHackathonsData(hackathonsData),
-  ].sort((a, b) => new Date(a.rawDate) - new Date(b.rawDate));
+  ].sort((a, b) => new Date(a.rawDate) - new Date(b.rawDate)),
+  [eventsData]);
 
   const [cardsPerView, setCardsPerView] = useState(1);
 
@@ -172,16 +231,33 @@ const WhatsHappening = () => {
     Math.floor(current / cardsPerView) %
     Math.ceil(upcomingEvents.length / cardsPerView);
 
+  // Announce current slide group to screen readers
+  const totalGroups = Math.ceil(upcomingEvents.length / cardsPerView);
+  const currentGroup = Math.floor(current / cardsPerView) + 1;
+  const liveMessage = `Showing slide group ${currentGroup} of ${totalGroups}`;
+
   return (
     <section
       ref={ref}
+      role="region"
+      aria-label="What's Happening Now — Upcoming events carousel"
       className="relative overflow-hidden py-16 sm:py-20 text-slate-900 dark:text-white border-t border-slate-200/60 dark:border-slate-800/60 transition-colors duration-300"
       style={{
         background: "linear-gradient(180deg, var(--bg-color, #F8FBFD) 0%, rgba(109, 40, 217, 0.02) 42%, rgba(109, 40, 217, 0.05) 100%)",
       }}
     >
+      {/* Screen-reader live region for slide position announcements */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      >
+        {liveMessage}
+      </div>
+
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-28 bg-gradient-to-b from-white/80 dark:from-slate-950/40 to-transparent" />
+        <div className="absolute top-0 left-0 right-0 h-28 bg-linear-to-b from-white/80 dark:from-slate-950/40 to-transparent" />
         <div className="absolute top-10 left-8 h-40 w-40 rounded-full bg-white/35 dark:bg-slate-800/10 blur-3xl" />
         <div className="absolute top-24 right-8 h-52 w-52 rounded-full bg-sky-100/35 dark:bg-brand-violet/5 blur-3xl" />
       </div>
@@ -214,6 +290,8 @@ const WhatsHappening = () => {
             <button
               onClick={() => setIsAutoPlaying(!isAutoPlaying)}
               className="p-2.5 rounded-full bg-white/90 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm backdrop-blur-md hover:bg-white dark:hover:bg-slate-700 hover:shadow-md text-slate-600 dark:text-slate-300 transition-all duration-200"
+              aria-label={isAutoPlaying ? "Pause automatic slide rotation" : "Resume automatic slide rotation"}
+              aria-pressed={isAutoPlaying}
               title={isAutoPlaying ? "Pause auto-play" : "Resume auto-play"}
             >
               {isAutoPlaying ? (
@@ -284,7 +362,7 @@ const WhatsHappening = () => {
               >
                 {isLoading
                   ? [...Array(cardsPerView)].map((_, i) => (
-                      <div key={`skeleton-wrap-${i}`} className="p-1 rounded-[24px] border-2 border-brand-violet/20" style={{ borderColor: 'rgba(139, 92, 246, 0.2)' }}>
+                      <div key={`skeleton-wrap-${i}`} className="p-1 rounded-3xl border-2 border-brand-violet/20" style={{ borderColor: 'rgba(139, 92, 246, 0.2)' }}>
                         <HomeCardSkeleton />
                       </div>
                     ))
@@ -302,7 +380,7 @@ const WhatsHappening = () => {
                           whileHover={prefersReducedMotion ? {} : { scale: 1.02, y: -6 }}
                           whileTap={prefersReducedMotion ? {} : { scale: 0.995 }}
                           transition={{ type: "spring", stiffness: 300, damping: 24 }}
-                          className="group relative w-full flex flex-col rounded-[24px] overflow-hidden bg-white dark:bg-slate-900 border-2 border-brand-violet/50 dark:border-brand-violet/60 p-5 sm:p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_18px_40px_rgba(109,40,217,0.25)] hover:border-brand-violet dark:hover:border-brand-violet transition-all duration-300 flex-1 min-h-[340px] pointer-events-auto"
+                          className="group relative w-full flex flex-col rounded-3xl overflow-hidden bg-white dark:bg-slate-900 border-2 border-brand-violet/50 dark:border-brand-violet/60 p-5 sm:p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_18px_40px_rgba(109,40,217,0.25)] hover:border-brand-violet dark:hover:border-brand-violet transition-all duration-300 flex-1 min-h-85 pointer-events-auto"
                           style={{ borderColor: 'rgba(139, 92, 246, 0.55)' }}
                           onMouseEnter={() => setIsAutoPlaying(false)}
                           onMouseLeave={() => setIsAutoPlaying(true)}
@@ -362,10 +440,20 @@ const WhatsHappening = () => {
                                 {event.date}
                               </div>
 
-                              <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-semibold border border-amber-500/20">
+                              <div className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-semibold border ${
+                                event.timeLeft === "Ended"
+                                  ? "bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/20"
+                                  : event.timeLeft === "Live Now"
+                                  ? "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20"
+                                  : "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20"
+                              }`}>
                                 {event.timeLeft === "Ended" ? (
                                   <>
                                     <CheckCircle2 className="w-3.5 h-3.5" /> Ended
+                                  </>
+                                ) : event.timeLeft === "Live Now" ? (
+                                  <>
+                                    <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" /> Live Now
                                   </>
                                 ) : (
                                   <>
@@ -423,4 +511,4 @@ const WhatsHappening = () => {
   );
 };
 
-export default WhatsHappening;
+export default memo(WhatsHappening);

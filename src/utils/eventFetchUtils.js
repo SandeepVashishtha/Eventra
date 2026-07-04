@@ -79,9 +79,26 @@ export function buildPaginatedUrl(baseUrl, page, size) {
  * @returns {object}
  */
 export function normalizeEvent(rawEvent) {
-  return {
+  if (!rawEvent) return rawEvent;
+
+  // Map backend API field names → internal field names used by components.
+  // The backend returns:  eventDate, imageUrl, capacity, registeredCount
+  // Components expect:   date,       image,    maxAttendees, attendees
+  const mapped = {
     ...rawEvent,
-    status: getEventStatus(rawEvent),
+    // Date field: prefer startDate > date > eventDate
+    date: rawEvent.date || rawEvent.startDate || rawEvent.eventDate || null,
+    startDate: rawEvent.startDate || rawEvent.date || rawEvent.eventDate || null,
+    // Image field: prefer image > imageUrl > banner
+    image: rawEvent.image || rawEvent.imageUrl || rawEvent.banner || null,
+    // Capacity fields
+    maxAttendees: rawEvent.maxAttendees ?? rawEvent.capacity ?? null,
+    attendees: rawEvent.attendees ?? rawEvent.registeredCount ?? rawEvent.participants ?? 0,
+  };
+
+  return {
+    ...mapped,
+    status: getEventStatus(mapped),
   };
 }
 

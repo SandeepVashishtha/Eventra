@@ -1,4 +1,6 @@
 import { logError } from "./errorLogger.js";
+import { logger } from "./logger.js";
+import { logCategorizedError } from "./errorRecovery.js";
 
 // Track recent errors to avoid flooding logs with identical stack traces
 // that happen in rapid succession (e.g. a render loop).
@@ -34,13 +36,34 @@ function buildFingerprint(error) {
 export const initializeGlobalErrorHandling = () => {
   if (typeof window === "undefined") return;
 
+  window.addEventListener(
+    "error",
+    (event) => {
+      const target = event.target;
+      const tagName = target?.tagName?.toLowerCase();
+      if (!["img", "script", "link", "source", "video", "audio"].includes(tagName)) {
+        return;
+      }
+
+      const url = target?.src || target?.href || target?.currentSrc || "";
+      const assetError = new Error(`Asset failed to load: ${url || tagName}`);
+      logCategorizedError(assetError, null, {
+        type: "asset",
+        tagName,
+        url,
+      });
+    },
+    true,
+  );
+
   window.onerror = (message, source, lineno, colno, error) => {
     const fp = buildFingerprint(error || message);
     if (isDuplicate(fp)) return;
 
-    console.error("[GlobalError]", error || message);
+    logger.error("[GlobalError]", error || message);
     if (error) {
       logError(error, null, { source, lineno, colno });
+      logCategorizedError(error, null, { source, lineno, colno });
     }
   };
 
@@ -50,8 +73,11 @@ export const initializeGlobalErrorHandling = () => {
     const fp = buildFingerprint(wrapped);
     if (isDuplicate(fp)) return;
 
-    console.error("[UnhandledPromiseRejection]", reason);
+    logger.error("[UnhandledPromiseRejection]", reason);
     logError(wrapped, null, {
+      type: "unhandled_promise_rejection",
+    });
+    logCategorizedError(wrapped, null, {
       type: "unhandled_promise_rejection",
     });
   };

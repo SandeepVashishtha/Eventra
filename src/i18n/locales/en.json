@@ -20,6 +20,7 @@
     "signUp": "Sign Up",
     "signOut": "Sign Out",
     "profile": "Profile",
+    "account": "Account",
     "settings": "Settings",
     "projects": "Projects",
     "networking": "Networking",
@@ -49,9 +50,22 @@
     "forgotPassword": "Forgot password?",
     "noAccount": "Don't have an account?",
     "hasAccount": "Already have an account?",
-    "sessionExpired": "Session expired. Please log in again.",
+    "sessionExpired": "Your session has expired. Please log in again.",
     "loginSuccess": "Welcome back!",
-    "signupSuccess": "Account created successfully!"
+    "signupSuccess": "Account created successfully!",
+    "welcomeBack": "Welcome Back",
+    "signInSubtitle": "Sign in to your Eventra account",
+    "usernameOrEmail": "Email or username",
+    "signIn": "Sign In",
+    "signingIn": "Signing In...",
+    "createAccount": "Create one here",
+    "usernamePlaceholder": "john@example.com / yourname@email.com / eventra.team@gmail.com",
+    "passwordPlaceholder": "Enter secure password / Minimum 8 characters / Use strong password",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "lockedOut": "Too many failed attempts. Try again in {{seconds}}s.",
+    "attemptsRemaining": "{{count}} attempt(s) remaining before temporary lockout.",
+    "lockedWait": "Locked — wait {{seconds}}s"
   },
   "validation": {
     "required": "This field is required",
@@ -79,7 +93,12 @@
     "feedbackTypeRequired": "Please select a feedback type",
     "feedbackMessageRequired": "Message is required",
     "feedbackMessageMinLength": "Message must be at least 20 characters",
-    "feedbackRatingRequired": "Please provide a rating"
+    "feedbackRatingRequired": "Please provide a rating",
+    "featureTitleRequired": "Feature title is required",
+    "featureTitleMinLength": "Feature title must be at least 5 characters",
+    "featureProblemRequired": "Please describe the problem this feature would solve",
+    "featureProblemMinLength": "Problem description must be at least 20 characters",
+    "featurePriorityRequired": "Please select a priority level"
   },
   "error": {
     "generic": "An unexpected error occurred. Please try again.",
@@ -136,7 +155,13 @@
     "viewMode": "View Mode",
     "timeline": "Timeline",
     "recommendations": "Recommendations for you",
-    "saved": "Saved Events"
+    "saved": "Saved Events",
+    "noEventsScheduled": "No events scheduled",
+    "noUpcomingEvents": "No upcoming events scheduled for this day.",
+    "noEventsMatch": "No events match your filters",
+    "noBookmarked": "No bookmarked events",
+    "noBookmarkedDesc": "Start exploring and bookmark events you're interested in!",
+    "noEventsMatchDesc": "Try adjusting your filters or clearing them to see all available events."
   },
   "hackathon": {
     "title": "Hackathons",
@@ -312,7 +337,7 @@
     "pageDescription": "Frequently asked questions about Eventra platform",
     "heading": "Frequently Asked Questions",
     "subtitle": "Everything you need to know about using Eventra and participating in events",
-    "searchPlaceholder": "Search FAQs...",
+    "searchPlaceholder": "Search frequently asked questions...",
     "filterAll": "All",
     "filterGeneral": "General",
     "filterHackathons": "Hackathons",
@@ -556,26 +581,147 @@
     "toastCopyFailed": "Failed to copy story."
   },
   "helpCenter": {
-    "pageTitle": "Eventra | Help Center",
-    "heroHeading": "Need Help with Hackathons, Projects, or Contributions?",
-    "heroSubtitle": "Find step-by-step guides, FAQs, and tips to make the most of your Eventra experience",
-    "categoriesHeading": "Browse by Category",
-    "communityHeading": "Connect with the Community",
-    "communitySubtitle": "Join discussions, meet contributors, and stay updated with the latest news",
-    "communityVisitLink": "Click to visit and connect with our community",
-    "tutorialsHeading": "Step-by-Step Tutorials",
-    "tutorialsSubtitle": "Master every aspect of the platform with our detailed tutorials",
-    "difficultyBeginner": "Beginner",
-    "difficultyIntermediate": "Intermediate",
-    "guidelinesHeading": "Platform Guidelines",
-    "guidelinesSubtitle": "Follow these best practices to get the most out of Eventra",
-    "guidelinesLearnMore": "Learn more",
-    "faqHeading": "Frequently Asked Questions",
-    "faqSubtitle": "Everything you need to know about using Eventra and participating in events",
-    "ctaHeading": "Need Help or Have Feedback?",
-    "ctaSubtitle": "Reach out to our support team and we will get back to you within 24 hours",
-    "ctaContactUs": "Contact Us",
-    "ctaGiveFeedback": "Give Feedback"
+  "pageTitle": "Eventra | Help Center",
+  "heroHeading": "Need Help with Hackathons, Projects, or Contributions?",
+  "heroSubtitle": "Find step-by-step guides, FAQs, and tips to make the most of your Eventra experience",
+  "categoriesHeading": "Browse by Category",
+  "communityHeading": "Connect with the Community",
+  "communitySubtitle": "Join discussions, meet contributors, and stay updated with the latest news",
+  "communityVisitLink": "Click to visit and connect with our community",
+  "tutorialsHeading": "Step-by-Step Tutorials",
+  "tutorialsSubtitle": "Master every aspect of the platform with our detailed tutorials",
+  "difficultyBeginner": "Beginner",
+  "difficultyIntermediate": "Intermediate",
+  "guidelinesHeading": "Platform Guidelines",
+  "guidelinesSubtitle": "Follow these best practices to get the most out of Eventra",
+  "guidelinesLearnMore": "Learn more",
+  "faqHeading": "Frequently Asked Questions",
+  "faqSubtitle": "Everything you need to know about using Eventra and participating in events",
+  "ctaHeading": "Need Help or Have Feedback?",
+  "ctaSubtitle": "Reach out to our support team and we will get back to you within 24 hours",
+  "ctaContactUs": "Contact Us",
+  "ctaGiveFeedback": "Give Feedback",
+  "categories": {
+    "hostingHackathons": {
+      "title": "Hosting Hackathons",
+      "description": "Learn how to create and manage hackathons on Eventra."
+    },
+    "projectSubmission": {
+      "title": "Project Submission",
+      "description": "Everything you need to know about submitting your projects."
+    },
+    "exploreProjects": {
+      "title": "Explore Projects",
+      "description": "Discover and browse projects from the community."
+    },
+    "contributing": {
+      "title": "Contributing",
+      "description": "How to contribute to open source projects on Eventra."
+    },
+    "leaderboard": {
+      "title": "Leaderboard",
+      "description": "Understand how the leaderboard rankings work."
+    },
+    "tipsBestPractices": {
+      "title": "Tips & Best Practices",
+      "description": "Get the most out of Eventra with these tips."
+    },
+    "events": {
+      "title": "Events",
+      "description": "Find and join events happening in the community."
+    },
+    "seeOnGitHub": {
+      "title": "See on GitHub",
+      "description": "Access the source code and contribute on GitHub."
+    },
+    "apiDocs": {
+      "title": "API Documentation",
+      "description": "Integrate with Eventra using our REST API."
+    },
+    "contributors": {
+      "title": "Contributors",
+      "description": "Meet the people who build and maintain Eventra."
+    },
+    "communityEvents": {
+      "title": "Community Events",
+      "description": "Discover events organized by the Eventra community."
+    },
+    "contactUs": {
+      "title": "Contact Us",
+      "description": "Get in touch with the Eventra team for support."
+    }
+  },
+  "faqs": {
+    "1": {
+      "category": "Events",
+      "question": "How do I register for an event or hackathon?",
+      "answer": "Navigate to the Events or Hackathons page, find the one you want, and click the Register button. Fill in the required details and submit your registration."
+    },
+    "2": {
+      "category": "Projects",
+      "question": "How do I submit a project?",
+      "answer": "Go to the Projects section, click Submit Project, and fill in the required details including your project title, description, and repository link."
+    },
+    "3": {
+      "category": "Hackathons",
+      "question": "How do I join a hackathon?",
+      "answer": "Browse the Hackathons page and click Join on any open hackathon. You can participate solo or as part of a team."
+    },
+    "4": {
+      "category": "Community",
+      "question": "How is the leaderboard score calculated?",
+      "answer": "Scores are based on your contributions, event participation, merged pull requests, and project submissions on the platform."
+    },
+    "5": {
+      "category": "Contributions",
+      "question": "How do I contribute to Eventra as an open source project?",
+      "answer": "Check the Contributors Guide page for detailed instructions on setting up the project locally, picking issues, and submitting pull requests."
+    }
+  },
+  "tutorials": {
+    "hostingHackathon": {
+      "title": "Hosting a Hackathon",
+      "description": "A step-by-step guide to creating and publishing your own hackathon on Eventra."
+    },
+    "submittingProject": {
+      "title": "Submitting a Project",
+      "description": "Learn how to showcase your work by submitting a project to the Eventra platform."
+    },
+    "creatingEvent": {
+      "title": "Creating an Event",
+      "description": "Set up and publish community events with all the details participants need."
+    },
+    "contributingGsoc": {
+      "title": "Contributing via GSSoC",
+      "description": "Get started with open source contributions through GirlScript Summer of Code on Eventra."
+    }
+  },
+  "guidelines": {
+    "checkHackathonRules": {
+      "title": "Check Hackathon Rules",
+      "description": "Always read the rules and eligibility criteria before joining a hackathon to ensure you qualify."
+    },
+    "documentYourWork": {
+      "title": "Document Your Work",
+      "description": "Write clear README files and project descriptions so others can understand and use your work."
+    },
+    "followContributionGuidelines": {
+      "title": "Follow Contribution Guidelines",
+      "description": "Read the contributor guide before submitting pull requests to ensure your code meets project standards."
+    },
+    "respectDeadlines": {
+      "title": "Respect Deadlines",
+      "description": "Submit your projects and registrations before the deadline — late entries may not be accepted."
+    },
+    "avoidDuplicates": {
+      "title": "Avoid Duplicates",
+      "description": "Search existing projects and issues before creating new ones to avoid duplicate submissions."
+    },
+    "getSupport": {
+      "title": "Get Support",
+      "description": "If you're stuck, reach out via the Contact page or community channels — we're happy to help."
+    }
+  }
   },
   "contactUs": {
     "pageTitle": "Contact Us",
@@ -645,5 +791,99 @@
     "toastValidationError": "Please fill in all required fields correctly",
     "toastSuccess": "Thank you for your feedback! We appreciate your input.",
     "toastError": "There was an error submitting your feedback. Please try again."
+  },
+  "about": {
+    "pageTitle": "About Us",
+    "pageDescription": "Learn about Eventra — the open-source event management platform for communities, colleges, and organizations worldwide.",
+    "documentTitle": "Eventra | About",
+    "errorBoundaryLabel": "Statistics",
+    "hero": {
+      "tagline": "Open Source • Community Driven • Free Forever",
+      "title": "Building Better Events",
+      "subtitle": "Together",
+      "description": "Eventra empowers communities, colleges, organizations, and open-source teams to create, manage, and grow impactful events through accessible, modern, and collaborative event management tools."
+    },
+    "stats": {
+      "events": "Events Hosted",
+      "builders": "Community Members",
+      "partners": "Community Reach"
+    },
+    "values": {
+      "heading": "What Drives Eventra",
+      "description": "Our values guide every decision we make, ensuring Eventra remains accessible, community-focused, and built for long-term impact.",
+      "eventManagement": {
+        "title": "Open Source",
+        "description": "Built transparently and freely available for communities worldwide."
+      },
+      "hackathonGrowth": {
+        "title": "Community First",
+        "description": "Designed around collaboration, inclusion, and meaningful connections."
+      },
+      "projectCollaboration": {
+        "title": "Innovation",
+        "description": "Continuously evolving through community feedback and modern technology."
+      },
+      "networking": {
+        "title": "Accessibility",
+        "description": "Simple, intuitive, and accessible for organizers of every skill level."
+      }
+    },
+    "cta": {
+      "badge": "Join the Eventra Community",
+      "heading": "Build, Collaborate & Grow",
+      "subtitle": "Together with Eventra",
+      "description": "Eventra empowers students, developers, organizers, and communities to discover opportunities, collaborate on meaningful projects, and create impact through technology-driven events.",
+      "socialProof": {
+        "community": "Growing Community",
+        "openSource": "Open Source Driven",
+        "learning": "Learning & Collaboration"
+      },
+      "getStartedFree": "Get Started Free",
+      "documentation": "Documentation",
+      "contactUs": "Contact Us"
+    },
+    "features": {
+      "heading": "Features That Power Every Event",
+      "description": "Eventra provides everything needed to create, manage, scale, and grow successful events while fostering stronger communities.",
+      "ctaAriaLabel": "{{cta}} - {{title}}",
+      "items": {
+        "events": {
+          "stat": "90% faster setup",
+          "title": "Smart Event Creation",
+          "description": "Launch events quickly using intelligent templates, streamlined workflows, and automated event management tools.",
+          "cta": "Start Creating"
+        },
+        "hackathons": {
+          "stat": "3 sec check-in",
+          "title": "Instant QR Check-ins",
+          "description": "Provide attendees with seamless check-ins using secure QR codes and real-time attendance tracking.",
+          "cta": "See Demo"
+        },
+        "projects": {
+          "stat": "15+ metrics",
+          "title": "Live Analytics",
+          "description": "Monitor registrations, engagement, participation trends, and event performance through live dashboards.",
+          "cta": "View Dashboard"
+        },
+        "connections": {
+          "stat": "Unlimited teams",
+          "title": "Community Collaboration",
+          "description": "Work together with organizers, contributors, and participants through collaborative event workflows.",
+          "cta": "Add Team"
+        },
+        "manage": {
+          "stat": "Enterprise-grade",
+          "title": "Secure by Design",
+          "description": "Advanced security controls, privacy-first architecture, and trusted authentication systems.",
+          "cta": "Learn More"
+        },
+        "benefits": {
+          "stat": "Worldwide",
+          "title": "Global Accessibility",
+          "description": "Designed for communities, educational institutions, and organizations across the globe.",
+          "cta": "Go Global"
+        }
+      }
+    }
   }
 }
