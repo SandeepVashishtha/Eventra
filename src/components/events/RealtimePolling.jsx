@@ -6,6 +6,8 @@ const RealtimePolling = ({ eventId }) => {
   const [activePoll, setActivePoll] = useState(null);
 
   useEffect(() => {
+    if (!eventId) return undefined;
+
     // Simulated SSE connection for active polls
     const evtSource = new EventSource(`/api/events/${eventId}/polls/stream`);
     evtSource.onmessage = (event) => {
