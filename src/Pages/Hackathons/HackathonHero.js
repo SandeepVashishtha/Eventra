@@ -124,7 +124,7 @@ export default function HackathonHero({
           transition={{ delay: 0.35, duration: prefersReducedMotion ? 0 : 0.6 }}
          className="w-full max-w-[700px] mx-auto mt-8"
         >
-          <div className="rounded-2xl border border-white/60 dark:border-white/10 bg-white/60 dark:bg-white/5 px-2 py-2 shadow-lg dark:shadow-[0_8px_40px_rgba(99,102,241,0.15)] backdrop-blur-xl ring-1 ring-inset ring-slate-200/50 dark:ring-white/5">
+          <div className="rounded-2xl bg-white/60 dark:bg-white/5 p-1 backdrop-blur-xl">
             <ModernSearchInput
               searchInputRef={searchInputRef}
               value={searchQuery}
