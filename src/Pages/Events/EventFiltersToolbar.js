@@ -37,6 +37,7 @@ const EventFiltersToolbar = ({
   searchQuery,
   onSearchChange,
   onResetFilters,
+  currentFilterConfig = {},
   visibleEvents = [],
   // totalElements = 0,
 }) => {
@@ -296,4 +297,3 @@ const EventFiltersToolbar = ({
 };
 
 export default memo(EventFiltersToolbar);
-
