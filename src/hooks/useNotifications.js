@@ -1,101 +1,85 @@
-import { useEffect, useState, useCallback, useRef } from "react";
-import { get as idbGet, set as idbSet } from "idb-keyval";
-import { logger } from "../utils/logger";
-import { safeJsonParse } from "../utils/safeJsonParse";
+import { useState, useEffect, useCallback } from "react";
+
 const STORAGE_KEY = "eventra_notifications";
+const FLUSH_INTERVAL_MS = 300;
 
-export const useNotifications = () => {
-   const [notifications, setNotifications] = useState([]);
+let queue = [];
+let flushTimeout = null;
 
-   // Track whether the initial load from IndexedDB has completed so we
-   // don't immediately overwrite persisted data with an empty array on mount.
-   const didLoadRef = useRef(false);
+export function useNotifications() {
+  const [notifications, setNotifications] = useState(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
 
-   useEffect(() => {
-     idbGet(STORAGE_KEY)
-       .then((stored) => {
-         if (stored) {
-           const parsed = safeJsonParse(stored, []);
-           setNotifications(parsed);
-         }
-       })
-       .catch((error) => {
-         logger.error("Failed to fetch notifications from indexedDB", error);
-         setNotifications([]);
-       })
-       .finally(() => {
-         // Allow the persistence effect to run only after the initial
-         // load has settled — prevents wiping IndexedDB on mount.
-         didLoadRef.current = true;
-       });
-   }, []);
+  const load = useCallback(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      setNotifications(raw ? JSON.parse(raw) : []);
+    } catch {}
+  }, []);
 
   useEffect(() => {
     const handleUpdate = () => {
-      idbGet(STORAGE_KEY)
-        .then((stored) => {
-          if (stored) {
-            const parsed = safeJsonParse(stored, []);
-            setNotifications(parsed);
-          }
-        })
-        .catch((error) => {
-          logger.error("Failed to reload notifications from indexedDB", error);
-        });
+      load();
     };
     window.addEventListener("eventra-notifications-updated", handleUpdate);
-    return () => window.removeEventListener("eventra-notifications-updated", handleUpdate);
-  }, []);
+    return () => {
+      window.removeEventListener("eventra-notifications-updated", handleUpdate);
+    };
+  }, [load]);
 
-  useEffect(() => {
-    if (!didLoadRef.current) return;
-    // Persist on every change — including when the list is cleared to []
-    // so that markAllAsRead and future "clear all" features are durable.
-    idbSet(STORAGE_KEY, JSON.stringify(notifications)).catch((error) => {
-      logger.error("Failed to persist notifications to indexedDB", error);
-    });
-  }, [notifications]);
+  const addNotification = useCallback((notif) => {
+    const newNotif = {
+      id: "notif-" + Math.random().toString(36).substring(2) + Date.now().toString(36),
+      read: false,
+      createdAt: new Date().toISOString(),
+      ...notif,
+    };
+    queue.push(newNotif);
 
-  const requestPermission = async () => {
-    if (!("Notification" in window)) return false;
-
-    const permission =
-      await Notification.requestPermission();
-
-    return permission === "granted";
-  };
-
-  const addNotification = useCallback((notification) => {
-    setNotifications((prev) => [
-      {
-        id: Date.now(),
-        read: false,
-        createdAt: new Date().toISOString(),
-        ...notification,
-      },
-      ...prev,
-    ]);
-    // Dispatch event to sync other instances
-    setTimeout(() => {
+    if (flushTimeout) {
+      clearTimeout(flushTimeout);
+    }
+    flushTimeout = setTimeout(() => {
+      try {
+        const raw = window.localStorage.getItem(STORAGE_KEY);
+        const existing = raw ? JSON.parse(raw) : [];
+        const updated = [...queue, ...existing];
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      } catch {}
+      queue = [];
+      flushTimeout = null;
       window.dispatchEvent(new CustomEvent("eventra-notifications-updated"));
-    }, 50);
+    }, FLUSH_INTERVAL_MS);
   }, []);
 
   const markAllAsRead = useCallback(() => {
-    setNotifications((prev) =>
-      prev.map((item) => ({
-        ...item,
-        read: true,
-      }))
-    );
-    setTimeout(() => {
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      const existing = raw ? JSON.parse(raw) : [];
+      const updated = existing.map((n) => ({ ...n, read: true }));
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      setNotifications(updated);
       window.dispatchEvent(new CustomEvent("eventra-notifications-updated"));
-    }, 50);
+    } catch {}
   }, []);
 
-  const unreadCount = notifications.filter(
-    (item) => !item.read
-  ).length;
+  const requestPermission = useCallback(async () => {
+    if (typeof window !== "undefined" && window.Notification) {
+      const permission = await window.Notification.requestPermission();
+      return permission === "granted";
+    }
+    return false;
+  }, []);
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   return {
     notifications,
@@ -104,4 +88,4 @@ export const useNotifications = () => {
     markAllAsRead,
     requestPermission,
   };
-};
+}
