@@ -64,7 +64,7 @@ const renderCardSection = (
   viewMode,
   searchQuery,
   onClearSearch,
-  filteredEvents,
+  matchScoreMap       // (#7437) Map of eventId → { score, reasons }
 ) => {
   if (isLoading) {
     return <ExploreEventsSkeleton />;
@@ -124,9 +124,17 @@ const renderCardSection = (
         : "grid-cols-1 max-w-4xl mx-auto"
         }`}
     >
-      {paginatedEvents.map((event) => (
-        <EventCard key={event.id} event={event} />
-      ))}
+      {paginatedEvents.map((event) => {
+          const match = matchScoreMap?.get(String(event.id));
+          return (
+            <EventCard
+              key={event.id}
+              event={event}
+              matchScore={match?.score}
+              matchReasons={match?.reasons}
+            />
+          );
+        })}
     </div>
   );
 };
@@ -399,19 +407,16 @@ const EventsPage = () => {
         />
 
         <ErrorBoundary level="section" label="Events">
-          {renderCardSection(
-            isLoading,
-            listing.loadError,
-            listing.fetchEvents,
-            listing.paginatedEvents,
-            listing.viewMode,
-            listing.searchQuery,
-            clearSearchAndFilters,
-            listing.filteredEvents,
-            hasActiveAdvancedFilters(listing.advancedFilters) ||
-              listing.filterType !== "all" ||
-              listing.categoryFilter !== "all"
-          )}
+     {renderCardSection(
+  isLoading,
+  listing.loadError,
+  listing.fetchEvents,
+  listing.paginatedEvents,
+  listing.viewMode,
+  listing.searchQuery,
+  clearSearchAndFilters,
+  listing.matchScoreMap   // (#7437) pass score map for badge rendering
+)}
 
           {!listing.isLoading && listing.totalPages > 1 && (
             <EventsPagination listing={listing} />
