@@ -25,7 +25,7 @@ import EmptyState from "../common/EmptyState";
 import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
 import { useOfflineStatus } from "../../hooks/useOfflineStatus";
 import LazyImage from "../common/LazyImage";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 
 /* ---------------- Helper Functions (Extracted to reduce complexity) ---------------- */
 
