@@ -1,6 +1,10 @@
 import { defineConfig, loadEnv, transformWithOxc } from "vite";
 import react from "@vitejs/plugin-react";
+
 import path from "path";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 // Quick regex to detect JSX syntax — lets us skip transformWithOxc
 // on plain .js files that have no JSX (the common case).
@@ -8,16 +12,23 @@ const JSX_HINT_RE = /<[A-Za-z][A-Za-z0-9.]*[\s\n\r/>]|<>/;
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
-  const DEPLOYED_BACKEND_URL =
-    "https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net";
-
   const backendTarget =
     env.BACKEND_URL ||
     env.VITE_API_URL?.replace(/\/api\/?$/, "") ||
-    env.REACT_APP_API_URL?.replace(/\/api\/?$/, "") ||
-    DEPLOYED_BACKEND_URL;
+    env.REACT_APP_API_URL?.replace(/\/api\/?$/, "");
+
+  if (!backendTarget) {
+    throw new Error(
+      "Backend URL is not configured. Set BACKEND_URL, VITE_API_URL, or REACT_APP_API_URL before starting the application."
+    );
+  }
 
   return {
+    appType: "spa",
+    base: env.VITE_BASE_URL || "/",
+    publicDir: "public",
+    cacheDir: process.env.VITE_CACHE_DIR || "node_modules/.vite",
+    clearScreen: false,
     plugins: [
       // Intercept .js files BEFORE vite:oxc / builtin:vite-transform so JSX
       // inside them is compiled correctly in both dev and production builds.
@@ -58,10 +69,12 @@ export default defineConfig(({ mode }) => {
         "/api": {
           target: backendTarget,
           changeOrigin: true,
+          secure: false,
         },
         "/stream": {
           target: backendTarget,
           changeOrigin: true,
+          secure: false,
         },
       },
     },
@@ -87,7 +100,6 @@ export default defineConfig(({ mode }) => {
         "date-fns",
         "recharts",
         "react-toastify",
-        "react-hot-toast",
         "dompurify",
         "fuse.js",
         "react-helmet-async",
@@ -99,14 +111,28 @@ export default defineConfig(({ mode }) => {
     },
 
     build: {
+      target: "es2020",
+      cssCodeSplit: true,
+      reportCompressedSize: false,
       outDir: "build",
+      emptyOutDir: true,
+      copyPublicDir: true,
       sourcemap: false,
       minify: "esbuild",
-      // Use esbuild for CSS minification instead of the default lightningcss,
-      // which cannot parse the custom Tailwind `short` screen media query.
       cssMinify: "esbuild",
-      chunkSizeWarningLimit: 1500,
+      chunkSizeWarningLimit: 500,
+      modulePreload: {
+        polyfill: true,
+        resolveDependencies: (url, deps, { hostType }) => {
+          return deps;
+        },
+      },
+      manifest: true,
       rollupOptions: {
+        onwarn(warning, warn) {
+          if (warning.code === "MODULE_LEVEL_DIRECTIVE") return;
+          warn(warning);
+        },
         output: {
           // manualChunks must be a function in Vite 8 / Rolldown
           manualChunks(id) {
@@ -132,7 +158,6 @@ export default defineConfig(({ mode }) => {
             }
             if (
               id.includes("node_modules/react-toastify/") ||
-              id.includes("node_modules/react-hot-toast/") ||
               id.includes("node_modules/aos/")
             ) {
               return "vendor-ui";
@@ -142,8 +167,42 @@ export default defineConfig(({ mode }) => {
       },
     },
 
+    json: {
+      namedExports: true,
+      stringify: false,
+    },
+
     css: {
       devSourcemap: false,
+      modules: {
+        localsConvention: "camelCase",
+        generateScopedName: "[name]__[local]___[hash:base64:5]",
+      },
+      preprocessorOptions: {
+        scss: {
+          api: "modern-compiler",
+        },
+      },
+    },
+
+    worker: {
+      format: "es",
+      plugins: () => [],
+    },
+
+    envDir: process.cwd(),
+
+    assetsInclude: ["**/*.webp", "**/*.avif"],
+
+    esbuild: {
+      legalComments: "none",
+      treeShaking: true,
+    },
+
+    // logLevel: "warn",
+    define: {
+      __APP_VERSION__: JSON.stringify(process.env.npm_package_version || "0.0.0"),
+      __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
     },
   };
 });

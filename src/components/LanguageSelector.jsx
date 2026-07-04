@@ -49,16 +49,18 @@ export default function LanguageSelector({ className = "", compact = false }) {
         aria-haspopup="listbox"
         aria-label={t("language.switch")}
         className={`
-          flex items-center gap-1.5 rounded-lg border border-border bg-navbar
-          text-text-light hover:text-text hover:bg-bg-secondary
+          flex items-center gap-2 rounded-full border border-gray-200/80 bg-white/80 hover:bg-white shadow-sm hover:shadow-md
+          dark:border-zinc-700/80 dark:bg-zinc-900/80 dark:hover:bg-zinc-800
+          text-text-light hover:text-text backdrop-blur-md
           transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary
-          ${compact ? "px-2 py-1.5 text-xs" : "px-3 py-2 text-sm"}
+          ${compact ? "px-3 py-1.5 text-xs" : "px-4 py-2 text-sm"}
         `}
       >
-        <Globe className={compact ? "h-3.5 w-3.5" : "h-4 w-4"} aria-hidden="true" />
-        <span className="font-medium">{currentLang.nativeLabel}</span>
+        <Globe className={compact ? "h-3.5 w-3.5" : "h-4 w-4"} strokeWidth={1.5} aria-hidden="true" />
+        <span className="font-medium tracking-wide">{currentLang.nativeLabel}</span>
         <ChevronDown
-          className={`h-3.5 w-3.5 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+          className={`${compact ? "h-3.5 w-3.5" : "h-4 w-4"} transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+          strokeWidth={1.5}
           aria-hidden="true"
         />
       </button>
@@ -72,7 +74,7 @@ export default function LanguageSelector({ className = "", compact = false }) {
             transition={{ duration: 0.15, ease: "easeOut" }}
             role="listbox"
             aria-label={t("language.switch")}
-            className="absolute right-0 mt-2 min-w-[10rem] origin-top-right rounded-xl border border-border bg-navbar shadow-lg p-1.5 z-[300]"
+            className="absolute right-0 mt-2 min-w-[10rem] origin-top-right rounded-xl border border-zinc-100 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md shadow-lg p-1.5 z-50"
           >
             {supportedLanguages.map((lang) => {
               const isActive = lang.code === language;

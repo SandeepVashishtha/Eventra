@@ -57,11 +57,7 @@ export const NAV_ITEMS = [
     href: "/networking",
     icon: <Users className="w-5 h-5" />,
   },
-  {
-    nameKey: "nav.saved",
-    href: "/bookmarks",
-    icon: <Bookmark className="w-5 h-5" />,
-  },
+
   {
     nameKey: "nav.community",
     href: "/community-event",

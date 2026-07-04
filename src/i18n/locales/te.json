@@ -20,6 +20,7 @@
     "signUp": "సైన్ అప్",
     "signOut": "సైన్ అవుట్",
     "profile": "ప్రొఫైల్",
+    "account": "ఖాతా",
     "settings": "సెట్టింగ్‌లు",
     "projects": "ప్రాజెక్ట్‌లు",
     "networking": "నెట్‌వర్కింగ్",
@@ -51,7 +52,20 @@
     "hasAccount": "ఇప్పటికే ఖాతా ఉందా?",
     "sessionExpired": "సెషన్ గడువు ముగిసింది. దయచేసి మళ్లీ లాగిన్ అవ్వండి.",
     "loginSuccess": "తిరిగి స్వాగతం!",
-    "signupSuccess": "ఖాతా విజయవంతంగా సృష్టించబడింది!"
+    "signupSuccess": "ఖాతా విజయవంతంగా సృష్టించబడింది!",
+    "welcomeBack": "తిరిగి స్వాగతం",
+    "signInSubtitle": "మీ Eventra ఖాతాలోకి సైన్ ఇన్ చేయండి",
+    "usernameOrEmail": "ఇమెయిల్ లేదా వినియోగదారు పేరు",
+    "signIn": "సైన్ ఇన్",
+    "signingIn": "సైన్ ఇన్ అవుతోంది...",
+    "createAccount": "ఇక్కడ ఖాతా సృష్టించండి",
+    "usernamePlaceholder": "john@example.com / yourname@email.com / eventra.team@gmail.com",
+    "passwordPlaceholder": "సురక్షిత పాస్‌వర్డ్ నమోదు చేయండి / కనీసం 8 అక్షరాలు / బలమైన పాస్‌వర్డ్ ఉపయోగించండి",
+    "showPassword": "పాస్‌వర్డ్ చూపించు",
+    "hidePassword": "పాస్‌వర్డ్ దాచు",
+    "lockedOut": "చాలా విఫల ప్రయత్నాలు. {{seconds}} సెకన్ల తర్వాత మళ్లీ ప్రయత్నించండి.",
+    "attemptsRemaining": "తాత్కాలిక లాకవుట్ కు ముందు {{count}} ప్రయత్నం(లు) మిగిలి ఉన్నాయి.",
+    "lockedWait": "లాక్ అయింది — {{seconds}} సెకన్లు వేచి ఉండండి"
   },
   "validation": {
     "required": "This field is required",
@@ -79,7 +93,12 @@
     "feedbackTypeRequired": "Please select a feedback type",
     "feedbackMessageRequired": "Message is required",
     "feedbackMessageMinLength": "Message must be at least 20 characters",
-    "feedbackRatingRequired": "Please provide a rating"
+    "feedbackRatingRequired": "Please provide a rating",
+    "featureTitleRequired": "Feature title is required",
+    "featureTitleMinLength": "Feature title must be at least 5 characters",
+    "featureProblemRequired": "Please describe the problem this feature would solve",
+    "featureProblemMinLength": "Problem description must be at least 20 characters",
+    "featurePriorityRequired": "Please select a priority level"
   },
   "error": {
     "generic": "An unexpected error occurred. Please try again.",
@@ -317,7 +336,7 @@
     "pageDescription": "Frequently asked questions about Eventra platform",
     "heading": "Frequently Asked Questions",
     "subtitle": "Everything you need to know about using Eventra and participating in events",
-    "searchPlaceholder": "Search FAQs...",
+    "searchPlaceholder": "తరచుగా అడిగే ప్రశ్నలు వెతకండి...",
     "filterAll": "All",
     "filterGeneral": "General",
     "filterHackathons": "Hackathons",
@@ -662,5 +681,99 @@
     "toastValidationError": "Please fill in all required fields correctly",
     "toastSuccess": "Thank you for your feedback! We appreciate your input.",
     "toastError": "There was an error submitting your feedback. Please try again."
+  },
+  "about": {
+    "pageTitle": "మా గురించి",
+    "pageDescription": "ప్రపంచవ్యాప్తంగా ఉన్న కమ్యూనిటీలు, కళాశాలలు మరియు సంస్థల కోసం ఓపెన్-సోర్స్ ఈవెంట్ మేనేజ్‌మెంట్ ప్లాట్‌ఫారమ్ అయిన ఈవెంట్్రా గురించి తెలుసుకోండి.",
+    "documentTitle": "ఈవెంట్్రా | మా గురించి",
+    "errorBoundaryLabel": "గణాంకాలు",
+    "hero": {
+      "tagline": "ఓపెన్ సోర్స్ • కమ్యూనిటీ ఆధారితం • ఎప్పటికీ ఉచితం",
+      "title": "మంచి ఈవెంట్‌లను నిర్మించడం",
+      "subtitle": "కలిసి",
+      "description": "ఈవెంట్్రా కమ్యూనిటీలు, కళాశాలలు, సంస్థలు మరియు ఓపెన్-సోర్స్ బృందాలను సులభమైన, ఆధునిక మరియు సహకార ఈవెంట్ మేనేజ్‌మెంట్ సాధనాల ద్వారా ప్రభావవంతమైన ఈవెంట్‌లను సృష్టించడానికి, నిర్వహించడానికి మరియు పెంచడానికి అధికారం ఇస్తుంది."
+    },
+    "stats": {
+      "events": "నిర్వహించిన ఈవెంట్‌లు",
+      "builders": "కమ్యూనిటీ సభ్యులు",
+      "partners": "కమ్యూనిటీ చేరువ"
+    },
+    "values": {
+      "heading": "ఈవెంట్‌రాను నడిపించే విలువలు",
+      "description": "మా విలువలు మేము తీసుకునే ప్రతి నిర్ణయానికి మార్గనిర్దేశం చేస్తాయి, ఈవెంట్్రా అందరికీ అందుబాటులో ఉండేలా, కమ్యూనిటీ-కేంద్రీకృతంగా మరియు దీర్ఘకాలిక ప్రభావం కోసం నిర్మించబడిందని నిర్ధారిస్తుంది.",
+      "eventManagement": {
+        "title": "ఓపెన్ సోర్స్",
+        "description": "ప్రపంచవ్యాప్తంగా ఉన్న కమ్యూనిటీల కోసం పారదర్శకంగా నిర్మించబడింది మరియు ఉచితంగా అందుబాటులో ఉంది."
+      },
+      "hackathonGrowth": {
+        "title": "కమ్యూనిటీకి ప్రాధాన్యత",
+        "description": "सहకారం, చేరిక మరియు అర్ధవంతమైన కనెక్షన్‌ల చుట్టూ రూపొందించబడింది."
+      },
+      "projectCollaboration": {
+        "title": "ఆవిష్కరణ (Innovation)",
+        "description": "కమ్యూనిటీ అభిప్రాయాలు మరియు ఆధునిక సాంకేతికత ద్వారా నిరంతరం అభివృద్ధి చెందుతోంది."
+      },
+      "networking": {
+        "title": "యాక్సెసిబిలిటీ",
+        "description": "అన్ని నైపుణ్య స్థాయిల నిర్వాహకుల కోసం సరళమైనది మరియు స్పష్టమైనది."
+      }
+    },
+    "cta": {
+      "badge": "ఈవెంట్్రా కమ్యూనిటీలో చేరండి",
+      "heading": "నిర్మించండి, సహకరించండి & ఎదగండి",
+      "subtitle": "ఈవెంట్్రాతో కలిసి",
+      "description": "ఈవెంట్్రా విద్యార్థులు, డెవలపర్లు, నిర్వాహకులు మరియు కమ్యూనిటీలను అవకాశాలను కనుగొనడానికి, అర్ధవంతమైన ప్రాజెక్ట్‌లపై సహకరించడానికి మరియు సాంకేతికత ఆధారిత ఈవెంట్‌ల ద్వారా ప్రభావాన్ని సృష్టించడానికి అధికారం ఇస్తుంది.",
+      "socialProof": {
+        "community": "పెరుగుతున్న కమ్యూనిటీ",
+        "openSource": "ఓపెన్ సోర్స్ ఆధారితం",
+        "learning": "అభ్యాసం & సహకారం"
+      },
+      "getStartedFree": "ఉచితంగా ప్రారంభించండి",
+      "documentation": "డాక్యుమెంటేషన్",
+      "contactUs": "మమ్మల్ని సంప్రదించండి"
+    },
+    "features": {
+      "heading": "ప్రతి ఈవెంట్‌కు शक्तिనిచ్చే ఫీచర్లు",
+      "description": "ఈవెంట్్రా బలమైన కమ్యూనిటీలను పెంపొందించడంతో పాటు విజయవంతమైన ఈవెంట్‌లను సృష్టించడానికి, నిర్వహించడానికి మరియు పెంచడానికి అవసరమైన ప్రతిదాన్ని అందిస్తుంది.",
+      "ctaAriaLabel": "{{cta}} - {{title}}",
+      "items": {
+        "events": {
+          "stat": "90% వేగవంతమైన సెటప్",
+          "title": "స్మార్ట్ ఈవెంట్ సృష్టి",
+          "description": "తెలివైన టెంప్లేట్లు, క్రమబద్ధీకరించబడిన వర్క్‌ఫ్లోలు మరియు స్వయంచాలక నిర్వహణ సాధనాలను ఉపయోగించి ఈవెంట్‌లను త్వరగా ప్రారంభించండి.",
+          "cta": "సృష్టించడం ప్రారంభించండి"
+        },
+        "hackathons": {
+          "stat": "త్వరిత రిజిస్ట్రేషన్",
+          "title": "హ్యాకథాన్‌లు & సవాళ్లు",
+          "description": "హ్యాకథాన్‌లలో చేరండి, బృందాలను ఏర్పాటు చేయండి, ప్రాజెక్ట్‌లను నిర్మించండి మరియు బహుమతులు గెలవడానికి మీ నైపుణ్యాలను ప్రదర్శించండి.",
+          "cta": "హ్యాకథాన్‌లు చూడండి"
+        },
+        "projects": {
+          "stat": "కలిసి నిర్మించండి",
+          "title": "ప్రాజెక్ట్ సహకారం",
+          "description": "ఓపెన్-సోర్స్ ప్రాజెక్ట్‌లపై సహకరించండి, నిజమైన కోడ్‌కు సహకరించండి మరియు మీ పోర్ట్‌ఫోలియోను నిర్మించుకోండి.",
+          "cta": "ప్రాజెక్ట్‌లను అన్వేషించండి"
+        },
+        "connections": {
+          "stat": "నెట్‌వర్క్‌ పెంచుకోండి",
+          "title": "కమ్యూనిటీ నెట్‌వర్కింగ్",
+          "description": "ప్రపంచవ్యాప్తంగా ఉన్న డెవలపర్లు, డిజైనర్లు మరియు బిల్డర్లతో కనెక్ట్ అవ్వండి.",
+          "cta": "కమ్యూనిటీలో చేరండి"
+        },
+        "manage": {
+          "stat": "సురక్షిత భద్రత",
+          "title": "సురక్షితమైన డిజైన్",
+          "description": "సురక్షితమైన QR కోడ్‌లు మరియు నిజ-సమయ హాజరు ట్రాకింగ్‌ని ఉపయోగించి హాజరైన వారికి సులభమైన చెక్-ఇన్‌లను అందించండి.",
+          "cta": "మరింత తెలుసుకోండి"
+        },
+        "benefits": {
+          "stat": "ప్రపంచవ్యాప్త యాక్సెస్",
+          "title": "డెవలపర్ ప్రయోజనాలు",
+          "description": "ధృవీకరించబడిన సర్టిఫికేట్‌లను పొందండి, మీ ప్రొఫైల్ స్థాయిని పెంచుకోండి మరియు మీ సహకారానికి బ్యాడ్జ్‌లను సంపాదించండి.",
+          "cta": "ఇప్పుడే సైన్ అప్ చేయండి"
+        }
+      }
+    }
   }
 }

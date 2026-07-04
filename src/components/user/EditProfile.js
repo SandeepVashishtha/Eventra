@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactDOM from "react-dom"; // 🔥 FIX: Required for Modal Portal
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -177,7 +177,7 @@ const EditProfile = () => {
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: undefined }));
   };
 
-  const calculateCompletion = () => {
+  const calculateCompletion = useCallback(() => {
     const fields = [
       "username",
       "email",
@@ -201,9 +201,9 @@ const EditProfile = () => {
     if (form.skills && form.skills.length > 0) filled++;
 
     return Math.round((filled / 10) * 100);
-  };
+  }, [form, user]);
 
-  const completionPercentage = useMemo(() => calculateCompletion(), [form, user]);
+  const completionPercentage = useMemo(() => calculateCompletion(), [calculateCompletion]);
 
   const addSkill = (skill) => {
     const trimmedSkill = skill.trim();
@@ -318,7 +318,7 @@ const EditProfile = () => {
             <button
               type="button"
               onClick={() => setAiModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-xl shadow-md transition-all active:scale-[0.98]"
+              className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-xl shadow-md transition-all active:scale-[0.98]"
             >
               <Sparkles size={16} />
               Auto-fill with AI
