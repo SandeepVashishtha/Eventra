@@ -86,6 +86,7 @@ export const getPublicRoutes = () => [
   <Route key="/api-docs" path="/api-docs" element={withModuleBoundary(<ApiDocs />, "API Docs")} />,
   <Route key="/helpcenter" path="/helpcenter" element={withModuleBoundary(<HelpCenter />, "Help Center")} />,
   <Route key="/feedback" path="/feedback" element={withModuleBoundary(<FeedbackPage />, "Feedback")} />,
+  <Route key="/submit-testimonial" path="/submit-testimonial" element={withModuleBoundary(<FeedbackPage />, "Submit Testimonial")} />,
   <Route key="/bookmarks" path="/bookmarks" element={withModuleBoundary(<BookmarkedEvents />, "Bookmarks")} />,
   <Route key="/reminders" path="/reminders" element={withModuleBoundary(<RemindersPage />, "Reminders")} />,
   <Route key="/calendar" path="/calendar" element={withModuleBoundary(<MyCalendar />, "Calendar")} />,
