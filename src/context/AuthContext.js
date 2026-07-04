@@ -197,7 +197,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const validate = async () => {
       try {
-        const res = await apiUtils.get("/api/auth/me");
+        const res = await apiUtils.get("/users/profile");
         let activeToken = "cookie-managed";
         if (!isMountedRef.current) return;
 
