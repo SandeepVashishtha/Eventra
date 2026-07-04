@@ -164,6 +164,12 @@ Optional environment flags:
 - `ALLOWED_ORIGIN` (default `http://localhost:3000`)
 - `SSE_DEBUG` (`true` or `false`)
 
+## Authentication Security
+
+For authentication and authorization security best practices, refer to:
+
+- docs/AUTHENTICATION_SECURITY.md
+
 ## Deployment
 
 Vercel configuration is checked in via [`vercel.json`](vercel.json):
