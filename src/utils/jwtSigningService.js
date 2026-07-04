@@ -32,6 +32,20 @@ const ALGORITHM_FAMILIES = {
   ES: 'asymmetric',
 };
 
+/**
+ * Standard time-based claim checks, evaluated in order against (payload, now).
+ * Declarative table instead of sequential if-statements keeps
+ * JWTSigningService.validateClaims a single flat lookup.
+ */
+const CLAIM_VALIDATORS = [
+  { test: (payload, now) => payload.exp && payload.exp < now, message: 'Token expired' },
+  { test: (payload, now) => payload.nbf && payload.nbf > now, message: 'Token not yet valid' },
+  {
+    test: (payload, now) => payload.iat && payload.iat > now + 60,
+    message: 'Token issued in the future (clock skew)',
+  },
+];
+
 class JWTSigningService {
   constructor(options = {}) {
     this.secret = options.secret || process.env.JWT_SECRET;
@@ -280,17 +294,10 @@ class JWTSigningService {
    */
   validateClaims(payload) {
     const now = Math.floor(Date.now() / 1000);
+    const failure = CLAIM_VALIDATORS.find((validator) => validator.test(payload, now));
 
-    if (payload.exp && payload.exp < now) {
-      throw new Error('Token expired');
-    }
-
-    if (payload.nbf && payload.nbf > now) {
-      throw new Error('Token not yet valid');
-    }
-
-    if (payload.iat && payload.iat > now + 60) {
-      throw new Error('Token issued in the future (clock skew)');
+    if (failure) {
+      throw new Error(failure.message);
     }
   }
 
