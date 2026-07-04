@@ -205,7 +205,7 @@ export const groupRecoverySessionsByType = (sessions = []) =>
   }, {});
 
 export const readMultiSessions = (
-  storage = globalThis.localStorage,
+  storage = null,
   key = MULTI_SESSION_RECOVERY_KEY,
 ) => {
   if (!storage?.getItem) return [];
@@ -221,7 +221,7 @@ export const readMultiSessions = (
 
 export const writeMultiSessions = (
   sessions = [],
-  storage = globalThis.localStorage,
+  storage = null,
   key = MULTI_SESSION_RECOVERY_KEY,
 ) => {
   const normalized = normalizeMultiSessions(sessions);
