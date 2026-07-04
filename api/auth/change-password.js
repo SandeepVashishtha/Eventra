@@ -5,79 +5,72 @@
  * Prevents unauthorized password changes even with stolen session tokens.
  */
 
+const isWrongMethod = (req) => req.method !== 'PUT';
+const isMissingAuth = (req) => !req.headers.authorization;
+const getUserId = (req) => req.session?.user?.id || req.user?.id;
+const isMissingUser = (req) => !getUserId(req);
+const isMissingFields = (req) => {
+  const { currentPassword, newPassword } = req.body;
+  return !currentPassword || !newPassword;
+};
+const isSamePassword = (req) => req.body.currentPassword === req.body.newPassword;
+
+const REQUEST_VALIDATORS = [
+  { test: isWrongMethod, status: 405, message: 'Method not allowed' },
+  { test: isMissingAuth, status: 401, message: 'Unauthorized' },
+  { test: isMissingUser, status: 401, message: 'User not found in session' },
+  { test: isMissingFields, status: 400, message: 'Current password and new password are required' },
+  { test: isSamePassword, status: 400, message: 'New password must be different from current password' },
+];
+
+function findValidationFailure(req) {
+  return REQUEST_VALIDATORS.find((validator) => validator.test(req)) || null;
+}
+
+/**
+ * Verify the caller's current password and persist the new one.
+ * Throws a tagged error so the handler can map it to the right HTTP status.
+ */
+async function performPasswordChange(userId, currentPassword, newPassword, currentSessionId) {
+  const user = await getUserById(userId);
+  if (!user) {
+    throw Object.assign(new Error('User not found'), { status: 404 });
+  }
+
+  const passwordMatches = await verifyPassword(currentPassword, user.passwordHash);
+  if (!passwordMatches) {
+    console.warn(`Failed password verification attempt for user ${userId}`);
+    throw Object.assign(new Error('Current password is incorrect'), { status: 401 });
+  }
+
+  const hashedPassword = await hashPassword(newPassword);
+  const result = await updateUserPassword(userId, hashedPassword);
+  if (!result.success) {
+    throw Object.assign(new Error('Failed to update password'), { status: 500 });
+  }
+
+  console.log(`Password changed for user ${userId} at ${new Date().toISOString()}`);
+  await invalidateOtherSessions(userId, currentSessionId);
+}
+
 export default async function handler(req, res) {
-  if (req.method !== 'PUT') {
-    return res.status(405).json({ message: 'Method not allowed' });
+  const failure = findValidationFailure(req);
+  if (failure) {
+    return res.status(failure.status).json({ message: failure.message });
+  }
+
+  const { currentPassword, newPassword } = req.body;
+  const passwordErrors = validatePasswordStrength(newPassword);
+  if (passwordErrors.length > 0) {
+    return res.status(400).json({
+      message: 'New password does not meet requirements',
+      errors: passwordErrors,
+    });
   }
 
   try {
-    // 1. Verify authentication
-    if (!req.headers.authorization) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
-
-    // 2. Extract user from session/JWT
-    const userId = req.session?.user?.id || req.user?.id;
-    if (!userId) {
-      return res.status(401).json({ message: 'User not found in session' });
-    }
-
-    // 3. Validate request body
-    const { currentPassword, newPassword } = req.body;
-
-    if (!currentPassword || !newPassword) {
-      return res.status(400).json({
-        message: 'Current password and new password are required',
-      });
-    }
-
-    if (currentPassword === newPassword) {
-      return res.status(400).json({
-        message: 'New password must be different from current password',
-      });
-    }
-
-    // 4. Validate password strength
-    const passwordErrors = validatePasswordStrength(newPassword);
-    if (passwordErrors.length > 0) {
-      return res.status(400).json({
-        message: 'New password does not meet requirements',
-        errors: passwordErrors,
-      });
-    }
-
-    // 5. Get user from database and verify current password
-    const user = await getUserById(userId);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    // 6. Verify current password matches
-    const passwordMatches = await verifyPassword(currentPassword, user.passwordHash);
-    if (!passwordMatches) {
-      // Log failed attempt for security audit
-      console.warn(`Failed password verification attempt for user ${userId}`);
-      return res.status(401).json({
-        message: 'Current password is incorrect',
-      });
-    }
-
-    // 7. Hash new password and update database
-    const hashedPassword = await hashPassword(newPassword);
-    const result = await updateUserPassword(userId, hashedPassword);
-
-    if (!result.success) {
-      return res.status(500).json({
-        message: 'Failed to update password',
-      });
-    }
-
-    // 8. Log password change for audit trail
-    console.log(`Password changed for user ${userId} at ${new Date().toISOString()}`);
-
-    // 9. Invalidate all other sessions (except current) for security
-    // This forces re-authentication on other devices
-    await invalidateOtherSessions(userId, req.session?.id);
+    const userId = getUserId(req);
+    await performPasswordChange(userId, currentPassword, newPassword, req.session?.id);
 
     return res.status(200).json({
       success: true,
@@ -86,9 +79,9 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error('Password change error:', error);
-    return res.status(500).json({
-      message: 'Failed to change password',
-      error: error.message,
+    return res.status(error.status || 500).json({
+      message: error.status ? error.message : 'Failed to change password',
+      error: error.status ? undefined : error.message,
     });
   }
 }

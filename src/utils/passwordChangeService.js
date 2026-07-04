@@ -52,36 +52,54 @@ class PasswordChangeService {
   }
 
   /**
+   * Validate inputs locally before making a network request.
+   * Returns a failure result object, or null if inputs are valid.
+   */
+  validateChangePasswordInputs(currentPassword, newPassword) {
+    if (!currentPassword) {
+      return { success: false, error: 'Current password is required' };
+    }
+
+    const strengthErrors = this.validatePasswordStrength(newPassword);
+    if (strengthErrors.length > 0) {
+      return { success: false, errors: strengthErrors };
+    }
+
+    const diffError = this.validateNewPasswordDifference(currentPassword, newPassword);
+    if (diffError) {
+      return { success: false, error: diffError };
+    }
+
+    return null;
+  }
+
+  /**
+   * Map an axios error from the change-password endpoint to a user-facing result
+   */
+  mapChangePasswordError(error) {
+    console.error('Password change error:', error);
+
+    if (error.response?.status === 401) {
+      return { success: false, error: 'Current password is incorrect' };
+    }
+
+    if (error.response?.status === 400) {
+      return { success: false, error: error.response.data?.error || 'Invalid password format' };
+    }
+
+    return { success: false, error: error.message || 'Password change failed' };
+  }
+
+  /**
    * Change password with current password verification
    */
   async changePassword(currentPassword, newPassword) {
+    const validationFailure = this.validateChangePasswordInputs(currentPassword, newPassword);
+    if (validationFailure) {
+      return validationFailure;
+    }
+
     try {
-      // 1. Validate inputs
-      if (!currentPassword) {
-        return {
-          success: false,
-          error: 'Current password is required',
-        };
-      }
-
-      const strengthErrors = this.validatePasswordStrength(newPassword);
-      if (strengthErrors.length > 0) {
-        return {
-          success: false,
-          errors: strengthErrors,
-        };
-      }
-
-      // 2. Check passwords are different
-      const diffError = this.validateNewPasswordDifference(currentPassword, newPassword);
-      if (diffError) {
-        return {
-          success: false,
-          error: diffError,
-        };
-      }
-
-      // 3. Send request to secure endpoint
       const response = await this.apiClient.put('/auth/change-password', {
         currentPassword,
         newPassword,
@@ -99,27 +117,7 @@ class PasswordChangeService {
         message: 'Password changed successfully',
       };
     } catch (error) {
-      console.error('Password change error:', error);
-
-      // Check for specific error types
-      if (error.response?.status === 401) {
-        return {
-          success: false,
-          error: 'Current password is incorrect',
-        };
-      }
-
-      if (error.response?.status === 400) {
-        return {
-          success: false,
-          error: error.response.data?.error || 'Invalid password format',
-        };
-      }
-
-      return {
-        success: false,
-        error: error.message || 'Password change failed',
-      };
+      return this.mapChangePasswordError(error);
     }
   }
 
