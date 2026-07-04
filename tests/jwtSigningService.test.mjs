@@ -39,7 +39,7 @@ class MockJWTSigningService {
     return `${message}.${encodedSignature}`;
   }
 
-  verifyToken(token, options = {}) {
+  splitTokenParts(token) {
     if (!token || typeof token !== 'string') {
       throw new Error('Token must be a string');
     }
@@ -49,8 +49,10 @@ class MockJWTSigningService {
       throw new Error('Invalid token format');
     }
 
-    const [encodedHeader, encodedPayload, encodedSignature] = parts;
+    return parts;
+  }
 
+  decodeAndValidateHeader(encodedHeader) {
     let header;
     try {
       header = JSON.parse(this.base64UrlDecode(encodedHeader));
@@ -66,25 +68,27 @@ class MockJWTSigningService {
       throw new Error(`Algorithm mismatch: token uses ${header.alg}, expected ${this.algorithm}`);
     }
 
-    const message = `${encodedHeader}.${encodedPayload}`;
-    const hmac = crypto
-      .createHmac('sha256', this.secret)
-      .update(message)
-      .digest();
+    return header;
+  }
 
+  verifySignature(message, encodedSignature) {
+    const hmac = crypto.createHmac('sha256', this.secret).update(message).digest();
     const expected = this.base64UrlEncode(hmac);
 
     if (encodedSignature !== expected) {
       throw new Error('Invalid token signature');
     }
+  }
 
-    let payload;
+  decodeAndValidatePayload(encodedPayload) {
     try {
-      payload = JSON.parse(this.base64UrlDecode(encodedPayload));
+      return JSON.parse(this.base64UrlDecode(encodedPayload));
     } catch {
       throw new Error('Invalid token payload');
     }
+  }
 
+  validateClaims(payload) {
     const now = Math.floor(Date.now() / 1000);
 
     if (payload.exp && payload.exp < now) {
@@ -94,6 +98,17 @@ class MockJWTSigningService {
     if (payload.nbf && payload.nbf > now) {
       throw new Error('Token not yet valid');
     }
+  }
+
+  verifyToken(token) {
+    const [encodedHeader, encodedPayload, encodedSignature] = this.splitTokenParts(token);
+    this.decodeAndValidateHeader(encodedHeader);
+
+    const message = `${encodedHeader}.${encodedPayload}`;
+    this.verifySignature(message, encodedSignature);
+
+    const payload = this.decodeAndValidatePayload(encodedPayload);
+    this.validateClaims(payload);
 
     return payload;
   }

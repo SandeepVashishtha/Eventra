@@ -44,34 +44,55 @@ class JWTSigningService {
   }
 
   /**
-   * Validate service configuration for security
+   * Validate symmetric (HMAC) key configuration
    */
-  validateConfiguration() {
-    // Symmetric algorithms require a secret
-    if (this.algorithm.startsWith('HS')) {
-      if (!this.secret) {
-        throw new Error('JWT_SECRET is required for HMAC algorithms');
-      }
-
-      if (this.secret.length < 32) {
-        console.warn('[SECURITY WARNING] JWT_SECRET is too short. Minimum 32 bytes recommended.');
-      }
+  validateSymmetricConfiguration() {
+    if (!this.algorithm.startsWith('HS')) {
+      return;
     }
 
-    // Asymmetric algorithms require keys
-    if (this.algorithm.startsWith('RS') || this.algorithm.startsWith('ES')) {
-      if (!this.privateKey) {
-        throw new Error('Private key is required for asymmetric algorithms');
-      }
-      if (!this.publicKey) {
-        throw new Error('Public key is required for asymmetric algorithms');
-      }
+    if (!this.secret) {
+      throw new Error('JWT_SECRET is required for HMAC algorithms');
     }
 
-    // Validate algorithm is whitelisted
+    if (this.secret.length < 32) {
+      console.warn('[SECURITY WARNING] JWT_SECRET is too short. Minimum 32 bytes recommended.');
+    }
+  }
+
+  /**
+   * Validate asymmetric (RSA/ECDSA) key configuration
+   */
+  validateAsymmetricConfiguration() {
+    const isAsymmetric = this.algorithm.startsWith('RS') || this.algorithm.startsWith('ES');
+    if (!isAsymmetric) {
+      return;
+    }
+
+    if (!this.privateKey) {
+      throw new Error('Private key is required for asymmetric algorithms');
+    }
+    if (!this.publicKey) {
+      throw new Error('Public key is required for asymmetric algorithms');
+    }
+  }
+
+  /**
+   * Validate the configured algorithm is on the whitelist
+   */
+  validateAlgorithmWhitelisted() {
     if (!ALLOWED_ALGORITHMS.includes(this.algorithm)) {
       throw new Error(`Algorithm ${this.algorithm} is not whitelisted. Allowed: ${ALLOWED_ALGORITHMS.join(', ')}`);
     }
+  }
+
+  /**
+   * Validate service configuration for security
+   */
+  validateConfiguration() {
+    this.validateSymmetricConfiguration();
+    this.validateAsymmetricConfiguration();
+    this.validateAlgorithmWhitelisted();
   }
 
   /**
@@ -165,9 +186,9 @@ class JWTSigningService {
   }
 
   /**
-   * Verify a JWT token
+   * Split and decode a token into its three constituent parts
    */
-  verifyToken(token, options = {}) {
+  splitTokenParts(token) {
     if (!token || typeof token !== 'string') {
       throw new Error('Token must be a string');
     }
@@ -177,9 +198,13 @@ class JWTSigningService {
       throw new Error('Invalid token format');
     }
 
-    const [encodedHeader, encodedPayload, encodedSignature] = parts;
+    return parts;
+  }
 
-    // Decode and parse header
+  /**
+   * Decode and validate the token header, enforcing algorithm safety
+   */
+  decodeAndValidateHeader(encodedHeader) {
     let header;
     try {
       header = JSON.parse(this.base64UrlDecode(encodedHeader));
@@ -187,7 +212,6 @@ class JWTSigningService {
       throw new Error('Invalid token header');
     }
 
-    // Validate header
     if (!header.alg) {
       throw new Error('Missing algorithm in token header');
     }
@@ -197,52 +221,73 @@ class JWTSigningService {
       throw new Error(`Algorithm mismatch: token uses ${header.alg}, expected ${this.algorithm}`);
     }
 
-    // Validate algorithm is whitelisted
     if (!ALLOWED_ALGORITHMS.includes(header.alg)) {
       throw new Error(`Algorithm ${header.alg} is not whitelisted`);
     }
 
-    // Verify signature
-    const message = `${encodedHeader}.${encodedPayload}`;
-    let isSignatureValid = false;
+    return header;
+  }
 
-    if (header.alg.startsWith('HS')) {
-      isSignatureValid = this.verifyHMACSignature(message, encodedSignature);
-    } else if (header.alg.startsWith('RS')) {
-      isSignatureValid = this.verifyRSASignature(message, encodedSignature);
-    } else if (header.alg.startsWith('ES')) {
-      isSignatureValid = this.verifyECDSASignature(message, encodedSignature);
-    }
+  /**
+   * Verify the token signature using the algorithm family's verifier
+   */
+  verifySignature(algorithm, message, encodedSignature) {
+    const verifiers = {
+      HS: () => this.verifyHMACSignature(message, encodedSignature),
+      RS: () => this.verifyRSASignature(message, encodedSignature),
+      ES: () => this.verifyECDSASignature(message, encodedSignature),
+    };
 
-    if (!isSignatureValid) {
+    const family = algorithm.slice(0, 2);
+    const isValid = verifiers[family] ? verifiers[family]() : false;
+
+    if (!isValid) {
       throw new Error('Invalid token signature');
     }
+  }
 
-    // Decode and parse payload
-    let payload;
+  /**
+   * Decode and parse the token payload
+   */
+  decodeAndValidatePayload(encodedPayload) {
     try {
-      payload = JSON.parse(this.base64UrlDecode(encodedPayload));
+      return JSON.parse(this.base64UrlDecode(encodedPayload));
     } catch {
       throw new Error('Invalid token payload');
     }
+  }
 
-    // Validate standard claims
+  /**
+   * Validate standard time-based claims (exp, nbf, iat)
+   */
+  validateClaims(payload) {
     const now = Math.floor(Date.now() / 1000);
 
-    // Check expiration
     if (payload.exp && payload.exp < now) {
       throw new Error('Token expired');
     }
 
-    // Check not-before
     if (payload.nbf && payload.nbf > now) {
       throw new Error('Token not yet valid');
     }
 
-    // Check issued-at clock skew
     if (payload.iat && payload.iat > now + 60) {
       throw new Error('Token issued in the future (clock skew)');
     }
+  }
+
+  /**
+   * Verify a JWT token
+   */
+  verifyToken(token, options = {}) {
+    const [encodedHeader, encodedPayload, encodedSignature] = this.splitTokenParts(token);
+    const header = this.decodeAndValidateHeader(encodedHeader);
+
+    const message = `${encodedHeader}.${encodedPayload}`;
+    this.verifySignature(header.alg, message, encodedSignature);
+
+    const payload = this.decodeAndValidatePayload(encodedPayload);
+    this.validateClaims(payload);
 
     return payload;
   }
