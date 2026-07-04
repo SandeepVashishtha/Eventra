@@ -117,10 +117,10 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     setAuthToken(null);
 
-    // Invalidate token cookie
-    deleteCookie("auth_token", {
+    // Invalidate token cookie (must match the name used in persistSession)
+    deleteCookie("token", {
       path: "/",
-      secure: true,
+      secureVariants: true,
     });
 
     // Clear user metadata from secure/local storage manager
