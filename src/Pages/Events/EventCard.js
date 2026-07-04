@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   Calendar,
@@ -10,13 +11,30 @@ import {
   BookOpen,
   Gift,
   Share2,
+  Bookmark,
 } from "lucide-react";
 import { addEventToGoogleCalendar } from "../../utils/calendarUtils";
 import ShareMenu from "../../components/common/ShareMenu";
 import { generateEventSharingData } from "../../utils/shareUtils";
 import StatusBadge from "../../components/common/StatusBadge";
-
+import { getSavedBookmarks, toggleBookmark } from "../../utils/bookmarkUtils";
 const EventCard = ({ event }) => {
+  const [isBookmarked, setIsBookmarked] = useState(false);
+
+  useEffect(() => {
+    const savedBookmarks = getSavedBookmarks();
+    if (savedBookmarks.includes(event.id)) {
+      setIsBookmarked(true);
+    }
+  }, [event.id]);
+
+  const handleBookmarkClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const updatedBookmarks = toggleBookmark(event.id);
+    setIsBookmarked(updatedBookmarks.includes(event.id));
+  };
+
   const icons = [
     <Star size={16} className="text-yellow-500" />,
     <Heart size={16} className="text-red-500" />,
@@ -60,6 +78,20 @@ const EventCard = ({ event }) => {
     >
       {/* Action buttons */}
       <div className="absolute top-[5.5rem] right-3 z-[200] flex space-x-1.5">
+        <div
+          onClick={handleBookmarkClick}
+          className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow cursor-pointer hover:shadow-md border border-gray-200 group/bookmark relative"
+          title={isBookmarked ? "Remove Bookmark" : "Save Event"}
+        >
+          <Bookmark
+            size={14}
+            className={`transition-colors duration-300 ${
+              isBookmarked ? "text-red-500 fill-red-500" : "text-gray-600"
+            }`}
+          />
+        </div>
+        {/* ======================================= */}
+
         <ShareMenu
           shareData={eventSharingData}
           position="above"
