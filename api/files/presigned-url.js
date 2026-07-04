@@ -33,35 +33,48 @@ const ALLOWED_MIME_TYPES = [
   'text/csv',
 ];
 
-export default async function handler(req, res) {
+function validateRequest(req) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method not allowed' });
+    return { error: true, status: 405, message: 'Method not allowed' };
+  }
+
+  if (!req.headers.authorization) {
+    return { error: true, status: 401, message: 'Unauthorized' };
+  }
+
+  const { key, contentType, fileSize } = req.body;
+
+  if (!key || !contentType || !fileSize) {
+    return { error: true, status: 400, message: 'Missing required fields' };
+  }
+
+  if (fileSize > MAX_FILE_SIZE) {
+    return {
+      error: true,
+      status: 413,
+      message: `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB`,
+    };
+  }
+
+  if (!ALLOWED_MIME_TYPES.includes(contentType)) {
+    return { error: true, status: 415, message: 'Content type not allowed' };
+  }
+
+  if (key.includes('..') || key.startsWith('/')) {
+    return { error: true, status: 400, message: 'Invalid file key' };
+  }
+
+  return { error: false, key, contentType, fileSize };
+}
+
+export default async function handler(req, res) {
+  const validation = validateRequest(req);
+  if (validation.error) {
+    return res.status(validation.status).json({ message: validation.message });
   }
 
   try {
-    if (!req.headers.authorization) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
-
-    const { key, contentType, fileSize } = req.body;
-
-    if (!key || !contentType || !fileSize) {
-      return res.status(400).json({ message: 'Missing required fields' });
-    }
-
-    if (fileSize > MAX_FILE_SIZE) {
-      return res.status(413).json({
-        message: `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB`,
-      });
-    }
-
-    if (!ALLOWED_MIME_TYPES.includes(contentType)) {
-      return res.status(415).json({ message: 'Content type not allowed' });
-    }
-
-    if (key.includes('..') || key.startsWith('/')) {
-      return res.status(400).json({ message: 'Invalid file key' });
-    }
+    const { key, contentType } = validation;
 
     const command = new PutObjectCommand({
       Bucket: process.env.S3_BUCKET_NAME,
