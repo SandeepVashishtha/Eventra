@@ -104,6 +104,68 @@ This is an automated message. Please do not reply to this email.
   }
 
   /**
+   * Build the no-op result returned when there are no attendees to notify
+   */
+  buildEmptyNotificationResult() {
+    return {
+      success: true,
+      message: 'No attendees to notify',
+      notificationsSent: 0,
+      notificationsFailed: 0,
+      details: [],
+    };
+  }
+
+  /**
+   * Dispatch cancellation emails to every attendee and collect settled results
+   */
+  async dispatchCancellationEmails(event, attendees) {
+    return Promise.allSettled(
+      attendees.map(attendee =>
+        this.notifyAttendee(
+          attendee.email,
+          event,
+          { firstName: attendee.firstName, lastName: attendee.lastName }
+        )
+      )
+    );
+  }
+
+  /**
+   * Describe the outcome of a single settled notification for the details report
+   */
+  describeNotificationOutcome(settledResult, attendeeEmail) {
+    const wasFulfilled = settledResult.status === 'fulfilled';
+    const status = wasFulfilled
+      ? (settledResult.value.success ? 'sent' : 'failed')
+      : 'error';
+
+    return {
+      attendeeEmail,
+      status,
+      error: settledResult.reason?.message || settledResult.value?.error,
+    };
+  }
+
+  /**
+   * Summarize settled notification promises into a single results object
+   */
+  summarizeNotificationResults(notifications, attendees) {
+    const isSuccessful = (n) => n.status === 'fulfilled' && n.value.success;
+    const successful = notifications.filter(isSuccessful);
+    const failed = notifications.filter((n) => !isSuccessful(n));
+
+    return {
+      success: failed.length === 0,
+      notificationsSent: successful.length,
+      notificationsFailed: failed.length,
+      details: notifications.map((n, idx) =>
+        this.describeNotificationOutcome(n, attendees[idx]?.email)
+      ),
+    };
+  }
+
+  /**
    * Send cancellation notifications to all registered attendees
    * Should be called immediately after event status is set to CANCELLED
    */
@@ -112,40 +174,13 @@ This is an automated message. Please do not reply to this email.
       this.validateEventData(event);
 
       if (!attendees || attendees.length === 0) {
-        return {
-          success: true,
-          message: 'No attendees to notify',
-          notificationsSent: 0,
-          notificationsFailed: 0,
-          details: [],
-        };
+        return this.buildEmptyNotificationResult();
       }
 
       console.log(`Sending event cancellation notifications to ${attendees.length} attendees for event: ${event.title}`);
 
-      const notifications = await Promise.allSettled(
-        attendees.map(attendee =>
-          this.notifyAttendee(
-            attendee.email,
-            event,
-            { firstName: attendee.firstName, lastName: attendee.lastName }
-          )
-        )
-      );
-
-      const successful = notifications.filter(n => n.status === 'fulfilled' && n.value.success);
-      const failed = notifications.filter(n => n.status === 'rejected' || (n.status === 'fulfilled' && !n.value.success));
-
-      const results = {
-        success: failed.length === 0,
-        notificationsSent: successful.length,
-        notificationsFailed: failed.length,
-        details: notifications.map((n, idx) => ({
-          attendeeEmail: attendees[idx]?.email,
-          status: n.status === 'fulfilled' ? (n.value.success ? 'sent' : 'failed') : 'error',
-          error: n.reason?.message || n.value?.error,
-        })),
-      };
+      const notifications = await this.dispatchCancellationEmails(event, attendees);
+      const results = this.summarizeNotificationResults(notifications, attendees);
 
       if (results.notificationsFailed > 0) {
         console.warn(`Failed to notify ${results.notificationsFailed} attendees of event cancellation`);

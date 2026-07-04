@@ -6,55 +6,64 @@
  * event-related notifications with proper validation and error handling.
  */
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const VALID_NOTIFICATION_TYPES = [
+  'event_cancellation',
+  'registration_confirmation',
+  'reminder',
+  'refund_notice',
+];
+
+const isWrongMethod = (req) => req.method !== 'POST';
+const isMissingAuth = (req) => !req.headers.authorization;
+const isMissingFields = (req) => {
+  const { to, subject, body } = req.body;
+  return !to || !subject || !body;
+};
+const isEmailInvalid = (req) => !EMAIL_REGEX.test(req.body.to);
+const isTypeInvalid = (req) => req.body.type && !VALID_NOTIFICATION_TYPES.includes(req.body.type);
+
+const REQUEST_VALIDATORS = [
+  { test: isWrongMethod, status: 405, message: 'Method not allowed' },
+  { test: isMissingAuth, status: 401, message: 'Unauthorized' },
+  { test: isMissingFields, status: 400, message: 'Missing required fields: to, subject, body' },
+  { test: isEmailInvalid, status: 400, message: 'Invalid email address' },
+  {
+    test: isTypeInvalid,
+    status: 400,
+    message: `Invalid notification type. Must be one of: ${VALID_NOTIFICATION_TYPES.join(', ')}`,
+  },
+];
+
+function findValidationFailure(req) {
+  return REQUEST_VALIDATORS.find((validator) => validator.test(req)) || null;
+}
+
+async function dispatchNotificationEmail(req) {
+  const { to, subject, body, type, eventId, eventTitle } = req.body;
+
+  console.log(`Sending ${type || 'notification'} email to ${to} for event: ${eventTitle}`);
+
+  const emailService = getEmailService();
+  return emailService.sendEmail({
+    to,
+    subject,
+    body,
+    type,
+    eventId,
+    eventTitle,
+    sentAt: new Date().toISOString(),
+  });
+}
+
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method not allowed' });
+  const failure = findValidationFailure(req);
+  if (failure) {
+    return res.status(failure.status).json({ message: failure.message });
   }
 
   try {
-    // Verify authentication
-    if (!req.headers.authorization) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
-
-    const { to, subject, body, type, eventId, eventTitle, timestamp } = req.body;
-
-    // Validate required fields
-    if (!to || !subject || !body) {
-      return res.status(400).json({
-        message: 'Missing required fields: to, subject, body',
-      });
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(to)) {
-      return res.status(400).json({ message: 'Invalid email address' });
-    }
-
-    // Validate notification type
-    const validTypes = ['event_cancellation', 'registration_confirmation', 'reminder', 'refund_notice'];
-    if (type && !validTypes.includes(type)) {
-      return res.status(400).json({
-        message: `Invalid notification type. Must be one of: ${validTypes.join(', ')}`,
-      });
-    }
-
-    // Log notification attempt
-    console.log(`Sending ${type || 'notification'} email to ${to} for event: ${eventTitle}`);
-
-    // In production, this would integrate with email service (SendGrid, AWS SES, etc.)
-    // For now, we'll use a mock implementation that logs and returns success
-    const emailService = getEmailService();
-    const result = await emailService.sendEmail({
-      to,
-      subject,
-      body,
-      type,
-      eventId,
-      eventTitle,
-      sentAt: new Date().toISOString(),
-    });
+    const result = await dispatchNotificationEmail(req);
 
     if (!result.success) {
       return res.status(500).json({
@@ -67,8 +76,8 @@ export default async function handler(req, res) {
       success: true,
       message: 'Email sent successfully',
       messageId: result.messageId,
-      recipient: to,
-      type,
+      recipient: req.body.to,
+      type: req.body.type,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
