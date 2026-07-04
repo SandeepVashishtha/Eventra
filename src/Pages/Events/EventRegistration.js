@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo, useActionState } from "react";
+import { useState, useEffect, useCallback, useMemo, useActionState } from "react";
 import { useTranslation } from "react-i18next";
 // Calendar URL helpers — import from the timezone-aware utility instead of
 // using the old inline implementations (which were UTC-blind and hardcoded
@@ -45,11 +45,11 @@ import { pushToQueue } from "../../utils/offlineQueue";
 
 const MAX_NOTES_CHARS = 500;
 
-const isRequestCanceled = (error, signal) =>
-  signal?.aborted ||
-  error?.name === "AbortError" ||
-  error?.name === "CanceledError" ||
-  error?.code === "ERR_CANCELED";
+// const isRequestCanceled = (error, signal) =>
+//   signal?.aborted ||
+//   error?.name === "AbortError" ||
+//   error?.name === "CanceledError" ||
+//   error?.code === "ERR_CANCELED";
 
 const generateSecureUUID = () => {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
@@ -629,7 +629,7 @@ const EventRegistration = () => {
           </p>
 
           <div className="bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200/40 dark:border-slate-800/50 rounded-3xl p-5 mb-8 text-left">
-            <h3 title={event.title} className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-3 line-clamp-2 break-words min-w-0">
+            <h3 title={event.title} className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-3 line-clamp-2 wrap-break-word min-w-0">
               {event.title}
             </h3>
 
@@ -702,7 +702,7 @@ const EventRegistration = () => {
                   ? {}
                   : { download: event.title ? `${event.title}.ics` : 'event.ics' }
                 )}
-                className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
+                className="flex-1 min-w-30 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold rounded-2xl text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm hover:scale-[1.03] transition-all duration-300"
               >
                 <svg className="w-4 h-4 text-slate-600 dark:text-slate-400" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M19 3h-14c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14h-4v-4h-2l4-4 4 4h-2v4z" />
@@ -799,7 +799,7 @@ const EventRegistration = () => {
             />
             <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent"></div>
             <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-              <h1 title={event.title} className="text-3xl font-bold mb-2 break-words">{event.title}</h1>
+              <h1 title={event.title} className="text-3xl font-bold mb-2 wrap-break-word">{event.title}</h1>
               <div className="flex flex-wrap gap-4 text-sm">
                 <span className="flex items-center gap-1">
                   <Calendar className="w-4 h-4" />
