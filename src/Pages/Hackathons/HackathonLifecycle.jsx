@@ -149,8 +149,8 @@ const HackathonLifecycle = () => {
 
   // Toggle dynamic checklist tasks
   const toggleTask = (phaseId, taskId) => {
-    setPhasesList(
-      phasesList.map((phase) => {
+    setPhasesList((prev) =>
+      prev.map((phase) => {
         if (phase.id === phaseId) {
           return {
             ...phase,
@@ -167,12 +167,15 @@ const HackathonLifecycle = () => {
   // Change overall active phase (organizer simulation)
   const setGlobalActivePhase = (index) => {
     setActivePhaseIndex(index);
-    setPhasesList(
-      phasesList.map((phase, idx) => {
-        let status = "upcoming";
-        if (idx < index) status = "completed";
-        else if (idx === index) status = "active";
-        return { ...phase, status };
+    setPhasesList((prev) =>
+      prev.map((phase) => {
+        if (phase.id === selectedPhaseId) {
+          return {
+            ...phase,
+            tasks: [...phase.tasks, newTask],
+          };
+        }
+        return phase;
       })
     );
     setSelectedPhaseId(index + 1);
@@ -198,7 +201,7 @@ const HackathonLifecycle = () => {
               <Shield className="w-4 h-4" />
               Eventra Organizer Hub
             </div>
-            <h1 className="text-4xl md:text-5xl font-black tracking-tight mt-2 bg-clip-text text-transparent bg-gradient-to-r from-text to-primary">
+            <h1 className="text-4xl md:text-5xl font-black tracking-tight mt-2 bg-clip-text text-transparent bg-linear-to-r from-text to-primary">
               Hackathon Lifecycle
             </h1>
             <p className="text-text-light mt-2 max-w-xl text-base">
@@ -285,7 +288,7 @@ const HackathonLifecycle = () => {
                   )}
                 </div>
 
-                <div className={`inline-flex p-2.5 rounded-xl bg-gradient-to-br ${phase.color} text-white mb-4`}>
+                <div className={`inline-flex p-2.5 rounded-xl bg-linear-to-br ${phase.color} text-white mb-4`}>
                   <PhaseIcon className="w-5 h-5" />
                 </div>
 
@@ -322,7 +325,7 @@ const HackathonLifecycle = () => {
               {/* DESCRIPTION BOARD */}
               <div className="bg-card-bg border border-border rounded-3xl p-6 md:p-8 shadow-sm">
                 <div className="flex items-center gap-3">
-                  <div className={`p-3 rounded-xl bg-gradient-to-br ${selectedPhase.color} text-white`}>
+                  <div className={`p-3 rounded-xl bg-linear-to-br ${selectedPhase.color} text-white`}>
                     <selectedPhase.icon className="w-6 h-6" />
                   </div>
                   <div>
@@ -470,7 +473,7 @@ const HackathonLifecycle = () => {
               </div>
 
               {/* ACTION CALLOUT CARD */}
-              <div className="bg-gradient-to-br from-primary/30 to-secondary/20 rounded-3xl p-6 text-white border border-primary/20 shadow-lg relative overflow-hidden">
+              <div className="bg-linear-to-br from-primary/30 to-secondary/20 rounded-3xl p-6 text-white border border-primary/20 shadow-lg relative overflow-hidden">
                 <div className="absolute top-0 right-0 transform translate-x-8 -translate-y-8 opacity-10">
                   <Award className="w-48 h-48" />
                 </div>

@@ -1,11 +1,15 @@
-/* eslint-disable no-console */
-import { STORAGE_KEYS } from "./storageKeys";
-import { validators } from "./storageValidators";
+import { STORAGE_KEYS } from "./storageKeys.js";
+import { validators } from "./storageValidators.js";
+import { safeJsonParse } from "../../utils/safeJsonParse.js";
+import { logger } from "../logger.js";
 
 const DEFAULT_EXPIRY = 1000 * 60 * 60; // 1 hour
 
 export const storageManager = {
   set(key, value, expiry = DEFAULT_EXPIRY) {
+    if (typeof window === "undefined" || !window.localStorage) {
+      return;
+    }
     try {
       const payload = {
         value,
@@ -15,20 +19,23 @@ export const storageManager = {
 
       localStorage.setItem(key, JSON.stringify(payload));
     } catch (error) {
-      console.error(`Storage set error for ${key}:`, error);
+      logger.error(`Storage set error for ${key}:`, error);
     }
   },
 
   get(key, validator = null) {
+    if (typeof window === "undefined" || !window.localStorage) {
+      return null;
+    }
     try {
       const raw = localStorage.getItem(key);
       if (!raw) return null;
 
-      const parsed = JSON.parse(raw);
+      const parsed = safeJsonParse(raw, {});
 
       // 1. Check for expected structure
       if (!parsed || typeof parsed !== 'object' || !('value' in parsed)) {
-        console.warn(`[Storage] Invalid structure for key: ${key}`);
+        logger.warn(`[Storage] Invalid structure for key: ${key}`);
         localStorage.removeItem(key);
         return null;
       }
@@ -41,21 +48,17 @@ export const storageManager = {
 
       // 3. Optional validation
       if (validator && !validator(parsed.value)) {
-        console.warn(`[Storage] Validation failed for key: ${key}`);
+        logger.warn(`[Storage] Validation failed for key: ${key}`);
         localStorage.removeItem(key);
         return null;
       }
 
       return parsed.value;
     } catch (error) {
-      // 4. Detailed logging instead of silent deletion
-      console.error(`[Storage] Corruption error for key "${key}":`, error);
-      
-      // Only remove if it's a parse error (definitely corrupted)
-      if (error instanceof SyntaxError) {
-        console.warn(`[Storage] Removing corrupted key: ${key}`);
-        localStorage.removeItem(key);
-      }
+      // safeJsonParse never re-throws SyntaxError — only localStorage access
+      // errors (SecurityError, QuotaExceededError) reach here. Log and return
+      // null; do not attempt removeItem since the access error would repeat.
+      logger.error(`[Storage] Access error for key "${key}":`, error);
       return null;
     }
   },
@@ -64,7 +67,7 @@ export const storageManager = {
     try {
       localStorage.removeItem(key);
     } catch (error) {
-      console.error(`Storage remove error for ${key}:`, error);
+      logger.error(`Storage remove error for ${key}:`, error);
     }
   },
 
@@ -72,7 +75,7 @@ export const storageManager = {
     try {
       localStorage.clear();
     } catch (error) {
-      console.error("Storage clear error:", error);
+      logger.error("Storage clear error:", error);
     }
   },
 };

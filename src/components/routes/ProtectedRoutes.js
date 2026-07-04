@@ -7,6 +7,7 @@ import { ROLES, PERMISSIONS } from "../../config/roles";
 
 // 🔥 FIX: Removed all duplicate const declarations that were causing fatal SyntaxErrors
 const NotificationSettings = lazy(() => import("../../Pages/NotificationSettings"));
+const NotificationCenter = lazy(() => import("../../Pages/Notifications/NotificationCenter"));
 const EventCreation = lazy(() => import("../common/EventCreation/EventCreation"));
 const HostHackathon = lazy(() => import("../../Pages/Hackathons/HostHackathon"));
 const UserProfile = lazy(() => import("../user/UserProfile"));
@@ -23,6 +24,8 @@ const CollaborativeFloorPlan = lazy(() => import("../events/CollaborativeFloorPl
 const UIInventory = lazy(() => import("../admin/UIInventory"));
 const SponsorDashboard = lazy(() => import("../../Pages/Sponsors/SponsorDashboard"));
 const EventAnalyticsDashboard = lazy(() => import("../../Pages/Events/EventAnalyticsDashboard.jsx"));
+const EventSchedulerCalendar = lazy(() => import("../../Pages/Calendar/EventSchedulerCalendar.jsx"));
+const VirtualVenueWalkthrough = lazy(() => import("../../Pages/Events/VirtualVenueWalkthrough.jsx"));
 
 // 🔥 FIX: Added Suspense wrapper required for React.lazy() to prevent layout thrashing and crashes
 const withModuleBoundary = (children, boundaryName) => (
@@ -142,6 +145,15 @@ export const getProtectedRoutes = () => [
     }
   />,
   <Route
+    key="/notifications"
+    path="/notifications"
+    element={
+      <ProtectedRoute>
+        {withModuleBoundary(<NotificationCenter />, "Notification Center")}
+      </ProtectedRoute>
+    }
+  />,
+  <Route
     key="/feedback/survey-builder"
     path="/feedback/survey-builder"
     element={
@@ -161,6 +173,20 @@ export const getProtectedRoutes = () => [
     element={
       <ProtectedRoute requiredRoles={[ROLES.ADMIN]}>
         {withModuleBoundary(<UIInventory />, "UI Inventory")}
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/events/scheduler"
+    path="/events/scheduler"
+    element={
+      <ProtectedRoute
+        requiredPermissions={[
+          PERMISSIONS.CREATE_EVENT,
+          PERMISSIONS.HOST_HACKATHON,
+        ]}
+      >
+        {withModuleBoundary(<EventSchedulerCalendar />, "Event Scheduler")}
       </ProtectedRoute>
     }
   />,
@@ -188,6 +214,15 @@ export const getProtectedRoutes = () => [
     element={
       <ProtectedRoute>
         {withModuleBoundary(<EventAnalyticsDashboard />, "Event Analytics Dashboard")}
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/events/:eventId/virtual-venue-walkthrough"
+    path="/events/:eventId/virtual-venue-walkthrough"
+    element={
+      <ProtectedRoute>
+        {withModuleBoundary(<VirtualVenueWalkthrough />, "Virtual Venue Walkthrough")}
       </ProtectedRoute>
     }
   />,

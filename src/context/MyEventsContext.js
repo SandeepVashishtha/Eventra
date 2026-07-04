@@ -37,14 +37,18 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "./AuthContext";
-import { safeJsonParse } from "../utils/safeJsonParse";
-import { saveToOfflineCache, getFromOfflineCache } from "../utils/indexedDB";
+
+import { saveToOfflineCache, getFromOfflineCache, removeFromOfflineCache } from "../utils/indexedDB";
+import { getOrMigrateKey } from "../utils/storageKeyManager";
 
 const MyEventsContext = createContext(null);
 
 // Use a hashed or opaque key so the localStorage key itself does not expose
 // the userId (which is often the user's email address).
-const storageKey = (userId) => `my_events_${userId}`;
+const storageKey = (userId) => {
+  const legacyKey = `my_events_${userId}`;
+  return getOrMigrateKey("my_events", userId, legacyKey);
+};
 
 // ---------------------------------------------------------------------------
 // Minimal event summary — only non-PII fields needed to show the registered
@@ -78,8 +82,21 @@ const toPersistedRecord = (eventId, registeredAt, event, registrationId, qrToken
 
 const loadFromIDB = async (userId) => {
   if (!userId) return [];
-  const data = await getFromOfflineCache(storageKey(userId), []);
-  return Array.isArray(data) ? data : [];
+  const key = storageKey(userId);
+  const data = await getFromOfflineCache(key, null);
+  if (data !== null) {
+    return Array.isArray(data) ? data : [];
+  }
+  const legacyKey = `my_events_${userId}`;
+  if (key !== legacyKey) {
+    const legacyData = await getFromOfflineCache(legacyKey, null);
+    if (legacyData !== null) {
+      await saveToOfflineCache(key, legacyData);
+      await removeFromOfflineCache(legacyKey);
+      return Array.isArray(legacyData) ? legacyData : [];
+    }
+  }
+  return [];
 };
 
 const saveToIDB = async (userId, records) => {
@@ -150,13 +167,19 @@ export const MyEventsProvider = ({ children }) => {
    */
   const addRegistration = useCallback((event, formData = {}, registrationId = null, qrToken = null) => {
     setMyEvents((prev) => {
-      if (prev.some((r) => r.eventId === event.id)) return prev;
+      const alreadyExists = prev.some(
+        (r) =>
+          r.eventId === event.id ||
+        (registrationId && r.registrationId && r.registrationId === registrationId)
+      );
+
+      if (alreadyExists) return prev;
       return [
         ...prev,
         {
           eventId: event.id,
           registeredAt: new Date().toISOString(),
-          registrationId: registrationId || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `reg-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`),
+          registrationId: registrationId || null,
           qrToken: qrToken || "",
           // formData and event are kept in memory for this session so the
           // success screen can display them, but they are NOT written to
@@ -174,10 +197,6 @@ export const MyEventsProvider = ({ children }) => {
    */
   const removeRegistration = useCallback((eventId) => {
     setMyEvents((prev) => prev.filter((r) => r.eventId !== eventId));
-    // Trigger automatic promotion from the waitlist
-    import("../utils/waitlistUtils.js").then(({ promoteNextUser }) => {
-      promoteNextUser(eventId);
-    }).catch(() => {});
   }, []);
 
   /**

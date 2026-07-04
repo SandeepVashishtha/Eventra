@@ -30,6 +30,29 @@ export const Default = {
   },
 };
 
+export const LoggedOut = {
+  args: {
+    cursorEnabled: false,
+    toggleCursor: () => {},
+  },
+};
+
+export const LoggedIn = {
+  args: {
+    cursorEnabled: false,
+    toggleCursor: () => {},
+  },
+  parameters: {
+    authContext: {
+      isAuthenticated: true,
+      user: {
+        name: "John Doe",
+        avatar: "/avatar.png",
+      },
+    },
+  },
+};
+
 export const CursorEnabled = {
   args: {
     cursorEnabled: true,
