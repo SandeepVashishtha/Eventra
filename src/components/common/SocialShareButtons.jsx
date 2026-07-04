@@ -1,7 +1,7 @@
 import { useMemo, useCallback } from "react";
 import { Copy, Facebook, Linkedin, Mail, MessageCircle, Send, Twitter } from "lucide-react";
 import { toast } from "react-toastify";
-import { isValidShareUrl } from "../../utils/shareUtils";
+import { copyToClipboard, isValidShareUrl } from "../../utils/shareUtils";
 
 const SocialShareButtons = ({ event, layout = "grid" }) => {
   const shareData = useMemo(() => {
@@ -29,12 +29,12 @@ const SocialShareButtons = ({ event, layout = "grid" }) => {
     if (!shareData?.shareUrl) return;
 
     try {
-      if (!navigator?.clipboard) {
-        throw new Error("Clipboard API unavailable.");
+      const copied = await copyToClipboard(shareData.shareUrl);
+      if (copied) {
+        toast.success("Link copied to clipboard");
+      } else {
+        toast.error("Could not copy the link");
       }
-
-      await navigator.clipboard.writeText(shareData.shareUrl);
-      toast.success("Link copied to clipboard");
     } catch (error) {
       console.error("Failed to copy share link:", error);
       toast.error("Could not copy the link");
