@@ -69,6 +69,9 @@ export const exportAttendeesToCSV = (attendees, filename = "event-attendees.csv"
   if (!attendees || attendees.length === 0) {
     return;
   }
+  if (typeof window === "undefined" || typeof document === "undefined") {
+    return;
+  }
 
   // Sanitize the filename: strip OS reserved characters and path separators.
   // Fall back to a safe default if sanitization produces an empty string.
@@ -130,6 +133,9 @@ export const exportSurveyToCSV = (questions, responses, surveyTitle = "Survey") 
   if (!questions || questions.length === 0 || !responses || responses.length === 0) {
     return;
   }
+  if (typeof window === "undefined" || typeof document === "undefined") {
+    return;
+  }
 
   // Sanitize the filename to strip OS path separators and reserved chars
   const sanitizedTitle = surveyTitle.replace(/[/\\:*?"<>|]/g, "_").trim() || "Survey";
@@ -177,6 +183,9 @@ export const exportSurveyToCSV = (questions, responses, surveyTitle = "Survey") 
  */
 export const exportEventsToCSV = (events, filename = "eventra-events.csv") => {
   if (!events || events.length === 0) {
+    return;
+  }
+  if (typeof window === "undefined" || typeof document === "undefined") {
     return;
   }
 
