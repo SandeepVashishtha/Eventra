@@ -65,21 +65,21 @@ const QRTicket = forwardRef(function QRTicket({ ticket }, ref) {
     <div
       ref={ref}
       // Removed anti-pattern select-none to allow users to copy their ticket details
-      className="w-[340px] print:w-full print:max-w-md print:mx-auto"
+      className="w-[340px] print:mx-auto print:w-full print:max-w-md"
       style={{ fontFamily: "'Syne', 'Inter', sans-serif" }}
     >
       {/* ── Top body ── */}
       <div
-        className="relative overflow-hidden rounded-t-2xl px-5 pt-5 pb-4 print:bg-white print:border-t print:border-l print:border-r print:border-gray-300 print:rounded-t-xl"
+        className="relative overflow-hidden rounded-t-2xl px-5 pt-5 pb-4 print:rounded-t-xl print:border-t print:border-r print:border-l print:border-gray-300 print:bg-white"
         style={{ background: "#1a1a2e" }}
       >
         {/* Decorative blobs (Hidden on print to save ink) */}
         <div
-          className="absolute -top-5 -right-5 w-28 h-28 rounded-full pointer-events-none print:hidden"
+          className="pointer-events-none absolute -top-5 -right-5 h-28 w-28 rounded-full print:hidden"
           style={{ background: config.accentLight }}
         />
         <div
-          className="absolute bottom-2 -left-8 w-20 h-20 rounded-full pointer-events-none print:hidden"
+          className="pointer-events-none absolute bottom-2 -left-8 h-20 w-20 rounded-full print:hidden"
           style={{ background: config.accentLight, opacity: 0.6 }}
         />
 
@@ -92,17 +92,17 @@ const QRTicket = forwardRef(function QRTicket({ ticket }, ref) {
 
         {/* Event name */}
         <h2
-          className="text-white print:text-black text-xl font-extrabold leading-tight mb-1 z-10 relative"
+          className="relative z-10 mb-1 text-xl leading-tight font-extrabold text-white print:text-black"
           style={{ letterSpacing: "-0.3px" }}
         >
           {eventName}
         </h2>
-        <p className="text-white/40 print:text-gray-500 text-xs mb-4 z-10 relative">
+        <p className="relative z-10 mb-4 text-xs text-white/40 print:text-gray-500">
           {eventOrganizer}
         </p>
 
         {/* Meta grid */}
-        <div className="grid grid-cols-2 gap-y-3 mb-4 z-10 relative">
+        <div className="relative z-10 mb-4 grid grid-cols-2 gap-y-3">
           {[
             { label: "Date", value: date },
             { label: "Time", value: time },
@@ -110,32 +110,32 @@ const QRTicket = forwardRef(function QRTicket({ ticket }, ref) {
             { label: "Seat", value: seat },
           ].map(({ label, value }) => (
             <div key={label}>
-              <p className="text-[9px] uppercase tracking-widest text-white/35 print:text-gray-400 mb-0.5">
+              <p className="mb-0.5 text-[9px] tracking-widest text-white/35 uppercase print:text-gray-400">
                 {label}
               </p>
-              <p className="text-white print:text-gray-900 text-[13px] font-medium">{value}</p>
+              <p className="text-[13px] font-medium text-white print:text-gray-900">{value}</p>
             </div>
           ))}
         </div>
 
         {/* Tear line */}
-        <div className="flex items-center -mx-5 print:mx-0">
-          <div className="w-4 h-4 rounded-full bg-gray-900 print:bg-white print:border print:border-gray-300 flex-shrink-0" />
+        <div className="-mx-5 flex items-center print:mx-0">
+          <div className="h-4 w-4 flex-shrink-0 rounded-full bg-gray-900 print:border print:border-gray-300 print:bg-white" />
           <div
             className="flex-1 border-t border-dashed print:border-gray-300"
             style={{ borderColor: "rgba(255,255,255,0.12)" }}
           />
-          <div className="w-4 h-4 rounded-full bg-gray-900 print:bg-white print:border print:border-gray-300 flex-shrink-0" />
+          <div className="h-4 w-4 flex-shrink-0 rounded-full bg-gray-900 print:border print:border-gray-300 print:bg-white" />
         </div>
       </div>
 
       {/* ── Bottom foot ── */}
       <div
-        className="flex items-center gap-4 rounded-b-2xl px-5 py-4 print:bg-white print:border-b print:border-l print:border-r print:border-gray-300 print:rounded-b-xl"
+        className="flex items-center gap-4 rounded-b-2xl px-5 py-4 print:rounded-b-xl print:border-r print:border-b print:border-l print:border-gray-300 print:bg-white"
         style={{ background: "#12112a" }}
       >
         {/* QR code */}
-        <div className="bg-white rounded-lg p-1.5 flex-shrink-0 print:border print:border-gray-200">
+        <div className="flex-shrink-0 rounded-lg bg-white p-1.5 print:border print:border-gray-200">
           <QRCode
             value={qrValue}
             size={72}
@@ -147,13 +147,13 @@ const QRTicket = forwardRef(function QRTicket({ ticket }, ref) {
         </div>
 
         {/* Holder info */}
-        <div className="flex-1 min-w-0">
-          <p className="text-[9px] uppercase tracking-widest text-white/35 print:text-gray-400 mb-0.5">
+        <div className="min-w-0 flex-1">
+          <p className="mb-0.5 text-[9px] tracking-widest text-white/35 uppercase print:text-gray-400">
             Ticket Holder
           </p>
-          <p className="text-white print:text-black text-sm font-bold truncate">{holderName}</p>
+          <p className="truncate text-sm font-bold text-white print:text-black">{holderName}</p>
           <p
-            className="text-[10px] mt-0.5 truncate print:text-gray-600"
+            className="mt-0.5 truncate text-[10px] print:text-gray-600"
             style={{
               fontFamily: "'DM Mono', 'Courier New', monospace",
               color: "rgba(255,255,255,0.3)",

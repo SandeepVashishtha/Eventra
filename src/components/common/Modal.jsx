@@ -53,7 +53,7 @@ const Modal = ({
     >
       {/* Overlay */}
       <div
-        className="absolute inset-0 bg-black bg-opacity-50"
+        className="bg-opacity-50 absolute inset-0 bg-black"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -82,7 +82,7 @@ const Modal = ({
                   type="button"
                   onClick={onClose}
                   aria-label="Close modal"
-                  className="ml-auto rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+                  className="ml-auto rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:hover:bg-gray-700 dark:hover:text-gray-300"
                 >
                   {/* × icon */}
                   <svg

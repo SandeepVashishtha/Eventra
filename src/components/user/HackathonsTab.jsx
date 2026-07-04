@@ -13,7 +13,7 @@ const HackathonsTab = ({ hackathons, loading, fadeUp }) => (
     </div>
     
     {!loading && hackathons.length === 0 ? (
-      <div className="w-full mt-4">
+      <div className="mt-4 w-full">
         <SearchEmptyState
           query=""
           itemLabel="hackathons"

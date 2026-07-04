@@ -26,12 +26,12 @@ const RecommendedEvents = () => {
 
   return (
 
-    <section className="bg-bg text-text py-12 border-b border-border">
+    <section className="border-b border-border bg-bg py-12 text-text">
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
         {/* Heading */}
-        <div className="flex justify-between items-center mb-8">
+        <div className="mb-8 flex items-center justify-between">
 
           <div>
 
@@ -41,7 +41,7 @@ const RecommendedEvents = () => {
 
             </h2>
 
-            <p className="text-text-light mt-2">
+            <p className="mt-2 text-text-light">
 
               Personalized hackathons based on your interests, activity, and recommendation score.
 
@@ -54,35 +54,18 @@ const RecommendedEvents = () => {
         {/* Recommendations */}
         {recommendedHackathons.length > 0 ? (
 
-          <div className="grid gap-10 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-3">
 
             {recommendedHackathons.map((hackathon, index) => (
 
               <div
                 key={hackathon.id}
-                className="
-                  relative
-                  rounded-2xl
-                  overflow-hidden
-                "
+                className="relative overflow-hidden rounded-2xl"
               >
 
                 {/* Recommendation Score Badge */}
                 <div
-                  className="
-                    absolute
-                    top-4
-                    right-4
-                    z-20
-                    bg-primary
-                    text-white
-                    text-xs
-                    font-bold
-                    px-3
-                    py-1
-                    rounded-full
-                    shadow-lg
-                  "
+                  className="absolute top-4 right-4 z-20 rounded-full bg-primary px-3 py-1 text-xs font-bold text-white shadow-lg"
                 >
                   {hackathon.recommendationScore}% Match
                 </div>
@@ -96,19 +79,7 @@ const RecommendedEvents = () => {
 
                 {/* Recommendation Reasons */}
                 <div
-                  className="
-                    px-4
-                    pb-4
-                    pt-2
-                    flex
-                    flex-wrap
-                    gap-2
-                    bg-card-bg
-                    border-x
-                    border-b
-                    border-border
-                    rounded-b-2xl
-                  "
+                  className="flex flex-wrap gap-2 rounded-b-2xl border-x border-b border-border bg-card-bg px-4 pt-2 pb-4"
                 >
 
                   {hackathon.recommendationReasons?.map(
@@ -116,15 +87,7 @@ const RecommendedEvents = () => {
 
                       <span
                         key={reasonIndex}
-                        className="
-                          text-xs
-                          bg-primary/10
-                          text-primary
-                          px-3
-                          py-1
-                          rounded-full
-                          font-medium
-                        "
+                        className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary"
                       >
                         {reason}
                       </span>
@@ -142,7 +105,7 @@ const RecommendedEvents = () => {
 
         ) : (
 
-          <div className="text-center py-10">
+          <div className="py-10 text-center">
 
             <p className="text-text-light">
 

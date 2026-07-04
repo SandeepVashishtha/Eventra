@@ -386,22 +386,22 @@ export default function TicketScanner() {
   };
 
   return (
-    <div className="ts-root bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-md transition-all duration-300">
+    <div className="ts-root rounded-3xl border border-slate-200 bg-white p-6 shadow-md transition-all duration-300 dark:border-slate-800 dark:bg-slate-900">
       {/* Network status banner */}
       {!isOnline && (
-        <div className="mb-4 flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 text-xs font-bold">
+        <div className="mb-4 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-bold text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-400">
           <WifiOff size={14} />
           You are offline. Check-ins will be queued and synced when connection resumes.
         </div>
       )}
 
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 dark:border-slate-800 pb-5 mb-6 gap-4">
+      <div className="mb-6 flex flex-col gap-4 border-b border-slate-100 pb-5 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800">
         <div>
-          <h2 className="text-xl font-black text-slate-850 dark:text-slate-100 tracking-tight flex items-center gap-2">
-            <Camera className="w-5 h-5 text-indigo-500 animate-pulse" />
+          <h2 className="text-slate-850 flex items-center gap-2 text-xl font-black tracking-tight dark:text-slate-100">
+            <Camera className="h-5 w-5 animate-pulse text-indigo-500" />
             Active Door Pass Scanner
           </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             Access device camera to scan dynamic attendee QR codes instantly or enter ticket codes manually.
           </p>
         </div>
@@ -412,7 +412,7 @@ export default function TicketScanner() {
           ) : (
             <WifiOff size={14} className="text-amber-500" />
           )}
-          <div className="flex bg-slate-100 dark:bg-slate-950 p-1 rounded-xl self-start sm:self-auto">
+          <div className="flex self-start rounded-xl bg-slate-100 p-1 sm:self-auto dark:bg-slate-950">
             <button
               onClick={() => { setManualMode(false); setScanResult(null); startScanner(selectedCameraId); }}
               aria-pressed={!manualMode}
@@ -440,17 +440,17 @@ export default function TicketScanner() {
       </div>
 
       {/* Event Selection and Statistics Dashboard */}
-      <div className="mb-6 bg-slate-50 dark:bg-slate-950/20 border border-slate-150 dark:border-slate-850/60 rounded-2xl p-5">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-          <div className="flex-1 max-w-md">
-            <label htmlFor="active-event-select" className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1.5">
+      <div className="border-slate-150 dark:border-slate-850/60 mb-6 rounded-2xl border bg-slate-50 p-5 dark:bg-slate-950/20">
+        <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="max-w-md flex-1">
+            <label htmlFor="active-event-select" className="mb-1.5 block text-[10px] font-bold tracking-widest text-slate-400 uppercase dark:text-slate-500">
               Select Active Event for Checking In
             </label>
             <select
               id="active-event-select"
               value={selectedEventId}
               onChange={(e) => setSelectedEventId(e.target.value)}
-              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-350 focus:outline-none focus:border-indigo-500"
+              className="dark:text-slate-350 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 focus:border-indigo-500 focus:outline-none dark:border-slate-800 dark:bg-slate-900"
             >
               {events.length === 0 ? (
                 <option value="">No events available</option>
@@ -467,7 +467,7 @@ export default function TicketScanner() {
             <button
               onClick={() => fetchStats(selectedEventId)}
               disabled={statsLoading}
-              className="self-end md:self-auto px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-900 text-xs font-bold text-slate-650 dark:text-slate-400 transition flex items-center gap-1.5 disabled:opacity-50"
+              className="text-slate-650 flex items-center gap-1.5 self-end rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold transition hover:bg-slate-100 disabled:opacity-50 md:self-auto dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-900"
             >
               <RefreshCw size={12} className={statsLoading ? "animate-spin" : ""} />
               Refresh Stats
@@ -477,70 +477,70 @@ export default function TicketScanner() {
 
         {selectedEventId && stats ? (
           <div className="space-y-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-850 p-4 rounded-xl shadow-sm">
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Total Registrations</span>
-                <span className="text-xl font-black text-slate-800 dark:text-white mt-1 block">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              <div className="border-slate-150 dark:border-slate-850 rounded-xl border bg-white p-4 shadow-sm dark:bg-slate-900">
+                <span className="block text-[9px] font-bold tracking-wider text-slate-400 uppercase">Total Registrations</span>
+                <span className="mt-1 block text-xl font-black text-slate-800 dark:text-white">
                   {statsLoading ? "..." : stats.totalRegistrations}
                 </span>
               </div>
-              <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-850 p-4 rounded-xl shadow-sm">
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Checked In</span>
-                <span className="text-xl font-black text-emerald-600 dark:text-emerald-450 mt-1 block">
+              <div className="border-slate-150 dark:border-slate-850 rounded-xl border bg-white p-4 shadow-sm dark:bg-slate-900">
+                <span className="block text-[9px] font-bold tracking-wider text-slate-400 uppercase">Checked In</span>
+                <span className="dark:text-emerald-450 mt-1 block text-xl font-black text-emerald-600">
                   {statsLoading ? "..." : stats.checkedInAttendees}
                 </span>
               </div>
-              <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-850 p-4 rounded-xl shadow-sm">
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Remaining</span>
-                <span className="text-xl font-black text-indigo-600 dark:text-indigo-400 mt-1 block">
+              <div className="border-slate-150 dark:border-slate-850 rounded-xl border bg-white p-4 shadow-sm dark:bg-slate-900">
+                <span className="block text-[9px] font-bold tracking-wider text-slate-400 uppercase">Remaining</span>
+                <span className="mt-1 block text-xl font-black text-indigo-600 dark:text-indigo-400">
                   {statsLoading ? "..." : stats.remainingAttendees}
                 </span>
               </div>
-              <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-850 p-4 rounded-xl shadow-sm">
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Attendance Rate</span>
-                <span className="text-xl font-black text-slate-800 dark:text-white mt-1 block">
+              <div className="border-slate-150 dark:border-slate-850 rounded-xl border bg-white p-4 shadow-sm dark:bg-slate-900">
+                <span className="block text-[9px] font-bold tracking-wider text-slate-400 uppercase">Attendance Rate</span>
+                <span className="mt-1 block text-xl font-black text-slate-800 dark:text-white">
                   {statsLoading ? "..." : `${stats.attendancePercentage}%`}
                 </span>
               </div>
             </div>
             {/* Visual Progress Bar */}
             <div className="space-y-1.5">
-              <div className="flex justify-between items-center text-[10px] font-bold text-slate-400">
+              <div className="flex items-center justify-between text-[10px] font-bold text-slate-400">
                 <span>Check-in Progress</span>
                 <span>{stats.checkedInAttendees} of {stats.totalRegistrations} Checked In</span>
               </div>
-              <div className="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
                 <div
-                  className="h-full bg-indigo-500 rounded-full transition-all duration-500"
+                  className="h-full rounded-full bg-indigo-500 transition-all duration-500"
                   style={{ width: `${stats.attendancePercentage}%` }}
                 />
               </div>
             </div>
           </div>
         ) : selectedEventId ? (
-          <div className="text-center py-6 text-slate-400 dark:text-slate-500">
-            <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 opacity-50" />
+          <div className="py-6 text-center text-slate-400 dark:text-slate-500">
+            <RefreshCw className="mx-auto mb-2 h-6 w-6 animate-spin opacity-50" />
             <p className="text-xs font-semibold">Loading real-time event stats...</p>
           </div>
         ) : (
-          <div className="text-center py-6 text-slate-400 dark:text-slate-500">
+          <div className="py-6 text-center text-slate-400 dark:text-slate-500">
             <p className="text-xs font-semibold">Please select an event to view statistics</p>
           </div>
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-        <div className="lg:col-span-3 flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950/40 border border-slate-150 dark:border-slate-850 rounded-2xl p-6 min-h-[380px] relative overflow-hidden">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
+        <div className="border-slate-150 dark:border-slate-850 relative flex min-h-[380px] flex-col items-center justify-center overflow-hidden rounded-2xl border bg-slate-50 p-6 lg:col-span-3 dark:bg-slate-950/40">
           {!manualMode ? (
-            <div className="w-full flex flex-col items-center gap-4">
+            <div className="flex w-full flex-col items-center gap-4">
               {devices.length > 1 && (
-                <div className="w-full max-w-sm flex items-center gap-2 mb-2">
-                  <label htmlFor="camera-select" className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest min-w-[70px]">Source:</label>
+                <div className="mb-2 flex w-full max-w-sm items-center gap-2">
+                  <label htmlFor="camera-select" className="min-w-[70px] text-[10px] font-bold tracking-widest text-slate-400 uppercase dark:text-slate-500">Source:</label>
                   <select
                     id="camera-select"
                     value={selectedCameraId}
                     onChange={handleCameraChange}
-                    className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-700 dark:text-slate-300 font-semibold focus:outline-none focus:border-indigo-500"
+                    className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 focus:border-indigo-500 focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
                   >
                     {devices.map((device) => (
                       <option key={device.id} value={device.id}>{device.label || `Camera ${devices.indexOf(device) + 1}`}</option>
@@ -549,71 +549,71 @@ export default function TicketScanner() {
                 </div>
               )}
 
-              <div className="relative w-full max-w-md aspect-square bg-slate-900 rounded-2xl overflow-hidden border-2 border-dashed border-slate-700/80 dark:border-slate-800/80 flex items-center justify-center">
-                <div id={readerId} className="w-full h-full object-cover" />
+              <div className="relative flex aspect-square w-full max-w-md items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-slate-700/80 bg-slate-900 dark:border-slate-800/80">
+                <div id={readerId} className="h-full w-full object-cover" />
 
                 {scannerStatus === "scanning" && (
-                  <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                    <div className="w-2/3 h-2/3 border-2 border-indigo-500 rounded-2xl relative animate-pulse flex items-center justify-center bg-transparent">
-                      <span className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-indigo-500 -mt-1 -ml-1 rounded-tl-lg" />
-                      <span className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-indigo-500 -mt-1 -mr-1 rounded-tr-lg" />
-                      <span className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-indigo-500 -mb-1 -ml-1 rounded-bl-lg" />
-                      <span className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-indigo-500 -mb-1 -mr-1 rounded-br-lg" />
-                      <div className="absolute w-full h-[3px] bg-rose-500/80 shadow-[0_0_10px_#f43f5e] rounded-full animate-bounce" style={{ top: "10%" }} />
+                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                    <div className="relative flex h-2/3 w-2/3 animate-pulse items-center justify-center rounded-2xl border-2 border-indigo-500 bg-transparent">
+                      <span className="absolute top-0 left-0 -mt-1 -ml-1 h-6 w-6 rounded-tl-lg border-t-4 border-l-4 border-indigo-500" />
+                      <span className="absolute top-0 right-0 -mt-1 -mr-1 h-6 w-6 rounded-tr-lg border-t-4 border-r-4 border-indigo-500" />
+                      <span className="absolute bottom-0 left-0 -mb-1 -ml-1 h-6 w-6 rounded-bl-lg border-b-4 border-l-4 border-indigo-500" />
+                      <span className="absolute right-0 bottom-0 -mr-1 -mb-1 h-6 w-6 rounded-br-lg border-r-4 border-b-4 border-indigo-500" />
+                      <div className="absolute h-[3px] w-full animate-bounce rounded-full bg-rose-500/80 shadow-[0_0_10px_#f43f5e]" style={{ top: "10%" }} />
                     </div>
                   </div>
                 )}
 
                 {scannerStatus === "idle" && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-950/80 text-white p-4 text-center">
-                    <CameraOff className="w-10 h-10 text-slate-500" />
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-950/80 p-4 text-center text-white">
+                    <CameraOff className="h-10 w-10 text-slate-500" />
                     <h4 className="text-sm font-bold">Scanner is currently inactive</h4>
-                    <p className="text-[10px] text-slate-400 max-w-xs leading-relaxed">Make sure Eventra has browser camera access permissions.</p>
-                    <button onClick={() => startScanner(selectedCameraId)} className="mt-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white transition-all shadow-md">Start Camera Stream</button>
+                    <p className="max-w-xs text-[10px] leading-relaxed text-slate-400">Make sure Eventra has browser camera access permissions.</p>
+                    <button onClick={() => startScanner(selectedCameraId)} className="mt-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-md transition-all hover:bg-indigo-700">Start Camera Stream</button>
                   </div>
                 )}
 
                 {scannerStatus === "starting" && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-slate-950 text-white">
-                    <RefreshCw className="w-8 h-8 text-indigo-500 animate-spin" />
+                    <RefreshCw className="h-8 w-8 animate-spin text-indigo-500" />
                     <span className="text-xs font-bold text-slate-400">Waking up lens hardware...</span>
                   </div>
                 )}
 
                 {scannerStatus === "stopped" && !scanResult && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-950/90 text-white">
-                    <CameraOff className="w-8 h-8 text-amber-500 animate-bounce" />
+                    <CameraOff className="h-8 w-8 animate-bounce text-amber-500" />
                     <span className="text-xs font-bold text-slate-300">Camera paused / feed stopped</span>
-                    <button onClick={() => startScanner(selectedCameraId)} className="px-4 py-2 rounded-xl bg-indigo-600 text-xs font-bold">Resume Scan</button>
+                    <button onClick={() => startScanner(selectedCameraId)} className="rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold">Resume Scan</button>
                   </div>
                 )}
               </div>
 
               {scannerStatus === "scanning" && (
-                <button onClick={stopScanner} className="px-5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-900 text-xs font-bold text-slate-650 dark:text-slate-400 transition" aria-label="Pause scanner">Pause Scanner</button>
+                <button onClick={stopScanner} className="text-slate-650 rounded-xl border border-slate-300 px-5 py-2.5 text-xs font-bold transition hover:bg-slate-100 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-900" aria-label="Pause scanner">Pause Scanner</button>
               )}
             </div>
           ) : (
-            <form onSubmit={handleManualCheckIn} className="w-full max-w-sm flex flex-col gap-5 py-2">
-              <div className="text-center mb-2">
-                <Keyboard className="w-10 h-10 text-indigo-500 mx-auto mb-2 animate-bounce" />
+            <form onSubmit={handleManualCheckIn} className="flex w-full max-w-sm flex-col gap-5 py-2">
+              <div className="mb-2 text-center">
+                <Keyboard className="mx-auto mb-2 h-10 w-10 animate-bounce text-indigo-500" />
                 <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">Manual Check-In Fallback</h4>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-normal max-w-xs mx-auto">Type in the ticket credentials directly. Use this when the guest&apos;s device screen is cracked or camera access is down.</p>
+                <p className="mx-auto max-w-xs text-[10px] leading-normal text-slate-500 dark:text-slate-400">Type in the ticket credentials directly. Use this when the guest&apos;s device screen is cracked or camera access is down.</p>
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Attendee Name</label>
-                <input type="text" placeholder="e.g. Priyanshu Ranjan" value={manualAttendeeName} onChange={(e) => setManualAttendeeName(e.target.value)} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50" required />
+                <label className="block text-[10px] font-bold tracking-wider text-slate-400 uppercase dark:text-slate-500">Attendee Name</label>
+                <input type="text" placeholder="e.g. Priyanshu Ranjan" value={manualAttendeeName} onChange={(e) => setManualAttendeeName(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100" required />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Ticket Code</label>
-                <input type="text" placeholder="e.g. GLO-PRI-8F39A" value={manualTicketId} onChange={(e) => setManualTicketId(e.target.value)} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-800 dark:text-slate-100 uppercase focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50" required />
+                <label className="block text-[10px] font-bold tracking-wider text-slate-400 uppercase dark:text-slate-500">Ticket Code</label>
+                <input type="text" placeholder="e.g. GLO-PRI-8F39A" value={manualTicketId} onChange={(e) => setManualTicketId(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-800 uppercase focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100" required />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Event Destination</label>
-                <select value={manualEventId} onChange={handleEventSelect} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-800 dark:text-slate-100 font-semibold focus:outline-none focus:border-indigo-500">
+                <label className="block text-[10px] font-bold tracking-wider text-slate-400 uppercase dark:text-slate-500">Event Destination</label>
+                <select value={manualEventId} onChange={handleEventSelect} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 focus:border-indigo-500 focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
                   {events.length === 0 ? (
                     <option value="">No events available</option>
                   ) : (
@@ -624,106 +624,106 @@ export default function TicketScanner() {
                 </select>
               </div>
 
-              <button type="submit" className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white shadow-md hover:shadow-lg transition-all rounded-xl mt-2 flex items-center justify-center gap-1.5" aria-label="Find and verify check-in">
-                <Search className="w-3.5 h-3.5" />
+              <button type="submit" className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl bg-indigo-600 py-3 text-xs font-bold text-white shadow-md transition-all hover:bg-indigo-700 hover:shadow-lg" aria-label="Find and verify check-in">
+                <Search className="h-3.5 w-3.5" />
                 Find & Verify Check-In
               </button>
             </form>
           )}
 
           {scanResult && (
-            <div className="absolute inset-0 bg-slate-950/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center animate-fadeIn z-20">
+            <div className="animate-fadeIn absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-950/95 p-6 text-center backdrop-blur-md">
               {scanResult.status === "verified" && (
                 <>
-                  <CheckCircle2 className="w-16 h-16 text-emerald-500 animate-bounce mb-3" />
-                  <span className="text-[10px] font-black tracking-widest uppercase bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full mb-2">Verified Entry</span>
+                  <CheckCircle2 className="mb-3 h-16 w-16 animate-bounce text-emerald-500" />
+                  <span className="mb-2 rounded-full bg-emerald-500/20 px-3 py-1 text-[10px] font-black tracking-widest text-emerald-400 uppercase">Verified Entry</span>
                 </>
               )}
               {scanResult.status === "flagged" && (
                 <>
-                  <XCircle className="w-16 h-16 text-rose-500 animate-bounce mb-3" />
-                  <span className="text-[10px] font-black tracking-widest uppercase bg-rose-500/20 text-rose-455 px-3 py-1 rounded-full mb-2">Flagged / Security Alert</span>
+                  <XCircle className="mb-3 h-16 w-16 animate-bounce text-rose-500" />
+                  <span className="text-rose-455 mb-2 rounded-full bg-rose-500/20 px-3 py-1 text-[10px] font-black tracking-widest uppercase">Flagged / Security Alert</span>
                 </>
               )}
               {scanResult.status === "duplicate" && (
                 <>
-                  <AlertTriangle className="w-16 h-16 text-amber-500 animate-bounce mb-3" />
-                  <span className="text-[10px] font-black tracking-widest uppercase bg-amber-500/20 text-amber-400 px-3 py-1 rounded-full mb-2">Duplicate Attempt</span>
+                  <AlertTriangle className="mb-3 h-16 w-16 animate-bounce text-amber-500" />
+                  <span className="mb-2 rounded-full bg-amber-500/20 px-3 py-1 text-[10px] font-black tracking-widest text-amber-400 uppercase">Duplicate Attempt</span>
                 </>
               )}
 
-              <h3 className="text-lg font-black text-white max-w-xs">{scanResult.message}</h3>
+              <h3 className="max-w-xs text-lg font-black text-white">{scanResult.message}</h3>
 
               {scanResult.data && (
-                <div className="my-5 p-4 border border-white/10 bg-white/5 rounded-2xl w-full max-w-sm text-left space-y-2.5">
+                <div className="my-5 w-full max-w-sm space-y-2.5 rounded-2xl border border-white/10 bg-white/5 p-4 text-left">
                   <div className="flex items-center gap-2">
-                    <User className="w-3.5 h-3.5 text-indigo-400" />
+                    <User className="h-3.5 w-3.5 text-indigo-400" />
                     <div>
-                      <span className="text-[9px] font-bold text-slate-400 uppercase block leading-none">ATTENDEE</span>
+                      <span className="block text-[9px] leading-none font-bold text-slate-400 uppercase">ATTENDEE</span>
                       <span className="text-xs font-bold text-white">{scanResult.data.userName}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Calendar className="w-3.5 h-3.5 text-indigo-400" />
+                    <Calendar className="h-3.5 w-3.5 text-indigo-400" />
                     <div>
-                      <span className="text-[9px] font-bold text-slate-400 uppercase block leading-none">EVENT</span>
+                      <span className="block text-[9px] leading-none font-bold text-slate-400 uppercase">EVENT</span>
                       <span className="text-xs font-bold text-zinc-300">{scanResult.data.eventName}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <FileText className="w-3.5 h-3.5 text-indigo-400" />
+                    <FileText className="h-3.5 w-3.5 text-indigo-400" />
                     <div>
-                      <span className="text-[9px] font-bold text-slate-400 uppercase block leading-none">TICKET CODE / UUID</span>
-                      <span className="text-xs font-mono font-bold text-slate-350">{scanResult.data.ticketId}</span>
+                      <span className="block text-[9px] leading-none font-bold text-slate-400 uppercase">TICKET CODE / UUID</span>
+                      <span className="text-slate-350 font-mono text-xs font-bold">{scanResult.data.ticketId}</span>
                     </div>
                   </div>
                 </div>
               )}
 
               {scanResult.raw && (
-                <div className="my-3 p-3 border border-red-500/20 bg-red-950/20 rounded-xl w-full max-w-sm text-xs font-mono text-rose-455 text-left truncate">Raw content: {scanResult.raw}</div>
+                <div className="text-rose-455 my-3 w-full max-w-sm truncate rounded-xl border border-red-500/20 bg-red-950/20 p-3 text-left font-mono text-xs">Raw content: {scanResult.raw}</div>
               )}
 
-              <button onClick={handleResetScan} className="mt-2 inline-flex items-center gap-1.5 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white rounded-xl shadow-lg hover:shadow-indigo-500/25 transition-all" aria-label="Scan next ticket">
-                <RefreshCw className="w-3.5 h-3.5" />
+              <button onClick={handleResetScan} className="mt-2 inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-6 py-3 text-xs font-bold text-white shadow-lg transition-all hover:bg-indigo-700 hover:shadow-indigo-500/25" aria-label="Scan next ticket">
+                <RefreshCw className="h-3.5 w-3.5" />
                 Scan Next Ticket
               </button>
             </div>
           )}
         </div>
 
-        <div className="lg:col-span-2 flex flex-col h-full min-h-[380px] bg-slate-50 dark:bg-slate-950/40 border border-slate-150 dark:border-slate-850 rounded-2xl p-5">
-          <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4 flex items-center justify-between">
+        <div className="border-slate-150 dark:border-slate-850 flex h-full min-h-[380px] flex-col rounded-2xl border bg-slate-50 p-5 lg:col-span-2 dark:bg-slate-950/40">
+          <h3 className="mb-4 flex items-center justify-between text-xs font-black tracking-wider text-slate-400 uppercase dark:text-slate-500">
             <span className="flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-indigo-500 fill-indigo-500/10" />
+              <Sparkles className="h-3.5 w-3.5 fill-indigo-500/10 text-indigo-500" />
               Scanning History Log
             </span>
-            <span className="text-[10px] font-bold bg-slate-200 dark:bg-slate-850 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-md">
+            <span className="dark:bg-slate-850 rounded-md bg-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-600 dark:text-slate-400">
               {isOnline ? "Live" : "Cached"}
             </span>
           </h3>
 
-          <div className="flex-1 overflow-y-auto space-y-3 max-h-[320px] pr-1">
+          <div className="max-h-[320px] flex-1 space-y-3 overflow-y-auto pr-1">
             {checkinHistory.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 dark:text-slate-500">
-                <FileText className="w-8 h-8 opacity-40 mb-2" />
+              <div className="flex h-full flex-col items-center justify-center p-6 text-center text-slate-400 dark:text-slate-500">
+                <FileText className="mb-2 h-8 w-8 opacity-40" />
                 <p className="text-xs font-bold">No tickets scanned yet</p>
-                <p className="text-[10px] mt-1 leading-normal max-w-xs">Scanned or manually verified check-ins on this session will show up here.</p>
+                <p className="mt-1 max-w-xs text-[10px] leading-normal">Scanned or manually verified check-ins on this session will show up here.</p>
               </div>
             ) : (
               checkinHistory.map((item) => (
-                <div key={item.id} className="flex items-center justify-between p-3 border bg-white dark:bg-slate-900 border-slate-150 dark:border-slate-850/80 rounded-xl hover:shadow-sm transition">
-                  <div className="flex items-center gap-2.5 truncate max-w-[70%]">
-                    <div className="flex items-center justify-center w-7 h-7 text-[10px] font-black text-indigo-600 bg-indigo-50 dark:bg-indigo-950/40 dark:text-indigo-400 rounded-full shrink-0">
+                <div key={item.id} className="border-slate-150 dark:border-slate-850/80 flex items-center justify-between rounded-xl border bg-white p-3 transition hover:shadow-sm dark:bg-slate-900">
+                  <div className="flex max-w-[70%] items-center gap-2.5 truncate">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[10px] font-black text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400">
                       {item.name ? item.name.charAt(0) : "U"}
                     </div>
                     <div className="truncate">
-                      <div className="text-[11px] font-bold text-slate-800 dark:text-slate-100 truncate">{item.name}</div>
-                      <div className="text-[9px] text-slate-450 truncate">{item.event}</div>
+                      <div className="truncate text-[11px] font-bold text-slate-800 dark:text-slate-100">{item.name}</div>
+                      <div className="text-slate-450 truncate text-[9px]">{item.event}</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[8px] font-mono text-slate-400">{item.ticketId?.slice(-5) || "N/A"}</span>
+                    <span className="font-mono text-[8px] text-slate-400">{item.ticketId?.slice(-5) || "N/A"}</span>
                     <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider ${
                       item.status === "Verified" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-450" :
                       item.status === "Queued" ? "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400" :

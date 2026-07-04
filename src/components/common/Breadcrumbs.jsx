@@ -27,10 +27,10 @@ const Breadcrumbs = () => {
   };
 
   return (
-    <nav className="flex px-4 py-4 max-w-7xl mx-auto w-full overflow-x-auto" aria-label="Breadcrumb">
-      <ol className="flex items-center space-x-2 text-sm font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
+    <nav className="mx-auto flex w-full max-w-7xl overflow-x-auto px-4 py-4" aria-label="Breadcrumb">
+      <ol className="flex items-center space-x-2 text-sm font-medium whitespace-nowrap text-gray-500 dark:text-gray-400">
         <li className="flex items-center">
-          <Link to="/" className="hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center transition-colors">
+          <Link to="/" className="flex items-center transition-colors hover:text-indigo-600 dark:hover:text-indigo-400">
             <Home size={16} className="mr-1" />
             Home
           </Link>
@@ -48,18 +48,13 @@ const Breadcrumbs = () => {
             <li key={to} className="flex items-center">
               <ChevronRight size={14} className="mx-2 text-gray-400" />
               {last ? (
-                <span className="text-gray-900 dark:text-white font-bold" aria-current="page">
+                <span className="font-bold text-gray-900 dark:text-white" aria-current="page">
                   {name}
                 </span>
               ) : (
-               <Link
-  to={to}
-  title={`Navigate to ${name}`}
-  aria-label={`Navigate to ${name}`}
-  className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
->
-  {name}
-</Link>
+                <Link to={to} className="transition-colors hover:text-indigo-600 dark:hover:text-indigo-400">
+                  {name}
+                </Link>
               )}
             </li>
           );

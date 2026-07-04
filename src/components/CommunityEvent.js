@@ -131,15 +131,15 @@ const CommunityEvent = () => {
         border-b border-gray-100 dark:border-slate-900
       `}
     >
-      <div className="max-w-7xl mx-auto px-6">
+      <div className="mx-auto max-w-7xl px-6">
         {/* Intro Section */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
-          className="text-center mb-14"
+          className="mb-14 text-center"
         >
-          <div className="flex justify-center mb-6">
+          <div className="mb-6 flex justify-center">
             <div
               className={`
                 p-4 rounded-full
@@ -189,7 +189,7 @@ const CommunityEvent = () => {
         </motion.div>
 
         {/* Events Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
           {events.map((event, idx) => (
             <motion.div
               key={idx}
@@ -208,14 +208,9 @@ const CommunityEvent = () => {
               `}
             >
               {/* Event Header */}
-              <div className="flex items-center gap-3 mb-4">
+              <div className="mb-4 flex items-center gap-3">
                 <div
-                  className="
-                    p-3
-                    bg-indigo-100 dark:bg-slate-800
-                    text-indigo-600 dark:text-indigo-400
-                    rounded-xl
-                  "
+                  className="rounded-xl bg-indigo-100 p-3 text-indigo-600 dark:bg-slate-800 dark:text-indigo-400"
                 >
                   {event.icon}
                 </div>
@@ -304,14 +299,7 @@ const CommunityEvent = () => {
             <button
               type="button"
               onClick={() => setSelectedEvent(null)}
-              className="
-                absolute right-4 top-4
-                rounded-full p-2
-                text-gray-500 dark:text-gray-300
-                transition
-                hover:bg-gray-100 dark:hover:bg-slate-800
-                hover:text-gray-900 dark:hover:text-white
-              "
+              className="absolute top-4 right-4 rounded-full p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-slate-800 dark:hover:text-white"
               aria-label="Close event details"
             >
               <X size={20} />
@@ -319,12 +307,7 @@ const CommunityEvent = () => {
 
             <div className="mb-5 flex items-center gap-3 pr-10">
               <div
-                className="
-                  rounded-xl
-                  bg-indigo-100 dark:bg-slate-800
-                  p-3
-                  text-indigo-600 dark:text-indigo-400
-                "
+                className="rounded-xl bg-indigo-100 p-3 text-indigo-600 dark:bg-slate-800 dark:text-indigo-400"
               >
                 {selectedEvent.icon}
               </div>
