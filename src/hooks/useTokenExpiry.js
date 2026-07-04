@@ -21,7 +21,9 @@ export function useTokenExpiry({ token, user, onExpired }) {
       toastId: "session-expired",
       autoClose: 4000,
     });
-    setTimeout(() => window.location.replace("/login"), 1500);
+    setTimeout(() => {
+      if (typeof window !== "undefined") window.location.replace("/login");
+    }, 1500);
   }, [onExpired]);
 
   useEffect(() => {
