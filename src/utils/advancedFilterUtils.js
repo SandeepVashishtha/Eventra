@@ -24,6 +24,16 @@ export const EVENT_MODES = [
   { id: "hybrid", label: "Hybrid", icon: "Cpu" },
 ];
 
+export const EVENT_SKILL_LEVELS = [
+  { id: "beginner", label: "Beginner" },
+  { id: "intermediate", label: "Intermediate" },
+  { id: "advanced", label: "Advanced" },
+];
+
+export const EVENT_TAGS = [
+  "React", "Node", "Design", "AI", "Business", "Startup", "Finance", "Marketing"
+];
+
 // Event status options
 export const EVENT_STATUS_OPTIONS = [
   { id: "upcoming", label: "Upcoming", color: "blue" },
@@ -134,7 +144,7 @@ export const filterByCategory = (events, selectedCategories) => {
 
   return events.filter((event) => {
     if (!event) return false;
-    const eventCategory = normalizeFilterValue(event.category || event.type);
+    const eventCategory = normalizeFilterValue(event.category);
     return selectedCategories.some((cat) => {
       const mappedCategory = EVENT_CATEGORIES.find(
         (category) =>
@@ -182,11 +192,12 @@ export const filterByMode = (events, selectedModes) => {
     return events;
   }
 
-  return events.filter((event) =>
-    event ? selectedModes.includes(
-      normalizeFilterValue(event.eventMode || event.mode || "offline"),
-    ) : false,
-  );
+  return events.filter((event) => {
+    if (!event) return false;
+    // Safely extract the raw mode without implicitly falling back to a valid filter value
+    const rawMode = event.eventMode !== undefined ? event.eventMode : (event.mode !== undefined ? event.mode : "");
+    return selectedModes.includes(normalizeFilterValue(rawMode));
+  });
 };
 
 /**
@@ -266,6 +277,26 @@ export const filterByStatus = (events, selectedStatuses) => {
   });
 };
 
+export const filterBySkillLevel = (events, selectedSkillLevels) => {
+  if (!Array.isArray(events)) return [];
+  if (!selectedSkillLevels || selectedSkillLevels.length === 0) return events;
+  return events.filter((event) => {
+    if (!event) return false;
+    const level = normalizeFilterValue(event.skillLevel || "beginner");
+    return selectedSkillLevels.some(selected => normalizeFilterValue(selected) === level);
+  });
+};
+
+export const filterByTags = (events, selectedTags) => {
+  if (!Array.isArray(events)) return [];
+  if (!selectedTags || selectedTags.length === 0) return events;
+  return events.filter((event) => {
+    if (!event || !Array.isArray(event.tags)) return false;
+    const eventTags = event.tags.map(normalizeFilterValue);
+    return selectedTags.some(tag => eventTags.includes(normalizeFilterValue(tag)));
+  });
+};
+
 /**
  * Apply all filters to events
  * @param {Array} events - Array of events to filter
@@ -299,6 +330,14 @@ export const applyAdvancedFilters = (events, filters = {}) => {
     filtered = filterByStatus(filtered, filters.statuses);
   }
 
+  if (filters.skillLevels && filters.skillLevels.length > 0) {
+    filtered = filterBySkillLevel(filtered, filters.skillLevels);
+  }
+
+  if (filters.tags && filters.tags.length > 0) {
+    filtered = filterByTags(filtered, filters.tags);
+  }
+
   return filtered;
 };
 
@@ -310,11 +349,13 @@ export const applyAdvancedFilters = (events, filters = {}) => {
 export const getUniqueCategories = (events) => {
   const categories = new Set();
   events.forEach((event) => {
-    if (event.category) {
-      categories.add(event.category);
+    // Fallback to event.type if event.category is missing
+    const categoryValue = event.category || event.type;
+    if (categoryValue) {
+      categories.add(categoryValue);
     }
   });
-  return Array.from(categories).sort();
+  return Array.from(categories).sort((a, b) => a.localeCompare(b));
 };
 
 /**
@@ -348,16 +389,18 @@ export const getPriceStats = (events) => {
  * @returns {Object} { earliest: Date, latest: Date }
  */
 export const getDateRange = (events) => {
-  if (events.length === 0) {
-    return { earliest: new Date(), latest: new Date() };
+  // Gracefully return null if the array is missing or entirely empty
+  if (!events || events.length === 0) {
+    return { earliest: null, latest: null };
   }
 
   const dates = events
     .map((e) => new Date(e.date || e.startDate))
     .filter((d) => !Number.isNaN(d.getTime()));
 
+  // Handle cases where events exist but none contain a structurally valid date format
   if (dates.length === 0) {
-    return { earliest: new Date(), latest: new Date() };
+    return { earliest: null, latest: null };
   }
 
   return {
@@ -376,6 +419,8 @@ export const hasActiveFilters = (filters = {}) => {
     (filters.categories && filters.categories.length > 0) ||
     (filters.modes && filters.modes.length > 0) ||
     (filters.statuses && filters.statuses.length > 0) ||
+    (filters.skillLevels && filters.skillLevels.length > 0) ||
+    (filters.tags && filters.tags.length > 0) ||
     (filters.location && filters.location.trim() !== "") ||
     (filters.priceRange &&
       (filters.priceRange.min > 0 || filters.priceRange.max < Infinity)) ||
@@ -383,6 +428,8 @@ export const hasActiveFilters = (filters = {}) => {
       (filters.dateRange.startDate || filters.dateRange.endDate))
   );
 };
+
+export const hasActiveAdvancedFilters = hasActiveFilters;
 
 /**
  * Reset all filters to default state
@@ -392,6 +439,8 @@ export const getDefaultFilters = () => ({
   categories: [],
   modes: [],
   statuses: [],
+  skillLevels: [],
+  tags: [],
   location: "",
   priceRange: null,
   dateRange: null,
@@ -403,6 +452,8 @@ export const normalizeAdvancedFilters = (filters = {}) => ({
   categories: Array.isArray(filters.categories) ? filters.categories : [],
   modes: Array.isArray(filters.modes) ? filters.modes : [],
   statuses: Array.isArray(filters.statuses) ? filters.statuses : [],
+  skillLevels: Array.isArray(filters.skillLevels) ? filters.skillLevels : [],
+  tags: Array.isArray(filters.tags) ? filters.tags : [],
   location: typeof filters.location === "string" ? filters.location : "",
   priceRange: filters.priceRange
     ? {
@@ -428,6 +479,8 @@ export const serializeAdvancedFilters = (filters = {}) => {
   if (normalized.categories.length) payload.categories = normalized.categories;
   if (normalized.modes.length) payload.modes = normalized.modes;
   if (normalized.statuses.length) payload.statuses = normalized.statuses;
+  if (normalized.skillLevels.length) payload.skillLevels = normalized.skillLevels;
+  if (normalized.tags.length) payload.tags = normalized.tags;
   if (normalized.location.trim()) payload.location = normalized.location.trim();
   if (normalized.priceRange) payload.priceRange = normalized.priceRange;
   if (
@@ -453,7 +506,11 @@ export const decodeAdvancedFilters = (value) => {
   }
 
   try {
-    return normalizeAdvancedFilters(JSON.parse(decodeURIComponent(value)));
+    const parsed = JSON.parse(decodeURIComponent(value));
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return getDefaultFilters();
+    }
+    return normalizeAdvancedFilters(parsed);
   } catch {
     return getDefaultFilters();
   }
