@@ -3,7 +3,7 @@
  * Utilities for managing recurring event series templates and instances.
  */
 
-import { validateRecurrenceRule, generateRecurrenceInstances, cloneRecurrenceRule } from './recurringEventUtils';
+import { validateRecurrenceRule, generateRecurrenceInstances, cloneRecurrenceRule } from './recurringEventUtils.js';
 
 /**
  * Creates a new event series from a recurrence rule

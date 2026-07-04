@@ -463,14 +463,26 @@ export const estimateInstanceCount = (rrule) => {
 export const cloneRecurrenceRule = (rrule) => {
   if (!rrule) return null;
   
-  return {
-    ...rrule,
-    byweekday: rrule.byweekday ? [...rrule.byweekday] : undefined,
-    bymonthday: rrule.bymonthday ? [...rrule.bymonthday] : undefined,
-    bymonth: rrule.bymonth ? [...rrule.bymonth] : undefined,
-    exdates: rrule.exdates ? [...rrule.exdates] : undefined,
-    rdate: rrule.rdate ? [...rrule.rdate] : undefined
-  };
+  const cloned = { ...rrule };
+  
+  // Deep clone array properties if they exist
+  if (rrule.byweekday) {
+    cloned.byweekday = [...rrule.byweekday];
+  }
+  if (rrule.bymonthday) {
+    cloned.bymonthday = [...rrule.bymonthday];
+  }
+  if (rrule.bymonth) {
+    cloned.bymonth = [...rrule.bymonth];
+  }
+  if (rrule.exdates) {
+    cloned.exdates = [...rrule.exdates];
+  }
+  if (rrule.rdate) {
+    cloned.rdate = [...rrule.rdate];
+  }
+  
+  return cloned;
 };
 
 /**
