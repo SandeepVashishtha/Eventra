@@ -86,7 +86,7 @@ export function logCategorizedError(error, errorInfo = null, metadata = {}) {
   const entry = {
     category,
     recoverable: isRecoverableError(category, error),
-    route: typeof window !== "undefined" ? window.location.pathname : "",
+    route: typeof window !== "undefined" && window.location ? window.location.pathname : "",
     online: typeof navigator !== "undefined" ? navigator.onLine : true,
     ...metadata,
   };

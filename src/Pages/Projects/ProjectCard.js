@@ -1,4 +1,4 @@
-import { Star, Github, ExternalLink, AlertCircle, GitPullRequest, Cpu, Code2, Layers, Bookmark } from "lucide-react";
+import { Star, Github, ExternalLink, AlertCircle, GitPullRequest, Cpu, Code2, Bookmark } from "lucide-react";
 import { useState, useEffect, useRef, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import useReducedMotion from "../../hooks/useReducedMotion.js";

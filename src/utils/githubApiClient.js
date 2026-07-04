@@ -55,6 +55,8 @@ export const fetchGitHubJson = async (path, queryParams = {}, options = {}) => {
 
     return data;
   } catch (error) {
+    let finalError = error;
+
     if (error?.status === 401 || error?.status === 403) {
       try {
         const { data } = await fetchWithTimeout(directUrl, {
@@ -66,30 +68,27 @@ export const fetchGitHubJson = async (path, queryParams = {}, options = {}) => {
         });
         return data;
       } catch (directError) {
-        error = directError;
+        finalError = directError;
       }
     }
 
     let message = "Failed to fetch data from GitHub";
-    //let severity = "warn";
 
-    if (error instanceof FetchError) {
-      if (error.status === 403) {
+    if (finalError instanceof FetchError) {
+      if (finalError.status === 403) {
         message = "GitHub API rate limit exceeded. Please try again later.";
-      } else if (error.status === 404) {
+      } else if (finalError.status === 404) {
         message = "GitHub repository or resource not found.";
-      } else if (error.status >= 500) {
+      } else if (finalError.status >= 500) {
         message = "GitHub's servers are currently experiencing issues.";
       }
     }
 
-    // Log the error for diagnostics while providing a clean message to the UI
-    logError(error, { componentStack: "githubApiClient" }, { path, queryParams, friendlyMessage: message });
+    logError(finalError, { componentStack: "githubApiClient" }, { path, queryParams, friendlyMessage: message });
 
-    // Re-throw a clean error for the UI components to catch
     const wrappedError = new Error(message);
-    wrappedError.status = error.status;
-    wrappedError.originalError = error;
+    wrappedError.status = finalError.status ?? error.status;
+    wrappedError.originalError = finalError;
     throw wrappedError;
   }
 };

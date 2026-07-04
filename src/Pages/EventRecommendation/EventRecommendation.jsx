@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import {
   X,
   Sliders,
@@ -9,9 +9,6 @@ import {
   FilterX,
 } from "lucide-react";
 import { showSuccessToast } from "../../utils/toast";
-import {
-  generateAIInsights
-} from "../../services/aiRecommendationService";
 import EmptyState from "../../components/common/EmptyState";
 
 import {
@@ -25,12 +22,8 @@ import { useAuth } from "../../context/AuthContext";
 import { useMyEvents } from "../../context/MyEventsContext";
 import useBookmarks from "../../hooks/useBookmarks";
 import useRecentlyViewed from "../../hooks/useRecentlyViewed";
-import {
-  getBookmarkedEvents,
-  subscribeToBookmarkChanges,
-} from "../../utils/bookmarkUtils";
 import mockEvents from "../Events/eventsMockData.json";
-import { EventCardSkeleton, SkeletonBlock } from "../../components/common/SkeletonLoaders";
+import { EventCardSkeleton } from "../../components/common/SkeletonLoaders";
 
 
 const EventRecommendation = () => {
@@ -38,7 +31,6 @@ const EventRecommendation = () => {
   const { myEvents, addRegistration } = useMyEvents();
   const { bookmarks } = useBookmarks(user?.id || user?.email || "guest");
   const { recentlyViewed } = useRecentlyViewed();
-  const [globalBookmarks, setGlobalBookmarks] = useState(() => getBookmarkedEvents());
 
   const events = useMemo(
     () =>
@@ -72,47 +64,14 @@ const EventRecommendation = () => {
   // Selected Event Modal State
   const [selectedEvent, setSelectedEvent] = useState(null);
 
-  const [aiInsights, setAiInsights] = useState("");
-
-  const [insightLoading, setInsightLoading] = useState(false);
-
-  useEffect(() => subscribeToBookmarkChanges(setGlobalBookmarks), []);
-
-  useEffect(() => {
-
-  const loadInsights = async () => {
-
-    if (!selectedEvent) return;
-
-    setInsightLoading(true);
-
-    const profile =
-      getUserProfile();
-
-    const insights =
-      await generateAIInsights(
-        selectedEvent,
-        profile
-      );
-
-    setAiInsights(insights);
-
-    setInsightLoading(false);
-
-  };
-
-  loadInsights();
-
-}, [selectedEvent]);
-
   const userProfile = useMemo(() => getUserProfile(), []);
   const preferredLocation = useMemo(() => {
-    const sources = [...myEvents, ...bookmarks, ...globalBookmarks, ...recentlyViewed]
+    const sources = [...myEvents, ...bookmarks, ...recentlyViewed]
       .map((entry) => entry?.event?.location || entry?.eventSummary?.location || entry?.location)
       .filter((locationValue) => locationValue && locationValue !== "Online");
 
     return sources[0] || user?.location || "";
-  }, [bookmarks, globalBookmarks, myEvents, recentlyViewed, user]);
+  }, [bookmarks, myEvents, recentlyViewed, user]);
 
   const trendingNearby = useMemo(
     () => getTrendingEventsForArea(events, preferredLocation, 4),
@@ -139,7 +98,7 @@ const EventRecommendation = () => {
         events,
         userProfile: selectedProfile,
         registeredEvents: myEvents,
-        bookmarkedEvents: [...bookmarks, ...globalBookmarks],
+        bookmarkedEvents: bookmarks,
         viewedEvents: recentlyViewed,
         location: preferredLocation,
         limit: events.length,
@@ -634,50 +593,6 @@ const EventRecommendation = () => {
   <strong className="text-text font-bold">
     {selectedEvent.category}
   </strong>.
-
-</div>
-
-
-{/* AI Insights Section */}
-
-<div className="mt-6">
-
-  <h3 className="text-lg font-semibold mb-3 text-text">
-
-    AI Recommendation Insights
-
-  </h3>
-
-  {insightLoading ? (
-    <>
-      <div className="sr-only" role="status" aria-live="polite">
-        Generating AI insights...
-      </div>
-      <div className="space-y-3 py-4" aria-hidden="true">
-        <SkeletonBlock className="h-4 w-full" />
-        <SkeletonBlock className="h-4 w-5/6" />
-        <SkeletonBlock className="h-4 w-4/5" />
-      </div>
-    </>
-  ) : (
-
-    <div
-      className="
-        rounded-xl
-        bg-bg/50
-        p-4
-        text-sm
-        text-text-light
-        leading-7
-        whitespace-pre-line
-      "
-    >
-
-      {aiInsights}
-
-    </div>
-
-  )}
 
 </div>
             </div>

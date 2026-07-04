@@ -83,7 +83,7 @@ services:
     working_dir: /app
     volumes:
       - .:/app
-    command: node sse-mock-server.js
+    command: npm run dev
     ports:
       - "4001:4001"
     environment:

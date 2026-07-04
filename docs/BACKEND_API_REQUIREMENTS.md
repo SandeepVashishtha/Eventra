@@ -1292,7 +1292,7 @@ GET /api/feedback/event/{eventId}
 
 ## 16. Real-Time / SSE APIs
 
-The frontend has a `RealTimeContext.js` referencing real-time updates. The `sse-mock-server.js` file at the project root simulates SSE events.
+The frontend consumes real-time updates from the separate backend service; local mock-server helpers are no longer part of this repository.
 
 ### 16.1 Server-Sent Events Stream
 

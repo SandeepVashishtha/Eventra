@@ -1,5 +1,6 @@
 import { defineConfig, loadEnv, transformWithOxc } from "vite";
 import react from "@vitejs/plugin-react";
+
 import path from "path";
 import dotenv from "dotenv";
 
@@ -10,9 +11,7 @@ dotenv.config();
 const JSX_HINT_RE = /<[A-Za-z][A-Za-z0-9.]*[\s\n\r/>]|<>/;
 
 export default defineConfig(({ mode }) => {
-  
-
-const env = loadEnv(mode, process.cwd(), "");
+  const env = loadEnv(mode, process.cwd(), "");
   const backendTarget =
     env.BACKEND_URL ||
     env.VITE_API_URL?.replace(/\/api\/?$/, "") ||
@@ -25,6 +24,11 @@ const env = loadEnv(mode, process.cwd(), "");
   }
 
   return {
+    appType: "spa",
+    base: env.VITE_BASE_URL || "/",
+    publicDir: "public",
+    cacheDir: process.env.VITE_CACHE_DIR || "node_modules/.vite",
+    clearScreen: false,
     plugins: [
       // Intercept .js files BEFORE vite:oxc / builtin:vite-transform so JSX
       // inside them is compiled correctly in both dev and production builds.
@@ -107,14 +111,28 @@ const env = loadEnv(mode, process.cwd(), "");
     },
 
     build: {
+      target: "es2020",
+      cssCodeSplit: true,
+      reportCompressedSize: false,
       outDir: "build",
+      emptyOutDir: true,
+      copyPublicDir: true,
       sourcemap: false,
       minify: "esbuild",
-      // Use esbuild for CSS minification instead of the default lightningcss,
-      // which cannot parse the custom Tailwind `short` screen media query.
       cssMinify: "esbuild",
       chunkSizeWarningLimit: 500,
+      modulePreload: {
+        polyfill: true,
+        resolveDependencies: (url, deps, { hostType }) => {
+          return deps;
+        },
+      },
+      manifest: true,
       rollupOptions: {
+        onwarn(warning, warn) {
+          if (warning.code === "MODULE_LEVEL_DIRECTIVE") return;
+          warn(warning);
+        },
         output: {
           // manualChunks must be a function in Vite 8 / Rolldown
           manualChunks(id) {
@@ -149,8 +167,42 @@ const env = loadEnv(mode, process.cwd(), "");
       },
     },
 
+    json: {
+      namedExports: true,
+      stringify: false,
+    },
+
     css: {
       devSourcemap: false,
+      modules: {
+        localsConvention: "camelCase",
+        generateScopedName: "[name]__[local]___[hash:base64:5]",
+      },
+      preprocessorOptions: {
+        scss: {
+          api: "modern-compiler",
+        },
+      },
+    },
+
+    worker: {
+      format: "es",
+      plugins: () => [],
+    },
+
+    envDir: process.cwd(),
+
+    assetsInclude: ["**/*.webp", "**/*.avif"],
+
+    esbuild: {
+      legalComments: "none",
+      treeShaking: true,
+    },
+
+    // logLevel: "warn",
+    define: {
+      __APP_VERSION__: JSON.stringify(process.env.npm_package_version || "0.0.0"),
+      __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
     },
   };
 });

@@ -33,11 +33,13 @@ export function useScrollProgress() {
 
   useEffect(() => {
     const update = () => {
-      const doc = document.documentElement;
-      const scrollTop = window.scrollY || doc.scrollTop || 0;
-      const height = doc.scrollHeight - window.innerHeight;
-      const pct = height > 0 ? Math.round((scrollTop / height) * 100) : 0;
-      setProgress(Math.max(0, Math.min(100, pct)));
+      if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+        const doc = document.documentElement;
+        const scrollTop = window.scrollY || doc.scrollTop || 0;
+        const height = doc.scrollHeight - window.innerHeight;
+        const pct = height > 0 ? Math.round((scrollTop / height) * 100) : 0;
+        setProgress(Math.max(0, Math.min(100, pct)));
+      }
       rafRef.current = null;
     };
 
@@ -46,14 +48,18 @@ export function useScrollProgress() {
       rafRef.current = requestAnimationFrame(update);
     };
 
-    update();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
+    if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+      update();
+      window.addEventListener("scroll", onScroll, { passive: true });
+      window.addEventListener("resize", onScroll);
+    }
 
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener("scroll", onScroll);
+        window.removeEventListener("resize", onScroll);
+      }
     };
   }, []);
 

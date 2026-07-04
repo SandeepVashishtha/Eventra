@@ -10,14 +10,12 @@ import {
   Trophy,
   Clock,
   Star,
-  ArrowRight,
   ExternalLink,
   Calendar,
   Award,
   MessageCircle,
   Zap,
   Target,
-  Copy,
   Bell,
   WifiOff,
 } from "lucide-react";
@@ -58,18 +56,23 @@ const RESOURCES = [
 // ============ UTILITY HOOKS ============
 const useCountdown = (endDate, onEnd) => {
   const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft(endDate));
-  
+  const onEndRef = useRef(onEnd);
+
+  useEffect(() => {
+    onEndRef.current = onEnd;
+  }, [onEnd]);
+
   useEffect(() => {
     if (timeLeft.ended) {
-      onEnd?.();
+      onEndRef.current?.();
       return;
     }
     const timer = setInterval(() => {
       setTimeLeft(calculateTimeLeft(endDate));
     }, 1000);
     return () => clearInterval(timer);
-  }, [timeLeft.ended, endDate, onEnd]);
-  
+  }, [timeLeft.ended, endDate]);
+
   return timeLeft;
 };
 
@@ -89,17 +92,23 @@ const calculateTimeLeft = (endDate) => {
   };
 };
 
-const useKeyboardShortcut = (key, callback, deps = []) => {
+const useKeyboardShortcut = (key, callback) => {
+  const callbackRef = useRef(callback);
+
+  useEffect(() => {
+    callbackRef.current = callback;
+  }, [callback]);
+
   useEffect(() => {
     const handler = (e) => {
       if (e.key === key && !e.target.matches("input, textarea")) {
         e.preventDefault();
-        callback();
+        callbackRef.current();
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, deps); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [key]);
 };
 
 const useToast = () => {
@@ -127,7 +136,7 @@ const CountdownTimer = memo(({ timeLeft }) => {
   const units = Object.entries(timeLeft).filter(([key]) => key !== 'ended');
   
   return (
-    <div className="grid grid-cols-4 gap-2 sm:gap-3 text-center" role="timer" aria-live="polite">
+    <div className="grid grid-cols-4 gap-2 sm:gap-3 text-center" role="timer" aria-live="off" aria-label="Countdown timer">
       {units.map(([unit, value]) => (
         <motion.div
           key={unit}
@@ -294,7 +303,8 @@ const GSSoCContribution = () => {
   const { toasts, addToast, removeToast } = useToast();
   
   const [searchQuery, setSearchQuery] = useState(() => localStorage.getItem("gssoc.search") || "");
-  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+  // eslint-disable-next-line no-unused-vars
+  const _debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [selectedDifficulty, setSelectedDifficulty] = useState(() => localStorage.getItem("gssoc.difficulty") || "all");
   
   const [userStats] = useState(() => {
@@ -339,7 +349,7 @@ const GSSoCContribution = () => {
   useKeyboardShortcut("/", () => {
     searchInputRef.current?.focus();
     addToast("🔍 Search focused. Start typing...", "info", 1500);
-  }, [addToast]);
+  });
   
   const containerVariants = useMemo(() => ({
     hidden: { opacity: 0 },
@@ -388,12 +398,13 @@ const GSSoCContribution = () => {
         )}
       </AnimatePresence>
       
-      <motion.main
+      <motion.section
         variants={containerVariants}
         initial="hidden"
         animate="visible"
         className="w-[95%] mx-auto my-10 min-h-screen pb-12"
-        role="main"
+        role="region"
+        aria-label="GSSoC Contribution Hub"
       >
         {/* 🎯 PROFESSIONAL HERO SECTION */}
         <motion.section
@@ -508,7 +519,7 @@ const GSSoCContribution = () => {
             ))}
           </div>
         </motion.section>
-      </motion.main>
+      </motion.section>
       
       <ToastContainer toasts={toasts} onClose={removeToast} />
     </>

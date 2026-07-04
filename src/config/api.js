@@ -1,5 +1,4 @@
 import axios from "axios";
-import { logger } from "../utils/logger.js";
 import { ApiError, RateLimitError, normalizeApiError } from "./api/errors.js";
 import { setupRequestInterceptor, setupResponseInterceptor, setOnRequiresReauthHandler } from "./api/interceptors.js";
 import { API_BASE_URL, validateBackendConfig } from "./backendConfig.js";
@@ -86,6 +85,16 @@ export const API_ENDPOINTS = {
     // URL manually rather than going through eventFetchUtils.buildPaginatedUrl.
     PAGINATED: (page, size) => buildApiUrl(`/events?page=${page}&size=${size}`),
   },
+  LIVE_AUDIENCE: {
+    BASE: (eventId) => buildApiUrl(`/events/${eventId}/live-audience`),
+    QUESTIONS: (eventId) => buildApiUrl(`/events/${eventId}/live-audience/questions`),
+    UPVOTE: (eventId, questionId) => buildApiUrl(`/events/${eventId}/live-audience/questions/${questionId}/upvote`),
+    FLAG: (eventId, questionId) => buildApiUrl(`/events/${eventId}/live-audience/questions/${questionId}/flag`),
+    QUESTION_DETAIL: (eventId, questionId) => buildApiUrl(`/events/${eventId}/live-audience/questions/${questionId}`),
+    POLLS: (eventId) => buildApiUrl(`/events/${eventId}/live-audience/polls`),
+    POLL_STATUS: (eventId, pollId) => buildApiUrl(`/events/${eventId}/live-audience/polls/${pollId}/status`),
+    POLL_VOTE: (eventId, pollId) => buildApiUrl(`/events/${eventId}/live-audience/polls/${pollId}/vote`),
+  },
   PROJECTS: {
     ALL: buildApiUrl("/projects"),
     LIST: buildApiUrl("/projects"),
@@ -147,6 +156,12 @@ export const API_ENDPOINTS = {
     PHONE: buildApiUrl("/validate/phone"),
     CONTACT: buildApiUrl("/contact"),
   },
+  WAITLIST: {
+    JOIN: (eventId) => buildApiUrl(`/waitlist/join/${eventId}`),
+    LEAVE: (eventId) => buildApiUrl(`/waitlist/leave/${eventId}`),
+    STATUS: (eventId) => buildApiUrl(`/waitlist/status/${eventId}`),
+    COUNT: (eventId) => buildApiUrl(`/waitlist/count/${eventId}`),
+  },
 };
 
 const normalizeRequestConfig = (configOrToken = {}) => {
@@ -172,7 +187,7 @@ const wrapAxiosResponse = (response) => {
       if (typeof response.data === "string") {
         try {
           return JSON.parse(response.data);
-        } catch (e) {
+        } catch (_e) {
           throw new Error("Received non-JSON response from server");
         }
       }

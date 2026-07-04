@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState } from "react";
 import { X, Download, ShieldCheck, Calendar, MapPin, Clock, User, Mail, Award, Loader2, RefreshCw, FileText, Sparkles, Map } from "lucide-react";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
@@ -8,7 +8,6 @@ import "./EventTicket.css";
 import { useMyEvents } from "../../context/MyEventsContext";
 import SpatialSeatSelector from "../events/SpatialSeatSelector";
 import { AnimatePresence } from "framer-motion";
-import { apiUtils } from "../../config/api";
 import { useOfflineStatus } from "../../hooks/useOfflineStatus";
 
 const EventTicket = ({ event, user, onClose }) => {
@@ -24,9 +23,9 @@ const EventTicket = ({ event, user, onClose }) => {
   const registration = myEvents.find((r) => r.eventId === event.id);
   const selectedSeat = registration?.formData?.selectedSeat;
 
-  const [qrToken, setQrToken] = useState(registration?.qrToken || "");
-  const [loadingToken, setLoadingToken] = useState(false);
-  const [tokenError, setTokenError] = useState(false);
+  // No backend ticket-token endpoint exists — the QR encodes the local
+  // registration ID (or a generated serial) as the pass identifier.
+  const qrToken = registration?.qrToken || "";
 
   // Generate a mock ticket serial code based on event and user details
   const generateSerial = () => {
@@ -37,36 +36,6 @@ const EventTicket = ({ event, user, onClose }) => {
   };
 
   const [serialNumber] = useState(() => registration?.registrationId || generateSerial());
-
-  useEffect(() => {
-    // If the token is already present (cached from registration session) skip fetching.
-    if (qrToken) return;
-    // When offline, skip the network call entirely — use the registration ID as fallback.
-    if (isOffline) return;
-
-    const regId = registration?.registrationId || serialNumber;
-    setLoadingToken(true);
-    setTokenError(false);
-
-    apiUtils.post("/api/tickets/token", {
-      registrationId: regId,
-      eventId: event.id
-    })
-    .then((res) => {
-      if (res.data?.token) {
-        setQrToken(res.data.token);
-      } else {
-        setTokenError(true);
-      }
-    })
-    .catch((err) => {
-      console.error("[EventTicket] Failed to load secure ticket token:", err);
-      setTokenError(true);
-    })
-    .finally(() => {
-      setLoadingToken(false);
-    });
-  }, [registration, event.id, qrToken, serialNumber, isOffline]);
 
   // Dynamic category themes
   const getThemeColors = () => {
@@ -386,10 +355,10 @@ const EventTicket = ({ event, user, onClose }) => {
                         Secure QR Unavailable
                       </div>
                     ) : (
-                      <QRCode 
-                        value={qrToken || registration?.qrToken || registration?.registrationId || serialNumber} 
-                        size={90} 
-                        bgColor="transparent" 
+                      <QRCode
+                        value={qrToken || registration?.qrToken || registration?.registrationId || serialNumber}
+                        size={90}
+                        bgColor="transparent"
                         fgColor="#ffffff"
                         className="ud-ticket-qr"
                       />

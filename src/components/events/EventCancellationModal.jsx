@@ -7,12 +7,16 @@
 // Delegates the actual API call to useEventCancellation().
 // ---------------------------------------------------------------------------
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { AlertTriangle, X } from "lucide-react";
 import useEventCancellation, {
   REFUND_POLICIES,
   REFUND_POLICY_LABELS,
 } from "../../hooks/useEventCancellation";
+import FocusTrap from "../common/FocusTrap";
+
+// Restores focus to a previously-focused element, if it's still focusable.
+const restoreFocusTo = (el) => el?.focus?.();
 
 /**
  * EventCancellationModal
@@ -26,6 +30,15 @@ const EventCancellationModal = ({ event, onClose, onSuccess }) => {
   const [reason, setReason] = useState("");
   const [refundPolicy, setRefundPolicy] = useState(REFUND_POLICIES.FULL);
   const [refundPercent, setRefundPercent] = useState(50);
+
+  // The parent unmounts this component entirely on close (rather than toggling
+  // an `isOpen` prop), so useFocusTrap's built-in restore-on-deactivate effect
+  // never runs. Restore focus manually via unmount cleanup instead.
+  const previouslyFocusedRef = useRef(null);
+  useEffect(() => {
+    previouslyFocusedRef.current = document.activeElement;
+    return () => restoreFocusTo(previouslyFocusedRef.current);
+  }, []);
 
   const { cancel, isCancelling, cancellationError } = useEventCancellation(
     event?.id,
@@ -187,7 +200,8 @@ const EventCancellationModal = ({ event, onClose, onSuccess }) => {
             )}
           </button>
         </div>
-      </div>
+        </div>
+      </FocusTrap>
     </div>
   );
 };

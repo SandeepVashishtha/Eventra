@@ -16,11 +16,11 @@ const optionalEnvVars = {
   },
   PUBLIC_URL: {
     keys: ["VITE_PUBLIC_URL", "REACT_APP_PUBLIC_URL"],
-    fallback: "https://sandeepvashishtha.tech",
+    fallback: "https://eventra.sandeepvashishtha.in",
   },
   SENTRY_DSN: {
     keys: ["VITE_SENTRY_DSN", "REACT_APP_SENTRY_DSN"],
-    fallback: "",
+    fallback: "https://0f5776d794dcf89120ca6b00a5923f93@o4511372299075584.ingest.de.sentry.io/4511556614946896",
   },
 };
 

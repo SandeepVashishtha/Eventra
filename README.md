@@ -51,7 +51,6 @@ App runs at `http://localhost:3000`.
 - [Environment Variables](#environment-variables)
 - [Available Scripts](#available-scripts)
 - [Testing and Quality](#testing-and-quality)
-- [SSE Mock Server (Optional)](#sse-mock-server-optional)
 - [Deployment](#deployment)
 - [Roadmap](#roadmap)
 - [Documentation](#documentation)
@@ -71,7 +70,7 @@ App runs at `http://localhost:3000`.
 
 Eventra is an open-source frontend application built with React and Vite. It supports event discovery, registration, dashboards, hackathons, collaboration features, feedback flows, and role-based access experiences.
 
-This repository contains the frontend application. The Spring Boot backend is maintained in a separate repository — all API traffic is proxied to it both in production (via Vercel rewrites) and in local development (via Vite proxy).
+This repository contains the frontend application only. The Spring Boot backend is maintained in a separate repository, and all API traffic is proxied to that backend in production via Vercel rewrites and in local development via the Vite proxy.
 
 - Frontend repo: <https://github.com/SandeepVashishtha/Eventra>
 - Backend repo: <https://github.com/SandeepVashishtha/Eventra-Backend>
@@ -89,6 +88,29 @@ Eventra brings together event discovery, hackathon management, and community col
 - **Authentication** — Auth-aware routing with protected pages, role-based access, and session management.
 - **Notifications** — Real-time and offline-friendly notification system with SSE support.
 - **Feedback System** — Rate and review events with rich feedback forms and moderation.
+
+## 🚀 Quick Links
+
+| Resource | Link |
+|----------|------|
+| 🤝 Contributing Guide | [CONTRIBUTING.md](CONTRIBUTING.md) |
+| 📜 Code of Conduct | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) |
+| ⚙️ Environment Setup | [docs/ENV_SETUP_GUIDE.md](docs/ENV_SETUP_GUIDE.md) |
+| 🏗️ Architecture | [docs/ARCHITECTURE_AND_ROLES.md](docs/ARCHITECTURE_AND_ROLES.md) |
+| 💻 Frontend Onboarding | [docs/frontend-onboarding.md](docs/frontend-onboarding.md) |
+| 🔒 Security Migration | [docs/SECURITY_MIGRATION.md](docs/SECURITY_MIGRATION.md) |
+| 📘 API Documentation | [docs/API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md) |
+
+---
+
+💡 **New contributor?**
+
+Start here:
+
+1. Read the Contributing Guide.
+2. Complete the Environment Setup.
+3. Follow the Frontend Onboarding guide.
+4. Run the project locally using `npm run dev`.
 
 ## Key Features
 
@@ -118,7 +140,7 @@ Below is the high-level architecture of Eventra:
 graph TD
     Client[Client: React/Vite] --> Assets[Assets: public/]
     Client --> State[State: Context/Hooks]
-    Client --> Backend[Backend: Spring Boot API]
+    Client --> Backend[Separate Spring Boot API]
     Backend --> Azure[Azure Spring Boot]
     Client -.-> VercelRewrite[Vercel /api/* Rewrite]
     VercelRewrite --> Backend
@@ -131,7 +153,7 @@ graph TD
 
 ### Frontend–Backend Communication
 
-- The React app communicates with the Spring Boot backend via REST API calls.
+- The React app communicates with the separate Spring Boot backend via REST API calls.
 - In production, `/api/*` requests are rewritten to the Azure-hosted backend via Vercel rewrites.
 - In development, Vite proxies API calls to `http://localhost:8080` (see `vite.config.js`).
 - Backend URL resolution priority: `BACKEND_URL` → `VITE_API_URL` → `REACT_APP_API_URL` (configured in `src/config/backendConfig.js`).
@@ -148,7 +170,7 @@ graph TD
 - Route-level guards in `src/components/` enforce authentication and role requirements.
 - Public routes (home, events, hackathons) are accessible without authentication.
 - Protected routes (dashboards, organizer panels) require a valid JWT and optionally specific roles.
-- Middleware runs at the edge for production builds, validating tokens before requests reach the app.
+- Production deployment uses Vercel rewrites and headers for routing and security; there is no local middleware implementation in this repository.
 
 ## Project Structure
 
@@ -269,6 +291,81 @@ docker compose up --build eventra-prod
 
 The production-optimized build will be served via Nginx at `http://localhost:8080`.
 
+## 🔧 Troubleshooting
+
+If you encounter issues while setting up or running Eventra locally, try the following solutions.
+
+### Missing Environment Variables
+
+If you see an error like:
+
+```text
+%VITE_GOOGLE_CLIENT_ID% is not defined
+```
+
+Ensure your `.env` file contains the required variables and restart the development server after making changes.
+
+---
+
+### Dependency Installation Issues
+
+If dependencies fail to install correctly:
+
+```bash
+rm -rf node_modules package-lock.json
+npm install
+```
+
+---
+
+### Vite Development Server Issues
+
+If the development server fails to start:
+
+```bash
+npm run dev
+```
+
+If problems persist, reinstall dependencies and clear the Vite cache if necessary.
+
+---
+
+### JSX Parse Errors
+
+Errors such as:
+
+- Unexpected token
+- Identifier has already been declared
+- Unterminated JSX
+
+are commonly caused by:
+
+- Duplicate imports
+- Duplicate variable declarations
+- Missing closing JSX tags
+- Unclosed braces or parentheses
+
+Review recent changes carefully before running the project again.
+
+---
+
+### Port Already in Use
+
+If port `3000` is occupied, start the development server on another port:
+
+```bash
+npm run dev -- --port 3001
+```
+
+---
+
+### Still Having Issues?
+
+- Pull the latest changes from the repository.
+- Reinstall dependencies.
+- Review terminal logs for detailed error messages.
+- Open a GitHub issue with reproduction steps if the problem persists.
+
 ## Environment Variables
 
 Use `.env.example` as the source of truth. See [docs/ENV_SETUP_GUIDE.md](docs/ENV_SETUP_GUIDE.md) for detailed configuration information.
@@ -354,32 +451,14 @@ npm run test
 npm run test:e2e
 ```
 
-## SSE Mock Server (Optional)
-
-For local realtime testing:
-
-```bash
-node sse-mock-server.js
-```
-
-Required environment variables:
-
-- `JWT_SECRET` - JWT signing secret for token generation and validation. Generate with: `openssl rand -base64 32`
-
-Optional environment flags:
-
-- `SSE_MOCK_PORT` (default `8080`)
-- `ALLOWED_ORIGIN` (default `http://localhost:3000`)
-- `SSE_DEBUG` (`true` or `false`)
-
 ## Deployment
 
 Vercel configuration is checked in via [`vercel.json`](vercel.json):
 
 - Build command: `npm run lint && GENERATE_SOURCEMAP=false npm run build`
 - Output directory: `build`
-- `/api/*` is rewritten to the hosted Spring Boot backend (the sole API provider)
-- No serverless functions are deployed — the `api/` directory was removed as dead code
+- `/api/*` is rewritten to the hosted Spring Boot backend
+- The repository does not contain a local serverless API or middleware implementation
 
 ## Roadmap
 
@@ -408,7 +487,7 @@ Vercel configuration is checked in via [`vercel.json`](vercel.json):
 - [Frontend Onboarding](docs/frontend-onboarding.md)
 - [Security Migration Notes](docs/SECURITY_MIGRATION.md)
 - [API Documentation Notes](docs/API_DOCUMENTATION.md)
-
+- Client-side authentication audit logging utilities for development and debugging.
 ## Contributing
 
 We welcome contributions from the community! Please follow our guidelines to keep the project maintainable.
@@ -472,6 +551,12 @@ Licensed under Apache 2.0. See [LICENSE](LICENSE).
     <img src="https://contrib.rocks/image?repo=SandeepVashishtha/Eventra&max=1000" alt="Contributors" />
   </a>
 </p>
+
+## Deployment Security
+
+Before deploying Eventra, review the deployment checklist:
+
+- docs/SECURE_DEPLOYMENT_CHECKLIST.md
 
 ### Maintainers
 

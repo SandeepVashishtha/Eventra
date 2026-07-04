@@ -1,6 +1,7 @@
 import { AlertCircle, ChevronDown, Search, X, Filter, Bookmark, RefreshCw } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Link } from "react-router-dom";
 import SEOHead from "../../components/SEOHead";
 
 import ProjectHero from "./ProjectHero";
@@ -266,8 +267,15 @@ const InnerGallery = () => {
       }
     } catch (err) {
       console.error("Failed to fetch projects:", err);
-      setError("Unable to load projects. Please try again later.");
-      setProjects([]);
+      
+     
+      if (err?.response?.status === 404 || err?.status === 404) {
+        setProjects([]);
+        setError("");
+      } else {
+        setError("Unable to load projects. Please try again later.");
+        setProjects([]);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -504,12 +512,12 @@ const InnerGallery = () => {
                     Clear All Filters
                   </button>
                 ) : (
-                  <a
-                    href="/submit-project"
+                  <Link
+                    to="/submit-project"
                     className="px-6 py-2.5 text-sm font-medium rounded-xl text-white bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors shadow-lg inline-flex items-center justify-center gap-2"
                   >
                     Submit a Project
-                  </a>
+                  </Link>
                 )}
               </div>
             </motion.div>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState , useRef  } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   FILTER_SUGGESTIONS_STORAGE_KEY,
   generateFilterSuggestions,
@@ -52,7 +52,8 @@ export const useFilterSuggestions = ({
       writeSuggestionHistory(next, storage, storageKey);
       return next;
     });
-  }, [filterSignature, storage, storageKey, recordFilterActivity, writeSuggestionHistory]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterSignature, storage, storageKey]);
 
   useEffect(() => {
     if (!Array.isArray(visibleEvents) || visibleEvents.length === 0) return;
@@ -62,7 +63,8 @@ export const useFilterSuggestions = ({
       writeSuggestionHistory(next, storage, storageKey);
       return next;
     });
-  }, [visibleEventSignature, storage, storageKey, recordVisibleEventSignals, writeSuggestionHistory]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleEventSignature, storage, storageKey]);
 
   const suggestions = useMemo(
     () =>

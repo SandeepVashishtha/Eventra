@@ -117,6 +117,8 @@ class SseMultiplexer {
   }
 
   setupLocalStorageElection() {
+    if (this.localStorageInterval) clearInterval(this.localStorageInterval);
+
     const HEARTBEAT_INTERVAL = 3000;
     const HEARTBEAT_TIMEOUT = 7000;
 
@@ -231,6 +233,10 @@ class SseMultiplexer {
       }
     };
     writeHeartbeat();
+
+    // Leadership may have been revoked inside writeHeartbeat if a competing
+    // leader was detected. Guard before starting any leader-only infrastructure.
+    if (!this.isLeader) return;
 
     // Heartbeat loop — keep the entry fresh while leadership is held
     if (this.heartbeatInterval) {
@@ -482,7 +488,7 @@ class SseMultiplexer {
       let payload = evt.data;
       try {
         payload = JSON.parse(evt.data);
-      } catch {}
+      } catch { }
 
       // Dispatch locally
       this.dispatchLocalMessage(path, payload, evt.type);

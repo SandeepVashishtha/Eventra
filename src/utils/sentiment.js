@@ -18,7 +18,7 @@ const NEGATIVE_KEYWORDS = new Set([
 ]);
 
 const NEGATION_WORDS = new Set([
-  "not", "no", "never", "dont", "cannot", "doesnt", "didnt",
+  "not", "no", "never", "dont", "cant", "cannot", "doesnt", "didnt",
   "isnt", "wasnt", "arent", "neither", "none", "without", "lack", "lacks",
   "havent", "hadnt", "hasnt", "wont", "wouldnt", "couldnt", "shouldnt"
 ]);
@@ -28,8 +28,10 @@ export const analyzeSentiment = (text) => {
     return 0; // Neutral default
   }
 
-  const normalized = text.toLowerCase();
-  
+  // Strip apostrophes before tokenizing so contractions like "don't" → "dont",
+  // "doesn't" → "doesnt", "can't" → "cant" match NEGATION_WORDS correctly
+  const normalized = text.toLowerCase().replace(/'/g, "");
+
   // Simple word tokenization matching alphabetic sequences
   const words = normalized.match(/[a-z]+/g) || [];
   
@@ -54,8 +56,10 @@ export const analyzeSentiment = (text) => {
     if (value !== 0) {
       if (negateNext && negateWindow > 0) {
         score -= value; // Invert the sentiment score change
-        negateNext = false;
-        negateWindow = 0;
+        negateWindow -= 1; // consume one window slot
+        if (negateWindow <= 0) {
+          negateNext = false;
+        }
       } else {
         score += value;
       }

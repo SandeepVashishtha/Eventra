@@ -4,6 +4,7 @@ import { X, CheckCircle, ThumbsUp, ThumbsDown } from 'lucide-react';
 import StarRating from './StarRating';
 import { saveFeedback, getUserFeedback } from '../../utils/feedbackUtils';
 import { toast } from 'react-toastify';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 /**
  * EventFeedbackModal Component
@@ -16,6 +17,7 @@ const EventFeedbackModal = ({ isOpen, onClose, event }) => {
   const [selectedTags, setSelectedTags] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const { containerRef } = useFocusTrap(isOpen, onClose);
 
   const FEEDBACK_TAGS = [
     'Well Organized',
@@ -104,6 +106,7 @@ const EventFeedbackModal = ({ isOpen, onClose, event }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
       <motion.div
+        ref={containerRef}
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
@@ -112,7 +115,7 @@ const EventFeedbackModal = ({ isOpen, onClose, event }) => {
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-200 p-6 dark:border-gray-800">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+            <h2 id="event-feedback-title" className="text-2xl font-bold text-gray-900 dark:text-white">
               Share Your Feedback
             </h2>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{event.title}</p>

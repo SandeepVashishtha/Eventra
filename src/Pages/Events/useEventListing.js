@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-// import mockEvents from "./eventsMockData.json";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
+import { normalizeEvent } from "../../utils/eventUtils";
 import { getEventStatus } from "../../utils/eventUtils";
 import useDebounce from "../../hooks/useDebounce";
 import { useStableFilters } from "../../hooks/useStableFilters";
@@ -12,9 +12,9 @@ import {
   normalizeAdvancedFilters,
 } from "../../utils/advancedFilterUtils";
 import { getRouteSearchResults } from "../../utils/searchUtils.mjs";
+import { getBookmarkedEvents } from "../../utils/bookmarkUtils";
 
-
-const DEFAULT_EVENTS_PER_PAGE = 12;
+const DEFAULT_EVENTS_PER_PAGE = 20;
 
 const SORT_MAPPING = {
   Newest: "date,desc",
@@ -26,10 +26,7 @@ const SORT_MAPPING = {
   "Price High to Low": "price,desc",
 };
 
-const normalizeEvent = (event) => ({
-  ...event,
-  status: event.status || getEventStatus(event),
-});
+const normalizeEventItem = (event) => normalizeEvent(event);
 
 const useEventListing = () => {
   const [events, setEvents] = useState([]);
@@ -134,7 +131,7 @@ const useEventListing = () => {
           ? responseData
           : [];
 
-      const normalizedEvents = apiEvents.map(normalizeEvent);
+      const normalizedEvents = apiEvents.map(normalizeEventItem);
       setEvents(normalizedEvents);
 
       setPagination({
@@ -144,16 +141,6 @@ const useEventListing = () => {
         last: responseData.last ?? true,
       });
     } catch (error) {
-      if (process.env.NODE_ENV === "development") {
-        const normalizedMockEvents = mockEvents.map(normalizeEvent);
-        setEvents(normalizedMockEvents);
-        setPagination({
-          totalPages: 1,
-          totalElements: normalizedMockEvents.length,
-          first: true,
-          last: true,
-        });
-      } else {
         setEvents([]);
         setPagination({
           totalPages: 1,
@@ -171,7 +158,6 @@ const useEventListing = () => {
             "Failed to load events. Please try again later.",
           );
         }
-      }
     } finally {
       setIsLoading(false);
     }
@@ -226,13 +212,25 @@ const useEventListing = () => {
       : [...events];
 
     // 2. Status timing filter
-    filtered = filtered.filter((event) => {
-      const status = getEventStatus(event);
-      if (filterType === "live" && status !== "live") return false;
-      if (filterType === "upcoming" && status !== "upcoming") return false;
-      if (filterType === "past" && status !== "past" && status !== "ended") return false;
-      return true;
-    });
+filtered = filtered.filter((event) => {
+  const status = getEventStatus(event);
+
+  if (filterType === "live" && status !== "live") return false;
+
+  if (filterType === "upcoming" && status !== "upcoming") return false;
+
+  if (filterType === "past" && status !== "past" && status !== "ended") return false;
+
+  if (filterType === "bookmarked") {
+    const bookmarks = getBookmarkedEvents();
+
+    return bookmarks.some(
+      (bookmark) => String(bookmark.id) === String(event.id)
+    );
+  }
+
+  return true;
+});
 
     // 3. Category filter
     const target = categoryFilter && categoryFilter !== "all"

@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { motion } from "framer-motion";
-import { useTranslation } from "react-i18next";
+
+import { motion, useAnimation, AnimatePresence, MotionConfig } from "framer-motion";
+import { useEffect, useState, useMemo, memo } from "react";
+import { Link } from "react-router-dom";
 import Fuse from "fuse.js";
 import { Calendar, Handshake, Users } from "lucide-react";
 import CountUpLib from "react-countup";
@@ -18,6 +19,11 @@ import { useNavigate } from "react-router-dom";
 
 
 const CountUp = CountUpLib.default || CountUpLib;
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
+};
 
 const HEADLINE_PHRASES = [
   "Amazing Tech Events",
@@ -75,7 +81,6 @@ const HeroStats = ({ stats, statsReady }) => (
 // MAIN HERO COMPONENT
 // =========================================================================
 const Hero = () => {
-  const { t } = useTranslation();
   useDocumentTitle("Eventra | Home");
   const navigate = useNavigate();
 
@@ -125,12 +130,11 @@ const Hero = () => {
     setShowResults(!!trimmed);
   }, [debouncedTerm, searchIndex]);
 
-  const stats = useMemo(() => [
-    { value: 1500, label: t("landing.hero.stats.developers"), suffix: "+", icon: Users },
-    { value: 75, label: t("landing.hero.stats.events"), suffix: "+", icon: Calendar },
-    { value: 30, label: t("landing.hero.stats.partners"), suffix: "+", icon: Handshake },
-  ], [t]);
-
+ const stats = [
+  { value: "1500+", label: "Developers Joined" },
+  { value: "75", label: "Events Organized" },
+  { value: "30+", label: "Partners & Sponsors" },
+];
   return (
     <section className="min-h-[80vh] flex items-center justify-center relative overflow-hidden py-16 sm:py-20 md:py-24">
       <motion.div 
@@ -159,10 +163,71 @@ const Hero = () => {
           <button onClick={()=>navigate("/community-event")} className="cursor-pointer border-2 border-purple-500 text-purple-600 bg-white px-8 py-3 rounded-full font-semibold hover:bg-purple-50">Join Community</button>
         </div>
 
-        {<HeroStats stats={stats} statsReady={statsReady} />}
-      </motion.div>
+          {/* Animated Stats Cards */}
+          {!searchTerm.trim() && (
+            <motion.div
+              variants={fadeUp}
+              initial="hidden"
+              animate="visible"
+              className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6"
+            >
+             {stats.map((stat, i) => (
+  <motion.div
+    key={i}
+    variants={fadeUp}
+    whileHover={{
+      y: -8,
+      scale: 1.03,
+    }}
+    transition={{
+      type: "spring",
+      stiffness: 300,
+      damping: 18,
+    }}
+    className="
+      bg-white/90
+      dark:bg-gray-800/80
+      backdrop-blur-md
+      rounded-2xl
+      p-5
+      sm:p-6
+      text-center
+      shadow-xl
+      shadow-blue-100/50
+      dark:shadow-none
+      border
+      border-blue-100
+      dark:border-gray-700
+      transition-all
+      duration-300
+      hover:shadow-2xl
+      hover:shadow-blue-300/30
+      hover:border-blue-400
+      cursor-pointer
+    "
+  >
+    <p className="text-3xl font-bold mb-2 text-gray-900 dark:text-white">
+      <CountUp
+        start={0}
+        end={parseInt(stat.value)}
+        duration={2.5}
+        suffix={stat.value.includes("+") ? "+" : ""}
+        enableScrollSpy
+        scrollSpyOnce
+      />
+    </p>
+
+    <p className="text-gray-500 dark:text-gray-300 text-sm">
+      {stat.label}
+    </p>
+  </motion.div>
+))}
+            
+            </motion.div>
+          )}
+        </motion.div>
     </section>
   );
 };
 
-export default Hero;
+export default memo(Hero);
