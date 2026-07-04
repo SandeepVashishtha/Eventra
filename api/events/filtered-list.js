@@ -5,45 +5,65 @@
  * from unauthenticated users while allowing organizers to see their own drafts.
  */
 
-export default async function handler(req, res) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ message: 'Method not allowed' });
+function parsePagination(req) {
+  const page = parseInt(req.query.page || '0', 10);
+  const size = parseInt(req.query.size || '20', 10);
+  return { page, size };
+}
+
+const isWrongMethod = (req) => req.method !== 'GET';
+const isPaginationInvalid = (req) => {
+  const { page, size } = parsePagination(req);
+  return page < 0 || size <= 0 || size > 100;
+};
+
+const REQUEST_VALIDATORS = [
+  { test: isWrongMethod, status: 405, message: 'Method not allowed' },
+  { test: isPaginationInvalid, status: 400, message: 'Invalid pagination parameters' },
+];
+
+function findValidationFailure(req) {
+  return REQUEST_VALIDATORS.find((validator) => validator.test(req)) || null;
+}
+
+async function buildFilteredEventsResponse(req) {
+  const userId = req.session?.user?.id || req.user?.id;
+  const isAuthenticated = !!userId;
+  const { page, size } = parsePagination(req);
+
+  const events = await fetchEvents(page, size, isAuthenticated, userId);
+  if (!events) {
+    return { error: true, status: 500, message: 'Failed to fetch events' };
   }
 
-  try {
-    // 1. Extract user context
-    const userId = req.session?.user?.id || req.user?.id;
-    const isAuthenticated = !!userId;
+  const filtered = filterEventsByVisibility(events, userId, isAuthenticated);
 
-    // 2. Get pagination parameters
-    const page = parseInt(req.query.page || '0', 10);
-    const size = parseInt(req.query.size || '20', 10);
-
-    if (page < 0 || size <= 0 || size > 100) {
-      return res.status(400).json({
-        message: 'Invalid pagination parameters',
-      });
-    }
-
-    // 3. Fetch events from database
-    const events = await fetchEvents(page, size, isAuthenticated, userId);
-
-    if (!events) {
-      return res.status(500).json({ message: 'Failed to fetch events' });
-    }
-
-    // 4. Filter events based on visibility rules
-    const filtered = filterEventsByVisibility(events, userId, isAuthenticated);
-
-    // 5. Return filtered response
-    return res.status(200).json({
+  return {
+    error: false,
+    body: {
       success: true,
       content: filtered,
       page,
       size,
       count: filtered.length,
       timestamp: new Date().toISOString(),
-    });
+    },
+  };
+}
+
+export default async function handler(req, res) {
+  const failure = findValidationFailure(req);
+  if (failure) {
+    return res.status(failure.status).json({ message: failure.message });
+  }
+
+  try {
+    const result = await buildFilteredEventsResponse(req);
+    if (result.error) {
+      return res.status(result.status).json({ message: result.message });
+    }
+
+    return res.status(200).json(result.body);
   } catch (error) {
     console.error('Events listing error:', error);
     return res.status(500).json({

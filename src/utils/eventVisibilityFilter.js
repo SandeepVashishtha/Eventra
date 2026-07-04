@@ -106,6 +106,20 @@ class EventVisibilityFilter {
   }
 
   /**
+   * Describe visibility for a status that is restricted to its organizer
+   * (organizer-only statuses and CANCELLED share identical rules)
+   */
+  describeOrganizerOnlyVisibility(status, event, currentUserId, isAuthenticated) {
+    if (!isAuthenticated) {
+      return `${status} - hidden from unauthenticated users`;
+    }
+    if (currentUserId === event.organiserId) {
+      return `${status} - visible to organizer`;
+    }
+    return `${status} - hidden from other users`;
+  }
+
+  /**
    * Get visibility status message for debugging
    */
   getVisibilityStatus(event, currentUserId, isAuthenticated) {
@@ -113,31 +127,19 @@ class EventVisibilityFilter {
       return 'Invalid event';
     }
 
-    if (PUBLIC_STATUSES.includes(event.status)) {
-      return `${event.status} - publicly visible`;
+    const { status } = event;
+    const isOrganizerRestricted =
+      ORGANIZER_STATUSES.includes(status) || status === EVENT_STATUS.CANCELLED;
+
+    if (PUBLIC_STATUSES.includes(status)) {
+      return `${status} - publicly visible`;
     }
 
-    if (ORGANIZER_STATUSES.includes(event.status)) {
-      if (!isAuthenticated) {
-        return `${event.status} - hidden from unauthenticated users`;
-      }
-      if (currentUserId === event.organiserId) {
-        return `${event.status} - visible to organizer`;
-      }
-      return `${event.status} - hidden from other users`;
+    if (isOrganizerRestricted) {
+      return this.describeOrganizerOnlyVisibility(status, event, currentUserId, isAuthenticated);
     }
 
-    if (event.status === EVENT_STATUS.CANCELLED) {
-      if (!isAuthenticated) {
-        return `${event.status} - hidden from unauthenticated users`;
-      }
-      if (currentUserId === event.organiserId) {
-        return `${event.status} - visible to organizer`;
-      }
-      return `${event.status} - hidden from other users`;
-    }
-
-    return `Unknown status: ${event.status}`;
+    return `Unknown status: ${status}`;
   }
 
   /**
