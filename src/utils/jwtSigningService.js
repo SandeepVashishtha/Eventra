@@ -96,6 +96,62 @@ class JWTSigningService {
   }
 
   /**
+   * Build the JWT header, including an optional key ID for key rotation
+   */
+  buildHeader(options) {
+    const header = {
+      alg: this.algorithm,
+      typ: 'JWT',
+    };
+
+    if (options.keyId) {
+      header.kid = options.keyId;
+    }
+
+    return header;
+  }
+
+  /**
+   * Build the token payload with standard claims (iat, exp, nbf)
+   */
+  buildTokenPayload(payload, options) {
+    const now = Math.floor(Date.now() / 1000);
+    const tokenPayload = {
+      iat: now,
+      ...payload,
+    };
+
+    if (options.expiresIn !== null) {
+      const expiresIn = options.expiresIn || this.expiresIn;
+      tokenPayload.exp = now + expiresIn;
+    }
+
+    if (options.notBefore) {
+      tokenPayload.nbf = now + options.notBefore;
+    }
+
+    return tokenPayload;
+  }
+
+  /**
+   * Sign a message using the configured algorithm family
+   */
+  signMessage(message) {
+    const signers = {
+      HS: () => this.signHMAC(message),
+      RS: () => this.signRSA(message),
+      ES: () => this.signECDSA(message),
+    };
+
+    const family = this.algorithm.slice(0, 2);
+    if (!signers[family]) {
+      throw new Error(`Unsupported algorithm: ${this.algorithm}`);
+    }
+
+    return signers[family]();
+  }
+
+  /**
    * Sign a JWT token with payload
    */
   signToken(payload, options = {}) {
@@ -103,52 +159,14 @@ class JWTSigningService {
       throw new Error('Payload must be an object');
     }
 
-    // Create header
-    const header = {
-      alg: this.algorithm,
-      typ: 'JWT',
-    };
+    const header = this.buildHeader(options);
+    const tokenPayload = this.buildTokenPayload(payload, options);
 
-    // Add kid (key ID) if provided - useful for key rotation
-    if (options.keyId) {
-      header.kid = options.keyId;
-    }
-
-    // Create payload with standard claims
-    const now = Math.floor(Date.now() / 1000);
-    const tokenPayload = {
-      iat: now,
-      ...payload,
-    };
-
-    // Add expiration unless explicitly disabled
-    if (options.expiresIn !== null) {
-      const expiresIn = options.expiresIn || this.expiresIn;
-      tokenPayload.exp = now + expiresIn;
-    }
-
-    // Add not-before if specified
-    if (options.notBefore) {
-      tokenPayload.nbf = now + options.notBefore;
-    }
-
-    // Encode header and payload
     const encodedHeader = this.base64UrlEncode(JSON.stringify(header));
     const encodedPayload = this.base64UrlEncode(JSON.stringify(tokenPayload));
-
     const message = `${encodedHeader}.${encodedPayload}`;
 
-    // Sign message
-    let signature;
-    if (this.algorithm.startsWith('HS')) {
-      signature = this.signHMAC(message);
-    } else if (this.algorithm.startsWith('RS')) {
-      signature = this.signRSA(message);
-    } else if (this.algorithm.startsWith('ES')) {
-      signature = this.signECDSA(message);
-    } else {
-      throw new Error(`Unsupported algorithm: ${this.algorithm}`);
-    }
+    const signature = this.signMessage(message);
 
     return `${message}.${signature}`;
   }
