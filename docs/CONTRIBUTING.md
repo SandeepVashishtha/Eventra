@@ -157,3 +157,11 @@ You do not need to set these manually.
 Do not commit secrets, tokens, or private keys.
 
 If you discover a security issue, follow [SECURITY.md](SECURITY.md).
+
+## Reporting Security Incidents
+
+Contributors should review the Incident Response Guide before reporting or responding to security-related issues.
+
+See:
+
+- docs/INCIDENT_RESPONSE.md

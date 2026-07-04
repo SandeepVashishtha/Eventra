@@ -126,6 +126,13 @@ Use `.env.example` as the source of truth.
 
 Security note: never place private secrets in `REACT_APP_*` or `VITE_*` variables because they are exposed to the client bundle.
 
+## Security Resources
+
+Additional security documentation:
+
+- SECURITY.md
+- docs/INCIDENT_RESPONSE.md
+
 ## Available Scripts
 
 | Command | Description |
