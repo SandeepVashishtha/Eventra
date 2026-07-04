@@ -156,6 +156,12 @@ export const API_ENDPOINTS = {
     PHONE: buildApiUrl("/validate/phone"),
     CONTACT: buildApiUrl("/contact"),
   },
+  WAITLIST: {
+    JOIN: (eventId) => buildApiUrl(`/waitlist/join/${eventId}`),
+    LEAVE: (eventId) => buildApiUrl(`/waitlist/leave/${eventId}`),
+    STATUS: (eventId) => buildApiUrl(`/waitlist/status/${eventId}`),
+    COUNT: (eventId) => buildApiUrl(`/waitlist/count/${eventId}`),
+  },
 };
 
 const normalizeRequestConfig = (configOrToken = {}) => {
