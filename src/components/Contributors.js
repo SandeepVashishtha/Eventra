@@ -10,6 +10,7 @@ import { STORAGE_KEYS } from "../utils/storage/storageKeys";
 import { validators } from "../utils/storage/storageValidators";
 import { fetchWithTimeout } from "../utils/fetchWithTimeout";
 import EmptyState from "../common/EmptyState";
+import { safeParseJson } from "../utils/jsonUtils";
 // GitHub repo
 const GITHUB_REPO = "sandeepvashishtha/Eventra";
 const CACHE_DURATION = 60 * 60 * 1000; // 1 hr
@@ -228,9 +229,9 @@ const ContributorsInner = () => {
   }, [fetchContributors]);
 useEffect(() => {
   const saved =
-    JSON.parse(localStorage.getItem("contributorSearchHistory")) || [];
+    safeParseJson(localStorage.getItem("contributorSearchHistory"), []);
 
-  setRecentSearches(saved);
+  setRecentSearches(Array.isArray(saved) ? saved : []);
 }, []);
   // Filter contributors based on search term
   const filteredContributors = contributors.filter(
