@@ -17,37 +17,41 @@ const s3Client = new S3Client({
   },
 });
 
+const isWrongMethod = (req) => req.method !== 'DELETE';
+const isMissingAuth = (req) => !req.headers.authorization;
+const isMissingKey = (req) => !req.body.key;
+const isKeyUnsafe = (req) => req.body.key.includes('..') || req.body.key.startsWith('/');
+const isOutsideEventsScope = (req) => !req.body.key.startsWith('events/');
+
+const REQUEST_VALIDATORS = [
+  { test: isWrongMethod, status: 405, message: 'Method not allowed' },
+  { test: isMissingAuth, status: 401, message: 'Unauthorized' },
+  { test: isMissingKey, status: 400, message: 'File key is required' },
+  { test: isKeyUnsafe, status: 400, message: 'Invalid file key' },
+  { test: isOutsideEventsScope, status: 403, message: 'Access denied' },
+];
+
+function findValidationFailure(req) {
+  return REQUEST_VALIDATORS.find((validator) => validator.test(req)) || null;
+}
+
+async function deleteFile(key) {
+  const command = new DeleteObjectCommand({
+    Bucket: process.env.S3_BUCKET_NAME,
+    Key: key,
+  });
+
+  await s3Client.send(command);
+}
+
 export default async function handler(req, res) {
-  if (req.method !== 'DELETE') {
-    return res.status(405).json({ message: 'Method not allowed' });
+  const failure = findValidationFailure(req);
+  if (failure) {
+    return res.status(failure.status).json({ message: failure.message });
   }
 
   try {
-    if (!req.headers.authorization) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
-
-    const { key } = req.body;
-
-    if (!key) {
-      return res.status(400).json({ message: 'File key is required' });
-    }
-
-    if (key.includes('..') || key.startsWith('/')) {
-      return res.status(400).json({ message: 'Invalid file key' });
-    }
-
-    if (!key.startsWith('events/')) {
-      return res.status(403).json({ message: 'Access denied' });
-    }
-
-    const command = new DeleteObjectCommand({
-      Bucket: process.env.S3_BUCKET_NAME,
-      Key: key,
-    });
-
-    await s3Client.send(command);
-
+    await deleteFile(req.body.key);
     return res.status(200).json({
       success: true,
       message: 'File deleted successfully',

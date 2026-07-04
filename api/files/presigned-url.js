@@ -33,63 +33,58 @@ const ALLOWED_MIME_TYPES = [
   'text/csv',
 ];
 
-function validateRequest(req) {
-  if (req.method !== 'POST') {
-    return { error: true, status: 405, message: 'Method not allowed' };
-  }
-
-  if (!req.headers.authorization) {
-    return { error: true, status: 401, message: 'Unauthorized' };
-  }
-
+const isWrongMethod = (req) => req.method !== 'POST';
+const isMissingAuth = (req) => !req.headers.authorization;
+const isMissingFields = (req) => {
   const { key, contentType, fileSize } = req.body;
+  return !key || !contentType || !fileSize;
+};
+const isFileTooLarge = (req) => req.body.fileSize > MAX_FILE_SIZE;
+const isMimeTypeDisallowed = (req) => !ALLOWED_MIME_TYPES.includes(req.body.contentType);
+const isKeyUnsafe = (req) => req.body.key.includes('..') || req.body.key.startsWith('/');
 
-  if (!key || !contentType || !fileSize) {
-    return { error: true, status: 400, message: 'Missing required fields' };
-  }
+const REQUEST_VALIDATORS = [
+  { test: isWrongMethod, status: 405, message: 'Method not allowed' },
+  { test: isMissingAuth, status: 401, message: 'Unauthorized' },
+  { test: isMissingFields, status: 400, message: 'Missing required fields' },
+  {
+    test: isFileTooLarge,
+    status: 413,
+    message: `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB`,
+  },
+  { test: isMimeTypeDisallowed, status: 415, message: 'Content type not allowed' },
+  { test: isKeyUnsafe, status: 400, message: 'Invalid file key' },
+];
 
-  if (fileSize > MAX_FILE_SIZE) {
-    return {
-      error: true,
-      status: 413,
-      message: `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB`,
-    };
-  }
+function findValidationFailure(req) {
+  return REQUEST_VALIDATORS.find((validator) => validator.test(req)) || null;
+}
 
-  if (!ALLOWED_MIME_TYPES.includes(contentType)) {
-    return { error: true, status: 415, message: 'Content type not allowed' };
-  }
+async function createPresignedUploadUrl(key, contentType) {
+  const command = new PutObjectCommand({
+    Bucket: process.env.S3_BUCKET_NAME,
+    Key: key,
+    ContentType: contentType,
+    Metadata: {
+      uploadedAt: new Date().toISOString(),
+    },
+  });
 
-  if (key.includes('..') || key.startsWith('/')) {
-    return { error: true, status: 400, message: 'Invalid file key' };
-  }
+  const presignedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+  const fileUrl = `${process.env.S3_PUBLIC_URL || process.env.S3_ENDPOINT}/${process.env.S3_BUCKET_NAME}/${key}`;
 
-  return { error: false, key, contentType, fileSize };
+  return { presignedUrl, fileUrl };
 }
 
 export default async function handler(req, res) {
-  const validation = validateRequest(req);
-  if (validation.error) {
-    return res.status(validation.status).json({ message: validation.message });
+  const failure = findValidationFailure(req);
+  if (failure) {
+    return res.status(failure.status).json({ message: failure.message });
   }
 
   try {
-    const { key, contentType } = validation;
-
-    const command = new PutObjectCommand({
-      Bucket: process.env.S3_BUCKET_NAME,
-      Key: key,
-      ContentType: contentType,
-      Metadata: {
-        uploadedAt: new Date().toISOString(),
-      },
-    });
-
-    const presignedUrl = await getSignedUrl(s3Client, command, {
-      expiresIn: 3600,
-    });
-
-    const fileUrl = `${process.env.S3_PUBLIC_URL || process.env.S3_ENDPOINT}/${process.env.S3_BUCKET_NAME}/${key}`;
+    const { key, contentType } = req.body;
+    const { presignedUrl, fileUrl } = await createPresignedUploadUrl(key, contentType);
 
     return res.status(200).json({
       presignedUrl,

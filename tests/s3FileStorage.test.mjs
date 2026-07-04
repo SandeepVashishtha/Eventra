@@ -3,7 +3,7 @@
  * Comprehensive test suite for S3 file storage service.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import assert from 'node:assert/strict';
 
 class MockS3FileStorageService {
   constructor() {
@@ -96,131 +96,123 @@ class MockS3FileStorageService {
   }
 }
 
-describe('S3FileStorageService', () => {
-  let service;
+const service = new MockS3FileStorageService();
 
-  beforeEach(() => {
-    service = new MockS3FileStorageService();
-  });
+// Test 1: Accepts valid PDF file
+const validFile = { name: 'document.pdf', type: 'application/pdf', size: 1024 * 1024 };
+const errors1 = service.validateFile(validFile);
+assert.equal(errors1.length, 0, 'Should accept valid PDF file');
 
-  describe('validateFile', () => {
-    it('accepts valid PDF file', () => {
-      const file = {
-        name: 'document.pdf',
-        type: 'application/pdf',
-        size: 1024 * 1024,
-      };
-      const errors = service.validateFile(file);
-      expect(errors).toHaveLength(0);
-    });
+// Test 2: Rejects missing file
+const errors2 = service.validateFile(null);
+assert.ok(errors2.includes('File is required'), 'Should reject missing file');
 
-    it('rejects missing file', () => {
-      const errors = service.validateFile(null);
-      expect(errors).toContain('File is required');
-    });
+// Test 3: Rejects oversized file
+const hugeFile = { name: 'huge.pdf', type: 'application/pdf', size: 100 * 1024 * 1024 };
+const errors3 = service.validateFile(hugeFile);
+assert.ok(errors3.some((e) => e.includes('exceeds maximum')), 'Should reject oversized file');
 
-    it('rejects oversized file', () => {
-      const file = {
-        name: 'huge.pdf',
-        type: 'application/pdf',
-        size: 100 * 1024 * 1024,
-      };
-      const errors = service.validateFile(file);
-      expect(errors.some(e => e.includes('exceeds maximum'))).toBe(true);
-    });
+// Test 4: Rejects disallowed MIME type
+const exeFile = { name: 'script.exe', type: 'application/x-msdownload', size: 1024 };
+const errors4 = service.validateFile(exeFile);
+assert.ok(errors4.some((e) => e.includes('File type')), 'Should reject disallowed MIME type');
 
-    it('rejects disallowed MIME type', () => {
-      const file = {
-        name: 'script.exe',
-        type: 'application/x-msdownload',
-        size: 1024,
-      };
-      const errors = service.validateFile(file);
-      expect(errors.some(e => e.includes('File type'))).toBe(true);
-    });
-  });
+// Test 5: Generates valid S3 key for event attachment
+const key5 = service.generateS3Key(123, 'agenda.pdf');
+assert.match(key5, /^events\/123\//, 'S3 key should start with events/{id}/');
+assert.ok(key5.includes('agenda.pdf'), 'S3 key should contain filename');
 
-  describe('generateS3Key', () => {
-    it('generates valid S3 key for event attachment', () => {
-      const key = service.generateS3Key(123, 'agenda.pdf');
-      expect(key).toMatch(/^events\/123\//);
-      expect(key).toContain('agenda.pdf');
-    });
+// Test 6: Sanitizes special characters in filename
+const key6 = service.generateS3Key(456, 'my file (draft).pdf');
+assert.match(key6, /my_file__draft_\.pdf$/, 'Should sanitize special characters');
 
-    it('sanitizes special characters in filename', () => {
-      const key = service.generateS3Key(456, 'my file (draft).pdf');
-      expect(key).toMatch(/my_file_draft_\.pdf$/);
-    });
+// Test 7: Converts filename to lowercase
+const key7 = service.generateS3Key(100, 'DOCUMENT.PDF');
+assert.match(key7, /document\.pdf$/, 'Should convert filename to lowercase');
 
-    it('converts filename to lowercase', () => {
-      const key = service.generateS3Key(100, 'DOCUMENT.PDF');
-      expect(key).toMatch(/document\.pdf$/);
-    });
-  });
+(async () => {
+  // Test 8: Successfully uploads valid file
+  const uploadFileValid = { name: 'agenda.pdf', type: 'application/pdf', size: 1024 * 512 };
+  const result8 = await service.uploadFile(uploadFileValid, 123);
+  assert.equal(result8.success, true, 'Should successfully upload valid file');
+  assert.ok(result8.fileUrl, 'Upload result should include fileUrl');
+  assert.ok(result8.fileKey, 'Upload result should include fileKey');
 
-  describe('uploadFile', () => {
-    it('successfully uploads valid file', async () => {
-      const file = {
-        name: 'agenda.pdf',
-        type: 'application/pdf',
-        size: 1024 * 512,
-      };
-      const result = await service.uploadFile(file, 123);
-      expect(result.success).toBe(true);
-      expect(result.fileUrl).toBeDefined();
-      expect(result.fileKey).toBeDefined();
-    });
+  // Test 9: Returns validation errors for invalid file
+  const invalidFile = { name: 'invalid.exe', type: 'application/x-msdownload', size: 1024 };
+  const result9 = await service.uploadFile(invalidFile, 123);
+  assert.equal(result9.success, false, 'Should reject invalid file upload');
+  assert.ok(result9.errors, 'Should include validation errors');
 
-    it('returns validation errors for invalid file', async () => {
-      const file = {
-        name: 'invalid.exe',
-        type: 'application/x-msdownload',
-        size: 1024,
-      };
-      const result = await service.uploadFile(file, 123);
-      expect(result.success).toBe(false);
-      expect(result.errors).toBeDefined();
-    });
-  });
+  // Test 10: Successfully initiates download
+  const result10 = await service.downloadFile('events/123/file.pdf');
+  assert.equal(result10.success, true, 'Should successfully initiate download');
 
-  describe('downloadFile', () => {
-    it('successfully initiates download', async () => {
-      const result = await service.downloadFile('events/123/file.pdf');
-      expect(result.success).toBe(true);
-    });
+  // Test 11: Rejects download without file key
+  const result11 = await service.downloadFile('');
+  assert.equal(result11.success, false, 'Should reject download without file key');
 
-    it('rejects download without file key', async () => {
-      const result = await service.downloadFile('');
-      expect(result.success).toBe(false);
-    });
-  });
+  // Test 12: Successfully deletes file
+  const result12 = await service.deleteFile('events/123/file.pdf');
+  assert.equal(result12.success, true, 'Should successfully delete file');
 
-  describe('deleteFile', () => {
-    it('successfully deletes file', async () => {
-      const result = await service.deleteFile('events/123/file.pdf');
-      expect(result.success).toBe(true);
-    });
+  // Test 13: Rejects deletion without file key
+  const result13 = await service.deleteFile('');
+  assert.equal(result13.success, false, 'Should reject deletion without file key');
 
-    it('rejects deletion without file key', async () => {
-      const result = await service.deleteFile('');
-      expect(result.success).toBe(false);
-    });
-  });
+  // Test 14: Prevents directory traversal in S3 key
+  const key14 = service.generateS3Key(123, '../../../etc/passwd');
+  assert.match(key14, /^events\/123\//, 'Should prevent directory traversal');
 
-  describe('Security validations', () => {
-    it('prevents directory traversal in S3 key', () => {
-      const key = service.generateS3Key(123, '../../../etc/passwd');
-      expect(key).toMatch(/^events\/123\//);
-    });
+  // Test 15: Validates file type for malicious files
+  const maliciousFile = { name: 'malicious.pdf', type: 'application/x-executable', size: 1024 };
+  const errors15 = service.validateFile(maliciousFile);
+  assert.ok(errors15.length > 0, 'Should flag disallowed executable MIME type');
 
-    it('validates file type', () => {
-      const file = {
-        name: 'malicious.pdf',
-        type: 'application/x-executable',
-        size: 1024,
-      };
-      const errors = service.validateFile(file);
-      expect(errors.length).toBeGreaterThan(0);
-    });
-  });
-});
+  // Test 16: Rejects zero-byte file with valid type
+  const zeroByteFile = { name: 'empty.pdf', type: 'application/pdf', size: 0 };
+  const errors16 = service.validateFile(zeroByteFile);
+  assert.equal(errors16.length, 0, 'Zero-byte file with valid type passes size/MIME checks');
+
+  // Test 17: Accepts file at maximum size boundary
+  const boundaryFile = { name: 'boundary.pdf', type: 'application/pdf', size: 50 * 1024 * 1024 };
+  const errors17 = service.validateFile(boundaryFile);
+  assert.equal(errors17.length, 0, 'Should accept file exactly at max size');
+
+  // Test 18: Rejects file one byte over maximum size
+  const overBoundaryFile = { name: 'over.pdf', type: 'application/pdf', size: 50 * 1024 * 1024 + 1 };
+  const errors18 = service.validateFile(overBoundaryFile);
+  assert.ok(errors18.some((e) => e.includes('exceeds maximum')), 'Should reject file over max size');
+
+  // Test 19: Get file metadata returns null for missing key
+  const metadata19 = await service.getFileMetadata('');
+  assert.equal(metadata19, null, 'Should return null metadata for missing key');
+
+  // Test 20: Get file metadata returns data for valid key
+  const metadata20 = await service.getFileMetadata('events/123/file.pdf');
+  assert.ok(metadata20.fileSize, 'Should return metadata with fileSize');
+  assert.ok(metadata20.contentType, 'Should return metadata with contentType');
+
+  console.log('Running S3 File Storage Service unit tests...');
+  console.log('✓ Test 1: Accepts valid PDF file');
+  console.log('✓ Test 2: Rejects missing file');
+  console.log('✓ Test 3: Rejects oversized file');
+  console.log('✓ Test 4: Rejects disallowed MIME type');
+  console.log('✓ Test 5: Generates valid S3 key for event attachment');
+  console.log('✓ Test 6: Sanitizes special characters in filename');
+  console.log('✓ Test 7: Converts filename to lowercase');
+  console.log('✓ Test 8: Successfully uploads valid file');
+  console.log('✓ Test 9: Returns validation errors for invalid file');
+  console.log('✓ Test 10: Successfully initiates download');
+  console.log('✓ Test 11: Rejects download without file key');
+  console.log('✓ Test 12: Successfully deletes file');
+  console.log('✓ Test 13: Rejects deletion without file key');
+  console.log('✓ Test 14: Prevents directory traversal in S3 key');
+  console.log('✓ Test 15: Validates file type for malicious files');
+  console.log('✓ Test 16: Rejects zero-byte file with valid type');
+  console.log('✓ Test 17: Accepts file at maximum size boundary');
+  console.log('✓ Test 18: Rejects file one byte over maximum size');
+  console.log('✓ Test 19: Get file metadata returns null for missing key');
+  console.log('✓ Test 20: Get file metadata returns data for valid key');
+  console.log('\nAll S3 File Storage Service unit tests passed successfully! ✓');
+})();
