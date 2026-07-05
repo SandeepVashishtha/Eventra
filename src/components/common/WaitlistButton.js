@@ -11,14 +11,30 @@ const useWaitlist = ({ eventId, isFullyBooked, waitlistEnabled, isAuthenticated,
   useEffect(() => {
     if (!isFullyBooked || !waitlistEnabled) return;
 
-    getWaitlistCount(eventId).then(data => setWaitlistCount(data.count));
+    let cancelled = false;
+
+    getWaitlistCount(eventId)
+      .then(data => {
+        if (!cancelled) setWaitlistCount(data.count);
+      })
+      .catch(() => {
+        // Silently ignore — default count of 0 is already set
+      });
 
     if (isAuthenticated && token) {
-      getWaitlistStatus(eventId, token).then(data => {
-        setOnWaitlist(data.onWaitlist);
-        setPosition(data.position);
-      });
+      getWaitlistStatus(eventId, token)
+        .then(data => {
+          if (!cancelled) {
+            setOnWaitlist(data.onWaitlist);
+            setPosition(data.position);
+          }
+        })
+        .catch(() => {
+          // Silently ignore — defaults (false / null) are already set
+        });
     }
+
+    return () => { cancelled = true; };
   }, [eventId, isFullyBooked, waitlistEnabled, isAuthenticated, token]);
 
   const handleClick = async () => {
