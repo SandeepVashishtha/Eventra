@@ -1,13 +1,26 @@
+import { getServerNow } from "./timeSync.js";
+
+const RELATIVE_TIME_FALLBACK = "—";
+
 export function getRelativeTime(dateInput) {
-  if (!dateInput || typeof dateInput === 'number') return null;
+  // Handle numeric Unix timestamps (milliseconds since epoch)
+  if (typeof dateInput === "number") {
+    dateInput = new Date(dateInput).toISOString();
+  }
+  if (dateInput === null || dateInput === undefined) {
+    return RELATIVE_TIME_FALLBACK;
+  }
+  if (typeof dateInput === "string" && dateInput.trim() === "") {
+    return RELATIVE_TIME_FALLBACK;
+  }
   const now = new Date();
   const date = new Date(dateInput);
 
-  if (isNaN(date.getTime())) return null;
+  if (Number.isNaN(date.getTime())) return RELATIVE_TIME_FALLBACK;
 
   const diffMs = date - now;
   const diffSec = Math.round(diffMs / 1000);
-  const diffMin = Math.round(diffSec / 60);
+  const diffMin = Math.floor(diffSec / 60);
   const diffHour = Math.round(diffMin / 60);
   const diffDay = Math.round(diffHour / 24);
 
@@ -35,7 +48,12 @@ export function getRelativeTime(dateInput) {
   if (diffDay < 30)
     return `In ${Math.floor(diffDay / 7)} week${Math.floor(diffDay / 7) !== 1 ? "s" : ""}`;
 
-  return null;
+  return new Date(dateInput).toLocaleDateString("en-US", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 export function getSmartDateLabel(dateInput, timeInput = "") {
@@ -62,12 +80,12 @@ export function isPast(dateInput) {
   if (!dateInput) return false;
   const parsed = new Date(dateInput);
   if (isNaN(parsed.getTime())) return false;
-  return parsed.getTime() < Date.now();
+  return parsed.getTime() < getServerNow();
 }
 
 export function isFuture(dateInput) {
   if (!dateInput) return false;
   const parsed = new Date(dateInput);
   if (isNaN(parsed.getTime())) return false;
-  return parsed.getTime() > Date.now();
+  return parsed.getTime() > getServerNow();
 }

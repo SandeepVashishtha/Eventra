@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import SurveyAnalytics from "../../components/admin/SurveyAnalytics";
 import { validate } from "../../validation";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 const SurveyEngine = () => {
   useDocumentTitle("Eventra | Dynamic Survey Engine");
@@ -57,7 +58,7 @@ const SurveyEngine = () => {
     const draft = localStorage.getItem("eventra_survey_builder_draft");
     if (draft) {
       try {
-        const parsed = JSON.parse(draft);
+        const parsed = safeJsonParse(draft, {});
         if (parsed.questions?.length > 0 || parsed.title || parsed.description) {
           setCachedDraft(parsed);
           setDraftDetected(true);
@@ -222,7 +223,7 @@ const SurveyEngine = () => {
         {/* HEADER BAR */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
-            <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-500 to-sky-400 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-extrabold tracking-tight bg-linear-to-r from-indigo-500 to-sky-400 bg-clip-text text-transparent">
               Dynamic Survey Constructor
             </h1>
             <p className="mt-1 text-slate-500 dark:text-slate-400">

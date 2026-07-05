@@ -17,23 +17,57 @@ const NEGATIVE_KEYWORDS = new Set([
   "crashed", "slowly", "laggy", "painful", "horrible", "defect", "failure"
 ]);
 
+const NEGATION_WORDS = new Set([
+  "not", "no", "never", "dont", "cant", "cannot", "doesnt", "didnt",
+  "isnt", "wasnt", "arent", "neither", "none", "without", "lack", "lacks",
+  "havent", "hadnt", "hasnt", "wont", "wouldnt", "couldnt", "shouldnt"
+]);
+
 export const analyzeSentiment = (text) => {
   if (!text || typeof text !== "string") {
     return 0; // Neutral default
   }
 
-  const normalized = text.toLowerCase();
-  
+  // Strip apostrophes before tokenizing so contractions like "don't" → "dont",
+  // "doesn't" → "doesnt", "can't" → "cant" match NEGATION_WORDS correctly
+  const normalized = text.toLowerCase().replace(/'/g, "");
+
   // Simple word tokenization matching alphabetic sequences
   const words = normalized.match(/[a-z]+/g) || [];
   
   let score = 0;
+  let negateNext = false;
+  let negateWindow = 0;
   
   words.forEach(word => {
+    if (NEGATION_WORDS.has(word)) {
+      negateNext = true;
+      negateWindow = 3; // Negation applies to any of the next 3 words
+      return;
+    }
+    
+    let value = 0;
     if (POSITIVE_KEYWORDS.has(word)) {
-      score += 1.5;
+      value = 1.5;
     } else if (NEGATIVE_KEYWORDS.has(word)) {
-      score -= 1.5;
+      value = -1.5;
+    }
+    
+    if (value !== 0) {
+      if (negateNext && negateWindow > 0) {
+        score -= value; // Invert the sentiment score change
+        negateWindow -= 1; // consume one window slot
+        if (negateWindow <= 0) {
+          negateNext = false;
+        }
+      } else {
+        score += value;
+      }
+    } else if (negateNext) {
+      negateWindow -= 1;
+      if (negateWindow <= 0) {
+        negateNext = false;
+      }
     }
   });
 
@@ -45,14 +79,14 @@ export const analyzeSentiment = (text) => {
  * Gets a descriptive label and an emoji representation based on the sentiment score
  */
 export const getSentimentDisplay = (score) => {
-  if (score >= 1.5) {
+  if (score > 1.5) {
     return {
       emoji: "🌟",
       label: "Excited / Highly Positive",
       color: "text-green-500 dark:text-green-400 animate-bounce"
     };
   }
-  if (score > 0.2) {
+  if (score >= 0.2) {
     return {
       emoji: "🙂",
       label: "Happy / Positive",
@@ -66,7 +100,7 @@ export const getSentimentDisplay = (score) => {
       color: "text-red-500 dark:text-red-400 animate-pulse"
     };
   }
-  if (score < -0.2) {
+  if (score <= -0.2) {
     return {
       emoji: "🙁",
       label: "Muted / Negative",

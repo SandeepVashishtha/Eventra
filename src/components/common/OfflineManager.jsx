@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Wifi, WifiOff, RefreshCw, Trash2, CheckCircle2, 
-  AlertTriangle, History, X, ChevronRight, Clock
+  RefreshCw, Trash2, CheckCircle2, 
+  AlertTriangle, History, X, Clock
 } from "lucide-react";
 import { getQueueIndexedDB, setQueue, clearQueue } from "../../utils/offlineQueue";
 import { toast } from "react-toastify";
@@ -35,6 +35,30 @@ const OfflineManager = ({ isOpen, onClose }) => {
     }
   };
 
+  const handleSyncNow = () => {
+    setIsSyncing(true);
+    window.dispatchEvent(new CustomEvent("eventra-background-sync"));
+  };
+
+  useEffect(() => {
+    const handleQueueProcessed = () => {
+      setIsSyncing(false);
+      loadQueue();
+    };
+
+    const handleQueueUpdated = () => {
+      loadQueue();
+    };
+
+    window.addEventListener("eventra-offline-queue-processed", handleQueueProcessed);
+    window.addEventListener("eventra-offline-queue-updated", handleQueueUpdated);
+
+    return () => {
+      window.removeEventListener("eventra-offline-queue-processed", handleQueueProcessed);
+      window.removeEventListener("eventra-offline-queue-updated", handleQueueUpdated);
+    };
+  }, [loadQueue]);
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -51,7 +75,7 @@ const OfflineManager = ({ isOpen, onClose }) => {
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-white dark:bg-gray-800 shadow-2xl z-[100] flex flex-col"
+            className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-white dark:bg-gray-800 shadow-2xl z-modal flex flex-col"
           >
             {/* Header */}
             <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
@@ -114,6 +138,7 @@ const OfflineManager = ({ isOpen, onClose }) => {
                 <p className="text-xs text-amber-700 dark:text-amber-400">Actions will automatically sync when a stable connection is detected.</p>
               </div>
               <button 
+                onClick={handleSyncNow}
                 disabled={pendingActions.length === 0 || isSyncing}
                 className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
               >
