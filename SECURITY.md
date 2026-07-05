@@ -16,3 +16,16 @@ If you discover a security vulnerability within this project, please do not open
 
 ### JWT Refresh Token Expiration Rules
 - Enforce secure cookie attributes for persistent auth sessions.
+
+## Client-side Security Configuration Validation
+
+Eventra performs a lightweight validation of important client-side security configuration during application startup.
+
+The validator checks:
+
+- HTTPS API endpoint configuration
+- Required environment variables
+- Authentication configuration
+- Content Security Policy (CSP) presence
+
+The validation utility reports configuration warnings during development to help contributors identify missing or insecure settings. It complements existing backend security controls and should not be considered a replacement for server-side validation.
