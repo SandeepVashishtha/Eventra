@@ -3,7 +3,7 @@
  */
 
 import { renderHook, act } from "@testing-library/react";
-import useAdvancedEventSearch, { DEFAULT_FILTERS, SORT_OPTIONS } from "../useAdvancedEventSearch";
+import useAdvancedEventSearch, { DEFAULT_FILTERS, SORT_OPTIONS } from "./useAdvancedEventSearch";
 
 // ---------------------------------------------------------------------------
 // Fixtures
