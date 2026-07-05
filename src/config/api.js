@@ -221,10 +221,10 @@ export const API_ENDPOINTS = {
     PUSH_UNSUBSCRIBE: buildApiUrl("/notifications/push-subscriptions/unsubscribe"),
   },
   USERS: {
-    PROFILE: buildApiUrl("/api/users/profile"),
-    ACHIEVEMENTS: buildApiUrl("/api/users/achievements"),
+    PROFILE: buildApiUrl("/users/profile"),
+    ACHIEVEMENTS: buildApiUrl("/users/achievements"),
     // (#7653) Endpoint for persisting user preferences (theme, etc.) across devices
-    PREFERENCES: buildApiUrl("/api/users/preferences"),
+    PREFERENCES: buildApiUrl("/users/preferences"),
   },
   TICKETS: {
     VALIDATE: buildApiUrl("/tickets/validate"),
