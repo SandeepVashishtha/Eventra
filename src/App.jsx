@@ -64,6 +64,7 @@ function App() {
   const location = useLocation();
   const isDashboardOrAdmin =
     location?.pathname === "/dashboard" || location?.pathname === "/admin";
+  const isHomePage = location?.pathname === "/";
   const pageLoader = (
     <div className="flex items-center justify-center min-h-screen text-gray-500">
       {t("app.loading")}
@@ -280,7 +281,7 @@ function App() {
                 {isDesktop && (
                   <ErrorBoundary level="section" label="Custom Cursor" silent>
                     <Suspense fallback={null}>
-                      <FluidCursor enabled={cursorEnabled} />
+                      <FluidCursor enabled={cursorEnabled && !isHomePage} />
                     </Suspense>
                   </ErrorBoundary>
                 )}
