@@ -323,6 +323,7 @@ export const useAnalyticsStream = () => {
 };
 
 export const useLiveAudienceStream = () => {
+  const ctx = useContext(LiveAudienceContext);
   if (typeof globalThis !== "undefined" && typeof globalThis.mockLiveAudienceStream === "function") {
     return globalThis.mockLiveAudienceStream();
   }
