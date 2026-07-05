@@ -371,18 +371,24 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   );
 
   useEffect(() => {
-    const stored = JSON.parse(
-      localStorage.getItem("recentEvents") || "[]"
-    );
+    let stored;
+    try {
+      stored = JSON.parse(localStorage.getItem("recentEvents") || "[]");
+    } catch {
+      stored = [];
+    }
     setRecentEvents(stored);
     const saved = safeParseJson(localStorage.getItem("recentSearches"), []);
     setRecentSearches(saved);
   }, []);
 
   const addToRecentEvents = (event) => {
-    const existing = JSON.parse(
-      localStorage.getItem("recentEvents") || "[]"
-    );
+    let existing;
+    try {
+      existing = JSON.parse(localStorage.getItem("recentEvents") || "[]");
+    } catch {
+      existing = [];
+    }
 
     const filtered = existing.filter((e) => e.id !== event.id);
     const updated = [event, ...filtered].slice(0, 6);
