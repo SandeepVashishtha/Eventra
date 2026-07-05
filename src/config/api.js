@@ -92,52 +92,8 @@ const wrapAxiosResponse = (response) => {
       typeof response.data === "string" ? response.data : JSON.stringify(response.data),
   };
 };
-const normalizeApiError = (error) => {
-  const config = error.config || {};
-  const status = error?.response?.status;
 
-  if (
-    error.code === "ECONNABORTED" ||
-    error.name === "AbortError" ||
-    error.message?.includes("timeout")
-  ) {
-    return new ApiError(
-      `Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s: ${config.method?.toUpperCase()} ${config.url}`,
-      {
-        status,
-        isTimeout: true,
-      }
-    );
-  }
 
-  if (!error.response) {
-    return new ApiError(
-      error.message ||
-        `Network error: ${config.method?.toUpperCase()} ${config.url}`,
-      {
-        status,
-        isNetworkError: true,
-      }
-    );
-  }
-
-  if (status === 429) {
-    return new RateLimitError(
-      error.response?.data?.message || "Too many requests, please try again later.",
-      { status, data: error.response?.data || null }
-    );
-  }
-
-  return new ApiError(
-    error.response?.data?.message ||
-      error.message ||
-      `Request failed with status ${status}`,
-    {
-      status,
-      data: error.response?.data || null,
-    }
-  );
-};
 
 // We completely removed the `if (!config.signal)` block that was generating the Ghost AbortController.
 API.interceptors.request.use((config) => {
@@ -156,6 +112,9 @@ API.interceptors.request.use((config) => {
       config.headers["X-CSRF-Token"] = csrf;
     }
   }
+
+  return config;
+});
 
 setupRequestInterceptor(API, { isDev, buildApiUrl, getAuthToken, getOnUnauthorized });
 setupResponseInterceptor(API, { isDev, timeoutMs: REQUEST_TIMEOUT_MS, getOnUnauthorized, getOnRequiresReauth });
@@ -252,39 +211,6 @@ export const API_ENDPOINTS = {
   },
 };
 
-const normalizeRequestConfig = (configOrToken = {}) => {
-  const config = typeof configOrToken === "string" ? {} : { ...configOrToken };
-  if ("skipAuth" in config) delete config.skipAuth;
-  return config;
-};
-
-const wrapHeaders = (headers) => {
-  if (!headers) return { get: () => null };
-  if (typeof headers.get === "function") return headers;
-  return { get: (key) => headers[key] || headers[key.toLowerCase()] || null };
-};
-
-const wrapAxiosResponse = (response) => {
-  const wrappedHeaders = wrapHeaders(response.headers);
-  return {
-    ...response,
-    headers: wrappedHeaders,
-    ok: response.status >= 200 && response.status < 300,
-    json: async () => {
-      // Guard against non-JSON responses (e.g. 502 HTML) evaluating incorrectly
-      if (typeof response.data === "string") {
-        try {
-          return JSON.parse(response.data);
-        } catch (_e) {
-          throw new Error("Received non-JSON response from server");
-        }
-      }
-      return response.data || {};
-    },
-    text: async () =>
-      typeof response.data === "string" ? response.data : JSON.stringify(response.data),
-  };
-};
 
 export const apiUtils = {
   get: (url, config = {}) =>

@@ -498,7 +498,7 @@ export default function CollaborationNetworkMap() {
                 </span>
                 <span className="mt-0.5 block text-xs uppercase tracking-wider text-slate-400">Active Hubs</span>
               </div>
-            ))}
+            </div>
           </div>
 
           {/* ── Map Frame — z-0 keeps the SVG canvas below the filter/popup layer ── */}
