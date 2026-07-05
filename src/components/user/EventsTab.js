@@ -391,21 +391,42 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
 
   // Registered events from user data
   const registeredEvents = useMemo(() => {
-    if (!myEvents || myEvents.length === 0) return [];
-    return myEvents
-      .map((registration) => {
-        const event = registration?.event || registration?.eventSummary;
-        if (!event) return null;
-        return {
-          ...event,
-          registeredAt: registration.registeredAt || registration.createdAt || new Date().toISOString(),
-          eventId: registration.eventId || registration.id || event.id,
-          isRegistered: true,
-        };
-      })
-      .filter(Boolean);
-  }, [myEvents]);
+  if (!myEvents || myEvents.length === 0) return [];
 
+  const seen = new Map();
+
+  myEvents.forEach((registration) => {
+    const source =
+      registration.event ||
+      registration.eventSummary ||
+      registration;
+
+    const eventId = registration.eventId || source.id;
+
+    const mapped = {
+      id: eventId,
+      eventId: eventId,
+      title: source.title,
+      description: source.description,
+      location: source.location,
+      date: source.date || source.startDate || source.eventDate,
+      time: source.time,
+      image: source.image || source.imageUrl,
+      imageUrl: source.image || source.imageUrl,
+      status: source.status || registration.status,
+      registeredAt: registration.registeredAt,
+      isRegistered: true,
+    };
+
+    const existing = seen.get(eventId);
+
+    if (!existing || (!existing.description && mapped.description)) {
+      seen.set(eventId, mapped);
+    }
+  });
+
+  return Array.from(seen.values());
+}, [myEvents]);
   // Available types for filter
   const availableTypes = useMemo(() => {
     const types = new Set();
