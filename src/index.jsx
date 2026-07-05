@@ -13,12 +13,16 @@ import { initCspReporting } from "./utils/cspReporting";
 import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
 import { RealTimeProvider } from "./context/RealTimeContext";
 import { HelmetProvider } from "react-helmet-async";
+import { validateSecurityConfiguration } from "./utils/security/securityConfigValidator";
 
 // Initialize Global Runtime Monitoring
 initializeGlobalErrorHandling();
 // Fixed Redis Rate Limiter TTL renewal on blocked requests to prevent permanent lockouts.
 // Refactored InMemoryLockManager implementation to prevent queue expiration race conditions.
 
+
+// Validate client-side security configuration
+validateSecurityConfiguration();
 
 // Attach CSP violation listener — surfaces policy breaches in dev console
 // and forwards reports to REACT_APP_CSP_REPORT_URI in production.
