@@ -14,6 +14,7 @@ import OfflineConflictModal from "./components/common/OfflineConflictModal";
 import UpdateAvailableBanner from "./components/common/UpdateAvailableBanner";
 import ScrollToTop from "./components/ScrollToTop";
 import ErrorBoundary from "./components/common/ErrorBoundary";
+import SkipToContent from "./components/accessibility/SkipToContent";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import NotificationToastContainer from "./components/common/NotificationProvider";
 import { NotificationProvider } from "./context/NotificationContext";
@@ -172,6 +173,7 @@ function App() {
               <OfflineSyncManager />
 <ScrollRestoration />
               <div className="App">
+                <SkipToContent />
                 <ErrorBoundary level="section" label="Navigation Bar">
                   <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
                 </ErrorBoundary>
