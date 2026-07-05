@@ -20,7 +20,7 @@ const CATEGORY_OPTIONS = [
 ];
 
 const EventFiltersToolbar = ({
-  // currentFilterConfig,
+  currentFilterConfig,
   filterType,
   onFilterChange,
   categoryFilter = "all",
@@ -48,7 +48,7 @@ const EventFiltersToolbar = ({
   // const { clearPresetError } = useEventFilterPresets();
 
   useFilterSuggestions({
-  currentFilters: {
+  currentFilters: currentFilterConfig ?? {
     searchQuery,
     filterType,
     categoryFilter,
