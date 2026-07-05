@@ -27,6 +27,8 @@ import LazyImage from "../../components/common/LazyImage";
 import ShareModal from "../../components/common/ShareModal";
 import StatusBadge from "../../components/common/StatusBadge";
 import { getEventStatus } from "../../utils/eventUtils";
+import SocialShareButtons from "../../components/common/SocialShareButtons";
+import AddToCalendar from "../../components/common/AddToCalendar";
 import { useMyEvents } from "../../context/MyEventsContext";
 import ReminderControls from "../../components/reminders/ReminderControls";
 import MatchScoreBadge from "../../components/common/MatchScoreBadge";
@@ -200,14 +202,16 @@ const EventCard = ({ event, matchScore, matchReasons }) => {
       e.preventDefault();
       e.stopPropagation();
       if (isBookmarked) {
-        toggleBookmark(event);
+        removeBookmarkedEvent(event.id);
+        setIsBookmarked(false);
         toast.info("Removed from saved events.", { toastId: `bookmark-${event.id}`, autoClose: 1800 });
       } else {
-        toggleBookmark({ ...event, status: computedStatus });
+        addBookmarkedEvent({ ...event, status: computedStatus });
+        setIsBookmarked(true);
         toast.success("Event saved!", { toastId: `bookmark-${event.id}`, autoClose: 1800 });
       }
     },
-    [isBookmarked, event, computedStatus, toggleBookmark]
+    [isBookmarked, event, computedStatus]
   );
 
   return (
