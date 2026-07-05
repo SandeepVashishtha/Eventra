@@ -97,16 +97,41 @@ export async function validateSignature(
   };
 }
 
-const cleanupInterval = setInterval(() => {
-  const now = Date.now();
+// ─── Nonce cleanup (lazy, non-leaking) ─────────────────────────────────────
 
-  for (const [nonce, timestamp] of usedNonces) {
-    if (now - timestamp > MAX_REQUEST_AGE_MS) {
-      usedNonces.delete(nonce);
+let cleanupInterval = null;
+
+/**
+ * Start the periodic nonce cleanup interval.
+ * Safe to call multiple times — no-ops if already running.
+ * Uses unref() in Node.js so the process can exit cleanly;
+ * in browsers, stopNonceCleanup() should be called on teardown.
+ */
+export function startNonceCleanup() {
+  if (cleanupInterval !== null) return;
+
+  cleanupInterval = setInterval(() => {
+    const now = Date.now();
+    for (const [nonce, timestamp] of usedNonces) {
+      if (now - timestamp > MAX_REQUEST_AGE_MS) {
+        usedNonces.delete(nonce);
+      }
     }
-  }
-}, 60000);
+  }, 60000);
 
-if (cleanupInterval && typeof cleanupInterval.unref === "function") {
-  cleanupInterval.unref();
+  if (cleanupInterval && typeof cleanupInterval.unref === "function") {
+    cleanupInterval.unref();
+  }
+}
+
+/**
+ * Stop the nonce cleanup interval and clear any pending nonces.
+ * Useful for tests and graceful shutdown.
+ */
+export function stopNonceCleanup() {
+  if (cleanupInterval !== null) {
+    clearInterval(cleanupInterval);
+    cleanupInterval = null;
+  }
+  usedNonces.clear();
 }
