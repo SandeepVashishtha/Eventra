@@ -1,6 +1,7 @@
 import axios from "axios";
 import { ENV } from "./env";
 import { syncServerTimeFromHeader } from "../utils/timeSync";
+import { createIntegrityHeader } from "../utils/security/requestIntegrity";
 
 // ---------------------------------------------------------------------------
 // Base API URL
@@ -198,15 +199,32 @@ const normalizeApiError = (error) => {
 };
 
 // We completely removed the `if (!config.signal)` block that was generating the Ghost AbortController.
-API.interceptors.request.use((config) => {
-  if (isDev) {
-    console.debug(`[API ${config.method?.toUpperCase()}]`, buildApiUrl(config.url || ""));
-  }
-  
-  const method = config.method?.toUpperCase();
-  
-  return config;
-});
+API.interceptors.request.use(
+  async (config) => {
+    if (isDev) {
+      console.debug(
+        `[API ${config.method?.toUpperCase()}]`,
+        buildApiUrl(config.url || "")
+      );
+    }
+
+    try {
+      const integrity = await createIntegrityHeader(config.data);
+
+      config.headers = {
+        ...config.headers,
+        "X-Request-Integrity": integrity,
+      };
+    } catch (error) {
+      if (isDev) {
+        console.warn("Failed to generate request integrity header.", error);
+      }
+    }
+
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 API.interceptors.response.use(
   (response) => {
