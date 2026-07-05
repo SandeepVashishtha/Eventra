@@ -139,26 +139,18 @@ const normalizeApiError = (error) => {
   );
 };
 
-// We completely removed the `if (!config.signal)` block that was generating the Ghost AbortController.
-API.interceptors.request.use((config) => {
-  if (isDev) {
-    logger.info(`[API ${config.method?.toUpperCase()}]`, buildApiUrl(config.url || ""));
-  }
-
-  if (_authToken && _authToken !== "cookie-managed") {
-    config.headers["Authorization"] = `Bearer ${_authToken}`;
-  }
-
-  const method = config.method?.toUpperCase();
-  if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
-    const csrf = getCSRFToken();
-    if (csrf) {
-      config.headers["X-CSRF-Token"] = csrf;
-    }
-  }
-
-setupRequestInterceptor(API, { isDev, buildApiUrl, getAuthToken, getOnUnauthorized });
-setupResponseInterceptor(API, { isDev, timeoutMs: REQUEST_TIMEOUT_MS, getOnUnauthorized, getOnRequiresReauth });
+setupRequestInterceptor(API, {
+  isDev,
+  buildApiUrl,
+  getAuthToken: () => _authToken,
+  getOnUnauthorized: () => onUnauthorized,
+});
+setupResponseInterceptor(API, {
+  isDev,
+  timeoutMs: REQUEST_TIMEOUT_MS,
+  getOnUnauthorized: () => onUnauthorized,
+  getOnRequiresReauth: () => onRequiresReauth,
+});
 
 // ---------------------------------------------------------------------------
 // API Endpoints
