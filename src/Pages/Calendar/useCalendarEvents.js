@@ -1,13 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import mockEvents from "../Events/eventsMockData.json";
-import { API_ENDPOINTS, apiUtils } from "../../config/api";
-import { getEventStatus } from "../../utils/eventUtils";
 
-const normalizeEvents = (events = []) =>
-  events.map((event) => ({
-    ...event,
-    status: getEventStatus(event),
-  }));
+import { eventService } from "../../services/eventService";
+import { normalizeEvent } from "../../utils/eventUtils";
+
+const normalizeEvents = (events = []) => events.map(normalizeEvent);
 
 const useCalendarEvents = () => {
   const [events, setEvents] = useState([]);
@@ -19,14 +15,16 @@ const useCalendarEvents = () => {
     setLoadError("");
 
     try {
-      const response = await apiUtils.get(API_ENDPOINTS.EVENTS.LIST);
+      const response = await eventService.getAllEvents();
       const apiEvents = Array.isArray(response.data) ? response.data : [];
       setEvents(normalizeEvents(apiEvents));
     } catch (error) {
       if (process.env.NODE_ENV === "development") {
         console.warn("Failed to fetch events. Falling back to mock data.", error);
         setLoadError(error?.message || "Failed to load events.");
-        setEvents(normalizeEvents(mockEvents));
+        import("../Events/eventsMockData.json").then(({ default: mockEvents }) => {
+          setEvents(normalizeEvents(mockEvents));
+        });
       } else {
         setEvents([]);
         setLoadError(error?.message || "Failed to load events. Please try again.");

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
+import { safeJsonParse } from "../../utils/safeJsonParse";
 import {
   Zap, CheckCircle, Gift, Target,
   Flame, Star, Trophy, Sparkles, Timer,
@@ -13,7 +14,7 @@ function loadQuestState() {
   try {
     const raw = localStorage.getItem(QUEST_STORAGE_KEY);
     if (!raw) return null;
-    return JSON.parse(raw);
+    return safeJsonParse(raw, {});
   } catch { return null; }
 }
 
@@ -144,8 +145,9 @@ const playClaimSound = () => {
 };
 
 // ─── Main QuestCenter component ────────────────────────────────────────────────
-export default function QuestCenter({ totalEvents = 0, currentStreak = 0 }) {
+export default function QuestCenter({ totalEvents = 0, currentStreak = 0, gssocEvents = 0 }) {
   const confettiRef = useRef(null);
+  const claimedGuardRef = useRef({});
   const [activeTab, setActiveTab] = useState('daily');
 
   // Initialise quest progress from localStorage or fresh defaults
@@ -200,12 +202,12 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0 }) {
       if (totalEvents >= 1) dp['dq-1'] = Math.min(1, totalEvents);
       dp['dq-2'] = 1; // visiting profile = auto-complete demo
       dp['dq-3'] = 1; // exploring events = auto-complete demo
-      wp['wq-1'] = Math.min(2, totalEvents);
+      wp['wq-1'] = Math.min(2, gssocEvents);
       wp['wq-2'] = Math.min(3, currentStreak);
       wp['wq-4'] = Math.min(5, totalEvents);
       return { ...prev, dailyProgress: dp, weeklyProgress: wp };
     });
-  }, [totalEvents, currentStreak, state.dailyResetAt, state.weeklyResetAt]);
+  }, [totalEvents, currentStreak, gssocEvents, state.dailyResetAt, state.weeklyResetAt]);
 
   // Countdown timer
   useEffect(() => {
@@ -227,12 +229,15 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0 }) {
   // ─── Claim handler ───────────────────────────────────────────────────────────
   const claimXP = (questId, xp, isWeekly) => {
     const claimedKey = isWeekly ? 'weeklyClaimed' : 'dailyClaimed';
-    
-    // 🔥 FIX 1: Moved the check INSIDE the functional setState.
-    // Checking the closure 'state' allows spam-click double-claiming exploits.
-    // Checking 'prev' guarantees atomic verification.
+    const guardKey = `${claimedKey}:${questId}`;
+
+    // Synchronous guard — blocks side effects on rapid double-click
+    // before React has had a chance to re-render with updated claimed state
+    if (claimedGuardRef.current[guardKey]) return;
+    claimedGuardRef.current[guardKey] = true;
+
     setState(prev => {
-      if (prev[claimedKey][questId]) return prev; // Already claimed, block exploit
+      if (prev[claimedKey][questId]) return prev;
 
       return {
         ...prev,
@@ -317,10 +322,10 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0 }) {
               transition={{ duration: 0.8, ease: 'easeOut' }}
               className={`h-full rounded-full ${
                 isClaimed
-                  ? 'bg-gradient-to-r from-emerald-400 to-teal-500'
+                  ? 'bg-linear-to-r from-emerald-400 to-teal-500'
                   : isComplete
-                    ? 'bg-gradient-to-r from-amber-400 to-orange-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]'
-                    : 'bg-gradient-to-r from-indigo-500 to-violet-500'
+                    ? 'bg-linear-to-r from-amber-400 to-orange-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]'
+                    : 'bg-linear-to-r from-indigo-500 to-violet-500'
               }`}
             />
           </div>
@@ -334,7 +339,7 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0 }) {
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.96 }}
             onClick={() => claimXP(quest.id, quest.rewardXP, isWeekly)}
-            className="mt-4 w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-black uppercase tracking-wider shadow-md hover:shadow-lg transition-shadow flex items-center justify-center gap-2"
+            className="mt-4 w-full py-2.5 rounded-xl bg-linear-to-r from-amber-500 to-orange-500 text-white text-xs font-black uppercase tracking-wider shadow-md hover:shadow-lg transition-shadow flex items-center justify-center gap-2"
           >
             <Gift className="w-3.5 h-3.5" />
             Claim {quest.rewardXP} XP
@@ -348,7 +353,7 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0 }) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-gradient-to-br from-emerald-400/20 to-teal-400/10 rounded-2xl pointer-events-none"
+              className="absolute inset-0 bg-linear-to-br from-emerald-400/20 to-teal-400/10 rounded-2xl pointer-events-none"
             />
           )}
         </AnimatePresence>
@@ -440,7 +445,7 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0 }) {
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: totalAvailableXP > 0 ? `${(claimedXP / totalAvailableXP) * 100}%` : '0%' }}
-            className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500"
+            className="h-full rounded-full bg-linear-to-r from-violet-500 to-fuchsia-500"
           />
         </div>
       </div>

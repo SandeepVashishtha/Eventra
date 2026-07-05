@@ -1,112 +1,54 @@
 import axios from "axios";
-import { ENV } from "./env";
-import { syncServerTimeFromHeader } from "../utils/timeSync";
+import { ApiError, RateLimitError, normalizeApiError } from "./api/errors.js";
+import { setupRequestInterceptor, setupResponseInterceptor, setOnRequiresReauthHandler } from "./api/interceptors.js";
+import { API_BASE_URL, validateBackendConfig } from "./backendConfig.js";
 
 // ---------------------------------------------------------------------------
 // Base API URL
 // ---------------------------------------------------------------------------
 
-const normalizeApiBaseUrl = (value = "") => {
-  if (!value) {
-    return "";
-  }
-
-  const trimmed = value.replace(/\/+$/, "").replace(/\/api$/, "");
-
-  try {
-    const parsed = new URL(trimmed);
-    return `${parsed.origin}${parsed.pathname === "/" ? "" : parsed.pathname}`;
-  } catch {
-    return trimmed;
-  }
-};
-
 const isDev = process.env.NODE_ENV === "development";
 
-const resolveEnvApiBaseUrl = () => {
-  const envUrl = ENV.API_URL;
-  if (envUrl) {
-    return normalizeApiBaseUrl(envUrl);
-  }
-  if (!isDev) {
-    console.warn(`VITE_API_URL environment variable is missing in ${process.env.NODE_ENV}. Defaulting to relative API requests.`);
-    return "";
-  }
-  return "http://localhost:8080";
-};
-
-export const API_BASE_URL = resolveEnvApiBaseUrl();
+// Validate backend configuration on module load
+const configValidation = validateBackendConfig();
+if (!configValidation.isValid && isDev) {
+  console.warn(`[API Config] ${configValidation.error}`);
+}
 
 const buildApiUrl = (path = "") => {
-  if (!path) {
-    return "";
-  }
-
-  if (/^https?:\/\//i.test(path)) {
-    return path;
-  }
-
+  if (!path) return "";
+  if (/^https?:\/\//i.test(path)) return path;
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-
-  if (!API_BASE_URL) {
-    return normalizedPath;
-  }
-
+  if (!API_BASE_URL) return normalizedPath;
   return `${API_BASE_URL}${normalizedPath}`;
 };
-
-// ---------------------------------------------------------------------------
-// Network Resilience Configuration
-// ---------------------------------------------------------------------------
-
-const REQUEST_TIMEOUT_MS = 15_000;
-const RETRYABLE_STATUS_CODES = [502, 503, 504];
-const RETRYABLE_METHODS = new Set(["GET", "HEAD", "OPTIONS", "TRACE"]);
-const MAX_RETRIES = 1;
-const RETRY_DELAY_MS = 1_000;
-
-// ---------------------------------------------------------------------------
-// Normalized API Error
-// ---------------------------------------------------------------------------
-
-export class ApiError extends Error {
-  constructor(
-    message,
-    { status = null, data = null, isTimeout = false, isNetworkError = false } = {}
-  ) {
-    super(message);
-    this.name = "ApiError";
-    this.status = status;
-    this.data = data;
-    this.isTimeout = isTimeout;
-    this.isNetworkError = isNetworkError;
-  }
-}
-
-export class RateLimitError extends ApiError {
-  constructor(message, { status = 429, data = null } = {}) {
-    super(message, { status, data });
-    this.name = "RateLimitError";
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Axios Instance
 // ---------------------------------------------------------------------------
 
+const REQUEST_TIMEOUT_MS = 15_000;
+
 const API = axios.create({
   baseURL: API_BASE_URL || undefined,
   timeout: REQUEST_TIMEOUT_MS,
-  headers: {
-    "Content-Type": "application/json",
-  },
+  headers: { "Content-Type": "application/json" },
   withCredentials: true,
 });
 
 let onUnauthorized = null;
+let onRequiresReauth = null;
+let _authToken = null;
 
 export const setOnUnauthorizedHandler = (handler) => {
   onUnauthorized = handler;
+};
+export const setRequiresReauthHandler = (handler) => {
+  onRequiresReauth = handler;
+  setOnRequiresReauthHandler(handler);
+};
+export const setAuthToken = (token) => {
+  _authToken = token;
 };
 
 /**
@@ -200,52 +142,23 @@ const normalizeApiError = (error) => {
 // We completely removed the `if (!config.signal)` block that was generating the Ghost AbortController.
 API.interceptors.request.use((config) => {
   if (isDev) {
-    console.debug(`[API ${config.method?.toUpperCase()}]`, buildApiUrl(config.url || ""));
+    logger.info(`[API ${config.method?.toUpperCase()}]`, buildApiUrl(config.url || ""));
   }
-  
+
+  if (_authToken && _authToken !== "cookie-managed") {
+    config.headers["Authorization"] = `Bearer ${_authToken}`;
+  }
+
   const method = config.method?.toUpperCase();
-  
-  return config;
-});
-
-API.interceptors.response.use(
-  (response) => {
-    const headerValue = response.headers.get("x-server-time") || response.headers.get("date");
-    if (headerValue) {
-      syncServerTimeFromHeader(headerValue);
+  if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+    const csrf = getCSRFToken();
+    if (csrf) {
+      config.headers["X-CSRF-Token"] = csrf;
     }
-    return response;
-  },
-  async (error) => {
-    const config = error.config || {};
-    const status = error?.response?.status;
-
-    if (status === 401 && onUnauthorized) {
-      onUnauthorized();
-    }
-
-    const retryCount = config._retryCount || 0;
-    const isNonMutating = RETRYABLE_METHODS.has(config.method?.toUpperCase() ?? "");
-    const isRetryableStatus = RETRYABLE_STATUS_CODES.includes(status);
-    
-    // Retry only idempotent reads/probes. Do not blind-retry mutations or 429s,
-    // because those can duplicate writes or worsen server-side rate limiting.
-    if (isNonMutating && isRetryableStatus && retryCount < MAX_RETRIES) {
-      config._retryCount = retryCount + 1;
-      const delay = RETRY_DELAY_MS * Math.pow(2, retryCount);
-
-      if (isDev) {
-        console.debug(
-          `[API ${config.method?.toUpperCase()}] ${config.url} returned ${status}, retrying in ${delay}ms (attempt ${config._retryCount})...`
-        );
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, delay));
-      return API(config);
-    }
-    throw normalizeApiError(error);
   }
-);
+
+setupRequestInterceptor(API, { isDev, buildApiUrl, getAuthToken, getOnUnauthorized });
+setupResponseInterceptor(API, { isDev, timeoutMs: REQUEST_TIMEOUT_MS, getOnUnauthorized, getOnRequiresReauth });
 
 // ---------------------------------------------------------------------------
 // API Endpoints
@@ -253,11 +166,12 @@ API.interceptors.response.use(
 
 export const API_ENDPOINTS = {
   AUTH: {
-    LOGIN: buildApiUrl("/api/auth/login"),
-    REGISTER: buildApiUrl("/api/auth/signup"),
-    SIGNUP: buildApiUrl("/api/auth/signup"),
-    LOGOUT: buildApiUrl("/api/auth/logout"),
-    RESET_PASSWORD: buildApiUrl("/api/auth/reset-password"),
+    LOGIN: buildApiUrl("/auth/login"),
+    REGISTER: buildApiUrl("/auth/signup"),
+    SIGNUP: buildApiUrl("/auth/signup"),
+    LOGOUT: buildApiUrl("/auth/logout"),
+    RESET_PASSWORD: buildApiUrl("/auth/reset-password"),
+    REFRESH: buildApiUrl("/auth/refresh"),
   },
   EVENTS: {
     CREATE: buildApiUrl("/api/events/create"),
@@ -270,44 +184,66 @@ export const API_ENDPOINTS = {
     REGISTRANTS: (id) => buildApiUrl(`/api/events/${id}/registrants`),
     // Convenience helper — appends ?page=&size= for callers that build the
     // URL manually rather than going through eventFetchUtils.buildPaginatedUrl.
-    PAGINATED: (page, size) => buildApiUrl(`/api/events?page=${page}&size=${size}`),
+    PAGINATED: (page, size) => buildApiUrl(`/events?page=${page}&size=${size}`),
+  },
+  LIVE_AUDIENCE: {
+    BASE: (eventId) => buildApiUrl(`/events/${eventId}/live-audience`),
+    QUESTIONS: (eventId) => buildApiUrl(`/events/${eventId}/live-audience/questions`),
+    UPVOTE: (eventId, questionId) => buildApiUrl(`/events/${eventId}/live-audience/questions/${questionId}/upvote`),
+    FLAG: (eventId, questionId) => buildApiUrl(`/events/${eventId}/live-audience/questions/${questionId}/flag`),
+    QUESTION_DETAIL: (eventId, questionId) => buildApiUrl(`/events/${eventId}/live-audience/questions/${questionId}`),
+    POLLS: (eventId) => buildApiUrl(`/events/${eventId}/live-audience/polls`),
+    POLL_STATUS: (eventId, pollId) => buildApiUrl(`/events/${eventId}/live-audience/polls/${pollId}/status`),
+    POLL_VOTE: (eventId, pollId) => buildApiUrl(`/events/${eventId}/live-audience/polls/${pollId}/vote`),
   },
   PROJECTS: {
-    ALL: buildApiUrl("/api/projects"),
-    LIST: buildApiUrl("/api/projects"),
-    DETAIL: (id) => buildApiUrl(`/api/projects/${id}`),
-    CATEGORIES: buildApiUrl("/api/projects/categories"),
-    SUBMIT: buildApiUrl("/api/projects"),
+    ALL: buildApiUrl("/projects"),
+    LIST: buildApiUrl("/projects"),
+    DETAIL: (id) => buildApiUrl(`/projects/${id}`),
+    CATEGORIES: buildApiUrl("/projects/categories"),
+    SUBMIT: buildApiUrl("/projects"),
+    UPVOTE: (id) => buildApiUrl(`/projects/${id}/upvote`),
+    FORK: (id) => buildApiUrl(`/projects/${id}/fork`),
   },
   HACKATHONS: {
-    LIST: buildApiUrl("/api/hackathons"),
-    DETAIL: (id) => buildApiUrl(`/api/hackathons/${id}`),
-    HOST: buildApiUrl("/api/hackathons"),
+    LIST: buildApiUrl("/hackathons"),
+    DETAIL: (id) => buildApiUrl(`/hackathons/${id}`),
+    HOST: buildApiUrl("/hackathons"),
   },
   NOTIFICATIONS: {
-    BASE: buildApiUrl("/api/notifications"),
-    ALL: buildApiUrl("/api/notifications"),
-    READ: (id) => (id ? buildApiUrl(`/api/notifications/${id}/read`) : ""),
-    READ_ALL: buildApiUrl("/api/notifications/read-all"),
-    PREFERENCES: buildApiUrl("/api/notifications/preferences"),
-    PUSH_SUBSCRIBE: buildApiUrl("/api/notifications/push-subscriptions"),
-    PUSH_UNSUBSCRIBE: buildApiUrl("/api/notifications/push-subscriptions/unsubscribe"),
+    BASE: buildApiUrl("/notifications"),
+    ALL: buildApiUrl("/notifications"),
+    READ: (id) => (id ? buildApiUrl(`/notifications/${id}/read`) : ""),
+    DELETE: (id) => (id ? buildApiUrl(`/notifications/${id}`) : ""),
+    READ_ALL: buildApiUrl("/notifications/read-all"),
+    PREFERENCES: buildApiUrl("/notifications/preferences"),
+    PUSH_SUBSCRIBE: buildApiUrl("/notifications/push-subscriptions"),
+    PUSH_UNSUBSCRIBE: buildApiUrl("/notifications/push-subscriptions/unsubscribe"),
   },
   USERS: {
     PROFILE: buildApiUrl("/api/users/profile"),
     ACHIEVEMENTS: buildApiUrl("/api/users/achievements"),
+    // (#7653) Endpoint for persisting user preferences (theme, etc.) across devices
+    PREFERENCES: buildApiUrl("/api/users/preferences"),
   },
   TICKETS: {
-    VALIDATE: buildApiUrl("/api/tickets/validate"),
-    CHECK_IN: buildApiUrl("/api/tickets/checkin"),
-    HISTORY: buildApiUrl("/api/tickets/checkins"),
+    VALIDATE: buildApiUrl("/tickets/validate"),
+    CHECK_IN: buildApiUrl("/tickets/checkin"),
+    HISTORY: buildApiUrl("/tickets/checkins"),
+  },
+  FEEDBACK: {
+    BASE: buildApiUrl("/feedback"),
+    BY_EVENT: (eventId) => {
+      const params = new URLSearchParams({ eventId: String(eventId) });
+      return buildApiUrl(`/feedback?${params.toString()}`);
+    },
   },
   ADMIN: {
-    USERS: buildApiUrl("/api/admin/users"),
-    USER: (id) => buildApiUrl(`/api/admin/users/${id}`),
-    EVENTS: buildApiUrl("/api/admin/events"),
-    EVENT: (id) => buildApiUrl(`/api/admin/events/${id}`),
-    STATS: buildApiUrl("/api/admin/stats"),
+    USERS: buildApiUrl("/admin/users"),
+    USER: (id) => buildApiUrl(`/admin/users/${id}`),
+    EVENTS: buildApiUrl("/admin/events"),
+    EVENT: (id) => buildApiUrl(`/admin/events/${id}`),
+    STATS: buildApiUrl("/admin/stats"),
   },
   VALIDATION: {
     EMAIL: (email) => buildApiUrl(`/api/validate/email/${encodeURIComponent(email)}`),
@@ -316,6 +252,39 @@ export const API_ENDPOINTS = {
   },
 };
 
+const normalizeRequestConfig = (configOrToken = {}) => {
+  const config = typeof configOrToken === "string" ? {} : { ...configOrToken };
+  if ("skipAuth" in config) delete config.skipAuth;
+  return config;
+};
+
+const wrapHeaders = (headers) => {
+  if (!headers) return { get: () => null };
+  if (typeof headers.get === "function") return headers;
+  return { get: (key) => headers[key] || headers[key.toLowerCase()] || null };
+};
+
+const wrapAxiosResponse = (response) => {
+  const wrappedHeaders = wrapHeaders(response.headers);
+  return {
+    ...response,
+    headers: wrappedHeaders,
+    ok: response.status >= 200 && response.status < 300,
+    json: async () => {
+      // Guard against non-JSON responses (e.g. 502 HTML) evaluating incorrectly
+      if (typeof response.data === "string") {
+        try {
+          return JSON.parse(response.data);
+        } catch (_e) {
+          throw new Error("Received non-JSON response from server");
+        }
+      }
+      return response.data || {};
+    },
+    text: async () =>
+      typeof response.data === "string" ? response.data : JSON.stringify(response.data),
+  };
+};
 
 export const apiUtils = {
   get: (url, config = {}) =>
@@ -328,15 +297,38 @@ export const apiUtils = {
     API.patch(url, data, normalizeRequestConfig(config)).then(wrapAxiosResponse),
   delete: (url, config = {}) =>
     API.delete(url, normalizeRequestConfig(config)).then(wrapAxiosResponse),
+  request: async (method, url, data = null, options = {}) => {
+    const config = normalizeRequestConfig(options);
+    if (options.signal) config.signal = options.signal;
+    if (options.headers) config.headers = { ...config.headers, ...options.headers };
+    config.method = method.toLowerCase();
+    const axiosResponse = await API.request({ url, method: config.method, data, ...config });
+    const wrappedHeaders = wrapHeaders(axiosResponse.headers);
+    return {
+      response: {
+        status: axiosResponse.status,
+        ok: axiosResponse.status >= 200 && axiosResponse.status < 300,
+        headers: wrappedHeaders,
+      },
+      data: axiosResponse.data,
+    };
+  },
 };
 
 export default API;
 
-export { normalizeApiError };
+export { ApiError, RateLimitError, normalizeApiError };
 
 // Centralized configuration cache store for fallback endpoints
 export const apiConfigCache = {
   store: new Map(),
-  get(key) { return this.store.get(key); },
-  set(key, val) { this.store.set(key, val); }
+  get(key) {
+    return this.store.get(key);
+  },
+  set(key, val) {
+    this.store.set(key, val);
+  },
+  clear() {
+    this.store.clear();
+  },
 };
