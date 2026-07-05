@@ -236,14 +236,6 @@ function App() {
                         {/* All other routes (auth, dashboard, admin, profile, events, etc.)
                             are handled by AppRoutes → PublicRoutes / ProtectedRoutes */}
                         <Route
-                          path="/matchmaking"
-                          element={
-                            <ProtectedRoute>
-                              <Suspense fallback={null}><MatchmakingHub /></Suspense>
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
                           path="*"
                           element={
                             <Suspense fallback={pageLoader}>
