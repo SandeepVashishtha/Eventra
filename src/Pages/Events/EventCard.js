@@ -166,6 +166,7 @@ const CapacityBar = ({ attendees, maxAttendees }) => {
 
 const EventCard = ({ event, matchScore, matchReasons }) => {
   const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
+  const [imageFailed, setImageFailed] = useState(false);
   const titleId = useId();
   const { myEvents, isRegistered } = useMyEvents();
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -221,12 +222,13 @@ const EventCard = ({ event, matchScore, matchReasons }) => {
       <div className="relative h-44 overflow-hidden bg-slate-900">
         <div className={`absolute inset-0 bg-gradient-to-br ${gradient} ${eventImage ? "opacity-25" : "opacity-80"}`} />
 
-        {eventImage ? (
+        {eventImage && !imageFailed ? (
           <LazyImage
             src={eventImage}
             alt={`${event.title} event banner`}
             className="absolute inset-0 w-full h-full"
             imgClassName="object-cover w-full h-full opacity-90 group-hover:scale-105 transition-transform duration-700"
+            onError={() => setImageFailed(true)}
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
