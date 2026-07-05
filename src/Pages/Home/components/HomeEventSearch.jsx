@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import Fuse from "fuse.js";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 
 import ModernSearchInput from "../../../components/common/ModernSearchInput";
 import useDebouncedSearch from "../../../hooks/useDebouncedSearch";
@@ -29,6 +30,7 @@ const getItemPath = (item) => {
 };
 
 export default function HomeEventSearch() {
+  const { t } = useTranslation();
   const [eventsData, setEventsData] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
@@ -70,13 +72,16 @@ export default function HomeEventSearch() {
   }, [debouncedTerm, searchIndex]);
 
   return (
-    <section className="mx-auto w-full max-w-3xl px-4 py-8 sm:py-10" aria-label="Find your next event">
+    <section
+      className="mx-auto w-full max-w-3xl px-4 py-8 sm:py-10"
+      aria-label={t("landing.search.ariaLabel")}
+    >
       <div className="text-center">
         <h2 className="text-lg font-semibold text-slate-900 dark:text-white sm:text-xl">
-          Find your next event
+          {t("landing.search.title")}
         </h2>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          Search hackathons, workshops, and community events
+          {t("landing.search.subtitle")}
         </p>
       </div>
 
@@ -84,8 +89,8 @@ export default function HomeEventSearch() {
         <ModernSearchInput
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search events, hackathons, projects..."
-          aria-label="Search events, hackathons, and projects"
+          placeholder={t("landing.search.placeholder")}
+          aria-label={t("landing.search.placeholder")}
         />
 
         {showResults && searchResults.length > 0 && (
@@ -94,7 +99,7 @@ export default function HomeEventSearch() {
             animate={{ opacity: 1, y: 0 }}
             className="absolute left-0 right-0 z-50 mt-2 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900"
             role="listbox"
-            aria-label="Search results"
+            aria-label={t("landing.hero.searchResults")}
           >
             {searchResults.map(({ item }) => (
               <li key={`${item.type}-${item.id}`} role="option">
@@ -103,7 +108,7 @@ export default function HomeEventSearch() {
                   className="block border-b border-slate-100 px-4 py-3 last:border-0 hover:bg-violet-50 dark:border-slate-800 dark:hover:bg-slate-800/80"
                 >
                   <span className="text-xs font-medium uppercase tracking-wide text-violet-600 dark:text-violet-400">
-                    {item.searchType}
+                    {t(`landing.hero.searchTypes.${item.searchType}`)}
                   </span>
                   <p className="font-medium text-slate-900 dark:text-white">{item.title}</p>
                   {item.description && (

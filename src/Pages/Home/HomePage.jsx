@@ -59,8 +59,8 @@ const HomePage = () => {
       {/* ─── PAGE CONTENT ───────────────────────────────────────────────── */}
       <Hero />
       <WhatsHappening />
-      <HomeEventSearch />
       <TrendingEvents title="Trending Events" limit={6} fetchSize={24} />
+      <HomeEventSearch />
       <RecommendationBanner />
       <CollaborationNetworkMap />
       <CollaborationMap />
