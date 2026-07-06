@@ -51,114 +51,18 @@ export const setAuthToken = (token) => {
   _authToken = token;
 };
 
-/**
- * Normalise the optional config/token argument accepted by apiUtils methods.
- *
- * IMPORTANT — do not pass a raw JWT string as the third argument to
- * apiUtils.post / .put / .patch:
- *   apiUtils.post(url, data, token)   ← WRONG: token is silently discarded
- *
- * Authentication is carried automatically via the HttpOnly session cookie
- * (withCredentials: true on the Axios instance). Callers must never include
- * user identity fields (userId, adminId) in the request body either — the
- * backend must derive identity from the verified JWT, not from client-supplied
- * body fields.
- */
-const normalizeRequestConfig = (configOrToken = {}) => {
-  const config = typeof configOrToken === "string" ? {} : { ...configOrToken };
-
-  if ("skipAuth" in config) {
-    delete config.skipAuth;
-  }
-  return config;
-};
-
-const wrapHeaders = (headers) => {
-  if (!headers) return { get: () => null };
-  if (typeof headers.get === "function") return headers;
-  return {
-    get: (key) => headers[key] || headers[key.toLowerCase()] || null,
-  };
-};
-
-const wrapAxiosResponse = (response) => {
-  const wrappedHeaders = wrapHeaders(response.headers);
-  return {
-    ...response,
-    headers: wrappedHeaders,
-    ok: response.status >= 200 && response.status < 300,
-    json: async () => response.data,
-    text: async () =>
-      typeof response.data === "string" ? response.data : JSON.stringify(response.data),
-  };
-};
-const normalizeApiError = (error) => {
-  const config = error.config || {};
-  const status = error?.response?.status;
-
-  if (
-    error.code === "ECONNABORTED" ||
-    error.name === "AbortError" ||
-    error.message?.includes("timeout")
-  ) {
-    return new ApiError(
-      `Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s: ${config.method?.toUpperCase()} ${config.url}`,
-      {
-        status,
-        isTimeout: true,
-      }
-    );
-  }
-
-  if (!error.response) {
-    return new ApiError(
-      error.message ||
-        `Network error: ${config.method?.toUpperCase()} ${config.url}`,
-      {
-        status,
-        isNetworkError: true,
-      }
-    );
-  }
-
-  if (status === 429) {
-    return new RateLimitError(
-      error.response?.data?.message || "Too many requests, please try again later.",
-      { status, data: error.response?.data || null }
-    );
-  }
-
-  return new ApiError(
-    error.response?.data?.message ||
-      error.message ||
-      `Request failed with status ${status}`,
-    {
-      status,
-      data: error.response?.data || null,
-    }
-  );
-};
-
-// We completely removed the `if (!config.signal)` block that was generating the Ghost AbortController.
-API.interceptors.request.use((config) => {
-  if (isDev) {
-    logger.info(`[API ${config.method?.toUpperCase()}]`, buildApiUrl(config.url || ""));
-  }
-
-  if (_authToken && _authToken !== "cookie-managed") {
-    config.headers["Authorization"] = `Bearer ${_authToken}`;
-  }
-
-  const method = config.method?.toUpperCase();
-  if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
-    const csrf = getCSRFToken();
-    if (csrf) {
-      config.headers["X-CSRF-Token"] = csrf;
-    }
-  }
-
-setupRequestInterceptor(API, { isDev, buildApiUrl, getAuthToken, getOnUnauthorized });
-setupResponseInterceptor(API, { isDev, timeoutMs: REQUEST_TIMEOUT_MS, getOnUnauthorized, getOnRequiresReauth });
+setupRequestInterceptor(API, {
+  isDev,
+  buildApiUrl,
+  getAuthToken: () => _authToken,
+  getOnUnauthorized: () => onUnauthorized,
+});
+setupResponseInterceptor(API, {
+  isDev,
+  timeoutMs: REQUEST_TIMEOUT_MS,
+  getOnUnauthorized: () => onUnauthorized,
+  getOnRequiresReauth: () => onRequiresReauth,
+});
 
 // ---------------------------------------------------------------------------
 // API Endpoints
@@ -252,6 +156,12 @@ export const API_ENDPOINTS = {
   },
 };
 
+/**
+ * Normalise the optional config/token argument accepted by apiUtils methods.
+ *
+ * Authentication is carried automatically via the HttpOnly session cookie
+ * (withCredentials: true on the Axios instance).
+ */
 const normalizeRequestConfig = (configOrToken = {}) => {
   const config = typeof configOrToken === "string" ? {} : { ...configOrToken };
   if ("skipAuth" in config) delete config.skipAuth;
