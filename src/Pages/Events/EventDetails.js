@@ -268,7 +268,15 @@ ${window.location.href}
     s: () => setShowShareModal(true),
     p: handlePrint,
   });
-  if (fetchLoading) return <EventDetailSkeleton />;
+  if (fetchLoading) {
+    return (
+      <div role="status" aria-live="polite">
+        <span className="sr-only">Loading event details</span>
+        <div className="mx-auto my-6 h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <EventDetailSkeleton />
+      </div>
+    );
+  }
 
   if (fetchError || !event) {
     return (
