@@ -125,7 +125,7 @@ const WaitlistModal = ({
                 )}
 
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  If spots become available or attendees cancel, we'll automatically promote you to
+                  If spots become available or attendees cancel, we&apos;ll automatically promote you to
                   confirmed registration and send you a notification.
                 </p>
               </div>
@@ -153,7 +153,7 @@ const WaitlistModal = ({
               <div className="mb-6">
                 <p className="text-gray-700 dark:text-gray-300 mb-4">
                   This event is currently full, but you can join the waitlist. If a spot opens up,
-                  we'll automatically promote you to a confirmed registration!
+                  we&apos;ll automatically promote you to a confirmed registration!
                 </p>
 
                 <p className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
@@ -175,7 +175,7 @@ const WaitlistModal = ({
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
                     />
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      We'll use this to contact you when a spot opens up
+                      We&apos;ll use this to contact you when a spot opens up
                     </p>
                   </div>
                 </div>
