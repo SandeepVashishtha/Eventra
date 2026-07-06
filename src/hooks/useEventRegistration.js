@@ -30,15 +30,15 @@ import { createRateLimiter } from "../utils/rateLimiter";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
-import { useFormValidation } from "../../hooks/useFormValidation";
+import { useFormValidation } from "./useFormValidation";
 import { getEventStatus } from "../utils/eventUtils";
 import { checkRegistrationConflict, suggestAlternativeEvents } from "../utils/conflictDetection";
-import { useAuth } from "../../context/AuthContext";
-import { useMyEvents } from "../../context/MyEventsContext";
+import { useAuth } from "../context/AuthContext";
+import { useMyEvents } from "../context/MyEventsContext";
 // Removed unused API_ENDPOINTS import
-import { eventService } from "../../services/eventService";
-import { useSessionRecovery } from "../../context/SessionRecoveryContext";
-import { validate } from "../../validation";
+import { eventService } from "../services/eventService";
+import { useSessionRecovery } from "../context/SessionRecoveryContext";
+import { validate } from "../validation";
 import {
   getCacheAgeLabel,
   getCachedEventDetail,
@@ -47,7 +47,7 @@ import {
 import { pushToQueue } from "../utils/offlineQueue";
 import { logError } from "../utils/errorLogger";
 import { logAbuseAttempt } from "../utils/abuseLogger";
-import hackathonsData from "../../Pages/Hackathons/hackathonMockData.json";
+import hackathonsData from "../Pages/Hackathons/hackathonMockData.json";
 import registrationLocks from "../utils/registrationLocks";
 
 export const MAX_NOTES_CHARS = 500;
