@@ -94,7 +94,7 @@ const MobileDrawer = ({
 
   return (
     <div
-      className={`fixed inset-0 z-50 lg:hidden ${
+      className={`fixed inset-0 z-50 ${
         isOpen ? "visible pointer-events-auto" : "invisible pointer-events-none"
       }`}
     >
