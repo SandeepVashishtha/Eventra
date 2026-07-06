@@ -1,5 +1,7 @@
 import { ENV } from "../config/env.js";
 
+const DEFAULT_EVENT_SHARE_HOST = "sandeepvashishtha.tech";
+
 /**
  * Sharing utility functions for Eventra
  * These functions generate URLs for sharing content across various platforms
@@ -125,25 +127,15 @@ export const generateEventSharingData = (event, baseUrl = null) => {
   }
 
   // Determine the correct base URL for sharing
-  const rawPublicUrl = ENV.PUBLIC_URL || "sandeepvashishtha.tech";
+  const rawPublicUrl = baseUrl ? ENV.PUBLIC_URL || DEFAULT_EVENT_SHARE_HOST : DEFAULT_EVENT_SHARE_HOST;
   const deployedOrigin = rawPublicUrl.startsWith("http")
     ? rawPublicUrl.replace(/\/$/, "")
     : `https://${rawPublicUrl}`;
 
-  // If baseUrl is provided, use it, otherwise detect
+  // If baseUrl is provided, use it. Otherwise use the public share host so
+  // copied/shared event links stay stable across local and production renders.
   if (!baseUrl) {
-    if (typeof window !== "undefined") {
-      const currentUrl = window.location.href;
-      // Check if we're on the deployed site
-      if (currentUrl.includes(rawPublicUrl)) {
-        baseUrl = deployedOrigin;
-      } else {
-        // Use the current origin (localhost or other development environment)
-        baseUrl = window.location.origin;
-      }
-    } else {
-      baseUrl = deployedOrigin; // Fallback for SSR/Node
-    }
+    baseUrl = deployedOrigin;
   }
 
   // Create a proper event URL
