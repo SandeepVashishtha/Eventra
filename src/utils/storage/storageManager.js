@@ -5,9 +5,20 @@ import { logger } from "../logger.js";
 
 const DEFAULT_EXPIRY = 1000 * 60 * 60; // 1 hour
 
+const getStorage = () => {
+  if (typeof globalThis !== "undefined" && globalThis.localStorage) {
+    return globalThis.localStorage;
+  }
+  if (typeof window !== "undefined" && window.localStorage) {
+    return window.localStorage;
+  }
+  return null;
+};
+
 export const storageManager = {
   set(key, value, expiry = DEFAULT_EXPIRY) {
-    if (typeof window === "undefined" || !window.localStorage) {
+    const storage = getStorage();
+    if (!storage) {
       return;
     }
     try {
@@ -17,18 +28,19 @@ export const storageManager = {
         version: 1,
       };
 
-      localStorage.setItem(key, JSON.stringify(payload));
+      storage.setItem(key, JSON.stringify(payload));
     } catch (error) {
       logger.error(`Storage set error for ${key}:`, error);
     }
   },
 
   get(key, validator = null) {
-    if (typeof window === "undefined" || !window.localStorage) {
+    const storage = getStorage();
+    if (!storage) {
       return null;
     }
     try {
-      const raw = localStorage.getItem(key);
+      const raw = storage.getItem(key);
       if (!raw) return null;
 
       const parsed = safeJsonParse(raw, {});
@@ -36,20 +48,20 @@ export const storageManager = {
       // 1. Check for expected structure
       if (!parsed || typeof parsed !== 'object' || !('value' in parsed)) {
         logger.warn(`[Storage] Invalid structure for key: ${key}`);
-        localStorage.removeItem(key);
+        storage.removeItem(key);
         return null;
       }
 
       // 2. Check for expiry (This is expected behavior)
       if (parsed.expiry && Date.now() > parsed.expiry) {
-        localStorage.removeItem(key);
+        storage.removeItem(key);
         return null;
       }
 
       // 3. Optional validation
       if (validator && !validator(parsed.value)) {
         logger.warn(`[Storage] Validation failed for key: ${key}`);
-        localStorage.removeItem(key);
+        storage.removeItem(key);
         return null;
       }
 
@@ -64,16 +76,20 @@ export const storageManager = {
   },
   
   remove(key) {
+    const storage = getStorage();
+    if (!storage) return;
     try {
-      localStorage.removeItem(key);
+      storage.removeItem(key);
     } catch (error) {
       logger.error(`Storage remove error for ${key}:`, error);
     }
   },
 
   clear() {
+    const storage = getStorage();
+    if (!storage) return;
     try {
-      localStorage.clear();
+      storage.clear();
     } catch (error) {
       logger.error("Storage clear error:", error);
     }
