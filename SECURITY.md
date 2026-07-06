@@ -64,5 +64,17 @@ Outgoing API requests automatically include an `X-Request-Integrity` header gene
 ### Notes
 
 This mechanism is intended for development and debugging purposes. It complements existing transport security (HTTPS) but does not replace server-side request validation or authentication.
+## Client-side Security Configuration Validation
+
+Eventra performs a lightweight validation of important client-side security configuration during application startup.
+
+The validator checks:
+
+- HTTPS API endpoint configuration
+- Required environment variables
+- Authentication configuration
+- Content Security Policy (CSP) presence
+
+The validation utility reports configuration warnings during development to help contributors identify missing or insecure settings. It complements existing backend security controls and should not be considered a replacement for server-side validation.
 ---
 _For general bugs or feature requests, open a regular [GitHub issue](../../issues/new/choose)._

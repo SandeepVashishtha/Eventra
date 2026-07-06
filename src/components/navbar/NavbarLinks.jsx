@@ -3,10 +3,10 @@ import { NavLink, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ChevronDown } from "lucide-react";
 
-import { NAV_ITEMS } from "./constants/navItems";
+import { PRIMARY_NAV_ITEMS } from "./constants/navItems";
 import { prefetchRoute } from "../../utils/routePrefetch";
 
-const NavbarLinks = ({ vertical = false, onClick }) => {
+const NavbarLinks = ({ vertical = false, items = PRIMARY_NAV_ITEMS, onClick }) => {
   const { t } = useTranslation();
   const location = useLocation();
   const navRef = useRef(null);
@@ -114,7 +114,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
       aria-label={vertical ? t("nav.mobilePrimaryLinks") : t("nav.primaryLinks")}
       className={`flex ${vertical ? "flex-col w-full gap-1" : "flex-nowrap items-center justify-center gap-2 lg:gap-2.5 xl:gap-3"}`}
     >
-      {NAV_ITEMS.map((item) => {
+      {items.map((item) => {
         const isOpen = openMenu === item.nameKey;
         const hasChildren = item.subItems && item.subItems.length > 0;
         const menuId = `menu-${item.nameKey}`;

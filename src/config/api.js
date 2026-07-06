@@ -214,6 +214,18 @@ API.interceptors.request.use((config) => {
 
 setupRequestInterceptor(API, { isDev, buildApiUrl, getAuthToken, getOnUnauthorized });
 setupResponseInterceptor(API, { isDev, timeoutMs: REQUEST_TIMEOUT_MS, getOnUnauthorized, getOnRequiresReauth });
+setupRequestInterceptor(API, {
+  isDev,
+  buildApiUrl,
+  getAuthToken: () => _authToken,
+  getOnUnauthorized: () => onUnauthorized,
+});
+setupResponseInterceptor(API, {
+  isDev,
+  timeoutMs: REQUEST_TIMEOUT_MS,
+  getOnUnauthorized: () => onUnauthorized,
+  getOnRequiresReauth: () => onRequiresReauth,
+});
 
 // ---------------------------------------------------------------------------
 // API Endpoints
@@ -307,6 +319,12 @@ export const API_ENDPOINTS = {
   },
 };
 
+/**
+ * Normalise the optional config/token argument accepted by apiUtils methods.
+ *
+ * Authentication is carried automatically via the HttpOnly session cookie
+ * (withCredentials: true on the Axios instance).
+ */
 const normalizeRequestConfig = (configOrToken = {}) => {
   const config = typeof configOrToken === "string" ? {} : { ...configOrToken };
   if ("skipAuth" in config) delete config.skipAuth;
