@@ -1,6 +1,7 @@
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { lazyWithRetry } from "./utils/lazyWithRetry.js";
 import { Analytics } from "@vercel/analytics/react";
 import "./App.css";
 import "./styles/reduced-motion.css";
@@ -36,22 +37,22 @@ import {
 } from "./components/common/SkeletonLoaders";
 
 // Route-level lazy splits - loaded only when route is visited
-const Footer = lazy(() => import("./components/Layout/Footer"));
-const Chatbot = lazy(() => import("./components/Chatbot"));
-const AppRoutes = lazy(() => import("./components/AppRoutes"));
-const SavedEventsPage = lazy(() => import("./Pages/SavedEventsPage"));
-const EventRecommendation = lazy(() => import("./Pages/EventRecommendation/EventRecommendation"));
-const ExploreEvents = lazy(() => import("./Pages/Events/EventsPage"));
+const Footer = lazyWithRetry(() => import("./components/Layout/Footer"));
+const Chatbot = lazyWithRetry(() => import("./components/Chatbot"));
+const AppRoutes = lazyWithRetry(() => import("./components/AppRoutes"));
+const SavedEventsPage = lazyWithRetry(() => import("./Pages/SavedEventsPage"));
+const EventRecommendation = lazyWithRetry(() => import("./Pages/EventRecommendation/EventRecommendation"));
+const ExploreEvents = lazyWithRetry(() => import("./Pages/Events/EventsPage"));
 
 // Non-critical UI - deferred after first paint
-const FluidCursor = lazy(() => import("./components/visual/FluidCursor"));
-const KeyboardShortcutsModal = lazy(() => import("./components/common/KeyboardShortcutsModal"));
-const OnboardingChecklist = lazy(() => import("./components/user/OnboardingChecklist"));
-const FeedbackButton = lazy(() => import("./components/FeedbackButton"));
-const BackToTop = lazy(() => import("./components/common/BackToTop"));
-const ReminderChecker = lazy(() => import("./components/reminders/ReminderChecker"));
-const SessionRecovery = lazy(() => import("./components/SessionRecovery"));
-const ThemeCustomizer = lazy(() => import("./components/Layout/ThemeCustomizer"));
+const FluidCursor = lazyWithRetry(() => import("./components/visual/FluidCursor"));
+const KeyboardShortcutsModal = lazyWithRetry(() => import("./components/common/KeyboardShortcutsModal"));
+const OnboardingChecklist = lazyWithRetry(() => import("./components/user/OnboardingChecklist"));
+const FeedbackButton = lazyWithRetry(() => import("./components/FeedbackButton"));
+const BackToTop = lazyWithRetry(() => import("./components/common/BackToTop"));
+const ReminderChecker = lazyWithRetry(() => import("./components/reminders/ReminderChecker"));
+const SessionRecovery = lazyWithRetry(() => import("./components/SessionRecovery"));
+const ThemeCustomizer = lazyWithRetry(() => import("./components/Layout/ThemeCustomizer"));
 
 
 const OfflineSyncManager = () => {
