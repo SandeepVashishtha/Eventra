@@ -85,6 +85,19 @@ class SseMultiplexer {
     this.reconnectAttempts = new Map(); // path -> attempt count (number)
     this.reconnectTimers = new Map();   // path -> setTimeout handle
 
+    this.msgHandlers = {
+      SUBSCRIBE: (msg) => this.handleSubscribe(msg),
+      UNSUBSCRIBE: (msg) => this.handleUnsubscribe(msg),
+      UNSUBSCRIBE_ALL: (msg) => this.handleUnsubscribeAll(msg),
+      QUERY_SUBSCRIBERS: () => this.handleQuerySubscribers(),
+      SUBSCRIBERS_RESPONSE: (msg) => this.handleSubscribersResponse(msg),
+      SSE_MESSAGE: (msg) => this.handleSseMessage(msg),
+      SSE_STATUS: (msg) => this.handleSseStatus(msg),
+      RECONNECT_REQUEST: (msg) => this.handleReconnectRequest(msg),
+      PING: () => this.handlePing(),
+      PONG: () => this.handlePong(),
+    };
+
     if (typeof window !== "undefined") {
       this.channel = new BroadcastChannel(MULTIPLEX_CHANNEL_NAME);
       this.channel.onmessage = (e) => this.handleBroadcastMessage(e.data);
@@ -155,37 +168,78 @@ class SseMultiplexer {
     checkLeader();
   }
 
-  claimLocalStorageLeadership() {
-    this.isLeader = true;
-    logger.log(`[SSE Multiplexer] Tab ${this.tabId} claimed leadership via LocalStorage.`);
-
-    // Write an immediate heartbeat so other tabs see the new leader without
-    // waiting up to HEARTBEAT_INTERVAL (3 s) for the first interval tick.
-    const writeHeartbeat = () => {
-      try {
-        localStorage.setItem(
-          HEARTBEAT_KEY,
-          JSON.stringify({ tabId: this.tabId, timestamp: Date.now() })
-        );
-      } catch {
-        // localStorage unavailable — non-fatal, leadership still held in memory
-      }
-    };
-    writeHeartbeat();
-
-    // Leadership may have been revoked inside writeHeartbeat if a competing
-    // leader was detected. Guard before starting any leader-only infrastructure.
-    if (!this.isLeader) return;
-
-    // Heartbeat loop — keep the entry fresh while leadership is held
-    if (this.heartbeatInterval) {
-      clearInterval(this.heartbeatInterval);
+  claimLocalStorageLeadership(confirmDelayMs = 30) {
+    if (this.localStorageClaimTimeout) {
+      clearTimeout(this.localStorageClaimTimeout);
+      this.localStorageClaimTimeout = null;
     }
-    this.heartbeatInterval = setInterval(writeHeartbeat, 2000);
 
-    this.startHeartbeatChecks();
-    this.queryGlobalSubscribers();
-    this.reconcileConnections();
+    const claimToken = `${this.tabId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    this.localStorageLeadershipToken = claimToken;
+
+    try {
+      localStorage.setItem(
+        HEARTBEAT_KEY,
+        JSON.stringify({
+          tabId: this.tabId,
+          token: claimToken,
+          timestamp: Date.now(),
+        }),
+      );
+    } catch {
+      this.localStorageLeadershipToken = null;
+      return;
+    }
+
+    this.localStorageClaimTimeout = setTimeout(() => {
+      this.localStorageClaimTimeout = null;
+
+      let storedClaim = null;
+      try {
+        const raw = localStorage.getItem(HEARTBEAT_KEY);
+        storedClaim = raw ? JSON.parse(raw) : null;
+      } catch {
+        storedClaim = null;
+      }
+
+      if (
+        !storedClaim ||
+        storedClaim.tabId !== this.tabId ||
+        storedClaim.token !== this.localStorageLeadershipToken
+      ) {
+        this.localStorageLeadershipToken = null;
+        return;
+      }
+
+      this.isLeader = true;
+      logger.log(`[SSE Multiplexer] Tab ${this.tabId} claimed leadership via LocalStorage.`);
+
+      const writeHeartbeat = () => {
+        if (!this.isLeader) return;
+        try {
+          localStorage.setItem(
+            HEARTBEAT_KEY,
+            JSON.stringify({
+              tabId: this.tabId,
+              token: this.localStorageLeadershipToken,
+              timestamp: Date.now(),
+            }),
+          );
+        } catch {
+          // localStorage unavailable — non-fatal, leadership still held in memory
+        }
+      };
+      writeHeartbeat();
+
+      if (this.heartbeatInterval) {
+        clearInterval(this.heartbeatInterval);
+      }
+      this.heartbeatInterval = setInterval(writeHeartbeat, 2000);
+
+      this.startHeartbeatChecks();
+      this.queryGlobalSubscribers();
+      this.reconcileConnections();
+    }, confirmDelayMs);
   }
 
   // --- 2. Subscription Management ---
