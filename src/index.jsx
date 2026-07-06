@@ -13,6 +13,7 @@ import { initCspReporting } from "./utils/cspReporting";
 import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
 import { RealTimeProvider } from "./context/RealTimeContext";
 import { HelmetProvider } from "react-helmet-async";
+import TranslationProvider from "./components/TranslationProvider";
 import { validateSecurityConfiguration } from "./utils/security/securityConfigValidator";
 
 // Initialize Global Runtime Monitoring
@@ -50,9 +51,11 @@ root.render(
     {/* Global Application Error Boundary (Fixes #5060) */}
     <GlobalErrorBoundary>
   <HelmetProvider>
+      <TranslationProvider>
       <RealTimeProvider>
         <RouterProvider router={router} />
       </RealTimeProvider>
+      </TranslationProvider>
   </HelmetProvider>
 </GlobalErrorBoundary>
   </React.StrictMode>
