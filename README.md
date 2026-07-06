@@ -30,7 +30,7 @@ npm run dev
 
 App runs at `http://localhost:3000`.
 
-> See [Local Development](#local-development) for detailed setup instructions and [Common Setup Issues](#common-setup-issues) for troubleshooting.
+> See [Local Development](#local-development) for detailed setup instructions and [Troubleshooting](#-troubleshooting) for common fixes.
 
 ## Table of Contents
 
@@ -48,6 +48,7 @@ App runs at `http://localhost:3000`.
 - [Prerequisites](#prerequisites)
 - [Local Development](#local-development)
 - [Docker Development](#docker-development)
+- [Troubleshooting](#-troubleshooting)
 - [Environment Variables](#environment-variables)
 - [Available Scripts](#available-scripts)
 - [Testing and Quality](#testing-and-quality)
@@ -316,6 +317,8 @@ rm -rf node_modules package-lock.json
 npm install
 ```
 
+If peer dependency errors appear on a fresh machine, make sure you are using the Node.js version declared in `package.json` before reinstalling.
+
 ---
 
 ### Vite Development Server Issues
@@ -326,7 +329,12 @@ If the development server fails to start:
 npm run dev
 ```
 
-If problems persist, reinstall dependencies and clear the Vite cache if necessary.
+If problems persist, reinstall dependencies and clear the Vite cache:
+
+```bash
+rm -rf node_modules/.vite
+npm run dev
+```
 
 ---
 
@@ -356,6 +364,39 @@ If port `3000` is occupied, start the development server on another port:
 ```bash
 npm run dev -- --port 3001
 ```
+
+If Docker is also running, check that `3000` or `8080` is not already bound by another Eventra container before restarting the app.
+
+---
+
+### Node.js Version Mismatch
+
+Eventra expects Node.js `22.x`. If you see unexpected install failures, missing globals, or Vite startup errors, verify your runtime first:
+
+```bash
+node -v
+```
+
+If the version does not start with `v22`, switch to Node 22 and reinstall dependencies.
+
+---
+
+### Windows Setup Notes
+
+On Windows PowerShell, replace Unix-style cleanup commands with:
+
+```powershell
+Remove-Item -Recurse -Force node_modules, package-lock.json
+npm install
+```
+
+If file watching feels unreliable in Docker or on mounted drives, try running `npm run dev` directly outside the container once to confirm the problem is environment-specific.
+
+---
+
+### API Configuration Mismatch
+
+If the frontend loads but API requests fail, confirm that one of `BACKEND_URL`, `VITE_API_URL`, or `REACT_APP_API_URL` points at a reachable backend. For local development, the default backend origin is `http://localhost:8080`.
 
 ---
 
@@ -551,6 +592,12 @@ Licensed under Apache 2.0. See [LICENSE](LICENSE).
     <img src="https://contrib.rocks/image?repo=SandeepVashishtha/Eventra&max=1000" alt="Contributors" />
   </a>
 </p>
+
+## Deployment Security
+
+Before deploying Eventra, review the deployment checklist:
+
+- docs/SECURE_DEPLOYMENT_CHECKLIST.md
 
 ### Maintainers
 

@@ -19,6 +19,9 @@ import ReminderControls from "../../components/reminders/ReminderControls";
 import EventRecommendations from "../../components/events/EventRecommendations";
 import EventCancellationModal from "../../components/events/EventCancellationModal";
 import SimilarEvents from "../../components/events/SimilarEvents";
+import LiveQABoard from "../../components/events/LiveQABoard";
+import EventRegistrationProgress from "../../components/common/EventRegistrationProgress";
+import LivePollController from "../../components/admin/LivePollController";
 import { EventDetailSkeleton } from "../../components/common/SkeletonLoaders";
 import LazyImage from "../../components/common/LazyImage";
 import { exportToCSV, exportToJSON } from "../../utils/exportUtils";
@@ -26,11 +29,10 @@ import { ROLES } from "../../config/roles";
 import { marked } from "marked";
 import ShareModal from "../../components/common/ShareModal";
 import SocialShareButtons from "../../components/common/SocialShareButtons";
-// import { generateEventSharingData } from "../../utils/shareUtils";
 import { downloadICSFile, generateGoogleCalendarLink, generateOutlookLink } from "../../utils/calendarExporter";
 import { RecentlyViewedTracker } from "../../components/common/RecentlyViewedEvents";
 import { apiUtils, API_ENDPOINTS } from "../../config/api";
-import { getLastUpdated } from "../../utils/lastUpdatedUtils";
+import { getLastUpdated } from "../../utils/LastUpdatedUtils";
 import mockEvents from "./eventsMockData.json";
 import CopyButton from '../../components/ui/CopyButton';
 const isRequestCanceled = (error, signal) =>
@@ -90,7 +92,6 @@ const EventDetails = () => {
       if (!isLatestRequest()) return;
       if (isRequestCanceled(error, controller.signal)) return;
 
-      // Fall back to bundled mock data when the API is unreachable
       const fallback = mockEvents.find((item) => String(item.id) === eventId);
       if (fallback) {
         setEvent({ ...fallback, status: getEventStatus(fallback) });
@@ -229,7 +230,7 @@ const EventDetails = () => {
 
   const handleCopy = async () => {
     const link = `
-🎉 Check out this event!
+Check out this event!
 
 Event: ${event.title}
 Date: ${new Date(event.date).toLocaleDateString()}
@@ -256,15 +257,11 @@ ${window.location.href}
       toast.success("Event link copied to clipboard!");
       setLinkCopied(true);
       setTimeout(() => setLinkCopied(false), 2000);
-    } catch (_err) {
+    } catch {
       toast.error("Failed to copy link. Please copy the URL from your browser's address bar.");
     }
   };
 
-  // For test compatibility with older spec expecting animate-spin spinner:
-  // {fetchLoading && <div className="animate-spin" style={{ display: 'none' }} />}
-
-  // Keyboard shortcuts for Event Detail page
   useKeyboardShortcuts({
     r: () => { if (event && !isEventRegistrationClosed(event)) navigate(`/events/${event.id}/register`); },
     c: handleCopy,
@@ -359,7 +356,7 @@ const lastUpdated = getLastUpdated(event.updatedAt);
 
   {showClosingSoon && (
     <span className="inline-flex items-center rounded-full bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
-      ⚠ Registration closes {hoursLeft <= 24 ? "today" : `in ${hoursLeft} hours`}
+      Registration closes {hoursLeft <= 24 ? "today" : `in ${hoursLeft} hours`}
     </span>
   )}
 
@@ -405,7 +402,7 @@ const lastUpdated = getLastUpdated(event.updatedAt);
                 className="print-hide inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
                 aria-label="Print or save as PDF"
               >
-                {isPrinting ? "Preparing..." : "≡ƒû¿∩╕Å Print / Save as PDF"}
+                {isPrinting ? "Preparing..." : "Print / Save as PDF"}
               </button>
 
               {isOrganizer && (
@@ -423,7 +420,7 @@ const lastUpdated = getLastUpdated(event.updatedAt);
                       className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800 cursor-pointer"
                       aria-label="Export registrant data"
                     >
-                      ≡ƒôÑ Export Registrants
+                      Export Registrants
                     </button>
                     {showExportDropdown && (
                       <>
@@ -455,7 +452,7 @@ const lastUpdated = getLastUpdated(event.updatedAt);
                                   }
                                 }
                                 exportToCSV(allRegistrants, `${event.title}_registrants`);
-                              } catch (_error) {
+                              } catch  {
                                 toast.error("Failed to fetch registrants");
                               } finally {
                                 setExportingRegistrants(false);
@@ -493,7 +490,7 @@ const lastUpdated = getLastUpdated(event.updatedAt);
                                   }
                                 }
                                 exportToJSON(allRegistrants, `${event.title}_registrants`);
-                              } catch (_error) {
+                              } catch {
                                 toast.error("Failed to fetch registrants");
                               } finally {
                                 setExportingRegistrants(false);

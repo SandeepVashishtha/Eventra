@@ -21,10 +21,10 @@ const AuthContext = createContext();
  * @returns {Object} Authentication context state and helper functions.
  */
 export const useAuth = () => {
+  const context = useContext(AuthContext);
   if (typeof globalThis !== "undefined" && typeof globalThis.mockAuth === "function") {
     return globalThis.mockAuth();
   }
-  const context = useContext(AuthContext);
   if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
@@ -117,10 +117,10 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     setAuthToken(null);
 
-    // Invalidate token cookie
-    deleteCookie("auth_token", {
+    // Invalidate token cookie (must match the name used in persistSession)
+    deleteCookie("token", {
       path: "/",
-      secure: true,
+      secureVariants: true,
     });
 
     // Clear user metadata from secure/local storage manager
@@ -197,7 +197,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const validate = async () => {
       try {
-        const res = await apiUtils.get("/api/auth/me");
+        const res = await apiUtils.get("/users/profile");
         let activeToken = "cookie-managed";
         if (!isMountedRef.current) return;
 

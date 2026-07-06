@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-// import mockEvents from "./eventsMockData.json";
 import { API_ENDPOINTS, apiUtils } from "../../config/api";
+import { normalizeEvent } from "../../utils/eventUtils";
 import { getEventStatus } from "../../utils/eventUtils";
 import useDebounce from "../../hooks/useDebounce";
 import { useStableFilters } from "../../hooks/useStableFilters";
+import useRecommendations from "../../hooks/useRecommendations";
 import {
   applyAdvancedFilters,
   getDateRange,
@@ -14,11 +15,13 @@ import {
 import { getRouteSearchResults } from "../../utils/searchUtils.mjs";
 import { getBookmarkedEvents } from "../../utils/bookmarkUtils";
 
-const DEFAULT_EVENTS_PER_PAGE = 12;
+const DEFAULT_EVENTS_PER_PAGE = 20;
 
 const SORT_MAPPING = {
   Newest: "date,desc",
   Upcoming: "date,asc",
+  // FIX (#7437): sort by AI recommendation score, highest first
+  "Best Match": "match,desc",
   Oldest: "date,asc",
   "Title A-Z": "title,asc",
   "Title Z-A": "title,desc",
@@ -26,10 +29,7 @@ const SORT_MAPPING = {
   "Price High to Low": "price,desc",
 };
 
-const normalizeEvent = (event) => ({
-  ...event,
-  status: event.status || getEventStatus(event),
-});
+const normalizeEventItem = (event) => normalizeEvent(event);
 
 const useEventListing = () => {
   const [events, setEvents] = useState([]);
@@ -134,7 +134,7 @@ const useEventListing = () => {
           ? responseData
           : [];
 
-      const normalizedEvents = apiEvents.map(normalizeEvent);
+      const normalizedEvents = apiEvents.map(normalizeEventItem);
       setEvents(normalizedEvents);
 
       setPagination({
@@ -144,16 +144,6 @@ const useEventListing = () => {
         last: responseData.last ?? true,
       });
     } catch (error) {
-      if (process.env.NODE_ENV === "development") {
-        const normalizedMockEvents = mockEvents.map(normalizeEvent);
-        setEvents(normalizedMockEvents);
-        setPagination({
-          totalPages: 1,
-          totalElements: normalizedMockEvents.length,
-          first: true,
-          last: true,
-        });
-      } else {
         setEvents([]);
         setPagination({
           totalPages: 1,
@@ -171,7 +161,6 @@ const useEventListing = () => {
             "Failed to load events. Please try again later.",
           );
         }
-      }
     } finally {
       setIsLoading(false);
     }
@@ -280,23 +269,31 @@ filtered = filtered.filter((event) => {
     return applyAdvancedFilters(filtered, advancedFilters);
   }, [events, filterType, categoryFilter, debouncedSearchQuery, advancedFilters]);
 
+  // FIX (#7437): Enrich all events with AI recommendation scores so the
+  // "Best Match" sort can rank events by personalised relevance.
+  // useRecommendations is memoised internally and only re-runs when `events`
+  // or the stored user profile changes — no extra network requests.
+  const scoredEvents = useRecommendations(events);
+
+  // Build a lookup map: eventId → { score, reasons } for downstream consumers
+  // (e.g. EventCard badge rendering) without re-sorting the whole list twice.
+  const matchScoreMap = useMemo(() => {
+    const map = new Map();
+    scoredEvents.forEach((e) => {
+      map.set(String(e.id), {
+        score: e.recommendationScore ?? 0,
+        reasons: e.recommendationReasons ?? [],
+      });
+    });
+    return map;
+  }, [scoredEvents]);
+
   const sortedEvents = useMemo(() => {
-    return [...filteredEvents].sort((a, b) => {
-      if (sortType === "Title A-Z") {
-        return (a.title || "").localeCompare(b.title || "");
-      }
-      if (sortType === "Title Z-A") {
-        return (b.title || "").localeCompare(a.title || "");
-      }
-      if (sortType === "Price Low to High") {
-        const priceA = a.price === "Free" || !a.price ? 0 : parseFloat(a.price);
-        const priceB = b.price === "Free" || !b.price ? 0 : parseFloat(b.price);
-        return priceA - priceB;
-      }
-      if (sortType === "Price High to Low") {
-        const priceA = a.price === "Free" || !a.price ? 0 : parseFloat(a.price);
-        const priceB = b.price === "Free" || !b.price ? 0 : parseFloat(b.price);
-        return priceB - priceA;
+    const base = sortType === "Best Match" ? scoredEvents : filteredEvents;
+    return [...base].sort((a, b) => {
+      // Best Match: sort by AI recommendation score descending
+      if (sortType === "Best Match") {
+        return (b.recommendationScore ?? 0) - (a.recommendationScore ?? 0);
       }
 
       const dateA = new Date(a.date || a.startDate);
@@ -308,7 +305,7 @@ filtered = filtered.filter((event) => {
       // Default / Newest
       return dateB - dateA;
     });
-  }, [filteredEvents, sortType]);
+  }, [filteredEvents, scoredEvents, sortType]);
 
   const paginatedEvents = useMemo(() => {
     const startIndex = (currentPage - 1) * eventsPerPage;
@@ -327,6 +324,7 @@ filtered = filtered.filter((event) => {
     categoryFilter,
     loadError,
     isLoading,
+    matchScoreMap,      // eventId → { score, reasons } for badge rendering
     paginatedEvents,
     searchQuery,
     sortType,

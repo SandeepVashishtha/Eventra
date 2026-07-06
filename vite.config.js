@@ -129,7 +129,6 @@ export default defineConfig(({ mode }) => {
       },
       manifest: true,
       rollupOptions: {
-        cache: true,
         onwarn(warning, warn) {
           if (warning.code === "MODULE_LEVEL_DIRECTIVE") return;
           warn(warning);
@@ -200,7 +199,7 @@ export default defineConfig(({ mode }) => {
       treeShaking: true,
     },
 
-    logLevel: "warn",
+    // logLevel: "warn",
     define: {
       __APP_VERSION__: JSON.stringify(process.env.npm_package_version || "0.0.0"),
       __BUILD_TIME__: JSON.stringify(new Date().toISOString()),

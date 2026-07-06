@@ -15,7 +15,9 @@ import {
 } from "lucide-react";
 import { useNotification } from "../../context/NotificationContext";
 import NavbarLinks from "./NavbarLinks";
+import { PRIMARY_NAV_ITEMS, SECONDARY_NAV_ITEMS } from "./constants/navItems";
 import LanguageSelector from "../LanguageSelector";
+import InstallAppButton from "../common/InstallAppButton";
 import { useTheme } from "../../context/ThemeContext";
 
 const MobileDrawer = ({
@@ -31,7 +33,7 @@ const MobileDrawer = ({
   const drawerRef = useRef(null);
   const closeButtonRef = useRef(null);
   const isActive = (path) => location.pathname === path;
-  const { isDarkMode, toggleTheme } = useTheme();
+  const { isDarkMode, toggleTheme, setIsCustomizerOpen } = useTheme();
   const { unreadCount } = useNotification();
 
   useEffect(() => {
@@ -92,7 +94,7 @@ const MobileDrawer = ({
 
   return (
     <div
-      className={`fixed inset-0 z-50 lg:hidden ${
+      className={`fixed inset-0 z-50 ${
         isOpen ? "visible pointer-events-auto" : "invisible pointer-events-none"
       }`}
     >
@@ -141,13 +143,14 @@ const MobileDrawer = ({
         </div>
 
         <div className="flex flex-col px-4 py-5">
-          <NavbarLinks
-            vertical
-            onClick={closeMenu}
-          />
+          <div className="lg:hidden mb-2">
+            <NavbarLinks vertical items={PRIMARY_NAV_ITEMS} onClick={closeMenu} />
+          </div>
+          
+          <NavbarLinks vertical items={SECONDARY_NAV_ITEMS} onClick={closeMenu} />
 
           <div className="mt-4 px-1">
-            <LanguageSelector className="w-full" />
+            <InstallAppButton />
           </div>
 
           {/* User Section */}
@@ -276,34 +279,52 @@ const MobileDrawer = ({
             )}
           </div>
 
-          {/* Preferences */}
+          {/* Settings Section */}
           <div className="mt-6 border-t border-border pt-4">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-text-light/80 mb-3 px-1">
-              Preferences
+              Settings
             </h3>
-            <div className="flex gap-3 px-1">
-              <button
-                type="button"
-                onClick={toggleTheme}
-                aria-pressed={isDarkMode}
-                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border border-border text-sm font-medium hover:bg-bg-secondary transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-              >
-                {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-                <span>{isDarkMode ? "Light" : "Dark"}</span>
-              </button>
-              <button
-                type="button"
-                onClick={toggleCursor}
-                aria-pressed={cursorEnabled}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-                  cursorEnabled
-                    ? "border-primary/40 bg-primary/10 text-primary"
-                    : "border-border hover:bg-bg-secondary"
-                }`}
-              >
-                <MousePointer size={18} />
-                <span>Cursor {cursorEnabled ? "On" : "Off"}</span>
-              </button>
+            <div className="flex flex-col gap-4 px-1">
+              <LanguageSelector className="w-full" />
+              
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  aria-pressed={isDarkMode}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border border-border text-sm font-medium hover:bg-bg-secondary transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+                  <span>{isDarkMode ? "Light" : "Dark"}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCustomizerOpen(true);
+                    closeMenu();
+                  }}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border border-border text-sm font-medium hover:bg-bg-secondary transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  <Sun size={18} className="text-primary" />
+                  <span>Appearance</span>
+                </button>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={toggleCursor}
+                  aria-pressed={cursorEnabled}
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                    cursorEnabled
+                      ? "border-primary/40 bg-primary/10 text-primary"
+                      : "border-border hover:bg-bg-secondary"
+                  }`}
+                >
+                  <MousePointer size={18} />
+                  <span>Cursor {cursorEnabled ? "On" : "Off"}</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -64,8 +64,7 @@ const renderCardSection = (
   viewMode,
   searchQuery,
   onClearSearch,
-  filteredEvents,
-  // hasFilters
+  matchScoreMap       // (#7437) Map of eventId → { score, reasons }
 ) => {
   if (isLoading) {
     return <ExploreEventsSkeleton />;
@@ -125,9 +124,17 @@ const renderCardSection = (
         : "grid-cols-1 max-w-4xl mx-auto"
         }`}
     >
-      {paginatedEvents.map((event) => (
-        <EventCard key={event.id} event={event} />
-      ))}
+      {paginatedEvents.map((event) => {
+          const match = matchScoreMap?.get(String(event.id));
+          return (
+            <EventCard
+              key={event.id}
+              event={event}
+              matchScore={match?.score}
+              matchReasons={match?.reasons}
+            />
+          );
+        })}
     </div>
   );
 };
@@ -141,10 +148,9 @@ const RecentlyViewedSection = () => (
 const EventsPage = () => {
   useDocumentTitle("Eventra | Events");
 
-  const location = useLocation(); // ✅ Now this works!
+  const location = useLocation(); 
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // SECURITY: Safely decode and sanitize search query from URL params
   const rawSearchParam =
     new URLSearchParams(location.search).get("search") || "";
 
@@ -155,7 +161,6 @@ const EventsPage = () => {
       decodeURIComponent(rawSearchParam)
     );
   } catch {
-    // Malformed URI component
     routeSearchQuery = "";
   }
 
@@ -165,19 +170,13 @@ const EventsPage = () => {
   const hasHydratedFilters = useRef(false);
   const [filtersHydrated, setFiltersHydrated] = useState(false);
 
-  // Local input value updates immediately on each keystroke so the input
-  // feels responsive. The debounced value is passed to the listing hook so
-  // the Fuse.js search pipeline only runs after the user pauses typing.
   const [localSearchInput, setLocalSearchInput] = useState(listing.searchQuery);
   const debouncedSearchQuery = useDebouncedValue(localSearchInput, 300);
 
-  // Sync the debounced value into the listing hook whenever it settles.
   useEffect(() => {
     listing.setSearchQuery(debouncedSearchQuery);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearchQuery]);
 
-  // Initialize state from URL params, falling back to persisted filters.
   useEffect(() => {
     if (hasHydratedFilters.current) return;
 
@@ -193,7 +192,7 @@ const EventsPage = () => {
 
     const page = parseInt(searchParams.get("page"), 10) || 1;
     const perPage =
-      parseInt(searchParams.get("perPage"), 10) || savedFilters.perPage || 6;
+      parseInt(searchParams.get("perPage"), 10) || savedFilters.perPage || 20;
     const filter =
       searchParams.get("filter") || savedFilters.filterType || "all";
     const category =
@@ -223,13 +222,12 @@ const EventsPage = () => {
     setFiltersHydrated(true);
   }, [searchParams, routeSearchQuery, listing]);
 
-  // Sync search query when URL param changes (e.g. navigating from navbar search)
   useEffect(() => {
     if (!filtersHydrated) return;
 
     const params = {};
     if (listing.currentPage > 1) params.page = listing.currentPage;
-    if (listing.eventsPerPage !== 6) params.perPage = listing.eventsPerPage;
+    if (listing.eventsPerPage !== 20) params.perPage = listing.eventsPerPage;
     if (listing.searchQuery) params.search = listing.searchQuery;
     if (listing.filterType !== "all") params.filter = listing.filterType;
     if (listing.categoryFilter !== "all") params.category = listing.categoryFilter;
@@ -254,7 +252,6 @@ const EventsPage = () => {
         })
       );
     } catch {
-      // sessionStorage can be unavailable in private browsing or embedded views.
     }
   }, [
     listing.currentPage,
@@ -269,7 +266,6 @@ const EventsPage = () => {
     setSearchParams,
   ]);
 
-  // Keep local state in sync when an explicit route search changes.
   useEffect(() => {
     if (!rawSearchParam) return;
 
@@ -278,7 +274,6 @@ const EventsPage = () => {
       setLocalSearchInput(safeQuery);
       listing.setSearchQuery(safeQuery);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     rawSearchParam,
     routeSearchQuery,
@@ -293,7 +288,6 @@ const EventsPage = () => {
     return listing.filteredEvents;
   };
 
-  // Scroll to card section after loading when a route search is active
   useEffect(() => {
     if (!isLoading && routeSearchQuery) {
       setTimeout(() => {
@@ -361,18 +355,14 @@ const EventsPage = () => {
 
       <div className="mt-6 sm:mt-8">
         <TrendingEvents title="Trending Events" limit={6} fetchSize={24} />
-
-<RecentlyViewedSection />
+        <RecentlyViewedSection />
       </div>
-
-      <RecentlyViewedSection />
 
       <div
         ref={cardSectionRef}
         className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8"
       >
         <div className="mb-5 sm:mb-6">
-
           <EventFiltersToolbar
             filterType={listing.filterType}
             onFilterChange={listing.setFilterType}
@@ -417,26 +407,22 @@ const EventsPage = () => {
         />
 
         <ErrorBoundary level="section" label="Events">
-          {renderCardSection(
-            isLoading,
-            listing.loadError,
-            listing.fetchEvents,
-            listing.paginatedEvents,
-            listing.viewMode,
-            listing.searchQuery,
-            clearSearchAndFilters,
-            listing.filteredEvents,
-            hasActiveAdvancedFilters(listing.advancedFilters) ||
-              listing.filterType !== "all" ||
-              listing.categoryFilter !== "all"
-          )}
+     {renderCardSection(
+  isLoading,
+  listing.loadError,
+  listing.fetchEvents,
+  listing.paginatedEvents,
+  listing.viewMode,
+  listing.searchQuery,
+  clearSearchAndFilters,
+  listing.matchScoreMap   // (#7437) pass score map for badge rendering
+)}
 
           {!listing.isLoading && listing.totalPages > 1 && (
             <EventsPagination listing={listing} />
           )}
         </ErrorBoundary>
 
-        {/* Interactive Event Timeline Planner Section */}
         <div className="mt-12 sm:mt-16">
           <ErrorBoundary level="section" label="Event Timeline Planner">
             <EventTimeline />

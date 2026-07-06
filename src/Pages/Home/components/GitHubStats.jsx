@@ -17,17 +17,26 @@ import {
 
 import { safeJsonParse } from "../../../utils/safeJsonParse";
 import { ENV } from "../../../config/env";
-import {
-  fetchRepository,
-  fetchContributors,
-  fetchPullRequests,
-} from "../../../utils/githubApiClient";
+import { fetchGitHubJson } from "../../../utils/githubApiClient";
 
 const repoPath = ENV.GITHUB_REPO;
 const [GITHUB_USER, GITHUB_REPO] = repoPath.split("/");
 
 const LS_KEY = "eventra:repoStats";
 const CACHE_MS = 30 * 60 * 1000; // 30 min
+const CONTRIBUTORS_PAGE_SIZE = 100;
+
+const fetchRepository = (owner, repo) =>
+  fetchGitHubJson(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`);
+
+const fetchContributors = (owner, repo) =>
+  fetchGitHubJson(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contributors`, {
+    per_page: CONTRIBUTORS_PAGE_SIZE,
+    anon: 1,
+  });
+
+const fetchPullRequests = (owner, repo, params) =>
+  fetchGitHubJson(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pulls`, params);
 
 const readCache = () => {
   try {
@@ -54,8 +63,8 @@ export default function GitHubStats() {
     lastCommit: "N/A",
     size: 0,
     pullRequests: 0,
-    releases: 0,
     license: "N/A",
+    defaultBranch: "master",
     watchers: 0,
     languages: {},
   });
@@ -74,7 +83,7 @@ export default function GitHubStats() {
         const [repoResult, contributorsResult, prResult] =
           await Promise.allSettled([
             fetchRepository(GITHUB_USER, GITHUB_REPO),
-            fetchContributors(GITHUB_USER, GITHUB_REPO, 1, 1),
+            fetchContributors(GITHUB_USER, GITHUB_REPO),
             fetchPullRequests(GITHUB_USER, GITHUB_REPO, { per_page: 1 }),
           ]);
 
@@ -93,7 +102,10 @@ export default function GitHubStats() {
         if (contributorsResult.status === "fulfilled") {
           const contributors = contributorsResult.value;
           if (Array.isArray(contributors) && contributors.length > 0) {
-            contribCount = contributors.length;
+            contribCount =
+              contributors.length === CONTRIBUTORS_PAGE_SIZE
+                ? `${CONTRIBUTORS_PAGE_SIZE}+`
+                : contributors.length;
           }
         } else if (contributorsResult.status === "rejected") {
           contribCount = "—";
@@ -120,8 +132,8 @@ export default function GitHubStats() {
             : "N/A",
           size: repoData.size || 0,
           pullRequests: prCount,
-          releases: "—",
           license: repoData.license?.spdx_id || "N/A",
+          defaultBranch: repoData.default_branch || "master",
           watchers: repoData.subscribers_count || 0,
           languages: {},
         };
@@ -186,7 +198,7 @@ export default function GitHubStats() {
       label: "License",
       value: stats.license,
       icon: <Scale className="text-gray-600 dark:text-gray-400" size={40} />,
-      link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/blob/main/LICENSE`,
+      link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/blob/${stats.defaultBranch || "master"}/LICENSE`,
     },
     {
       label: "Last Update",
@@ -244,7 +256,7 @@ export default function GitHubStats() {
                     <div className="p-2 sm:p-3 md:p-4 bg-gray-50 dark:bg-gray-700 rounded-full shadow-inner [&>svg]:w-7 [&>svg]:h-7 sm:[&>svg]:w-9 sm:[&>svg]:h-9 md:[&>svg]:w-10 md:[&>svg]:h-10">
                       {icon}
                     </div>
-                    <p className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100 text-center wrap-break-word px-1">
+                    <p className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100 text-center break-words px-1">
                       {value}
                     </p>
                     <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 text-center px-1">

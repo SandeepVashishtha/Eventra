@@ -14,12 +14,7 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 
-export const NAV_ITEMS = [
-  {
-    nameKey: "nav.home",
-    href: "/",
-    icon: <Home className="w-5 h-5" />,
-  },
+export const PRIMARY_NAV_ITEMS = [
   {
     nameKey: "nav.events",
     href: "/events",
@@ -52,12 +47,14 @@ export const NAV_ITEMS = [
     href: "/projects",
     icon: <FolderKanban className="w-5 h-5" />,
   },
+];
+
+export const SECONDARY_NAV_ITEMS = [
   {
     nameKey: "nav.networking",
     href: "/networking",
     icon: <Users className="w-5 h-5" />,
   },
-
   {
     nameKey: "nav.community",
     href: "/community-event",

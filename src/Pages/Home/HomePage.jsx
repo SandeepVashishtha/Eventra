@@ -1,6 +1,7 @@
 import { Helmet } from "react-helmet-async";
 
 import Hero from "./components/Hero";
+import HomeEventSearch from "./components/HomeEventSearch";
 import WhatsHappening from "./components/WhatsHappening";
 import HomeCTA from "./components/HomeCTA";
 import RecommendationBanner from "./components/RecommendationBanner";
@@ -59,6 +60,7 @@ const HomePage = () => {
       <Hero />
       <WhatsHappening />
       <TrendingEvents title="Trending Events" limit={6} fetchSize={24} />
+      <HomeEventSearch />
       <RecommendationBanner />
       <CollaborationNetworkMap />
       <CollaborationMap />
