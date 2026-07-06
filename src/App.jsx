@@ -64,6 +64,7 @@ function App() {
   const location = useLocation();
   const isDashboardOrAdmin =
     location?.pathname === "/dashboard" || location?.pathname === "/admin";
+  const isHomePage = location?.pathname === "/";
   const pageLoader = (
     <div className="flex items-center justify-center min-h-screen text-gray-500">
       {t("app.loading")}
@@ -237,14 +238,6 @@ function App() {
                         {/* All other routes (auth, dashboard, admin, profile, events, etc.)
                             are handled by AppRoutes → PublicRoutes / ProtectedRoutes */}
                         <Route
-                          path="/matchmaking"
-                          element={
-                            <ProtectedRoute>
-                              <Suspense fallback={null}><MatchmakingHub /></Suspense>
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
                           path="*"
                           element={
                             <Suspense fallback={pageLoader}>
@@ -288,7 +281,7 @@ function App() {
                 {isDesktop && (
                   <ErrorBoundary level="section" label="Custom Cursor" silent>
                     <Suspense fallback={null}>
-                      <FluidCursor enabled={cursorEnabled} />
+                      <FluidCursor enabled={cursorEnabled && !isHomePage} />
                     </Suspense>
                   </ErrorBoundary>
                 )}
