@@ -33,6 +33,13 @@ import CryptoJS from "crypto-js";
 
 let _memoizedFingerprint = null;
 
+const getFingerprintDayOffset = () => Math.floor(Date.now() / 86_400_000);
+
+const buildFingerprintSalt = (namespace, origin) => {
+  const dayOffset = getFingerprintDayOffset();
+  return `eventra:${namespace}:${origin}:day:${dayOffset}`;
+};
+
 export const getDeviceFingerprint = () => {
   // Return cached value if already computed this page load
   if (_memoizedFingerprint !== null) {
@@ -77,7 +84,7 @@ export const getDeviceFingerprint = () => {
     // Per-origin salt: different for each deployment and never a static literal
     // in the bundle. Combining the origin with a domain-specific namespace
     // avoids salt collisions if two deployments share the same hostname root.
-    const salt = `eventra:fingerprint:${window.location.origin}`;
+    const salt = buildFingerprintSalt("fingerprint", window.location.origin);
 
     _memoizedFingerprint = CryptoJS.SHA256(fingerprintRaw + salt).toString();
     return _memoizedFingerprint;
@@ -86,7 +93,7 @@ export const getDeviceFingerprint = () => {
     const fallbackSalt =
       typeof window !== "undefined" ? window.location.origin : "eventra-fallback";
     _memoizedFingerprint = CryptoJS.SHA256(
-      `eventra-fingerprint-fallback:${fallbackSalt}`,
+      buildFingerprintSalt("fingerprint-fallback", fallbackSalt),
     ).toString();
     return _memoizedFingerprint;
   }
@@ -113,7 +120,7 @@ export const getFastFingerprint = () => {
   try {
     const screenInfo = `${window.screen?.width || 0}x${window.screen?.height || 0}x${window.screen?.colorDepth || 0}`;
     const navInfo = `${window.navigator?.userAgent || ""}_${window.navigator?.language || ""}_${window.navigator?.hardwareConcurrency || 0}`;
-    const salt = `eventra:fast-fingerprint:${window.location.origin}`;
+    const salt = buildFingerprintSalt("fast-fingerprint", window.location.origin);
     _memoizedFastFingerprint = CryptoJS.SHA256(`${screenInfo}_${navInfo}_${salt}`).toString();
     return _memoizedFastFingerprint;
   } catch {
@@ -140,6 +147,6 @@ export const _clearFingerprintCache = () => {
  * @returns {string}
  */
 export const _getFingerprintSalt = () => {
-  if (typeof window === "undefined") return "eventra:fingerprint:test";
-  return `eventra:fingerprint:${window.location.origin}`;
+  const origin = typeof window === "undefined" ? "test" : window.location.origin;
+  return buildFingerprintSalt("fingerprint", origin);
 };
