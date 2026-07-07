@@ -83,7 +83,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
       <nav
         ref={navRef}
         aria-label="Primary navigation"
-        className={`sticky top-0 z-50 w-full transition-all duration-300 bg-white/70 dark:bg-gray-950/70 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-800/30 ${
+        className={`sticky top-0 z-50 w-full transition-all duration-300 bg-card-bg/70 backdrop-blur-md border-b border-border ${
           scrolled ? "shadow-premium-md border-primary/10" : "shadow-premium-sm border-transparent"
         }`}
       >
