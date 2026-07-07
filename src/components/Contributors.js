@@ -227,8 +227,12 @@ const ContributorsInner = () => {
     fetchContributors();
   }, [fetchContributors]);
 useEffect(() => {
-  const saved =
-    JSON.parse(localStorage.getItem("contributorSearchHistory")) || [];
+  let saved;
+  try {
+    saved = JSON.parse(localStorage.getItem("contributorSearchHistory")) || [];
+  } catch {
+    saved = [];
+  }
 
   setRecentSearches(saved);
 }, []);
