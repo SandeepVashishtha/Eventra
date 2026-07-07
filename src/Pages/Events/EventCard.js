@@ -217,10 +217,10 @@ const EventCard = ({ event, matchScore, matchReasons }) => {
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -6, scale: 1.015 }}
       transition={{ type: "spring", stiffness: 280, damping: 22 }}
-      className="group relative flex flex-col rounded-2xl overflow-hidden bg-[#0f1117] border border-white/[0.07] shadow-xl shadow-black/40 hover:shadow-2xl hover:shadow-black/60 hover:border-white/[0.14] transition-all duration-300"
+      className="group relative flex flex-col rounded-2xl overflow-hidden bg-card-bg border border-border shadow-premium-sm hover:shadow-premium-lg hover:border-indigo-500/30 dark:hover:border-indigo-400/30 transition-all duration-300"
     >
-      <div className="relative h-44 overflow-hidden bg-slate-900">
-        <div className={`absolute inset-0 bg-gradient-to-br ${gradient} ${eventImage ? "opacity-25" : "opacity-80"}`} />
+      <div className="relative h-44 overflow-hidden bg-slate-100 dark:bg-slate-900">
+        <div className={`absolute inset-0 bg-gradient-to-br ${gradient} ${eventImage ? "opacity-15" : "opacity-80"}`} />
 
         {eventImage && !imageFailed ? (
           <LazyImage
@@ -323,38 +323,38 @@ const EventCard = ({ event, matchScore, matchReasons }) => {
         <h3
           id={titleId}
           title={event.title}
-          className="text-white font-bold text-base leading-snug line-clamp-2 group-hover:text-indigo-300 transition-colors duration-200"
+          className="text-text font-bold text-base leading-snug line-clamp-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-200"
         >
           {event.title}
         </h3>
 
-        <p className="text-slate-400 text-sm leading-relaxed line-clamp-2 -mt-1">
+        <p className="text-text-light/90 dark:text-slate-400 text-sm leading-relaxed line-clamp-2 -mt-1">
           {event.description}
         </p>
 
         <div className="flex flex-col gap-2.5">
           {event.location && (
             <div className="flex items-center gap-2.5">
-              <div className="flex-shrink-0 w-7 h-7 rounded-lg bg-pink-500/10 border border-pink-500/20 flex items-center justify-center">
-                <MapPin size={13} className="text-pink-400" />
+              <div className="flex-shrink-0 w-7 h-7 rounded-lg bg-pink-500/5 dark:bg-pink-500/10 border border-pink-500/10 dark:border-pink-500/20 flex items-center justify-center">
+                <MapPin size={13} className="text-pink-500 dark:text-pink-400" />
               </div>
-              <span className="text-sm text-slate-300 font-medium truncate">{event.location}</span>
+              <span className="text-sm text-text-light dark:text-slate-300 font-medium truncate">{event.location}</span>
             </div>
           )}
 
           <div className="flex items-center gap-2.5">
-            <div className="flex-shrink-0 w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
-              <Calendar size={13} className="text-indigo-400" />
+            <div className="flex-shrink-0 w-7 h-7 rounded-lg bg-indigo-500/5 dark:bg-indigo-500/10 border border-indigo-500/10 dark:border-indigo-500/20 flex items-center justify-center">
+              <Calendar size={13} className="text-indigo-600 dark:text-indigo-400" />
             </div>
             <div className="flex items-center gap-2 min-w-0">
-              <span className="text-sm text-slate-300 font-medium">
+              <span className="text-sm text-text-light dark:text-slate-300 font-medium">
                 {dateInfo.full !== "Date TBD" ? dateInfo.full : "Date TBD"}
               </span>
               {dateInfo.time && dateInfo.full !== "Date TBD" && (
                 <>
-                  <span className="text-slate-600">·</span>
-                  <Clock size={11} className="text-slate-500 flex-shrink-0" />
-                  <span className="text-xs text-slate-500">{dateInfo.time}</span>
+                  <span className="text-slate-400">·</span>
+                  <Clock size={11} className="text-slate-400 dark:text-slate-500 flex-shrink-0" />
+                  <span className="text-xs text-text-light/80 dark:text-slate-500">{dateInfo.time}</span>
                 </>
               )}
             </div>
@@ -365,10 +365,10 @@ const EventCard = ({ event, matchScore, matchReasons }) => {
               <div className="w-7 h-7" />
               <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${
                 dateInfo.relative === "Past"
-                  ? "bg-slate-500/10 border-slate-500/20 text-slate-400"
+                  ? "bg-slate-500/10 border-slate-500/20 text-slate-500 dark:text-slate-400"
                   : dateInfo.relative === "Today"
-                  ? "bg-green-500/10 border-green-500/20 text-green-400"
-                  : "bg-indigo-500/10 border-indigo-500/20 text-indigo-400"
+                  ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                  : "bg-indigo-500/10 border-indigo-500/20 text-indigo-600 dark:text-indigo-400"
               }`}>
                 {dateInfo.relative}
               </span>
@@ -381,27 +381,27 @@ const EventCard = ({ event, matchScore, matchReasons }) => {
         <CapacityBar attendees={event.attendees} maxAttendees={event.maxAttendees} />
       )}
 
-      <div className="px-5 py-2.5 border-t border-white/[0.06] flex items-center justify-between">
+      <div className="px-5 py-2.5 border-t border-border flex items-center justify-between">
         <SocialShareButtons event={event} layout="inline" />
         <AddToCalendar event={event} iconOnly={true} />
       </div>
 
-      <div className="px-4 py-4 flex gap-2.5 border-t border-white/[0.06]">
+      <div className="px-4 py-4 flex gap-2.5 border-t border-border">
         {isPastEvent ? (
-          <div className="flex-1 inline-flex items-center justify-center rounded-xl bg-slate-800 text-slate-500 px-4 py-2.5 text-sm font-semibold cursor-not-allowed select-none">
+          <div className="flex-1 inline-flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 px-4 py-2.5 text-sm font-semibold cursor-not-allowed select-none">
             Event Ended
           </div>
         ) : (
           <Link
             to={`/events/${event.id}/register`}
-            className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white px-4 py-2.5 text-sm font-bold shadow-lg shadow-indigo-900/40 hover:shadow-indigo-900/60 transition-all duration-200 hover:scale-[1.02]"
+            className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white px-4 py-2.5 text-sm font-bold shadow-premium-md shadow-indigo-500/10 hover:shadow-premium-lg hover:shadow-indigo-500/20 transition-all duration-200 hover:scale-[1.02]"
           >
             Register Now
           </Link>
         )}
         <Link
           to={`/events/${event.id}`}
-          className="inline-flex items-center justify-center gap-1 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-slate-300 hover:text-white px-4 py-2.5 text-sm font-semibold transition-all duration-200 hover:scale-[1.02]"
+          className="inline-flex items-center justify-center gap-1 rounded-xl bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 border border-border hover:border-gray-300 dark:border-white/10 dark:hover:border-white/20 text-text-light hover:text-text dark:text-slate-300 dark:hover:text-white px-4 py-2.5 text-sm font-semibold transition-all duration-200 hover:scale-[1.02]"
         >
           Details
           <ArrowRight size={13} />

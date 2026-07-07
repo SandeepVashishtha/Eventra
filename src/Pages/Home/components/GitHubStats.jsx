@@ -223,13 +223,13 @@ export default function GitHubStats() {
   ], [stats]);
 
   return (
-    <section className="py-16 bg-white dark:bg-black ">
+    <section className="py-16 bg-bg transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-6">
         <motion.h2
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="text-3xl sm:text-4xl font-extrabold text-center text-gray-900 dark:text-gray-100 mb-8 sm:mb-10 px-4"
+          className="text-3xl sm:text-4xl font-extrabold text-center text-text mb-8 sm:mb-10 px-4"
         >
           Project Statistics
         </motion.h2>
@@ -246,20 +246,20 @@ export default function GitHubStats() {
                   key={label}
                   href={link}
                   target="_blank" rel="noopener noreferrer"
-                  whileHover={{ scale: 1.1, rotate: 1 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="group flex flex-col items-center justify-center bg-white dark:bg-gray-800 rounded-2xl px-3 py-4 sm:px-6 sm:py-6 md:px-8 shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-700 relative overflow-hidden"
+                  whileHover={{ scale: 1.05, y: -4 }}
+                  whileTap={{ scale: 0.97 }}
+                  className="group flex flex-col items-center justify-center bg-card-bg rounded-2xl px-3 py-4 sm:px-6 sm:py-6 md:px-8 shadow-premium-sm hover:shadow-premium-lg hover:border-indigo-500/30 dark:hover:border-indigo-400/30 transition-all duration-300 border border-border relative overflow-hidden"
                 >
-                  <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition duration-700 blur-3xl rounded-2xl"></div>
+                  <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/10 via-purple-500/5 to-pink-500/10 opacity-0 group-hover:opacity-100 transition duration-500 blur-2xl rounded-2xl"></div>
 
                   <div className="z-10 flex flex-col items-center space-y-2 sm:space-y-3">
-                    <div className="p-2 sm:p-3 md:p-4 bg-gray-50 dark:bg-gray-700 rounded-full shadow-inner [&>svg]:w-7 [&>svg]:h-7 sm:[&>svg]:w-9 sm:[&>svg]:h-9 md:[&>svg]:w-10 md:[&>svg]:h-10">
+                    <div className="p-2 sm:p-3 md:p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl shadow-inner [&>svg]:w-7 [&>svg]:h-7 sm:[&>svg]:w-9 sm:[&>svg]:h-9 md:[&>svg]:w-10 md:[&>svg]:h-10">
                       {icon}
                     </div>
-                    <p className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100 text-center break-words px-1">
+                    <p className="text-base sm:text-lg md:text-xl font-bold text-text text-center break-words px-1">
                       {value}
                     </p>
-                    <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 text-center px-1">
+                    <p className="text-xs sm:text-sm font-medium text-text-light dark:text-slate-400 text-center px-1">
                       {label}
                     </p>
                   </div>

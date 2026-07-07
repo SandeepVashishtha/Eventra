@@ -40,8 +40,8 @@ export default function HeroVisual() {
       className="relative mx-auto h-[320px] w-full max-w-md sm:h-[380px] lg:max-w-none lg:h-[420px]"
       aria-hidden="true"
     >
-      <div className="absolute inset-4 rounded-[2rem] bg-gradient-to-br from-violet-100/80 via-indigo-50/60 to-pink-100/70 dark:from-violet-950/40 dark:via-indigo-950/30 dark:to-pink-950/30 border border-violet-200/50 dark:border-violet-800/40" />
-      <div className="absolute left-1/2 top-1/2 h-36 w-36 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-br from-violet-400/30 to-pink-400/20 blur-2xl dark:from-violet-600/20 dark:to-pink-600/10" />
+      <div className="absolute inset-4 rounded-[2.5rem] bg-gradient-to-br from-indigo-100/60 via-purple-50/40 to-pink-100/50 dark:from-indigo-950/20 dark:via-purple-950/15 dark:to-pink-950/15 border border-indigo-200/30 dark:border-indigo-800/20" />
+      <div className="absolute left-1/2 top-1/2 h-36 w-36 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-br from-indigo-400/20 to-pink-400/20 blur-3xl dark:from-indigo-600/10 dark:to-pink-600/10" />
 
       <motion.div
         initial={{ opacity: 0, scale: 0.96 }}
@@ -49,14 +49,14 @@ export default function HeroVisual() {
         transition={{ duration: 0.55 }}
         className="absolute left-1/2 top-1/2 z-20 w-[min(100%,260px)] -translate-x-1/2 -translate-y-1/2 sm:w-[280px]"
       >
-        <div className="overflow-hidden rounded-2xl border border-white/70 bg-white/95 shadow-2xl shadow-violet-300/30 backdrop-blur-md dark:border-slate-700/70 dark:bg-slate-900/95 dark:shadow-black/40">
-          <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2.5 dark:border-slate-800">
+        <div className="overflow-hidden rounded-2xl border border-white/60 bg-white/70 shadow-premium-lg backdrop-blur-md dark:border-slate-800/50 dark:bg-slate-900/70 dark:shadow-black/50">
+          <div className="flex items-center justify-between border-b border-slate-100/60 px-4 py-2.5 dark:border-slate-800/60">
             <div className="flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-rose-400" />
               <span className="h-2 w-2 rounded-full bg-amber-400" />
               <span className="h-2 w-2 rounded-full bg-emerald-400" />
             </div>
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
               Eventra
             </span>
           </div>
@@ -64,7 +64,7 @@ export default function HeroVisual() {
           <div className="space-y-2 p-3">
             <div className="flex items-center justify-between">
               <p className="text-xs font-bold text-slate-900 dark:text-white">Upcoming Events</p>
-              <Calendar className="h-3.5 w-3.5 text-violet-500" />
+              <Calendar className="h-3.5 w-3.5 text-indigo-500" />
             </div>
 
             {previewEvents.map((event, index) => (
@@ -73,7 +73,7 @@ export default function HeroVisual() {
                 initial={{ opacity: 0, x: -8 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.2 + index * 0.1 }}
-                className="flex items-start gap-2.5 rounded-xl border border-slate-100 bg-slate-50/80 px-2.5 py-2 dark:border-slate-800 dark:bg-slate-800/50"
+                className="flex items-start gap-2.5 rounded-xl border border-gray-100/80 bg-white/80 px-2.5 py-2 dark:border-slate-800/60 dark:bg-slate-800/40"
               >
                 <div className={`mt-0.5 h-2 w-2 shrink-0 rounded-full ${event.accent}`} />
                 <div className="min-w-0">
@@ -104,7 +104,7 @@ export default function HeroVisual() {
             <motion.div
               animate={{ y: [0, -6, 0] }}
               transition={{ duration: 4 + card.delay * 2, repeat: Infinity, ease: "easeInOut" }}
-              className="flex items-center gap-2.5 rounded-2xl border border-white/60 bg-white/90 px-3 py-2.5 shadow-lg shadow-violet-200/40 backdrop-blur-sm dark:border-slate-700/60 dark:bg-slate-900/90 dark:shadow-black/30 sm:px-3.5 sm:py-3"
+              className="flex items-center gap-2.5 rounded-2xl border border-white/50 bg-white/70 px-3 py-2.5 shadow-premium-md backdrop-blur-md dark:border-slate-800/50 dark:bg-slate-900/70 dark:shadow-black/45 sm:px-3.5 sm:py-3"
             >
               <div
                 className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${card.accent} text-white`}
