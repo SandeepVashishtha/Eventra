@@ -85,6 +85,19 @@ class SseMultiplexer {
     this.reconnectAttempts = new Map(); // path -> attempt count (number)
     this.reconnectTimers = new Map();   // path -> setTimeout handle
 
+    this.msgHandlers = {
+      SUBSCRIBE: (msg) => this.handleSubscribe(msg),
+      UNSUBSCRIBE: (msg) => this.handleUnsubscribe(msg),
+      UNSUBSCRIBE_ALL: (msg) => this.handleUnsubscribeAll(msg),
+      QUERY_SUBSCRIBERS: (msg) => this.handleQuerySubscribers(msg),
+      SUBSCRIBERS_RESPONSE: (msg) => this.handleSubscribersResponse(msg),
+      SSE_MESSAGE: (msg) => this.handleSseMessage(msg),
+      SSE_STATUS: (msg) => this.handleSseStatus(msg),
+      RECONNECT_REQUEST: (msg) => this.handleReconnectRequest(msg),
+      PING: (msg) => this.handlePing(msg),
+      PONG: (msg) => this.handlePong(msg),
+    };
+
     if (typeof window !== "undefined") {
       this.channel = new BroadcastChannel(MULTIPLEX_CHANNEL_NAME);
       this.channel.onmessage = (e) => this.handleBroadcastMessage(e.data);

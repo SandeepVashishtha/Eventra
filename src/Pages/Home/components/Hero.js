@@ -40,39 +40,39 @@ const Hero = () => {
         className="relative mx-auto grid w-full max-w-6xl items-center gap-6 px-4 sm:gap-8 lg:grid-cols-2 lg:gap-10"
       >
         <div className="flex flex-col gap-4 sm:gap-5">
-          <div className="inline-flex w-fit items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-violet-700 dark:border-violet-800 dark:bg-violet-950/50 dark:text-violet-300">
+          <div className="inline-flex w-fit items-center gap-2 rounded-lg border border-border bg-white/[0.04] dark:bg-white/[0.02] px-3 py-1 text-xs font-semibold uppercase tracking-wider text-text-light">
             {t("landing.hero.badge")}
           </div>
 
-          <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-slate-900 dark:text-white sm:text-5xl lg:text-[3.25rem]">
+          <h1 className="text-4xl font-extrabold leading-tight tracking-tighter text-text sm:text-5xl lg:text-[3.25rem]">
             {t("landing.hero.headlineBefore")}{" "}
-            <span className="bg-gradient-to-r from-violet-600 to-pink-500 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-slate-950 to-slate-600 dark:from-white dark:to-slate-400 bg-clip-text text-transparent">
               {t("landing.hero.headlineHighlight")}
             </span>{" "}
             {t("landing.hero.headlineAfter")}
           </h1>
 
-          <p className="max-w-xl text-base font-medium leading-relaxed text-slate-700 dark:text-slate-200 sm:text-lg">
+          <p className="max-w-xl text-base font-medium leading-relaxed text-text-light sm:text-lg">
             {t("landing.hero.tagline")}
           </p>
 
-          <p className="max-w-xl text-sm leading-relaxed text-slate-600 dark:text-slate-400 sm:text-base">
+          <p className="max-w-xl text-sm leading-relaxed text-text-light/80 sm:text-base">
             {t("landing.hero.description")}
           </p>
 
-          <p className="max-w-xl text-sm font-medium text-violet-700 dark:text-violet-300">
+          <p className="max-w-xl text-sm font-semibold text-primary">
             {t("landing.hero.differentiator")}
           </p>
 
           <ul
-            className="flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium text-slate-700 dark:text-slate-300"
+            className="flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium text-text-light"
             aria-label={t("landing.hero.platformStats")}
           >
             {SOCIAL_PROOF_VALUES.map((stat) => (
               <li key={stat.key} className="flex items-center gap-1.5">
                 <Check className="h-4 w-4 shrink-0 text-emerald-500" aria-hidden="true" />
                 <span>
-                  <span className="font-bold text-slate-900 dark:text-white">{stat.value}</span>{" "}
+                  <span className="font-bold text-text">{stat.value}</span>{" "}
                   {t(`landing.hero.stats.${stat.key}`)}
                 </span>
               </li>
@@ -82,7 +82,7 @@ const Hero = () => {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <Link
               to="/events"
-              className="group inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-violet-600 to-pink-500 px-7 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 transition-transform hover:scale-[1.02] sm:text-base"
+              className="group inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 hover:bg-slate-900 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-950 px-6 py-2.5 text-sm font-semibold shadow-premium-sm hover:shadow-premium-md transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] sm:text-base"
             >
               {t("landing.hero.ctaExplore")}
               <ArrowRight
@@ -92,7 +92,7 @@ const Hero = () => {
             </Link>
             <Link
               to="/create-event"
-              className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-violet-500 bg-white px-7 py-3 text-sm font-semibold text-violet-600 transition-colors hover:bg-violet-50 dark:border-violet-400 dark:bg-transparent dark:text-violet-300 dark:hover:bg-violet-950/40 sm:text-base"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-white dark:bg-slate-900/40 hover:bg-gray-50 dark:hover:bg-slate-800 text-text px-6 py-2.5 text-sm font-semibold shadow-premium-sm hover:shadow-premium-md transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] sm:text-base"
             >
               <Plus className="h-4 w-4" aria-hidden="true" />
               {t("landing.hero.ctaCreate")}
@@ -104,7 +104,7 @@ const Hero = () => {
               <Link
                 key={chip.to + chip.label}
                 to={chip.to}
-                className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-violet-300 hover:text-violet-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-violet-600 dark:hover:text-violet-300 sm:text-sm"
+                className="rounded-lg border border-border bg-white/30 dark:bg-white/[0.02] px-3.5 py-1.5 text-xs font-semibold text-text-light hover:text-text hover:border-border hover:bg-white/70 dark:hover:bg-white/[0.05] transition-all duration-200"
               >
                 {chip.label}
               </Link>
