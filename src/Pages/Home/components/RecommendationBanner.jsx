@@ -4,7 +4,8 @@ const RecommendationBanner = () => {
   const [activeFilter, setActiveFilter] = useState("AI/ML");
   return (
     <section
-      className="relative overflow-hidden px-4 md:px-8 py-16 text-text border-t border-border transition-colors duration-300"
+      className="relative overflow-hidden px-4 md:px-8 py-16 text-slate-900 dark:text-white border-t border-slate-200/60 dark:border-slate-800/60 transition-colors duration-300"
+      /* MODIFIED: Re-applied the identical matching background gradient flow from the events carousel */
       style={{
         background: "linear-gradient(180deg, var(--bg-color, #F8FBFD) 0%, rgba(109, 40, 217, 0.02) 42%, rgba(109, 40, 217, 0.05) 100%)",
       }}
@@ -16,34 +17,38 @@ const RecommendationBanner = () => {
       </div>
 
       <div className="relative max-w-7xl mx-auto">
+        {/* MODIFIED: Inner container is now a transparent glass overlay to let the section gradient shine through cleanly */}
         <div
           className="
             rounded-[28px]
             border-2
-            bg-card-bg
+            border-brand-violet/30
+            bg-white/40
+            dark:bg-slate-900/30
+            backdrop-blur-md
             px-8
             py-10
             md:px-12
             md:py-14
-            shadow-premium-lg
-            transition-all duration-300
+            shadow-[0_20px_60px_rgba(109,40,217,0.04)]
+            dark:shadow-[0_20px_60px_rgba(0,0,0,0.2)]
           "
-          style={{ borderColor: 'var(--primary-color)' }}
+          style={{ borderColor: 'rgba(139, 92, 246, 0.35)' }}
         >
           <div className="max-w-3xl">
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-50 dark:bg-slate-800/80 text-primary text-sm font-semibold border border-primary/20 shadow-sm">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 dark:bg-slate-800/80 text-brand-violet text-sm font-semibold border border-brand-violet/10 shadow-sm">
               ✨ AI Recommendation System
             </div>
 
             {/* Heading */}
-            <h2 className="mt-5 text-4xl md:text-5xl font-extrabold leading-tight text-text">
+            <h2 className="mt-5 text-4xl md:text-5xl font-extrabold leading-tight text-slate-900 dark:text-white">
               Find Events Tailored
-              <span className="block text-primary mt-1">Just For You</span>
+              <span className="block text-brand-violet mt-1">Just For You</span>
             </h2>
 
             {/* Description */}
-            <p className="mt-4 text-base md:text-lg leading-relaxed text-text-light/90 max-w-2xl">
+            <p className="mt-4 text-base md:text-lg leading-relaxed text-slate-600 dark:text-slate-300 max-w-2xl">
               Discover personalized hackathons, workshops, and tech events curated to your interests, skills, and past participation.
             </p>
 
@@ -58,17 +63,18 @@ const RecommendationBanner = () => {
                 'Beginner Friendly',
               ].map((tag, index) => (
                 <button
-                  key={index}
-                  type="button"
-                  onClick={() => setActiveFilter(tag)}
-                  className={`px-3 py-1.5 rounded-full text-sm shadow-sm transition-all duration-300 border ${
-                    activeFilter === tag
-                      ? "bg-primary text-white border-primary shadow-premium-sm scale-105"
-                      : "bg-card-bg border-border text-text hover:border-primary/50"
-                  }`}
-                >
-                  {tag}
-                </button>
+    key={index}
+    type="button"
+    onClick={() => setActiveFilter(tag)}
+    className={`px-3 py-1.5 rounded-full text-sm shadow-sm transition-all duration-300 border ${
+      activeFilter === tag
+        ? "bg-brand-violet text-white border-brand-violet shadow-[0_0_15px_rgba(139,92,246,0.35)] scale-105"
+        : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-brand-violet/50"
+    }`}
+  >
+    {tag}
+  </button>
+
               ))}
             </div>
 
@@ -77,22 +83,22 @@ const RecommendationBanner = () => {
               <Link
                 to="/event-recommendation"
                 className="
-                  px-6 py-3
-                  rounded-full
-                  bg-primary
-                  hover:opacity-90
-                  text-white
-                  font-semibold
-                  shadow-md
-                  transition-all
-                "
+    px-6 py-3
+    rounded-full
+    bg-violet-600
+    hover:bg-violet-700
+    text-white
+    font-semibold
+    shadow-md
+    transition-all
+  "
               >
                 Try Recommendation Assistant
               </Link>
 
               <Link
                 to="/events"
-                className="px-6 py-3 rounded-full border border-border bg-card-bg hover:opacity-90 text-text text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                className="px-6 py-3 rounded-full border border-slate-300 dark:border-slate-700 bg-white/40 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-200"
               >
                 Explore Events
               </Link>

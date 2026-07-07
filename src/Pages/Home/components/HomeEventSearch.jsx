@@ -77,10 +77,10 @@ export default function HomeEventSearch() {
       aria-label={t("landing.search.ariaLabel")}
     >
       <div className="text-center">
-        <h2 className="text-lg font-semibold text-text sm:text-xl">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-white sm:text-xl">
           {t("landing.search.title")}
         </h2>
-        <p className="mt-1 text-sm text-text-light/80">
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
           {t("landing.search.subtitle")}
         </p>
       </div>
@@ -97,7 +97,7 @@ export default function HomeEventSearch() {
           <motion.ul
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="absolute left-0 right-0 z-50 mt-2 overflow-hidden rounded-xl border border-border bg-card-bg shadow-xl"
+            className="absolute left-0 right-0 z-50 mt-2 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900"
             role="listbox"
             aria-label={t("landing.hero.searchResults")}
           >
@@ -105,14 +105,14 @@ export default function HomeEventSearch() {
               <li key={`${item.type}-${item.id}`} role="option">
                 <Link
                   to={getItemPath(item)}
-                  className="block border-b border-border px-4 py-3 last:border-0 hover:bg-primary/10 transition-colors duration-200"
+                  className="block border-b border-slate-100 px-4 py-3 last:border-0 hover:bg-violet-50 dark:border-slate-800 dark:hover:bg-slate-800/80"
                 >
-                  <span className="text-xs font-semibold uppercase tracking-wide text-primary">
+                  <span className="text-xs font-medium uppercase tracking-wide text-violet-600 dark:text-violet-400">
                     {t(`landing.hero.searchTypes.${item.searchType}`)}
                   </span>
-                  <p className="font-medium text-text">{item.title}</p>
+                  <p className="font-medium text-slate-900 dark:text-white">{item.title}</p>
                   {item.description && (
-                    <p className="mt-0.5 line-clamp-1 text-sm text-text-light/95">
+                    <p className="mt-0.5 line-clamp-1 text-sm text-slate-500 dark:text-slate-400">
                       {item.description}
                     </p>
                   )}

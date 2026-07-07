@@ -344,7 +344,7 @@ const EventsPage = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-bg text-text transition-colors duration-300 overflow-x-hidden">
+    <div className="flex flex-col min-h-screen bg-linear-to-b from-blue-50 via-indigo-50/30 to-white dark:bg-slate-950 text-slate-900 dark:text-gray-100 overflow-x-hidden">
       <EventHero
         searchQuery={localSearchInput}
         setSearchQuery={setLocalSearchInput}

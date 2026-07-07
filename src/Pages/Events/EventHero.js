@@ -147,7 +147,7 @@ function EventHero({
   const showDropdown = isSearchFocused && !prefersReducedMotion;
 
   return (
-    <div className="w-full bg-bg transition-colors duration-300">
+    <div className="w-full bg-white dark:bg-slate-950">
       <section
         className="relative min-h-[60vh] md:min-h-[70vh] w-full overflow-hidden flex flex-col items-center justify-center"
         role="search"
@@ -155,25 +155,25 @@ function EventHero({
         style={{zIndex: 1}} 
       >
         <div
-        className="absolute inset-0 bg-[url('/assets/eventbg.png')] bg-cover bg-center bg-no-repeat opacity-50 dark:opacity-20"
+        className="absolute inset-0 bg-[url('/assets/eventbg.png')] bg-cover bg-center bg-no-repeat"
         aria-hidden="true"
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-bg/40 to-bg transition-all duration-300" />
+      <div className="absolute inset-0 bg-gradient-to-b from-blue-50/80 via-indigo-50/40 to-white dark:from-slate-950/90 dark:via-slate-900/70 dark:to-slate-950/95" />
       <div className="relative z-10 flex flex-col items-center justify-center px-4 py-12 sm:py-16 md:py-20 max-w-4xl mx-auto w-full">
         <h1 
-          className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight text-text drop-shadow-sm text-center"
+          className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight text-slate-900 dark:text-white drop-shadow-sm text-center"
           style={{fontFamily: '"Big Shoulders Display", sans-serif'}}
         >
           Discover{" "}
-          <span className="bg-linear-to-r from-primary to-blue-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
+          <span className="bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
             Events
           </span>
         </h1>
 
-        <p className="mt-4 text-sm sm:text-base md:text-lg text-text-light/90 max-w-2xl mx-auto text-center">
+        <p className="mt-4 text-sm sm:text-base md:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto text-center">
           Discover exciting events, compete with talented participants, learn
           new skills, and{" "}
-          <span className="font-semibold text-text">
+          <span className="font-semibold text-slate-900 dark:text-white">
             win rewards
           </span>
           .
@@ -284,7 +284,7 @@ function EventHero({
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={scrollToCard}
-              className="relative w-full sm:w-auto min-w-[200px] px-6 py-3 rounded-2xl text-sm sm:text-base font-semibold transition-all duration-300 flex items-center justify-center bg-primary text-white hover:opacity-90 shadow-md"
+              className={`relative w-full sm:w-auto min-w-[200px] px-6 py-3 rounded-2xl text-sm sm:text-base font-semibold transition-all duration-300 flex items-center justify-center ${darkTheme.buttonPrimary}`}
             >
               <Sparkles className="inline-block w-4 h-4 sm:w-5 sm:h-5 mr-2" />
               Explore Events
@@ -293,7 +293,7 @@ function EventHero({
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => navigate("/create-event")}
-              className="relative w-full sm:w-auto min-w-[200px] px-6 py-3 rounded-2xl text-sm sm:text-base font-medium transition-all duration-300 flex items-center justify-center bg-card-bg border border-border text-text hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm"
+              className={`relative w-full sm:w-auto min-w-[200px] px-6 py-3 rounded-2xl text-sm sm:text-base font-medium transition-all duration-300 flex items-center justify-center ${darkTheme.buttonSecondary}`}
             >
               <Users className="inline-block w-4 h-4 sm:w-5 sm:h-5 mr-2" />
               Host an Event

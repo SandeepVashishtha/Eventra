@@ -75,8 +75,8 @@ module.exports = {
         secondary: 'var(--secondary-color)',
 
         // Navbar & Sidebar
-        navbar: 'var(--navbar-bg)',
-        sidebar: 'var(--sidebar-bg)',
+        navbar: 'var(--navbar-color)',
+        sidebar: 'var(--sidebar-color)',
       },
 
       spacing: {
