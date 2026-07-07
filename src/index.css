@@ -300,8 +300,8 @@ html {
   --evt-text-heading: #0f172a;
   --evt-text-secondary: #334155;
   --evt-text-muted: #64748b;
-  --evt-border-default: #e2e8f0;
-  --evt-border-subtle: #f1f5f9;
+  --evt-border-default: rgba(15, 23, 42, 0.08);
+  --evt-border-subtle: rgba(15, 23, 42, 0.04);
   --evt-border-input: #cbd5e1;
   --evt-brand-primary: #4f46e5;
   --evt-brand-primary-strong: #3730a3;
@@ -447,8 +447,8 @@ html {
   --evt-text-heading: #ffffff;
   --evt-text-secondary: #cbd5e1;
   --evt-text-muted: #9ca3af;
-  --evt-border-default: #1f2937;
-  --evt-border-subtle: rgba(255, 255, 255, 0.06);
+  --evt-border-default: rgba(255, 255, 255, 0.08);
+  --evt-border-subtle: rgba(255, 255, 255, 0.04);
   --evt-border-input: #475569;
   --evt-brand-primary: #6366f1;
   --evt-brand-primary-strong: #818cf8;

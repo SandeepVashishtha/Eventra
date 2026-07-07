@@ -1,128 +1,124 @@
 import { motion } from "framer-motion";
-import { Calendar, Code2, MapPin, Trophy, Users } from "lucide-react";
-
-const previewEvents = [
-  { title: "AI Hackathon Finals", meta: "Mar 15 · 240 registered", accent: "bg-violet-500" },
-  { title: "React Workshop", meta: "Mar 18 · Online", accent: "bg-pink-500" },
-  { title: "Open Source Sprint", meta: "Mar 22 · Hybrid", accent: "bg-indigo-500" },
-];
-
-const floatingCards = [
-  {
-    icon: Trophy,
-    title: "AI Hackathon 2026",
-    subtitle: "48 teams competing",
-    accent: "from-violet-500 to-purple-600",
-    position: "top-0 left-0 sm:left-2",
-    delay: 0,
-  },
-  {
-    icon: Code2,
-    title: "Open Source Sprint",
-    subtitle: "Build with contributors",
-    accent: "from-indigo-500 to-blue-600",
-    position: "top-24 right-0 sm:right-2",
-    delay: 0.15,
-  },
-  {
-    icon: Users,
-    title: "Dev Meetup",
-    subtitle: "1,200+ attending",
-    accent: "from-emerald-500 to-teal-600",
-    position: "bottom-2 right-4 sm:right-8",
-    delay: 0.3,
-  },
-];
+import { LayoutDashboard, Calendar, Trophy, Settings, Users, Activity } from "lucide-react";
 
 export default function HeroVisual() {
   return (
     <div
-      className="relative mx-auto h-[320px] w-full max-w-md sm:h-[380px] lg:max-w-none lg:h-[420px]"
+      className="relative mx-auto w-full max-w-lg h-[360px] sm:h-[400px] lg:h-[430px]"
       aria-hidden="true"
     >
-      <div className="absolute inset-4 rounded-[2.5rem] bg-gradient-to-br from-indigo-100/60 via-purple-50/40 to-pink-100/50 dark:from-indigo-950/20 dark:via-purple-950/15 dark:to-pink-950/15 border border-indigo-200/30 dark:border-indigo-800/20" />
-      <div className="absolute left-1/2 top-1/2 h-36 w-36 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-br from-indigo-400/20 to-pink-400/20 blur-3xl dark:from-indigo-600/10 dark:to-pink-600/10" />
+      {/* Background soft mesh glow */}
+      <div className="absolute inset-4 rounded-[2rem] bg-gradient-to-tr from-indigo-500/5 via-transparent to-pink-500/5 blur-xl" />
 
+      {/* Main Glass Mockup Container */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.96 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.55 }}
-        className="absolute left-1/2 top-1/2 z-20 w-[min(100%,260px)] -translate-x-1/2 -translate-y-1/2 sm:w-[280px]"
+        initial={{ opacity: 0, y: 30, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.7, ease: "easeOut" }}
+        className="w-full h-full rounded-2xl border border-border bg-white/60 dark:bg-slate-900/40 backdrop-blur-md shadow-premium-lg flex flex-col overflow-hidden"
       >
-        <div className="overflow-hidden rounded-2xl border border-white/60 bg-white/70 shadow-premium-lg backdrop-blur-md dark:border-slate-800/50 dark:bg-slate-900/70 dark:shadow-black/50">
-          <div className="flex items-center justify-between border-b border-slate-100/60 px-4 py-2.5 dark:border-slate-800/60">
-            <div className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-rose-400" />
-              <span className="h-2 w-2 rounded-full bg-amber-400" />
-              <span className="h-2 w-2 rounded-full bg-emerald-400" />
+        {/* Window Chrome/Header */}
+        <div className="flex h-11 items-center justify-between border-b border-border bg-white/40 dark:bg-slate-950/20">
+          <div className="flex items-center gap-1.5">
+            <span className="h-3 w-3 rounded-full bg-red-500/20 dark:bg-red-500/10 border border-red-500/30" />
+            <span className="h-3 w-3 rounded-full bg-amber-500/20 dark:bg-amber-500/10 border border-amber-500/30" />
+            <span className="h-3 w-3 rounded-full bg-green-500/20 dark:bg-green-500/10 border border-green-500/30" />
+          </div>
+          <div className="text-[11px] font-medium text-text-light/60 font-mono select-none">
+            eventra.dev/dashboard
+          </div>
+          <div className="w-12" />
+        </div>
+
+        {/* Inner Dashboard Layout */}
+        <div className="flex flex-1 overflow-hidden">
+          {/* Mock Sidebar */}
+          <div className="w-[140px] border-r border-border bg-white/20 dark:bg-slate-950/10 p-3 hidden sm:flex flex-col gap-2">
+            <div className="text-[9px] font-bold text-text-light/40 uppercase tracking-wider mb-2 px-2">
+              Console
             </div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-              Eventra
-            </span>
+            {[
+              { icon: LayoutDashboard, label: "Overview", active: true },
+              { icon: Calendar, label: "Events", active: false },
+              { icon: Trophy, label: "Hackathons", active: false },
+              { icon: Settings, label: "Settings", active: false },
+            ].map((item) => (
+              <div
+                key={item.label}
+                className={`flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-semibold select-none transition-colors ${
+                  item.active
+                    ? "bg-slate-950/5 dark:bg-white/5 text-text"
+                    : "text-text-light/60 hover:text-text hover:bg-slate-950/5 dark:hover:bg-white/5"
+                }`}
+              >
+                <item.icon size={13} className="text-text-light" />
+                {item.label}
+              </div>
+            ))}
           </div>
 
-          <div className="space-y-2 p-3">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-bold text-slate-900 dark:text-white">Upcoming Events</p>
-              <Calendar className="h-3.5 w-3.5 text-indigo-500" />
+          {/* Mock Content Board */}
+          <div className="flex-1 p-4 flex flex-col gap-3.5 overflow-hidden">
+            {/* Stats strip */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-3 rounded-xl border border-border bg-white/40 dark:bg-white/[0.01]">
+                <div className="flex items-center gap-1.5 text-text-light/50 text-[10px] font-semibold uppercase tracking-wider">
+                  <Users size={11} />
+                  Registry
+                </div>
+                <div className="mt-1 flex items-baseline gap-1">
+                  <span className="text-lg font-bold text-text">1,540</span>
+                  <span className="text-[9px] font-bold text-emerald-500 font-mono">+12%</span>
+                </div>
+              </div>
+              <div className="p-3 rounded-xl border border-border bg-white/40 dark:bg-white/[0.01]">
+                <div className="flex items-center gap-1.5 text-text-light/50 text-[10px] font-semibold uppercase tracking-wider">
+                  <Activity size={11} />
+                  Engagement
+                </div>
+                <div className="mt-1 flex items-baseline gap-1">
+                  <span className="text-lg font-bold text-text">94.8%</span>
+                  <span className="text-[9px] font-bold text-indigo-500 font-mono">Max</span>
+                </div>
+              </div>
             </div>
 
-            {previewEvents.map((event, index) => (
-              <motion.div
-                key={event.title}
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 + index * 0.1 }}
-                className="flex items-start gap-2.5 rounded-xl border border-gray-100/80 bg-white/80 px-2.5 py-2 dark:border-slate-800/60 dark:bg-slate-800/40"
-              >
-                <div className={`mt-0.5 h-2 w-2 shrink-0 rounded-full ${event.accent}`} />
-                <div className="min-w-0">
-                  <p className="truncate text-xs font-semibold text-slate-900 dark:text-white">
-                    {event.title}
-                  </p>
-                  <p className="mt-0.5 flex items-center gap-1 truncate text-[10px] text-slate-500 dark:text-slate-400">
-                    <MapPin className="h-2.5 w-2.5 shrink-0" />
-                    {event.meta}
-                  </p>
-                </div>
-              </motion.div>
-            ))}
+            {/* List Board */}
+            <div className="flex-1 flex flex-col gap-2 min-w-0">
+              <div className="text-[10px] font-bold text-text-light/40 uppercase tracking-wider px-1">
+                Upcoming Schedule
+              </div>
+              {[
+                { title: "AI Hackathon Finals", meta: "Mar 15 · 240 registered", status: "Live" },
+                { title: "React Workshop", meta: "Mar 18 · Online", status: "Upcoming" },
+                { title: "Open Source Sprint", meta: "Mar 22 · Hybrid", status: "Upcoming" },
+              ].map((ev, index) => (
+                <motion.div
+                  key={ev.title}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 + index * 0.1 }}
+                  className="flex items-center justify-between p-2.5 rounded-xl border border-border bg-white/40 dark:bg-white/[0.01] hover:bg-white/60 dark:hover:bg-white/[0.03] transition-colors min-w-0"
+                >
+                  <div className="min-w-0 flex-1 pr-2">
+                    <div className="text-[11px] font-bold text-text truncate">{ev.title}</div>
+                    <div className="text-[9px] text-text-light/60 truncate mt-0.5">{ev.meta}</div>
+                  </div>
+                  <span
+                    className={`text-[9px] font-bold px-2 py-0.5 rounded-md ${
+                      ev.status === "Live"
+                        ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                        : "bg-indigo-500/10 text-indigo-500 border border-indigo-500/20"
+                    }`}
+                  >
+                    {ev.status}
+                  </span>
+                </motion.div>
+              ))}
+            </div>
           </div>
         </div>
       </motion.div>
-
-      {floatingCards.map((card) => {
-        const Icon = card.icon;
-        return (
-          <motion.div
-            key={card.title}
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: card.delay }}
-            className={`absolute ${card.position} z-30`}
-          >
-            <motion.div
-              animate={{ y: [0, -6, 0] }}
-              transition={{ duration: 4 + card.delay * 2, repeat: Infinity, ease: "easeInOut" }}
-              className="flex items-center gap-2.5 rounded-2xl border border-white/50 bg-white/70 px-3 py-2.5 shadow-premium-md backdrop-blur-md dark:border-slate-800/50 dark:bg-slate-900/70 dark:shadow-black/45 sm:px-3.5 sm:py-3"
-            >
-              <div
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${card.accent} text-white`}
-              >
-                <Icon className="h-3.5 w-3.5" />
-              </div>
-              <div className="min-w-0">
-                <p className="truncate text-xs font-semibold text-slate-900 dark:text-white sm:text-sm">
-                  {card.title}
-                </p>
-                <p className="truncate text-[10px] text-slate-500 dark:text-slate-400 sm:text-xs">
-                  {card.subtitle}
-                </p>
-              </div>
-            </motion.div>
-          </motion.div>
-        );
-      })}
     </div>
   );
 }
