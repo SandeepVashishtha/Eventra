@@ -72,6 +72,18 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
     return ratings;
   }, [questions, simulatedData]);
 
+  // Compute overall satisfaction average across all rating questions
+  const overallSatisfaction = useMemo(() => {
+    const ratingEntries = Object.values(analyzedRatings);
+    if (ratingEntries.length === 0) return null;
+    const totalWeightedSum = ratingEntries.reduce(
+      (sum, r) => sum + parseFloat(r.average) * r.total,
+      0
+    );
+    const totalVotes = ratingEntries.reduce((sum, r) => sum + r.total, 0);
+    return totalVotes > 0 ? (totalWeightedSum / totalVotes).toFixed(1) : null;
+  }, [analyzedRatings]);
+
   // Reconstruct individual rows corresponding to each submission per question distribution
   const handleExportCSV = () => {
     if (questions.length === 0) {
@@ -212,8 +224,8 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
           },
           {
             label: "Attendee Satisfaction",
-            value: "4.4 / 5.0",
-            sub: "Highly positive feedback",
+            value: overallSatisfaction ? `${overallSatisfaction} / 5.0` : "N/A",
+            sub: overallSatisfaction ? "Based on live rating responses" : "No rating questions yet",
             icon: <Smile className="w-5 h-5" />,
             color: "text-rose-500 bg-rose-50 dark:bg-rose-950/40 border-rose-100/50 dark:border-rose-900/30",
           },
