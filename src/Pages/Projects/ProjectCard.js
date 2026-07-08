@@ -176,7 +176,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
         try {
           const saved = localStorage.getItem(CACHE_KEY);
           cache = saved ? safeJsonParse(saved, {}) : {};
-        } catch (e) {
+        } catch {
           cache = {};
         }
 
@@ -282,7 +282,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
           {safeStatus}
         </span>
         <button
-          onClick={(e) => {
+          onClick={() => {
             e.preventDefault();
             e.stopPropagation();
             onBookmarkToggle(project.id);

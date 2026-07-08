@@ -84,6 +84,7 @@ export const API_ENDPOINTS = {
     DETAIL: (id) => buildApiUrl(`/api/events/${id}`),
     REGISTER: (id) => buildApiUrl(`/api/events/${id}/register`),
     AVAILABILITY: (id) => buildApiUrl(`/api/events/${id}/availability`),
+    CANCEL: (id) => buildApiUrl(`/api/events/${id}/cancel`),
 
     REGISTRANTS: (id) => buildApiUrl(`/api/events/${id}/registrants`),
     // Convenience helper — appends ?page=&size= for callers that build the
@@ -185,7 +186,7 @@ const wrapAxiosResponse = (response) => {
       if (typeof response.data === "string") {
         try {
           return JSON.parse(response.data);
-        } catch (_e) {
+        } catch {
           throw new Error("Received non-JSON response from server");
         }
       }

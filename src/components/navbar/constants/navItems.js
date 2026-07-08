@@ -1,5 +1,4 @@
 import {
-  Home,
   Calendar,
   CalendarDays,
   Clock,
@@ -8,7 +7,6 @@ import {
   Trophy,
   MessageSquare,
   Book,
-  Bookmark,
   Info,
   HelpCircle,
   MoreHorizontal,

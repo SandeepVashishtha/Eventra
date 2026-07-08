@@ -155,10 +155,11 @@ export function csrfFetch(url, options = {}) {
 
 export function rotateCSRFToken(newToken) {
   if (newToken && typeof newToken === "string") {
-    // Update cookies
+    const isSecureEnv = typeof window !== "undefined" &&
+      (window.location.protocol === "https:" || window.location.hostname === "localhost");
     setCookie(CSRF_COOKIE_NAME, newToken, {
       path: "/",
-      secure: true,
+      secure: isSecureEnv,
     });
   }
 }

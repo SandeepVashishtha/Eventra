@@ -191,9 +191,9 @@ export const copyToClipboard = async (text) => {
       document.body.appendChild(textArea);
       textArea.focus();
       textArea.select();
-      const successful = document.execCommand("copy");
+      document.execCommand("copy");
       document.body.removeChild(textArea);
-      return successful;
+      return true;
     }
   } catch (err) {
     console.error("Failed to copy text: ", err);
