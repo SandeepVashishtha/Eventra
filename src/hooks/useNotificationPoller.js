@@ -23,7 +23,7 @@ const getStorageKey = () => {
       const user = JSON.parse(userStr);
       if (user && user.id) return 'eventra_notification_inbox_' + user.id;
     }
-  } catch (_e) {}
+  } catch {}
   return 'eventra_notification_inbox_guest';
 };
 

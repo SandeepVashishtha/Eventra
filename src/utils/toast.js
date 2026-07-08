@@ -4,7 +4,6 @@ const AUTH_TOAST_ID = "auth-feedback";
 let _toast = null;
 const getToast = () => {
   if (!_toast) {
-    // eslint-disable-next-line global-require
     const mod = require("react-toastify");
     _toast = mod.toast;
   }
@@ -65,14 +64,6 @@ export function showWarningToast(message, options = {}) {
 export function dismissToastsByGroup(groupId) {
   if (typeof window === "undefined") return;
   if (window.__EVENTRA_TOASTS__) {
-    const list = window.__EVENTRA_TOASTS__[groupId] || [];
-    list.forEach((_id) => {
-      try {
-        // trigger clear callbacks
-      } catch {
-        /* noop */
-      }
-    });
     window.__EVENTRA_TOASTS__[groupId] = [];
   }
 }
