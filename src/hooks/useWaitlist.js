@@ -71,7 +71,7 @@ function persistWaitlist(map) {
  *   leave: () => Promise<void>,
  * }}
  */
-export default function useWaitlist(eventId, { capacity: _capacity, attendees: _attendees } = {}) {
+export default function useWaitlist(eventId) {
   const [waitlistMap, setWaitlistMap] = useState(readPersistedWaitlist);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);

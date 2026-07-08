@@ -196,11 +196,19 @@ const getOrCreateSecret = (storageKey) => {
   return secret;
 };
 
-// Both values are initialised eagerly at module load so every call to
-// getDerivedKey() within a page session operates on the same key.
+// Both values are initialised lazily so module import does not crash in
+// SSR/Node.js environments where localStorage is unavailable.
 // These are declared as 'let' to allow refreshing from localStorage after key rotation.
-let DERIVED_KEY_MATERIAL = cryptoSupported ? getOrCreateSecret(MATERIAL_STORAGE_KEY) : null;
-let DERIVED_KEY_SALT = cryptoSupported ? getOrCreateSecret(SALT_STORAGE_KEY) : null;
+let DERIVED_KEY_MATERIAL = null;
+let DERIVED_KEY_SALT = null;
+let _keyMaterialInitialized = false;
+
+const ensureKeyMaterial = () => {
+  if (_keyMaterialInitialized) return;
+  DERIVED_KEY_MATERIAL = cryptoSupported ? getOrCreateSecret(MATERIAL_STORAGE_KEY) : null;
+  DERIVED_KEY_SALT = cryptoSupported ? getOrCreateSecret(SALT_STORAGE_KEY) : null;
+  _keyMaterialInitialized = true;
+};
 
 /**
  * Initialize or load key metadata.
@@ -247,6 +255,7 @@ let _keyPromise = null;
  * @throws {Error} If key material or salt is missing or invalid
  */
 const refreshKeyMaterial = () => {
+  ensureKeyMaterial();
   if (!cryptoSupported) {
     return;
   }
@@ -281,6 +290,7 @@ const refreshKeyMaterial = () => {
 };
 
 const getDerivedKey = () => {
+  ensureKeyMaterial();
   if (_keyPromise) return _keyPromise;
 
   _keyPromise = (async () => {
