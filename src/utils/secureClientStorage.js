@@ -19,18 +19,6 @@ const BLOCKED_KEYS = [
   "refreshToken",
 ];
 
-// Fields allowed in client storage (whitelist approach)
-const ALLOWED_KEYS = [
-  "theme",
-  "language",
-  "viewMode",
-  "searchHistory",
-  "anonymous_user",
-  "cursor",
-  "eventra_chatbot_last_active",
-  "eventra_events_searchHistory",
-];
-
 const isSensitiveKey = (key) => {
   const lowerKey = key.toLowerCase();
   return BLOCKED_KEYS.some((blocked) => lowerKey.includes(blocked.toLowerCase()));
