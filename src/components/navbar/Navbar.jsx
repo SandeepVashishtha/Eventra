@@ -4,10 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import DesktopNavbar from "./DesktopNavbar";
 import MobileNavbar from "./MobileNavbar";
-import ThemeToggleButton from "../Layout/ThemeToggleButton";
-import InstallAppButton from "../common/InstallAppButton";
 import AuthButtons from "./AuthButtons";
-import LanguageSelector from "../LanguageSelector";
 import ProfileMenu from "./ProfileMenu";
 import NotificationBell from "../notifications/NotificationBell";
 import useBodyScrollLock from "./hooks/useBodyScrollLock";
@@ -20,7 +17,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const [scrolled, setScrolled] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
   const authenticated = isAuthenticated();
-  const { isDarkMode, toggleTheme, setIsCustomizerOpen } = useTheme();
+  useTheme();
 
   useBodyScrollLock(isMobileMenuOpen);
 

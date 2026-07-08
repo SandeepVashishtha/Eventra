@@ -10,7 +10,7 @@ const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 1_000;
 
 let onUnauthorized = null;
-let _onRequiresReauth = null;
+
 let _authToken = null;
 
 export const setOnUnauthorizedHandler = (handler) => { onUnauthorized = handler; };
@@ -129,7 +129,7 @@ const normalizeApiErrorWithTimeout = (error, timeoutMs) => {
   );
 };
 
-export function setupRequestInterceptor(api, { isDev, buildApiUrl, getAuthToken, getOnUnauthorized: _getOnUnauthorized }) {
+export function setupRequestInterceptor(api, { isDev, buildApiUrl, getAuthToken,   }) {
   api.interceptors.request.use((config) => {
     if (isDev) {
       logger.info(`[API ${config.method?.toUpperCase()}]`, buildApiUrl(config.url || ""));

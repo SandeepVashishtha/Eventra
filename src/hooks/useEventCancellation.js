@@ -95,6 +95,11 @@ const useEventCancellation = (eventId, onSuccess) => {
           cancelledAt: new Date().toISOString(),
         };
 
+        if (typeof API_ENDPOINTS.EVENTS.CANCEL !== "function") {
+          setCancellationError("Cancel endpoint is not configured.");
+          return false;
+        }
+
         const res = await apiUtils.post(
           API_ENDPOINTS.EVENTS.CANCEL(eventId),
           payload

@@ -32,27 +32,6 @@ const GSSOC_TIMELINE = [
   { phase: "Final Results", date: "Jun 15", status: "upcoming", icon: Award },
 ];
 
-const MENTORS = [
-  { name: "Priya Sharma", role: "Frontend Lead", expertise: ["React", "Tailwind"], avatar: "👩‍💻", available: true, bio: "10+ years in frontend architecture" },
-  { name: "Rahul Verma", role: "Backend Expert", expertise: ["Node.js", "MongoDB"], avatar: "👨‍💻", available: true, bio: "Scalable systems specialist" },
-  { name: "Anita Das", role: "DevOps Mentor", expertise: ["Docker", "CI/CD"], avatar: "👩‍🔧", available: false, bio: "Cloud infrastructure expert" },
-  { name: "Vikram Singh", role: "Full-Stack Guide", expertise: ["MERN", "GraphQL"], avatar: "👨‍🚀", available: true, bio: "End-to-end product builder" },
-];
-
-const ACHIEVEMENTS = [
-  { id: "first-pr", label: "First PR", icon: Star, unlocked: true, color: "text-yellow-500", description: "Submitted your first pull request" },
-  { id: "bug-hunter", label: "Bug Hunter", icon: Zap, unlocked: true, color: "text-red-500", description: "Found and fixed 5+ bugs" },
-  { id: "helper", label: "Community Helper", icon: MessageCircle, unlocked: false, color: "text-blue-500", description: "Helped 10+ contributors" },
-  { id: "top-contributor", label: "Top Contributor", icon: Trophy, unlocked: false, color: "text-purple-500", description: "Ranked in top 10 contributors" },
-];
-
-const RESOURCES = [
-  { title: "Git & GitHub Basics", type: "Tutorial", duration: "15 min", link: "#", difficulty: "beginner" },
-  { title: "Writing Good PR Descriptions", type: "Guide", duration: "5 min", link: "#", difficulty: "beginner" },
-  { title: "Code Review Checklist", type: "PDF", duration: "2 min", link: "#", difficulty: "intermediate" },
-  { title: "Eventra Architecture Overview", type: "Video", duration: "20 min", link: "#", difficulty: "advanced" },
-];
-
 // ============ UTILITY HOOKS ============
 const useCountdown = (endDate, onEnd) => {
   const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft(endDate));
@@ -302,10 +281,9 @@ const GSSoCContribution = () => {
   const searchInputRef = useRef(null);
   const { toasts, addToast, removeToast } = useToast();
   
-  const [searchQuery, setSearchQuery] = useState(() => localStorage.getItem("gssoc.search") || "");
-  // eslint-disable-next-line no-unused-vars
+  const [searchQuery] = useState(() => localStorage.getItem("gssoc.search") || "");
   const _debouncedSearchQuery = useDebounce(searchQuery, 300);
-  const [selectedDifficulty, setSelectedDifficulty] = useState(() => localStorage.getItem("gssoc.difficulty") || "all");
+  const [selectedDifficulty] = useState(() => localStorage.getItem("gssoc.difficulty") || "all");
   
   const [userStats] = useState(() => {
     const saved = localStorage.getItem("gssoc.userStats");

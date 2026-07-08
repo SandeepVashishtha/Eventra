@@ -34,7 +34,7 @@ function buildFingerprint(error) {
 }
 
 export const initializeGlobalErrorHandling = () => {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined" || typeof window.addEventListener !== "function") return;
 
   window.addEventListener(
     "error",
