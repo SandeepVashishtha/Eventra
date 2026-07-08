@@ -13,6 +13,7 @@ import {
 import mockEvents from "../../Pages/Events/eventsMockData.json";
 import { syncSecureStorage } from "../../utils/secureStorage";
 import { safeJsonParse } from "../../utils/safeJsonParse";
+import { getRecommendedEvents } from "../../utils/eventRecommendationUtils";
 import MatchScoreBadge from "../common/MatchScoreBadge";
 
 // =========================================================================
