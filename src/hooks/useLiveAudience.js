@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useLiveAudienceStream } from "../context/RealTimeContext.js";
 import { apiUtils, API_ENDPOINTS } from "../config/api.js";
 
@@ -121,7 +121,6 @@ export default function useLiveAudience(eventId) {
     [eventData?.questions]
   );
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const actions = useMemo(() => bindActions(eventId), [eventId]);
 
   return {

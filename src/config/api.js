@@ -185,7 +185,7 @@ const wrapAxiosResponse = (response) => {
       if (typeof response.data === "string") {
         try {
           return JSON.parse(response.data);
-        } catch (_e) {
+        } catch {
           throw new Error("Received non-JSON response from server");
         }
       }

@@ -28,14 +28,8 @@ import ShareModal from "../../components/common/ShareModal";
 import StatusBadge from "../../components/common/StatusBadge";
 import { getEventStatus } from "../../utils/eventUtils";
 import { useMyEvents } from "../../context/MyEventsContext";
-import ReminderControls from "../../components/reminders/ReminderControls";
 import MatchScoreBadge from "../../components/common/MatchScoreBadge";
-import {
-  addBookmarkedEvent,
-  isEventBookmarked,
-  removeBookmarkedEvent,
-  subscribeToBookmarkChanges,
-} from "../../utils/bookmarkUtils";
+import { isEventBookmarked } from "../../utils/bookmarkUtils";
 import { checkRegistrationConflict } from "../../utils/conflictDetection";
 
 const CARD_GRADIENTS = [
@@ -165,7 +159,7 @@ const CapacityBar = ({ attendees, maxAttendees }) => {
 };
 
 const EventCard = ({ event, matchScore, matchReasons }) => {
-  const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
+  const [isBookmarked] = useState(() => isEventBookmarked(event.id));
   const [imageFailed, setImageFailed] = useState(false);
   const titleId = useId();
   const { myEvents, isRegistered } = useMyEvents();
@@ -207,7 +201,7 @@ const EventCard = ({ event, matchScore, matchReasons }) => {
         toast.success("Event saved!", { toastId: `bookmark-${event.id}`, autoClose: 1800 });
       }
     },
-    [isBookmarked, event, computedStatus, toggleBookmark]
+    [isBookmarked, event, computedStatus]
   );
 
   return (

@@ -67,7 +67,8 @@ const CollaborationHub = () => {
   setNewRequest(prev => ({ ...prev, [name]: value }));
   setRequestErrors(prev => {
     if (!prev[name]) return prev;
-    const { [name]: _removed, ...rest } = prev;
+    const rest = { ...prev };
+    delete rest[name];
     return rest;
   });
 };
