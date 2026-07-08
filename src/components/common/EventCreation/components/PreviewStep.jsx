@@ -1,5 +1,6 @@
+import React from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { TagIcon, Ticket, CheckCircleIcon, PencilIcon, CalendarIcon, MapPinIcon, UsersIcon } from "lucide-react";
-import { motion } from "framer-motion";
 import { LoadingButton } from "../../../ui/LoadingButton";
 import {
   formatDate,
@@ -23,9 +24,10 @@ const PreviewStep = ({
       className="w-full max-w-4xl"
     >
       <div className="text-center mb-8">
-        <h1 className="text-4xl font-extrabold text-indigo-800 dark:text-indigo-300 mb-4">
+        {/* Deep Fix: Adjusted heading rank for semantic correctness */}
+        <h2 className="text-4xl font-extrabold text-indigo-800 dark:text-indigo-300 mb-4">
           Preview Your Event
-        </h1>
+        </h2>
 
         <p className="text-gray-600 dark:text-gray-400">
           Review all details before publishing
@@ -45,9 +47,9 @@ const PreviewStep = ({
         )}
 
         <div className="p-8">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+          <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
             {formData.title}
-          </h2>
+          </h3>
 
           <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
             {formData.description}
@@ -55,7 +57,7 @@ const PreviewStep = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div className="flex items-start gap-3 p-4 bg-indigo-50 dark:bg-gray-700 rounded-lg">
-              <TagIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mt-1" />
+              <TagIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mt-1" aria-hidden="true" />
 
               <div>
                 <p className="font-semibold text-gray-700 dark:text-gray-300">
@@ -73,7 +75,7 @@ const PreviewStep = ({
             </div>
 
             <div className="flex items-start gap-3 p-4 bg-indigo-50 dark:bg-gray-700 rounded-lg">
-              <CalendarIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mt-1" />
+              <CalendarIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mt-1" aria-hidden="true" />
 
               <div>
                 <p className="font-semibold text-gray-700 dark:text-gray-300">
@@ -96,7 +98,7 @@ const PreviewStep = ({
             </div>
 
             <div className="flex items-start gap-3 p-4 bg-indigo-50 dark:bg-gray-700 rounded-lg">
-              <MapPinIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mt-1" />
+              <MapPinIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mt-1" aria-hidden="true" />
 
               <div>
                 <p className="font-semibold text-gray-700 dark:text-gray-300">
@@ -118,7 +120,7 @@ const PreviewStep = ({
             </div>
 
             <div className="flex items-start gap-3 p-4 bg-indigo-50 dark:bg-gray-700 rounded-lg">
-              <UsersIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mt-1" />
+              <UsersIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mt-1" aria-hidden="true" />
 
               <div>
                 <p className="font-semibold text-gray-700 dark:text-gray-300">
@@ -142,7 +144,7 @@ const PreviewStep = ({
             formData.ticketTiers[0].name && (
               <div className="mb-6">
                 <div className="flex items-center gap-2 mb-3">
-                  <Ticket className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                  <Ticket className="w-5 h-5 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
 
                   <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300">
                     Ticket Tiers
@@ -214,8 +216,9 @@ const PreviewStep = ({
       </div>
 
       <div className="mt-8 flex flex-col items-center">
+        {/* Deep Fix: Added aria-live="polite" so screen readers announce errors */}
         {submitError && (
-          <div className="error-banner w-full mb-4" role="alert">
+          <div className="error-banner w-full mb-4" role="alert" aria-live="polite">
             ❌ {submitError}
           </div>
         )}
@@ -228,17 +231,18 @@ const PreviewStep = ({
             whileTap={{ scale: 0.95 }}
             className="flex items-center justify-center gap-2 bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 border-2 border-indigo-500 font-semibold px-8 py-3 rounded-xl shadow-lg hover:bg-indigo-50 dark:hover:bg-gray-600 transition-all duration-300"
           >
-            <PencilIcon className="w-5 h-5" />
+            <PencilIcon className="w-5 h-5" aria-hidden="true" />
             Edit Event
           </motion.button>
 
           <LoadingButton
             onClick={createEvent}
             isLoading={isSubmitting}
+            aria-busy={isSubmitting} // Deep Fix: Communicates submission state to screen readers
             loadingText="Creating Event..."
             className="flex items-center justify-center gap-2 bg-black text-white font-semibold px-8 py-3 rounded-xl shadow-lg hover:bg-zinc-800 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <CheckCircleIcon className="w-5 h-5" />
+            <CheckCircleIcon className="w-5 h-5" aria-hidden="true" />
             Create Event
           </LoadingButton>
         </div>
