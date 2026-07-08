@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'react-toastify';
-import { joinWaitlist, leaveWaitlist, getQueuePosition } from '../utils/waitlistUtils.js';
+import { joinWaitlist, leaveWaitlist } from '../utils/waitlistUtils.js';
 import { useAuth } from '../context/AuthContext';
 
 /**

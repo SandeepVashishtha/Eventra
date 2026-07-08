@@ -63,8 +63,8 @@ export function showWarningToast(message, options = {}) {
 }
 
 export function dismissToastsByGroup(groupId) {
-  if (isSSR) return;
-  if (typeof window !== "undefined" && window.__EVENTRA_TOASTS__) {
+  if (typeof window === "undefined") return;
+  if (window.__EVENTRA_TOASTS__) {
     const list = window.__EVENTRA_TOASTS__[groupId] || [];
     list.forEach((_id) => {
       try {
