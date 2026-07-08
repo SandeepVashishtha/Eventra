@@ -26,14 +26,20 @@ import { motion } from "framer-motion";
 import { Share2, Twitter, Linkedin, MessageCircle, Link2, Check } from "lucide-react";
 import { toast } from "react-toastify";
 import useCopyToClipboard from "../../hooks/useCopyToClipboard";
+import { ENV } from "../../config/env";
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 function getEventUrl(event) {
-  const base =
-    typeof window !== "undefined" ? window.location.origin : "https://eventra.app";
+  const rawPublicUrl = ENV.PUBLIC_URL || "eventra.app";
+  const deployedOrigin = rawPublicUrl.startsWith("http")
+    ? rawPublicUrl.replace(/\/$/, "")
+    : `https://${rawPublicUrl}`;
+  const base = typeof window !== "undefined" && window.location.href.includes(rawPublicUrl)
+    ? deployedOrigin
+    : typeof window !== "undefined" ? window.location.origin : deployedOrigin;
   return `${base}/events/${event.id}`;
 }
 

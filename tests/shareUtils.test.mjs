@@ -74,6 +74,6 @@ assert.ok(sharingData.description.includes("Berlin"));
 assert.equal(sharingData.hashtags, "eventra,event,tech");
 
 const sharingDataNoBase = generateEventSharingData(mockEvent);
-assert.ok(sharingDataNoBase.url.includes("sandeepvashishtha.tech"));
+assert.ok(sharingDataNoBase.url.includes("eventra.sandeepvashishtha.in"));
 
 console.log("All shareUtils tests passed");
