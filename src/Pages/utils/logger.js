@@ -21,7 +21,7 @@ const sanitizeLogData = (data) => {
     
     recursivelyMaskKeys(cleanData, sensitiveKeys);
     return cleanData;
-  } catch (_e) {
+  } catch {
     return '[Unparsable Data - Securely Masked]';
   }
 };
