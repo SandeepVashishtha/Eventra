@@ -334,7 +334,7 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
                   {/* B. MULTIPLE CHOICE BAR CHART */}
                   {question.type === "choice" && hasData && (
                     <div className="w-full h-44">
-                      {question.options.length === 0 ? (
+                      {!question.options || question.options.length === 0 ? (
                         <div className="text-center py-6 text-xs text-slate-400">
                           No options defined for this choice question.
                         </div>
