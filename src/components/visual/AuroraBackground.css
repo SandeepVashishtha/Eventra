@@ -1,0 +1,44 @@
+.aurora-bg {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.aurora-layer {
+  position: absolute;
+  inset: -50%;
+  width: 200%;
+  height: 200%;
+  opacity: 0.3;
+  mix-blend-mode: screen;
+  animation: aurora-drift 20s ease-in-out infinite alternate;
+}
+
+.layer-1 {
+  background: radial-gradient(ellipse at 20% 50%, rgba(99, 102, 241, 0.4) 0%, transparent 60%);
+  animation-duration: 25s;
+}
+
+.layer-2 {
+  background: radial-gradient(ellipse at 80% 50%, rgba(168, 85, 247, 0.3) 0%, transparent 60%);
+  animation-duration: 30s;
+  animation-delay: -5s;
+}
+
+.layer-3 {
+  background: radial-gradient(ellipse at 50% 80%, rgba(59, 130, 246, 0.3) 0%, transparent 60%);
+  animation-duration: 35s;
+  animation-delay: -10s;
+}
+
+@keyframes aurora-drift {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  100% { transform: translate(2%, 2%) rotate(3deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora-layer {
+    animation: none;
+  }
+}
