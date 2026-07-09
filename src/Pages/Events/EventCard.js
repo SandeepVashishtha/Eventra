@@ -162,7 +162,7 @@ const CapacityBar = ({ attendees, maxAttendees }) => {
 };
 
 const EventCard = ({ event, matchScore, matchReasons }) => {
-  const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
+  const [isBookmarked] = useState(() => isEventBookmarked(event.id));
   const [imageFailed, setImageFailed] = useState(false);
   const titleId = useId();
   const { myEvents, isRegistered } = useMyEvents();
