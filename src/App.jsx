@@ -54,6 +54,10 @@ const SessionRecovery = lazy(() => import("./components/SessionRecovery"));
 const ThemeCustomizer = lazy(() => import("./components/Layout/ThemeCustomizer"));
 
 
+function ErrorButton() {
+  throw new Error("This is your first error!");
+}
+
 const OfflineSyncManager = () => {
   useOfflineSync();
   return null;
@@ -105,7 +109,8 @@ function App() {
       setShowChatbot(true);
     }, 3000);
 
-    return () => clearTimeout(timer);
+    return (
+    {import.meta.env.DEV && <ErrorButton />}) => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -115,7 +120,8 @@ function App() {
 
     window.addEventListener("resize", handleResize);
 
-    return () => {
+    return (
+    {import.meta.env.DEV && <ErrorButton />}) => {
       window.removeEventListener("resize", handleResize);
     };
   }, []);
@@ -128,7 +134,8 @@ function App() {
     };
 
     window.addEventListener("cursorPreferenceChanged", handleCursorPreference);
-    return () => {
+    return (
+    {import.meta.env.DEV && <ErrorButton />}) => {
       window.removeEventListener("cursorPreferenceChanged", handleCursorPreference);
     };
   }, []);
@@ -153,13 +160,15 @@ function App() {
       handleOffline();
     }
 
-    return () => {
+    return (
+    {import.meta.env.DEV && <ErrorButton />}) => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
   }, [t]);
 
   return (
+    {import.meta.env.DEV && <ErrorButton />}
     
     <ErrorBoundary>
       <AuthProvider>
@@ -299,3 +308,7 @@ function App() {
 }
 
 export default App;
+
+function ErrorButton() {
+  throw new Error("This is your first error!");
+}
