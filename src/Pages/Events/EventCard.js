@@ -204,7 +204,7 @@ const EventCard = ({ event, matchScore, matchReasons }) => {
         toast.success("Event saved!", { toastId: `bookmark-${event.id}`, autoClose: 1800 });
       }
     },
-    [isBookmarked, event, computedStatus, toggleBookmark]
+    [isBookmarked, event, computedStatus]
   );
 
   return (
