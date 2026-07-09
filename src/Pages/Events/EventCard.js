@@ -31,10 +31,7 @@ import { useMyEvents } from "../../context/MyEventsContext";
 import ReminderControls from "../../components/reminders/ReminderControls";
 import MatchScoreBadge from "../../components/common/MatchScoreBadge";
 import {
-  addBookmarkedEvent,
   isEventBookmarked,
-  removeBookmarkedEvent,
-  subscribeToBookmarkChanges,
 } from "../../utils/bookmarkUtils";
 import { checkRegistrationConflict } from "../../utils/conflictDetection";
 
