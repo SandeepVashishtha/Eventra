@@ -179,7 +179,6 @@ function PollModeratorPanel({ activePoll, totalVotes, pollState, handlers }) {
 }
 
 // ─── Attendee view ────────────────────────────────────────────────────────────
-function PollVotingForm({ activePoll, selectedOption, setSelectedOption, votingLoading }) {
   return (
     <form className="flex flex-col gap-4">
       <h3 className="text-base font-bold text-slate-200 mb-2 leading-snug">Q: {activePoll.question}</h3>
@@ -209,7 +208,6 @@ function PollVotingForm({ activePoll, selectedOption, setSelectedOption, votingL
   );
 }
 
-function PollAttendeeView({ activePoll, hasVoted, selectedOption, setSelectedOption, handleVoteSubmit, votingLoading, totalVotes }) {
   if (!activePoll) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-slate-500 text-center">
@@ -244,14 +242,11 @@ function PollAttendeeView({ activePoll, hasVoted, selectedOption, setSelectedOpt
         activePoll={activePoll}
         selectedOption={selectedOption}
         setSelectedOption={setSelectedOption}
-        votingLoading={votingLoading}
       />
       <button
         type="submit"
-        disabled={votingLoading || !selectedOption}
         className="w-full flex items-center justify-center gap-1.5 py-3 rounded-xl text-sm font-semibold text-slate-950 bg-linear-to-r from-cyan-400 to-primary hover:brightness-110 active:scale-95 disabled:opacity-50 disabled:scale-100 disabled:brightness-100 transition-all duration-300 shadow-glow-sm cursor-pointer"
       >
-        {votingLoading ? <Loader2 className="h-5 w-5 animate-spin text-slate-950" /> : <Vote className="h-4 w-4 text-slate-950" />}
         <span>Submit Vote</span>
       </button>
     </form>
@@ -353,7 +348,6 @@ export default function LivePollController({ eventId }) {
   const [submitting, setSubmitting] = useState(false);
   const [selectedOption, setSelectedOption] = useState("");
   const [hasVoted, setHasVoted] = useState(false);
-  const [votingLoading, setVotingLoading] = useState(false);
 
   useEffect(() => {
     syncActivePoll(activePoll, eventId, setHasVoted, setSelectedOption);
@@ -396,7 +390,6 @@ export default function LivePollController({ eventId }) {
           selectedOption={selectedOption}
           setSelectedOption={setSelectedOption}
           handleVoteSubmit={handlers.voteSubmit}
-          votingLoading={votingLoading}
           totalVotes={totalVotes}
         />
       )}
