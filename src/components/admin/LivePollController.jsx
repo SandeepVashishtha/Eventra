@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext.js";
 import useLiveAudience from "../../hooks/useLiveAudience.js";
 import { BarChart3, Plus, Pause, Play, XCircle, Vote, Check, Loader2, RefreshCw } from "lucide-react";
@@ -179,7 +179,7 @@ function PollModeratorPanel({ activePoll, totalVotes, pollState, handlers }) {
 }
 
 // ─── Attendee view ────────────────────────────────────────────────────────────
-function PollVotingForm({ activePoll, selectedOption, setSelectedOption, votingLoading }) {
+function PollVotingForm({ activePoll, selectedOption, setSelectedOption }) {
   return (
     <form className="flex flex-col gap-4">
       <h3 className="text-base font-bold text-slate-200 mb-2 leading-snug">Q: {activePoll.question}</h3>
