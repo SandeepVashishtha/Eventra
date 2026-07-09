@@ -7,7 +7,6 @@ import MobileNavbar from "./MobileNavbar";
 import ThemeToggleButton from "../Layout/ThemeToggleButton";
 import InstallAppButton from "../common/InstallAppButton";
 import AuthButtons from "./AuthButtons";
-import LanguageSelector from "../LanguageSelector";
 import ProfileMenu from "./ProfileMenu";
 import NotificationBell from "../notifications/NotificationBell";
 import useBodyScrollLock from "./hooks/useBodyScrollLock";
