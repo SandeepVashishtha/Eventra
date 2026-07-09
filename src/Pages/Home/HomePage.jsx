@@ -8,6 +8,7 @@ import RecommendationBanner from "./components/RecommendationBanner";
 import TrendingEvents from "../../components/TrendingEvents/TrendingEvents";
 import CollaborationNetworkMap from "../../components/visual/CollaborationNetworkMap";
 import CollaborationMap from "../../components/CollaborationMap";
+import useHomeEventsData from "./hooks/useHomeEventsData";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 
 // ─── CONSTANTS ──────────────────────────────────────────────────────────────
@@ -20,6 +21,7 @@ const SITE_DESCRIPTION =
 // ─── MAIN COMPONENT ─────────────────────────────────────────────────────────
 const HomePage = () => {
   useDocumentTitle("Home | Eventra");
+  const { eventsData, isLoading } = useHomeEventsData();
 
   return (
     <main className="min-h-screen bg-bg">
@@ -58,9 +60,9 @@ const HomePage = () => {
 
       {/* ─── PAGE CONTENT ───────────────────────────────────────────────── */}
       <Hero />
-      <WhatsHappening />
+      <WhatsHappening eventsData={eventsData} isLoading={isLoading} />
       <TrendingEvents title="Trending Events" limit={6} fetchSize={24} />
-      <HomeEventSearch />
+      <HomeEventSearch eventsData={eventsData} />
       <RecommendationBanner />
       <CollaborationNetworkMap />
       <CollaborationMap />
