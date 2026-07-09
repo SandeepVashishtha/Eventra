@@ -28,7 +28,6 @@ import ShareModal from "../../components/common/ShareModal";
 import StatusBadge from "../../components/common/StatusBadge";
 import { getEventStatus } from "../../utils/eventUtils";
 import { useMyEvents } from "../../context/MyEventsContext";
-import ReminderControls from "../../components/reminders/ReminderControls";
 import MatchScoreBadge from "../../components/common/MatchScoreBadge";
 import {
   addBookmarkedEvent,
