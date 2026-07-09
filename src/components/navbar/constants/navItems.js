@@ -8,7 +8,6 @@ import {
   Trophy,
   MessageSquare,
   Book,
-  Bookmark,
   Info,
   HelpCircle,
   MoreHorizontal,
