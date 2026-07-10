@@ -20,7 +20,6 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const [scrolled, setScrolled] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
   const authenticated = isAuthenticated();
-  const { isDarkMode, toggleTheme, setIsCustomizerOpen } = useTheme();
 
   useBodyScrollLock(isMobileMenuOpen);
 
