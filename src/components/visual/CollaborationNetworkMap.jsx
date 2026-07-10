@@ -283,6 +283,7 @@ export default function CollaborationNetworkMap() {
     [hubCoordinates]
   );
 
+  const getTooltipPosition = useCallback((hub) => {
     if (!hub) return {};
     const xPercent = (hub.x / 1000) * 100;
     const yPercent = (hub.y / 500) * 100;
@@ -334,6 +335,7 @@ export default function CollaborationNetworkMap() {
     [pinnedHub]
   );
 
+  const handleHubLeave = useCallback((hub) => {
     if (!pinnedHub) {
       hoverTimeoutRef.current = setTimeout(() => {
         setActiveHub(null);

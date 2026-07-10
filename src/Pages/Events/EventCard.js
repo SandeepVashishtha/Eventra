@@ -31,8 +31,7 @@ import SocialShareButtons from "../../components/common/SocialShareButtons";
 import AddToCalendar from "../../components/common/AddToCalendar";
 import { useMyEvents } from "../../context/MyEventsContext";
 import MatchScoreBadge from "../../components/common/MatchScoreBadge";
-import SocialShareButtons from "../../components/common/SocialShareButtons";
-import AddToCalendar from "../../components/common/AddToCalendar";
+
 import {
   isEventBookmarked,
 } from "../../utils/bookmarkUtils";
@@ -292,9 +291,6 @@ const EventCard = ({ event, matchScore, matchReasons }) => {
 
         <div className="absolute bottom-3 right-3">
           <StatusBadge status={computedStatus} />
-
-          {/* AI match confidence badge — rendered when matchScore is supplied
-              (e.g. from useRecommendations / EventsPage sort-by-match) */}
           {matchScore !== undefined && matchScore !== null && (
             <MatchScoreBadge
               score={matchScore}

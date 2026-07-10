@@ -32,6 +32,7 @@ const GSSOC_TIMELINE = [
   { phase: "Final Results", date: "Jun 15", status: "upcoming", icon: Award },
 ];
 
+const MENTORS = [
   { name: "Priya Sharma", role: "Frontend Lead", expertise: ["React", "Tailwind"], avatar: "👩‍💻", available: true, bio: "10+ years in frontend architecture" },
   { name: "Rahul Verma", role: "Backend Expert", expertise: ["Node.js", "MongoDB"], avatar: "👨‍💻", available: true, bio: "Scalable systems specialist" },
   { name: "Anita Das", role: "DevOps Mentor", expertise: ["Docker", "CI/CD"], avatar: "👩‍🔧", available: false, bio: "Cloud infrastructure expert" },
@@ -45,6 +46,7 @@ const ACHIEVEMENTS = [
   { id: "top-contributor", label: "Top Contributor", icon: Trophy, unlocked: false, color: "text-purple-500", description: "Ranked in top 10 contributors" },
 ];
 
+const LEARNING_RESOURCES = [
   { title: "Git & GitHub Basics", type: "Tutorial", duration: "15 min", link: "#", difficulty: "beginner" },
   { title: "Writing Good PR Descriptions", type: "Guide", duration: "5 min", link: "#", difficulty: "beginner" },
   { title: "Code Review Checklist", type: "PDF", duration: "2 min", link: "#", difficulty: "intermediate" },
@@ -300,6 +302,7 @@ const GSSoCContribution = () => {
   const searchInputRef = useRef(null);
   const { toasts, addToast, removeToast } = useToast();
   
+  const [searchQuery, setSearchQuery] = useState(() => localStorage.getItem("gssoc.search") || "");
   // eslint-disable-next-line no-unused-vars
   const _debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [selectedDifficulty, setSelectedDifficulty] = useState(() => localStorage.getItem("gssoc.difficulty") || "all");
