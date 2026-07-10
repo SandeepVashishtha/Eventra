@@ -1,7 +1,7 @@
 /**
  * EventStructuredData tests
  */
-import { buildEventJsonLd, mapEventStatus, mapAttendanceMode } from "../EventStructuredData";
+import { buildEventJsonLd, mapEventStatus, mapAttendanceMode } from "./EventStructuredData";
 
 const BASE_EVENT = {
   id: 1,
