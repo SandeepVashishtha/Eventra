@@ -38,7 +38,6 @@ const GSSOC_TIMELINE = [
   { name: "Vikram Singh", role: "Full-Stack Guide", expertise: ["MERN", "GraphQL"], avatar: "👨‍🚀", available: true, bio: "End-to-end product builder" },
 ];
 
-const ACHIEVEMENTS = [
   { id: "first-pr", label: "First PR", icon: Star, unlocked: true, color: "text-yellow-500", description: "Submitted your first pull request" },
   { id: "bug-hunter", label: "Bug Hunter", icon: Zap, unlocked: true, color: "text-red-500", description: "Found and fixed 5+ bugs" },
   { id: "helper", label: "Community Helper", icon: MessageCircle, unlocked: false, color: "text-blue-500", description: "Helped 10+ contributors" },
