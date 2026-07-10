@@ -29,7 +29,6 @@ const COLORS = [
 
 export default function CollaborativeWhiteboard() {
   const canvasRef = useRef(null);
-  const containerRef = useRef(null);
   const bcRef = useRef(null);
   const dbRef = useRef(null);
 
@@ -521,7 +520,6 @@ export default function CollaborativeWhiteboard() {
   };
 
   return (
-    <div className="flex flex-col gap-6" ref={containerRef}>
       {/* HUD Whiteboard Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-slate-900 border border-slate-800 rounded-3xl shadow-lg">
         {/* Tools Select Group */}
