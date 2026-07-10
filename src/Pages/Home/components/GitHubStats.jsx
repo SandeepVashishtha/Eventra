@@ -25,17 +25,7 @@ const LS_KEY = "eventra:repoStats";
 const CACHE_MS = 30 * 60 * 1000; // 30 min
 const CONTRIBUTORS_PAGE_SIZE = 100;
 
-const fetchRepository = (owner, repo) =>
-  fetchGitHubJson(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`);
-
-const fetchContributors = (owner, repo) =>
-  fetchGitHubJson(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contributors`, {
-    per_page: CONTRIBUTORS_PAGE_SIZE,
-    anon: 1,
-  });
-
-const fetchPullRequests = (owner, repo, params) =>
-  fetchGitHubJson(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pulls`, params);
+const fetchStat = (path, params) => fetchGitHubJson(path, params);
 
 const readCache = () => {
   try {
@@ -79,11 +69,15 @@ export default function GitHubStats() {
 
     (async () => {
       try {
+        const repoEndpoint = `/repos/${encodeURIComponent(GITHUB_USER)}/${encodeURIComponent(GITHUB_REPO)}`;
         const [repoResult, contributorsResult, prResult] =
           await Promise.allSettled([
-            fetchRepository(GITHUB_USER, GITHUB_REPO),
-            fetchContributors(GITHUB_USER, GITHUB_REPO),
-            fetchPullRequests(GITHUB_USER, GITHUB_REPO, { per_page: 1 }),
+            fetchStat(repoEndpoint),
+            fetchStat(`${repoEndpoint}/contributors`, {
+              per_page: CONTRIBUTORS_PAGE_SIZE,
+              anon: 1,
+            }),
+            fetchStat(`${repoEndpoint}/pulls`, { per_page: 1 }),
           ]);
 
         if (repoResult.status === "rejected") {
