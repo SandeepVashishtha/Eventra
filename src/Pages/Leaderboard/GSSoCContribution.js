@@ -300,7 +300,6 @@ const GSSoCContribution = () => {
   const searchInputRef = useRef(null);
   const { toasts, addToast, removeToast } = useToast();
   
-  const [searchQuery, setSearchQuery] = useState(() => localStorage.getItem("gssoc.search") || "");
   // eslint-disable-next-line no-unused-vars
   const _debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [selectedDifficulty, setSelectedDifficulty] = useState(() => localStorage.getItem("gssoc.difficulty") || "all");
