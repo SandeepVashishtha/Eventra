@@ -4,7 +4,6 @@ import { ENV } from "../config/env.js";
 const MULTIPLEX_CHANNEL_NAME = "eventra_sse_multiplexer";
 const LOCK_NAME = "eventra_sse_leader_lock";
 const HEARTBEAT_KEY = "eventra_sse_leader_heartbeat";
-
 // Unique identifier for this tab instance
 const TAB_ID = Math.random().toString(36).substring(2, 9);
 
