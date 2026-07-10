@@ -77,27 +77,26 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
       <nav
         ref={navRef}
         aria-label="Primary navigation"
-        className={`sticky top-0 z-50 w-full transition-all duration-300 bg-white/70 dark:bg-gray-950/70 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-800/30 ${
-          scrolled ? "shadow-premium-md border-primary/10" : "shadow-premium-sm border-transparent"
-        }`}
+        className={`fixed top-0 left-0 right-0 z-50 w-full transition-all duration-300 bg-white dark:bg-gray-950 backdrop-blur-md border-b border-transparent ${scrolled ? "shadow-premium-md border-primary/10" : "shadow-premium-sm border-transparent"
+          }`}
       >
         <div className="mx-auto max-w-screen-2xl px-3 sm:px-4 lg:px-6">
           {/* FIXED: Added overflow-hidden and min-width-0 to prevent overflow */}
           <div className="flex h-16 items-center justify-between gap-2 overflow-hidden min-w-0">
-            
+
             {/* Logo - Fixed width */}
             <Link to="/" aria-label="Eventra Home" className="flex items-center shrink-0">
               <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-950 p-1 shadow-md shadow-primary/10 ring-1 ring-primary/20 dark:ring-blue-500/30 transition-transform duration-300 group-hover:scale-105">
+                <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-900 dark:to-slate-950 p-1 shadow-md shadow-primary/10 ring-1 ring-primary/20 dark:ring-blue-500/30 transition-transform duration-300 group-hover:scale-105">
                   <img
                     src="/favicon.png"
                     alt="Eventra Logo"
-                    className="h-full w-full object-contain"
+                    className="h-full w-full object-contain scale-110"
                     width="32"
                     height="32"
                   />
                 </div>
-                <span className="font-heading text-base font-bold tracking-wider bg-gradient-to-r from-primary to-blue-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
+                <span className="font-heading text-base font-bold tracking-wider text-primary dark:text-blue-400">
                   Eventra
                 </span>
               </div>
