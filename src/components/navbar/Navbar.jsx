@@ -83,8 +83,8 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
       <nav
         ref={navRef}
         aria-label="Primary navigation"
-        className={`sticky top-0 z-50 w-full transition-all duration-300 bg-white/85 dark:bg-slate-950/85 backdrop-blur-xl border-b border-slate-200/40 dark:border-slate-800/40 ${
-          scrolled ? "shadow-md shadow-primary/5 dark:shadow-blue-900/10" : "shadow-sm shadow-primary/2 dark:shadow-blue-900/5"
+        className={`sticky top-0 z-50 w-full transition-all duration-300 bg-white/70 dark:bg-gray-950/70 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-800/30 ${
+          scrolled ? "shadow-premium-md border-primary/10" : "shadow-premium-sm border-transparent"
         }`}
       >
         <div className="mx-auto max-w-screen-2xl px-3 sm:px-4 lg:px-6">
@@ -114,47 +114,35 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
               <DesktopNavbar />
             </div>
 
-            {/* FIXED: Right Controls - Added flex-shrink-0 and flex-wrap for desktop */}
-            <div className="flex items-center justify-end gap-1.5 shrink-0 flex-wrap lg:flex-nowrap">
-              <div className="hidden lg:flex items-center gap-1.5">
-                <InstallAppButton />
-                <ThemeToggleButton
-                  isDarkMode={isDarkMode}
-                  toggleTheme={toggleTheme}
-                  isMobile={false}
-                  setIsCustomizerOpen={setIsCustomizerOpen}
-                />
+            {/* Controls & CTAs */}
+            <div className="flex items-center justify-end gap-2 shrink-0">
+              {/* Desktop CTAs & Profile */}
+              <div className="hidden lg:flex items-center gap-2">
                 {authenticated ? (
                   <>
                     <NotificationBell />
-                    <LanguageSelector compact />
                     <ProfileMenu user={user} logout={logout} />
                   </>
                 ) : (
-                  <>
-                    <LanguageSelector compact />
-                    <AuthButtons />
-                  </>
+                  <AuthButtons />
                 )}
               </div>
 
+              {/* Mobile Notifications */}
               <div className="flex items-center gap-2 lg:hidden">
-                <InstallAppButton />
-                <ThemeToggleButton
-                  isDarkMode={isDarkMode}
-                  toggleTheme={toggleTheme}
-                  isMobile={false}
-                  setIsCustomizerOpen={setIsCustomizerOpen}
-                />
                 {authenticated && <NotificationBell />}
-                <MobileNavbar
-                  isOpen={isMobileMenuOpen}
-                  setIsOpen={setIsMobileMenuOpen}
-                  isAuthenticated={authenticated}
-                  user={user}
-                  logout={logout}
-                />
               </div>
+
+              {/* Navigation Drawer Toggle */}
+              <MobileNavbar
+                isOpen={isMobileMenuOpen}
+                setIsOpen={setIsMobileMenuOpen}
+                isAuthenticated={authenticated}
+                user={user}
+                logout={logout}
+                cursorEnabled={cursorEnabled}
+                toggleCursor={toggleCursor}
+              />
             </div>
           </div>
         </div>

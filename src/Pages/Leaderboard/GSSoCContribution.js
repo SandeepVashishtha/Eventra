@@ -32,7 +32,6 @@ const GSSOC_TIMELINE = [
   { phase: "Final Results", date: "Jun 15", status: "upcoming", icon: Award },
 ];
 
-const MENTORS = [
   { name: "Priya Sharma", role: "Frontend Lead", expertise: ["React", "Tailwind"], avatar: "👩‍💻", available: true, bio: "10+ years in frontend architecture" },
   { name: "Rahul Verma", role: "Backend Expert", expertise: ["Node.js", "MongoDB"], avatar: "👨‍💻", available: true, bio: "Scalable systems specialist" },
   { name: "Anita Das", role: "DevOps Mentor", expertise: ["Docker", "CI/CD"], avatar: "👩‍🔧", available: false, bio: "Cloud infrastructure expert" },

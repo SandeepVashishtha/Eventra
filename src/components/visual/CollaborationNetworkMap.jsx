@@ -344,59 +344,59 @@ export default function CollaborationNetworkMap() {
   }, [pinnedHub]);
 
   return (
-    <section className="bg-white dark:bg-slate-950 py-12 text-slate-900 dark:text-slate-100">
+    <section className="bg-bg py-12 text-text transition-colors duration-300">
       <div className="mx-auto max-w-7xl px-6">
         {/* ── Glassmorphic outer card — wraps the entire module ── */}
-        <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl dark:bg-slate-950/70 dark:border-white/5">
+        <div className="relative overflow-hidden rounded-3xl border border-border bg-card-bg p-6 shadow-premium-lg backdrop-blur-xl transition-all duration-300">
 
           {/* Header */}
           <div className="mb-6 flex flex-col gap-3">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <div className="flex items-center gap-2 text-sm font-medium text-blue-400">
+              <div className="flex items-center gap-2 text-sm font-medium text-primary">
                 <Globe className="h-4 w-4" />
                 <span>Global Connectivity</span>
               </div>
               {/* Zoom controls — positioned relative to the card, not the page */}
               <div className="flex items-center gap-3">
                 <button
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-600 text-white shadow-lg transition hover:scale-105 hover:bg-violet-500"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-950 dark:bg-white text-white dark:text-slate-950 hover:bg-slate-900 dark:hover:bg-slate-100 shadow-premium-sm transition duration-200 hover:scale-105"
                   onClick={() => setZoom((z) => Math.min(z + 0.2, 2))}
                   aria-label="Zoom in"
                 >
-                  <ZoomIn size={16} />
+                  <ZoomIn size={15} />
                 </button>
                 <button
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-600 text-white shadow-lg transition hover:scale-105 hover:bg-violet-500"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-950 dark:bg-white text-white dark:text-slate-950 hover:bg-slate-900 dark:hover:bg-slate-100 shadow-premium-sm transition duration-200 hover:scale-105"
                   onClick={() => setZoom((z) => Math.max(z - 0.2, 0.5))}
                   aria-label="Zoom out"
                 >
-                  <ZoomOut size={16} />
+                  <ZoomOut size={15} />
                 </button>
               </div>
             </div>
 
-            <h2 className="text-3xl font-bold tracking-tight text-white">
+            <h2 className="text-3xl font-bold tracking-tight text-text">
               Real-Time Global Collaboration Network
             </h2>
-            <p className="max-w-2xl text-slate-400">
+            <p className="max-w-2xl text-text-light/95">
               Connecting {stats.totalDevs.toLocaleString()} developers across{" "}
               {stats.regions} regions in a unified ecosystem.
             </p>
           </div>
 
           {/* ── Filters row — glass pill container so inputs stand clear of the map ── */}
-          <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-slate-800/60 px-4 py-3 backdrop-blur-md">
+          <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-slate-50/50 dark:bg-slate-950/20 px-4 py-3 backdrop-blur-md transition-all duration-300">
             <div className="relative">
               <Search
                 size={16}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-text-light/65"
               />
               <input
                 type="text"
                 placeholder="Search hubs or technologies..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full md:w-64 rounded-xl border border-slate-600 bg-slate-900/70 py-2.5 pl-10 pr-4 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                className="w-full md:w-64 rounded-xl border border-border bg-card-bg py-2.5 pl-10 pr-4 text-text placeholder:text-text-light/50 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-300"
                 aria-label="Search hubs"
               />
             </div>
@@ -404,12 +404,12 @@ export default function CollaborationNetworkMap() {
             <div className="relative">
               <Filter
                 size={16}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-text-light/65"
               />
               <select
                 value={selectedRegion}
                 onChange={(e) => setSelectedRegion(e.target.value)}
-                className="rounded-xl border border-slate-600 bg-slate-900/70 py-2.5 pl-10 pr-4 text-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                className="rounded-xl border border-border bg-card-bg py-2.5 pl-10 pr-4 text-text focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-300"
                 aria-label="Filter by region"
               >
                 {REGIONS.map((region) => (
@@ -423,12 +423,12 @@ export default function CollaborationNetworkMap() {
             <div className="relative">
               <Activity
                 size={16}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-text-light/65"
               />
               <select
                 value={selectedActivity}
                 onChange={(e) => setSelectedActivity(e.target.value)}
-                className="rounded-xl border border-slate-600 bg-slate-900/70 py-2.5 pl-10 pr-4 text-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                className="rounded-xl border border-border bg-card-bg py-2.5 pl-10 pr-4 text-text focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-300"
                 aria-label="Filter by activity"
               >
                 {["All", "Critical", "High", "Medium", "Low"].map((a) => (
@@ -439,23 +439,23 @@ export default function CollaborationNetworkMap() {
               </select>
             </div>
 
-            <label className="flex items-center gap-2 text-slate-300 cursor-pointer select-none">
+            <label className="flex items-center gap-2 text-text-light cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={showConnections}
                 onChange={(e) => setShowConnections(e.target.checked)}
-                className="h-4 w-4 rounded border-slate-600 bg-slate-800 accent-violet-500 focus:ring-2 focus:ring-violet-500 cursor-pointer"
+                className="h-4 w-4 rounded border-border bg-card-bg accent-primary focus:ring-2 focus:ring-primary/50 cursor-pointer"
               />
               <span>Connections</span>
             </label>
 
-            <label className="flex items-center gap-2 text-slate-300 cursor-pointer select-none">
+            <label className="flex items-center gap-2 text-text-light cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={particlesEnabled}
                 onChange={(e) => setParticlesEnabled(e.target.checked)}
                 disabled={prefersReducedMotion}
-                className="h-4 w-4 rounded border-slate-600 bg-slate-800 accent-violet-500 focus:ring-2 focus:ring-violet-500 cursor-pointer disabled:opacity-40"
+                className="h-4 w-4 rounded border-border bg-card-bg accent-primary focus:ring-2 focus:ring-primary/50 cursor-pointer disabled:opacity-40"
               />
               <span>Particles</span>
             </label>
@@ -463,47 +463,47 @@ export default function CollaborationNetworkMap() {
 
           {/* ── Stats Summary ── */}
           <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
-            <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-slate-800/50 p-5 shadow-inner backdrop-blur-sm">
-              <Users size={18} className="text-violet-400 shrink-0" />
+            <div className="flex items-center gap-4 rounded-2xl border border-border bg-slate-50/50 dark:bg-slate-950/20 p-5 shadow-premium-sm transition-all duration-300">
+              <Users size={18} className="text-primary shrink-0" />
               <div>
-                <span className="block text-2xl font-bold text-emerald-400">
+                <span className="block text-2xl font-bold text-emerald-600 dark:text-emerald-400">
                   {stats.totalDevs.toLocaleString()}
                 </span>
-                <span className="mt-0.5 block text-xs uppercase tracking-wider text-slate-400">Developers</span>
+                <span className="mt-0.5 block text-xs uppercase tracking-wider text-text-light">Developers</span>
               </div>
             </div>
-            <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-slate-800/50 p-5 shadow-inner backdrop-blur-sm">
-              <Code size={18} className="text-violet-400 shrink-0" />
+            <div className="flex items-center gap-4 rounded-2xl border border-border bg-slate-50/50 dark:bg-slate-950/20 p-5 shadow-premium-sm transition-all duration-300">
+              <Code size={18} className="text-primary shrink-0" />
               <div>
-                <span className="block text-2xl font-bold text-emerald-400">
+                <span className="block text-2xl font-bold text-emerald-600 dark:text-emerald-400">
                   {stats.totalProjects}
                 </span>
-                <span className="mt-0.5 block text-xs uppercase tracking-wider text-slate-400">Projects</span>
+                <span className="mt-0.5 block text-xs uppercase tracking-wider text-text-light">Projects</span>
               </div>
             </div>
-            <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-slate-800/50 p-5 shadow-inner backdrop-blur-sm">
-              <GitBranch size={18} className="text-violet-400 shrink-0" />
+            <div className="flex items-center gap-4 rounded-2xl border border-border bg-slate-50/50 dark:bg-slate-950/20 p-5 shadow-premium-sm transition-all duration-300">
+              <GitBranch size={18} className="text-primary shrink-0" />
               <div>
-                <span className="block text-2xl font-bold text-emerald-400">
+                <span className="block text-2xl font-bold text-emerald-600 dark:text-emerald-400">
                   {CONNECTIONS.length}
                 </span>
-                <span className="mt-0.5 block text-xs uppercase tracking-wider text-slate-400">Connections</span>
+                <span className="mt-0.5 block text-xs uppercase tracking-wider text-text-light">Connections</span>
               </div>
             </div>
-            <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-slate-800/50 p-5 shadow-inner backdrop-blur-sm">
-              <TrendingUp size={18} className="text-violet-400 shrink-0" />
+            <div className="flex items-center gap-4 rounded-2xl border border-border bg-slate-50/50 dark:bg-slate-950/20 p-5 shadow-premium-sm transition-all duration-300">
+              <TrendingUp size={18} className="text-primary shrink-0" />
               <div>
-                <span className="block text-2xl font-bold text-emerald-400">
+                <span className="block text-2xl font-bold text-emerald-600 dark:text-emerald-400">
                   {stats.activeHubs}/{HUBS.length}
                 </span>
-                <span className="mt-0.5 block text-xs uppercase tracking-wider text-slate-400">Active Hubs</span>
+                <span className="mt-0.5 block text-xs uppercase tracking-wider text-text-light">Active Hubs</span>
               </div>
             </div>
           </div>
 
           {/* ── Map Frame — z-0 keeps the SVG canvas below the filter/popup layer ── */}
           <div
-            className="relative z-0 overflow-hidden rounded-2xl border border-white/10 bg-slate-900/80"
+            className="relative z-0 overflow-hidden rounded-2xl border border-border bg-slate-50 dark:bg-slate-950/30 transition-all duration-300"
             style={{ transform: `scale(${zoom})`, transformOrigin: "center" }}
           >
             <svg
@@ -522,7 +522,7 @@ export default function CollaborationNetworkMap() {
                   </feMerge>
                 </filter>
                 <pattern id="cnm-grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                  <circle cx="2" cy="2" r="1.5" fill="rgba(224,233,242,0.06)" />
+                  <circle cx="2" cy="2" r="1.5" fill="currentColor" className="text-text-light/10 dark:text-text-light/5" />
                 </pattern>
                 <linearGradient id="connection-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
                   <stop offset="0%" stopColor="rgba(224,233,242,0.6)" />
@@ -560,7 +560,7 @@ export default function CollaborationNetworkMap() {
                     <path
                       d={pathD}
                       fill="none"
-                      stroke="rgba(224,233,242,0.5)"
+                      className="stroke-slate-200 dark:stroke-slate-800/80 transition-colors duration-350"
                       strokeWidth={Math.max(0.8, getConnectionWidth(conn.intensity))}
                       strokeLinecap="round"
                     />
@@ -617,10 +617,9 @@ export default function CollaborationNetworkMap() {
                       cx={hub.x}
                       cy={hub.y}
                       r={hubSize}
-                      fill="#1e293b"
+                      className="fill-card-bg transition-colors duration-300 node-core"
                       stroke={config.color}
                       strokeWidth="2.5"
-                      className="node-core"
                     />
                     {/* Pin indicator */}
                     {isPinned && (
@@ -637,10 +636,8 @@ export default function CollaborationNetworkMap() {
                       x={hub.x}
                       y={hub.y + hubSize + 18}
                       textAnchor="middle"
-                      className="node-label"
-                      fill="#cbd5e1"
+                      className="node-label fill-text-light font-semibold"
                       fontSize="11"
-                      fontWeight="500"
                     >
                       {hub.name.split(" ")[0]}
                     </text>
@@ -657,11 +654,11 @@ export default function CollaborationNetworkMap() {
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.92, y: 8 }}
                   transition={{ duration: 0.18, ease: "easeOut" }}
-                  className={`absolute left-4 top-4 z-50 w-72 rounded-2xl border border-white/10 bg-slate-900/90 p-5 shadow-2xl backdrop-blur-xl ${pinnedHub ? "pinned" : ""}`}
+                  className={`absolute left-4 top-4 z-50 w-72 rounded-2xl border border-border bg-card-bg/95 p-5 shadow-premium-lg backdrop-blur-xl transition-colors duration-300 ${pinnedHub ? "pinned" : ""}`}
                 >
                   {pinnedHub && (
                     <button
-                      className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-slate-700 text-slate-300 hover:bg-slate-600"
+                      className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-text-light hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
                       onClick={(e) => {
                         e.stopPropagation();
                         setPinnedHub(null);
@@ -675,12 +672,12 @@ export default function CollaborationNetworkMap() {
 
                   <div className="mb-4">
                     <div className="flex items-center gap-2">
-                      <MapPin className="text-blue-400" size={18} />
-                      <h4 className="text-base font-bold text-white">
+                      <MapPin className="text-primary" size={18} />
+                      <h4 className="text-base font-bold text-text">
                         {(activeHub || pinnedHub).name}
                       </h4>
                     </div>
-                    <div className="mt-2 ml-7 text-xs text-slate-400 space-y-1">
+                    <div className="mt-2 ml-7 text-xs text-text-light/80 space-y-1">
                       <div>
                         {(activeHub || pinnedHub).lat} • {(activeHub || pinnedHub).lng}
                       </div>
@@ -692,21 +689,21 @@ export default function CollaborationNetworkMap() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 mb-4">
-                    <div className="rounded-xl bg-slate-800/70 p-3">
+                    <div className="rounded-xl bg-slate-50/50 dark:bg-slate-950/20 border border-border p-3">
                       <div className="flex items-center gap-2 mb-1">
-                        <Users className="w-4 h-4 text-violet-400 shrink-0" />
-                        <span className="text-xs text-slate-400">Developers</span>
+                        <Users className="w-4 h-4 text-primary shrink-0" />
+                        <span className="text-[10px] font-bold text-text-light/70 uppercase">Developers</span>
                       </div>
-                      <span className="block text-xl font-bold text-emerald-400">
+                      <span className="block text-xl font-bold text-emerald-600 dark:text-emerald-400">
                         {(activeHub || pinnedHub).devs.toLocaleString()}
                       </span>
                     </div>
-                    <div className="rounded-xl bg-slate-800/70 p-3">
+                    <div className="rounded-xl bg-slate-50/50 dark:bg-slate-950/20 border border-border p-3">
                       <div className="flex items-center gap-2 mb-1">
-                        <Code className="w-4 h-4 text-violet-400 shrink-0" />
-                        <span className="text-xs text-slate-400">Projects</span>
+                        <Code className="w-4 h-4 text-primary shrink-0" />
+                        <span className="text-[10px] font-bold text-text-light/70 uppercase">Projects</span>
                       </div>
-                      <span className="block text-xl font-bold text-emerald-400">
+                      <span className="block text-xl font-bold text-emerald-600 dark:text-emerald-400">
                         {(activeHub || pinnedHub).projects}
                       </span>
                     </div>
@@ -714,25 +711,25 @@ export default function CollaborationNetworkMap() {
 
                   <div className="flex flex-wrap gap-2 mb-4">
                     {(activeHub || pinnedHub).categories.map((cat) => (
-                      <span key={cat} className="px-2.5 py-0.5 text-xs font-medium rounded-full bg-slate-700/80 text-slate-300">
+                      <span key={cat} className="px-2.5 py-0.5 text-xs font-semibold rounded-lg bg-slate-50 dark:bg-slate-800 border border-border text-text-light">
                         {cat}
                       </span>
                     ))}
                   </div>
 
                   <div className="mb-3 flex items-center justify-between">
-                    <span className="text-sm text-slate-400">Activity</span>
-                    <div className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-slate-700/60 text-slate-200">
+                    <span className="text-sm text-text-light">Activity</span>
+                    <div className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-slate-50 dark:bg-slate-800 border border-border text-text">
                       <Activity size={12} />
                       {ACTIVITY_LEVELS[(activeHub || pinnedHub).activity].label}
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between border-t border-white/10 pt-3">
-                    <span className="text-sm font-medium text-slate-300">
+                  <div className="flex items-center justify-between border-t border-border pt-3">
+                    <span className="text-xs font-bold uppercase tracking-wider text-text-light">
                       {(activeHub || pinnedHub).region}
                     </span>
-                    <button className="flex items-center gap-1.5 text-blue-400 hover:text-blue-300 text-sm font-medium">
+                    <button className="flex items-center gap-1.5 text-primary hover:opacity-80 text-xs font-bold transition-opacity">
                       <ExternalLink size={14} />
                       View Details
                     </button>
@@ -745,21 +742,21 @@ export default function CollaborationNetworkMap() {
           {/* ── Footer row: legend left, zoom indicator right ── */}
           <div className="mt-5 flex flex-wrap items-center justify-between gap-4">
             {/* Activity legend — bottom-left */}
-            <div className="flex flex-wrap items-center gap-4 text-sm text-slate-400">
-              <span className="font-medium text-slate-300">Activity Levels</span>
+            <div className="flex flex-wrap items-center gap-4 text-sm text-text-light">
+              <span className="font-semibold text-text">Activity Levels</span>
               {Object.entries(ACTIVITY_LEVELS).map(([key, config]) => (
                 <div key={key} className="flex items-center gap-2">
                   <span
                     className="h-2.5 w-2.5 rounded-full"
                     style={{ backgroundColor: config.color, boxShadow: `0 0 6px ${config.pulse}` }}
                   />
-                  <span className="text-slate-700 dark:text-slate-300">{config.label}</span>
+                  <span className="text-text-light">{config.label}</span>
                 </div>
               ))}
             </div>
 
             {/* Zoom indicator — bottom-right */}
-            <div className="rounded-full border border-white/10 bg-slate-800/60 px-4 py-1.5 text-sm text-slate-300 backdrop-blur-sm">
+            <div className="rounded-full border border-border bg-slate-50/50 dark:bg-slate-950/20 px-4 py-1.5 text-xs font-bold text-text-light backdrop-blur-sm transition-colors duration-300">
               Zoom: {Math.round(zoom * 100)}%
             </div>
           </div>

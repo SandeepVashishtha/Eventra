@@ -4,7 +4,6 @@ import { ENV } from "../config/env.js";
 const MULTIPLEX_CHANNEL_NAME = "eventra_sse_multiplexer";
 const LOCK_NAME = "eventra_sse_leader_lock";
 const HEARTBEAT_KEY = "eventra_sse_leader_heartbeat";
-
 // Unique identifier for this tab instance
 const TAB_ID = Math.random().toString(36).substring(2, 9);
 
@@ -84,6 +83,19 @@ class SseMultiplexer {
     // backoff timers so we can implement exponential backoff with jitter.
     this.reconnectAttempts = new Map(); // path -> attempt count (number)
     this.reconnectTimers = new Map();   // path -> setTimeout handle
+
+    this.msgHandlers = {
+      SUBSCRIBE: (msg) => this.handleSubscribe(msg),
+      UNSUBSCRIBE: (msg) => this.handleUnsubscribe(msg),
+      UNSUBSCRIBE_ALL: (msg) => this.handleUnsubscribeAll(msg),
+      QUERY_SUBSCRIBERS: (msg) => this.handleQuerySubscribers(msg),
+      SUBSCRIBERS_RESPONSE: (msg) => this.handleSubscribersResponse(msg),
+      SSE_MESSAGE: (msg) => this.handleSseMessage(msg),
+      SSE_STATUS: (msg) => this.handleSseStatus(msg),
+      RECONNECT_REQUEST: (msg) => this.handleReconnectRequest(msg),
+      PING: (msg) => this.handlePing(msg),
+      PONG: (msg) => this.handlePong(msg),
+    };
 
     if (typeof window !== "undefined") {
       this.channel = new BroadcastChannel(MULTIPLEX_CHANNEL_NAME);
