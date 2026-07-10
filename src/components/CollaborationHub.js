@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import useDebounce from '../hooks/useDebounce.js';
 import { toast } from 'react-toastify';
-import './components.css';
+import './common/common-components.css';
 import CharacterCounter from "./common/CharacterCounter";
 import { sanitizeInputText } from "../utils/inputSanitization";
 import EventMaterials from "./common/EventMaterials";
