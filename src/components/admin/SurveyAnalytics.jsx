@@ -1,5 +1,5 @@
 import { Users, Activity, Smile, Play, Star, Download } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { exportSurveyToCSV } from "../../utils/exportCsv";
 import {
   ResponsiveContainer,
@@ -28,7 +28,7 @@ const FEEDBACK_COMMENTS_POOL = [
 ];
 
 const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
-  const [isActive] = useState(true);
+  const isActive = true;
 
   // Hook handles mock data generation - decoupled from UI components
   const {
@@ -71,6 +71,13 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
     });
     return ratings;
   }, [questions, simulatedData]);
+
+  const overallSatisfaction = useMemo(() => {
+    const ratings = Object.values(analyzedRatings);
+    if (ratings.length === 0) return "0.0 / 5.0";
+    const avg = ratings.reduce((sum, r) => sum + parseFloat(r.average), 0) / ratings.length;
+    return `${avg.toFixed(1)} / 5.0`;
+  }, [analyzedRatings]);
 
   // Reconstruct individual rows corresponding to each submission per question distribution
   const handleExportCSV = () => {
@@ -212,7 +219,7 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
           },
           {
             label: "Attendee Satisfaction",
-            value: "4.4 / 5.0",
+            value: overallSatisfaction,
             sub: "Highly positive feedback",
             icon: <Smile className="w-5 h-5" />,
             color: "text-rose-500 bg-rose-50 dark:bg-rose-950/40 border-rose-100/50 dark:border-rose-900/30",
