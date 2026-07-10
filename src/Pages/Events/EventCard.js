@@ -29,6 +29,8 @@ import StatusBadge from "../../components/common/StatusBadge";
 import { getEventStatus } from "../../utils/eventUtils";
 import { useMyEvents } from "../../context/MyEventsContext";
 import MatchScoreBadge from "../../components/common/MatchScoreBadge";
+import SocialShareButtons from "../../components/common/SocialShareButtons";
+import AddToCalendar from "../../components/common/AddToCalendar";
 import {
   isEventBookmarked,
 } from "../../utils/bookmarkUtils";
