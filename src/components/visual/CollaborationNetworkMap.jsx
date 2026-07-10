@@ -334,7 +334,6 @@ export default function CollaborationNetworkMap() {
     [pinnedHub]
   );
 
-  const handleHubMouseLeave = useCallback(() => {
     if (!pinnedHub) {
       hoverTimeoutRef.current = setTimeout(() => {
         setActiveHub(null);
