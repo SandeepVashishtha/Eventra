@@ -10,6 +10,7 @@ const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 1_000;
 
 let onUnauthorized = null;
+let _onRequiresReauth = null;
 
 let _authToken = null;
 

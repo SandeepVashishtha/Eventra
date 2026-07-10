@@ -2,6 +2,7 @@
  * @fileoverview useRoutePrefetch - Route prefetching hook based on current location
  * @module hooks/useRoutePrefetch
  */
+import { useCallback, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { prefetchRoute } from "../utils/prefetchUtils";
 

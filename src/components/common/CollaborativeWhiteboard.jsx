@@ -520,6 +520,7 @@ export default function CollaborativeWhiteboard() {
   };
 
   return (
+    <>
       {/* HUD Whiteboard Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-slate-900 border border-slate-800 rounded-3xl shadow-lg">
         {/* Tools Select Group */}
@@ -682,6 +683,6 @@ export default function CollaborativeWhiteboard() {
           )}
         </AnimatePresence>
       </div>
-    </div>
+    </>
   );
 }
