@@ -1,5 +1,4 @@
 import {
-  Home,
   Calendar,
   CalendarDays,
   Clock,
