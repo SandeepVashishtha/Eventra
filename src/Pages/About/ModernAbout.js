@@ -1,12 +1,11 @@
+import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { Globe, Users, CalendarDays, HeartHandshake, Sparkles, Code2, Rocket } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { useReducedMotion } from "../../hooks/useReducedMotion";
-import CountUpLib from "react-countup";
 import ErrorBoundary from "../../components/common/ErrorBoundary";
-
-const CountUp = CountUpLib.default || CountUpLib;
 
 const container = {
   hidden: { opacity: 0 },
@@ -29,59 +28,74 @@ const item = {
   },
 };
 
-const stats = [
+const STAT_CONFIG = [
   {
+    id: "events",
     value: 100,
     suffix: "+",
-    label: "Events Hosted",
     icon: CalendarDays,
   },
   {
+    id: "builders",
     value: 500,
     suffix: "+",
-    label: "Community Members",
     icon: Users,
   },
   {
+    id: "partners",
     value: "Global",
-    label: "Community Reach",
     icon: Globe,
   },
 ];
 
-const values = [
+const VALUE_CONFIG = [
   {
+    id: "eventManagement",
     icon: Code2,
-    title: "Open Source",
-    desc: "Built transparently and freely available for communities worldwide.",
   },
   {
+    id: "hackathonGrowth",
     icon: HeartHandshake,
-    title: "Community First",
-    desc: "Designed around collaboration, inclusion, and meaningful connections.",
   },
   {
+    id: "projectCollaboration",
     icon: Rocket,
-    title: "Innovation",
-    desc: "Continuously evolving through community feedback and modern technology.",
   },
   {
+    id: "networking",
     icon: Sparkles,
-    title: "Accessibility",
-    desc: "Simple, intuitive, and accessible for organizers of every skill level.",
   },
 ];
 
 export default function ModernAbout() {
-  useDocumentTitle("Eventra | About");
+  const { t } = useTranslation();
+
+  useDocumentTitle(t("about.documentTitle"));
 
   const prefersReducedMotion = useReducedMotion();
 
+  const stats = useMemo(
+    () =>
+      STAT_CONFIG.map((stat) => ({
+        ...stat,
+        label: t(`about.stats.${stat.id}`),
+      })),
+    [t],
+  );
+
+  const values = useMemo(
+    () =>
+      VALUE_CONFIG.map((value) => ({
+        ...value,
+        title: t(`about.values.${value.id}.title`),
+        desc: t(`about.values.${value.id}.description`),
+      })),
+    [t],
+  );
+
   return (
     <>
-      {/* Hero */}
       <section className="relative min-h-[85vh] flex items-center justify-center bg-slate-950 overflow-hidden py-24 px-4">
-        {/* Background Glow */}
         <motion.div
           aria-hidden="true"
           className="absolute top-0 left-1/4 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl"
@@ -116,7 +130,6 @@ export default function ModernAbout() {
           }}
         />
 
-        {/* Grid Overlay */}
         <div
           aria-hidden="true"
           className="absolute inset-0 opacity-[0.04]"
@@ -135,16 +148,16 @@ export default function ModernAbout() {
               variants={item}
               className="text-sm uppercase tracking-[0.25em] text-blue-400 mb-6"
             >
-              Open Source • Community Driven • Free Forever
+              {t("about.hero.tagline")}
             </motion.p>
 
             <motion.h1
               variants={item}
               className="text-5xl md:text-7xl font-bold text-white mb-8 leading-tight"
             >
-              Building Better Events
-              <span className="block bg-linear-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
-                Together
+              {t("about.hero.title")}
+              <span className="block bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                {t("about.hero.subtitle")}
               </span>
             </motion.h1>
 
@@ -152,14 +165,11 @@ export default function ModernAbout() {
               variants={item}
               className="max-w-3xl mx-auto text-lg md:text-xl text-slate-400 leading-relaxed mb-16"
             >
-              Eventra empowers communities, colleges, organizations, and open-source teams to
-              create, manage, and grow impactful events through accessible, modern, and
-              collaborative event management tools.
+              {t("about.hero.description")}
             </motion.p>
           </motion.div>
 
-          {/* Stats */}
-          <ErrorBoundary level="section" label="Statistics">
+          <ErrorBoundary level="section" label={t("about.errorBoundaryLabel")}>
             <motion.div
               variants={container}
               initial="hidden"
@@ -172,7 +182,7 @@ export default function ModernAbout() {
 
                 return (
                   <motion.div
-                    key={stat.label}
+                    key={stat.id}
                     variants={item}
                     whileHover={
                       prefersReducedMotion
@@ -188,18 +198,8 @@ export default function ModernAbout() {
                     </div>
 
                     <h3 className="text-3xl font-bold text-white mb-2">
-                      {typeof stat.value === "number" ? (
-                        <CountUp
-                          start={0}
-                          end={stat.value}
-                          duration={3}
-                          suffix={stat.suffix}
-                          enableScrollSpy
-                          scrollSpyOnce
-                        />
-                      ) : (
-                        stat.value
-                      )}
+                      {stat.value}
+                      {stat.suffix}
                     </h3>
 
                     <p className="text-slate-400 text-sm">{stat.label}</p>
@@ -211,7 +211,6 @@ export default function ModernAbout() {
         </div>
       </section>
 
-      {/* Values */}
       <section className="py-24 bg-slate-950">
         <div className="max-w-7xl mx-auto px-6">
           <motion.div
@@ -222,12 +221,11 @@ export default function ModernAbout() {
             className="text-center mb-16"
           >
             <motion.h2 variants={item} className="text-4xl md:text-5xl font-bold text-white mb-6">
-              What Drives Eventra
+              {t("about.values.heading")}
             </motion.h2>
 
             <motion.p variants={item} className="max-w-3xl mx-auto text-lg text-slate-400">
-              Our values guide every decision we make, ensuring Eventra remains accessible,
-              community-focused, and built for long-term impact.
+              {t("about.values.description")}
             </motion.p>
           </motion.div>
 
@@ -243,7 +241,7 @@ export default function ModernAbout() {
 
               return (
                 <motion.div
-                  key={value.title}
+                  key={value.id}
                   variants={item}
                   whileHover={
                     prefersReducedMotion

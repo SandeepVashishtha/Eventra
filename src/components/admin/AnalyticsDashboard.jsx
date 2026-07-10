@@ -46,37 +46,6 @@ const FALLBACK_CATEGORY_DATA = [
   { name: "Web3", value: 110, color: "#f59e0b" },
 ];
 
-// =========================================================================
-// SUB-COMPONENTS
-// =========================================================================
-function AnalyticsStreamBadge({ status }) {
-  if (status === SSE_STATUS.CONNECTED) {
-    return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 normal-case">
-        <span className="relative flex h-1.5 w-1.5">
-          <span className="absolute inline-flex w-full h-full rounded-full opacity-75 animate-ping bg-emerald-400" />
-          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
-        </span>
-        SSE Live
-      </span>
-    );
-  }
-  if (status === SSE_STATUS.RECONNECTING) {
-    return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-500 dark:text-amber-400 normal-case">
-        <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
-        Reconnecting
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-400 normal-case">
-      <span className="h-1.5 w-1.5 rounded-full bg-slate-300 dark:bg-slate-600" />
-      Simulated
-    </span>
-  );
-}
-
 const LOCAL_STORAGE_KEY = "eventra_checkins";
 
 // Pure initializers — depend only on module-level constants, safe to define outside component

@@ -1,6 +1,14 @@
 export function getCountdown(eventDate) {
+  if (!eventDate) {
+    return { status: "UPCOMING", text: "Date TBD" };
+  }
+
   const now = new Date().getTime();
   const target = new Date(eventDate).getTime();
+
+  if (isNaN(target)) {
+    return { status: "UPCOMING", text: "Date TBD" };
+  }
 
   const diff = target - now;
 

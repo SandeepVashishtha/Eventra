@@ -24,7 +24,6 @@ graph TD
 
     subgraph API["Serverless API Helpers — Vercel Functions"]
         ProxyFn["/api/* proxy functions"]
-        Middleware["middleware.js\n(CSRF, CSP headers)"]
     end
 
     subgraph Backend["Backend — Azure Spring Boot"]
@@ -130,7 +129,7 @@ graph TD
 |---|---|
 | Transport | HTTPS only; HSTS via Vercel headers |
 | Auth | JWT Bearer tokens; refresh via HttpOnly cookie |
-| CSRF | Double-submit cookie pattern in `middleware.js` |
+| CSRF | Enforced by deployment headers and frontend request handling |
 | Input | `inputSanitization.js` + `sanitizeHtml.js` |
 | Rate Limiting | Token-bucket `rateLimiter.js` on hot endpoints |
 | CSP | Strict Content-Security-Policy via `cspReporting.js` |

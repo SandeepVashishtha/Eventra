@@ -92,7 +92,6 @@ const ContributorsInner = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [recentSearches, setRecentSearches] = useState([]);
   const fetchControllerRef = useRef(null);
   const isFetchingRef = useRef(false);
 
@@ -227,12 +226,8 @@ const ContributorsInner = () => {
   useEffect(() => {
     fetchContributors();
   }, [fetchContributors]);
-useEffect(() => {
-  const saved =
-    JSON.parse(localStorage.getItem("contributorSearchHistory")) || [];
 
-  setRecentSearches(saved);
-}, []);
+
   // Filter contributors based on search term
   const filteredContributors = contributors.filter(
     (c) =>

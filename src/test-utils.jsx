@@ -26,13 +26,15 @@ export function renderWithProviders(ui, options = {}) {
   return render(ui, {
     wrapper: ({ children }) => (
       <BrowserRouter>
-        <ThemeProvider>
-          <AuthProvider>
+        {/* FIX (#7653): ThemeProvider must be inside AuthProvider so useAuth()
+            is available for cross-device theme sync — mirrors App.jsx nesting. */}
+        <AuthProvider>
+          <ThemeProvider>
             <NotificationProvider>
               {children}
             </NotificationProvider>
-          </AuthProvider>
-        </ThemeProvider>
+          </ThemeProvider>
+        </AuthProvider>
       </BrowserRouter>
     ),
     ...options,

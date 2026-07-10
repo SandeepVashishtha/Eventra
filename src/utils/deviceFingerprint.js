@@ -74,12 +74,11 @@ export const getDeviceFingerprint = () => {
 
     const fingerprintRaw = `${screenInfo}_${navInfo}_${canvasHash}`;
 
-    // Per-origin salt: different for each deployment and never a static literal
-    // in the bundle. Combining the origin with a domain-specific namespace
-    // avoids salt collisions if two deployments share the same hostname root.
-    // Remove daily time-based salt offset to maintain fingerprint stability across days
-    const dayOffset = 0;
-const salt = dayOffset + `eventra:fingerprint:${window.location.origin}`;
+    // Per-origin salt with time-based rotation: combines origin with a day offset
+    // so fingerprints rotate every 24 hours. The dayOffset uses a fixed epoch
+    // (2020-01-01) for consistent buckets across sessions.
+    const dayOffset = Math.floor((Date.now() - 1577836800000) / 86400000);
+    const salt = `eventra:fingerprint:${window.location.origin}:${dayOffset}`;
 
     _memoizedFingerprint = CryptoJS.SHA256(fingerprintRaw + salt).toString();
     return _memoizedFingerprint;
@@ -115,9 +114,8 @@ export const getFastFingerprint = () => {
   try {
     const screenInfo = `${window.screen?.width || 0}x${window.screen?.height || 0}x${window.screen?.colorDepth || 0}`;
     const navInfo = `${window.navigator?.userAgent || ""}_${window.navigator?.language || ""}_${window.navigator?.hardwareConcurrency || 0}`;
-    // Remove daily time-based salt offset to maintain fingerprint stability across days
-    const dayOffset = 0;
-const salt = dayOffset + `eventra:fast-fingerprint:${window.location.origin}`;
+    const dayOffset = Math.floor((Date.now() - 1577836800000) / 86400000);
+    const salt = `eventra:fast-fingerprint:${window.location.origin}:${dayOffset}`;
     _memoizedFastFingerprint = CryptoJS.SHA256(`${screenInfo}_${navInfo}_${salt}`).toString();
     return _memoizedFastFingerprint;
   } catch {
@@ -145,5 +143,6 @@ export const _clearFingerprintCache = () => {
  */
 export const _getFingerprintSalt = () => {
   if (typeof window === "undefined") return "eventra:fingerprint:test";
-  return `eventra:fingerprint:${window.location.origin}`;
+  const dayOffset = Math.floor((Date.now() - 1577836800000) / 86400000);
+  return `eventra:fingerprint:${window.location.origin}:${dayOffset}`;
 };

@@ -6,7 +6,7 @@ const payload = {
   action: "register",
 };
 
-const signed = signRequest(
+const signed = await signRequest(
   payload,
   "test-secret"
 );
