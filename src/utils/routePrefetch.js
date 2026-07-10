@@ -6,13 +6,27 @@
 
 const prefetchCache = new Map();
 
+const createPrefetchPlaceholder = () => ({
+  default: function PrefetchPlaceholder() {
+    return null;
+  },
+});
+
+const loadRouteModule = (importFn) => {
+  if (typeof window === "undefined" || typeof window.document === "undefined") {
+    return Promise.resolve(createPrefetchPlaceholder());
+  }
+
+  return importFn();
+};
+
 const ROUTE_REGISTRY = {
-  home: () => import("../Pages/Home/HomePage"),
-  events: () => import("../Pages/Events/EventsPage"),
-  dashboard: () => import("../components/Dashboard"),
-  hackathons: () => import("../Pages/Hackathons/HackathonPage"),
-  profile: () => import("../components/user/UserProfile"),
-  projects: () => import("../Pages/Projects/ProjectsPage"),
+  home: () => import("../Pages/Home/HomePage.js"),
+  events: () => import("../Pages/Events/EventsPage.js"),
+  dashboard: () => import("../components/Dashboard.js"),
+  hackathons: () => import("../Pages/Hackathons/HackathonPage.js"),
+  profile: () => import("../components/user/UserProfile.js"),
+  projects: () => import("../Pages/Projects/ProjectsPage.js"),
 };
 
 /**
@@ -28,7 +42,7 @@ export const prefetchRoute = (routeName) => {
     return prefetchCache.get(routeName);
   }
 
-  const promise = importFn()
+  const promise = loadRouteModule(importFn)
     .then((module) => {
       return module;
     })
