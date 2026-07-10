@@ -13,6 +13,34 @@ const shortcutData = [
     workflow: "Help & Guidance"
   },
   {
+    action: "Go to Dashboard",
+    shortcut: "Alt + D",
+    keys: ["alt", "d"],
+    category: "Navigation",
+    workflow: "Quick Access"
+  },
+  {
+    action: "Go to Events",
+    shortcut: "Alt + E",
+    keys: ["alt", "e"],
+    category: "Navigation",
+    workflow: "Quick Access"
+  },
+  {
+    action: "Go to Profile",
+    shortcut: "Alt + P",
+    keys: ["alt", "p"],
+    category: "Navigation",
+    workflow: "Quick Access"
+  },
+  {
+    action: "Focus Search",
+    shortcut: "/",
+    keys: ["/"],
+    category: "General",
+    workflow: "Quick Search"
+  },
+  {
     action: "Close modal / Cancel",
     shortcut: "Esc",
     keys: ["escape"],
