@@ -45,7 +45,6 @@ const ACHIEVEMENTS = [
   { id: "top-contributor", label: "Top Contributor", icon: Trophy, unlocked: false, color: "text-purple-500", description: "Ranked in top 10 contributors" },
 ];
 
-const RESOURCES = [
   { title: "Git & GitHub Basics", type: "Tutorial", duration: "15 min", link: "#", difficulty: "beginner" },
   { title: "Writing Good PR Descriptions", type: "Guide", duration: "5 min", link: "#", difficulty: "beginner" },
   { title: "Code Review Checklist", type: "PDF", duration: "2 min", link: "#", difficulty: "intermediate" },
