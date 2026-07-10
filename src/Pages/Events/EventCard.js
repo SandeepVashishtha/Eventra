@@ -321,7 +321,7 @@ const EventCard = ({ event, matchScore, matchReasons }) => {
         <h3
           id={titleId}
           title={event.title}
-          className="text-text font-bold text-base leading-snug line-clamp-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-200"
+          className="min-w-0 break-words text-text font-bold text-base leading-snug line-clamp-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-200"
         >
           {event.title}
         </h3>
