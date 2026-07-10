@@ -52,7 +52,6 @@ const SessionRecovery = lazy(() => import("./components/SessionRecovery"));
 const MatchmakingHub = lazy(() => import("./Pages/Networking/MatchmakingHub"));
 const ThemeCustomizer = lazy(() => import("./components/Layout/ThemeCustomizer"));
 
-
 const OfflineSyncManager = () => {
   useOfflineSync();
   return null;
