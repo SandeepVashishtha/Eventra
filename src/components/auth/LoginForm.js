@@ -1,3 +1,22 @@
+import { useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { useAuth } from "../../context/AuthContext";
+import { toast } from "react-toastify";
+import { showAuthToast } from "../../utils/toast";
+import { ValidationMessage } from "../forms";
+import { LogIn, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { validate as fieldValidators } from "../../validation";
+import { getSafeRedirectPath } from "../../utils/redirectValidation";
+
+const LoginForm = () => {
+  const [formData, setFormData] = useState({ usernameOrEmail: "", password: "" });
+  const [error, setError] = useState({});
+  const [, setValidationState] = useState({
+    usernameOrEmail: "idle",
+    password: "idle",
+  });
+  const [showPassword, setShowPassword] = useState(false);
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -7,6 +26,15 @@ import { Eye, EyeOff } from 'lucide-react';
 export default function LoginForm() {
   const navigate = useNavigate();
   const { login, authRequest } = useAuth();
+  const from = location.state?.from;
+  const redirectPath = getSafeRedirectPath(
+    typeof from === "string"
+      ? from
+      : from?.pathname
+        ? `${from.pathname}${from.search || ""}${from.hash || ""}`
+        : "/dashboard",
+    "/dashboard"
+  );
 
   const [emailOrUsername, setEmailOrUsername] = useState('');
   const [password, setPassword] = useState('');
