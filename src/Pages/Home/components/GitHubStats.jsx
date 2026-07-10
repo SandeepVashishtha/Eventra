@@ -8,7 +8,6 @@ import {
   Users,
   Clock,
   Code2,
-  ExternalLink,
   GitPullRequest,
   Scale,
   Eye,
