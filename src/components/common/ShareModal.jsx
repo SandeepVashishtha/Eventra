@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { createShareModalData } from "../../utils/shareModalUtils.js";
+import { copyToClipboard } from "../../utils/shareUtils.js";
 const ModalCloseButton = memo(({ onClick }) => (
   <button
     type="button"
@@ -36,12 +37,12 @@ const ShareModal = ({ isOpen, onClose, event }) => {
     if (!shareData?.shareUrl) return;
 
     try {
-      if (!navigator?.clipboard) {
-        throw new Error("Clipboard API unavailable.");
+      const copied = await copyToClipboard(shareData.shareUrl);
+      if (copied) {
+        toast.success("Link copied to clipboard");
+      } else {
+        toast.error("Could not copy the link");
       }
-
-      await navigator.clipboard.writeText(shareData.shareUrl);
-      toast.success("Link copied to clipboard");
     } catch (error) {
       console.error("Failed to copy share link:", error);
       toast.error("Could not copy the link");
