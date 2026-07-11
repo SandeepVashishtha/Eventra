@@ -88,6 +88,15 @@ export function getInitialMessages(t, pathname = "") {
 }
 
 export function getAssistantReply(input, t) {
+  if (!input || typeof input !== "string") {
+    return {
+      answer: t("chatbot.knowledge.default"),
+      actions: [
+        { label: t("chatbot.knowledge.exploreEvents"), to: "/events", icon: "CalendarDays" },
+      ],
+    };
+  }
+
   const match = input.match(keywordPattern);
   const matchedKeyword = match ? match[0].toLowerCase() : null;
   const matchedItem = matchedKeyword ? keywordIndex.get(matchedKeyword) : null;
