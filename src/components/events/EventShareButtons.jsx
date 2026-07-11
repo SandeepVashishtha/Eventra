@@ -32,8 +32,7 @@ import useCopyToClipboard from "../../hooks/useCopyToClipboard";
 // ---------------------------------------------------------------------------
 
 function getEventUrl(event) {
-  const base =
-    typeof window !== "undefined" ? window.location.origin : "https://eventra.app";
+  const base = process.env.REACT_APP_PUBLIC_URL || "https://eventra.app";
   return `${base}/events/${event.id}`;
 }
 
