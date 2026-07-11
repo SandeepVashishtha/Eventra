@@ -3,6 +3,7 @@ import { useCallback } from 'react';
 
 export const useCSVExport = () => {
   const exportToCSV = useCallback((data, filename = 'export.csv') => {
+    if (typeof document === 'undefined') return;
     if (!data || !data.length) return;
     
     const headers = Object.keys(data[0]);
