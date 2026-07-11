@@ -1,5 +1,7 @@
 import { useState, useMemo, useEffect, useCallback, memo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+// NEW
+import { ArrowRight } from "lucide-react";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 import {
   Lightbulb,
@@ -184,13 +186,13 @@ const HorizontalTimeline = memo(({ timeline, variants }) => {
             </div>
             <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Program Timeline</h3>
           </div>
-          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 ml-[52px]">Track your milestones and upcoming deadlines</p>
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 ml-13">Track your milestones and upcoming deadlines</p>
         </div>
         
         <div className="flex flex-col md:items-end bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-200/60 dark:border-slate-800/80 shadow-inner">
           <div className="flex items-center gap-3 mb-1.5">
             <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Program Progress</span>
-            <span className="text-xs font-black text-white bg-gradient-to-r from-indigo-500 to-violet-600 px-2.5 py-1 rounded-full shadow-md shadow-indigo-500/20">{Math.round(progressPercent)}% Complete</span>
+            <span className="text-xs font-black text-white bg-linear-to-r from-indigo-500 to-violet-600 px-2.5 py-1 rounded-full shadow-md shadow-indigo-500/20">{Math.round(progressPercent)}% Complete</span>
           </div>
           {currentItem && (
             <p className="text-xs text-slate-600 dark:text-slate-400 mt-1.5 font-medium">
@@ -206,13 +208,13 @@ const HorizontalTimeline = memo(({ timeline, variants }) => {
       </div>
       
       <div className="relative w-full py-4 overflow-x-auto hide-scrollbar">
-        <div className="min-w-[700px] flex items-start justify-between relative px-8 md:px-12 pb-8 pt-2">
-          <div className="absolute top-[34px] left-20 right-20 h-2 bg-slate-100 dark:bg-slate-800/80 rounded-full overflow-hidden border border-slate-200/50 dark:border-slate-700/50" aria-hidden="true">
+        <div className="min-w-175 flex items-start justify-between relative px-8 md:px-12 pb-8 pt-2">
+          <div className="absolute top-8.5 left-20 right-20 h-2 bg-slate-100 dark:bg-slate-800/80 rounded-full overflow-hidden border border-slate-200/50 dark:border-slate-700/50" aria-hidden="true">
             <motion.div 
               initial={{ width: 0 }}
               animate={{ width: `${progressPercent}%` }}
               transition={{ duration: 1.5, ease: "easeOut", delay: 0.2 }}
-              className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)]" 
+              className="absolute top-0 left-0 h-full bg-linear-to-r from-blue-500 via-indigo-500 to-violet-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)]" 
             />
           </div>
           
@@ -228,7 +230,7 @@ const HorizontalTimeline = memo(({ timeline, variants }) => {
                   animate={{ scale: 1 }}
                   transition={{ delay: idx * 0.1, type: "spring", stiffness: 200 }}
                   className={`w-14 h-14 rounded-2xl flex items-center justify-center border-4 shadow-xl transition-all duration-300 ${
-                    isCompleted ? 'bg-gradient-to-br from-indigo-500 to-violet-600 border-white dark:border-slate-900 text-white group-hover:scale-110 group-hover:-translate-y-1 shadow-indigo-500/20' : 
+                    isCompleted ? 'bg-linear-to-br from-indigo-500 to-violet-600 border-white dark:border-slate-900 text-white group-hover:scale-110 group-hover:-translate-y-1 shadow-indigo-500/20' : 
                     isCurrent ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 border-indigo-500 shadow-indigo-500/30 scale-110 group-hover:scale-125 group-hover:-translate-y-1' : 
                     'bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border-white dark:border-slate-900 shadow-slate-200/50 dark:shadow-none'
                   } ${isCurrent ? 'rotate-3 group-hover:rotate-6' : '-rotate-3 group-hover:rotate-0'}`}
@@ -518,6 +520,29 @@ const GSSoCContribution = () => {
               </motion.article>
             ))}
           </div>
+          {/* NEW: Contributors Guide CTA */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.4 }}
+            className="mt-8 flex justify-center"
+          >
+            <a
+              href="/contributorguide" 
+              className="group inline-flex items-center gap-3 px-8 py-4 rounded-2xl
+                        bg-linear-to-r from-indigo-600 to-violet-600
+                        hover:from-indigo-700 hover:to-violet-700
+                        text-white font-semibold shadow-lg
+                        transition-all duration-300 hover:scale-[1.02] hover:shadow-xl"
+            >
+              <BookOpen className="w-5 h-5 transition-transform duration-300 group-hover:rotate-6" />
+
+              <span>Read Complete Contributors' Guide</span>
+
+              <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
+            </a>
+          </motion.div>
         </motion.section>
       </motion.section>
       
