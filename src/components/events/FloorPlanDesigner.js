@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { Layout, Save, RotateCcw, Plus, Minus, Move, AlertTriangle, Undo2, Redo2 } from "lucide-react";
+import { Layout, Save, RotateCcw, Plus, Minus, Move, AlertTriangle, Undo2, Redo2, Users } from "lucide-react";
+import { LiveAudienceContext } from "../../context/RealTimeContext";
 import { toast } from "react-toastify";
 import ConfirmationModal from "../../common/ConfirmationModal";
 import ElementPalette from "./FloorPlan/ElementPalette";
@@ -12,6 +13,16 @@ import "./FloorPlanDesigner.css";
 import { safeJsonParse } from "../../utils/safeJsonParse";
 
 const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
+  const realTimeCtx = useContext(LiveAudienceContext);
+  const [concurrentUsers, setConcurrentUsers] = useState(0);
+
+  useEffect(() => {
+     if(realTimeCtx && realTimeCtx.socket) {
+        realTimeCtx.socket.on("presence_update", (data) => setConcurrentUsers(data.count));
+        realTimeCtx.socket.emit("join_floorplan");
+        return () => realTimeCtx.socket.emit("leave_floorplan");
+     }
+  }, [realTimeCtx]);
   const navigate = useNavigate();
   const [elements, setElements] = useState([]);
   const [history, setHistory] = useState({ past: [], future: [] });
@@ -487,6 +498,11 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
 
   return (
     <div className="fp-container">
+      {concurrentUsers > 1 && (
+        <div className="flex items-center gap-2 bg-amber-500/20 border border-amber-500/50 text-amber-500 px-4 py-2 rounded-lg m-4 text-sm font-bold shadow-lg absolute top-16 left-1/2 -translate-x-1/2 z-50">
+           <Users size={16} /> Warning: {concurrentUsers - 1} other organizer(s) are currently editing this floor plan.
+        </div>
+      )}
       <div style={{ position: "absolute", width: "1px", height: "1px", padding: "0", margin: "-1px", overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", border: "0" }}
         aria-live="polite" role="status">{announcement}</div>
       <div className="fp-topbar">
