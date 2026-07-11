@@ -7,7 +7,7 @@ import EventCalendarView from "./EventCalendarView";
 import FeedbackButton from "../../components/FeedbackButton";
 import EventCTA from "./EventCTA";
 import EventFiltersToolbar from "./EventFiltersToolbar";
-import { EventCardSkeleton } from "../../components/common/SkeletonLoaders";
+import EventCardSkeleton from "../../components/common/EventCardSkeleton"; // CHANGED: Import from specific file
 import SearchEmptyState from "../../components/common/SearchEmptyState";
 import EmptyState from "../../components/common/EmptyState";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
@@ -48,10 +48,11 @@ const EventsPagination = ({ listing }) => {
   );
 };
 
+// CHANGED: Updated skeleton to use EventCardSkeleton with proper key
 const ExploreEventsSkeleton = () => (
   <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" aria-label="Loading events">
     {Array.from({ length: 6 }, (_, index) => (
-      <EventCardSkeleton key={index} />
+      <EventCardSkeleton key={`skeleton-${index}`} />
     ))}
   </div>
 );
