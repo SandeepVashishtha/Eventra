@@ -84,6 +84,7 @@ const useLocalStorage = (key, initialValue) => {
   const removeValue = useCallback(() => {
     if (typeof window === "undefined") return;
     try {
+      if (typeof window === "undefined") return;
       window.localStorage.removeItem(key);
       setStoredValue(initialValueRef.current);
 
