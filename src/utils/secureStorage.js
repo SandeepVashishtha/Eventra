@@ -196,11 +196,19 @@ const getOrCreateSecret = (storageKey) => {
   return secret;
 };
 
-// Both values are initialised eagerly at module load so every call to
-// getDerivedKey() within a page session operates on the same key.
-// These are declared as 'let' to allow refreshing from localStorage after key rotation.
-let DERIVED_KEY_MATERIAL = cryptoSupported ? getOrCreateSecret(MATERIAL_STORAGE_KEY) : null;
-let DERIVED_KEY_SALT = cryptoSupported ? getOrCreateSecret(SALT_STORAGE_KEY) : null;
+// Lazy-init key material on first use so module import does not touch localStorage (SSR-safe).
+let DERIVED_KEY_MATERIAL = null;
+let DERIVED_KEY_SALT = null;
+
+const ensureKeySecrets = () => {
+  if (!cryptoSupported || typeof localStorage === "undefined") return;
+  if (!DERIVED_KEY_MATERIAL) {
+    DERIVED_KEY_MATERIAL = getOrCreateSecret(MATERIAL_STORAGE_KEY);
+  }
+  if (!DERIVED_KEY_SALT) {
+    DERIVED_KEY_SALT = getOrCreateSecret(SALT_STORAGE_KEY);
+  }
+};
 
 /**
  * Initialize or load key metadata.
@@ -236,8 +244,24 @@ const initializeKeyMetadata = () => {
   return metadata;
 };
 
-let _keyMetadata = initializeKeyMetadata();
+let _keyMetadata = null;
 let _keyPromise = null;
+
+const getKeyMetadata = () => {
+  if (_keyMetadata) return _keyMetadata;
+  if (typeof localStorage === "undefined") {
+    _keyMetadata = {
+      version: CRYPTO_CONFIG.VERSION,
+      createdAt: new Date().toISOString(),
+      iterations: CRYPTO_CONFIG.PBKDF2_ITERATIONS,
+      algorithm: CRYPTO_CONFIG.ALGORITHM,
+      keyLength: CRYPTO_CONFIG.KEY_LENGTH,
+    };
+    return _keyMetadata;
+  }
+  _keyMetadata = initializeKeyMetadata();
+  return _keyMetadata;
+};
 
 /**
  * Refresh in-memory key material and salt from localStorage.
@@ -284,10 +308,10 @@ const getDerivedKey = () => {
   if (_keyPromise) return _keyPromise;
 
   _keyPromise = (async () => {
-    // Import the random per-browser key material as the PBKDF2 "password".
-    // This replaces the previous window.location.origin usage, which was a
-    // public value that allowed any attacker who knew the origin to precompute
-    // PBKDF2 offline once they obtained the salt.
+    ensureKeySecrets();
+    if (!DERIVED_KEY_MATERIAL || !DERIVED_KEY_SALT) {
+      throw new Error("Secure storage is unavailable in this environment");
+    }
     const keyMaterial = await crypto.subtle.importKey(
       'raw',
       DERIVED_KEY_MATERIAL,
@@ -297,7 +321,7 @@ const getDerivedKey = () => {
     );
 
     // Use the iteration count from metadata for future compatibility
-    const iterations = _keyMetadata?.iterations || CRYPTO_CONFIG.PBKDF2_ITERATIONS;
+    const iterations = getKeyMetadata()?.iterations || CRYPTO_CONFIG.PBKDF2_ITERATIONS;
 
     return crypto.subtle.deriveKey(
       {
