@@ -32,6 +32,7 @@ export function useScrollProgress() {
   const rafRef = useRef(null);
 
   useEffect(() => {
+    if (typeof document === 'undefined' || typeof window === 'undefined') return;
     const update = () => {
       if (typeof window !== 'undefined' && typeof document !== 'undefined') {
         const doc = document.documentElement;
