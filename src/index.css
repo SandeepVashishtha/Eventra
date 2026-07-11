@@ -116,27 +116,27 @@ body {
 
 /* Elevation and Glow utilities */
 .elevation-sm {
-  box-shadow: var(--shadow-premium-sm-val) !important;
+  box-shadow: var(--shadow-premium-sm-val);
 }
 
 .elevation-md {
-  box-shadow: var(--shadow-premium-md-val) !important;
+  box-shadow: var(--shadow-premium-md-val);
 }
 
 .elevation-lg {
-  box-shadow: var(--shadow-premium-lg-val) !important;
+  box-shadow: var(--shadow-premium-lg-val);
 }
 
 .shadow-glow {
-  box-shadow: var(--shadow-glow-md-val) !important;
+  box-shadow: var(--shadow-glow-md-val);
 }
 
 .shadow-glow-sm {
-  box-shadow: var(--shadow-glow-sm-val) !important;
+  box-shadow: var(--shadow-glow-sm-val);
 }
 
 .shadow-glow-lg {
-  box-shadow: var(--shadow-glow-lg-val) !important;
+  box-shadow: var(--shadow-glow-lg-val);
 }
 
 .sr-only {
@@ -551,7 +551,7 @@ aside {
      which remains visible otherwise. This ensures pages that use the pastel grid
      utility (like Contributors) render correctly in dark mode. */
   background-color: var(--bg-color);
-  background-image: none !important;
+  background-image: none;
   opacity: 1;
 }
 
@@ -890,7 +890,7 @@ input::-ms-reveal,
 input::-ms-clear,
 input::-webkit-clear-button,
 input::-webkit-password-toggle {
-  display: none !important;
+  display: none;
 }
 
 /* Shared pastel grid background used across static pages */
@@ -1042,7 +1042,7 @@ td {
 .no-transition *,
 .no-transition *::before,
 .no-transition *::after {
-  transition: none !important;
+  transition: none;
 }
 
 /* Smooth Scrolling */
@@ -1151,23 +1151,23 @@ select,
 /* WCAG AA Accessibility Contrast Overrides (Light Mode) */
 /* Overriding standard Tailwind light mode gray utilities that fail the 4.5:1 contrast check on white backgrounds */
 html:not(.dark) .text-gray-400 {
-  color: var(--evt-text-muted) !important;
+  color: var(--evt-text-muted);
   /* Gray 500/600 hybrid, passes WCAG AA 4.5:1 */
 }
 
 html:not(.dark) .text-gray-500 {
-  color: var(--evt-neutral-strong) !important;
+  color: var(--evt-neutral-strong);
   /* Gray 600, passes WCAG AA 4.5:1 */
 }
 
 html:not(.dark) .text-gray-600 {
-  color: var(--evt-neutral-strong) !important;
+  color: var(--evt-neutral-strong);
   /* Gray 700, passes WCAG AAA 7:1 */
 }
 
 html:not(.dark) .placeholder-gray-400::placeholder,
 html:not(.dark) ::placeholder {
-  color: var(--evt-text-muted) !important;
+  color: var(--evt-text-muted);
   /* Ensure accessible placeholder contrast */
 }
 
@@ -1181,18 +1181,18 @@ html:not(.dark) ::placeholder {
     z-index: 50;
     transform: translateY(-6px) scale(1.005);
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    border-color: #a5b4fc !important;
+    border-color: #a5b4fc;
     /* border-indigo-300 */
   }
 
   .dark .event-card-hoverable:hover {
-    border-color: #4338ca !important;
+    border-color: #4338ca;
     /* border-indigo-700 */
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
   }
 
   .project-card,
 .project-card * {
-  color: white !important;
+  color: white;
 }
 }
