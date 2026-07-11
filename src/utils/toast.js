@@ -11,10 +11,10 @@ const getToast = () => {
   return _toast;
 };
 
-const isSSR = typeof window === "undefined";
+const isBrowser = () => typeof window !== "undefined";
 
 export function showAuthToast(message, onAfterClose) {
-  if (isSSR) return;
+  if (!isBrowser()) return;
   const toast = getToast();
   toast.dismiss(AUTH_TOAST_ID);
   toast.success(message, {
@@ -25,7 +25,7 @@ export function showAuthToast(message, onAfterClose) {
 }
 
 export function showErrorToast(message, onAfterClose) {
-  if (isSSR) return;
+  if (!isBrowser()) return;
   const toast = getToast();
   toast.dismiss("error-feedback");
   toast.error(message, {
@@ -36,7 +36,7 @@ export function showErrorToast(message, onAfterClose) {
 }
 
 export function showInfoToast(message, onAfterClose) {
-  if (isSSR) return;
+  if (!isBrowser()) return;
   const toast = getToast();
   toast.dismiss("info-feedback");
   toast.info(message, {
@@ -47,7 +47,7 @@ export function showInfoToast(message, onAfterClose) {
 }
 
 export function showSuccessToast(message, options = {}) {
-  if (isSSR) return;
+  if (!isBrowser()) return;
   const { autoClose = 2500, toastId, onClose } = options;
   const toast = getToast();
   if (toastId) toast.dismiss(toastId);
@@ -55,7 +55,7 @@ export function showSuccessToast(message, options = {}) {
 }
 
 export function showWarningToast(message, options = {}) {
-  if (isSSR) return;
+  if (!isBrowser()) return;
   const { autoClose = 3000, toastId, onClose } = options;
   const toast = getToast();
   if (toastId) toast.dismiss(toastId);
@@ -63,8 +63,8 @@ export function showWarningToast(message, options = {}) {
 }
 
 export function dismissToastsByGroup(groupId) {
-  if (isSSR) return;
-  if (typeof window !== "undefined" && window.__EVENTRA_TOASTS__) {
+  if (!isBrowser()) return;
+  if (window.__EVENTRA_TOASTS__) {
     const list = window.__EVENTRA_TOASTS__[groupId] || [];
     list.forEach((_id) => {
       try {
