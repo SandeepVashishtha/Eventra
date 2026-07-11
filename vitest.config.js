@@ -11,7 +11,7 @@ export default defineConfig({
       name: "jsx-in-js",
       enforce: "pre",
       async transform(code, id) {
-        if (!/[/\\]src[/\\].*\.js$/.test(id)) return null;
+        if (!/[/\\](src|tests)[/\\].*\.js$/.test(id)) return null;
         if (!JSX_HINT_RE.test(code)) return null;
         return transformWithOxc(code, id, { lang: "jsx" });
       },
@@ -24,9 +24,38 @@ export default defineConfig({
     globals: true,
     environment: "jsdom",
     setupFiles: ["./src/setupTests.js"],
-    include: ["src/**/*.test.{js,jsx,ts,tsx}"],
-    exclude: ["src/**/*.spec.{js,jsx}", "tests/**"],
+    include: [
+      "src/**/*.test.{js,jsx,ts,tsx}",
+      "tests/navbar.keyboard.test.js",
+      "tests/**/*.test.mjs",
+    ],
+    exclude: [
+      "src/**/*.spec.{js,jsx}",
+      "tests/e2e/**",
+      "tests/helpers/**",
+      "tests/loaders/**",
+    ],
     css: true,
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "lcov", "html"],
+      include: ["src/**/*.{js,jsx}"],
+      exclude: [
+        "src/**/*.test.{js,jsx}",
+        "src/setupTests.js",
+        "src/__tests__/**",
+      ],
+    },
+    pool: "forks",
+    poolOptions: {
+      forks: {
+        singleFork: true,
+      },
+    },
+    testTimeout: 10000,
+    hookTimeout: 10000,
+    retry: 0,
+    bail: 0,
   },
   resolve: {
     alias: {

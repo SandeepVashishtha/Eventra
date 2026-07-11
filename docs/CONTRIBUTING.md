@@ -95,6 +95,10 @@ npm run test:e2e
 - Update docs when behavior or setup changes.
 - Use ESLint and Prettier conventions used in the repo.
 
+### Authentication Audit Logging
+
+When modifying authentication-related functionality, use the shared authentication audit utility instead of creating custom logging logic. This keeps authentication events consistent throughout the application.
+
 ## Testing Expectations
 
 - Add or update tests for meaningful behavior changes.
@@ -168,3 +172,11 @@ You do not need to set these manually.
 Do not commit secrets, tokens, or private keys.
 
 If you discover a security issue, follow [SECURITY.md](SECURITY.md).
+
+## Secure Deployments
+
+Contributors working on deployment-related features should review the Secure Deployment Checklist before submitting production-related changes.
+
+See:
+
+- docs/SECURE_DEPLOYMENT_CHECKLIST.md

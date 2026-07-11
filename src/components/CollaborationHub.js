@@ -5,12 +5,35 @@ import { useReducedMotion } from '../hooks/useReducedMotion';
 import useDebounce from '../hooks/useDebounce.js';
 import { toast } from 'react-toastify';
 import './components.css';
-import CharacterCounter from "../../components/common/CharacterCounter";
+import CharacterCounter from "./common/CharacterCounter";
 import { sanitizeInputText } from "../utils/inputSanitization";
 import EventMaterials from "./common/EventMaterials";
 import { Plus, Search, Check, X, Briefcase as BriefcaseIcon, DollarSign, Calendar, Users, Send, MessageCircle } from 'lucide-react';
 import CollaborativeWhiteboard from './common/CollaborativeWhiteboard';
 import { safeJsonParse } from "../utils/safeJsonParse";
+import { z } from 'zod';
+
+const COLLABORATION_TYPES = [
+  'Sponsorship',
+  'Content Partnership',
+  'Venue Partnership',
+  'Technical Support',
+];
+
+const collaborationRequestSchema = z.object({
+  title: z.string().trim().min(1, 'Project title is required.'),
+  type: z.enum(COLLABORATION_TYPES, {
+    error: 'Please select a collaboration type.',
+  }),
+  description: z
+    .string()
+    .trim()
+    .min(1, 'Description is required.')
+    .max(300, 'Description must be 300 characters or fewer.'),
+  budget: z.string().optional(),
+  deadline: z.string().optional(),
+  skills: z.string().optional(),
+});
 
 
 const CollaborationHub = () => {
@@ -37,11 +60,17 @@ const CollaborationHub = () => {
     deadline: '',
     skills: ''
   });
+  const [requestErrors, setRequestErrors] = useState({});
 
   const handleRequestChange = (e) => {
-    const { name, value } = e.target;
-    setNewRequest(prev => ({ ...prev, [name]: value }));
-  };
+  const { name, value } = e.target;
+  setNewRequest(prev => ({ ...prev, [name]: value }));
+  setRequestErrors(prev => {
+    if (!prev[name]) return prev;
+    const { [name]: _removed, ...rest } = prev;
+    return rest;
+  });
+};
 
   const OPPORTUNITY_SCHEMA = {
     id: "number", title: "string", organizer: "string", type: "string",
@@ -121,16 +150,25 @@ const CollaborationHub = () => {
   });
 
   const handleRequestSubmit = (e) => {
-    e.preventDefault();
-    if (!newRequest.title.trim() || !newRequest.type || !newRequest.description.trim()) {
-      toast.error('Please fill in all required fields (Title, Type, and Description)');
-      return;
-    }
+  e.preventDefault();
 
-    const sanitizedTitle = sanitizeInputText(newRequest.title);
-    const sanitizedDescription = sanitizeInputText(newRequest.description);
-    const sanitizedBudget = newRequest.budget ? sanitizeInputText(newRequest.budget) : "Not Specified";
+  const result = collaborationRequestSchema.safeParse(newRequest);
+  if (!result.success) {
+    const fieldErrors = {};
+    result.error.issues.forEach((issue) => {
+      const field = issue.path[0];
+      if (field && !fieldErrors[field]) fieldErrors[field] = issue.message;
+    });
+    setRequestErrors(fieldErrors);
+    toast.error('Please fix the highlighted fields.');
+    return;
+  }
+  setRequestErrors({});
 
+  const sanitizedTitle = sanitizeInputText(result.data.title);
+  const sanitizedDescription = sanitizeInputText(result.data.description);
+  const sanitizedBudget = result.data.budget ? sanitizeInputText(result.data.budget) : "Not Specified";
+  
     const skillsArray = newRequest.skills
       ? newRequest.skills.split(',').map(s => sanitizeInputText(s)).filter(s => s.length > 0)
       : [];
@@ -161,6 +199,7 @@ const CollaborationHub = () => {
       deadline: '',
       skills: ''
     });
+    setRequestErrors({});
     setActiveSection('opportunities');
   };
 
@@ -171,7 +210,11 @@ const CollaborationHub = () => {
       return;
     }
 
-    // Sanitize user proposal pitch text
+    const sanitizedProposal = sanitizeInputText(applicationText);
+    if (!sanitizedProposal.trim()) {
+      toast.error('Proposal message contains invalid content.');
+      return;
+    }
     toast.success('Your partnership proposal has been submitted successfully!');
     setApplicationText('');
     setProposalFile(null);
@@ -568,13 +611,19 @@ const CollaborationHub = () => {
                   value={newRequest.title}
                   onChange={handleRequestChange}
                   placeholder="Enter your collaboration project title"
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-955 text-slate-900 dark:text-white text-xs outline-none focus:border-indigo-500"
-                  required
+                  className={`px-4 py-2.5 rounded-xl border bg-white dark:bg-slate-955 text-slate-900 dark:text-white text-xs outline-none focus:border-indigo-500 ${
+                    requestErrors.title ? 'border-red-500' : 'border-slate-200 dark:border-slate-800'
+                  }`}
                   aria-required="true"
-                  aria-invalid={newRequest.title.trim() === '' ? "true" : "false"}
-                  aria-describedby="title-hint"
+                  aria-invalid={requestErrors.title ? "true" : "false"}
+                  aria-describedby={requestErrors.title ? "title-error" : "title-hint"}
                 />
                 <span id="title-hint" className="sr-only">Please enter a descriptive title for your project</span>
+                {requestErrors.title && (
+                  <span id="title-error" role="alert" className="text-[11px] font-bold text-red-500">
+                    {requestErrors.title}
+                  </span>
+                )}
               </div>
 
               <div className="form-group flex flex-col gap-2">
@@ -584,11 +633,12 @@ const CollaborationHub = () => {
                   name="type"
                   value={newRequest.type}
                   onChange={handleRequestChange}
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-955 text-slate-900 dark:text-white text-xs outline-none focus:border-indigo-500"
-                  required
+                  className={`px-4 py-2.5 rounded-xl border bg-white dark:bg-slate-955 text-slate-900 dark:text-white text-xs outline-none focus:border-indigo-500 ${
+                    requestErrors.type ? 'border-red-500' : 'border-slate-200 dark:border-slate-800'
+                  }`}
                   aria-required="true"
-                  aria-invalid={newRequest.type === '' ? "true" : "false"}
-                  aria-describedby="type-hint"
+                  aria-invalid={requestErrors.type ? "true" : "false"}
+                  aria-describedby={requestErrors.type ? "type-error" : "type-hint"}
                 >
                   <option value="">Select type</option>
                   <option value="Sponsorship">Sponsorship</option>
@@ -597,6 +647,11 @@ const CollaborationHub = () => {
                   <option value="Technical Support">Technical Support</option>
                 </select>
                 <span id="type-hint" className="sr-only">Select the type of collaboration partnership</span>
+                {requestErrors.type && (
+                  <span id="type-error" role="alert" className="text-[11px] font-bold text-red-500">
+                    {requestErrors.type}
+                  </span>
+                )}
               </div>
 
               <div className="form-group flex flex-col gap-2">
@@ -610,11 +665,12 @@ const CollaborationHub = () => {
                     rows="4"
                     maxLength={300}
                     placeholder="Describe partnership goals / Sponsorship details / Collaboration ideas..."
-                    required
-                    className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                    className={`w-full rounded-xl border bg-white dark:bg-gray-900 px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition ${
+                      requestErrors.description ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'
+                    }`}
                     aria-required="true"
-                    aria-invalid={newRequest.description.trim() === '' ? "true" : "false"}
-                    aria-describedby="desc-hint"
+                    aria-invalid={requestErrors.description ? "true" : "false"}
+                    aria-describedby={requestErrors.description ? "desc-error" : "desc-hint"}
                   ></textarea>
                   <div className="flex justify-end">
                     <CharacterCounter
@@ -624,6 +680,11 @@ const CollaborationHub = () => {
                   </div>
                 </div>
                 <span id="desc-hint" className="sr-only">Provide context and objectives of the collaboration. Maximum 300 characters.</span>
+                {requestErrors.description && (
+                  <span id="desc-error" role="alert" className="text-[11px] font-bold text-red-500">
+                    {requestErrors.description}
+                  </span>
+                )}
               </div>
 
               <div className="form-row grid grid-cols-1 sm:grid-cols-2 gap-4">

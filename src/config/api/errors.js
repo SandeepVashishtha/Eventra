@@ -19,6 +19,12 @@ export class RateLimitError extends ApiError {
   }
 }
 
+export class CSRFError extends ApiError {
+  constructor(message, { status = 403, data = null } = {}) {
+    super(message, { status, data });
+    this.name = "CSRFError";
+  }
+}
 export const normalizeApiError = (error) => {
   const config = error.config || {};
   const status = error?.response?.status;
@@ -29,7 +35,7 @@ export const normalizeApiError = (error) => {
     error.message?.includes("timeout")
   ) {
     return new ApiError(
-      `Request timed out after ${config.timeout || 15000 / 1000}s: ${config.method?.toUpperCase()} ${config.url}`,
+      `Request timed out after ${(config.timeout || 15000) / 1000}s: ${config.method?.toUpperCase()} ${config.url}`,
       { status, isTimeout: true }
     );
   }

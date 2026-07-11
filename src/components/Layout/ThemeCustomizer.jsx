@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Check, Monitor, Sun, Moon } from "lucide-react";
 import { useTheme } from "../../context/ThemeContext";
@@ -28,46 +28,46 @@ const ThemeCustomizer = () => {
   if (!isCustomizerOpen) return null;
 
   const baseThemeOptions = [
-    { id: "light", label: "Light", icon: <Sun className="w-5 h-5" /> },
-    { id: "dark", label: "Dark", icon: <Moon className="w-5 h-5" /> },
-    { id: "system", label: "System", icon: <Monitor className="w-5 h-5" /> },
+    { id: "light", label: "Light", icon: <Sun className="w-4 h-4" /> },
+    { id: "dark", label: "Dark", icon: <Moon className="w-4 h-4" /> },
+    { id: "system", label: "System", icon: <Monitor className="w-4 h-4" /> },
   ];
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-200 flex items-center justify-center p-4">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={() => setIsCustomizerOpen(false)}
-          className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         />
 
         {/* Modal */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          initial={{ opacity: 0, scale: 0.98, y: 12 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh]"
+          exit={{ opacity: 0, scale: 0.98, y: 12 }}
+          className="relative w-full max-w-lg bg-card-bg rounded-2xl shadow-premium-lg border border-border overflow-hidden flex flex-col max-h-[90vh] transition-colors duration-300"
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-slate-800">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Theme Customizer</h2>
+          <div className="flex items-center justify-between p-6 border-b border-border bg-slate-50/20 dark:bg-slate-950/10">
+            <h2 className="text-lg font-bold text-text">Theme Customizer</h2>
             <button
               onClick={() => setIsCustomizerOpen(false)}
-              className="p-2 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800 dark:text-gray-400 transition-colors"
+              className="p-2 rounded-lg text-text-light hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors"
               aria-label="Close customizer"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          <div className="p-6 overflow-y-auto space-y-8">
+          <div className="p-6 overflow-y-auto space-y-6">
             {/* Base Theme Section */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <div className="space-y-3">
+              <h3 className="text-[10px] font-bold uppercase tracking-wider text-text-light/50">
                 Base Mode
               </h3>
               <div className="grid grid-cols-3 gap-3">
@@ -77,14 +77,14 @@ const ThemeCustomizer = () => {
                     <button
                       key={option.id}
                       onClick={() => setTheme(option.id)}
-                      className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                      className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border transition-all ${
                         isActive
-                          ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
-                          : "border-gray-200 dark:border-slate-700 bg-transparent text-gray-600 dark:text-gray-300 hover:border-indigo-300 dark:hover:border-indigo-700 hover:bg-gray-50 dark:hover:bg-slate-800"
+                          ? "border-primary bg-primary/10 text-primary font-bold shadow-premium-sm"
+                          : "border-border bg-transparent text-text-light hover:border-primary/50 hover:bg-slate-50 dark:hover:bg-slate-800/40"
                       }`}
                     >
                       {option.icon}
-                      <span className="text-sm font-medium">{option.label}</span>
+                      <span className="text-xs font-semibold">{option.label}</span>
                     </button>
                   );
                 })}
@@ -92,8 +92,8 @@ const ThemeCustomizer = () => {
             </div>
 
             {/* Skins / Color Themes Section */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <div className="space-y-3">
+              <h3 className="text-[10px] font-bold uppercase tracking-wider text-text-light/50">
                 Color Themes
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -103,22 +103,20 @@ const ThemeCustomizer = () => {
                     <button
                       key={themeOption.id}
                       onClick={() => setActiveThemeId(themeOption.id)}
-                      className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all text-left ${
+                      className={`flex items-center gap-3 p-4 rounded-xl border transition-all text-left ${
                         isActive
-                          ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10"
-                          : "border-gray-200 dark:border-slate-700 bg-transparent hover:border-indigo-300 dark:hover:border-indigo-700 hover:bg-gray-50 dark:hover:bg-slate-800"
+                          ? "border-primary bg-primary/10"
+                          : "border-border bg-transparent hover:border-primary/50 hover:bg-slate-50 dark:hover:bg-slate-800/40"
                       }`}
                     >
                       <div
-                        className={`w-8 h-8 rounded-full bg-gradient-to-br ${themeOption.accent} flex items-center justify-center shadow-sm shrink-0`}
+                        className={`w-7 h-7 rounded-full bg-gradient-to-br ${themeOption.accent} flex items-center justify-center shadow-sm shrink-0`}
                       >
-                        {isActive && <Check className="w-4 h-4 text-white" />}
+                        {isActive && <Check className="w-3.5 h-3.5 text-white" />}
                       </div>
                       <span
-                        className={`text-sm font-medium flex-1 truncate ${
-                          isActive
-                            ? "text-indigo-700 dark:text-indigo-300"
-                            : "text-gray-700 dark:text-gray-200"
+                        className={`text-xs font-semibold flex-1 truncate ${
+                          isActive ? "text-primary font-bold" : "text-text"
                         }`}
                       >
                         {themeOption.name}

@@ -13,6 +13,34 @@ const shortcutData = [
     workflow: "Help & Guidance"
   },
   {
+    action: "Go to Dashboard",
+    shortcut: "Alt + D",
+    keys: ["alt", "d"],
+    category: "Navigation",
+    workflow: "Quick Access"
+  },
+  {
+    action: "Go to Events",
+    shortcut: "Alt + E",
+    keys: ["alt", "e"],
+    category: "Navigation",
+    workflow: "Quick Access"
+  },
+  {
+    action: "Go to Profile",
+    shortcut: "Alt + P",
+    keys: ["alt", "p"],
+    category: "Navigation",
+    workflow: "Quick Access"
+  },
+  {
+    action: "Focus Search",
+    shortcut: "/",
+    keys: ["/"],
+    category: "General",
+    workflow: "Quick Search"
+  },
+  {
     action: "Close modal / Cancel",
     shortcut: "Esc",
     keys: ["escape"],
@@ -189,7 +217,7 @@ const ShortcutRow = ({ action, keys, isPressed }) => (
             className={`
               px-2.5 py-1.5 rounded-lg border text-xs font-black uppercase tracking-tight shadow-sm transition-all duration-150
               ${active
-                ? "bg-gradient-to-r from-indigo-500 to-pink-500 text-white border-transparent scale-95 shadow-[0_0_12px_rgba(99,102,241,0.4)]"
+                ? "bg-linear-to-r from-indigo-500 to-pink-500 text-white border-transparent scale-95 shadow-[0_0_12px_rgba(99,102,241,0.4)]"
                 : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
               }
             `}
@@ -290,7 +318,7 @@ const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-modal flex items-center justify-center p-4">
           {/* Backdrop Blur Overlay */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -319,7 +347,7 @@ const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
             <div className="flex items-center justify-between mb-6 flex-shrink-0">
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <span className="absolute -inset-0.5 rounded-full bg-gradient-to-r from-indigo-500 to-pink-500 blur opacity-70 animate-pulse" />
+                  <span className="absolute -inset-0.5 rounded-full bg-linear-to-r from-indigo-500 to-pink-500 blur opacity-70 animate-pulse" />
                   <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-indigo-400 border border-white/10">
                     <Keyboard className="h-5 w-5" />
                   </div>
@@ -362,7 +390,7 @@ const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
                       className={`
                         px-3.5 py-2.5 rounded-xl text-xs font-black uppercase tracking-tight transition-all duration-150 select-none
                         ${active
-                          ? "bg-gradient-to-r from-indigo-500 to-pink-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.5)] border-transparent"
+                          ? "bg-linear-to-r from-indigo-500 to-pink-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.5)] border-transparent"
                           : "bg-white dark:bg-slate-800 border-b-4 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 border-l border-r border-t border-slate-200/30 dark:border-slate-700/10"
                         }
                       `}

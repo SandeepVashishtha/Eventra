@@ -1,48 +1,41 @@
 import { memo, useRef, useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { useTheme } from "../../context/ThemeContext";
 import DesktopNavbar from "./DesktopNavbar";
 import MobileNavbar from "./MobileNavbar";
-import CursorToggle from "./CursorToggle";
-import ThemeToggleButton from "../Layout/ThemeToggleButton";
 import AuthButtons from "./AuthButtons";
-import InstallAppButton from "../common/InstallAppButton";
-import LanguageSelector from "../LanguageSelector";
 import ProfileMenu from "./ProfileMenu";
 import NotificationBell from "../notifications/NotificationBell";
 import useBodyScrollLock from "./hooks/useBodyScrollLock";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
 
 const Navbar = ({ cursorEnabled, toggleCursor }) => {
+  const navRef = useRef(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [scrolled, setScrolled] = useState(false);
-  const navRef = useRef(null);
-  const { isDarkMode, toggleTheme, setIsCustomizerOpen } = useTheme();
-
   const { user, isAuthenticated, logout } = useAuth();
   const authenticated = isAuthenticated();
-
   useBodyScrollLock(isMobileMenuOpen);
+
   const handleCloseModals = useCallback(() => {
     setIsMobileMenuOpen(false);
   }, []);
 
   const handleSearchFocus = useCallback(() => {
-    const searchInput = navRef.current?.querySelector(
-      'input[type="text"], input[type="search"]'
-    );
-
-    if (searchInput) searchInput.focus();
+    const searchInput = navRef.current?.querySelector('input[type="text"], input[type="search"]');
+    if (searchInput) {
+      searchInput.focus();
+    }
   }, []);
 
   const handleNewEvent = useCallback(() => {
-    const createEventBtn = navRef.current?.querySelector(
+    const createButton = navRef.current?.querySelector(
       '[aria-label*="Create Event"], [aria-label*="create"]'
     );
-
-    if (createEventBtn) createEventBtn.click();
+    if (createButton) {
+      createButton.click();
+    }
   }, []);
 
   useKeyboardShortcuts({
@@ -53,28 +46,20 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
 
   useEffect(() => {
     let ticking = false;
-
     const handleScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          const scrollTop = window.scrollY;
-          const docHeight =
-            document.documentElement.scrollHeight - window.innerHeight;
-
-          const progress =
-            docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
-
-          setScrollProgress(progress);
-          setScrolled(scrollTop > 12);
-          ticking = false;
-        });
-
-        ticking = true;
-      }
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(() => {
+        const scrollTop = window.scrollY;
+        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+        setScrollProgress(progress);
+        setScrolled(scrollTop > 12);
+        ticking = false;
+      });
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
-
     return () => {
       window.removeEventListener("scroll", handleScroll);
     };
@@ -82,71 +67,84 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
 
   return (
     <>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-white"
+      >
+        Skip to main content
+      </a>
+
       <nav
         ref={navRef}
         aria-label="Primary navigation"
-        className={`sticky top-0 left-0 w-full z-[200] transition-all duration-300 ${
-          scrolled
-            ? "backdrop-blur-md bg-navbar/95 border-b border-border shadow-sm"
-            : "bg-transparent border-b border-transparent"
-        }`}
+        className={`fixed top-0 left-0 right-0 z-50 w-full transition-all duration-300 bg-white dark:bg-gray-950 backdrop-blur-md border-b border-transparent ${scrolled ? "shadow-premium-md border-primary/10" : "shadow-premium-sm border-transparent"
+          }`}
       >
-        <div className="relative px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-3">
-          {/* Logo - Left Section */}
-          <Link to="/" aria-label="Eventra home logo template" className="relative z-10 flex items-center shrink-0">
-            <div className="flex items-center gap-2 sm:gap-2.5">
-              <div className="flex h-8 w-8 sm:h-9 sm:w-9 flex-none items-center justify-center overflow-hidden rounded-lg bg-card-bg p-1 shadow-premium-sm ring-1 ring-border">
-                <img
-                  src="/favicon.png"
-                  alt="Eventra Brand Logo"
-                  className="block h-full w-full object-contain"
-                  loading="eager"
-                  decoding="async"
-                  width="36"
-                  height="36"
-                />
+        <div className="mx-auto max-w-screen-2xl px-3 sm:px-4 lg:px-6">
+          {/* FIXED: Added overflow-hidden and min-width-0 to prevent overflow */}
+          <div className="flex h-16 items-center justify-between gap-2 overflow-hidden min-w-0">
+
+            {/* Logo - Fixed width */}
+            <Link to="/" aria-label="Eventra Home" className="flex items-center shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-900 dark:to-slate-950 p-1 shadow-md shadow-primary/10 ring-1 ring-primary/20 dark:ring-blue-500/30 transition-transform duration-300 group-hover:scale-105">
+                  <img
+                    src="/favicon.png"
+                    alt="Eventra Logo"
+                    className="h-full w-full object-contain scale-110"
+                    width="32"
+                    height="32"
+                  />
+                </div>
+                <span className="font-heading text-base font-bold tracking-wider text-primary dark:text-blue-400">
+                  Eventra
+                </span>
               </div>
-              <h1 className="truncate text-base sm:text-lg lg:text-xl font-heading font-semibold text-text tracking-tight">Eventra</h1>
+            </Link>
+
+            {/* FIXED: Desktop Navigation - Added flex-shrink and min-width-0 */}
+            <div className="hidden lg:flex flex-1 justify-center min-w-0 mx-1 overflow-hidden">
+              <DesktopNavbar />
             </div>
-          </Link>
 
-          {/* Desktop Links - Wrapping instead of absolute positioning */}
-          <div className="hidden lg:flex items-center justify-center flex-1 overflow-x-auto">
-            <DesktopNavbar />
-          </div>
+            {/* Controls & CTAs */}
+            <div className="flex items-center justify-end gap-2 shrink-0">
+              {/* Desktop CTAs & Profile */}
+              <div className="hidden lg:flex items-center gap-2">
+                {authenticated ? (
+                  <>
+                    <NotificationBell />
+                    <ProfileMenu user={user} logout={logout} />
+                  </>
+                ) : (
+                  <AuthButtons />
+                )}
+              </div>
 
-          {/* Right Controls Container */}
-          <div className="relative z-10 flex items-center gap-2 sm:gap-2.5 shrink-0">
-            <div className="hidden lg:flex items-center gap-2.5">
-              <LanguageSelector compact />
-              {authenticated ? (
-                <>
-                  <NotificationBell />
-                  <ProfileMenu user={user} logout={logout} />
-                </>
-              ) : (
-                <AuthButtons />
-              )}
-              <InstallAppButton />
-              <CursorToggle cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
-            </div>
-            <ThemeToggleButton 
-              isDarkMode={isDarkMode}
-              toggleTheme={toggleTheme}
-              isMobile={false}
-              setIsCustomizerOpen={setIsCustomizerOpen}
-            />
+              {/* Mobile Notifications */}
+              <div className="flex items-center gap-2 lg:hidden">
+                {authenticated && <NotificationBell />}
+              </div>
 
-            <div className="flex items-center gap-1 lg:hidden">
-              {authenticated && <NotificationBell />}
-              <MobileNavbar isOpen={isMobileMenuOpen} setIsOpen={setIsMobileMenuOpen} isAuthenticated={authenticated} user={user} logout={logout} />
+              {/* Navigation Drawer Toggle */}
+              <MobileNavbar
+                isOpen={isMobileMenuOpen}
+                setIsOpen={setIsMobileMenuOpen}
+                isAuthenticated={authenticated}
+                user={user}
+                logout={logout}
+                cursorEnabled={cursorEnabled}
+                toggleCursor={toggleCursor}
+              />
             </div>
           </div>
         </div>
-        
-        {/* Scroll Progress Bar */}
-        <div className="absolute bottom-0 left-0 w-full h-1 bg-transparent" aria-hidden="true">
-          <div className="h-full bg-primary transition-all duration-100 ease-out" style={{ width: `${scrollProgress}%` }} />
+
+        <div aria-hidden="true" className="absolute bottom-0 left-0 h-[2px] w-full">
+          <div
+            className="h-full bg-primary transition-all duration-100 ease-out"
+            style={{ width: `${scrollProgress}%` }}
+          />
         </div>
       </nav>
     </>

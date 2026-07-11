@@ -99,6 +99,7 @@ export default function TicketScanner() {
   useEffect(() => {
     fetchScannerEvents()
       .then((data) => {
+        if (!isMountedRef.current) return;
         setEvents(data);
         if (data.length > 0) {
           setManualEventId(data[0].id);
@@ -107,6 +108,7 @@ export default function TicketScanner() {
         }
       })
       .catch(() => {
+        if (!isMountedRef.current) return;
         setEvents([]);
       });
   }, []);
@@ -116,10 +118,12 @@ export default function TicketScanner() {
       fetchStats(selectedEventId);
       fetchCheckInHistory(selectedEventId)
         .then((data) => {
+          if (!isMountedRef.current) return;
           const items = Array.isArray(data) ? data : data.content || data.checkins || [];
           setCheckinHistory(items);
         })
         .catch((err) => {
+          if (!isMountedRef.current) return;
           console.error("Failed to load check-in history:", err);
           toast.error("Failed to load check-in history. The data shown may be stale.");
         });

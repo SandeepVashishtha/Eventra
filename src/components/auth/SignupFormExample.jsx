@@ -12,8 +12,8 @@ import {
   UserCheck, 
   Info 
 } from "lucide-react";
-import useFormValidation from "../hooks/useFormValidation.enhanced";
-import useValidationState from "../hooks/useValidationState";
+import useFormValidation from "../../hooks/useFormValidation.enhanced";
+import useValidationState from "../../hooks/useValidationState";
 
 // =========================================================================
 // INTERFACE DESIGN CONSTANTS (PREVENTING INLINE REDECLARATIONS)
@@ -217,7 +217,7 @@ const SignupFormExample = ({ onSignupSuccess }) => {
     } catch {
       alert("Registration failed. Please audit inputs or try again later.");
     }
-  }), [handleSubmit, resetForm, onSignupSuccess,validationState]);
+  }), [handleSubmit, resetForm, onSignupSuccess,errors,]);
 
   return (
     <motion.div

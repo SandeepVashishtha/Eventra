@@ -25,6 +25,7 @@ const UIInventory = lazy(() => import("../admin/UIInventory"));
 const SponsorDashboard = lazy(() => import("../../Pages/Sponsors/SponsorDashboard"));
 const EventAnalyticsDashboard = lazy(() => import("../../Pages/Events/EventAnalyticsDashboard.jsx"));
 const EventSchedulerCalendar = lazy(() => import("../../Pages/Calendar/EventSchedulerCalendar.jsx"));
+const VirtualVenueWalkthrough = lazy(() => import("../../Pages/Events/VirtualVenueWalkthrough.jsx"));
 
 // 🔥 FIX: Added Suspense wrapper required for React.lazy() to prevent layout thrashing and crashes
 const withModuleBoundary = (children, boundaryName) => (
@@ -213,6 +214,15 @@ export const getProtectedRoutes = () => [
     element={
       <ProtectedRoute>
         {withModuleBoundary(<EventAnalyticsDashboard />, "Event Analytics Dashboard")}
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/events/:eventId/virtual-venue-walkthrough"
+    path="/events/:eventId/virtual-venue-walkthrough"
+    element={
+      <ProtectedRoute>
+        {withModuleBoundary(<VirtualVenueWalkthrough />, "Virtual Venue Walkthrough")}
       </ProtectedRoute>
     }
   />,

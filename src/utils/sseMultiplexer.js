@@ -1,13 +1,9 @@
 import { logger } from "./logger.js";
 import { ENV } from "../config/env.js";
-import { API_BASE_URL } from "../config/api.js";
 
 const MULTIPLEX_CHANNEL_NAME = "eventra_sse_multiplexer";
 const LOCK_NAME = "eventra_sse_leader_lock";
 const HEARTBEAT_KEY = "eventra_sse_leader_heartbeat";
-const LOCAL_STORAGE_CONFIRM_MIN_MS = 25;
-const LOCAL_STORAGE_CONFIRM_JITTER_MS = 75;
-
 // Unique identifier for this tab instance
 const TAB_ID = Math.random().toString(36).substring(2, 9);
 
@@ -30,8 +26,8 @@ const MESSAGE_REQUIRED_FIELDS = {
   UNSUBSCRIBE_ALL: ["tabId", "paths"],
   QUERY_SUBSCRIBERS: ["tabId"],
   SUBSCRIBERS_RESPONSE: ["tabId", "paths"],
-  SSE_MESSAGE: ["tabId", "path", "data"],
-  SSE_STATUS: ["tabId", "path", "status"],
+  SSE_MESSAGE: ["path", "data"],
+  SSE_STATUS: ["path", "status", "tabId"],
   RECONNECT_REQUEST: ["path"],
   PING: ["tabId"],
   PONG: ["tabId"],
@@ -49,6 +45,29 @@ const isValidBroadcastMessage = (msg) => {
   return true;
 };
 
+// FIX (#7855 Bug 4): Exponential backoff constants for SSE reconnection.
+// Using full-jitter strategy (random value in [0, cap]) to spread reconnection
+// attempts across time and prevent thundering-herd on server recovery.
+const BACKOFF_BASE_MS = 1_000;   // 1 s initial delay
+const BACKOFF_MAX_MS = 30_000;   // 30 s ceiling
+const BACKOFF_FACTOR = 2;        // doubles each attempt
+
+/**
+ * Compute a full-jitter exponential backoff delay.
+ * Returns a random value in [0, min(BACKOFF_MAX_MS, BACKOFF_BASE_MS * 2^attempt)].
+ *
+ * Full-jitter is recommended by AWS Architecture Blog
+ * (https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/)
+ * because it minimises collision probability on server recovery.
+ *
+ * @param {number} attempt - Zero-based reconnect attempt count
+ * @returns {number} Delay in milliseconds
+ */
+function jitteredBackoff(attempt) {
+  const cap = Math.min(BACKOFF_MAX_MS, BACKOFF_BASE_MS * Math.pow(BACKOFF_FACTOR, attempt));
+  return Math.random() * cap;
+}
+
 class SseMultiplexer {
   constructor() {
     this.tabId = TAB_ID;
@@ -60,8 +79,23 @@ class SseMultiplexer {
     this.statusListeners = new Set(); // callbacks listening to status changes
     this.lastSeenFollowers = new Map();
     this.tabIdToPaths = new Map();
-    this.localStorageLeadershipToken = null;
-    this.localStorageClaimTimeout = null;
+    // FIX (#7855 Bug 4): Track per-path reconnect attempt counts and pending
+    // backoff timers so we can implement exponential backoff with jitter.
+    this.reconnectAttempts = new Map(); // path -> attempt count (number)
+    this.reconnectTimers = new Map();   // path -> setTimeout handle
+
+    this.msgHandlers = {
+      SUBSCRIBE: (msg) => this.handleSubscribe(msg),
+      UNSUBSCRIBE: (msg) => this.handleUnsubscribe(msg),
+      UNSUBSCRIBE_ALL: (msg) => this.handleUnsubscribeAll(msg),
+      QUERY_SUBSCRIBERS: (msg) => this.handleQuerySubscribers(msg),
+      SUBSCRIBERS_RESPONSE: (msg) => this.handleSubscribersResponse(msg),
+      SSE_MESSAGE: (msg) => this.handleSseMessage(msg),
+      SSE_STATUS: (msg) => this.handleSseStatus(msg),
+      RECONNECT_REQUEST: (msg) => this.handleReconnectRequest(msg),
+      PING: (msg) => this.handlePing(msg),
+      PONG: (msg) => this.handlePong(msg),
+    };
 
     if (typeof window !== "undefined") {
       this.channel = new BroadcastChannel(MULTIPLEX_CHANNEL_NAME);
@@ -104,114 +138,46 @@ class SseMultiplexer {
   }
 
   setupLocalStorageElection() {
+    if (this.localStorageInterval) clearInterval(this.localStorageInterval);
+
     const HEARTBEAT_INTERVAL = 3000;
     const HEARTBEAT_TIMEOUT = 7000;
-
-    const readHeartbeat = () => {
-      try {
-        const heartbeat = localStorage.getItem(HEARTBEAT_KEY);
-        return heartbeat ? JSON.parse(heartbeat) : null;
-      } catch {
-        return null;
-      }
-    };
-
-    const hasActiveExternalLeader = (heartbeat, now) =>
-      heartbeat &&
-      heartbeat.tabId !== this.tabId &&
-      now - heartbeat.timestamp < HEARTBEAT_TIMEOUT;
 
     const checkLeader = () => {
       if (this.isLeader) return;
 
       const now = Date.now();
-      const heartbeat = readHeartbeat();
-      if (hasActiveExternalLeader(heartbeat, now)) return;
+      const heartbeat = localStorage.getItem(HEARTBEAT_KEY);
+
+      if (heartbeat) {
+        try {
+          const parsed = JSON.parse(heartbeat);
+          if (parsed && now - parsed.timestamp < HEARTBEAT_TIMEOUT && parsed.tabId !== this.tabId) {
+            // Active leader exists
+            return;
+          }
+        } catch {}
+      }
 
       // Try to claim leadership
-      this.claimLocalStorageLeadership(HEARTBEAT_TIMEOUT);
+      this.claimLocalStorageLeadership();
     };
 
     this.localStorageInterval = setInterval(checkLeader, HEARTBEAT_INTERVAL);
     checkLeader();
   }
 
-  claimLocalStorageLeadership(heartbeatTimeout = 7000) {
-    if (this.localStorageClaimTimeout || this.isLeader) return;
-
-    const token = `${this.tabId}:${Date.now()}:${Math.random().toString(36).substring(2, 9)}`;
-    const timestamp = Date.now();
-
-    try {
-      const current = localStorage.getItem(HEARTBEAT_KEY);
-      const parsed = current ? JSON.parse(current) : null;
-      if (
-        parsed &&
-        parsed.tabId !== this.tabId &&
-        timestamp - parsed.timestamp < heartbeatTimeout
-      ) {
-        return;
-      }
-
-      localStorage.setItem(HEARTBEAT_KEY, JSON.stringify({ tabId: this.tabId, token, timestamp }));
-    } catch {
-      this.becomeLocalStorageLeader(token);
-      return;
-    }
-
-    const confirmDelay =
-      LOCAL_STORAGE_CONFIRM_MIN_MS + Math.floor(Math.random() * LOCAL_STORAGE_CONFIRM_JITTER_MS);
-
-    this.localStorageClaimTimeout = setTimeout(() => {
-      this.localStorageClaimTimeout = null;
-
-      try {
-        const heartbeat = JSON.parse(localStorage.getItem(HEARTBEAT_KEY) || "null");
-        if (heartbeat?.tabId !== this.tabId || heartbeat?.token !== token) return;
-      } catch {
-        return;
-      }
-
-      this.becomeLocalStorageLeader(token);
-    }, confirmDelay);
-  }
-
-  becomeLocalStorageLeader(token) {
+  claimLocalStorageLeadership() {
     this.isLeader = true;
-    this.localStorageLeadershipToken = token;
     logger.log(`[SSE Multiplexer] Tab ${this.tabId} claimed leadership via LocalStorage.`);
 
     // Write an immediate heartbeat so other tabs see the new leader without
     // waiting up to HEARTBEAT_INTERVAL (3 s) for the first interval tick.
     const writeHeartbeat = () => {
       try {
-        const current = JSON.parse(localStorage.getItem(HEARTBEAT_KEY) || "null");
-        if (
-          current?.tabId &&
-          current.tabId !== this.tabId &&
-          Date.now() - current.timestamp < 7000
-        ) {
-          for (const source of this.activeEventSources.values()) {
-            source.close();
-          }
-          this.activeEventSources.clear();
-          this.isLeader = false;
-          this.localStorageLeadershipToken = null;
-          if (this.heartbeatInterval) {
-            clearInterval(this.heartbeatInterval);
-            this.heartbeatInterval = null;
-          }
-          this.stopHeartbeatChecks();
-          return;
-        }
-
         localStorage.setItem(
           HEARTBEAT_KEY,
-          JSON.stringify({
-            tabId: this.tabId,
-            token: this.localStorageLeadershipToken,
-            timestamp: Date.now(),
-          })
+          JSON.stringify({ tabId: this.tabId, timestamp: Date.now() })
         );
       } catch {
         // localStorage unavailable — non-fatal, leadership still held in memory
@@ -219,7 +185,14 @@ class SseMultiplexer {
     };
     writeHeartbeat();
 
+    // Leadership may have been revoked inside writeHeartbeat if a competing
+    // leader was detected. Guard before starting any leader-only infrastructure.
+    if (!this.isLeader) return;
+
     // Heartbeat loop — keep the entry fresh while leadership is held
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+    }
     this.heartbeatInterval = setInterval(writeHeartbeat, 2000);
 
     this.startHeartbeatChecks();
@@ -294,71 +267,97 @@ class SseMultiplexer {
   handleBroadcastMessage(msg) {
     if (!isValidBroadcastMessage(msg) || msg.tabId === this.tabId) return;
 
-    if (this.isLeader && this.lastSeenFollowers instanceof Map) {
+    if (this.isLeader && this.lastSeenFollowers) {
       this.lastSeenFollowers.set(msg.tabId, Date.now());
     }
 
-    switch (msg.type) {
-      case "SUBSCRIBE":
-        this.addGlobalSubscriber(msg.path, msg.tabId);
-        if (this.isLeader) this.reconcileConnections();
-        break;
+    const handler = this.msgHandlers[msg.type];
+    if (handler) {
+      handler(msg);
+    }
+  }
 
-      case "UNSUBSCRIBE":
-        this.removeGlobalSubscriber(msg.path, msg.tabId);
-        if (this.isLeader) this.reconcileConnections();
-        break;
+  handleSubscribe(msg) {
+    this.addGlobalSubscriber(msg.path, msg.tabId);
+    if (this.isLeader) {
+      this.reconcileConnections();
+      const currentStatus = this.pathStatuses.get(msg.path);
+      if (currentStatus) {
+        this.broadcastMessage({
+          type: "SSE_STATUS",
+          path: msg.path,
+          status: currentStatus,
+          tabId: this.tabId,
+        });
+      }
+    }
+  }
 
-      case "UNSUBSCRIBE_ALL":
-        if (msg.paths) {
-          msg.paths.forEach((p) => this.removeGlobalSubscriber(p, msg.tabId));
-          if (this.isLeader) this.reconcileConnections();
-        }
-        break;
+  handleUnsubscribe(msg) {
+    this.removeGlobalSubscriber(msg.path, msg.tabId);
+    if (this.isLeader) this.reconcileConnections();
+  }
 
-      case "QUERY_SUBSCRIBERS":
-        if (this.localSubscriptions.size > 0) {
+  handleUnsubscribeAll(msg) {
+    if (msg.paths) {
+      msg.paths.forEach((p) => this.removeGlobalSubscriber(p, msg.tabId));
+      if (this.isLeader) this.reconcileConnections();
+    }
+  }
+
+  handleQuerySubscribers() {
+    if (this.localSubscriptions.size > 0) {
+      this.broadcastMessage({
+        type: "SUBSCRIBERS_RESPONSE",
+        tabId: this.tabId,
+        paths: Array.from(this.localSubscriptions.keys()),
+      });
+    }
+  }
+
+  handleSubscribersResponse(msg) {
+    if (!msg.paths) return;
+
+    msg.paths.forEach((p) => this.addGlobalSubscriber(p, msg.tabId));
+
+    if (this.isLeader) {
+      msg.paths.forEach((p) => {
+        const currentStatus = this.pathStatuses.get(p);
+        if (currentStatus) {
           this.broadcastMessage({
-            type: "SUBSCRIBERS_RESPONSE",
+            type: "SSE_STATUS",
+            path: p,
+            status: currentStatus,
             tabId: this.tabId,
-            paths: Array.from(this.localSubscriptions.keys()),
           });
         }
-        break;
-
-      case "SUBSCRIBERS_RESPONSE":
-        if (msg.paths) {
-          msg.paths.forEach((p) => this.addGlobalSubscriber(p, msg.tabId));
-          if (this.isLeader) this.reconcileConnections();
-        }
-        break;
-
-      case "SSE_MESSAGE":
-        this.dispatchLocalMessage(msg.path, msg.data, msg.eventType);
-        break;
-
-      case "SSE_STATUS":
-        this.updatePathStatus(msg.path, msg.status);
-        break;
-
-      case "RECONNECT_REQUEST":
-        if (this.isLeader) {
-          this.reconnect(msg.path);
-        }
-        break;
-
-      case "PING":
-        if (!this.isLeader) {
-          this.broadcastMessage({ type: "PONG", tabId: this.tabId });
-        }
-        break;
-
-      case "PONG":
-        break;
-
-      default:
-        break;
+      });
+      this.reconcileConnections();
     }
+  }
+
+  handleSseMessage(msg) {
+    this.dispatchLocalMessage(msg.path, msg.data, msg.eventType);
+  }
+
+  handleSseStatus(msg) {
+    this.updatePathStatus(msg.path, msg.status);
+  }
+
+  handleReconnectRequest(msg) {
+    if (this.isLeader) {
+      this.reconnect(msg.path);
+    }
+  }
+
+  handlePing() {
+    if (!this.isLeader) {
+      this.broadcastMessage({ type: "PONG", tabId: this.tabId });
+    }
+  }
+
+  handlePong() {
+    // No-op, handled by heartbeats tracking
   }
 
   addGlobalSubscriber(path, tabId) {
@@ -411,6 +410,11 @@ class SseMultiplexer {
         logger.log(`[SSE Multiplexer] Closing inactive connection to path: ${path}`);
         source.close();
         this.activeEventSources.delete(path);
+        // FIX (#7855 Bug 4): Cancel any pending backoff timer for this path
+        // and reset its attempt counter so a future re-subscription starts fresh.
+        clearTimeout(this.reconnectTimers.get(path));
+        this.reconnectTimers.delete(path);
+        this.reconnectAttempts.delete(path);
         this.updatePathStatus(path, "idle");
       }
     }
@@ -424,10 +428,7 @@ class SseMultiplexer {
   }
 
   openEventSource(path) {
-    const sseBaseUrl =
-      ENV.API_URL ||
-      API_BASE_URL ||
-      (typeof window !== "undefined" ? window.location.origin : "http://localhost:8080");
+    const sseBaseUrl = ENV.API_URL || (typeof window !== "undefined" ? window.location.origin : "http://localhost:8080");
 
     logger.log(`[SSE Multiplexer] Leader tab opening physical EventSource: ${sseBaseUrl}${path}`);
     this.updatePathStatus(path, "connecting");
@@ -436,6 +437,9 @@ class SseMultiplexer {
     this.activeEventSources.set(path, source);
 
     source.onopen = () => {
+      // FIX (#7855 Bug 4): Reset the attempt counter on successful connection
+      // so the next error starts backoff from the base delay again.
+      this.reconnectAttempts.set(path, 0);
       this.updatePathStatus(path, "connected");
     };
 
@@ -443,7 +447,7 @@ class SseMultiplexer {
       let payload = evt.data;
       try {
         payload = JSON.parse(evt.data);
-      } catch {}
+      } catch { }
 
       // Dispatch locally
       this.dispatchLocalMessage(path, payload, evt.type);
@@ -451,7 +455,6 @@ class SseMultiplexer {
       // Broadcast to follower tabs
       this.broadcastMessage({
         type: "SSE_MESSAGE",
-        tabId: this.tabId,
         path,
         data: payload,
         eventType: evt.type,
@@ -459,7 +462,56 @@ class SseMultiplexer {
     };
 
     source.onerror = () => {
+      // FIX (#7855 Bug 4): Replace the browser's native immediate-retry
+      // behaviour with explicit exponential backoff + full jitter so that
+      // simultaneous reconnections after a server restart are spread out
+      // instead of hitting the server in a synchronised burst.
+      //
+      // We close and delete the EventSource immediately so the browser does
+      // not attempt its own retries in parallel with ours.
+      source.close();
+      this.activeEventSources.delete(path);
       this.updatePathStatus(path, "reconnecting");
+
+      // Only schedule a reconnect if there are still active subscribers for
+      // this path — avoids reconnecting after a deliberate unsubscribe.
+      const hasSubscribers =
+        (this.globalSubscribers.get(path)?.size ?? 0) > 0 ||
+        (this.localSubscriptions.get(path)?.size ?? 0) > 0;
+
+      if (!hasSubscribers) {
+        this.updatePathStatus(path, "idle");
+        return;
+      }
+
+      // Cancel any previously scheduled reconnect for this path to avoid
+      // stacking timers if onerror fires multiple times before the timer fires.
+      clearTimeout(this.reconnectTimers.get(path));
+
+      const attempt = (this.reconnectAttempts.get(path) ?? 0) + 1;
+      this.reconnectAttempts.set(path, attempt);
+
+      const delay = jitteredBackoff(attempt - 1); // 0-indexed in jitteredBackoff
+      logger.log(
+        `[SSE Multiplexer] Reconnecting to ${path} in ${Math.round(delay)}ms (attempt ${attempt})`
+      );
+
+      this.reconnectTimers.set(
+        path,
+        setTimeout(() => {
+          this.reconnectTimers.delete(path);
+          // Re-check subscribers — they may have all unsubscribed during the
+          // backoff window.
+          const stillHasSubscribers =
+            (this.globalSubscribers.get(path)?.size ?? 0) > 0 ||
+            (this.localSubscriptions.get(path)?.size ?? 0) > 0;
+          if (stillHasSubscribers && !this.activeEventSources.has(path)) {
+            this.openEventSource(path);
+          } else if (!stillHasSubscribers) {
+            this.updatePathStatus(path, "idle");
+          }
+        }, delay)
+      );
     };
   }
 
@@ -481,7 +533,7 @@ class SseMultiplexer {
 
     // Broadcast status to other tabs if we are the leader
     if (this.isLeader) {
-      this.broadcastMessage({ type: "SSE_STATUS", tabId: this.tabId, path, status });
+      this.broadcastMessage({ type: "SSE_STATUS", path, status, tabId: this.tabId });
     }
 
     // Trigger local status listeners
@@ -509,35 +561,28 @@ class SseMultiplexer {
 
       const now = Date.now();
       let changed = false;
-      const staleTabs = [];
 
       for (const [tabId, lastSeen] of this.lastSeenFollowers) {
         if (now - lastSeen > MISSING_TIMEOUT) {
-          staleTabs.push(tabId);
-        }
-      }
-
-      for (const tabId of staleTabs) {
-        logger.log(
-          `[SSE Multiplexer] Follower tab ${tabId} missed heartbeats. Removing stale subscriptions.`
-        );
-        const paths = this.tabIdToPaths.get(tabId);
-        if (paths) {
-          const pathsToRemove = [];
-          for (const path of paths) {
-            const tabs = this.globalSubscribers.get(path);
-            if (tabs) {
-              tabs.delete(tabId);
-              if (tabs.size === 0) {
-                pathsToRemove.push(path);
+          logger.log(
+            `[SSE Multiplexer] Follower tab ${tabId} missed heartbeats. Removing stale subscriptions.`
+          );
+          const paths = this.tabIdToPaths.get(tabId);
+          if (paths) {
+            for (const path of paths) {
+              const tabs = this.globalSubscribers.get(path);
+              if (tabs) {
+                tabs.delete(tabId);
+                if (tabs.size === 0) {
+                  this.globalSubscribers.delete(path);
+                }
               }
             }
+            this.tabIdToPaths.delete(tabId);
           }
-          pathsToRemove.forEach((p) => this.globalSubscribers.delete(p));
-          this.tabIdToPaths.delete(tabId);
+          this.lastSeenFollowers.delete(tabId);
+          changed = true;
         }
-        this.lastSeenFollowers.delete(tabId);
-        changed = true;
       }
 
       if (changed) {
@@ -550,14 +595,6 @@ class SseMultiplexer {
     if (this.pingInterval) {
       clearInterval(this.pingInterval);
       this.pingInterval = null;
-    }
-    if (this.localStorageInterval) {
-      clearInterval(this.localStorageInterval);
-      this.localStorageInterval = null;
-    }
-    if (this.heartbeatInterval) {
-      clearInterval(this.heartbeatInterval);
-      this.heartbeatInterval = null;
     }
     this.lastSeenFollowers = null;
   }
@@ -583,13 +620,20 @@ class SseMultiplexer {
     }
     this.activeEventSources.clear();
 
+    // FIX (#7855 Bug 4): Cancel all pending backoff timers on teardown to
+    // prevent reconnection attempts after the tab has begun unloading.
+    for (const timer of this.reconnectTimers.values()) {
+      clearTimeout(timer);
+    }
+    this.reconnectTimers.clear();
+    this.reconnectAttempts.clear();
+
     if (this.releaseLockPromise) {
       this.releaseLockPromise();
     }
 
     if (this.localStorageInterval) clearInterval(this.localStorageInterval);
     if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
-    if (this.localStorageClaimTimeout) clearTimeout(this.localStorageClaimTimeout);
 
     // Remove the heartbeat key from localStorage when this tab was the leader.
     //
