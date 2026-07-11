@@ -480,7 +480,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
 
   // Load recent events from localStorage
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("recentEvents") || "[]");
+    const stored = safeParseJson(localStorage.getItem("recentEvents"), []);
     setRecentEvents(stored);
     const saved = safeParseJson(localStorage.getItem("recentSearches"), []);
     setRecentSearches(saved);
@@ -525,7 +525,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const triggerWaitlistUpdate = () => setWaitlistUpdated(prev => !prev);
 
   const addToRecentEvents = (event) => {
-    const existing = JSON.parse(localStorage.getItem("recentEvents") || "[]");
+    const existing = safeParseJson(localStorage.getItem("recentEvents"), []);
     const filtered = existing.filter((e) => e.id !== event.id && e.eventId !== event.id);
     const updated = [event, ...filtered].slice(0, 6);
     localStorage.setItem("recentEvents", JSON.stringify(updated));
