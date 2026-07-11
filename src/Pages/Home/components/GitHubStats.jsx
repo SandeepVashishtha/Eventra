@@ -37,6 +37,21 @@ const fetchContributors = (owner, repo) =>
 const fetchPullRequests = (owner, repo, params) =>
   fetchGitHubJson(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pulls`, params);
 
+const fetchRepository = (owner, repo) =>
+  fetchGitHubJson(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`);
+
+const fetchContributors = (owner, repo, page, perPage) =>
+  fetchGitHubJson(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contributors`, {
+    page,
+    per_page: perPage,
+  });
+
+const fetchPullRequests = (owner, repo, params) =>
+  fetchGitHubJson(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pulls`, params);
+
+const fetchLanguages = (owner, repo) =>
+  fetchGitHubJson(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/languages`);
+
 const readCache = () => {
   try {
     const raw = localStorage.getItem(LS_KEY);
@@ -79,11 +94,12 @@ export default function GitHubStats() {
 
     (async () => {
       try {
-        const [repoResult, contributorsResult, prResult] =
+        const [repoResult, contributorsResult, prResult, languagesResult] =
           await Promise.allSettled([
             fetchRepository(GITHUB_USER, GITHUB_REPO),
             fetchContributors(GITHUB_USER, GITHUB_REPO),
             fetchPullRequests(GITHUB_USER, GITHUB_REPO, { per_page: 1 }),
+            fetchLanguages(GITHUB_USER, GITHUB_REPO),
           ]);
 
         if (repoResult.status === "rejected") {
@@ -121,6 +137,13 @@ export default function GitHubStats() {
         } else {
         }
 
+        const languages =
+          languagesResult.status === "fulfilled" &&
+          languagesResult.value &&
+          typeof languagesResult.value === "object"
+            ? languagesResult.value
+            : {};
+
         const next = {
           stars: repoData.stargazers_count || 0,
           forks: repoData.forks_count || 0,
@@ -134,7 +157,7 @@ export default function GitHubStats() {
           license: repoData.license?.spdx_id || "N/A",
           defaultBranch: repoData.default_branch || "master",
           watchers: repoData.subscribers_count || 0,
-          languages: {},
+          languages,
         };
 
         if (mounted) {
