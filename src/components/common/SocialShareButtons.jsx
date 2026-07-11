@@ -29,11 +29,21 @@ const SocialShareButtons = ({ event, layout = "grid" }) => {
     if (!shareData?.shareUrl) return;
 
     try {
-      if (!navigator?.clipboard) {
-        throw new Error("Clipboard API unavailable.");
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(shareData.shareUrl);
+      } else {
+        const textArea = document.createElement("textarea");
+        textArea.value = shareData.shareUrl;
+        textArea.style.position = "absolute";
+        textArea.style.left = "-999999px";
+        document.body.prepend(textArea);
+        textArea.select();
+        try {
+          document.execCommand("copy");
+        } finally {
+          textArea.remove();
+        }
       }
-
-      await navigator.clipboard.writeText(shareData.shareUrl);
       toast.success("Link copied to clipboard");
     } catch (error) {
       console.error("Failed to copy share link:", error);
