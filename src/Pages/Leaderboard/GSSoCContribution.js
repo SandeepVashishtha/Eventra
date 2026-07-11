@@ -32,13 +32,6 @@ const GSSOC_TIMELINE = [
   { phase: "Final Results", date: "Jun 15", status: "upcoming", icon: Award },
 ];
 
-const MENTORS = [
-  { name: "Priya Sharma", role: "Frontend Lead", expertise: ["React", "Tailwind"], avatar: "👩‍💻", available: true, bio: "10+ years in frontend architecture" },
-  { name: "Rahul Verma", role: "Backend Expert", expertise: ["Node.js", "MongoDB"], avatar: "👨‍💻", available: true, bio: "Scalable systems specialist" },
-  { name: "Anita Das", role: "DevOps Mentor", expertise: ["Docker", "CI/CD"], avatar: "👩‍🔧", available: false, bio: "Cloud infrastructure expert" },
-  { name: "Vikram Singh", role: "Full-Stack Guide", expertise: ["MERN", "GraphQL"], avatar: "👨‍🚀", available: true, bio: "End-to-end product builder" },
-];
-
 const ACHIEVEMENTS = [
   { id: "first-pr", label: "First PR", icon: Star, unlocked: true, color: "text-yellow-500", description: "Submitted your first pull request" },
   { id: "bug-hunter", label: "Bug Hunter", icon: Zap, unlocked: true, color: "text-red-500", description: "Found and fixed 5+ bugs" },
