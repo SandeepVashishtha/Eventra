@@ -3,6 +3,7 @@ import { Route } from "react-router-dom";
 import ProtectedRoute from "../auth/ProtectedRoute";
 import ErrorBoundary from "../common/ErrorBoundary";
 
+
 // ─── Lazy-loaded page components ─────────────────────────────────────────────
 // 🔥 FIX: Removed duplicate const declarations for all components
 const HealthCheckPage = lazy(() => import("../../Pages/HealthCheckPage"));
@@ -32,6 +33,7 @@ const ContactUs = lazy(() => import("../../Pages/Contact/ContactUs"));
 const FeedbackPage = lazy(() => import("../../Pages/Feedback/FeedbackPage"));
 const BookmarkedEvents = lazy(() => import("../../Pages/Events/BookmarkedEvents"));
 const RemindersPage = lazy(() => import("../../Pages/Events/RemindersPage"));
+const WhatsNewPage = lazy(() => import("../../Pages/WhatsNew/WhatsNewPage"));
 const MyCalendar = lazy(() => import("../../Pages/Calendar/MyCalendar"));
 const OptimizedImage = lazy(() => import("../common/OptimizedImage"));
 
@@ -86,6 +88,7 @@ export const getPublicRoutes = () => [
   <Route key="/feedback" path="/feedback" element={withModuleBoundary(<FeedbackPage />, "Feedback")} />,
   <Route key="/bookmarks" path="/bookmarks" element={withModuleBoundary(<BookmarkedEvents />, "Bookmarks")} />,
   <Route key="/reminders" path="/reminders" element={withModuleBoundary(<RemindersPage />, "Reminders")} />,
+  <Route key="/whats-new" path="/whats-new" element={withModuleBoundary(<WhatsNewPage />, "What's New")} />,
   <Route key="/calendar" path="/calendar" element={withModuleBoundary(<MyCalendar />, "Calendar")} />,
   // 🔥 FIX: Wrapped naked image test route with Suspense
   <Route key="/image-test" path="/image-test" element={withPublicSuspense(<OptimizedImage src="https://images.unsplash.com/photo-1540575861501-7c90b707a27d" alt="Test" />)} />,

@@ -12,7 +12,7 @@ import AuthButtons from "./AuthButtons";
 import LanguageSelector from "../LanguageSelector";
 import ProfileMenu from "./ProfileMenu";
 import NotificationBell from "../notifications/NotificationBell";
-
+import WhatsNewBell from "../whatsnew/WhatsNewBell";
 import useBodyScrollLock from "./hooks/useBodyScrollLock";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
 
@@ -140,6 +140,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
                   isMobile={false}
                   setIsCustomizerOpen={setIsCustomizerOpen}
                 />
+                <WhatsNewBell />
                 {authenticated ? (
                   <>
                     <NotificationBell />
@@ -161,7 +162,8 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
                   isMobile={false}
                   setIsCustomizerOpen={setIsCustomizerOpen}
                 />
-                {authenticated && <NotificationBell />}
+                <WhatsNewBell />
+               {authenticated && <NotificationBell />}
 
                 <MobileNavbar
                   isOpen={isMobileMenuOpen}
