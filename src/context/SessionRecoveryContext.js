@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { safeJsonParse } from "../utils/safeJsonParse";
 import { logger } from "../utils/logger";
 import { sanitizeSessionState } from "../utils/sessionSanitization";
@@ -100,6 +101,7 @@ export const useSessionRecovery = () => {
 
 export const SessionRecoveryProvider = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const [hasSession, setHasSession] = useState(false);
   const [sessionData, setSessionData] = useState(null);
   const [isOnline, setIsOnline] = useState(true);
@@ -202,7 +204,7 @@ export const SessionRecoveryProvider = ({ children }) => {
             );
             localStorage.removeItem(SESSION_KEY);
             if (typeof window !== "undefined" && window.location) {
-              window.location.href = "/login";
+              navigate("/login");
             }
             return;
           }
