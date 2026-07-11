@@ -83,6 +83,24 @@ class SseMultiplexer {
     // backoff timers so we can implement exponential backoff with jitter.
     this.reconnectAttempts = new Map(); // path -> attempt count (number)
     this.reconnectTimers = new Map();   // path -> setTimeout handle
+    
+    // localStorage-based leadership token and timeout
+    this.localStorageLeadershipToken = null;
+    this.localStorageClaimTimeout = null;
+
+    // Message type handlers for broadcast messages
+    this.msgHandlers = {
+      SUBSCRIBE: (msg) => this.handleSubscribe(msg),
+      UNSUBSCRIBE: (msg) => this.handleUnsubscribe(msg),
+      UNSUBSCRIBE_ALL: (msg) => this.handleUnsubscribeAll(msg),
+      QUERY_SUBSCRIBERS: (msg) => this.handleQuerySubscribers(msg),
+      SUBSCRIBERS_RESPONSE: (msg) => this.handleSubscribersResponse(msg),
+      SSE_MESSAGE: (msg) => this.handleSseMessage(msg),
+      SSE_STATUS: (msg) => this.handleSseStatus(msg),
+      RECONNECT_REQUEST: (msg) => this.handleReconnectRequest(msg),
+      PING: (msg) => this.handlePing(msg),
+      PONG: (msg) => this.handlePong(msg),
+    };
 
     this.msgHandlers = {
       SUBSCRIBE: (msg) => this.handleSubscribe(msg),
@@ -167,9 +185,13 @@ class SseMultiplexer {
     checkLeader();
   }
 
-  claimLocalStorageLeadership() {
+  claimLocalStorageLeadership(verifyDelay = 100) {
     this.isLeader = true;
     logger.log(`[SSE Multiplexer] Tab ${this.tabId} claimed leadership via LocalStorage.`);
+
+    // Generate a unique token for this leadership claim
+    const token = Math.random().toString(36).substring(2);
+    this.localStorageLeadershipToken = token;
 
     // Write an immediate heartbeat so other tabs see the new leader without
     // waiting up to HEARTBEAT_INTERVAL (3 s) for the first interval tick.
@@ -177,13 +199,39 @@ class SseMultiplexer {
       try {
         localStorage.setItem(
           HEARTBEAT_KEY,
-          JSON.stringify({ tabId: this.tabId, timestamp: Date.now() })
+          JSON.stringify({ tabId: this.tabId, token, timestamp: Date.now() })
         );
       } catch {
         // localStorage unavailable — non-fatal, leadership still held in memory
       }
     };
     writeHeartbeat();
+
+    // Verify ownership after a short delay - if another tab overwrote our claim,
+    // revoke our leadership immediately
+    if (this.localStorageClaimTimeout) {
+      clearTimeout(this.localStorageClaimTimeout);
+    }
+    this.localStorageClaimTimeout = setTimeout(() => {
+      try {
+        const heartbeat = localStorage.getItem(HEARTBEAT_KEY);
+        if (heartbeat) {
+          const parsed = JSON.parse(heartbeat);
+          if (parsed.token !== token || parsed.tabId !== this.tabId) {
+            // Another tab has claimed leadership - revoke ours
+            this.isLeader = false;
+            logger.log(`[SSE Multiplexer] Tab ${this.tabId} revoked leadership (claim overwritten)`);
+            if (this.heartbeatInterval) {
+              clearInterval(this.heartbeatInterval);
+              this.heartbeatInterval = null;
+            }
+            return;
+          }
+        }
+      } catch {
+        // localStorage error - keep leadership in memory
+      }
+    }, verifyDelay);
 
     // Leadership may have been revoked inside writeHeartbeat if a competing
     // leader was detected. Guard before starting any leader-only infrastructure.
