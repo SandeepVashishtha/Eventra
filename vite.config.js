@@ -15,13 +15,8 @@ export default defineConfig(({ mode }) => {
   const backendTarget =
     env.BACKEND_URL ||
     env.VITE_API_URL?.replace(/\/api\/?$/, "") ||
-    env.REACT_APP_API_URL?.replace(/\/api\/?$/, "");
-
-  if (!backendTarget) {
-    throw new Error(
-      "Backend URL is not configured. Set BACKEND_URL, VITE_API_URL, or REACT_APP_API_URL before starting the application."
-    );
-  }
+    env.REACT_APP_API_URL?.replace(/\/api\/?$/, "") ||
+    "http://localhost:8080";
 
   return {
     appType: "spa",
