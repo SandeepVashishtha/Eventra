@@ -11,7 +11,7 @@ const ProjectCTA = () => {
   
   return (
     <section 
-      className="relative py-16 px-8 m-8 rounded-3xl bg-gradient-to-tr from-sky-100 via-white to-blue-100 dark:from-[#111827] dark:via-[#0f172a] dark:to-black text-black dark:text-white shadow-xl overflow-hidden border border-gray-200 dark:border-gray-800"
+      className="relative py-16 px-8 m-8 rounded-3xl bg-linear-to-tr from-sky-100 via-white to-blue-100 dark:from-[#111827] dark:via-[#0f172a] dark:to-black text-black dark:text-white shadow-xl overflow-hidden border border-gray-200 dark:border-gray-800"
       // AOS Implementation
       data-aos="zoom-in-up"
       data-aos-duration="1000"
@@ -54,16 +54,14 @@ const ProjectCTA = () => {
 
         {/* Buttons */}
         <div className="flex flex-col md:flex-row justify-center gap-4">
-          <motion.a
-            href="/projects"
-            className="inline-flex items-center justify-center gap-2 bg-blue-600 dark:bg-blue-600 text-white dark:text-white font-semibold px-8 py-4 rounded-lg shadow-lg hover:scale-105 hover:bg-blue-700 dark:hover:bg-blue-700 transition-transform duration-300 border border-blue-600 dark:border-blue-600"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            data-aos="zoom-in"
-            data-aos-delay="200"
-          >
-            <FolderOpen size={20} /> Explore Projects
-          </motion.a>
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} data-aos="zoom-in" data-aos-delay="200">
+            <Link
+              to="/projects"
+              className="inline-flex items-center justify-center gap-2 bg-blue-600 dark:bg-blue-600 text-white dark:text-white font-semibold px-8 py-4 rounded-lg shadow-lg hover:scale-105 hover:bg-blue-700 dark:hover:bg-blue-700 transition-transform duration-300 border border-blue-600 dark:border-blue-600"
+            >
+              <FolderOpen size={20} /> Explore Projects
+            </Link>
+          </motion.div>
 
           <Link
              to={user ? "/submit-project" : "/login"}

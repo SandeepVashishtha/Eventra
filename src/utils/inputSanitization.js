@@ -1,4 +1,4 @@
-/* eslint-disable-next-line no-console */
+
 /**
  * Input Sanitization Utilities
  *
@@ -7,8 +7,7 @@
  */
 
 /**
- * Sanitize search query to prevent NoSQL injection attacks.
- * Allows only alphanumeric characters, spaces, hyphens, and common punctuation.
+ * Sanitize search query to prevent XSS and NoSQL injection attacks.
  *
  * @param {string} query - The raw search query from user input
  * @returns {string} - Sanitized query safe for API transmission
@@ -18,16 +17,31 @@ export const sanitizeSearchQuery = (query = '') => {
     return '';
   }
 
-  // Trim whitespace
+  const MAX_QUERY_LENGTH = 200;
+
   let sanitized = query.trim();
 
-  // Remove dangerous characters in a single pass
-  sanitized = sanitized.replace(/[${}\[\];'`|\\\n\r<>]/g, '');
+  // Strip script tags and their content (closed or open-ended)
+  sanitized = sanitized.replace(/<script\b[^>]*>(?:[\s\S]*?<\/script>|[\s\S]*)/gi, ' ');
+
+  // Strip img tags (closed or open-ended)
+  sanitized = sanitized.replace(/<img\b[^>]*>?/gi, ' ');
+
+  // Strip javascript: links
+  sanitized = sanitized.replace(/javascript:[^\s]*/gi, ' ');
+
+  // Remove all other < and > characters
+  sanitized = sanitized.replace(/[<>]/g, '');
+
+  // Remove other disallowed characters completely (replaced with empty string)
+  sanitized = sanitized.replace(/[${}\[\];'`|\\/\n\r]/g, '');
+
+  // Collapse spaces
+  sanitized = sanitized.replace(/\s+/g, ' ').trim();
 
   // Ensure max length to prevent ReDoS attacks
-  const MAX_QUERY_LENGTH = 200;
   if (sanitized.length > MAX_QUERY_LENGTH) {
-    sanitized = sanitized.substring(0, MAX_QUERY_LENGTH);
+    sanitized = sanitized.substring(0, MAX_QUERY_LENGTH).trim();
   }
 
   return sanitized;
@@ -71,14 +85,19 @@ export const validateSearchQuery = (query = '') => {
  * @returns {string} - Safe query for API, or empty string if invalid
  */
 export const prepareSafeSearchQuery = (rawQuery = '') => {
-  const validation = validateSearchQuery(rawQuery);
-  if (!validation.isValid) {
-    /* eslint-disable-next-line no-console */
-    console.warn(`[Security] Invalid search query: ${validation.error}`);
+  if (typeof rawQuery === 'string' && rawQuery.length > 200) {
+    console.warn(`[Security] Invalid search query after sanitization: Search query must be less than 200 characters`);
     return '';
   }
 
-  return sanitizeSearchQuery(rawQuery);
+  const validation = validateSearchQuery(rawQuery);
+  if (!validation.isValid) {
+    console.warn(`[Security] Invalid search query after sanitization: ${validation.error}`);
+    return '';
+  }
+
+  const sanitized = sanitizeSearchQuery(rawQuery);
+  return sanitized;
 };
 
 /**
@@ -103,7 +122,7 @@ export const sanitizeInputText = (text = '') => {
     '/': '&#x2F;'
   };
 
-  return text.replace(/[&<>"'/]/g, (match) => htmlEscapes[match]);
+  return text.replace(/[&<>"'\/]/g, (match) => htmlEscapes[match]);
 };
 
 /**

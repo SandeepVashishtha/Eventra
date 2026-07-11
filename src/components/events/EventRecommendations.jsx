@@ -1,4 +1,4 @@
-import React, { useState, useEffect, memo, useCallback } from "react";
+import { useState, useEffect, memo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
   Sparkles,
@@ -11,6 +11,9 @@ import {
   Clock,
 } from "lucide-react";
 import mockEvents from "../../Pages/Events/eventsMockData.json";
+import { syncSecureStorage } from "../../utils/secureStorage";
+import { safeJsonParse } from "../../utils/safeJsonParse";
+import MatchScoreBadge from "../common/MatchScoreBadge";
 
 // =========================================================================
 // INLINE VECTOR GRAPHIC CONSTANTS (FALLBACK PLACEHOLDER IMAGES)
@@ -85,14 +88,14 @@ RecommendationSkeleton.displayName = "RecommendationSkeleton";
  * 🖼️ SAFE FALLBACK IMAGE LAYOUT MODULE
  * Intercepts broken external URLs natively and updates sources to a fallback vector.
  */
-const CardBannerImage = memo(({ src, alt }) => {
-  const handleImageLoadingError = (e) => {
-    e.target.onerror = null; // Prevent infinite fallback trigger loops
-    e.target.src = INLINE_SVG_PLACEHOLDER;
-    e.target.className =
-      "h-full w-full object-cover opacity-60 filter grayscale dark:brightness-75";
-  };
+const handleImageLoadingError = (e) => {
+  e.target.onerror = null;
+  e.target.src = INLINE_SVG_PLACEHOLDER;
+  e.target.className =
+    "h-full w-full object-cover opacity-60 filter grayscale dark:brightness-75";
+};
 
+const CardBannerImage = memo(({ src, alt }) => {
   return (
     <div className="relative w-full h-32 rounded-xl overflow-hidden mb-3.5 bg-slate-100 dark:bg-slate-900 border border-slate-200/20 shadow-inner group">
       <img
@@ -151,65 +154,49 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
   // Core processing effect tracing profile parameters
   useEffect(() => {
     setLoading(true);
+    let active = true;
 
-    const computationalTimer = setTimeout(() => {
+    const loadRecommendations = async () => {
       let userInterests = ["Coding", "Tech", "AI", "Development"];
 
       // Sync and extract client custom telemetry interests log from localStorage safely
       try {
-        const storedInterests = localStorage.getItem("user_interests");
-        if (storedInterests) {
-          userInterests = JSON.parse(storedInterests);
+        const storedUser = await syncSecureStorage.getItemAsync("user");
+        if (storedUser) {
+          const parsed = safeJsonParse(storedUser, null);
+          if (parsed && Array.isArray(parsed.skills) && parsed.skills.length > 0) {
+            userInterests = parsed.skills;
+          }
         }
       } catch (error) {
-        console.error("Failsafe tracking intercept: localStorage parsing collapsed safely.", error);
+        console.error("Failsafe tracking intercept: secureStorage parsing collapsed safely.", error);
       }
 
-      // Ensure mock data arrays pass standard validation checks
+      if (!active) return;
+
       const validMockEvents = Array.isArray(mockEvents) ? mockEvents : [];
-
-      // 1. Filter out the currently selected active item profile
-      const filteringPool = validMockEvents.filter((e) => e && e.id !== currentEventId);
-
-      // 2. Map structural values and evaluate preference matching scores
-      const scoredPool = filteringPool.map((event) => {
-        if (!event) return { recommendationScore: 0 };
-        let score = 0;
-
-        // Exact category alignment check vector (+10 points)
-        if (currentCategory && event.category?.toLowerCase() === currentCategory.toLowerCase()) {
-          score += 10;
-        }
-
-        // Match user's array metrics elements (+5 points per intersection matching)
-        const parsedCategoryTerms = (event.category || "").split(/[\s/&-]+/);
-        parsedCategoryTerms.forEach((term) => {
-          if (!term) return;
-          if (
-            Array.isArray(userInterests) &&
-            userInterests.some(
-              (interest) =>
-                typeof interest === "string" && interest.toLowerCase().includes(term.toLowerCase())
-            )
-          ) {
-            score += 5;
-          }
-        });
-
-        return { ...event, recommendationScore: score };
+      const recommendations = getRecommendedEvents({
+        events: validMockEvents,
+        currentEventId,
+        currentCategory,
+        userInterests,
       });
 
-      // 3. Sort pool in descending structural order based on priority scores
-      const sortedResultMatrix = scoredPool.sort(
-        (a, b) => b.recommendationScore - a.recommendationScore
-      );
+      if (active) {
+        setRecommendedEvents(recommendations);
+        setCurrentIndex(0);
+        setLoading(false);
+      }
+    };
 
-      // Select topmost 6 scoring matches for the carousel limits
-      setRecommendedEvents(sortedResultMatrix.slice(0, 6));
-      setLoading(false);
+    const computationalTimer = setTimeout(() => {
+      loadRecommendations();
     }, 800);
 
-    return () => clearTimeout(computationalTimer);
+    return () => {
+      active = false;
+      clearTimeout(computationalTimer);
+    };
   }, [currentEventId, currentCategory]);
 
   // Carousel slider boundary movement methods
@@ -311,7 +298,6 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
         >
           {recommendedEvents.map((event) => {
             if (!event) return null;
-            const hasStrongMatchingScore = event.recommendationScore > 10;
             const targetFormattedDateString = event.date
               ? new Date(event.date.replace(/-/g, "/")).toLocaleDateString()
               : "Upcoming";
@@ -330,19 +316,20 @@ const EventRecommendations = ({ currentEventId, currentCategory }) => {
                   <CardBannerImage src={event.image || event.banner} alt={event.title} />
 
                   {/* Badge Row Overlay Elements */}
-                  <div className="flex items-center justify-between gap-2 categories-meta-container">
+                  <div className="flex items-center justify-between gap-2 categories-meta-container flex-wrap">
                     <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200/10">
                       {event.category || "General Context"}
                     </span>
-                    {hasStrongMatchingScore && (
-                      <span className="text-[9px] font-black uppercase tracking-wide text-amber-500 flex items-center gap-0.5 bg-amber-500/5 dark:bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
-                        <Sparkles className="w-2.5 h-2.5 fill-amber-500/20 animate-spin-slow" />
-                        Top Match
-                      </span>
-                    )}
+                    {/* AI confidence badge — replaces the old static "Top Match" label.
+                        MatchScoreBadge maps the 0–100 score to Great/Good/Might Like tiers
+                        and shows a tooltip with the match reasons on hover (#7437). */}
+                    <MatchScoreBadge
+                      score={event.recommendationScore}
+                      reasons={event.recommendationReasons}
+                    />
                   </div>
 
-                  <h4 className="font-extrabold text-sm tracking-tight text-slate-900 dark:text-slate-100 mt-3 line-clamp-1">
+                  <h4 title={event.title} className="font-extrabold text-sm tracking-tight text-slate-900 dark:text-slate-100 mt-3 line-clamp-2 break-words min-w-0">
                     {event.title}
                   </h4>
 

@@ -1,4 +1,4 @@
-import { createDebouncedValidator } from "./utils/debounceUtils";
+import { createDebouncedValidator } from "./utils/debounceUtils.js";
 import {
   checkEmailAvailability,
   checkPhoneValidation,
@@ -6,20 +6,23 @@ import {
   createValidationResponse,
   normalizeValidationApiResponse,
   requestValidation,
-} from "./utils/validationApi";
+} from "./utils/validationApi.js";
+import i18n from "./i18n/i18n.js";
+
+const t = (key) => i18n.t(key);
 
 /**
  * Shared validation copy used by sync and async validators.
  * Keep these messages short because they are shown inline under form fields.
  */
 export const VALIDATION_MESSAGES = {
-  required: "This field is required",
-  invalidEmail: "Invalid email format",
-  emailTaken: "Email is already registered",
-  usernameTaken: "Username is already taken",
-  weakPassword: "Password does not meet strength requirements",
-  invalidPhone: "Phone number is invalid",
-  validationUnavailable: "Unable to validate right now. Please try again.",
+  required: t("validation.required"),
+  invalidEmail: t("validation.invalidEmail"),
+  emailTaken: t("validation.emailTaken"),
+  usernameTaken: t("validation.usernameTaken"),
+  weakPassword: t("validation.weakPassword"),
+  invalidPhone: t("validation.invalidPhone"),
+  validationUnavailable: t("validation.validationUnavailable"),
 };
 
 // Single source of truth regular expressions (Anchored, non-backtracking)
@@ -44,7 +47,18 @@ export const validate = {
     return EMAIL_REGEX.test(val) || "Invalid email format";
   },
 
-  password: (val) => val.length >= 8 || "Password must be at least 8 characters",
+  password: (val) => {
+    if (!val || val.length < 8) return "Password must be at least 8 characters";
+    const hasUpper = /[A-Z]/.test(val);
+    const hasLower = /[a-z]/.test(val);
+    const hasNumber = /\d/.test(val);
+    // FIX: Explictly match special characters rather than allowing whitespace/invisible chars
+    const hasSpecial = /[!@#$%^&*(),.?":{}|<>+\-_=\/\\\[\]~`']/.test(val);
+    if (!hasUpper || !hasLower || !hasNumber || !hasSpecial) {
+      return "Password must meet all 5 security criteria: 8+ characters, uppercase, lowercase, number, and special character";
+    }
+    return true;
+  },
 
   required: (val) => (val && val.trim() !== "") || "This field is required",
 
@@ -130,24 +144,28 @@ export const validate = {
   /**
    * Survey sanitizers & XSS guards.
    * Capped to 150 chars for prompts, 80 for options.
+   * Input is truncated before regex evaluation to prevent ReDoS.
    */
   sanitizeSurveyPrompt: (val) => {
     if (typeof val !== "string") return "";
-    let cleaned = val.replace(/<\/?[^>]+(>|$)/g, "");
+    let cleaned = val.length > 300 ? val.substring(0, 300) : val;
+    cleaned = cleaned.replace(/<\/?[^>]+(>|$)/g, "");
     if (cleaned.length > 150) cleaned = cleaned.substring(0, 150);
     return cleaned;
   },
 
   sanitizeSurveyOption: (val) => {
     if (typeof val !== "string") return "";
-    let cleaned = val.replace(/<\/?[^>]+(>|$)/g, "");
+    let cleaned = val.length > 200 ? val.substring(0, 200) : val;
+    cleaned = cleaned.replace(/<\/?[^>]+(>|$)/g, "");
     if (cleaned.length > 80) cleaned = cleaned.substring(0, 80);
     return cleaned;
   },
 
   detectHTML: (val) => {
     if (typeof val !== "string") return false;
-    return /<\/?[^>]+(>|$)/g.test(val);
+    const bounded = val.length > 300 ? val.substring(0, 300) : val;
+    return /<\/?[^>]+(>|$)/g.test(bounded);
   },
 };
 
@@ -331,7 +349,7 @@ export const validatePasswordStrength = async (password, options = {}) => {
     [!requireUppercase || /[A-Z]/.test(password), messages.uppercase || "Password must include an uppercase letter"],
     [!requireLowercase || /[a-z]/.test(password), messages.lowercase || "Password must include a lowercase letter"],
     [!requireNumber || /\d/.test(password), messages.number || "Password must include a number"],
-    [!requireSpecial || /[^A-Za-z0-9]/.test(password), messages.special || "Password must include a special character"],
+    [!requireSpecial || /[!@#$%^&*(),.?":{}|<>]/.test(password), messages.special || "Password must include a special character"],
   ];
 
   const failedCheck = checks.find(([passed]) => !passed);

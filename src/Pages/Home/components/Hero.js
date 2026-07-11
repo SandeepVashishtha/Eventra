@@ -1,448 +1,103 @@
-import Fuse from "fuse.js";
-import {
-  AnimatePresence,
-  MotionConfig,
-  motion,
-  useAnimation,
-  useScroll,
-  useTransform,
-} from "framer-motion";
-import { Calendar, Code, ExternalLink, Handshake, Search, Trophy, Users } from "lucide-react";
-import CountUpLib from "react-countup";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
+import { memo, useMemo } from "react";
+import { ArrowRight, Check, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
-import SectionErrorBoundary from "../../../components/common/SectionErrorBoundary";
-import ModernSearchInput from "../../../components/common/ModernSearchInput";
-import RespawningText from "../../../components/visual/RespawningText";
-import useDebouncedSearch from "../../../hooks/useDebouncedSearch";
 import useDocumentTitle from "../../../hooks/useDocumentTitle";
-import useReducedMotion from "../../../hooks/useReducedMotion.js";
-import eventsData from "../../Events/eventsMockData.json";
-import hackathonsData from "../../Hackathons/hackathonMockData.json";
-import projectsData from "../../Projects/mockProjectsData.json";
+import HeroVisual from "./HeroVisual";
 
-const CountUp = CountUpLib.default || CountUpLib;
-const MotionLink = motion(Link);
-
-const HEADLINE_PHRASES = [
-  "Amazing Tech Events",
-  "Exciting Hackathons Today",
-  "Innovative Dev Workshops",
-  "Cutting-Edge Tech Meetups",
+const SOCIAL_PROOF_VALUES = [
+  { value: "1,500+", key: "developers" },
+  { value: "75+", key: "events" },
+  { value: "30+", key: "partners" },
 ];
-
-const TAGLINE_TEXTS = ["Discover & Join", "Innovate & Create", "Learn & Grow"];
-const SEARCH_RESULT_LIMIT = 5;
-
-const SEARCH_ROUTES = {
-  event: "/events",
-  hackathon: "/hackathons",
-  project: "/projects",
-};
-
-const SEARCH_ICONS = {
-  event: Calendar,
-  hackathon: Trophy,
-  project: Code,
-};
-
-const HERO_STATS = [
-  { value: 1500, label: "Developers", suffix: "+", icon: Users },
-  { value: 75, label: "Events", suffix: "+", icon: Calendar },
-  { value: 30, label: "Partners", suffix: "+", icon: Handshake },
-];
-
-const createSearchItem = (item, type, searchType) => ({
-  id: item.id,
-  title: item.title,
-  description: item.description,
-  location: item.location,
-  tags: item.tags,
-  techStack: item.techStack,
-  type,
-  searchType,
-});
-
-const allSearchItems = [
-  ...eventsData.map((item) => createSearchItem(item, "event", "Events")),
-  ...hackathonsData.map((item) => createSearchItem(item, "hackathon", "Hackathons")),
-  ...projectsData.map((item) => createSearchItem(item, "project", "Projects")),
-];
-
-const searchIndex = new Fuse(allSearchItems, {
-  keys: ["title", "description", "location", "tags", "techStack", "category", "author", "organizer", "type"],
-  threshold: 0.3,
-  includeScore: true,
-});
-
-const getResultHref = (item, fallbackTerm) => {
-  const query = encodeURIComponent(item.title || fallbackTerm);
-  return `${SEARCH_ROUTES[item.type] || "/"}?search=${query}`;
-};
-
-const getResultIcon = (type) => {
-  const Icon = SEARCH_ICONS[type] || Search;
-  return <Icon className="w-4 h-4 shrink-0" aria-hidden="true" />;
-};
 
 const Hero = () => {
   useDocumentTitle("Eventra | Home");
+  const { t } = useTranslation();
 
-  const prefersReducedMotion = useReducedMotion();
-  const controls = useAnimation();
-  const containerRef = useRef(null);
-
-  const [isTouch, setIsTouch] = useState(false);
-  const [statsReady, setStatsReady] = useState(false);
-  const [phraseIndex, setPhraseIndex] = useState(0);
-  const [showResults, setShowResults] = useState(false);
-  const [searchResults, setSearchResults] = useState([]);
-
-  const { searchTerm, debouncedTerm, setSearchTerm, clear: clearSearchTerm } = useDebouncedSearch("", 300);
-
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start start", "end start"],
-  });
-
-  const yText = useTransform(scrollYProgress, [0, 1], [0, 180]);
-  const yStats = useTransform(scrollYProgress, [0, 1], [0, 60]);
-  const opacityHero = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
-
-  const container = {
-    hidden: {},
-    show: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
-  };
-
-  const fadeUp = {
-    hidden: { y: 32, opacity: 0 },
-    show: {
-      y: 0,
-      opacity: 1,
-      transition: { duration: prefersReducedMotion ? 0 : 0.7, ease: [0.22, 1, 0.36, 1] },
-    },
-  };
-
-  useEffect(() => {
-    const pointerQuery = window.matchMedia("(pointer: coarse)");
-    const updateTouchState = () => setIsTouch(pointerQuery.matches);
-
-    updateTouchState();
-    if (pointerQuery.addEventListener) {
-      pointerQuery.addEventListener("change", updateTouchState);
-      return () => pointerQuery.removeEventListener("change", updateTouchState);
-    }
-
-    pointerQuery.addListener(updateTouchState);
-    return () => pointerQuery.removeListener(updateTouchState);
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setPhraseIndex((prev) => (prev + 1) % HEADLINE_PHRASES.length);
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    controls.start("show");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [controls]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setStatsReady(true), 100);
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    if (debouncedTerm.trim()) {
-      setSearchResults(searchIndex.search(debouncedTerm.trim()).slice(0, SEARCH_RESULT_LIMIT));
-      setShowResults(true);
-      return;
-    }
-
-    setSearchResults([]);
-    setShowResults(false);
-  }, [debouncedTerm]);
-
-  const handleSearch = useCallback((query) => setSearchTerm(query), [setSearchTerm]);
-
-  const clearSearch = useCallback(() => {
-    setShowResults(false);
-    clearSearchTerm();
-  }, [clearSearchTerm]);
+  const categoryChips = useMemo(
+    () => [
+      { label: t("landing.hero.categories.hackathons"), to: "/hackathons" },
+      { label: t("landing.hero.categories.ai"), to: "/events" },
+      { label: t("landing.hero.categories.webDev"), to: "/events" },
+      { label: t("landing.hero.categories.openSource"), to: "/projects" },
+      { label: t("landing.hero.categories.workshops"), to: "/events" },
+    ],
+    [t]
+  );
 
   return (
-    <section
-      ref={containerRef}
-      aria-label="Hero section"
-      className="relative overflow-hidden border-b border-gray-100 pb-16 text-slate-900 sm:pb-20 md:pb-24"
-      style={{ background: "linear-gradient(180deg, #F8FBFD 0%, #F3F7FA 10%, #EAF1F7 42%, #DAE3ED 100%)" }}
-    >
-      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 150,
-            background: "linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.2) 100%)",
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            top: 12,
-            left: 28,
-            width: 260,
-            height: 160,
-            borderRadius: "50%",
-            background: "#E6F0F7",
-            filter: "blur(36px)",
-            opacity: 0.8,
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            top: 36,
-            right: 80,
-            width: 180,
-            height: 120,
-            borderRadius: "50%",
-            background: "#EFF6FB",
-            filter: "blur(28px)",
-            opacity: 0.7,
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            bottom: 20,
-            left: "12%",
-            width: 220,
-            height: 90,
-            borderRadius: "50%",
-            background: "#F7FAFC",
-            filter: "blur(20px)",
-            opacity: 0.85,
-          }}
-        />
-      </div>
+    <section className="relative overflow-hidden pb-10 pt-2 sm:pb-12 sm:pt-4 md:pb-14 md:pt-6">
+      <div className="pointer-events-none absolute -left-24 top-0 h-72 w-72 rounded-full bg-violet-300/20 blur-3xl dark:bg-violet-600/10" />
+      <div className="pointer-events-none absolute -right-24 bottom-0 h-72 w-72 rounded-full bg-pink-300/20 blur-3xl dark:bg-pink-600/10" />
 
       <motion.div
-        className="relative z-10 px-4 pt-20 sm:px-6 sm:pt-24 md:pt-28 lg:px-8"
-        style={{
-          y: isTouch || prefersReducedMotion ? 0 : yText,
-          opacity: isTouch ? 1 : opacityHero,
-          willChange: "transform, opacity",
-        }}
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="relative mx-auto grid w-full max-w-6xl items-center gap-6 px-4 sm:gap-8 lg:grid-cols-2 lg:gap-10"
       >
-        <motion.div className="mx-auto max-w-5xl text-center" variants={container} initial="hidden" animate={controls}>
-          <MotionConfig reducedMotion="never">
-            <motion.h1
-              className="flex flex-col items-center gap-3 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl md:text-4xl lg:text-5xl"
-              style={{ fontFamily: "\"Inter\", system-ui, sans-serif" }}
+        <div className="flex flex-col">
+          <div className="inline-flex w-fit items-center gap-2 rounded-lg border border-border bg-white/[0.04] dark:bg-white/[0.02] px-3 py-1 text-xs font-semibold uppercase tracking-wider text-text-light mb-3">
+            {t("landing.hero.badge")}
+          </div>
+
+          <h1 className="text-4xl font-extrabold leading-tight tracking-tighter text-text sm:text-5xl lg:text-[3.25rem] mb-2 sm:mb-3">
+            {t("landing.hero.headlineBefore")}{" "}
+            <span className="bg-gradient-to-r from-slate-950 to-slate-600 dark:from-white dark:to-slate-400 bg-clip-text text-transparent">
+              {t("landing.hero.headlineHighlight")}
+            </span>{" "}
+            {t("landing.hero.headlineAfter")}
+          </h1>
+
+          <p className="max-w-xl text-base font-medium leading-relaxed text-text-light sm:text-lg mb-3 sm:mb-4">
+            {t("landing.hero.description")}
+          </p>
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center mb-4 sm:mb-5">
+            <Link
+              to="/events"
+              className="group inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 hover:bg-slate-900 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-950 px-6 py-2.5 text-sm font-semibold shadow-premium-sm hover:shadow-premium-md transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] sm:text-base"
             >
-              <motion.span
-                className="block text-sm font-medium text-gray-500"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.08 }}
-              >
-                <RespawningText texts={TAGLINE_TEXTS} />
-              </motion.span>
+              {t("landing.hero.ctaExplore")}
+              <ArrowRight
+                className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
+                aria-hidden="true"
+              />
+            </Link>
+            <Link
+              to="/create-event"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-white dark:bg-slate-900/40 hover:bg-gray-50 dark:hover:bg-slate-800 text-text px-6 py-2.5 text-sm font-semibold shadow-premium-sm hover:shadow-premium-md transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] sm:text-base"
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              {t("landing.hero.ctaCreate")}
+            </Link>
+          </div>
 
-              <div className="relative flex min-h-20 w-full items-center justify-center overflow-hidden sm:min-h-24 md:min-h-24">
-                <AnimatePresence mode="wait">
-                  <motion.span
-                    key={phraseIndex}
-                    className="block text-2xl font-extrabold text-gray-900 sm:text-3xl md:text-4xl lg:text-5xl"
-                    initial={{ opacity: 0, y: 24 }}
-                    animate={{
-                      opacity: 1,
-                      y: 0,
-                      transition: { duration: prefersReducedMotion ? 0 : 0.6, ease: "easeOut" },
-                    }}
-                    exit={{
-                      opacity: 0,
-                      y: -16,
-                      transition: { duration: prefersReducedMotion ? 0 : 0.3, ease: "easeIn" },
-                    }}
-                    whileHover={prefersReducedMotion ? {} : { scale: 1.01 }}
-                  >
-                    {HEADLINE_PHRASES[phraseIndex]}
-                  </motion.span>
-                </AnimatePresence>
-              </div>
-            </motion.h1>
-          </MotionConfig>
-
-          <motion.p
-            variants={fadeUp}
-            className="mx-auto mb-8 mt-4 max-w-3xl text-base leading-relaxed text-gray-600 sm:mb-10 sm:mt-6 sm:text-lg md:text-lg"
+          <ul
+            className="flex flex-wrap gap-x-6 gap-y-3 text-sm font-medium text-text-light"
+            aria-label={t("landing.hero.platformStats")}
           >
-            Connect with developers, learn new skills, and grow your network at curated tech events, hackathons, and
-            workshops.
-          </motion.p>
+            {SOCIAL_PROOF_VALUES.map((stat) => (
+              <li key={stat.key} className="flex items-center gap-1.5">
+                <Check className="h-4 w-4 shrink-0 text-emerald-500" aria-hidden="true" />
+                <span>
+                  <span className="font-bold text-text">{stat.value}</span>{" "}
+                  {t(`landing.hero.stats.${stat.key}`)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
 
-          <motion.div variants={fadeUp} className="mx-auto mb-10 w-full max-w-2xl">
-            <div className="relative">
-              <div className="relative rounded-lg border border-gray-200 bg-white shadow-sm">
-                <ModernSearchInput
-                  value={searchTerm}
-                  onChange={(e) => handleSearch(e.target.value)}
-                  placeholder="Search events, hackathons, projects..."
-                  onFocus={() => searchTerm && setShowResults(true)}
-                  onBlur={() => setTimeout(() => setShowResults(false), 200)}
-                  className="border-0 bg-transparent text-gray-700 placeholder-gray-400 focus:ring-0"
-                >
-                  <AnimatePresence>
-                    {showResults && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -8, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -8, scale: 0.98 }}
-                        transition={{ duration: prefersReducedMotion ? 0 : 0.15 }}
-                        className="absolute left-0 right-0 top-full z-50 mt-2 max-h-80 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-lg"
-                        role="listbox"
-                        aria-label="Search results"
-                      >
-                        <div className="p-3">
-                          {searchResults.length > 0 ? (
-                            <>
-                              <div className="px-2 py-1.5 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                Results ({searchResults.length})
-                              </div>
-                              <div className="space-y-1">
-                                {searchResults.map((result, idx) => (
-                                  <MotionLink
-                                    key={`${result.item.type}-${result.item.id}`}
-                                    to={getResultHref(result.item, debouncedTerm)}
-                                    initial={{ opacity: 0, x: -12 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: idx * 0.03 }}
-                                    onClick={clearSearch}
-                                    className="group flex cursor-pointer items-center gap-3 rounded-lg p-3 text-left no-underline transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/60"
-                                    role="option"
-                                    aria-label={`Open ${result.item.title}`}
-                                  >
-                                    <div className="shrink-0 rounded-lg bg-gray-100 p-2 text-gray-700 transition-transform group-hover:scale-105">
-                                      {getResultIcon(result.item.type)}
-                                    </div>
-                                    <div className="min-w-0 flex-1">
-                                      <div className="mb-0.5 flex items-center gap-2">
-                                        <h4 className="truncate text-sm font-semibold text-gray-900 dark:text-white">
-                                          {result.item.title}
-                                        </h4>
-                                        <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600 dark:bg-slate-800 dark:text-gray-300">
-                                          {result.item.searchType}
-                                        </span>
-                                      </div>
-                                      <p className="line-clamp-1 text-xs text-gray-500 dark:text-gray-400">
-                                        {result.item.description
-                                          ? `${result.item.description.substring(0, 70)}...`
-                                          : "No description available"}
-                                      </p>
-                                    </div>
-                                    <ExternalLink
-                                      className="h-4 w-4 shrink-0 text-gray-400 transition-colors group-hover:text-indigo-500"
-                                      aria-hidden="true"
-                                    />
-                                  </MotionLink>
-                                ))}
-                              </div>
-                            </>
-                          ) : (
-                            <motion.div
-                              initial={{ opacity: 0, y: 8 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: 8 }}
-                              className="py-8 text-center text-sm text-gray-500 dark:text-gray-400"
-                            >
-                              No results for{" "}
-                              <span className="font-medium text-gray-700 dark:text-gray-200">&quot;{searchTerm}&quot;</span>
-                            </motion.div>
-                          )}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </ModernSearchInput>
-              </div>
-            </div>
-          </motion.div>
-
-          {!searchTerm.trim() && (
-            <SectionErrorBoundary label="Statistics">
-              <motion.div
-                variants={fadeUp}
-                style={{ y: isTouch || prefersReducedMotion ? 0 : yStats, willChange: "transform" }}
-                className="mx-auto grid max-w-4xl grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5"
-                role="region"
-                aria-label="Platform statistics"
-              >
-                {HERO_STATS.map((stat) => (
-                  <motion.div
-                    key={stat.label}
-                    variants={fadeUp}
-                    whileHover={{ y: -2, transition: { duration: 0.15 } }}
-                    className="flex flex-col items-center justify-center rounded-md border border-gray-100 bg-white p-4 shadow-sm transition-shadow sm:p-5"
-                  >
-                    <div className="mb-2 rounded-full bg-gray-100 p-2 text-gray-700">
-                      <stat.icon className="h-5 w-5" aria-hidden="true" />
-                    </div>
-                    <p className="mb-1 text-2xl font-semibold tabular-nums text-gray-900 sm:text-3xl">
-                      {statsReady ? (
-                        <CountUp
-                          start={0}
-                          end={Number.isFinite(stat.value) ? stat.value : 0}
-                          duration={2.2}
-                          suffix={stat.suffix || ""}
-                        />
-                      ) : (
-                        <>
-                          {stat.value}
-                          {stat.suffix || ""}
-                        </>
-                      )}
-                    </p>
-                    <p className="text-center text-xs font-medium uppercase tracking-wider text-gray-600 sm:text-sm">
-                      {stat.label}
-                    </p>
-                  </motion.div>
-                ))}
-              </motion.div>
-            </SectionErrorBoundary>
-          )}
-        </motion.div>
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.2 }}
-        className="absolute bottom-6 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-2 text-gray-500 dark:text-gray-400 md:flex"
-        aria-hidden="true"
-      >
-        <span className="text-xs font-medium">Scroll to explore</span>
-        <motion.div
-          animate={{ y: [0, 8, 0] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          className="flex h-10 w-6 justify-center rounded-full border-2 border-current pt-2"
-        >
-          <motion.div
-            className="h-1.5 w-1.5 rounded-full bg-current"
-            animate={{ y: [0, 12, 0] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          />
-        </motion.div>
+        <div className="mt-8 lg:mt-0">
+          <HeroVisual />
+        </div>
       </motion.div>
     </section>
   );
 };
 
-export default Hero;
+export default memo(Hero);

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Html5Qrcode } from "html5-qrcode";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 import {
   Camera,
   CameraOff,
@@ -20,7 +21,6 @@ import { toast } from "react-toastify";
 import { pushToQueue } from "../../utils/offlineQueue";
 import { validateTicket, recordCheckIn, fetchCheckInHistory, fetchScannerEvents, fetchTicketStats } from "../../services/ticketService";
 import "./TicketScanner.css";
-
 const HISTORY_CACHE_KEY = "eventra_checkins_cache";
 
 export default function TicketScanner() {
@@ -32,7 +32,6 @@ export default function TicketScanner() {
   const [checkinHistory, setCheckinHistory] = useState([]);
   const [events, setEvents] = useState([]);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-
   const [manualTicketId, setManualTicketId] = useState("");
   const [manualAttendeeName, setManualAttendeeName] = useState("");
   const [manualEventId, setManualEventId] = useState("");
@@ -100,6 +99,7 @@ export default function TicketScanner() {
   useEffect(() => {
     fetchScannerEvents()
       .then((data) => {
+        if (!isMountedRef.current) return;
         setEvents(data);
         if (data.length > 0) {
           setManualEventId(data[0].id);
@@ -108,6 +108,7 @@ export default function TicketScanner() {
         }
       })
       .catch(() => {
+        if (!isMountedRef.current) return;
         setEvents([]);
       });
   }, []);
@@ -117,10 +118,15 @@ export default function TicketScanner() {
       fetchStats(selectedEventId);
       fetchCheckInHistory(selectedEventId)
         .then((data) => {
+          if (!isMountedRef.current) return;
           const items = Array.isArray(data) ? data : data.content || data.checkins || [];
           setCheckinHistory(items);
         })
-        .catch(() => {});
+        .catch((err) => {
+          if (!isMountedRef.current) return;
+          console.error("Failed to load check-in history:", err);
+          toast.error("Failed to load check-in history. The data shown may be stale.");
+        });
     }
   }, [selectedEventId, fetchStats]);
 
@@ -180,7 +186,7 @@ export default function TicketScanner() {
   const addToHistory = useCallback((entry) => {
     setCheckinHistory((prev) => [entry, ...prev].slice(0, 50));
     try {
-      const updated = [entry, ...JSON.parse(localStorage.getItem(HISTORY_CACHE_KEY) || "[]")].slice(0, 50);
+      const updated = [entry, ...safeJsonParse(localStorage.getItem(HISTORY_CACHE_KEY), [])].slice(0, 50);
       localStorage.setItem(HISTORY_CACHE_KEY, JSON.stringify(updated));
     } catch { /* ignore */ }
   }, []);
@@ -192,7 +198,7 @@ export default function TicketScanner() {
     try {
       ticketData = JSON.parse(decodedText);
     } catch {
-      if (decodedText.startsWith("eyJ")) {
+      if (decodedText.startsWith("eyJ") && decodedText.split(".").length === 3) {
         const activeEvent = events.find(e => String(e.id) === String(selectedEventId));
         ticketData = {
           ticketId: decodedText,
@@ -219,7 +225,7 @@ export default function TicketScanner() {
       }
     }
 
-    if (!ticketData || !ticketData.ticketId) {
+    if (!ticketData || typeof ticketData !== 'object' || !ticketData.ticketId) {
       setScanResult({
         status: "flagged",
         message: "Invalid QR Code format. Ticket is secure and cannot be verified.",

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { GitHubStatCardSkeleton } from "../../../components/common/SkeletonLoaders";
 import {
@@ -8,29 +8,40 @@ import {
   Users,
   Clock,
   Code2,
-  ExternalLink,
   GitPullRequest,
   Scale,
   Eye,
   Languages,
 } from "lucide-react";
-import {
-  fetchRepository,
-  fetchContributors,
-  fetchPullRequests,
-} from "../../../utils/githubApiClient";
 
-const repoPath = process.env.REACT_APP_GITHUB_REPO || "SandeepVashishtha/Eventra";
+import { safeJsonParse } from "../../../utils/safeJsonParse";
+import { ENV } from "../../../config/env";
+import { fetchGitHubJson } from "../../../utils/githubApiClient";
+
+const repoPath = ENV.GITHUB_REPO;
 const [GITHUB_USER, GITHUB_REPO] = repoPath.split("/");
 
 const LS_KEY = "eventra:repoStats";
 const CACHE_MS = 30 * 60 * 1000; // 30 min
+const CONTRIBUTORS_PAGE_SIZE = 100;
+
+const fetchRepository = (owner, repo) =>
+  fetchGitHubJson(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`);
+
+const fetchContributors = (owner, repo) =>
+  fetchGitHubJson(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contributors`, {
+    per_page: CONTRIBUTORS_PAGE_SIZE,
+    anon: 1,
+  });
+
+const fetchPullRequests = (owner, repo, params) =>
+  fetchGitHubJson(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pulls`, params);
 
 const readCache = () => {
   try {
     const raw = localStorage.getItem(LS_KEY);
     if (!raw) return null;
-    const { data, ts } = JSON.parse(raw);
+    const { data, ts } = safeJsonParse(raw, {});
     return Date.now() - ts > CACHE_MS ? null : data;
   } catch {
     return null;
@@ -51,8 +62,8 @@ export default function GitHubStats() {
     lastCommit: "N/A",
     size: 0,
     pullRequests: 0,
-    releases: 0,
     license: "N/A",
+    defaultBranch: "master",
     watchers: 0,
     languages: {},
   });
@@ -68,41 +79,46 @@ export default function GitHubStats() {
 
     (async () => {
       try {
-        // Fire all three requests in parallel — none depends on the others,
-        // so sequential awaits would triple the load time unnecessarily.
-        const [repoResult, contributorsResult, pullRequestsResult] =
+        const [repoResult, contributorsResult, prResult] =
           await Promise.allSettled([
             fetchRepository(GITHUB_USER, GITHUB_REPO),
-            fetchContributors(GITHUB_USER, GITHUB_REPO, 1, 1),
+            fetchContributors(GITHUB_USER, GITHUB_REPO),
             fetchPullRequests(GITHUB_USER, GITHUB_REPO, { per_page: 1 }),
           ]);
 
-        // Repository data is required; bail out if it failed
         if (repoResult.status === "rejected") {
+          const cached = readCache();
+          if (cached) {
+            setStats(cached);
+            setIsLoading(false);
+            return;
+          }
           throw repoResult.reason;
         }
         const repoData = repoResult.value;
 
-        // Contributor count — graceful fallback on failure
         let contribCount = "—";
         if (contributorsResult.status === "fulfilled") {
           const contributors = contributorsResult.value;
           if (Array.isArray(contributors) && contributors.length > 0) {
-            contribCount = contributors.length;
+            contribCount =
+              contributors.length === CONTRIBUTORS_PAGE_SIZE
+                ? `${CONTRIBUTORS_PAGE_SIZE}+`
+                : contributors.length;
           }
-        } else {
-          //console.warn("Failed to fetch contributor count:", contributorsResult.reason);
+        } else if (contributorsResult.status === "rejected") {
+          contribCount = "—";
         }
 
-        // Pull request count — graceful fallback on failure
         let prCount = "—";
-        if (pullRequestsResult.status === "fulfilled") {
-          const pullRequests = pullRequestsResult.value;
+        if (prResult.status === "fulfilled") {
+          const pullRequests = prResult.value;
           if (Array.isArray(pullRequests) && pullRequests.length > 0) {
             prCount = pullRequests.length;
           }
+        } else if (prResult.status === "rejected") {
+          prCount = "—";
         } else {
-         //console.warn("Failed to fetch pull request count:", pullRequestsResult.reason);
         }
 
         const next = {
@@ -115,8 +131,8 @@ export default function GitHubStats() {
             : "N/A",
           size: repoData.size || 0,
           pullRequests: prCount,
-          releases: "—",
           license: repoData.license?.spdx_id || "N/A",
+          defaultBranch: repoData.default_branch || "master",
           watchers: repoData.subscribers_count || 0,
           languages: {},
         };
@@ -127,7 +143,6 @@ export default function GitHubStats() {
           setIsLoading(false);
         }
       } catch {
-        //console.warn("GitHub stats fetch failed", err);
         if (!cached && mounted) {
           setStats((s) => ({ ...s, stars: "—", forks: "—", issues: "—" }));
           setIsLoading(false);
@@ -182,7 +197,7 @@ export default function GitHubStats() {
       label: "License",
       value: stats.license,
       icon: <Scale className="text-gray-600 dark:text-gray-400" size={40} />,
-      link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/blob/main/LICENSE`,
+      link: `https://github.com/${GITHUB_USER}/${GITHUB_REPO}/blob/${stats.defaultBranch || "master"}/LICENSE`,
     },
     {
       label: "Last Update",
@@ -207,15 +222,13 @@ export default function GitHubStats() {
   ], [stats]);
 
   return (
-    // UPDATED: Section background
-    <section className="py-16 bg-white dark:bg-black ">
+    <section className="py-16 bg-bg transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-6">
         <motion.h2
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          // UPDATED: Title text color with responsive sizing
-          className="text-3xl sm:text-4xl font-extrabold text-center text-gray-900 dark:text-gray-100 mb-8 sm:mb-10 px-4"
+          className="text-3xl sm:text-4xl font-extrabold text-center text-text mb-8 sm:mb-10 px-4"
         >
           Project Statistics
         </motion.h2>
@@ -227,41 +240,33 @@ export default function GitHubStats() {
         >
           {isLoading
             ? [...Array(10)].map((_, i) => <GitHubStatCardSkeleton key={`skeleton-${i}`} />)
-            : statCards.map(({ label, value, icon, link }) => (
-                <motion.a
-                  key={label}
-                  href={link}
-                  target="_blank" rel="noopener noreferrer"
-                  whileHover={{ scale: 1.1, rotate: 1 }}
-                  whileTap={{ scale: 0.95 }}
-                  // UPDATED: Card background, border, and responsive sizing
-                  className="group flex flex-col items-center justify-center bg-white dark:bg-gray-800 rounded-2xl px-3 py-4 sm:px-6 sm:py-6 md:px-8 shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-700 relative overflow-hidden"
-                >
-                  {/* Glow effect */}
-                  {/* UPDATED: Glow effect for dark mode */}
-                  <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition duration-700 blur-3xl rounded-2xl"></div>
-
-                  <div className="z-10 flex flex-col items-center space-y-2 sm:space-y-3">
-                    {/* UPDATED: Icon wrapper background with responsive sizing */}
-                    <div className="p-2 sm:p-3 md:p-4 bg-gray-50 dark:bg-gray-700 rounded-full shadow-inner [&>svg]:w-7 [&>svg]:h-7 sm:[&>svg]:w-9 sm:[&>svg]:h-9 md:[&>svg]:w-10 md:[&>svg]:h-10">
-                      {icon}
+            : statCards.map(({ label, value, icon, link }) => {
+                const customIcon = React.cloneElement(icon, {
+                  className: "text-text-light/50 group-hover:text-primary transition-colors duration-300",
+                  size: 15
+                });
+                return (
+                  <motion.a
+                    key={label}
+                    href={link}
+                    target="_blank" rel="noopener noreferrer"
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="group p-4 rounded-xl bg-white/40 dark:bg-slate-900/10 backdrop-blur-sm border border-border hover:border-text-light/40 dark:hover:border-slate-700/60 shadow-premium-sm transition-all duration-300 relative flex flex-col justify-between h-[100px]"
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className="text-[10px] font-bold text-text-light/50 uppercase tracking-wider select-none">
+                        {label}
+                      </span>
+                      {customIcon}
                     </div>
-                    {/* UPDATED: Text colors with responsive sizing */}
-                    <p className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100 text-center break-words px-1">
-                      {value}
-                    </p>
-                    <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 text-center px-1">
-                      {label}
-                    </p>
-                  </div>
 
-                  {/* UPDATED: Icon color */}
-                  <ExternalLink
-                    size={16}
-                    className="absolute top-3 right-3 text-gray-400 dark:text-gray-500 opacity-0 group-hover:opacity-100 transition duration-300"
-                  />
-                </motion.a>
-              ))}
+                    <div className="mt-2 text-xl sm:text-2xl font-extrabold tracking-tight text-text truncate">
+                      {value}
+                    </div>
+                  </motion.a>
+                );
+              })}
         </motion.div>
       </div>
     </section>
