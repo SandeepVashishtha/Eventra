@@ -37,7 +37,9 @@ const keywordIndex = knowledgeBaseConfig.reduce((acc, item) => {
 const sortedKeywords = [...keywordIndex.keys()].sort((a, b) => b.length - a.length);
 
 const keywordPattern = new RegExp(
-  sortedKeywords.map((kw) => kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"),
+  "\\b(" +
+    sortedKeywords.map((kw) => kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|") +
+    ")\\b",
   "i"
 );
 
@@ -88,6 +90,9 @@ export function getInitialMessages(t, pathname = "") {
 }
 
 export function getAssistantReply(input, t) {
+  if (typeof input !== "string" || !input.trim()) {
+    return null;
+  }
   const match = input.match(keywordPattern);
   const matchedKeyword = match ? match[0].toLowerCase() : null;
   const matchedItem = matchedKeyword ? keywordIndex.get(matchedKeyword) : null;
