@@ -124,6 +124,8 @@ assert.equal(cleanupExpiredRecoverySessions([eventDraft, expired], t2.getTime())
 const storage = createStorage();
 writeMultiSessions([eventDraft, profileDraft], storage, "multi");
 assert.equal(readMultiSessions(storage, "multi").length, 2);
+assert.deepEqual(readMultiSessions(), []);
+assert.deepEqual(writeMultiSessions([eventDraft]), normalizeMultiSessions([eventDraft]));
 storage.setItem("multi", "{bad json");
 assert.deepEqual(readMultiSessions(storage, "multi"), []);
 assert.equal(storage.has("multi"), false);
