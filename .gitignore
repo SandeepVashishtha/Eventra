@@ -45,3 +45,4 @@ lint_output.txt
 playwright-report/
 test-results/
 playwright/.cache/
+.opencode

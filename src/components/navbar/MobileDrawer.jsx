@@ -10,7 +10,6 @@ import {
   Moon,
   MousePointer,
   Bell,
-  PlusCircle,
   LayoutDashboard,
 } from "lucide-react";
 import { useNotification } from "../../context/NotificationContext";

@@ -78,14 +78,15 @@ export const API_ENDPOINTS = {
     REFRESH: buildApiUrl("/auth/refresh"),
   },
   EVENTS: {
-    CREATE: buildApiUrl("/api/events/create"),
-    ALL: buildApiUrl("/api/events"),
-    LIST: buildApiUrl("/api/events"),
-    DETAIL: (id) => buildApiUrl(`/api/events/${id}`),
-    REGISTER: (id) => buildApiUrl(`/api/events/${id}/register`),
-    AVAILABILITY: (id) => buildApiUrl(`/api/events/${id}/availability`),
+    CREATE: buildApiUrl("/events/create"),
+    ALL: buildApiUrl("/events"),
+    LIST: buildApiUrl("/events"),
+    DETAIL: (id) => buildApiUrl(`/events/${id}`),
+    REGISTER: (id) => buildApiUrl(`/events/${id}/register`),
+    CANCEL: (id) => buildApiUrl(`/events/${id}/cancel`),
+    AVAILABILITY: (id) => buildApiUrl(`/events/${id}/availability`),
 
-    REGISTRANTS: (id) => buildApiUrl(`/api/events/${id}/registrants`),
+    REGISTRANTS: (id) => buildApiUrl(`/events/${id}/registrants`),
     // Convenience helper — appends ?page=&size= for callers that build the
     // URL manually rather than going through eventFetchUtils.buildPaginatedUrl.
     PAGINATED: (page, size) => buildApiUrl(`/events?page=${page}&size=${size}`),
@@ -125,10 +126,10 @@ export const API_ENDPOINTS = {
     PUSH_UNSUBSCRIBE: buildApiUrl("/notifications/push-subscriptions/unsubscribe"),
   },
   USERS: {
-    PROFILE: buildApiUrl("/api/users/profile"),
-    ACHIEVEMENTS: buildApiUrl("/api/users/achievements"),
+    PROFILE: buildApiUrl("/users/profile"),
+    ACHIEVEMENTS: buildApiUrl("/users/achievements"),
     // (#7653) Endpoint for persisting user preferences (theme, etc.) across devices
-    PREFERENCES: buildApiUrl("/api/users/preferences"),
+    PREFERENCES: buildApiUrl("/users/preferences"),
   },
   TICKETS: {
     VALIDATE: buildApiUrl("/tickets/validate"),
@@ -150,9 +151,9 @@ export const API_ENDPOINTS = {
     STATS: buildApiUrl("/admin/stats"),
   },
   VALIDATION: {
-    EMAIL: (email) => buildApiUrl(`/api/validate/email/${encodeURIComponent(email)}`),
-    USERNAME: (username) => buildApiUrl(`/api/validate/username/${encodeURIComponent(username)}`),
-    PHONE: buildApiUrl("/api/validate/phone"),
+    EMAIL: (email) => buildApiUrl(`/validate/email/${encodeURIComponent(email)}`),
+    USERNAME: (username) => buildApiUrl(`/validate/username/${encodeURIComponent(username)}`),
+    PHONE: buildApiUrl("/validate/phone"),
   },
 };
 
@@ -185,7 +186,7 @@ const wrapAxiosResponse = (response) => {
       if (typeof response.data === "string") {
         try {
           return JSON.parse(response.data);
-        } catch (_e) {
+        } catch {
           throw new Error("Received non-JSON response from server");
         }
       }

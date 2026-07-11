@@ -355,8 +355,8 @@ const HackathonHub = () => {
   }, [loadHackathons]);
 
   const positionClass = `
-    ${isScrollVisible ? "bottom-[calc(2.5rem+var(--safe-area-bottom))] sm:bottom-40" : "bottom-[calc(1rem+var(--safe-area-bottom))] sm:bottom-24"}
-    ${isChatbotOpen ? "left-[calc(1rem+var(--safe-area-left))] sm:left-6" : "right-[calc(1rem+var(--safe-area-right))] sm:right-6"}
+    ${isScrollVisible ? "bottom-[calc(2.5rem+var(--safe-area-bottom))] sm:bottom-37" : "bottom-[calc(1rem+var(--safe-area-bottom))] sm:bottom-21"}
+    ${isChatbotOpen ? "left-[calc(1rem+var(--safe-area-left))] sm:left-15" : "right-[calc(1rem+var(--safe-area-right))] sm:right-15"}
   `;
 
   const containerVariants = {
@@ -795,7 +795,6 @@ const HackathonHub = () => {
       </div>
 
       <HackathonCTA />
-      <BackToTopButton positionClass={positionClass} />
     </div>
   );
 };

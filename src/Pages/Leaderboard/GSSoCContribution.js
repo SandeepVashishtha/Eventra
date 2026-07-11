@@ -32,13 +32,6 @@ const GSSOC_TIMELINE = [
   { phase: "Final Results", date: "Jun 15", status: "upcoming", icon: Award },
 ];
 
-const MENTORS = [
-  { name: "Priya Sharma", role: "Frontend Lead", expertise: ["React", "Tailwind"], avatar: "👩‍💻", available: true, bio: "10+ years in frontend architecture" },
-  { name: "Rahul Verma", role: "Backend Expert", expertise: ["Node.js", "MongoDB"], avatar: "👨‍💻", available: true, bio: "Scalable systems specialist" },
-  { name: "Anita Das", role: "DevOps Mentor", expertise: ["Docker", "CI/CD"], avatar: "👩‍🔧", available: false, bio: "Cloud infrastructure expert" },
-  { name: "Vikram Singh", role: "Full-Stack Guide", expertise: ["MERN", "GraphQL"], avatar: "👨‍🚀", available: true, bio: "End-to-end product builder" },
-];
-
 const ACHIEVEMENTS = [
   { id: "first-pr", label: "First PR", icon: Star, unlocked: true, color: "text-yellow-500", description: "Submitted your first pull request" },
   { id: "bug-hunter", label: "Bug Hunter", icon: Zap, unlocked: true, color: "text-red-500", description: "Found and fixed 5+ bugs" },
@@ -46,7 +39,7 @@ const ACHIEVEMENTS = [
   { id: "top-contributor", label: "Top Contributor", icon: Trophy, unlocked: false, color: "text-purple-500", description: "Ranked in top 10 contributors" },
 ];
 
-const RESOURCES = [
+const LEARNING_RESOURCES = [
   { title: "Git & GitHub Basics", type: "Tutorial", duration: "15 min", link: "#", difficulty: "beginner" },
   { title: "Writing Good PR Descriptions", type: "Guide", duration: "5 min", link: "#", difficulty: "beginner" },
   { title: "Code Review Checklist", type: "PDF", duration: "2 min", link: "#", difficulty: "intermediate" },
@@ -184,13 +177,13 @@ const HorizontalTimeline = memo(({ timeline, variants }) => {
             </div>
             <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Program Timeline</h3>
           </div>
-          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 ml-[52px]">Track your milestones and upcoming deadlines</p>
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 ml-13">Track your milestones and upcoming deadlines</p>
         </div>
         
         <div className="flex flex-col md:items-end bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-200/60 dark:border-slate-800/80 shadow-inner">
           <div className="flex items-center gap-3 mb-1.5">
             <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Program Progress</span>
-            <span className="text-xs font-black text-white bg-gradient-to-r from-indigo-500 to-violet-600 px-2.5 py-1 rounded-full shadow-md shadow-indigo-500/20">{Math.round(progressPercent)}% Complete</span>
+            <span className="text-xs font-black text-white bg-linear-to-r from-indigo-500 to-violet-600 px-2.5 py-1 rounded-full shadow-md shadow-indigo-500/20">{Math.round(progressPercent)}% Complete</span>
           </div>
           {currentItem && (
             <p className="text-xs text-slate-600 dark:text-slate-400 mt-1.5 font-medium">
@@ -206,13 +199,13 @@ const HorizontalTimeline = memo(({ timeline, variants }) => {
       </div>
       
       <div className="relative w-full py-4 overflow-x-auto hide-scrollbar">
-        <div className="min-w-[700px] flex items-start justify-between relative px-8 md:px-12 pb-8 pt-2">
-          <div className="absolute top-[34px] left-20 right-20 h-2 bg-slate-100 dark:bg-slate-800/80 rounded-full overflow-hidden border border-slate-200/50 dark:border-slate-700/50" aria-hidden="true">
+        <div className="min-w-175 flex items-start justify-between relative px-8 md:px-12 pb-8 pt-2">
+          <div className="absolute top-8.5 left-20 right-20 h-2 bg-slate-100 dark:bg-slate-800/80 rounded-full overflow-hidden border border-slate-200/50 dark:border-slate-700/50" aria-hidden="true">
             <motion.div 
               initial={{ width: 0 }}
               animate={{ width: `${progressPercent}%` }}
               transition={{ duration: 1.5, ease: "easeOut", delay: 0.2 }}
-              className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)]" 
+              className="absolute top-0 left-0 h-full bg-linear-to-r from-blue-500 via-indigo-500 to-violet-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)]" 
             />
           </div>
           
@@ -228,7 +221,7 @@ const HorizontalTimeline = memo(({ timeline, variants }) => {
                   animate={{ scale: 1 }}
                   transition={{ delay: idx * 0.1, type: "spring", stiffness: 200 }}
                   className={`w-14 h-14 rounded-2xl flex items-center justify-center border-4 shadow-xl transition-all duration-300 ${
-                    isCompleted ? 'bg-gradient-to-br from-indigo-500 to-violet-600 border-white dark:border-slate-900 text-white group-hover:scale-110 group-hover:-translate-y-1 shadow-indigo-500/20' : 
+                    isCompleted ? 'bg-linear-to-br from-indigo-500 to-violet-600 border-white dark:border-slate-900 text-white group-hover:scale-110 group-hover:-translate-y-1 shadow-indigo-500/20' : 
                     isCurrent ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 border-indigo-500 shadow-indigo-500/30 scale-110 group-hover:scale-125 group-hover:-translate-y-1' : 
                     'bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border-white dark:border-slate-900 shadow-slate-200/50 dark:shadow-none'
                   } ${isCurrent ? 'rotate-3 group-hover:rotate-6' : '-rotate-3 group-hover:rotate-0'}`}
@@ -471,7 +464,7 @@ const GSSoCContribution = () => {
               <motion.button
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => window.open("https://gssoc.girlscript.tech", "_blank", "noopener,noreferrer")}
+                onClick={() => window.open("https://gssoc.girlscript.org/leaderboard", "_blank", "noopener,noreferrer")}
                 className="w-full mt-3 sm:mt-4 py-2.5 bg-indigo-600 text-white font-semibold rounded-xl flex items-center justify-center gap-2 hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 shadow-sm text-sm"
                 aria-label="View GSSoC leaderboard (opens in new tab)"
               >

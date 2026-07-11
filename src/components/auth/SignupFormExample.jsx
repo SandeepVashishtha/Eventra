@@ -12,8 +12,8 @@ import {
   UserCheck, 
   Info 
 } from "lucide-react";
-import useFormValidation from "../hooks/useFormValidation.enhanced";
-import useValidationState from "../hooks/useValidationState";
+import useFormValidation from "../../hooks/useFormValidation.enhanced";
+import useValidationState from "../../hooks/useValidationState";
 
 // =========================================================================
 // INTERFACE DESIGN CONSTANTS (PREVENTING INLINE REDECLARATIONS)

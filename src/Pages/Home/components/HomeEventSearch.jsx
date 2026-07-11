@@ -6,7 +6,6 @@ import { useTranslation } from "react-i18next";
 
 import ModernSearchInput from "../../../components/common/ModernSearchInput";
 import useDebouncedSearch from "../../../hooks/useDebouncedSearch";
-import { eventService } from "../../../services/eventService";
 import hackathonsData from "../../Hackathons/hackathonMockData.json";
 import projectsData from "../../Projects/mockProjectsData.json";
 
@@ -29,26 +28,10 @@ const getItemPath = (item) => {
   return `/events/${item.id}`;
 };
 
-export default function HomeEventSearch() {
+export default function HomeEventSearch({ eventsData = [] }) {
   const { t } = useTranslation();
-  const [eventsData, setEventsData] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    eventService
-      .getAllEvents()
-      .then((res) => {
-        if (cancelled) return;
-        const raw = Array.isArray(res.data) ? res.data : res.data?.content ?? [];
-        setEventsData(raw);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const searchIndex = useMemo(() => {
     const allSearchItems = [
