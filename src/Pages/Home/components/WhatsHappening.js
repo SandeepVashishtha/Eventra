@@ -6,11 +6,9 @@ import { HomeCardSkeleton } from "../../../components/common/SkeletonLoaders";
 import { CheckCircle2, Hourglass } from "lucide-react";
 
 import useReducedMotion from "../../../hooks/useReducedMotion.js";
-// Fetch events from backend API instead of static mock data
-import { eventService } from "../../../services/eventService";
 import hackathonsData from "../../Hackathons/hackathonMockData.json";
 
-const WhatsHappening = () => {
+const WhatsHappening = ({ eventsData = [], isLoading = true }) => {
   const prefersReducedMotion = useReducedMotion();
   const [ref, inView] = useInView({
     triggerOnce: true,
@@ -20,38 +18,11 @@ const WhatsHappening = () => {
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(1);
   const [isAutoPlaying, setIsAutoPlaying] = useState(!prefersReducedMotion);
-  const [eventsData, setEventsData] = useState([]);
-
   useEffect(() => {
     if (prefersReducedMotion) {
       setIsAutoPlaying(false);
     }
   }, [prefersReducedMotion]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    eventService.getAllEvents().then((res) => {
-      if (cancelled) return;
-      const raw = Array.isArray(res.data) ? res.data : res.data?.content ?? [];
-      // Normalize backend shape (eventDate, capacity) to the shape formatEventsData expects
-      const normalized = raw.map((e) => ({
-        ...e,
-        date: e.date || e.eventDate,
-        startDate: e.startDate || e.eventDate,
-        type: e.type || "conference",
-        status: e.status || "upcoming",
-        attendees: e.attendees ?? e.registeredCount ?? 0,
-        description: e.description || "",
-        location: e.location || "",
-      }));
-      setEventsData(normalized);
-      setIsLoading(false);
-    }).catch(() => {
-      if (!cancelled) setIsLoading(false);
-    });
-    return () => { cancelled = true; };
-  }, []);
 
   const formatEventsData = (events) => {
     const now = new Date();

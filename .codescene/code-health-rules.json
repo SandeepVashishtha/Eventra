@@ -1,0 +1,120 @@
+{
+  "usage": "Persist this file inside your repositories as .codescene/code-health-rules.json",
+  "rule_sets": [
+    {
+      "matching_content_path": "**/*",
+      "rules": [
+        {
+          "name": "Cyclomatic Complexity",
+          "weight": 1.0,
+          "options": {
+            "threshold": 20
+          }
+        },
+        {
+          "name": "Cognitive Complexity",
+          "weight": 1.0,
+          "options": {
+            "threshold": 25
+          }
+        },
+        {
+          "name": "Function Length",
+          "weight": 1.0,
+          "options": {
+            "threshold": 80
+          }
+        },
+        {
+          "name": "Nesting Depth",
+          "weight": 1.0,
+          "options": {
+            "threshold": 4
+          }
+        },
+        {
+          "name": "Parameter Count",
+          "weight": 1.0,
+          "options": {
+            "threshold": 5
+          }
+        }
+      ]
+    },
+    {
+      "matching_content_path": "**/*.test.js",
+      "rules": [
+        {
+          "name": "Cyclomatic Complexity",
+          "weight": 0.0
+        },
+        {
+          "name": "Cognitive Complexity",
+          "weight": 0.0
+        },
+        {
+          "name": "Function Length",
+          "weight": 0.0
+        },
+        {
+          "name": "Nesting Depth",
+          "weight": 0.0
+        },
+        {
+          "name": "Parameter Count",
+          "weight": 0.0
+        }
+      ]
+    },
+    {
+      "matching_content_path": "**/*.spec.js",
+      "rules": [
+        {
+          "name": "Cyclomatic Complexity",
+          "weight": 0.0
+        },
+        {
+          "name": "Cognitive Complexity",
+          "weight": 0.0
+        },
+        {
+          "name": "Function Length",
+          "weight": 0.0
+        },
+        {
+          "name": "Nesting Depth",
+          "weight": 0.0
+        },
+        {
+          "name": "Parameter Count",
+          "weight": 0.0
+        }
+      ]
+    },
+    {
+      "matching_content_path": "tests/**",
+      "rules": [
+        {
+          "name": "Cyclomatic Complexity",
+          "weight": 0.0
+        },
+        {
+          "name": "Cognitive Complexity",
+          "weight": 0.0
+        },
+        {
+          "name": "Function Length",
+          "weight": 0.0
+        },
+        {
+          "name": "Nesting Depth",
+          "weight": 0.0
+        },
+        {
+          "name": "Parameter Count",
+          "weight": 0.0
+        }
+      ]
+    }
+  ]
+}

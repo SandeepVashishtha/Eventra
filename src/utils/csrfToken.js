@@ -158,7 +158,7 @@ export function rotateCSRFToken(newToken) {
     // Update cookies
     setCookie(CSRF_COOKIE_NAME, newToken, {
       path: "/",
-      secure: true,
+      secure: typeof location !== "undefined" && location.protocol === "https:",
     });
   }
 }

@@ -226,12 +226,8 @@ const ContributorsInner = () => {
   useEffect(() => {
     fetchContributors();
   }, [fetchContributors]);
-useEffect(() => {
-  const saved =
-    JSON.parse(localStorage.getItem("contributorSearchHistory")) || [];
 
-  setRecentSearches(saved);
-}, []);
+
   // Filter contributors based on search term
   const filteredContributors = contributors.filter(
     (c) =>

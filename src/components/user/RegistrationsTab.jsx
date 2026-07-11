@@ -9,7 +9,6 @@ import { DashboardTableSkeleton } from "../common/SkeletonLoaders";
 import { getSmartDateLabel } from "../../utils/relativeTime";
 import { downloadBulkICSFile } from "../../utils/calendarExporter";
 import CertificateDownload from "../CertificateDownload";
-import { useRegistrationFilters, TYPE_OPTIONS, STATUS_OPTIONS } from "../../hooks/useRegistrationFilters";
 
 // Icon mapping (extracted to reduce complexity)
 const TYPE_ICON = {
