@@ -9,7 +9,7 @@ import { DashboardTableSkeleton } from "../common/SkeletonLoaders";
 import { getSmartDateLabel } from "../../utils/relativeTime";
 import { downloadBulkICSFile } from "../../utils/calendarExporter";
 import CertificateDownload from "../CertificateDownload";
-import { useRegistrationFilters, TYPE_OPTIONS, STATUS_OPTIONS } from "../../hooks/useRegistrationFilters";
+import { useRegistrationFilters, TYPE_OPTIONS, STATUS_OPTIONS, TICKET_TYPE_OPTIONS, SORT_OPTIONS } from "../../hooks/useRegistrationFilters";
 
 // Icon mapping (extracted to reduce complexity)
 const TYPE_ICON = {
@@ -98,6 +98,10 @@ const RegistrationsTab = ({
   toggleStatus,
   activeFilterCount,
   clearAll,
+  ticketType,
+  setTicketType,
+  sortBy,
+  setSortBy,
   setSelectedTicketEvent,
   hasRegistrations = false,
   totalRegistrations = 0,
@@ -168,6 +172,22 @@ const RegistrationsTab = ({
         value={statusDisplayValue}
         options={STATUS_OPTIONS}
         onChange={handleStatusChange}
+      />
+
+      <StyledDropdown
+        label=""
+        placeholder="Ticket Type"
+        value={ticketType}
+        options={TICKET_TYPE_OPTIONS}
+        onChange={setTicketType}
+      />
+
+      <StyledDropdown
+        label=""
+        placeholder="Sort By"
+        value={sortBy}
+        options={SORT_OPTIONS}
+        onChange={setSortBy}
       />
 
       {activeFilterCount > 0 && (

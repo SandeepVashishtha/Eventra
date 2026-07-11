@@ -579,6 +579,10 @@ export default function UserDashboard() {
                   toggleStatus={dashboardFilters.toggleStatus}
                   activeFilterCount={dashboardFilters.activeFilterCount}
                   clearAll={dashboardFilters.clearAll}
+                  ticketType={dashboardFilters.ticketType}
+                  setTicketType={dashboardFilters.setTicketType}
+                  sortBy={dashboardFilters.sortBy}
+                  setSortBy={dashboardFilters.setSortBy}
                   setSelectedTicketEvent={setSelectedTicketEvent}
                 />
               </ErrorBoundary>
