@@ -176,7 +176,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
         try {
           const saved = localStorage.getItem(CACHE_KEY);
           cache = saved ? safeJsonParse(saved, {}) : {};
-        } catch (e) {
+        } catch {
           cache = {};
         }
 
