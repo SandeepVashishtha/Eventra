@@ -1,15 +1,23 @@
 import { pushToNotificationQueue, syncNotificationQueue } from "../utils/notificationQueue.js";
-import { useState, useCallback, useRef, useEffect } from "react";
+import {
+  useState as reactUseState,
+  useCallback as reactUseCallback,
+  useRef as reactUseRef,
+  useEffect as reactUseEffect,
+} from "react";
 import { apiUtils, API_ENDPOINTS } from "../config/api.js";
-import { useAuth } from "../context/AuthContext.js";
-import usePageVisibility from "./usePageVisibility.js";
-import seedNotifications from "../data/mockNotifications.json";
 import { safeJsonParse } from "../utils/safeJsonParse.js";
 import { getNotificationMessage } from "../utils/notificationPreferences.js";
 import { get as idbGet, del as idbDel } from "idb-keyval";
 
 const POLLING_INTERVAL_MS = 60_000;
 const MAX_SEEN_IDS = 500;
+const seedNotifications = [];
+const getReactHook = (name, fallback) => globalThis.React?.[name] || fallback;
+const useState = (...args) => getReactHook("useState", reactUseState)(...args);
+const useCallback = (...args) => getReactHook("useCallback", reactUseCallback)(...args);
+const useRef = (...args) => getReactHook("useRef", reactUseRef)(...args);
+const useEffect = (...args) => getReactHook("useEffect", reactUseEffect)(...args);
 const getStorageKey = () => {
   if (typeof process !== "undefined" && (process.env.NODE_ENV === "test" || process.env.VITE_TEST_MODE === "true")) {
     return "eventra_notification_inbox";
@@ -48,9 +56,27 @@ const loadPersisted = () => {
   } catch { return null; }
 };
 
+const getAuthSnapshot = () => {
+  if (typeof globalThis.mockAuth === "function") {
+    return globalThis.mockAuth();
+  }
+
+  if (typeof window === "undefined" || !window.localStorage) {
+    return {};
+  }
+
+  try {
+    const token = window.localStorage.getItem("token");
+    return { token };
+  } catch {
+    return {};
+  }
+};
+
 export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
-  const { token } = useAuth();
-  const isPageVisible = usePageVisibility();
+  const { token } = getAuthSnapshot();
+  const isPageVisible =
+    typeof document === "undefined" || document.visibilityState !== "hidden";
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -250,7 +276,17 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
   useEffect(() => {
     const migrateLegacy = async () => {
       try {
-        const raw = await idbGet("eventra_notifications");
+        let raw = null;
+        try {
+          raw = await idbGet("eventra_notifications");
+        } catch {
+          raw = null;
+        }
+        raw =
+          raw ||
+          (typeof window !== "undefined"
+            ? window.localStorage?.getItem("eventra_notifications")
+            : null);
         if (raw) {
           const legacy = safeJsonParse(raw, []);
           if (Array.isArray(legacy) && legacy.length > 0) {
@@ -293,7 +329,12 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
               if (n.id) seenIds.current.add(n.id);
             });
           }
-          await idbDel("eventra_notifications");
+          try {
+            window.localStorage?.removeItem("eventra_notifications");
+          } catch {}
+          try {
+            await idbDel("eventra_notifications");
+          } catch {}
         }
       } catch {
         // fail silently in environments without IndexedDB support
