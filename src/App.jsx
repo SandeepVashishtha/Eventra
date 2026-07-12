@@ -49,7 +49,7 @@ const FeedbackButton = lazy(() => import("./components/FeedbackButton"));
 const BackToTop = lazy(() => import("./components/common/BackToTop"));
 const ReminderChecker = lazy(() => import("./components/reminders/ReminderChecker"));
 const SessionRecovery = lazy(() => import("./components/SessionRecovery"));
-const MatchmakingHub = lazy(() => import("./Pages/Networking/MatchmakingHub"));
+// const MatchmakingHub = lazy(() => import("./Pages/Networking/MatchmakingHub"));
 const ThemeCustomizer = lazy(() => import("./components/Layout/ThemeCustomizer"));
 
 const OfflineSyncManager = () => {
