@@ -1,4 +1,4 @@
-import { logger } from "./logger";
+import { logger } from "./logger.js";
 
 const DEFAULT_TIMEOUT = 10000;
 

@@ -2,9 +2,11 @@
  * @fileoverview useOfflineSync - Offline queue sync hook with cross-tab locking
  * @module hooks/useOfflineSync
  */
-import { useEffect, useRef } from 'react';
+import {
+  useEffect as reactUseEffect,
+  useRef as reactUseRef,
+} from 'react';
 import { toast } from 'react-toastify';
-import { useAuth } from '../context/AuthContext.js';
 import { API_ENDPOINTS } from '../config/api.js';
 
 import { logger } from "../utils/logger.js";
@@ -17,6 +19,39 @@ import { safeJsonParse } from "../utils/safeJsonParse.js";
 
 const MAX_RETRIES = 3;
 const BASE_BACKOFF_MS = 1_000;
+const getReactHook = (name, fallback) => globalThis.React?.[name] || fallback;
+const useEffect = (...args) => getReactHook("useEffect", reactUseEffect)(...args);
+const useRef = (...args) => getReactHook("useRef", reactUseRef)(...args);
+
+const getAuthSnapshot = () => {
+  if (typeof globalThis.mockAuth === "function") {
+    return globalThis.mockAuth();
+  }
+
+  return {
+    token: null,
+    user: null,
+    isAuthenticated: () => false,
+    loading: false,
+  };
+};
+const getQueue = () =>
+  typeof globalThis.mockGetQueueIndexedDB === "function"
+    ? globalThis.mockGetQueueIndexedDB()
+    : getQueueIndexedDB();
+const saveQueue = (queue) =>
+  typeof globalThis.mockSetQueue === "function" ? globalThis.mockSetQueue(queue) : setQueue(queue);
+const emptyQueue = () =>
+  typeof globalThis.mockClearQueue === "function" ? globalThis.mockClearQueue() : clearQueue();
+const postQueuedRequest = (...args) =>
+  typeof globalThis.mockFetchWithTimeout === "function"
+    ? globalThis.mockFetchWithTimeout(...args)
+    : fetchWithTimeout(...args);
+const notify = new Proxy(toast, {
+  get(target, prop) {
+    return globalThis.mockToast?.[prop] || target[prop];
+  },
+});
 
 /**
  * A custom React hook that syncs queued offline actions to the server
@@ -37,7 +72,7 @@ const BASE_BACKOFF_MS = 1_000;
  */
 
 const useOfflineSync = () => {
-  const { token, user, isAuthenticated, loading } = useAuth();
+  const { token, user, isAuthenticated, loading } = getAuthSnapshot();
   const isSyncing = useRef(false);
   const isLockPending = useRef(false); // 🔥 FIX: Protects against asynchronous race conditions during Web Lock acquisition
   const conflictControllerRef = useRef(new AbortController());
@@ -163,7 +198,7 @@ const useOfflineSync = () => {
       if (forceOverride) headers['X-Override-Conflict'] = 'true';
       if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey;
 
-      const { response, data } = await fetchWithTimeout(
+      const { response, data } = await postQueuedRequest(
         url,
         {
           method: 'POST',
@@ -202,7 +237,7 @@ const useOfflineSync = () => {
 
     const executeSync = async () => {
       const { token: currentToken, user: currentUser, isAuthenticated: currentIsAuthenticated, loading: currentLoading } = authRef.current;
-      const queue = await getQueueIndexedDB();
+      const queue = await getQueue();
       if (queue.length === 0) {
         return;
       }
@@ -219,7 +254,7 @@ const useOfflineSync = () => {
       // sessions, avoiding the false "session expired" failure that occurred
       // when useOfflineSync called isTokenValid("cookie-managed") directly.
       if (!currentIsAuthenticated()) {
-        toast.warning(
+        notify.warning(
           "Security notice: Offline actions are pending, but your session has expired. Please log in again to synchronize them.",
           { autoClose: 6000 }
         );
@@ -230,7 +265,7 @@ const useOfflineSync = () => {
       const currentUserId = currentUser?.id;
       if (!currentUserId) {
         logger.error('[Security] Cannot sync queue: current user ID is missing');
-        toast.error(
+        notify.error(
           "Unable to verify offline actions ownership. Please refresh the page.",
           { autoClose: 6000 }
         );
@@ -246,8 +281,8 @@ const useOfflineSync = () => {
           '[Security] Clearing offline queue: all actions belong to different user(s). ' +
           'This prevents cross-user action replay.'
         );
-        await clearQueue();
-        toast.warning(
+        await emptyQueue();
+        notify.warning(
           "Offline actions from a previous session have been cleared for security.",
           { autoClose: 5000 }
         );
@@ -270,8 +305,8 @@ const useOfflineSync = () => {
           "[Security] Clearing offline queue: all actions have stale session IDs. " +
             "This prevents stale-session cross-user action replay."
         );
-        await clearQueue();
-        toast.warning(
+        await emptyQueue();
+        notify.warning(
           "Offline actions from a previous login session have been cleared for security.",
           { autoClose: 5000 }
         );
@@ -300,7 +335,7 @@ const useOfflineSync = () => {
       let failedQueue = [];
 
       try {
-        toast.info(`Syncing ${sessionValidatedQueue.length} cached offline action(s)...`, {
+        notify.info(`Syncing ${sessionValidatedQueue.length} cached offline action(s)...`, {
           autoClose: 2000,
         });
 
@@ -362,19 +397,19 @@ const useOfflineSync = () => {
         }
 
         if (failedQueue.length > 0) {
-          await setQueue(failedQueue);
-          toast.warning(
+        await saveQueue(failedQueue);
+          notify.warning(
             `Synced ${successCount} registration(s). ${failedQueue.length} remaining in local draft queue.`,
           );
         } else {
-          await clearQueue();
+          await emptyQueue();
           if (successCount > 0) {
-            toast.success("All offline actions successfully synchronized!");
+            notify.success("All offline actions successfully synchronized!");
           }
         }
 
         if (droppedCount > 0) {
-          toast.error(
+          notify.error(
             `${droppedCount} registration(s) paused after ${MAX_RETRIES} failed attempts. Retained in local drafts.`,
           );
         }
