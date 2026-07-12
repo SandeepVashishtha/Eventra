@@ -167,9 +167,9 @@ class SseMultiplexer {
     checkLeader();
   }
 
-  claimLocalStorageLeadership() {
-    this.isLeader = true;
-    logger.log(`[SSE Multiplexer] Tab ${this.tabId} claimed leadership via LocalStorage.`);
+  claimLocalStorageLeadership(confirmDelayMs = 25) {
+    const token = `${this.tabId}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    this.localStorageLeadershipToken = token;
 
     // Write an immediate heartbeat so other tabs see the new leader without
     // waiting up to HEARTBEAT_INTERVAL (3 s) for the first interval tick.
@@ -177,7 +177,7 @@ class SseMultiplexer {
       try {
         localStorage.setItem(
           HEARTBEAT_KEY,
-          JSON.stringify({ tabId: this.tabId, timestamp: Date.now() })
+          JSON.stringify({ tabId: this.tabId, token, timestamp: Date.now() })
         );
       } catch {
         // localStorage unavailable — non-fatal, leadership still held in memory
@@ -187,7 +187,29 @@ class SseMultiplexer {
 
     // Leadership may have been revoked inside writeHeartbeat if a competing
     // leader was detected. Guard before starting any leader-only infrastructure.
-    if (!this.isLeader) return;
+    if (this.localStorageClaimTimeout) {
+      clearTimeout(this.localStorageClaimTimeout);
+    }
+
+    this.localStorageClaimTimeout = setTimeout(() => {
+      this.localStorageClaimTimeout = null;
+
+      try {
+        const heartbeat = JSON.parse(localStorage.getItem(HEARTBEAT_KEY) || "null");
+        if (!heartbeat || heartbeat.tabId !== this.tabId || heartbeat.token !== token) {
+          if (this.localStorageLeadershipToken === token) {
+            this.localStorageLeadershipToken = null;
+          }
+          this.isLeader = false;
+          return;
+        }
+      } catch {
+        this.isLeader = false;
+        return;
+      }
+
+      this.isLeader = true;
+      logger.log(`[SSE Multiplexer] Tab ${this.tabId} claimed leadership via LocalStorage.`);
 
     // Heartbeat loop — keep the entry fresh while leadership is held
     if (this.heartbeatInterval) {
@@ -197,7 +219,8 @@ class SseMultiplexer {
 
     this.startHeartbeatChecks();
     this.queryGlobalSubscribers();
-    this.reconcileConnections();
+      this.reconcileConnections();
+    }, confirmDelayMs);
   }
 
   // --- 2. Subscription Management ---
