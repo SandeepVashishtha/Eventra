@@ -4,7 +4,7 @@ const AUTH_TOAST_ID = "auth-feedback";
 let _toast = null;
 const getToast = () => {
   if (!_toast) {
-    // eslint-disable-next-line global-require
+     
     const mod = require("react-toastify");
     _toast = mod.toast;
   }
