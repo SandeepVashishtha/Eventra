@@ -403,7 +403,7 @@ const EventRegistration = () => {
       if (isAlreadyRegistered) {
         toast.success(isFreshlyFull ? t("eventRegistration.toastWaitlistSuccess") : t("eventRegistration.toastRegistrationSuccess"));
         const existingRegId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `reg-existing-${Date.now()}`;
-        addRegistration(event, {}, existingRegId, "");
+        addRegistration(event, formData);
         clearSession();
         toast.info(failureMessage);
         return { success: true, error: null, waitlistPosition: -1 };
