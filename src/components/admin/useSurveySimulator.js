@@ -56,6 +56,10 @@ export function useSurveySimulator(questions, feedbackPool) {
 
     setSimulatedData(initialData);
     setTextFeed(textComments);
+    // Reset counters in sync with data so the submission count
+    // never contradicts the chart distributions after a question change.
+    setTotalSubmissions(142);
+    setCompletionRate(87.3);
     // Use the content hashes as the true dependencies
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [questionsHash, feedbackHash]);
