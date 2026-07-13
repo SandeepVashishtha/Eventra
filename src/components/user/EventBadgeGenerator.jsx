@@ -99,7 +99,10 @@ export default function EventBadgeGenerator({ onClose, userStats = {} }) {
       const a = document.createElement("a");
       a.href = url;
       a.download = `eventra-badge-${attendeeName.toLowerCase().replace(/\s+/g, "-")}.png`;
+      // Anchor must be in the DOM before .click() for Firefox to trigger the download
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
       toast.success("PNG Badge exported successfully.");
     } catch (err) {
       console.error(err);
