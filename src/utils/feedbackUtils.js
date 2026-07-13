@@ -4,9 +4,9 @@
  * Handles localStorage-based feedback management for events
  */
 
-import { safeJsonParse } from './safeJsonParse';
-import { sanitizeHtml } from './sanitizeHtml';
-import { API_ENDPOINTS, apiUtils } from '../config/api';
+import { safeJsonParse } from "./safeJsonParse.js";
+import { sanitizeHtml } from "./sanitizeHtml.js";
+import { API_ENDPOINTS, apiUtils } from "../config/api.js";
 
 const FEEDBACK_STORAGE_KEY = 'eventra_feedback';
 
