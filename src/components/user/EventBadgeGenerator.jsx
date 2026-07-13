@@ -394,10 +394,16 @@ export default function EventBadgeGenerator({ onClose, userStats = {} }) {
                 <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider block mt-1">Verified Member</span>
               </div>
               <div className="p-1 bg-white rounded-md shrink-0">
-                <QRCode 
-                  value={`https://eventra.dev/verify/attendee/${attendeeName.toLowerCase().replace(/\s+/g, "-")}`}
-                  size={36} 
-                  level="M" 
+                <QRCode
+                  value={
+                    attendeeName.trim()
+                      ? `https://eventra.dev/verify/attendee/${encodeURIComponent(
+                        attendeeName.trim().toLowerCase().replace(/\s+/g, "-")
+                      )}`
+                      : "https://eventra.dev/verify"
+                  }
+                  size={36}
+                  level="M"
                   bgColor="#ffffff"
                   fgColor="#020617"
                 />
