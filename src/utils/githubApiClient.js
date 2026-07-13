@@ -1,5 +1,5 @@
-import { fetchWithTimeout, FetchError } from "./fetchWithTimeout";
-import { logError } from "./errorLogger";
+import { fetchWithTimeout, FetchError } from "./fetchWithTimeout.js";
+import { logError } from "./errorLogger.js";
 
 const GITHUB_HOST = "github.com";
 
