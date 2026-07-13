@@ -10,6 +10,7 @@
 const usedNonces = new Map();
 
 const MAX_REQUEST_AGE_MS = 5 * 60 * 1000;
+let lastCleanup = Date.now();
 
 // Resolve a crypto-like object available in the current environment.
 const getCrypto = () => {
@@ -55,6 +56,15 @@ export async function validateSignature(
 ) {
   const now = Date.now();
 
+  if (now - lastCleanup > 60000) {
+    lastCleanup = now;
+    for (const [n, ts] of usedNonces) {
+      if (now - ts > MAX_REQUEST_AGE_MS) {
+        usedNonces.delete(n);
+      }
+    }
+  }
+
   if (!timestamp || !nonce || !signature) {
     return {
       valid: false,
@@ -97,16 +107,5 @@ export async function validateSignature(
   };
 }
 
-const cleanupInterval = setInterval(() => {
-  const now = Date.now();
-
-  for (const [nonce, timestamp] of usedNonces) {
-    if (now - timestamp > MAX_REQUEST_AGE_MS) {
-      usedNonces.delete(nonce);
-    }
-  }
-}, 60000);
-
-if (cleanupInterval && typeof cleanupInterval.unref === "function") {
-  cleanupInterval.unref();
-}
+// Cleanup of expired nonces is now handled lazily within validateSignature()
+// instead of a module-scoped setInterval to prevent memory leaks in the browser.
