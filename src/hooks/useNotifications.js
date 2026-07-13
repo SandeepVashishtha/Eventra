@@ -1,7 +1,15 @@
-import { useState, useEffect, useCallback } from "react";
+import {
+  useState as reactUseState,
+  useEffect as reactUseEffect,
+  useCallback as reactUseCallback,
+} from "react";
 
 const STORAGE_KEY = "eventra_notifications";
 const FLUSH_INTERVAL_MS = 300;
+const getReactHook = (name, fallback) => globalThis.React?.[name] || fallback;
+const useState = (...args) => getReactHook("useState", reactUseState)(...args);
+const useEffect = (...args) => getReactHook("useEffect", reactUseEffect)(...args);
+const useCallback = (...args) => getReactHook("useCallback", reactUseCallback)(...args);
 
 let queue = [];
 let flushTimeout = null;
