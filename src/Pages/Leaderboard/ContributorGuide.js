@@ -179,7 +179,7 @@ const ContributorGuide = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration }}
-          className="relative overflow-hidden rounded-3xl bg-linear-to-br from-violet-600 via-indigo-600 to-blue-600 p-[1px]"
+          className="relative overflow-hidden rounded-3xl bg-linear-to-br from-violet-600 via-indigo-600 to-blue-600 p-px"
         >
           <div className="relative bg-zinc-950 rounded-3xl p-6 md:p-10 overflow-hidden">
             {/* Decorative glow */}
@@ -521,7 +521,7 @@ Closes #<issue_number>`}
                         transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
                         className="overflow-hidden"
                       >
-                        <div className="px-5 pb-5 pl-[72px] text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                        <div className="px-5 pb-5 pl-18 text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
                           {faq.answer}
                         </div>
                       </motion.div>

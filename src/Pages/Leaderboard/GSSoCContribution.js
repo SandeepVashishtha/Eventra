@@ -1,5 +1,7 @@
 import { useState, useMemo, useEffect, useCallback, memo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+// NEW
+import { ArrowRight } from "lucide-react";
 import useReducedMotion from "../../hooks/useReducedMotion.js";
 import {
   Lightbulb,
@@ -511,6 +513,29 @@ const GSSoCContribution = () => {
               </motion.article>
             ))}
           </div>
+          {/* NEW: Contributors Guide CTA */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.4 }}
+            className="mt-8 flex justify-center"
+          >
+            <a
+              href="/contributorguide" 
+              className="group inline-flex items-center gap-3 px-8 py-4 rounded-2xl
+                        bg-linear-to-r from-indigo-600 to-violet-600
+                        hover:from-indigo-700 hover:to-violet-700
+                        text-white font-semibold shadow-lg
+                        transition-all duration-300 hover:scale-[1.02] hover:shadow-xl"
+            >
+              <BookOpen className="w-5 h-5 transition-transform duration-300 group-hover:rotate-6" />
+
+              <span>Read Complete Contributors' Guide</span>
+
+              <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
+            </a>
+          </motion.div>
         </motion.section>
       </motion.section>
       
