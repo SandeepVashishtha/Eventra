@@ -16,6 +16,7 @@ import {
   ThumbsDown,
 } from "lucide-react";
 import FAQCTA from "./FaqCTA";
+import "./faq.css";
 import SEOHead from "../../components/SEOHead";
 import { useTranslation } from "react-i18next";
 import { logger } from "../../utils/logger";
@@ -25,12 +26,14 @@ const NAVBAR_HEIGHT = 65;
 
 export default function FAQSection() {
   const { t } = useTranslation();
+  const pageUrl =
+    typeof window !== "undefined" && window.location ? window.location.href : "";
   return (
     <>
       <SEOHead
         title={t("faq.pageTitle")}
         description={t("faq.pageDescription")}
-        url={window.location.href}
+        url={pageUrl}
       />
       <FAQSectionInner />
     </>
