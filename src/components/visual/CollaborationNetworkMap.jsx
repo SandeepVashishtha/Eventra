@@ -307,8 +307,7 @@ export default function CollaborationNetworkMap() {
     return { 
       left: `${xPercent}%`, 
       top: `${yPercent + yOffset}%`, 
-      x: xTransform,
-      y: yTransform
+      transform: `translate(${xTransform}, ${yTransform})`,
     };
   }, []);
 
@@ -335,7 +334,7 @@ export default function CollaborationNetworkMap() {
     [pinnedHub]
   );
 
-  const handleHubLeave = useCallback((hub) => {
+  const handleHubLeave = useCallback(() => {
     if (!pinnedHub) {
       hoverTimeoutRef.current = setTimeout(() => {
         setActiveHub(null);
@@ -583,7 +582,7 @@ export default function CollaborationNetworkMap() {
                     key={hub.id}
                     className={`cnm-node-group ${isActive ? "active" : ""} ${isPinned ? "pinned" : ""}`}
                     onMouseEnter={() => handleHubHover(hub)}
-                    onMouseLeave={() => !pinnedHub && setActiveHub(null)}
+                    onMouseLeave={handleHubLeave}
                     onClick={() => handleHubClick(hub)}
                     role="button"
                     aria-label={`${hub.name}, ${hub.devs} developers, ${hub.activity} activity`}
@@ -650,11 +649,12 @@ export default function CollaborationNetworkMap() {
             <AnimatePresence>
               {(activeHub || pinnedHub) && (
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.92, y: 1 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.92, y: 8 }}
+                  initial={{ opacity: 0, scale: 0.92 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.92 }}
                   transition={{ duration: 0.18, ease: "easeOut" }}
-                  className={`absolute left-4 top-4 z-50 w-72 rounded-2xl border border-border bg-card-bg/95 p-5 shadow-premium-lg backdrop-blur-xl transition-colors duration-300 ${pinnedHub ? "pinned" : ""}`}
+                  style={getTooltipPosition(activeHub || pinnedHub)}
+                  className={`absolute z-50 w-72 rounded-2xl border border-border bg-card-bg/95 p-5 shadow-premium-lg backdrop-blur-xl transition-colors duration-300 ${pinnedHub ? "pinned" : ""}`}
                 >
                   {pinnedHub && (
                     <button
