@@ -20,6 +20,7 @@ import {
   Target,
   Bell,
   WifiOff,
+  Search,
 } from "lucide-react";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import useDebounce from "../../hooks/useDebounce.js";
@@ -298,8 +299,7 @@ const GSSoCContribution = () => {
   const { toasts, addToast, removeToast } = useToast();
   
   const [searchQuery, setSearchQuery] = useState(() => localStorage.getItem("gssoc.search") || "");
-  // eslint-disable-next-line no-unused-vars
-  const _debouncedSearchQuery = useDebounce(searchQuery, 300);
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [selectedDifficulty, setSelectedDifficulty] = useState(() => localStorage.getItem("gssoc.difficulty") || "all");
   
   const [userStats] = useState(() => {
@@ -359,6 +359,23 @@ const GSSoCContribution = () => {
       transition: { duration: prefersReducedMotion ? 0 : 0.4, ease: [0.22, 1, 0.36, 1] } 
     }
   }), [prefersReducedMotion]);
+
+  const filteredLearningResources = useMemo(() => {
+    const query = debouncedSearchQuery.trim().toLowerCase();
+
+    return LEARNING_RESOURCES.filter((resource) => {
+      const matchesDifficulty =
+        selectedDifficulty === "all" || resource.difficulty === selectedDifficulty;
+      const matchesSearch =
+        !query ||
+        [resource.title, resource.type, resource.difficulty]
+          .join(" ")
+          .toLowerCase()
+          .includes(query);
+
+      return matchesDifficulty && matchesSearch;
+    });
+  }, [debouncedSearchQuery, selectedDifficulty]);
   
   if (isLoading) {
     return (
@@ -478,6 +495,98 @@ const GSSoCContribution = () => {
         </motion.section>
 
         {/* 📋 TIMELINE */}
+        <motion.section
+          variants={itemVariants}
+          className="mb-6 rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800"
+          aria-labelledby="resources-heading"
+        >
+          <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <h2 id="resources-heading" className="text-xl font-bold text-gray-900 dark:text-white">
+                Learning Resources
+              </h2>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Search guides by title, type, or difficulty.
+              </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-[minmax(220px,1fr)_180px]">
+              <label className="relative block">
+                <span className="sr-only">Search resources</span>
+                <Search
+                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+                  aria-hidden="true"
+                />
+                <input
+                  ref={searchInputRef}
+                  type="search"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Search resources"
+                  className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-9 pr-3 text-sm text-gray-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                />
+              </label>
+
+              <label className="block">
+                <span className="sr-only">Filter by difficulty</span>
+                <select
+                  value={selectedDifficulty}
+                  onChange={(event) => setSelectedDifficulty(event.target.value)}
+                  className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                >
+                  <option value="all">All difficulties</option>
+                  <option value="beginner">Beginner</option>
+                  <option value="intermediate">Intermediate</option>
+                  <option value="advanced">Advanced</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2">
+            {filteredLearningResources.map((resource) => (
+              <a
+                key={resource.title}
+                href={resource.link}
+                className="rounded-2xl border border-gray-100 bg-gray-50 p-4 transition hover:border-indigo-200 hover:bg-indigo-50/50 dark:border-gray-700 dark:bg-gray-900/40 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/20"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="font-semibold text-gray-900 dark:text-white">{resource.title}</h3>
+                  <span className="rounded-full bg-indigo-100 px-2.5 py-1 text-xs font-semibold capitalize text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">
+                    {resource.difficulty}
+                  </span>
+                </div>
+                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                  {resource.type} - {resource.duration}
+                </p>
+              </a>
+            ))}
+          </div>
+
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {ACHIEVEMENTS.map(({ id, label, icon: Icon, unlocked, color, description }) => (
+              <div
+                key={id}
+                className={`rounded-2xl border p-4 ${
+                  unlocked
+                    ? "border-indigo-100 bg-indigo-50/60 dark:border-indigo-900 dark:bg-indigo-950/20"
+                    : "border-gray-100 bg-gray-50 opacity-70 dark:border-gray-700 dark:bg-gray-900/40"
+                }`}
+              >
+                <Icon className={`mb-3 h-5 w-5 ${color}`} aria-hidden="true" />
+                <h3 className="font-semibold text-gray-900 dark:text-white">{label}</h3>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{description}</p>
+              </div>
+            ))}
+          </div>
+
+          {filteredLearningResources.length === 0 && (
+            <div className="rounded-2xl border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+              No resources match the current filters.
+            </div>
+          )}
+        </motion.section>
+
         <HorizontalTimeline timeline={GSSOC_TIMELINE} variants={itemVariants} />
 
         {/* 📋 GUIDELINES */}
@@ -531,7 +640,7 @@ const GSSoCContribution = () => {
             >
               <BookOpen className="w-5 h-5 transition-transform duration-300 group-hover:rotate-6" />
 
-              <span>Read Complete Contributors' Guide</span>
+              <span>Read Complete Contributors&apos; Guide</span>
 
               <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
             </a>
