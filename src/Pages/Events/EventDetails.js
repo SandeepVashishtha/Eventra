@@ -268,7 +268,14 @@ ${window.location.href}
     s: () => setShowShareModal(true),
     p: handlePrint,
   });
-  if (fetchLoading) return <EventDetailSkeleton />;
+  if (fetchLoading) return (
+    <div className="relative">
+      <EventDetailSkeleton />
+      <div className="fixed inset-0 flex items-center justify-center bg-white/50 dark:bg-slate-950/50 z-50">
+        <div className="h-10 w-10 rounded-full border-4 border-indigo-600 border-t-transparent animate-spin" role="status" aria-label="Loading event details" />
+      </div>
+    </div>
+  );
 
   if (fetchError || !event) {
     return (
