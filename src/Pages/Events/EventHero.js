@@ -26,7 +26,7 @@ const TRENDING_SEARCHES = [
   "Web Development",
 ];
 
-const StatCounter = ({ stat, shouldAnimate }) => {
+const StatCounter = ({ stat, shouldAnimate, delay = 0 }) => {
   const prefix = stat.prefix || "";
   const suffix = stat.suffix || "";
 
@@ -46,6 +46,7 @@ const StatCounter = ({ stat, shouldAnimate }) => {
       prefix={prefix}
       suffix={suffix}
       startOnMount
+      delay={delay}
     />
   );
 };
@@ -349,7 +350,11 @@ function EventHero({
                   <stat.icon className={`h-5 w-5 sm:h-6 sm:w-6 ${darkTheme.textSecondary}`} />
                 </div>
                 <p className={`text-xl sm:text-2xl md:text-3xl font-bold tracking-tight ${darkTheme.textPrimary}`}>
-                  <StatCounter stat={stat} shouldAnimate={hasMounted && isStatsInView} />
+                  <StatCounter 
+                    stat={stat} 
+                    shouldAnimate={hasMounted && isStatsInView} 
+                    delay={prefersReducedMotion ? 0 : i * 0.1}
+                  />
                 </p>
                 <p className={`mt-1 text-xs sm:text-sm font-medium ${darkTheme.textSecondary}`}>
                   {stat.label}
