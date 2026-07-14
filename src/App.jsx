@@ -52,6 +52,20 @@ const SessionRecovery = lazy(() => import("./components/SessionRecovery"));
 const MatchmakingHub = lazy(() => import("./Pages/Networking/MatchmakingHub"));
 const ThemeCustomizer = lazy(() => import("./components/Layout/ThemeCustomizer"));
 
+function ErrorButton() {
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        throw new Error("This is your first error!");
+      }}
+      className="fixed bottom-4 left-4 z-50 rounded bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-lg"
+    >
+      Test Error
+    </button>
+  );
+}
+
 const OfflineSyncManager = () => {
   useOfflineSync();
   return null;
@@ -275,6 +289,7 @@ function App() {
                 <Suspense fallback={null}>
                   <SessionRecovery />
                 </Suspense>
+                {import.meta.env.DEV && <ErrorButton />}
 
                 {isDesktop && (
                   <ErrorBoundary level="section" label="Custom Cursor" silent>
