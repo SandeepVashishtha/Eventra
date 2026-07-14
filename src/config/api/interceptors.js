@@ -59,8 +59,15 @@ export const createResponseInterceptor = (API) => {
   const reject = async (error) => {
     const config = error.config || {};
     const status = error?.response?.status;
+    const errorCode = error?.response?.data?.code;
 
-    if (status === 401 && onUnauthorized) onUnauthorized();
+    if (status === 401) {
+      if (errorCode === "REQUIRES_REAUTH" && _onRequiresReauth) {
+        _onRequiresReauth();
+      } else if (onUnauthorized) {
+        onUnauthorized();
+      }
+    }
 
     const retryCount = config._retryCount || 0;
     const isNonMutating = RETRYABLE_METHODS.has(config.method?.toUpperCase() ?? "");
