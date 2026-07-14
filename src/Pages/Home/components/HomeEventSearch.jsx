@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import Fuse from "fuse.js";
 import { motion } from "framer-motion";
@@ -30,6 +31,9 @@ const getItemPath = (item) => {
 
 export default function HomeEventSearch({ eventsData = [] }) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const inputRef = useRef(null);
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
 
@@ -52,7 +56,25 @@ export default function HomeEventSearch({ eventsData = [] }) {
     const trimmed = debouncedTerm.trim();
     setSearchResults(trimmed ? searchIndex.search(trimmed).slice(0, SEARCH_RESULT_LIMIT) : []);
     setShowResults(!!trimmed);
+    setActiveIndex(-1);
   }, [debouncedTerm, searchIndex]);
+
+  const handleKeyDown = (e) => {
+    if (!showResults || searchResults.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiveIndex(prev => (prev < searchResults.length - 1 ? prev + 1 : prev));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiveIndex(prev => (prev > 0 ? prev - 1 : -1));
+    } else if (e.key === 'Enter' && activeIndex >= 0) {
+      e.preventDefault();
+      navigate(getItemPath(searchResults[activeIndex].item));
+      setShowResults(false);
+    } else if (e.key === 'Escape') {
+      setShowResults(false);
+    }
+  };
 
   return (
     <section
@@ -70,8 +92,10 @@ export default function HomeEventSearch({ eventsData = [] }) {
 
       <div className="relative mt-4">
         <ModernSearchInput
+          ref={inputRef}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
+          onKeyDown={handleKeyDown}
           placeholder={t("landing.search.placeholder")}
           aria-label={t("landing.search.placeholder")}
         />
@@ -84,11 +108,11 @@ export default function HomeEventSearch({ eventsData = [] }) {
             role="listbox"
             aria-label={t("landing.hero.searchResults")}
           >
-            {searchResults.map(({ item }) => (
+            {searchResults.map(({ item }, index) => (
               <li key={`${item.type}-${item.id}`} role="option">
                 <Link
                   to={getItemPath(item)}
-                  className="block border-b border-slate-100 px-4 py-3 last:border-0 hover:bg-violet-50 dark:border-slate-800 dark:hover:bg-slate-800/80"
+                  className={`block border-b border-slate-100 px-4 py-3 last:border-0 transition-colors ${activeIndex === index ? 'bg-violet-50 dark:bg-slate-800' : 'hover:bg-violet-50 dark:border-slate-800 dark:hover:bg-slate-800/80'}`}
                 >
                   <span className="text-xs font-medium uppercase tracking-wide text-violet-600 dark:text-violet-400">
                     {t(`landing.hero.searchTypes.${item.searchType}`)}
