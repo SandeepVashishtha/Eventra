@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Calendar, ChevronDown, X } from 'lucide-react';
 import { getGoogleCalendarUrl, getOutlookCalendarUrl, getWebcalSubscriptionUrl } from '../../utils/calendarUrlUtils';
 
@@ -50,19 +50,21 @@ const downloadIcal = (event) => {
 export default function AddToCalendar({ event, className = '', iconOnly = false }) {
   const [open, setOpen] = useState(false);
   const [added, setAdded] = useState('');
+  const timeoutRef = useRef(null);
+  useEffect(() => () => clearTimeout(timeoutRef.current), []);
 
   if (!event) return null;
 
   const handleGoogle = () => {
     window.open(getGoogleCalendarUrl(event), '_blank', 'noopener,noreferrer');
     setAdded('Google Calendar');
-    setTimeout(() => setOpen(false), 800);
+    timeoutRef.current = setTimeout(() => setOpen(false), 800);
   };
 
   const handleOutlook = () => {
     window.open(getOutlookCalendarUrl(event), '_blank', 'noopener,noreferrer');
     setAdded('Outlook');
-    setTimeout(() => setOpen(false), 800);
+    timeoutRef.current = setTimeout(() => setOpen(false), 800);
   };
 
   const handleIcal = () => {
@@ -74,7 +76,7 @@ export default function AddToCalendar({ event, className = '', iconOnly = false 
       downloadIcal(event);
     }
     setAdded('Apple / ICS');
-    setTimeout(() => setOpen(false), 800);
+    timeoutRef.current = setTimeout(() => setOpen(false), 800);
   };
 
   return (
