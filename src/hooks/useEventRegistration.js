@@ -432,9 +432,15 @@ const useEventRegistration = (eventIdParam) => {
       return;
     }
 
+    // Fresh capacity check right before submission. `isFull` here comes from
+    // a server-authoritative fetch (checkEventCapacity), which is why we can
+    // hard-bail on it — previously we only surfaced a toast and still fell
+    // through to proceedWithRegistration, over-registering users past the cap
+    // whenever the backend didn't strictly reject (see #10386, #7671).
     const isFull = await checkEventCapacity(eventId, event);
     if (isFull) {
       toast.info("This event is at full capacity.");
+      return;
     }
 
     if (await checkAndHandleConflicts()) return;
