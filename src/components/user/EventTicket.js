@@ -136,7 +136,10 @@ const EventTicket = ({ event, user, onClose }) => {
         const link = document.createElement("a");
         link.download = `eventra-ticket-${cleanTitle}.png`;
         link.href = imgData;
+        // Must be in the DOM before .click() for Firefox to trigger the download
+        document.body.appendChild(link);
         link.click();
+        document.body.removeChild(link);
         toast.success("PNG Ticket downloaded successfully!");
       }
     } catch (error) {
