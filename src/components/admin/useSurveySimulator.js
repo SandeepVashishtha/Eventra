@@ -84,7 +84,15 @@ export function useSurveySimulator(questions, feedbackPool) {
       const updated = { ...prev };
       safeQuestions.forEach((q) => {
         if (q.type === "rating") {
-          const score = Math.random() > 0.4 ? (Math.random() > 0.4 ? 5 : 4) : 3;
+          // Weighted distribution across all 5 stars so every bar can grow.
+          // Biased toward positive (5★/4★) to reflect typical event feedback.
+          const rand = Math.random();
+          const score =
+            rand < 0.36 ? 5 :  // 36%
+            rand < 0.60 ? 4 :  // 24%
+            rand < 0.84 ? 3 :  // 24%
+            rand < 0.94 ? 2 :  // 10%
+                          1;   //  6%
           updated[q.id] = {
             ...updated[q.id],
             [score]: (updated[q.id]?.[score] || 0) + 1,
