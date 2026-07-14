@@ -166,7 +166,17 @@ const EventsPage = () => {
   }
 
   const listing = useEventListing();
-  const { isLoading } = listing;
+  const {
+    isLoading,
+    setAdvancedFilters,
+    setCategoryFilter,
+    setEventsPerPage,
+    setFilterType,
+    setSafePage,
+    setSearchQuery,
+    setSortType,
+    setViewMode,
+  } = listing;
   const cardSectionRef = useRef();
   const hasHydratedFilters = useRef(false);
   const [filtersHydrated, setFiltersHydrated] = useState(false);
@@ -175,8 +185,8 @@ const EventsPage = () => {
   const debouncedSearchQuery = useDebouncedValue(localSearchInput, 300);
 
   useEffect(() => {
-    listing.setSearchQuery(debouncedSearchQuery);
-  }, [debouncedSearchQuery]);
+    setSearchQuery(debouncedSearchQuery);
+  }, [debouncedSearchQuery, setSearchQuery]);
 
   useEffect(() => {
     if (hasHydratedFilters.current) return;
@@ -210,18 +220,29 @@ const EventsPage = () => {
 
     if (initialSearch) {
       setLocalSearchInput(initialSearch);
-      listing.setSearchQuery(initialSearch);
+      setSearchQuery(initialSearch);
     }
-    listing.setFilterType(filter);
-    listing.setCategoryFilter(category);
-    listing.setSortType(sort);
-    listing.setViewMode(view);
-    listing.setEventsPerPage(perPage);
-    listing.setAdvancedFilters(advancedFilters);
-    if (page !== 1) listing.setSafePage(page);
+    setFilterType(filter);
+    setCategoryFilter(category);
+    setSortType(sort);
+    setViewMode(view);
+    setEventsPerPage(perPage);
+    setAdvancedFilters(advancedFilters);
+    if (page !== 1) setSafePage(page);
     hasHydratedFilters.current = true;
     setFiltersHydrated(true);
-  }, [searchParams, routeSearchQuery, listing]);
+  }, [
+    searchParams,
+    routeSearchQuery,
+    setAdvancedFilters,
+    setCategoryFilter,
+    setEventsPerPage,
+    setFilterType,
+    setSafePage,
+    setSearchQuery,
+    setSortType,
+    setViewMode,
+  ]);
 
   useEffect(() => {
     if (!filtersHydrated) return;
@@ -273,13 +294,13 @@ const EventsPage = () => {
     const safeQuery = prepareSafeSearchQuery(routeSearchQuery);
     if (safeQuery !== listing.searchQuery) {
       setLocalSearchInput(safeQuery);
-      listing.setSearchQuery(safeQuery);
+      setSearchQuery(safeQuery);
     }
   }, [
     rawSearchParam,
     routeSearchQuery,
     listing.searchQuery,
-    listing.setSearchQuery,
+    setSearchQuery,
   ]);
 
   const handleSearch = (query = "") => {
