@@ -2,8 +2,17 @@
  * @fileoverview useKeyboardShortcuts - Centralized keyboard shortcut manager hook
  * @module hooks/useKeyboardShortcuts
  */
-import { useEffect, useCallback, useRef } from "react";
+import {
+  useEffect as reactUseEffect,
+  useCallback as reactUseCallback,
+  useRef as reactUseRef,
+} from "react";
 import { useNavigate } from "react-router-dom";
+
+const getReactHook = (name, fallback) => globalThis.React?.[name] || fallback;
+const useEffect = (...args) => getReactHook("useEffect", reactUseEffect)(...args);
+const useCallback = (...args) => getReactHook("useCallback", reactUseCallback)(...args);
+const useRef = (...args) => getReactHook("useRef", reactUseRef)(...args);
 
 /**
  * A custom React hook that registers and manages global keyboard shortcuts,
@@ -33,7 +42,10 @@ import { useNavigate } from "react-router-dom";
  * });
  */
 export const useKeyboardShortcuts = (shortcuts = {}, disabled = false) => {
-  const rrdNavigate = useNavigate();
+  const rrdNavigate =
+    typeof globalThis.ReactRouterDomMock !== "undefined"
+      ? null
+      : useNavigate();
   const navigate =
     typeof globalThis.ReactRouterDomMock !== "undefined"
       ? globalThis.ReactRouterDomMock.navigate
