@@ -93,9 +93,11 @@ const EventTicket = ({ event, user, onClose }) => {
     setDownloading(true);
     toast.info(`Generating your high-resolution ticket ${format.toUpperCase()}...`);
 
+    // Capture originalFlip outside try so finally can always restore it
+    const originalFlip = isFlipped;
+
     try {
       // Force temporary state to front-side without rotation to capture cleanly
-      const originalFlip = isFlipped;
       setIsFlipped(false);
       setRotate({ x: 0, y: 0 });
       
@@ -116,9 +118,6 @@ const EventTicket = ({ event, user, onClose }) => {
           }
         }
       });
-
-      // Restore original state
-      setIsFlipped(originalFlip);
 
       const imgData = canvas.toDataURL("image/png");
       const cleanTitle = (event?.title || "ticket").toLowerCase().replace(/[^a-z0-9]+/g, "-");
@@ -143,6 +142,8 @@ const EventTicket = ({ event, user, onClose }) => {
       console.error("Ticket export error:", error);
       toast.error("Failed to generate ticket. Please try again.");
     } finally {
+      // Always restore flip state — even if html2canvas threw
+      setIsFlipped(originalFlip);
       setDownloading(false);
     }
   };
