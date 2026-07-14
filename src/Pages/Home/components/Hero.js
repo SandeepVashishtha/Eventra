@@ -17,16 +17,17 @@ const Hero = () => {
   useDocumentTitle("Eventra | Home");
   const { t } = useTranslation();
 
-  const categoryChips = useMemo(
-    () => [
-      { label: t("landing.hero.categories.hackathons"), to: "/hackathons" },
-      { label: t("landing.hero.categories.ai"), to: "/events" },
-      { label: t("landing.hero.categories.webDev"), to: "/events" },
-      { label: t("landing.hero.categories.openSource"), to: "/projects" },
-      { label: t("landing.hero.categories.workshops"), to: "/events" },
-    ],
-    [t]
-  );
+  // const categoryChips = useMemo(
+  //   () => [
+  //     // { label: t("landing.hero.categories.hackathons"), to: "/hackathons" },
+  //     // { label: t("landing.hero.categories.ai"), to: "/events" },
+  //     // { label: t("landing.hero.categories.webDev"), to: "/events" },
+  //     // { label: t("landing.hero.categories.openSource"), to: "/projects" },
+  //     // { label: t("landing.hero.categories.workshops"), to: "/events" },
+  //   ],
+  //   [ //t
+  //   ]
+  // );
 
   return (
     <section className="relative overflow-hidden pb-10 pt-2 sm:pb-12 sm:pt-4 md:pb-14 md:pt-6">
