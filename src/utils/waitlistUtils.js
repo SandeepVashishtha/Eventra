@@ -199,7 +199,8 @@ export const joinWaitlist = async (eventId, user, registrationForm = {}) => {
     }
     throw new Error(response.data?.message || "Server rejected waitlist join");
   } catch (error) {
-    if (error.response?.status === 409) {
+    const status = error?.status || error?.response?.status;
+    if (status === 409) {
       throw new Error("You are already on the waitlist for this event.");
     }
     if (error.isNetworkError || error.isTimeout) {
