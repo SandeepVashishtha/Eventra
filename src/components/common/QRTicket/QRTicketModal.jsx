@@ -72,7 +72,8 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
   useEffect(() => {
     if (!isOpen || !modalRef.current) return;
 
-    const focusableElements = modalRef.current.querySelectorAll(
+    const modalNode = modalRef.current;
+    const focusableElements = modalNode.querySelectorAll(
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
     );
     
@@ -97,16 +98,14 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
       }
     };
 
-    modalRef.current.addEventListener("keydown", handleFocusTrap);
+    modalNode.addEventListener("keydown", handleFocusTrap);
     // Focus the modal automatically
-    modalRef.current.focus();
+    modalNode.focus();
 
     return () => {
-      if (modalRef.current) {
-        modalRef.current.removeEventListener("keydown", handleFocusTrap);
-      }
+      modalNode.removeEventListener("keydown", handleFocusTrap);
     };
-  }, [isOpen, handleFocusTrap]);
+  }, [isOpen]);
 
   const handleShare = async () => {
     const shareUrl = ticket?.qrValue || window.location.href;
