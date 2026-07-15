@@ -112,10 +112,10 @@ const RecommendedEvents = () => {
                 >
 
                   {hackathon.recommendationReasons?.map(
-                    (reason, reasonIndex) => (
+                    (reason) => (
 
                       <span
-                        key={reasonIndex}
+                        key={reason}
                         className="
                           text-xs
                           bg-primary/10
