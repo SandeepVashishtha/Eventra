@@ -18,7 +18,7 @@ import {
   ArrowDown,
   CornerDownLeft
 } from "lucide-react";
-import { useModalStack } from "../../hooks/useModalStack";
+import { useModalStack } from "hooks/useModalStack";
 
 const trendTags = ["AI", "Web3", "Hackathons", "Workshops", "Community", "Auth"];
 

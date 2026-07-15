@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useReducedMotion } from '../../hooks/useReducedMotion';
+import { useReducedMotion } from 'hooks/useReducedMotion';
 import {
   User,
   AtSign,
@@ -20,11 +20,11 @@ import {
   Star,
   Zap,
 } from "lucide-react";
-import { useAuth } from "../../context/AuthContext";
-import { syncSecureStorage } from "../../utils/secureStorage";
+import { useAuth } from "context/AuthContext";
+import { syncSecureStorage } from "utils/secureStorage";
 import LazyImage from "../common/LazyImage";
 import "./UserProfile.css";
-import { safeJsonParse } from "../../utils/safeJsonParse";
+import { safeJsonParse } from "utils/safeJsonParse";
 
 // 🔥 FIX 1: Safe URL Sanitizer to prevent Stored XSS via malicious URI schemes
 const sanitizeUrl = (url) => {

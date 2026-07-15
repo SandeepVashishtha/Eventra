@@ -1,19 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { API_ENDPOINTS, apiUtils } from "../../config/api";
-import { normalizeEvent } from "../../utils/eventUtils";
-import { getEventStatus } from "../../utils/eventUtils";
-import useDebounce from "../../hooks/useDebounce";
-import { useStableFilters } from "../../hooks/useStableFilters";
-import useRecommendations from "../../hooks/useRecommendations";
+import { API_ENDPOINTS, apiUtils } from "config/api";
+import { normalizeEvent } from "utils/eventUtils";
+import { getEventStatus } from "utils/eventUtils";
+import useDebounce from "hooks/useDebounce";
+import { useStableFilters } from "hooks/useStableFilters";
+import useRecommendations from "hooks/useRecommendations";
 import {
   applyAdvancedFilters,
   getDateRange,
   // getDefaultFilters,
   getPriceStats,
   normalizeAdvancedFilters,
-} from "../../utils/advancedFilterUtils";
-import { getRouteSearchResults } from "../../utils/searchUtils.mjs";
-import { getBookmarkedEvents } from "../../utils/bookmarkUtils";
+} from "utils/advancedFilterUtils";
+import { getRouteSearchResults } from "utils/searchUtils.mjs";
+import { getBookmarkedEvents } from "utils/bookmarkUtils";
 
 const DEFAULT_EVENTS_PER_PAGE = 20;
 

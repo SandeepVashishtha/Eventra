@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Trash2, Users } from "lucide-react";
-import { MOCK_ATTENDEES } from "../../../constants/floorPlanPresets";
+import { MOCK_ATTENDEES } from "../constants/floorPlanPresets";
 
 export default function PropertiesPanel({
   activeElement, elements, onUpdateSelected, onDeleteSelected,

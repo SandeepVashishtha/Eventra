@@ -1,5 +1,5 @@
 import React, { memo, useCallback, useId, useState } from "react";
-import { logger } from "../../utils/logger";
+import { logger } from "utils/logger";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -23,19 +23,19 @@ import {
   Heart,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import LazyImage from "../../components/common/LazyImage";
-import ShareModal from "../../components/common/ShareModal";
-import StatusBadge from "../../components/common/StatusBadge";
-import { getEventStatus } from "../../utils/eventUtils";
-import SocialShareButtons from "../../components/common/SocialShareButtons";
-import AddToCalendar from "../../components/common/AddToCalendar";
-import { useMyEvents } from "../../context/MyEventsContext";
-import MatchScoreBadge from "../../components/common/MatchScoreBadge";
+import LazyImage from "components/common/LazyImage";
+import ShareModal from "components/common/ShareModal";
+import StatusBadge from "components/common/StatusBadge";
+import { getEventStatus } from "utils/eventUtils";
+import SocialShareButtons from "components/common/SocialShareButtons";
+import AddToCalendar from "components/common/AddToCalendar";
+import { useMyEvents } from "context/MyEventsContext";
+import MatchScoreBadge from "components/common/MatchScoreBadge";
 
 import {
   isEventBookmarked,
-} from "../../utils/bookmarkUtils";
-import { checkRegistrationConflict } from "../../utils/conflictDetection";
+} from "utils/bookmarkUtils";
+import { checkRegistrationConflict } from "utils/conflictDetection";
 
 const CARD_GRADIENTS = [
   "from-violet-600 via-purple-600 to-indigo-700",

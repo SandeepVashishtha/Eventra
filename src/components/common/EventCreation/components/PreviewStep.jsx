@@ -4,8 +4,8 @@ import { LoadingButton } from "../../../ui/LoadingButton";
 import {
   formatDate,
   formatTime,
-} from "../../../../utils/eventCreationUtils";
-import { CREATION_STEPS } from "../../../../constants/eventDefaults";
+} from "../../utils/eventCreationUtils";
+import { CREATION_STEPS } from "../../constants/eventDefaults";
 
 const PreviewStep = ({
   formData,

@@ -1,13 +1,13 @@
 import { AnimatePresence, motion, useInView } from "framer-motion";
-import useReducedMotion from "../../hooks/useReducedMotion.js";
+import useReducedMotion from "hooks/useReducedMotion.js";
 import { Award, Calendar, Clock, Code2, Sparkles, TrendingUp, Trash2, Users } from "lucide-react";
 import { useEffect, useRef, useState, useCallback, memo } from "react";
 import { useNavigate } from "react-router-dom";
-import ModernSearchInput from "../../components/common/ModernSearchInput";
+import ModernSearchInput from "components/common/ModernSearchInput";
 import CountUpLib from "react-countup";
-import { darkTheme } from "../../components/styles/theme";
-import { safeParseJson } from "../../utils/jsonUtils";
-import { SkeletonBlock } from "../../components/common/SkeletonLoaders";
+import { darkTheme } from "components/styles/theme";
+import { safeParseJson } from "utils/jsonUtils";
+import { SkeletonBlock } from "components/common/SkeletonLoaders";
 const CountUp = CountUpLib.default || CountUpLib;
 
 const SEARCH_HISTORY_KEY = "eventra.events.searchHistory";
@@ -153,7 +153,7 @@ function EventHero({
         className="relative min-h-[60vh] md:min-h-[70vh] w-full overflow-hidden flex flex-col items-center justify-center"
         role="search"
         aria-label="Search events"
-        style={{zIndex: 1}} 
+        style={{zIndex: 1}}
       >
         <div
         className="absolute inset-0 bg-[url('/assets/eventbg.png')] bg-cover bg-center bg-no-repeat"
@@ -161,7 +161,7 @@ function EventHero({
       />
       <div className="absolute inset-0 bg-gradient-to-b from-blue-50/80 via-indigo-50/40 to-white dark:from-slate-950/90 dark:via-slate-900/70 dark:to-slate-950/95" />
       <div className="relative z-10 flex flex-col items-center justify-center px-4 py-12 sm:py-16 md:py-20 max-w-4xl mx-auto w-full">
-        <h1 
+        <h1
           className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight text-slate-900 dark:text-white drop-shadow-sm text-center"
           style={{fontFamily: '"Big Shoulders Display", sans-serif'}}
         >
@@ -350,9 +350,9 @@ function EventHero({
                   <stat.icon className={`h-5 w-5 sm:h-6 sm:w-6 ${darkTheme.textSecondary}`} />
                 </div>
                 <p className={`text-xl sm:text-2xl md:text-3xl font-bold tracking-tight ${darkTheme.textPrimary}`}>
-                  <StatCounter 
-                    stat={stat} 
-                    shouldAnimate={hasMounted && isStatsInView} 
+                  <StatCounter
+                    stat={stat}
+                    shouldAnimate={hasMounted && isStatsInView}
                     delay={prefersReducedMotion ? 0 : i * 0.1}
                   />
                 </p>

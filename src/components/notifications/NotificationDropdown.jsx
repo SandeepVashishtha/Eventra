@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Bell, CheckCheck, ExternalLink, Settings } from "lucide-react";
-import { useNotification } from "../../context/NotificationContext";
+import { useNotification } from "context/NotificationContext";
 import EmptyState from "../common/EmptyState";
 import NotificationItem from "./NotificationItem";
 

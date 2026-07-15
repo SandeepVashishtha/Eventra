@@ -1,6 +1,6 @@
 import { Users, Activity, Smile, Play, Star, Download } from "lucide-react";
 import { useMemo } from "react";
-import { exportSurveyToCSV } from "../../utils/exportCsv";
+import { exportSurveyToCSV } from "utils/exportCsv";
 import {
   ResponsiveContainer,
   BarChart,
@@ -177,7 +177,7 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
             <Download className="w-4 h-4 text-indigo-500" />
             Export Results to CSV
           </button>
-          
+
           <button
             onClick={handleSimulateSubmission}
             className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-xs font-bold text-white shadow-lg shadow-indigo-600/15 transition self-start sm:self-auto cursor-pointer"

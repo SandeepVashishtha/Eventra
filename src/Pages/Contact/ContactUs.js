@@ -1,13 +1,13 @@
-﻿import { apiUtils, API_ENDPOINTS } from "../../config/api";
+﻿import { apiUtils, API_ENDPOINTS } from "config/api";
 import { Star, MessageSquare } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { User, Mail, FileText, AlertCircle } from "lucide-react";
 import { toast } from "react-toastify";
-import SEOHead from "../../components/SEOHead";
+import SEOHead from "components/SEOHead";
 import { useTranslation } from "react-i18next";
 
-import useReducedMotion from "../../hooks/useReducedMotion.js";
+import useReducedMotion from "hooks/useReducedMotion.js";
 const FloatingField = ({
   id,
   label,

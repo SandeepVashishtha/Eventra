@@ -25,7 +25,7 @@ import { useCallback } from "react";
 import { motion } from "framer-motion";
 import { Share2, Twitter, Linkedin, MessageCircle, Link2, Check } from "lucide-react";
 import { toast } from "react-toastify";
-import useCopyToClipboard from "../../hooks/useCopyToClipboard";
+import useCopyToClipboard from "hooks/useCopyToClipboard";
 
 // ---------------------------------------------------------------------------
 // Helpers

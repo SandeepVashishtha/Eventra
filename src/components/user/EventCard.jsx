@@ -12,8 +12,8 @@ import {
   Copy,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useReducedMotion } from "../../hooks/useReducedMotion";
-import { useOfflineStatus } from "../../hooks/useOfflineStatus";
+import { useReducedMotion } from "hooks/useReducedMotion";
+import { useOfflineStatus } from "hooks/useOfflineStatus";
 import StatusBadge from "../common/StatusBadge";
 import LazyImage from "../common/LazyImage";
 
@@ -107,7 +107,7 @@ const EventCard = memo(({
         </>
       );
     }
-    
+
     return (
       <button
         className="group/btn w-full sm:flex-1 inline-flex items-center justify-center gap-2 rounded-2xl bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-950/50 px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold transition-all duration-300 hover:scale-105"

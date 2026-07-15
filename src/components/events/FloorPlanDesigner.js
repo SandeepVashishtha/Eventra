@@ -1,16 +1,16 @@
 import { useState, useEffect, useRef, useCallback, useMemo, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { Layout, Save, RotateCcw, Plus, Minus, Move, AlertTriangle, Undo2, Redo2, Users } from "lucide-react";
-import { LiveAudienceContext } from "../../context/RealTimeContext";
+import { LiveAudienceContext } from "context/RealTimeContext";
 import { toast } from "react-toastify";
 import ConfirmationModal from "../../common/ConfirmationModal";
 import ElementPalette from "./FloorPlan/ElementPalette";
 import PropertiesPanel from "./FloorPlan/PropertiesPanel";
-import { PRESETS } from "../../constants/floorPlanPresets";
-import { checkCollision, getSeatPositions } from "../../utils/floorPlanGeometry";
-import { exportAsSVG, exportAsPNG, downloadLayoutJSON, importLayoutJSON } from "../../utils/floorPlanExport";
+import { PRESETS } from "constants/floorPlanPresets";
+import { checkCollision, getSeatPositions } from "utils/floorPlanGeometry";
+import { exportAsSVG, exportAsPNG, downloadLayoutJSON, importLayoutJSON } from "utils/floorPlanExport";
 import "./FloorPlanDesigner.css";
-import { safeJsonParse } from "../../utils/safeJsonParse";
+import { safeJsonParse } from "utils/safeJsonParse";
 
 const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
   const realTimeCtx = useContext(LiveAudienceContext);
@@ -171,7 +171,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
         }
         return { ...el, assignedAttendees: nextAssignments };
       }
-      
+
       // Clear duplicate attendee assignments from other tables
       let changed = false;
       if (attendeeName !== "") {

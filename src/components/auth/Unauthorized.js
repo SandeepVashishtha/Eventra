@@ -1,11 +1,11 @@
 import { XCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useReducedMotion } from '../../hooks/useReducedMotion';
+import { useReducedMotion } from 'hooks/useReducedMotion';
 
 const Unauthorized = () => {
   const prefersReducedMotion = useReducedMotion();
-  
+
   // Predefined bubble positions around the card
   const bubblePositions = [
     { top: "10%", left: "5%" },
@@ -58,7 +58,7 @@ const Unauthorized = () => {
           >
             <XCircle className="h-20 w-20 text-red-500" />
           </motion.div>
-          
+
           <h2 className="text-3xl font-extrabold text-gray-800 dark:text-gray-100">
             Access Denied
           </h2>
@@ -72,7 +72,7 @@ const Unauthorized = () => {
             This page requires special permissions. If you think this is an
             error, contact an administrator.
           </p>
-          
+
           <Link
             to="/"
             className="inline-block bg-red-500 hover:bg-red-600 text-white font-semibold px-6 py-3 rounded-lg shadow-lg transition transform hover:-translate-y-1"

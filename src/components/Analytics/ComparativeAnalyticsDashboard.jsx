@@ -5,7 +5,7 @@ import {
 } from 'recharts';
 
 // 1. IMPORT YOUR GLOBAL DASHBOARD LAYOUT ELEMENT
-import DashboardLayout from '../../components/Layout/DashboardLayout';
+import DashboardLayout from 'components/Layout/DashboardLayout';
 
 const eventsData = [
   { name: 'Tech Summit', registrations: 320, attendance: 280, engagement: 87, category: 'Tech' },
@@ -37,12 +37,12 @@ export default function ComparativeAnalyticsDashboard() {
     // 2. ENCLOSE YOUR PAGE CODE IN THE WRAPPER ELEMENT
     <DashboardLayout>
       {/* Note: I removed bg-gray-50 min-h-screen to let the component adopt the skin base */}
-      <div className="p-6 space-y-8 w-full"> 
+      <div className="p-6 space-y-8 w-full">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Comparative Event Analytics</h1>
           <p className="text-gray-500 mt-1">Compare performance across multiple events</p>
         </div>
-        
+
         <div className="flex flex-wrap gap-2">
           {eventsData.map(e => (
             <button key={e.name} onClick={() => toggle(e.name)}
@@ -55,7 +55,7 @@ export default function ComparativeAnalyticsDashboard() {
             </button>
           ))}
         </div>
-        
+
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-green-50 border border-green-200 rounded-xl p-5 dark:bg-green-950/20 dark:border-green-900/50">
             <p className="text-sm font-medium text-green-600 dark:text-green-400">Best Performing</p>
@@ -73,7 +73,7 @@ export default function ComparativeAnalyticsDashboard() {
             <p className="text-xl font-bold text-purple-800 dark:text-purple-200 mt-1">{avgAttendance}%</p>
           </div>
         </div>
-        
+
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 dark:bg-gray-900 dark:border-gray-800">
           <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4">Registrations vs Attendance</h2>
           <ResponsiveContainer width="100%" height={300}>
@@ -88,7 +88,7 @@ export default function ComparativeAnalyticsDashboard() {
             </BarChart>
           </ResponsiveContainer>
         </div>
-        
+
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 dark:bg-gray-900 dark:border-gray-800">
           <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4">Engagement Rate (%)</h2>
           <ResponsiveContainer width="100%" height={250}>
@@ -101,7 +101,7 @@ export default function ComparativeAnalyticsDashboard() {
             </LineChart>
           </ResponsiveContainer>
         </div>
-        
+
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 dark:bg-gray-900 dark:border-gray-800">
           <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4">Growth Trends Over Time</h2>
           <ResponsiveContainer width="100%" height={250}>

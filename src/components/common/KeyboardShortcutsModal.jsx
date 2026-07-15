@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Keyboard, Sparkles, X } from "lucide-react";
-import { useFocusTrap } from "../../hooks/useFocusTrap";
-import { useModalStack } from "../../hooks/useModalStack";
+import { useFocusTrap } from "hooks/useFocusTrap";
+import { useModalStack } from "hooks/useModalStack";
 
 const shortcutData = [
   {
@@ -246,7 +246,7 @@ const KeyboardShortcutsModal = ({ isOpen, onClose }) => {
       if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") {
         return;
       }
-      
+
       let key = e.key.toLowerCase();
       if (key === "?") key = "/";
 

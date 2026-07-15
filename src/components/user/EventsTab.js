@@ -1,7 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import ReactDOM from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { useReducedMotion } from "../../hooks/useReducedMotion";
+import { useReducedMotion } from "hooks/useReducedMotion";
 import {
   Calendar,
   MapPin,
@@ -15,15 +15,15 @@ import {
   Copy,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useMyEvents } from "../../context/MyEventsContext";
-import { useAuth } from "../../context/AuthContext";
+import { useMyEvents } from "context/MyEventsContext";
+import { useAuth } from "context/AuthContext";
 import StatusBadge from "../common/StatusBadge";
-import { safeParseJson } from "../../utils/jsonUtils";
+import { safeParseJson } from "utils/jsonUtils";
 import StyledDropdown from "../StyledDropdown";
 import SearchEmptyState from "../common/SearchEmptyState";
 import EmptyState from "../common/EmptyState";
-import { useDebouncedSearch } from "../../hooks/useDebouncedSearch";
-import { useOfflineStatus } from "../../hooks/useOfflineStatus";
+import { useDebouncedSearch } from "hooks/useDebouncedSearch";
+import { useOfflineStatus } from "hooks/useOfflineStatus";
 import LazyImage from "../common/LazyImage";
 import toast from "react-hot-toast";
 
@@ -54,7 +54,7 @@ const formatShortDate = (date) => {
 // Filter events by search, status, type
 const filterEvents = (events, searchTerm, filterStatus, filterType) => {
   const normalizedSearch = searchTerm.trim().toLowerCase();
-  
+
   return events.filter((event) => {
     const searchTarget = `${event?.title || ""} ${event?.location || ""} ${event?.description || ""} ${(event?.tags || []).join(" ")}`.toLowerCase();
     const matchSearch = !searchTerm || searchTarget.includes(normalizedSearch);
@@ -166,7 +166,7 @@ const EventCard = memo(({
         </>
       );
     }
-    
+
     return (
       <button
         className="group/btn w-full sm:flex-1 inline-flex items-center justify-center gap-2 rounded-2xl bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-950/50 px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold transition-all duration-300 hover:scale-105"
@@ -246,7 +246,7 @@ const WaitlistCard = memo(({ event, index, onLeaveWaitlist }) => {
 
   useEffect(() => {
     if (!user) return;
-    import("../../utils/waitlistUtils")
+    import("utils/waitlistUtils")
       .then(({ getQueuePosition }) => {
         setQueuePos(getQueuePosition(event.id, user.id || user.email));
       })
@@ -370,7 +370,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const staggerVariants = stagger(prefersReducedMotion);
   const { myEvents, removeRegistration, loading: myEventsLoading } = useMyEvents();
   const { user } = useAuth();
-  
+
   const [waitlistEvents, setWaitlistEvents] = useState([]);
   const [recentEvents, setRecentEvents] = useState([]);
   const [waitlistUpdated, setWaitlistUpdated] = useState(false);
@@ -442,13 +442,13 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   useEffect(() => {
     setIsLoading(true);
     if (user) {
-      import("../../utils/waitlistUtils.js")
+      import("utils/waitlistUtils.js")
         .then(({ getGlobalWaitlist }) => {
           const records = getGlobalWaitlist();
           const userId = user.id || user.email;
           const userWaitlists = records.filter(r => r.userId === userId && r.status === 'waiting');
           const resolved = userWaitlists.map(w => {
-            const foundEvent = [...registeredEvents, ...hostedEvents].find(e => 
+            const foundEvent = [...registeredEvents, ...hostedEvents].find(e =>
               e.id === w.eventId || e.eventId === w.eventId
             );
             if (foundEvent) {
@@ -554,7 +554,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const handleLeaveWaitlist = async (eventId, eventTitle) => {
     if (window.confirm(`Are you sure you want to leave the waitlist for "${eventTitle}"?`)) {
       try {
-        const { leaveWaitlist } = await import("../../utils/waitlistUtils.js");
+        const { leaveWaitlist } = await import("utils/waitlistUtils.js");
         await leaveWaitlist(eventId, user.id || user.email);
         toast.success("Left the waitlist successfully.");
         triggerWaitlistUpdate();

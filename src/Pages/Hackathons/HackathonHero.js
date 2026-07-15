@@ -2,11 +2,11 @@ import { AnimatePresence, motion, useInView } from "framer-motion";
 import { Award, Calendar, Code2, Sparkles, Users, X, Rocket } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useRef, useState, useEffect } from "react";
-import ModernSearchInput from "../../components/common/ModernSearchInput";
-import { useAuth } from "../../context/AuthContext";
+import ModernSearchInput from "components/common/ModernSearchInput";
+import { useAuth } from "context/AuthContext";
 import CountUpLib from "react-countup";
-import ErrorBoundary from "../../components/common/ErrorBoundary";
-import useReducedMotion from "../../hooks/useReducedMotion.js";
+import ErrorBoundary from "components/common/ErrorBoundary";
+import useReducedMotion from "hooks/useReducedMotion.js";
 
 const CountUp = CountUpLib.default || CountUpLib;
 
@@ -201,7 +201,7 @@ export default function HackathonHero({
                 {filteredCount}{" "}{filteredCount === 1 ? "hackathon" : "hackathons"} found
               </span>
             ) : (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="mt-4 flex flex-col items-center text-center p-6 bg-white/40 dark:bg-slate-900/40 rounded-2xl border border-indigo-100 dark:border-indigo-900/50 backdrop-blur-md w-full"
@@ -294,9 +294,9 @@ export default function HackathonHero({
                 </motion.div>
 
                 <p className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
-                  <StatCounter 
-                    stat={stat} 
-                    shouldAnimate={hasMounted && isStatsInView} 
+                  <StatCounter
+                    stat={stat}
+                    shouldAnimate={hasMounted && isStatsInView}
                     delay={prefersReducedMotion ? 0 : 0.15 + idx * 0.12}
                   />
                 </p>
@@ -311,4 +311,3 @@ export default function HackathonHero({
     </div>
   );
 }
-
