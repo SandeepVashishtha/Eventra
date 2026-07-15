@@ -310,6 +310,7 @@ export const AuthProvider = ({ children }) => {
         setCookie("token", sessionToken, {
           path: "/",
           secure: window.location.protocol === "https:",
+          maxAge: 7 * 24 * 60 * 60, // Persist for 7 days
         });
       }
     } catch (err) {

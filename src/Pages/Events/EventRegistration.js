@@ -549,7 +549,7 @@ const EventRegistration = () => {
 
 
   // Show skeleton while joining the waitlist specifically
-  if (submitting && isEventFull) {
+  if (isPending && isEventFull) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 px-4 py-12 gap-4">
         <WaitlistSkeleton />
