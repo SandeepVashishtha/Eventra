@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+// No React hooks needed — recommendedHackathons is computed directly from useRecommendations
 
 import HackathonCard from "../../Pages/Hackathons/HackathonCard";
 
@@ -9,20 +9,11 @@ import useRecommendations from "../../hooks/useRecommendations";
 
 const RecommendedEvents = () => {
 
-  const [recommendedHackathons, setRecommendedHackathons] = useState([]);
-
-  // Intelligent recommendation engine
-  const recommendations =
-    useRecommendations(mockHackathons);
-
-  useEffect(() => {
-
-    // Show top 3 recommendations
-    setRecommendedHackathons(
-      recommendations.slice(0, 3)
-    );
-
-  }, [recommendations]);
+  // Intelligent recommendation engine — slice directly, no intermediate state needed.
+  // Storing derived data in useState + useEffect adds an extra render per update
+  // and risks an infinite loop if useRecommendations returns unstable references.
+  const recommendations = useRecommendations(mockHackathons);
+  const recommendedHackathons = recommendations.slice(0, 3);
 
   return (
 
