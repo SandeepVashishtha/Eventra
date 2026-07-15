@@ -35,6 +35,41 @@ import { apiUtils, API_ENDPOINTS } from "../../config/api";
 import { getLastUpdated } from "../../utils/LastUpdatedUtils";
 import mockEvents from "./eventsMockData.json";
 import CopyButton from '../../components/ui/CopyButton';
+const formatEventDate = (dateValue) => {
+  if (!dateValue) return { short: "TBD", full: "Date TBD", relative: "" };
+  const d = new Date(dateValue);
+  if (isNaN(d.getTime())) return { short: "TBD", full: "Date TBD", relative: "" };
+
+  const now = new Date();
+  const diffMs = d - now;
+  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+  let relative = "";
+  if (diffMs < 0) {
+    relative = "Past";
+  } else if (diffDays === 0) {
+    relative = "Today";
+  } else if (diffDays === 1) {
+    relative = "Tomorrow";
+  } else if (diffDays < 7) {
+    relative = `In ${diffDays} days`;
+  } else if (diffDays < 30) {
+    relative = `In ${Math.round(diffDays / 7)} w`;
+  } else {
+    relative = `In ${Math.round(diffDays / 30)} m`;
+  }
+
+  const short = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const full = d.toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+  const time = d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+
+  return { short, full, relative, time };
+};
+
 const isRequestCanceled = (error, signal) =>
   signal?.aborted ||
   error?.name === "AbortError" ||
@@ -299,6 +334,8 @@ ${window.location.href}
   const registrationEnd = event.registrationEnd
   ? new Date(event.registrationEnd)
   : null;
+  const eventDate = event.date || event.eventDate || event.startDate || null;
+  const dateInfo = formatEventDate(eventDate);
 
 const hoursLeft = registrationEnd
   ? Math.ceil((registrationEnd - new Date()) / (1000 * 60 * 60))
@@ -520,7 +557,7 @@ const lastUpdated = getLastUpdated(event.updatedAt);
           </section>
 
           {/* Main Grid */}
-          <div className="grid gap-8 lg:grid-cols-[1.25fr_0.75fr] items-start">
+          <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr] items-start">
             {/* Left Column */}
             <div className="space-y-6 rounded-3xl bg-white p-8 shadow-xl dark:bg-gray-900">
               <LazyImage
@@ -539,12 +576,14 @@ const lastUpdated = getLastUpdated(event.updatedAt);
                   <div>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Date</p>
                     <p className="font-semibold">
-                      {new Date(event.date).toLocaleDateString("en-US", {
-                        weekday: "long",
-                        month: "long",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
+                      {eventDate && !isNaN(new Date(eventDate).getTime())
+                        ? new Date(eventDate).toLocaleDateString("en-US", {
+                            weekday: "long",
+                            month: "long",
+                            day: "numeric",
+                            year: "numeric",
+                          })
+                        : "Date TBA"}
                     </p>
                   </div>
                 </div>
@@ -553,7 +592,7 @@ const lastUpdated = getLastUpdated(event.updatedAt);
                   <Clock className="h-5 w-5 text-indigo-600" />
                   <div>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Time</p>
-                    <p className="font-semibold">{event.time}</p>
+                    <p className="font-semibold">{event.time || dateInfo.time || "N/A"}</p>
                   </div>
                 </div>
 
@@ -561,7 +600,7 @@ const lastUpdated = getLastUpdated(event.updatedAt);
                   <MapPin className="h-5 w-5 text-indigo-600" />
                   <div>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Location</p>
-                    <p className="font-semibold">{event.location}</p>
+                    <p className="font-semibold">{event.location || "Online"}</p>
                   </div>
                 </div>
 
@@ -574,58 +613,17 @@ const lastUpdated = getLastUpdated(event.updatedAt);
                       </div>
                       </div>
                 </div>
-                {/* Last Updated */}
-<div className="flex items-center gap-3 rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
-  <Clock className="h-5 w-5 text-indigo-600" />
-
-  <div>
-    <p className="text-sm text-gray-500 dark:text-gray-400">
-      Last Updated
-    </p>
-
-    <p className="font-semibold">
-      {lastUpdated}
-    </p>
-  </div>
-</div>
 
                 {/* Event Countdown */}
                 <div className="sm:col-span-2">
-                  <CountdownTimer date={event.date} time={event.time} timezone={event.timezone} />
+                  <CountdownTimer date={eventDate} time={event.time || dateInfo.time} timezone={event.timezone} />
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <h2 className="text-xl font-semibold">Event Details</h2>
-                <div className="text-sm text-gray-600 dark:text-gray-300 space-y-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p><span className="font-semibold">Attendees:</span> {event.attendees}/{event.maxAttendees}</p>
-                    <EventRegistrationProgress
-    attendees={event.attendees}
-    maxAttendees={event.maxAttendees}
-/>
-                    {/* "Almost Full!" urgency badge — shown when ≥ 80% capacity and not yet sold out (#7665) */}
-                    {event.maxAttendees > 0 &&
-                      event.attendees / event.maxAttendees >= 0.8 &&
-                      event.attendees < event.maxAttendees && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-700 ring-1 ring-inset ring-red-600/20 dark:bg-red-900/40 dark:text-red-300 dark:ring-red-500/30">
-                          🔥 Almost Full!
-                        </span>
-                      )}
-                  </div>
-                  <p><span className="font-semibold">Type:</span> {event.type}</p>
-                  <p><span className="font-semibold">Tags:</span> {(event.tags ?? []).join(", ")}</p>
-                </div>
-              </div>
-
-              {/* Share & Add to Calendar */}
+              {/* Add to Calendar & Copy Link */}
               <div className="rounded-3xl bg-slate-50 p-5 dark:bg-gray-800 space-y-4">
-                <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Share & Add to Calendar</h3>
-                <SocialShareButtons event={event} layout="grid" />
-                <div className="mt-4">
-                  <CopyButton textToCopy={window.location.href} />
-                </div>
-
+                <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Add to Calendar</h3>
+                
                 <div className="flex flex-col gap-2">
                   <button onClick={() => { downloadICSFile(event); toast.success("Calendar invite downloaded!"); }} className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-100 shadow-sm hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-300 dark:hover:border-green-700 transition-all duration-200" aria-label="Download .ics calendar invite">
                     <CalendarPlus size={15} className="text-green-500" /> Download .ics Invite
@@ -647,24 +645,18 @@ const lastUpdated = getLastUpdated(event.updatedAt);
                     </a>
                   )}
                 </div>
+
+                <div className="pt-2">
+                  <CopyButton textToCopy={window.location.href} />
+                </div>
               </div>
+
               <div className="rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
                 <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Summary</h3>
                 <div
                   className="mt-3 text-gray-700 dark:text-gray-300 text-sm leading-6 prose prose-indigo dark:prose-invert"
                   dangerouslySetInnerHTML={{ __html: sanitizeMarkdown(event.description, marked.parse) }}
                 />
-              </div>
-
-              {/* Live Audience Engagement Section (Q&A and Polls) */}
-              <div className="space-y-4 pt-6 border-t border-gray-100 dark:border-gray-800">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 font-sans tracking-wide">
-                  Live Session Interaction
-                </h3>
-                <div className="grid gap-6 md:grid-cols-2">
-                  <LiveQABoard eventId={event.id} />
-                  <LivePollController eventId={event.id} />
-                </div>
               </div>
             </div>
           </div>
