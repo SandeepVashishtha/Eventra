@@ -77,7 +77,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
       <nav
         ref={navRef}
         aria-label="Primary navigation"
-        className={`fixed top-0 left-0 right-0 z-50 w-full transition-all duration-300 bg-white dark:bg-gray-950 backdrop-blur-md border-b border-transparent ${scrolled ? "shadow-premium-md border-primary/10" : "shadow-premium-sm border-transparent"
+        className={`fixed top-0 left-0 right-0 z-50 w-full transition-all duration-300 bg-navbar border-b border-transparent ${scrolled ? "shadow-premium-md border-primary/10" : "shadow-premium-sm border-transparent"
           }`}
       >
         <div className="mx-auto max-w-screen-2xl px-3 sm:px-4 lg:px-6">
