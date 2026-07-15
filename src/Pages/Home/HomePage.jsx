@@ -21,7 +21,7 @@ const SITE_DESCRIPTION =
 // ─── MAIN COMPONENT ─────────────────────────────────────────────────────────
 const HomePage = () => {
   useDocumentTitle("Home | Eventra");
-  const { eventsData, isLoading } = useHomeEventsData();
+  const { eventsData, hackathonsData, projectsData, isLoading } = useHomeEventsData();
 
   return (
     <main className="min-h-screen bg-bg">
@@ -60,7 +60,12 @@ const HomePage = () => {
 
       {/* ─── PAGE CONTENT ───────────────────────────────────────────────── */}
       <Hero />
-      <WhatsHappening eventsData={eventsData} isLoading={isLoading} />
+      <WhatsHappening
+        eventsData={eventsData}
+        hackathonsData={hackathonsData}
+        projectsData={projectsData}
+        isLoading={isLoading}
+      />
       <TrendingEvents title="Trending Events" limit={6} fetchSize={24} />
       <HomeEventSearch eventsData={eventsData} />
       <RecommendationBanner />

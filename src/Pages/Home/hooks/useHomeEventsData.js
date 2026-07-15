@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { eventService } from "../../../services/eventService";
+import { fetchHackathons } from "../../../services/hackathonService";
+import { projectService } from "../../../services/projectService";
 
 const normalizeEvents = (rawEvents = []) =>
   rawEvents.map((e) => ({
@@ -15,29 +17,48 @@ const normalizeEvents = (rawEvents = []) =>
 
 export default function useHomeEventsData() {
   const [eventsData, setEventsData] = useState([]);
+  const [hackathonsData, setHackathonsData] = useState([]);
+  const [projectsData, setProjectsData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
 
-    eventService
-      .getAllEvents()
-      .then((res) => {
-        if (cancelled) return;
-        const raw = Array.isArray(res.data) ? res.data : res.data?.content ?? [];
-        setEventsData(normalizeEvents(raw));
-      })
-      .catch(() => {
-        if (!cancelled) setEventsData([]);
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
-      });
+    Promise.allSettled([
+      eventService.getAllEvents(),
+      fetchHackathons(),
+      projectService.getAllProjects(),
+    ]).then(([eventsRes, hackathonsRes, projectsRes]) => {
+      if (cancelled) return;
+
+      // Handle Events
+      if (eventsRes.status === "fulfilled") {
+        const rawEvents = Array.isArray(eventsRes.value.data)
+          ? eventsRes.value.data
+          : eventsRes.value.data?.content ?? [];
+        setEventsData(normalizeEvents(rawEvents));
+      }
+
+      // Handle Hackathons
+      if (hackathonsRes.status === "fulfilled") {
+        setHackathonsData(hackathonsRes.value || []);
+      }
+
+      // Handle Projects
+      if (projectsRes.status === "fulfilled") {
+        const rawProjects = Array.isArray(projectsRes.value.data)
+          ? projectsRes.value.data
+          : [];
+        setProjectsData(rawProjects);
+      }
+
+      setIsLoading(false);
+    });
 
     return () => {
       cancelled = true;
     };
   }, []);
 
-  return { eventsData, isLoading };
+  return { eventsData, hackathonsData, projectsData, isLoading };
 }

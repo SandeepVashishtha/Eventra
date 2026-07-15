@@ -195,7 +195,7 @@ function App() {
 
                 <main
                   id="main-content"
-                  className="relative z-10 min-h-[85vh] bg-bg text-text transition-colors duration-300"
+                  className="relative z-10 min-h-[85vh] pt-16 bg-bg text-text transition-colors duration-300"
                 >
                   <PageTransition>
                     <ErrorBoundary>
