@@ -204,7 +204,9 @@ const EventTicket = ({ event, user, onClose }) => {
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
             style={{
-              transform: `perspective(1200px) rotateX(${rotate.x}deg) rotateY(${rotate.y + (isFlipped ? 180 : 0)}deg)`,
+              // When flipped, both axes are mirrored from the viewer's perspective —
+              // negate rotate.x and subtract rotate.y from 180 to keep tilt natural.
+              transform: `perspective(1200px) rotateX(${isFlipped ? -rotate.x : rotate.x}deg) rotateY(${isFlipped ? 180 - rotate.y : rotate.y}deg)`,
               boxShadow: `0 30px 60px -15px rgba(0, 0, 0, 0.6), 0 0 50px ${theme.glow}`
             }}
             ref={ticketRef}
