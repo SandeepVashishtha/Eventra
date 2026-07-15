@@ -531,7 +531,7 @@ const GSSoCContribution = () => {
             >
               <BookOpen className="w-5 h-5 transition-transform duration-300 group-hover:rotate-6" />
 
-              <span>Read Complete Contributors' Guide</span>
+              <span>Read Complete Contributors&apos; Guide</span>
 
               <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
             </a>
