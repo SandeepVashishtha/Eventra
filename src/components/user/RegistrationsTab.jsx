@@ -9,7 +9,15 @@ import { DashboardTableSkeleton } from "../common/SkeletonLoaders";
 import { getSmartDateLabel } from "../../utils/relativeTime";
 import { downloadBulkICSFile } from "../../utils/calendarExporter";
 import CertificateDownload from "../CertificateDownload";
-import { useRegistrationFilters, TYPE_OPTIONS, STATUS_OPTIONS, TICKET_TYPE_OPTIONS, SORT_OPTIONS } from "../../hooks/useRegistrationFilters";
+const TYPE_OPTIONS = ["Event", "Hackathon", "Project"];
+const STATUS_OPTIONS = ["Upcoming", "Completed", "In Progress", "Done"];
+const TICKET_TYPE_OPTIONS = ["All", "VIP", "Early Bird", "General"];
+const SORT_OPTIONS = [
+  "Event Date (Newest)",
+  "Event Date (Oldest)",
+  "Purchase Date (Newest)",
+  "Purchase Date (Oldest)",
+];
 
 // Icon mapping (extracted to reduce complexity)
 const TYPE_ICON = {

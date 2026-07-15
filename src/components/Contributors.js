@@ -9,7 +9,7 @@ import { storageManager } from "../utils/storage/storageManager";
 import { STORAGE_KEYS } from "../utils/storage/storageKeys";
 import { validators } from "../utils/storage/storageValidators";
 import { fetchWithTimeout } from "../utils/fetchWithTimeout";
-import EmptyState from "../common/EmptyState";
+import EmptyState from "./common/EmptyState";
 // GitHub repo
 const GITHUB_REPO = "sandeepvashishtha/Eventra";
 const CACHE_DURATION = 60 * 60 * 1000; // 1 hr
