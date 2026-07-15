@@ -16,7 +16,6 @@ import { useNotification } from "../../context/NotificationContext";
 import NavbarLinks from "./NavbarLinks";
 import { PRIMARY_NAV_ITEMS, SECONDARY_NAV_ITEMS } from "./constants/navItems";
 import LanguageSelector from "../LanguageSelector";
-import InstallAppButton from "../common/InstallAppButton";
 import { useTheme } from "../../context/ThemeContext";
 
 const MobileDrawer = ({
@@ -147,10 +146,6 @@ const MobileDrawer = ({
           </div>
           
           <NavbarLinks vertical items={SECONDARY_NAV_ITEMS} onClick={closeMenu} />
-
-          <div className="mt-4 px-1">
-            <InstallAppButton />
-          </div>
 
           {/* User Section */}
           <div className="mt-6 border-t border-border pt-4">
