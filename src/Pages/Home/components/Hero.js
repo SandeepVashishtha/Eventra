@@ -5,7 +5,7 @@ import { ArrowRight, Check, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
-import useDocumentTitle from "../hooks/useDocumentTitle";
+import useDocumentTitle from "../../../hooks/useDocumentTitle";
 import HeroVisual from "./HeroVisual";
 
 const SOCIAL_PROOF_VALUES = [

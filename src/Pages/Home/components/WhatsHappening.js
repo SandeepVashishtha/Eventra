@@ -3,10 +3,10 @@ import { motion } from "framer-motion";
 import { useState, useEffect, useCallback, useMemo, memo } from "react";
 import { Link } from "react-router-dom";
 import { useInView } from "react-intersection-observer";
-import { HomeCardSkeleton } from "../components/common/SkeletonLoaders";
+import { HomeCardSkeleton } from "../../../components/common/SkeletonLoaders";
 import { CheckCircle2, Hourglass } from "lucide-react";
 
-import useReducedMotion from "../hooks/useReducedMotion.js";
+import useReducedMotion from "../../../hooks/useReducedMotion.js";
 
 const WhatsHappening = ({ eventsData = [], hackathonsData = [], projectsData = [], isLoading = true }) => {
   const prefersReducedMotion = useReducedMotion();

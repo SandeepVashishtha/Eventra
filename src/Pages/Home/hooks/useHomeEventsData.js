@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { eventService } from "../services/eventService";
-import { fetchHackathons } from "../services/hackathonService";
-import { projectService } from "../services/projectService";
+import { eventService } from "../../../services/eventService";
+import { fetchHackathons } from "../../../services/hackathonService";
+import { projectService } from "../../../services/projectService";
 
 const normalizeEvents = (rawEvents = []) =>
   rawEvents.map((e) => ({

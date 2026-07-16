@@ -5,8 +5,8 @@ import Fuse from "fuse.js";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 
-import ModernSearchInput from "../components/common/ModernSearchInput";
-import useDebouncedSearch from "../hooks/useDebouncedSearch";
+import ModernSearchInput from "../../../components/common/ModernSearchInput";
+import useDebouncedSearch from "../../../hooks/useDebouncedSearch";
 import hackathonsData from "../../Hackathons/hackathonMockData.json";
 import projectsData from "../../Projects/mockProjectsData.json";
 

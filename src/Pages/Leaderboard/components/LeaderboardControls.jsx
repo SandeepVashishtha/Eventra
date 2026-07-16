@@ -1,6 +1,6 @@
 import { Search, Filter, RefreshCw, Download } from "lucide-react";
 import { motion } from "framer-motion";
-import StyledDropdown from "../components/StyledDropdown";
+import StyledDropdown from "../../../components/StyledDropdown";
 
 const sortOptions = [
   { label: "Points (High \u2192 Low)", value: "points" },

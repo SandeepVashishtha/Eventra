@@ -1,4 +1,4 @@
-import { SSE_STATUS } from "../context/RealTimeContext";
+import { SSE_STATUS } from "../../../context/RealTimeContext";
 
 export default function LiveStatusBadge({ status }) {
   const statusConfig = {

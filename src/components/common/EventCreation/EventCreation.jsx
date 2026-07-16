@@ -3,11 +3,11 @@ import { useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { Download, Calendar, Globe, Link2, Plus } from "lucide-react";
-import { logger } from "../utils/logger";
-import useReducedMotion from "../hooks/useReducedMotion";
+import { logger } from "../../../utils/logger";
+import useReducedMotion from "../../../hooks/useReducedMotion";
 import TicketsStep from "./components/TicketsStep";
 import GeneralInfoStep from "./components/GeneralInfoStep";
-import { exportAttendeesToCSV } from "../utils/exportCsv";
+import { exportAttendeesToCSV } from "../../../utils/exportCsv";
 import PreviewStep from "./components/PreviewStep";
 import RestoreDraftModal from "./components/RestoreDraftModal";
 import GuidelinesSection from "./components/GuidelinesSection";
@@ -17,8 +17,8 @@ import LocationFields from "./components/LocationFields";
 import RegistrationDatesFields from "./components/RegistrationDatesFields";
 import TagsInput from "./components/TagsInput";
 import StatsSection from "./components/StatsSection";
-// import { useAutoSaveDraft } from "../hooks/useAutoSaveDraft";
-import { formatDraftAge } from "../utils/eventDraftUtils";
+// import { useAutoSaveDraft } from "../../../hooks/useAutoSaveDraft";
+import { formatDraftAge } from "../../../utils/eventDraftUtils";
 import {
   DRAFT_KEY,
   CREATION_STEPS,
@@ -26,15 +26,16 @@ import {
   mockAttendees,
   initialFormData,
   todayString,
-} from "../constants/eventDefaults";
+} from "../../../constants/eventDefaults";
 import {
   TagIcon,
 } from "@heroicons/react/24/solid";
-import { API_ENDPOINTS, apiUtils } from "../config/api";
-import { useFormSubmit } from "../hooks/useFormSubmit";
-import { buildEventPayload } from "../utils/eventCreationUtils";
-import { validateForm } from "../utils/eventFormValidation";
-import { safeJsonParse } from "../utils/safeJsonParse";
+import { API_ENDPOINTS, apiUtils } from "../../../config/api";
+import { useFormSubmit } from "../../../hooks/useFormSubmit";
+import { buildEventPayload } from "../../../utils/eventCreationUtils";
+import { validateForm } from "../../../utils/eventFormValidation";
+import { safeJsonParse } from "../../../utils/safeJsonParse";
+
 
 const EventCreation = () => {
   const prefersReducedMotion = useReducedMotion();

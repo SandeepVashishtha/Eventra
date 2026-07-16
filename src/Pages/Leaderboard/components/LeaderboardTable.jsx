@@ -1,10 +1,10 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Star, Code, Search, ChevronLeft, ChevronRight } from "lucide-react";
-import { getAchievementBadge } from "../utils/leaderboardUtils";
+import { getAchievementBadge } from "../../../utils/leaderboardUtils";
 import AnimatedCounter from "./AnimatedCounter";
 import RankMovementIndicator from "./RankMovementIndicator";
 import LiveStatusBadge from "./LiveStatusBadge";
-import SkeletonLeaderboard from "../components/common/SkeletonLeaderboard";
+import SkeletonLeaderboard from "../../../components/common/SkeletonLeaderboard";
 
 function TableRow({ c, rank, badge, streak, index }) {
   return (
