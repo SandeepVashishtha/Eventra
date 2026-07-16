@@ -43,6 +43,7 @@ const renderParticipationActions = (item, setSelectedTicketEvent) => {
       <StatusBadge status={item.participationType} />
       {isEventOrHackathon && isRegistered && (
         <button
+          type="button"
           onClick={() => setSelectedTicketEvent(item)}
           className="ud-btn-ticket"
           style={{
@@ -143,7 +144,7 @@ const RegistrationsTab = ({
           id="registrations-search"
         />
         {searchTerm && (
-          <button className="ud-search-clear" onClick={() => setSearchTerm("")} aria-label="Clear search">
+          <button type="button" className="ud-search-clear" onClick={() => setSearchTerm("")} aria-label="Clear search">
             <X size={13} />
           </button>
         )}
@@ -200,6 +201,7 @@ const RegistrationsTab = ({
 
       {activeFilterCount > 0 && (
         <button
+          type="button"
           onClick={clearAll}
           className="ud-clear-filters-btn"
           style={{
@@ -266,6 +268,7 @@ const RegistrationsTab = ({
 
         {filteredData.length > 0 && (
           <button
+            type="button"
             onClick={() => downloadBulkICSFile(filteredData, "eventra-schedule")}
             style={{
               display: "inline-flex",
