@@ -27,7 +27,7 @@
       "destination": "https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net/stream/:path*"
     },
     {
-      "source": "/((?!api/|stream/).*)",
+      "source": "/((?!assets/|api/|stream/|[^/]+\\.[^/]+$).*)",
       "destination": "/index.html"
     }
   ],
