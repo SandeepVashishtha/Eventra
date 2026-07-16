@@ -4,7 +4,7 @@
 // Shown while event data is being fetched from the Spring Boot backend API.
 // Matches the dimensions of the real EventCard component to prevent layout shift.
 
-import React from 'react';
+// import React from 'react';
 
 /**
  * EventCardSkeleton
