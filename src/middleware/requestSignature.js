@@ -1,6 +1,6 @@
 import { validateSignature } from "../utils/signatureValidator.js";
 
-export function verifyRequestSignature(
+export async function verifyRequestSignature(
   req,
   secret
 ) {
