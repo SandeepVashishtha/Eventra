@@ -2,8 +2,8 @@
 import React, { memo, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Calendar, MapPin } from "lucide-react";
-import { useAuth } from "../../context/AuthContext";
-import { useReducedMotion } from "../../hooks/useReducedMotion";
+import { useAuth } from "context/AuthContext";
+import { useReducedMotion } from "hooks/useReducedMotion";
 import LazyImage from "../common/LazyImage";
 
 const fadeUp = (prefersReducedMotion) => ({
@@ -27,7 +27,7 @@ const WaitlistCard = memo(({ event, index, onLeaveWaitlist }) => {
 
   useEffect(() => {
     if (!user) return;
-    import("../../utils/waitlistUtils")
+    import("utils/waitlistUtils")
       .then(({ getQueuePosition }) => {
         setQueuePos(getQueuePosition(event.id, user.id || user.email));
       })

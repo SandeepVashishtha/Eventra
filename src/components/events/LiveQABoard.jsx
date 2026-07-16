@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useAuth } from "../../context/AuthContext.js";
-import useLiveAudience from "../../hooks/useLiveAudience.js";
+import { useAuth } from "context/AuthContext.js";
+import useLiveAudience from "hooks/useLiveAudience.js";
 import { ThumbsUp, Trash, Flag, Send, AlertTriangle, HelpCircle, Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
 
@@ -75,9 +75,9 @@ function highlightKeywords(text) {
   const keywords = ['bug', 'feature', 'question', 'pricing', 'roadmap'];
   const regex = new RegExp(`\\b(${keywords.join('|')})\\b`, 'gi');
   const parts = text.split(regex);
-  return parts.map((part, i) => 
-    keywords.includes(part.toLowerCase()) 
-      ? <span key={i} className="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-400 font-bold border border-indigo-500/30 text-[10px] uppercase tracking-widest mx-0.5">{part}</span> 
+  return parts.map((part, i) =>
+    keywords.includes(part.toLowerCase())
+      ? <span key={i} className="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-400 font-bold border border-indigo-500/30 text-[10px] uppercase tracking-widest mx-0.5">{part}</span>
       : part
   );
 }

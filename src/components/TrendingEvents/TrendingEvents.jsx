@@ -1,11 +1,11 @@
-import { getTrendingBadge } from "../../utils/trendingRankUtils";
+import { getTrendingBadge } from "utils/trendingRankUtils";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { eventService } from "../../services/eventService";
+import { eventService } from "services/eventService";
 import EventCard from "../../Pages/Events/EventCard";
 import {Calendar,TrendingUp,Users,Bookmark,Eye,} from "lucide-react";
 
-import { normalizeEvents } from "../../utils/eventFetchUtils";
+import { normalizeEvents } from "utils/eventFetchUtils";
 
 const EVENT_LIST_KEYS = ["content", "events", "items", "results", "data"];
 

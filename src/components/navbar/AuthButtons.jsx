@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
-const prefetchLogin = () => import("../../components/auth/Login");
-const prefetchSignup = () => import("../../components/auth/Signup");
+const prefetchLogin = () => import("components/auth/Login");
+const prefetchSignup = () => import("components/auth/Signup");
 
 const AuthButtons = () => {
   const { t } = useTranslation();

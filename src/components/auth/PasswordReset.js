@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 // Under the hood, password reset requests are sent to API_ENDPOINTS.AUTH.RESET_PASSWORD via authService.
-import { authService } from '../../services/authService';
+import { authService } from 'services/authService';
 import { motion } from "framer-motion";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
-import { RESET_COOLDOWN_SECONDS, secondsUntilUnlock, STORAGE_KEY_RESET_LAST_SUBMIT } from '../../utils/rateLimitUtils';
+import useDocumentTitle from "hooks/useDocumentTitle";
+import { RESET_COOLDOWN_SECONDS, secondsUntilUnlock, STORAGE_KEY_RESET_LAST_SUBMIT } from 'utils/rateLimitUtils';
 
 // ---------------------------------------------------------------------------
 // sessionStorage helpers — persist cooldown across page refreshes (Issue #5720)
@@ -68,7 +68,7 @@ const PasswordReset = () => {
   }, []);
 
   const startCooldownTimer = useCallback(() => {
-    clearAllTimers(); 
+    clearAllTimers();
     const unlockAt = lastSubmitRef.current + RESET_COOLDOWN_SECONDS * 1000;
     setCooldownSeconds(secondsUntilUnlock(unlockAt));
 

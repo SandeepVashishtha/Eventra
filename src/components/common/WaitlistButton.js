@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { joinWaitlist, leaveWaitlist, getWaitlistStatus, getWaitlistCount } from '../../services/waitlistService';
+import { joinWaitlist, leaveWaitlist, getWaitlistStatus, getWaitlistCount } from 'services/waitlistService';
 
 // Custom hook - args grouped into single options object (fixes Excess Function Arguments)
 const useWaitlist = ({ eventId, isFullyBooked, waitlistEnabled, isAuthenticated, token }) => {

@@ -3,10 +3,10 @@ import { motion } from "framer-motion";
 import { useState, useEffect, useCallback, useMemo, memo } from "react";
 import { Link } from "react-router-dom";
 import { useInView } from "react-intersection-observer";
-import { HomeCardSkeleton } from "../../../components/common/SkeletonLoaders";
+import { HomeCardSkeleton } from "../components/common/SkeletonLoaders";
 import { CheckCircle2, Hourglass } from "lucide-react";
 
-import useReducedMotion from "../../../hooks/useReducedMotion.js";
+import useReducedMotion from "../hooks/useReducedMotion.js";
 
 const WhatsHappening = ({ eventsData = [], hackathonsData = [], projectsData = [], isLoading = true }) => {
   const prefersReducedMotion = useReducedMotion();
@@ -243,7 +243,7 @@ const WhatsHappening = ({ eventsData = [], hackathonsData = [], projectsData = [
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
         >
-          <h2 
+          <h2
             style={{ fontFamily: "'Oxanium', sans-serif" }}
             className="mt-4 text-3xl sm:text-4xl font-extrabold tracking-tight text-text"
           >
@@ -257,7 +257,7 @@ const WhatsHappening = ({ eventsData = [], hackathonsData = [], projectsData = [
 
         {/* Carousel Outside Container */}
         <div className="relative w-full max-w-7xl mx-auto rounded-2xl border border-border bg-card-bg shadow-premium-lg px-3 sm:px-5 py-4 sm:py-5">
-          
+
           {/* Play/Pause Button */}
           <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20">
             <button
@@ -356,7 +356,7 @@ const WhatsHappening = ({ eventsData = [], hackathonsData = [], projectsData = [
                           <h3 title={event.title} className="text-lg sm:text-xl font-bold text-text mb-2 leading-snug group-hover:text-primary transition-colors line-clamp-2 break-words min-w-0">
                             {event.title}
                           </h3>
-                          
+
                           <p className="text-text-light text-sm mb-4 line-clamp-3 leading-relaxed flex-1 font-normal">
                             {event.description}
                           </p>

@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Tab } from '@headlessui/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import QAPanel from '../../components/events/QAPanel';
-import LivePollPanel from '../../components/events/LivePollPanel';
-import QuizPanel from '../../components/events/QuizPanel';
+import QAPanel from 'components/events/QAPanel';
+import LivePollPanel from 'components/events/LivePollPanel';
+import QuizPanel from 'components/events/QuizPanel';
 
 /**
  * Minimal Live Interaction Hub.

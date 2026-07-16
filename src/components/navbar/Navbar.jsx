@@ -1,13 +1,13 @@
 import { memo, useRef, useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "context/AuthContext";
 import DesktopNavbar from "./DesktopNavbar";
 import MobileNavbar from "./MobileNavbar";
 import AuthButtons from "./AuthButtons";
 import ProfileMenu from "./ProfileMenu";
 import NotificationBell from "../notifications/NotificationBell";
 import useBodyScrollLock from "./hooks/useBodyScrollLock";
-import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
+import useKeyboardShortcuts from "hooks/useKeyboardShortcuts";
 
 const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const navRef = useRef(null);

@@ -1,6 +1,6 @@
 ﻿import { motion, AnimatePresence } from "framer-motion";
-import { useReducedMotion } from '../../hooks/useReducedMotion';
-import { getSmartDateLabel } from "../../utils/relativeTime";
+import { useReducedMotion } from 'hooks/useReducedMotion';
+import { getSmartDateLabel } from "utils/relativeTime";
 import {
   Calendar, Trophy, FolderOpen, Users, Settings,
   Clock, Zap, Activity, Bell, ChevronRight,
@@ -9,13 +9,13 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
 import ErrorBoundary from "../common/ErrorBoundary";
-import { useAuth } from "../../context/AuthContext";
-import { useMyEvents } from "../../context/MyEventsContext";
-import useBookmarks from "../../hooks/useBookmarks";
-import { getEventStatus } from "../../utils/eventUtils";
+import { useAuth } from "context/AuthContext";
+import { useMyEvents } from "context/MyEventsContext";
+import useBookmarks from "hooks/useBookmarks";
+import { getEventStatus } from "utils/eventUtils";
 import StatusBadge from "../common/StatusBadge";
-import { requestNotificationPermission, disableNotifications } from "../../utils/NotificationManager";
-import { readNotificationPreferences } from "../../utils/notificationPreferences";
+import { requestNotificationPermission, disableNotifications } from "utils/NotificationManager";
+import { readNotificationPreferences } from "utils/notificationPreferences";
 import EventsTab from "./EventsTab";
 import HackathonsTab from "./HackathonsTab";
 import ProjectsTab from "./ProjectsTab";
@@ -28,7 +28,7 @@ import {
   DashboardSectionTitleSkeleton,
   DashboardStatCardSkeleton,
 } from "../common/SkeletonLoaders";
-import useDashboardFilters from "../../hooks/useDashboardFilters";
+import useDashboardFilters from "hooks/useDashboardFilters";
 import "./UserDashboard.css";
 import EventTicket from "./EventTicket";
 import EmptyState from "../common/EmptyState";
@@ -77,7 +77,7 @@ export default function UserDashboard() {
   const [selectedTicketEvent, setSelectedTicketEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [pushEnabled, setPushEnabled] = useState(() => readNotificationPreferences().push);
-  
+
   // Γ£à Get real user data from contexts
   const { myEvents, loading: myEventsLoading } = useMyEvents();
   const { bookmarks } = useBookmarks(user?.id || user?.email || "guest");
@@ -85,13 +85,13 @@ export default function UserDashboard() {
   // Γ£à Transform real data into registrations format
   const userRegistrations = useMemo(() => {
     if (!myEvents || myEvents.length === 0) return [];
-    
+
     return myEvents
       .map(registration => {
         // Extract event data from registration
         const event = registration?.event || registration?.eventSummary;
         if (!event) return null;
-        
+
         return {
           id: registration.id || event.id || Math.random().toString(36).substr(2, 9),
           type: event.type || "Event",
@@ -149,7 +149,7 @@ export default function UserDashboard() {
   // Γ£à Calculate derived data from real user registrations
   const derivedData = useMemo(() => {
     const records = userRegistrations;
-    
+
     let eventsTotal = 0;
     let eventsCreated = 0;
     let eventsJoined = 0;
@@ -330,11 +330,11 @@ export default function UserDashboard() {
                       <div className="flex items-center gap-3">
                         <label className="flex items-center gap-2 text-xs cursor-pointer">
                           <span className="text-gray-500">Push</span>
-                          <input 
-                            type="checkbox" 
-                            checked={pushEnabled} 
+                          <input
+                            type="checkbox"
+                            checked={pushEnabled}
                             onChange={togglePushNotifications}
-                            className="w-3 h-3 rounded text-indigo-600 focus:ring-indigo-500" 
+                            className="w-3 h-3 rounded text-indigo-600 focus:ring-indigo-500"
                           />
                         </label>
                         <button onClick={() => setNotifOpen(false)} aria-label="Close notification panel"><X size={14} /></button>
@@ -461,7 +461,7 @@ export default function UserDashboard() {
                         ))
                       )}
                     </motion.section>
- 
+
                     {/* Upcoming Hackathons */}
                     <motion.section custom={3} variants={fadeUp(prefersReducedMotion)} className="ud-card backdrop-blur-md bg-white/10 border border-white/20 shadow-lg">
                       <div className="ud-card-head">
@@ -489,7 +489,7 @@ export default function UserDashboard() {
                         ))
                       )}
                     </motion.section>
- 
+
                     {/* Active Projects */}
                     <motion.section custom={4} variants={fadeUp(prefersReducedMotion)} className="ud-card backdrop-blur-md bg-white/10 border border-white/20 shadow-lg">
                       <div className="ud-card-head">

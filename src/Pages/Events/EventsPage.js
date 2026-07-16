@@ -1,27 +1,27 @@
 import { useRef, useEffect, useMemo, useState } from "react";
 import { useSearchParams, useLocation } from "react-router-dom";
-import VirtualizedEventGrid from "../../components/common/VirtualizedEventGrid";
+import VirtualizedEventGrid from "components/common/VirtualizedEventGrid";
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
 import EventCalendarView from "./EventCalendarView";
-import FeedbackButton from "../../components/FeedbackButton";
+import FeedbackButton from "components/FeedbackButton";
 import EventCTA from "./EventCTA";
 import EventFiltersToolbar from "./EventFiltersToolbar";
-import EventCardSkeleton from "../../components/common/EventCardSkeleton"; // CHANGED: Import from specific file
-import SearchEmptyState from "../../components/common/SearchEmptyState";
-import EmptyState from "../../components/common/EmptyState";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
+import EventCardSkeleton from "components/common/EventCardSkeleton"; // CHANGED: Import from specific file
+import SearchEmptyState from "components/common/SearchEmptyState";
+import EmptyState from "components/common/EmptyState";
+import useDocumentTitle from "hooks/useDocumentTitle";
 import ActiveFilters from "./ActiveFilters";
 import PaginationControls from "./PaginationControls";
 import useEventListing from "./useEventListing";
-import { useDebouncedValue } from "../../hooks/useDebouncedValue";
-import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
-import ErrorBoundary from "../../components/common/ErrorBoundary";
-import ErrorMessage from "../../components/common/ErrorMessage";
-import { EventTimeline } from "../../components/EventTimeline";
-import TrendingEvents from "../../components/TrendingEvents/TrendingEvents";
-import RecentlyViewedEvents from "../../components/common/RecentlyViewedEvents";
-import { safeJsonParse } from "../../utils/safeJsonParse";
+import { useDebouncedValue } from "hooks/useDebouncedValue";
+import { prepareSafeSearchQuery } from "utils/inputSanitization";
+import ErrorBoundary from "components/common/ErrorBoundary";
+import ErrorMessage from "components/common/ErrorMessage";
+import { EventTimeline } from "components/EventTimeline";
+import TrendingEvents from "components/TrendingEvents/TrendingEvents";
+import RecentlyViewedEvents from "components/common/RecentlyViewedEvents";
+import { safeJsonParse } from "utils/safeJsonParse";
 import {
   decodeAdvancedFilters,
   encodeAdvancedFilters,
@@ -29,7 +29,7 @@ import {
   hasActiveAdvancedFilters,
   normalizeAdvancedFilters,
   serializeAdvancedFilters,
-} from "../../utils/advancedFilterUtils";
+} from "utils/advancedFilterUtils";
 const FILTER_STORAGE_KEY = "eventra:event-filters:v1";
 
 const EventsPagination = ({ listing }) => {
@@ -149,7 +149,7 @@ const RecentlyViewedSection = () => (
 const EventsPage = () => {
   useDocumentTitle("Eventra | Events");
 
-  const location = useLocation(); 
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const rawSearchParam =

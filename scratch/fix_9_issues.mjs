@@ -36,7 +36,7 @@ for (const issue of issues) {
       if (!code.includes('getRecommendedEvents')) {
         code = code.replace(
           'import MatchScoreBadge from "../common/MatchScoreBadge";',
-          'import MatchScoreBadge from "../common/MatchScoreBadge";\nimport { getRecommendedEvents } from "../../utils/eventRecommendationUtils";'
+          'import MatchScoreBadge from "../common/MatchScoreBadge";\nimport { getRecommendedEvents } from "utils/eventRecommendationUtils";'
         );
         fs.writeFileSync(file, code);
       }
@@ -247,9 +247,9 @@ for (const issue of issues) {
   const keywords = ['bug', 'feature', 'question', 'pricing', 'roadmap'];
   const regex = new RegExp(\`\\\\b(\${keywords.join('|')})\\\\b\`, 'gi');
   const parts = text.split(regex);
-  return parts.map((part, i) => 
-    keywords.includes(part.toLowerCase()) 
-      ? <span key={i} className="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-400 font-bold border border-indigo-500/30 text-[10px] uppercase tracking-widest mx-0.5">{part}</span> 
+  return parts.map((part, i) =>
+    keywords.includes(part.toLowerCase())
+      ? <span key={i} className="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-400 font-bold border border-indigo-500/30 text-[10px] uppercase tracking-widest mx-0.5">{part}</span>
       : part
   );
 }
@@ -270,7 +270,7 @@ function QuestionCard({ q, isModerator, onUpvote, onFlag, onDelete }) {`
       let code = fs.readFileSync(file, 'utf8');
       code = code.replace(
         /import React, \{ useState, useRef, useEffect, useCallback \} from "react";/,
-        `import React, { useState, useRef, useEffect, useCallback, useContext } from "react";\nimport { LiveAudienceContext } from "../../context/RealTimeContext";\nimport { Users } from "lucide-react";`
+        `import React, { useState, useRef, useEffect, useCallback, useContext } from "react";\nimport { LiveAudienceContext } from "context/RealTimeContext";\nimport { Users } from "lucide-react";`
       );
       code = code.replace(
         /const FloorPlanDesigner = \(\) => \{/,

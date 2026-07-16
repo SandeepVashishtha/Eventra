@@ -28,7 +28,7 @@ import {
   getChartDataPoints,
   sliderToHours,
   getFormattedSimTime
-} from "../../utils/eventTimelineUtils";
+} from "utils/eventTimelineUtils";
 
 const EventTimelineReplay = ({ eventId }) => {
   // Find matching event from mock data or fallback
@@ -104,7 +104,7 @@ const EventTimelineReplay = ({ eventId }) => {
   // Active Sessions
   const activeSessions = [];
   const sessionStatusMap = {};
-  
+
   // Track start/end of sessions up to currentHours
   visibleEvents.forEach((evt) => {
     if (evt.type === "session") {
@@ -161,7 +161,7 @@ const EventTimelineReplay = ({ eventId }) => {
               Scrub or press play to visualize how the event unfolded chronologically.
             </p>
           </div>
-          
+
           {/* Simulated Time Indicator */}
           <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-950 px-4 py-2.5 rounded-2xl border border-slate-100 dark:border-white/5">
             <Clock className="text-indigo-500" size={18} />
@@ -336,10 +336,10 @@ const EventTimelineReplay = ({ eventId }) => {
 
       {/* Main Grid: Visuals & Feed */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* Left Side: Growth Chart & Active Sessions */}
         <div className="lg:col-span-2 space-y-6">
-          
+
           {/* Dynamic Replays Trend AreaChart */}
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-3xl p-6 shadow-sm">
             <h3 className="text-md font-bold mb-4 flex items-center gap-2">
@@ -362,7 +362,7 @@ const EventTimelineReplay = ({ eventId }) => {
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                   <XAxis dataKey="timeLabel" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} dy={10} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} />
-                  <Tooltip 
+                  <Tooltip
                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '12px' }}
                     itemStyle={{ fontStyle: 'normal' }}
                   />
@@ -423,7 +423,7 @@ const EventTimelineReplay = ({ eventId }) => {
               <Filter className="text-pink-500" size={18} />
               Replay Activity Feed
             </h3>
-            
+
             {/* Search Input */}
             <div className="relative">
               <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />

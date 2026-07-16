@@ -1,23 +1,62 @@
 import React, { memo, useCallback, useId, useState } from "react";
-import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
-import {
-  Calendar,
-  MapPin,
-  Clock,
-  ArrowRight,
-  Bookmark,
-  BookmarkCheck,
-} from "lucide-react";
-import { toast } from "react-toastify";
-import LazyImage from "../../components/common/LazyImage";
-import { getEventStatus } from "../../utils/eventUtils";
-import { useMyEvents } from "../../context/MyEventsContext";
+import { logger } from "utils/logger";
+import LazyImage from "components/common/LazyImage";
+import ShareModal from "components/common/ShareModal";
+import StatusBadge from "components/common/StatusBadge";
+import { getEventStatus } from "utils/eventUtils";
+import SocialShareButtons from "components/common/SocialShareButtons";
+import AddToCalendar from "components/common/AddToCalendar";
+import { useMyEvents } from "context/MyEventsContext";
+import MatchScoreBadge from "components/common/MatchScoreBadge";
+
 import {
   isEventBookmarked,
   addBookmarkedEvent,
   removeBookmarkedEvent,
-} from "../../utils/bookmarkUtils";
+} from "utils/bookmarkUtils";
+import { checkRegistrationConflict } from "utils/conflictDetection";
+
+const CARD_GRADIENTS = [
+  "from-violet-600 via-purple-600 to-indigo-700",
+  "from-rose-500 via-pink-600 to-purple-700",
+  "from-cyan-500 via-blue-600 to-indigo-700",
+  "from-emerald-500 via-teal-600 to-cyan-700",
+  "from-orange-500 via-amber-500 to-yellow-500",
+  "from-fuchsia-600 via-pink-600 to-rose-600",
+  "from-sky-500 via-blue-500 to-violet-600",
+  "from-green-500 via-emerald-600 to-teal-700",
+];
+
+const CATEGORY_ICONS = {
+  ai: Cpu,
+  tech: Code,
+  technology: Code,
+  music: Music,
+  business: Briefcase,
+  global: Globe,
+  summit: Award,
+  conference: Award,
+  hackathon: Zap,
+  bootcamp: Star,
+  networking: Globe,
+  cultural: Heart,
+  default: Star,
+};
+
+const getCategoryIcon = (event) => {
+  const titleLower = (event.title || "").toLowerCase();
+  const typeLower = (event.type || event.category || "").toLowerCase();
+  const text = `${titleLower} ${typeLower}`;
+  for (const [key, Icon] of Object.entries(CATEGORY_ICONS)) {
+    if (key !== "default" && text.includes(key)) return Icon;
+  }
+  return CATEGORY_ICONS.default;
+};
+
+const getCardGradient = (id) => {
+  const index = (parseInt(id, 10) || 0) % CARD_GRADIENTS.length;
+  return CARD_GRADIENTS[index];
+};
 
 const formatEventDate = (dateValue) => {
   if (!dateValue) return { short: "TBD", full: "Date TBD", relative: "" };

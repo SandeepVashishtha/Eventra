@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import useReducedMotion from "../../hooks/useReducedMotion";
+import useReducedMotion from "hooks/useReducedMotion";
 import {
   Globe,
   Users,
@@ -287,7 +287,7 @@ export default function CollaborationNetworkMap() {
     if (!hub) return {};
     const xPercent = (hub.x / 1000) * 100;
     const yPercent = (hub.y / 500) * 100;
-    
+
     // Prevent horizontal overflow
     let xTransform = "-50%";
     if (hub.x > 750) {
@@ -304,9 +304,9 @@ export default function CollaborationNetworkMap() {
       yOffset = 4;
     }
 
-    return { 
-      left: `${xPercent}%`, 
-      top: `${yPercent + yOffset}%`, 
+    return {
+      left: `${xPercent}%`,
+      top: `${yPercent + yOffset}%`,
       x: xTransform,
       y: yTransform
     };
