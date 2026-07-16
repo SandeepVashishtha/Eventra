@@ -42,10 +42,15 @@ export default function CollaborativeWhiteboard() {
   // Stroke list state
   const [localStrokes, setLocalStrokes] = useState([]);
   const [remoteActiveStrokes, setRemoteActiveStrokes] = useState({}); // strokes currently being drawn by peers
+  const remoteActiveStrokesRef = useRef(remoteActiveStrokes);
 
   const isDrawingRef = useRef(false);
   const currentStrokeIdRef = useRef(null);
   const currentPointsRef = useRef([]);
+
+  useEffect(() => {
+    remoteActiveStrokesRef.current = remoteActiveStrokes;
+  }, [remoteActiveStrokes]);
 
   // Generate a random client peer identifier
   const peerId = useRef(`peer_${Math.random().toString(36).substring(2, 7)}`);
@@ -245,7 +250,7 @@ export default function CollaborativeWhiteboard() {
           break;
 
         case "WHITEBOARD_STROKE_END": {
-          const finishedRemote = remoteActiveStrokes[msg.id];
+          const finishedRemote = remoteActiveStrokesRef.current[msg.id];
           if (finishedRemote) {
             setLocalStrokes((l) => {
               const updated = [...l, finishedRemote];
@@ -437,7 +442,7 @@ export default function CollaborativeWhiteboard() {
         return copy;
       });
       setLocalStrokes(prev => {
-        const finished = remoteActiveStrokes[finishedId];
+        const finished = remoteActiveStrokesRef.current[finishedId];
         if (!finished) return prev;
         const updated = [...prev, finished];
         saveHistory(updated);
@@ -446,7 +451,7 @@ export default function CollaborativeWhiteboard() {
     } else {
       // Shape drawing finished
       const finishedId = currentStrokeIdRef.current;
-      const finished = remoteActiveStrokes[finishedId];
+      const finished = remoteActiveStrokesRef.current[finishedId];
       if (finished) {
         bcRef.current.postMessage({
           type: "WHITEBOARD_COMPLETE_STROKE",
