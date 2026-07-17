@@ -4,6 +4,7 @@ import { Trophy, Calendar, MapPin, Plus } from "lucide-react";
 import StatusBadge from "../common/StatusBadge";
 import { DashboardItemCardSkeleton } from "../common/SkeletonLoaders";
 import SearchEmptyState from "../common/SearchEmptyState";
+import { getSmartDateLabel } from "utils/relativeTime";
 
 const HackathonsTab = ({ hackathons, loading, fadeUp }) => (
   <motion.div key="hackathons" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="ud-content">
@@ -39,8 +40,8 @@ const HackathonsTab = ({ hackathons, loading, fadeUp }) => (
           </div>
           <h3 className="ud-item-title">{h.title}</h3>
           <div className="ud-item-meta">
-            <span><Calendar size={13} /> {h.date}</span>
-            <span><MapPin size={13} /> {h.location}</span>
+            <span><Calendar size={13} /> {h.date ? getSmartDateLabel(h.date) : "—"}</span>
+            <span><MapPin size={13} /> {h.location || "Online"}</span>
           </div>
           <div className="ud-item-footer">
             <StatusBadge status={h.participationType} />
