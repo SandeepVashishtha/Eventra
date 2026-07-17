@@ -28,7 +28,13 @@ const TYPE_ICON = {
 
 // Helper to render status badge
 const renderStatusBadge = (item) => {
-  const status = item.projectStatus !== "-" ? item.projectStatus : item.status;
+  // Guard against undefined/null in addition to the "-" sentinel so that
+  // Event and Hackathon rows (which have no projectStatus) correctly fall
+  // back to item.status instead of rendering <StatusBadge status={undefined} />.
+  const status =
+    item.projectStatus && item.projectStatus !== "-"
+      ? item.projectStatus
+      : item.status;
   return <StatusBadge status={status} />;
 };
 
