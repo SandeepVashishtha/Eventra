@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 // Consolidated lucide-react imports for code cleanliness
 import { Facebook, Linkedin, MessageCircle, Send, Share2, Copy, Mail, Check } from 'lucide-react';
-import { generateSharingUrl, copyToClipboard } from '../../../utils/shareUtils';
+import { generateSharingUrl, copyToClipboard } from '@utils/shareUtils';
 import { toast } from 'react-toastify';
 import './ShareMenu.css';
 
