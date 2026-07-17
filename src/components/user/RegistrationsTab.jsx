@@ -26,6 +26,9 @@ const TYPE_ICON = {
   Project: <FolderOpen className="ud-type-icon" style={{ color: "#8b5cf6" }} />,
 };
 
+// Fallback for unrecognized or missing item.type values
+const DEFAULT_TYPE_ICON = <FolderOpen className="ud-type-icon" style={{ color: "#94a3b8" }} />;
+
 // Helper to render status badge
 const renderStatusBadge = (item) => {
   // Guard against undefined/null in addition to the "-" sentinel so that
@@ -85,8 +88,8 @@ const renderTableRow = (item, setSelectedTicketEvent) => (
   <tr key={item.id}>
     <td>
       <span className="ud-table-type">
-        {TYPE_ICON[item.type]}
-        {item.type}
+      {TYPE_ICON[item.type] ?? DEFAULT_TYPE_ICON}
+      {item.type ?? "Unknown"}
       </span>
     </td>
     <td className="ud-table-title" title={item.title}>
