@@ -5,6 +5,7 @@ import DesktopNavbar from "./DesktopNavbar";
 import MobileNavbar from "./MobileNavbar";
 import AuthButtons from "./AuthButtons";
 import ProfileMenu from "./ProfileMenu";
+import LanguageSelector from "../LanguageSelector";
 import NotificationBell from "../notifications/NotificationBell";
 import useBodyScrollLock from "./hooks/useBodyScrollLock";
 import useKeyboardShortcuts from "hooks/useKeyboardShortcuts";
@@ -81,8 +82,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           }`}
       >
         <div className="mx-auto max-w-screen-2xl px-3 sm:px-4 lg:px-6">
-          {/* FIXED: Added overflow-hidden and min-width-0 to prevent overflow */}
-          <div className="flex h-16 items-center justify-between gap-2 overflow-hidden min-w-0">
+          <div className="flex h-16 min-w-0 items-center justify-between gap-2 overflow-visible">
 
             {/* Logo - Fixed width */}
             <Link to="/" aria-label="Eventra Home" className="flex items-center shrink-0">
@@ -102,8 +102,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
               </div>
             </Link>
 
-            {/* FIXED: Desktop Navigation - Added flex-shrink and min-width-0 */}
-            <div className="hidden lg:flex flex-1 justify-center min-w-0 mx-1 overflow-hidden">
+            <div className="hidden lg:flex flex-1 justify-center min-w-0 mx-1">
               <DesktopNavbar />
             </div>
 
@@ -111,6 +110,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             <div className="flex items-center justify-end gap-2 shrink-0">
               {/* Desktop CTAs & Profile */}
               <div className="hidden lg:flex items-center gap-2">
+                <LanguageSelector compact />
                 {authenticated ? (
                   <>
                     <NotificationBell />
