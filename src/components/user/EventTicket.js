@@ -9,6 +9,7 @@ import { useMyEvents } from "context/MyEventsContext";
 import SpatialSeatSelector from "../events/SpatialSeatSelector";
 import { AnimatePresence } from "framer-motion";
 import { useOfflineStatus } from "hooks/useOfflineStatus";
+import { buildTicketQrPayload, buildTicketQrValue, getTicketHolderName } from "utils/ticketQrPayload";
 
 const EventTicket = ({ event, user, onClose }) => {
   const ticketRef = useRef(null);
@@ -23,10 +24,7 @@ const EventTicket = ({ event, user, onClose }) => {
   const registration = myEvents.find((r) => r.eventId === event.id);
   const selectedSeat = registration?.formData?.selectedSeat;
 
-  // No backend ticket-token endpoint exists — the QR encodes the local
-  // registration ID (or a generated serial) as the pass identifier.
-  const qrToken = registration?.qrToken || "";
-
+  // The QR payload mirrors the JSON shape consumed by TicketScanner.
   // Generate a mock ticket serial code based on event and user details
   const generateSerial = () => {
     const eventPart = (event?.title || "EVT").slice(0, 3).toUpperCase();
@@ -36,6 +34,9 @@ const EventTicket = ({ event, user, onClose }) => {
   };
 
   const [serialNumber] = useState(() => registration?.registrationId || generateSerial());
+  const qrPayload = buildTicketQrPayload({ event, user, registration, serialNumber });
+  const qrValue = buildTicketQrValue(qrPayload);
+  const attendeeName = getTicketHolderName(user);
 
   // Dynamic category themes
   const getThemeColors = () => {
@@ -304,7 +305,7 @@ const EventTicket = ({ event, user, onClose }) => {
                     <span className="ud-ticket-info-label">ATTENDEE</span>
                     <span className="ud-ticket-info-value flex items-center gap-1.5 font-semibold text-white">
                       <User size={13} style={{ color: theme.accent }} />
-                      {user?.fullName || `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || "Eventra Guest"}
+                      {attendeeName}
                     </span>
                   </div>
 
@@ -344,25 +345,13 @@ const EventTicket = ({ event, user, onClose }) => {
               <div className="ud-ticket-footer">
                 <div className="ud-ticket-qr-wrap">
                   <div className="ud-ticket-qr-border flex items-center justify-center bg-zinc-950/20 dark:bg-white/5 rounded-xl border border-white/10" style={{ width: 110, height: 110 }}>
-                    {isOffline && !qrToken ? (
-                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
-                        <QRCode
-                          value={registration?.registrationId || serialNumber}
-                          size={80}
-                          bgColor="transparent"
-                          fgColor="#ffffff"
-                          className="ud-ticket-qr"
-                        />
-                      </div>
-                    ) : (
-                      <QRCode
-                        value={qrToken || registration?.qrToken || registration?.registrationId || serialNumber}
-                        size={90}
-                        bgColor="transparent"
-                        fgColor="#ffffff"
-                        className="ud-ticket-qr"
-                      />
-                    )}
+                    <QRCode
+                      value={qrValue}
+                      size={90}
+                      bgColor="transparent"
+                      fgColor="#ffffff"
+                      className="ud-ticket-qr"
+                    />
                   </div>
                 </div>
 
