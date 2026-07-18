@@ -5,6 +5,7 @@ import en from "./locales/en.json" with { type: "json" };
 import es from "./locales/es.json" with { type: "json" };
 import hi from "./locales/hi.json" with { type: "json" };
 import te from "./locales/te.json" with { type: "json" };
+import ar from "./locales/ar.json" with { type: "json" };
 
 i18n
   .use(LanguageDetector)
@@ -15,8 +16,9 @@ i18n
       hi: { translation: hi },
       te: { translation: te },
       es: { translation: es },
+      ar: { translation: ar },
     },
-    supportedLngs: ["en", "hi", "te", "es"],
+    supportedLngs: ["en", "hi", "te", "es", "ar"],
     fallbackLng: "en",
     interpolation: {
       escapeValue: false,

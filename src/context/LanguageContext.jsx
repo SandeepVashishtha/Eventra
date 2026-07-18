@@ -4,11 +4,26 @@ import { useTranslation } from "react-i18next";
 const STORAGE_KEY = "eventra_language";
 
 export const SUPPORTED_LANGUAGES = [
-  { code: "en", label: "English", nativeLabel: "English" },
-  { code: "hi", label: "Hindi", nativeLabel: "हिन्दी" },
-  { code: "te", label: "Telugu", nativeLabel: "తెలుగు" },
-  { code: "es", label: "Spanish", nativeLabel: "Español" },
+  { code: "en", label: "English", nativeLabel: "English", rtl: false },
+  { code: "hi", label: "Hindi", nativeLabel: "हिन्दी", rtl: false },
+  { code: "te", label: "Telugu", nativeLabel: "తెలుగు", rtl: false },
+  { code: "es", label: "Spanish", nativeLabel: "Español", rtl: false },
+  { code: "ar", label: "Arabic", nativeLabel: "العربية", rtl: true },
 ];
+
+// Fast lookup set of RTL language codes, kept in sync with SUPPORTED_LANGUAGES.
+const RTL_LANGUAGE_CODES = new Set(
+  SUPPORTED_LANGUAGES.filter((lang) => lang.rtl).map((lang) => lang.code)
+);
+
+const isLanguageRTL = (code) => RTL_LANGUAGE_CODES.has(code?.split("-")[0]);
+
+const applyDocumentDirection = (code) => {
+  if (typeof document === "undefined") return;
+  const normalized = code?.split("-")[0] || "en";
+  document.documentElement.lang = normalized;
+  document.documentElement.dir = isLanguageRTL(normalized) ? "rtl" : "ltr";
+};
 
 const LanguageContext = createContext(null);
 
@@ -32,7 +47,7 @@ export function LanguageProvider({ children }) {
       } catch {
         // localStorage may be unavailable
       }
-      document.documentElement.lang = normalized;
+      applyDocumentDirection(normalized);
     },
     [i18n]
   );
@@ -41,11 +56,11 @@ export function LanguageProvider({ children }) {
     const handleLanguageChanged = (lng) => {
       const normalized = lng.split("-")[0];
       setLanguage(normalized);
-      document.documentElement.lang = normalized;
+      applyDocumentDirection(normalized);
     };
 
     i18n.on("languageChanged", handleLanguageChanged);
-    document.documentElement.lang = i18n.language?.split("-")[0] || "en";
+    applyDocumentDirection(i18n.language);
 
     return () => {
       i18n.off("languageChanged", handleLanguageChanged);
@@ -57,7 +72,7 @@ export function LanguageProvider({ children }) {
       language,
       changeLanguage,
       supportedLanguages: SUPPORTED_LANGUAGES,
-      isRTL: false,
+      isRTL: isLanguageRTL(language),
     }),
     [language, changeLanguage]
   );

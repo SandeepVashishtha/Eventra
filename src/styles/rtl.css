@@ -1,0 +1,34 @@
+/**
+ * RTL (Right-to-Left) support
+ * ----------------------------------------------------------------------------
+ * Direction is toggled globally via `document.documentElement.dir`, set by
+ * LanguageContext (see src/context/LanguageContext.jsx) whenever an RTL
+ * language (currently Arabic, "ar") is active.
+ *
+ * Convention for contributors:
+ *  - Prefer Tailwind's built-in logical-property utilities so components are
+ *    direction-agnostic by default: `ms-*`/`me-*` instead of `ml-*`/`mr-*`,
+ *    `ps-*`/`pe-*` instead of `pl-*`/`pr-*`, and `text-start`/`text-end`
+ *    instead of `text-left`/`text-right`.
+ *  - When a logical utility isn't enough (e.g. flipping an icon, or a
+ *    transform-based animation that assumes LTR), use the `rtl:` variant
+ *    defined in src/index.css, e.g.
+ *      className="flex-row rtl:flex-row-reverse"
+ *      className="translate-x-2 rtl:-translate-x-2"
+ *  - This file only carries global, direction-aware defaults that can't be
+ *    reasonably expressed per-component (fonts, scrollbars, etc). Component-
+ *    level fixes belong in the component's own className, not here.
+ */
+
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;600;700;800&display=swap");
+
+[dir="rtl"] {
+  font-family: "Noto Sans Arabic", "Inter", sans-serif;
+}
+
+/* Directional icons that visually encode "forward/back" (chevrons, arrows)
+   should be mirrored in RTL unless they represent a fixed real-world
+   direction (e.g. a compass). Apply this class alongside such icons. */
+[dir="rtl"] .rtl-mirror {
+  transform: scaleX(-1);
+}
