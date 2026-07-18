@@ -377,7 +377,7 @@ const Footer = () => {
         </div>
 
         {/* ── Bottom bar ── */}
-        <div className="py-5 border-t border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="py-5 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-gray-400 dark:text-gray-500 transition-colors duration-200 hover:text-gray-600 dark:hover:text-gray-300">
             © {new Date().getFullYear()} Eventra. <span>{t("footer.rights")}</span>
           </p>
