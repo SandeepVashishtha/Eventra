@@ -132,7 +132,10 @@ const PasswordReset = () => {
     }
   };
 
-  const isSubmitDisabled = loading || isCoolingDown();
+  // Compute once per render so isSubmitDisabled, the banner, and the button
+  // label all read the same snapshot — prevents inconsistent UI at cooldown boundary.
+  const coolingDown = isCoolingDown();
+  const isSubmitDisabled = loading || coolingDown;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-black py-12 px-4 sm:px-6 lg:px-8">
@@ -150,7 +153,7 @@ const PasswordReset = () => {
         <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 text-center">Reset Password</h1>
         <p className="text-sm text-gray-600 dark:text-gray-400 text-center">Secure your account and get back to creating events.</p>
 
-        {isCoolingDown() && cooldownSeconds > 0 && (
+        {coolingDown && cooldownSeconds > 0 && (
           <motion.div
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
@@ -189,7 +192,7 @@ const PasswordReset = () => {
             disabled={isSubmitDisabled}
             className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition-colors disabled:bg-blue-400 disabled:cursor-not-allowed"
           >
-            {loading ? 'Sending...' : isCoolingDown() ? `Wait ${cooldownSeconds}s` : 'Send Reset Link'}
+            {loading ? 'Sending...' : coolingDown ? `Wait ${cooldownSeconds}s` : 'Send Reset Link'}
           </button>
         </form>
 
