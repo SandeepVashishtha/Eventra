@@ -85,6 +85,12 @@ const PasswordReset = () => {
     return () => clearAllTimers(); // Safely clean up everything on unmount
   }, [clearAllTimers]);
 
+  // Auto-focus the email input on mount for keyboard and accessibility UX.
+  // emailInputRef was already wired to the input but the focus call was missing.
+  useEffect(() => {
+    emailInputRef.current?.focus();
+  }, []);
+
   // FIX (Issue #5720): On mount, if a persisted cooldown is still active,
   // start the countdown timer so the UI reflects the correct remaining time.
   useEffect(() => {
