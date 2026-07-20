@@ -25,6 +25,7 @@ import EmptyState from "../common/EmptyState";
 import { useDebouncedSearch } from "hooks/useDebouncedSearch";
 import { useOfflineStatus } from "hooks/useOfflineStatus";
 import LazyImage from "../common/LazyImage";
+import { showUndoToast } from "utils/toast";
 import toast from "react-hot-toast";
 
 /* ---------------- Helper Functions (Extracted to reduce complexity) ---------------- */
@@ -368,7 +369,7 @@ const EventsEmptyState = () => (
 const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const prefersReducedMotion = useReducedMotion();
   const staggerVariants = stagger(prefersReducedMotion);
-  const { myEvents, removeRegistration, loading: myEventsLoading } = useMyEvents();
+  const { myEvents, removeRegistration, restoreRegistration, loading: myEventsLoading } = useMyEvents();
   const { user } = useAuth();
 
   const [waitlistEvents, setWaitlistEvents] = useState([]);
@@ -536,10 +537,17 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const handleCancelDismiss = () => setCancelTarget(null);
   const handleCancelConfirm = useCallback(() => {
     if (!cancelTarget) return;
+    const registration = myEvents.find((event) => event.eventId === cancelTarget.id);
     removeRegistration(cancelTarget.id);
     setCancelTarget(null);
-    toast.success("Registration cancelled successfully");
-  }, [cancelTarget, removeRegistration]);
+    showUndoToast({
+      message: "Registration cancelled.",
+      toastId: `cancel-registration-${cancelTarget.id}`,
+      onUndo: () => {
+        if (registration) restoreRegistration(registration);
+      },
+    });
+  }, [cancelTarget, myEvents, removeRegistration, restoreRegistration]);
 
   const handleCopyLink = async (event) => {
     try {
@@ -552,15 +560,57 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   };
 
   const handleLeaveWaitlist = async (eventId, eventTitle) => {
-    if (window.confirm(`Are you sure you want to leave the waitlist for "${eventTitle}"?`)) {
-      try {
-        const { leaveWaitlist } = await import("utils/waitlistUtils.js");
-        await leaveWaitlist(eventId, user.id || user.email);
-        toast.success("Left the waitlist successfully.");
-        triggerWaitlistUpdate();
-      } catch (err) {
-        toast.error(err.message || "Failed to leave waitlist.");
+    try {
+      const { getGlobalWaitlist, saveGlobalWaitlist, leaveWaitlist } = await import("utils/waitlistUtils.js");
+      const userId = user.id || user.email;
+      const records = getGlobalWaitlist();
+      const recordIndex = records.findIndex(
+        (record) => String(record.eventId) === String(eventId) && record.userId === userId && record.status === "waiting"
+      );
+      const previousRecord = recordIndex >= 0 ? { ...records[recordIndex] } : null;
+
+      if (recordIndex >= 0) {
+        const optimisticRecords = [...records];
+        optimisticRecords[recordIndex] = {
+          ...optimisticRecords[recordIndex],
+          status: "removed",
+          removedAt: new Date().toISOString(),
+        };
+        saveGlobalWaitlist(optimisticRecords);
       }
+
+      triggerWaitlistUpdate();
+      showUndoToast({
+        message: `Left the waitlist for "${eventTitle}".`,
+        toastId: `dashboard-leave-waitlist-${eventId}`,
+        onUndo: () => {
+          if (!previousRecord) return;
+          const latest = getGlobalWaitlist();
+          const restoreIndex = latest.findIndex(
+            (record) => String(record.eventId) === String(eventId) && record.userId === userId
+          );
+          const restored = restoreIndex >= 0 ? [...latest] : [previousRecord, ...latest];
+          if (restoreIndex >= 0) restored[restoreIndex] = previousRecord;
+          saveGlobalWaitlist(restored);
+          triggerWaitlistUpdate();
+        },
+        onCommit: async () => {
+          try {
+            await leaveWaitlist(eventId, userId);
+          } catch (err) {
+            if (previousRecord) {
+              const latest = getGlobalWaitlist();
+              if (!latest.some((record) => String(record.eventId) === String(eventId) && record.userId === userId && record.status === "waiting")) {
+                saveGlobalWaitlist([previousRecord, ...latest]);
+              }
+              triggerWaitlistUpdate();
+            }
+            toast.error(err.message || "Failed to leave waitlist.");
+          }
+        },
+      });
+    } catch (err) {
+      toast.error(err.message || "Failed to leave waitlist.");
     }
   };
 

@@ -16,6 +16,7 @@ import { apiUtils, API_ENDPOINTS } from "../config/api.js";
 import { safeLocalStorage } from "../utils/safeStorage";
 import { useAuth } from "../context/AuthContext";
 import { getOrMigrateKey } from "../utils/storageKeyManager";
+import { showUndoToast } from "../utils/toast";
 
 // Legacy unscoped key the hook used before #10388. Kept around so
 // getOrMigrateKey can adopt any data left under it into the user's namespaced
@@ -185,26 +186,35 @@ export default function useWaitlist(eventId, { capacity: _capacity, attendees: _
       return next;
     });
 
-    try {
-      const res = await apiUtils.delete(
-        API_ENDPOINTS.EVENTS?.WAITLIST
-          ? API_ENDPOINTS.EVENTS.WAITLIST(id)
-          : `/api/events/${id}/waitlist`,
-        {}
-      );
-      if (!res.ok) {
-        throw new Error(res.data?.message || "Failed to leave waitlist.");
-      }
-      toast.info("You've been removed from the waitlist.");
-    } catch (err) {
-      // Roll back
-      setWaitlistMap((prev) => ({ ...prev, [id]: prevEntry }));
-      const msg = err.message || "Unable to leave waitlist right now.";
-      setError(msg);
-      toast.error(msg);
-    } finally {
-      setIsLoading(false);
-    }
+    showUndoToast({
+      message: "Removed from waitlist.",
+      toastId: `leave-waitlist-${id}`,
+      onUndo: () => {
+        setWaitlistMap((prev) => ({ ...prev, [id]: prevEntry }));
+        setIsLoading(false);
+        toast.info("Waitlist removal undone.");
+      },
+      onCommit: async () => {
+        try {
+          const res = await apiUtils.delete(
+            API_ENDPOINTS.EVENTS?.WAITLIST
+              ? API_ENDPOINTS.EVENTS.WAITLIST(id)
+              : `/api/events/${id}/waitlist`,
+            {}
+          );
+          if (!res.ok) {
+            throw new Error(res.data?.message || "Failed to leave waitlist.");
+          }
+        } catch (err) {
+          setWaitlistMap((prev) => ({ ...prev, [id]: prevEntry }));
+          const msg = err.message || "Unable to leave waitlist right now.";
+          setError(msg);
+          toast.error(msg);
+        } finally {
+          setIsLoading(false);
+        }
+      },
+    });
   }, [id, isOnWaitlist, isLoading, waitlistMap]);
 
   return {
