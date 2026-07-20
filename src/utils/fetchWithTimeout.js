@@ -62,6 +62,7 @@ export const fetchWithTimeout = async (
   try {
     const response = await fetch(url, {
       ...options,
+      headers: requestHeaders,
       signal: controller.signal, // This now responds to BOTH the timeout and the user's unmount signal
     });
 
