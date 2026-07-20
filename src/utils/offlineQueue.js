@@ -726,7 +726,10 @@ export const processQueue = async (currentUserId, fetchFn, options = {}) => {
 
     if (result.status === "success") {
       succeeded.push(item);
-    } else if (result.status === "dropped") {
+    } else if (result.status === "dropped" || result.status === "conflict") {
+      if (result.status === "conflict") {
+        logger.warn(`[OfflineQueue] Unresolved 409 conflict for item ${item.id} — dropping.`);
+      }
       dropped.push(item);
     } else {
       failed.push({ ...item, retryCount: (item.retryCount || 0) + 1 });
