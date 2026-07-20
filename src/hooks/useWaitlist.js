@@ -81,7 +81,9 @@ function persistWaitlist(map, storageKey) {
  *   leave: () => Promise<void>,
  * }}
  */
-export default function useWaitlist(eventId, { capacity: _capacity, attendees: _attendees } = {}) {
+export default function useWaitlist(eventId, { 
+  // capacity: _capacity, attendees: _attendees 
+} = {}) {
   const { user } = useAuth();
   const userId = user?.id;
 
