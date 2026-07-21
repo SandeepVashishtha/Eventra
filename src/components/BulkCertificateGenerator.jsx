@@ -112,7 +112,7 @@ const BulkCertificateGenerator = ({ eventName, eventDate, eventType, organizerNa
       {isGenerating && (
         <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
           <div className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
-            style={{ width: `${(progress / attendees.length) * 100}%` }} />
+            style={{ width: `${attendees.length > 0 ? (progress / attendees.length) * 100 : 0}%` }} />
         </div>
       )}
 
