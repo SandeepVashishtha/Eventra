@@ -12,15 +12,19 @@ import {
   STORAGE_KEY_LOCKOUT_UNTIL,
 } from "../src/utils/rateLimitUtils.js";
 
-globalThis.sessionStorage = globalThis.sessionStorage || {
-  _data: {},
-  getItem: function(key) { return this._data[key] ?? null; },
-  setItem: function(key, val) { this._data[key] = String(val); },
-  removeItem: function(key) { delete this._data[key]; },
-  clear: function() { this._data = {}; },
+// Always install an isolated in-memory mock regardless of Node built-ins.
+// Node 26 exposes a native sessionStorage that lacks the ._data property
+// used by the assertions below, so we unconditionally replace it.
+const _data = {};
+globalThis.sessionStorage = {
+  _data,
+  getItem: function(key) { return _data[key] ?? null; },
+  setItem: function(key, val) { _data[key] = String(val); },
+  removeItem: function(key) { delete _data[key]; },
+  clear: function() { Object.keys(_data).forEach(k => delete _data[k]); },
 };
 
-const storage = globalThis.sessionStorage._data;
+const storage = _data;
 
 assert.equal(readPersistedRateLimit().attempts, 0, "empty storage should return 0 attempts");
 assert.equal(readPersistedRateLimit().lockoutUntil, 0, "empty storage should return 0 lockoutUntil");

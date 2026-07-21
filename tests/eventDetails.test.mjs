@@ -104,11 +104,11 @@ describe('EventDetails — mock fallback for offline/dev', () => {
 });
 
 describe('EventDetails — no duplicate React import', () => {
-  it('has at most one React import declaration', () => {
-    const reactImports = src.match(/^import .* from ["']react["'];?$/gm) || [];
+  it('has at most one React import (zero is valid with the automatic JSX transform)', () => {
+    const reactImports = src.match(/^import React/gm) || [];
     assert.ok(
       reactImports.length <= 1,
-      `Expected at most 1 React import declaration, found ${reactImports.length} — duplicate imports cause ESLint parse errors`,
+      `Expected 0 or 1 React import, found ${reactImports.length} — duplicate imports cause ESLint parse errors`,
     );
   });
 
