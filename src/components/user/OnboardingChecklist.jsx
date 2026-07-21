@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { safeJsonParse } from "utils/safeJsonParse";
 import { syncSecureStorage } from "utils/secureStorage";
+import { showUndoToast } from "utils/toast";
 
 // Confetti Component for celebration
 const OnboardingConfetti = () => {
@@ -298,9 +299,19 @@ export default function OnboardingChecklist() {
   }, [checkTaskStatus]);
 
   const handleDismiss = () => {
-    localStorage.setItem("eventra_onboarding_dismissed", "true");
     setIsDismissed(true);
     setIsOpen(false);
+    showUndoToast({
+      message: "Onboarding quest dismissed.",
+      toastId: "dismiss-onboarding-checklist",
+      onUndo: () => {
+        setIsDismissed(false);
+        setIsOpen(true);
+      },
+      onCommit: () => {
+        localStorage.setItem("eventra_onboarding_dismissed", "true");
+      },
+    });
   };
 
 

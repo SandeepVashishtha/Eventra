@@ -33,6 +33,7 @@
     "ioredis": "^5.11.1",
     "jsonwebtoken": "9.0.3",
     "jspdf": "^4.2.1",
+    "jszip": "^3.10.1",
     "lenis": "^1.0.42",
     "lucide-react": "^0.542.0",
     "marked": "18.0.4",
