@@ -24,7 +24,15 @@ const BulkCertificateGenerator = ({ eventName, eventDate, eventType, organizerNa
         const attendee = attendees[i];
         const participantName = `${attendee.firstName || ""} ${attendee.lastName || attendee.name || ""}`.trim() || "Participant";
         const doc = generateCertificatePDF({ participantName, eventName, eventDate, eventType, organizerName, template });
-        const safeFileName = `${participantName.replace(/[^a-zA-Z0-9]/g, "_")}_${(eventName || "Event").replace(/[^a-zA-Z0-9]/g, "_")}_Certificate.pdf`;
+        const baseName = participantName.replace(/[^a-zA-Z0-9]/g, "_");
+        const safeEventName = (eventName || "Event").replace(/[^a-zA-Z0-9]/g, "_");
+        let safeFileName = `${baseName}_${safeEventName}_Certificate.pdf`;
+        
+        let counter = 1;
+        while (zip.file(safeFileName)) {
+          safeFileName = `${baseName}_${safeEventName}_Certificate_${counter}.pdf`;
+          counter++;
+        }
         
         const pdfBlob = doc.output("blob");
         zip.file(safeFileName, pdfBlob);
