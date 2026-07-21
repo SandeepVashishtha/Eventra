@@ -10,7 +10,7 @@ import { get as idbGet, del as idbDel } from "idb-keyval";
 import { showUndoToast } from "../utils/toast.js";
 
 const POLLING_INTERVAL_MS = 60_000;
-const MAX_SEEN_IDS = 500;
+const MAX_SEEN_IDS = 10000; // Increased to prevent eviction loops
 const NOTIFICATION_INBOX_PREFIX = "eventra_notification_inbox";
 const GUEST_INBOX_KEY = `${NOTIFICATION_INBOX_PREFIX}_guest`;
 
