@@ -16,10 +16,10 @@ import {
   ThumbsDown,
 } from "lucide-react";
 import FAQCTA from "./FaqCTA";
-import SEOHead from "../../components/SEOHead";
+import SEOHead from "components/SEOHead";
 import { useTranslation } from "react-i18next";
-import { logger } from "../../utils/logger";
-import { safeJsonParse } from "../../utils/safeJsonParse";
+import { logger } from "utils/logger";
+import { safeJsonParse } from "utils/safeJsonParse";
 
 const NAVBAR_HEIGHT = 65;
 
@@ -336,7 +336,7 @@ function FAQSectionInner() {
           left: 0;
           right: 0;
           bottom: 0;
-          background-image: 
+          background-image:
             radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.05) 0%, transparent 50%),
             radial-gradient(circle at 80% 70%, rgba(139, 92, 246, 0.05) 0%, transparent 50%);
           pointer-events: none;
@@ -344,7 +344,7 @@ function FAQSectionInner() {
         }
 
         .dark .faq-background-pattern {
-          background-image: 
+          background-image:
             radial-gradient(circle at 20% 30%, rgba(129, 140, 248, 0.08) 0%, transparent 50%),
             radial-gradient(circle at 80% 70%, rgba(167, 139, 250, 0.08) 0%, transparent 50%);
         }

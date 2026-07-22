@@ -109,7 +109,7 @@ const TeamMatchmaking = () => {
       .split(",")
       .map(s => s.trim().toLowerCase())
       .filter(s => s.length > 0);
-      
+
     const teamSkills = (team.skills || [])
       .map(s => s.trim().toLowerCase())
       .filter(s => s.length > 0);
@@ -117,11 +117,11 @@ const TeamMatchmaking = () => {
     let roleScore = 0;
     const userRoleLower = myProfile.role.toLowerCase();
     const teamRoleLower = (team.role || "").toLowerCase();
-    
+
     if (userRoleLower === teamRoleLower) {
       roleScore = 40;
     } else if (
-      userRoleLower.includes(teamRoleLower) || 
+      userRoleLower.includes(teamRoleLower) ||
       teamRoleLower.includes(userRoleLower) ||
       (userRoleLower.includes("full") && (teamRoleLower.includes("front") || teamRoleLower.includes("back")))
     ) {
@@ -131,7 +131,7 @@ const TeamMatchmaking = () => {
     let skillScore = 0;
     const matchedSkills = [];
     const missingSkills = [];
-    
+
     if (teamSkills.length > 0) {
       const loweredUserSkills = userSkills.map(s => s.toLowerCase());
       teamSkills.forEach(skill => {
@@ -145,7 +145,7 @@ const TeamMatchmaking = () => {
       });
       skillScore = Math.round((matchedSkills.length / teamSkills.length) * 40);
     } else {
-      skillScore = 20; 
+      skillScore = 20;
     }
 
     let levelScore = 0;
@@ -213,7 +213,7 @@ const TeamMatchmaking = () => {
               <Settings size={14} />
               {showProfileSettings ? "Close Match Settings" : "Configure My Skills"}
             </button>
-            
+
             <button
             onClick={() => { setShowForm(!showForm); setShowProfileSettings(false); }}
             className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-blue-500/10"
@@ -237,7 +237,7 @@ const TeamMatchmaking = () => {
                 <User size={18} className="text-blue-500" />
                 Configure Your Matching Criteria
               </h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[10px] font-black uppercase text-slate-400">My Role</label>

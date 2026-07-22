@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 
 import HostHackathon from './HostHackathon';
-import { hostHackathon } from '../../services/hackathonService';
+import { hostHackathon } from 'services/hackathonService';
 
 const renderHostHackathon = () => render(<HostHackathon />, { wrapper: MemoryRouter });
 
@@ -18,15 +18,15 @@ vi.mock('react-toastify', () => ({
 }));
 import { toast } from 'react-toastify';
 
-vi.mock('../../services/hackathonService', () => ({
+vi.mock('services/hackathonService', () => ({
   hostHackathon: vi.fn(),
 }));
 
-vi.mock('../../context/AuthContext', async () => {
-  const actual = await vi.importActual('../../context/AuthContext');
+vi.mock('context/AuthContext', async () => {
+  const actual = await vi.importActual('context/AuthContext');
   return { ...actual, useAuth: vi.fn() };
 });
-import { useAuth as useAuthMock } from '../../context/AuthContext';
+import { useAuth as useAuthMock } from 'context/AuthContext';
 
 const mockIsAuthenticated = vi.fn(() => true);
 

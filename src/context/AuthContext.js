@@ -202,7 +202,7 @@ export const AuthProvider = ({ children }) => {
         if (!isMountedRef.current) return;
 
         if (res.ok && res.data) {
-          const { sessionUser } = extractSession(res.data, null);
+          const { sessionToken, sessionUser } = extractSession(res, res.data, null);
           if (!isMountedRef.current) return;
           setToken(activeToken);
           setUser(sessionUser);
@@ -310,6 +310,7 @@ export const AuthProvider = ({ children }) => {
         setCookie("token", sessionToken, {
           path: "/",
           secure: window.location.protocol === "https:",
+          maxAge: 7 * 24 * 60 * 60, // Persist for 7 days
         });
       }
     } catch (err) {

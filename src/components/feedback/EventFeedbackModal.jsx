@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X, CheckCircle, ThumbsUp, ThumbsDown } from 'lucide-react';
 import StarRating from './StarRating';
-import { saveFeedback, getUserFeedback } from '../../utils/feedbackUtils';
+import { saveFeedback, getUserFeedback } from 'utils/feedbackUtils';
 import { toast } from 'react-toastify';
-import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { useFocusTrap } from 'hooks/useFocusTrap';
 
 /**
  * EventFeedbackModal Component

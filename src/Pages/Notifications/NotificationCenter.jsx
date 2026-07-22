@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bell, CheckCheck, Filter, Search, Wifi, WifiOff } from "lucide-react";
-import { useNotification } from "../../context/NotificationContext";
-import { NOTIFICATION_CATEGORIES } from "../../utils/notificationPreferences";
-import NotificationItem from "../../components/notifications/NotificationItem";
-import EmptyState from "../../components/common/EmptyState";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
+import { useNotification } from "context/NotificationContext";
+import { NOTIFICATION_CATEGORIES } from "utils/notificationPreferences";
+import NotificationItem from "components/notifications/NotificationItem";
+import EmptyState from "components/common/EmptyState";
+import useDocumentTitle from "hooks/useDocumentTitle";
 
 const FILTER_OPTIONS = [
   { id: "all", label: "All" },

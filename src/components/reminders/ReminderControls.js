@@ -8,7 +8,7 @@ import {
   isPastEvent,
   removeReminder,
   subscribeToReminderChanges,
-} from "../../utils/reminderUtils";
+} from "utils/reminderUtils";
 
 const requestBrowserNotificationPermission = async () => {
   if (typeof window === "undefined" || !("Notification" in window)) {
@@ -25,10 +25,10 @@ const requestBrowserNotificationPermission = async () => {
 const ReminderControls = ({ event, canSetReminder, compact = false }) => {
   const [eventReminders, setEventReminders] = useState(() => getEventReminders(event.id));
   const eventHasPassed = useMemo(() => isPastEvent(event), [event]);
-  
+
   // 🔥 FIX: Track processing state to prevent spam-clicks during async browser prompts
   const [processingTiming, setProcessingTiming] = useState(null);
-  
+
   // 🔥 FIX: Track mounted state to prevent unmount memory leaks
   const isMounted = useRef(true);
 

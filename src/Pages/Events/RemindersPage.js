@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { Bell, CalendarDays, Clock, MapPin, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
+import useDocumentTitle from "hooks/useDocumentTitle";
 import {
   getActiveReminders,
   removeReminderById,
   subscribeToReminderChanges,
-} from "../../utils/reminderUtils";
+} from "utils/reminderUtils";
 
-import { parseEventDateTimeLocal } from "../../utils/timezoneUtils";
+import { parseEventDateTimeLocal } from "utils/timezoneUtils";
 
 const formatEventDate = (event) => {
   const parsed = parseEventDateTimeLocal(event.date, event.time);

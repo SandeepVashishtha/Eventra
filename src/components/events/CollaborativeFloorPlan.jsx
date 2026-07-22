@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
-import { useCollaboration } from "../../hooks/useCollaboration";
+import { useCollaboration } from "hooks/useCollaboration";
 import { CloudLightning, Save, LayoutTemplate } from "lucide-react";
 
 const CollaborativeFloorPlan = () => {
@@ -41,8 +41,8 @@ const CollaborativeFloorPlan = () => {
         <div className="flex items-center gap-6">
           <div className="flex items-center -space-x-2">
             {users.map((u, i) => (
-              <div 
-                key={u.id} 
+              <div
+                key={u.id}
                 className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white border-2 border-white dark:border-gray-800"
                 style={{ backgroundColor: u.color, zIndex: 10 - i }}
                 title={u.name}
@@ -76,13 +76,13 @@ const CollaborativeFloorPlan = () => {
         </div>
 
         {/* Canvas Area */}
-        <div 
+        <div
           className="flex-1 relative bg-gray-100 dark:bg-gray-900 overflow-hidden"
           onMouseMove={handleCanvasMove}
         >
           {/* Grid Background */}
           <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: "radial-gradient(#6366f1 1px, transparent 1px)", backgroundSize: "20px 20px" }} />
-          
+
           {/* Render Elements */}
           {elements.map(el => (
             <div key={el.id} className="absolute p-4 bg-white dark:bg-gray-800 border-2 border-indigo-500 shadow-lg rounded-lg text-sm font-medium dark:text-white cursor-move" style={{ left: el.x, top: el.y }}>
@@ -92,8 +92,8 @@ const CollaborativeFloorPlan = () => {
 
           {/* Render Remote Cursors */}
           {isConnected && users.filter(u => u.id !== "u1").map(u => (
-            <div 
-              key={`cursor-${u.id}`} 
+            <div
+              key={`cursor-${u.id}`}
               className="absolute pointer-events-none transition-all duration-100 ease-linear flex items-center gap-1"
               style={{ left: u.cursor.x, top: u.cursor.y, zIndex: 50 }}
             >

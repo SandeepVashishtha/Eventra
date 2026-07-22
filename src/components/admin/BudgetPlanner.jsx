@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
-import { exportToCSV, exportToJSON } from '../../utils/exportUtils';
+import { exportToCSV, exportToJSON } from 'utils/exportUtils';
 import { Sparkles } from 'lucide-react';
-import { toast } from 'react-toastify'; 
+import { toast } from 'react-toastify';
 
 // Mock data for budgeting
 const initialBudget = {
@@ -95,7 +95,7 @@ const BudgetPlanner = () => {
               <CartesianGrid strokeDasharray="3 3" stroke="currentColor" opacity={0.2} />
               <XAxis dataKey="month" stroke="currentColor" />
               <YAxis stroke="currentColor" />
-              <Tooltip 
+              <Tooltip
                 contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff' }}
               />
               <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} name="Revenue" />
@@ -123,7 +123,7 @@ const BudgetPlanner = () => {
                 <Cell key={`cell-${i}`} fill={entry.fill} />
               ))}
             </Pie>
-            <Tooltip 
+            <Tooltip
               contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff' }}
             />
           </PieChart>

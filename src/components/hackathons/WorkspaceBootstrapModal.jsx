@@ -11,7 +11,7 @@ import {
   slugifyRepoName,
   extractGitHubUsername,
   bootstrapWorkspace,
-} from "../../utils/githubWorkspace";
+} from "utils/githubWorkspace";
 
 // ─── Step indicator ──────────────────────────────────────────────────────────
 const STEPS = [

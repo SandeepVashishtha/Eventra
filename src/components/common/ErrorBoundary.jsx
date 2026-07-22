@@ -1,7 +1,7 @@
 import React from "react";
 import "./ErrorBoundary.css";
-import { logError, persistErrors } from "../../utils/errorLogger";
-import { logSecurityEvent } from "../../utils/securityLogger";
+import { logError, persistErrors } from "utils/errorLogger";
+import { logSecurityEvent } from "utils/securityLogger";
 import {
   categorizeError,
   ERROR_CATEGORIES,
@@ -9,7 +9,7 @@ import {
   invalidateCorruptedAssetCache,
   isRecoverableError,
   logCategorizedError,
-} from "../../utils/errorRecovery";
+} from "utils/errorRecovery";
 
 function generateErrorId() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";

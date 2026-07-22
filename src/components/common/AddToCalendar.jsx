@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Calendar, ChevronDown, X } from 'lucide-react';
-import { getGoogleCalendarUrl, getOutlookCalendarUrl, getWebcalSubscriptionUrl } from '../../utils/calendarUrlUtils';
+import { getGoogleCalendarUrl, getOutlookCalendarUrl, getWebcalSubscriptionUrl } from 'utils/calendarUrlUtils';
 
 const generateICalContent = (event) => {
   const formatICalDate = (dateStr, timeStr) => {
@@ -50,19 +50,21 @@ const downloadIcal = (event) => {
 export default function AddToCalendar({ event, className = '', iconOnly = false }) {
   const [open, setOpen] = useState(false);
   const [added, setAdded] = useState('');
+  const timeoutRef = useRef(null);
+  useEffect(() => () => clearTimeout(timeoutRef.current), []);
 
   if (!event) return null;
 
   const handleGoogle = () => {
     window.open(getGoogleCalendarUrl(event), '_blank', 'noopener,noreferrer');
     setAdded('Google Calendar');
-    setTimeout(() => setOpen(false), 800);
+    timeoutRef.current = setTimeout(() => setOpen(false), 800);
   };
 
   const handleOutlook = () => {
     window.open(getOutlookCalendarUrl(event), '_blank', 'noopener,noreferrer');
     setAdded('Outlook');
-    setTimeout(() => setOpen(false), 800);
+    timeoutRef.current = setTimeout(() => setOpen(false), 800);
   };
 
   const handleIcal = () => {
@@ -74,14 +76,14 @@ export default function AddToCalendar({ event, className = '', iconOnly = false 
       downloadIcal(event);
     }
     setAdded('Apple / ICS');
-    setTimeout(() => setOpen(false), 800);
+    timeoutRef.current = setTimeout(() => setOpen(false), 800);
   };
 
   return (
     <div className={`relative inline-block ${className}`}>
       <button
         onClick={() => setOpen(!open)}
-        className={iconOnly 
+        className={iconOnly
           ? "rounded-full border border-gray-200 bg-white/90 p-2 shadow backdrop-blur-sm hover:border-indigo-200 dark:border-gray-700 dark:bg-gray-800/90 dark:hover:border-indigo-500 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer"
           : "flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"}
         aria-haspopup="true"

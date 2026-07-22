@@ -10,15 +10,13 @@ import {
   Moon,
   MousePointer,
   Bell,
-  PlusCircle,
   LayoutDashboard,
 } from "lucide-react";
-import { useNotification } from "../../context/NotificationContext";
+import { useNotification } from "context/NotificationContext";
 import NavbarLinks from "./NavbarLinks";
 import { PRIMARY_NAV_ITEMS, SECONDARY_NAV_ITEMS } from "./constants/navItems";
 import LanguageSelector from "../LanguageSelector";
-import InstallAppButton from "../common/InstallAppButton";
-import { useTheme } from "../../context/ThemeContext";
+import { useTheme } from "context/ThemeContext";
 
 const MobileDrawer = ({
   isOpen,
@@ -146,12 +144,8 @@ const MobileDrawer = ({
           <div className="lg:hidden mb-2">
             <NavbarLinks vertical items={PRIMARY_NAV_ITEMS} onClick={closeMenu} />
           </div>
-          
-          <NavbarLinks vertical items={SECONDARY_NAV_ITEMS} onClick={closeMenu} />
 
-          <div className="mt-4 px-1">
-            <InstallAppButton />
-          </div>
+          <NavbarLinks vertical items={SECONDARY_NAV_ITEMS} onClick={closeMenu} />
 
           {/* User Section */}
           <div className="mt-6 border-t border-border pt-4">
@@ -286,7 +280,7 @@ const MobileDrawer = ({
             </h3>
             <div className="flex flex-col gap-4 px-1">
               <LanguageSelector className="w-full" />
-              
+
               <div className="flex gap-3">
                 <button
                   type="button"
