@@ -658,12 +658,16 @@ export const syncSecureStorage = {
     try {
       pendingWrites.set(key, value);
       await writeWithEncryption(key, value);
-      pendingWrites.delete(key);
+      if (pendingWrites.get(key) === value) {
+        pendingWrites.delete(key);
+      }
       return true;
     } catch (error) {
       console.error('[secureStorage] setItem failed:', error);
       /* Removed destructive cleanup to prevent queued writes from being dropped silently */
-      pendingWrites.delete(key);
+      if (pendingWrites.get(key) === value) {
+        pendingWrites.delete(key);
+      }
       return false;
     }
   },
