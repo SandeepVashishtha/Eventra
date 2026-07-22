@@ -293,16 +293,23 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
     const handleUpdate = () => {
       const persisted = loadPersisted(storageKeyRef.current);
       if (persisted) {
+        const incomingUnread = persisted.filter(
+          (n) => n.id && !seenIds.current.has(n.id) && !n.isRead
+        );
         setNotifications(persisted);
         setUnreadCount(persisted.filter((n) => !n.isRead).length);
         persisted.forEach((n) => {
-          if (n.id) seenIds.current.add(n.id);
+          if (n.id) addSeenId(n.id);
         });
+        if (hasCompletedInitialFetchRef.current && incomingUnread.length > 0) {
+          deliverNew(incomingUnread);
+        }
+        hasCompletedInitialFetchRef.current = true;
       }
     };
     window.addEventListener("eventra-notifications-updated", handleUpdate);
     return () => window.removeEventListener("eventra-notifications-updated", handleUpdate);
-  }, []);
+  }, [deliverNew, hasCompletedInitialFetchRef]);
 
   // Legacy IndexedDB eventra_notifications migration
   useEffect(() => {
