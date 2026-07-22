@@ -66,7 +66,8 @@ globalThis.indexedDB = {
 
 // Mock window and CustomEvent
 globalThis.window = {
-  dispatchEvent: (event) => {},
+  dispatchEvent: () => {},
+  location: { href: "http://localhost/" },
 };
 Object.defineProperty(globalThis, "navigator", {
   value: { onLine: false },
@@ -189,6 +190,59 @@ console.log("Running Waitlist System unit tests...");
   console.log("✓ Test 5: Leave Waitlist");
 }
 
+// 5b. Leaving notifies users whose queue position improves
+{
+  resetAll();
+  const eventId = 1;
+  const joinedAt = Date.now();
+  saveGlobalWaitlist([
+    {
+      userId: "u-1",
+      userName: "User One",
+      userEmail: "u1@example.com",
+      eventId,
+      eventTitle: "React Conf",
+      joinedAt: new Date(joinedAt).toISOString(),
+      status: "waiting",
+    },
+    {
+      userId: "u-2",
+      userName: "User Two",
+      userEmail: "u2@example.com",
+      eventId,
+      eventTitle: "React Conf",
+      joinedAt: new Date(joinedAt + 1000).toISOString(),
+      status: "waiting",
+    },
+    {
+      userId: "u-3",
+      userName: "User Three",
+      userEmail: "u3@example.com",
+      eventId,
+      eventTitle: "React Conf",
+      joinedAt: new Date(joinedAt + 2000).toISOString(),
+      status: "waiting",
+    },
+  ]);
+
+  await leaveWaitlist(eventId, "u-1");
+
+  const u2Inbox = JSON.parse(localStorage.getItem("eventra_notification_inbox_u-2"));
+  const u3Inbox = JSON.parse(localStorage.getItem("eventra_notification_inbox_u-3"));
+  assert.equal(u2Inbox[0].title, "Waitlist Position Updated");
+  assert.equal(
+    u2Inbox[0].message,
+    "Your waitlist position for React Conf moved from #2 to #1!"
+  );
+  assert.equal(u2Inbox[0].metadata.previousPosition, 2);
+  assert.equal(u2Inbox[0].metadata.currentPosition, 1);
+  assert.equal(
+    u3Inbox[0].message,
+    "Your waitlist position for React Conf moved from #3 to #2!"
+  );
+  console.log("Test 5b: Position change notifications after leave");
+}
+
 // 6. Promote Next User on Cancellation
 {
   resetAll();
@@ -232,6 +286,38 @@ console.log("Running Waitlist System unit tests...");
   const all = getGlobalWaitlist();
   assert.equal(all.filter(r => r.status === "promoted").length, 2);
   console.log("✓ Test 7: Auto-Promotion on Capacity Increase");
+}
+
+// 7b. Batch promotion sends one final queue movement notification
+{
+  resetAll();
+  const eventId = 3;
+  const event = { id: eventId, title: "DevOps Summit", maxAttendees: 10, attendees: 10 };
+  const joinedAt = Date.now();
+
+  saveGlobalWaitlist([1, 2, 3, 4, 5].map((position) => ({
+    userId: `u-${position}`,
+    userName: `User ${position}`,
+    userEmail: `u${position}@example.com`,
+    eventId,
+    eventTitle: event.title,
+    joinedAt: new Date(joinedAt + position).toISOString(),
+    status: "waiting",
+  })));
+
+  const promotedCount = await handleCapacityIncrease(event, 12);
+  assert.equal(promotedCount, 2);
+
+  const u5Inbox = JSON.parse(localStorage.getItem("eventra_notification_inbox_u-5"));
+  const movementNotifications = u5Inbox.filter((n) => n.title === "Waitlist Position Updated");
+  assert.equal(movementNotifications.length, 1);
+  assert.equal(
+    movementNotifications[0].message,
+    "Your waitlist position for DevOps Summit moved from #5 to #3!"
+  );
+  assert.equal(movementNotifications[0].metadata.previousPosition, 5);
+  assert.equal(movementNotifications[0].metadata.currentPosition, 3);
+  console.log("Test 7b: Batch position movement notification");
 }
 
 // 8. Organizer Manual User Removal

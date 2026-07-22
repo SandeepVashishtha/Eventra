@@ -1,12 +1,17 @@
-import { Star, MessageSquare, Send, CheckCircle, LogIn } from "lucide-react";
+import { Star, MessageSquare, Send, CheckCircle, LogIn, ChevronRight, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-
-import { Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
 import { useAuth } from "context/AuthContext";
 import { fetchEventFeedback, submitEventFeedback } from "utils/feedbackUtils";
+
+const SURVEY_QUESTIONS = [
+  { key: "venue", label: "How would you rate the venue/platform quality?" },
+  { key: "content", label: "How relevant and useful was the event content?" },
+  { key: "audioVideo", label: "How would you rate the audio & video quality?" },
+  { key: "pacing", label: "Was the event pacing comfortable for you?" }
+];
 
 const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
   const { user, isAuthenticated } = useAuth();
@@ -19,6 +24,15 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
+  // Multi-step survey steps: 'form' | 'survey'
+  const [step, setStep] = useState("form");
+  const [surveyAnswers, setSurveyAnswers] = useState({
+    venue: 3,
+    content: 3,
+    audioVideo: 3,
+    pacing: 3
+  });
+
   useEffect(() => {
     let isActive = true;
 
@@ -26,6 +40,13 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
     setRating(0);
     setHoveredRating(0);
     setComment("");
+    setStep("form");
+    setSurveyAnswers({
+      venue: 3,
+      content: 3,
+      audioVideo: 3,
+      pacing: 3
+    });
 
     if (!eventId || !userId) {
       return () => {
@@ -74,7 +95,7 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
     );
   }
 
-  const handleSubmit = async (e) => {
+  const handleNextStep = (e) => {
     e.preventDefault();
     if (rating === 0) {
       toast.error("Please provide a rating from 1 to 5 stars");
@@ -84,17 +105,29 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
       toast.error("Please write a short comment about your experience");
       return;
     }
+    setStep("survey");
+  };
 
+  const handleSurveyRatingChange = (key, val) => {
+    setSurveyAnswers((prev) => ({
+      ...prev,
+      [key]: val
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     setIsSubmitting(true);
     try {
       await submitEventFeedback({
         eventId,
         rating,
         comment: comment.trim(),
+        survey: surveyAnswers
       });
 
       setSubmitted(true);
-      toast.success("Feedback submitted! Thank you for sharing your thoughts.");
+      toast.success("Feedback & Survey submitted! Thank you for sharing your thoughts.");
     } catch (err) {
       const message = err?.data?.error || err?.message || "Failed to submit feedback. Please try again.";
       toast.error(message);
@@ -107,108 +140,174 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
     <div className="w-full max-w-2xl mx-auto p-6 md:p-8 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-xl">
       <AnimatePresence mode="wait">
         {!submitted ? (
-          <motion.form
-            key="feedback-form"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            onSubmit={handleSubmit}
-            className="space-y-6"
-          >
-            <div>
-              <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-                Share Your Feedback
-              </h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                Help us improve by rating your experience attending {eventTitle}.
-              </p>
-            </div>
+          step === "form" ? (
+            <motion.form
+              key="feedback-form"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              onSubmit={handleNextStep}
+              className="space-y-6"
+            >
+              <div>
+                <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+                  Share Your Feedback
+                </h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                  Help us improve by rating your experience attending {eventTitle}.
+                </p>
+              </div>
 
-            {/* Star Rating Matrix */}
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
-                Rate this Event <span className="text-red-500">*</span>
-              </label>
-              <div className="flex items-center space-x-1.5">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <motion.button
-                    key={star}
-                    type="button"
-                    onClick={() => setRating(star)}
-                    onMouseEnter={() => setHoveredRating(star)}
-                    onMouseLeave={() => setHoveredRating(0)}
-                    whileHover={{ scale: 1.15 }}
-                    whileTap={{ scale: 0.92 }}
-                    className="focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-md p-0.5"
-                    aria-label={`Rate ${star} Star${star > 1 ? "s" : ""}`}
-                  >
-                    <Star
+              {/* Star Rating Matrix */}
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  Rate this Event <span className="text-red-500">*</span>
+                </label>
+                <div className="flex items-center space-x-1.5">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <motion.button
+                      key={star}
+                      type="button"
+                      onClick={() => setRating(star)}
+                      onMouseEnter={() => setHoveredRating(star)}
+                      onMouseLeave={() => setHoveredRating(0)}
+                      whileHover={{ scale: 1.15 }}
+                      whileTap={{ scale: 0.92 }}
+                      className="focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-md p-0.5"
+                      aria-label={`Rate ${star} Star${star > 1 ? "s" : ""}`}
+                    >
+                      <Star
                       className={`w-8 h-8 transition-colors duration-150 ${
                         star <= (hoveredRating || rating)
                           ? "text-yellow-400 fill-current"
                           : "text-slate-300 dark:text-slate-600"
                       }`}
                     />
-                  </motion.button>
-                ))}
-                {rating > 0 && (
-                  <span className="ml-3 text-sm font-medium text-indigo-600 dark:text-indigo-400 transition-opacity">
-                    {rating === 1 && "Poor"}
-                    {rating === 2 && "Fair"}
-                    {rating === 3 && "Good"}
-                    {rating === 4 && "Very Good"}
-                    {rating === 5 && "Excellent!"}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Comment Section */}
-            <div className="space-y-2">
-              <label
-                htmlFor="feedback-comments"
-                className="block text-sm font-semibold text-slate-700 dark:text-slate-300"
-              >
-                Comments & Suggestions <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <MessageSquare className="absolute left-3.5 top-3.5 text-slate-400 dark:text-slate-500 w-5 h-5" />
-                <textarea
-                  id="feedback-comments"
-                  rows={4}
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  maxLength={1000}
-                  placeholder="What did you like? What can we do better?"
-                  className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 resize-none"
-                />
-                <div className="text-right text-xs text-slate-400 mt-1">
-                  {comment.length} / 1000 characters
+                    </motion.button>
+                  ))}
+                  {rating > 0 && (
+                    <span className="ml-3 text-sm font-medium text-indigo-600 dark:text-indigo-400 transition-opacity">
+                      {rating === 1 && "Poor"}
+                      {rating === 2 && "Fair"}
+                      {rating === 3 && "Good"}
+                      {rating === 4 && "Very Good"}
+                      {rating === 5 && "Excellent!"}
+                    </span>
+                  )}
                 </div>
               </div>
-            </div>
 
-            {/* Submit */}
-            <motion.button
-              type="submit"
-              disabled={isSubmitting}
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-lg shadow-indigo-600/15 disabled:opacity-75 transition-all"
+              {/* Comment Section */}
+              <div className="space-y-2">
+                <label
+                  htmlFor="feedback-comments"
+                  className="block text-sm font-semibold text-slate-700 dark:text-slate-300"
+                >
+                  Comments & Suggestions <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <MessageSquare className="absolute left-3.5 top-3.5 text-slate-400 dark:text-slate-500 w-5 h-5" />
+                  <textarea
+                    id="feedback-comments"
+                    rows={4}
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    maxLength={1000}
+                    placeholder="What did you like? What can we do better?"
+                    className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 resize-none"
+                  />
+                  <div className="text-right text-xs text-slate-400 mt-1">
+                    {comment.length} / 1000 characters
+                  </div>
+                </div>
+              </div>
+
+              {/* Next Button */}
+              <motion.button
+                type="submit"
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-lg shadow-indigo-600/15 transition-all"
+              >
+                Continue to Survey
+                <ChevronRight className="w-4 h-4" />
+              </motion.button>
+            </motion.form>
+          ) : (
+            <motion.form
+              key="post-event-survey"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              onSubmit={handleSubmit}
+              className="space-y-6"
             >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Submitting...
-                </>
-              ) : (
-                <>
-                  <Send className="w-4 h-4" />
-                  Submit Feedback
-                </>
-              )}
-            </motion.button>
-          </motion.form>
+              <div>
+                <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+                  Post-Event Survey
+                </h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                  Please answer these quick questions to help us organize even better events in the future.
+                </p>
+              </div>
+
+              {/* Survey Questions list */}
+              <div className="space-y-5">
+                {SURVEY_QUESTIONS.map((q) => (
+                  <div key={q.key} className="space-y-2">
+                    <span className="block text-sm font-semibold text-slate-700 dark:text-slate-300">{q.label}</span>
+                    <div className="flex items-center space-x-1.5">
+                      {[1, 2, 3, 4, 5].map((val) => (
+                        <button
+                          key={val}
+                          type="button"
+                          onClick={() => handleSurveyRatingChange(q.key, val)}
+                          className="focus:outline-none rounded-md p-0.5"
+                          aria-label={`Survey Rating ${val}`}
+                        >
+                          <Star
+                            className={`w-6 h-6 transition-colors duration-150 ${
+                              val <= surveyAnswers[q.key]
+                                ? "text-indigo-500 fill-current"
+                                : "text-slate-300 dark:text-slate-650"
+                            }`}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Submit Action Buttons */}
+              <div className="flex gap-4 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setStep("form")}
+                  className="flex-1 py-3 px-4 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                >
+                  Back
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-lg transition-all"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      Submit Survey
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.form>
+          )
         ) : (
           <motion.div
             key="feedback-success"

@@ -1,3 +1,4 @@
+import { toast } from "./toast.js";
 // ---------------------------------------------------------------------------
 // Self-Healing Offline Queue Utility (IndexedDB backed with LocalStorage Backup)
 // ---------------------------------------------------------------------------
@@ -34,7 +35,8 @@ const notifyQueueUpdated = (queuedItem) => {
     return;
   }
 
-  window.dispatchEvent(
+  toast.success(rescuedCount > 0 ? `IndexedDB schema upgraded. ${rescuedCount} queued action(s) were safely migrated.` : "IndexedDB schema upgraded. No queued actions were affected.");
+    window.dispatchEvent(
     new CustomEvent("eventra-offline-queue-updated", {
       detail: { item: queuedItem },
     })
@@ -726,7 +728,10 @@ export const processQueue = async (currentUserId, fetchFn, options = {}) => {
 
     if (result.status === "success") {
       succeeded.push(item);
-    } else if (result.status === "dropped") {
+    } else if (result.status === "dropped" || result.status === "conflict") {
+      if (result.status === "conflict") {
+        logger.warn(`[OfflineQueue] Unresolved 409 conflict for item ${item.id} — dropping.`);
+      }
       dropped.push(item);
     } else {
       failed.push({ ...item, retryCount: (item.retryCount || 0) + 1 });
