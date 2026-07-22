@@ -1,4 +1,4 @@
-﻿import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useReducedMotion } from 'hooks/useReducedMotion';
 import { getSmartDateLabel } from "utils/relativeTime";
 import {
@@ -396,6 +396,12 @@ export default function UserDashboard() {
             <div>
               <p className="ud-greeting">{greeting},</p>
               <h1 className="ud-username">{firstName} ≡ƒæï</h1>
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('eventra-offline-queue-sync'))}
+              className="ml-4 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-full shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
+            >
+              Sync Offline Queue
+            </button>
             </div>
           )}
 
