@@ -71,25 +71,6 @@ const MobileDrawer = ({
     };
   }, [closeMenu, isOpen]);
 
-  // Scroll lock
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const scrollY = window.scrollY;
-    document.body.style.overflow = "hidden";
-    document.body.style.position = "fixed";
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.width = "100%";
-
-    return () => {
-      document.body.style.overflow = "";
-      document.body.style.position = "";
-      document.body.style.top = "";
-      document.body.style.width = "";
-      window.scrollTo(0, scrollY);
-    };
-  }, [isOpen]);
-
   return (
     <div
       className={`fixed inset-0 z-50 ${
@@ -111,12 +92,12 @@ const MobileDrawer = ({
         role="dialog"
         aria-modal="true"
         aria-label="Mobile navigation"
-        className={`mobile-drawer-panel fixed right-0 top-0 flex max-h-dvh w-full max-w-sm flex-col bg-navbar shadow-premium-lg transition-transform duration-200 ease-out overflow-y-auto ${
+        className={`mobile-drawer-panel fixed right-0 top-0 inset-y-0 flex h-dvh w-full max-w-sm flex-col bg-navbar shadow-premium-lg transition-transform duration-200 ease-out ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 flex min-h-[64px] items-center justify-between gap-3 border-b border-border bg-navbar px-4 py-3">
+        <div className="sticky top-0 z-10 flex min-h-[64px] shrink-0 items-center justify-between gap-3 border-b border-border bg-navbar px-4 py-3">
           <div className="flex min-w-0 items-center gap-2">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-card-bg p-1 ring-1 ring-border">
               <img
@@ -140,7 +121,7 @@ const MobileDrawer = ({
           </button>
         </div>
 
-        <div className="flex flex-col px-4 py-5">
+        <div className="mobile-drawer-scroll flex flex-1 flex-col overflow-y-auto px-4 py-5 overscroll-contain">
           <div className="lg:hidden mb-2">
             <NavbarLinks vertical items={PRIMARY_NAV_ITEMS} onClick={closeMenu} />
           </div>

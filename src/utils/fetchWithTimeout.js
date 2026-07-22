@@ -27,6 +27,7 @@ export const fetchWithTimeout = async (
   if (options.signal) {
     if (options.signal.aborted) {
       controller.abort();
+      throw new DOMException("Aborted", "AbortError");
     } else {
       options.signal.addEventListener("abort", handleUserAbort);
     }
@@ -62,6 +63,7 @@ export const fetchWithTimeout = async (
   try {
     const response = await fetch(url, {
       ...options,
+      headers: requestHeaders,
       signal: controller.signal, // This now responds to BOTH the timeout and the user's unmount signal
     });
 

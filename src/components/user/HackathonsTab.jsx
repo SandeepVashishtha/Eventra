@@ -15,17 +15,12 @@ const HackathonsTab = ({ hackathons, loading, fadeUp }) => (
     
     {!loading && hackathons.length === 0 ? (
       <div className="w-full mt-4">
-        <SearchEmptyState
-          query=""
-          itemLabel="hackathons"
-          browseLabel="Browse Hackathons"
-          browsePath="/hackathons"
-          onClear={() => {}}
-          suggestions={[
-            "Explore upcoming hackathons",
-            "Join a team to participate",
-            "Host your own hackathon",
-          ]}
+        <EmptyState
+          icon={<Trophy size={48} className="text-pink-500" />}
+          title="No Hackathons Yet"
+          description="You haven't joined any hackathons yet. Explore upcoming hackathons, form a team, and start building!"
+          actionLabel="Browse Hackathons"
+          actionPath="/hackathons"
         />
       </div>
     ) : (
