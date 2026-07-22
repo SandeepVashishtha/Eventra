@@ -335,13 +335,13 @@ export default function CollaborationNetworkMap() {
     [pinnedHub]
   );
 
-  const handleHubLeave = useCallback((hub) => {
-    if (!pinnedHub) {
-      hoverTimeoutRef.current = setTimeout(() => {
-        setActiveHub(null);
-      }, 150);
-    }
-  }, [pinnedHub]);
+  // const handleHubLeave = useCallback(() => {
+  //   if (!pinnedHub) {
+  //     hoverTimeoutRef.current = setTimeout(() => {
+  //       setActiveHub(null);
+  //     }, 150);
+  //   }
+  // }, [pinnedHub]);
 
   return (
     <section className="bg-bg py-12 text-text transition-colors duration-300">
