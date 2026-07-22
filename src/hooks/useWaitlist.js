@@ -14,16 +14,24 @@ import { useState, useEffect, useCallback } from "react";
 import { toast } from "react-toastify";
 import { apiUtils, API_ENDPOINTS } from "../config/api.js";
 import { safeLocalStorage } from "../utils/safeStorage";
+import { useAuth } from "../context/AuthContext";
+import { getOrMigrateKey } from "../utils/storageKeyManager";
+import { showUndoToast } from "../utils/toast";
 
-const STORAGE_KEY = "eventra_waitlist_positions";
+// Legacy unscoped key the hook used before #10388. Kept around so
+// getOrMigrateKey can adopt any data left under it into the user's namespaced
+// key on first login after this fix.
+const LEGACY_STORAGE_KEY = "eventra_waitlist_positions";
+const WAITLIST_NAMESPACE = "eventra_waitlist_positions";
 
 /**
- * Read the persisted waitlist map from localStorage.
+ * Read the persisted waitlist map for a given storage key.
  * Returns an object keyed by eventId with { position, joinedAt }.
  */
-function readPersistedWaitlist() {
+function readPersistedWaitlist(storageKey) {
+  if (!storageKey) return {};
   try {
-    const raw = safeLocalStorage.getItem(STORAGE_KEY);
+    const raw = safeLocalStorage.getItem(storageKey);
     return raw ? JSON.parse(raw) : {};
   } catch {
     return {};
@@ -33,17 +41,19 @@ function readPersistedWaitlist() {
 let persistTimeout = null;
 
 /**
- * Persist the waitlist map.
+ * Persist the waitlist map to the given storage key. No-op if the key is
+ * falsy (e.g. logged-out state where we want in-memory only, so nothing
+ * leaks to the next user of a shared browser).
  */
-function persistWaitlist(map) {
-  if (typeof window === "undefined") return;
+function persistWaitlist(map, storageKey) {
+  if (typeof window === "undefined" || !storageKey) return;
   if (persistTimeout) {
     clearTimeout(persistTimeout);
   }
   persistTimeout = setTimeout(() => {
     const runWrite = () => {
       try {
-        safeLocalStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+        safeLocalStorage.setItem(storageKey, JSON.stringify(map));
       } catch {
         // ignore quota errors
       }
@@ -71,8 +81,23 @@ function persistWaitlist(map) {
  *   leave: () => Promise<void>,
  * }}
  */
-export default function useWaitlist(eventId, { capacity: _capacity, attendees: _attendees } = {}) {
-  const [waitlistMap, setWaitlistMap] = useState(readPersistedWaitlist);
+export default function useWaitlist(eventId, { 
+  // capacity: _capacity, attendees: _attendees 
+} = {}) {
+  const { user } = useAuth();
+  const userId = user?.id;
+
+  // Scope the persistence key to the authenticated user. For guests, `storageKey`
+  // is `undefined` so `persistWaitlist` becomes a no-op — the state stays in
+  // memory for the session and never touches localStorage, so a guest can't leak
+  // their positions to the next person on a shared browser. Authenticated
+  // users go through getOrMigrateKey, which also adopts anything left under the
+  // legacy unscoped `eventra_waitlist_positions` key on first login.
+  const storageKey = userId
+    ? getOrMigrateKey(WAITLIST_NAMESPACE, userId, LEGACY_STORAGE_KEY)
+    : undefined;
+
+  const [waitlistMap, setWaitlistMap] = useState(() => readPersistedWaitlist(storageKey));
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -81,10 +106,16 @@ export default function useWaitlist(eventId, { capacity: _capacity, attendees: _
   const isOnWaitlist = Boolean(entry);
   const position = entry?.position ?? null;
 
-  // Persist on every change
+  // On sign-in/out, re-seed the map from the new key so user B doesn't see
+  // user A's in-memory state after a session swap on the same tab.
   useEffect(() => {
-    persistWaitlist(waitlistMap);
-  }, [waitlistMap]);
+    setWaitlistMap(readPersistedWaitlist(storageKey));
+  }, [storageKey]);
+
+  // Persist on every change (no-op for guests via the storageKey check)
+  useEffect(() => {
+    persistWaitlist(waitlistMap, storageKey);
+  }, [waitlistMap, storageKey]);
 
   /**
    * Estimate wait in human-readable form.
@@ -157,26 +188,35 @@ export default function useWaitlist(eventId, { capacity: _capacity, attendees: _
       return next;
     });
 
-    try {
-      const res = await apiUtils.delete(
-        API_ENDPOINTS.EVENTS?.WAITLIST
-          ? API_ENDPOINTS.EVENTS.WAITLIST(id)
-          : `/api/events/${id}/waitlist`,
-        {}
-      );
-      if (!res.ok) {
-        throw new Error(res.data?.message || "Failed to leave waitlist.");
-      }
-      toast.info("You've been removed from the waitlist.");
-    } catch (err) {
-      // Roll back
-      setWaitlistMap((prev) => ({ ...prev, [id]: prevEntry }));
-      const msg = err.message || "Unable to leave waitlist right now.";
-      setError(msg);
-      toast.error(msg);
-    } finally {
-      setIsLoading(false);
-    }
+    showUndoToast({
+      message: "Removed from waitlist.",
+      toastId: `leave-waitlist-${id}`,
+      onUndo: () => {
+        setWaitlistMap((prev) => ({ ...prev, [id]: prevEntry }));
+        setIsLoading(false);
+        toast.info("Waitlist removal undone.");
+      },
+      onCommit: async () => {
+        try {
+          const res = await apiUtils.delete(
+            API_ENDPOINTS.EVENTS?.WAITLIST
+              ? API_ENDPOINTS.EVENTS.WAITLIST(id)
+              : `/api/events/${id}/waitlist`,
+            {}
+          );
+          if (!res.ok) {
+            throw new Error(res.data?.message || "Failed to leave waitlist.");
+          }
+        } catch (err) {
+          setWaitlistMap((prev) => ({ ...prev, [id]: prevEntry }));
+          const msg = err.message || "Unable to leave waitlist right now.";
+          setError(msg);
+          toast.error(msg);
+        } finally {
+          setIsLoading(false);
+        }
+      },
+    });
   }, [id, isOnWaitlist, isLoading, waitlistMap]);
 
   return {

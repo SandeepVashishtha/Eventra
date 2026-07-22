@@ -15,7 +15,7 @@ import {
 import { toast } from "react-toastify";
 import InteractiveWhiteboard from "./InteractiveWhiteboard";
 import PomodoroTimer from "./PomodoroTimer";
-import { logger } from "../../utils/logger";
+import { logger } from "utils/logger";
 
 // Initial constants removed to support real-time sync database values
 

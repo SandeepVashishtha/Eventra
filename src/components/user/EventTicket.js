@@ -5,10 +5,10 @@ import { jsPDF } from "jspdf";
 import QRCode from "react-qr-code";
 import { toast } from "react-toastify";
 import "./EventTicket.css";
-import { useMyEvents } from "../../context/MyEventsContext";
+import { useMyEvents } from "context/MyEventsContext";
 import SpatialSeatSelector from "../events/SpatialSeatSelector";
 import { AnimatePresence } from "framer-motion";
-import { useOfflineStatus } from "../../hooks/useOfflineStatus";
+import { useOfflineStatus } from "hooks/useOfflineStatus";
 
 const EventTicket = ({ event, user, onClose }) => {
   const ticketRef = useRef(null);
@@ -93,12 +93,14 @@ const EventTicket = ({ event, user, onClose }) => {
     setDownloading(true);
     toast.info(`Generating your high-resolution ticket ${format.toUpperCase()}...`);
 
+    // Capture originalFlip outside try so finally can always restore it
+    const originalFlip = isFlipped;
+
     try {
       // Force temporary state to front-side without rotation to capture cleanly
-      const originalFlip = isFlipped;
       setIsFlipped(false);
       setRotate({ x: 0, y: 0 });
-      
+
       await new Promise((resolve) => setTimeout(resolve, 300));
 
       const canvas = await html2canvas(ticketRef.current, {
@@ -117,9 +119,6 @@ const EventTicket = ({ event, user, onClose }) => {
         }
       });
 
-      // Restore original state
-      setIsFlipped(originalFlip);
-
       const imgData = canvas.toDataURL("image/png");
       const cleanTitle = (event?.title || "ticket").toLowerCase().replace(/[^a-z0-9]+/g, "-");
 
@@ -136,13 +135,18 @@ const EventTicket = ({ event, user, onClose }) => {
         const link = document.createElement("a");
         link.download = `eventra-ticket-${cleanTitle}.png`;
         link.href = imgData;
+        // Must be in the DOM before .click() for Firefox to trigger the download
+        document.body.appendChild(link);
         link.click();
+        document.body.removeChild(link);
         toast.success("PNG Ticket downloaded successfully!");
       }
     } catch (error) {
       console.error("Ticket export error:", error);
       toast.error("Failed to generate ticket. Please try again.");
     } finally {
+      // Always restore flip state — even if html2canvas threw
+      setIsFlipped(originalFlip);
       setDownloading(false);
     }
   };
@@ -155,8 +159,8 @@ const EventTicket = ({ event, user, onClose }) => {
         {/* Modal Header Actions */}
         <div className="ud-ticket-modal-actions">
           <div className="flex gap-2 flex-1">
-            <button 
-              onClick={() => handleDownload("png")} 
+            <button
+              onClick={() => handleDownload("png")}
               disabled={downloading}
               className="ud-ticket-action-btn download-btn"
               title="Download PNG Ticket"
@@ -168,8 +172,8 @@ const EventTicket = ({ event, user, onClose }) => {
               )}
               <span>PNG</span>
             </button>
-            <button 
-              onClick={() => handleDownload("pdf")} 
+            <button
+              onClick={() => handleDownload("pdf")}
               disabled={downloading}
               className="ud-ticket-action-btn pdf-btn"
               title="Download PDF Ticket"
@@ -178,9 +182,9 @@ const EventTicket = ({ event, user, onClose }) => {
               <span>PDF</span>
             </button>
           </div>
-          
-          <button 
-            onClick={() => setIsFlipped(!isFlipped)} 
+
+          <button
+            onClick={() => setIsFlipped(!isFlipped)}
             className="ud-ticket-action-btn flip-btn"
             title="Flip Ticket"
           >
@@ -188,8 +192,8 @@ const EventTicket = ({ event, user, onClose }) => {
             <span>Info</span>
           </button>
 
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="ud-ticket-action-btn close-btn"
             title="Close Ticket"
            aria-label="button">
@@ -199,12 +203,14 @@ const EventTicket = ({ event, user, onClose }) => {
 
         {/* Outer frame containing the interactive 3D card layout */}
         <div className="ud-ticket-capture-frame">
-          <div 
+          <div
             className={`ud-ticket-card-wrapper ${isFlipped ? "flipped" : ""}`}
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
             style={{
-              transform: `perspective(1200px) rotateX(${rotate.x}deg) rotateY(${rotate.y + (isFlipped ? 180 : 0)}deg)`,
+              // When flipped, both axes are mirrored from the viewer's perspective —
+              // negate rotate.x and subtract rotate.y from 180 to keep tilt natural.
+              transform: `perspective(1200px) rotateX(${isFlipped ? -rotate.x : rotate.x}deg) rotateY(${isFlipped ? 180 - rotate.y : rotate.y}deg)`,
               boxShadow: `0 30px 60px -15px rgba(0, 0, 0, 0.6), 0 0 50px ${theme.glow}`
             }}
             ref={ticketRef}
@@ -213,8 +219,8 @@ const EventTicket = ({ event, user, onClose }) => {
             {/* Front of Card */}
             <div className="ud-ticket-card-face ud-ticket-card-front">
               {/* Holographic light sheen overlay */}
-              <div 
-                className="ud-ticket-holo-overlay" 
+              <div
+                className="ud-ticket-holo-overlay"
                 style={{
                   background: `radial-gradient(circle at ${shine.x}% ${shine.y}%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 60%), linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%)`
                 }}
@@ -246,7 +252,7 @@ const EventTicket = ({ event, user, onClose }) => {
               {/* Event Body */}
               <div className="ud-ticket-body">
                 <h2 className="ud-ticket-title">{event.title}</h2>
-                
+
                 <div className="ud-ticket-grid">
                   <div className="ud-ticket-info-item">
                     <span className="ud-ticket-info-label">DATE</span>
@@ -260,7 +266,7 @@ const EventTicket = ({ event, user, onClose }) => {
                       }) : "TBA"}
                     </span>
                   </div>
-                  
+
                   <div className="ud-ticket-info-item">
                     <span className="ud-ticket-info-label">TIME</span>
                     <span className="ud-ticket-info-value flex items-center gap-1.5">
@@ -301,7 +307,7 @@ const EventTicket = ({ event, user, onClose }) => {
                       {user?.fullName || `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || "Eventra Guest"}
                     </span>
                   </div>
-                  
+
                   <div className="ud-ticket-info-item">
                     <span className="ud-ticket-info-label">EMAIL</span>
                     <span className="ud-ticket-info-value flex items-center gap-1.5 text-xs text-zinc-300">
@@ -359,7 +365,7 @@ const EventTicket = ({ event, user, onClose }) => {
                     )}
                   </div>
                 </div>
-                
+
                 <div className="ud-ticket-stub-details">
                   <div className="ud-ticket-serial">{serialNumber}</div>
                   <div className="ud-ticket-status">
@@ -429,21 +435,21 @@ const EventTicket = ({ event, user, onClose }) => {
       {/* Seating Map Modal Popup */}
       <AnimatePresence>
         {showSeatMap && selectedSeat && (
-          <div 
+          <div
             className="ud-ticket-modal-overlay"
-            style={{ 
-              zIndex: 1000, 
-              display: "flex", 
-              alignItems: "center", 
-              justifyContent: "center", 
-              position: "fixed", 
-              inset: 0, 
-              background: "rgba(0,0,0,0.85)", 
-              backdropFilter: "blur(8px)" 
+            style={{
+              zIndex: 1000,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.85)",
+              backdropFilter: "blur(8px)"
             }}
             onClick={() => setShowSeatMap(false)}
           >
-            <div 
+            <div
               className="relative max-w-xl w-full mx-4 bg-zinc-950 border border-zinc-800 rounded-3xl overflow-hidden shadow-2xl"
               style={{ padding: "1.5rem" }}
               onClick={(e) => e.stopPropagation()}
@@ -456,7 +462,7 @@ const EventTicket = ({ event, user, onClose }) => {
                   </h3>
                   <p className="text-xs text-zinc-400 mt-0.5" style={{ fontSize: "11px", color: "#a1a1aa", marginTop: "2px" }}>Your exact allocated seat is pulsing in a glowing golden radar overlay</p>
                 </div>
-                <button 
+                <button
                   onClick={() => setShowSeatMap(false)}
                   className="p-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white transition-colors cursor-pointer"
                   style={{ cursor: "pointer", background: "#18181b", border: "1px solid #27272a", borderRadius: "8px", padding: "6px", color: "#a1a1aa" }}

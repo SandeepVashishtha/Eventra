@@ -1,12 +1,12 @@
 import { GitBranch, ChevronLeft, ChevronRight } from "lucide-react";
 import { FaMedal, FaCodeBranch, FaUserFriends, FaBuilding, FaMapMarkerAlt, FaGithub, FaExternalLinkAlt } from "react-icons/fa";
 import { useState, useEffect, useCallback, useRef, memo } from "react";
-import useReducedMotion from "../../../hooks/useReducedMotion.js";
+import useReducedMotion from "../hooks/useReducedMotion.js";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { fetchWithTimeout } from "../../../utils/fetchWithTimeout";
-import { ContributorCardSkeleton } from "../../../components/common/SkeletonLoaders";
-import { safeJsonParse } from "../../../utils/safeJsonParse";
+import { fetchWithTimeout } from "../utils/fetchWithTimeout";
+import { ContributorCardSkeleton } from "../components/common/SkeletonLoaders";
+import { safeJsonParse } from "../utils/safeJsonParse";
 
 // GitHub repo
 const GITHUB_REPO = "sandeepvashishtha/Eventra";
@@ -40,12 +40,12 @@ const fetchInBatches = async (items, asyncFn, batchSize = PROFILE_BATCH_SIZE) =>
   const results = [];
   for (let i = 0; i < items.length; i += batchSize) {
     const batch = items.slice(i, i + batchSize);
-     
+
     const batchResults = await Promise.allSettled(batch.map(asyncFn));
     results.push(...batchResults);
     // Insert a delay between batches (but not after the last one)
     if (i + batchSize < items.length) {
-       
+
       await new Promise((resolve) => setTimeout(resolve, BATCH_DELAY_MS));
     }
   }

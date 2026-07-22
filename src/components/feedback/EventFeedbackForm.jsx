@@ -5,8 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import { Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
-import { useAuth } from "../../context/AuthContext";
-import { fetchEventFeedback, submitEventFeedback } from "../../utils/feedbackUtils";
+import { useAuth } from "context/AuthContext";
+import { fetchEventFeedback, submitEventFeedback } from "utils/feedbackUtils";
 
 const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
   const { user, isAuthenticated } = useAuth();

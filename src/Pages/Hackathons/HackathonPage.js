@@ -4,21 +4,21 @@ import TeamMatchmaking from "./components/TeamMatchmaking";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useSearchParams } from "react-router-dom";
-import { fetchHackathons } from "../../services/hackathonService";
+import { fetchHackathons } from "services/hackathonService";
 import HackathonHero from "./HackathonHero";
 import HackathonCard from "./HackathonCard";
 import HackathonCTA from "./HackathonCTA";
 import Fuse from "fuse.js";
 import { createPortal } from "react-dom";
-import BackToTopButton from "../../components/common/BackToTopButton";
-// import VirtualizedHackathonGrid from "../../components/common/VirtualizedHackathonGrid";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
+// import BackToTopButton from "components/common/BackToTopButton";
+// import VirtualizedHackathonGrid from "components/common/VirtualizedHackathonGrid";
+import useDocumentTitle from "hooks/useDocumentTitle";
 import { filterHackathons } from "./hackathonFilterUtils.mjs";
-import { HackathonCardSkeleton } from "../../components/common/SkeletonLoaders";
-import useReducedMotion from "../../hooks/useReducedMotion.js";
-import useDebounce from "../../hooks/useDebounce";
-import ErrorBoundary from "../../components/common/ErrorBoundary";
-import { safeJsonParse } from "../../utils/safeJsonParse";
+import { HackathonCardSkeleton } from "components/common/SkeletonLoaders";
+import useReducedMotion from "hooks/useReducedMotion.js";
+import useDebounce from "hooks/useDebounce";
+import ErrorBoundary from "components/common/ErrorBoundary";
+import { safeJsonParse } from "utils/safeJsonParse";
 
 // NEW: Tag component for selected tags in search bar
 const Tag = ({ tag, onRemove }) => (
@@ -355,8 +355,8 @@ const HackathonHub = () => {
   }, [loadHackathons]);
 
   const positionClass = `
-    ${isScrollVisible ? "bottom-[calc(2.5rem+var(--safe-area-bottom))] sm:bottom-40" : "bottom-[calc(1rem+var(--safe-area-bottom))] sm:bottom-24"}
-    ${isChatbotOpen ? "left-[calc(1rem+var(--safe-area-left))] sm:left-6" : "right-[calc(1rem+var(--safe-area-right))] sm:right-6"}
+    ${isScrollVisible ? "bottom-[calc(2.5rem+var(--safe-area-bottom))] sm:bottom-37" : "bottom-[calc(1rem+var(--safe-area-bottom))] sm:bottom-21"}
+    ${isChatbotOpen ? "left-[calc(1rem+var(--safe-area-left))] sm:left-15" : "right-[calc(1rem+var(--safe-area-right))] sm:right-15"}
   `;
 
   const containerVariants = {
@@ -795,7 +795,6 @@ const HackathonHub = () => {
       </div>
 
       <HackathonCTA />
-      <BackToTopButton positionClass={positionClass} />
     </div>
   );
 };

@@ -11,7 +11,7 @@
  *  - className     {string}         - Extra Tailwind classes for the wrapper
  */
 
-import useWaitlist from "../../hooks/useWaitlist";
+import useWaitlist from "hooks/useWaitlist";
 import { Loader2, ListOrdered, X, Clock } from "lucide-react";
 
 export default function WaitlistButton({

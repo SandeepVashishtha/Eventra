@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactDOM from "react-dom"; // 🔥 FIX: Required for Modal Portal
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { safeJsonParse } from "../../utils/safeJsonParse";
-import { syncSecureStorage } from "../../utils/secureStorage";
+import { safeJsonParse } from "utils/safeJsonParse";
+import { syncSecureStorage } from "utils/secureStorage";
 
 import {
   User as UserIcon,
@@ -270,11 +270,11 @@ const EditProfile = () => {
       setSuccessMessage("Profile updated successfully");
       setConfirmOpen(false);
       setUser(resolvedForm);
-      
+
       // 🔥 FIX 2: Strip massive Base64 strings before saving to storage to prevent QuotaExceededError crashes
       const safeStorageUser = { ...resolvedForm };
       delete safeStorageUser.avatarBase64;
-      
+
       try {
         await syncSecureStorage.setItem("user", JSON.stringify(safeStorageUser));
       } catch {

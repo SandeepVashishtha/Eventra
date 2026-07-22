@@ -10,8 +10,8 @@ import {
   Users,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import { API_ENDPOINTS, apiUtils } from "../../config/api";
-import useEventScheduling from "../../hooks/useEventScheduling";
+import { API_ENDPOINTS, apiUtils } from "config/api";
+import useEventScheduling from "hooks/useEventScheduling";
 import {
   buildCalendarDays,
   buildTimeSlots,
@@ -22,7 +22,7 @@ import {
   navigateCalendarDate,
   normalizeScheduledEvents,
   toDateKey,
-} from "../../utils/eventSchedulingUtils";
+} from "utils/eventSchedulingUtils";
 import mockEvents from "../Events/eventsMockData.json";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "./CalendarPage.css";

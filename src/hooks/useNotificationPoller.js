@@ -7,24 +7,25 @@ import seedNotifications from "../data/mockNotifications.json";
 import { safeJsonParse } from "../utils/safeJsonParse.js";
 import { getNotificationMessage } from "../utils/notificationPreferences.js";
 import { get as idbGet, del as idbDel } from "idb-keyval";
+import { showUndoToast } from "../utils/toast.js";
 
 const POLLING_INTERVAL_MS = 60_000;
 const MAX_SEEN_IDS = 500;
-const getStorageKey = () => {
+const NOTIFICATION_INBOX_PREFIX = "eventra_notification_inbox";
+const GUEST_INBOX_KEY = `${NOTIFICATION_INBOX_PREFIX}_guest`;
+
+// The raw `user` blob in localStorage is written by syncSecureStorage — it's
+// an AES-GCM ciphertext envelope, not a plain profile JSON — so the previous
+// implementation that tried `JSON.parse(localStorage.getItem('user')).id`
+// threw silently in every browser with WebCrypto and every logged-in user
+// ended up sharing `eventra_notification_inbox_guest`. Take the id from the
+// AuthContext-provided user object instead (see #10387).
+const getStorageKey = (userId) => {
   if (typeof process !== "undefined" && (process.env.NODE_ENV === "test" || process.env.VITE_TEST_MODE === "true")) {
-    return "eventra_notification_inbox";
+    return NOTIFICATION_INBOX_PREFIX;
   }
-  if (typeof window === "undefined" || !window.localStorage) {
-    return 'eventra_notification_inbox_guest';
-  }
-  try {
-    const userStr = window.localStorage.getItem('user');
-    if (userStr) {
-      const user = JSON.parse(userStr);
-      if (user && user.id) return 'eventra_notification_inbox_' + user.id;
-    }
-  } catch (_e) {}
-  return 'eventra_notification_inbox_guest';
+  if (!userId) return GUEST_INBOX_KEY;
+  return `${NOTIFICATION_INBOX_PREFIX}_${userId}`;
 };
 
 const normalize = (n = {}) => ({
@@ -33,15 +34,15 @@ const normalize = (n = {}) => ({
   timestamp: n.timestamp || n.createdAt || n.updatedAt || new Date().toISOString(),
 });
 
-const persist = (items) => {
-  if (typeof window === "undefined" || !window.localStorage) return;
-  try { window.localStorage.setItem(getStorageKey(), JSON.stringify(items)); } catch {}
+const persist = (items, storageKey) => {
+  if (typeof window === "undefined" || !window.localStorage || !storageKey) return;
+  try { window.localStorage.setItem(storageKey, JSON.stringify(items)); } catch {}
 };
 
-const loadPersisted = () => {
-  if (typeof window === "undefined" || !window.localStorage) return null;
+const loadPersisted = (storageKey) => {
+  if (typeof window === "undefined" || !window.localStorage || !storageKey) return null;
   try {
-    const raw = window.localStorage.getItem(getStorageKey());
+    const raw = window.localStorage.getItem(storageKey);
     if (!raw) return null;
     const parsed = safeJsonParse(raw, []);
     return Array.isArray(parsed) ? parsed.map(normalize) : null;
@@ -49,7 +50,7 @@ const loadPersisted = () => {
 };
 
 export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const isPageVisible = usePageVisibility();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -58,10 +59,45 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
   const isMounted = useRef(true);
   const tokenRef = useRef(token);
   const isPageVisibleRef = useRef(isPageVisible);
+  const storageKeyRef = useRef(getStorageKey(user?.id));
+  const notificationsRef = useRef([]);
 
   useEffect(() => { isMounted.current = true; return () => { isMounted.current = false; }; }, []);
   useEffect(() => { tokenRef.current = token; }, [token]);
   useEffect(() => { isPageVisibleRef.current = isPageVisible; }, [isPageVisible]);
+  useEffect(() => { storageKeyRef.current = getStorageKey(user?.id); }, [user?.id]);
+  useEffect(() => { notificationsRef.current = notifications; }, [notifications]);
+
+  // One-shot migration: when a user first logs in, adopt any inbox that was
+  // still sitting under the guest key (because the old code path routed every
+  // authenticated user into it). Merge, not replace, so we don't clobber
+  // whatever the user already has under their scoped key on subsequent logins.
+  useEffect(() => {
+    if (!user?.id || typeof window === "undefined" || !window.localStorage) return;
+    const userKey = getStorageKey(user.id);
+    if (userKey === GUEST_INBOX_KEY) return;
+    try {
+      const guestRaw = window.localStorage.getItem(GUEST_INBOX_KEY);
+      if (!guestRaw) return;
+      const guestParsed = safeJsonParse(guestRaw, []);
+      if (!Array.isArray(guestParsed) || guestParsed.length === 0) {
+        window.localStorage.removeItem(GUEST_INBOX_KEY);
+        return;
+      }
+      const existingRaw = window.localStorage.getItem(userKey);
+      const existingParsed = existingRaw ? safeJsonParse(existingRaw, []) : [];
+      const existing = Array.isArray(existingParsed) ? existingParsed : [];
+      const seen = new Set(existing.map((n) => n?.id).filter(Boolean));
+      const merged = [...existing];
+      guestParsed.forEach((n) => {
+        if (!n) return;
+        const normalized = normalize(n);
+        if (!seen.has(normalized.id)) merged.push(normalized);
+      });
+      window.localStorage.setItem(userKey, JSON.stringify(merged));
+      window.localStorage.removeItem(GUEST_INBOX_KEY);
+    } catch {}
+  }, [user?.id]);
 
   const addSeenId = (id) => {
     if (seenIds.current.has(id)) return;
@@ -82,7 +118,7 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
       normalized.forEach((n) => addSeenId(n.id));
       setNotifications(normalized);
       setUnreadCount(normalized.filter((n) => !n.isRead).length);
-      persist(normalized);
+      persist(normalized, storageKeyRef.current);
       if (shouldDeliver && hasCompletedInitialFetchRef.current && incomingUnread.length > 0) {
         deliverNew(incomingUnread);
       }
@@ -106,7 +142,7 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
         applyList(Array.isArray(data) ? data : data?.content || [], { deliverNew: true });
       } catch {
         if (isMounted.current && tokenRef.current === t) {
-          const persisted = loadPersisted();
+          const persisted = loadPersisted(storageKeyRef.current);
           const fallback = persisted?.length ? persisted : seedNotifications.map(normalize);
           applyList(fallback, { deliverNew: false });
         }
@@ -160,7 +196,7 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
         if (!isMounted.current || tokenRef.current !== t) return;
         setNotifications((prev) => {
           const updated = prev.map((n) => (n.id === id ? { ...n, isRead: true } : n));
-          persist(updated);
+          persist(updated, storageKeyRef.current);
           return updated;
         });
         setUnreadCount((p) => Math.max(0, p - 1));
@@ -180,7 +216,7 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
       hasUnread = prev.some((n) => !n.isRead);
       if (!hasUnread) return prev;
       const updated = prev.map((n) => ({ ...n, isRead: true }));
-      persist(updated);
+      persist(updated, storageKeyRef.current);
       return updated;
     });
     if (!hasUnread) return;
@@ -201,27 +237,49 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
     async (id) => {
       if (!id) return;
       const t = token;
-      let removedWasUnread = false;
-      setNotifications((prev) => {
-        const target = prev.find((n) => n.id === id);
-        removedWasUnread = target ? !target.isRead : false;
-        const updated = prev.filter((n) => n.id !== id);
-        persist(updated);
-        return updated;
-      });
+      const currentNotifications = notificationsRef.current;
+      const removedIndex = currentNotifications.findIndex((n) => n.id === id);
+      const removedNotification = removedIndex >= 0 ? currentNotifications[removedIndex] : null;
+      if (!removedNotification) return;
+      const removedWasUnread = !removedNotification.isRead;
+      const optimisticallyUpdated = currentNotifications.filter((n) => n.id !== id);
+      setNotifications(optimisticallyUpdated);
+      notificationsRef.current = optimisticallyUpdated;
+      persist(optimisticallyUpdated, storageKeyRef.current);
       if (removedWasUnread) setUnreadCount((p) => Math.max(0, p - 1));
       const fn = API_ENDPOINTS?.NOTIFICATIONS?.DELETE;
-      if (!token || typeof fn !== "function") return;
-      const endpoint = fn(id);
-      if (!endpoint) return;
-      try { await apiUtils.delete(endpoint); }
-      catch (err) {
-        pushToNotificationQueue("delete", { endpoint });
-        if (isMounted.current && tokenRef.current === t) {
-          console.error("[useNotificationPoller] delete:", err);
-          refetchRef.current({ isBackground: true });
-        }
-      }
+      const endpoint = token && typeof fn === "function" ? fn(id) : null;
+
+      const restoreNotification = () => {
+        if (!isMounted.current) return;
+        setNotifications((prev) => {
+          if (prev.some((n) => n.id === id)) return prev;
+          const updated = [...prev];
+          const insertAt = removedIndex >= 0 ? Math.min(removedIndex, updated.length) : 0;
+          updated.splice(insertAt, 0, removedNotification);
+          persist(updated, storageKeyRef.current);
+          notificationsRef.current = updated;
+          return updated;
+        });
+        if (removedWasUnread) setUnreadCount((p) => p + 1);
+      };
+
+      showUndoToast({
+        message: "Notification deleted.",
+        toastId: `delete-notification-${id}`,
+        onUndo: restoreNotification,
+        onCommit: async () => {
+          if (!endpoint) return;
+          try { await apiUtils.delete(endpoint); }
+          catch (err) {
+            pushToNotificationQueue("delete", { endpoint });
+            if (isMounted.current && tokenRef.current === t) {
+              console.error("[useNotificationPoller] delete:", err);
+              refetchRef.current({ isBackground: true });
+            }
+          }
+        },
+      });
     },
     [token],
   );
@@ -233,7 +291,7 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const handleUpdate = () => {
-      const persisted = loadPersisted();
+      const persisted = loadPersisted(storageKeyRef.current);
       if (persisted) {
         setNotifications(persisted);
         setUnreadCount(persisted.filter((n) => !n.isRead).length);
@@ -254,7 +312,7 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
         if (raw) {
           const legacy = safeJsonParse(raw, []);
           if (Array.isArray(legacy) && legacy.length > 0) {
-            const currentPersisted = loadPersisted() || [];
+            const currentPersisted = loadPersisted(storageKeyRef.current) || [];
             const merged = [...currentPersisted];
 
             legacy.forEach((ln) => {
@@ -286,7 +344,7 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
 
             // Sort newest first
             merged.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-            persist(merged);
+            persist(merged, storageKeyRef.current);
             setNotifications(merged);
             setUnreadCount(merged.filter((n) => !n.isRead).length);
             merged.forEach((n) => {

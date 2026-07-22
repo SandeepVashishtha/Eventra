@@ -20,7 +20,7 @@ import {
 // src/Pages/Documentation/DocumentationPage.jsx
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
+import useDocumentTitle from "hooks/useDocumentTitle";
 export default function DocumentationPage() {
   useDocumentTitle("Documentation | Eventra");
   const sectionVariants = {

@@ -1,16 +1,16 @@
 import { motion } from "framer-motion";
 import { FolderOpen, UploadCloud, Bug } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "context/AuthContext";
 
-import useReducedMotion from "../../hooks/useReducedMotion.js";
+import useReducedMotion from "hooks/useReducedMotion.js";
 const ProjectCTA = () => {
   const prefersReducedMotion = useReducedMotion();
 
     const { user } = useAuth();
-  
+
   return (
-    <section 
+    <section
       className="relative py-16 px-8 m-8 rounded-3xl bg-linear-to-tr from-sky-100 via-white to-blue-100 dark:from-[#111827] dark:via-[#0f172a] dark:to-black text-black dark:text-white shadow-xl overflow-hidden border border-gray-200 dark:border-gray-800"
       // AOS Implementation
       data-aos="zoom-in-up"

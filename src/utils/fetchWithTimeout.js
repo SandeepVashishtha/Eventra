@@ -31,19 +31,29 @@ export const fetchWithTimeout = async (
       options.signal.addEventListener("abort", handleUserAbort);
     }
   }
-
   const method = (options.method || "GET").toUpperCase();
   let requestHeaders = options.headers;
   if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
     const headers = new Headers(options.headers || {});
     if (!headers.has("Idempotency-Key")) {
-      const idempotencyKey = typeof crypto !== "undefined" && crypto.randomUUID
-        ? crypto.randomUUID()
-        : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-            const r = Math.random() * 16 | 0;
-            const v = c === 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-          });
+      // Fix (Issue #9230): Use crypto.getRandomValues() instead of Math.random()
+      // Math.random() is not cryptographically secure — values are predictable.
+      let idempotencyKey;
+      if (typeof crypto !== "undefined" && crypto.randomUUID) {
+        idempotencyKey = crypto.randomUUID();
+      } else if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+        const bytes = new Uint8Array(16);
+        crypto.getRandomValues(bytes);
+        bytes[6] = (bytes[6] & 0x0f) | 0x40;
+        bytes[8] = (bytes[8] & 0x3f) | 0x80;
+        idempotencyKey = [...bytes].map((b, i) =>
+          [4, 6, 8, 10].includes(i)
+            ? '-' + b.toString(16).padStart(2, '0')
+            : b.toString(16).padStart(2, '0')
+        ).join('');
+      } else {
+        throw new Error("[fetchWithTimeout] crypto API unavailable — cannot generate secure Idempotency-Key");
+      }
       headers.set("Idempotency-Key", idempotencyKey);
     }
     requestHeaders = headers;
@@ -53,9 +63,16 @@ export const fetchWithTimeout = async (
     const response = await fetch(url, {
       ...options,
       headers: requestHeaders,
-      signal: controller.signal,
+      signal: controller.signal, // This now responds to BOTH the timeout and the user's unmount signal
     });
 
+    // Read the body once — directly from the response stream.
+    //
+    // The previous implementation used response.clone().json() which allocates
+    // a duplicate of the entire body in memory before parsing, doubling peak
+    // consumption for every request. Since callers consume the returned `data`
+    // field rather than response.body, there is no need to keep the original
+    // stream open. Read directly and skip the clone.
     let data = null;
     const contentType = response.headers.get("content-type") || "";
 

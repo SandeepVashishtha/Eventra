@@ -1,10 +1,10 @@
 import { Grid, List, Search, X, RotateCcw, Sparkles, Filter } from "lucide-react";
 import { useState, useEffect, useRef, memo } from "react";
-import StyledDropdown from "../../components/StyledDropdown";
-import AdvancedFilterPanel from "../../components/common/AdvancedFilterPanel";
-// import useEventFilterPresets from "../../hooks/useEventFilterPresets";
-import useFilterSuggestions from "../../hooks/useFilterSuggestions";
-// import { exportEventsResultFile } from "../../utils/eventResultsExport";
+import StyledDropdown from "components/StyledDropdown";
+import AdvancedFilterPanel from "components/common/AdvancedFilterPanel";
+// import useEventFilterPresets from "hooks/useEventFilterPresets";
+import useFilterSuggestions from "hooks/useFilterSuggestions";
+// import { exportEventsResultFile } from "utils/eventResultsExport";
 
 const CATEGORY_OPTIONS = [
   { id: "all", label: "All Categories" },
@@ -44,7 +44,7 @@ const EventFiltersToolbar = ({
 }) => {
   const [localQuery, setLocalQuery] = useState(searchQuery || "");
   const debounceRef = useRef(null);
-  
+
   // const { clearPresetError } = useEventFilterPresets();
 
   useFilterSuggestions({
@@ -59,7 +59,7 @@ const EventFiltersToolbar = ({
   visibleEvents,
   presets: [],
 });
-    
+
 
 
   useEffect(() => {
@@ -308,4 +308,3 @@ const EventFiltersToolbar = ({
 };
 
 export default memo(EventFiltersToolbar);
-

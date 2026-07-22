@@ -25,15 +25,14 @@ import { useCallback } from "react";
 import { motion } from "framer-motion";
 import { Share2, Twitter, Linkedin, MessageCircle, Link2, Check } from "lucide-react";
 import { toast } from "react-toastify";
-import useCopyToClipboard from "../../hooks/useCopyToClipboard";
+import useCopyToClipboard from "hooks/useCopyToClipboard";
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 function getEventUrl(event) {
-  const base =
-    typeof window !== "undefined" ? window.location.origin : "https://eventra.app";
+  const base = process.env.REACT_APP_PUBLIC_URL || "https://eventra.app";
   return `${base}/events/${event.id}`;
 }
 

@@ -1,13 +1,38 @@
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useInView } from "framer-motion";
 import { Award, Calendar, Code2, Sparkles, Users, X, Rocket } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import ModernSearchInput from "../../components/common/ModernSearchInput";
-import { useAuth } from "../../context/AuthContext";
+import { useRef, useState, useEffect } from "react";
+import ModernSearchInput from "components/common/ModernSearchInput";
+import { useAuth } from "context/AuthContext";
 import CountUpLib from "react-countup";
-import ErrorBoundary from "../../components/common/ErrorBoundary";
-import useReducedMotion from "../../hooks/useReducedMotion.js";
+import ErrorBoundary from "components/common/ErrorBoundary";
+import useReducedMotion from "hooks/useReducedMotion.js";
 
 const CountUp = CountUpLib.default || CountUpLib;
+
+const StatCounter = ({ stat, shouldAnimate, delay = 0 }) => {
+  const prefix = stat.prefix || "";
+  const suffix = stat.suffix || "";
+
+  if (!shouldAnimate) {
+    return (
+      <>
+        {prefix}0{suffix}
+      </>
+    );
+  }
+
+  return (
+    <CountUp
+      start={0}
+      end={stat.value}
+      duration={2.5}
+      prefix={prefix}
+      suffix={suffix}
+      delay={delay}
+    />
+  );
+};
 // Tag component for selected tags in search bar
 const Tag = ({ tag, onRemove }) => (
   <motion.div
@@ -41,6 +66,14 @@ export default function HackathonHero({
   const prefersReducedMotion = useReducedMotion();
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  const statsRef = useRef(null);
+  const isStatsInView = useInView(statsRef, { once: true, margin: "-100px" });
+  const [hasMounted, setHasMounted] = useState(false);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   return (
     <div className="relative overflow-hidden bg-linear-to-b from-slate-50 via-indigo-50/40 to-slate-50 dark:from-slate-950 dark:via-indigo-950/60 dark:to-slate-950 text-slate-900 dark:text-white py-16 sm:py-20 md:py-24 border-b border-slate-200 dark:border-indigo-900/40 transition-colors duration-300">
@@ -168,7 +201,7 @@ export default function HackathonHero({
                 {filteredCount}{" "}{filteredCount === 1 ? "hackathon" : "hackathons"} found
               </span>
             ) : (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="mt-4 flex flex-col items-center text-center p-6 bg-white/40 dark:bg-slate-900/40 rounded-2xl border border-indigo-100 dark:border-indigo-900/50 backdrop-blur-md w-full"
@@ -224,7 +257,7 @@ export default function HackathonHero({
       {/* STATS SECTION */}
       {searchQuery.trim() === "" && selectedTags.length === 0 && (
         <ErrorBoundary level="section" label="Hackathon Statistics">
-          <div className="relative max-w-6xl mx-auto px-4 sm:px-6 mt-14 sm:mt-20 mb-12 sm:mb-16 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div ref={statsRef} className="relative max-w-6xl mx-auto px-4 sm:px-6 mt-14 sm:mt-20 mb-12 sm:mb-16 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {[
               { label: "Hackathons Hosted", value: 120, suffix: "+", icon: Calendar, color: "from-blue-500 to-indigo-500" },
               { label: "Participants", value: 50, suffix: "k+", icon: Users, color: "from-violet-500 to-purple-500" },
@@ -261,12 +294,10 @@ export default function HackathonHero({
                 </motion.div>
 
                 <p className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
-                  <CountUp
-                    start={0}
-                    end={stat.value}
-                    duration={2.5}
-                    prefix={stat.prefix}
-                    suffix={stat.suffix}
+                  <StatCounter
+                    stat={stat}
+                    shouldAnimate={hasMounted && isStatsInView}
+                    delay={prefersReducedMotion ? 0 : 0.15 + idx * 0.12}
                   />
                 </p>
                 <p className="mt-1 text-sm font-medium text-slate-500 dark:text-slate-400">
@@ -280,4 +311,3 @@ export default function HackathonHero({
     </div>
   );
 }
-

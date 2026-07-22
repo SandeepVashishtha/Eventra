@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { generateCertificatePDF } from "./CertificateDownload";
+import JSZip from "jszip";
 
 const TEMPLATES = ["classic", "elegant", "modern"];
 
@@ -18,18 +19,40 @@ const BulkCertificateGenerator = ({ eventName, eventDate, eventType, organizerNa
     const toastId = toast.loading(`Generating 0/${attendees.length} certificates...`);
 
     try {
+      const zip = new JSZip();
       for (let i = 0; i < attendees.length; i++) {
         const attendee = attendees[i];
         const participantName = `${attendee.firstName || ""} ${attendee.lastName || attendee.name || ""}`.trim() || "Participant";
         const doc = generateCertificatePDF({ participantName, eventName, eventDate, eventType, organizerName, template });
         const safeFileName = `${participantName.replace(/[^a-zA-Z0-9]/g, "_")}_${(eventName || "Event").replace(/[^a-zA-Z0-9]/g, "_")}_Certificate.pdf`;
-        doc.save(safeFileName);
+        
+        const pdfBlob = doc.output("blob");
+        zip.file(safeFileName, pdfBlob);
+
         setProgress(i + 1);
         toast.update(toastId, { render: `Generating ${i + 1}/${attendees.length} certificates...` });
-        await new Promise(r => setTimeout(r, 100));
+        await new Promise(r => setTimeout(r, 50));
       }
-      toast.update(toastId, { render: `✅ ${attendees.length} certificates generated!`, type: "success", isLoading: false, autoClose: 4000 });
-    } catch (_err) {
+
+      toast.update(toastId, { render: "Packaging certificates into ZIP..." });
+      const zipContent = await zip.generateAsync({ type: "blob" });
+      const safeEventName = (eventName || "Event").replace(/[^a-zA-Z0-9]/g, "_");
+      const zipFileName = `${safeEventName}_Certificates.zip`;
+
+      const url = URL.createObjectURL(zipContent);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = zipFileName;
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      setTimeout(() => URL.revokeObjectURL(url), 100);
+
+      toast.update(toastId, { render: `✅ ${attendees.length} certificates generated and downloaded!`, type: "success", isLoading: false, autoClose: 4000 });
+    } catch (error) {
+      console.error(error);
       toast.update(toastId, { render: "Bulk generation failed.", type: "error", isLoading: false, autoClose: 3000 });
     } finally {
       setIsGenerating(false);

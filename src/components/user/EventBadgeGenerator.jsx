@@ -127,6 +127,8 @@ export default function EventBadgeGenerator({ onClose, userStats = {} }) {
       const imgHeight = 135; // Badge height in mm
       const xOffset = (210 - imgWidth) / 2;
       const yOffset = (297 - imgHeight) / 2;
+      const footerTitleY = yOffset + imgHeight + 18;
+      const footerSubtitleY = footerTitleY + 10;
 
       pdf.setFillColor(15, 23, 42); // Dark slate background fill
       pdf.rect(0, 0, 210, 297, "F");
@@ -139,16 +141,25 @@ export default function EventBadgeGenerator({ onClose, userStats = {} }) {
       // Render badge
       pdf.addImage(imgData, "PNG", xOffset, yOffset, imgWidth, imgHeight);
 
-      // Certify text at bottom
+      // Certify text at bottom — badge ends at yOffset + imgHeight = 81 + 135 = 216mm
+      // Place text below the badge with comfortable spacing toward the footer.
       pdf.setTextColor(255, 255, 255);
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(16);
-      pdf.text("OFFICIAL ATTENDEE EVENT CREDENTIAL", 105, 45, { align: "center" });
+<<<<<<< HEAD
+      pdf.text("OFFICIAL ATTENDEE EVENT CREDENTIAL", 105, 240, { align: "center" });
+=======
+      pdf.text("OFFICIAL ATTENDEE EVENT CREDENTIAL", 105, footerTitleY, { align: "center" });
+>>>>>>> 9c106f04 (fix: EventBadgeGenerator PDF export rendering)
 
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(10);
       pdf.setTextColor(148, 163, 184);
-      pdf.text("This badge grants access to the Eventra Contribution Arena.", 105, 55, { align: "center" });
+<<<<<<< HEAD
+      pdf.text("This badge grants access to the Eventra Contribution Arena.", 105, 252, { align: "center" });
+=======
+      pdf.text("This badge grants access to the Eventra Contribution Arena.", 105, footerSubtitleY, { align: "center" });
+>>>>>>> 9c106f04 (fix: EventBadgeGenerator PDF export rendering)
       
       pdf.save(`eventra-badge-${attendeeName.toLowerCase().replace(/\s+/g, "-")}.pdf`);
       toast.success("PDF Pass generated and downloaded.");

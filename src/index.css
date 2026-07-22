@@ -1323,6 +1323,37 @@ html:not(.dark) ::placeholder {
   border: 1px solid #1e293b;
 }
 
+.eventra-undo-toast {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.eventra-undo-toast__message {
+  flex: 1;
+  min-width: 0;
+}
+
+.eventra-undo-toast__button {
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 9999px;
+  background: #111827;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0.45rem 0.7rem;
+}
+
+.eventra-undo-toast__button:hover,
+.eventra-undo-toast__button:focus-visible {
+  background: #4338ca;
+  outline: none;
+}
+
 /* Accessibility: Keyboard Outlines on Close Button */
 .Toastify__close-button:focus-visible {
   outline: 2px solid #38bdf8;
@@ -1348,4 +1379,3 @@ html:not(.dark) ::placeholder {
 .dark #fluid {
   mix-blend-mode: plus-lighter; /* Extra premium neon glow on dark backgrounds */
 }
-

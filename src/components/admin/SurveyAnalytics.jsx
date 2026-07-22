@@ -1,6 +1,6 @@
 import { Users, Activity, Smile, Play, Star, Download } from "lucide-react";
-import { useState, useMemo } from "react";
-import { exportSurveyToCSV } from "../../utils/exportCsv";
+import { useMemo } from "react";
+import { exportSurveyToCSV } from "utils/exportCsv";
 import {
   ResponsiveContainer,
   BarChart,
@@ -28,7 +28,7 @@ const FEEDBACK_COMMENTS_POOL = [
 ];
 
 const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
-  const [isActive] = useState(true);
+  const isActive = true;
 
   // Hook handles mock data generation - decoupled from UI components
   const {
@@ -182,7 +182,7 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
             <Download className="w-4 h-4 text-indigo-500" />
             Export Results to CSV
           </button>
-          
+
           <button
             onClick={handleSimulateSubmission}
             className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-xs font-bold text-white shadow-lg shadow-indigo-600/15 transition self-start sm:self-auto cursor-pointer"
@@ -346,7 +346,7 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
                   {/* B. MULTIPLE CHOICE BAR CHART */}
                   {question.type === "choice" && hasData && (
                     <div className="w-full h-44">
-                      {question.options.length === 0 ? (
+                      {!question.options || question.options.length === 0 ? (
                         <div className="text-center py-6 text-xs text-slate-400">
                           No options defined for this choice question.
                         </div>

@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { ChevronDown } from "lucide-react";
 
 import { PRIMARY_NAV_ITEMS } from "./constants/navItems";
-import { prefetchRoute } from "../../utils/routePrefetch";
+import { prefetchRoute } from "utils/routePrefetch";
 
 const NavbarLinks = ({ vertical = false, items = PRIMARY_NAV_ITEMS, onClick }) => {
   const { t } = useTranslation();
