@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { FolderOpen, Plus } from "lucide-react";
 import StatusBadge from "../common/StatusBadge";
 import { DashboardItemCardSkeleton } from "../common/SkeletonLoaders";
-import EmptyState from "../common/EmptyState";
+import SearchEmptyState from "../common/SearchEmptyState";
+import { getSmartDateLabel } from "utils/relativeTime";
 
 const ProjectsTab = ({ projects, loading, fadeUp }) => (
   <motion.div key="projects" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="ud-content">
@@ -34,7 +35,7 @@ const ProjectsTab = ({ projects, loading, fadeUp }) => (
           </div>
           <h3 className="ud-item-title">{p.title}</h3>
           <div className="ud-item-meta">
-            <span>Updated: {p.lastUpdate}</span>
+            <span>Updated: {p.lastUpdate ? getSmartDateLabel(p.lastUpdate) : "—"}</span>
           </div>
           <div className="ud-item-footer">
             <StatusBadge status={p.participationType} />
