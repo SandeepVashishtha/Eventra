@@ -1,6 +1,6 @@
 // src/components/user/RegistrationsTab.jsx
 import { motion } from "framer-motion";
-import { Users, Calendar, Trophy, FolderOpen, Search, X, SlidersHorizontal } from "lucide-react";
+import { Users, Calendar, Trophy, FolderOpen, Search, X, SlidersHorizontal, Download } from "lucide-react";
 import StatusBadge from "../common/StatusBadge";
 import SearchEmptyState from "../common/SearchEmptyState";
 import EmptyState from "../common/EmptyState";
@@ -125,25 +125,6 @@ const RegistrationsTab = ({
   totalRegistrations = 0,
 }) => {
   const { exportToCSV } = useCSVExport();
-  filteredData,
-  loading,
-  searchTerm,
-  setSearchTerm,
-  isDebouncing,
-  selectedTypes,
-  toggleType,
-  selectedStatuses,
-  toggleStatus,
-  activeFilterCount,
-  clearAll,
-  ticketType,
-  setTicketType,
-  sortBy,
-  setSortBy,
-  setSelectedTicketEvent,
-  hasRegistrations = false,
-  totalRegistrations = 0,
-}) => {
   // Derive display value for the type dropdown
   const typeDisplayValue = selectedTypes.includes("All") ? "" : selectedTypes.join(", ");
   const statusDisplayValue = selectedStatuses.includes("All") ? "" : selectedStatuses.join(", ");

@@ -149,20 +149,12 @@ export default function EventBadgeGenerator({ onClose, userStats = {} }) {
       pdf.setTextColor(255, 255, 255);
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(16);
-<<<<<<< HEAD
-      pdf.text("OFFICIAL ATTENDEE EVENT CREDENTIAL", 105, 240, { align: "center" });
-=======
       pdf.text("OFFICIAL ATTENDEE EVENT CREDENTIAL", 105, footerTitleY, { align: "center" });
->>>>>>> 9c106f04 (fix: EventBadgeGenerator PDF export rendering)
 
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(10);
       pdf.setTextColor(148, 163, 184);
-<<<<<<< HEAD
-      pdf.text("This badge grants access to the Eventra Contribution Arena.", 105, 252, { align: "center" });
-=======
       pdf.text("This badge grants access to the Eventra Contribution Arena.", 105, footerSubtitleY, { align: "center" });
->>>>>>> 9c106f04 (fix: EventBadgeGenerator PDF export rendering)
       
       pdf.save(`eventra-badge-${attendeeName.toLowerCase().replace(/\s+/g, "-")}.pdf`);
       toast.success("PDF Pass generated and downloaded.");
