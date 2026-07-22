@@ -1,12 +1,12 @@
 import { Star, Github, ExternalLink, AlertCircle, GitPullRequest, Cpu, Code2, Bookmark } from "lucide-react";
 import { useState, useEffect, useRef, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import useReducedMotion from "../../hooks/useReducedMotion.js";
-import { fetchGitHubRepo, getGitHubRepoDetails } from "../../utils/githubApiClient.js";
-import { safeJsonParse } from "../../utils/safeJsonParse";
-import { useAuth } from "../../context/AuthContext.js";
+import useReducedMotion from "hooks/useReducedMotion.js";
+import { fetchGitHubRepo, getGitHubRepoDetails } from "utils/githubApiClient.js";
+import { safeJsonParse } from "utils/safeJsonParse";
+import { useAuth } from "context/AuthContext.js";
 import { toast } from "react-toastify";
-import { projectService } from "../../services/projectService.js";
+import { projectService } from "services/projectService.js";
 
 // Cache Keys & Constants
 const CACHE_KEY = "eventra_github_metrics_cache";
@@ -176,7 +176,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
         try {
           const saved = localStorage.getItem(CACHE_KEY);
           cache = saved ? safeJsonParse(saved, {}) : {};
-        } catch (e) {
+        } catch {
           cache = {};
         }
 

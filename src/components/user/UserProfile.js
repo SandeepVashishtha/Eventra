@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useReducedMotion } from '../../hooks/useReducedMotion';
+import { useReducedMotion } from 'hooks/useReducedMotion';
 import {
   User,
   AtSign,
@@ -20,11 +20,11 @@ import {
   Star,
   Zap,
 } from "lucide-react";
-import { useAuth } from "../../context/AuthContext";
-import { syncSecureStorage } from "../../utils/secureStorage";
+import { useAuth } from "context/AuthContext";
+import { syncSecureStorage } from "utils/secureStorage";
 import LazyImage from "../common/LazyImage";
 import "./UserProfile.css";
-import { safeJsonParse } from "../../utils/safeJsonParse";
+import { safeJsonParse } from "utils/safeJsonParse";
 import { userService } from "../../services/userService";
 
 // 🔥 FIX 1: Safe URL Sanitizer to prevent Stored XSS via malicious URI schemes
@@ -160,8 +160,8 @@ export default function UserProfile() {
   loading="lazy"
   onError={(e) => {
     e.target.onerror = null;
-    e.target.src =
-      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%239ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>';
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%239ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>';
+    e.target.src = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
     e.target.style.backgroundColor = "#f3f4f6";
   }}
 />

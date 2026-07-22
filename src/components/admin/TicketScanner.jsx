@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Html5Qrcode } from "html5-qrcode";
-import { safeJsonParse } from "../../utils/safeJsonParse";
+import { safeJsonParse } from "utils/safeJsonParse";
 import {
   Camera,
   CameraOff,
@@ -18,8 +18,8 @@ import {
   WifiOff,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import { pushToQueue } from "../../utils/offlineQueue";
-import { validateTicket, recordCheckIn, fetchCheckInHistory, fetchScannerEvents, fetchTicketStats } from "../../services/ticketService";
+import { pushToQueue } from "utils/offlineQueue";
+import { validateTicket, recordCheckIn, fetchCheckInHistory, fetchScannerEvents, fetchTicketStats } from "services/ticketService";
 import "./TicketScanner.css";
 const HISTORY_CACHE_KEY = "eventra_checkins_cache";
 
@@ -99,6 +99,7 @@ export default function TicketScanner() {
   useEffect(() => {
     fetchScannerEvents()
       .then((data) => {
+        if (!isMountedRef.current) return;
         setEvents(data);
         if (data.length > 0) {
           setManualEventId(data[0].id);
@@ -107,6 +108,7 @@ export default function TicketScanner() {
         }
       })
       .catch(() => {
+        if (!isMountedRef.current) return;
         setEvents([]);
       });
   }, []);
@@ -116,10 +118,12 @@ export default function TicketScanner() {
       fetchStats(selectedEventId);
       fetchCheckInHistory(selectedEventId)
         .then((data) => {
+          if (!isMountedRef.current) return;
           const items = Array.isArray(data) ? data : data.content || data.checkins || [];
           setCheckinHistory(items);
         })
         .catch((err) => {
+          if (!isMountedRef.current) return;
           console.error("Failed to load check-in history:", err);
           toast.error("Failed to load check-in history. The data shown may be stale.");
         });

@@ -1,11 +1,11 @@
 import { Github, ExternalLink, Plus, X } from "lucide-react";
-import { getPublicErrorMessage, FORM_ERRORS } from "../../utils/errorMessages";
+import { getPublicErrorMessage, FORM_ERRORS } from "utils/errorMessages";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "context/AuthContext";
 
-import { projectService } from "../../services/projectService";
-import { getUserFullName } from "../../utils/userNameUtils.mjs";
+import { projectService } from "services/projectService";
+import { getUserFullName } from "utils/userNameUtils.mjs";
 import CharacterCounter from "./CharacterCounter";
 import "./ProjectSubmission.css";
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import useRecentlyViewed from '../../hooks/useRecentlyViewed';
+import useRecentlyViewed from 'hooks/useRecentlyViewed';
 import LazyImage from './LazyImage';
 import './RecentlyViewedEvents.css';
 
@@ -138,7 +138,7 @@ const RecentlyViewedCard = ({ event, onCardClick, onRemove }) => {
 
 /**
  * RecentlyViewedTracker Component
- * 
+ *
  * Simple declarative component to trigger adding an event to history.
  * Intended to be rendered in EventDetails.js with `<RecentlyViewedTracker event={event} />`
  */

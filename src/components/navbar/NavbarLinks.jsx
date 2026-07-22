@@ -3,10 +3,10 @@ import { NavLink, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ChevronDown } from "lucide-react";
 
-import { NAV_ITEMS } from "./constants/navItems";
-import { prefetchRoute } from "../../utils/routePrefetch";
+import { PRIMARY_NAV_ITEMS } from "./constants/navItems";
+import { prefetchRoute } from "utils/routePrefetch";
 
-const NavbarLinks = ({ vertical = false, onClick }) => {
+const NavbarLinks = ({ vertical = false, items = PRIMARY_NAV_ITEMS, onClick }) => {
   const { t } = useTranslation();
   const location = useLocation();
   const navRef = useRef(null);
@@ -89,11 +89,13 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
         }
       `
       : `
-        flex items-center gap-1.5
+        inline-flex flex-none items-center gap-1.5
+        shrink-0
+        min-w-max
         whitespace-nowrap
-        px-3.5 py-1.5
+        px-3.5 sm:px-4 py-1.5 sm:py-2
         rounded-full
-        text-[12px]
+        text-[12px] sm:text-[13px]
         font-semibold
         uppercase
         tracking-wider
@@ -110,9 +112,9 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
     <nav
       ref={navRef}
       aria-label={vertical ? t("nav.mobilePrimaryLinks") : t("nav.primaryLinks")}
-      className={`flex ${vertical ? "flex-col w-full gap-1" : "items-center gap-2"}`}
+      className={`flex ${vertical ? "flex-col w-full gap-1" : "flex-nowrap items-center justify-center gap-2 lg:gap-2.5 xl:gap-3"}`}
     >
-      {NAV_ITEMS.map((item) => {
+      {items.map((item) => {
         const isOpen = openMenu === item.nameKey;
         const hasChildren = item.subItems && item.subItems.length > 0;
         const menuId = `menu-${item.nameKey}`;
@@ -121,7 +123,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
           return (
             <div
               key={item.nameKey}
-              className={`relative ${vertical ? "w-full" : "flex items-center"}`}
+              className={`relative ${vertical ? "w-full" : "flex flex-shrink-0 items-center"}`}
             >
               <div className="flex items-center">
                 <NavLink
@@ -149,7 +151,7 @@ const NavbarLinks = ({ vertical = false, onClick }) => {
                         );
                       }
                     }}
-                    className="ml-0.5 rounded p-1.5 hover:bg-bg-secondary transition-colors"
+                    className="ml-0.5 flex-shrink-0 rounded-full p-1.5 hover:bg-bg-secondary transition-colors"
                     aria-label={`Toggle ${t(item.nameKey)} menu`}
                   >
                     <ChevronDown

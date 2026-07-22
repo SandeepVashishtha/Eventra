@@ -5,7 +5,7 @@ import { Calendar, MapPin, Award, Users, Trophy, Tag, ArrowLeft } from "lucide-r
 
 import hackathonsData from "./hackathonMockData.json";
 
-import useReducedMotion from "../../hooks/useReducedMotion.js";
+import useReducedMotion from "hooks/useReducedMotion.js";
 const getHackathonStatus = (hackathon) => {
   const now = new Date();
   const startDate = new Date(hackathon.startDate);

@@ -2,7 +2,7 @@
  * @fileoverview useRoutePrefetch - Route prefetching hook based on current location
  * @module hooks/useRoutePrefetch
  */
-import { useEffect, useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { prefetchRoute } from "../utils/prefetchUtils";
 
@@ -26,7 +26,7 @@ import { prefetchRoute } from "../utils/prefetchUtils";
  * prefetchManual(() => import('../Pages/Events/EventDetails'), 'details');
  */
 
-export const useRoutePrefetch = (_config = {}) => {
+export const useRoutePrefetch = () => {
   const location = useLocation();
 
   const prefetch = useCallback((importFn, key) => {

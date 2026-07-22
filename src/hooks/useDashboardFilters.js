@@ -22,6 +22,8 @@ export function useDashboardFilters(data = [], { debounceMs = 300 } = {}) {
   // --- Multi-select filter state ---
   const [selectedTypes, setSelectedTypes] = useState(["All"]);
   const [selectedStatuses, setSelectedStatuses] = useState(["All"]);
+  const [ticketType, setTicketType] = useState("All");
+  const [sortBy, setSortBy] = useState("Event Date (Newest)");
 
   // Toggle a value inside a multi-select array.
   // Selecting "All" resets the array; deselecting the last item falls back to "All".
@@ -71,21 +73,35 @@ export function useDashboardFilters(data = [], { debounceMs = 300 } = {}) {
           selectedStatuses.includes(item.status) ||
           selectedStatuses.includes(item.projectStatus);
 
-        return matchSearch && matchType && matchStatus;
+        // Ticket type match
+        const matchTicket = 
+          ticketType === "All" || item.ticketType === ticketType || (ticketType === "General" && !item.ticketType);
+
+        return matchSearch && matchType && matchStatus && matchTicket;
       })
       .sort((a, b) => {
-        if (!a.date && !b.date) return 0;
-        if (!a.date) return 1;
-        if (!b.date) return -1;
-        return new Date(b.date) - new Date(a.date);
+        const dateA = new Date(a.date || a.purchaseDate || 0).getTime();
+        const dateB = new Date(b.date || b.purchaseDate || 0).getTime();
+        const purchaseA = new Date(a.purchaseDate || a.date || 0).getTime();
+        const purchaseB = new Date(b.purchaseDate || b.date || 0).getTime();
+        
+        switch (sortBy) {
+          case "Event Date (Newest)": return dateB - dateA;
+          case "Event Date (Oldest)": return dateA - dateB;
+          case "Purchase Date (Newest)": return purchaseB - purchaseA;
+          case "Purchase Date (Oldest)": return purchaseA - purchaseB;
+          default: return dateB - dateA;
+        }
       });
-  }, [data, debouncedTerm, selectedTypes, selectedStatuses]);
+  }, [data, debouncedTerm, selectedTypes, selectedStatuses, ticketType, sortBy]);
 
   // --- Reset everything ---
   const clearAll = useCallback(() => {
     clearSearch();
     setSelectedTypes(["All"]);
     setSelectedStatuses(["All"]);
+    setTicketType("All");
+    setSortBy("Event Date (Newest)");
   }, [clearSearch]);
 
   // Active filter count (for UI badges)
@@ -111,6 +127,12 @@ export function useDashboardFilters(data = [], { debounceMs = 300 } = {}) {
     // Results
     filteredData,
     activeFilterCount,
+
+    // Tickets filters
+    ticketType,
+    setTicketType,
+    sortBy,
+    setSortBy,
 
     // Helpers
     clearAll,

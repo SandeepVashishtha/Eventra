@@ -5,8 +5,8 @@
 "use client";
 import { useEffect, useRef } from "react";
 import { useState } from "react";
-import { useReducedMotion } from "../../hooks/useReducedMotion";
-import { logger } from "../../utils/logger";
+import { useReducedMotion } from "hooks/useReducedMotion";
+import { logger } from "utils/logger";
 
 /**
  * A React component that renders a WebGL-powered fluid simulation
@@ -1230,14 +1230,14 @@ const FluidCursor = ({ enabled = true }) => {
     // and detect the actual DOM element beneath it.
     function isExcludedZone(clientX, clientY, target) {
       if (target && typeof target.closest === 'function') {
-        // Only exclude header nav and footer to prevent cluttering global navigation, 
+        // Only exclude header nav and footer to prevent cluttering global navigation,
         // but keep trail active on buttons, links, and inputs for visual consistency.
         if (target.closest("nav") !== null || target.closest("footer") !== null) {
           return true;
         }
       }
       // 🔥 FIX 2: Removed document.elementFromPoint to prevent massive Layout Thrashing.
-      // Since the canvas is pointer-events-none, window.onmousemove already receives 
+      // Since the canvas is pointer-events-none, window.onmousemove already receives
       // the true underlying DOM element as e.target. Calling elementFromPoint 60x a second
       // forces synchronous layout recalculations and tanks rendering FPS.
       return false;
@@ -1309,7 +1309,7 @@ const FluidCursor = ({ enabled = true }) => {
       if (animationFrameId) {
         cancelAnimationFrame(animationFrameId);
       }
-      
+
       // 🔥 FIX 1: Prevent WebGL Context Exhaustion (Memory Leak)
       // We must explicitly ask the browser to destroy the active WebGL context.
       // Otherwise, toggling the cursor leaves orphaned contexts in memory until the browser crashes.

@@ -1,8 +1,8 @@
-import { syncServerTimeFromHeader } from "../../utils/timeSync.js";
-import { getCSRFToken, requiresCSRF, getCSRFEnforcementMode } from "../../utils/csrfToken.js";
-import { logger } from "../../utils/logger.js";
+import { syncServerTimeFromHeader } from "utils/timeSync.js";
+import { getCSRFToken, requiresCSRF, getCSRFEnforcementMode } from "utils/csrfToken.js";
+import { logger } from "utils/logger.js";
 import { ApiError, RateLimitError, CSRFError } from "./errors.js";
-import { logCategorizedError } from "../../utils/errorRecovery.js";
+import { logCategorizedError } from "utils/errorRecovery.js";
 
 const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504];
 const RETRYABLE_METHODS = new Set(["GET", "HEAD", "OPTIONS", "TRACE"]);
@@ -11,6 +11,7 @@ const RETRY_DELAY_MS = 1_000;
 
 let onUnauthorized = null;
 let _onRequiresReauth = null;
+
 let _authToken = null;
 
 export const setOnUnauthorizedHandler = (handler) => { onUnauthorized = handler; };
@@ -129,7 +130,7 @@ const normalizeApiErrorWithTimeout = (error, timeoutMs) => {
   );
 };
 
-export function setupRequestInterceptor(api, { isDev, buildApiUrl, getAuthToken, getOnUnauthorized: _getOnUnauthorized }) {
+export function setupRequestInterceptor(api, { isDev, buildApiUrl, getAuthToken,   }) {
   api.interceptors.request.use((config) => {
     if (isDev) {
       logger.info(`[API ${config.method?.toUpperCase()}]`, buildApiUrl(config.url || ""));
@@ -198,7 +199,7 @@ export function setupResponseInterceptor(api, { isDev, timeoutMs, getOnUnauthori
 
       const onUnauthorized = getOnUnauthorized();
       const onRequiresReauth = getOnRequiresReauth ? getOnRequiresReauth() : null;
-      
+
       if (status === 401) {
         if (errorCode === "REQUIRES_REAUTH") {
           if (onRequiresReauth) onRequiresReauth();

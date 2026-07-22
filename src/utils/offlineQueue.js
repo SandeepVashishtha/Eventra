@@ -1,3 +1,4 @@
+import { toast } from "./toast.js";
 // ---------------------------------------------------------------------------
 // Self-Healing Offline Queue Utility (IndexedDB backed with LocalStorage Backup)
 // ---------------------------------------------------------------------------
@@ -34,7 +35,8 @@ const notifyQueueUpdated = (queuedItem) => {
     return;
   }
 
-  window.dispatchEvent(
+  toast.success(rescuedCount > 0 ? `IndexedDB schema upgraded. ${rescuedCount} queued action(s) were safely migrated.` : "IndexedDB schema upgraded. No queued actions were affected.");
+    window.dispatchEvent(
     new CustomEvent("eventra-offline-queue-updated", {
       detail: { item: queuedItem },
     })
@@ -598,9 +600,13 @@ export const processQueueItem = async (item, fetchFn, options = {}) => {
       timeoutId = setTimeout(() => {
         if (controller) controller.abort();
       }, REQUEST_TIMEOUT_MS);
-      const combinedSignal = signal
-        ? combineAbortSignals(signal, controller.signal)
-        : controller.signal;
+      let combinedSignal = controller.signal;
+      let cleanupCombined = null;
+      if (signal) {
+        const combined = combineAbortSignals(signal, controller.signal);
+        combinedSignal = combined.signal;
+        cleanupCombined = combined.cleanup;
+      }
 
       const response = await fetchFn(url, {
         method: "POST",
@@ -610,6 +616,7 @@ export const processQueueItem = async (item, fetchFn, options = {}) => {
       });
 
       clearPendingTimeout();
+      if (cleanupCombined) cleanupCombined();
 
       if (response.ok) return { status: "success", item };
 
@@ -619,24 +626,25 @@ export const processQueueItem = async (item, fetchFn, options = {}) => {
 
         if (typeof onConflict === "function") {
           const resolution = await onConflict(item, serverState);
-          if (resolution === "retry") { clearPendingTimeout(); continue; }
-          if (resolution === "discard") { clearPendingTimeout(); return { status: "dropped", item }; }
-          clearPendingTimeout(); return { status: "success", item };
+          if (resolution === "retry") { clearPendingTimeout(); if (cleanupCombined) cleanupCombined(); continue; }
+          if (resolution === "discard") { clearPendingTimeout(); if (cleanupCombined) cleanupCombined(); return { status: "dropped", item }; }
+          clearPendingTimeout(); if (cleanupCombined) cleanupCombined(); return { status: "success", item };
         }
-        clearPendingTimeout(); return { status: "conflict", item, serverState };
+        clearPendingTimeout(); if (cleanupCombined) cleanupCombined(); return { status: "conflict", item, serverState };
       }
 
       if (response.status >= 400 && response.status < 500) {
         logger.warn(
           `[OfflineQueue] Server rejected item ${item.id} with ${response.status} — dropping.`
         );
-        clearPendingTimeout(); return { status: "dropped", item };
+        clearPendingTimeout(); if (cleanupCombined) cleanupCombined(); return { status: "dropped", item };
       }
 
       // 5xx — retry with backoff
-      clearPendingTimeout(); continue;
+      clearPendingTimeout(); if (cleanupCombined) cleanupCombined(); continue;
     } catch (error) {
       clearPendingTimeout();
+      if (cleanupCombined) cleanupCombined();
       if (error.name === "AbortError") return { status: "error", item, error };
       logger.error(`[OfflineQueue] Network error processing item ${item.id}:`, error);
       // Retry on network errors
@@ -720,7 +728,10 @@ export const processQueue = async (currentUserId, fetchFn, options = {}) => {
 
     if (result.status === "success") {
       succeeded.push(item);
-    } else if (result.status === "dropped") {
+    } else if (result.status === "dropped" || result.status === "conflict") {
+      if (result.status === "conflict") {
+        logger.warn(`[OfflineQueue] Unresolved 409 conflict for item ${item.id} — dropping.`);
+      }
       dropped.push(item);
     } else {
       failed.push({ ...item, retryCount: (item.retryCount || 0) + 1 });
@@ -754,10 +765,16 @@ const combineAbortSignals = (...signals) => {
   for (const signal of signals) {
     if (signal.aborted) {
       controller.abort();
-      return controller.signal;
+      return { signal: controller.signal, cleanup: () => {} };
     }
     signal.addEventListener("abort", onAbort, { once: true });
   }
 
-  return controller.signal;
+  const cleanup = () => {
+    for (const signal of signals) {
+      signal.removeEventListener("abort", onAbort);
+    }
+  };
+
+  return { signal: controller.signal, cleanup };
 };

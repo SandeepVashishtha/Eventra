@@ -1,20 +1,21 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
-import useReducedMotion from "../../hooks/useReducedMotion";
-import { 
-  CheckCircle2, 
-  Circle, 
-  Trophy, 
-  ArrowRight, 
-  Sparkles, 
+import { useAuth } from "context/AuthContext";
+import useReducedMotion from "hooks/useReducedMotion";
+import {
+  CheckCircle2,
+  Circle,
+  Trophy,
+  ArrowRight,
+  Sparkles,
   Award,
   ChevronUp,
   ChevronDown
 } from "lucide-react";
-import { safeJsonParse } from "../../utils/safeJsonParse";
-import { syncSecureStorage } from "../../utils/secureStorage";
+import { safeJsonParse } from "utils/safeJsonParse";
+import { syncSecureStorage } from "utils/secureStorage";
+import { showUndoToast } from "utils/toast";
 
 // Confetti Component for celebration
 const OnboardingConfetti = () => {
@@ -64,10 +65,10 @@ const OnboardingConfetti = () => {
 
 const OnboardingTaskItem = ({ task, setIsOpen }) => {
   return (
-    <div 
+    <div
       className={`p-3 rounded-xl border transition-all duration-300 flex items-start gap-3 ${
-        task.completed 
-          ? "bg-green-50/30 dark:bg-green-950/10 border-green-100/50 dark:border-green-900/20 opacity-80" 
+        task.completed
+          ? "bg-green-50/30 dark:bg-green-950/10 border-green-100/50 dark:border-green-900/20 opacity-80"
           : "bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-sm"
       }`}
     >
@@ -80,8 +81,8 @@ const OnboardingTaskItem = ({ task, setIsOpen }) => {
         className="sr-only"
         aria-describedby={`onboarding-desc-${task.id}`}
       />
-      
-      <label 
+
+      <label
         htmlFor={`onboarding-task-${task.id}`}
         className="flex-1 flex items-start gap-3 cursor-default"
       >
@@ -218,7 +219,7 @@ export default function OnboardingChecklist() {
         interestsDone = true;
       }
     }
-    
+
     const storedInterests = localStorage.getItem("user_interests");
     if (storedInterests) {
       const parsedInt = safeJsonParse(storedInterests, []);
@@ -255,7 +256,7 @@ export default function OnboardingChecklist() {
       // Detect 100% completion for celebration
       const allDone = updated.every(t => t.completed);
       const prevAllDone = prevTasks.every(t => t.completed);
-      
+
       if (allDone && !prevAllDone) {
         const alreadyCelebrated = localStorage.getItem("eventra_onboarding_completed_fired") === "true";
         if (!alreadyCelebrated) {
@@ -276,7 +277,7 @@ export default function OnboardingChecklist() {
   // Perform checks periodically and on routing
   useEffect(() => {
     if (!user || isDismissed) return;
-    
+
     checkTaskStatus();
     const interval = setInterval(checkTaskStatus, 1500);
 
@@ -298,12 +299,22 @@ export default function OnboardingChecklist() {
   }, [checkTaskStatus]);
 
   const handleDismiss = () => {
-    localStorage.setItem("eventra_onboarding_dismissed", "true");
     setIsDismissed(true);
     setIsOpen(false);
+    showUndoToast({
+      message: "Onboarding quest dismissed.",
+      toastId: "dismiss-onboarding-checklist",
+      onUndo: () => {
+        setIsDismissed(false);
+        setIsOpen(true);
+      },
+      onCommit: () => {
+        localStorage.setItem("eventra_onboarding_dismissed", "true");
+      },
+    });
   };
 
-  
+
   // Render check
   if (!user || isDismissed) {
     // Hidden except if they want to reset it on settings page (can trigger reset)
@@ -390,8 +401,8 @@ export default function OnboardingChecklist() {
                   <p className="text-[10px] text-slate-500">Complete quests to level up profile</p>
                 </div>
               </div>
-              
-              <button 
+
+              <button
                 onClick={() => setIsOpen(false)}
                 className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
                 aria-label="Minimize panel"
@@ -406,7 +417,7 @@ export default function OnboardingChecklist() {
                 <span>Quest Progress</span>
                 <span className="text-indigo-600 dark:text-indigo-400 font-bold">{progressPercent}%</span>
               </div>
-              
+
               <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                 <motion.div
                   className="h-full bg-indigo-600 dark:bg-indigo-500 rounded-full"
@@ -432,10 +443,10 @@ export default function OnboardingChecklist() {
             {/* Task list items */}
             <div className="p-4 space-y-3 max-h-[300px] overflow-y-auto bg-slate-50/50 dark:bg-slate-900/30">
               {tasks.map((task) => (
-                <OnboardingTaskItem 
-                  key={task.id} 
-                  task={task} 
-                  setIsOpen={setIsOpen} 
+                <OnboardingTaskItem
+                  key={task.id}
+                  task={task}
+                  setIsOpen={setIsOpen}
                 />
               ))}
             </div>

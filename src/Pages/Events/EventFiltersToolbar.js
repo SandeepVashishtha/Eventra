@@ -1,10 +1,10 @@
 import { Grid, List, Search, X, RotateCcw, Sparkles, Filter } from "lucide-react";
 import { useState, useEffect, useRef, memo } from "react";
-import StyledDropdown from "../../components/StyledDropdown";
-import AdvancedFilterPanel from "../../components/common/AdvancedFilterPanel";
-// import useEventFilterPresets from "../../hooks/useEventFilterPresets";
-import useFilterSuggestions from "../../hooks/useFilterSuggestions";
-// import { exportEventsResultFile } from "../../utils/eventResultsExport";
+import StyledDropdown from "components/StyledDropdown";
+import AdvancedFilterPanel from "components/common/AdvancedFilterPanel";
+// import useEventFilterPresets from "hooks/useEventFilterPresets";
+import useFilterSuggestions from "hooks/useFilterSuggestions";
+// import { exportEventsResultFile } from "utils/eventResultsExport";
 
 const CATEGORY_OPTIONS = [
   { id: "all", label: "All Categories" },
@@ -20,7 +20,7 @@ const CATEGORY_OPTIONS = [
 ];
 
 const EventFiltersToolbar = ({
-  // currentFilterConfig,
+  currentFilterConfig,
   filterType,
   onFilterChange,
   categoryFilter = "all",
@@ -44,11 +44,11 @@ const EventFiltersToolbar = ({
 }) => {
   const [localQuery, setLocalQuery] = useState(searchQuery || "");
   const debounceRef = useRef(null);
-  
+
   // const { clearPresetError } = useEventFilterPresets();
 
   useFilterSuggestions({
-  currentFilters: {
+  currentFilters: currentFilterConfig ?? {
     searchQuery,
     filterType,
     categoryFilter,
@@ -59,7 +59,7 @@ const EventFiltersToolbar = ({
   visibleEvents,
   presets: [],
 });
-    
+
 
 
   useEffect(() => {
@@ -271,7 +271,7 @@ const EventFiltersToolbar = ({
             label=""
             value={sortType === "" ? "" : sortType}
             onChange={onSortChange}
-            options={["Newest", "Upcoming"]}
+            options={["Newest", "Upcoming", "Best Match"]}
             placeholder="Sort by Date"
           />
         </div>
@@ -308,4 +308,3 @@ const EventFiltersToolbar = ({
 };
 
 export default memo(EventFiltersToolbar);
-

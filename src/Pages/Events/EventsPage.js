@@ -1,27 +1,27 @@
 import { useRef, useEffect, useMemo, useState } from "react";
 import { useSearchParams, useLocation } from "react-router-dom";
-import VirtualizedEventGrid from "../../components/common/VirtualizedEventGrid";
+import VirtualizedEventGrid from "components/common/VirtualizedEventGrid";
 import EventHero from "./EventHero";
 import EventCard from "./EventCard";
 import EventCalendarView from "./EventCalendarView";
-import FeedbackButton from "../../components/FeedbackButton";
+import FeedbackButton from "components/FeedbackButton";
 import EventCTA from "./EventCTA";
 import EventFiltersToolbar from "./EventFiltersToolbar";
-import { EventCardSkeleton } from "../../components/common/SkeletonLoaders";
-import SearchEmptyState from "../../components/common/SearchEmptyState";
-import EmptyState from "../../components/common/EmptyState";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
+import EventCardSkeleton from "components/common/EventCardSkeleton"; // CHANGED: Import from specific file
+import SearchEmptyState from "components/common/SearchEmptyState";
+import EmptyState from "components/common/EmptyState";
+import useDocumentTitle from "hooks/useDocumentTitle";
 import ActiveFilters from "./ActiveFilters";
 import PaginationControls from "./PaginationControls";
 import useEventListing from "./useEventListing";
-import { useDebouncedValue } from "../../hooks/useDebouncedValue";
-import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
-import ErrorBoundary from "../../components/common/ErrorBoundary";
-import ErrorMessage from "../../components/common/ErrorMessage";
-import { EventTimeline } from "../../components/EventTimeline";
-import TrendingEvents from "../../components/TrendingEvents/TrendingEvents";
-import RecentlyViewedEvents from "../../components/common/RecentlyViewedEvents";
-import { safeJsonParse } from "../../utils/safeJsonParse";
+import { useDebouncedValue } from "hooks/useDebouncedValue";
+import { prepareSafeSearchQuery } from "utils/inputSanitization";
+import ErrorBoundary from "components/common/ErrorBoundary";
+import ErrorMessage from "components/common/ErrorMessage";
+import { EventTimeline } from "components/EventTimeline";
+import TrendingEvents from "components/TrendingEvents/TrendingEvents";
+import RecentlyViewedEvents from "components/common/RecentlyViewedEvents";
+import { safeJsonParse } from "utils/safeJsonParse";
 import {
   decodeAdvancedFilters,
   encodeAdvancedFilters,
@@ -29,7 +29,7 @@ import {
   hasActiveAdvancedFilters,
   normalizeAdvancedFilters,
   serializeAdvancedFilters,
-} from "../../utils/advancedFilterUtils";
+} from "utils/advancedFilterUtils";
 const FILTER_STORAGE_KEY = "eventra:event-filters:v1";
 
 const EventsPagination = ({ listing }) => {
@@ -48,10 +48,11 @@ const EventsPagination = ({ listing }) => {
   );
 };
 
+// CHANGED: Updated skeleton to use EventCardSkeleton with proper key
 const ExploreEventsSkeleton = () => (
   <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" aria-label="Loading events">
     {Array.from({ length: 6 }, (_, index) => (
-      <EventCardSkeleton key={index} />
+      <EventCardSkeleton key={`skeleton-${index}`} />
     ))}
   </div>
 );
@@ -64,7 +65,7 @@ const renderCardSection = (
   viewMode,
   searchQuery,
   onClearSearch,
-  filteredEvents,
+  matchScoreMap       // (#7437) Map of eventId → { score, reasons }
 ) => {
   if (isLoading) {
     return <ExploreEventsSkeleton />;
@@ -124,9 +125,17 @@ const renderCardSection = (
         : "grid-cols-1 max-w-4xl mx-auto"
         }`}
     >
-      {paginatedEvents.map((event) => (
-        <EventCard key={event.id} event={event} />
-      ))}
+      {paginatedEvents.map((event) => {
+          const match = matchScoreMap?.get(String(event.id));
+          return (
+            <EventCard
+              key={event.id}
+              event={event}
+              matchScore={match?.score}
+              matchReasons={match?.reasons}
+            />
+          );
+        })}
     </div>
   );
 };
@@ -140,7 +149,7 @@ const RecentlyViewedSection = () => (
 const EventsPage = () => {
   useDocumentTitle("Eventra | Events");
 
-  const location = useLocation(); 
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const rawSearchParam =
@@ -347,18 +356,14 @@ const EventsPage = () => {
 
       <div className="mt-6 sm:mt-8">
         <TrendingEvents title="Trending Events" limit={6} fetchSize={24} />
-
-<RecentlyViewedSection />
+        <RecentlyViewedSection />
       </div>
-
-      <RecentlyViewedSection />
 
       <div
         ref={cardSectionRef}
         className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8"
       >
         <div className="mb-5 sm:mb-6">
-
           <EventFiltersToolbar
             filterType={listing.filterType}
             onFilterChange={listing.setFilterType}
@@ -403,19 +408,16 @@ const EventsPage = () => {
         />
 
         <ErrorBoundary level="section" label="Events">
-          {renderCardSection(
-            isLoading,
-            listing.loadError,
-            listing.fetchEvents,
-            listing.paginatedEvents,
-            listing.viewMode,
-            listing.searchQuery,
-            clearSearchAndFilters,
-            listing.filteredEvents,
-            hasActiveAdvancedFilters(listing.advancedFilters) ||
-              listing.filterType !== "all" ||
-              listing.categoryFilter !== "all"
-          )}
+     {renderCardSection(
+  isLoading,
+  listing.loadError,
+  listing.fetchEvents,
+  listing.paginatedEvents,
+  listing.viewMode,
+  listing.searchQuery,
+  clearSearchAndFilters,
+  listing.matchScoreMap   // (#7437) pass score map for badge rendering
+)}
 
           {!listing.isLoading && listing.totalPages > 1 && (
             <EventsPagination listing={listing} />

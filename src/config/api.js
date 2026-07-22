@@ -51,12 +51,18 @@ export const setAuthToken = (token) => {
   _authToken = token;
 };
 
-const getAuthToken = () => _authToken;
-const getOnUnauthorized = () => onUnauthorized;
-const getOnRequiresReauth = () => onRequiresReauth;
-
-setupRequestInterceptor(API, { isDev, buildApiUrl, getAuthToken, getOnUnauthorized });
-setupResponseInterceptor(API, { isDev, timeoutMs: REQUEST_TIMEOUT_MS, getOnUnauthorized, getOnRequiresReauth });
+setupRequestInterceptor(API, {
+  isDev,
+  buildApiUrl,
+  getAuthToken: () => _authToken,
+  getOnUnauthorized: () => onUnauthorized,
+});
+setupResponseInterceptor(API, {
+  isDev,
+  timeoutMs: REQUEST_TIMEOUT_MS,
+  getOnUnauthorized: () => onUnauthorized,
+  getOnRequiresReauth: () => onRequiresReauth,
+});
 
 // ---------------------------------------------------------------------------
 // API Endpoints
@@ -76,10 +82,10 @@ export const API_ENDPOINTS = {
     ALL: buildApiUrl("/events"),
     LIST: buildApiUrl("/events"),
     DETAIL: (id) => buildApiUrl(`/events/${id}`),
-    SCHEDULE: (id) => buildApiUrl(`/events/${id}/schedule`),
     REGISTER: (id) => buildApiUrl(`/events/${id}/register`),
-    AVAILABILITY: (id) => buildApiUrl(`/events/${id}/availability`),
     CANCEL: (id) => buildApiUrl(`/events/${id}/cancel`),
+    AVAILABILITY: (id) => buildApiUrl(`/events/${id}/availability`),
+
     REGISTRANTS: (id) => buildApiUrl(`/events/${id}/registrants`),
     // Convenience helper — appends ?page=&size= for callers that build the
     // URL manually rather than going through eventFetchUtils.buildPaginatedUrl.
@@ -122,14 +128,8 @@ export const API_ENDPOINTS = {
   USERS: {
     PROFILE: buildApiUrl("/users/profile"),
     ACHIEVEMENTS: buildApiUrl("/users/achievements"),
-  },
-  SESSION_RECOVERY: {
-    BASE: buildApiUrl("/session-recovery"),
-    SESSION: (sessionId) =>
-      buildApiUrl(`/session-recovery/${encodeURIComponent(sessionId)}`),
-    RESTORE: (sessionId) =>
-      buildApiUrl(`/session-recovery/${encodeURIComponent(sessionId)}/restore`),
-    CLEANUP_EXPIRED: buildApiUrl("/session-recovery/expired"),
+    // (#7653) Endpoint for persisting user preferences (theme, etc.) across devices
+    PREFERENCES: buildApiUrl("/users/preferences"),
   },
   TICKETS: {
     VALIDATE: buildApiUrl("/tickets/validate"),
@@ -154,16 +154,15 @@ export const API_ENDPOINTS = {
     EMAIL: (email) => buildApiUrl(`/validate/email/${encodeURIComponent(email)}`),
     USERNAME: (username) => buildApiUrl(`/validate/username/${encodeURIComponent(username)}`),
     PHONE: buildApiUrl("/validate/phone"),
-    CONTACT: buildApiUrl("/contact"),
-  },
-  WAITLIST: {
-    JOIN: (eventId) => buildApiUrl(`/waitlist/join/${eventId}`),
-    LEAVE: (eventId) => buildApiUrl(`/waitlist/leave/${eventId}`),
-    STATUS: (eventId) => buildApiUrl(`/waitlist/status/${eventId}`),
-    COUNT: (eventId) => buildApiUrl(`/waitlist/count/${eventId}`),
   },
 };
 
+/**
+ * Normalise the optional config/token argument accepted by apiUtils methods.
+ *
+ * Authentication is carried automatically via the HttpOnly session cookie
+ * (withCredentials: true on the Axios instance).
+ */
 const normalizeRequestConfig = (configOrToken = {}) => {
   const config = typeof configOrToken === "string" ? {} : { ...configOrToken };
   if ("skipAuth" in config) delete config.skipAuth;
@@ -187,7 +186,7 @@ const wrapAxiosResponse = (response) => {
       if (typeof response.data === "string") {
         try {
           return JSON.parse(response.data);
-        } catch (_e) {
+        } catch {
           throw new Error("Received non-JSON response from server");
         }
       }
