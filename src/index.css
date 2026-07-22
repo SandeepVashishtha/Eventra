@@ -535,7 +535,6 @@ html.lenis {
 /* Overrides the dynamic inline body overflow: auto rules */
 body[style] {
   overflow-x: hidden;
-  position: relative;
   max-width: 100%;
 }
 
