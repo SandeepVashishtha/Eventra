@@ -7,6 +7,7 @@ import seedNotifications from "../data/mockNotifications.json";
 import { safeJsonParse } from "../utils/safeJsonParse.js";
 import { getNotificationMessage } from "../utils/notificationPreferences.js";
 import { get as idbGet, del as idbDel } from "idb-keyval";
+import { showUndoToast } from "../utils/toast.js";
 
 const POLLING_INTERVAL_MS = 60_000;
 const MAX_SEEN_IDS = 500;
@@ -59,11 +60,13 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
   const tokenRef = useRef(token);
   const isPageVisibleRef = useRef(isPageVisible);
   const storageKeyRef = useRef(getStorageKey(user?.id));
+  const notificationsRef = useRef([]);
 
   useEffect(() => { isMounted.current = true; return () => { isMounted.current = false; }; }, []);
   useEffect(() => { tokenRef.current = token; }, [token]);
   useEffect(() => { isPageVisibleRef.current = isPageVisible; }, [isPageVisible]);
   useEffect(() => { storageKeyRef.current = getStorageKey(user?.id); }, [user?.id]);
+  useEffect(() => { notificationsRef.current = notifications; }, [notifications]);
 
   // One-shot migration: when a user first logs in, adopt any inbox that was
   // still sitting under the guest key (because the old code path routed every
@@ -234,27 +237,49 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
     async (id) => {
       if (!id) return;
       const t = token;
-      let removedWasUnread = false;
-      setNotifications((prev) => {
-        const target = prev.find((n) => n.id === id);
-        removedWasUnread = target ? !target.isRead : false;
-        const updated = prev.filter((n) => n.id !== id);
-        persist(updated, storageKeyRef.current);
-        return updated;
-      });
+      const currentNotifications = notificationsRef.current;
+      const removedIndex = currentNotifications.findIndex((n) => n.id === id);
+      const removedNotification = removedIndex >= 0 ? currentNotifications[removedIndex] : null;
+      if (!removedNotification) return;
+      const removedWasUnread = !removedNotification.isRead;
+      const optimisticallyUpdated = currentNotifications.filter((n) => n.id !== id);
+      setNotifications(optimisticallyUpdated);
+      notificationsRef.current = optimisticallyUpdated;
+      persist(optimisticallyUpdated, storageKeyRef.current);
       if (removedWasUnread) setUnreadCount((p) => Math.max(0, p - 1));
       const fn = API_ENDPOINTS?.NOTIFICATIONS?.DELETE;
-      if (!token || typeof fn !== "function") return;
-      const endpoint = fn(id);
-      if (!endpoint) return;
-      try { await apiUtils.delete(endpoint); }
-      catch (err) {
-        pushToNotificationQueue("delete", { endpoint });
-        if (isMounted.current && tokenRef.current === t) {
-          console.error("[useNotificationPoller] delete:", err);
-          refetchRef.current({ isBackground: true });
-        }
-      }
+      const endpoint = token && typeof fn === "function" ? fn(id) : null;
+
+      const restoreNotification = () => {
+        if (!isMounted.current) return;
+        setNotifications((prev) => {
+          if (prev.some((n) => n.id === id)) return prev;
+          const updated = [...prev];
+          const insertAt = removedIndex >= 0 ? Math.min(removedIndex, updated.length) : 0;
+          updated.splice(insertAt, 0, removedNotification);
+          persist(updated, storageKeyRef.current);
+          notificationsRef.current = updated;
+          return updated;
+        });
+        if (removedWasUnread) setUnreadCount((p) => p + 1);
+      };
+
+      showUndoToast({
+        message: "Notification deleted.",
+        toastId: `delete-notification-${id}`,
+        onUndo: restoreNotification,
+        onCommit: async () => {
+          if (!endpoint) return;
+          try { await apiUtils.delete(endpoint); }
+          catch (err) {
+            pushToNotificationQueue("delete", { endpoint });
+            if (isMounted.current && tokenRef.current === t) {
+              console.error("[useNotificationPoller] delete:", err);
+              refetchRef.current({ isBackground: true });
+            }
+          }
+        },
+      });
     },
     [token],
   );
