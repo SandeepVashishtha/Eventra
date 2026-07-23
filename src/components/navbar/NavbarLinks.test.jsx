@@ -7,7 +7,7 @@ vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key) => key }),
 }));
 
-vi.mock("../../utils/routePrefetch", () => ({
+vi.mock("utils/routePrefetch", () => ({
   prefetchRoute: vi.fn(),
 }));
 

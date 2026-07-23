@@ -4,12 +4,12 @@ import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { useNavigate, Link } from "react-router-dom";
 
-import useReducedMotion from "../../hooks/useReducedMotion.js";
-import { useAuth } from "../../context/AuthContext";
+import useReducedMotion from "hooks/useReducedMotion.js";
+import { useAuth } from "context/AuthContext";
 
-import { hostHackathon } from "../../services/hackathonService";
-import { sanitizeInputText } from "../../utils/inputSanitization";
-import { REQUIRED_FIELDS, validateHostHackathonForm } from "../../utils/hostHackathonValidation";
+import { hostHackathon } from "services/hackathonService";
+import { sanitizeInputText } from "utils/inputSanitization";
+import { REQUIRED_FIELDS, validateHostHackathonForm } from "utils/hostHackathonValidation";
 
 const HostHackathon = () => {
   const prefersReducedMotion = useReducedMotion();
@@ -350,11 +350,11 @@ const HostHackathon = () => {
                   value={formData[name]}
                   onChange={handleChange}
                   min={today}
-                  className="w-full text-gray-700 dark:text-gray-300 
-        bg-bg 
-        rounded-lg p-3 
+                  className="w-full text-gray-700 dark:text-gray-300
+        bg-bg
+        rounded-lg p-3
         border border-gray-300 dark:border-gray-600
-        focus:outline-none 
+        focus:outline-none
         focus:ring-2 focus:ring-primary focus:border-primary
         transition duration-150 ease-in-out"
                 />

@@ -1,5 +1,5 @@
 import { ToastContainer } from "react-toastify";
-import { useTheme } from "../../context/ThemeContext";
+import { useTheme } from "context/ThemeContext";
 import "react-toastify/dist/ReactToastify.css";
 
 const NotificationToastContainer = () => {
@@ -19,7 +19,7 @@ const NotificationToastContainer = () => {
       pauseOnHover
       theme={isDarkMode ? "dark" : "light"}
       limit={3}
-      style={{ 
+      style={{
         zIndex: 10050,
         marginBottom: '1rem'
       }}

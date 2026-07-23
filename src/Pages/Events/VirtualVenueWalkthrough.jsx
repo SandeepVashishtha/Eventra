@@ -3,10 +3,10 @@ import {
   Layout, MapPin, Users, Award, Coffee, Eye,
   Maximize2, Volume2, Info, ChevronRight
 } from "lucide-react";
-import useReducedMotion from "../../hooks/useReducedMotion";
-import VirtualBoothModal from "../../components/events/VirtualBoothModal";
+import useReducedMotion from "hooks/useReducedMotion";
+import VirtualBoothModal from "components/events/VirtualBoothModal";
 import { toast } from "react-toastify";
-import { safeJsonParse } from "../../utils/safeJsonParse";
+import { safeJsonParse } from "utils/safeJsonParse";
 
 // Default premium developer sponsor booths (fallback if none loaded from designer)
 const DEFAULT_SPONSORS = [
@@ -134,7 +134,7 @@ const VirtualVenueWalkthrough = () => {
   useEffect(() => {
     let baseSponsors = [...DEFAULT_SPONSORS];
     const savedLayout = localStorage.getItem("eventra_floorplan_default");
-    
+
     // Check if the floorplan designer has overriding sponsors
     if (savedLayout) {
       try {
@@ -147,7 +147,7 @@ const VirtualVenueWalkthrough = () => {
         console.error("Failed to parse floorplan", e);
       }
     }
-    
+
     // Check if the Dedicated Sponsor Dashboard has updated the booth
     const dashboardSettings = localStorage.getItem("eventra_sponsor_settings");
     if (dashboardSettings) {
@@ -163,7 +163,7 @@ const VirtualVenueWalkthrough = () => {
         console.error("Failed to parse sponsor dashboard settings", e);
       }
     }
-    
+
     setSponsorBooths(baseSponsors);
   }, []);
 
@@ -212,7 +212,7 @@ const VirtualVenueWalkthrough = () => {
 
       {/* Main Workspace */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-        
+
         {/* Left Side: 3D Interactive Oblique Map Workspace */}
         <div className="lg:col-span-2 flex flex-col min-h-[500px] bg-slate-950/40 border border-indigo-500/10 rounded-3xl overflow-hidden relative group">
           <div className="absolute top-4 left-4 z-10 text-[10px] font-bold tracking-widest text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 rounded-md px-2.5 py-1 uppercase backdrop-blur-md">
@@ -242,8 +242,8 @@ const VirtualVenueWalkthrough = () => {
               }}
             >
               {/* Floor grid pattern */}
-              <div 
-                className="absolute inset-0 rounded-3xl opacity-[0.06]" 
+              <div
+                className="absolute inset-0 rounded-3xl opacity-[0.06]"
                 style={{
                   backgroundImage: `radial-gradient(circle, rgba(99, 102, 241, 0.3) 1px, transparent 1px)`,
                   backgroundSize: "24px 24px"
@@ -257,7 +257,7 @@ const VirtualVenueWalkthrough = () => {
               {ROOMS.map((room) => {
                 const IconComponent = room.icon;
                 const isSelected = selectedRoom.id === room.id;
-                
+
                 return (
                   <button
                     key={room.id}
@@ -270,17 +270,17 @@ const VirtualVenueWalkthrough = () => {
                       height: room.coordinates.height,
                       transformStyle: "preserve-3d",
                       // Animate height offset on hover or selection
-                      transform: isSelected 
-                        ? `translateZ(${room.coordinates.z}) scale(1.03)` 
+                      transform: isSelected
+                        ? `translateZ(${room.coordinates.z}) scale(1.03)`
                         : `translateZ(8px) hover:translateZ(20px)`,
                       borderColor: isSelected ? "#818cf8" : "rgba(255,255,255,0.05)",
-                      boxShadow: isSelected 
+                      boxShadow: isSelected
                         ? `0 20px 40px -10px ${room.glowColor}, inset 0 0 16px rgba(255,255,255,0.1)`
                         : "0 10px 25px -10px rgba(0,0,0,0.5)"
                     }}
                   >
                     {/* Shadow layer underneath element */}
-                    <div 
+                    <div
                       className="absolute -inset-1 rounded-2xl bg-black/40 blur-md pointer-events-none transition-opacity duration-300"
                       style={{
                         transform: "translateZ(-8px)",
@@ -310,7 +310,7 @@ const VirtualVenueWalkthrough = () => {
                     </div>
 
                     {/* 3D Side Walls (Extrusions) */}
-                    <div 
+                    <div
                       className="absolute left-0 right-0 bottom-0 bg-slate-900 border-t border-white/5 opacity-80"
                       style={{
                         height: "10px",
@@ -318,7 +318,7 @@ const VirtualVenueWalkthrough = () => {
                         transformOrigin: "bottom center"
                       }}
                     />
-                    <div 
+                    <div
                       className="absolute top-0 bottom-0 right-0 bg-slate-950 border-l border-white/5 opacity-80"
                       style={{
                         width: "10px",

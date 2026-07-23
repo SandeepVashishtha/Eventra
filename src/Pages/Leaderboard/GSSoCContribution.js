@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect, useCallback, memo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import useReducedMotion from "../../hooks/useReducedMotion.js";
+// NEW
+import { ArrowRight } from "lucide-react";
+import useReducedMotion from "hooks/useReducedMotion.js";
 import {
   Lightbulb,
   Code2,
@@ -19,9 +21,9 @@ import {
   Bell,
   WifiOff,
 } from "lucide-react";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
-import useDebounce from "../../hooks/useDebounce.js";
-import { safeJsonParse } from "../../utils/safeJsonParse";
+import useDocumentTitle from "hooks/useDocumentTitle";
+import useDebounce from "hooks/useDebounce.js";
+import { safeJsonParse } from "utils/safeJsonParse";
 
 // ============ CONSTANTS ============
 const GSSOC_TIMELINE = [
@@ -32,19 +34,19 @@ const GSSOC_TIMELINE = [
   { phase: "Final Results", date: "Jun 15", status: "upcoming", icon: Award },
 ];
 
-const ACHIEVEMENTS = [
-  { id: "first-pr", label: "First PR", icon: Star, unlocked: true, color: "text-yellow-500", description: "Submitted your first pull request" },
-  { id: "bug-hunter", label: "Bug Hunter", icon: Zap, unlocked: true, color: "text-red-500", description: "Found and fixed 5+ bugs" },
-  { id: "helper", label: "Community Helper", icon: MessageCircle, unlocked: false, color: "text-blue-500", description: "Helped 10+ contributors" },
-  { id: "top-contributor", label: "Top Contributor", icon: Trophy, unlocked: false, color: "text-purple-500", description: "Ranked in top 10 contributors" },
-];
+// const ACHIEVEMENTS = [
+//   { id: "first-pr", label: "First PR", icon: Star, unlocked: true, color: "text-yellow-500", description: "Submitted your first pull request" },
+//   { id: "bug-hunter", label: "Bug Hunter", icon: Zap, unlocked: true, color: "text-red-500", description: "Found and fixed 5+ bugs" },
+//   { id: "helper", label: "Community Helper", icon: MessageCircle, unlocked: false, color: "text-blue-500", description: "Helped 10+ contributors" },
+//   { id: "top-contributor", label: "Top Contributor", icon: Trophy, unlocked: false, color: "text-purple-500", description: "Ranked in top 10 contributors" },
+// ];
 
-const LEARNING_RESOURCES = [
-  { title: "Git & GitHub Basics", type: "Tutorial", duration: "15 min", link: "#", difficulty: "beginner" },
-  { title: "Writing Good PR Descriptions", type: "Guide", duration: "5 min", link: "#", difficulty: "beginner" },
-  { title: "Code Review Checklist", type: "PDF", duration: "2 min", link: "#", difficulty: "intermediate" },
-  { title: "Eventra Architecture Overview", type: "Video", duration: "20 min", link: "#", difficulty: "advanced" },
-];
+// const LEARNING_RESOURCES = [
+//   { title: "Git & GitHub Basics", type: "Tutorial", duration: "15 min", link: "#", difficulty: "beginner" },
+//   { title: "Writing Good PR Descriptions", type: "Guide", duration: "5 min", link: "#", difficulty: "beginner" },
+//   { title: "Code Review Checklist", type: "PDF", duration: "2 min", link: "#", difficulty: "intermediate" },
+//   { title: "Eventra Architecture Overview", type: "Video", duration: "20 min", link: "#", difficulty: "advanced" },
+// ];
 
 // ============ UTILITY HOOKS ============
 const useCountdown = (endDate, onEnd) => {
@@ -73,9 +75,9 @@ const calculateTimeLeft = (endDate) => {
   const end = new Date(endDate);
   const now = new Date();
   const diff = end - now;
-  
+
   if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0, ended: true };
-  
+
   return {
     days: Math.floor(diff / (1000 * 60 * 60 * 24)),
     hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
@@ -106,7 +108,7 @@ const useKeyboardShortcut = (key, callback) => {
 
 const useToast = () => {
   const [toasts, setToasts] = useState([]);
-  
+
   const addToast = useCallback((message, type = "info", duration = 3000) => {
     const id = Date.now();
     setToasts(prev => [...prev, { id, message, type }]);
@@ -114,11 +116,11 @@ const useToast = () => {
       setToasts(prev => prev.filter(t => t.id !== id));
     }, duration);
   }, []);
-  
+
   const removeToast = useCallback((id) => {
     setToasts(prev => prev.filter(t => t.id !== id));
   }, []);
-  
+
   return { toasts, addToast, removeToast };
 };
 
@@ -127,7 +129,7 @@ const formatNumber = (num) => num >= 1000 ? `${(num/1000).toFixed(1)}k` : num;
 // ============ SUB-COMPONENTS (Improves Cyclomatic Complexity) ============
 const CountdownTimer = memo(({ timeLeft }) => {
   const units = Object.entries(timeLeft).filter(([key]) => key !== 'ended');
-  
+
   return (
     <div className="grid grid-cols-4 gap-2 sm:gap-3 text-center" role="timer" aria-live="off" aria-label="Countdown timer">
       {units.map(([unit, value]) => (
@@ -147,8 +149,8 @@ const CountdownTimer = memo(({ timeLeft }) => {
 CountdownTimer.displayName = "CountdownTimer";
 
 const HeroStatCard = memo(({ label, value, icon: Icon }) => (
-  <motion.div 
-    key={label} 
+  <motion.div
+    key={label}
     className="text-center p-3 sm:p-4 bg-white dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600 shadow-sm"
     whileHover={{ scale: 1.03, y: -2 }}
   >
@@ -163,7 +165,7 @@ const HorizontalTimeline = memo(({ timeline, variants }) => {
   const total = timeline.length - 1;
   const currentIndex = timeline.findIndex(item => item.status === 'current');
   const progressPercent = currentIndex >= 0 ? (currentIndex / total) * 100 : 100;
-  
+
   const currentItem = timeline[currentIndex];
   const nextItem = timeline[currentIndex + 1];
 
@@ -179,7 +181,7 @@ const HorizontalTimeline = memo(({ timeline, variants }) => {
           </div>
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400 ml-13">Track your milestones and upcoming deadlines</p>
         </div>
-        
+
         <div className="flex flex-col md:items-end bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-200/60 dark:border-slate-800/80 shadow-inner">
           <div className="flex items-center gap-3 mb-1.5">
             <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Program Progress</span>
@@ -197,23 +199,23 @@ const HorizontalTimeline = memo(({ timeline, variants }) => {
           )}
         </div>
       </div>
-      
+
       <div className="relative w-full py-4 overflow-x-auto hide-scrollbar">
         <div className="min-w-175 flex items-start justify-between relative px-8 md:px-12 pb-8 pt-2">
           <div className="absolute top-8.5 left-20 right-20 h-2 bg-slate-100 dark:bg-slate-800/80 rounded-full overflow-hidden border border-slate-200/50 dark:border-slate-700/50" aria-hidden="true">
-            <motion.div 
+            <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${progressPercent}%` }}
               transition={{ duration: 1.5, ease: "easeOut", delay: 0.2 }}
-              className="absolute top-0 left-0 h-full bg-linear-to-r from-blue-500 via-indigo-500 to-violet-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)]" 
+              className="absolute top-0 left-0 h-full bg-linear-to-r from-blue-500 via-indigo-500 to-violet-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)]"
             />
           </div>
-          
+
           {timeline.map((item, idx) => {
             const Icon = item.icon;
             const isCompleted = item.status === 'completed';
             const isCurrent = item.status === 'current';
-            
+
             return (
               <div key={item.phase} className="relative flex flex-col items-center w-32 shrink-0 z-10 group" role="listitem">
                 <motion.div
@@ -221,19 +223,19 @@ const HorizontalTimeline = memo(({ timeline, variants }) => {
                   animate={{ scale: 1 }}
                   transition={{ delay: idx * 0.1, type: "spring", stiffness: 200 }}
                   className={`w-14 h-14 rounded-2xl flex items-center justify-center border-4 shadow-xl transition-all duration-300 ${
-                    isCompleted ? 'bg-linear-to-br from-indigo-500 to-violet-600 border-white dark:border-slate-900 text-white group-hover:scale-110 group-hover:-translate-y-1 shadow-indigo-500/20' : 
-                    isCurrent ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 border-indigo-500 shadow-indigo-500/30 scale-110 group-hover:scale-125 group-hover:-translate-y-1' : 
+                    isCompleted ? 'bg-linear-to-br from-indigo-500 to-violet-600 border-white dark:border-slate-900 text-white group-hover:scale-110 group-hover:-translate-y-1 shadow-indigo-500/20' :
+                    isCurrent ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 border-indigo-500 shadow-indigo-500/30 scale-110 group-hover:scale-125 group-hover:-translate-y-1' :
                     'bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border-white dark:border-slate-900 shadow-slate-200/50 dark:shadow-none'
                   } ${isCurrent ? 'rotate-3 group-hover:rotate-6' : '-rotate-3 group-hover:rotate-0'}`}
                   aria-label={`${item.phase}: ${item.status}`}
                 >
                   {isCompleted ? <CheckCircle className="w-6 h-6" /> : <Icon className={`w-6 h-6 ${isCurrent ? 'animate-pulse' : ''}`} aria-hidden="true" />}
                 </motion.div>
-                
+
                 <div className="mt-5 text-center">
                   <h4 className={`text-sm font-extrabold mb-1.5 transition-colors ${
-                    isCurrent ? 'text-indigo-600 dark:text-indigo-400' : 
-                    isCompleted ? 'text-slate-900 dark:text-white' : 
+                    isCurrent ? 'text-indigo-600 dark:text-indigo-400' :
+                    isCompleted ? 'text-slate-900 dark:text-white' :
                     'text-slate-400 dark:text-slate-500'
                   }`}>
                     {item.phase}
@@ -294,12 +296,12 @@ const GSSoCContribution = () => {
   useDocumentTitle("Eventra | GSSoC Contribution");
   const searchInputRef = useRef(null);
   const { toasts, addToast, removeToast } = useToast();
-  
-  const [searchQuery, setSearchQuery] = useState(() => localStorage.getItem("gssoc.search") || "");
+
+  const [searchQuery] = useState(() => localStorage.getItem("gssoc.search") || "");
   // eslint-disable-next-line no-unused-vars
   const _debouncedSearchQuery = useDebounce(searchQuery, 300);
-  const [selectedDifficulty, setSelectedDifficulty] = useState(() => localStorage.getItem("gssoc.difficulty") || "all");
-  
+  const [selectedDifficulty] = useState(() => localStorage.getItem("gssoc.difficulty") || "all");
+
   const [userStats] = useState(() => {
     const saved = localStorage.getItem("gssoc.userStats");
     return saved ? safeJsonParse(saved, {}) : {
@@ -309,23 +311,23 @@ const GSSoCContribution = () => {
       rank: "Rising Star"
     };
   });
-  
+
   const [isLoading, setIsLoading] = useState(true);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
-  
+
   const GSSOC_END_DATE = "2026-08-15T23:59:59";
   const timeLeft = useCountdown(GSSOC_END_DATE, () => {
     addToast("🎉 GSSoC program has ended!", "success");
   });
-  
+
   useEffect(() => { localStorage.setItem("gssoc.search", searchQuery); }, [searchQuery]);
   useEffect(() => { localStorage.setItem("gssoc.difficulty", selectedDifficulty); }, [selectedDifficulty]);
   useEffect(() => { localStorage.setItem("gssoc.userStats", JSON.stringify(userStats)); }, [userStats]);
-  
+
   useEffect(() => {
     const handleOnline = () => { setIsOffline(false); addToast("🟢 You're back online!", "success"); };
     const handleOffline = () => { setIsOffline(true); addToast("🔴 You're offline. Some features may be limited.", "error"); };
-    
+
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
     return () => {
@@ -333,31 +335,31 @@ const GSSoCContribution = () => {
       window.removeEventListener("offline", handleOffline);
     };
   }, [addToast]);
-  
+
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 800);
     return () => clearTimeout(timer);
   }, []);
-  
+
   useKeyboardShortcut("/", () => {
     searchInputRef.current?.focus();
     addToast("🔍 Search focused. Start typing...", "info", 1500);
   });
-  
+
   const containerVariants = useMemo(() => ({
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { staggerChildren: 0.08, delayChildren: 0.1 } }
   }), []);
-  
+
   const itemVariants = useMemo(() => ({
     hidden: { y: 20, opacity: 0 },
-    visible: { 
-      y: 0, 
-      opacity: 1, 
-      transition: { duration: prefersReducedMotion ? 0 : 0.4, ease: [0.22, 1, 0.36, 1] } 
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: { duration: prefersReducedMotion ? 0 : 0.4, ease: [0.22, 1, 0.36, 1] }
     }
   }), [prefersReducedMotion]);
-  
+
   if (isLoading) {
     return (
       <div className="w-[95%] mx-auto my-10 min-h-screen pb-12">
@@ -371,7 +373,7 @@ const GSSoCContribution = () => {
       </div>
     );
   }
-  
+
   return (
     <>
       <AnimatePresence>
@@ -390,7 +392,7 @@ const GSSoCContribution = () => {
           </motion.div>
         )}
       </AnimatePresence>
-      
+
       <motion.section
         variants={containerVariants}
         initial="hidden"
@@ -409,7 +411,7 @@ const GSSoCContribution = () => {
             <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-50 dark:bg-indigo-900/20 rounded-full blur-3xl" />
             <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-50 dark:bg-blue-900/20 rounded-full blur-3xl" />
           </div>
-          
+
           <div className="relative z-10 grid md:grid-cols-2 gap-6 sm:gap-8 items-center">
             <div>
               <div className="flex items-center gap-2 mb-4">
@@ -418,17 +420,17 @@ const GSSoCContribution = () => {
                   GSSoC 2024
                 </span>
               </div>
-              
+
               <h1 id="hero-heading" className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 tracking-tight leading-tight text-gray-900 dark:text-white">
                 Contribute to Eventra & <br className="hidden sm:block"/>
                 <span className="text-indigo-600 dark:text-indigo-400">Level Up Your Skills</span>
               </h1>
-              
+
               <p className="text-gray-600 dark:text-gray-300 text-base sm:text-lg mb-4 sm:mb-6 leading-relaxed max-w-xl">
-                Join 500+ contributors building real-world features. Earn points, 
+                Join 500+ contributors building real-world features. Earn points,
                 badges, and recognition while making an impact.
               </p>
-              
+
               {/* User Stats Layout */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
                 <HeroStatCard label="Issues" value={userStats.issuesClaimed} icon={Target} />
@@ -437,7 +439,7 @@ const GSSoCContribution = () => {
                 <HeroStatCard label="Rank" value={userStats.rank.split(' ')[0]} icon={Award} />
               </div>
             </div>
-            
+
             {/* Integrated Countdown Card */}
             <motion.aside
               whileHover={{ scale: 1.02 }}
@@ -450,7 +452,7 @@ const GSSoCContribution = () => {
                 </div>
                 <h3 id="countdown-heading" className="font-semibold text-gray-900 dark:text-white">Program Ends In</h3>
               </div>
-              
+
               {timeLeft.ended ? (
                 <div className="text-center py-4">
                   <Trophy className="w-12 h-12 mx-auto mb-3 text-indigo-400" aria-hidden="true" />
@@ -460,7 +462,7 @@ const GSSoCContribution = () => {
               ) : (
                 <CountdownTimer timeLeft={timeLeft} />
               )}
-              
+
               <motion.button
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.98 }}
@@ -511,9 +513,32 @@ const GSSoCContribution = () => {
               </motion.article>
             ))}
           </div>
+          {/* NEW: Contributors Guide CTA */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.4 }}
+            className="mt-8 flex justify-center"
+          >
+            <a
+              href="/contributorguide"
+              className="group inline-flex items-center gap-3 px-8 py-4 rounded-2xl
+                        bg-linear-to-r from-indigo-600 to-violet-600
+                        hover:from-indigo-700 hover:to-violet-700
+                        text-white font-semibold shadow-lg
+                        transition-all duration-300 hover:scale-[1.02] hover:shadow-xl"
+            >
+              <BookOpen className="w-5 h-5 transition-transform duration-300 group-hover:rotate-6" />
+
+              <span>Read Complete Contributors&apos; Guide</span>
+
+              <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
+            </a>
+          </motion.div>
         </motion.section>
       </motion.section>
-      
+
       <ToastContainer toasts={toasts} onClose={removeToast} />
     </>
   );

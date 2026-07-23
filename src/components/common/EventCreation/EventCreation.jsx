@@ -36,6 +36,7 @@ import { buildEventPayload } from "../../../utils/eventCreationUtils";
 import { validateForm } from "../../../utils/eventFormValidation";
 import { safeJsonParse } from "../../../utils/safeJsonParse";
 
+
 const EventCreation = () => {
   const prefersReducedMotion = useReducedMotion();
   const location = useLocation();
@@ -952,4 +953,3 @@ const EventCreation = () => {
 };
 
 export default EventCreation;
-

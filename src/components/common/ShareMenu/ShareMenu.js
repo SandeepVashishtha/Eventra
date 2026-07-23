@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 // Consolidated lucide-react imports for code cleanliness
 import { Facebook, Linkedin, MessageCircle, Send, Share2, Copy, Mail, Check } from 'lucide-react';
-import { generateSharingUrl, copyToClipboard } from '../../../utils/shareUtils';
+import { generateSharingUrl, copyToClipboard } from '@utils/shareUtils';
 import { toast } from 'react-toastify';
 import './ShareMenu.css';
 
@@ -39,9 +39,9 @@ const ShareMenu = ({
       const viewportWidth = window.innerWidth;
       const menuHeight = 350; // Approximate height of the menu
       const menuWidth = 256; // w-64 = 256px
-      
+
       let bestPosition = position;
-      
+
       // For 'above' position, check if there's enough space above
       if (position === 'above') {
         if (rect.top < menuHeight + 20) {
@@ -51,26 +51,26 @@ const ShareMenu = ({
           bestPosition = 'above';
         }
       }
-      
+
       // For cards where buttons are inside the card (top-2), adjust logic
       if (position === 'above' && rect.top > 50) {
         // If we're positioning inside a card, prefer bottom
         bestPosition = 'bottom';
       }
-      
+
       // For other positions, check viewport boundaries
       if (position === 'bottom' && rect.bottom + menuHeight > viewportHeight - 20) {
         bestPosition = 'top';
       }
-      
+
       if (position === 'right' && rect.right + menuWidth > viewportWidth - 20) {
         bestPosition = 'left';
       }
-      
+
       if (position === 'left' && rect.left - menuWidth < 20) {
         bestPosition = 'right';
       }
-      
+
       setCalculatedPosition(bestPosition);
     }
     setIsOpen(!isOpen);
@@ -80,10 +80,10 @@ const ShareMenu = ({
     const url = generateSharingUrl(shareData, 'copy');
     copyToClipboard(url);
     setCopied(true);
-    
+
     // Clear any existing timeouts to prevent memory leaks
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    
+
     // Reset copied status after 2 seconds safely
     timeoutRef.current = setTimeout(() => {
       setCopied(false);
@@ -93,7 +93,7 @@ const ShareMenu = ({
   const handleShare = (platform) => {
     //To generate the URL and data
     const url = generateSharingUrl(shareData, platform);
-    
+
     //Native Share Logic
     if(platform === 'system' && navigator.share) {
       navigator.share({
@@ -114,7 +114,7 @@ const ShareMenu = ({
     if (platform === 'copy') {
       copyToClipboard(url);
       setCopied(true);
-      
+
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       timeoutRef.current = setTimeout(() => setCopied(false), 2000);
       return;
@@ -123,12 +123,12 @@ const ShareMenu = ({
     if (!url) {
       return;
     }
-    
+
     // Open URL in a new window for social platforms
     window.open(url, '_blank', 'noopener,noreferrer');
     setIsOpen(false);
   };
-  
+
   // Handle component unmount memory leak cleanup
   useEffect(() => {
     return () => {
@@ -143,7 +143,7 @@ const ShareMenu = ({
         setIsOpen(false);
       }
     };
-    
+
     const handleResize = () => {
       if (isOpen) {
         // Recalculate position on window resize
@@ -157,20 +157,20 @@ const ShareMenu = ({
         buttonRef.current?.focus();
       }
     };
-    
+
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
       document.addEventListener('keydown', handleEscapeKey);
       window.addEventListener('resize', handleResize);
     }
-    
+
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleEscapeKey);
       window.removeEventListener('resize', handleResize);
     };
   }, [isOpen, menuRef]);
-  
+
   // Determine the position class for the menu
   const positionClasses = {
     top: 'bottom-full mb-2',
@@ -202,7 +202,7 @@ const ShareMenu = ({
           </span>
         )}
       </button>
-      
+
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -248,7 +248,7 @@ const ShareMenu = ({
                   {copied ? 'Copied!' : 'Copy link to clipboard'}
                 </span>
               </button>
-              
+
               {/* Email */}
               <button
                 onClick={() => handleShare('email')}
@@ -260,7 +260,7 @@ const ShareMenu = ({
                 </div>
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Email</span>
               </button>
-              
+
               {/* WhatsApp */}
               <button
                 onClick={() => handleShare('whatsapp')}
@@ -272,7 +272,7 @@ const ShareMenu = ({
                 </div>
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">WhatsApp</span>
               </button>
-              
+
               {/* Twitter/X */}
               <button
                 onClick={() => handleShare('twitter')}
@@ -287,7 +287,7 @@ const ShareMenu = ({
                 </div>
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Twitter/X</span>
               </button>
-              
+
               {/* Facebook */}
               <button
                 onClick={() => handleShare('facebook')}
@@ -299,7 +299,7 @@ const ShareMenu = ({
                 </div>
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Facebook</span>
               </button>
-              
+
               {/* LinkedIn */}
               <button
                 onClick={() => handleShare('linkedin')}
@@ -311,7 +311,7 @@ const ShareMenu = ({
                 </div>
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">LinkedIn</span>
               </button>
-              
+
               {/* Telegram */}
               <button
                 onClick={() => handleShare('telegram')}

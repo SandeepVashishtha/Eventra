@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useAuth } from "../../context/AuthContext.js";
-import useLiveAudience from "../../hooks/useLiveAudience.js";
+import { useAuth } from "context/AuthContext.js";
+import useLiveAudience from "hooks/useLiveAudience.js";
 import { ThumbsUp, Trash, Flag, Send, AlertTriangle, HelpCircle, Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
 
@@ -71,6 +71,17 @@ function ModeratorButtons({ q, onFlag, onDelete }) {
   );
 }
 
+function highlightKeywords(text) {
+  const keywords = ['bug', 'feature', 'question', 'pricing', 'roadmap'];
+  const regex = new RegExp(`\\b(${keywords.join('|')})\\b`, 'gi');
+  const parts = text.split(regex);
+  return parts.map((part, i) =>
+    keywords.includes(part.toLowerCase())
+      ? <span key={i} className="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-400 font-bold border border-indigo-500/30 text-[10px] uppercase tracking-widest mx-0.5">{part}</span>
+      : part
+  );
+}
+
 function QuestionCard({ q, isModerator, onUpvote, onFlag, onDelete }) {
   return (
     <div
@@ -84,7 +95,7 @@ function QuestionCard({ q, isModerator, onUpvote, onFlag, onDelete }) {
             <AlertTriangle className="h-3 w-3" /> Flagged for moderation
           </span>
         )}
-        <p className="text-sm text-slate-200 break-words leading-relaxed font-sans">{q.text}</p>
+        <p className="text-sm text-slate-200 break-words leading-relaxed font-sans">{isModerator ? highlightKeywords(q.text) : q.text}</p>
         <span className="text-[10px] text-slate-500 font-medium">{formatTime(q.createdAt)}</span>
       </div>
 

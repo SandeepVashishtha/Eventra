@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "react-toastify";
 
 export function useSurveySimulator(questions, feedbackPool) {
@@ -56,15 +56,25 @@ export function useSurveySimulator(questions, feedbackPool) {
 
     setSimulatedData(initialData);
     setTextFeed(textComments);
+    // Reset counters in sync with data so the submission count
+    // never contradicts the chart distributions after a question change.
+    setTotalSubmissions(142);
+    setCompletionRate(87.3);
     // Use the content hashes as the true dependencies
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [questionsHash, feedbackHash]);
 
-  // 🔥 FIX 2: Wrapped in useCallback to provide a stable reference signature.
-  // Prevents downstream components from pointlessly re-rendering.
+  // 🔥 FIX 2: useRef stores always-current values so the callback can read
+  // fresh questions/feedbackPool without listing unstable array refs as deps.
+  // This gives handleSimulateSubmission a truly stable identity across renders.
+  const questionsRef = useRef(questions);
+  const feedbackPoolRef = useRef(feedbackPool);
+  questionsRef.current = questions;
+  feedbackPoolRef.current = feedbackPool;
+
   const handleSimulateSubmission = useCallback(() => {
-    const safeQuestions = questions || [];
-    const safeFeedback = feedbackPool || [];
+    const safeQuestions = questionsRef.current || [];
+    const safeFeedback = feedbackPoolRef.current || [];
 
     if (safeQuestions.length === 0) {
       toast.warn("Please add some questions first before simulating submissions!");
@@ -80,7 +90,15 @@ export function useSurveySimulator(questions, feedbackPool) {
       const updated = { ...prev };
       safeQuestions.forEach((q) => {
         if (q.type === "rating") {
-          const score = Math.random() > 0.4 ? (Math.random() > 0.4 ? 5 : 4) : 3;
+          // Weighted distribution across all 5 stars so every bar can grow.
+          // Biased toward positive (5★/4★) to reflect typical event feedback.
+          const rand = Math.random();
+          const score =
+            rand < 0.36 ? 5 :  // 36%
+            rand < 0.60 ? 4 :  // 24%
+            rand < 0.84 ? 3 :  // 24%
+            rand < 0.94 ? 2 :  // 10%
+                          1;   //  6%
           updated[q.id] = {
             ...updated[q.id],
             [score]: (updated[q.id]?.[score] || 0) + 1,
@@ -128,8 +146,7 @@ export function useSurveySimulator(questions, feedbackPool) {
       );
     }
 
-    toast.success("🚀 Simulator: Injected a new active survey submission record!");
-  }, [questions, feedbackPool]);
+  }, []); // stable forever — reads latest values via refs
 
   return {
     totalSubmissions,

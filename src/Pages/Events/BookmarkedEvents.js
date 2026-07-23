@@ -1,11 +1,11 @@
 import { useMemo } from "react";
 import { Bookmark, CalendarDays } from "lucide-react";
 import { Link } from "react-router-dom";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
+import useDocumentTitle from "hooks/useDocumentTitle";
 import EventCard from "./EventCard";
-import { getEventStatus } from "../../utils/eventUtils";
-import { useAuth } from "../../context/AuthContext";
-import useBookmarks from "../../hooks/useBookmarks";
+import { getEventStatus } from "utils/eventUtils";
+import { useAuth } from "context/AuthContext";
+import useBookmarks from "hooks/useBookmarks";
 
 const BookmarkedEvents = () => {
   useDocumentTitle("Eventra | Bookmarked Events");

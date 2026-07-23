@@ -4,6 +4,8 @@
 node_modules
 build/
 .DS_Store
+.agents
+skills-lock.json
 
 # Secret Files - DO NOT COMMIT
 *.SECRETS.*

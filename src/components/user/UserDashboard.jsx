@@ -1,21 +1,22 @@
-﻿import { motion, AnimatePresence } from "framer-motion";
-import { useReducedMotion } from '../../hooks/useReducedMotion';
-import { getSmartDateLabel } from "../../utils/relativeTime";
+import { motion, AnimatePresence } from "framer-motion";
+import { useReducedMotion } from 'hooks/useReducedMotion';
+import { getSmartDateLabel } from "utils/relativeTime";
 import {
   Calendar, Trophy, FolderOpen, Users, Settings,
   Clock, Zap, Activity, Bell, ChevronRight,
-  LogOut, User, Plus, Search, X, CheckCircle2
+  LogOut, User, Plus, Search, X, CheckCircle2,
+  ChevronLeft, List
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
 import ErrorBoundary from "../common/ErrorBoundary";
-import { useAuth } from "../../context/AuthContext";
-import { useMyEvents } from "../../context/MyEventsContext";
-import useBookmarks from "../../hooks/useBookmarks";
-import { getEventStatus } from "../../utils/eventUtils";
+import { useAuth } from "context/AuthContext";
+import { useMyEvents } from "context/MyEventsContext";
+import useBookmarks from "hooks/useBookmarks";
+import { getEventStatus } from "utils/eventUtils";
 import StatusBadge from "../common/StatusBadge";
-import { requestNotificationPermission, disableNotifications } from "../../utils/NotificationManager";
-import { readNotificationPreferences } from "../../utils/notificationPreferences";
+import { requestNotificationPermission, disableNotifications } from "utils/NotificationManager";
+import { readNotificationPreferences } from "utils/notificationPreferences";
 import EventsTab from "./EventsTab";
 import HackathonsTab from "./HackathonsTab";
 import ProjectsTab from "./ProjectsTab";
@@ -28,7 +29,8 @@ import {
   DashboardSectionTitleSkeleton,
   DashboardStatCardSkeleton,
 } from "../common/SkeletonLoaders";
-import useDashboardFilters from "../../hooks/useDashboardFilters";
+import useDashboardFilters from "hooks/useDashboardFilters";
+import { parseEventDateTime } from "utils/calendarExport";
 import "./UserDashboard.css";
 import EventTicket from "./EventTicket";
 import EmptyState from "../common/EmptyState";
@@ -65,6 +67,49 @@ const QUICK_ACTIONS = [
   { label: "Settings", icon: <Settings size={22} />, to: "/settings", color: "#f59e0b" },
 ];
 
+const formatDateKey = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const isSameMonth = (date, monthDate) =>
+  date.getFullYear() === monthDate.getFullYear() && date.getMonth() === monthDate.getMonth();
+
+const formatMonthLabel = (date) =>
+  date.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+
+const formatDayLabel = (dateKey) => {
+  const date = new Date(`${dateKey}T00:00:00`);
+  return date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+};
+
+const buildMonthDays = (monthDate) => {
+  const firstDay = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+  const start = new Date(firstDay);
+  start.setDate(firstDay.getDate() - firstDay.getDay());
+
+  return Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(start);
+    date.setDate(start.getDate() + index);
+    return date;
+  });
+};
+
+const getRegistrationEvent = (registration) =>
+  registration?.event || registration?.eventSummary || registration || null;
+
+const getCalendarDateTime = (event) => {
+  const dateValue = event?.startDate || event?.date;
+  if (!dateValue) return null;
+
+  const parsed = parseEventDateTime(String(dateValue), String(event?.startTime || event?.time || ""));
+  if (Number.isNaN(parsed.getTime()) || parsed.getTime() === 0) return null;
+
+  return parsed;
+};
+
 export default function UserDashboard() {
   const prefersReducedMotion = useReducedMotion();
   const { user, logout } = useAuth();
@@ -76,8 +121,11 @@ export default function UserDashboard() {
   const [notifOpen, setNotifOpen] = useState(false);
   const [selectedTicketEvent, setSelectedTicketEvent] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [scheduleView, setScheduleView] = useState("list");
+  const [calendarMonth, setCalendarMonth] = useState(() => new Date());
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState(() => formatDateKey(new Date()));
   const [pushEnabled, setPushEnabled] = useState(() => readNotificationPreferences().push);
-  
+
   // Γ£à Get real user data from contexts
   const { myEvents, loading: myEventsLoading } = useMyEvents();
   const { bookmarks } = useBookmarks(user?.id || user?.email || "guest");
@@ -85,13 +133,13 @@ export default function UserDashboard() {
   // Γ£à Transform real data into registrations format
   const userRegistrations = useMemo(() => {
     if (!myEvents || myEvents.length === 0) return [];
-    
+
     return myEvents
       .map(registration => {
         // Extract event data from registration
         const event = registration?.event || registration?.eventSummary;
         if (!event) return null;
-        
+
         return {
           id: registration.id || event.id || Math.random().toString(36).substr(2, 9),
           type: event.type || "Event",
@@ -149,7 +197,7 @@ export default function UserDashboard() {
   // Γ£à Calculate derived data from real user registrations
   const derivedData = useMemo(() => {
     const records = userRegistrations;
-    
+
     let eventsTotal = 0;
     let eventsCreated = 0;
     let eventsJoined = 0;
@@ -199,6 +247,56 @@ export default function UserDashboard() {
 
   // Γ£à Use real data for filters
   const dashboardFilters = useDashboardFilters(userRegistrations, { debounceMs: 300 });
+
+  const registeredCalendarEvents = useMemo(() => {
+    const records = Array.isArray(myEvents) ? myEvents : [];
+
+    return records
+      .map((registration) => {
+        const event = getRegistrationEvent(registration);
+        const dateTime = getCalendarDateTime(event);
+        if (!event || !dateTime) return null;
+
+        return {
+          id: registration?.id || event.id || `${event.title}-${formatDateKey(dateTime)}`,
+          title: event.title || "Untitled Event",
+          date: dateTime,
+          dateKey: formatDateKey(dateTime),
+          time: event.startTime || event.time || "",
+          location: event.location || event.venue || "Online",
+          type: event.type || "Event",
+          status: getEventStatus(event) || "Upcoming",
+          participationType: registration?.participationType || "Registered",
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => a.date - b.date);
+  }, [myEvents]);
+
+  const calendarDays = useMemo(() => buildMonthDays(calendarMonth), [calendarMonth]);
+
+  const calendarEventsByDate = useMemo(() => {
+    return registeredCalendarEvents.reduce((grouped, event) => {
+      const events = grouped.get(event.dateKey) || [];
+      events.push(event);
+      grouped.set(event.dateKey, events);
+      return grouped;
+    }, new Map());
+  }, [registeredCalendarEvents]);
+
+  const selectedDayEvents = calendarEventsByDate.get(selectedCalendarDate) || [];
+
+  const goToPreviousMonth = () => {
+    setCalendarMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1));
+  };
+
+  const goToNextMonth = () => {
+    setCalendarMonth((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1));
+  };
+
+  const selectCalendarDay = (date) => {
+    setSelectedCalendarDate(formatDateKey(date));
+  };
 
   const togglePushNotifications = async () => {
     if (pushEnabled) {
@@ -298,6 +396,12 @@ export default function UserDashboard() {
             <div>
               <p className="ud-greeting">{greeting},</p>
               <h1 className="ud-username">{firstName} ≡ƒæï</h1>
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('eventra-offline-queue-sync'))}
+              className="ml-4 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-full shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
+            >
+              Sync Offline Queue
+            </button>
             </div>
           )}
 
@@ -330,11 +434,11 @@ export default function UserDashboard() {
                       <div className="flex items-center gap-3">
                         <label className="flex items-center gap-2 text-xs cursor-pointer">
                           <span className="text-gray-500">Push</span>
-                          <input 
-                            type="checkbox" 
-                            checked={pushEnabled} 
+                          <input
+                            type="checkbox"
+                            checked={pushEnabled}
                             onChange={togglePushNotifications}
-                            className="w-3 h-3 rounded text-indigo-600 focus:ring-indigo-500" 
+                            className="w-3 h-3 rounded text-indigo-600 focus:ring-indigo-500"
                           />
                         </label>
                         <button onClick={() => setNotifOpen(false)} aria-label="Close notification panel"><X size={14} /></button>
@@ -435,33 +539,137 @@ export default function UserDashboard() {
 
                   <div className="ud-three-col">
                     {/* Upcoming Events */}
-                    <motion.section custom={2} variants={fadeUp(prefersReducedMotion)} className="ud-card backdrop-blur-md bg-white/10 border border-white/20 shadow-lg">
-                      <div className="ud-card-head">
+                    <motion.section custom={2} variants={fadeUp(prefersReducedMotion)} className="ud-card ud-schedule-card backdrop-blur-md bg-white/10 border border-white/20 shadow-lg">
+                      <div className="ud-card-head ud-schedule-head">
                         <span className="ud-card-icon" style={{ background: "#6366f118", color: "#6366f1" }}><Clock size={16} /></span>
                         <h3>Upcoming Events</h3>
-                        <Link to="/events" className="ud-card-link">See all <ChevronRight size={13} /></Link>
-                      </div>
-                      {upcomingEvents.length === 0 ? (
-                        <EmptyState
-                          compact={true}
-                          icon={<Calendar size={32} className="text-indigo-500" />}
-                          title="No Upcoming Events"
-                          message="You haven't registered or joined any events yet. Check out the Events tab to find one!"
-                          onBrowseAll={() => navigate("/events")}
-                        />
-                      ) : (
-                        upcomingEvents.map(ev => (
-                          <div key={ev.id} className="ud-list-item">
-                            <div className="min-w-0 flex-1">
-                              <p className="ud-list-title" title={ev.title}>{ev.title}</p>
-                              <p className="ud-list-meta"><Calendar size={12} /> {getSmartDateLabel(ev.date)}</p>
-                            </div>
-                            <StatusBadge status={ev.participationType} />
+                        <div className="ud-schedule-actions">
+                          <div className="ud-view-toggle" aria-label="Schedule view mode">
+                            <button
+                              type="button"
+                              className={`ud-view-toggle-btn ${scheduleView === "list" ? "ud-view-toggle-active" : ""}`}
+                              onClick={() => setScheduleView("list")}
+                              aria-pressed={scheduleView === "list"}
+                            >
+                              <List size={14} />
+                              <span>List</span>
+                            </button>
+                            <button
+                              type="button"
+                              className={`ud-view-toggle-btn ${scheduleView === "calendar" ? "ud-view-toggle-active" : ""}`}
+                              onClick={() => setScheduleView("calendar")}
+                              aria-pressed={scheduleView === "calendar"}
+                            >
+                              <Calendar size={14} />
+                              <span>Calendar</span>
+                            </button>
                           </div>
-                        ))
+                          <Link to="/events" className="ud-card-link">See all <ChevronRight size={13} /></Link>
+                        </div>
+                      </div>
+
+                      {scheduleView === "calendar" ? (
+                        registeredCalendarEvents.length === 0 ? (
+                          <EmptyState
+                            compact={true}
+                            icon={<Calendar size={32} className="text-indigo-500" />}
+                            title="No Registered Events"
+                            message="Register for an event to see it on your monthly calendar."
+                            onBrowseAll={() => navigate("/events")}
+                          />
+                        ) : (
+                          <div className="ud-calendar-wrap">
+                            <div className="ud-calendar-toolbar">
+                              <button type="button" className="ud-calendar-nav-btn" onClick={goToPreviousMonth} aria-label="Previous month">
+                                <ChevronLeft size={15} />
+                              </button>
+                              <p className="ud-calendar-month">{formatMonthLabel(calendarMonth)}</p>
+                              <button type="button" className="ud-calendar-nav-btn" onClick={goToNextMonth} aria-label="Next month">
+                                <ChevronRight size={15} />
+                              </button>
+                            </div>
+
+                            <div className="ud-calendar-grid" role="grid" aria-label={`${formatMonthLabel(calendarMonth)} registered events`}>
+                              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+                                <div key={day} className="ud-calendar-weekday">{day}</div>
+                              ))}
+                              {calendarDays.map((date) => {
+                                const dateKey = formatDateKey(date);
+                                const dayEvents = calendarEventsByDate.get(dateKey) || [];
+                                const isSelected = dateKey === selectedCalendarDate;
+                                const inCurrentMonth = isSameMonth(date, calendarMonth);
+                                const isToday = dateKey === formatDateKey(new Date());
+
+                                return (
+                                  <button
+                                    key={dateKey}
+                                    type="button"
+                                    className={`ud-calendar-day ${inCurrentMonth ? "" : "ud-calendar-day-muted"} ${isSelected ? "ud-calendar-day-selected" : ""} ${isToday ? "ud-calendar-day-today" : ""}`}
+                                    onClick={() => selectCalendarDay(date)}
+                                    aria-label={`${date.toLocaleDateString(undefined, { month: "long", day: "numeric" })}, ${dayEvents.length} registered event${dayEvents.length === 1 ? "" : "s"}`}
+                                    aria-pressed={isSelected}
+                                  >
+                                    <span className="ud-calendar-day-number">{date.getDate()}</span>
+                                    <span className="ud-calendar-event-stack">
+                                      {dayEvents.slice(0, 2).map((event) => (
+                                        <span key={event.id} className="ud-calendar-event-chip" title={event.title}>
+                                          {event.title}
+                                        </span>
+                                      ))}
+                                      {dayEvents.length > 2 && (
+                                        <span className="ud-calendar-more">+{dayEvents.length - 2}</span>
+                                      )}
+                                    </span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+
+                            <div className="ud-calendar-details" aria-live="polite">
+                              <h4>{formatDayLabel(selectedCalendarDate)}</h4>
+                              {selectedDayEvents.length === 0 ? (
+                                <p className="ud-calendar-details-empty">No registered events on this day.</p>
+                              ) : (
+                                selectedDayEvents.map((event) => (
+                                  <div key={event.id} className="ud-calendar-detail-item">
+                                    <div className="min-w-0 flex-1">
+                                      <p className="ud-list-title" title={event.title}>{event.title}</p>
+                                      <p className="ud-list-meta">
+                                        <Clock size={12} /> {event.time || "Time TBA"}
+                                        <span>&middot;</span>
+                                        {event.location}
+                                      </p>
+                                    </div>
+                                    <StatusBadge status={event.participationType} />
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          </div>
+                        )
+                      ) : (
+                        upcomingEvents.length === 0 ? (
+                          <EmptyState
+                            compact={true}
+                            icon={<Calendar size={32} className="text-indigo-500" />}
+                            title="No Upcoming Events"
+                            message="You haven't registered or joined any events yet. Check out the Events tab to find one!"
+                            onBrowseAll={() => navigate("/events")}
+                          />
+                        ) : (
+                          upcomingEvents.map(ev => (
+                            <div key={ev.id} className="ud-list-item">
+                              <div className="min-w-0 flex-1">
+                                <p className="ud-list-title" title={ev.title}>{ev.title}</p>
+                                <p className="ud-list-meta"><Calendar size={12} /> {getSmartDateLabel(ev.date)}</p>
+                              </div>
+                              <StatusBadge status={ev.participationType} />
+                            </div>
+                          ))
+                        )
                       )}
                     </motion.section>
- 
+
                     {/* Upcoming Hackathons */}
                     <motion.section custom={3} variants={fadeUp(prefersReducedMotion)} className="ud-card backdrop-blur-md bg-white/10 border border-white/20 shadow-lg">
                       <div className="ud-card-head">
@@ -489,7 +697,7 @@ export default function UserDashboard() {
                         ))
                       )}
                     </motion.section>
- 
+
                     {/* Active Projects */}
                     <motion.section custom={4} variants={fadeUp(prefersReducedMotion)} className="ud-card backdrop-blur-md bg-white/10 border border-white/20 shadow-lg">
                       <div className="ud-card-head">
@@ -579,6 +787,10 @@ export default function UserDashboard() {
                   toggleStatus={dashboardFilters.toggleStatus}
                   activeFilterCount={dashboardFilters.activeFilterCount}
                   clearAll={dashboardFilters.clearAll}
+                  ticketType={dashboardFilters.ticketType}
+                  setTicketType={dashboardFilters.setTicketType}
+                  sortBy={dashboardFilters.sortBy}
+                  setSortBy={dashboardFilters.setSortBy}
                   setSelectedTicketEvent={setSelectedTicketEvent}
                 />
               </ErrorBoundary>

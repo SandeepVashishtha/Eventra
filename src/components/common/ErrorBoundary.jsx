@@ -1,7 +1,7 @@
 import React from "react";
 import "./ErrorBoundary.css";
-import { logError, persistErrors } from "../../utils/errorLogger";
-import { logSecurityEvent } from "../../utils/securityLogger";
+import { logError, persistErrors } from "utils/errorLogger";
+import { logSecurityEvent } from "utils/securityLogger";
 import {
   categorizeError,
   ERROR_CATEGORIES,
@@ -9,7 +9,7 @@ import {
   invalidateCorruptedAssetCache,
   isRecoverableError,
   logCategorizedError,
-} from "../../utils/errorRecovery";
+} from "utils/errorRecovery";
 
 function generateErrorId() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -302,7 +302,7 @@ class ErrorBoundary extends React.Component {
     saveAppStateSnapshot();
     try {
       const preserved = {};
-      ["theme", "cursor", "eventra_user_prefs"].forEach((key) => {
+      ["theme", "cursor", "eventra_user_prefs", "token", "user", "eventra:key-material", "eventra:key-salt"].forEach((key) => {
         const val = localStorage.getItem(key);
         if (val) preserved[key] = val;
       });

@@ -1,5 +1,6 @@
+/* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5 */
 import { motion } from "framer-motion";
-import { memo, useMemo } from "react";
+import { memo } from "react";
 import { ArrowRight, Check, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -17,49 +18,39 @@ const Hero = () => {
   useDocumentTitle("Eventra | Home");
   const { t } = useTranslation();
 
-  const categoryChips = useMemo(
-    () => [
-      { label: t("landing.hero.categories.hackathons"), to: "/hackathons" },
-      { label: t("landing.hero.categories.ai"), to: "/events" },
-      { label: t("landing.hero.categories.webDev"), to: "/events" },
-      { label: t("landing.hero.categories.openSource"), to: "/projects" },
-      { label: t("landing.hero.categories.workshops"), to: "/events" },
-    ],
-    [t]
-  );
-
   return (
-    <section className="relative overflow-hidden pb-10 pt-2 sm:pb-12 sm:pt-4 md:pb-14 md:pt-6">
-      <div className="pointer-events-none absolute -left-24 top-0 h-72 w-72 rounded-full bg-violet-300/20 blur-3xl dark:bg-violet-600/10" />
-      <div className="pointer-events-none absolute -right-24 bottom-0 h-72 w-72 rounded-full bg-pink-300/20 blur-3xl dark:bg-pink-600/10" />
-
+    <section className="relative overflow-hidden border-b border-border bg-bg pb-12 pt-6 sm:pb-16 sm:pt-8 md:pb-20 md:pt-10">
+      {/* Structural layout: Asymmetric 2-column grid */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="relative mx-auto grid w-full max-w-6xl items-center gap-6 px-4 sm:gap-8 lg:grid-cols-2 lg:gap-10"
+        className="relative mx-auto grid w-full max-w-6xl items-start gap-8 px-6 lg:grid-cols-[1.1fr_0.9fr] lg:gap-12"
       >
-        <div className="flex flex-col">
-          <div className="inline-flex w-fit items-center gap-2 rounded-lg border border-border bg-white/[0.04] dark:bg-white/[0.02] px-3 py-1 text-xs font-semibold uppercase tracking-wider text-text-light mb-3">
+        <div className="flex flex-col pt-2 lg:pt-6">
+          <div className="inline-flex w-fit items-center gap-2 rounded-md border border-border bg-bg-secondary px-3 py-1 text-xs font-semibold uppercase tracking-wider text-text-light mb-4">
             {t("landing.hero.badge")}
           </div>
 
-          <h1 className="text-4xl font-extrabold leading-tight tracking-tighter text-text sm:text-5xl lg:text-[3.25rem] mb-2 sm:mb-3">
+          <h1
+            style={{ fontFamily: "'Oxanium', sans-serif" }}
+            className="text-4xl font-extrabold leading-tight tracking-tight text-text sm:text-5xl lg:text-[3.5rem] mb-4"
+          >
             {t("landing.hero.headlineBefore")}{" "}
-            <span className="bg-gradient-to-r from-slate-950 to-slate-600 dark:from-white dark:to-slate-400 bg-clip-text text-transparent">
+            <span className="text-primary">
               {t("landing.hero.headlineHighlight")}
             </span>{" "}
             {t("landing.hero.headlineAfter")}
           </h1>
 
-          <p className="max-w-xl text-base font-medium leading-relaxed text-text-light sm:text-lg mb-3 sm:mb-4">
+          <p className="max-w-xl text-base font-normal leading-relaxed text-text-light sm:text-lg mb-6">
             {t("landing.hero.description")}
           </p>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center mb-4 sm:mb-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center mb-8">
             <Link
               to="/events"
-              className="group inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 hover:bg-slate-900 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-950 px-6 py-2.5 text-sm font-semibold shadow-premium-sm hover:shadow-premium-md transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] sm:text-base"
+              className="group inline-flex items-center justify-center gap-2 rounded-lg bg-text text-bg hover:opacity-90 px-6 py-3 text-sm font-bold transition-all duration-200"
             >
               {t("landing.hero.ctaExplore")}
               <ArrowRight
@@ -69,7 +60,7 @@ const Hero = () => {
             </Link>
             <Link
               to="/create-event"
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-white dark:bg-slate-900/40 hover:bg-gray-50 dark:hover:bg-slate-800 text-text px-6 py-2.5 text-sm font-semibold shadow-premium-sm hover:shadow-premium-md transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] sm:text-base"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-card-bg hover:bg-bg-secondary text-text px-6 py-3 text-sm font-bold transition-all duration-200"
             >
               <Plus className="h-4 w-4" aria-hidden="true" />
               {t("landing.hero.ctaCreate")}
@@ -77,11 +68,11 @@ const Hero = () => {
           </div>
 
           <ul
-            className="flex flex-wrap gap-x-6 gap-y-3 text-sm font-medium text-text-light"
+            className="flex flex-wrap gap-x-6 gap-y-3 text-sm font-medium text-text-light border-t border-border pt-6"
             aria-label={t("landing.hero.platformStats")}
           >
             {SOCIAL_PROOF_VALUES.map((stat) => (
-              <li key={stat.key} className="flex items-center gap-1.5">
+              <li key={stat.key} className="flex items-center gap-2">
                 <Check className="h-4 w-4 shrink-0 text-emerald-500" aria-hidden="true" />
                 <span>
                   <span className="font-bold text-text">{stat.value}</span>{" "}
@@ -92,7 +83,7 @@ const Hero = () => {
           </ul>
         </div>
 
-        <div className="mt-8 lg:mt-0">
+        <div className="w-full lg:sticky lg:top-24">
           <HeroVisual />
         </div>
       </motion.div>

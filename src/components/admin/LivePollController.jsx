@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "../../context/AuthContext.js";
-import useLiveAudience from "../../hooks/useLiveAudience.js";
+import { useAuth } from "context/AuthContext.js";
+import useLiveAudience from "hooks/useLiveAudience.js";
 import { BarChart3, Plus, Pause, Play, XCircle, Vote, Check, Loader2, RefreshCw } from "lucide-react";
 import { toast } from "react-toastify";
 
