@@ -203,6 +203,7 @@ export const downloadBulkICSFile = (events, filename = "registered-events") => {
     "METHOD:PUBLISH"
   ];
 
+  let validEventsCount = 0;
   events.forEach((item) => {
     const eventObj = item.event ? item.event : item;
     const { title, description, date, endDate, location, id } = eventObj;
@@ -210,6 +211,7 @@ export const downloadBulkICSFile = (events, filename = "registered-events") => {
     const formattedStart = formatToICSDate(date);
     if (!formattedStart) return;
     
+    validEventsCount++;
     const formattedEnd = endDate ? formatToICSDate(endDate) : formatToICSDate(new Date(new Date(date).getTime() + 2 * 60 * 60 * 1000));
 
     icsLines.push(
@@ -231,6 +233,11 @@ export const downloadBulkICSFile = (events, filename = "registered-events") => {
       "END:VEVENT"
     );
   });
+
+  if (validEventsCount === 0) {
+    console.error("No valid event dates found for bulk ICS export.");
+    return;
+  }
 
   icsLines.push("END:VCALENDAR");
 
