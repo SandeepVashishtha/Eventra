@@ -97,16 +97,15 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
       }
     };
 
-    modalRef.current.addEventListener("keydown", handleFocusTrap);
+    const modalElement = modalRef.current;
+    modalElement.addEventListener("keydown", handleFocusTrap);
     // Focus the modal automatically
-    modalRef.current.focus();
+    modalElement.focus();
 
     return () => {
-      if (modalRef.current) {
-        modalRef.current.removeEventListener("keydown", handleFocusTrap);
-      }
+      modalElement.removeEventListener("keydown", handleFocusTrap);
     };
-  }, [isOpen, handleFocusTrap]);
+  }, [isOpen]);
 
   const handleShare = async () => {
     const shareUrl = ticket?.qrValue || window.location.href;
