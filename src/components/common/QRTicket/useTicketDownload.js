@@ -56,7 +56,9 @@ export function useTicketDownload(ticketRef, ticketId = "ticket") {
         const link = document.createElement("a");
         link.download = `eventra-ticket-${ticketId}.png`;
         link.href = url;
+        document.body.appendChild(link);
         link.click();
+        document.body.removeChild(link);
         
         // Deep Fix 3: Defer revocation to prevent WebKit/Safari silent download failures
         setTimeout(() => URL.revokeObjectURL(url), 150);
