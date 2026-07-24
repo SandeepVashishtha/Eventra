@@ -1,4 +1,4 @@
-import { toast } from "./toast.js";
+import { showSuccessToast } from "./toast.js";
 // ---------------------------------------------------------------------------
 // Self-Healing Offline Queue Utility (IndexedDB backed with LocalStorage Backup)
 // ---------------------------------------------------------------------------
@@ -35,8 +35,7 @@ const notifyQueueUpdated = (queuedItem) => {
     return;
   }
 
-  toast.success(rescuedCount > 0 ? `IndexedDB schema upgraded. ${rescuedCount} queued action(s) were safely migrated.` : "IndexedDB schema upgraded. No queued actions were affected.");
-    window.dispatchEvent(
+  window.dispatchEvent(
     new CustomEvent("eventra-offline-queue-updated", {
       detail: { item: queuedItem },
     })
@@ -81,19 +80,23 @@ const _rescueFromLocalStorage = () => {
 // Internal: notify the UI that a schema upgrade occurred
 // ---------------------------------------------------------------------------
 const _dispatchUpgradeEvent = (rescuedCount) => {
+  const message =
+    rescuedCount > 0
+      ? `IndexedDB schema upgraded. ${rescuedCount} queued action(s) were safely migrated.`
+      : "IndexedDB schema upgraded. No queued actions were affected.";
+
   if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
     window.dispatchEvent(
       new CustomEvent("eventra-offline-queue-upgraded", {
         detail: {
           rescuedItems: rescuedCount,
-          message:
-            rescuedCount > 0
-              ? `IndexedDB schema upgraded. ${rescuedCount} queued action(s) were safely migrated.`
-              : "IndexedDB schema upgraded. No queued actions were affected.",
+          message,
         },
       })
     );
   }
+
+  showSuccessToast(message);
 };
 
 // ---------------------------------------------------------------------------
