@@ -9,6 +9,7 @@ import LanguageSelector from "../LanguageSelector";
 import NotificationBell from "../notifications/NotificationBell";
 import useBodyScrollLock from "./hooks/useBodyScrollLock";
 import useKeyboardShortcuts from "hooks/useKeyboardShortcuts";
+import { motion, useScroll, useSpring } from "framer-motion";
 
 const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const navRef = useRef(null);
@@ -65,6 +66,16 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
       window.removeEventListener("scroll", handleScroll);
     };
   }, []);
+
+  /* SCROLL PROGRESSBAR */
+
+  const { scrollYProgress } = useScroll();
+
+  const scaleX = useSpring(scrollYProgress, {
+    stiffness: 140,
+    damping: 28,
+    mass: 0.2,
+  });
 
   return (
     <>
@@ -139,13 +150,31 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             </div>
           </div>
         </div>
-
         <div aria-hidden="true" className="absolute bottom-0 left-0 h-[2px] w-full">
-          <div
-            className="h-full bg-primary transition-all duration-100 ease-out"
-            style={{ width: `${scrollProgress}%` }}
-          />
         </div>
+        <motion.div
+          aria-hidden="true"
+          style={{
+            scaleX,
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: "2px",
+            borderRadius: "9999px",
+            transformOrigin: "left center",
+            willChange: "transform",
+            pointerEvents: "none",
+            zIndex: 9999,
+            background:
+              "linear-gradient(90deg, #38bdf8 0%, #3b82f6 50%, #6366f1 100%)",
+            boxShadow: `
+      0 0 6px rgba(59,130,246,0.35),
+      0 0 12px rgba(59,130,246,0.20),
+      0 0 20px rgba(99,102,241,0.15)
+    `,
+          }}
+        />
       </nav>
     </>
   );
