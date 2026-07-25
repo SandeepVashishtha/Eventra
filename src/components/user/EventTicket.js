@@ -107,7 +107,6 @@ const EventTicket = ({ event, user, onClose }) => {
       const canvas = await html2canvas(ticketRef.current, {
         scale: 3,
         useCORS: true,
-        allowTaint: true,
         backgroundColor: null,
         logging: false,
         onclone: (clonedDoc) => {
