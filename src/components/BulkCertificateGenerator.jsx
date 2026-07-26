@@ -26,26 +26,48 @@ const BulkCertificateGenerator = ({ eventName, eventDate, eventType, organizerNa
     try {
       const zip = new JSZip();
       const newStatus = { ...deliveryStatus };
+      let successCount = 0;
+      let failureCount = 0;
 
       for (let i = 0; i < attendees.length; i++) {
-        const attendee = attendees[i];
+        const attendee = attendees[i] || {};
         const attendeeId = attendee.id || attendee.email || `index-${i}`;
         newStatus[attendeeId] = "generating";
         setDeliveryStatus({ ...newStatus });
 
-        const participantName = `${attendee.firstName || ""} ${attendee.lastName || attendee.name || ""}`.trim() || "Participant";
-        const doc = generateCertificatePDF({ participantName, eventName, eventDate, eventType, organizerName, template });
-        const safeFileName = `${participantName.replace(/[^a-zA-Z0-9]/g, "_")}_${(eventName || "Event").replace(/[^a-zA-Z0-9]/g, "_")}_Certificate.pdf`;
-        
-        const pdfBlob = doc.output("blob");
-        zip.file(safeFileName, pdfBlob);
+        try {
+          const participantName = `${attendee.firstName || ""} ${attendee.lastName || attendee.name || ""}`.trim() || "Participant";
+          const doc = generateCertificatePDF({ participantName, eventName, eventDate, eventType, organizerName, template });
+          const baseName = participantName.replace(/[^a-zA-Z0-9]/g, "_");
+          const safeEventName = (eventName || "Event").replace(/[^a-zA-Z0-9]/g, "_");
+          let safeFileName = `${baseName}_${safeEventName}_Certificate.pdf`;
+          
+          let counter = 1;
+          while (zip.file(safeFileName)) {
+            safeFileName = `${baseName}_${safeEventName}_Certificate_${counter}.pdf`;
+            counter++;
+          }
+          
+          const pdfBlob = doc.output("blob");
+          zip.file(safeFileName, pdfBlob);
+          successCount++;
+          newStatus[attendeeId] = "generated";
+        } catch (err) {
+          console.error(`Failed to generate certificate for attendee at index ${i}:`, err);
+          failureCount++;
+          newStatus[attendeeId] = "failed";
+        }
 
-        newStatus[attendeeId] = "generated";
         setDeliveryStatus({ ...newStatus });
 
         setProgress(i + 1);
         toast.update(toastId, { render: `Generating ${i + 1}/${attendees.length} certificates...` });
         await new Promise(r => setTimeout(r, 50));
+      }
+
+      if (successCount === 0) {
+        toast.update(toastId, { render: "❌ Failed to generate any certificates.", type: "error", isLoading: false, autoClose: 4000 });
+        return;
       }
 
       toast.update(toastId, { render: "Packaging certificates into ZIP..." });
@@ -64,7 +86,11 @@ const BulkCertificateGenerator = ({ eventName, eventDate, eventType, organizerNa
 
       setTimeout(() => URL.revokeObjectURL(url), 100);
 
-      toast.update(toastId, { render: `✅ ${attendees.length} certificates generated and downloaded!`, type: "success", isLoading: false, autoClose: 4000 });
+      const statusMsg = failureCount > 0
+        ? `⚠️ Generated ${successCount}/${attendees.length} certificates (${failureCount} failed)`
+        : `✅ ${attendees.length} certificates generated and downloaded!`;
+
+      toast.update(toastId, { render: statusMsg, type: failureCount > 0 ? "warning" : "success", isLoading: false, autoClose: 4000 });
     } catch (error) {
       console.error(error);
       toast.update(toastId, { render: "Bulk generation failed.", type: "error", isLoading: false, autoClose: 3000 });
@@ -160,7 +186,7 @@ const BulkCertificateGenerator = ({ eventName, eventDate, eventType, organizerNa
       {isGenerating || isEmailing ? (
         <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
           <div className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
-            style={{ width: `${(progress / attendees.length) * 100}%` }} />
+            style={{ width: `${attendees.length > 0 ? (progress / attendees.length) * 100 : 0}%` }} />
         </div>
       ) : null}
 

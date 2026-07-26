@@ -335,13 +335,13 @@ export default function CollaborationNetworkMap() {
     [pinnedHub]
   );
 
-  const handleHubLeave = useCallback((hub) => {
-    if (!pinnedHub) {
-      hoverTimeoutRef.current = setTimeout(() => {
-        setActiveHub(null);
-      }, 150);
-    }
-  }, [pinnedHub]);
+  // const handleHubLeave = useCallback(() => {
+  //   if (!pinnedHub) {
+  //     hoverTimeoutRef.current = setTimeout(() => {
+  //       setActiveHub(null);
+  //     }, 150);
+  //   }
+  // }, [pinnedHub]);
 
   return (
     <section className="bg-bg py-12 text-text transition-colors duration-300">
@@ -650,11 +650,12 @@ export default function CollaborationNetworkMap() {
             <AnimatePresence>
               {(activeHub || pinnedHub) && (
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.92, y: 1 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.92, y: 8 }}
+                  style={getTooltipPosition(activeHub || pinnedHub)}
+                  initial={{ opacity: 0, scale: 0.92 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.92 }}
                   transition={{ duration: 0.18, ease: "easeOut" }}
-                  className={`absolute left-4 top-4 z-50 w-72 rounded-2xl border border-border bg-card-bg/95 p-5 shadow-premium-lg backdrop-blur-xl transition-colors duration-300 ${pinnedHub ? "pinned" : ""}`}
+                  className={`absolute z-50 w-72 rounded-2xl border border-border bg-card-bg/95 p-5 shadow-premium-lg backdrop-blur-xl transition-colors duration-300 ${pinnedHub ? "pinned" : ""}`}
                 >
                   {pinnedHub && (
                     <button

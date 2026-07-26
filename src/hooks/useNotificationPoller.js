@@ -10,7 +10,7 @@ import { get as idbGet, del as idbDel } from "idb-keyval";
 import { showUndoToast } from "../utils/toast.js";
 
 const POLLING_INTERVAL_MS = 60_000;
-const MAX_SEEN_IDS = 500;
+const MAX_SEEN_IDS = 10000; // Increased to prevent eviction loops
 const NOTIFICATION_INBOX_PREFIX = "eventra_notification_inbox";
 const GUEST_INBOX_KEY = `${NOTIFICATION_INBOX_PREFIX}_guest`;
 
@@ -293,16 +293,23 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
     const handleUpdate = () => {
       const persisted = loadPersisted(storageKeyRef.current);
       if (persisted) {
+        const incomingUnread = persisted.filter(
+          (n) => n.id && !seenIds.current.has(n.id) && !n.isRead
+        );
         setNotifications(persisted);
         setUnreadCount(persisted.filter((n) => !n.isRead).length);
         persisted.forEach((n) => {
-          if (n.id) seenIds.current.add(n.id);
+          if (n.id) addSeenId(n.id);
         });
+        if (hasCompletedInitialFetchRef.current && incomingUnread.length > 0) {
+          deliverNew(incomingUnread);
+        }
+        hasCompletedInitialFetchRef.current = true;
       }
     };
     window.addEventListener("eventra-notifications-updated", handleUpdate);
     return () => window.removeEventListener("eventra-notifications-updated", handleUpdate);
-  }, []);
+  }, [deliverNew, hasCompletedInitialFetchRef]);
 
   // Legacy IndexedDB eventra_notifications migration
   useEffect(() => {

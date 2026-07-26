@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { Bell, CheckCheck, ExternalLink, Settings } from "lucide-react";
+import { Bell, CheckCheck, ExternalLink, Settings, Trash } from "lucide-react";
 import { useNotification } from "context/NotificationContext";
 import EmptyState from "../common/EmptyState";
 import NotificationItem from "./NotificationItem";
@@ -66,6 +66,17 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
                 aria-label="Mark all notifications as read"
               >
                 <CheckCheck className="h-4 w-4" />
+              </button>
+            )}
+            {notifications.length > 0 && (
+              <button
+                type="button"
+                onClick={() => notifications.forEach(n => deleteNotification(n.id))}
+                className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-white hover:text-red-600 dark:hover:bg-gray-700"
+                title="Clear all notifications"
+                aria-label="Clear all notifications"
+              >
+                <Trash className="h-4 w-4" />
               </button>
             )}
             <Link

@@ -125,7 +125,7 @@ export function dismissToastsByGroup(groupId) {
   if (isSSR()) return;
   if (typeof window !== "undefined" && window.__EVENTRA_TOASTS__) {
     const list = window.__EVENTRA_TOASTS__[groupId] || [];
-    list.forEach((_id) => {
+    list.forEach(() => {
       try {
         // trigger clear callbacks
       } catch {

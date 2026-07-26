@@ -53,7 +53,12 @@ function persistWaitlist(map, storageKey) {
   persistTimeout = setTimeout(() => {
     const runWrite = () => {
       try {
-        safeLocalStorage.setItem(storageKey, JSON.stringify(map));
+        const mapToPersist = {};
+        for (const [key, value] of Object.entries(map)) {
+          const { pendingRemoval, ...rest } = value;
+          mapToPersist[key] = rest;
+        }
+        safeLocalStorage.setItem(storageKey, JSON.stringify(mapToPersist));
       } catch {
         // ignore quota errors
       }
@@ -103,8 +108,8 @@ export default function useWaitlist(eventId, {
 
   const id = String(eventId);
   const entry = waitlistMap[id] ?? null;
-  const isOnWaitlist = Boolean(entry);
-  const position = entry?.position ?? null;
+  const isOnWaitlist = Boolean(entry && !entry.pendingRemoval);
+  const position = isOnWaitlist ? (entry?.position ?? null) : null;
 
   // On sign-in/out, re-seed the map from the new key so user B doesn't see
   // user A's in-memory state after a session swap on the same tab.
@@ -182,11 +187,10 @@ export default function useWaitlist(eventId, {
 
     // Optimistic update
     const prevEntry = waitlistMap[id];
-    setWaitlistMap((prev) => {
-      const next = { ...prev };
-      delete next[id];
-      return next;
-    });
+    setWaitlistMap((prev) => ({
+      ...prev,
+      [id]: { ...prev[id], pendingRemoval: true },
+    }));
 
     showUndoToast({
       message: "Removed from waitlist.",
