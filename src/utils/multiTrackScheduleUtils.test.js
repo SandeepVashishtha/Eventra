@@ -1,7 +1,5 @@
-/**
- * Tests for Multi-Track Schedule Builder Utilities
- */
-
+import { describe, it } from 'node:test';
+import assert from 'node:assert';
 import {
   detectSessionConflicts,
   hasTimeOverlap,
@@ -11,7 +9,7 @@ import {
   calculateTrackUtilization,
   generateScheduleSummary,
   validateScheduleIntegrity,
-} from './multiTrackScheduleUtils';
+} from './multiTrackScheduleUtils.js';
 
 describe('multiTrackScheduleUtils', () => {
   const eventStart = new Date('2024-01-15T08:00:00Z').toISOString();
@@ -72,7 +70,7 @@ describe('multiTrackScheduleUtils', () => {
         endTime: new Date('2024-01-15T10:30:00Z').toISOString(),
       };
 
-      expect(hasTimeOverlap(session1, session2)).toBe(true);
+      assert.strictEqual(hasTimeOverlap(session1, session2), true);
     });
 
     it('should not detect overlap for non-overlapping sessions', () => {
@@ -85,7 +83,7 @@ describe('multiTrackScheduleUtils', () => {
         endTime: new Date('2024-01-15T11:00:00Z').toISOString(),
       };
 
-      expect(hasTimeOverlap(session1, session2)).toBe(false);
+      assert.strictEqual(hasTimeOverlap(session1, session2), false);
     });
 
     it('should detect full overlap', () => {
@@ -98,7 +96,7 @@ describe('multiTrackScheduleUtils', () => {
         endTime: new Date('2024-01-15T10:30:00Z').toISOString(),
       };
 
-      expect(hasTimeOverlap(session1, session2)).toBe(true);
+      assert.strictEqual(hasTimeOverlap(session1, session2), true);
     });
   });
 
@@ -113,7 +111,7 @@ describe('multiTrackScheduleUtils', () => {
         endTime: new Date('2024-01-15T10:30:00Z').toISOString(),
       };
 
-      expect(calculateOverlapMinutes(session1, session2)).toBe(30);
+      assert.strictEqual(calculateOverlapMinutes(session1, session2), 30);
     });
 
     it('should return 0 for non-overlapping sessions', () => {
@@ -126,7 +124,7 @@ describe('multiTrackScheduleUtils', () => {
         endTime: new Date('2024-01-15T12:00:00Z').toISOString(),
       };
 
-      expect(calculateOverlapMinutes(session1, session2)).toBe(0);
+      assert.strictEqual(calculateOverlapMinutes(session1, session2), 0);
     });
 
     it('should calculate full overlap correctly', () => {
@@ -139,7 +137,7 @@ describe('multiTrackScheduleUtils', () => {
         endTime: new Date('2024-01-15T10:30:00Z').toISOString(),
       };
 
-      expect(calculateOverlapMinutes(session1, session2)).toBe(60);
+      assert.strictEqual(calculateOverlapMinutes(session1, session2), 60);
     });
   });
 
@@ -164,8 +162,8 @@ describe('multiTrackScheduleUtils', () => {
 
       const result = detectSessionConflicts(conflictingSessions, mockTracks);
 
-      expect(result.hasConflicts).toBe(true);
-      expect(result.conflicts.some(c => c.type === 'TRACK_CONFLICT')).toBe(true);
+      assert.strictEqual(result.hasConflicts, true);
+      assert.strictEqual(result.conflicts.some(c => c.type === 'TRACK_CONFLICT'), true);
     });
 
     it('should detect speaker conflicts', () => {
@@ -190,8 +188,8 @@ describe('multiTrackScheduleUtils', () => {
 
       const result = detectSessionConflicts(conflictingSessions, mockTracks);
 
-      expect(result.hasConflicts).toBe(true);
-      expect(result.conflicts.some(c => c.type === 'SPEAKER_CONFLICT')).toBe(true);
+      assert.strictEqual(result.hasConflicts, true);
+      assert.strictEqual(result.conflicts.some(c => c.type === 'SPEAKER_CONFLICT'), true);
     });
 
     it('should not flag conflicts for non-overlapping sessions', () => {
@@ -214,8 +212,8 @@ describe('multiTrackScheduleUtils', () => {
 
       const result = detectSessionConflicts(noConflictSessions, mockTracks);
 
-      expect(result.hasConflicts).toBe(false);
-      expect(result.conflictCount).toBe(0);
+      assert.strictEqual(result.hasConflicts, false);
+      assert.strictEqual(result.conflictCount, 0);
     });
   });
 
@@ -240,8 +238,8 @@ describe('multiTrackScheduleUtils', () => {
 
       const result = autoAssignSessionsToTracks(unassignedSessions, mockTracks);
 
-      expect(result.every(s => s.trackId)).toBe(true);
-      expect(result.some(s => s.trackId === 'track-1')).toBe(true);
+      assert.strictEqual(result.every(s => s.trackId), true);
+      assert.strictEqual(result.some(s => s.trackId === 'track-1'), true);
     });
 
     it('should avoid track conflicts when auto-assigning', () => {
@@ -266,7 +264,7 @@ describe('multiTrackScheduleUtils', () => {
 
       // Session 2 should be assigned to track-2 to avoid conflict with session-1
       const session2 = result.find(s => s.id === 'session-2');
-      expect(session2.trackId).toBe('track-2');
+      assert.strictEqual(session2.trackId, 'track-2');
     });
   });
 
@@ -280,10 +278,10 @@ describe('multiTrackScheduleUtils', () => {
         []
       );
 
-      expect(slots.length).toBeGreaterThan(0);
-      expect(slots[0]).toHaveProperty('startTime');
-      expect(slots[0]).toHaveProperty('endTime');
-      expect(slots[0]).toHaveProperty('available', true);
+      assert.ok(slots.length > 0);
+      assert.ok(slots[0].startTime !== undefined);
+      assert.ok(slots[0].endTime !== undefined);
+      assert.strictEqual(slots[0].available, true);
     });
 
     it('should exclude occupied slots', () => {
@@ -303,12 +301,13 @@ describe('multiTrackScheduleUtils', () => {
         occupiedSlots
       );
 
-      expect(slots.every(s => {
+      const allValid = slots.every(s => {
         const slotStart = new Date(s.startTime);
         const occupiedStart = new Date(occupiedSlots[0].startTime);
         const occupiedEnd = new Date(occupiedSlots[0].endTime);
         return slotStart.getTime() >= occupiedEnd.getTime() || slotStart.getTime() < occupiedStart.getTime();
-      })).toBe(true);
+      });
+      assert.strictEqual(allValid, true);
     });
   });
 
@@ -316,18 +315,18 @@ describe('multiTrackScheduleUtils', () => {
     it('should calculate utilization correctly', () => {
       const result = calculateTrackUtilization(mockSessions, mockTracks, eventStart, eventEnd);
 
-      expect(result).toHaveProperty('trackUtilization');
-      expect(result).toHaveProperty('overallUtilization');
-      expect(result).toHaveProperty('totalSessionMinutes');
+      assert.ok((result)['trackUtilization'] !== undefined);
+      assert.ok((result)['overallUtilization'] !== undefined);
+      assert.ok((result)['totalSessionMinutes'] !== undefined);
     });
 
     it('should show per-track utilization', () => {
       const result = calculateTrackUtilization(mockSessions, mockTracks, eventStart, eventEnd);
 
-      expect(result.trackUtilization['track-1']).toBeDefined();
-      expect(result.trackUtilization['track-2']).toBeDefined();
-      expect(result.trackUtilization['track-1']).toHaveProperty('utilization');
-      expect(result.trackUtilization['track-1']).toHaveProperty('sessionCount');
+      assert.ok((result.trackUtilization['track-1']) !== undefined);
+      assert.ok((result.trackUtilization['track-2']) !== undefined);
+      assert.ok((result.trackUtilization['track-1'])['utilization'] !== undefined);
+      assert.ok((result.trackUtilization['track-1'])['sessionCount'] !== undefined);
     });
   });
 
@@ -335,9 +334,9 @@ describe('multiTrackScheduleUtils', () => {
     it('should generate summary organized by track', () => {
       const result = generateScheduleSummary(mockSessions, mockTracks);
 
-      expect(Object.keys(result).length).toBe(2);
-      expect(result['track-1']).toBeDefined();
-      expect(result['track-2']).toBeDefined();
+      assert.strictEqual(Object.keys(result).length, 2);
+      assert.ok((result['track-1']) !== undefined);
+      assert.ok((result['track-2']) !== undefined);
     });
 
     it('should sort sessions by start time', () => {
@@ -347,7 +346,7 @@ describe('multiTrackScheduleUtils', () => {
       for (let i = 0; i < track1Sessions.length - 1; i++) {
         const current = new Date(track1Sessions[i].startTime);
         const next = new Date(track1Sessions[i + 1].startTime);
-        expect(current.getTime()).toBeLessThanOrEqual(next.getTime());
+        assert.ok((current.getTime()) <= (next.getTime()));
       }
     });
   });
@@ -356,9 +355,9 @@ describe('multiTrackScheduleUtils', () => {
     it('should validate a valid schedule', () => {
       const result = validateScheduleIntegrity(mockSessions, mockTracks);
 
-      expect(result).toHaveProperty('isValid');
-      expect(result).toHaveProperty('issues');
-      expect(result).toHaveProperty('warnings');
+      assert.ok((result)['isValid'] !== undefined);
+      assert.ok((result)['issues'] !== undefined);
+      assert.ok((result)['warnings'] !== undefined);
     });
 
     it('should detect unassigned sessions', () => {
@@ -375,8 +374,8 @@ describe('multiTrackScheduleUtils', () => {
 
       const result = validateScheduleIntegrity(unassignedSessions, mockTracks);
 
-      expect(result.isValid).toBe(false);
-      expect(result.issues.some(i => i.includes('not assigned'))).toBe(true);
+      assert.strictEqual(result.isValid, false);
+      assert.strictEqual(result.issues.some(i => i.includes('not assigned')), true);
     });
 
     it('should detect sessions on non-existent tracks', () => {
@@ -392,14 +391,14 @@ describe('multiTrackScheduleUtils', () => {
 
       const result = validateScheduleIntegrity(invalidSessions, mockTracks);
 
-      expect(result.isValid).toBe(false);
-      expect(result.issues.some(i => i.includes('non-existent track'))).toBe(true);
+      assert.strictEqual(result.isValid, false);
+      assert.strictEqual(result.issues.some(i => i.includes('non-existent track')), true);
     });
 
     it('should warn about empty tracks', () => {
       const result = validateScheduleIntegrity([mockSessions[0]], mockTracks);
 
-      expect(result.warnings.some(w => w.includes('no sessions'))).toBe(true);
+      assert.strictEqual(result.warnings.some(w => w.includes('no sessions')), true);
     });
   });
 });
