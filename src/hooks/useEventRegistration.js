@@ -30,15 +30,15 @@ import { createRateLimiter } from "../utils/rateLimiter";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
-import { useFormValidation } from "../../hooks/useFormValidation";
+import { useFormValidation } from "../hooks/useFormValidation";
 import { getEventStatus } from "../utils/eventUtils";
 import { checkRegistrationConflict, suggestAlternativeEvents } from "../utils/conflictDetection";
-import { useAuth } from "../../context/AuthContext";
-import { useMyEvents } from "../../context/MyEventsContext";
+import { useAuth } from "../context/AuthContext";
+import { useMyEvents } from "../context/MyEventsContext";
 // Removed unused API_ENDPOINTS import
-import { eventService } from "../../services/eventService";
-import { useSessionRecovery } from "../../context/SessionRecoveryContext";
-import { validate } from "../../validation";
+import { eventService } from "../services/eventService";
+import { useSessionRecovery } from "../context/SessionRecoveryContext";
+import { validate } from "../validation";
 import {
   getCacheAgeLabel,
   getCachedEventDetail,
@@ -47,40 +47,11 @@ import {
 import { pushToQueue } from "../utils/offlineQueue";
 import { logError } from "../utils/errorLogger";
 import { logAbuseAttempt } from "../utils/abuseLogger";
-import hackathonsData from "../../Pages/Hackathons/hackathonMockData.json";
+import hackathonsData from "../Pages/Hackathons/hackathonMockData.json";
 import registrationLocks from "../utils/registrationLocks";
+import { getRegistrationFailureMessage } from "../utils/registrationErrors";
 
 export const MAX_NOTES_CHARS = 500;
-
-// Registration lock map to prevent concurrent registrations for the same event
-// const registrationLocks = new Map();
-// registrationLimiterRef initialized at hook scope with 3 tokens, 0.3/sec refill
-
-/**
- * Derives a user-facing error message from a failed registration API response.
- */
-const getRegistrationFailureMessage = (error) => {
-  const message = error?.data?.message || error?.data?.error || error?.message || "";
-  const normalizedMessage = message.toLowerCase();
-
-  if (error?.status === 409 && /already registered|duplicate/.test(normalizedMessage)) {
-    return "You are already registered for this event.";
-  }
-
-  if (
-    error?.status === 409 ||
-    error?.status === 423 ||
-    /capacity|full|sold out|max(?:imum)? capacity/.test(normalizedMessage)
-  ) {
-    return "This event has reached maximum capacity. Please choose another event.";
-  }
-
-  if (/conflict/.test(normalizedMessage)) {
-    return "Registration could not be completed because the server reported a conflict.";
-  }
-
-  return message || "Registration failed. Please try again.";
-};
 
 const useEventRegistration = (eventIdParam) => {
   const { eventId: routeEventId, id: routeId } = useParams();
@@ -432,9 +403,15 @@ const useEventRegistration = (eventIdParam) => {
       return;
     }
 
+    // Fresh capacity check right before submission. `isFull` here comes from
+    // a server-authoritative fetch (checkEventCapacity), which is why we can
+    // hard-bail on it — previously we only surfaced a toast and still fell
+    // through to proceedWithRegistration, over-registering users past the cap
+    // whenever the backend didn't strictly reject (see #10386, #7671).
     const isFull = await checkEventCapacity(eventId, event);
     if (isFull) {
       toast.info("This event is at full capacity.");
+      return;
     }
 
     if (await checkAndHandleConflicts()) return;

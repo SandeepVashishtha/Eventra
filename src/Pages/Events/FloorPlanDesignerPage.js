@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Calendar, MapPin, Users, Info } from "lucide-react";
-import FloorPlanDesigner from "../../components/events/FloorPlanDesigner";
-import ConfirmationModal from "../../components/common/ConfirmationModal";
+import FloorPlanDesigner from "components/events/FloorPlanDesigner";
+import ConfirmationModal from "components/common/ConfirmationModal";
 import eventsMockData from "./eventsMockData.json";
 
 const FloorPlanDesignerPage = () => {
@@ -36,7 +36,7 @@ const FloorPlanDesignerPage = () => {
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-6">
-        
+
         {/* Navigation Breadcrumbs and Back Button */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/40 dark:bg-gray-900/40 backdrop-blur-md border border-gray-200/50 dark:border-gray-800/50 rounded-2xl p-4 shadow-sm">
           <div className="flex items-center gap-3">

@@ -9,7 +9,7 @@
  * authenticated API responses. Only public, non-authenticated endpoints
  * are cached to prevent privacy leaks and stale data exposure.
  */
-const CACHE_NAME = 'eventra-cache-v3';
+const CACHE_NAME = 'eventra-cache-v4';
 const BACKGROUND_SYNC_TAG = 'eventra-offline-queue-sync';
 const ASSETS_TO_CACHE = [
   '/',
@@ -478,15 +478,55 @@ function handleApiFetch(event, requestUrl) {
 }
 
 /**
- * Handle cache-first caching for static assets.
+ * Handle network-first caching for navigation requests (HTML page loads).
+ *
+ * Ensures the browser always receives the latest index.html and its hashed
+ * assets when online, but falls back to the cached index.html when offline.
  *
  * @param {FetchEvent} event - The fetch event
  */
-function handleStaticFetch(event) {
+function handleNavigateFetch(event) {
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => {
+        if (response && response.status === 200) {
+          const responseCopy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseCopy);
+          });
+        }
+        return response;
+      })
+      .catch(() => {
+        return caches.match('/index.html');
+      })
+  );
+}
+
+/**
+ * Handle caching for static assets.
+ *
+ * For hashed assets (e.g., in /assets/), we use a strict Cache-First strategy
+ * WITHOUT background revalidation, since hashed files are immutable.
+ *
+ * For mutable assets (e.g., /favicon.png, /manifest.json, /sun.svg), we use
+ * Stale-While-Revalidate to ensure fast loading while keeping them fresh.
+ *
+ * @param {FetchEvent} event - The fetch event
+ * @param {URL} requestUrl - The parsed request URL
+ */
+function handleStaticFetch(event, requestUrl) {
+  const isHashedAsset = requestUrl.pathname.startsWith('/assets/');
+
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
-        // Stale-while-revalidate: serve cache, update in background
+        if (isHashedAsset) {
+          // Hashed assets are immutable; serve from cache directly without network request
+          return cachedResponse;
+        }
+
+        // Mutable assets: Stale-While-Revalidate
         fetch(event.request)
           .then((response) => {
             if (response && response.status === 200 && response.type === 'basic') {
@@ -500,6 +540,7 @@ function handleStaticFetch(event) {
         return cachedResponse;
       }
 
+      // Cache miss: fetch from network
       return fetch(event.request)
         .then((response) => {
           if (!response || response.status !== 200 || response.type !== 'basic') {
@@ -512,12 +553,7 @@ function handleStaticFetch(event) {
           return response;
         })
         .catch(() => {
-          if (event.request.mode === 'navigate') {
-            return caches.match('/index.html');
-          }
           // Return an explicit offline response for non-navigate requests
-          // (e.g. CSS, JS, images). Returning undefined here would cause
-          // "Failed to convert value to 'Response'" TypeError.
           return new Response('', { status: 503, statusText: 'Service Unavailable' });
         });
     })
@@ -540,19 +576,25 @@ self.addEventListener('fetch', (event) => {
   // undefined instead of a valid Response. Let the browser handle them.
   if (requestUrl.origin !== self.location.origin) return;
 
-  // CUSTOM CACHING STRATEGY: Stale-While-Revalidate with TTL for leaderboard data.
+  // 1. Navigation requests (HTML page views): Network-First
+  if (event.request.mode === 'navigate') {
+    handleNavigateFetch(event);
+    return;
+  }
+
+  // 2. CUSTOM CACHING STRATEGY: Stale-While-Revalidate with TTL for leaderboard data.
   // Ensures fast response, offline support, and automatic revalidation/client notification.
   if (requestUrl.pathname === '/api/leaderboard') {
     handleLeaderboardFetch(event, requestUrl);
     return;
   }
 
-  // SECURITY: Network-First strategy for API routes with sensitive data filtering
+  // 3. SECURITY: Network-First strategy for API routes with sensitive data filtering
   if (requestUrl.pathname.startsWith('/api/')) {
     handleApiFetch(event, requestUrl);
     return;
   }
 
-  // Cache-First strategy for static assets and page views
-  handleStaticFetch(event);
+  // 4. Cache-First or Stale-While-Revalidate strategy for static assets
+  handleStaticFetch(event, requestUrl);
 });

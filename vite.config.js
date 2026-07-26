@@ -2,7 +2,10 @@ import { defineConfig, loadEnv, transformWithOxc } from "vite";
 import react from "@vitejs/plugin-react";
 
 import path from "path";
+import { fileURLToPath } from "url";
 import dotenv from "dotenv";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 dotenv.config();
 
@@ -58,6 +61,16 @@ export default defineConfig(({ mode }) => {
         "@hooks": path.resolve(__dirname, "src/hooks"),
         "@utils": path.resolve(__dirname, "src/utils"),
         "@context": path.resolve(__dirname, "src/context"),
+        "components": path.resolve(__dirname, "src/components"),
+        "Pages": path.resolve(__dirname, "src/Pages"),
+        "hooks": path.resolve(__dirname, "src/hooks"),
+        "utils": path.resolve(__dirname, "src/utils"),
+        "context": path.resolve(__dirname, "src/context"),
+        "services": path.resolve(__dirname, "src/services"),
+        "config": path.resolve(__dirname, "src/config"),
+        "constants": path.resolve(__dirname, "src/constants"),
+        "storage": path.resolve(__dirname, "src/storage"),
+        "validation": path.resolve(__dirname, "src/validation"),
       },
     },
 

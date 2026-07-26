@@ -4,6 +4,8 @@
 node_modules
 build/
 .DS_Store
+.agents
+skills-lock.json
 
 # Secret Files - DO NOT COMMIT
 *.SECRETS.*
@@ -45,3 +47,4 @@ lint_output.txt
 playwright-report/
 test-results/
 playwright/.cache/
+.opencode

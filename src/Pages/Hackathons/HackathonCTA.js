@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, UserPlus, X, Rocket } from "lucide-react";
 import { Link } from "react-router-dom";
 
-import useReducedMotion from "../../hooks/useReducedMotion.js";
+import useReducedMotion from "hooks/useReducedMotion.js";
 const HackathonCTA = () => {
   const prefersReducedMotion = useReducedMotion();
   const [showModal, setShowModal] = useState(false);

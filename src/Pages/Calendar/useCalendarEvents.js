@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { eventService } from "../../services/eventService";
-import { normalizeEvent } from "../../utils/eventUtils";
+import { eventService } from "services/eventService";
+import { normalizeEvent } from "utils/eventUtils";
 
 const normalizeEvents = (events = []) => events.map(normalizeEvent);
 

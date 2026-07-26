@@ -24,7 +24,7 @@ import {
   Cell,
   Legend
 } from "recharts";
-import EventTimelineReplay from "../../components/Analytics/EventTimelineReplay";
+import EventTimelineReplay from "components/Analytics/EventTimelineReplay";
 
 // Mock Data for Charts
 const registrationData = [
@@ -97,12 +97,12 @@ const EventAnalyticsDashboard = () => {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white py-10 px-4 sm:px-6 lg:px-8 font-sans">
       <div className="max-w-7xl mx-auto space-y-8">
-        
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <Link 
-              to="/dashboard" 
+            <Link
+              to="/dashboard"
               className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             >
               <ArrowLeft size={20} />
@@ -150,45 +150,45 @@ const EventAnalyticsDashboard = () => {
         <>
           {/* Top KPIs */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <StatCard 
-              title="Total Registrations" 
-              value="1,248" 
-              change="+12.5%" 
-              icon={Users} 
-              colorClass="from-indigo-500 to-indigo-600" 
-              index={0} 
+            <StatCard
+              title="Total Registrations"
+              value="1,248"
+              change="+12.5%"
+              icon={Users}
+              colorClass="from-indigo-500 to-indigo-600"
+              index={0}
             />
-            <StatCard 
-              title="Page Views" 
-              value="8,405" 
-              change="+24.1%" 
-              icon={Eye} 
-              colorClass="from-pink-500 to-pink-600" 
-              index={1} 
+            <StatCard
+              title="Page Views"
+              value="8,405"
+              change="+24.1%"
+              icon={Eye}
+              colorClass="from-pink-500 to-pink-600"
+              index={1}
             />
-            <StatCard 
-              title="Check-in Rate" 
-              value="68%" 
-              change="+5.2%" 
-              icon={CheckCircle} 
-              colorClass="from-emerald-500 to-emerald-600" 
-              index={2} 
+            <StatCard
+              title="Check-in Rate"
+              value="68%"
+              change="+5.2%"
+              icon={CheckCircle}
+              colorClass="from-emerald-500 to-emerald-600"
+              index={2}
             />
-            <StatCard 
-              title="Est. Ticket Revenue" 
-              value="$12,400" 
-              change="+18.0%" 
-              icon={CreditCard} 
-              colorClass="from-amber-500 to-orange-500" 
-              index={3} 
+            <StatCard
+              title="Est. Ticket Revenue"
+              value="$12,400"
+              change="+18.0%"
+              icon={CreditCard}
+              colorClass="from-amber-500 to-orange-500"
+              index={3}
             />
           </div>
 
           {/* Charts Section */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
+
             {/* Main Area Chart */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
@@ -210,7 +210,7 @@ const EventAnalyticsDashboard = () => {
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} dy={10} />
                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
-                    <Tooltip 
+                    <Tooltip
                       contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                       itemStyle={{ fontWeight: 'bold' }}
                     />
@@ -221,7 +221,7 @@ const EventAnalyticsDashboard = () => {
             </motion.div>
 
             {/* Demographics Pie Chart */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
@@ -247,7 +247,7 @@ const EventAnalyticsDashboard = () => {
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip 
+                    <Tooltip
                       contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                       itemStyle={{ fontWeight: 'bold', color: '#1e293b' }}
                     />
@@ -259,7 +259,7 @@ const EventAnalyticsDashboard = () => {
           </div>
 
           {/* Recent Activity Table */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}

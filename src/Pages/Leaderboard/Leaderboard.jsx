@@ -1,11 +1,11 @@
 import { useMemo, useRef, useState, useEffect, useCallback } from "react";
 
-import ErrorBoundary from "../../components/common/ErrorBoundary";
-import { fetchLeaderboardData, getCacheTimestamp, clearLeaderboardCache } from "../../services/githubLeaderboardService";
+import ErrorBoundary from "components/common/ErrorBoundary";
+import { fetchLeaderboardData, getCacheTimestamp, clearLeaderboardCache } from "services/githubLeaderboardService";
 import confetti from "canvas-confetti";
 import GSSoCContribution from "./GSSoCContribution";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
-import { useLeaderboardStream } from "../../context/RealTimeContext";
+import useDocumentTitle from "hooks/useDocumentTitle";
+import { useLeaderboardStream } from "context/RealTimeContext";
 import {
   filterContributors,
   sortContributors,
@@ -14,13 +14,13 @@ import {
   buildRanksMap,
   computeLeaderboardStats,
   applyAchievementBonus,
-} from "../../utils/leaderboardUtils";
+} from "utils/leaderboardUtils";
 
 import { useTranslation } from "react-i18next";
-import { logger } from "../../utils/logger";
-import { storageManager } from "../../utils/storage/storageManager";
-import { STORAGE_KEYS } from "../../utils/storage/storageKeys";
-import { validators } from "../../utils/storage/storageValidators";
+import { logger } from "utils/logger";
+import { storageManager } from "utils/storage/storageManager";
+import { STORAGE_KEYS } from "utils/storage/storageKeys";
+import { validators } from "utils/storage/storageValidators";
 
 import LeaderboardHero from "./components/LeaderboardHero";
 import LeaderboardPodium from "./components/LeaderboardPodium";

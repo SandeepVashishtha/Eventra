@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  RefreshCw, Trash2, CheckCircle2, 
+import {
+  RefreshCw, Trash2, CheckCircle2,
   AlertTriangle, History, X, Clock
 } from "lucide-react";
-import { getQueueIndexedDB, setQueue, clearQueue } from "../../utils/offlineQueue";
+import { getQueueIndexedDB, setQueue, clearQueue } from "utils/offlineQueue";
 import { toast } from "react-toastify";
 
 const OfflineManager = ({ isOpen, onClose }) => {
@@ -63,12 +63,12 @@ const OfflineManager = ({ isOpen, onClose }) => {
     <AnimatePresence>
       {isOpen && (
         <>
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[90]" 
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[90]"
           />
           <motion.div
             initial={{ x: "100%" }}
@@ -137,7 +137,7 @@ const OfflineManager = ({ isOpen, onClose }) => {
                 <AlertTriangle size={18} className="text-amber-600 shrink-0" />
                 <p className="text-xs text-amber-700 dark:text-amber-400">Actions will automatically sync when a stable connection is detected.</p>
               </div>
-              <button 
+              <button
                 onClick={handleSyncNow}
                 disabled={pendingActions.length === 0 || isSyncing}
                 className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
