@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 
 /**
  * A custom React hook that acts as a drop-in replacement for `useState`, designed to skip
@@ -81,7 +81,7 @@ export function useStableFilters(initialValue) {
 
   // Keep the ref in sync so the stable setter always compares against the
   // latest committed value, not a stale closure capture.
-  useEffect(() => {
+  useLayoutEffect(() => {
     valueRef.current = value;
   }, [value]);
 

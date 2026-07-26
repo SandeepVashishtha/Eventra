@@ -1,4 +1,5 @@
 export const saveToStorage = (key, value) => {
+  if (typeof window === "undefined") return;
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch (error) {
@@ -7,6 +8,7 @@ export const saveToStorage = (key, value) => {
 };
 
 export const loadFromStorage = (key, fallbackValue) => {
+  if (typeof window === "undefined") return fallbackValue;
   try {
     const stored = localStorage.getItem(key);
 

@@ -2,7 +2,7 @@ import { apiUtils } from "../config/api.js";
 
 const DEFAULT_TIMEOUT_MS = 8000;
 const DEFAULT_RETRIES = 1;
-const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504];
+// const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504];
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -119,6 +119,35 @@ export const requestValidation = async (endpoint, options = {}) => {
 
   let lastError = null;
 
+  let sanitizedBody = body;
+  if (body && typeof body === "object") {
+    // Sanitize request body by stripping HTML tags from string values.
+    // This prevents XSS and ensures clean data is sent to the API.
+    // Errors during sanitization are logged but do not block the request
+    // to maintain backward compatibility. Common failures include circular
+    // references or objects with throwing getters.
+    try {
+      sanitizedBody = JSON.parse(JSON.stringify(body), (key, value) => {
+        if (typeof value === "string") {
+          return value.replace(/<[^>]*>/g, ""); // Strip raw HTML tags
+        }
+        return value;
+      });
+    } catch (error) {
+      console.error(
+        "[validationApi] Failed to sanitize request payload",
+        {
+          endpoint,
+          method: method.toUpperCase(),
+          error: error.message,
+          stack: error.stack,
+        }
+      );
+      // Preserve original body if sanitization fails to maintain compatibility
+      sanitizedBody = body;
+    }
+  }
+
   for (let attempt = 0; attempt <= retries; attempt += 1) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -131,11 +160,11 @@ export const requestValidation = async (endpoint, options = {}) => {
       if (uppercaseMethod === "GET") {
         response = await apiUtils.get(endpoint, config);
       } else if (uppercaseMethod === "POST") {
-        response = await apiUtils.post(endpoint, body, config);
+        response = await apiUtils.post(endpoint, sanitizedBody, config);
       } else if (uppercaseMethod === "PUT") {
-        response = await apiUtils.put(endpoint, body, config);
+        response = await apiUtils.put(endpoint, sanitizedBody, config);
       } else if (uppercaseMethod === "PATCH") {
-        response = await apiUtils.patch(endpoint, body, config);
+        response = await apiUtils.patch(endpoint, sanitizedBody, config);
       } else if (uppercaseMethod === "DELETE") {
         response = await apiUtils.delete(endpoint, config);
       } else {
@@ -145,9 +174,21 @@ export const requestValidation = async (endpoint, options = {}) => {
       clearTimeout(timeoutId);
 
       let data = null;
+      // Parse JSON response. Errors are logged but do not fail the request
+      // to maintain backward compatibility. Invalid JSON responses are treated
+      // as null data, which normalizeValidationApiResponse handles gracefully.
       try {
         data = await response.json();
-      } catch {
+      } catch (error) {
+        console.error(
+          "[validationApi] Failed to parse JSON response",
+          {
+            endpoint,
+            method: method.toUpperCase(),
+            error: error.message,
+            stack: error.stack,
+          }
+        );
         data = null;
       }
 
@@ -163,7 +204,15 @@ export const requestValidation = async (endpoint, options = {}) => {
       const status = error.status;
       const data = error.data;
 
-      // If the API explicitly returned a validation failure (like 400, 409)
+      // If the API explicitly returned an authentication or validation failure.
+      if (status === 409) {
+        return createValidationResponse(
+          false,
+          invalidMessage,
+          { status, data }
+        );
+      }
+
       if (status === 401 || status === 403) {
         return createValidationResponse(
           false,
@@ -180,14 +229,17 @@ export const requestValidation = async (endpoint, options = {}) => {
     }
   }
 
+  // Fail closed: never treat unreachable validation as success (would allow
+  // registration with already-taken email/username when the API is down).
   const timedOut = lastError?.isTimeout || lastError?.name === "AbortError";
   return createValidationResponse(
     false,
-    timedOut ? "Validation request timed out. Please try again." : networkMessage,
+    networkMessage,
     {
       error: lastError,
       isTimeout: timedOut,
       isNetworkError: !timedOut,
+      skippedDueToError: true,
     },
   );
 };

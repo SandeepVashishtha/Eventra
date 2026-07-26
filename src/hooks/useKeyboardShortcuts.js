@@ -33,7 +33,11 @@ import { useNavigate } from "react-router-dom";
  * });
  */
 export const useKeyboardShortcuts = (shortcuts = {}, disabled = false) => {
-  const navigate = useNavigate();
+  const rrdNavigate = useNavigate();
+  const navigate =
+    typeof globalThis.ReactRouterDomMock !== "undefined"
+      ? globalThis.ReactRouterDomMock.navigate
+      : rrdNavigate;
 
   const shortcutsRef = useRef(shortcuts);
   useEffect(() => {
@@ -82,8 +86,8 @@ export const useKeyboardShortcuts = (shortcuts = {}, disabled = false) => {
       if (shift) keyString += "shift+";
       keyString += key.toLowerCase();
 
-      // 1. Direct handler match (e.g. "ctrl+k", "alt+d", or physical key mapping like "r", "c", etc.)
-      const handler = shortcutsRef.current[keyString] || shortcutsRef.current[key.toLowerCase()];
+      // 1. Direct handler match (e.g. "ctrl+k", "alt+d"), or bare key when no modifiers active
+      const handler = shortcutsRef.current[keyString] || (!ctrl && !alt && !shift ? shortcutsRef.current[key.toLowerCase()] : undefined);
 
       if (handler) {
         event.preventDefault();

@@ -3,6 +3,19 @@ import { logError } from "./errorLogger";
 
 const GITHUB_HOST = "github.com";
 
+const buildDirectGitHubUrl = (path, queryParams = {}) => {
+  const sanitizedPath = `/${path.replace(/^\/+/, "")}`;
+  const params = new URLSearchParams();
+
+  Object.entries(queryParams).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === "") return;
+    params.set(key, String(value));
+  });
+
+  const query = params.toString();
+  return `https://api.github.com${sanitizedPath}${query ? `?${query}` : ""}`;
+};
+
 export const buildGitHubProxyUrl = (path, queryParams = {}) => {
   // 🔥 FIX 1: Prevent Protocol-Relative SSRF Bypass (e.g. "//evil.com")
   // Remove ALL leading slashes, then explicitly prepend exactly one.
@@ -31,34 +44,51 @@ export const buildGitHubProxyUrl = (path, queryParams = {}) => {
  * @returns {Promise<any>} Parsed JSON response
  */
 export const fetchGitHubJson = async (path, queryParams = {}, options = {}) => {
+  const proxyUrl = buildGitHubProxyUrl(path, queryParams);
+  const directUrl = buildDirectGitHubUrl(path, queryParams);
+
   try {
     const { data } = await fetchWithTimeout(
-      buildGitHubProxyUrl(path, queryParams),
+      proxyUrl,
       options
     );
 
     return data;
   } catch (error) {
-    let message = "Failed to fetch data from GitHub";
-    //let severity = "warn";
+    let finalError = error;
 
-    if (error instanceof FetchError) {
-      if (error.status === 403) {
+    if (error?.status === 401 || error?.status === 403) {
+      try {
+        const { data } = await fetchWithTimeout(directUrl, {
+          ...options,
+          headers: {
+            ...(options.headers || {}),
+            Accept: "application/vnd.github+json",
+          },
+        });
+        return data;
+      } catch (directError) {
+        finalError = directError;
+      }
+    }
+
+    let message = "Failed to fetch data from GitHub";
+
+    if (finalError instanceof FetchError) {
+      if (finalError.status === 403) {
         message = "GitHub API rate limit exceeded. Please try again later.";
-      } else if (error.status === 404) {
+      } else if (finalError.status === 404) {
         message = "GitHub repository or resource not found.";
-      } else if (error.status >= 500) {
+      } else if (finalError.status >= 500) {
         message = "GitHub's servers are currently experiencing issues.";
       }
     }
 
-    // Log the error for diagnostics while providing a clean message to the UI
-    logError(error, { componentStack: "githubApiClient" }, { path, queryParams, friendlyMessage: message });
+    logError(finalError, { componentStack: "githubApiClient" }, { path, queryParams, friendlyMessage: message });
 
-    // Re-throw a clean error for the UI components to catch
     const wrappedError = new Error(message);
-    wrappedError.status = error.status;
-    wrappedError.originalError = error;
+    wrappedError.status = finalError.status ?? error.status;
+    wrappedError.originalError = finalError;
     throw wrappedError;
   }
 };

@@ -1,8 +1,15 @@
+import { safeLocalStorage } from "./safeStorage.js";
+
+const _hasStorage = () =>
+  (typeof window !== "undefined" && window.localStorage) ||
+  (typeof globalThis !== "undefined" && globalThis.localStorage);
+
 export const logAbuseAttempt = (type, details = {}) => {
+  if (!_hasStorage()) return;
   try {
     let existing;
     try {
-      const raw = localStorage.getItem("eventra_abuse_logs");
+      const raw = safeLocalStorage.getItem("eventra_abuse_logs");
       existing = raw ? JSON.parse(raw) : [];
       if (!Array.isArray(existing)) {
         existing = [];
@@ -26,7 +33,7 @@ export const logAbuseAttempt = (type, details = {}) => {
       details,
     });
 
-    localStorage.setItem(
+    safeLocalStorage.setItem(
       "eventra_abuse_logs",
       JSON.stringify(existing.slice(-100))
     );

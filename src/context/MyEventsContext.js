@@ -38,13 +38,17 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "./AuthContext";
 
-import { saveToOfflineCache, getFromOfflineCache } from "../utils/indexedDB";
+import { saveToOfflineCache, getFromOfflineCache, removeFromOfflineCache } from "../utils/indexedDB";
+import { getOrMigrateKey } from "../utils/storageKeyManager";
 
 const MyEventsContext = createContext(null);
 
 // Use a hashed or opaque key so the localStorage key itself does not expose
 // the userId (which is often the user's email address).
-const storageKey = (userId) => `my_events_${userId}`;
+const storageKey = (userId) => {
+  const legacyKey = `my_events_${userId}`;
+  return getOrMigrateKey("my_events", userId, legacyKey);
+};
 
 // ---------------------------------------------------------------------------
 // Minimal event summary — only non-PII fields needed to show the registered
@@ -78,8 +82,21 @@ const toPersistedRecord = (eventId, registeredAt, event, registrationId, qrToken
 
 const loadFromIDB = async (userId) => {
   if (!userId) return [];
-  const data = await getFromOfflineCache(storageKey(userId), []);
-  return Array.isArray(data) ? data : [];
+  const key = storageKey(userId);
+  const data = await getFromOfflineCache(key, null);
+  if (data !== null) {
+    return Array.isArray(data) ? data : [];
+  }
+  const legacyKey = `my_events_${userId}`;
+  if (key !== legacyKey) {
+    const legacyData = await getFromOfflineCache(legacyKey, null);
+    if (legacyData !== null) {
+      await saveToOfflineCache(key, legacyData);
+      await removeFromOfflineCache(legacyKey);
+      return Array.isArray(legacyData) ? legacyData : [];
+    }
+  }
+  return [];
 };
 
 const saveToIDB = async (userId, records) => {
@@ -182,6 +199,14 @@ export const MyEventsProvider = ({ children }) => {
     setMyEvents((prev) => prev.filter((r) => r.eventId !== eventId));
   }, []);
 
+  const restoreRegistration = useCallback((registration) => {
+    if (!registration?.eventId) return;
+    setMyEvents((prev) => {
+      if (prev.some((r) => r.eventId === registration.eventId)) return prev;
+      return [...prev, registration];
+    });
+  }, []);
+
   /**
    * isRegistered — returns true if the user is already registered for eventId.
    */
@@ -202,6 +227,7 @@ export const MyEventsProvider = ({ children }) => {
         myEvents,
         addRegistration,
         removeRegistration,
+        restoreRegistration,
         isRegistered,
         loading,
         waitlistUpdated,

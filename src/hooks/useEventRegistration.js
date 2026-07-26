@@ -1,4 +1,4 @@
-import { createRateLimiter } from "../../utils/rateLimiter";
+import { createRateLimiter } from "../utils/rateLimiter";
 /**
  * @file useEventRegistration.js
  * @module hooks/useEventRegistration
@@ -16,8 +16,8 @@ import { createRateLimiter } from "../../utils/rateLimiter";
  * - Validates the registration form via `useFormValidation` (300 ms debounce).
  * - Detects scheduling conflicts against the user's existing registrations
  *   and opens a conflict-resolution modal when one is found.
- * - Checks live event capacity immediately before submission and routes the
- *   request to the waitlist endpoint when the event is full.
+ * - Checks live event capacity immediately before submission and notifies the
+ *   user when the event is at full capacity.
  * - Uses a shared module-level `Map` lock (`registrationLocks` from
  *   `utils/registrationLocks`) and a ref
  *   (`isSubmittingRef`) to guard against duplicate concurrent submissions.
@@ -30,57 +30,28 @@ import { createRateLimiter } from "../../utils/rateLimiter";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
-import { useFormValidation } from "../../hooks/useFormValidation";
-import { getEventStatus } from "../../utils/eventUtils";
-import { checkRegistrationConflict, suggestAlternativeEvents } from "../../utils/conflictDetection";
-import { useAuth } from "../../context/AuthContext";
-import { useMyEvents } from "../../context/MyEventsContext";
+import { useFormValidation } from "../hooks/useFormValidation";
+import { getEventStatus } from "../utils/eventUtils";
+import { checkRegistrationConflict, suggestAlternativeEvents } from "../utils/conflictDetection";
+import { useAuth } from "../context/AuthContext";
+import { useMyEvents } from "../context/MyEventsContext";
 // Removed unused API_ENDPOINTS import
-import { eventService } from "../../services/eventService";
-import { useSessionRecovery } from "../../context/SessionRecoveryContext";
-import { validate } from "../../validation";
+import { eventService } from "../services/eventService";
+import { useSessionRecovery } from "../context/SessionRecoveryContext";
+import { validate } from "../validation";
 import {
   getCacheAgeLabel,
   getCachedEventDetail,
   saveCachedEventDetail,
-} from "../../utils/offlineEventCache";
-import { pushToQueue } from "../../utils/offlineQueue";
-import { logError } from "../../utils/errorLogger";
-import { logAbuseAttempt } from "../../utils/abuseLogger";
-import hackathonsData from "../../Pages/Hackathons/hackathonMockData.json";
-import registrationLocks from "../../utils/registrationLocks";
+} from "../utils/offlineEventCache";
+import { pushToQueue } from "../utils/offlineQueue";
+import { logError } from "../utils/errorLogger";
+import { logAbuseAttempt } from "../utils/abuseLogger";
+import hackathonsData from "../Pages/Hackathons/hackathonMockData.json";
+import registrationLocks from "../utils/registrationLocks";
+import { getRegistrationFailureMessage } from "../utils/registrationErrors";
 
 export const MAX_NOTES_CHARS = 500;
-
-// Registration lock map to prevent concurrent registrations for the same event
-// const registrationLocks = new Map();
-// registrationLimiterRef initialized at hook scope with 3 tokens, 0.3/sec refill
-
-/**
- * Derives a user-facing error message from a failed registration API response.
- */
-const getRegistrationFailureMessage = (error) => {
-  const message = error?.data?.message || error?.data?.error || error?.message || "";
-  const normalizedMessage = message.toLowerCase();
-
-  if (error?.status === 409 && /already registered|duplicate/.test(normalizedMessage)) {
-    return "You are already registered for this event.";
-  }
-
-  if (
-    error?.status === 409 ||
-    error?.status === 423 ||
-    /capacity|full|sold out|max(?:imum)? capacity/.test(normalizedMessage)
-  ) {
-    return "This event has reached maximum capacity. Please choose another event.";
-  }
-
-  if (/conflict/.test(normalizedMessage)) {
-    return "Registration could not be completed because the server reported a conflict.";
-  }
-
-  return message || "Registration failed. Please try again.";
-};
 
 const useEventRegistration = (eventIdParam) => {
   const { eventId: routeEventId, id: routeId } = useParams();
@@ -320,7 +291,9 @@ const useEventRegistration = (eventIdParam) => {
       return;
     }
     if (!isAuthenticated() || !user?.id) {
-      toast.error("Please log in to register for events.");
+      toast.error(
+        "Authentication required. Please log in to register for events."
+      );
       navigate("/login", {
         state: { from: registrationPath },
       });
@@ -341,11 +314,7 @@ const useEventRegistration = (eventIdParam) => {
     };
 
     try {
-      if (event && event.attendees >= event.maxAttendees) {
-        await eventService.waitlistForEvent(eventId, payload);
-      } else {
-        await eventService.registerForEvent(eventId, payload);
-      }
+      await eventService.registerForEvent(eventId, payload);
 
       setRegistered(true);
       toast.success("Registration successful!");
@@ -365,7 +334,7 @@ const useEventRegistration = (eventIdParam) => {
 
         const success = await pushToQueue(
           {
-            actionType: isEventFull ? "JOIN_WAITLIST" : "REGISTER_EVENT",
+            actionType: "REGISTER_EVENT",
             // Fixed: Removed undefined 'endpoint' variable which would cause a crash
             eventId: parseInt(eventId),
             payload: queuePayload,
@@ -390,7 +359,7 @@ const useEventRegistration = (eventIdParam) => {
 
       if (isAlreadyRegistered) {
         setRegistered(true);
-        toast.success(isEventFull ? "Successfully joined waitlist!" : "Registration successful!");
+        toast.success("Registration successful!");
         addRegistration(event, formData);
         clearSession();
         toast.info(failureMessage);
@@ -404,7 +373,7 @@ const useEventRegistration = (eventIdParam) => {
       setSubmitting(false);
     }
     // Fixed: Added isEventFull to dependency array
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId, event, formData, isAuthenticated, user, token, navigate, registrationPath, addRegistration, clearSession, isEventFull]);
 
   // Handle form submission
@@ -434,12 +403,18 @@ const useEventRegistration = (eventIdParam) => {
       return;
     }
 
+    // Fresh capacity check right before submission. `isFull` here comes from
+    // a server-authoritative fetch (checkEventCapacity), which is why we can
+    // hard-bail on it — previously we only surfaced a toast and still fell
+    // through to proceedWithRegistration, over-registering users past the cap
+    // whenever the backend didn't strictly reject (see #10386, #7671).
     const isFull = await checkEventCapacity(eventId, event);
     if (isFull) {
-      toast.info("This event is full. You will be added to the waitlist.");
+      toast.info("This event is at full capacity.");
+      return;
     }
 
-      if (await checkAndHandleConflicts()) return;
+    if (await checkAndHandleConflicts()) return;
 
     await proceedWithRegistration();
   }, [isAuthenticated, user, navigate, registrationPath, validateAll, eventId, event, checkEventCapacity, checkAndHandleConflicts, proceedWithRegistration]);

@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { Bell, CheckCheck, ExternalLink, Settings } from "lucide-react";
-import { useNotification } from "../../context/NotificationContext";
+import { Bell, CheckCheck, ExternalLink, Settings, Trash } from "lucide-react";
+import { useNotification } from "context/NotificationContext";
 import EmptyState from "../common/EmptyState";
 import NotificationItem from "./NotificationItem";
 
@@ -43,7 +43,7 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: -8, scale: 0.98 }}
         transition={{ duration: 0.18 }}
-        className="absolute right-0 z-[300] mt-2 w-[min(100vw-1rem,24rem)] origin-top-right overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900"
+        className="absolute right-0 z-dropdown mt-2 w-[min(100%-1rem,24rem)] origin-top-right overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900"
         role="dialog"
         aria-label="Notification panel"
       >
@@ -66,6 +66,17 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
                 aria-label="Mark all notifications as read"
               >
                 <CheckCheck className="h-4 w-4" />
+              </button>
+            )}
+            {notifications.length > 0 && (
+              <button
+                type="button"
+                onClick={() => notifications.forEach(n => deleteNotification(n.id))}
+                className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-white hover:text-red-600 dark:hover:bg-gray-700"
+                title="Clear all notifications"
+                aria-label="Clear all notifications"
+              >
+                <Trash className="h-4 w-4" />
               </button>
             )}
             <Link

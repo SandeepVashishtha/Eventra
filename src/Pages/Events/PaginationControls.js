@@ -116,17 +116,23 @@ const PaginationControls = ({
   onPageChange,
   onPageSizeChange,
 }) => {
-  if (totalEvents === 0) {
-    return null;
-  }
+  const safeTotalEvents = Number(totalEvents) || 0;
+const safeCurrentPage = Number(currentPage) || 1;
+const safeEventsPerPage = Number(eventsPerPage) || EVENTS_PER_PAGE_OPTIONS[0];
 
-  const startEvent = (currentPage - 1) * eventsPerPage + 1;
-  const endEvent = Math.min(currentPage * eventsPerPage, totalEvents);
+if (safeTotalEvents === 0) {
+  return null;
+}
 
+const startEvent = (safeCurrentPage - 1) * safeEventsPerPage + 1;
+const endEvent = Math.min(
+  safeCurrentPage * safeEventsPerPage,
+  safeTotalEvents
+);
   return (
     <div className="mt-10 flex flex-col gap-4 border-t border-gray-200 pt-6 dark:border-gray-700 sm:flex-row sm:items-center sm:justify-between">
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Showing {startEvent}–{endEvent} of {totalEvents} events
+        Showing {startEvent}–{endEvent} of {safeTotalEvents} events
       </p>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">

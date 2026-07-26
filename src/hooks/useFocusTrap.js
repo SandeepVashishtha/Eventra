@@ -107,8 +107,10 @@ export function useFocusTrap(isActive, onEscape) {
   }, [isActive]);
 
   useEffect(() => {
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    if (typeof document !== 'undefined') {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
   }, [handleKeyDown]);
 
   // Restore focus when the trap deactivates (dialog/drawer closes).

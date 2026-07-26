@@ -41,7 +41,7 @@ export default function TemplatePicker({
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="px-8 py-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-indigo-50 to-white dark:from-gray-800 dark:to-gray-900">
+            <div className="px-8 py-6 border-b border-gray-200 dark:border-gray-700 bg-linear-to-r from-indigo-50 to-white dark:from-gray-800 dark:to-gray-900">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                 Event Templates
               </h2>

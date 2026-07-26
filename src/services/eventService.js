@@ -28,9 +28,5 @@ export const eventService = {
   
   getRegistrants: async (eventId) => {
     return apiUtils.get(API_ENDPOINTS.EVENTS.REGISTRANTS(eventId));
-  },
-  
-  waitlistForEvent: async (eventId, data = {}) => {
-    return apiUtils.post(`/api/events/${eventId}/waitlist`, data);
   }
 };
