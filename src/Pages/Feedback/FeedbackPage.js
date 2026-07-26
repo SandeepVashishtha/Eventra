@@ -1,10 +1,10 @@
 import { BarChart, Calendar, Check, CheckCircle, ChevronDown, Mail, MessageSquare, Monitor, MoreHorizontal, Plus, Star, User, Bug } from "lucide-react";
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import useReducedMotion from "../../hooks/useReducedMotion.js";
+import useReducedMotion from "hooks/useReducedMotion.js";
 import { toast } from "react-toastify";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
-import { analyzeSentiment, getSentimentDisplay } from "../../utils/sentiment.js";
+import useDocumentTitle from "hooks/useDocumentTitle";
+import { analyzeSentiment, getSentimentDisplay } from "utils/sentiment.js";
 import { useTranslation } from "react-i18next";
 
 // Star Rating Component
@@ -200,7 +200,7 @@ const CustomFloatingSelect = ({
 
   return (
     <div className="relative mt-6" ref={dropdownRef}>
-      <div className="relative">        
+      <div className="relative">
 
         <button
           type="button"
@@ -318,7 +318,7 @@ const FeedbackPage = () => {
   });
 
   const [errors, setErrors] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);  
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [sentimentScore, setSentimentScore] = useState(0);
 
   useEffect(() => {
@@ -783,7 +783,7 @@ const FeedbackPage = () => {
                     const messageLength = formData.message ? formData.message.length : 0;
                     const MAX_MESSAGE_LENGTH = 500;
                     const progressPercent = Math.min((messageLength / MAX_MESSAGE_LENGTH) * 100, 100);
-                    
+
                     return (
                       <div className="mt-2.5 space-y-1.5">
                         {/* Animated Bar Meter */}

@@ -1,7 +1,6 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { ImageIcon, Upload, X, Plus } from "lucide-react";
-import { logger } from "../../../utils/logger";
 
 const MAX_BANNER_SIZE = 5 * 1024 * 1024; // 5MB
 const allowedTypes = [

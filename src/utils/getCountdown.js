@@ -1,15 +1,9 @@
 export function getCountdown(eventDate) {
-  if (!eventDate) {
-    return { status: "UPCOMING", text: "Date TBD" };
+  if (!eventDate || Number.isNaN(new Date(eventDate).getTime())) {
+    return { status: "INVALID", text: "Date unavailable" };
   }
-
   const now = new Date().getTime();
   const target = new Date(eventDate).getTime();
-
-  if (isNaN(target)) {
-    return { status: "UPCOMING", text: "Date TBD" };
-  }
-
   const diff = target - now;
 
   if (diff <= 0) {

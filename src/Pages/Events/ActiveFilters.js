@@ -1,9 +1,9 @@
-import FilterBadge from "../../components/common/FilterBadge";
+import FilterBadge from "components/common/FilterBadge";
 import {
   getCategoryLabel,
   getDefaultFilters,
   hasActiveFilters,
-} from "../../utils/advancedFilterUtils";
+} from "utils/advancedFilterUtils";
 
 const FILTER_LABELS = {
   all: "All",

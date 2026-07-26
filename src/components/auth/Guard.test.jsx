@@ -1,18 +1,18 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import Guard from './Guard';
-// import { AuthProvider } from '../../context/AuthContext';
+// import { AuthProvider } from 'context/AuthContext';
 
 // Mock useAuth hook for testing
-vi.mock('../../context/AuthContext', async () => {
-  const actual = await vi.importActual('../../context/AuthContext');
+vi.mock('context/AuthContext', async () => {
+  const actual = await vi.importActual('context/AuthContext');
   return {
     ...actual,
     useAuth: vi.fn(),
   };
 });
 
-import { useAuth as useAuthMock } from '../../context/AuthContext';
+import { useAuth as useAuthMock } from 'context/AuthContext';
 
 const MOCK_AUTH_METHODS = {
   isAuthenticated: () => true,

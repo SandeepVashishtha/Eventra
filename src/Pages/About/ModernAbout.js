@@ -3,9 +3,9 @@ import { motion } from "framer-motion";
 import { Globe, Users, CalendarDays, HeartHandshake, Sparkles, Code2, Rocket } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import useDocumentTitle from "../../hooks/useDocumentTitle";
-import { useReducedMotion } from "../../hooks/useReducedMotion";
-import ErrorBoundary from "../../components/common/ErrorBoundary";
+import useDocumentTitle from "hooks/useDocumentTitle";
+import { useReducedMotion } from "hooks/useReducedMotion";
+import ErrorBoundary from "components/common/ErrorBoundary";
 
 const container = {
   hidden: { opacity: 0 },
@@ -95,9 +95,7 @@ export default function ModernAbout() {
 
   return (
     <>
-      {/* Hero */}
       <section className="relative min-h-[85vh] flex items-center justify-center bg-slate-950 overflow-hidden py-24 px-4">
-        {/* Background Glow */}
         <motion.div
           aria-hidden="true"
           className="absolute top-0 left-1/4 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl"
@@ -132,7 +130,6 @@ export default function ModernAbout() {
           }}
         />
 
-        {/* Grid Overlay */}
         <div
           aria-hidden="true"
           className="absolute inset-0 opacity-[0.04]"
@@ -172,7 +169,6 @@ export default function ModernAbout() {
             </motion.p>
           </motion.div>
 
-          {/* Stats */}
           <ErrorBoundary level="section" label={t("about.errorBoundaryLabel")}>
             <motion.div
               variants={container}
@@ -215,7 +211,6 @@ export default function ModernAbout() {
         </div>
       </section>
 
-      {/* Values */}
       <section className="py-24 bg-slate-950">
         <div className="max-w-7xl mx-auto px-6">
           <motion.div

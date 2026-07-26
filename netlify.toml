@@ -24,9 +24,7 @@
     Permissions-Policy = "camera=(), microphone=(), geolocation=(), browsing-topics=(), interest-cohort=(), payment=(), usb=(), bluetooth=()"
     Cross-Origin-Opener-Policy = "same-origin-allow-popups"
     Cross-Origin-Resource-Policy = "same-site"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' https://accounts.google.com https://cdn.jsdelivr.net; style-src 'self' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.github.com https://o4511372299075584.ingest.de.sentry.io; frame-src 'self' https://accounts.google.com"
-
-[[headers]]
+    Content-Security-Policy = "default-src 'self'; script-src 'self' https://accounts.google.com https://cdn.jsdelivr.net; style-src 'self' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.github.com https://o4511372299075584.ingest.de.sentry.io; frame-src 'self' https://accounts.google.com; worker-src 'self' blob:"
   for = "/"
   [headers.values]
     Link = "</.well-known/api-catalog>; rel=\"api-catalog\", </apiDocs>; rel=\"service-doc\""

@@ -1,7 +1,11 @@
 import { safeLocalStorage } from "./safeStorage.js";
 
+const _hasStorage = () =>
+  (typeof window !== "undefined" && window.localStorage) ||
+  (typeof globalThis !== "undefined" && globalThis.localStorage);
+
 export const logAbuseAttempt = (type, details = {}) => {
-  if (typeof window === "undefined" || !window.localStorage) return;
+  if (!_hasStorage()) return;
   try {
     let existing;
     try {

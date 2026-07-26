@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { MessageSquare } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { getEventStatus } from '../../utils/eventUtils';
-import { hasUserSubmittedFeedback } from '../../utils/feedbackUtils';
+import { getEventStatus } from 'utils/eventUtils';
+import { hasUserSubmittedFeedback } from 'utils/feedbackUtils';
 import EventFeedbackModal from './EventFeedbackModal';
 
 /**

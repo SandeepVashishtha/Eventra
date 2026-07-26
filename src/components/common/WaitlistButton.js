@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { joinWaitlist, leaveWaitlist, getWaitlistStatus, getWaitlistCount } from '../../services/waitlistService';
+import { joinWaitlist, leaveWaitlist, getWaitlistStatus, getWaitlistCount } from 'services/waitlistService';
+import { showUndoToast } from 'utils/toast';
 
 // Custom hook - args grouped into single options object (fixes Excess Function Arguments)
 const useWaitlist = ({ eventId, isFullyBooked, waitlistEnabled, isAuthenticated, token }) => {
@@ -11,14 +12,30 @@ const useWaitlist = ({ eventId, isFullyBooked, waitlistEnabled, isAuthenticated,
   useEffect(() => {
     if (!isFullyBooked || !waitlistEnabled) return;
 
-    getWaitlistCount(eventId).then(data => setWaitlistCount(data.count));
+    let cancelled = false;
+
+    getWaitlistCount(eventId)
+      .then(data => {
+        if (!cancelled) setWaitlistCount(data.count);
+      })
+      .catch(() => {
+        // Silently ignore — default count of 0 is already set
+      });
 
     if (isAuthenticated && token) {
-      getWaitlistStatus(eventId, token).then(data => {
-        setOnWaitlist(data.onWaitlist);
-        setPosition(data.position);
-      });
+      getWaitlistStatus(eventId, token)
+        .then(data => {
+          if (!cancelled) {
+            setOnWaitlist(data.onWaitlist);
+            setPosition(data.position);
+          }
+        })
+        .catch(() => {
+          // Silently ignore — defaults (false / null) are already set
+        });
     }
+
+    return () => { cancelled = true; };
   }, [eventId, isFullyBooked, waitlistEnabled, isAuthenticated, token]);
 
   const handleClick = async () => {
@@ -29,10 +46,28 @@ const useWaitlist = ({ eventId, isFullyBooked, waitlistEnabled, isAuthenticated,
     setLoading(true);
     try {
       if (onWaitlist) {
-        await leaveWaitlist(eventId, token);
         setOnWaitlist(false);
         setPosition(null);
         setWaitlistCount(prev => prev - 1);
+        showUndoToast({
+          message: 'Removed from waitlist.',
+          toastId: `common-leave-waitlist-${eventId}`,
+          onUndo: () => {
+            setOnWaitlist(true);
+            setPosition(position);
+            setWaitlistCount(prev => prev + 1);
+          },
+          onCommit: async () => {
+            try {
+              await leaveWaitlist(eventId, token);
+            } catch (err) {
+              setOnWaitlist(true);
+              setPosition(position);
+              setWaitlistCount(prev => prev + 1);
+              alert(err.message);
+            }
+          },
+        });
       } else {
         const data = await joinWaitlist(eventId, token);
         setOnWaitlist(true);

@@ -1,11 +1,11 @@
-import { getTrendingBadge } from "../../utils/trendingRankUtils";
+import { getTrendingBadge } from "utils/trendingRankUtils";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { eventService } from "../../services/eventService";
+import { eventService } from "services/eventService";
 import EventCard from "../../Pages/Events/EventCard";
 import {Calendar,TrendingUp,Users,Bookmark,Eye,} from "lucide-react";
 
-import { normalizeEvents } from "../../utils/eventFetchUtils";
+import { normalizeEvents } from "utils/eventFetchUtils";
 
 const EVENT_LIST_KEYS = ["content", "events", "items", "results", "data"];
 
@@ -269,11 +269,11 @@ const TrendingEvents = ({
             ) => (
               <div
                 key={event.id ?? event.title}
-                className="rounded-3xl overflow-hidden"
+                className="group flex flex-col gap-2"
               >
-                <span className="inline-flex items-center rounded-full bg-yellow-100 px-3 py-1 text-xs font-semibold text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
-  {getTrendingBadge(index)}
-</span>
+                <div className="flex items-center gap-1.5 text-xs font-bold text-amber-600 dark:text-amber-400 px-1">
+                  <span>{getTrendingBadge(index)}</span>
+                </div>
                 <EventCard
                   event={{
                     ...event,
@@ -288,30 +288,6 @@ const TrendingEvents = ({
                       registrations,
                   }}
                 />
-
-                <div className="px-5 py-3 bg-white/60 dark:bg-slate-950/20 border-t border-slate-200/60 dark:border-slate-800/60">
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-slate-600 dark:text-slate-300">
-                    <span className="inline-flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5 text-indigo-500" />
-                      {registrations} regs
-                    </span>
-
-                    <span className="inline-flex items-center gap-1">
-                      <Eye className="w-3.5 h-3.5 text-sky-500" />
-                      {pageViews} views
-                    </span>
-
-                    <span className="inline-flex items-center gap-1">
-                      <Bookmark className="w-3.5 h-3.5 text-amber-500" />
-                      {bookmarks} saves
-                    </span>
-
-                    <span className="inline-flex items-center gap-1">
-                      <Users className="w-3.5 h-3.5 text-emerald-500" />
-                      {engagement} eng
-                    </span>
-                  </div>
-                </div>
               </div>
             )
           )}

@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useMemo } from "react";
-import { useFocusTrap } from "../../hooks/useFocusTrap";
+import { useFocusTrap } from "hooks/useFocusTrap";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Copy,
@@ -12,7 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import { createShareModalData } from "../../utils/shareModalUtils.js";
+import { createShareModalData } from "utils/shareModalUtils.js";
 const ModalCloseButton = memo(({ onClick }) => (
   <button
     type="button"

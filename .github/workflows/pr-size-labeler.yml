@@ -13,28 +13,38 @@ jobs:
     name: Auto Label PR Size
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          ref: refs/pull/${{ github.event.pull_request.number }}/merge
-          fetch-depth: 0
-
-      - name: Calculate PR Size
-        id: size
+      - name: Ensure jq is available
         run: |
-          # Fetch the target branch to compare
-          git fetch origin ${{ github.event.pull_request.base.ref }}
-          
-          # Calculate line changes (additions + deletions) excluding package-lock.json and mock assets
-          CHANGES=$(git diff --numstat origin/${{ github.event.pull_request.base.ref }}...HEAD | \
-            grep -v 'package-lock.json' | \
-            grep -v 'Mock' | \
-            awk '{add += $1; del += $2} END {print add + del}')
-          
-          # Default to 0 if no changes
-          if [ -z "$CHANGES" ]; then CHANGES=0; fi
-          echo "Total line changes: $CHANGES"
-          echo "changes=$CHANGES" >> $GITHUB_OUTPUT
+          sudo apt-get update -y
+          sudo apt-get install -y jq
+
+      - name: Calculate PR Size via GitHub API
+        id: size
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          # Paginate through pull files and sum additions+deletions excluding package-lock.json and Mock
+          PAGE=1
+          TOTAL=0
+          while : ; do
+            RESP=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/$REPO/pulls/$PR_NUMBER/files?per_page=100&page=$PAGE")
+            COUNT=$(echo "$RESP" | jq 'length')
+            if [ "$COUNT" -eq 0 ]; then
+              break
+            fi
+            # Sum additions+deletions for this page, excluding unwanted files
+            PAGE_SUM=$(echo "$RESP" | jq '[.[] | select(.filename != "package-lock.json" and (.filename | test("Mock") | not)) | (.additions + .deletions)] | add // 0')
+            PAGE_SUM=${PAGE_SUM:-0}
+            TOTAL=$((TOTAL + PAGE_SUM))
+            PAGE=$((PAGE + 1))
+          done
+
+          echo "Total line changes: $TOTAL"
+          echo "changes=$TOTAL" >> $GITHUB_OUTPUT
 
       - name: Apply Label based on Size
         env:

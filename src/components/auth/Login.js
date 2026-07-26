@@ -2,15 +2,15 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "../../context/AuthContext";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
+import { useAuth } from "context/AuthContext";
+import useDocumentTitle from "hooks/useDocumentTitle";
 import { toast } from "react-toastify";
-import { showAuthToast } from "../../utils/toast";
-import { getPublicErrorMessage, AUTH_ERRORS } from "../../utils/errorMessages";
-import useReducedMotion from "../../hooks/useReducedMotion";
+import { showAuthToast } from "utils/toast";
+import { getPublicErrorMessage, AUTH_ERRORS } from "utils/errorMessages";
+import useReducedMotion from "hooks/useReducedMotion";
 import FieldError from '../common/FieldError';
-import useLoginRateLimit from '../../hooks/useLoginRateLimit';
-import { MAX_LOGIN_ATTEMPTS, parseRetryAfterMs } from '../../utils/rateLimitUtils';
+import useLoginRateLimit from 'hooks/useLoginRateLimit';
+import { MAX_LOGIN_ATTEMPTS, parseRetryAfterMs } from 'utils/rateLimitUtils';
 import '../../styles/auth.css';
 import { emailPattern } from '../../validation';
 import {
@@ -19,7 +19,7 @@ import {
   incrementFailures,
   resetFailures,
   getBackoffDelay,
-} from "../../utils/authRateLimiter";
+} from "utils/authRateLimiter";
 
 const Login = () => {
   useDocumentTitle("Login | Eventra");
@@ -100,7 +100,7 @@ const Login = () => {
           "Login successful! Redirecting to dashboard...",
           () => navigate("/dashboard", { replace: true })
         );
-      } 
+      }
       else {
         incrementFailures("login");
 
