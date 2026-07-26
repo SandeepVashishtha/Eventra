@@ -28,6 +28,7 @@ export const parseScheduleTime = (value = "") => {
   if (ampm) {
     let hours = Number(ampm[1]);
     const minutes = Number(ampm[2] || 0);
+    if (hours < 1 || hours > 12 || minutes < 0 || minutes > 59) return null;
     const period = ampm[3].toUpperCase();
     if (period === "PM" && hours < 12) hours += 12;
     if (period === "AM" && hours === 12) hours = 0;
@@ -36,10 +37,10 @@ export const parseScheduleTime = (value = "") => {
 
   const twentyFour = input.match(/^(\d{1,2})(?::(\d{2}))?$/);
   if (twentyFour) {
-    return {
-      hours: Number(twentyFour[1]),
-      minutes: Number(twentyFour[2] || 0),
-    };
+    const hours = Number(twentyFour[1]);
+    const minutes = Number(twentyFour[2] || 0);
+    if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
+    return { hours, minutes };
   }
 
   return null;

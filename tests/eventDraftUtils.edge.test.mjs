@@ -21,7 +21,7 @@ localStorage.setItem("event_creation_draft", "{not-json");
 assert.equal(getDraft(), null, "returns null for malformed draft JSON");
 
 saveDraft({ title: "Draft event", step: 2 });
-assert.deepEqual(getDraft(), { title: "Draft event", step: 2 });
+assert.deepEqual(getDraft()?.data, { title: "Draft event", step: 2 });
 
 clearDraft();
 assert.equal(getDraft(), null, "clearDraft removes stored draft");

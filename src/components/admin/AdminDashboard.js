@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "context/AuthContext";
 import { useNavigate, Navigate, useLocation, Link } from "react-router-dom";
 import {
   Users,
@@ -22,8 +22,8 @@ import {
   ChevronLeft,
   Clock,
 } from "lucide-react";
-import { ENV } from "../../config/env";
-import { exportToCSV, exportToJSON } from "../../utils/exportUtils";
+import { ENV } from "config/env";
+import { exportToCSV, exportToJSON } from "utils/exportUtils";
 import {
   AdminListCardSkeleton,
   AdminStatCardSkeleton,
@@ -36,15 +36,15 @@ import TicketScanner from "./TicketScanner";
 import ErrorBoundary from "../common/ErrorBoundary";
 import { toast } from "react-toastify";
 
-import { ROLES, PERMISSIONS } from "../../config/roles";
+import { ROLES, PERMISSIONS } from "config/roles";
 import {
   fetchAdminUsers,
   deleteAdminUser,
   fetchAdminEvents,
   deleteAdminEvent,
   fetchAdminStats,
-} from "../../services/adminService";
-import { safeJsonParse } from "../../utils/safeJsonParse";
+} from "services/adminService";
+import { safeJsonParse } from "utils/safeJsonParse";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -134,7 +134,7 @@ const AdminDashboard = () => {
   const [waitlistAnalytics, setWaitlistAnalytics] = useState(null);
 
  const loadWaitlist = useCallback((eventId) => {
-  import("../../utils/waitlistUtils.js")
+  import("utils/waitlistUtils.js")
     .then(
       ({
         getEventWaitlist,
@@ -164,7 +164,7 @@ const AdminDashboard = () => {
     if (!selectedWaitlistEvent) return;
     if (window.confirm("Are you sure you want to remove this user from the waitlist?")) {
       try {
-        const { organizerRemoveUser } = await import("../../utils/waitlistUtils.js");
+        const { organizerRemoveUser } = await import("utils/waitlistUtils.js");
         await organizerRemoveUser(selectedWaitlistEvent.id, userId);
         toast.success("User removed from waitlist.");
         loadWaitlist(selectedWaitlistEvent.id);
@@ -185,16 +185,16 @@ const AdminDashboard = () => {
     }
 
     try {
-      const { handleCapacityIncrease } = await import("../../utils/waitlistUtils.js");
-      
+      const { handleCapacityIncrease } = await import("utils/waitlistUtils.js");
+
       const updatedEvent = {
         ...selectedWaitlistEvent,
         maxAttendees: newCap,
         attendees: selectedWaitlistEvent.attendees
       };
-      
+
       const promotedCount = await handleCapacityIncrease(updatedEvent, newCap);
-      
+
       const cacheKey = `event_detail_${selectedWaitlistEvent.id}`;
       const raw = localStorage.getItem(cacheKey);
       if (raw) {
@@ -205,7 +205,7 @@ const AdminDashboard = () => {
           localStorage.setItem(cacheKey, JSON.stringify(parsed));
         }
       }
-      
+
       setSelectedWaitlistEvent(prev => ({
         ...prev,
         maxAttendees: newCap,
@@ -773,7 +773,7 @@ const AdminDashboard = () => {
               </h3>
               <button onClick={() => setSelectedWaitlistEvent(null)} className="text-gray-500 hover:text-gray-700">✕</button>
             </div>
-            
+
             <div className="mb-4 flex items-center justify-between bg-slate-50 dark:bg-slate-800/40 p-3 rounded-xl">
               <span className="text-xs font-semibold text-slate-650 dark:text-slate-400">
                 Capacity: {selectedWaitlistEvent.attendees} / {selectedWaitlistEvent.maxAttendees} registered

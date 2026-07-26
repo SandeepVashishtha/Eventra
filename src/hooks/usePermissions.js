@@ -1,18 +1,3 @@
-/**
- * @fileoverview usePermissions hook
- * @module hooks/usePermissions
- * 
- * Provides authorization helper utilities (such as hasRole, hasPermission, etc.)
- * derived from the authenticated user's profile.
- * 
- * Design Principles:
- * 1. Pure Hooks: This hook does not query the AuthContext directly to prevent circular dependency
- *    issues since the AuthContext provider uses this hook to build its value.
- * 2. Immutable Outputs: Results are heavily memoized using React's useMemo to ensure
- *    reference-stable callback references and avoid component re-render cascades.
- * 3. Fallback Resilience: Gracefully handles null/undefined user states by returning falsy outputs.
- */
-
 import { useMemo } from "react";
 import { ROLES } from "../config/roles.js";
 
@@ -46,22 +31,24 @@ export const normalizeRoles = (roles = []) => {
  */
 export function usePermissions(user) {
   // 1. Normalize and memoize roles list
+  const roles = user?.roles;
   const normalizedRoles = useMemo(() => {
-    if (!user || !user.roles) {
+    if (!roles) {
       return [];
     }
-    return normalizeRoles(user.roles);
-  }, [user]);
+    return normalizeRoles(roles);
+  }, [roles]);
 
   // 2. Extract and memoize explicit permissions
+  const permissions = user?.permissions;
   const allPermissions = useMemo(() => {
-    if (!user || !user.permissions) {
+    if (!permissions) {
       return [];
     }
-    return Array.isArray(user.permissions)
-      ? user.permissions.map((p) => String(p))
-      : [String(user.permissions)];
-  }, [user]);
+    return Array.isArray(permissions)
+      ? permissions.map((p) => String(p))
+      : [String(permissions)];
+  }, [permissions]);
 
   // 3. Compile and memoize final helper utility functions
   return useMemo(() => {

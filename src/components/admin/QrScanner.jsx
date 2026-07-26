@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 const QrScanner = () => {
   const [scanResult, setScanResult] = useState(null);

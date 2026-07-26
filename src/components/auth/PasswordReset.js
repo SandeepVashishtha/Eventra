@@ -1,10 +1,10 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 // Under the hood, password reset requests are sent to API_ENDPOINTS.AUTH.RESET_PASSWORD via authService.
-import { authService } from '../../services/authService';
+import { authService } from 'services/authService';
 import { motion } from "framer-motion";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
-import { RESET_COOLDOWN_SECONDS, secondsUntilUnlock, STORAGE_KEY_RESET_LAST_SUBMIT } from '../../utils/rateLimitUtils';
+import useDocumentTitle from "hooks/useDocumentTitle";
+import { RESET_COOLDOWN_SECONDS, secondsUntilUnlock, STORAGE_KEY_RESET_LAST_SUBMIT } from 'utils/rateLimitUtils';
 
 // ---------------------------------------------------------------------------
 // sessionStorage helpers — persist cooldown across page refreshes (Issue #5720)
@@ -68,7 +68,7 @@ const PasswordReset = () => {
   }, []);
 
   const startCooldownTimer = useCallback(() => {
-    clearAllTimers(); 
+    clearAllTimers();
     const unlockAt = lastSubmitRef.current + RESET_COOLDOWN_SECONDS * 1000;
     setCooldownSeconds(secondsUntilUnlock(unlockAt));
 
@@ -84,6 +84,12 @@ const PasswordReset = () => {
   useEffect(() => {
     return () => clearAllTimers(); // Safely clean up everything on unmount
   }, [clearAllTimers]);
+
+  // Auto-focus the email input on mount for keyboard and accessibility UX.
+  // emailInputRef was already wired to the input but the focus call was missing.
+  useEffect(() => {
+    emailInputRef.current?.focus();
+  }, []);
 
   // FIX (Issue #5720): On mount, if a persisted cooldown is still active,
   // start the countdown timer so the UI reflects the correct remaining time.
@@ -132,7 +138,10 @@ const PasswordReset = () => {
     }
   };
 
-  const isSubmitDisabled = loading || isCoolingDown();
+  // Compute once per render so isSubmitDisabled, the banner, and the button
+  // label all read the same snapshot — prevents inconsistent UI at cooldown boundary.
+  const coolingDown = isCoolingDown();
+  const isSubmitDisabled = loading || coolingDown;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-black py-12 px-4 sm:px-6 lg:px-8">
@@ -140,7 +149,7 @@ const PasswordReset = () => {
         <motion.div
           whileHover={{ scale: 1.05, rotate: 5 }}
           whileTap={{ scale: 0.95 }}
-          className="mx-auto w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg transform transition-transform duration-200"
+          className="mx-auto w-16 h-16 bg-linear-to-r from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg transform transition-transform duration-200"
         >
           <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -150,7 +159,7 @@ const PasswordReset = () => {
         <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 text-center">Reset Password</h1>
         <p className="text-sm text-gray-600 dark:text-gray-400 text-center">Secure your account and get back to creating events.</p>
 
-        {isCoolingDown() && cooldownSeconds > 0 && (
+        {coolingDown && cooldownSeconds > 0 && (
           <motion.div
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
@@ -189,7 +198,7 @@ const PasswordReset = () => {
             disabled={isSubmitDisabled}
             className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition-colors disabled:bg-blue-400 disabled:cursor-not-allowed"
           >
-            {loading ? 'Sending...' : isCoolingDown() ? `Wait ${cooldownSeconds}s` : 'Send Reset Link'}
+            {loading ? 'Sending...' : coolingDown ? `Wait ${cooldownSeconds}s` : 'Send Reset Link'}
           </button>
         </form>
 

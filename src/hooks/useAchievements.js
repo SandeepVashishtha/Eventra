@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { apiUtils, API_ENDPOINTS } from "../config/api";
+import { apiUtils, API_ENDPOINTS } from "../config/api.js";
 import { useAuth } from "../context/AuthContext";
 
 export function useAchievements() {
@@ -10,7 +10,7 @@ export function useAchievements() {
 
   const fetchAchievements = useCallback(async () => {
     if (!token) return;
-    const t = token;
+    // const t = token;
     const endpoint = API_ENDPOINTS?.USERS?.ACHIEVEMENTS;
     if (!endpoint) return;
     try {

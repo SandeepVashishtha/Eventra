@@ -22,15 +22,15 @@ const DashboardEmptyState = () => {
     >
       {/* ── Decorative background blobs ── */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-        <div className="absolute -top-16 -right-16 h-56 w-56 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 opacity-60 blur-3xl dark:from-indigo-900/20 dark:to-purple-900/20" />
-        <div className="absolute -bottom-16 -left-16 h-56 w-56 rounded-full bg-gradient-to-tr from-blue-100 to-cyan-100 opacity-60 blur-3xl dark:from-blue-900/20 dark:to-cyan-900/20" />
-        <div className="absolute left-1/2 top-0 h-px w-3/4 -translate-x-1/2 bg-gradient-to-r from-transparent via-indigo-300/40 to-transparent dark:via-indigo-500/20" />
+        <div className="absolute -top-16 -right-16 h-56 w-56 rounded-full bg-linear-to-br from-indigo-100 to-purple-100 opacity-60 blur-3xl dark:from-indigo-900/20 dark:to-purple-900/20" />
+        <div className="absolute -bottom-16 -left-16 h-56 w-56 rounded-full bg-linear-to-tr from-blue-100 to-cyan-100 opacity-60 blur-3xl dark:from-blue-900/20 dark:to-cyan-900/20" />
+        <div className="absolute left-1/2 top-0 h-px w-3/4 -translate-x-1/2 bg-linear-to-r from-transparent via-indigo-300/40 to-transparent dark:via-indigo-500/20" />
       </div>
 
       <div className="relative z-10 flex flex-col items-center px-8 py-14 text-center sm:px-14">
         {/* ── Illustration ── */}
         <div className="mb-8 flex items-center justify-center">
-          <div className="relative flex h-28 w-28 items-center justify-center rounded-3xl bg-gradient-to-br from-indigo-50 to-purple-50 shadow-inner dark:from-indigo-900/30 dark:to-purple-900/30">
+          <div className="relative flex h-28 w-28 items-center justify-center rounded-3xl bg-linear-to-br from-indigo-50 to-purple-50 shadow-inner dark:from-indigo-900/30 dark:to-purple-900/30">
             {/* Orbiting calendar icon */}
             <Calendar
               size={52}
@@ -82,7 +82,7 @@ const DashboardEmptyState = () => {
           <button
             type="button"
             onClick={() => navigate("/events")}
-            className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-500/25 transition-all hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl hover:shadow-indigo-500/30 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 active:scale-[0.98]"
+            className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-indigo-600 to-purple-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-500/25 transition-all hover:from-indigo-700 hover:to-purple-700 hover:shadow-xl hover:shadow-indigo-500/30 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 active:scale-[0.98]"
             aria-label="Browse all events"
           >
             <Search size={16} />
