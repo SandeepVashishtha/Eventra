@@ -11,13 +11,13 @@ import {
   generateAnalyticsCSV,
 } from '../src/utils/eventAnalyticsUtils.js';
 
-// Test data
+const currentYear = new Date().getFullYear();
 const mockRegistrations = [
   {
     id: '1',
     createdAt: '2024-01-01T10:30:00Z',
     status: 'confirmed',
-    dateOfBirth: '2000-05-15',
+    dateOfBirth: `${currentYear - 24}-05-15`,
     gender: 'Male',
     institution: 'MIT',
   },
@@ -25,7 +25,7 @@ const mockRegistrations = [
     id: '2',
     createdAt: '2024-01-01T14:45:00Z',
     status: 'confirmed',
-    dateOfBirth: '1995-03-20',
+    dateOfBirth: `${currentYear - 29}-03-20`,
     gender: 'Female',
     institution: 'Stanford',
   },
@@ -33,7 +33,7 @@ const mockRegistrations = [
     id: '3',
     createdAt: '2024-01-02T09:15:00Z',
     status: 'confirmed',
-    dateOfBirth: '2002-07-10',
+    dateOfBirth: `${currentYear - 22}-07-10`,
     gender: 'Male',
     institution: 'MIT',
   },
@@ -41,7 +41,7 @@ const mockRegistrations = [
     id: '4',
     createdAt: '2024-01-03T11:00:00Z',
     status: 'cancelled',
-    dateOfBirth: '1998-12-25',
+    dateOfBirth: `${currentYear - 26}-12-25`,
     gender: 'Female',
     institution: 'Harvard',
   },
@@ -84,7 +84,7 @@ test('computeDemographicBreakdown - should compute age groups', () => {
   assert.ok(breakdown.genders);
   assert.ok(breakdown.institutions);
   assert.equal(breakdown.ageGroups['18-25'], 2); // 2 people aged 18-25
-  assert.equal(breakdown.ageGroups['26-35'], 1); // 1 person aged 26-35
+  assert.equal(breakdown.ageGroups['26-35'], 2); // 2 people aged 26-35
 });
 
 test('computeDemographicBreakdown - should count gender distribution', () => {

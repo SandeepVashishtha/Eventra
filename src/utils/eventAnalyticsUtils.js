@@ -80,7 +80,7 @@ export const computeDemographicBreakdown = (registrations = []) => {
     // Gender distribution
     if (reg.gender && genders[reg.gender] !== undefined) {
       genders[reg.gender]++;
-    } else if (reg.gender) {
+    } else if (reg.gender || reg.dateOfBirth || reg.institution || reg.name) {
       genders.Other++;
     }
 
@@ -180,7 +180,7 @@ export const computeHourlyRegistrationDistribution = (registrations = []) => {
 
   registrations.forEach((reg) => {
     if (reg.createdAt) {
-      const hour = new Date(reg.createdAt).getHours();
+      const hour = new Date(reg.createdAt).getUTCHours();
       hourly[hour]++;
     }
   });
