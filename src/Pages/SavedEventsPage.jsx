@@ -1,16 +1,24 @@
-import { useState, useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useMemo, useRef, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Download, Inbox } from "lucide-react";
 import EmptyState from "../components/common/EmptyState";
+import { useAuth } from "../context/AuthContext";
 import useBookmarks from "../hooks/useBookmarks";
 import { exportToCSV } from "../utils/exportUtils";
 import { toast } from "react-toastify";
 
 const SavedEventsPage = () => {
-  const navigate = useNavigate();
-  const { bookmarks, toggleBookmark } = useBookmarks();
+  const { user } = useAuth();
+  const { bookmarks, toggleBookmark } = useBookmarks(user?.id || user?.email || "guest");
   const [sortBy, setSortBy] = useState("savedAt");
   const [exporting, setExporting] = useState(false);
+  const exportTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (exportTimeoutRef.current) clearTimeout(exportTimeoutRef.current);
+    };
+  }, []);
 
   const sorted = useMemo(
     () => [...bookmarks].sort((a, b) =>
@@ -28,13 +36,13 @@ const SavedEventsPage = () => {
       toast.error("Failed to export saved events. Please try again.");
     } finally {
       // Brief visual feedback before resetting
-      setTimeout(() => setExporting(false), 800);
+      exportTimeoutRef.current = setTimeout(() => setExporting(false), 800);
     }
   };
 
   if (bookmarks.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#f5f7ff] via-[#eef2ff] to-[#f3e8ff] px-4 py-12 text-slate-900 dark:from-slate-950 dark:via-slate-950 dark:to-gray-950 dark:text-gray-100 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-linear-to-br from-[#f5f7ff] via-[#eef2ff] to-[#f3e8ff] px-4 py-12 text-slate-900 dark:from-slate-950 dark:via-slate-950 dark:to-gray-950 dark:text-gray-100 sm:px-6 lg:px-8">
         <section className="mx-auto max-w-4xl">
           <EmptyState
             title="No saved events yet!"
@@ -49,7 +57,7 @@ const SavedEventsPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f5f7ff] via-[#eef2ff] to-[#f3e8ff] px-4 py-12 text-slate-900 dark:from-slate-950 dark:via-slate-950 dark:to-gray-950 dark:text-gray-100 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-linear-to-br from-[#f5f7ff] via-[#eef2ff] to-[#f3e8ff] px-4 py-12 text-slate-900 dark:from-slate-950 dark:via-slate-950 dark:to-gray-950 dark:text-gray-100 sm:px-6 lg:px-8">
       <section className="mx-auto max-w-7xl">
         <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -79,7 +87,7 @@ const SavedEventsPage = () => {
               disabled={exporting || sorted.length === 0}
               aria-label="Export saved events as CSV"
               title="Download saved events as a CSV file"
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:from-indigo-500 hover:via-indigo-600 hover:to-slate-800 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-linear-to-r from-indigo-600 via-indigo-700 to-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:from-indigo-500 hover:via-indigo-600 hover:to-slate-800 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Download size={15} aria-hidden="true" />
               {exporting ? "Exporting…" : "Export CSV"}

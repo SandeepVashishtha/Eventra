@@ -1,24 +1,25 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
+import { apiUtils } from "../config/api.js";
+import { logError } from "../utils/errorLogger";
+import { toast } from "react-toastify";
 
 const useAnalytics = () => {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const { token } = useAuth();
 
   useEffect(() => {
     if (!token) { setLoading(false); return; }
     const fetchAnalytics = async () => {
       try {
-        const res = await fetch(
-          `${process.env.REACT_APP_API_URL}/analytics/summary`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        if (!res.ok) throw new Error("API unavailable");
-        const data = await res.json();
-        setAnalytics(data);
-      } catch {
-        // falls back to mock data silently
+        const res = await apiUtils.get("/analytics/summary");
+        setAnalytics(res.data);
+      } catch (err) {
+        logError(err, null, { hook: "useAnalytics", action: "fetchAnalytics" });
+        setError(err);
+        toast.error("Failed to load analytics. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -26,7 +27,7 @@ const useAnalytics = () => {
     fetchAnalytics();
   }, [token]);
 
-  return { analytics, loading };
+  return { analytics, loading, error };
 };
 
 export default useAnalytics;

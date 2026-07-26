@@ -12,6 +12,21 @@ import {
 } from "../src/utils/sessionExportImport.js";
 import { createRecoverySession } from "../src/utils/multiSessionRecovery.js";
 
+const originalDate = globalThis.Date;
+class MockDate extends originalDate {
+  constructor(...args) {
+    if (args.length === 0) {
+      super("2026-06-05T12:15:00.000Z");
+    } else {
+      super(...args);
+    }
+  }
+  static now() {
+    return new originalDate("2026-06-05T12:15:00.000Z").getTime();
+  }
+}
+globalThis.Date = MockDate;
+
 const now = new Date("2026-06-05T12:00:00.000Z");
 
 console.log("sessionExportImport tests starting...");
@@ -159,3 +174,4 @@ assert.equal(downloadedBackup.count, 1);
 assert.equal(downloadedBackup.sessions[0].sessionId, "session-a");
 
 console.log("sessionExportImport tests passed");
+globalThis.Date = originalDate;

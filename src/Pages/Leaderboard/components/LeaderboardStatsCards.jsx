@@ -38,18 +38,18 @@ export default function LeaderboardStatsCards({ stats, loading }) {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: idx * 0.1 }}
-          className={`group flex items-center gap-4 rounded-3xl border bg-white/80 p-6 shadow-[0_16px_40px_rgba(15,23,42,0.06)] backdrop-blur-xl transition-transform duration-200 hover:-translate-y-0.5 ${card.border}`}
+          className={`group flex items-center gap-4 rounded-3xl border bg-white/80 dark:bg-slate-800/80 p-6 shadow-[0_16px_40px_rgba(15,23,42,0.06)] dark:shadow-[0_16px_40px_rgba(0,0,0,0.3)] backdrop-blur-xl transition-transform duration-200 hover:-translate-y-0.5 ${card.border}`}
         >
-          <div className="rounded-2xl border border-slate-200 bg-[#E0E9F2]/35 p-3.5 text-slate-700 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-[#E0E9F2]/35 dark:bg-slate-700/50 p-3.5 text-slate-700 dark:text-slate-300 shadow-sm">
             <card.icon className="text-2xl" aria-hidden="true" />
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
               {card.title}
             </p>
-            <p className="mt-1 text-3xl font-extrabold text-slate-950">
+            <p className="mt-1 text-3xl font-extrabold text-slate-950 dark:text-white">
               {loading ? (
-                <span className="inline-block w-12 h-8 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+                <span className="inline-block w-12 h-8 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
               ) : (
                 <AnimatedCounter value={stats[card.key]} />
               )}

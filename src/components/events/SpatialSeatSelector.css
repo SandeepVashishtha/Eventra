@@ -81,9 +81,9 @@
 }
 
 .ssp-seat-glowing circle {
-  r: 13.5px !important;
-  filter: drop-shadow(0 0 12px rgba(34, 211, 238, 0.85)) !important;
-  stroke-width: 2px !important;
+  r: 13.5px;
+  filter: drop-shadow(0 0 12px rgba(34, 211, 238, 0.85));
+  stroke-width: 2px;
 }
 
 /* Radar Pulse Loop Animation */
@@ -283,6 +283,6 @@
     height: 300px;
   }
   .ssp-legend-tip {
-    display: none !important;
+    display: none;
   }
 }

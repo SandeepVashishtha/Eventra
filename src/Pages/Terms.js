@@ -320,7 +320,7 @@ export const Terms = () => {
       {/* ── Scroll progress bar ── */}
       <div className="fixed top-0 left-0 right-0 z-50 h-0.5 bg-transparent">
         <div
-          className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-100"
+          className="h-full bg-linear-to-r from-primary to-secondary transition-all duration-100"
           style={{ width: `${scrollProgress}%` }}
         />
       </div>
@@ -361,7 +361,7 @@ export const Terms = () => {
           <h1 className="text-5xl sm:text-6xl font-extrabold tracking-tight
             text-text mb-4 leading-none">
             Terms of{" "}
-            <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            <span className="bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent">
               Service
             </span>
           </h1>
@@ -389,7 +389,7 @@ export const Terms = () => {
         {/* ── Intro Card ── */}
         <div
           className="relative rounded-2xl overflow-hidden mb-10 p-6 sm:p-8
-            bg-gradient-to-br from-primary to-secondary
+            bg-linear-to-br from-primary to-secondary
             shadow-xl shadow-glow-md"
           style={{
             opacity: animateIn ? 1 : 0,

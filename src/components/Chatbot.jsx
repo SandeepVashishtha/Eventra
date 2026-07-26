@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useMemo, useState, Fragment } from "react";
 import { createPortal } from "react-dom";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
 import {
@@ -97,14 +97,16 @@ const MAX_STORED_MESSAGES = 100;
 
 export default function Chatbot() {
   const { t, i18n } = useTranslation();
+  const { pathname } = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [draft, setDraft] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [messages, setMessages] = useLocalStorage("eventra_chatbot_history", getInitialMessages(t));
+  const [messages, setMessages] = useLocalStorage("eventra_chatbot_history", getInitialMessages(t, pathname));
   const replyTimerRef = useRef(null);
   const prevLangRef = useRef(i18n.language);
-  const quickPrompts = useMemo(() => getQuickPrompts(t), [t, i18n.language]);
+  const quickPrompts = useMemo(() => getQuickPrompts(t, pathname), [t, pathname]);
+  const hasInteracted = messages.length > 1;
 
   const clearReplyTimer = useCallback(() => {
     if (replyTimerRef.current) {
@@ -115,10 +117,10 @@ export default function Chatbot() {
 
   useEffect(() => {
     if (prevLangRef.current !== i18n.language) {
-      setMessages(getInitialMessages(t));
+      setMessages(getInitialMessages(t, pathname));
       prevLangRef.current = i18n.language;
     }
-  }, [i18n.language, setMessages, t]);
+  }, [i18n.language, setMessages, t, pathname]);
 
   // Expiration check on mount (2 hours threshold)
   useEffect(() => {
@@ -126,13 +128,13 @@ export default function Chatbot() {
       const lastActive = localStorage.getItem("eventra_chatbot_last_active");
       const twoHours = 2 * 60 * 60 * 1000;
       if (lastActive && Date.now() - parseInt(lastActive, 10) > twoHours) {
-        setMessages(getInitialMessages(t));
+        setMessages(getInitialMessages(t, pathname));
       }
       localStorage.setItem("eventra_chatbot_last_active", Date.now().toString());
     } catch {
       console.warn("localStorage unavailable for Chatbot expiration check");
     }
-  }, [setMessages, t]);
+  }, [setMessages, t, pathname]);
 
   useEffect(() => {
     return () => {
@@ -158,7 +160,7 @@ export default function Chatbot() {
           <div className="flex gap-2">
             <button
               onClick={() => {
-                setMessages(getInitialMessages(t));
+                setMessages(getInitialMessages(t, pathname));
                 toast.success(t("chatbot.clearSuccess"));
                 closeToast();
               }}
@@ -294,8 +296,9 @@ export default function Chatbot() {
           {/* Minimized strip — only on desktop when minimized */}
           {isOpen && isMinimized && (
             <div
+              data-chatbot-launcher
               className="
-                fixed bottom-6 right-6 z-[100]
+                fixed bottom-6 right-6 z-100
                 hidden sm:flex              /* hide strip on mobile, show FAB instead */
                 items-center justify-between gap-3
                 w-72 rounded-2xl
@@ -334,12 +337,13 @@ export default function Chatbot() {
           )}
 
           <motion.button
+            data-chatbot-launcher
             onClick={handleOpen}
             whileHover={{ scale: 1.1, rotate: 5 }}
             className={`
-              fixed bottom-6 right-6 z-[100]
+              fixed bottom-6 right-6 z-100
               flex h-14 w-14 items-center justify-center
-              rounded-full bg-gradient-to-br from-indigo-600 to-pink-600 text-white
+              rounded-full bg-linear-to-br from-indigo-600 to-pink-600 text-white
               shadow-[0_8px_30px_rgb(99,102,241,0.4)]
               hover:shadow-[0_8px_30px_rgb(236,72,153,0.5)]
               focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2
@@ -367,9 +371,9 @@ export default function Chatbot() {
             exit={{ opacity: 0, y: 12 }}
             transition={{ duration: 0.2 }}
             className="
-              fixed bottom-6 right-6 z-[100]
+              fixed bottom-6 right-6 z-100
               flex flex-col                        /* KEY FIX: flex column layout */
-              w-[calc(100vw-2rem)] max-w-sm sm:max-w-sm
+              w-[calc(100%-2rem)] max-w-sm sm:max-w-sm
               rounded-2xl
               border border-slate-200 dark:border-slate-700
               bg-white dark:bg-slate-900
@@ -378,14 +382,14 @@ export default function Chatbot() {
               transition-opacity duration-300
       
               /* KEY FIX: constrain total height to viewport so it never overflows.
-                 bottom-6 = 1.5rem offset from bottom, so we subtract that + a little breathing room. */
+                 .bottom-6 = 1.5rem offset from bottom, so we subtract that + a little breathing room. */
               max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100vh-5rem)]
             "
           >
             {/* ── Header — always visible, never scrolls away ── */}
             <header
               className="
-              flex flex-shrink-0 items-center justify-between gap-3
+              flex shrink-0 items-center justify-between gap-3
               border-b border-slate-200 dark:border-slate-700
               bg-slate-950 px-4 py-3 text-white
               rounded-t-2xl
@@ -450,7 +454,7 @@ export default function Chatbot() {
                     transition={{ type: "spring", stiffness: 300, damping: 20 }}
                     className={`max-w-[85%] rounded-[1.25rem] px-4 py-3 text-sm leading-relaxed shadow-sm ${
                       message.role === "user"
-                        ? "bg-gradient-to-r from-indigo-600 to-pink-600 text-white rounded-br-sm"
+                        ? "bg-linear-to-r from-indigo-600 to-pink-600 text-white rounded-br-sm"
                         : "bg-slate-100 dark:bg-slate-800/80 backdrop-blur-sm text-slate-800 dark:text-slate-100 rounded-bl-sm border border-slate-200/30 dark:border-slate-700/20"
                     }`}
                   >
@@ -498,25 +502,27 @@ export default function Chatbot() {
             {/* Footer controls */}
             <div
               className="
-              flex-shrink-0
+              shrink-0
               px-4 py-4
               bg-white/90 dark:bg-slate-900/90
               border-t border-slate-200/50 dark:border-slate-800/40
             "
             >
               {/* Quick prompts */}
-              <div className="mb-3.5 flex flex-wrap gap-1.5">
-                {quickPrompts.map((prompt) => (
-                  <button
-                    key={prompt}
-                    type="button"
-                    onClick={() => sendMessage(prompt)}
-                    className="rounded-full border border-slate-200/60 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-950/40 px-3 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-gradient-to-r hover:from-indigo-600 hover:to-pink-600 hover:text-white hover:border-transparent transition-all duration-300 transform hover:scale-[1.03] focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                  >
-                    {prompt}
-                  </button>
-                ))}
-              </div>
+              {!hasInteracted && (
+                <div className="mb-3.5 flex flex-wrap gap-1.5">
+                  {quickPrompts.map((prompt) => (
+                    <button
+                      key={prompt}
+                      type="button"
+                      onClick={() => sendMessage(prompt)}
+                      className="rounded-full border border-slate-200/60 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-950/40 px-3 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-linear-to-r hover:from-indigo-600 hover:to-pink-600 hover:text-white hover:border-transparent transition-all duration-300 transform hover:scale-[1.03] focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+              )}
 
               {/* Contextual action links */}
               {latestActions.length > 0 && (

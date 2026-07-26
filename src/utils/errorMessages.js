@@ -27,6 +27,36 @@ import i18n from "../i18n/i18n.js";
  */
 const t = (key) => i18n.t(key);
 
+// 🔥 FIX: Pre-compile each keyword regex pattern ONCE at module load.
+// Previously every call to getPublicErrorMessage recompiled the patterns
+// inside the for-loop. Now the patterns are built once, and only the
+// per-call message lookup is done in the loop.
+//
+// Patterns are intentionally written with bounded [\\s\\S]{0,200}? quantifiers
+// instead of unbounded .* to prevent catastrophic backtracking (ReDoS) on
+// attacker-controlled long error strings.
+const KEYWORD_PATTERNS = [
+  /(?:email[\s\S]{0,200}?already[\s\S]{0,200}?exist)|(?:already[\s\S]{0,200}?registered)|(?:duplicate[\s\S]{0,200}?email)/i,
+  /(?:invalid[\s\S]{0,200}?password)|(?:password[\s\S]{0,200}?incorrect)|(?:wrong[\s\S]{0,200}?password)/i,
+  /(?:invalid[\s\S]{0,200}?credential)|(?:credentials[\s\S]{0,200}?incorrect)/i,
+  /(?:account[\s\S]{0,200}?not[\s\S]{0,200}?found)|(?:user[\s\S]{0,200}?not[\s\S]{0,200}?found)/i,
+  /(?:account[\s\S]{0,200}?locked)|(?:too[\s\S]{0,200}?many[\s\S]{0,200}?attempt)/i,
+  /(?:token[\s\S]{0,200}?expired)|(?:session[\s\S]{0,200}?expired)|(?:jwt[\s\S]{0,200}?expired)/i,
+  /(?:network)|(?:fetch)|(?:econnrefused)|(?:enotfound)/i,
+];
+
+// Translation keys mapped 1:1 to KEYWORD_PATTERNS. We resolve the message
+// at call time (not at module load) so i18n is fully initialised.
+const KEYWORD_KEYS = [
+  "error.emailExists",
+  "error.invalidCredentials",
+  "error.invalidCredentials",
+  "error.accountNotFound",
+  "error.accountLocked",
+  "error.unauthorized",
+  "error.networkError",
+];
+
 /**
  * Retrieves a safe, sanitized, user-facing error message suitable for displaying in the UI.
  * Inspects status codes first, and if unavailable, applies regex keyword matching on message headers.
@@ -61,26 +91,7 @@ export function getPublicErrorMessage(err, fallback = t("error.generic")) {
   // 2. Regular Expression (Regex) Keyword Recognition Matrix
   // When an HTTP code is unavailable, we parse raw message strings to discover matching patterns.
   // Using case-insensitive patterns to resolve common relational database or microservice issues.
-  const KEYWORD_MESSAGES = {
-    // Matches database constraints related to duplicate email registrations
-    "email.*already.*exist|already.*registered|duplicate.*email": t("error.emailExists"),
-    
-    // Matches authentication failures (wrong passwords or invalid username keys)
-    "invalid.*password|password.*incorrect|wrong.*password": t("error.invalidCredentials"),
-    "invalid.*credential|credentials.*incorrect": t("error.invalidCredentials"),
-    
-    // Matches account lookup failures
-    "account.*not.*found|user.*not.*found": t("error.accountNotFound"),
-    
-    // Matches rate-limiter or security login lockout conditions
-    "account.*locked|too.*many.*attempt": t("error.accountLocked"),
-    
-    // Matches expired sessions, expired JWT tokens, or signatures
-    "token.*expired|session.*expired|jwt.*expired": t("error.unauthorized"),
-    
-    // Matches network timeout, ECONNREFUSED, or server offline states
-    "network|fetch|econnrefused|enotfound": t("error.networkError"),
-  };
+  // (Keyword regex patterns are pre-built at module load — see top of file.)
 
   // Safe Guard Clause: if the error argument itself is falsy, immediately yield the fallback
   if (!err) {
@@ -111,10 +122,12 @@ export function getPublicErrorMessage(err, fallback = t("error.generic")) {
     ""
   ).toLowerCase();
 
-  // Iterate over each regex rule in the keyword table
-  for (const [pattern, message] of Object.entries(KEYWORD_MESSAGES)) {
-    if (new RegExp(pattern, "i").test(rawMessage)) {
-      return message;
+  // Iterate over each pre-compiled regex rule in the keyword table.
+  // Pattern is built once at module load; the translation key is resolved
+  // at call time so i18n is fully initialised.
+  for (let i = 0; i < KEYWORD_PATTERNS.length; i++) {
+    if (KEYWORD_PATTERNS[i].test(rawMessage)) {
+      return t(KEYWORD_KEYS[i]);
     }
   }
 

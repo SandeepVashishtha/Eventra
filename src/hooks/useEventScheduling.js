@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { API_ENDPOINTS, apiUtils } from "../config/api";
+import { API_ENDPOINTS, apiUtils } from "../config/api.js";
 import {
   applyScheduleToEvent,
   buildScheduleUpdatePayload,
