@@ -82,6 +82,16 @@ const useEventCancellation = (eventId, onSuccess) => {
         }
       }
 
+      // Fail fast with a readable message if the cancel endpoint isn't wired
+      // up on this build (older configs, misconfigured environments, or a
+      // future refactor that drops the key). Without this guard the raw
+      // `TypeError: API_ENDPOINTS.EVENTS.CANCEL is not a function` bubbles
+      // through the catch below and reaches the toast.
+      if (typeof API_ENDPOINTS.EVENTS.CANCEL !== "function") {
+        setCancellationError("Cancel endpoint is not configured.");
+        return false;
+      }
+
       setIsCancelling(true);
       setCancellationError(null);
 

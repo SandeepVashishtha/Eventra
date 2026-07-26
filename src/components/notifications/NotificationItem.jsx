@@ -10,8 +10,8 @@ import {
   Trophy,
   Trash2,
 } from "lucide-react";
-import { NOTIFICATION_CATEGORIES } from "../../utils/notificationPreferences";
-import { getRelativeTime } from "../../utils/relativeTime";
+import { NOTIFICATION_CATEGORIES } from "utils/notificationPreferences";
+import { getRelativeTime } from "utils/relativeTime";
 
 const CATEGORY_ICONS = {
   registrations: Calendar,

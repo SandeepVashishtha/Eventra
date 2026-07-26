@@ -2,15 +2,15 @@ import { AlertCircle, ChevronDown, Search, X, Filter, Bookmark, RefreshCw } from
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
-import SEOHead from "../../components/SEOHead";
+import SEOHead from "components/SEOHead";
 
 import ProjectHero from "./ProjectHero";
 import ProjectCard from "./ProjectCard";
 import ProjectCTA from "./ProjectCTA";
 
-import { projectService } from "../../services/projectService";
-import { safeJsonParse } from "../../utils/safeJsonParse";
-import useDebounce from "../../hooks/useDebounce.js";
+import { projectService } from "services/projectService";
+import { safeJsonParse } from "utils/safeJsonParse";
+import useDebounce from "hooks/useDebounce.js";
 
 // Reusable Custom Dropdown Component
 const CustomDropdown = ({ value, options, onChange, placeholder, icon: Icon }) => {
@@ -267,8 +267,8 @@ const InnerGallery = () => {
       }
     } catch (err) {
       console.error("Failed to fetch projects:", err);
-      
-     
+
+
       if (err?.response?.status === 404 || err?.status === 404) {
         setProjects([]);
         setError("");

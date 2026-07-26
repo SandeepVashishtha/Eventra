@@ -2,15 +2,15 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
-import { authService } from "../../services/authService";
+import { authService } from "services/authService";
 
-import { ROLES } from "../../config/roles";
-import { useAuth } from "../../context/AuthContext";
+import { ROLES } from "config/roles";
+import { useAuth } from "context/AuthContext";
 import { FormFieldWrapper, ValidationMessage } from "../forms";
 import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
 import { User, AtSign, Lock, Eye, EyeOff, Zap, LoaderCircle } from "lucide-react";
 import { validate, validateEmailAvailability, validatePasswordStrength } from "../../validation";
-import { getPublicErrorMessage, AUTH_ERRORS } from "../../utils/errorMessages";
+import { getPublicErrorMessage, AUTH_ERRORS } from "utils/errorMessages";
 
 const getResultMessage = (result, fallback) => (result?.isValid ? "" : result?.message || fallback);
 

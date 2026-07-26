@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { toast } from "react-toastify";
-import { popDueReminders } from "../../utils/reminderUtils";
-import { parseEventDateTimeLocal } from "../../utils/timezoneUtils";
+import { popDueReminders } from "utils/reminderUtils";
+import { parseEventDateTimeLocal } from "utils/timezoneUtils";
 
 const CHECK_INTERVAL_MS = 30 * 1000;
 const CHANNEL_NAME = "eventra_reminders_sync_channel";
@@ -75,7 +75,7 @@ const ReminderChecker = () => {
     };
 
     // 🔥 FIX: Inject 0-500ms mathematical jitter to stagger simultaneous tab executions.
-    // This solves the race condition where 3 tabs fire at the exact same millisecond 
+    // This solves the race condition where 3 tabs fire at the exact same millisecond
     // before the BroadcastChannel has time to deliver the message.
     const runWithJitter = () => {
       const randomJitterDelay = Math.random() * 500;

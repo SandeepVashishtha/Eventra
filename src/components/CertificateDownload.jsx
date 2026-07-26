@@ -16,9 +16,8 @@ const TEMPLATES = {
   modern:  { bg: [15, 23, 42],  accent: [16, 185, 129], text: [255, 255, 255] },
 };
 
-export const generateCertificatePDF = ({ participantName, eventName, eventDate, eventType, organizerName, template = 'classic' }) => {
+export const drawCertificateOnDoc = (doc, { participantName, eventName, eventDate, eventType, organizerName, template = 'classic' }) => {
   const t = TEMPLATES[template] || TEMPLATES.classic;
-  const doc = new jsPDF("landscape", "mm", "a4");
 
   doc.setFillColor(...t.bg);
   doc.rect(0, 0, 297, 210, "F");
@@ -58,7 +57,11 @@ export const generateCertificatePDF = ({ participantName, eventName, eventDate, 
   doc.setFontSize(11);
   doc.setTextColor(150, 150, 150);
   doc.text("Eventra - Event Management Platform", 148, 193, { align: "center", maxWidth: 240 });
+};
 
+export const generateCertificatePDF = (options) => {
+  const doc = new jsPDF("landscape", "mm", "a4");
+  drawCertificateOnDoc(doc, options);
   return doc;
 };
 
@@ -85,7 +88,7 @@ const CertificateDownload = ({ eventName, eventDate, eventType, organizerName, t
       const safeFileName = `${sanitizeText(eventName || "Event", 30).replace(/[^a-zA-Z0-9]/g, "_")}_Certificate.pdf`;
       doc.save(safeFileName);
       toast.update(toastId, { render: "Certificate downloaded!", type: "success", isLoading: false, autoClose: 3000 });
-    } catch (_err) {
+    } catch {
       toast.update(toastId, { render: "Failed to generate certificate.", type: "error", isLoading: false, autoClose: 3000 });
     } finally {
       setIsGenerating(false);

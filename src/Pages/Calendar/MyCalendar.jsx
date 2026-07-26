@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMyEvents } from "../../context/MyEventsContext";
+import { useMyEvents } from "context/MyEventsContext";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Calendar as CalendarIcon,
@@ -18,8 +18,8 @@ import {
   downloadICSFile,
   downloadBulkICSFile,
   generateGoogleCalendarLink,
-} from "../../utils/calendarExporter";
-import SkeletonCalendar from "../../components/common/SkeletonCalendar";
+} from "utils/calendarExporter";
+import SkeletonCalendar from "components/common/SkeletonCalendar";
 
 // Category Configuration Map
 const CATEGORIES = [

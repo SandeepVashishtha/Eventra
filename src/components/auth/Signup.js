@@ -11,8 +11,8 @@ import {
   X,
 } from "lucide-react";
 import SignupForm from "./SignupForm";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
-import useReducedMotion from "../../hooks/useReducedMotion";
+import useDocumentTitle from "hooks/useDocumentTitle";
+import useReducedMotion from "hooks/useReducedMotion";
 
 const PASSWORD_REQUIREMENTS = [
   { id: "length", label: "At least 8 characters", regex: /.{8,}/ },

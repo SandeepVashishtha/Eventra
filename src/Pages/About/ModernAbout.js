@@ -3,9 +3,9 @@ import { motion } from "framer-motion";
 import { Globe, Users, CalendarDays, HeartHandshake, Sparkles, Code2, Rocket } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import useDocumentTitle from "../../hooks/useDocumentTitle";
-import { useReducedMotion } from "../../hooks/useReducedMotion";
-import ErrorBoundary from "../../components/common/ErrorBoundary";
+import useDocumentTitle from "hooks/useDocumentTitle";
+import { useReducedMotion } from "hooks/useReducedMotion";
+import ErrorBoundary from "components/common/ErrorBoundary";
 
 const container = {
   hidden: { opacity: 0 },

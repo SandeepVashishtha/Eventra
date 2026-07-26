@@ -4,11 +4,11 @@ import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "context/AuthContext";
 
-import { projectService } from "../../services/projectService";
-import { sanitizeInputText } from "../../utils/inputSanitization";
-import { REQUIRED_FIELDS, validateSubmitProjectForm } from "../../utils/submitProjectValidation";
+import { projectService } from "services/projectService";
+import { sanitizeInputText } from "utils/inputSanitization";
+import { REQUIRED_FIELDS, validateSubmitProjectForm } from "utils/submitProjectValidation";
 
 const SubmitProject = () => {
   const navigate = useNavigate();
@@ -199,7 +199,7 @@ const handleSubmit = async (e) => {
       setIsSubmitting(false);
     }
   };
-  
+
   // Define form fields with icons
   const formFields = [
       {
@@ -583,7 +583,7 @@ const handleSubmit = async (e) => {
           >
             <ArrowUpTrayIcon className="w-5 h-5" /> Submit Another Project
           </motion.button>
-          
+
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Link
               to="/projects"
