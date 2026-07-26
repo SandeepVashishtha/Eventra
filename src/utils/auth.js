@@ -3,6 +3,13 @@ import { safeJsonParse } from "./safeJsonParse.js";
 /** Grace period (in seconds) to account for clock skew between browser and server. */
 const CLOCK_SKEW_BUFFER = 30;
 
+// RFC 4648 base64url alphabet. Validating before atob avoids InvalidCharacterError
+// from atob on non-base64 inputs (a stray space, a non-ASCII character, an
+// unusual encoding from a custom auth server), which would otherwise be
+// silently swallowed by the outer try/catch and surface as a generic "null"
+// to all callers, masking the real failure.
+const BASE64URL_RE = /^[A-Za-z0-9_-]+={0,2}$/;
+
 export function decodeJwtPayload(token) {
   try {
     if (!token || typeof token !== "string") return null;
@@ -10,7 +17,12 @@ export function decodeJwtPayload(token) {
     const parts = token.split(".");
     if (parts.length !== 3) return null;
 
+    // Deep Fix: Validate the raw base64url string BEFORE mutating it.
+    // Testing after replacing -/_ with +// caused valid tokens to be rejected.
+    if (!BASE64URL_RE.test(parts[1])) return null;
+
     const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+
     const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
 
     const jsonPayload = decodeURIComponent(

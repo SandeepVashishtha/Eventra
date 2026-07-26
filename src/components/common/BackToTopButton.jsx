@@ -1,16 +1,40 @@
-import BackToTop from "./BackToTop";
+import { useCallback, useEffect, useState } from "react";
+import { ChevronUp } from "lucide-react";
 
-/**
- * @deprecated Use BackToTop component directly. 
- * This remains as a wrapper for backward compatibility.
- */
 const BackToTopButton = ({ threshold = 300, positionClass = "bottom-6 right-6" }) => {
+  const [visible, setVisible] = useState(false);
+
+  const handleScroll = useCallback(() => {
+    setVisible(window.scrollY > threshold);
+  }, [threshold]);
+
+  useEffect(() => {
+    window.addEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [handleScroll]);
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
+
   return (
-    <BackToTop 
-      threshold={threshold} 
-      className={positionClass} 
-      showProgress={false} 
-    />
+    <button
+      onClick={scrollToTop}
+      aria-label="Back to top"
+      title="Back to top"
+      className={`fixed z-50 ${positionClass} p-3 rounded-full bg-indigo-600 text-white shadow-lg transition-all duration-300 ${
+        visible
+          ? "opacity-100 translate-y-0"
+          : "opacity-0 translate-y-10 pointer-events-none"
+      }`}
+    >
+      <ChevronUp className="h-6 w-6" />
+    </button>
   );
 };
 

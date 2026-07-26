@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Star, TrendingUp, Users, ThumbsUp, Download, BarChart3 } from 'lucide-react';
 import {
@@ -8,7 +8,8 @@ import {
   getRecommendationStats,
   getTagStats,
   exportFeedbackAsCSV,
-} from '../../utils/feedbackUtils';
+} from 'utils/feedbackUtils';
+import { safeJsonParseFromStorage } from 'utils/safeJsonParse';
 
 const COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ec4899', '#14b8a6'];
 
@@ -21,7 +22,7 @@ const MOCK_EVENTS = [
 // Seed mock feedback for demo
 const seedMockFeedback = (eventId) => {
   const key = 'eventra_feedback';
-  const existing = JSON.parse(localStorage.getItem(key) || '{}');
+  const existing = safeJsonParseFromStorage(key, {});
   if (existing[eventId]?.length > 0) return;
   const comments = ['Great event!', 'Very informative', 'Well organized', 'Loved the speakers', 'Will attend again'];
   const tags = [['Networking', 'Speakers'], ['Content', 'Organization'], ['Venue', 'Speakers'], ['Content'], ['Networking']];

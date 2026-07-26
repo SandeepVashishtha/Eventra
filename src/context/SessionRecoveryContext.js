@@ -108,6 +108,7 @@ export const SessionRecoveryProvider = ({ children }) => {
   const [lastActivity, setLastActivity] = useState(Date.now());
 
   const lastActivityRef = useRef(Date.now());
+  const isLoadingRef = useRef(true);
   const saveTimeoutRef = useRef(null);
   const activityTimeoutRef = useRef(null);
   const cloudRecovery = useCloudSessionRecovery({
@@ -214,6 +215,8 @@ export const SessionRecoveryProvider = ({ children }) => {
         }
       } catch (e) {
         logger.error("Failed to load session:", e);
+      } finally {
+        isLoadingRef.current = false;
       }
     };
 
@@ -227,6 +230,7 @@ export const SessionRecoveryProvider = ({ children }) => {
       }
 
       saveTimeoutRef.current = setTimeout(async () => {
+        if (isLoadingRef.current) return;
         try {
           if (!isCryptoAvailable()) return;
 

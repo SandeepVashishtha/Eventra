@@ -6,7 +6,7 @@ import {
   FeedbackButton,
   FeedbackSummary,
   StarRating,
-} from '../../components/feedback';
+} from 'components/feedback';
 import {
   getEventFeedback,
   getAverageRating,
@@ -15,7 +15,7 @@ import {
   exportFeedbackAsCSV,
   clearAllFeedback,
   saveFeedback,
-} from '../../utils/feedbackUtils';
+} from 'utils/feedbackUtils';
 
 // Demo event definition moved outside the component for a stable reference
 const demoEvent = {
@@ -28,7 +28,7 @@ const demoEvent = {
 /**
  * FeedbackSystemDemo
  * Demonstration page for the post-event feedback system
- * 
+ *
  * This page showcases all feedback components and utilities
  * Remove this file after confirming the feature works in production
  */
@@ -125,7 +125,7 @@ const FeedbackSystemDemo = () => {
   const tagStats = getTagStats(demoEvent.id);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-8">
+    <div className="min-h-screen bg-linear-to-br from-slate-900 to-slate-800 p-8">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <motion.div
@@ -356,7 +356,7 @@ const FeedbackSystemDemo = () => {
                     .map(([tag, count]) => (
                       <div
                         key={tag}
-                        className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-full text-sm font-medium shadow-md"
+                        className="px-4 py-2 bg-linear-to-r from-indigo-500 to-purple-500 text-white rounded-full text-sm font-medium shadow-md"
                       >
                         {tag} ×{count}
                       </div>

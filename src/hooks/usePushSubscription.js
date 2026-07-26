@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { apiUtils, API_ENDPOINTS } from "../config/api";
+import { apiUtils, API_ENDPOINTS } from "../config/api.js";
 import { useAuth } from "../context/AuthContext";
 import { logger } from "../utils/logger";
 import { safeJsonParse } from "../utils/safeJsonParse";

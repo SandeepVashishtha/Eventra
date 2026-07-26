@@ -1,41 +1,19 @@
 import axios from "axios";
-import { ENV } from "./env.js";
-import { logger } from "../utils/logger.js";
 import { ApiError, RateLimitError, normalizeApiError } from "./api/errors.js";
-import { setupRequestInterceptor, setupResponseInterceptor } from "./api/interceptors.js";
+import { setupRequestInterceptor, setupResponseInterceptor, setOnRequiresReauthHandler } from "./api/interceptors.js";
+import { API_BASE_URL, validateBackendConfig } from "./backendConfig.js";
 
 // ---------------------------------------------------------------------------
 // Base API URL
 // ---------------------------------------------------------------------------
 
-const normalizeApiBaseUrl = (value = "") => {
-  if (!value) return "";
-  const trimmed = value.replace(/\/+$/, "").replace(/\/api$/, "");
-  try {
-    const parsed = new URL(trimmed);
-    return `${parsed.origin}${parsed.pathname === "/" ? "" : parsed.pathname}`;
-  } catch {
-    return trimmed;
-  }
-};
-
 const isDev = process.env.NODE_ENV === "development";
 
-// Deployed backend — used when no environment variable overrides it.
-// Update this URL if the backend is redeployed to a different host.
-const DEPLOYED_BACKEND_URL =
-  "https://eventra-backend-springboot-eybhdvaubxcua7ha.centralindia-01.azurewebsites.net";
-
-const resolveEnvApiBaseUrl = () => {
-  const envUrl = ENV.API_URL;
-  if (envUrl) {
-    return normalizeApiBaseUrl(envUrl);
-  }
-  // No env variable set — fall back to the deployed backend URL.
-  return normalizeApiBaseUrl(DEPLOYED_BACKEND_URL);
-};
-
-export const API_BASE_URL = resolveEnvApiBaseUrl();
+// Validate backend configuration on module load
+const configValidation = validateBackendConfig();
+if (!configValidation.isValid && isDev) {
+  console.warn(`[API Config] ${configValidation.error}`);
+}
 
 const buildApiUrl = (path = "") => {
   if (!path) return "";
@@ -59,20 +37,32 @@ const API = axios.create({
 });
 
 let onUnauthorized = null;
+let onRequiresReauth = null;
 let _authToken = null;
 
 export const setOnUnauthorizedHandler = (handler) => {
   onUnauthorized = handler;
 };
+export const setRequiresReauthHandler = (handler) => {
+  onRequiresReauth = handler;
+  setOnRequiresReauthHandler(handler);
+};
 export const setAuthToken = (token) => {
   _authToken = token;
 };
 
-const getAuthToken = () => _authToken;
-const getOnUnauthorized = () => onUnauthorized;
-
-setupRequestInterceptor(API, { isDev, buildApiUrl, getAuthToken, getOnUnauthorized });
-setupResponseInterceptor(API, { isDev, timeoutMs: REQUEST_TIMEOUT_MS, getOnUnauthorized });
+setupRequestInterceptor(API, {
+  isDev,
+  buildApiUrl,
+  getAuthToken: () => _authToken,
+  getOnUnauthorized: () => onUnauthorized,
+});
+setupResponseInterceptor(API, {
+  isDev,
+  timeoutMs: REQUEST_TIMEOUT_MS,
+  getOnUnauthorized: () => onUnauthorized,
+  getOnRequiresReauth: () => onRequiresReauth,
+});
 
 // ---------------------------------------------------------------------------
 // API Endpoints
@@ -80,84 +70,99 @@ setupResponseInterceptor(API, { isDev, timeoutMs: REQUEST_TIMEOUT_MS, getOnUnaut
 
 export const API_ENDPOINTS = {
   AUTH: {
-    LOGIN: buildApiUrl("/api/auth/login"),
-    REGISTER: buildApiUrl("/api/auth/signup"),
-    SIGNUP: buildApiUrl("/api/auth/signup"),
-    LOGOUT: buildApiUrl("/api/auth/logout"),
-    RESET_PASSWORD: buildApiUrl("/api/auth/reset-password"),
+    LOGIN: buildApiUrl("/auth/login"),
+    REGISTER: buildApiUrl("/auth/signup"),
+    SIGNUP: buildApiUrl("/auth/signup"),
+    LOGOUT: buildApiUrl("/auth/logout"),
+    RESET_PASSWORD: buildApiUrl("/auth/reset-password"),
+    REFRESH: buildApiUrl("/auth/refresh"),
   },
   EVENTS: {
-    CREATE: buildApiUrl("/api/events/create"),
-    ALL: buildApiUrl("/api/events"),
-    LIST: buildApiUrl("/api/events"),
-    DETAIL: (id) => buildApiUrl(`/api/events/${id}`),
-    SCHEDULE: (id) => buildApiUrl(`/api/events/${id}/schedule`),
-    REGISTER: (id) => buildApiUrl(`/api/events/${id}/register`),
-    AVAILABILITY: (id) => buildApiUrl(`/api/events/${id}/availability`),
-    CANCEL: (id) => buildApiUrl(`/api/events/${id}/cancel`),
-    REGISTRANTS: (id) => buildApiUrl(`/api/events/${id}/registrants`),
-    PAGINATED: (page, size) => buildApiUrl(`/api/events?page=${page}&size=${size}`),
+    CREATE: buildApiUrl("/events/create"),
+    ALL: buildApiUrl("/events"),
+    LIST: buildApiUrl("/events"),
+    DETAIL: (id) => buildApiUrl(`/events/${id}`),
+    REGISTER: (id) => buildApiUrl(`/events/${id}/register`),
+    CANCEL: (id) => buildApiUrl(`/events/${id}/cancel`),
+    AVAILABILITY: (id) => buildApiUrl(`/events/${id}/availability`),
+
+    REGISTRANTS: (id) => buildApiUrl(`/events/${id}/registrants`),
+    // Convenience helper — appends ?page=&size= for callers that build the
+    // URL manually rather than going through eventFetchUtils.buildPaginatedUrl.
+    PAGINATED: (page, size) => buildApiUrl(`/events?page=${page}&size=${size}`),
+  },
+  LIVE_AUDIENCE: {
+    BASE: (eventId) => buildApiUrl(`/events/${eventId}/live-audience`),
+    QUESTIONS: (eventId) => buildApiUrl(`/events/${eventId}/live-audience/questions`),
+    UPVOTE: (eventId, questionId) => buildApiUrl(`/events/${eventId}/live-audience/questions/${questionId}/upvote`),
+    FLAG: (eventId, questionId) => buildApiUrl(`/events/${eventId}/live-audience/questions/${questionId}/flag`),
+    QUESTION_DETAIL: (eventId, questionId) => buildApiUrl(`/events/${eventId}/live-audience/questions/${questionId}`),
+    POLLS: (eventId) => buildApiUrl(`/events/${eventId}/live-audience/polls`),
+    POLL_STATUS: (eventId, pollId) => buildApiUrl(`/events/${eventId}/live-audience/polls/${pollId}/status`),
+    POLL_VOTE: (eventId, pollId) => buildApiUrl(`/events/${eventId}/live-audience/polls/${pollId}/vote`),
   },
   PROJECTS: {
-    ALL: buildApiUrl("/api/projects"),
-    LIST: buildApiUrl("/api/projects"),
-    DETAIL: (id) => buildApiUrl(`/api/projects/${id}`),
-    CATEGORIES: buildApiUrl("/api/projects/categories"),
-    SUBMIT: buildApiUrl("/api/projects"),
-    UPVOTE: (id) => buildApiUrl(`/api/projects/${id}/upvote`),
+    ALL: buildApiUrl("/projects"),
+    LIST: buildApiUrl("/projects"),
+    DETAIL: (id) => buildApiUrl(`/projects/${id}`),
+    CATEGORIES: buildApiUrl("/projects/categories"),
+    SUBMIT: buildApiUrl("/projects"),
+    UPVOTE: (id) => buildApiUrl(`/projects/${id}/upvote`),
+    FORK: (id) => buildApiUrl(`/projects/${id}/fork`),
   },
   HACKATHONS: {
-    LIST: buildApiUrl("/api/hackathons"),
-    DETAIL: (id) => buildApiUrl(`/api/hackathons/${id}`),
-    HOST: buildApiUrl("/api/hackathons"),
+    LIST: buildApiUrl("/hackathons"),
+    DETAIL: (id) => buildApiUrl(`/hackathons/${id}`),
+    HOST: buildApiUrl("/hackathons"),
   },
   NOTIFICATIONS: {
-    BASE: buildApiUrl("/api/notifications"),
-    ALL: buildApiUrl("/api/notifications"),
-    READ: (id) => (id ? buildApiUrl(`/api/notifications/${id}/read`) : ""),
-    DELETE: (id) => (id ? buildApiUrl(`/api/notifications/${id}`) : ""),
-    READ_ALL: buildApiUrl("/api/notifications/read-all"),
-    PREFERENCES: buildApiUrl("/api/notifications/preferences"),
-    PUSH_SUBSCRIBE: buildApiUrl("/api/notifications/push-subscriptions"),
-    PUSH_UNSUBSCRIBE: buildApiUrl("/api/notifications/push-subscriptions/unsubscribe"),
+    BASE: buildApiUrl("/notifications"),
+    ALL: buildApiUrl("/notifications"),
+    READ: (id) => (id ? buildApiUrl(`/notifications/${id}/read`) : ""),
+    DELETE: (id) => (id ? buildApiUrl(`/notifications/${id}`) : ""),
+    READ_ALL: buildApiUrl("/notifications/read-all"),
+    PREFERENCES: buildApiUrl("/notifications/preferences"),
+    PUSH_SUBSCRIBE: buildApiUrl("/notifications/push-subscriptions"),
+    PUSH_UNSUBSCRIBE: buildApiUrl("/notifications/push-subscriptions/unsubscribe"),
   },
   USERS: {
-    PROFILE: buildApiUrl("/api/users/profile"),
-    ACHIEVEMENTS: buildApiUrl("/api/users/achievements"),
-  },
-  SESSION_RECOVERY: {
-    BASE: buildApiUrl("/api/session-recovery"),
-    SESSION: (sessionId) => buildApiUrl(`/api/session-recovery/${encodeURIComponent(sessionId)}`),
-    RESTORE: (sessionId) => buildApiUrl(`/api/session-recovery/${encodeURIComponent(sessionId)}/restore`),
-    CLEANUP_EXPIRED: buildApiUrl("/api/session-recovery/expired"),
+    PROFILE: buildApiUrl("/users/profile"),
+    ACHIEVEMENTS: buildApiUrl("/users/achievements"),
+    // (#7653) Endpoint for persisting user preferences (theme, etc.) across devices
+    PREFERENCES: buildApiUrl("/users/preferences"),
   },
   TICKETS: {
-    VALIDATE: buildApiUrl("/api/tickets/validate"),
-    CHECK_IN: buildApiUrl("/api/tickets/checkin"),
-    HISTORY: buildApiUrl("/api/tickets/checkins"),
+    VALIDATE: buildApiUrl("/tickets/validate"),
+    CHECK_IN: buildApiUrl("/tickets/checkin"),
+    HISTORY: buildApiUrl("/tickets/checkins"),
   },
   FEEDBACK: {
-    BASE: buildApiUrl("/api/feedback"),
+    BASE: buildApiUrl("/feedback"),
     BY_EVENT: (eventId) => {
       const params = new URLSearchParams({ eventId: String(eventId) });
-      return buildApiUrl(`/api/feedback?${params.toString()}`);
+      return buildApiUrl(`/feedback?${params.toString()}`);
     },
   },
   ADMIN: {
-    USERS: buildApiUrl("/api/admin/users"),
-    USER: (id) => buildApiUrl(`/api/admin/users/${id}`),
-    EVENTS: buildApiUrl("/api/admin/events"),
-    EVENT: (id) => buildApiUrl(`/api/admin/events/${id}`),
-    STATS: buildApiUrl("/api/admin/stats"),
+    USERS: buildApiUrl("/admin/users"),
+    USER: (id) => buildApiUrl(`/admin/users/${id}`),
+    EVENTS: buildApiUrl("/admin/events"),
+    EVENT: (id) => buildApiUrl(`/admin/events/${id}`),
+    STATS: buildApiUrl("/admin/stats"),
   },
   VALIDATION: {
-    EMAIL: (email) => buildApiUrl(`/api/validate/email/${encodeURIComponent(email)}`),
-    USERNAME: (username) => buildApiUrl(`/api/validate/username/${encodeURIComponent(username)}`),
-    PHONE: buildApiUrl("/api/validate/phone"),
-    CONTACT: buildApiUrl("/api/contact"),
+    EMAIL: (email) => buildApiUrl(`/validate/email/${encodeURIComponent(email)}`),
+    USERNAME: (username) => buildApiUrl(`/validate/username/${encodeURIComponent(username)}`),
+    PHONE: buildApiUrl("/validate/phone"),
   },
 };
 
+/**
+ * Normalise the optional config/token argument accepted by apiUtils methods.
+ *
+ * Authentication is carried automatically via the HttpOnly session cookie
+ * (withCredentials: true on the Axios instance).
+ */
 const normalizeRequestConfig = (configOrToken = {}) => {
   const config = typeof configOrToken === "string" ? {} : { ...configOrToken };
   if ("skipAuth" in config) delete config.skipAuth;
@@ -176,7 +181,17 @@ const wrapAxiosResponse = (response) => {
     ...response,
     headers: wrappedHeaders,
     ok: response.status >= 200 && response.status < 300,
-    json: async () => response.data,
+    json: async () => {
+      // Guard against non-JSON responses (e.g. 502 HTML) evaluating incorrectly
+      if (typeof response.data === "string") {
+        try {
+          return JSON.parse(response.data);
+        } catch {
+          throw new Error("Received non-JSON response from server");
+        }
+      }
+      return response.data || {};
+    },
     text: async () =>
       typeof response.data === "string" ? response.data : JSON.stringify(response.data),
   };

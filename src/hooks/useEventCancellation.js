@@ -10,7 +10,7 @@
 // ---------------------------------------------------------------------------
 
 import { useState, useCallback } from "react";
-import { apiUtils, API_ENDPOINTS } from "../config/api";
+import { apiUtils, API_ENDPOINTS } from "../config/api.js";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "react-toastify";
 import { logger } from "../utils/logger";
@@ -80,6 +80,16 @@ const useEventCancellation = (eventId, onSuccess) => {
           setCancellationError("Partial refund percentage must be between 1 and 99.");
           return false;
         }
+      }
+
+      // Fail fast with a readable message if the cancel endpoint isn't wired
+      // up on this build (older configs, misconfigured environments, or a
+      // future refactor that drops the key). Without this guard the raw
+      // `TypeError: API_ENDPOINTS.EVENTS.CANCEL is not a function` bubbles
+      // through the catch below and reaches the toast.
+      if (typeof API_ENDPOINTS.EVENTS.CANCEL !== "function") {
+        setCancellationError("Cancel endpoint is not configured.");
+        return false;
       }
 
       setIsCancelling(true);

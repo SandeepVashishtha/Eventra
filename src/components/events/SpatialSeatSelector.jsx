@@ -10,7 +10,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import "./SpatialSeatSelector.css";
-import { safeJsonParse } from "../../utils/safeJsonParse";
+import { safeJsonParse } from "utils/safeJsonParse";
 
 // Fallback presets if no venue layout is stored yet
 const DEFAULT_PRESETS = {
@@ -292,6 +292,11 @@ const SpatialSeatSelector = ({
     return list;
   }, [elements, elementSeatPositions]);
 
+  const allSeatsRef = useRef(allSeats);
+  useEffect(() => {
+    allSeatsRef.current = allSeats;
+  }, [allSeats]);
+
   // Auto-center and zoom to highlighted seat in read-only dashboard view
   useEffect(() => {
     if (readOnly && selectedSeat && elements.length > 0) {
@@ -464,9 +469,9 @@ const SpatialSeatSelector = ({
                 {el.type === "round-table" ? (
                   <>
                     <path
-                      d={`M ${el.x + el.width / 2 - el.width / 2} ${el.y + el.height / 2} 
-                          A ${el.width / 2} ${el.height / 2} 0 0 0 ${el.x + el.width / 2 + el.width / 2} ${el.y + el.height / 2} 
-                          L ${el.x + el.width / 2 + el.width / 2 - projOffset} ${el.y + el.height / 2 + projOffset} 
+                      d={`M ${el.x + el.width / 2 - el.width / 2} ${el.y + el.height / 2}
+                          A ${el.width / 2} ${el.height / 2} 0 0 0 ${el.x + el.width / 2 + el.width / 2} ${el.y + el.height / 2}
+                          L ${el.x + el.width / 2 + el.width / 2 - projOffset} ${el.y + el.height / 2 + projOffset}
                           A ${el.width / 2} ${el.height / 2} 0 0 1 ${el.x + el.width / 2 - el.width / 2 - projOffset} ${el.y + el.height / 2 + projOffset} Z`}
                       fill="rgba(8, 7, 24, 0.9)"
                       stroke="rgba(255, 255, 255, 0.03)"
@@ -486,9 +491,9 @@ const SpatialSeatSelector = ({
                   el.type !== "booth" ? (
                   <>
                     <path
-                      d={`M ${el.x} ${el.y + el.height} 
-                          L ${el.x - projOffset} ${el.y + el.height - projOffset} 
-                          L ${el.x + el.width - projOffset} ${el.y + el.height - projOffset} 
+                      d={`M ${el.x} ${el.y + el.height}
+                          L ${el.x - projOffset} ${el.y + el.height - projOffset}
+                          L ${el.x + el.width - projOffset} ${el.y + el.height - projOffset}
                           L ${el.x + el.width} ${el.y + el.height} Z`}
                       fill="rgba(8, 7, 24, 0.9)"
                     />
@@ -545,7 +550,7 @@ const SpatialSeatSelector = ({
                     key={`seat-${el.id}-${seat.index}`}
                     el={el}
                     seat={seat}
-                    allSeats={allSeats}
+                    allSeatsRef={allSeatsRef}
                     isSelected={isSeatSelected(el.id, seat.index)}
                     readOnly={readOnly}
                     onSelect={handleSeatClick}
@@ -661,11 +666,13 @@ const SpatialSeatSelector = ({
   );
 };
 
-export default SpatialSeatSelector;
+// Export at end to ensure helper components are defined first
+// (avoids potential parser issues in some linting environments)
+// export will be moved to file end.
 
 // ── Optimized Seat Component ────────────────────────────────────────────────
 
-const Seat = ({ el, seat, allSeats, isSelected, readOnly, onSelect, onHover, containerRef }) => {
+const Seat = ({ el, seat, allSeatsRef, isSelected, readOnly, onSelect, onHover, containerRef }) => {
   const isVIP = el.tier && el.tier.toLowerCase().includes("vip");
   const isOccupied = el.assignedAttendees[seat.index];
   const seatLabel = (el.seatLabels && el.seatLabels[seat.index]) || `Seat ${seat.index + 1}`;
@@ -697,7 +704,7 @@ const Seat = ({ el, seat, allSeats, isSelected, readOnly, onSelect, onHover, con
       let bestSeat = null;
       let minScore = Infinity;
 
-      (allSeats || []).forEach((s) => {
+      (allSeatsRef.current || []).forEach((s) => {
         if (s.elementId === el.id && s.index === seat.index) return;
         const dx = s.x - seat.x;
         const dy = s.y - seat.y;
@@ -816,3 +823,5 @@ const Seat = ({ el, seat, allSeats, isSelected, readOnly, onSelect, onHover, con
 };
 
 const MemoizedSeat = memo(Seat);
+
+export default SpatialSeatSelector;

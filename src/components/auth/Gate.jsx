@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
-import { isTokenValid } from "../../utils/auth";
+import { useAuth } from "context/AuthContext";
+import { isTokenValid } from "utils/auth";
 import Loading from "../common/Loading";
 
 const Gate = ({
@@ -37,7 +37,7 @@ const Gate = ({
     return <Navigate to={redirectTo} replace state={{ from: location, sessionExpired }} />;
   }
 
-  const needsRedirect = !fallback || typeof fallback === "undefined";
+  const needsRedirect = typeof fallback === "undefined";
   const deny = (reason) => {
     if (!needsRedirect) return fallback;
     if (!isAuthenticated()) return <Navigate to={redirectTo} replace state={{ from: location, sessionExpired }} />;

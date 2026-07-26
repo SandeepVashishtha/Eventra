@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Calendar, ChevronDown, X } from 'lucide-react';
-import { getGoogleCalendarUrl, getOutlookCalendarUrl } from '../../utils/calendarUrlUtils';
+import { getGoogleCalendarUrl, getOutlookCalendarUrl, getWebcalSubscriptionUrl } from 'utils/calendarUrlUtils';
 
 const generateICalContent = (event) => {
   const formatICalDate = (dateStr, timeStr) => {
@@ -50,32 +50,40 @@ const downloadIcal = (event) => {
 export default function AddToCalendar({ event, className = '', iconOnly = false }) {
   const [open, setOpen] = useState(false);
   const [added, setAdded] = useState('');
+  const timeoutRef = useRef(null);
+  useEffect(() => () => clearTimeout(timeoutRef.current), []);
 
   if (!event) return null;
 
   const handleGoogle = () => {
     window.open(getGoogleCalendarUrl(event), '_blank', 'noopener,noreferrer');
     setAdded('Google Calendar');
-    setTimeout(() => setOpen(false), 800);
+    timeoutRef.current = setTimeout(() => setOpen(false), 800);
   };
 
   const handleOutlook = () => {
     window.open(getOutlookCalendarUrl(event), '_blank', 'noopener,noreferrer');
     setAdded('Outlook');
-    setTimeout(() => setOpen(false), 800);
+    timeoutRef.current = setTimeout(() => setOpen(false), 800);
   };
 
   const handleIcal = () => {
-    downloadIcal(event);
-    setAdded('iCal');
-    setTimeout(() => setOpen(false), 800);
+    if (event.id) {
+      const webcalUrl = getWebcalSubscriptionUrl(event.id);
+      window.location.href = webcalUrl;
+    } else {
+      // Fallback to static download when event has no ID
+      downloadIcal(event);
+    }
+    setAdded('Apple / ICS');
+    timeoutRef.current = setTimeout(() => setOpen(false), 800);
   };
 
   return (
     <div className={`relative inline-block ${className}`}>
       <button
         onClick={() => setOpen(!open)}
-        className={iconOnly 
+        className={iconOnly
           ? "rounded-full border border-gray-200 bg-white/90 p-2 shadow backdrop-blur-sm hover:border-indigo-200 dark:border-gray-700 dark:bg-gray-800/90 dark:hover:border-indigo-500 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer"
           : "flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"}
         aria-haspopup="true"
@@ -100,16 +108,16 @@ export default function AddToCalendar({ event, className = '', iconOnly = false 
             </button>
           </div>
           <button onClick={handleGoogle} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left">
-            <img src="https://www.google.com/favicon.ico" alt="" className="w-4 h-4" />
+            <img src="https://www.google.com/favicon.ico" alt="" className="w-4 h-4" loading="lazy" />
             Google Calendar
           </button>
           <button onClick={handleOutlook} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left border-t border-gray-100 dark:border-gray-800">
-            <img src="https://outlook.live.com/favicon.ico" alt="" className="w-4 h-4" />
+            <img src="https://outlook.live.com/favicon.ico" alt="" className="w-4 h-4" loading="lazy" />
             Outlook Calendar
           </button>
           <button onClick={handleIcal} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left border-t border-gray-100 dark:border-gray-800">
             <Calendar className="w-4 h-4 text-gray-400" />
-            Download iCal (.ics)
+            Subscribe (Apple / ICS)
           </button>
           {added && (
             <div className="px-4 py-2 bg-green-50 dark:bg-green-900/20 border-t border-green-100 dark:border-green-800">

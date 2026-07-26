@@ -88,14 +88,17 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
   // Validate all fields synchronously. Returns true when all pass.
   const validateAll = useCallback(() => {
     const newErrors = {};
+    const newTouched = {};
     let isValid = true;
     Object.keys(validationRulesRef.current).forEach((name) => {
+      newTouched[name] = true;
       const error = validateField(name, values[name], values);
       if (error) {
         newErrors[name] = error;
         isValid = false;
       }
     });
+    setTouched((prev) => ({ ...prev, ...newTouched }));
     setErrors(newErrors);
     setIsFormValid(isValid);
     return isValid;

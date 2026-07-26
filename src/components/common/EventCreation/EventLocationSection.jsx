@@ -77,6 +77,7 @@ const EventLocationSection = ({ formData, handleInputChange, handleNestedChange,
         ) : (
           <>
             <FormField htmlFor="venue-name-input" label="Venue Name" icon={MapPin} error={errors.location} required>
+              <input
                 type="text"
                 id="venue-name-input"
                 name="location"

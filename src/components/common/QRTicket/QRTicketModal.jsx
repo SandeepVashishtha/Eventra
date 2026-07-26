@@ -97,14 +97,13 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
       }
     };
 
-    modalRef.current.addEventListener("keydown", handleFocusTrap);
+    const modalElement = modalRef.current;
+    modalElement.addEventListener("keydown", handleFocusTrap);
     // Focus the modal automatically
-    modalRef.current.focus();
+    modalElement.focus();
 
     return () => {
-      if (modalRef.current) {
-        modalRef.current.removeEventListener("keydown", handleFocusTrap);
-      }
+      modalElement.removeEventListener("keydown", handleFocusTrap);
     };
   }, [isOpen]);
 
@@ -194,7 +193,7 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
         </div>
 
         {/* Action buttons */}
-        <div className="flex gap-3 w-full max-w-[340px]">
+        <div className="flex gap-3 w-full max-w-85">
           {/* Download PNG */}
           <button
             onClick={downloadPNG}

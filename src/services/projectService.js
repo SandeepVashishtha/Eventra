@@ -19,5 +19,9 @@ export const projectService = {
   
   upvoteProject: async (projectId, config) => {
     return apiUtils.post(API_ENDPOINTS.PROJECTS.UPVOTE(projectId), {}, config);
+  },
+  
+  forkProject: async (projectId, config) => {
+    return apiUtils.post(API_ENDPOINTS.PROJECTS.FORK(projectId), {}, config);
   }
 };

@@ -1,5 +1,9 @@
 import assert from "node:assert/strict";
 
+if (typeof process !== "undefined") {
+  process.env.NODE_ENV = "test";
+}
+
 // ── Mock DOM & Storage Globals ──────────────────────────────────────────────
 const _lsStore = {};
 globalThis.localStorage = {
@@ -62,8 +66,14 @@ globalThis.indexedDB = {
 
 // Mock window and CustomEvent
 globalThis.window = {
-  dispatchEvent: (event) => {},
+  dispatchEvent: () => {},
+  location: { href: "http://localhost/" },
 };
+Object.defineProperty(globalThis, "navigator", {
+  value: { onLine: false },
+  writable: true,
+  configurable: true
+});
 globalThis.CustomEvent = class CustomEvent {
   constructor(type, detail) {
     this.type = type;
@@ -180,6 +190,59 @@ console.log("Running Waitlist System unit tests...");
   console.log("✓ Test 5: Leave Waitlist");
 }
 
+// 5b. Leaving notifies users whose queue position improves
+{
+  resetAll();
+  const eventId = 1;
+  const joinedAt = Date.now();
+  saveGlobalWaitlist([
+    {
+      userId: "u-1",
+      userName: "User One",
+      userEmail: "u1@example.com",
+      eventId,
+      eventTitle: "React Conf",
+      joinedAt: new Date(joinedAt).toISOString(),
+      status: "waiting",
+    },
+    {
+      userId: "u-2",
+      userName: "User Two",
+      userEmail: "u2@example.com",
+      eventId,
+      eventTitle: "React Conf",
+      joinedAt: new Date(joinedAt + 1000).toISOString(),
+      status: "waiting",
+    },
+    {
+      userId: "u-3",
+      userName: "User Three",
+      userEmail: "u3@example.com",
+      eventId,
+      eventTitle: "React Conf",
+      joinedAt: new Date(joinedAt + 2000).toISOString(),
+      status: "waiting",
+    },
+  ]);
+
+  await leaveWaitlist(eventId, "u-1");
+
+  const u2Inbox = JSON.parse(localStorage.getItem("eventra_notification_inbox_u-2"));
+  const u3Inbox = JSON.parse(localStorage.getItem("eventra_notification_inbox_u-3"));
+  assert.equal(u2Inbox[0].title, "Waitlist Position Updated");
+  assert.equal(
+    u2Inbox[0].message,
+    "Your waitlist position for React Conf moved from #2 to #1!"
+  );
+  assert.equal(u2Inbox[0].metadata.previousPosition, 2);
+  assert.equal(u2Inbox[0].metadata.currentPosition, 1);
+  assert.equal(
+    u3Inbox[0].message,
+    "Your waitlist position for React Conf moved from #3 to #2!"
+  );
+  console.log("Test 5b: Position change notifications after leave");
+}
+
 // 6. Promote Next User on Cancellation
 {
   resetAll();
@@ -225,6 +288,38 @@ console.log("Running Waitlist System unit tests...");
   console.log("✓ Test 7: Auto-Promotion on Capacity Increase");
 }
 
+// 7b. Batch promotion sends one final queue movement notification
+{
+  resetAll();
+  const eventId = 3;
+  const event = { id: eventId, title: "DevOps Summit", maxAttendees: 10, attendees: 10 };
+  const joinedAt = Date.now();
+
+  saveGlobalWaitlist([1, 2, 3, 4, 5].map((position) => ({
+    userId: `u-${position}`,
+    userName: `User ${position}`,
+    userEmail: `u${position}@example.com`,
+    eventId,
+    eventTitle: event.title,
+    joinedAt: new Date(joinedAt + position).toISOString(),
+    status: "waiting",
+  })));
+
+  const promotedCount = await handleCapacityIncrease(event, 12);
+  assert.equal(promotedCount, 2);
+
+  const u5Inbox = JSON.parse(localStorage.getItem("eventra_notification_inbox_u-5"));
+  const movementNotifications = u5Inbox.filter((n) => n.title === "Waitlist Position Updated");
+  assert.equal(movementNotifications.length, 1);
+  assert.equal(
+    movementNotifications[0].message,
+    "Your waitlist position for DevOps Summit moved from #5 to #3!"
+  );
+  assert.equal(movementNotifications[0].metadata.previousPosition, 5);
+  assert.equal(movementNotifications[0].metadata.currentPosition, 3);
+  console.log("Test 7b: Batch position movement notification");
+}
+
 // 8. Organizer Manual User Removal
 {
   resetAll();
@@ -239,8 +334,90 @@ console.log("Running Waitlist System unit tests...");
   assert.equal(list.length, 0);
 
   const all = getGlobalWaitlist();
-  assert.equal(all[0].status, "removed");
+  assert.equal(all[0].status, "removed_by_organizer");
   console.log("✓ Test 8: Organizer Manual User Removal");
+}
+
+// 9. Promote Record Online Success
+{
+  resetAll();
+  const eventId = 4;
+  const event = { id: eventId, title: "Online Promo Event" };
+  const user = { id: "user-9", email: "user9@example.com", fullName: "User Nine" };
+  
+  const records = [{ userId: user.id, eventId, status: "waiting", joinedAt: new Date().toISOString() }];
+  saveGlobalWaitlist(records);
+
+  navigator.onLine = true;
+
+  const { apiUtils } = await import("../src/config/api.js");
+  const originalPost = apiUtils.post;
+  apiUtils.post = async () => ({ ok: true });
+
+  const success = await promoteRecord(records[0], event);
+  assert.ok(success, "promoteRecord should return true on online success");
+
+  const list = getGlobalWaitlist();
+  assert.equal(list[0].status, "promoted", "Status should be updated to promoted");
+
+  apiUtils.post = originalPost;
+  console.log("✓ Test 9: Promote Record Online Success");
+}
+
+// 10. Promote Record Online Server Rejection
+{
+  resetAll();
+  const eventId = 4;
+  const event = { id: eventId, title: "Online Rejection Event" };
+  const user = { id: "user-10", email: "user10@example.com", fullName: "User Ten" };
+  
+  const records = [{ userId: user.id, eventId, status: "waiting", joinedAt: new Date().toISOString() }];
+  saveGlobalWaitlist(records);
+
+  navigator.onLine = true;
+
+  const { apiUtils } = await import("../src/config/api.js");
+  const originalPost = apiUtils.post;
+  apiUtils.post = async () => ({ ok: false });
+
+  const success = await promoteRecord(records[0], event);
+  assert.equal(success, false, "promoteRecord should return false on online rejection");
+
+  const list = getGlobalWaitlist();
+  assert.equal(list[0].status, "waiting", "Status should NOT be changed");
+
+  apiUtils.post = originalPost;
+  console.log("✓ Test 10: Promote Record Online Server Rejection");
+}
+
+// 11. Promote Record Online Server Error (Throws Exception)
+{
+  resetAll();
+  const eventId = 4;
+  const event = { id: eventId, title: "Online Error Event" };
+  const user = { id: "user-11", email: "user11@example.com", fullName: "User Eleven" };
+  
+  const records = [{ userId: user.id, eventId, status: "waiting", joinedAt: new Date().toISOString() }];
+  saveGlobalWaitlist(records);
+
+  navigator.onLine = true;
+
+  const { apiUtils } = await import("../src/config/api.js");
+  const originalPost = apiUtils.post;
+  apiUtils.post = async () => {
+    const err = new Error("Internal Server Error");
+    err.response = { status: 500 };
+    throw err;
+  };
+
+  const success = await promoteRecord(records[0], event);
+  assert.equal(success, false, "promoteRecord should return false on server error");
+
+  const list = getGlobalWaitlist();
+  assert.equal(list[0].status, "waiting", "Status should NOT be changed");
+
+  apiUtils.post = originalPost;
+  console.log("✓ Test 11: Promote Record Online Server Error");
 }
 
 console.log("\nAll Waitlist unit tests passed successfully! ✓");
