@@ -80,11 +80,15 @@ const EventMaterials = ({ materials }) => {
       // P2P transfer is now running asynchronously via RTCPeerConnection DataChannel.
       // Once completed, the coordinator will trigger state change, write chunks, and clean up.
       // Let's hook a check to trigger local file download once completed
+      let attempts = 0;
+      const MAX_ATTEMPTS = 60; // 30 seconds
       const checkCompletion = setInterval(async () => {
+        attempts++;
         const completed = await isFileCached(fileId);
-        if (completed) {
+        if (completed || attempts >= MAX_ATTEMPTS) {
           clearInterval(checkCompletion);
-          triggerLocalDownload(fileId, fileName);
+          if (completed) {
+            triggerLocalDownload(fileId, fileName);
           setCachedStatus((prev) => ({ ...prev, [fileId]: true }));
           setTimeout(() => {
             setActiveTransfer((prev) => {
