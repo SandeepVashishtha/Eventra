@@ -8,7 +8,7 @@ import { sanitizeMarkdown } from "utils/sanitizeHtml";
 import { toast } from "react-toastify";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import useKeyboardShortcuts from "hooks/useKeyboardShortcuts";
-import { Calendar, MapPin, Clock, Tag, CalendarPlus, Link2, Check } from "lucide-react";
+import { Calendar, MapPin, Clock, Tag, CalendarPlus, Link2, Check, Copy } from "lucide-react";
 import { getEventStatus, isEventRegistrationClosed } from "utils/eventUtils";
 import { useAuth } from "context/AuthContext";
 import useBookmarks from "hooks/useBookmarks";
@@ -597,12 +597,26 @@ const lastUpdated = getLastUpdated(event.updatedAt);
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
-                  <MapPin className="h-5 w-5 text-indigo-600" />
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Location</p>
-                    <p className="font-semibold">{event.location || "Online"}</p>
+                <div className="flex items-center justify-between rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
+                  <div className="flex items-center gap-3">
+                    <MapPin className="h-5 w-5 text-indigo-600" />
+                    <div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Location</p>
+                      <p className="font-semibold">{event.location || "Online"}</p>
+                    </div>
                   </div>
+                  {event.location && event.location !== "Online" && (
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(event.location);
+                        toast.success("Address copied!");
+                      }}
+                      className="p-2 text-gray-400 hover:text-indigo-600 transition-colors"
+                      title="Copy Address"
+                    >
+                      <Copy size={18} />
+                    </button>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-3 rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
