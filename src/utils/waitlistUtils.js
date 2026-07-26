@@ -143,6 +143,9 @@ export const saveGlobalWaitlist = (records) => {
   try {
     localStorage.setItem(GLOBAL_WAITLIST_KEY, JSON.stringify(records));
   } catch (error) {
+    if (error.name === 'QuotaExceededError') {
+      throw error;
+    }
     logger.error("[WaitlistUtils] Failed to save global waitlist:", error);
   }
 };
