@@ -37,7 +37,9 @@ const isOfflineSubmissionError = (error) =>
  * );
  */
 
-export function useFormSubmit(submitFn, offlineOptions = {}) {
+const defaultOfflineOptions = {};
+
+export function useFormSubmit(submitFn, offlineOptions = defaultOfflineOptions) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
