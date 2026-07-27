@@ -23,6 +23,7 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
   const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [isAnonymous, setIsAnonymous] = useState(false);
 
   // Multi-step survey steps: 'form' | 'survey'
   const [step, setStep] = useState("form");
@@ -123,7 +124,8 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
         eventId,
         rating,
         comment: comment.trim(),
-        survey: surveyAnswers
+        survey: surveyAnswers,
+        isAnonymous
       });
 
       setSubmitted(true);
@@ -195,6 +197,19 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
                     </span>
                   )}
                 </div>
+              </div>
+
+              <div className="flex items-center space-x-2 mt-4 mb-2">
+                <input
+                  type="checkbox"
+                  id="anonymous-checkbox"
+                  checked={isAnonymous}
+                  onChange={(e) => setIsAnonymous(e.target.checked)}
+                  className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
+                />
+                <label htmlFor="anonymous-checkbox" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Submit Anonymously
+                </label>
               </div>
 
               {/* Comment Section */}
