@@ -68,6 +68,7 @@ export default function EventShareButtons({ event }) {
   useEffect(() => {
     if (typeof document === "undefined") return;
 
+    const injectedTags = [];
     const updateOrCreateMeta = (property, content, isName = false) => {
       const selector = isName ? `meta[name="${property}"]` : `meta[property="${property}"]`;
       let element = document.querySelector(selector);
@@ -79,6 +80,7 @@ export default function EventShareButtons({ event }) {
           element.setAttribute("property", property);
         }
         document.head.appendChild(element);
+        injectedTags.push(element);
       }
       element.setAttribute("content", content);
     };
@@ -94,9 +96,8 @@ export default function EventShareButtons({ event }) {
     updateOrCreateMeta("twitter:image", ogImageUrl, true);
 
     return () => {
-      // Clean up metadata tags on unmount to keep DOM clean
-      const tags = document.querySelectorAll('meta[property^="og:"], meta[name^="twitter:"]');
-      tags.forEach(tag => tag.remove());
+      // Clean up only the injected tags to preserve baseline SEO
+      injectedTags.forEach(tag => tag.remove());
     };
   }, [event, url, text, ogImageUrl]);
 
