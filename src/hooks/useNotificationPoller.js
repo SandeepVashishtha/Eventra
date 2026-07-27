@@ -254,9 +254,7 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
         if (!isMounted.current) return;
         setNotifications((prev) => {
           if (prev.some((n) => n.id === id)) return prev;
-          const updated = [...prev];
-          const insertAt = removedIndex >= 0 ? Math.min(removedIndex, updated.length) : 0;
-          updated.splice(insertAt, 0, removedNotification);
+          const updated = [...prev, removedNotification].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
           persist(updated, storageKeyRef.current);
           notificationsRef.current = updated;
           return updated;
