@@ -1,6 +1,6 @@
 // src/components/user/RegistrationsTab.jsx
 import { motion } from "framer-motion";
-import { Users, Calendar, Trophy, FolderOpen, Search, X, SlidersHorizontal, Download } from "lucide-react";
+import { Users, Calendar, Trophy, FolderOpen, Search, X, SlidersHorizontal, Download, Upload } from "lucide-react";
 import StatusBadge from "../common/StatusBadge";
 import SearchEmptyState from "../common/SearchEmptyState";
 import EmptyState from "../common/EmptyState";
@@ -304,9 +304,33 @@ const RegistrationsTab = ({
 
       
         {filteredData.length > 0 && (
-          <button
-            type="button"
-            onClick={() => exportToCSV(filteredData, "eventra-registrations")}
+          <>
+            <button
+              type="button"
+              onClick={() => {}}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                padding: "0.5rem 1rem",
+                fontSize: "0.875rem",
+                fontWeight: 600,
+                background: "#f59e0b",
+                color: "white",
+                border: "none",
+                borderRadius: "0.75rem",
+                cursor: "pointer",
+                transition: "all 0.2s",
+                marginRight: "0.5rem"
+              }}
+              onMouseOver={(e) => (e.currentTarget.style.opacity = "0.9")}
+              onMouseOut={(e) => (e.currentTarget.style.opacity = "1")}
+            >
+              <Upload size={15} /> Import CSV
+            </button>
+            <button
+              type="button"
+              onClick={() => exportToCSV(filteredData, "eventra-registrations")}
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -326,6 +350,7 @@ const RegistrationsTab = ({
           >
             <Download size={15} /> Export CSV
           </button>
+          </>
         )}
 
       {/* Filters */}
