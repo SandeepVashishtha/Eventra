@@ -156,7 +156,10 @@ class SseMultiplexer {
             // Active leader exists
             return;
           }
-        } catch {}
+        } catch {
+          setTimeout(() => this.claimLocalStorageLeadership(), Math.random() * 500);
+          return;
+        }
       }
 
       // Try to claim leadership
