@@ -26,7 +26,7 @@
 
 import { useCallback, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Share2, Twitter, Linkedin, MessageCircle, Link2, Check, Eye, X, Calendar, MapPin } from "lucide-react";
+import { Share2, Twitter, Linkedin, MessageCircle, Link2, Check, Eye, X, Calendar, MapPin, Mail } from "lucide-react";
 import { toast } from "react-toastify";
 import useCopyToClipboard from "../../hooks/useCopyToClipboard";
 
@@ -208,6 +208,21 @@ export default function EventShareButtons({ event }) {
           <MessageCircle className="h-4 w-4" aria-hidden="true" />
           WhatsApp
         </motion.a>
+
+        {/* Email */}
+        <motion.button
+          variants={itemVariants}
+          onClick={() => {
+            const subject = encodeURIComponent(`Invitation: ${event.title}`);
+            const body = encodeURIComponent(`Check out this event:\n\n${event.title}\n${url}`);
+            window.location.href = `mailto:?subject=${subject}&body=${body}`;
+          }}
+          aria-label={`Share "${event.title}" via Email`}
+          className="share-btn inline-flex items-center gap-2 rounded-xl bg-gray-500 px-4 py-2 text-sm font-semibold text-white shadow transition-all hover:bg-gray-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gray-300"
+        >
+          <Mail className="h-4 w-4" aria-hidden="true" />
+          Email
+        </motion.button>
 
         {/* Copy Link */}
         <motion.button
