@@ -8,7 +8,7 @@ import { sanitizeMarkdown } from "utils/sanitizeHtml";
 import { toast } from "react-toastify";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import useKeyboardShortcuts from "hooks/useKeyboardShortcuts";
-import { Calendar, MapPin, Clock, Tag, CalendarPlus, Link2, Check } from "lucide-react";
+import { Calendar, MapPin, Clock, Tag, CalendarPlus, Link2, Check, Archive } from "lucide-react";
 import { getEventStatus, isEventRegistrationClosed } from "utils/eventUtils";
 import { useAuth } from "context/AuthContext";
 import useBookmarks from "hooks/useBookmarks";
@@ -424,6 +424,14 @@ const lastUpdated = getLastUpdated(event.updatedAt);
                   className="inline-flex items-center justify-center rounded-full border border-red-500 px-6 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
                 >
                   Cancel Event
+                </button>
+              )}
+              {isOrganizer && event.status !== "cancelled" && event.status !== "archived" && (
+                <button
+                  onClick={() => { setEvent({ ...event, status: "archived" }); toast.success("Event Archived!"); }}
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-orange-500 px-6 py-3 text-sm font-semibold text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition"
+                >
+                  <Archive size={16} /> Archive Event
                 </button>
               )}
 
