@@ -40,7 +40,7 @@ export const getEventFeedback = (eventId) => {
       comment: f.comment ? sanitizeHtml(f.comment) : f.comment
     }));
   } catch {
-    //console.error('Error retrieving feedback:', error);
+    console.warn("Error retrieving feedback:", error)', error);
     return [];
   }
 };
@@ -70,7 +70,7 @@ export const saveFeedback = (eventId, feedback) => {
     localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(allFeedback));
     return true;
   } catch {
-    //console.error('Error saving feedback:', error);
+    console.warn("Error saving feedback:", error)', error);
     return false;
   }
 };
@@ -90,7 +90,7 @@ export const hasUserSubmittedFeedback = (eventId, userId = null) => {
     const userIdSet = new Set(feedback.map((f) => f.userId));
     return userIdSet.has(userId);
   } catch {
-    //console.error('Error checking feedback status:', error);
+    console.warn("Error checking feedback status:", error)', error);
     return false;
   }
 };
@@ -108,7 +108,7 @@ export const getUserFeedback = (eventId, userId = null) => {
     const feedbackMap = new Map(feedback.map((f) => [f.userId, f]));
     return feedbackMap.get(userId) || null;
   } catch {
-    //console.error('Error retrieving user feedback:', error);
+    console.warn("Error retrieving user feedback:", error)', error);
     return null;
   }
 };
@@ -136,7 +136,7 @@ export const getAverageRating = (eventId) => {
       total,
     };
   } catch {
-    //console.error('Error calculating average rating:', error);
+    console.warn("Error calculating average rating:", error)', error);
     return { average: 0, count: 0, total: 0 };
   }
 };
@@ -169,7 +169,7 @@ export const getRatingBreakdown = (eventId) => {
 
     return breakdown;
   } catch {
-    //console.error('Error calculating rating breakdown:', error);
+    console.warn("Error calculating rating breakdown:", error)', error);
     return { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
   }
 };
@@ -216,7 +216,7 @@ export const getRecommendationStats = (eventId) => {
       percentage,
     };
   } catch {
-    //console.error('Error calculating recommendation stats:', error);
+    console.warn("Error calculating recommendation stats:", error)', error);
     return { recommendCount: 0, notRecommendCount: 0, total: 0, percentage: 0 };
   }
 };
@@ -241,7 +241,7 @@ export const getTagStats = (eventId) => {
 
     return tagCounts;
   } catch {
-    //console.error('Error calculating tag stats:', error);
+    console.warn("Error calculating tag stats:", error)', error);
     return {};
   }
 };
@@ -267,7 +267,7 @@ export const deleteFeedback = (eventId, userId = null) => {
     localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(allFeedback));
     return true;
   } catch {
-    //console.error('Error deleting feedback:', error);
+    console.warn("Error deleting feedback:", error)', error);
     return false;
   }
 };
@@ -297,7 +297,7 @@ export const exportFeedbackAsCSV = (eventId) => {
     const csv = [headers, ...rows].map((row) => row.join(',')).join('\n');
     return csv;
   } catch {
-    //console.error('Error exporting feedback:', error);
+    console.warn("Error exporting feedback:", error)', error);
     return '';
   }
 };
@@ -311,7 +311,7 @@ export const clearAllFeedback = () => {
     localStorage.removeItem(FEEDBACK_STORAGE_KEY);
     return true;
   } catch {
-    //console.error('Error clearing feedback:', error);
+    console.warn("Error clearing feedback:", error)', error);
     return false;
   }
 };
