@@ -175,12 +175,12 @@ export const generateEventSharingData = (event, baseUrl = null) => {
  * @returns {Promise<boolean>} Success status
  */
 export const copyToClipboard = async (text) => {
-  if (typeof window === "undefined" || typeof document === "undefined") {
+  if (typeof document === "undefined") {
     return false;
   }
 
   try {
-    if (navigator.clipboard) {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
       await navigator.clipboard.writeText(text);
       return true;
     } else {
