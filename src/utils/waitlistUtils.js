@@ -162,6 +162,7 @@ export const syncWaitlistFromServer = async (eventId) => {
     }
   } catch {
     logger.warn("[WaitlistUtils] Server sync failed, using localStorage cache");
+    return getGlobalWaitlist();
   }
   return getGlobalWaitlist();
 };
