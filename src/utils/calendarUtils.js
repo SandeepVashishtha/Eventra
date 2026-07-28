@@ -26,7 +26,7 @@ export const generateGoogleCalendarUrl = (eventData) => {
     // If we have a start time, combine date and time
     const [hours, minutes] = eventData.startTime.split(':');
     const startDate = new Date(eventData.startDate);
-    startDate.setHours(parseInt(hours), parseInt(minutes), 0);
+    startDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0);
     startDateTime = startDate.toISOString().replace(/-|:|\.\d+/g, '');
   } else {
     // If no time, use the date only (all day event)
@@ -39,7 +39,7 @@ export const generateGoogleCalendarUrl = (eventData) => {
       // If we have an end time, combine date and time
       const [hours, minutes] = eventData.endTime.split(':');
       const endDate = new Date(eventData.endDate);
-      endDate.setHours(parseInt(hours), parseInt(minutes), 0);
+      endDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0);
       endDateTime = endDate.toISOString().replace(/-|:|\.\d+/g, '');
     } else {
       // If no time, use the date only (all day event)
