@@ -60,7 +60,7 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
         let total = 0;
         let sum = 0;
         Object.entries(distribution).forEach(([score, count]) => {
-          sum += parseInt(score) * count;
+          sum += parseInt(score, 10) * count;
           total += count;
         });
         ratings[q.id] = {
