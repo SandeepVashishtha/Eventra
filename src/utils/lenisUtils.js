@@ -9,6 +9,9 @@
  * @param {Object} options - Scroll options
  */
 export const scrollToElement = (selector, options = {}) => {
+  if (typeof window === "undefined") {
+    return;
+  }
   const element = document.querySelector(selector);
   if (element && window.lenis) {
     window.lenis.scrollTo(element, {
@@ -25,6 +28,9 @@ export const scrollToElement = (selector, options = {}) => {
  * @param {Object} options - Scroll options
  */
 export const scrollToTop = (options = {}) => {
+  if (typeof window === "undefined") {
+    return;
+  }
   if (window.lenis) {
     window.lenis.scrollTo(0, {
       duration: 1.2,
@@ -43,6 +49,9 @@ export const scrollToTop = (options = {}) => {
  * Stop Lenis scrolling (useful for modals)
  */
 export const stopScroll = () => {
+  if (typeof window === "undefined") {
+    return;
+  }
   if (window.lenis) {
     window.lenis.stop();
   }
@@ -52,6 +61,9 @@ export const stopScroll = () => {
  * Start Lenis scrolling
  */
 export const startScroll = () => {
+  if (typeof window === "undefined") {
+    return;
+  }
   if (window.lenis) {
     window.lenis.start();
   }
@@ -62,5 +74,8 @@ export const startScroll = () => {
  * @returns {number} Current scroll position
  */
 export const getScrollPosition = () => {
-  return window.lenis ? window.lenis.scroll : window.scrollY;
+  if (typeof window === "undefined") {
+    return 0;
+  }
+  return window.lenis ? window.lenis.scroll : (window.scrollY ?? 0);
 };
