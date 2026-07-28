@@ -13,7 +13,7 @@ export const formatICSDate = (dateString) => {
 export const getGoogleCalendarUrl = (event) => {
   const baseUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE";
   const text = `&text=${encodeURIComponent(event.title || '')}`;
-  const dates = `&dates=${formatICSDate(event.startDateTime)}/${formatICSDate(event.endDateTime)}`;
+  const dates = `&dates=${formatICSDate(event.date)}/${formatICSDate(event.endDate)}`;
   const details = `&details=${encodeURIComponent(event.description || '')}`;
   const location = `&location=${encodeURIComponent(event.location || '')}`;
   
@@ -33,8 +33,8 @@ export const generateRawICSContent = (event) => {
     'BEGIN:VEVENT',
     `UID:${event.id || Date.now()}@eventra.com`,
     `DTSTAMP:${formatICSDate(new Date().toISOString())}`,
-    `DTSTART:${formatICSDate(event.startDateTime)}`,
-    `DTEND:${formatICSDate(event.endDateTime)}`,
+    `DTSTART:${formatICSDate(event.date)}`,
+    `DTEND:${formatICSDate(event.endDate)}`,
     `SUMMARY:${(event.title || '').replace(/,/g, '\\,')}`,
     `DESCRIPTION:${(event.description || '').replace(/,/g, '\\,')}`,
     `LOCATION:${(event.location || '').replace(/,/g, '\\,')}`,
