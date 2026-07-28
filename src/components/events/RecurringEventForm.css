@@ -1,0 +1,365 @@
+/**
+ * RecurringEventForm.css
+ * Styles for the recurring event form component.
+ */
+
+.recurring-event-form {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.recurring-event-form form {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Fieldset Styling */
+.recurring-event-form fieldset {
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 8px;
+  padding: 1.5rem;
+  background: var(--color-background-secondary, #f9fafb);
+}
+
+.recurring-event-form legend {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text-primary, #1f2937);
+  padding: 0 0.5rem;
+}
+
+/* Form Groups */
+.recurring-event-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.recurring-event-form .form-group label {
+  font-weight: 500;
+  color: var(--color-text-primary, #1f2937);
+  font-size: 0.95rem;
+}
+
+.recurring-event-form .form-group input,
+.recurring-event-form .form-group textarea,
+.recurring-event-form .form-group select {
+  padding: 0.75rem;
+  border: 1px solid var(--color-border, #d1d5db);
+  border-radius: 6px;
+  font-size: 1rem;
+  font-family: inherit;
+  background: white;
+  color: var(--color-text-primary, #1f2937);
+  transition: all 0.2s ease;
+}
+
+.recurring-event-form .form-group input:focus,
+.recurring-event-form .form-group textarea:focus,
+.recurring-event-form .form-group select:focus {
+  outline: none;
+  border-color: var(--color-primary, #3b82f6);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.recurring-event-form .form-group textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+/* Form Row (two columns) */
+.recurring-event-form .form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Template Selector */
+.recurring-event-form .template-selector {
+  margin-bottom: 1.5rem;
+}
+
+.recurring-event-form .template-selector label {
+  font-weight: 600;
+  color: var(--color-text-primary, #1f2937);
+  display: block;
+  margin-bottom: 0.75rem;
+}
+
+.recurring-event-form .template-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.recurring-event-form .template-btn {
+  padding: 0.5rem 1rem;
+  border: 2px solid var(--color-border, #d1d5db);
+  background: white;
+  color: var(--color-text-primary, #1f2937);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.recurring-event-form .template-btn:hover {
+  border-color: var(--color-primary, #3b82f6);
+  background: var(--color-primary-light, #eff6ff);
+}
+
+.recurring-event-form .template-btn.active {
+  background: var(--color-primary, #3b82f6);
+  color: white;
+  border-color: var(--color-primary, #3b82f6);
+}
+
+/* Weekday Selector */
+.recurring-event-form .weekday-selector {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid var(--color-border, #e5e7eb);
+}
+
+.recurring-event-form .weekday-selector label {
+  display: block;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.recurring-event-form .weekday-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.recurring-event-form .weekday-btn {
+  width: 40px;
+  height: 40px;
+  border: 2px solid var(--color-border, #d1d5db);
+  background: white;
+  color: var(--color-text-primary, #1f2937);
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.recurring-event-form .weekday-btn:hover {
+  border-color: var(--color-primary, #3b82f6);
+  background: var(--color-primary-light, #eff6ff);
+}
+
+.recurring-event-form .weekday-btn.active {
+  background: var(--color-primary, #3b82f6);
+  color: white;
+  border-color: var(--color-primary, #3b82f6);
+}
+
+/* Advanced Options */
+.recurring-event-form .toggle-advanced {
+  padding: 0.75rem 1rem;
+  background: var(--color-background, #f3f4f6);
+  border: 1px solid var(--color-border, #d1d5db);
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  margin: 1rem 0;
+}
+
+.recurring-event-form .toggle-advanced:hover {
+  background: var(--color-background-secondary, #e5e7eb);
+}
+
+.recurring-event-form .advanced-options {
+  padding: 1rem;
+  background: var(--color-background-light, #fafbfc);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 6px;
+  margin-top: 1rem;
+}
+
+.recurring-event-form .advanced-options .form-group {
+  margin-bottom: 1rem;
+}
+
+/* Alert Messages */
+.recurring-event-form .alert {
+  padding: 1rem;
+  border-radius: 6px;
+  margin: 1rem 0;
+  border-left: 4px solid;
+}
+
+.recurring-event-form .alert strong {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.recurring-event-form .alert ul {
+  margin: 0.5rem 0 0 1.5rem;
+  padding: 0;
+}
+
+.recurring-event-form .alert li {
+  margin: 0.25rem 0;
+  font-size: 0.95rem;
+}
+
+.recurring-event-form .alert-error {
+  background: var(--color-error-light, #fee2e2);
+  color: var(--color-error-dark, #991b1b);
+  border-left-color: var(--color-error, #dc2626);
+}
+
+.recurring-event-form .alert-warning {
+  background: var(--color-warning-light, #fef3c7);
+  color: var(--color-warning-dark, #92400e);
+  border-left-color: var(--color-warning, #f59e0b);
+}
+
+/* Preview Section */
+.recurring-event-form .preview-section {
+  padding: 1.5rem;
+  background: var(--color-background-light, #fafbfc);
+  border: 1px dashed var(--color-border, #d1d5db);
+  border-radius: 6px;
+}
+
+.recurring-event-form .preview-section > button {
+  padding: 0.75rem 1.5rem;
+  background: var(--color-primary, #3b82f6);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  margin-bottom: 1rem;
+}
+
+.recurring-event-form .preview-section > button:hover:not(:disabled) {
+  background: var(--color-primary-dark, #2563eb);
+  transform: translateY(-2px);
+}
+
+.recurring-event-form .preview-section > button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.recurring-event-form .preview-results {
+  margin-top: 1rem;
+}
+
+.recurring-event-form .preview-results h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  color: var(--color-text-primary, #1f2937);
+}
+
+.recurring-event-form .instance-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.75rem;
+}
+
+.recurring-event-form .instance-item {
+  padding: 0.75rem;
+  background: white;
+  border: 1px solid var(--color-border, #d1d5db);
+  border-radius: 4px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--color-text-primary, #1f2937);
+}
+
+/* Form Actions */
+.recurring-event-form .form-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border, #e5e7eb);
+}
+
+.recurring-event-form .form-actions button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.recurring-event-form .btn-primary {
+  background: var(--color-primary, #3b82f6);
+  color: white;
+}
+
+.recurring-event-form .btn-primary:hover {
+  background: var(--color-primary-dark, #2563eb);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.recurring-event-form .btn-secondary {
+  background: var(--color-border, #d1d5db);
+  color: var(--color-text-primary, #1f2937);
+}
+
+.recurring-event-form .btn-secondary:hover {
+  background: var(--color-border-dark, #9ca3af);
+}
+
+.recurring-event-form .form-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .recurring-event-form {
+    padding: 1rem;
+  }
+
+  .recurring-event-form fieldset {
+    padding: 1rem;
+  }
+
+  .recurring-event-form .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .recurring-event-form .template-buttons {
+    flex-direction: column;
+  }
+
+  .recurring-event-form .template-btn {
+    width: 100%;
+  }
+
+  .recurring-event-form .form-actions {
+    flex-direction: column;
+  }
+
+  .recurring-event-form .form-actions button {
+    width: 100%;
+  }
+
+  .recurring-event-form .instance-list {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+}
