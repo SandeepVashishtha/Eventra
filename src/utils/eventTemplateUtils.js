@@ -3,6 +3,18 @@ import { safeJsonParse } from "./safeJsonParse.js";
 const TEMPLATES_KEY = "eventra_event_templates";
 
 /**
+ * Guard against SSR environments where localStorage is not available.
+ * @returns {boolean} True if localStorage is available and accessible
+ */
+const isLocalStorageAvailable = () => {
+  try {
+    return typeof localStorage !== "undefined" && localStorage !== null;
+  } catch {
+    return false;
+  }
+};
+
+/**
  * Generate a unique template ID
  */
 const generateTemplateId = () => {
@@ -44,6 +56,7 @@ const sanitizeTemplateData = (formData) => {
  * @returns {Array} Array of template objects
  */
 export const getTemplates = () => {
+  if (!isLocalStorageAvailable()) return [];
   try {
     const stored = localStorage.getItem(TEMPLATES_KEY);
     if (!stored) return [];
@@ -63,6 +76,7 @@ export const getTemplates = () => {
  * @returns {Object|null} The created template object or null on error
  */
 export const saveTemplate = (templateName, formData) => {
+  if (!isLocalStorageAvailable()) return null;
   if (!templateName || !templateName.trim()) {
     console.warn("[EventTemplates] Template name is required");
     return null;
@@ -106,6 +120,7 @@ export const saveTemplate = (templateName, formData) => {
  * @returns {Object|null} Template data or null if not found
  */
 export const loadTemplate = (templateId) => {
+  if (!isLocalStorageAvailable()) return null;
   try {
     const templates = getTemplates();
     const template = templates.find((t) => t.id === templateId);
@@ -128,6 +143,7 @@ export const loadTemplate = (templateId) => {
  * @returns {Boolean} True if deleted, false otherwise
  */
 export const deleteTemplate = (templateId) => {
+  if (!isLocalStorageAvailable()) return false;
   try {
     const templates = getTemplates();
     const filteredTemplates = templates.filter((t) => t.id !== templateId);
@@ -150,6 +166,7 @@ export const deleteTemplate = (templateId) => {
  * @returns {Boolean} True if cleared
  */
 export const clearAllTemplates = () => {
+  if (!isLocalStorageAvailable()) return false;
   try {
     localStorage.removeItem(TEMPLATES_KEY);
     return true;
@@ -165,6 +182,7 @@ export const clearAllTemplates = () => {
  * @returns {Boolean} True if name exists
  */
 export const templateNameExists = (templateName) => {
+  if (!isLocalStorageAvailable()) return false;
   try {
     const templates = getTemplates();
     return templates.some(
