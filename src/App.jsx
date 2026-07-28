@@ -57,6 +57,20 @@ const OfflineSyncManager = () => {
   return null;
 };
 
+function ErrorButton() {
+  return (
+    <button
+      type="button"
+      className="sr-only"
+      onClick={() => {
+        throw new Error("This is your first error!");
+      }}
+    >
+      Trigger error
+    </button>
+  );
+}
+
 function App() {
   const { t } = useTranslation();
   const location = useLocation();
@@ -275,6 +289,7 @@ function App() {
                 <Suspense fallback={null}>
                   <SessionRecovery />
                 </Suspense>
+                {import.meta.env.DEV && <ErrorButton />}
 
                 {isDesktop && (
                   <ErrorBoundary level="section" label="Custom Cursor" silent>
