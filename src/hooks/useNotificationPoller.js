@@ -59,11 +59,13 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
   const tokenRef = useRef(token);
   const isPageVisibleRef = useRef(isPageVisible);
   const storageKeyRef = useRef(getStorageKey(user?.id));
+  const notificationsRef = useRef(notifications);
 
   useEffect(() => { isMounted.current = true; return () => { isMounted.current = false; }; }, []);
   useEffect(() => { tokenRef.current = token; }, [token]);
   useEffect(() => { isPageVisibleRef.current = isPageVisible; }, [isPageVisible]);
   useEffect(() => { storageKeyRef.current = getStorageKey(user?.id); }, [user?.id]);
+  useEffect(() => { notificationsRef.current = notifications; }, [notifications]);
 
   // One-shot migration: when a user first logs in, adopt any inbox that was
   // still sitting under the guest key (because the old code path routed every
@@ -234,10 +236,9 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
     async (id) => {
       if (!id) return;
       const t = token;
-      let removedWasUnread = false;
+      const target = notificationsRef.current.find((n) => n.id === id);
+      const removedWasUnread = target ? !target.isRead : false;
       setNotifications((prev) => {
-        const target = prev.find((n) => n.id === id);
-        removedWasUnread = target ? !target.isRead : false;
         const updated = prev.filter((n) => n.id !== id);
         persist(updated, storageKeyRef.current);
         return updated;
