@@ -71,6 +71,12 @@ globalThis.BroadcastChannel = MockBroadcastChannel;
 // Now import the coordinator
 const { P2PFileTransferCoordinator } = await import("../src/utils/p2pFileTransfer.js");
 
+const savedWindow = globalThis.window;
+delete globalThis.window;
+const ssrModule = await import("../src/utils/p2pFileTransfer.js?ssr");
+assert.equal(await ssrModule.isFileCached("ssr-file"), false, "SSR cache lookup should fall back cleanly");
+globalThis.window = savedWindow;
+
 // Define test cases
 async function runTests() {
   console.log("Starting P2PFileTransferCoordinator tests...");
