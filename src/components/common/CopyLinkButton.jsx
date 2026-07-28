@@ -1,27 +1,36 @@
 import { useState } from "react";
 import { Link2, Check } from "lucide-react";
 
-const CopyLinkButton = () => {
+const CopyLinkButton = ({ url, title = "Event", text = "Check out this event!" }) => {
   const [copied, setCopied] = useState(false);
+  const textToCopy = url || (typeof window !== "undefined" ? window.location.href : "");
+
+  const markCopied = () => {
+    setCopied(true);
+    setTimeout(() => {
+      setCopied(false);
+    }, 2000);
+  };
 
   const handleCopy = async () => {
   try {
+    if (!textToCopy) return;
+
     if (navigator.share) {
       await navigator.share({
-        title: "Event",
-        text: "Check out this event!",
+        title,
+        text,
         url: textToCopy,
       });
+      markCopied();
+      toast.success("Link shared successfully");
       return;
     }
 
     await navigator.clipboard.writeText(textToCopy);
 
-    setCopied(true);
-
-    setTimeout(() => {
-      setCopied(false);
-    }, 2000);
+    markCopied();
+    toast.success("Link copied successfully");
   } catch (err) {
     console.error(err);
   }
