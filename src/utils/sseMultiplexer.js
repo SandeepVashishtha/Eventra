@@ -120,9 +120,29 @@ class SseMultiplexer {
           this.queryGlobalSubscribers();
           this.reconcileConnections();
 
-          // Keep the lock active until tab unloads/unmounts
+          // Detect when the tab is backgrounded so the lock is released cleanly
+          // before the browser auto-releases it (which would leave releaseLockPromise hanging).
+          const onVisibilityChange = () => {
+            if (document.visibilityState === "hidden") {
+              this.stopHeartbeatChecks();
+              this.isLeader = false;
+              document.removeEventListener("visibilitychange", onVisibilityChange);
+              if (this.releaseLockPromise) {
+                this.releaseLockPromise();
+                this.releaseLockPromise = null;
+              }
+              // Revert to localStorage-based election so another tab can claim leadership
+              this.setupLocalStorageElection();
+            }
+          };
+          document.addEventListener("visibilitychange", onVisibilityChange);
+
+          // Keep the lock active until tab unloads/unmounts or is backgrounded
           await new Promise((resolve) => {
-            this.releaseLockPromise = resolve;
+            this.releaseLockPromise = () => {
+              document.removeEventListener("visibilitychange", onVisibilityChange);
+              resolve();
+            };
           });
         })
         .catch((err) => {
