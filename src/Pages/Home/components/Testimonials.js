@@ -441,7 +441,7 @@ const ModernTestimonialTrain = () => {
             Have a story to share?
           </span>
           <Link
-            to="/submit-testimonial"
+            to="/feedback"
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition-colors shadow-md hover:shadow-lg"
           >
             Share Your Story <ExternalLink className="w-3.5 h-3.5" />
