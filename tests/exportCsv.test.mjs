@@ -45,6 +45,17 @@ globalThis.document = {
 
 const { exportAttendeesToCSV, exportEventsToCSV } = await import("../src/utils/exportCsv.js");
 
+const savedWindow = globalThis.window;
+const savedDocument = globalThis.document;
+delete globalThis.window;
+delete globalThis.document;
+const ssrModule = await import("../src/utils/exportCsv.js?ssr");
+assert.doesNotThrow(() => ssrModule.exportAttendeesToCSV([{ name: "A" }]), "SSR attendee export is a no-op");
+assert.doesNotThrow(() => ssrModule.exportSurveyToCSV([{ id: "q1", questionText: "Q1" }], [{ answers: { q1: "A" } }]), "SSR survey export is a no-op");
+assert.doesNotThrow(() => ssrModule.exportEventsToCSV([{ id: 1 }]), "SSR event export is a no-op");
+globalThis.window = savedWindow;
+globalThis.document = savedDocument;
+
 exportAttendeesToCSV([
   {
     name: '=HYPERLINK("http://evil.com","click")',
