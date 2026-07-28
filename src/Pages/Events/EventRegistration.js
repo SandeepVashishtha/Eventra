@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 // Calendar URL helpers — import from the timezone-aware utility instead of
 // using the old inline implementations (which were UTC-blind and hardcoded
 // a 1-hour event duration — fixed in issue #2015).
-import { getGoogleCalendarUrl, getOutlookCalendarUrl, getYahooCalendarUrl, generateIcsFileBlobUrl, getWebcalSubscriptionUrl } from "../../utils/calendarUrlUtils";
+import { getGoogleCalendarUrl, getOutlookCalendarUrl, getYahooCalendarUrl, generateIcsFileBlobUrl, getWebcalSubscriptionUrl } from "utils/calendarUrlUtils";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import hackathonsData from "../Hackathons/hackathonMockData.json";
 import { motion } from "framer-motion";
@@ -25,23 +25,23 @@ import {
   isEventAtCapacity,
   mergeAvailabilityIntoEvent,
   normalizeEventAvailability,
-} from "../../utils/eventAvailabilityUtils.mjs";
-import { useFormValidation } from "../../hooks/useFormValidation";
-import SpatialSeatSelector from "../../components/events/SpatialSeatSelector";
-import { getEventStatus, isEventRegistrationClosed } from "../../utils/eventUtils";
-import { checkRegistrationConflict, suggestAlternativeEvents } from "../../utils/conflictDetection";
-import { useAuth } from "../../context/AuthContext";
-import { useMyEvents } from "../../context/MyEventsContext";
-import { API_ENDPOINTS, apiUtils } from "../../config/api";
-import { useSessionRecovery } from "../../context/SessionRecoveryContext";
-import CalendarView from "../../components/CalendarView";
-import EventConflictModal from "../../components/EventConflictModal";
-import ConfettiCanvas from "../../components/common/ConfettiCanvas";
-import { SkeletonEventCard, WaitlistSkeleton, WaitlistPositionSkeleton } from "../../components/common/SkeletonLoaders";
-import { logger } from "../../utils/logger";
+} from "utils/eventAvailabilityUtils.mjs";
+import { useFormValidation } from "hooks/useFormValidation";
+import SpatialSeatSelector from "components/events/SpatialSeatSelector";
+import { getEventStatus, isEventRegistrationClosed } from "utils/eventUtils";
+import { checkRegistrationConflict, suggestAlternativeEvents } from "utils/conflictDetection";
+import { useAuth } from "context/AuthContext";
+import { useMyEvents } from "context/MyEventsContext";
+import { API_ENDPOINTS, apiUtils } from "config/api";
+import { useSessionRecovery } from "context/SessionRecoveryContext";
+import CalendarView from "components/CalendarView";
+import EventConflictModal from "components/EventConflictModal";
+import ConfettiCanvas from "components/common/ConfettiCanvas";
+import { SkeletonEventCard, WaitlistSkeleton, WaitlistPositionSkeleton } from "components/common/SkeletonLoaders";
+import { logger } from "utils/logger";
 import { validate } from "../../validation";
-import { getCacheAgeLabel, getCachedEventDetail, saveCachedEventDetail } from "../../utils/offlineEventCache";
-import { pushToQueue } from "../../utils/offlineQueue";
+import { getCacheAgeLabel, getCachedEventDetail, saveCachedEventDetail } from "utils/offlineEventCache";
+import { pushToQueue } from "utils/offlineQueue";
 
 const MAX_NOTES_CHARS = 500;
 
@@ -318,7 +318,7 @@ const EventRegistration = () => {
 
     if (isFreshlyFull) {
       try {
-        const { joinWaitlist, getQueuePosition } = await import("../../utils/waitlistUtils");
+        const { joinWaitlist, getQueuePosition } = await import("utils/waitlistUtils");
         await joinWaitlist(eventId, user, { ...formData, eventTitle: event?.title || "the event" });
         const pos = getQueuePosition(eventId, user.id);
         toast.success(t("eventRegistration.toastWaitlistSuccess"));
@@ -449,7 +449,7 @@ const EventRegistration = () => {
         try {
           const isFull = await checkEventCapacity(eventId, event);
           if (isFull) {
-            const { getGlobalWaitlist } = await import("../../utils/waitlistUtils");
+            const { getGlobalWaitlist } = await import("utils/waitlistUtils");
             const records = getGlobalWaitlist();
             const onWaitlist = records.some(
               (r) => r.userId === user.id && r.eventId === parseInt(eventId) && r.status === "waiting"
@@ -623,7 +623,7 @@ const EventRegistration = () => {
             {isEventFull ? t("eventRegistration.successWaitlistTitle") : t("eventRegistration.successConfirmedTitle")}
           </h2>
           <p className="text-gray-500 dark:text-gray-400 text-sm mb-6 max-w-md mx-auto leading-relaxed">
-            {isEventFull 
+            {isEventFull
               ? t("eventRegistration.successWaitlistDesc", { position: waitlistPosition })
               : t("eventRegistration.successConfirmedDesc")}
           </p>

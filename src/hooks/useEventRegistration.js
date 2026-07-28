@@ -335,7 +335,7 @@ const useEventRegistration = (eventIdParam) => {
         const success = await pushToQueue(
           {
             actionType: "REGISTER_EVENT",
-            // Fixed: Removed undefined 'endpoint' variable which would cause a crash
+            endpoint: `/api/events/${eventId}/register`,
             eventId: parseInt(eventId),
             payload: queuePayload,
           },

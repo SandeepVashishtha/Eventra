@@ -1,3 +1,4 @@
+import { showSuccessToast } from "./toast.js";
 // ---------------------------------------------------------------------------
 // Self-Healing Offline Queue Utility (IndexedDB backed with LocalStorage Backup)
 // ---------------------------------------------------------------------------
@@ -79,19 +80,23 @@ const _rescueFromLocalStorage = () => {
 // Internal: notify the UI that a schema upgrade occurred
 // ---------------------------------------------------------------------------
 const _dispatchUpgradeEvent = (rescuedCount) => {
+  const message =
+    rescuedCount > 0
+      ? `IndexedDB schema upgraded. ${rescuedCount} queued action(s) were safely migrated.`
+      : "IndexedDB schema upgraded. No queued actions were affected.";
+
   if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
     window.dispatchEvent(
       new CustomEvent("eventra-offline-queue-upgraded", {
         detail: {
           rescuedItems: rescuedCount,
-          message:
-            rescuedCount > 0
-              ? `IndexedDB schema upgraded. ${rescuedCount} queued action(s) were safely migrated.`
-              : "IndexedDB schema upgraded. No queued actions were affected.",
+          message,
         },
       })
     );
   }
+
+  showSuccessToast(message);
 };
 
 // ---------------------------------------------------------------------------
@@ -726,7 +731,10 @@ export const processQueue = async (currentUserId, fetchFn, options = {}) => {
 
     if (result.status === "success") {
       succeeded.push(item);
-    } else if (result.status === "dropped") {
+    } else if (result.status === "dropped" || result.status === "conflict") {
+      if (result.status === "conflict") {
+        logger.warn(`[OfflineQueue] Unresolved 409 conflict for item ${item.id} — dropping.`);
+      }
       dropped.push(item);
     } else {
       failed.push({ ...item, retryCount: (item.retryCount || 0) + 1 });

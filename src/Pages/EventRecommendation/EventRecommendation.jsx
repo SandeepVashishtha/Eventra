@@ -8,22 +8,22 @@ import {
   ChevronRight,
   FilterX,
 } from "lucide-react";
-import { showSuccessToast } from "../../utils/toast";
-import EmptyState from "../../components/common/EmptyState";
+import { showSuccessToast } from "utils/toast";
+import EmptyState from "components/common/EmptyState";
 
 import {
   getUserProfile
-} from "../../utils/userProfileAnalyzer";
+} from "utils/userProfileAnalyzer";
 import {
   buildPersonalizedRecommendations,
   getTrendingEventsForArea,
-} from "../../utils/recommendationEngine";
-import { useAuth } from "../../context/AuthContext";
-import { useMyEvents } from "../../context/MyEventsContext";
-import useBookmarks from "../../hooks/useBookmarks";
-import useRecentlyViewed from "../../hooks/useRecentlyViewed";
+} from "utils/recommendationEngine";
+import { useAuth } from "context/AuthContext";
+import { useMyEvents } from "context/MyEventsContext";
+import useBookmarks from "hooks/useBookmarks";
+import useRecentlyViewed from "hooks/useRecentlyViewed";
 import mockEvents from "../Events/eventsMockData.json";
-import { EventCardSkeleton } from "../../components/common/SkeletonLoaders";
+import { EventCardSkeleton } from "components/common/SkeletonLoaders";
 
 
 const EventRecommendation = () => {
@@ -60,7 +60,7 @@ const EventRecommendation = () => {
   const [interestWeight, setInterestWeight] = useState(40);
   const [levelWeight, setLevelWeight] = useState(30);
   const [typeWeight, setTypeWeight] = useState(30);
-  
+
   // Selected Event Modal State
   const [selectedEvent, setSelectedEvent] = useState(null);
 
@@ -82,7 +82,7 @@ const EventRecommendation = () => {
     setHasSearched(true);
     setLoading(true);
     setShowOtherEvents(false);
-    
+
     // Track execution for onboarding checklist
     localStorage.setItem("eventra_ai_recommendation_generated", "true");
 
@@ -275,7 +275,7 @@ const EventRecommendation = () => {
                   <Sliders size={16} className="text-primary" />
                   <span>Recommendation Weights</span>
                 </div>
-                
+
                 <div className="space-y-3">
                   <div>
                     <div className="flex justify-between text-xs font-medium mb-1 text-text-light">
@@ -545,7 +545,7 @@ const EventRecommendation = () => {
               {/* Breakdown Matrix */}
               <div className="space-y-3">
                 <span className="text-xs font-extrabold text-text-light/60 uppercase tracking-widest block">Match Priority Matrix</span>
-                
+
                 {selectedEvent.breakdown && selectedEvent.breakdown.map((item, idx) => (
                   <div key={idx} className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
@@ -619,7 +619,7 @@ const EventRecommendation = () => {
           </div>
         </div>
       )}
-      
+
     </div>
   );
 };

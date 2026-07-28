@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { GitHubStatCardSkeleton } from "../../../components/common/SkeletonLoaders";
+import { GitHubStatCardSkeleton } from "../components/common/SkeletonLoaders";
 import {
   Star,
   GitFork,
@@ -14,9 +14,9 @@ import {
   Languages,
 } from "lucide-react";
 
-import { safeJsonParse } from "../../../utils/safeJsonParse";
-import { ENV } from "../../../config/env";
-import { fetchGitHubJson } from "../../../utils/githubApiClient";
+import { safeJsonParse } from "../utils/safeJsonParse";
+import { ENV } from "../config/env";
+import { fetchGitHubJson } from "../utils/githubApiClient";
 
 const repoPath = ENV.GITHUB_REPO;
 const [GITHUB_USER, GITHUB_REPO] = repoPath.split("/");

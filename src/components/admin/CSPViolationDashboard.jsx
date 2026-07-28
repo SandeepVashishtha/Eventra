@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from 'context/AuthContext';
 
 const CSPViolationDashboard = () => {
   const [violations, setViolations] = useState([]);
@@ -9,7 +9,7 @@ const CSPViolationDashboard = () => {
   useEffect(() => {
     fetch('/api/admin/csp-reports', {
       headers: { Authorization: `Bearer ${token}` }
-    }).then(res => res.json()).then(setViolations).catch(() => {});
+    }).then(res => res.json()).then(setViolations).catch(err => console.error("[CSP] Failed to fetch violations:", err));
   }, [token]);
 
   return (

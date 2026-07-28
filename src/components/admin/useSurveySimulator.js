@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "react-toastify";
 
 export function useSurveySimulator(questions, feedbackPool) {
@@ -64,11 +64,17 @@ export function useSurveySimulator(questions, feedbackPool) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [questionsHash, feedbackHash]);
 
-  // 🔥 FIX 2: Wrapped in useCallback to provide a stable reference signature.
-  // Prevents downstream components from pointlessly re-rendering.
+  // 🔥 FIX 2: useRef stores always-current values so the callback can read
+  // fresh questions/feedbackPool without listing unstable array refs as deps.
+  // This gives handleSimulateSubmission a truly stable identity across renders.
+  const questionsRef = useRef(questions);
+  const feedbackPoolRef = useRef(feedbackPool);
+  questionsRef.current = questions;
+  feedbackPoolRef.current = feedbackPool;
+
   const handleSimulateSubmission = useCallback(() => {
-    const safeQuestions = questions || [];
-    const safeFeedback = feedbackPool || [];
+    const safeQuestions = questionsRef.current || [];
+    const safeFeedback = feedbackPoolRef.current || [];
 
     if (safeQuestions.length === 0) {
       toast.warn("Please add some questions first before simulating submissions!");
@@ -140,8 +146,7 @@ export function useSurveySimulator(questions, feedbackPool) {
       );
     }
 
-    toast.success("🚀 Simulator: Injected a new active survey submission record!");
-  }, [questions, feedbackPool]);
+  }, []); // stable forever — reads latest values via refs
 
   return {
     totalSubmissions,

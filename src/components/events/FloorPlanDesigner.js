@@ -1,16 +1,16 @@
 import { useState, useEffect, useRef, useCallback, useMemo, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { Layout, Save, RotateCcw, Plus, Minus, Move, AlertTriangle, Undo2, Redo2, Users } from "lucide-react";
-import { LiveAudienceContext } from "../../context/RealTimeContext";
+import { LiveAudienceContext } from "context/RealTimeContext";
 import { toast } from "react-toastify";
 import ConfirmationModal from "../../common/ConfirmationModal";
 import ElementPalette from "./FloorPlan/ElementPalette";
 import PropertiesPanel from "./FloorPlan/PropertiesPanel";
-import { PRESETS } from "../../constants/floorPlanPresets";
-import { checkCollision, getSeatPositions } from "../../utils/floorPlanGeometry";
-import { exportAsSVG, exportAsPNG, downloadLayoutJSON, importLayoutJSON } from "../../utils/floorPlanExport";
+import { PRESETS } from "constants/floorPlanPresets";
+import { checkCollision, getSeatPositions } from "utils/floorPlanGeometry";
+import { exportAsSVG, exportAsPNG, downloadLayoutJSON, importLayoutJSON } from "utils/floorPlanExport";
 import "./FloorPlanDesigner.css";
-import { safeJsonParse } from "../../utils/safeJsonParse";
+import { safeJsonParse } from "utils/safeJsonParse";
 
 const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
   const realTimeCtx = useContext(LiveAudienceContext);
@@ -171,7 +171,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
         }
         return { ...el, assignedAttendees: nextAssignments };
       }
-      
+
       // Clear duplicate attendee assignments from other tables
       let changed = false;
       if (attendeeName !== "") {
@@ -547,6 +547,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
             <button onClick={() => loadPreset("conference")} className="text-xs font-semibold px-2 py-0.5 hover:text-indigo-400 text-gray-300 transition-colors">Keynote</button>
           </div>
           <button onClick={() => navigate(`/events/${eventId}/virtual-venue-walkthrough`)} className="fp-btn fp-btn-primary" aria-label="3D Walkthrough">3D Walkthrough</button>
+          {lastSavedElementsStr && !isDirty && <span className="text-emerald-500 text-sm font-medium mr-3">All changes saved</span>}
           <button onClick={saveLayout} className="fp-btn fp-btn-primary" aria-label="button"><Save size={16} /> Save Layout</button>
         </div>
       </div>

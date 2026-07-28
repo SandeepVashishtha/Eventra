@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 
 import SubmitProject from './SubmitProject';
-import { projectService } from '../../services/projectService';
+import { projectService } from 'services/projectService';
 
 const renderSubmitProject = () => render(<SubmitProject />, { wrapper: MemoryRouter });
 
@@ -18,15 +18,15 @@ vi.mock('react-toastify', () => ({
 }));
 import { toast } from 'react-toastify';
 
-vi.mock('../../services/projectService', () => ({
+vi.mock('services/projectService', () => ({
   projectService: { submitProject: vi.fn() },
 }));
 
-vi.mock('../../context/AuthContext', async () => {
-  const actual = await vi.importActual('../../context/AuthContext');
+vi.mock('context/AuthContext', async () => {
+  const actual = await vi.importActual('context/AuthContext');
   return { ...actual, useAuth: vi.fn() };
 });
-import { useAuth as useAuthMock } from '../../context/AuthContext';
+import { useAuth as useAuthMock } from 'context/AuthContext';
 
 const mockIsAuthenticated = vi.fn(() => true);
 

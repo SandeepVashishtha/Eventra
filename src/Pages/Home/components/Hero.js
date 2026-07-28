@@ -32,8 +32,8 @@ const Hero = () => {
             {t("landing.hero.badge")}
           </div>
 
-          <h1 
-            style={{ fontFamily: "'Oxanium', sans-serif" }} 
+          <h1
+            style={{ fontFamily: "'Oxanium', sans-serif" }}
             className="text-4xl font-extrabold leading-tight tracking-tight text-text sm:text-5xl lg:text-[3.5rem] mb-4"
           >
             {t("landing.hero.headlineBefore")}{" "}

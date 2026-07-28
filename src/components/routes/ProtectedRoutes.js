@@ -3,7 +3,7 @@ import { Route } from "react-router-dom";
 
 import ProtectedRoute from "../auth/ProtectedRoute";
 import ErrorBoundary from "../common/ErrorBoundary";
-import { ROLES, PERMISSIONS } from "../../config/roles";
+import { ROLES, PERMISSIONS } from "config/roles";
 
 // 🔥 FIX: Removed all duplicate const declarations that were causing fatal SyntaxErrors
 const NotificationSettings = lazy(() => import("../../Pages/NotificationSettings"));

@@ -12,7 +12,7 @@ import { AlertTriangle, X } from "lucide-react";
 import useEventCancellation, {
   REFUND_POLICIES,
   REFUND_POLICY_LABELS,
-} from "../../hooks/useEventCancellation";
+} from "hooks/useEventCancellation";
 import FocusTrap from "../common/FocusTrap";
 
 // Restores focus to a previously-focused element, if it's still focusable.

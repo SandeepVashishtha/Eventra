@@ -1,13 +1,13 @@
 // src/components/user/RegistrationsTab.jsx
 import { motion } from "framer-motion";
-import { Users, Calendar, Trophy, FolderOpen, Search, X, SlidersHorizontal } from "lucide-react";
+import { Users, Calendar, Trophy, FolderOpen, Search, X, SlidersHorizontal, Download, Upload } from "lucide-react";
 import StatusBadge from "../common/StatusBadge";
 import SearchEmptyState from "../common/SearchEmptyState";
 import EmptyState from "../common/EmptyState";
 import StyledDropdown from "../StyledDropdown";
 import { DashboardTableSkeleton } from "../common/SkeletonLoaders";
-import { getSmartDateLabel } from "../../utils/relativeTime";
-import { downloadBulkICSFile } from "../../utils/calendarExporter";
+import { getSmartDateLabel } from "utils/relativeTime";
+import { downloadBulkICSFile } from "utils/calendarExporter";
 import CertificateDownload from "../CertificateDownload";
 const TYPE_OPTIONS = ["Event", "Hackathon", "Project"];
 const STATUS_OPTIONS = ["Upcoming", "Completed", "In Progress", "Done"];
@@ -26,9 +26,18 @@ const TYPE_ICON = {
   Project: <FolderOpen className="ud-type-icon" style={{ color: "#8b5cf6" }} />,
 };
 
+// Fallback for unrecognized or missing item.type values
+const DEFAULT_TYPE_ICON = <FolderOpen className="ud-type-icon" style={{ color: "#94a3b8" }} />;
+
 // Helper to render status badge
 const renderStatusBadge = (item) => {
-  const status = item.projectStatus !== "-" ? item.projectStatus : item.status;
+  // Guard against undefined/null in addition to the "-" sentinel so that
+  // Event and Hackathon rows (which have no projectStatus) correctly fall
+  // back to item.status instead of rendering <StatusBadge status={undefined} />.
+  const status =
+    item.projectStatus && item.projectStatus !== "-"
+      ? item.projectStatus
+      : item.status;
   return <StatusBadge status={status} />;
 };
 
@@ -43,6 +52,7 @@ const renderParticipationActions = (item, setSelectedTicketEvent) => {
       <StatusBadge status={item.participationType} />
       {isEventOrHackathon && isRegistered && (
         <button
+          type="button"
           onClick={() => setSelectedTicketEvent(item)}
           className="ud-btn-ticket"
           style={{
@@ -78,8 +88,8 @@ const renderTableRow = (item, setSelectedTicketEvent) => (
   <tr key={item.id}>
     <td>
       <span className="ud-table-type">
-        {TYPE_ICON[item.type]}
-        {item.type}
+      {TYPE_ICON[item.type] ?? DEFAULT_TYPE_ICON}
+      {item.type ?? "Unknown"}
       </span>
     </td>
     <td className="ud-table-title" title={item.title}>
@@ -114,6 +124,7 @@ const RegistrationsTab = ({
   hasRegistrations = false,
   totalRegistrations = 0,
 }) => {
+  const { exportToCSV } = useCSVExport();
   // Derive display value for the type dropdown
   const typeDisplayValue = selectedTypes.includes("All") ? "" : selectedTypes.join(", ");
   const statusDisplayValue = selectedStatuses.includes("All") ? "" : selectedStatuses.join(", ");
@@ -143,7 +154,7 @@ const RegistrationsTab = ({
           id="registrations-search"
         />
         {searchTerm && (
-          <button className="ud-search-clear" onClick={() => setSearchTerm("")} aria-label="Clear search">
+          <button type="button" className="ud-search-clear" onClick={() => setSearchTerm("")} aria-label="Clear search">
             <X size={13} />
           </button>
         )}
@@ -200,6 +211,7 @@ const RegistrationsTab = ({
 
       {activeFilterCount > 0 && (
         <button
+          type="button"
           onClick={clearAll}
           className="ud-clear-filters-btn"
           style={{
@@ -266,6 +278,7 @@ const RegistrationsTab = ({
 
         {filteredData.length > 0 && (
           <button
+            type="button"
             onClick={() => downloadBulkICSFile(filteredData, "eventra-schedule")}
             style={{
               display: "inline-flex",
@@ -288,6 +301,57 @@ const RegistrationsTab = ({
           </button>
         )}
       </div>
+
+      
+        {filteredData.length > 0 && (
+          <>
+            <button
+              type="button"
+              onClick={() => {}}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                padding: "0.5rem 1rem",
+                fontSize: "0.875rem",
+                fontWeight: 600,
+                background: "#f59e0b",
+                color: "white",
+                border: "none",
+                borderRadius: "0.75rem",
+                cursor: "pointer",
+                transition: "all 0.2s",
+                marginRight: "0.5rem"
+              }}
+              onMouseOver={(e) => (e.currentTarget.style.opacity = "0.9")}
+              onMouseOut={(e) => (e.currentTarget.style.opacity = "1")}
+            >
+              <Upload size={15} /> Import CSV
+            </button>
+            <button
+              type="button"
+              onClick={() => exportToCSV(filteredData, "eventra-registrations")}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              padding: "0.5rem 1rem",
+              fontSize: "0.875rem",
+              fontWeight: 600,
+              background: "#10b981",
+              color: "white",
+              border: "none",
+              borderRadius: "0.75rem",
+              cursor: "pointer",
+              transition: "all 0.2s",
+            }}
+            onMouseOver={(e) => (e.currentTarget.style.opacity = "0.9")}
+            onMouseOut={(e) => (e.currentTarget.style.opacity = "1")}
+          >
+            <Download size={15} /> Export CSV
+          </button>
+          </>
+        )}
 
       {/* Filters */}
       {hasAnyRegistrations && renderFilters()}

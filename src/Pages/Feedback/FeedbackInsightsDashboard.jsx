@@ -8,8 +8,8 @@ import {
   getRecommendationStats,
   getTagStats,
   exportFeedbackAsCSV,
-} from '../../utils/feedbackUtils';
-import { safeJsonParseFromStorage } from '../../utils/safeJsonParse';
+} from 'utils/feedbackUtils';
+import { safeJsonParseFromStorage } from 'utils/safeJsonParse';
 
 const COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ec4899', '#14b8a6'];
 

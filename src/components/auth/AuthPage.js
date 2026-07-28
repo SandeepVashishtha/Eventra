@@ -2,9 +2,9 @@ import { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import { AlertCircle, X as XIcon } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { useAuth } from "../../context/AuthContext";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
-import useReducedMotion from "../../hooks/useReducedMotion";
+import { useAuth } from "context/AuthContext";
+import useDocumentTitle from "hooks/useDocumentTitle";
+import useReducedMotion from "hooks/useReducedMotion";
 
 const LoginForm = lazy(() => import("./LoginForm"));
 const SignupForm = lazy(() => import("./SignupForm"));

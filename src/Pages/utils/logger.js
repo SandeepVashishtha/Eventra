@@ -1,4 +1,4 @@
-import { logger as baseLogger } from "../../utils/logger";
+import { logger as baseLogger } from "utils/logger";
 
 // Standalone recursive worker function to lower cyclomatic complexity
 const recursivelyMaskKeys = (obj, sensitiveKeys) => {
@@ -18,7 +18,7 @@ const sanitizeLogData = (data) => {
   try {
     const cleanData = JSON.parse(JSON.stringify(data));
     const sensitiveKeys = ['token', 'jwt', 'password', 'accesstoken', 'refreshtoken', 'secret'];
-    
+
     recursivelyMaskKeys(cleanData, sensitiveKeys);
     return cleanData;
   } catch {
@@ -29,7 +29,7 @@ const sanitizeLogData = (data) => {
 // Define custom secure wrapper matching their logger pattern
 const logger = {
   ...baseLogger,
-  
+
   log: (message, data = null) => {
     if (import.meta.env?.PROD || process.env.NODE_ENV === 'production') return;
 

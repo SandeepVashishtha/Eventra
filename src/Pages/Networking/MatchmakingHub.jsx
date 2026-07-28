@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
-import { fetchRecommendedConnections } from "../../utils/aiMatchmaking";
+import { useAuth } from "context/AuthContext";
+import { fetchRecommendedConnections } from "utils/aiMatchmaking";
 import { Calendar, MessageSquare, Zap, Star } from "lucide-react";
 import { toast } from "react-toastify";
 
 // 1. IMPORT THE MASTER SKIN LAYOUT SHELL
-import DashboardLayout from "../../components/Layout/DashboardLayout"; 
+import DashboardLayout from "components/Layout/DashboardLayout";
 
 const MatchmakingHub = () => {
   const { eventId = "networking-hub" } = useParams();
@@ -63,7 +63,7 @@ const MatchmakingHub = () => {
                     <Star className="w-3 h-3" /> {conn.matchScore}%
                   </div>
                 </div>
-                
+
                 <div className="p-3 bg-indigo-50 dark:bg-indigo-900/10 rounded-xl mb-4 text-sm text-indigo-800 dark:text-indigo-300">
                   <span className="font-semibold block mb-1">Why you match:</span>
                   {conn.matchReason}
@@ -78,7 +78,7 @@ const MatchmakingHub = () => {
                 </div>
 
                 <div className="mt-auto flex gap-3">
-                  <button 
+                  <button
                     onClick={() => handleSchedule(conn)}
                     className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
                   >

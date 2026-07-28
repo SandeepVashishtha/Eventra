@@ -5,11 +5,11 @@ import HomeEventSearch from "./components/HomeEventSearch";
 import WhatsHappening from "./components/WhatsHappening";
 import HomeCTA from "./components/HomeCTA";
 import RecommendationBanner from "./components/RecommendationBanner";
-import TrendingEvents from "../../components/TrendingEvents/TrendingEvents";
-import CollaborationNetworkMap from "../../components/visual/CollaborationNetworkMap";
-import CollaborationMap from "../../components/CollaborationMap";
+import TrendingEvents from "components/TrendingEvents/TrendingEvents";
+import CollaborationNetworkMap from "components/visual/CollaborationNetworkMap";
+import CollaborationMap from "components/CollaborationMap";
 import useHomeEventsData from "./hooks/useHomeEventsData";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
+import useDocumentTitle from "hooks/useDocumentTitle";
 
 // ─── CONSTANTS ──────────────────────────────────────────────────────────────
 const SITE_URL = "https://eventra.vercel.app";

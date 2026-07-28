@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Html5Qrcode } from "html5-qrcode";
-import { safeJsonParse } from "../../utils/safeJsonParse";
+import { safeJsonParse } from "utils/safeJsonParse";
 import {
   Camera,
   CameraOff,
@@ -18,8 +18,8 @@ import {
   WifiOff,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import { pushToQueue } from "../../utils/offlineQueue";
-import { validateTicket, recordCheckIn, fetchCheckInHistory, fetchScannerEvents, fetchTicketStats } from "../../services/ticketService";
+import { pushToQueue } from "utils/offlineQueue";
+import { validateTicket, recordCheckIn, fetchCheckInHistory, fetchScannerEvents, fetchTicketStats } from "services/ticketService";
 import "./TicketScanner.css";
 const HISTORY_CACHE_KEY = "eventra_checkins_cache";
 

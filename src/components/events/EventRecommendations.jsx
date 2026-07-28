@@ -11,8 +11,8 @@ import {
   Clock,
 } from "lucide-react";
 import mockEvents from "../../Pages/Events/eventsMockData.json";
-import { syncSecureStorage } from "../../utils/secureStorage";
-import { safeJsonParse } from "../../utils/safeJsonParse";
+import { syncSecureStorage } from "utils/secureStorage";
+import { safeJsonParse } from "utils/safeJsonParse";
 import MatchScoreBadge from "../common/MatchScoreBadge";
 
 // =========================================================================

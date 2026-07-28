@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "../../context/AuthContext.js";
-import useLiveAudience from "../../hooks/useLiveAudience.js";
+import { useAuth } from "context/AuthContext.js";
+import useLiveAudience from "hooks/useLiveAudience.js";
 import { BarChart3, Plus, Pause, Play, XCircle, Vote, Check, Loader2, RefreshCw } from "lucide-react";
 import { toast } from "react-toastify";
 
@@ -84,7 +84,7 @@ function PollStatusButtons({ activePoll, handleStatusChange }) {
         </button>
       )}
       <button
-        onClick={() => handleStatusChange("closed")}
+        onClick={() => handleStatusChange("cleared")}
         className="ml-auto flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-950 bg-linear-to-r from-cyan-400 to-primary hover:brightness-110 active:scale-95 transition-all duration-300 shadow-glow-sm cursor-pointer"
       >
         <RefreshCw className="h-4 w-4 text-slate-950" /><span>Create New Poll</span>

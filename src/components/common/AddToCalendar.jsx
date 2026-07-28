@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Calendar, ChevronDown, X } from 'lucide-react';
-import { getGoogleCalendarUrl, getOutlookCalendarUrl, getWebcalSubscriptionUrl } from '../../utils/calendarUrlUtils';
+import { getGoogleCalendarUrl, getOutlookCalendarUrl, getWebcalSubscriptionUrl } from 'utils/calendarUrlUtils';
 
 const generateICalContent = (event) => {
   const formatICalDate = (dateStr, timeStr) => {
@@ -83,7 +83,7 @@ export default function AddToCalendar({ event, className = '', iconOnly = false 
     <div className={`relative inline-block ${className}`}>
       <button
         onClick={() => setOpen(!open)}
-        className={iconOnly 
+        className={iconOnly
           ? "rounded-full border border-gray-200 bg-white/90 p-2 shadow backdrop-blur-sm hover:border-indigo-200 dark:border-gray-700 dark:bg-gray-800/90 dark:hover:border-indigo-500 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer"
           : "flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"}
         aria-haspopup="true"
@@ -117,7 +117,7 @@ export default function AddToCalendar({ event, className = '', iconOnly = false 
           </button>
           <button onClick={handleIcal} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left border-t border-gray-100 dark:border-gray-800">
             <Calendar className="w-4 h-4 text-gray-400" />
-            Subscribe (Apple / ICS)
+            Export to Apple Calendar (.ics)
           </button>
           {added && (
             <div className="px-4 py-2 bg-green-50 dark:bg-green-900/20 border-t border-green-100 dark:border-green-800">

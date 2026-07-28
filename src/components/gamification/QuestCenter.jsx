@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
-import { safeJsonParse } from "../../utils/safeJsonParse";
+import { safeJsonParse } from "utils/safeJsonParse";
 import {
   Zap, CheckCircle, Gift, Target,
   Flame, Star, Trophy, Sparkles, Timer,
@@ -98,44 +98,44 @@ const playClaimSound = () => {
 
     // Define pitch sequence for ascending chime (pentatonic scale feels very positive)
     const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50]; // C4, E4, G4, C5, E5, G5, C6
-    
+
     notes.forEach((freq, idx) => {
       const triggerTime = now + idx * 0.08;
-      
+
       // Oscillator 1: Sine (warm body)
       const osc1 = ctx.createOscillator();
       const gainNode = ctx.createGain();
-      
+
       osc1.type = 'sine';
       osc1.frequency.setValueAtTime(freq, triggerTime);
-      
+
       // Pitch slide up slightly on each note for extra dynamic bounce
       osc1.frequency.exponentialRampToValueAtTime(freq * 1.05, triggerTime + 0.12);
-      
+
       // Exponential decay envelope
       gainNode.gain.setValueAtTime(0, triggerTime);
       gainNode.gain.linearRampToValueAtTime(0.2, triggerTime + 0.02);
       gainNode.gain.exponentialRampToValueAtTime(0.001, triggerTime + 0.25);
-      
+
       osc1.connect(gainNode);
       gainNode.connect(ctx.destination);
-      
+
       osc1.start(triggerTime);
       osc1.stop(triggerTime + 0.3);
 
       // Oscillator 2: Triangle (adds subtle retro weight)
       const osc2 = ctx.createOscillator();
       const gainNode2 = ctx.createGain();
-      
+
       osc2.type = 'triangle';
       osc2.frequency.setValueAtTime(freq, triggerTime);
       gainNode2.gain.setValueAtTime(0, triggerTime);
       gainNode2.gain.linearRampToValueAtTime(0.08, triggerTime + 0.02);
       gainNode2.gain.exponentialRampToValueAtTime(0.001, triggerTime + 0.2);
-      
+
       osc2.connect(gainNode2);
       gainNode2.connect(ctx.destination);
-      
+
       osc2.start(triggerTime);
       osc2.stop(triggerTime + 0.25);
     });
@@ -192,7 +192,7 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0, gssocE
 
   // Derive demo progress from props (totalEvents, currentStreak)
   // 🔥 FIX 2: Added state.dailyResetAt and state.weeklyResetAt to dependency array.
-  // This ensures that when the clock rolls over and the quests are wiped clean, 
+  // This ensures that when the clock rolls over and the quests are wiped clean,
   // this effect re-runs to correctly repopulate progress from the active props!
   useEffect(() => {
     setState(prev => {

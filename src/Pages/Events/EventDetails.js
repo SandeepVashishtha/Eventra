@@ -1,40 +1,41 @@
-import StatusBadge from "../../components/common/StatusBadge";
-import ReadingProgressBar from "../../components/common/ReadingProgressBar";
+import StatusBadge from "components/common/StatusBadge";
+import ReadingProgressBar from "components/common/ReadingProgressBar";
 import "./EventDetails.print.css";
-import CountdownTimer from "../../components/common/CountdownTimer";
+import CountdownTimer from "components/common/CountdownTimer";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Helmet } from "react-helmet-async";
-import { sanitizeMarkdown } from "../../utils/sanitizeHtml";
+import { sanitizeMarkdown } from "utils/sanitizeHtml";
 import { toast } from "react-toastify";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
-import { Calendar, MapPin, Clock, Tag, CalendarPlus, Link2, Check } from "lucide-react";
-import { getEventStatus, isEventRegistrationClosed } from "../../utils/eventUtils";
-import { useAuth } from "../../context/AuthContext";
-import useBookmarks from "../../hooks/useBookmarks";
-import { DRAFT_KEY } from "../../constants/eventDefaults";
-import { useMyEvents } from "../../context/MyEventsContext";
-import { logger } from "../../utils/logger";
-import ReminderControls from "../../components/reminders/ReminderControls";
-import EventRecommendations from "../../components/events/EventRecommendations";
-import EventCancellationModal from "../../components/events/EventCancellationModal";
-import SimilarEvents from "../../components/events/SimilarEvents";
-import LiveQABoard from "../../components/events/LiveQABoard";
-import EventRegistrationProgress from "../../components/common/EventRegistrationProgress";
-import LivePollController from "../../components/admin/LivePollController";
-import { EventDetailSkeleton } from "../../components/common/SkeletonLoaders";
-import LazyImage from "../../components/common/LazyImage";
-import { exportToCSV, exportToJSON } from "../../utils/exportUtils";
-import { ROLES } from "../../config/roles";
+import useKeyboardShortcuts from "hooks/useKeyboardShortcuts";
+import { Calendar, MapPin, Clock, Tag, CalendarPlus, Link2, Check, Archive } from "lucide-react";
+import { getEventStatus, isEventRegistrationClosed } from "utils/eventUtils";
+import { useAuth } from "context/AuthContext";
+import useBookmarks from "hooks/useBookmarks";
+import { DRAFT_KEY } from "constants/eventDefaults";
+import { useMyEvents } from "context/MyEventsContext";
+import { logger } from "utils/logger";
+import ReminderControls from "components/reminders/ReminderControls";
+import EventRecommendations from "components/events/EventRecommendations";
+import EventCancellationModal from "components/events/EventCancellationModal";
+import SimilarEvents from "components/events/SimilarEvents";
+import LiveQABoard from "components/events/LiveQABoard";
+import EventRegistrationProgress from "components/common/EventRegistrationProgress";
+import LivePollController from "components/admin/LivePollController";
+import { EventDetailSkeleton } from "components/common/SkeletonLoaders";
+import LazyImage from "components/common/LazyImage";
+import { exportToCSV, exportToJSON } from "utils/exportUtils";
+import { ROLES } from "config/roles";
 import { marked } from "marked";
-import ShareModal from "../../components/common/ShareModal";
-import SocialShareButtons from "../../components/common/SocialShareButtons";
-import { downloadICSFile, generateGoogleCalendarLink, generateOutlookLink } from "../../utils/calendarExporter";
-import { RecentlyViewedTracker } from "../../components/common/RecentlyViewedEvents";
-import { apiUtils, API_ENDPOINTS } from "../../config/api";
-import { getLastUpdated } from "../../utils/LastUpdatedUtils";
+import ShareModal from "components/common/ShareModal";
+import SocialShareButtons from "components/common/SocialShareButtons";
+import { downloadICSFile, generateGoogleCalendarLink, generateOutlookLink } from "utils/calendarExporter";
+import { RecentlyViewedTracker } from "components/common/RecentlyViewedEvents";
+import { apiUtils, API_ENDPOINTS } from "config/api";
+import { getLastUpdated } from "utils/LastUpdatedUtils";
 import mockEvents from "./eventsMockData.json";
-import CopyButton from '../../components/ui/CopyButton';
+import CopyButton from 'components/ui/CopyButton';
+
 const formatEventDate = (dateValue) => {
   if (!dateValue) return { short: "TBD", full: "Date TBD", relative: "" };
   const d = new Date(dateValue);
@@ -345,7 +346,7 @@ const showClosingSoon =
   hoursLeft !== null &&
   hoursLeft > 0 &&
   hoursLeft <= 48;
-const lastUpdated = getLastUpdated(event.updatedAt);  
+const lastUpdated = getLastUpdated(event.updatedAt);
 
   return (
   <>
@@ -423,6 +424,14 @@ const lastUpdated = getLastUpdated(event.updatedAt);
                   className="inline-flex items-center justify-center rounded-full border border-red-500 px-6 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
                 >
                   Cancel Event
+                </button>
+              )}
+              {isOrganizer && event.status !== "cancelled" && event.status !== "archived" && (
+                <button
+                  onClick={() => { setEvent({ ...event, status: "archived" }); toast.success("Event Archived!"); }}
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-orange-500 px-6 py-3 text-sm font-semibold text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition"
+                >
+                  <Archive size={16} /> Archive Event
                 </button>
               )}
 

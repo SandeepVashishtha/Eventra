@@ -12,10 +12,10 @@ import {
   Pie,
 } from "recharts";
 import { toast } from "react-toastify";
-import { useAnalyticsStream, SSE_STATUS } from "../../context/RealTimeContext";
+import { useAnalyticsStream, SSE_STATUS } from "context/RealTimeContext";
 import BudgetPlanner from "./BudgetPlanner";
-import { safeJsonParse } from "../../utils/safeJsonParse";
-import useAnalytics from "../../hooks/useAnalytics";
+import { safeJsonParse } from "utils/safeJsonParse";
+import useAnalytics from "hooks/useAnalytics";
 
 // =========================================================================
 // CONSTANTS & FALLBACK DATA

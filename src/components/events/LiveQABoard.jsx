@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useAuth } from "../../context/AuthContext.js";
-import useLiveAudience from "../../hooks/useLiveAudience.js";
+import { useAuth } from "context/AuthContext.js";
+import useLiveAudience from "hooks/useLiveAudience.js";
 import { ThumbsUp, Trash, Flag, Send, AlertTriangle, HelpCircle, Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
 
@@ -75,9 +75,9 @@ function highlightKeywords(text) {
   const keywords = ['bug', 'feature', 'question', 'pricing', 'roadmap'];
   const regex = new RegExp(`\\b(${keywords.join('|')})\\b`, 'gi');
   const parts = text.split(regex);
-  return parts.map((part, i) => 
-    keywords.includes(part.toLowerCase()) 
-      ? <span key={i} className="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-400 font-bold border border-indigo-500/30 text-[10px] uppercase tracking-widest mx-0.5">{part}</span> 
+  return parts.map((part, i) =>
+    keywords.includes(part.toLowerCase())
+      ? <span key={i} className="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-400 font-bold border border-indigo-500/30 text-[10px] uppercase tracking-widest mx-0.5">{part}</span>
       : part
   );
 }
@@ -96,7 +96,12 @@ function QuestionCard({ q, isModerator, onUpvote, onFlag, onDelete }) {
           </span>
         )}
         <p className="text-sm text-slate-200 break-words leading-relaxed font-sans">{isModerator ? highlightKeywords(q.text) : q.text}</p>
-        <span className="text-[10px] text-slate-500 font-medium">{formatTime(q.createdAt)}</span>
+        <span className="text-[10px] text-slate-500 font-medium">
+          {formatTime(q.createdAt)}
+          {q.isSpeaker && (
+            <span className="ml-2 px-1.5 py-0.5 rounded-full bg-primary/20 text-primary text-[10px] font-bold uppercase tracking-wider">Speaker</span>
+          )}
+        </span>
       </div>
 
       <div className="flex items-center gap-2 shrink-0">

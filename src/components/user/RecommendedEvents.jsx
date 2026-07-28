@@ -4,7 +4,7 @@ import HackathonCard from "../../Pages/Hackathons/HackathonCard";
 
 import mockHackathons from "../../Pages/Hackathons/hackathonMockData.json";
 
-import useRecommendations from "../../hooks/useRecommendations";
+import useRecommendations from "hooks/useRecommendations";
 
 
 const RecommendedEvents = () => {
