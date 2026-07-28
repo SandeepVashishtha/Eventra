@@ -36,7 +36,7 @@ const normalize = (n = {}) => ({
 
 const persist = (items, storageKey) => {
   if (typeof window === "undefined" || !window.localStorage || !storageKey) return;
-  try { window.localStorage.setItem(storageKey, JSON.stringify(items)); } catch {}
+  try { window.localStorage.setItem(storageKey, JSON.stringify(items)); } catch (e) { console.warn("[useNotificationPoller] Failed to persist notifications", e); }
 };
 
 const loadPersisted = (storageKey) => {
@@ -96,7 +96,7 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
       });
       window.localStorage.setItem(userKey, JSON.stringify(merged));
       window.localStorage.removeItem(GUEST_INBOX_KEY);
-    } catch {}
+    } catch (e) { console.warn("[useNotificationPoller] Failed to persist notifications", e); }
   }, [user?.id]);
 
   const addSeenId = (id) => {
