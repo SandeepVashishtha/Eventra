@@ -38,6 +38,8 @@ const escapeICSText = (text = "") => {
  * @param {CalendarEvent} event - The event object to export.
  */
 export const downloadICSFile = (event) => {
+  if (typeof window === "undefined" || typeof document === "undefined") return;
+
   const { title, description, date, endDate, location, id } = event;
   
   const formattedStart = formatToICSDate(date);
@@ -191,6 +193,7 @@ export const generateYahooCalendarLink = (event) => {
  * @param {string} [filename="registered-events"] - Custom filename for the downloaded file.
  */
 export const downloadBulkICSFile = (events, filename = "registered-events") => {
+  if (typeof window === "undefined" || typeof document === "undefined") return;
   if (!Array.isArray(events) || events.length === 0) return;
 
   const createdDate = formatToICSDate(new Date());
