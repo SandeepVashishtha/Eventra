@@ -144,23 +144,24 @@ const useEventListing = () => {
         last: responseData.last ?? true,
       });
     } catch (error) {
-        setEvents([]);
-        setPagination({
-          totalPages: 1,
-          totalElements: 0,
-          first: true,
-          last: true,
-        });
+      console.warn("API event fetch failed:", error);
+      setEvents([]);
+      setPagination({
+        totalPages: 1,
+        totalElements: 0,
+        first: true,
+        last: true,
+      });
 
-        if (error?.response?.status === 403) {
-          setLoadError(
-            "Access to events is currently restricted. Please try again later.",
-          );
-        } else {
-          setLoadError(
-            "Failed to load events. Please try again later.",
-          );
-        }
+      if (error?.response?.status === 403) {
+        setLoadError(
+          "Access to events is currently restricted. Please try again later.",
+        );
+      } else {
+        setLoadError(
+          "Failed to load events. Please try again later.",
+        );
+      }
     } finally {
       setIsLoading(false);
     }
