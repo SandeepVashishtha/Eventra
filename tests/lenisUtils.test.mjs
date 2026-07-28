@@ -38,6 +38,20 @@ global.window = {
 const { scrollToElement, scrollToTop, stopScroll, startScroll, getScrollPosition } =
   await import("../src/utils/lenisUtils.js");
 
+// ── SSR guards ───────────────────────────────────────────────────────────────
+const savedWindow = global.window;
+const savedDocument = global.document;
+delete global.window;
+delete global.document;
+const ssrModule = await import("../src/utils/lenisUtils.js?ssr");
+assert.doesNotThrow(() => ssrModule.scrollToElement("#hero"), "SSR scrollToElement is a no-op");
+assert.doesNotThrow(() => ssrModule.scrollToTop(), "SSR scrollToTop is a no-op");
+assert.doesNotThrow(() => ssrModule.stopScroll(), "SSR stopScroll is a no-op");
+assert.doesNotThrow(() => ssrModule.startScroll(), "SSR startScroll is a no-op");
+assert.equal(ssrModule.getScrollPosition(), 0, "SSR getScrollPosition returns 0");
+global.window = savedWindow;
+global.document = savedDocument;
+
 // ── scrollToElement ──────────────────────────────────────────────────────────
 calls.lenis.scrollTo.length = 0;
 scrollToElement("#hero");
