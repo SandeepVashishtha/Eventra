@@ -1,55 +1,20 @@
-const CACHE_NAME = 'eventra-offline-v1';
-const OFFLINE_PAGE = '/offline.html';
-
-// Assets to cache immediately
-const STATIC_ASSETS = [
-  '/',
-  '/offline.html',
-  '/index.html',
-  '/Eventra.png',
-];
-
-// Install event - cache offline page
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('[Service Worker] Caching offline page');
-      return cache.addAll(STATIC_ASSETS);
-    })
-  );
-  self.skipWaiting();
-});
-
-// Activate event - clean old caches
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames
-          .filter((name) => name !== CACHE_NAME)
-          .map((name) => caches.delete(name))
-      );
-    })
-  );
-  self.clients.claim();
-});
-
-// Fetch event - serve offline page when network fails
-self.addEventListener('fetch', (event) => {
-  // Only handle navigation requests (HTML pages)
-  if (event.request.mode !== 'navigate') {
-    return;
-  }
-
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        // If successful, return the response
-        return response;
-      })
-      .catch(() => {
-        // If network fails, serve offline page
-        return caches.match(OFFLINE_PAGE);
-      })
-  );
-});
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://eventra.sandeepvashishtha.in/</loc><priority>1.0</priority></url>
+  <url><loc>https://eventra.sandeepvashishtha.in/events</loc><priority>0.9</priority></url>
+  <url><loc>https://eventra.sandeepvashishtha.in/hackathons</loc><priority>0.9</priority></url>
+  <url><loc>https://eventra.sandeepvashishtha.in/projects</loc><priority>0.9</priority></url>
+  <url><loc>https://eventra.sandeepvashishtha.in/leaderboard</loc><priority>0.8</priority></url>
+  <url><loc>https://eventra.sandeepvashishtha.in/about</loc><priority>0.7</priority></url>
+  <url><loc>https://eventra.sandeepvashishtha.in/faq</loc><priority>0.7</priority></url>
+  <url><loc>https://eventra.sandeepvashishtha.in/contact</loc><priority>0.7</priority></url>
+  <url><loc>https://eventra.sandeepvashishtha.in/contributors</loc><priority>0.7</priority></url>
+  <url><loc>https://eventra.sandeepvashishtha.in/documentation</loc><priority>0.7</priority></url>
+  <url><loc>https://eventra.sandeepvashishtha.in/api-docs</loc><priority>0.7</priority></url>
+  <url><loc>https://eventra.sandeepvashishtha.in/terms</loc><priority>0.6</priority></url>
+  <url><loc>https://eventra.sandeepvashishtha.in/privacy</loc><priority>0.6</priority></url>
+  <url><loc>https://eventra.sandeepvashishtha.in/helpcenter</loc><priority>0.6</priority></url>
+  <url><loc>https://eventra.sandeepvashishtha.in/dashboard</loc><priority>0.5</priority></url>
+  <url><loc>https://eventra.sandeepvashishtha.in/community-event</loc><priority>0.7</priority></url>
+  <url><loc>https://eventra.sandeepvashishtha.in/contributorguide</loc><priority>0.6</priority></url>
+</urlset>

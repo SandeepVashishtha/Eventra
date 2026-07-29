@@ -1,3 +1,4 @@
+import { safeJsonParse } from "./safeJsonParse.js";
 export const NOTIFICATION_CATEGORIES = {
   registrations: {
     label: "Registrations",
@@ -38,6 +39,9 @@ export const PUSH_SUBSCRIPTION_KEY = "eventra_push_subscription";
 export const DEFAULT_NOTIFICATION_PREFERENCES = {
   inApp: true,
   push: false,
+  marketing: true,
+  social: true,
+  updates: true,
   email: true,
   emailDigest: "daily",
   sound: "chime",
@@ -48,6 +52,7 @@ export const DEFAULT_NOTIFICATION_PREFERENCES = {
 };
 
 export const getNotificationCategory = (notification = {}) => {
+  if (!notification) return "system";
   const rawCategory =
     notification.category ||
     notification.type ||
@@ -87,7 +92,7 @@ export const readNotificationPreferences = () => {
 
   try {
     const stored = window.localStorage.getItem(NOTIFICATION_PREFERENCES_KEY);
-    return normalizeNotificationPreferences(stored ? JSON.parse(stored) : {});
+    return normalizeNotificationPreferences(stored ? safeJsonParse(stored, {}) : {});
   } catch {
     return DEFAULT_NOTIFICATION_PREFERENCES;
   }
@@ -96,10 +101,18 @@ export const readNotificationPreferences = () => {
 export const writeNotificationPreferences = (preferences) => {
   if (typeof window === "undefined") return preferences;
   const normalized = normalizeNotificationPreferences(preferences);
-  window.localStorage.setItem(NOTIFICATION_PREFERENCES_KEY, JSON.stringify(normalized));
-  window.dispatchEvent(
-    new CustomEvent("eventra-notification-preferences", { detail: normalized })
-  );
+  try {
+    window.localStorage.setItem(NOTIFICATION_PREFERENCES_KEY, JSON.stringify(normalized));
+    window.dispatchEvent(
+      new CustomEvent("eventra-notification-preferences", { detail: normalized })
+    );
+  } catch {
+    // localStorage may be full or blocked — dispatch the event anyway
+    // so in-memory consumers stay in sync even if persistence fails
+    window.dispatchEvent(
+      new CustomEvent("eventra-notification-preferences", { detail: normalized })
+    );
+  }
   return normalized;
 };
 
@@ -145,6 +158,7 @@ export const playNotificationSound = (soundKey) => {
 };
 
 export const urlBase64ToUint8Array = (base64String) => {
+  if (typeof window === "undefined") return new Uint8Array();
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
   const rawData = window.atob(base64);

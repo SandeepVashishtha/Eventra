@@ -1,0 +1,230 @@
+{
+  "app": {
+    "name": "Eventra",
+    "tagline": "Tu plataforma de eventos todo en uno",
+    "loading": "Cargando página...",
+    "backOnline": "¡De vuelta en línea! Tus conexiones han sido restauradas.",
+    "offline": "Estás offline. Ejecutando en modo de caché local seguro."
+  },
+  "nav": {
+    "home": "Inicio",
+    "events": "Eventos",
+    "hackathons": "Hackathones",
+    "leaderboard": "Clasificación",
+    "contributors": "Contribuidores",
+    "about": "Acerca de",
+    "contact": "Contacto",
+    "dashboard": "Panel",
+    "admin": "Admin",
+    "signIn": "Iniciar Sesión",
+    "signUp": "Registrarse",
+    "signOut": "Cerrar Sesión",
+    "profile": "Perfil",
+    "account": "Cuenta",
+    "settings": "Ajustes",
+    "projects": "Proyectos",
+    "networking": "Conexiones",
+    "saved": "Guardados",
+    "community": "Comunidad",
+    "more": "Más",
+    "exploreEvents": "Explorar Eventos",
+    "eventCalendar": "Calendario de Eventos",
+    "scheduler": "Programador",
+    "communityEvents": "Eventos Comunitarios",
+    "contributorsGuide": "Guía de Contribuidores",
+    "faq": "FAQ",
+    "getStarted": "Comenzar",
+    "viewProfile": "Ver Perfil",
+    "faqFull": "Preguntas Frecuentes",
+    "expandSubmenu": "Expandir submenú {{name}}",
+    "collapseSubmenu": "Contraer submenú {{name}}",
+    "mobilePrimaryLinks": "Enlaces primarios móviles",
+    "primaryLinks": "Enlaces primarios"
+  },
+  "auth": {
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "confirmPassword": "Confirmar Contraseña",
+    "name": "Nombre",
+    "rememberMe": "Recordarme",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "noAccount": "¿No tienes una cuenta?",
+    "hasAccount": "¿Ya tienes una cuenta?",
+    "sessionExpired": "Sesión expirada. Por favor inicia sesión nuevamente.",
+    "loginSuccess": "¡Bienvenido de nuevo!",
+    "signupSuccess": "¡Cuenta creada exitosamente!",
+    "welcomeBack": "Bienvenido de nuevo",
+    "signInSubtitle": "Inicia sesión en tu cuenta de Eventra",
+    "usernameOrEmail": "Correo electrónico o nombre de usuario",
+    "signIn": "Iniciar sesión",
+    "signingIn": "Iniciando sesión...",
+    "createAccount": "Crear una aquí",
+    "usernamePlaceholder": "john@example.com / yourname@email.com / eventra.team@gmail.com",
+    "passwordPlaceholder": "Ingresa una contraseña segura / Mínimo 8 caracteres / Usa una contraseña fuerte",
+    "showPassword": "Mostrar contraseña",
+    "hidePassword": "Ocultar contraseña",
+    "lockedOut": "Demasiados intentos fallidos. Inténtalo de nuevo en {{seconds}}s.",
+    "attemptsRemaining": "{{count}} intento(s) restante(s) antes del bloqueo temporal.",
+    "lockedWait": "Bloqueado — espera {{seconds}}s"
+  },
+  "validation": {
+    "required": "Este campo es obligatorio",
+    "invalidEmail": "Formato de correo inválido",
+    "weakPassword": "La contraseña no cumple con los requisitos de seguridad",
+    "passwordLength": "La contraseña debe tener al menos 8 caracteres",
+    "nameRequired": "El nombre es obligatorio",
+    "nameMinLength": "El nombre debe tener al menos 2 caracteres",
+    "nameLettersOnly": "El nombre solo debe contener letras",
+    "emailRequired": "El correo es obligatorio",
+    "emailValid": "Por favor ingresa un correo válido",
+    "subjectRequired": "El asunto es obligatorio",
+    "subjectMinLength": "El asunto debe tener al menos 5 caracteres",
+    "subjectMeaningful": "Por favor ingresa un asunto significativo",
+    "messageRequired": "El mensaje es obligatorio",
+    "messageMinLength": "El mensaje debe tener al menos 10 caracteres",
+    "feedbackNameRequired": "El nombre es obligatorio",
+    "feedbackNameMinLength": "El nombre debe tener al menos 3 caracteres",
+    "feedbackEmailRequired": "El correo es obligatorio",
+    "feedbackEmailValid": "Por favor ingresa un correo válido",
+    "feedbackTypeRequired": "Por favor selecciona un tipo de feedback",
+    "feedbackMessageRequired": "El mensaje es obligatorio",
+    "feedbackMessageMinLength": "El mensaje debe tener al menos 20 caracteres",
+    "feedbackRatingRequired": "Por favor proporciona una calificación"
+  },
+  "error": {
+    "generic": "Ocurrió un error inesperado. Por favor intenta de nuevo.",
+    "unauthorized": "Tus credenciales son incorrectas o tu sesión ha expirado.",
+    "notFound": "El recurso solicitado no fue encontrado.",
+    "serverError": "Algo salió mal. Por favor intenta de nuevo.",
+    "networkError": "No se puede alcanzar el servidor. Verifica tu conexión.",
+    "rateLimited": "Demasiadas solicitudes. Por favor espera..."
+  },
+  "common": {
+    "close": "Cerrar",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "save": "Guardar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "submit": "Enviar",
+    "retry": "Reintentar",
+    "loading": "Cargando...",
+    "search": "Buscar",
+    "closeModal": "Cerrar modal",
+    "noResults": "No se encontraron resultados"
+  },
+  "footer": {
+    "rights": "Todos los derechos reservados.",
+    "privacy": "Política de Privacidad",
+    "terms": "Términos del Servicio"
+  },
+  "language": {
+    "switch": "Idioma",
+    "en": "English",
+    "es": "Español"
+  },
+  "event": {
+    "noEventsScheduled": "No hay eventos programados",
+    "noUpcomingEvents": "No hay eventos próximos programados para este día.",
+    "noEventsMatch": "Ningún evento coincide con tus filtros",
+    "noBookmarked": "No hay eventos guardados",
+    "noBookmarkedDesc": "¡Empieza a explorar y guarda los eventos que te interesen!",
+    "noEventsMatchDesc": "Intenta ajustar o limpiar tus filtros para ver todos los eventos disponibles."
+  },
+  "about": {
+    "pageTitle": "Acerca de nosotros",
+    "pageDescription": "Conozca Eventra: la plataforma de gestión de eventos de código abierto para comunidades, universidades y organizaciones de todo el mundo.",
+    "documentTitle": "Eventra | Acerca de",
+    "errorBoundaryLabel": "Estadísticas",
+    "hero": {
+      "tagline": "Código Abierto • Impulsado por la Comunidad • Gratis para Siempre",
+      "title": "Construyendo Mejores Eventos",
+      "subtitle": "Juntos",
+      "description": "Eventra empodera a comunidades, universidades, organizaciones y equipos de código abierto para crear, gestionar y hacer crecer eventos de gran impacto a través de herramientas de gestión de eventos accesibles, modernas y colaborativas."
+    },
+    "stats": {
+      "events": "Eventos Organizados",
+      "builders": "Miembros de la Comunidad",
+      "partners": "Alcance Comunitario"
+    },
+    "values": {
+      "heading": "Qué Impulsa a Eventra",
+      "description": "Nuestros valores guían cada decisión que tomamos, asegurando que Eventra siga siendo accesible, centrada en la comunidad y construida para un impacto a largo plazo.",
+      "eventManagement": {
+        "title": "Código Abierto",
+        "description": "Construido de manera transparente y disponible libremente para comunidades de todo el mundo."
+      },
+      "hackathonGrowth": {
+        "title": "La Comunidad Primero",
+        "description": "Diseñado en torno a la colaboración, la inclusión y las conexiones significativas."
+      },
+      "projectCollaboration": {
+        "title": "Innovación",
+        "description": "Evolucionando continuamente a través de los comentarios de la comunidad y la tecnología moderna."
+      },
+      "networking": {
+        "title": "Accesibilidad",
+        "description": "Simple, intuitivo y accesible para organizadores de todos los niveles."
+      }
+    },
+    "cta": {
+      "badge": "Únete a la Comunidad de Eventra",
+      "heading": "Construye, Colabora y Crece",
+      "subtitle": "Juntos con Eventra",
+      "description": "Eventra capacita a estudiantes, desarrolladores, organizadores y comunidades para descubrir oportunidades, colaborar en proyectos significativos y crear impacto a través de eventos tecnológicos.",
+      "socialProof": {
+        "community": "Comunidad Creciente",
+        "openSource": "Impulsado por Código Abierto",
+        "learning": "Aprendizaje y Colaboración"
+      },
+      "getStartedFree": "Comenzar Gratis",
+      "documentation": "Documentación",
+      "contactUs": "Contáctenos"
+    },
+    "features": {
+      "heading": "Características que Potencian Cada Evento",
+      "description": "Eventra proporciona todo lo necesario para crear, gestionar, escalar y hacer crecer eventos exitosos mientras fomenta comunidades más fuertes.",
+      "ctaAriaLabel": "{{cta}} - {{title}}",
+      "items": {
+        "events": {
+          "stat": "Configuración 90% más rápida",
+          "title": "Creación Inteligente de Eventos",
+          "description": "Lance eventos rápidamente utilizando plantillas inteligentes, flujos de trabajo optimizados y herramientas automatizadas.",
+          "cta": "Comenzar a Crear"
+        },
+        "hackathons": {
+          "stat": "Registro rápido",
+          "title": "Hackathones y Desafíos",
+          "description": "Únete a hackathones, forma equipos, construye proyectos y demuestra tus habilidades para ganar premios.",
+          "cta": "Ver Hackathones"
+        },
+        "projects": {
+          "stat": "Construir juntos",
+          "title": "Colaboración de Proyectos",
+          "description": "Colabora en proyectos de código abierto, contribuye al código real y construye tu portafolio.",
+          "cta": "Explorar Proyectos"
+        },
+        "connections": {
+          "stat": "Crece tu red",
+          "title": "Red de Contactos",
+          "description": "Conéctate con desarrolladores, diseñadores y creadores de todo el mundo.",
+          "cta": "Unirse a la Comunidad"
+        },
+        "manage": {
+          "stat": "Grado empresarial",
+          "title": "Gestión Segura",
+          "description": "Gestione sus eventos con total tranquilidad mediante check-ins automáticos con códigos QR y control de acceso.",
+          "cta": "Leer Documentación"
+        },
+        "benefits": {
+          "stat": "Acceso global",
+          "title": "Beneficios para Desarrolladores",
+          "description": "Obtén certificados, insignias por tus contribuciones y sube de nivel en el ranking global.",
+          "cta": "Registrarse Ahora"
+        }
+      }
+    }
+  }
+}
