@@ -91,16 +91,8 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const extractSession = useCallback(
-    (res, data, fallbackEmail) => {
-      let sessionToken = data?.token ?? data?.accessToken ?? null;
-
-      if (!sessionToken) {
-        const authHeader = res.headers?.authorization || res.headers?.Authorization || null;
-        if (authHeader && authHeader.startsWith("Bearer ")) {
-          sessionToken = authHeader.substring(7);
-        }
-      }
-
+    (data, fallbackEmail) => {
+      const sessionToken = data?.token ?? data?.accessToken ?? null;
       const rawUser = data?.user ?? data?.data ?? data ?? null;
       const rawRoles = rawUser?.roles ?? (rawUser?.role ? [rawUser.role] : []);
       const resolvedRoles = normalizeRoles(rawRoles);
@@ -142,7 +134,7 @@ export const AuthProvider = ({ children }) => {
         if (!isMountedRef.current) return;
 
         if (res.ok && res.data) {
-          const { sessionToken, sessionUser } = extractSession(res, res.data, null);
+          const { sessionToken, sessionUser } = extractSession(res.data, res.data?.user?.email || null);
           if (!isMountedRef.current) return;
           setToken(sessionToken || "cookie-managed");
           setUser(sessionUser);
@@ -293,7 +285,7 @@ export const AuthProvider = ({ children }) => {
           throw new Error(data?.message || data?.error || "Invalid credentials");
         }
 
-        const { sessionToken, sessionUser } = extractSession(res, data, usernameOrEmail);
+        const { sessionToken, sessionUser } = extractSession(data, usernameOrEmail);
 
         if (!sessionToken) {
           throw new Error("Login failed: token missing from response");
