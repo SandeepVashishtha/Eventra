@@ -11,4 +11,18 @@ assert.equal(decoded.id, 123);
 assert.equal(isTokenExpired(mockJwt), false);
 assert.equal(isTokenValid(mockJwt), true);
 
+// Edge Cases: Malformed tokens (missing parts)
+assert.equal(decodeTokenPayload("malformed-token"), null);
+assert.equal(isTokenExpired("malformed-token"), true);
+assert.equal(isTokenValid("malformed-token"), false);
+
+// Edge Cases: Empty strings and nulls
+assert.equal(decodeTokenPayload(""), null);
+assert.equal(isTokenExpired(""), true);
+assert.equal(isTokenValid(""), false);
+
+assert.equal(decodeTokenPayload(null), null);
+assert.equal(isTokenExpired(null), true);
+assert.equal(isTokenValid(null), false);
+
 console.log("tokenUtils tests passed ✓");

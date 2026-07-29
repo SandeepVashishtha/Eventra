@@ -1,0 +1,21 @@
+<svg width="1200" height="700" xmlns="http://www.w3.org/2000/svg">
+<rect width="1200" height="700" fill="#050816"></rect>
+
+<text x="60" y="100" fill="#00e5ff" font-size="48" font-family="Arial" font-weight="bold">
+Blockchain Voting System
+</text>
+
+<!-- network nodes -->
+<circle cx="250" cy="320" r="55" fill="#00e5ff"></circle>
+<circle cx="450" cy="320" r="55" fill="#00bcd4"></circle>
+<circle cx="650" cy="320" r="55" fill="#0097a7"></circle>
+<circle cx="850" cy="320" r="55" fill="#00e5ff"></circle>
+
+<line x1="305" y1="320" x2="395" y2="320" stroke="#00e5ff" stroke-width="4"></line>
+<line x1="505" y1="320" x2="595" y2="320" stroke="#00e5ff" stroke-width="4"></line>
+<line x1="705" y1="320" x2="795" y2="320" stroke="#00e5ff" stroke-width="4"></line>
+
+<!-- security badge -->
+<rect x="980" y="140" width="120" height="120" rx="25" fill="#00e5ff"></rect>
+<text x="1000" y="210" fill="black" font-size="18" font-weight="bold">SECURE</text>
+</svg>
