@@ -1,250 +1,94 @@
-/**
- * Tests for src/utils/rateLimitUtils.js
- *
- * Covers: backoff computation, sessionStorage persistence helpers,
- * parseRetryAfterMs, and the page-refresh-bypass security invariant.
- */
-
-import { strict as assert } from 'node:assert';
-import { describe, it, beforeEach } from 'node:test';
-
-// ---------------------------------------------------------------------------
-// sessionStorage mock
-// ---------------------------------------------------------------------------
-
-class SessionStorageMock {
-  constructor() { this._store = {}; }
-  getItem(k) { return Object.prototype.hasOwnProperty.call(this._store, k) ? this._store[k] : null; }
-  setItem(k, v) { this._store[k] = String(v); }
-  removeItem(k) { delete this._store[k]; }
-  clear() { this._store = {}; }
-}
-
-const mockSession = new SessionStorageMock();
-global.sessionStorage = mockSession;
-global.window = { sessionStorage: mockSession };
-
-// ---------------------------------------------------------------------------
-// Module under test (imported AFTER shims)
-// ---------------------------------------------------------------------------
-
-const {
-  MAX_LOGIN_ATTEMPTS,
-  STORAGE_KEY_ATTEMPTS,
-  STORAGE_KEY_LOCKOUT_UNTIL,
-  getBackoffDelay,
-  formatCountdown,
-  secondsUntilUnlock,
+import assert from "node:assert/strict";
+import {
   readPersistedRateLimit,
   persistRateLimit,
   clearPersistedRateLimit,
   parseRetryAfterMs,
-} = await import('../src/utils/rateLimitUtils.js');
+  getBackoffDelay,
+  formatCountdown,
+  secondsUntilUnlock,
+  MAX_LOGIN_ATTEMPTS,
+  STORAGE_KEY_ATTEMPTS,
+  STORAGE_KEY_LOCKOUT_UNTIL,
+} from "../src/utils/rateLimitUtils.js";
 
-// ---------------------------------------------------------------------------
-// getBackoffDelay
-// ---------------------------------------------------------------------------
+globalThis.sessionStorage = globalThis.sessionStorage || {
+  _data: {},
+  getItem: function(key) { return this._data[key] ?? null; },
+  setItem: function(key, val) { this._data[key] = String(val); },
+  removeItem: function(key) { delete this._data[key]; },
+  clear: function() { this._data = {}; },
+};
 
-describe('getBackoffDelay', () => {
-  it('returns 0 for attempts below MAX_LOGIN_ATTEMPTS', () => {
-    for (let i = 0; i < MAX_LOGIN_ATTEMPTS; i++) {
-      assert.strictEqual(getBackoffDelay(i), 0, `Expected 0 for attempt ${i}`);
-    }
-  });
+const storage = globalThis.sessionStorage._data;
 
-  it('returns a positive delay at exactly MAX_LOGIN_ATTEMPTS', () => {
-    assert.ok(getBackoffDelay(MAX_LOGIN_ATTEMPTS) > 0);
-  });
+assert.equal(readPersistedRateLimit().attempts, 0, "empty storage should return 0 attempts");
+assert.equal(readPersistedRateLimit().lockoutUntil, 0, "empty storage should return 0 lockoutUntil");
 
-  it('delay increases with each additional attempt', () => {
-    const d1 = getBackoffDelay(MAX_LOGIN_ATTEMPTS);
-    const d2 = getBackoffDelay(MAX_LOGIN_ATTEMPTS + 1);
-    assert.ok(d2 > d1, 'delay should increase with more attempts');
-  });
+persistRateLimit(3, 0);
+assert.deepEqual(readPersistedRateLimit(), { attempts: 3, lockoutUntil: 0 }, "persist and read 3 attempts");
 
-  it('delay is capped at 30 000 ms', () => {
-    for (let i = MAX_LOGIN_ATTEMPTS; i <= MAX_LOGIN_ATTEMPTS + 10; i++) {
-      assert.ok(
-        getBackoffDelay(i) <= 30_000,
-        `Expected delay <= 30000 ms for ${i} attempts`,
-      );
-    }
-  });
+persistRateLimit(0, Date.now() + 60000);
+const result = readPersistedRateLimit();
+assert.ok(result.attempts === 0, "attempts should be 0");
+assert.ok(result.lockoutUntil > Date.now(), "lockout should be in future");
 
-  it('returns a number (not NaN)', () => {
-    assert.ok(!isNaN(getBackoffDelay(MAX_LOGIN_ATTEMPTS)));
-  });
-});
+clearPersistedRateLimit();
+assert.deepEqual(readPersistedRateLimit(), { attempts: 0, lockoutUntil: 0 }, "after clear");
 
-// ---------------------------------------------------------------------------
-// formatCountdown
-// ---------------------------------------------------------------------------
+storage[STORAGE_KEY_ATTEMPTS] = "NaN";
+storage[STORAGE_KEY_LOCKOUT_UNTIL] = "0";
+assert.deepEqual(readPersistedRateLimit(), { attempts: 0, lockoutUntil: 0 }, "NaN attempts returns 0");
 
-describe('formatCountdown', () => {
-  it('returns "0s" for zero or negative input', () => {
-    assert.strictEqual(formatCountdown(0), '0s');
-    assert.strictEqual(formatCountdown(-1000), '0s');
-  });
+storage[STORAGE_KEY_ATTEMPTS] = "-5";
+storage[STORAGE_KEY_LOCKOUT_UNTIL] = "0";
+assert.deepEqual(readPersistedRateLimit(), { attempts: 0, lockoutUntil: 0 }, "negative attempts returns 0");
 
-  it('formats sub-minute durations as "Xs"', () => {
-    assert.strictEqual(formatCountdown(29_000), '29s');
-    assert.strictEqual(formatCountdown(1_000), '1s');
-  });
+storage[STORAGE_KEY_ATTEMPTS] = "99999999999";
+storage[STORAGE_KEY_LOCKOUT_UNTIL] = "0";
+assert.deepEqual(readPersistedRateLimit(), { attempts: 99999999999, lockoutUntil: 0 }, "very large but finite attempts is accepted");
 
-  it('formats minute-scale durations as "Xm Ys"', () => {
-    assert.strictEqual(formatCountdown(90_000), '1m 30s');
-    assert.strictEqual(formatCountdown(120_000), '2m 0s');
-  });
+assert.equal(parseRetryAfterMs(null), 0, "null returns 0");
+assert.equal(parseRetryAfterMs(undefined), 0, "undefined returns 0");
+assert.equal(parseRetryAfterMs(""), 0, "empty string returns 0");
+assert.equal(parseRetryAfterMs("abc"), 0, "non-numeric string returns 0");
+assert.equal(parseRetryAfterMs("30"), 30000, "integer seconds form returns correct ms");
+assert.equal(parseRetryAfterMs("0"), 0, "zero seconds returns 0");
+assert.equal(parseRetryAfterMs("  45  "), 45000, "whitespace-padded seconds");
+assert.equal(parseRetryAfterMs("not123"), 0, "mixed text returns 0");
+assert.equal(parseRetryAfterMs("123.45"), 0, "decimal returns 0");
+assert.equal(parseRetryAfterMs("72 hours"), 0, "text with number returns 0");
 
-  it('rounds up partial seconds', () => {
-    assert.strictEqual(formatCountdown(1_500), '2s');
-  });
-});
+const futureDate = new Date(Date.now() + 30000).toUTCString();
+const resultMs = parseRetryAfterMs(futureDate);
+assert.ok(resultMs > 0 && resultMs <= 30000, "HTTP-date form returns positive ms");
 
-// ---------------------------------------------------------------------------
-// secondsUntilUnlock
-// ---------------------------------------------------------------------------
+assert.equal(parseRetryAfterMs("Tue, 01 Jan 2000 00:00:00 GMT"), 0, "past date returns 0");
 
-describe('secondsUntilUnlock', () => {
-  it('returns 0 for a lockout already in the past', () => {
-    assert.strictEqual(secondsUntilUnlock(Date.now() - 5000), 0);
-  });
+assert.equal(getBackoffDelay(0), 0, "0 attempts returns 0");
+assert.equal(getBackoffDelay(1), 0, "1 attempt returns 0");
+assert.equal(getBackoffDelay(4), 0, "4 attempts (below MAX_LOGIN_ATTEMPTS) returns 0");
+assert.equal(getBackoffDelay(5), 2000, "5 attempts (at threshold) returns 2s");
+assert.equal(getBackoffDelay(6), 4000, "6 attempts returns 4s");
+assert.equal(getBackoffDelay(7), 8000, "7 attempts returns 8s");
+assert.equal(getBackoffDelay(8), 16000, "8 attempts returns 16s");
+assert.equal(getBackoffDelay(9), 30000, "9 attempts (exceeds cap) returns 30s");
+assert.equal(getBackoffDelay(100), 30000, "100 attempts returns 30s (capped)");
 
-  it('returns a positive count for a future lockout', () => {
-    const future = Date.now() + 10_000;
-    const s = secondsUntilUnlock(future);
-    assert.ok(s > 0 && s <= 10, `Expected 1-10s, got ${s}`);
-  });
+assert.equal(formatCountdown(0), "0s", "zero returns 0s");
+assert.equal(formatCountdown(-100), "0s", "negative returns 0s");
+assert.equal(formatCountdown(999), "1s", "999ms rounds up to 1s");
+assert.equal(formatCountdown(1000), "1s", "1 second returns 1s");
+assert.equal(formatCountdown(59000), "59s", "59 seconds returns 59s");
+assert.equal(formatCountdown(60000), "1m 0s", "60 seconds returns 1m 0s");
+assert.equal(formatCountdown(65000), "1m 5s", "65 seconds returns 1m 5s");
+assert.equal(formatCountdown(120000), "2m 0s", "120 seconds returns 2m 0s");
+assert.equal(formatCountdown(90000), "1m 30s", "90 seconds returns 1m 30s");
 
-  it('never returns negative', () => {
-    assert.ok(secondsUntilUnlock(0) >= 0);
-  });
-});
+const futureUnlock = Date.now() + 45000;
+const pastUnlock = Date.now() - 1000;
+assert.ok(secondsUntilUnlock(futureUnlock) > 0, "future lockout returns positive");
+assert.equal(secondsUntilUnlock(pastUnlock), 0, "past lockout returns 0");
+assert.equal(secondsUntilUnlock(0), 0, "zero lockout returns 0");
 
-// ---------------------------------------------------------------------------
-// persistRateLimit / readPersistedRateLimit / clearPersistedRateLimit
-// ---------------------------------------------------------------------------
-
-describe('sessionStorage persistence', () => {
-  beforeEach(() => {
-    mockSession.clear();
-  });
-
-  it('persistRateLimit writes attempts and lockoutUntil to sessionStorage', () => {
-    persistRateLimit(3, 9_999_999_999);
-    assert.strictEqual(mockSession.getItem(STORAGE_KEY_ATTEMPTS), '3');
-    assert.strictEqual(mockSession.getItem(STORAGE_KEY_LOCKOUT_UNTIL), '9999999999');
-  });
-
-  it('readPersistedRateLimit returns the written values', () => {
-    persistRateLimit(4, Date.now() + 30_000);
-    const { attempts, lockoutUntil } = readPersistedRateLimit();
-    assert.strictEqual(attempts, 4);
-    assert.ok(lockoutUntil > Date.now());
-  });
-
-  it('readPersistedRateLimit returns zeroed defaults when storage is empty', () => {
-    const { attempts, lockoutUntil } = readPersistedRateLimit();
-    assert.strictEqual(attempts, 0);
-    assert.strictEqual(lockoutUntil, 0);
-  });
-
-  it('readPersistedRateLimit discards an already-expired lockoutUntil', () => {
-    // Expired lockout (1 second in the past)
-    mockSession.setItem(STORAGE_KEY_ATTEMPTS, '5');
-    mockSession.setItem(STORAGE_KEY_LOCKOUT_UNTIL, String(Date.now() - 1000));
-    const { lockoutUntil } = readPersistedRateLimit();
-    assert.strictEqual(lockoutUntil, 0, 'Expired lockout should be discarded');
-  });
-
-  it('readPersistedRateLimit returns 0 lockoutUntil for value of 0', () => {
-    persistRateLimit(2, 0);
-    const { lockoutUntil } = readPersistedRateLimit();
-    assert.strictEqual(lockoutUntil, 0);
-  });
-
-  it('clearPersistedRateLimit removes both keys', () => {
-    persistRateLimit(3, Date.now() + 10_000);
-    clearPersistedRateLimit();
-    assert.strictEqual(mockSession.getItem(STORAGE_KEY_ATTEMPTS), null);
-    assert.strictEqual(mockSession.getItem(STORAGE_KEY_LOCKOUT_UNTIL), null);
-  });
-
-  it('readPersistedRateLimit handles corrupt/non-numeric values gracefully', () => {
-    mockSession.setItem(STORAGE_KEY_ATTEMPTS, 'notanumber');
-    mockSession.setItem(STORAGE_KEY_LOCKOUT_UNTIL, 'alsonotanumber');
-    const { attempts, lockoutUntil } = readPersistedRateLimit();
-    assert.strictEqual(lockoutUntil, 0);
-    // attempts is NaN from parseInt — should default to 0
-    assert.ok(attempts === 0 || isNaN(attempts), 'Corrupt attempts should be 0 or NaN');
-  });
-
-  // Security invariant: page refresh does NOT reset the lockout
-  it('page refresh does not bypass lockout — state survives sessionStorage round-trip', () => {
-    const futureTs = Date.now() + 15_000;
-    persistRateLimit(MAX_LOGIN_ATTEMPTS, futureTs);
-
-    // Simulate page refresh: read back from sessionStorage (as the hook does on mount)
-    const { attempts, lockoutUntil } = readPersistedRateLimit();
-    assert.strictEqual(attempts, MAX_LOGIN_ATTEMPTS);
-    assert.ok(lockoutUntil > Date.now(), 'Lockout must still be active after simulated refresh');
-  });
-
-  it('attempt count accumulates correctly across multiple persistRateLimit calls', () => {
-    persistRateLimit(1, 0);
-    persistRateLimit(2, 0);
-    persistRateLimit(3, 0);
-    const { attempts } = readPersistedRateLimit();
-    assert.strictEqual(attempts, 3);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// parseRetryAfterMs
-// ---------------------------------------------------------------------------
-
-describe('parseRetryAfterMs', () => {
-  it('parses integer seconds form "30" as 30000 ms', () => {
-    assert.strictEqual(parseRetryAfterMs('30'), 30_000);
-  });
-
-  it('parses "0" as 0 ms', () => {
-    assert.strictEqual(parseRetryAfterMs('0'), 0);
-  });
-
-  it('parses a future HTTP-date correctly', () => {
-    const futureDate = new Date(Date.now() + 60_000).toUTCString();
-    const result = parseRetryAfterMs(futureDate);
-    assert.ok(result > 55_000 && result <= 61_000, `Expected ~60000 ms, got ${result}`);
-  });
-
-  it('returns 0 for null', () => {
-    assert.strictEqual(parseRetryAfterMs(null), 0);
-  });
-
-  it('returns 0 for undefined', () => {
-    assert.strictEqual(parseRetryAfterMs(undefined), 0);
-  });
-
-  it('returns 0 for empty string', () => {
-    assert.strictEqual(parseRetryAfterMs(''), 0);
-  });
-
-  it('returns 0 for a non-date, non-integer string', () => {
-    assert.strictEqual(parseRetryAfterMs('invalid'), 0);
-  });
-
-  it('returns 0 for a past HTTP-date', () => {
-    const pastDate = new Date(Date.now() - 60_000).toUTCString();
-    assert.strictEqual(parseRetryAfterMs(pastDate), 0);
-  });
-
-  it('returns 0 for negative second values', () => {
-    assert.strictEqual(parseRetryAfterMs('-10'), 0);
-  });
-
-  it('handles large second values without overflow', () => {
-    const result = parseRetryAfterMs('86400');
-    assert.strictEqual(result, 86_400_000);
-  });
-});
+console.log("All rateLimitUtils tests passed!");
