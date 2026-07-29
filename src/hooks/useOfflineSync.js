@@ -294,28 +294,35 @@ const useOfflineSync = () => {
 
     const executeSyncWithLocalLock = async () => {
       const LOCK_KEY = "eventra_offline_sync_local_lock";
-      const LOCK_TIMEOUT_MS = 30_000;
 
-      const now = Date.now();
-      const lockVal = localStorage.getItem(LOCK_KEY);
-
-      if (lockVal) {
+      // Use atomic Web Locks API if available (eliminates TOCTOU race)
+      if (typeof navigator?.locks?.request === "function") {
         try {
-          const parsed = JSON.parse(lockVal);
-          if (parsed && parsed.timestamp && now - parsed.timestamp < LOCK_TIMEOUT_MS) {
-            logger.log("[useOfflineSync] Local sync lock is held by another active tab. Skipping.");
-            return;
-          }
-        } catch (e) {}
+          await navigator.locks.request(LOCK_KEY, { ifAvailable: true }, async (lock) => {
+            if (!lock) {
+              logger.log("[useOfflineSync] Local sync lock is held by another tab via Web Locks. Skipping.");
+              return;
+            }
+            await executeSync();
+          });
+          return;
+        } catch (err) {
+          logger.warn("[useOfflineSync] Web Locks request failed in executeSyncWithLocalLock, falling back to localStorage:", err);
+        }
       }
 
+      // Fallback: localStorage with write-then-verify (reduces TOCTOU window)
       const currentTabId = Math.random().toString(36).slice(2, 9);
-      const lockData = JSON.stringify({ timestamp: now, tabId: currentTabId });
-      
+      const lockData = JSON.stringify({ timestamp: Date.now(), tabId: currentTabId });
+
       try {
         localStorage.setItem(LOCK_KEY, lockData);
+        const stored = localStorage.getItem(LOCK_KEY);
+        if (stored !== lockData) {
+          logger.log("[useOfflineSync] Local sync lock race lost to another tab. Skipping.");
+          return;
+        }
       } catch (e) {
-        // If localStorage fails (private mode etc.), run sync directly to avoid blocking
         await executeSync();
         return;
       }
