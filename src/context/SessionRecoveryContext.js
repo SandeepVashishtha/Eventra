@@ -28,11 +28,15 @@ const getOrCreateRecoverySalt = () => {
   try {
     const stored = localStorage.getItem(SESSION_SALT_KEY);
     if (stored) return Uint8Array.from(atob(stored), (c) => c.charCodeAt(0));
-  } catch {}
+  } catch (err) {
+    console.warn("Recovery salt persistence failed:", err);
+  }
   const salt = crypto.getRandomValues(new Uint8Array(PBKDF2_SALT_LENGTH));
   try {
     localStorage.setItem(SESSION_SALT_KEY, btoa(String.fromCharCode(...salt)));
-  } catch {}
+  } catch (err) {
+    console.warn("Recovery salt persistence failed:", err);
+  }
   return salt;
 };
 
