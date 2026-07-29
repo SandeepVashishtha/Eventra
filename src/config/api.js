@@ -256,6 +256,8 @@ export const API_ENDPOINTS = {
     REGISTER: (id) => buildApiUrl(`/api/events/${id}/register`),
 
     REGISTRANTS: (id) => buildApiUrl(`/api/events/${id}/registrants`),
+    WAITLIST: (id) => buildApiUrl(`/api/events/${id}/waitlist`),
+    SCHEDULE: buildApiUrl('/api/events/schedule'),
     // Convenience helper — appends ?page=&size= for callers that build the
     // URL manually rather than going through eventFetchUtils.buildPaginatedUrl.
     PAGINATED: (page, size) => buildApiUrl(`/api/events?page=${page}&size=${size}`),
@@ -284,6 +286,21 @@ export const API_ENDPOINTS = {
   USERS: {
     PROFILE: buildApiUrl("/api/users/profile"),
     ACHIEVEMENTS: buildApiUrl("/api/users/achievements"),
+  },
+  SESSION_RECOVERY: {
+    BASE: buildApiUrl('/api/session-recovery'),
+    SESSION: (id) => buildApiUrl(`/api/session-recovery/${id}`),
+    RESTORE: (id) => buildApiUrl(`/api/session-recovery/${id}/restore`),
+    CLEANUP_EXPIRED: buildApiUrl('/api/session-recovery/cleanup'),
+  },
+  TICKETS: {
+    STATS: buildApiUrl('/api/tickets/stats'),
+  },
+  WAITLIST: {
+    BASE: buildApiUrl('/api/waitlist'),
+    JOIN: buildApiUrl('/api/waitlist/join'),
+    LEAVE: (id) => buildApiUrl(`/api/waitlist/${id}/leave`),
+    STATUS: (id) => buildApiUrl(`/api/waitlist/${id}/status`),
   },
   VALIDATION: {
     EMAIL: (email) => buildApiUrl(`/api/validate/email/${encodeURIComponent(email)}`),
