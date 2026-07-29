@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Offline - Eventra</title>
+
   <style>
     * {
       margin: 0;
@@ -12,22 +13,44 @@
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+        Ubuntu, sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       min-height: 100vh;
       display: flex;
-      align-items: center;
       justify-content: center;
+      align-items: center;
       padding: 20px;
     }
 
     .container {
       background: white;
-      border-radius: 24px;
-      padding: 48px;
-      text-align: center;
       max-width: 500px;
+      width: 100%;
+      padding: 48px;
+      border-radius: 24px;
+      text-align: center;
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Status Badge */
+
+    .status {
+      display: inline-block;
+      padding: 8px 18px;
+      border-radius: 999px;
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+
+    .status.offline {
+      background: #dc2626;
+    }
+
+    .status.online {
+      background: #16a34a;
     }
 
     .icon {
@@ -55,10 +78,14 @@
     }
 
     p {
-      font-size: 16px;
       color: #4a5568;
       line-height: 1.6;
-      margin-bottom: 32px;
+      margin-bottom: 20px;
+    }
+
+    #statusMessage {
+      font-weight: 600;
+      color: #4a5568;
     }
 
     .btn {
@@ -70,20 +97,15 @@
       color: white;
       border: none;
       border-radius: 12px;
+      cursor: pointer;
       font-size: 16px;
       font-weight: 600;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
-      text-decoration: none;
+      transition: 0.3s;
     }
 
     .btn:hover {
       transform: translateY(-2px);
       box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
-    }
-
-    .btn:active {
-      transform: translateY(0);
     }
 
     .tips {
@@ -93,11 +115,11 @@
     }
 
     .tips h3 {
-      font-size: 14px;
+      margin-bottom: 12px;
       color: #718096;
+      font-size: 14px;
       text-transform: uppercase;
       letter-spacing: 1px;
-      margin-bottom: 12px;
     }
 
     .tips ul {
@@ -106,21 +128,17 @@
     }
 
     .tips li {
-      font-size: 14px;
-      color: #4a5568;
       padding: 6px 0;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      color: #4a5568;
     }
 
     .tips li::before {
-      content: '✓';
+      content: "✓ ";
       color: #667eea;
       font-weight: bold;
     }
 
-    @media (max-width: 480px) {
+    @media (max-width:480px) {
       .container {
         padding: 32px 24px;
       }
@@ -128,49 +146,147 @@
       h1 {
         font-size: 24px;
       }
-
-      p {
-        font-size: 14px;
-      }
     }
   </style>
 </head>
+
 <body>
+
   <div class="container">
+
+    <!-- Status Badge -->
+
+    <div id="statusBadge" class="status offline">
+      🔴 Offline
+    </div>
+
     <div class="icon">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.657a9 9 0 01-2.167-9.192m2.167 9.192L2.828 21M12 9v2m0 4h.01" />
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none"
+        viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829
+          2.829L21 21M15.536 8.464a5 5 0 010
+          7.072m0 0l-2.829-2.829m-4.243
+          2.829a4.978 4.978 0
+          01-1.414-2.83m-1.414
+          5.657a9 9 0
+          01-2.167-9.192m2.167
+          9.192L2.828 21M12
+          9v2m0 4h.01"/>
       </svg>
     </div>
 
     <h1>You're Offline</h1>
+
     <p>
-      It looks like you've lost your internet connection. Don't worry! 
-      You can still access your previously viewed events and try again when you're back online.
+      It looks like you've lost your internet connection.
+      Don't worry! You can still access your previously viewed
+      events and try again when you're back online.
     </p>
 
-    <button class="btn" onclick="window.location.reload()">
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-      </svg>
+    <p id="statusMessage">
+      Checking connection...
+    </p>
+
+    <button id="retryBtn" class="btn" onclick="window.location.reload()">
       Try Again
     </button>
 
     <div class="tips">
       <h3>What you can do:</h3>
+
       <ul>
         <li>Check your network connection</li>
         <li>View previously cached events</li>
         <li>Refresh when back online</li>
       </ul>
+
     </div>
+
   </div>
 
-  <script>
-    // Listen for online event and auto-reload
-    window.addEventListener('online', () => {
-      window.location.reload();
-    });
-  </script>
+<script>
+
+const badge = document.getElementById("statusBadge");
+const message = document.getElementById("statusMessage");
+const retryBtn = document.getElementById("retryBtn");
+
+let countdown;
+
+function startCountdown() {
+
+    let seconds = 5;
+
+    message.textContent = `Reloading in ${seconds} seconds...`;
+
+    countdown = setInterval(() => {
+
+        seconds--;
+
+        if (seconds > 0) {
+
+            message.textContent =
+                `Reloading in ${seconds} seconds...`;
+
+        } else {
+
+            clearInterval(countdown);
+
+            window.location.reload();
+
+        }
+
+    },1000);
+
+}
+
+function goOnline() {
+
+    badge.classList.remove("offline");
+    badge.classList.add("online");
+
+    badge.textContent="🟢 Connection Restored";
+
+    message.textContent="Back online.";
+
+    retryBtn.disabled=false;
+
+    startCountdown();
+
+}
+
+function goOffline(){
+
+    badge.classList.remove("online");
+    badge.classList.add("offline");
+
+    badge.textContent="🔴 Offline";
+
+    message.textContent="Checking connection...";
+
+    retryBtn.disabled=false;
+
+    clearInterval(countdown);
+
+}
+
+window.addEventListener("online",goOnline);
+
+window.addEventListener("offline",goOffline);
+
+if(navigator.onLine){
+
+    goOnline();
+
+}else{
+
+    goOffline();
+
+}
+
+</script>
+
 </body>
 </html>
