@@ -18,9 +18,7 @@ const useWaitlist = ({ eventId, isFullyBooked, waitlistEnabled, isAuthenticated,
       .then(data => {
         if (!cancelled) setWaitlistCount(data.count);
       })
-      .catch(() => {
-        // Silently ignore — default count of 0 is already set
-      });
+      .catch(() => console.warn("[WaitlistButton] API call failed"));
 
     if (isAuthenticated && token) {
       getWaitlistStatus(eventId, token)
@@ -30,9 +28,7 @@ const useWaitlist = ({ eventId, isFullyBooked, waitlistEnabled, isAuthenticated,
             setPosition(data.position);
           }
         })
-        .catch(() => {
-          // Silently ignore — defaults (false / null) are already set
-        });
+        .catch(() => console.warn("[WaitlistButton] API call failed"));
     }
 
     return () => { cancelled = true; };
