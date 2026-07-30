@@ -1,37 +1,40 @@
 import { useState, useEffect } from "react";
-import BackToTopButton from "./common/BackToTopButton";
+import { ChevronUp } from "lucide-react";
 
-export default function ScrollToTopButton() {
-  const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+/**
+ * ScrollToTopButton component with safe-area aware positioning.
+ * Placements configured for when chatbot is open/closed on mobile screens.
+ */
+const ScrollToTopButton = ({ chatbotOpen = false }) => {
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    // Listen for chatbot state changes
-    const handleChatbotState = () => {
-      setIsChatbotOpen(document.querySelector('[data-chatbot-open]') !== null);
+    const handleScroll = () => {
+      setVisible(window.scrollY > 300);
     };
-    
-    // Check initially and set up observer
-    handleChatbotState();
-    const observer = new MutationObserver(handleChatbotState);
-    observer.observe(document.body, { childList: true, subtree: true });
-    
-    return () => {
-      observer.disconnect();
-    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Position based on chatbot state
-  const positionClass = isChatbotOpen 
-    ? "bottom-24 left-6"  // When chatbot is open - bottom left
-    : "bottom-6 right-6 sm:bottom-24 sm:right-6"; // When chatbot is closed - bottom right
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
-  return <BackToTopButton threshold={50} positionClass={positionClass} />;
-}
-// Accessible landmark container router focus shifting utility helper
-export const shiftLandmarkFocus = (elementId) => {
-  const container = document.getElementById(elementId);
-  if (container) {
-    container.setAttribute("tabindex", "-1");
-    container.focus();
-  }
+  const positionClass = chatbotOpen
+    ? "bottom-[calc(1rem+var(--safe-area-bottom))] left-[calc(1rem+var(--safe-area-left))] sm:bottom-24 sm:left-6"
+    : "bottom-[calc(1rem+var(--safe-area-bottom))] right-[calc(1rem+var(--safe-area-right))] sm:bottom-24 sm:right-6";
+
+  return (
+    <button
+      onClick={scrollToTop}
+      className={`fixed z-50 p-3 rounded-full bg-indigo-600 text-white shadow-lg transition-all duration-300 ${positionClass} ${
+        visible ? "opacity-100 scale-100" : "opacity-0 scale-75 pointer-events-none"
+      }`}
+      aria-label="Scroll to top"
+    >
+      <ChevronUp className="h-6 w-6" />
+    </button>
+  );
 };
+
+export default ScrollToTopButton;

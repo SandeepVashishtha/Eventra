@@ -1,13 +1,5 @@
+import { TagIcon, Ticket, CheckCircleIcon, PencilIcon, CalendarIcon, MapPinIcon, UsersIcon } from "lucide-react";
 import { motion } from "framer-motion";
-import {
-  TagIcon,
-  TicketIcon,
-  CheckCircleIcon,
-  PencilIcon,
-  CalendarIcon,
-  MapPinIcon,
-  UsersIcon,
-} from "@heroicons/react/24/solid";
 import { LoadingButton } from "../../../ui/LoadingButton";
 import {
   formatDate,
@@ -150,7 +142,7 @@ const PreviewStep = ({
             formData.ticketTiers[0].name && (
               <div className="mb-6">
                 <div className="flex items-center gap-2 mb-3">
-                  <TicketIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                  <Ticket className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
 
                   <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300">
                     Ticket Tiers
