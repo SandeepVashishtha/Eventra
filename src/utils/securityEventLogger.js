@@ -17,9 +17,15 @@ export const logSecurityEvent = (
       timestamp: new Date().toISOString(),
     };
 
-    const existing = JSON.parse(
-      localStorage.getItem(STORAGE_KEY) || "[]"
-    );
+    let existing;
+    try {
+      existing = JSON.parse(
+        localStorage.getItem(STORAGE_KEY) || "[]"
+      );
+    } catch {
+      existing = [];
+      localStorage.removeItem(STORAGE_KEY);
+    }
 
     existing.unshift(event);
 
@@ -40,6 +46,7 @@ export const getSecurityEvents = () => {
       localStorage.getItem(STORAGE_KEY) || "[]"
     );
   } catch {
+    localStorage.removeItem(STORAGE_KEY);
     return [];
   }
 };
