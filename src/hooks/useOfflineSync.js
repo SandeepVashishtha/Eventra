@@ -423,7 +423,7 @@ const useOfflineSync = () => {
             logger.log("[useOfflineSync] Local sync lock is held by another active tab. Skipping.");
             return;
           }
-        } catch {}
+        } catch { console.warn("[useOfflineSync] Operation failed"); }
       }
 
       const currentTabId = Math.random().toString(36).slice(2, 9);
@@ -441,7 +441,7 @@ const useOfflineSync = () => {
         if (syncLockAborted.current) { clearInterval(heartbeatInterval); return; }
         try {
           window.localStorage.setItem(LOCK_KEY, JSON.stringify({ timestamp: Date.now(), tabId: currentTabId }));
-        } catch {}
+        } catch { console.warn("[useOfflineSync] Operation failed"); }
       }, 10_000);
       heartbeatIntervalRef.current = heartbeatInterval;
 
@@ -457,7 +457,7 @@ const useOfflineSync = () => {
               window.localStorage.removeItem(LOCK_KEY);
             }
           }
-        } catch {}
+        } catch { console.warn("[useOfflineSync] Operation failed"); }
       }
     };
 
