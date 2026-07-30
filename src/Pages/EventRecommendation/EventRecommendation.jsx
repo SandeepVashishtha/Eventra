@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import {
   X,
   Sliders,
@@ -55,6 +55,13 @@ const EventRecommendation = () => {
   const [loading, setLoading] = useState(false);
   const [showOtherEvents, setShowOtherEvents] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
 
   // Match Priority Weights
   const [interestWeight, setInterestWeight] = useState(40);
@@ -86,7 +93,7 @@ const EventRecommendation = () => {
     // Track execution for onboarding checklist
     localStorage.setItem("eventra_ai_recommendation_generated", "true");
 
-    setTimeout(() => {
+    timerRef.current = setTimeout(() => {
       const selectedProfile = {
         ...userProfile,
         interests: [...(userProfile.interests || []), interest].filter(Boolean),
