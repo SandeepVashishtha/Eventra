@@ -24,12 +24,12 @@ const getRegistration = async () => {
   if (existing) return existing;
   try {
     return await navigator.serviceWorker.register("/service-worker.js");
-  } catch {
-    return null;
-  }
-};
-
-export function usePushSubscription(updatePreferences) {
+    try {
+      return await navigator.serviceWorker.register('/service-worker.js');
+    } catch (err) {
+      logger.warn('[usePushSubscription] SW registration failed:', err);
+      return null;
+    }
   const { token } = useAuth();
   const [pushStatus, setPushStatus] = useState({
     supported: false,
