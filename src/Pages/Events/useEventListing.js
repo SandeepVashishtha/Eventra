@@ -17,6 +17,7 @@ import {
   saveAllCachedEventDetails,
   saveCachedEvents,
 } from "../../utils/offlineEventCache";
+import useDebounce from "../../hooks/useDebounce";
 
 const normalizeEvent = (event) => ({
   ...event,
@@ -27,9 +28,7 @@ const FUSE_OPTIONS = {
   keys: ['title', 'description', 'location', 'category', 'type', 'tags'],
   threshold: 0.4,
   includeScore: true,
-import useDebounce from "../../hooks/useDebounce";
-
-const DEFAULT_EVENTS_PER_PAGE = 12;
+};
 
 const SORT_MAPPING = {
   Newest: "date,desc",
@@ -125,23 +124,12 @@ const useEventListing = () => {
           ? responseData
           : [];
 
-      const nextEvents = (apiEvents.length > 0 ? apiEvents : fallbackEvents).map(normalizeEvent);
-      setEvents(nextEvents);
-      setCacheInfo(null);
-      saveCachedEvents(nextEvents);
-      // Batch-write all detail entries in a single read+write cycle.
-      // Replaces nextEvents.forEach(saveCachedEventDetail) which triggered
-      // N independent localStorage read+write pairs — O(n) synchronous
-      // main-thread I/O that blocked the UI for each event in the list.
-      saveAllCachedEventDetails(nextEvents);
+      const normalizedEvents = apiEvents.length > 0
+        ? apiEvents.map(normalizeEvent)
         : [];
-
-      const normalizedEvents = apiEvents.map((event) => ({
-        ...event,
-        status: event.status || getEventStatus(event),
-      }));
-
       setEvents(normalizedEvents);
+      saveCachedEvents(normalizedEvents);
+      saveAllCachedEventDetails(normalizedEvents);
 
       setPagination({
         totalPages: responseData.totalPages || 1,
@@ -176,14 +164,14 @@ const useEventListing = () => {
         });
 
         if (error?.response?.status === 403) {
-  setLoadError(
-    "Access to events is currently restricted. Please try again later.",
-  );
-} else {
-  setLoadError(
-    "Failed to load events. Please try again later.",
-  );
-}
+          setLoadError(
+            "Access to events is currently restricted. Please try again later.",
+          );
+        } else {
+          setLoadError(
+            "Failed to load events. Please try again later.",
+          );
+        }
       }
     } finally {
       setIsLoading(false);
@@ -216,22 +204,19 @@ const useEventListing = () => {
   }, [searchQuery, filterType, sortType, advancedFilters, eventsPerPage]);
 
   const setSafePage = (page) => {
-    if (page < 1) {
-      setCurrentPage(1);
-      return;
-    }
-
-    if (page > pagination.totalPages) {
-      setCurrentPage(pagination.totalPages);
-      return;
-    }
-
-    setCurrentPage(page);
+    const totalPages = getTotalPages(filteredEvents.length, eventsPerPage);
+    setCurrentPage(clampPage(page, totalPages));
   };
 
-  const filteredEvents = useMemo(() => events, [events]);
+  const filteredEvents = useMemo(
+    () => filterEventsByType(events, filterType),
+    [events, filterType],
+  );
 
-  const paginatedEvents = useMemo(() => events, [events]);
+  const paginatedEvents = useMemo(
+    () => getPaginatedEvents(filteredEvents, currentPage, eventsPerPage),
+    [filteredEvents, currentPage, eventsPerPage],
+  );
 
   return {
     currentPage,
@@ -244,7 +229,7 @@ const useEventListing = () => {
     paginatedEvents,
     searchQuery,
     sortType,
-    totalPages: pagination.totalPages,
+    totalPages: getTotalPages(filteredEvents.length, eventsPerPage),
     totalElements: pagination.totalElements,
     viewMode,
     advancedFilters,
