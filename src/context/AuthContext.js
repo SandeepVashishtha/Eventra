@@ -295,11 +295,7 @@ export const AuthProvider = ({ children }) => {
 
         const { sessionToken, sessionUser } = extractSession(res, data, usernameOrEmail);
 
-        if (!sessionToken) {
-          throw new Error("Login failed: token missing from response");
-        }
-
-        const persisted = persistSession(sessionToken, sessionUser);
+        const persisted = persistSession(sessionToken || "cookie-managed", sessionUser);
         if (!persisted) return false;
 
         setAuthRequestState({ loading: false, error: null });
