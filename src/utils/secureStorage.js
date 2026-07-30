@@ -144,28 +144,56 @@ const cryptoSupported = isCryptoAvailable();
  * (non-HTTPS contexts or very old browsers).
  */
 export const syncSecureStorage = {
+  // Serialized write queue: ensures last-write-wins and no plaintext window.
+  // Each key enqueues its latest value; the queue processes one at a time,
+  // writing only the ciphertext to localStorage. If the queue is already
+  // processing, a new enqueue updates the pending value for that key without
+  // starting a new chain, so the final write always reflects the last call.
+  _writeQueue: new Map(),
+  _processing: false,
+
+  _processQueue: async function () {
+    if (this._processing) return;
+    this._processing = true;
+    try {
+      while (this._writeQueue.size > 0) {
+        const entries = [...this._writeQueue.entries()];
+        this._writeQueue.clear();
+        for (const [key, plaintext] of entries) {
+          try {
+            const encrypted = await encryptValue(plaintext);
+            localStorage.setItem(key, encrypted);
+          } catch (err) {
+            console.error('[secureStorage] Encryption failed for', key, err);
+          }
+        }
+      }
+    } finally {
+      this._processing = false;
+    }
+  },
+
   /**
    * Stores a value encrypted under the given key.
    *
-   * The value is written to localStorage immediately (plaintext) and then
-   * replaced with AES-GCM ciphertext once the async encryption resolves.
-   * Use getItemAsync() on the read path to guarantee the decrypted value.
+   * Uses a serialized write queue so the value is never written as plaintext
+   * to localStorage; only the final AES-GCM ciphertext is persisted. The
+   * queue guarantees last-write-wins per key and eliminates the plaintext
+   * exposure window, tab-close data leak, and write-skew race condition.
+   *
+   * Falls back to plain localStorage when Web Crypto is unavailable.
    *
    * @param {string} key
    * @param {string} value
-   * @returns {boolean} true on success, false on storage failure
+   * @returns {boolean} true on success (enqueue accepted), false on failure
    */
   setItem: (key, value) => {
     try {
-      localStorage.setItem(key, value);
       if (cryptoSupported) {
-        encryptValue(value)
-          .then((encrypted) => {
-            localStorage.setItem(key, encrypted);
-          })
-          .catch((err) => {
-            console.error('[secureStorage] Encryption failed, value stored as plaintext:', err);
-          });
+        this._writeQueue.set(key, value);
+        this._processQueue();
+      } else {
+        localStorage.setItem(key, value);
       }
       return true;
     } catch (error) {
