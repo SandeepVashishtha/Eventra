@@ -104,7 +104,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
           cache = saved ? safeJsonParse(saved, {}) : {};
           cache[key] = { data: updated, timestamp: Date.now() };
           saveMetricsCache(cache);
-        } catch {}
+        } catch { console.warn("[ProjectCard] Metrics cache operation failed"); }
         return updated;
       });
       toast.success("Project upvoted successfully!");
@@ -141,7 +141,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
           cache = saved ? safeJsonParse(saved, {}) : {};
           cache[key] = { data: updated, timestamp: Date.now() };
           saveMetricsCache(cache);
-        } catch {}
+        } catch { console.warn("[ProjectCard] Metrics cache operation failed"); }
         return updated;
       });
       toast.success("Project forked successfully!");
