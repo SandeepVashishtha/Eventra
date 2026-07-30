@@ -1,17 +1,11 @@
+import { Plus, Trash2, PlusCircle, Save, ArrowUp, ArrowDown } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  FiPlus,
-  FiTrash2,
-  FiPlusCircle,
-  FiSave,
-  FiArrowUp,
-  FiArrowDown,
-} from "react-icons/fi";
 import { toast } from "react-toastify";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
-import SurveyAnalytics from "../../components/admin/SurveyAnalytics";
+import useDocumentTitle from "hooks/useDocumentTitle";
+import SurveyAnalytics from "components/admin/SurveyAnalytics";
 import { validate } from "../../validation";
+import { safeJsonParse } from "utils/safeJsonParse";
 
 const SurveyEngine = () => {
   useDocumentTitle("Eventra | Dynamic Survey Engine");
@@ -45,7 +39,7 @@ const SurveyEngine = () => {
     },
   ]);
 
-  
+
   const [activeTab, setActiveTab] = useState("builder"); // "builder" | "preview"
   const [confirmModal, setConfirmModal] = useState({
     open: false,
@@ -64,15 +58,13 @@ const SurveyEngine = () => {
     const draft = localStorage.getItem("eventra_survey_builder_draft");
     if (draft) {
       try {
-        const parsed = JSON.parse(draft);
+        const parsed = safeJsonParse(draft, {});
         if (parsed.questions?.length > 0 || parsed.title || parsed.description) {
           setCachedDraft(parsed);
           setDraftDetected(true);
           return; // Skip setting isInitialized to prevent early overwrite
         }
-      } catch (e) {
-        console.error("Failed to parse cached survey draft:", e);
-      }
+      } catch {}
     }
     setIsInitialized(true);
   }, []);
@@ -227,24 +219,24 @@ const SurveyEngine = () => {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
       <div className="max-w-5xl mx-auto">
-        
+
         {/* HEADER BAR */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
-            <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-500 to-sky-400 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-extrabold tracking-tight bg-linear-to-r from-indigo-500 to-sky-400 bg-clip-text text-transparent">
               Dynamic Survey Constructor
             </h1>
             <p className="mt-1 text-slate-500 dark:text-slate-400">
               Build custom feedback forms, ratings, and questionnaires for your attendees.
             </p>
           </div>
-          
+
           <div className="flex items-center gap-3">
             <button
               onClick={handleSaveSurvey}
               className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 active:scale-95 transition-all cursor-pointer"
              aria-label="button">
-              <FiSave className="w-5 h-5" />
+              <Save className="w-5 h-5" />
               Publish Survey
             </button>
           </div>
@@ -294,7 +286,7 @@ const SurveyEngine = () => {
                       📝 Resume where you left off?
                     </h3>
                     <p className="text-xs text-indigo-700/80 dark:text-indigo-400/80 leading-relaxed">
-                      We found an unsaved survey template draft with {cachedDraft.questions?.length || 0} question(s) titled <strong className="font-semibold">"{cachedDraft.title || "Untitled Survey"}"</strong>.
+                      We found an unsaved survey template draft with {cachedDraft.questions?.length || 0} question(s) titled <strong className="font-semibold">&quot;{cachedDraft.title || "Untitled Survey"}&quot;</strong>.
                     </p>
                   </div>
                   <div className="flex gap-2.5 shrink-0 w-full sm:w-auto">
@@ -362,7 +354,7 @@ const SurveyEngine = () => {
                               {questionTypes.find((t) => t.value === question.type)?.label}
                             </span>
                           </div>
-                          
+
                           <input
                             type="text"
                             value={question.questionText}
@@ -370,7 +362,7 @@ const SurveyEngine = () => {
                             placeholder="Type your question prompt here..."
                             className="w-full text-lg font-semibold bg-transparent border-b border-slate-200 dark:border-slate-800 focus:border-indigo-500 outline-none pb-1 transition-all"
                           />
-                          
+
                           {/* REAL-TIME VALIDATION WARNINGS & COUNTERS */}
                           <div className="flex justify-between items-center text-[10px] font-semibold pt-1">
                             <div className="text-rose-500 flex items-center gap-1">
@@ -395,9 +387,9 @@ const SurveyEngine = () => {
                             }`}
                             title="Move question up"
                           >
-                            <FiArrowUp className="w-4 h-4" />
+                            <ArrowUp className="w-4 h-4" />
                           </button>
-                          
+
                           <button
                             onClick={() => moveQuestion(index, "down")}
                             disabled={index === questions.length - 1}
@@ -408,9 +400,9 @@ const SurveyEngine = () => {
                             }`}
                             title="Move question down"
                           >
-                            <FiArrowDown className="w-4 h-4" />
+                            <ArrowDown className="w-4 h-4" />
                           </button>
-                          
+
                           <button
                             id="ymjlwm"
                             onClick={() =>
@@ -423,7 +415,7 @@ const SurveyEngine = () => {
                             className="p-2.5 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all cursor-pointer ml-1"
                             title="Remove question"
                           >
-                            <FiTrash2 className="w-5 h-5" />
+                            <Trash2 className="w-5 h-5" />
                           </button>
                         </div>
                       </div>
@@ -461,7 +453,7 @@ const SurveyEngine = () => {
                                   onClick={() => setConfirmModal({ open: true, type: "option", questionId: question.id, optionIndex: optIdx }) }
                                   className="text-slate-400 hover:text-red-500 p-1 self-start"
                                 >
-                                  <FiTrash2 className="w-4 h-4" />
+                                  <Trash2 className="w-4 h-4" />
                                 </button>
                               </motion.div>
                             ))}
@@ -470,7 +462,7 @@ const SurveyEngine = () => {
                             onClick={() => addOption(question.id)}
                             className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 mt-2"
                           >
-                            <FiPlusCircle className="w-4 h-4" />
+                            <PlusCircle className="w-4 h-4" />
                             Add Option
                           </button>
                         </div>
@@ -514,7 +506,7 @@ const SurveyEngine = () => {
                       onClick={() => addQuestion(type.value)}
                       className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-semibold hover:border-indigo-500 hover:text-indigo-600 dark:hover:border-indigo-400 dark:hover:text-indigo-400 hover:shadow-md transition-all active:scale-98"
                     >
-                      <FiPlus className="w-5 h-5" />
+                      <Plus className="w-5 h-5" />
                       {type.label}
                     </button>
                   ))}
@@ -614,7 +606,7 @@ const SurveyEngine = () => {
       {confirmModal.open && (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
     <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-md p-6 animate-in fade-in zoom-in duration-200">
-      
+
       <h2 className="text-xl font-bold text-slate-800 dark:text-white">
         Confirm Delete
       </h2>

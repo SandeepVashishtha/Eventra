@@ -1,23 +1,9 @@
 import NavbarLinks from "./NavbarLinks";
-import AuthButtons from "./AuthButtons";
-import ProfileMenu from "./ProfileMenu";
 
-const DesktopNavbar = ({
-  isAuthenticated,
-  user,
-  logout,
-}) => {
+const DesktopNavbar = () => {
   return (
-    <div className="hidden xl:flex items-center justify-between flex-1 min-w-0 gap-2">
+    <div className="flex min-w-max flex-1 items-center justify-center gap-x-4 px-2 lg:gap-x-6 lg:px-3 xl:gap-x-8 xl:px-4">
       <NavbarLinks />
-
-      <div className="flex items-center gap-3 xl:gap-4 mr-2 xl:mr-5 shrink-0">
-        {isAuthenticated ? (
-          <ProfileMenu user={user} logout={logout} />
-        ) : (
-          <AuthButtons />
-        )}
-      </div>
     </div>
   );
 };
