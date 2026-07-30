@@ -57,26 +57,38 @@ const TeamWorkspace = () => {
 
   // SSE Simulator & Fallback Hook
   useEffect(() => {
+    let isMounted = true;
     let sseSource = null;
     let fallbackInterval = null;
     let idleTimeout = null;
+    let abortController = null;
 
-    setConnectionStatus("connecting");
+    if (isMounted) {
+      setConnectionStatus("connecting");
+    }
     const logPrefix = "[TeamSync]";
 
     function triggerPollingFallback() {
+      if (!isMounted) return;
       setPollingLogs((prev) => [
         ...prev,
         "SSE connection error. Started HTTP short-polling fallback stream every 4s.",
       ]);
 
       const fetchState = async () => {
+        if (abortController) {
+          abortController.abort();
+        }
+        abortController = new AbortController();
+
         try {
           const response = await fetch("/api/hackathons/team/sync", {
             method: "POST",
+            signal: abortController.signal,
           });
           if (response.ok) {
             const data = await response.json();
+            if (!isMounted) return;
             setTasks(data.tasks || []);
             setPins(data.pins || []);
             setChatHistory(data.chat || []);
@@ -85,12 +97,15 @@ const TeamWorkspace = () => {
               `[HTTP-Poll] Checking for team changes... Status: 200 OK`,
             ]);
           } else {
+            if (!isMounted) return;
             setPollingLogs((prev) => [
               ...prev,
               `[HTTP-Poll] Fetch failed with status ${response.status}`,
             ]);
           }
         } catch (err) {
+          if (err.name === "AbortError") return;
+          if (!isMounted) return;
           setPollingLogs((prev) => [...prev, `[HTTP-Poll] Fetch network error: ${err.message}`]);
         }
       };
@@ -100,17 +115,23 @@ const TeamWorkspace = () => {
     }
 
     const connectStream = () => {
+      if (!isMounted) return;
       setConnectionStatus("connecting");
       try {
         logger.info(`${logPrefix} Establishing real-time Server-Sent Events stream...`);
         sseSource = new EventSource("/api/hackathons/team/sync");
 
         sseSource.onopen = () => {
+          if (!isMounted) {
+            sseSource.close();
+            return;
+          }
           setConnectionStatus("sse");
           logger.info(`${logPrefix} Connection opened. Realtime SSE stream active.`);
         };
 
         sseSource.onmessage = (event) => {
+          if (!isMounted) return;
           try {
             const data = JSON.parse(event.data);
             if (data.type === "init") {
@@ -130,6 +151,7 @@ const TeamWorkspace = () => {
         };
 
         sseSource.onerror = () => {
+          if (!isMounted) return;
           logger.warn(
             `${logPrefix} Server-Sent Events stream interrupted. Fallback to short-polling activated.`
           );
@@ -138,6 +160,7 @@ const TeamWorkspace = () => {
           triggerPollingFallback();
         };
       } catch (e) {
+        if (!isMounted) return;
         logger.error(`${logPrefix} SSE not supported by browser. Falling back to HTTP polling.`, e);
         setConnectionStatus("polling_fallback");
         triggerPollingFallback();
@@ -153,7 +176,13 @@ const TeamWorkspace = () => {
         clearInterval(fallbackInterval);
         fallbackInterval = null;
       }
-      setConnectionStatus("idle");
+      if (abortController) {
+        abortController.abort();
+        abortController = null;
+      }
+      if (isMounted) {
+        setConnectionStatus("idle");
+      }
     };
 
     connectStream();
@@ -179,6 +208,7 @@ const TeamWorkspace = () => {
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
+      isMounted = false;
       disconnectStream();
       if (idleTimeout) clearTimeout(idleTimeout);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
