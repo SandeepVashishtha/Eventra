@@ -11,4 +11,5 @@ export {
   decodeJwtPayload as decodeTokenPayload,
   isTokenExpired,
   isTokenValid,
+  isAuthSessionValid,
 } from './auth';

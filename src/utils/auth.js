@@ -49,3 +49,7 @@ export function getTokenTTL(token) {
   // This prevents the background refresh timer from firing too late.
   return (payload.exp - CLOCK_SKEW_BUFFER) - Math.floor(Date.now() / 1000);
 }
+
+export function isAuthSessionValid(token) {
+  return token === "cookie-managed" || isTokenValid(token);
+}

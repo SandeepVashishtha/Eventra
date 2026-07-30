@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { API_ENDPOINTS } from '../config/api';
 import { logger } from "../utils/logger";
 import { getQueueIndexedDB, setQueue, clearQueue, filterQueueByOwnership } from '../utils/offlineQueue';
-import { isTokenValid } from '../utils/tokenUtils';
+import { isAuthSessionValid } from '../utils/tokenUtils';
 import { fetchWithTimeout } from "../utils/fetchWithTimeout";
 
 const MAX_RETRIES = 3;
@@ -106,7 +106,7 @@ const useOfflineSync = () => {
       }
 
       const headers = { 'Content-Type': 'application/json' };
-      if (authToken) headers.Authorization = `Bearer ${authToken}`;
+      if (authToken && authToken !== "cookie-managed") headers.Authorization = `Bearer ${authToken}`;
       if (forceOverride) headers['X-Override-Conflict'] = 'true';
 
       const { response, data } = await fetchWithTimeout(
@@ -152,7 +152,7 @@ const useOfflineSync = () => {
       // Refuse to replay queued actions under an expired or missing token.
       // The queue was saved under a previous session; firing it now could
       // attach those actions to whichever user happens to be logged in.
-      if (!token || !isTokenValid(token)) {
+      if (!token || !isAuthSessionValid(token)) {
         toast.warning(
           "Offline actions are pending but your session has expired. Please log in again to sync them.",
           { autoClose: 6000 }
