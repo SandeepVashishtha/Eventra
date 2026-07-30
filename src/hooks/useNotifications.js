@@ -22,7 +22,7 @@ export function useNotifications() {
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
       setNotifications(raw ? JSON.parse(raw) : []);
-    } catch {}
+    } catch { console.warn("[useNotifications] Notification storage failed"); }
   }, []);
 
   useEffect(() => {
@@ -53,7 +53,7 @@ export function useNotifications() {
         const existing = raw ? JSON.parse(raw) : [];
         const updated = [...queue, ...existing];
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      } catch {}
+      } catch { console.warn("[useNotifications] Notification storage failed"); }
       queue = [];
       flushTimeout = null;
       window.dispatchEvent(new CustomEvent("eventra-notifications-updated"));
@@ -68,7 +68,7 @@ export function useNotifications() {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
       setNotifications(updated);
       window.dispatchEvent(new CustomEvent("eventra-notifications-updated"));
-    } catch {}
+    } catch { console.warn("[useNotifications] Notification storage failed"); }
   }, []);
 
   const requestPermission = useCallback(async () => {
