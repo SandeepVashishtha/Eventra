@@ -45,16 +45,16 @@ textarea:focus-visible {
 /* High contrast mode support */
 @media (prefers-contrast: high) {
   .text-gray-500 {
-    color: #374151 !important;
+    color: #374151;
   }
   
   .dark .text-gray-400 {
-    color: #d1d5db !important;
+    color: #d1d5db;
   }
   
   button,
   a {
-    border: 2px solid currentColor !important;
+    border: 2px solid currentColor;
   }
 }
 
@@ -63,10 +63,10 @@ textarea:focus-visible {
   *,
   *::before,
   *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
+    transition-duration: 0.01ms;
+    scroll-behavior: auto;
   }
 }
 
