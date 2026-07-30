@@ -66,8 +66,5 @@ export const syncThemeToProfile = (theme, isAuthenticated = false) => {
   // Intentional: no await, no catch re-throw — true fire-and-forget
   apiUtils
     .put(API_ENDPOINTS.USERS.PREFERENCES, { preferences: { theme } })
-    .catch(() => {
-      // Non-fatal: localStorage already has the correct value.
-      // The next successful PUT will eventually reconcile the profile.
-    });
+    .catch(() => console.warn("[themeSync] Theme update failed"));
 };
