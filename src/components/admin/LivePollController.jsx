@@ -3,6 +3,7 @@ import { useAuth } from "context/AuthContext.js";
 import useLiveAudience from "hooks/useLiveAudience.js";
 import { BarChart3, Plus, Pause, Play, XCircle, Vote, Check, Loader2, RefreshCw } from "lucide-react";
 import { toast } from "react-toastify";
+import { safeJsonParseFromStorage } from "utils/safeJsonParse.js";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function isMod(user) {
@@ -10,7 +11,7 @@ function isMod(user) {
 }
 
 function getVotedPolls(eventId) {
-  return JSON.parse(localStorage.getItem(`voted_polls_${eventId}`) || "[]");
+  return safeJsonParseFromStorage(`voted_polls_${eventId}`, []);
 }
 
 function saveVotedPoll(eventId, pollId) {
