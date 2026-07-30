@@ -1,14 +1,22 @@
+import { safeJsonParse } from "../utils/safeJsonParse";
 export const getUserProfile = () => {
+  if (typeof window === "undefined" || !window.localStorage) {
+    return {
+      interests: [],
+      techStack: [],
+      eventTypes: [],
+      level: "Beginner",
+    };
+  }
 
-  const saved =
-    JSON.parse(
-      localStorage.getItem(
-        "eventra_user_profile"
-      )
-    ) || {};
+  let saved = {};
+  try {
+    saved = safeJsonParse(localStorage.getItem("eventra_user_profile"), {}) || {};
+  } catch {
+    saved = {};
+  }
 
   return {
-
     interests:
       saved.interests || [],
 
@@ -20,7 +28,5 @@ export const getUserProfile = () => {
 
     level:
       saved.level || "Beginner",
-
   };
-
 };

@@ -17,8 +17,12 @@ const _listeners = {};
 global.window = {
   localStorage: {
     getItem: (key) => (key in _lsStore ? _lsStore[key] : null),
-    setItem: (key, val) => { _lsStore[key] = String(val); },
-    removeItem: (key) => { delete _lsStore[key]; },
+    setItem: (key, val) => {
+      _lsStore[key] = String(val);
+    },
+    removeItem: (key) => {
+      delete _lsStore[key];
+    },
   },
   addEventListener: (event, cb) => {
     if (!_listeners[event]) _listeners[event] = [];
@@ -47,6 +51,7 @@ const {
   REMINDER_TIMINGS,
   getReminderId,
   isPastEvent,
+  getEventDateTime,
   getReminderTriggerTime,
   addReminder,
   removeReminder,
@@ -60,14 +65,46 @@ function resetStorage() {
   for (const k of Object.keys(_lsStore)) delete _lsStore[k];
 }
 
+function formatLocalDate(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 function futureEvent(offsetMinutes = 120) {
   const d = new Date(Date.now() + offsetMinutes * 60 * 1000);
   return {
     id: "evt-1",
     title: "Test Event",
-    date: d.toISOString().split("T")[0],   // YYYY-MM-DD
-    time: d.toTimeString().slice(0, 5),    // HH:MM
+    date: formatLocalDate(d), // YYYY-MM-DD in the local timezone
+    time: d.toTimeString().slice(0, 5), // HH:MM
     location: "Berlin",
+  };
+}
+
+function eventAtInstantInTimezone(instant, timezone, id = "evt-tz-dynamic") {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  const parts = Object.fromEntries(
+    formatter.formatToParts(instant).map((part) => [part.type, part.value])
+  );
+  const hour = String(parseInt(parts.hour, 10) % 24).padStart(2, "0");
+
+  return {
+    id,
+    title: `Timezone event ${id}`,
+    date: `${parts.year}-${parts.month}-${parts.day}`,
+    time: `${hour}:${parts.minute}`,
+    timezone,
+    location: timezone,
   };
 }
 
@@ -85,11 +122,7 @@ assert.equal(
   "evt-42::15m",
   "getReminderId returns a colon-separated composite key"
 );
-assert.equal(
-  getReminderId(99, "1h"),
-  "99::1h",
-  "getReminderId coerces numeric eventId to string"
-);
+assert.equal(getReminderId(99, "1h"), "99::1h", "getReminderId coerces numeric eventId to string");
 
 // ── isPastEvent ──────────────────────────────────────────────────────────────
 const pastDate = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -106,10 +139,51 @@ assert.equal(
   "isPastEvent returns false for an event 6 hours in the future"
 );
 
+assert.equal(isPastEvent({}), true, "isPastEvent returns true when event has no date");
+
+const localFutureEvent = futureEvent(30);
 assert.equal(
-  isPastEvent({}),
+  isPastEvent(localFutureEvent),
+  false,
+  "isPastEvent returns false for a local event 30 minutes in the future"
+);
+
+const losAngelesFuture = eventAtInstantInTimezone(
+  new Date(Date.now() + 6 * 60 * 60 * 1000),
+  "America/Los_Angeles",
+  "evt-la-future"
+);
+assert.equal(
+  isPastEvent(losAngelesFuture),
+  false,
+  "isPastEvent returns false for a future event in America/Los_Angeles"
+);
+
+const tokyoPast = eventAtInstantInTimezone(
+  new Date(Date.now() - 6 * 60 * 60 * 1000),
+  "Asia/Tokyo",
+  "evt-tokyo-past"
+);
+assert.equal(
+  isPastEvent(tokyoPast),
   true,
-  "isPastEvent returns true when event has no date"
+  "isPastEvent returns true for a past event in Asia/Tokyo"
+);
+
+const kiritimatiFuture = eventAtInstantInTimezone(
+  new Date(Date.now() + 8 * 60 * 60 * 1000),
+  "Pacific/Kiritimati",
+  "evt-kiritimati-future"
+);
+assert.equal(
+  isPastEvent(kiritimatiFuture),
+  false,
+  "isPastEvent handles future events across date-line timezones"
+);
+assert.ok(
+  Math.abs(getEventDateTime(losAngelesFuture).getTime() - (Date.now() + 6 * 60 * 60 * 1000)) <
+    70_000,
+  "getEventDateTime resolves timezone event times to the expected UTC instant"
 );
 
 // ── getReminderTriggerTime ────────────────────────────────────────────────────
@@ -182,5 +256,23 @@ addReminder(evtR, "15m");
 assert.equal(hasReminder(evtR.id, "15m"), true, "reminder exists before removal");
 removeReminder(evtR.id, "15m");
 assert.equal(hasReminder(evtR.id, "15m"), false, "reminder absent after removeReminder");
+
+// ── timezone-aware reminders ───────────────────────────────────────────────────
+const timezoneEvt = {
+  id: "evt-tz",
+  title: "Kolkata Event",
+  date: "2026-06-01",
+  time: "10:00 AM",
+  timezone: "Asia/Kolkata",
+};
+const tzTrigger = getReminderTriggerTime(timezoneEvt, "1h");
+// 10:00 AM Asia/Kolkata is 04:30 AM UTC.
+// 1 hour before is 03:30 AM UTC (2026-06-01T03:30:00Z)
+const expectedTzTrigger = new Date(Date.UTC(2026, 5, 1, 3, 30, 0, 0)); // 5 = June
+assert.equal(
+  tzTrigger.getTime(),
+  expectedTzTrigger.getTime(),
+  "getReminderTriggerTime calculates correct timezone-aware trigger time"
+);
 
 console.log("All reminderUtils tests passed ✓");

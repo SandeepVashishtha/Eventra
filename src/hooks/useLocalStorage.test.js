@@ -1,4 +1,4 @@
-/* eslint-disable testing-library/no-unnecessary-act */
+ 
 import { useEffect, act } from "react";
 import { createRoot } from "react-dom/client";
 import useLocalStorage from "./useLocalStorage";
