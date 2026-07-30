@@ -50,7 +50,7 @@ const readCache = () => {
 const writeCache = (data) => {
   try {
     localStorage.setItem(LS_KEY, JSON.stringify({ data, ts: Date.now() }));
-  } catch {}
+  } catch { console.warn("[GitHubStats] Cache write failed"); }
 };
 
 export default function GitHubStats() {
