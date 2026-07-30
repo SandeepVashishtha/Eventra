@@ -120,11 +120,11 @@ export function usePushSubscription(updatePreferences) {
         const existing = window.localStorage.getItem(PUSH_SUBSCRIPTION_KEY);
         if (existing) {
           try { if (safeJsonParse(existing, {}).keys) logger.info("[usePushSubscription] Migrating legacy record."); }
-          catch {}
-        }
+      try { if (safeJsonParse(existing, {}).keys) logger.info('[usePushSubscription] Migrating legacy record.'); }
+      catch (err) { logger.warn('[usePushSubscription] Legacy migration failed:', err); }
         window.localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(safeLocalRecord));
-      } catch {}
-      const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.PUSH_SUBSCRIBE;
+      window.localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(safeLocalRecord));
+      } catch (err) { logger.warn('[usePushSubscription] Failed to persist subscription:', err); }
       if (token && endpoint) await apiUtils.post(endpoint, subscription);
       updatePreferences((c) => ({ ...c, push: true }));
       await updatePushStatus();
