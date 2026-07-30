@@ -75,9 +75,7 @@ function sendReport(report) {
       body: JSON.stringify(report),
       headers: { 'Content-Type': 'application/csp-report' },
       keepalive: true,
-    }).catch(() => {
-      // Swallow — reporting is best-effort and must never crash the app.
-    });
+    }).catch(() => console.warn("[CSP] Report submission failed"));
   }
 }
 
