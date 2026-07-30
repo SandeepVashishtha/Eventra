@@ -356,8 +356,8 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
           }
           await idbDel("eventra_notifications");
         }
-      } catch {
-        // fail silently in environments without IndexedDB support
+      } catch (e) {
+        console.warn('[useNotificationPoller] Legacy IndexedDB migration failed', e);
       }
     };
 
