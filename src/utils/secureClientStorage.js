@@ -110,7 +110,7 @@ export const auditStorage = () => {
         issues.push({ storage: "sessionStorage", key, risk: "sensitive key name" });
       }
     });
-  } catch {}
+  } catch { console.warn("[secureClientStorage] Security audit failed"); }
 
   return issues;
 };
