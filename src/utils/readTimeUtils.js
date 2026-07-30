@@ -1,53 +1,35 @@
-/**
- * Calculate estimated read time for text content
- * Based on average reading speed of 200 words per minute
- * @param {string} text - The text content to analyze
- * @returns {number} - Estimated read time in minutes
- */
+const WORDS_PER_MINUTE = 200;
+
+const stripHtml = (value) => String(value).replace(/<[^>]*>/g, " ");
+
+export const getWordCount = (text) => {
+  if (text == null || text === "") return 0;
+
+  const normalized = stripHtml(text).trim();
+  if (!normalized) return 0;
+
+  return normalized.split(/\s+/).filter(Boolean).length;
+};
+
 export const calculateReadTime = (text) => {
-  if (!text || typeof text !== 'string') {
-    return 0;
-  }
+  if (text == null || text === "") return 0;
 
-  // Remove HTML tags if present
-  const plainText = text.replace(/<[^>]*>/g, '');
-  
-  // Count words (split by whitespace and filter empty strings)
-  const wordCount = plainText.trim().split(/\s+/).filter(word => word.length > 0).length;
-  
-  // Average reading speed: 200 words per minute
-  const wordsPerMinute = 200;
-  
-  // Calculate read time in minutes (round up)
-  const readTimeMinutes = Math.ceil(wordCount / wordsPerMinute);
-  
-  // Minimum 1 minute for any content
-  return Math.max(1, readTimeMinutes);
+  const wordCount = getWordCount(text);
+  return Math.max(1, Math.ceil(wordCount / WORDS_PER_MINUTE));
 };
 
-/**
- * Format read time for display
- * @param {number} minutes - Read time in minutes
- * @returns {string} - Formatted string (e.g., "2 min read")
- */
 export const formatReadTime = (minutes) => {
-  if (minutes <= 0) return '';
-  if (minutes === 1) return '1 min read';
-  return `${minutes} min read`;
+  if (!Number.isFinite(minutes) || minutes <= 0) return "";
+  return `${Math.ceil(minutes)} min read`;
 };
 
-/**
- * Get read time info for an event
- * @param {Object} event - Event object with description
- * @returns {{minutes: number, display: string}} - Read time info
- */
-export const getEventReadTime = (event) => {
-  const description = event?.description || '';
+export const getEventReadTime = (event = {}) => {
+  const description = event?.description;
   const minutes = calculateReadTime(description);
-  
+
   return {
     minutes,
     display: formatReadTime(minutes),
-    wordCount: description.trim().split(/\s+/).filter(word => word.length > 0).length,
+    wordCount: getWordCount(description),
   };
 };

@@ -1,6 +1,13 @@
 import { defineConfig, loadEnv, transformWithOxc } from "vite";
 import react from "@vitejs/plugin-react";
+
 import path from "path";
+import { fileURLToPath } from "url";
+import dotenv from "dotenv";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+dotenv.config();
 
 // Quick regex to detect JSX syntax — lets us skip transformWithOxc
 // on plain .js files that have no JSX (the common case).
@@ -8,8 +15,23 @@ const JSX_HINT_RE = /<[A-Za-z][A-Za-z0-9.]*[\s\n\r/>]|<>/;
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
+  const backendTarget =
+    env.BACKEND_URL ||
+    env.VITE_API_URL?.replace(/\/api\/?$/, "") ||
+    env.REACT_APP_API_URL?.replace(/\/api\/?$/, "");
+
+  if (!backendTarget) {
+    throw new Error(
+      "Backend URL is not configured. Set BACKEND_URL, VITE_API_URL, or REACT_APP_API_URL before starting the application."
+    );
+  }
 
   return {
+    appType: "spa",
+    base: env.VITE_BASE_URL || "/",
+    publicDir: "public",
+    cacheDir: process.env.VITE_CACHE_DIR || "node_modules/.vite",
+    clearScreen: false,
     plugins: [
       // Intercept .js files BEFORE vite:oxc / builtin:vite-transform so JSX
       // inside them is compiled correctly in both dev and production builds.
@@ -39,32 +61,44 @@ export default defineConfig(({ mode }) => {
         "@hooks": path.resolve(__dirname, "src/hooks"),
         "@utils": path.resolve(__dirname, "src/utils"),
         "@context": path.resolve(__dirname, "src/context"),
+        "components": path.resolve(__dirname, "src/components"),
+        "Pages": path.resolve(__dirname, "src/Pages"),
+        "hooks": path.resolve(__dirname, "src/hooks"),
+        "utils": path.resolve(__dirname, "src/utils"),
+        "context": path.resolve(__dirname, "src/context"),
+        "services": path.resolve(__dirname, "src/services"),
+        "config": path.resolve(__dirname, "src/config"),
+        "constants": path.resolve(__dirname, "src/constants"),
+        "storage": path.resolve(__dirname, "src/storage"),
+        "validation": path.resolve(__dirname, "src/validation"),
       },
-    },
-
-    define: {
-      "process.env.NODE_ENV": JSON.stringify(mode),
-      "process.env.PUBLIC_URL": JSON.stringify(""),
-      "process.env.REACT_APP_API_URL": JSON.stringify(env.REACT_APP_API_URL || env.VITE_API_URL || "/api"),
-      "process.env.REACT_APP_SENTRY_DSN": JSON.stringify(env.REACT_APP_SENTRY_DSN || ""),
-      "process.env.REACT_APP_GITHUB_REPO": JSON.stringify(env.REACT_APP_GITHUB_REPO || "SandeepVashishtha/Eventra"),
-      "process.env.REACT_APP_PUBLIC_URL": JSON.stringify(env.REACT_APP_PUBLIC_URL || "https://eventra.sandeepvashishtha.tech"),
-      "process.env.REACT_APP_VAPID_PUBLIC_KEY": JSON.stringify(env.REACT_APP_VAPID_PUBLIC_KEY || ""),
-      "process.env.REACT_APP_CSP_REPORT_URI": JSON.stringify(env.REACT_APP_CSP_REPORT_URI || ""),
-      "process.env.REACT_APP_FACEBOOK_APP_ID": JSON.stringify(env.REACT_APP_FACEBOOK_APP_ID || ""),
-      "process.env.REACT_APP_EMAILJS_PUBLIC_KEY": JSON.stringify(env.REACT_APP_EMAILJS_PUBLIC_KEY || ""),
-      "process.env.REACT_APP_EMAILJS_SERVICE_ID": JSON.stringify(env.REACT_APP_EMAILJS_SERVICE_ID || ""),
-      "process.env.REACT_APP_EMAILJS_TEMPLATE_ID": JSON.stringify(env.REACT_APP_EMAILJS_TEMPLATE_ID || ""),
     },
 
     server: {
       port: 3000,
       open: false,
       hmr: { overlay: true },
+      proxy: {
+        "/api": {
+          target: backendTarget,
+          changeOrigin: true,
+          secure: false,
+        },
+        "/stream": {
+          target: backendTarget,
+          changeOrigin: true,
+          secure: false,
+        },
+      },
     },
 
     // Pre-bundle heavy deps once → node_modules/.vite/deps
     optimizeDeps: {
+      rolldownOptions: {
+        moduleTypes: {
+          ".js": "jsx",
+        },
+      },
       include: [
         "react",
         "react-dom",
@@ -79,7 +113,6 @@ export default defineConfig(({ mode }) => {
         "date-fns",
         "recharts",
         "react-toastify",
-        "react-hot-toast",
         "dompurify",
         "fuse.js",
         "react-helmet-async",
@@ -91,14 +124,28 @@ export default defineConfig(({ mode }) => {
     },
 
     build: {
+      target: "es2020",
+      cssCodeSplit: true,
+      reportCompressedSize: false,
       outDir: "build",
+      emptyOutDir: true,
+      copyPublicDir: true,
       sourcemap: false,
       minify: "esbuild",
-      // Disable CSS minification — lightningcss (Vite 8 default) cannot parse
-      // the custom Tailwind `short` screen: (max-height: 520px) media query.
-      cssMinify: false,
-      chunkSizeWarningLimit: 1500,
+      cssMinify: "esbuild",
+      chunkSizeWarningLimit: 500,
+      modulePreload: {
+        polyfill: true,
+        resolveDependencies: (url, deps, { hostType }) => {
+          return deps;
+        },
+      },
+      manifest: true,
       rollupOptions: {
+        onwarn(warning, warn) {
+          if (warning.code === "MODULE_LEVEL_DIRECTIVE") return;
+          warn(warning);
+        },
         output: {
           // manualChunks must be a function in Vite 8 / Rolldown
           manualChunks(id) {
@@ -124,7 +171,6 @@ export default defineConfig(({ mode }) => {
             }
             if (
               id.includes("node_modules/react-toastify/") ||
-              id.includes("node_modules/react-hot-toast/") ||
               id.includes("node_modules/aos/")
             ) {
               return "vendor-ui";
@@ -134,8 +180,42 @@ export default defineConfig(({ mode }) => {
       },
     },
 
+    json: {
+      namedExports: true,
+      stringify: false,
+    },
+
     css: {
       devSourcemap: false,
+      modules: {
+        localsConvention: "camelCase",
+        generateScopedName: "[name]__[local]___[hash:base64:5]",
+      },
+      preprocessorOptions: {
+        scss: {
+          api: "modern-compiler",
+        },
+      },
+    },
+
+    worker: {
+      format: "es",
+      plugins: () => [],
+    },
+
+    envDir: process.cwd(),
+
+    assetsInclude: ["**/*.webp", "**/*.avif"],
+
+    esbuild: {
+      legalComments: "none",
+      treeShaking: true,
+    },
+
+    // logLevel: "warn",
+    define: {
+      __APP_VERSION__: JSON.stringify(process.env.npm_package_version || "0.0.0"),
+      __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
     },
   };
 });

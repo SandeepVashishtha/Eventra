@@ -1,7 +1,8 @@
 import { renderHook, act } from "@testing-library/react";
 import useRecentlyViewed from "./useRecentlyViewed";
+import { safeJsonParse } from "../utils/safeJsonParse";
 
-const STORAGE_KEY = "eventra_recently_viewed";
+const STORAGE_KEY = "recentlyViewedEvents";
 
 const mockEvent = (id, title = `Event ${id}`) => ({
   id,
@@ -56,18 +57,18 @@ describe("useRecentlyViewed", () => {
     expect(result.current.recentlyViewed[0].id).toBe(1);
   });
 
-  it("caps the list at MAX_ITEMS (10) entries", () => {
+  it("caps the list at MAX_ITEMS (5) entries", () => {
     const { result } = renderHook(() => useRecentlyViewed());
 
     act(() => {
-      for (let i = 1; i <= 12; i++) {
+      for (let i = 1; i <= 7; i++) {
         result.current.addRecentlyViewed(mockEvent(i));
       }
     });
 
-    expect(result.current.recentlyViewed.length).toBe(10);
+    expect(result.current.recentlyViewed.length).toBe(5);
     // Most-recently added should be at the front
-    expect(result.current.recentlyViewed[0].id).toBe(12);
+    expect(result.current.recentlyViewed[0].id).toBe(7);
   });
 
   it("ignores addRecentlyViewed calls with null or missing id", () => {
@@ -134,7 +135,7 @@ describe("useRecentlyViewed", () => {
       result.current.addRecentlyViewed(mockEvent(5));
     });
 
-    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    const stored = safeJsonParse(localStorage.getItem(STORAGE_KEY), []);
     expect(stored).toHaveLength(1);
     expect(stored[0].id).toBe(5);
   });

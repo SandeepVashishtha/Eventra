@@ -2,7 +2,7 @@
  * - verify popup timeout handling
  * - verify fallback redirect works
  */
-const { test } = require('@playwright/test');
+import { test } from '@playwright/test';
 
 test('OAuth popup timeout placeholder', async () => {
   test.info().skip('Implement OAuth provider simulation and popup assertions');
