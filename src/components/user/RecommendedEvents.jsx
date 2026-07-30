@@ -1,32 +1,23 @@
-import { useEffect, useState } from "react";
+// No React hooks needed — recommendedHackathons is computed directly from useRecommendations
 
 import HackathonCard from "../../Pages/Hackathons/HackathonCard";
 
 import mockHackathons from "../../Pages/Hackathons/hackathonMockData.json";
 
-import useRecommendations from "../../hooks/useRecommendations";
+import useRecommendations from "hooks/useRecommendations";
 
 
 const RecommendedEvents = () => {
 
-  const [recommendedHackathons, setRecommendedHackathons] = useState([]);
-
-  // Intelligent recommendation engine
-  const recommendations =
-    useRecommendations(mockHackathons);
-
-  useEffect(() => {
-
-    // Show top 3 recommendations
-    setRecommendedHackathons(
-      recommendations.slice(0, 3)
-    );
-
-  }, [recommendations]);
+  // Intelligent recommendation engine — slice directly, no intermediate state needed.
+  // Storing derived data in useState + useEffect adds an extra render per update
+  // and risks an infinite loop if useRecommendations returns unstable references.
+  const recommendations = useRecommendations(mockHackathons);
+  const recommendedHackathons = recommendations.slice(0, 3);
 
   return (
 
-    <section className="bg-white dark:bg-black py-12 border-b border-gray-200 dark:border-gray-800">
+    <section className="bg-bg text-text py-12 border-b border-border">
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
@@ -35,13 +26,13 @@ const RecommendedEvents = () => {
 
           <div>
 
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+            <h2 className="text-3xl font-bold text-text">
 
               Recommended For You
 
             </h2>
 
-            <p className="text-gray-600 dark:text-gray-400 mt-2">
+            <p className="text-text-light mt-2">
 
               Personalized hackathons based on your interests, activity, and recommendation score.
 
@@ -74,7 +65,7 @@ const RecommendedEvents = () => {
                     top-4
                     right-4
                     z-20
-                    bg-blue-600
+                    bg-primary
                     text-white
                     text-xs
                     font-bold
@@ -103,27 +94,23 @@ const RecommendedEvents = () => {
                     flex
                     flex-wrap
                     gap-2
-                    bg-white
-                    dark:bg-[#050505]
+                    bg-card-bg
                     border-x
                     border-b
-                    border-gray-200
-                    dark:border-gray-800
+                    border-border
                     rounded-b-2xl
                   "
                 >
 
                   {hackathon.recommendationReasons?.map(
-                    (reason, reasonIndex) => (
+                    (reason) => (
 
                       <span
-                        key={reasonIndex}
+                        key={reason}
                         className="
                           text-xs
-                          bg-blue-100
-                          dark:bg-blue-900/30
-                          text-blue-700
-                          dark:text-blue-300
+                          bg-primary/10
+                          text-primary
                           px-3
                           py-1
                           rounded-full
@@ -148,7 +135,7 @@ const RecommendedEvents = () => {
 
           <div className="text-center py-10">
 
-            <p className="text-gray-500 dark:text-gray-400">
+            <p className="text-text-light">
 
               No recommendations available right now.
 

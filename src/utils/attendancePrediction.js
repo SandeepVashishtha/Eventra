@@ -158,7 +158,10 @@ export const computeAttendancePrediction = (event = {}, options = {}) => {
 
   const attendanceProbability = Math.round(probability * 100);
   const noShowProbability = Math.round((1 - probability) * 100);
-  const predictedAttendees = capacity > 0 ? Math.round(probability * capacity) : attendees;
+  
+  // Deep Fix: Predict attendees based on *actual registrants*, not total venue capacity
+  const predictedAttendees = attendees > 0 ? Math.round(probability * attendees) : 0;
+  
   const predictedGap = predictedAttendees - attendees;
   const waitlistSize = getWaitlistSize(event);
   const expectedOpenSeats = Math.max(0, capacity - predictedAttendees);
@@ -168,8 +171,9 @@ export const computeAttendancePrediction = (event = {}, options = {}) => {
     ? Math.min(waitlistSize, Math.max(0, Math.round(expectedNoShowSeats * 0.8)))
     : 0;
 
+  // Deep Fix: Safely cap projected fill rate to prevent overbooking anomalies
   const projectedFillRate = capacity > 0
-    ? Math.round(((attendees + recommendedPromotions) / capacity) * 100)
+    ? Math.min(100, Math.round(((attendees + recommendedPromotions) / capacity) * 100))
     : 0;
 
   const reminderHint = attendanceProbability < 75
@@ -193,7 +197,7 @@ export const computeAttendancePrediction = (event = {}, options = {}) => {
 
 export const buildWaitlistPromotionSummary = (event = {}, options = {}) => {
   const prediction = computeAttendancePrediction(event, options);
-    const capacity = Number(event.maxAttendees || event.capacity || 0);
+  const capacity = Number(event.maxAttendees || event.capacity || 0);
   const seatsToPromote = prediction.recommendedPromotions;
   const hasWaitlist = prediction.waitlistSize > 0;
 

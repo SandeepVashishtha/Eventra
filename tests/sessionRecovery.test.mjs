@@ -150,5 +150,29 @@ const tamperedState = {
 assert.notEqual(tamperedState.deviceFingerprint, originalFingerprint, "Malicious fingerprint does not match original");
 assert.ok(tamperedState.deviceFingerprint !== getDeviceFingerprint(), "Mismatched device fingerprint successfully detected");
 
+// ── Test 5: Session Overwrite Race Condition Protection ──────────────────────
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const contextSrc = readFileSync(
+  path.resolve(__dirname, "../src/context/SessionRecoveryContext.js"),
+  "utf8"
+);
+
+assert.ok(
+  contextSrc.includes("isLoadingRef = useRef(true)"),
+  "Must initialize isLoadingRef to true to track initial load state"
+);
+assert.ok(
+  contextSrc.includes("isLoadingRef.current = false"),
+  "Must set isLoadingRef.current to false when session loading completes"
+);
+assert.ok(
+  contextSrc.includes("if (isLoadingRef.current) return"),
+  "Must guard saveSession from writing to localStorage if initial session load is in progress"
+);
+
 console.log("All Session Recovery Sanitization & Cryptography tests passed successfully ✓");
 

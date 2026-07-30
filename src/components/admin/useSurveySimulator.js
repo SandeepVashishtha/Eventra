@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "react-toastify";
 
 export function useSurveySimulator(questions, feedbackPool) {
@@ -7,12 +7,22 @@ export function useSurveySimulator(questions, feedbackPool) {
   const [simulatedData, setSimulatedData] = useState({});
   const [textFeed, setTextFeed] = useState([]);
 
+  // 🔥 FIX 1: Dependency Hashing to prevent Infinite Render Loops.
+  // By tracking the stringified content, we prevent the useEffect from firing
+  // endlessly if the parent component passes unmemoized array references.
+  const questionsHash = JSON.stringify(questions);
+  const feedbackHash = JSON.stringify(feedbackPool);
+
   // Initialize simulated data once or if questions length changes
   useEffect(() => {
+    // Safety guard in case undefined is passed
+    const safeQuestions = questions || [];
+    const safeFeedback = feedbackPool || [];
+    
     const initialData = {};
     const textComments = [];
 
-    questions.forEach((q) => {
+    safeQuestions.forEach((q) => {
       if (q.type === "rating") {
         // Biased rating counts: [5-star, 4-star, 3-star, 2-star, 1-star]
         initialData[q.id] = {
@@ -24,19 +34,19 @@ export function useSurveySimulator(questions, feedbackPool) {
         };
       } else if (q.type === "choice") {
         const optionVotes = {};
-        q.options.forEach((opt) => {
+        q.options?.forEach((opt) => {
           optionVotes[opt] = Math.floor(Math.random() * 40) + 10;
         });
         initialData[q.id] = optionVotes;
       } else if (q.type === "text") {
         // Grab 3 random comments from our pool
-        const shuffled = [...feedbackPool].sort(() => 0.5 - Math.random());
+        const shuffled = [...safeFeedback].sort(() => 0.5 - Math.random());
         textComments.push({
           questionId: q.id,
           questionText: q.questionText,
           comments: shuffled.slice(0, 3).map((comment, index) => ({
             id: `${q.id}-${index}`,
-            author: ["Aravind S.", "Meera N.", "Zoya A.", "Kabir D.", "Sara K."][index],
+            author: ["Aravind S.", "Meera N.", "Zoya A.", "Kabir D.", "Sara K."][index] || "Anonymous",
             text: comment,
             time: `${index * 4 + 2} mins ago`,
           })),
@@ -46,11 +56,27 @@ export function useSurveySimulator(questions, feedbackPool) {
 
     setSimulatedData(initialData);
     setTextFeed(textComments);
-  }, [questions, feedbackPool]);
+    // Reset counters in sync with data so the submission count
+    // never contradicts the chart distributions after a question change.
+    setTotalSubmissions(142);
+    setCompletionRate(87.3);
+    // Use the content hashes as the true dependencies
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [questionsHash, feedbackHash]);
 
-  // Trigger manual simulation of an attendee submitting the survey
-  const handleSimulateSubmission = () => {
-    if (questions.length === 0) {
+  // 🔥 FIX 2: useRef stores always-current values so the callback can read
+  // fresh questions/feedbackPool without listing unstable array refs as deps.
+  // This gives handleSimulateSubmission a truly stable identity across renders.
+  const questionsRef = useRef(questions);
+  const feedbackPoolRef = useRef(feedbackPool);
+  questionsRef.current = questions;
+  feedbackPoolRef.current = feedbackPool;
+
+  const handleSimulateSubmission = useCallback(() => {
+    const safeQuestions = questionsRef.current || [];
+    const safeFeedback = feedbackPoolRef.current || [];
+
+    if (safeQuestions.length === 0) {
       toast.warn("Please add some questions first before simulating submissions!");
       return;
     }
@@ -62,15 +88,23 @@ export function useSurveySimulator(questions, feedbackPool) {
 
     setSimulatedData((prev) => {
       const updated = { ...prev };
-      questions.forEach((q) => {
+      safeQuestions.forEach((q) => {
         if (q.type === "rating") {
-          const score = Math.random() > 0.4 ? (Math.random() > 0.4 ? 5 : 4) : 3;
+          // Weighted distribution across all 5 stars so every bar can grow.
+          // Biased toward positive (5★/4★) to reflect typical event feedback.
+          const rand = Math.random();
+          const score =
+            rand < 0.36 ? 5 :  // 36%
+            rand < 0.60 ? 4 :  // 24%
+            rand < 0.84 ? 3 :  // 24%
+            rand < 0.94 ? 2 :  // 10%
+                          1;   //  6%
           updated[q.id] = {
             ...updated[q.id],
             [score]: (updated[q.id]?.[score] || 0) + 1,
           };
         } else if (q.type === "choice") {
-          if (q.options.length > 0) {
+          if (q.options && q.options.length > 0) {
             const randomOpt = q.options[Math.floor(Math.random() * q.options.length)];
             updated[q.id] = {
               ...updated[q.id],
@@ -83,13 +117,13 @@ export function useSurveySimulator(questions, feedbackPool) {
     });
 
     // Add a comment to the scrolling feed if there are text questions
-    const textQuestions = questions.filter((q) => q.type === "text");
-    if (textQuestions.length > 0) {
+    const textQuestions = safeQuestions.filter((q) => q.type === "text");
+    if (textQuestions.length > 0 && safeFeedback.length > 0) {
       const targetQ = textQuestions[Math.floor(Math.random() * textQuestions.length)];
       const randomAuthor = [
         "Aarav S.", "Priya M.", "Rohan V.", "Sneha P.", "Karan J.", "Aditya R.", "Ishaan R."
       ][Math.floor(Math.random() * 7)];
-      const randomComment = feedbackPool[Math.floor(Math.random() * feedbackPool.length)];
+      const randomComment = safeFeedback[Math.floor(Math.random() * safeFeedback.length)];
 
       setTextFeed((prev) =>
         prev.map((item) => {
@@ -112,8 +146,7 @@ export function useSurveySimulator(questions, feedbackPool) {
       );
     }
 
-    toast.success("🚀 Simulator: Injected a new active survey submission record!");
-  };
+  }, []); // stable forever — reads latest values via refs
 
   return {
     totalSubmissions,
