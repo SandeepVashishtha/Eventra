@@ -113,10 +113,10 @@ function buildDiagnosticReport(errorId, error, errorInfo) {
       for (let i = 0; i < sessionStorage.length; i++) {
         const k = sessionStorage.key(i);
         if (k && !k.includes("token") && !k.includes("password") && !k.includes("eventra:key-material") && !k.includes("eventra:key-salt")) {
-          try { snap[k] = process.env.NODE_ENV === "production" ? "[redacted]" : (sessionStorage.getItem(k)?.slice(0, 200)); } catch {}
+           try { snap[k] = process.env.NODE_ENV === "production" ? "[redacted]" : (sessionStorage.getItem(k)?.slice(0, 200)); } catch { console.warn("[ErrorBoundary] Diagnostic operation failed"); }
+          }
         }
-      }
-      return JSON.stringify(snap, null, 2);
+        return JSON.stringify(snap, null, 2);
     } catch {
       return "Unable to read sessionStorage";
     }
@@ -211,7 +211,7 @@ class ErrorBoundary extends React.Component {
     if (typeof this.props.onError === "function") {
       try {
         this.props.onError(error, errorInfo);
-      } catch {}
+      } catch { console.warn("[ErrorBoundary] Diagnostic operation failed"); }
     }
   }
 
@@ -344,7 +344,7 @@ class ErrorBoundary extends React.Component {
         for (let i = 0; i < localStorage.length; i++) {
           const k = localStorage.key(i);
           if (k && !k.includes("token") && !k.includes("password") && !k.includes("eventra:key-material") && !k.includes("eventra:key-salt")) {
-            try { snap[k] = process.env.NODE_ENV === "production" ? "[redacted]" : (localStorage.getItem(k)?.slice(0, 200)); } catch {}
+            try { snap[k] = process.env.NODE_ENV === "production" ? "[redacted]" : (localStorage.getItem(k)?.slice(0, 200)); } catch { console.warn("[ErrorBoundary] Diagnostic operation failed"); }
           }
         }
         return JSON.stringify(snap, null, 2);
