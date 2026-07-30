@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import { getJwtSecret } from "../auth/jwt-config.js";
 import { users } from "../auth/signup.js";
+import { isTokenBlacklisted } from "../auth/logout.js";
 
 // ---------------------------------------------------------------------------
 // JWT Middleware
@@ -28,6 +29,11 @@ export const verifyAuth = (handler) => {
 
     if (!token) {
       return res.status(401).json({ error: "Unauthorized: Missing authentication token" });
+    }
+
+    // 1.5 Check if token has been blacklisted (invalidated via logout)
+    if (isTokenBlacklisted(token)) {
+      return res.status(401).json({ error: "Unauthorized: Token has been invalidated" });
     }
 
     // 2. Verify token signature and expiry

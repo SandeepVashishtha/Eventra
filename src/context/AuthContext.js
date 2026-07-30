@@ -315,7 +315,12 @@ export const AuthProvider = ({ children }) => {
 
 
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    try {
+      await apiUtils.post(API_ENDPOINTS.AUTH.LOGOUT);
+    } catch {
+      // Best-effort: proceed with local cleanup even if backend call fails
+    }
     clearSession();
     setAuthRequestState({ loading: false, error: null });
   }, [clearSession, setAuthRequestState]);

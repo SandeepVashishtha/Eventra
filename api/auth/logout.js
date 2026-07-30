@@ -122,6 +122,24 @@ const extractToken = (authHeader) => {
 };
 
 // ---------------------------------------------------------------------------
+// Extract token from Cookie (for cookie-managed sessions)
+// ---------------------------------------------------------------------------
+
+const extractTokenFromCookies = (req) => {
+  if (req.cookies && req.cookies.token) {
+    return req.cookies.token;
+  }
+  if (req.headers.cookie) {
+    const cookies = req.headers.cookie.split(";").map((c) => c.trim());
+    const tokenCookie = cookies.find((c) => c.startsWith("token="));
+    if (tokenCookie) {
+      return tokenCookie.substring(6);
+    }
+  }
+  return null;
+};
+
+// ---------------------------------------------------------------------------
 // Check if token is blacklisted
 // ---------------------------------------------------------------------------
 
@@ -178,11 +196,11 @@ export default async function handler(req, res) {
 
   try {
     // -----------------------------------------------------------------------
-    // Extract and validate token from Authorization header
+    // Extract and validate token from Authorization header or Cookie
     // -----------------------------------------------------------------------
 
     const authHeader = req.headers?.authorization || req.headers?.Authorization;
-    const token = extractToken(authHeader);
+    const token = extractToken(authHeader) || extractTokenFromCookies(req);
 
     if (!token) {
       return corsResponse(res, 401, { 
