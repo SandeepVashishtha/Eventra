@@ -71,15 +71,23 @@ function ModeratorButtons({ q, onFlag, onDelete }) {
   );
 }
 
-function highlightKeywords(text) {
+function formatText(text, isModerator) {
   const keywords = ['bug', 'feature', 'question', 'pricing', 'roadmap'];
-  const regex = new RegExp(`\\b(${keywords.join('|')})\\b`, 'gi');
+  const regex = isModerator 
+    ? new RegExp(`(@\\w+)|\\b(${keywords.join('|')})\\b`, 'gi')
+    : /(@\w+)/gi;
+
   const parts = text.split(regex);
-  return parts.map((part, i) =>
-    keywords.includes(part.toLowerCase())
-      ? <span key={i} className="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-400 font-bold border border-indigo-500/30 text-[10px] uppercase tracking-widest mx-0.5">{part}</span>
-      : part
-  );
+  return parts.map((part, i) => {
+    if (!part) return null;
+    if (/^@\w+$/.test(part)) {
+      return <span key={i} className="font-bold text-blue-500">{part}</span>;
+    }
+    if (isModerator && keywords.includes(part.toLowerCase())) {
+      return <span key={i} className="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-400 font-bold border border-indigo-500/30 text-[10px] uppercase tracking-widest mx-0.5">{part}</span>;
+    }
+    return part;
+  });
 }
 
 function QuestionCard({ q, isModerator, onUpvote, onFlag, onDelete }) {
@@ -95,7 +103,7 @@ function QuestionCard({ q, isModerator, onUpvote, onFlag, onDelete }) {
             <AlertTriangle className="h-3 w-3" /> Flagged for moderation
           </span>
         )}
-        <p className="text-sm text-slate-200 break-words leading-relaxed font-sans">{isModerator ? highlightKeywords(q.text) : q.text}</p>
+        <p className="text-sm text-slate-200 break-words leading-relaxed font-sans">{formatText(q.text, isModerator)}</p>
         <span className="text-[10px] text-slate-500 font-medium">
           {formatTime(q.createdAt)}
           {q.isSpeaker && (
