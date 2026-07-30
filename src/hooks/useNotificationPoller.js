@@ -60,7 +60,7 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
   const tokenRef = useRef(token);
   const isPageVisibleRef = useRef(isPageVisible);
   const storageKeyRef = useRef(getStorageKey(user?.id));
-  const notificationsRef = useRef([]);
+  const notificationsRef = useRef(notifications);
 
   useEffect(() => { isMounted.current = true; return () => { isMounted.current = false; }; }, []);
   useEffect(() => { tokenRef.current = token; }, [token]);
@@ -237,15 +237,13 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
     async (id) => {
       if (!id) return;
       const t = token;
-      const currentNotifications = notificationsRef.current;
-      const removedIndex = currentNotifications.findIndex((n) => n.id === id);
-      const removedNotification = removedIndex >= 0 ? currentNotifications[removedIndex] : null;
-      if (!removedNotification) return;
-      const removedWasUnread = !removedNotification.isRead;
-      const optimisticallyUpdated = currentNotifications.filter((n) => n.id !== id);
-      setNotifications(optimisticallyUpdated);
-      notificationsRef.current = optimisticallyUpdated;
-      persist(optimisticallyUpdated, storageKeyRef.current);
+      const target = notificationsRef.current.find((n) => n.id === id);
+      const removedWasUnread = target ? !target.isRead : false;
+      setNotifications((prev) => {
+        const updated = prev.filter((n) => n.id !== id);
+        persist(updated, storageKeyRef.current);
+        return updated;
+      });
       if (removedWasUnread) setUnreadCount((p) => Math.max(0, p - 1));
       const fn = API_ENDPOINTS?.NOTIFICATIONS?.DELETE;
       const endpoint = token && typeof fn === "function" ? fn(id) : null;
