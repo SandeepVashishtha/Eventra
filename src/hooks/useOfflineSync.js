@@ -402,37 +402,36 @@ const useOfflineSync = () => {
 
     const executeSyncWithLocalLock = async () => {
       const LOCK_KEY = "eventra_offline_sync_local_lock";
-      const LOCK_TIMEOUT_MS = 30_000;
 
-      // 🔥 FIX: SSR guard. Previously the localStorage access below
-      // threw ReferenceError in any Node.js-like environment. On SSR
-      // there is no cross-tab concern, so we just return without
-      // acquiring a lock — the Web Locks API path (if available) still
-      // runs via handleOnline. Falls through to a no-op otherwise.
+      // SSR guard — no cross-tab concern in server environment
       if (typeof window === "undefined" || !window.localStorage) {
+        await executeSync();
         return;
       }
 
-      const now = Date.now();
-      const lockVal = window.localStorage.getItem(LOCK_KEY);
-
-      if (lockVal) {
+      // Use atomic Web Locks API if available (eliminates TOCTOU race)
+      if (typeof navigator?.locks?.request === "function") {
         try {
-          const parsed = safeJsonParse(lockVal, {});
-          if (parsed && parsed.timestamp && now - parsed.timestamp < LOCK_TIMEOUT_MS) {
-            logger.log("[useOfflineSync] Local sync lock is held by another active tab. Skipping.");
-            return;
-          }
-        } catch {}
+          await navigator.locks.request(LOCK_KEY, { ifAvailable: true }, async (lock) => {
+            if (!lock) {
+              logger.log("[useOfflineSync] Local sync lock is held by another tab via Web Locks. Skipping.");
+              return;
+            }
+            await executeSync();
+          });
+          return;
+        } catch (err) {
+          logger.warn("[useOfflineSync] Web Locks request failed in executeSyncWithLocalLock, falling back to localStorage:", err);
+        }
       }
 
+      // Fallback: localStorage with write-then-verify (reduces TOCTOU window)
       const currentTabId = Math.random().toString(36).slice(2, 9);
-      const lockData = JSON.stringify({ timestamp: now, tabId: currentTabId });
+      const lockData = JSON.stringify({ timestamp: Date.now(), tabId: currentTabId });
 
       try {
         window.localStorage.setItem(LOCK_KEY, lockData);
       } catch {
-        // If localStorage fails (private mode etc.), run sync directly to avoid blocking
         await executeSync();
         return;
       }
