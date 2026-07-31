@@ -53,7 +53,9 @@ export function useNotifications() {
         const existing = raw ? JSON.parse(raw) : [];
         const updated = [...queue, ...existing];
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      } catch {}
+      } catch (err) {
+        console.warn('Notification storage operation failed:', err);
+      }
       queue = [];
       flushTimeout = null;
       window.dispatchEvent(new CustomEvent("eventra-notifications-updated"));
