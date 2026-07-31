@@ -1,5 +1,5 @@
 // src/components/user/WaitlistCard.jsx
-import React, { memo, useState, useEffect } from "react";
+import { memo, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Calendar, MapPin } from "lucide-react";
 import { useAuth } from "context/AuthContext";

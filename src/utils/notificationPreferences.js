@@ -39,6 +39,9 @@ export const PUSH_SUBSCRIPTION_KEY = "eventra_push_subscription";
 export const DEFAULT_NOTIFICATION_PREFERENCES = {
   inApp: true,
   push: false,
+  marketing: true,
+  social: true,
+  updates: true,
   email: true,
   emailDigest: "daily",
   sound: "chime",

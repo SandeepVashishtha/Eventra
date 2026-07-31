@@ -16,6 +16,7 @@ import { apiUtils, API_ENDPOINTS } from "../config/api.js";
 import { safeLocalStorage } from "../utils/safeStorage";
 import { useAuth } from "../context/AuthContext";
 import { getOrMigrateKey } from "../utils/storageKeyManager";
+import { showUndoToast } from "../utils/toast";
 
 // Legacy unscoped key the hook used before #10388. Kept around so
 // getOrMigrateKey can adopt any data left under it into the user's namespaced
@@ -52,7 +53,12 @@ function persistWaitlist(map, storageKey) {
   persistTimeout = setTimeout(() => {
     const runWrite = () => {
       try {
-        safeLocalStorage.setItem(storageKey, JSON.stringify(map));
+        const mapToPersist = {};
+        for (const [key, value] of Object.entries(map)) {
+          const { pendingRemoval, ...rest } = value;
+          mapToPersist[key] = rest;
+        }
+        safeLocalStorage.setItem(storageKey, JSON.stringify(mapToPersist));
       } catch {
         // ignore quota errors
       }
@@ -80,7 +86,9 @@ function persistWaitlist(map, storageKey) {
  *   leave: () => Promise<void>,
  * }}
  */
-export default function useWaitlist(eventId, { capacity: _capacity, attendees: _attendees } = {}) {
+export default function useWaitlist(eventId, { 
+  // capacity: _capacity, attendees: _attendees 
+} = {}) {
   const { user } = useAuth();
   const userId = user?.id;
 
@@ -100,8 +108,8 @@ export default function useWaitlist(eventId, { capacity: _capacity, attendees: _
 
   const id = String(eventId);
   const entry = waitlistMap[id] ?? null;
-  const isOnWaitlist = Boolean(entry);
-  const position = entry?.position ?? null;
+  const isOnWaitlist = Boolean(entry && !entry.pendingRemoval);
+  const position = isOnWaitlist ? (entry?.position ?? null) : null;
 
   // On sign-in/out, re-seed the map from the new key so user B doesn't see
   // user A's in-memory state after a session swap on the same tab.
@@ -179,32 +187,40 @@ export default function useWaitlist(eventId, { capacity: _capacity, attendees: _
 
     // Optimistic update
     const prevEntry = waitlistMap[id];
-    setWaitlistMap((prev) => {
-      const next = { ...prev };
-      delete next[id];
-      return next;
-    });
+    setWaitlistMap((prev) => ({
+      ...prev,
+      [id]: { ...prev[id], pendingRemoval: true },
+    }));
 
-    try {
-      const res = await apiUtils.delete(
-        API_ENDPOINTS.EVENTS?.WAITLIST
-          ? API_ENDPOINTS.EVENTS.WAITLIST(id)
-          : `/api/events/${id}/waitlist`,
-        {}
-      );
-      if (!res.ok) {
-        throw new Error(res.data?.message || "Failed to leave waitlist.");
-      }
-      toast.info("You've been removed from the waitlist.");
-    } catch (err) {
-      // Roll back
-      setWaitlistMap((prev) => ({ ...prev, [id]: prevEntry }));
-      const msg = err.message || "Unable to leave waitlist right now.";
-      setError(msg);
-      toast.error(msg);
-    } finally {
-      setIsLoading(false);
-    }
+    showUndoToast({
+      message: "Removed from waitlist.",
+      toastId: `leave-waitlist-${id}`,
+      onUndo: () => {
+        setWaitlistMap((prev) => ({ ...prev, [id]: prevEntry }));
+        setIsLoading(false);
+        toast.info("Waitlist removal undone.");
+      },
+      onCommit: async () => {
+        try {
+          const res = await apiUtils.delete(
+            API_ENDPOINTS.EVENTS?.WAITLIST
+              ? API_ENDPOINTS.EVENTS.WAITLIST(id)
+              : `/api/events/${id}/waitlist`,
+            {}
+          );
+          if (!res.ok) {
+            throw new Error(res.data?.message || "Failed to leave waitlist.");
+          }
+        } catch (err) {
+          setWaitlistMap((prev) => ({ ...prev, [id]: prevEntry }));
+          const msg = err.message || "Unable to leave waitlist right now.";
+          setError(msg);
+          toast.error(msg);
+        } finally {
+          setIsLoading(false);
+        }
+      },
+    });
   }, [id, isOnWaitlist, isLoading, waitlistMap]);
 
   return {

@@ -252,7 +252,8 @@ const EventsPage = () => {
           advancedFilters: serializeAdvancedFilters(listing.advancedFilters),
         })
       );
-    } catch {
+    } catch (err) {
+      console.error("Failed to persist filter params:", err);
     }
   }, [
     listing.currentPage,

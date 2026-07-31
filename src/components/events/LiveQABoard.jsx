@@ -96,7 +96,12 @@ function QuestionCard({ q, isModerator, onUpvote, onFlag, onDelete }) {
           </span>
         )}
         <p className="text-sm text-slate-200 break-words leading-relaxed font-sans">{isModerator ? highlightKeywords(q.text) : q.text}</p>
-        <span className="text-[10px] text-slate-500 font-medium">{formatTime(q.createdAt)}</span>
+        <span className="text-[10px] text-slate-500 font-medium">
+          {formatTime(q.createdAt)}
+          {q.isSpeaker && (
+            <span className="ml-2 px-1.5 py-0.5 rounded-full bg-primary/20 text-primary text-[10px] font-bold uppercase tracking-wider">Speaker</span>
+          )}
+        </span>
       </div>
 
       <div className="flex items-center gap-2 shrink-0">

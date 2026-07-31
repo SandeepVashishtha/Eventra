@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { FolderOpen, Plus } from "lucide-react";
 import StatusBadge from "../common/StatusBadge";
 import { DashboardItemCardSkeleton } from "../common/SkeletonLoaders";
-import SearchEmptyState from "../common/SearchEmptyState";
+import EmptyState from "../common/EmptyState";
+import { getSmartDateLabel } from "utils/relativeTime";
 
 const ProjectsTab = ({ projects, loading, fadeUp }) => (
   <motion.div key="projects" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="ud-content">
@@ -14,17 +15,12 @@ const ProjectsTab = ({ projects, loading, fadeUp }) => (
     
     {!loading && projects.length === 0 ? (
       <div className="w-full mt-4">
-        <SearchEmptyState
-          query=""
-          itemLabel="projects"
-          browseLabel="Browse Projects"
-          browsePath="/projects"
-          onClear={() => {}}
-          suggestions={[
-            "Check out open source projects",
-            "Submit your own project",
-            "Collaborate with others",
-          ]}
+        <EmptyState
+          icon={<FolderOpen size={48} className="text-violet-500" />}
+          title="No Projects Yet"
+          description="You haven't submitted any projects yet. Share your work, collaborate with others, and showcase your builds!"
+          actionLabel="Submit a Project"
+          actionPath="/submit-project"
         />
       </div>
     ) : (
@@ -39,7 +35,7 @@ const ProjectsTab = ({ projects, loading, fadeUp }) => (
           </div>
           <h3 className="ud-item-title">{p.title}</h3>
           <div className="ud-item-meta">
-            <span>Updated: {p.lastUpdate}</span>
+            <span>Updated: {p.lastUpdate ? getSmartDateLabel(p.lastUpdate) : "—"}</span>
           </div>
           <div className="ud-item-footer">
             <StatusBadge status={p.participationType} />
