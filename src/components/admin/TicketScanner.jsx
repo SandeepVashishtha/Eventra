@@ -16,14 +16,18 @@ import {
   Search,
   Wifi,
   WifiOff,
+  Clock,
 } from "lucide-react";
 import { toast } from "react-toastify";
+import { useAuth } from "context/AuthContext";
+import { API_ENDPOINTS } from "config/api";
 import { pushToQueue } from "utils/offlineQueue";
 import { validateTicket, recordCheckIn, fetchCheckInHistory, fetchScannerEvents, fetchTicketStats } from "services/ticketService";
 import "./TicketScanner.css";
 const HISTORY_CACHE_KEY = "eventra_checkins_cache";
 
 export default function TicketScanner() {
+  const { user } = useAuth();
   const [devices, setDevices] = useState([]);
   const [selectedCameraId, setSelectedCameraId] = useState("");
   const [scannerStatus, setScannerStatus] = useState("idle");
@@ -255,17 +259,21 @@ export default function TicketScanner() {
 
     if (!isOnline) {
       setScanResult({
-        status: "verified",
+        status: "queued",
         data: ticketData,
-        message: "Check-in queued offline — will sync when connection resumes.",
+        message: "Check-in queued offline — will be verified when connection resumes.",
       });
       toast.info(`Offline check-in queued for ${userName}.`);
-      await pushToQueue({
-        actionType: "TICKET_CHECK_IN",
-        ticketId,
-        eventId: eventId || "unknown",
-        payload: ticketData,
-      });
+      await pushToQueue(
+        {
+          actionType: "TICKET_CHECK_IN",
+          ticketId,
+          eventId: eventId || "unknown",
+          endpoint: API_ENDPOINTS.TICKETS.CHECK_IN,
+          payload: ticketData,
+        },
+        user?.id
+      );
       addToHistory({
         id: `offline-${Date.now()}`,
         ticketId,
@@ -641,6 +649,12 @@ export default function TicketScanner() {
                 <>
                   <CheckCircle2 className="w-16 h-16 text-emerald-500 animate-bounce mb-3" />
                   <span className="text-[10px] font-black tracking-widest uppercase bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full mb-2">Verified Entry</span>
+                </>
+              )}
+              {scanResult.status === "queued" && (
+                <>
+                  <Clock className="w-16 h-16 text-amber-500 animate-pulse mb-3" />
+                  <span className="text-[10px] font-black tracking-widest uppercase bg-amber-500/20 text-amber-400 px-3 py-1 rounded-full mb-2">Queued for Verification</span>
                 </>
               )}
               {scanResult.status === "flagged" && (
