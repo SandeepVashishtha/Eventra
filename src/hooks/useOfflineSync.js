@@ -159,7 +159,7 @@ const useOfflineSync = () => {
       }
 
       const headers = { 'Content-Type': 'application/json' };
-      if (authToken) headers.Authorization = `Bearer ${authToken}`;
+      if (authToken && authToken !== "cookie-managed") headers.Authorization = `Bearer ${authToken}`;
       if (forceOverride) headers['X-Override-Conflict'] = 'true';
       if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey;
 
