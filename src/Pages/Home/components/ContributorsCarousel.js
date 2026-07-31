@@ -232,7 +232,7 @@ const Contributors = () => {
       if (!backgroundRefresh) setContributors([]);
 
       if (error.name === "AbortError") {
-        //console.error("Contributor request timed out");
+        console.error("Contributor request timed out");
       }
     } finally {
       if (!backgroundRefresh) setLoading(false);
