@@ -70,9 +70,6 @@ const extractSession = (data, fallbackEmail) => {
   return { sessionToken, sessionUser };
 };
 
-  return { sessionUser };
-};
-
 /**
  * AuthProvider component wrapper.
  * Manages the core authenticated state, token management, session expiry timing,

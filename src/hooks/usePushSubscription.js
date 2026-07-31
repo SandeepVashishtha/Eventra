@@ -24,12 +24,13 @@ const getRegistration = async () => {
   if (existing) return existing;
   try {
     return await navigator.serviceWorker.register("/service-worker.js");
-    try {
-      return await navigator.serviceWorker.register('/service-worker.js');
-    } catch (err) {
-      logger.warn('[usePushSubscription] SW registration failed:', err);
-      return null;
-    }
+  } catch (err) {
+    logger.warn('[usePushSubscription] SW registration failed:', err);
+    return null;
+  }
+};
+
+export function usePushSubscription(updatePreferences) {
   const { token } = useAuth();
   const [pushStatus, setPushStatus] = useState({
     supported: false,
@@ -119,12 +120,18 @@ const getRegistration = async () => {
       try {
         const existing = window.localStorage.getItem(PUSH_SUBSCRIPTION_KEY);
         if (existing) {
-          try { if (safeJsonParse(existing, {}).keys) logger.info("[usePushSubscription] Migrating legacy record."); }
-      try { if (safeJsonParse(existing, {}).keys) logger.info('[usePushSubscription] Migrating legacy record.'); }
-      catch (err) { logger.warn('[usePushSubscription] Legacy migration failed:', err); }
+          try {
+            if (safeJsonParse(existing, {}).keys) {
+              logger.info("[usePushSubscription] Migrating legacy record.");
+            }
+          } catch (err) {
+            logger.warn("[usePushSubscription] Legacy migration failed:", err);
+          }
+        }
         window.localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(safeLocalRecord));
-      window.localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(safeLocalRecord));
-      } catch (err) { logger.warn('[usePushSubscription] Failed to persist subscription:', err); }
+      } catch (err) {
+        logger.warn("[usePushSubscription] Failed to persist subscription:", err);
+      }
       if (token && endpoint) await apiUtils.post(endpoint, subscription);
       updatePreferences((c) => ({ ...c, push: true }));
       await updatePushStatus();
