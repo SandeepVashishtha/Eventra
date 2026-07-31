@@ -593,6 +593,10 @@ Licensed under Apache 2.0. See [LICENSE](LICENSE).
   </a>
 </p>
 
+## Release Management
+
+Eventra uses [Release Drafter](https://github.com/release-drafter/release-drafter) to automate the generation of release notes. When a pull request is merged into the `master` branch, a draft release is automatically created or updated. The draft categorizes merged pull requests based on their labels (e.g., Features, Bug Fixes, Documentation) and acknowledges contributors automatically. Maintainers can review the draft and publish the release with minimal manual effort.
+
 ## Deployment Security
 
 Before deploying Eventra, review the deployment checklist:
