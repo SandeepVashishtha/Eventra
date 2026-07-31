@@ -599,6 +599,10 @@ Before deploying Eventra, review the deployment checklist:
 
 - docs/SECURE_DEPLOYMENT_CHECKLIST.md
 
+### Software Bill of Materials (SBOM)
+
+Eventra automatically generates a Software Bill of Materials (SBOM) during the CI process for every push to `master` and release. The SBOM is provided in SPDX format and can be found as an attached artifact named `sbom` in the GitHub Actions run summary. This improves our software supply chain transparency and helps identify affected components when new vulnerabilities are disclosed.
+
 ### Maintainers
 
 <table>
