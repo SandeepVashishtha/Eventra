@@ -104,7 +104,15 @@ class SseMultiplexer {
       this.setupLeaderElection();
 
       // Sync on page close / unload
-      window.addEventListener("beforeunload", () => this.teardown());
+      this.boundTeardown = () => this.teardown();
+      window.addEventListener("beforeunload", this.boundTeardown);
+      window.addEventListener("pagehide", this.boundTeardown);
+      this.boundVisibilityChange = () => {
+        if (document.visibilityState === "hidden") {
+          this.teardown();
+        }
+      };
+      document.addEventListener("visibilitychange", this.boundVisibilityChange);
     }
   }
 
@@ -144,10 +152,32 @@ class SseMultiplexer {
     const HEARTBEAT_TIMEOUT = 7000;
 
     const checkLeader = () => {
-      if (this.isLeader) return;
-
       const now = Date.now();
       const heartbeat = localStorage.getItem(HEARTBEAT_KEY);
+
+      // If we think we're the leader, verify we still hold the heartbeat
+      if (this.isLeader) {
+        if (heartbeat) {
+          try {
+            const parsed = JSON.parse(heartbeat);
+            if (parsed && parsed.tabId !== this.tabId) {
+              // Another tab overwrote our heartbeat — we lost leadership
+              logger.log(`[SSE Multiplexer] Tab ${this.tabId} detected leadership loss. Relinquishing.`);
+              this.isLeader = false;
+              if (this.heartbeatInterval) {
+                clearInterval(this.heartbeatInterval);
+                this.heartbeatInterval = null;
+              }
+              // Close all physical EventSources since we're no longer leader
+              for (const source of this.activeEventSources.values()) {
+                source.close();
+              }
+              this.activeEventSources.clear();
+            }
+          } catch {}
+        }
+        return;
+      }
 
       if (heartbeat) {
         try {
@@ -623,8 +653,16 @@ class SseMultiplexer {
     }
     this.activeEventSources.clear();
 
-    // FIX (#7855 Bug 4): Cancel all pending backoff timers on teardown to
-    // prevent reconnection attempts after the tab has begun unloading.
+    if (this.boundTeardown) {
+      window.removeEventListener("beforeunload", this.boundTeardown);
+      window.removeEventListener("pagehide", this.boundTeardown);
+    }
+    if (this.boundVisibilityChange) {
+      document.removeEventListener("visibilitychange", this.boundVisibilityChange);
+    }
+
+    // Cancel all pending backoff timers on teardown to prevent reconnection
+    // attempts after the tab has begun unloading.
     for (const timer of this.reconnectTimers.values()) {
       clearTimeout(timer);
     }
