@@ -633,6 +633,35 @@ const writeWithEncryption = async (key, value) => {
 };
 
 export const syncSecureStorage = {
+  // Serialized write queue: ensures last-write-wins and no plaintext window.
+  // Each key enqueues its latest value; the queue processes one at a time,
+  // writing only the ciphertext to localStorage. If the queue is already
+  // processing, a new enqueue updates the pending value for that key without
+  // starting a new chain, so the final write always reflects the last call.
+  _writeQueue: new Map(),
+  _processing: false,
+
+  _processQueue: async function () {
+    if (this._processing) return;
+    this._processing = true;
+    try {
+      while (this._writeQueue.size > 0) {
+        const entries = [...this._writeQueue.entries()];
+        this._writeQueue.clear();
+        for (const [key, plaintext] of entries) {
+          try {
+            const encrypted = await encryptValue(plaintext);
+            localStorage.setItem(key, encrypted);
+          } catch (err) {
+            console.error('[secureStorage] Encryption failed for', key, err);
+          }
+        }
+      }
+    } finally {
+      this._processing = false;
+    }
+  },
+
   /**
    * Encrypts `value` and stores it under `key` in localStorage.
    *
