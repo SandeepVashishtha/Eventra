@@ -599,6 +599,10 @@ Before deploying Eventra, review the deployment checklist:
 
 - docs/SECURE_DEPLOYMENT_CHECKLIST.md
 
+### OpenSSF Scorecard
+
+To ensure our repository continuously aligns with industry-recognized open-source security best practices, Eventra integrates the **OpenSSF Scorecard** into its GitHub Actions pipeline. The Scorecard runs on every push to the default branch and on a weekly schedule. It evaluates the project against critical security metrics (like branch protection, dependency pinning, and token permissions) and automatically publishes the results to the GitHub Security tab, guiding maintainers in continuously improving our software supply chain security.
+
 ### Maintainers
 
 <table>
