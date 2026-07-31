@@ -1,0 +1,42 @@
+name: Trivy Container Scan
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  scan-image:
+    name: Build and Scan Docker Image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t eventra-local:test .
+
+      - name: Run Trivy scanner (JSON Artifact)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'eventra-local:test'
+          format: 'json'
+          output: 'trivy-results.json'
+          exit-code: '0'
+
+      - name: Upload Trivy scan results
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-results
+          path: trivy-results.json
+
+      - name: Run Trivy scanner (Blocking)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'eventra-local:test'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'

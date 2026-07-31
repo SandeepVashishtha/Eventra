@@ -599,6 +599,10 @@ Before deploying Eventra, review the deployment checklist:
 
 - docs/SECURE_DEPLOYMENT_CHECKLIST.md
 
+### Container Vulnerability Scanning (Trivy)
+
+To ensure the security of our Docker images, Eventra uses Aqua Security's Trivy to perform automated vulnerability scanning on every image built during the CI process. If Trivy detects any vulnerabilities with a `HIGH` or `CRITICAL` severity, the CI workflow will automatically fail, preventing insecure images from progressing to deployment. Detailed JSON scan reports are attached to each workflow run as an artifact.
+
 ### Maintainers
 
 <table>
