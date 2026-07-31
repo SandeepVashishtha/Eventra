@@ -599,6 +599,10 @@ Before deploying Eventra, review the deployment checklist:
 
 - docs/SECURE_DEPLOYMENT_CHECKLIST.md
 
+### Automated Code Scanning (CodeQL)
+
+Eventra uses GitHub CodeQL for continuous static code analysis. The CodeQL workflow automatically scans every pull request and push to `master` for common vulnerabilities, security flaws, and code quality issues. Findings are uploaded to GitHub Security, allowing maintainers to resolve issues proactively before they reach production.
+
 ### Maintainers
 
 <table>
