@@ -531,7 +531,9 @@ function handleStaticFetch(event, requestUrl) {
           .then((response) => {
             if (response && response.status === 200 && response.type === 'basic') {
               caches.open(CACHE_NAME).then((cache) => {
-                cache.put(event.request, response).catch(() => { });
+                cache.put(event.request, response).catch((err) => {
+      console.warn('[Service Worker] Cache put failed:', err);
+    });
               });
             }
           })
