@@ -290,8 +290,8 @@ export const syncPendingRecoverySessions = async (
     try {
       const saved = await saveRecoverySession(session);
       synced.push(saved);
-    } catch {
-      failed.push(session);
+    } catch (err) {
+      console.error('[sessionRecoveryService] Sync failed for session', session?.sessionId, err);
     }
   }
 

@@ -40,21 +40,15 @@ export const useAuth = () => {
  * @returns {Object} Extracted session user details.
  */
 const extractSession = (data, fallbackEmail) => {
-  // Extract user details from raw API response payload structure
+  const sessionToken = data?.token ?? data?.accessToken ?? null;
   const rawUser = data?.user ?? data?.data ?? data ?? null;
   const rawRoles = rawUser?.roles ?? (rawUser?.role ? [rawUser.role] : []);
-
-  // Normalize roles to ensure consistent uppercase format and organization names
   const resolvedRoles = normalizeRoles(rawRoles);
-
-  // Build user permissions by combining token-based and role-based permissions
   const tokenPermissions = Array.isArray(rawUser?.permissions)
     ? rawUser.permissions.map((p) => String(p))
     : [];
   const rolePermissions = resolvedRoles.flatMap((role) => ROLE_PERMISSIONS[role] || []);
   const permissions = Array.from(new Set([...tokenPermissions, ...rolePermissions]));
-
-  // Resolve scopes based on the normalized user roles
   const scopes =
     rawUser?.scopes ??
     (resolvedRoles.includes(ROLES.SUPER_ADMIN) || resolvedRoles.includes(ROLES.ADMIN)
@@ -62,8 +56,6 @@ const extractSession = (data, fallbackEmail) => {
       : resolvedRoles.includes(ROLES.ORGANIZER)
         ? ["event:write", "event:read", "hackathon:write", "hackathon:read"]
         : ["event:read", "hackathon:read"]);
-
-  // Compile final clean user object representation
   const sessionUser = {
     ...(rawUser || {}),
     firstName: rawUser?.firstName ?? "",
@@ -75,6 +67,8 @@ const extractSession = (data, fallbackEmail) => {
     permissions,
     scopes,
   };
+  return { sessionToken, sessionUser };
+};
 
   return { sessionUser };
 };
@@ -202,7 +196,7 @@ export const AuthProvider = ({ children }) => {
         if (!isMountedRef.current) return;
 
         if (res.ok && res.data) {
-          const { sessionToken, sessionUser } = extractSession(res, res.data, null);
+          const { sessionToken, sessionUser } = extractSession(res.data, res.data?.user?.email || null);
           if (!isMountedRef.current) return;
           setToken(activeToken);
           setUser(sessionUser);
@@ -360,9 +354,9 @@ export const AuthProvider = ({ children }) => {
 
         const data = res.data;
 
-        const { sessionUser } = extractSession(data, usernameOrEmail);
+        const { sessionToken, sessionUser } = extractSession(data, usernameOrEmail);
 
-        const tokenValue = data?.token || data?.data?.token || "cookie-managed";
+        const tokenValue = sessionToken || data?.token || "cookie-managed";
         const persisted = await persistSession(tokenValue, sessionUser);
         if (!persisted) return false;
 

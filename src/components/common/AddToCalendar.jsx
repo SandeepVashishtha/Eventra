@@ -117,7 +117,7 @@ export default function AddToCalendar({ event, className = '', iconOnly = false 
           </button>
           <button onClick={handleIcal} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left border-t border-gray-100 dark:border-gray-800">
             <Calendar className="w-4 h-4 text-gray-400" />
-            Subscribe (Apple / ICS)
+            Export to Apple Calendar (.ics)
           </button>
           {added && (
             <div className="px-4 py-2 bg-green-50 dark:bg-green-900/20 border-t border-green-100 dark:border-green-800">

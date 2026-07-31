@@ -175,7 +175,7 @@ graph TD
 
 ## Project Structure
 
-```text
+text
 Eventra/
 |-- docs/                # Architecture, env setup, onboarding, security docs
 |-- public/              # Static assets (images, icons, manifests)

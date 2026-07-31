@@ -199,6 +199,14 @@ export const MyEventsProvider = ({ children }) => {
     setMyEvents((prev) => prev.filter((r) => r.eventId !== eventId));
   }, []);
 
+  const restoreRegistration = useCallback((registration) => {
+    if (!registration?.eventId) return;
+    setMyEvents((prev) => {
+      if (prev.some((r) => r.eventId === registration.eventId)) return prev;
+      return [...prev, registration];
+    });
+  }, []);
+
   /**
    * isRegistered — returns true if the user is already registered for eventId.
    */
@@ -219,6 +227,7 @@ export const MyEventsProvider = ({ children }) => {
         myEvents,
         addRegistration,
         removeRegistration,
+        restoreRegistration,
         isRegistered,
         loading,
         waitlistUpdated,
