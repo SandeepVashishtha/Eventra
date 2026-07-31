@@ -10,6 +10,11 @@ Modern event and hackathon platform for communities, organizers, and contributor
 [![Contributors](https://img.shields.io/github/contributors/SandeepVashishtha/Eventra?style=flat&color=green)](https://github.com/SandeepVashishtha/Eventra/graphs/contributors)
 [![Open Issues](https://img.shields.io/github/issues/SandeepVashishtha/Eventra?style=flat&color=red)](https://github.com/SandeepVashishtha/Eventra/issues)
 [![Open PRs](https://img.shields.io/github/issues-pr/SandeepVashishtha/Eventra?style=flat&color=blue)](https://github.com/SandeepVashishtha/Eventra/pulls)
+[![CI Validation](https://github.com/SandeepVashishtha/Eventra/actions/workflows/ci.yml/badge.svg)](https://github.com/SandeepVashishtha/Eventra/actions/workflows/ci.yml)
+[![Docker Build](https://github.com/SandeepVashishtha/Eventra/actions/workflows/docker-ci.yml/badge.svg)](https://github.com/SandeepVashishtha/Eventra/actions/workflows/docker-ci.yml)
+[![Docker Publish](https://github.com/SandeepVashishtha/Eventra/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/SandeepVashishtha/Eventra/actions/workflows/docker-publish.yml)
+[![Security Validation](https://github.com/SandeepVashishtha/Eventra/actions/workflows/security-ci.yml/badge.svg)](https://github.com/SandeepVashishtha/Eventra/actions/workflows/security-ci.yml)
+[![CodeQL Analysis](https://github.com/SandeepVashishtha/Eventra/actions/workflows/codeql.yml/badge.svg)](https://github.com/SandeepVashishtha/Eventra/actions/workflows/codeql.yml)
 
 ---
 
