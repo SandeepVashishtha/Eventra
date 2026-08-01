@@ -37,6 +37,14 @@ public class Event {
     private int registeredCount = 0;
 
     /**
+     * ID of the user who created (owns) this event.
+     * Used to enforce event-ownership authorization (Issue #11021) so that
+     * only the event's own organizer can manage it (cancel/archive/export).
+     */
+    @Column(name = "owner_id")
+    private Long ownerId;
+
+    /**
      * Optimistic-lock version field.
      * Acts as a safety net alongside the pessimistic write-lock used in the
      * registration flow: if two transactions somehow both pass the capacity
@@ -92,6 +100,9 @@ public class Event {
 
     public int getRegisteredCount() { return registeredCount; }
     public void setRegisteredCount(int registeredCount) { this.registeredCount = registeredCount; }
+
+    public Long getOwnerId() { return ownerId; }
+    public void setOwnerId(Long ownerId) { this.ownerId = ownerId; }
 
     public Long getVersion() { return version; }
     public void setVersion(Long version) { this.version = version; }

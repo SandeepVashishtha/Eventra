@@ -89,9 +89,10 @@ public class EventController {
             )
     })
     public ResponseEntity<EventResponse> createEvent(
-            @Valid @RequestBody EventCreateRequest request) {
+            @Valid @RequestBody EventCreateRequest request,
+            Authentication authentication) {
 
-        EventResponse createdEvent = eventService.createEvent(request);
+        EventResponse createdEvent = eventService.createEvent(request, authentication.getName());
         return ResponseEntity.status(HttpStatus.CREATED).body(createdEvent);
     }
 
@@ -144,9 +145,10 @@ public class EventController {
     public ResponseEntity<EventResponse> updateEvent(
             @Parameter(description = "ID of the event to update")
             @PathVariable Long id,
-            @Valid @RequestBody EventUpdateRequest request) {
+            @Valid @RequestBody EventUpdateRequest request,
+            Authentication authentication) {
 
-        EventResponse updatedEvent = eventService.updateEvent(id, request);
+        EventResponse updatedEvent = eventService.updateEvent(id, request, authentication.getName());
         return ResponseEntity.ok(updatedEvent);
     }
 

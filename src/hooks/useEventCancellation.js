@@ -36,6 +36,7 @@ export const REFUND_POLICY_LABELS = {
  *
  * @param {string|number} eventId  - The event to cancel
  * @param {Function}      onSuccess - Called with updated event object after success
+ * @param {number}        ownerId   - ID of the user who owns the event (Issue #11021)
  *
  * @returns {{
  *   cancel: Function,
@@ -43,8 +44,8 @@ export const REFUND_POLICY_LABELS = {
  *   cancellationError: string|null,
  * }}
  */
-const useEventCancellation = (eventId, onSuccess) => {
-  const { isAdmin, isOrganizer } = useAuth();
+const useEventCancellation = (eventId, onSuccess, ownerId) => {
+  const { isAdmin, isOrganizer, user } = useAuth();
   const [isCancelling, setIsCancelling] = useState(false);
   const [cancellationError, setCancellationError] = useState(null);
 
@@ -61,6 +62,14 @@ const useEventCancellation = (eventId, onSuccess) => {
       // Guard: only admins and organizers can cancel events
       if (!isAdmin() && !isOrganizer()) {
         setCancellationError("You do not have permission to cancel this event.");
+        return false;
+      }
+
+      // Guard (Issue #11021): role alone is not enough — only the event's own
+      // organizer may cancel it. Prevents cross-tenant cancellation by swapping
+      // the event id in the URL.
+      if (ownerId != null && user?.id != null && String(ownerId) !== String(user.id)) {
+        setCancellationError("Only the event's own organizer can cancel this event.");
         return false;
       }
 
@@ -142,7 +151,7 @@ const useEventCancellation = (eventId, onSuccess) => {
         setIsCancelling(false);
       }
     },
-    [eventId, isAdmin, isOrganizer, onSuccess]
+    [eventId, isAdmin, isOrganizer, user, ownerId, onSuccess]
   );
 
   return { cancel, isCancelling, cancellationError };
