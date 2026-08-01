@@ -1,0 +1,41 @@
+name: Post-Deployment Health Check
+
+on:
+  deployment_status:
+
+jobs:
+  health-check:
+    if: github.event.deployment_status.state == 'success'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Verify Application is Reachable
+        run: |
+          TARGET_URL="${{ github.event.deployment_status.target_url }}"
+          
+          if [ -z "$TARGET_URL" ]; then
+            echo "No target URL provided by the deployment event. Cannot perform health check."
+            exit 1
+          fi
+          
+          echo "Target URL: $TARGET_URL"
+          echo "Starting health check with retries..."
+          
+          MAX_RETRIES=5
+          RETRY_DELAY=10
+          
+          for ((i=1; i<=MAX_RETRIES; i++)); do
+            echo "Attempt $i/$MAX_RETRIES..."
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$TARGET_URL" || echo "000")
+            
+            if [ "$HTTP_STATUS" -eq 200 ]; then
+              echo "✅ Health check passed! Received HTTP 200 OK."
+              exit 0
+            fi
+            
+            echo "⚠️ Received HTTP $HTTP_STATUS. Retrying in $RETRY_DELAY seconds..."
+            sleep $RETRY_DELAY
+          done
+          
+          echo "❌ Health check failed. Application did not return HTTP 200 after $MAX_RETRIES attempts."
+          exit 1
