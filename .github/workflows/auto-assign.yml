@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Auto-assign issue to commenter (robust)
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const cfg = {
