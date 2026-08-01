@@ -37,7 +37,9 @@ const keywordIndex = knowledgeBaseConfig.reduce((acc, item) => {
 const sortedKeywords = [...keywordIndex.keys()].sort((a, b) => b.length - a.length);
 
 const keywordPattern = new RegExp(
-  sortedKeywords.map((kw) => kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"),
+  sortedKeywords
+    .map((kw) => `\\b${kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`)
+    .join("|"),
   "i"
 );
 
