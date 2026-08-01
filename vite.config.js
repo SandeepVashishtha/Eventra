@@ -50,6 +50,25 @@ export default defineConfig(({ mode }) => {
         // Only .jsx/.tsx — .js files are handled above
         include: /\.(jsx|tsx)$/,
       }),
+      // Fail the build if an un-substituted %PLACEHOLDER% survives into the
+      // final index.html. Vite only auto-replaces %VITE_*% values, so any other
+      // %...% token is a build mistake — historically a literal %CSRF_TOKEN%
+      // was shipped and sent as the CSRF header on every mutating request.
+      {
+        name: "assert-no-html-placeholders",
+        enforce: "post",
+        transformIndexHtml(html) {
+          const placeholder = html.match(/%[A-Z_][A-Z0-9_]*%/g);
+          if (placeholder && placeholder.length > 0) {
+            throw new Error(
+              `[assert-no-html-placeholders] Un-substituted build placeholder(s) found in index.html: ` +
+                `${placeholder.join(", ")}. Vite only replaces %VITE_*% tokens; remove the ` +
+                `placeholder or define it as a VITE_ prefixed environment variable.`,
+            );
+          }
+          return html;
+        },
+      },
     ],
 
     // Path aliases — cleaner imports and faster resolution
