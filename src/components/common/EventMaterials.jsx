@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Download, Loader2, CheckCircle, Server, Zap, Sparkles, HelpCircle } from "lucide-react";
 import { isFileCached, getCachedFile, simulateServerDownload, P2PFileTransferCoordinator } from "utils/p2pFileTransfer";
@@ -6,6 +6,15 @@ import { isFileCached, getCachedFile, simulateServerDownload, P2PFileTransferCoo
 const EventMaterials = ({ materials }) => {
   const [cachedStatus, setCachedStatus] = useState({});
   const [activeTransfer, setActiveTransfer] = useState({}); // Stores: { [fileId]: { state, progress, speed, peerCount, type } }
+  const p2pCheckIntervalRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (p2pCheckIntervalRef.current) {
+        clearInterval(p2pCheckIntervalRef.current);
+      }
+    };
+  }, []);
 
   // Check which files are already cached in IndexedDB on mount
   useEffect(() => {
@@ -82,11 +91,11 @@ const EventMaterials = ({ materials }) => {
       // Let's hook a check to trigger local file download once completed
       let attempts = 0;
       const MAX_ATTEMPTS = 60; // 30 seconds
-      const checkCompletion = setInterval(async () => {
+      p2pCheckIntervalRef.current = setInterval(async () => {
         attempts++;
         const completed = await isFileCached(fileId);
         if (completed || attempts >= MAX_ATTEMPTS) {
-          clearInterval(checkCompletion);
+          clearInterval(p2pCheckIntervalRef.current);
           if (completed) {
             triggerLocalDownload(fileId, fileName);
           setCachedStatus((prev) => ({ ...prev, [fileId]: true }));
