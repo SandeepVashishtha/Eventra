@@ -16,7 +16,7 @@
     "@tailwindcss/postcss": "4.3.3",
     "@vercel/analytics": "^2.0.1",
     "aos": "^2.3.4",
-    "axios": "^1.18.1",
+    "axios": "^1.19.0",
     "bcryptjs": "3.0.3",
     "canvas-confetti": "^1.9.3",
     "crypto-js": "^4.2.0",
