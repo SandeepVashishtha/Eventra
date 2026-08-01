@@ -414,7 +414,7 @@ export const setQueue = async (newQueue) => {
           return;
         }
 
-        newQueue.forEach((item) => store.put(item));
+        try {\n          newQueue.forEach((item) => store.put(item));\n        } catch (err) {\n          if (err.name === "QuotaExceededError") logger.error("[OfflineQueue] IndexedDB quota exceeded during setQueue", err);\n          throw err;\n        }
 
         tx.oncomplete = () => resolve();
         tx.onerror = (e) => reject(e.target?.error || new Error('IndexedDB transaction failed'));
