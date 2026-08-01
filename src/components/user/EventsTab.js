@@ -495,8 +495,8 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
         const raw = localStorage.getItem("recentSearches");
         saved = raw ? JSON.parse(raw) : [];
         if (!Array.isArray(saved)) saved = [];
-      } catch {
-        saved = [];
+      } catch (err) {
+        console.warn("[EventsTab] Failed to load events:", err);
       }
       const updatedHistory = [
         debouncedTerm.trim(),
@@ -554,8 +554,8 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
       const eventLink = `${window.location.origin}/events/${event.id || event.eventId}`;
       await navigator.clipboard.writeText(eventLink);
       toast.success("Link copied successfully");
-    } catch {
-      toast.error("Failed to copy link");
+    } catch (err) {
+      console.warn("[EventsTab] Failed to load events:", err);
     }
   };
 
