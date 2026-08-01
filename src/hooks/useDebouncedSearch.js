@@ -17,7 +17,7 @@ export function useDebouncedSearch(initialValue = '', delay = 300) {
   const [searchTerm, setSearchTerm] = useState(initialValue);
   const [debouncedTerm, setDebouncedTerm] = useState(prepareSafeSearchQuery(initialValue));
   const [isDebouncing, setIsDebouncing] = useState(false);
-  const timerRef = useRef(null);
+  const timerRef = useRef(null);\n  const sequenceRef = useRef(0);
 
   useEffect(() => {
     const safeSearchTerm = prepareSafeSearchQuery(searchTerm);
@@ -34,7 +34,7 @@ export function useDebouncedSearch(initialValue = '', delay = 300) {
     }
 
     timerRef.current = setTimeout(() => {
-      setDebouncedTerm(safeSearchTerm);
+      sequenceRef.current += 1;\n      setDebouncedTerm(safeSearchTerm);
       setIsDebouncing(false);
     }, delay);
 
@@ -59,7 +59,7 @@ export function useDebouncedSearch(initialValue = '', delay = 300) {
     debouncedTerm,
     setSearchTerm,
     isDebouncing,
-    clear,
+    clear,\n    sequence: sequenceRef.current,
   };
 }
 
