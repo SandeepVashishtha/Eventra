@@ -85,7 +85,7 @@ const cacheContributors = (data) => {
       STORAGE_KEY,
       JSON.stringify({ data, timestamp: Date.now() })
     );
-  } catch { }
+  } catch { console.warn("[ContributorsCarousel] Cache write failed"); }
 };
 
 const Contributors = () => {
