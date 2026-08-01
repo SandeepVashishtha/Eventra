@@ -152,18 +152,26 @@ export const saveGlobalWaitlist = (records) => {
 
 // Sync waitlist from server, falling back to localStorage cache
 export const syncWaitlistFromServer = async (eventId) => {
+  const id = parseEventId(eventId);
   try {
-    const response = await apiUtils.get(`${API_ENDPOINTS.EVENTS.ALL}/${eventId}/waitlist`);
+    const response = await apiUtils.get(`${API_ENDPOINTS.EVENTS.ALL}/${id}/waitlist`);
     if (response.ok && response.data) {
-      const serverData = Array.isArray(response.data) ? response.data : response.data.entries || [];
-      const existing = getGlobalWaitlist().filter(r => r.eventId !== eventId);
-      saveGlobalWaitlist([...existing, ...serverData]);
+      const serverData = (
+        Array.isArray(response.data) ? response.data : response.data.entries || []
+      ).map((r) => ({ ...r, eventId: parseInt(r.eventId, 10) }));
+      // Reconcile: replace stale local records for this event with server state
+      const records = getGlobalWaitlist();
+      const reconciled = [
+        ...records.filter((r) => r.eventId !== id),
+        ...serverData,
+      ];
+      saveGlobalWaitlist(reconciled);
       return serverData;
     }
   } catch {
     logger.warn("[WaitlistUtils] Server sync failed, using localStorage cache");
   }
-  return getGlobalWaitlist();
+  return getEventWaitlist(id);
 };
 
 // Get waitlist entries for a specific event with 'waiting' status
@@ -389,6 +397,21 @@ const performLocalPromotion = async (record, event) => {
   return !!match;
 };
 
+// Mark a waitlist record as pending server sync (offline path).
+// The record stays "waiting" — a confirmed promotion is never fabricated, so
+// no fake registration or attendee count is created while offline.
+const markPromotionPendingSync = (record) => {
+  const records = getGlobalWaitlist();
+  const match = records.find(
+    (r) => r.userId === record.userId && r.eventId === record.eventId && r.status === "waiting"
+  );
+  if (match) {
+    match.promotionPendingSync = true;
+    saveGlobalWaitlist(records);
+  }
+  return !!match;
+};
+
 // Helper to detect if a throw/exception is caused by a offline/network/timeout condition
 const checkIfOffline = (error) => {
   if (error?.isNetworkError || error?.isTimeout) {
@@ -425,11 +448,16 @@ export const promoteRecord = async (record, event, options = {}) => {
     }
   }
 
-  const promoted = await performLocalPromotion(record, event);
-  if (promoted && shouldNotifyPositionChanges) {
-    await notifyWaitlistPositionChanges(record.eventId, beforeWaitlist, event);
-  }
-  return promoted;
+  // Offline: do not fabricate a confirmed promotion — the server never issued
+  // a registration. Clearly mark the record as pending sync and report the
+  // failure so the organizer can retry once the connection is restored.
+  markPromotionPendingSync(record);
+  await addLocalNotification(
+    "Waitlist Promotion Pending",
+    `The promotion for "${event.title || "your event"}" is pending — it will complete once the connection is restored.`,
+    { userId: record.userId }
+  );
+  return false;
 };
 
 // Promote the next user in queue when a spot opens up

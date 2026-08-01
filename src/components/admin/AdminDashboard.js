@@ -136,10 +136,12 @@ const AdminDashboard = () => {
  const loadWaitlist = useCallback((eventId) => {
   import("utils/waitlistUtils.js")
     .then(
-      ({
+      async ({
         getEventWaitlist,
         getWaitlistAnalytics,
+        syncWaitlistFromServer,
       }) => {
+        await syncWaitlistFromServer(eventId);
         setWaitlistUsers(
           getEventWaitlist(eventId)
         );

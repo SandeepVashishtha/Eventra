@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import {
   getEventWaitlist,
+  syncWaitlistFromServer,
   organizerRemoveUser,
   promoteNextUser,
   handleCapacityIncrease,
@@ -27,8 +28,9 @@ const OrganizerWaitlistManagement = ({ eventId, eventName, currentAttendees = 0,
     return () => clearInterval(interval);
   }, [eventId]);
 
-  const loadWaitlistData = () => {
+  const loadWaitlistData = async () => {
     try {
+      await syncWaitlistFromServer(eventId);
       const data = getEventWaitlist(eventId);
       setWaitlist(data);
 
