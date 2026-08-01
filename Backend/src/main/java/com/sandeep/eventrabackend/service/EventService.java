@@ -235,13 +235,13 @@ public class EventService {
      * @return registration confirmation response
      */
     @Transactional
-    public RegistrationResponse registerUserForEvent(Long eventId, String userEmail) {
+    public RegistrationResponse registerUserForEvent(Long eventId, String userEmail, String seatId) {
 
         ObjectOptimisticLockingFailureException lastConflict = null;
 
         for (int attempt = 1; attempt <= MAX_REGISTRATION_RETRIES; attempt++) {
             try {
-                return executeRegistration(eventId, userEmail);
+                return executeRegistration(eventId, userEmail, seatId);
 
             } catch (ObjectOptimisticLockingFailureException ex) {
                 lastConflict = ex;
@@ -269,7 +269,8 @@ public class EventService {
 
     private RegistrationResponse executeRegistration(
             Long eventId,
-            String userEmail) {
+            String userEmail,
+            String seatId) {
 
         Event event = eventRepository.findByIdWithLock(eventId)
                 .orElseThrow(() ->
@@ -286,6 +287,14 @@ public class EventService {
 
             throw new RegistrationConflictException(
                     "You are already registered for this event.");
+        }
+
+        if (seatId != null && !seatId.isBlank()) {
+            eventRegistrationRepository.findByEvent_IdAndSeatId(eventId, seatId)
+                    .ifPresent(existing -> {
+                        throw new RegistrationConflictException(
+                                "Seat " + seatId + " is already taken.");
+                    });
         }
 
         if (event.getCapacity() != null
@@ -305,6 +314,7 @@ public class EventService {
         registration.setUser(user);
         registration.setRegisteredAt(LocalDateTime.now());
         registration.setStatus("CONFIRMED");
+        registration.setSeatId(seatId);
 
         registration = eventRegistrationRepository.save(registration);
 
@@ -322,7 +332,24 @@ public class EventService {
                 .registeredAt(registration.getRegisteredAt())
                 .spotsRemaining(spotsRemaining)
                 .registrationStatus(registration.getStatus())
+                .seatId(registration.getSeatId())
                 .build();
+    }
+
+    /**
+     * Returns the seat identifiers already reserved for an event, used by the
+     * seat selector to derive live, cross-browser occupancy.
+     *
+     * @param eventId ID of the event
+     * @return list of reserved seat identifiers (e.g. {@code table-1:3})
+     */
+    @Transactional(readOnly = true)
+    public List<String> getOccupiedSeats(Long eventId) {
+        return eventRegistrationRepository.findByEvent_Id(eventId)
+                .stream()
+                .map(EventRegistration::getSeatId)
+                .filter(seatId -> seatId != null && !seatId.isBlank())
+                .toList();
     }
 
     private MyRegisteredEventResponse toMyRegisteredEventResponse(
