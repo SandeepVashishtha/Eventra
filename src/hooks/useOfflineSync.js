@@ -321,8 +321,16 @@ const useOfflineSync = () => {
           }
 
           try {
-            // Determine endpoints dynamically
-            const url = item.endpoint || API_ENDPOINTS.EVENTS.REGISTER(item.eventId);
+            // Determine endpoints dynamically. Items enqueued by the current
+            // code always carry an explicit endpoint; the actionType fallback
+            // below only covers legacy items (e.g. TICKET_CHECK_IN queued
+            // before endpoints were recorded) so they never replay to the
+            // event registration route by accident.
+            const url =
+              item.endpoint ||
+              (item.actionType === "TICKET_CHECK_IN"
+                ? API_ENDPOINTS.TICKETS.CHECK_IN
+                : API_ENDPOINTS.EVENTS.REGISTER(item.eventId));
             let res = await postWithBackoff(
               url,
               item.payload,
