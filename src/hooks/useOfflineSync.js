@@ -18,6 +18,12 @@ import { safeJsonParse } from "../utils/safeJsonParse.js";
 const MAX_RETRIES = 3;
 const BASE_BACKOFF_MS = 1_000;
 
+// Message types the service worker may post to request an offline queue sync.
+// EVENTRA_BACKGROUND_SYNC is posted by public/service-worker.js when the
+// browser fires the "sync" event for the eventra-offline-queue-sync tag.
+// SYNC_REQUESTED is retained for backward compatibility with older SW builds.
+const SYNC_MESSAGE_TYPES = new Set(["SYNC_REQUESTED", "EVENTRA_BACKGROUND_SYNC"]);
+
 /**
  * A custom React hook that syncs queued offline actions to the server
  * when the network connection is restored.
@@ -501,7 +507,7 @@ const useOfflineSync = () => {
     // 🔥 FIX: Safely define the missing functions introduced by the master branch to prevent ReferenceErrors
     const handleSyncRequested = () => void handleOnline();
     const handleServiceWorkerMessage = (event) => {
-      if (event?.data?.type === 'SYNC_REQUESTED') {
+      if (SYNC_MESSAGE_TYPES.has(event?.data?.type)) {
         void handleOnline();
       }
     };
