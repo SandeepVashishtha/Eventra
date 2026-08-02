@@ -1057,6 +1057,8 @@ const EventRegistration = () => {
                 <button
                   type="submit"
                   disabled={isPending || !isFormValid}
+                  aria-disabled={isPending || !isFormValid}
+                  aria-busy={isPending}
                   className="flex-1 px-6 py-3 bg-black text-white rounded-lg hover:bg-zinc-800 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   aria-label={t("eventRegistration.formSubmitAriaLabel")}
                 >
