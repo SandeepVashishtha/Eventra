@@ -87,7 +87,7 @@ const EditProfile = () => {
   const { user, setUser } = useAuth();
 
   // Initialize with fallback progression to prevent undefined fields
-  const [form, setForm] = useState(user ? { ...initialFormState, ...user } : initialFormState);
+  const [form, setForm] = useState(user ? { ...initialFormState, ...user, skills: user.skills || [] } : initialFormState);
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -136,12 +136,12 @@ const EditProfile = () => {
           if (saved) {
             const parsed = safeJsonParse(saved, null);
             if (parsed) {
-              setForm(parsed);
+              setForm({ ...initialFormState, ...parsed, skills: parsed.skills || [] });
               return;
             }
           }
           if (user) {
-            setForm((prev) => ({ ...prev, ...user }));
+            setForm((prev) => ({ ...prev, ...user, skills: user.skills || [] }));
           }
         }
       } catch (error) {
