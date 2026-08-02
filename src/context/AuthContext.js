@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useCallback, useRef, use
 import { setOnUnauthorizedHandler, setRequiresReauthHandler, setAuthToken, apiUtils } from "../config/api.js";
 import { authService } from "../services/authService.js";
 import { syncSecureStorage } from "../utils/secureStorage.js";
+import { clearWaitlistCache } from "../utils/waitlistUtils.js";
 import { usePermissions, normalizeRoles } from "../hooks/usePermissions.js";
 import { useTokenExpiry } from "../hooks/useTokenExpiry.js";
 import { isTokenValid } from "../utils/tokenUtils.js";
@@ -90,6 +91,12 @@ export const AuthProvider = ({ children }) => {
   // Ref to track mounting status and prevent setting state on unmounted components
   const isMountedRef = useRef(true);
 
+  // Ref so session-clear flows can purge the current user's waitlist PII cache
+  const userIdRef = useRef(null);
+  useEffect(() => {
+    userIdRef.current = user?.id || user?.email || null;
+  }, [user]);
+
   // Ref to track whether session expired toast has already been displayed to prevent spamming
   const expiryToastShownRef = useRef(false);
 
@@ -121,6 +128,11 @@ export const AuthProvider = ({ children }) => {
 
     // Clear user metadata from secure/local storage manager
     syncSecureStorage.removeItem("user");
+
+    // Purge the current user's waitlist PII cache so it does not outlive the session
+    if (userIdRef.current) {
+      clearWaitlistCache(userIdRef.current);
+    }
     return true;
   }, []);
 
