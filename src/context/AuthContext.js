@@ -28,7 +28,24 @@ export const useAuth = () => {
     typeof globalThis !== "undefined" &&
     typeof globalThis.mockAuth === "function"
   ) {
-    return globalThis.mockAuth();
+    const mock = globalThis.mockAuth();
+    // Even in development, the forged session is validated against the real
+    // permission model so the test seam resolves roles/permissions exactly like
+    // a production session instead of trusting arbitrary mock claims.
+    if (mock && typeof mock === "object") {
+      const rawUser = mock.user ?? {};
+      const rawRoles = mock.roles ?? rawUser.roles ?? (rawUser.role ? [rawUser.role] : []);
+      const roles = normalizeRoles(rawRoles);
+      const permissions = Array.from(
+        new Set([
+          ...(Array.isArray(mock.permissions) ? mock.permissions.map((p) => String(p)) : []),
+          ...(Array.isArray(rawUser.permissions) ? rawUser.permissions.map((p) => String(p)) : []),
+          ...roles.flatMap((role) => ROLE_PERMISSIONS[role] || []),
+        ])
+      );
+      return { ...mock, roles, permissions, user: { ...rawUser, roles, permissions } };
+    }
+    return mock;
   }
   if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
