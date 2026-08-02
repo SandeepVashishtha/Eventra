@@ -8,7 +8,7 @@ import { isTokenValid } from "../utils/tokenUtils.js";
 import { toast } from "react-toastify";
 import { ROLES, ROLE_PERMISSIONS } from "../config/roles.js";
 import { getSessionChannel, closeSessionChannel, SESSION_TERMINATED, broadcastSessionTerminated } from "../utils/sessionBroadcast.js";
-import { deleteCookie, setCookie } from "../utils/cookieUtils.js";
+import { deleteCookie } from "../utils/cookieUtils.js";
 import ReAuthModal from "../components/auth/ReAuthModal";
 
 // Create context for Authentication
@@ -22,7 +22,12 @@ const AuthContext = createContext();
  */
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (typeof globalThis !== "undefined" && typeof globalThis.mockAuth === "function") {
+  // Development-only backdoor for storybook/testing. Never active in production.
+  if (
+    import.meta.env?.DEV &&
+    typeof globalThis !== "undefined" &&
+    typeof globalThis.mockAuth === "function"
+  ) {
     return globalThis.mockAuth();
   }
   if (!context) {
@@ -212,11 +217,10 @@ export const AuthProvider = ({ children }) => {
             const cachedUser = await syncSecureStorage.getItemAsync("user");
             if (cachedUser) {
               setUser(JSON.parse(cachedUser));
-              const cookieToken = document.cookie
-                .split("; ")
-                .find((row) => row.startsWith("token="))
-                ?.split("=")[1];
-              setToken(cookieToken || "cookie-managed");
+              // Never read a JS-readable token cookie (httpOnlyStorage policy).
+              // The active token is held in JS memory by setAuthToken or by
+              // the backend's HttpOnly Set-Cookie flow.
+              setToken("cookie-managed");
             } else {
               clearSession();
             }
@@ -296,17 +300,10 @@ export const AuthProvider = ({ children }) => {
     setUser(sessionUser);
     setAuthToken(sessionToken);
 
-    try {
-      if (sessionToken && sessionToken !== "cookie-managed") {
-        setCookie("token", sessionToken, {
-          path: "/",
-          secure: window.location.protocol === "https:",
-          maxAge: 7 * 24 * 60 * 60, // Persist for 7 days
-        });
-      }
-    } catch (err) {
-      console.warn("[AuthContext] Failed to write cookie:", err);
-    }
+    // Security Contract (src/utils/httpOnlyStorage.js): the bearer token is
+    // held in JS memory only via setAuthToken above — it is never written to
+    // a JS-readable document.cookie. HttpOnly cookie sessions are established
+    // solely by the backend's Set-Cookie flow (axios uses withCredentials).
 
     try {
       // Security Contract: Strip authorization keys from display profile object stored in localStorage
