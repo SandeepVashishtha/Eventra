@@ -201,6 +201,20 @@ export default function TicketScanner() {
     let ticketData = null;
     try {
       ticketData = JSON.parse(decodedText);
+      // SECURITY (Issue #11073): only accept opaque, server-issued ticket
+      // tokens ({ ticketId }) that carry no forgeable claims. Any other JSON
+      // shape — e.g. {"ticketId":"x","userName":"Guest","role":"ADMIN"} — is
+      // rejected and routed to the same flagged path as a malformed QR.
+      const opaqueKeys = Object.keys(ticketData || {});
+      if (
+        !ticketData ||
+        typeof ticketData !== "object" ||
+        Array.isArray(ticketData) ||
+        opaqueKeys.length !== 1 ||
+        opaqueKeys[0] !== "ticketId"
+      ) {
+        throw new Error("Opaque ticket token required");
+      }
     } catch {
       if (decodedText.startsWith("eyJ") && decodedText.split(".").length === 3) {
         const activeEvent = events.find(e => String(e.id) === String(selectedEventId));
