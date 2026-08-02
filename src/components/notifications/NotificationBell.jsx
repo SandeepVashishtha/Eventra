@@ -31,6 +31,7 @@ const NotificationBell = () => {
 
   return (
     <div className="relative" ref={wrapperRef}>
+      <div aria-live="polite" className="sr-only">{unreadCount > 0 ? `You have ${unreadCount} unread notifications` : ""}</div>
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
