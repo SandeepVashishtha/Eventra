@@ -5,6 +5,7 @@ import com.sandeep.eventrabackend.model.Role;
 import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.EventRegistrationRepository;
 import com.sandeep.eventrabackend.repository.EventRepository;
+import com.sandeep.eventrabackend.repository.EventWaitlistRepository;
 import com.sandeep.eventrabackend.repository.HackathonRegistrationRepository;
 import com.sandeep.eventrabackend.repository.NotificationRepository;
 import com.sandeep.eventrabackend.repository.UserRepository;
@@ -25,9 +26,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -51,6 +54,9 @@ public class EventRegistrationTests {
     private EventRegistrationRepository eventRegistrationRepository;
 
     @Autowired
+    private EventWaitlistRepository eventWaitlistRepository;
+
+    @Autowired
     private HackathonRegistrationRepository hackathonRegistrationRepository;
 
     @Autowired
@@ -68,6 +74,7 @@ public class EventRegistrationTests {
     void setUp() {
         notificationRepository.deleteAll();
         hackathonRegistrationRepository.deleteAll();
+        eventWaitlistRepository.deleteAll();
         eventRegistrationRepository.deleteAll();
         eventRepository.deleteAll();
         userRepository.deleteAll();
@@ -286,6 +293,113 @@ public class EventRegistrationTests {
         mockMvc.perform(post("/api/events/" + eventId + "/register")
                         .with(user("user6@example.com")))
                 .andExpect(status().isConflict());
+    }
+
+    @Test
+    @DisplayName("#9977 - full event allows users to join waitlist and exposes queue position")
+    void testJoinWaitlistAndAvailabilityPosition() throws Exception {
+        for (int i = 1; i <= 5; i++) {
+            mockMvc.perform(post("/api/events/" + eventId + "/register")
+                            .with(user("user" + i + "@example.com")))
+                    .andExpect(status().isOk());
+        }
+
+        mockMvc.perform(post("/api/events/" + eventId + "/waitlist")
+                        .with(user("user6@example.com")))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.eventId").value(eventId))
+                .andExpect(jsonPath("$.userEmail").value("user6@example.com"))
+                .andExpect(jsonPath("$.position").value(1))
+                .andExpect(jsonPath("$.status").value("WAITING"));
+
+        mockMvc.perform(get("/api/events/" + eventId + "/availability")
+                        .with(user("user6@example.com")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.full").value(true))
+                .andExpect(jsonPath("$.waitlisted").value(true))
+                .andExpect(jsonPath("$.waitlistPosition").value(1));
+    }
+
+    @Test
+    @DisplayName("#9977 - cancellation auto-promotes the first waitlisted user")
+    void testCancellationPromotesFirstWaitlistedUser() throws Exception {
+        for (int i = 1; i <= 5; i++) {
+            mockMvc.perform(post("/api/events/" + eventId + "/register")
+                            .with(user("user" + i + "@example.com")))
+                    .andExpect(status().isOk());
+        }
+
+        mockMvc.perform(post("/api/events/" + eventId + "/waitlist")
+                        .with(user("user6@example.com")))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(delete("/api/events/" + eventId + "/registration")
+                        .with(user("user1@example.com")))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/users/my-events")
+                        .with(user("user6@example.com")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].eventId").value(eventId))
+                .andExpect(jsonPath("$[0].status").value("CONFIRMED"));
+
+        mockMvc.perform(get("/api/notifications")
+                        .with(user("user6@example.com")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].title").value("Waitlist spot opened"));
+    }
+
+    @Test
+    @DisplayName("#9977 - queued user can leave the waitlist")
+    void testLeaveWaitlist() throws Exception {
+        for (int i = 1; i <= 5; i++) {
+            mockMvc.perform(post("/api/events/" + eventId + "/register")
+                            .with(user("user" + i + "@example.com")))
+                    .andExpect(status().isOk());
+        }
+
+        mockMvc.perform(post("/api/events/" + eventId + "/waitlist")
+                        .with(user("user6@example.com")))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(delete("/api/events/" + eventId + "/waitlist")
+                        .with(user("user6@example.com")))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/events/" + eventId + "/availability")
+                        .with(user("user6@example.com")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.waitlisted").value(false))
+                .andExpect(jsonPath("$.waitlistPosition", nullValue()));
+    }
+
+    @Test
+    @DisplayName("#9977 - admin can manually promote a waitlisted user when capacity opens")
+    void testAdminManualPromotion() throws Exception {
+        Event event = eventRepository.findById(eventId).orElseThrow();
+        event.setCapacity(1);
+        eventRepository.save(event);
+
+        mockMvc.perform(post("/api/events/" + eventId + "/register")
+                        .with(user("user1@example.com")))
+                .andExpect(status().isOk());
+
+        String response = mockMvc.perform(post("/api/events/" + eventId + "/waitlist")
+                        .with(user("user2@example.com")))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+
+        Long waitlistId = Long.valueOf(response.replaceAll(".*\"id\":(\\d+).*", "$1"));
+
+        event = eventRepository.findById(eventId).orElseThrow();
+        event.setCapacity(2);
+        eventRepository.save(event);
+
+        mockMvc.perform(post("/api/events/" + eventId + "/waitlist/" + waitlistId + "/promote")
+                        .with(user("admin@example.com").authorities(() -> "ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userEmail").value("user2@example.com"))
+                .andExpect(jsonPath("$.registrationStatus").value("CONFIRMED"));
     }
 
     // ── Issue #2104 — Concurrent registration ────────────────────────────────
