@@ -2,6 +2,7 @@ package com.sandeep.eventrabackend.controller;
 
 import com.sandeep.eventrabackend.dto.request.EventCreateRequest;
 import com.sandeep.eventrabackend.dto.request.EventUpdateRequest;
+import com.sandeep.eventrabackend.dto.request.RegistrationRequest;
 import com.sandeep.eventrabackend.dto.response.ErrorResponse;
 import com.sandeep.eventrabackend.dto.response.EventAvailabilityResponse;
 import com.sandeep.eventrabackend.dto.response.EventResponse;
@@ -300,14 +301,32 @@ public class EventController {
     public ResponseEntity<RegistrationResponse> registerForEvent(
             @Parameter(description = "ID of the event to register for")
             @PathVariable Long id,
+            @RequestBody(required = false) RegistrationRequest request,
             Authentication authentication) {
 
         String userEmail = authentication.getName();
+        String seatId = (request != null) ? request.getSeatId() : null;
 
         RegistrationResponse response =
-                eventService.registerUserForEvent(id, userEmail);
+                eventService.registerUserForEvent(id, userEmail, seatId);
 
         return ResponseEntity.ok(response);
+    }
+
+    // ── Issue #11025 — GET /api/events/{id}/seats ───────────────────────────
+
+    @GetMapping("/{id}/seats")
+    @Operation(
+            summary = "Get seats already reserved for an event",
+            description =
+                    "Returns the seat identifiers already reserved for the event, " +
+                    "used to derive live occupancy for the seat selector."
+    )
+    public ResponseEntity<List<String>> getOccupiedSeats(
+            @Parameter(description = "ID of the event")
+            @PathVariable Long id) {
+
+        return ResponseEntity.ok(eventService.getOccupiedSeats(id));
     }
 
     // ── Issue #2100 — DELETE /api/events/{id} ───────────────────────────────

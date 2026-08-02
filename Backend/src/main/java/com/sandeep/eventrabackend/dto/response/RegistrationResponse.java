@@ -50,4 +50,7 @@ public class RegistrationResponse {
     @Schema(description = "Registration confirmation status.", example = "CONFIRMED")
     @Builder.Default
     private String registrationStatus = "CONFIRMED";
+
+    @Schema(description = "Reserved seat identifier when the event supports seat selection.", example = "table-1:3")
+    private String seatId;
 }

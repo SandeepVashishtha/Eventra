@@ -336,6 +336,12 @@ const EventRegistration = () => {
 
     const idempotencyKey = generateSecureUUID();
 
+    // The selected seat travels with the registration so the server can
+    // persist and atomically reserve it (format elementId:seatIndex).
+    const selectedSeatId = selectedSeat
+      ? `${selectedSeat.elementId}:${selectedSeat.seatIndex}`
+      : null;
+
     try {
       const response = await apiUtils.post(
         endpoint,
@@ -344,6 +350,7 @@ const EventRegistration = () => {
           priority: formData.priority,
           eventId: parseInt(eventId, 10),
           idempotencyKey,
+          seatId: selectedSeatId,
         },
         token
       );
@@ -371,6 +378,7 @@ const EventRegistration = () => {
           ...formData,
           eventId: parseInt(eventId, 10),
           idempotencyKey,
+          seatId: selectedSeatId,
         };
 
         const success = await pushToQueue(

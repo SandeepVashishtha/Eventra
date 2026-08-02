@@ -8,10 +8,16 @@ import java.time.LocalDateTime;
 @Entity
 @Table(
         name = "event_registrations",
-        uniqueConstraints = @UniqueConstraint(
-                name = "uk_event_registration_event_user",
-                columnNames = {"event_id", "user_id"}
-        )
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_event_registration_event_user",
+                        columnNames = {"event_id", "user_id"}
+                ),
+                @UniqueConstraint(
+                        name = "uk_event_registration_event_seat",
+                        columnNames = {"event_id", "seat_id"}
+                )
+        }
 )
 public class EventRegistration {
 
@@ -33,6 +39,13 @@ public class EventRegistration {
 
     @Column(nullable = false, length = 30)
     private String status = "CONFIRMED";
+
+    /**
+     * Selected seat identifier (format {@code elementId:seatIndex}) when the
+     * event offers seat selection. Null when no seat was chosen.
+     */
+    @Column(name = "seat_id", length = 100)
+    private String seatId;
 
     public Long getId() {
         return id;
@@ -72,5 +85,13 @@ public class EventRegistration {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getSeatId() {
+        return seatId;
+    }
+
+    public void setSeatId(String seatId) {
+        this.seatId = seatId;
     }
 }
