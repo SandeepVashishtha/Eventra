@@ -130,7 +130,7 @@ export const useKeyboardShortcuts = (shortcuts = {}, disabled = false) => {
         } else {
           const input = document.querySelector('nav input[type="text"], nav input[type="search"]') ||
                         document.querySelector('input[type="text"], input[type="search"]');
-          if (input) input.focus();
+          if (input) requestAnimationFrame(() => input.focus());
         }
         return;
       }
@@ -144,7 +144,7 @@ export const useKeyboardShortcuts = (shortcuts = {}, disabled = false) => {
         }
         const input = document.querySelector('nav input[type="text"], nav input[type="search"]') ||
                       document.querySelector('input[type="text"], input[type="search"]');
-        if (input) input.focus();
+        if (input) requestAnimationFrame(() => input.focus());
         return;
       }
 
