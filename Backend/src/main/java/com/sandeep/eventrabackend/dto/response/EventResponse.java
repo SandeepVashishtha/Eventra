@@ -43,4 +43,7 @@ public class EventResponse {
 
     @Schema(description = "URL to the event's banner or thumbnail image", example = "https://example.com/images/event-banner.jpg")
     private String imageUrl;
+
+    @Schema(description = "ID of the user who created (owns) this event", example = "7")
+    private Long ownerId;
 }

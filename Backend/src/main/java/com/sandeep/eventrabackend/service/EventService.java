@@ -18,6 +18,7 @@ import com.sandeep.eventrabackend.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -151,7 +152,7 @@ public class EventService {
      * @return the saved event
      */
     @Transactional
-    public EventResponse createEvent(EventCreateRequest request) {
+    public EventResponse createEvent(EventCreateRequest request, String userEmail) {
         Event event = new Event();
         event.setTitle(request.getTitle());
         event.setDescription(request.getDescription());
@@ -166,6 +167,14 @@ public class EventService {
         // Ensure registeredCount is 0 for new events
         event.setRegisteredCount(0);
 
+        // Issue #11021 — record the authenticated creator as the event owner so
+        // ownership-based authorization can be enforced on later management actions.
+        User owner = userRepository.findByEmail(userEmail)
+                .orElseThrow(() ->
+                        new UsernameNotFoundException(
+                                "User not found with email: " + userEmail));
+        event.setOwnerId(owner.getId());
+
         Event saved = eventRepository.save(event);
         return toEventResponse(saved);
     }
@@ -179,10 +188,21 @@ public class EventService {
      * @throws EventNotFoundException if the event does not exist
      */
     @Transactional
-    public EventResponse updateEvent(Long id, EventUpdateRequest request) {
+    public EventResponse updateEvent(Long id, EventUpdateRequest request, String userEmail) {
         Event event = eventRepository.findById(id)
                 .orElseThrow(() ->
                         new EventNotFoundException("Event not found with id: " + id));
+
+        // Issue #11021 — event management is owner-scoped: a user may only update
+        // an event they created. This closes the cross-tenant IDOR where any
+        // ORGANIZER could mutate any event by swapping the id.
+        Long principalId = userRepository.findByEmail(userEmail)
+                .map(User::getId)
+                .orElse(null);
+        if (event.getOwnerId() != null && !event.getOwnerId().equals(principalId)) {
+            throw new AccessDeniedException(
+                    "Only the event's own organizer can manage this event.");
+        }
 
         // Business Rule: Capacity cannot be less than current registrations
         if (request.getCapacity() != null && request.getCapacity() < event.getRegisteredCount()) {
@@ -381,6 +401,7 @@ public class EventService {
                 .registeredCount(event.getRegisteredCount())
                 .isPublic(event.isPublic())
                 .imageUrl(event.getImageUrl())
+                .ownerId(event.getOwnerId())
                 .build();
     }
 }
