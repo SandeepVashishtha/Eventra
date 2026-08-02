@@ -28,7 +28,11 @@ const ReAuthModal = ({ onSuccess }) => {
         setError(res.data?.error || "Incorrect password");
       }
     } catch (err) {
-      setError(err.message || "Failed to verify session");
+      if (err.name === 'TypeError' || err.message === 'Failed to fetch') {
+        setError("Network error. Please check your connection and try again.");
+      } else {
+        setError(err.message || "Failed to verify session");
+      }
     } finally {
       setLoading(false);
     }
