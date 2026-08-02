@@ -316,7 +316,7 @@ public class AdminService {
             return Role.valueOf(role.toUpperCase());
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid role: " + role +
-                    ". Must be one of: CLIENT, ORGANIZER, ADMIN, SUPER_ADMIN");
+                    ". Must be one of: CLIENT, ATTENDEE, MODERATOR, OWNER, ORGANIZER, ADMIN, SUPER_ADMIN");
         }
     }
 }
