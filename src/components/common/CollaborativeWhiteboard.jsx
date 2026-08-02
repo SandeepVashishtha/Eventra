@@ -46,6 +46,7 @@ export default function CollaborativeWhiteboard() {
   const isDrawingRef = useRef(false);
   const currentStrokeIdRef = useRef(null);
   const currentPointsRef = useRef([]);
+  const currentStrokeRef = useRef(null);
 
   // Generate a random client peer identifier
   const peerId = useRef(`peer_${Math.random().toString(36).substring(2, 7)}`);
@@ -330,6 +331,7 @@ export default function CollaborativeWhiteboard() {
         lineWidth,
         points: [...currentPointsRef.current],  // ← copy, not the same reference
       };
+      currentStrokeRef.current = newStroke;
 
       bcRef.current.postMessage({
         type: "WHITEBOARD_STROKE_START",
@@ -352,6 +354,7 @@ export default function CollaborativeWhiteboard() {
         start: [coords.x, coords.y],
         end: [coords.x, coords.y],
       };
+      currentStrokeRef.current = newStroke;
 
       bcRef.current.postMessage({
         type: "WHITEBOARD_STROKE_START",
@@ -373,6 +376,9 @@ export default function CollaborativeWhiteboard() {
 
     if (tool === "pencil") {
       currentPointsRef.current.push([coords.x, coords.y]);
+      if (currentStrokeRef.current) {
+        currentStrokeRef.current.points = [...currentPointsRef.current];
+      }
 
       bcRef.current.postMessage({
         type: "WHITEBOARD_STROKE_DRAW",
@@ -404,6 +410,7 @@ export default function CollaborativeWhiteboard() {
         start: [startX, startY],
         end: [coords.x, coords.y]
       };
+      currentStrokeRef.current = previewStroke;
 
       bcRef.current.postMessage({
         type: "WHITEBOARD_SHAPE_PREVIEW",
@@ -436,17 +443,18 @@ export default function CollaborativeWhiteboard() {
         delete copy[finishedId];
         return copy;
       });
+      const finished = currentStrokeRef.current;
       setLocalStrokes(prev => {
-        const finished = remoteActiveStrokes[finishedId];
         if (!finished) return prev;
         const updated = [...prev, finished];
         saveHistory(updated);
         return updated;
       });
+      currentStrokeRef.current = null;
     } else {
       // Shape drawing finished
       const finishedId = currentStrokeIdRef.current;
-      const finished = remoteActiveStrokes[finishedId];
+      const finished = currentStrokeRef.current;
       if (finished) {
         bcRef.current.postMessage({
           type: "WHITEBOARD_COMPLETE_STROKE",
@@ -465,6 +473,7 @@ export default function CollaborativeWhiteboard() {
         delete copy[finishedId];
         return copy;
       });
+      currentStrokeRef.current = null;
     }
   };
 
