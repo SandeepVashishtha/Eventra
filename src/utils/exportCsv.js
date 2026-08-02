@@ -142,7 +142,7 @@ export const exportSurveyToCSV = (questions, responses, surveyTitle = "Survey") 
   // Rows: Each anonymous attendee submission
   const rows = responses.map((resp) => [
     resp.timestamp || "",
-    ...questions.map((q) => resp.answers[q.id] ?? ""),
+    ...questions.map((q) => resp.answers?.[q.id] ?? ""),
   ]);
 
   const csvContent = [headers, ...rows]
