@@ -19,8 +19,8 @@ const isStorageAvailable = () => {
     }
     return true;
   } catch (err) {
-      console.warn("[activityTracker] Failed to track activity:", err);
-    }
+    console.warn("[activityTracker] Failed to track activity:", err);
+    return false;
   }
 };
 
