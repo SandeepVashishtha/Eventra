@@ -107,8 +107,47 @@ const getDOMPurify = () => {
  * @param {string} dirty - Raw HTML from an untrusted source (API, user input)
  * @returns {string} Sanitised HTML safe for injection into the DOM
  */
-const stripAllHtml = (text) =>
-  text.replace(/<[^>]*>/g, '');
+// Fix (Issue #11122): Replace regex-based HTML stripping with a parser-based
+// approach. Regex cannot handle malformed, nested, or specially crafted HTML
+// and may allow XSS payloads to slip through the fallback path.
+//
+// Strategy (in priority order):
+//   1. DOMParser (all modern browsers) — parse as text/html, extract textContent
+//   2. document.createElement('div') — SSR-safe DOM alternative
+//   3. Last-resort regex — only reached in non-browser environments with no DOM
+//      at all (e.g. Jest with jsdom disabled). Logs a warning so it is visible.
+const stripAllHtml = (text) => {
+  // Strategy 1: DOMParser
+  if (typeof DOMParser !== 'undefined') {
+    try {
+      const doc = new DOMParser().parseFromString(text, 'text/html');
+      return doc.body?.textContent ?? '';
+    } catch {
+      // fall through to next strategy
+    }
+  }
+
+  // Strategy 2: createElement (works in jsdom / React Native Web)
+  if (typeof document !== 'undefined' && typeof document.createElement === 'function') {
+    try {
+      const el = document.createElement('div');
+      // Assign via textContent to avoid any parsing — then read back as text
+      // Use innerHTML only to set, then immediately read textContent to strip tags
+      el.innerHTML = text;
+      return el.textContent ?? el.innerText ?? '';
+    } catch {
+      // fall through to last resort
+    }
+  }
+
+  // Last resort: regex (non-browser environment, no DOM available at all)
+  // This path should never be reached in a browser context.
+  console.warn(
+    '[sanitizeHtml] No DOM API available — falling back to regex stripping. ' +
+    'This is unsafe in browser environments and should not occur in production.'
+  );
+  return text.replace(/<[^>]*>/g, '');
+};
 
 export function sanitizeHtml(dirty) {
   if (!dirty || typeof dirty !== "string") return "";
