@@ -6,6 +6,7 @@ import com.sandeep.eventrabackend.dto.OrganizerInsightDTO;
 import com.sandeep.eventrabackend.dto.RegistrationTrendDTO;
 import com.sandeep.eventrabackend.service.AnalyticsService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -15,6 +16,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/analytics")
+@PreAuthorize("hasAnyAuthority('ADMIN', 'SUPER_ADMIN', 'ORGANIZER')")
 public class AnalyticsController {
 
     private final AnalyticsService analyticsService;
