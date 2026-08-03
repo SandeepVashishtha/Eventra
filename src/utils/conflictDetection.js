@@ -299,3 +299,14 @@ export const formatTimeRange = (timeStr, durationMinutes = 60, dateStr, timezone
 
   return `${formatMinutes(startMinutes)} – ${formatMinutes(endMinutes)}`;
 };
+
+export const compareEventTimezones = (event, targetTz) => {
+  if (!event || !targetTz) return null;
+  const userTz = getUserTimezone();
+  return {
+    userTime: formatTimeRange(event.time, event.durationMinutes, event.date, userTz),
+    targetTime: formatTimeRange(event.time, event.durationMinutes, event.date, targetTz),
+    userTz,
+    targetTz
+  };
+};
