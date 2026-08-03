@@ -27,6 +27,7 @@ const readBookmarks = () => {
     return Array.isArray(parsed) ? parsed : [];
   } catch (err) {
       console.warn("[bookmarkUtils] Bookmark operation failed:", err);
+      return [];
     }
 };
 
@@ -125,4 +126,14 @@ export const subscribeToBookmarkChanges = (callback) => {
     window.removeEventListener(BOOKMARKS_CHANGED_EVENT, handleLocalChange);
     window.removeEventListener("storage", handleStorageChange);
   };
+};
+export const exportBookmarksJSON = () => {
+  const bookmarks = readBookmarks();
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(bookmarks, null, 2));
+  const downloadAnchor = document.createElement("a");
+  downloadAnchor.setAttribute("href", dataStr);
+  downloadAnchor.setAttribute("download", "eventra_bookmarks.json");
+  document.body.appendChild(downloadAnchor);
+  downloadAnchor.click();
+  downloadAnchor.remove();
 };
