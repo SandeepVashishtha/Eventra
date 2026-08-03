@@ -317,9 +317,10 @@ public class EventController {
             @Parameter(description = "ID of the event")
             @PathVariable Long id,
             @Parameter(description = "ID of the waitlist entry")
-            @PathVariable Long waitlistId) {
+            @PathVariable Long waitlistId,
+            Authentication authentication) {
 
-        return ResponseEntity.ok(eventService.promoteWaitlistedUser(id, waitlistId));
+        return ResponseEntity.ok(eventService.promoteWaitlistedUser(id, waitlistId, authentication.getName()));
     }
 
     // ── Issue #2102 — POST /api/events/{id}/register ─────────────────────────
