@@ -285,13 +285,6 @@ export default function Chatbot() {
     setIsMinimized(false);
   };
 
-  const handleClose = useCallback(() => {
-    clearReplyTimer();
-    setIsTyping(false);
-    setIsOpen(false);
-    setIsMinimized(false);
-  }, [clearReplyTimer]);
-
   const handleMinimize = () => setIsMinimized((v) => !v);
 
   // ── Unified single portal rendering ─────────────────────────────────────────
