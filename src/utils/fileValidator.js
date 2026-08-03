@@ -58,7 +58,10 @@ export function validateImageFile(file, options = {}) {
   }
 
   // Check file extension
-  const fileName = file.name.toLowerCase();
+  // Fix (Issue #11120): Normalize filename before extracting extension.
+  // Without trimming trailing dots, a file named "payload.exe." produces
+  // extension "." which bypasses all dangerous extension checks entirely.
+  const fileName = file.name.trim().replace(/\.+$/, "").toLowerCase();
   const ext = "." + fileName.split(".").pop();
 
   if (DANGEROUS_EXTENSIONS.includes(ext)) {
@@ -101,7 +104,8 @@ export function validateFile(file, options = {}) {
     };
   }
 
-  const fileName = file.name.toLowerCase();
+  // Fix (Issue #11120): Normalize filename before extracting extension.
+  const fileName = file.name.trim().replace(/\.+$/, "").toLowerCase();
   const ext = "." + fileName.split(".").pop();
 
   if (DANGEROUS_EXTENSIONS.includes(ext)) {
