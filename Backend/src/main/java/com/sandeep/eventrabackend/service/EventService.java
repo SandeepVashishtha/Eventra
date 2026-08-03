@@ -17,6 +17,7 @@ import com.sandeep.eventrabackend.model.Notification;
 import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.EventRegistrationRepository;
 import com.sandeep.eventrabackend.repository.EventRepository;
+import com.sandeep.eventrabackend.model.Role;
 import com.sandeep.eventrabackend.repository.EventWaitlistRepository;
 import com.sandeep.eventrabackend.repository.NotificationRepository;
 import com.sandeep.eventrabackend.repository.UserRepository;
@@ -341,10 +342,19 @@ public class EventService {
     }
 
     @Transactional
-    public RegistrationResponse promoteWaitlistedUser(Long eventId, Long waitlistId) {
+    public RegistrationResponse promoteWaitlistedUser(Long eventId, Long waitlistId, String userEmail) {
         Event event = eventRepository.findByIdWithLock(eventId)
                 .orElseThrow(() ->
                         new EventNotFoundException("Event not found with id: " + eventId));
+
+        User currentUser = userRepository.findByEmail(userEmail).orElse(null);
+        if (currentUser != null) {
+            boolean isAdmin = currentUser.getRole() == Role.ADMIN || currentUser.getRole() == Role.SUPER_ADMIN;
+            if (!isAdmin && event.getOwnerId() != null && !event.getOwnerId().equals(currentUser.getId())) {
+                throw new AccessDeniedException(
+                        "Only the event's own organizer (or an administrator) can manage this event.");
+            }
+        }
 
         EventWaitlist entry = eventWaitlistRepository.findById(waitlistId)
                 .filter(waitlist -> waitlist.getEvent().getId().equals(eventId))
