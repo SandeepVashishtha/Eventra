@@ -124,8 +124,9 @@ public class HackathonController {
             )
     })
     public ResponseEntity<HackathonResponse> createHackathon(
-            @Valid @RequestBody HackathonCreateRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(hackathonService.createHackathon(request));
+            @Valid @RequestBody HackathonCreateRequest request,
+            Authentication authentication) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(hackathonService.createHackathon(request, authentication.getName()));
     }
 
     @PutMapping("/{id}")
@@ -175,8 +176,9 @@ public class HackathonController {
     public ResponseEntity<HackathonResponse> updateHackathon(
             @Parameter(description = "ID of the hackathon to update")
             @PathVariable Long id,
-            @Valid @RequestBody HackathonUpdateRequest request) {
-        return ResponseEntity.ok(hackathonService.updateHackathon(id, request));
+            @Valid @RequestBody HackathonUpdateRequest request,
+            Authentication authentication) {
+        return ResponseEntity.ok(hackathonService.updateHackathon(id, request, authentication.getName()));
     }
 
     @GetMapping
