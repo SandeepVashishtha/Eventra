@@ -46,4 +46,19 @@ public class EventResponse {
 
     @Schema(description = "ID of the user who created (owns) this event", example = "7")
     private Long ownerId;
+
+    @Schema(description = "Lifecycle status of the event", example = "SCHEDULED")
+    private String status;
+
+    @Schema(description = "Reason provided when the event was cancelled", example = "Venue unavailable")
+    private String cancellationReason;
+
+    @Schema(description = "Timestamp when the event was cancelled")
+    private LocalDateTime cancelledAt;
+
+    @Schema(description = "Refund policy chosen at cancellation (FULL / PARTIAL / NONE)", example = "FULL")
+    private String refundPolicy;
+
+    @Schema(description = "Refund percentage when the refund policy is PARTIAL", example = "50")
+    private Integer refundPercent;
 }

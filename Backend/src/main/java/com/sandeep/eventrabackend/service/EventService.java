@@ -1,5 +1,6 @@
 package com.sandeep.eventrabackend.service;
 
+import com.sandeep.eventrabackend.dto.request.CancelEventRequest;
 import com.sandeep.eventrabackend.dto.request.EventCreateRequest;
 import com.sandeep.eventrabackend.dto.request.EventUpdateRequest;
 import com.sandeep.eventrabackend.dto.response.EventAvailabilityResponse;
@@ -247,6 +248,57 @@ public class EventService {
 
         Event saved = eventRepository.save(event);
         return toEventResponse(saved);
+    }
+
+    /**
+     * Cancels an existing event.
+     *
+     * <p>Authorization (Issue #11021): only the event's own organizer or an
+     * administrator (ADMIN / SUPER_ADMIN) may cancel an event. This closes the
+     * broken object-level authorization hole where any ORGANIZER could cancel
+     * events created by other organizers.</p>
+     *
+     * @param id        ID of the event to cancel
+     * @param userEmail email extracted from JWT principal
+     * @param request   cancellation details (reason, refund policy)
+     * @return the updated (cancelled) event
+     * @throws EventNotFoundException if the event does not exist
+     */
+    @Transactional
+    public EventResponse cancelEvent(Long id, String userEmail, CancelEventRequest request) {
+        Event event = eventRepository.findById(id)
+                .orElseThrow(() ->
+                        new EventNotFoundException("Event not found with id: " + id));
+
+        User currentUser = userRepository.findByEmail(userEmail)
+                .orElseThrow(() ->
+                        new UsernameNotFoundException("User not found with email: " + userEmail));
+
+        boolean isAdmin = currentUser.getRole() == Role.ADMIN || currentUser.getRole() == Role.SUPER_ADMIN;
+        if (!isAdmin && (event.getOwnerId() == null || !event.getOwnerId().equals(currentUser.getId()))) {
+            throw new AccessDeniedException(
+                    "Only the event's own organizer (or an administrator) can cancel this event.");
+        }
+
+        if ("CANCELLED".equals(event.getStatus())) {
+            throw new RegistrationConflictException("Event is already cancelled.");
+        }
+
+        String refundPolicy = request.getRefundPolicy().toUpperCase();
+        if ("PARTIAL".equals(refundPolicy)) {
+            if (request.getRefundPercent() == null) {
+                throw new IllegalArgumentException(
+                        "Refund percentage is required when the refund policy is PARTIAL.");
+            }
+        }
+
+        event.setStatus("CANCELLED");
+        event.setCancellationReason(request.getReason());
+        event.setCancelledAt(request.getCancelledAt() != null ? request.getCancelledAt() : LocalDateTime.now());
+        event.setRefundPolicy(refundPolicy);
+        event.setRefundPercent("PARTIAL".equals(refundPolicy) ? request.getRefundPercent() : null);
+
+        return toEventResponse(eventRepository.save(event));
     }
 
     /**
@@ -601,6 +653,11 @@ public class EventService {
                 .isPublic(event.isPublic())
                 .imageUrl(event.getImageUrl())
                 .ownerId(event.getOwnerId())
+                .status(event.getStatus())
+                .cancellationReason(event.getCancellationReason())
+                .cancelledAt(event.getCancelledAt())
+                .refundPolicy(event.getRefundPolicy())
+                .refundPercent(event.getRefundPercent())
                 .build();
     }
 
