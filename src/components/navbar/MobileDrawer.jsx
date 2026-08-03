@@ -8,7 +8,6 @@ import {
   HelpCircle,
   Sun,
   Moon,
-  MousePointer,
   Bell,
   LayoutDashboard,
 } from "lucide-react";
@@ -16,15 +15,17 @@ import { useNotification } from "context/NotificationContext";
 import NavbarLinks from "./NavbarLinks";
 import { PRIMARY_NAV_ITEMS, SECONDARY_NAV_ITEMS } from "./constants/navItems";
 import LanguageSelector from "../LanguageSelector";
-import { useTheme } from "context/ThemeContext";
+import InstallAppButton from "../common/InstallAppButton";
+import { useTheme } from "../../context/ThemeContext";
+import CursorToggle from "./CursorToggle";
 
 const MobileDrawer = ({
   isOpen,
   closeMenu,
   isAuthenticated,
   logout,
-  cursorEnabled,
-  toggleCursor,
+  cursorStyle,
+  setCursorStyle,
 }) => {
   const { t } = useTranslation();
   const location = useLocation();
@@ -73,17 +74,15 @@ const MobileDrawer = ({
 
   return (
     <div
-      className={`fixed inset-0 z-50 ${
-        isOpen ? "visible pointer-events-auto" : "invisible pointer-events-none"
-      }`}
+      className={`fixed inset-0 z-50 ${isOpen ? "visible pointer-events-auto" : "invisible pointer-events-none"
+        }`}
     >
       <button
         type="button"
         aria-label="Close navigation menu"
         onClick={closeMenu}
-        className={`absolute inset-0 h-full w-full bg-black/50 transition-opacity duration-300 ease-in-out ${
-          isOpen ? "opacity-100" : "opacity-0"
-        }`}
+        className={`absolute inset-0 h-full w-full bg-black/50 transition-opacity duration-300 ease-in-out ${isOpen ? "opacity-100" : "opacity-0"
+          }`}
       />
 
       <div
@@ -92,7 +91,7 @@ const MobileDrawer = ({
         role="dialog"
         aria-modal="true"
         aria-label="Mobile navigation"
-        className={`mobile-drawer-panel fixed right-0 top-0 inset-y-0 flex h-dvh w-full max-w-sm flex-col bg-navbar shadow-premium-lg transition-transform duration-200 ease-out ${
+        className={`mobile-drawer-panel fixed right-0 top-0 flex max-h-dvh w-full max-w-sm flex-col bg-navbar shadow-premium-lg transition-transform duration-200 ease-out overflow-y-auto ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -135,11 +134,10 @@ const MobileDrawer = ({
                 <Link
                   to="/dashboard"
                   onClick={closeMenu}
-                  className={`flex min-h-[48px] w-full items-center gap-3 rounded-lg border-l-4 px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
-                    isActive("/dashboard")
+                  className={`flex min-h-[48px] w-full items-center gap-3 rounded-lg border-l-4 px-3 py-2.5 text-sm font-medium transition-all duration-200 ${isActive("/dashboard")
                       ? "border-primary bg-bg-secondary text-text font-semibold"
                       : "border-transparent text-text-light hover:bg-bg hover:text-text"
-                  }`}
+                    }`}
                 >
                   <LayoutDashboard className="w-5 h-5" />
                   {t("nav.dashboard")}
@@ -147,11 +145,10 @@ const MobileDrawer = ({
                 <Link
                   to="/dashboard/profile"
                   onClick={closeMenu}
-                  className={`flex min-h-[48px] w-full items-center gap-3 rounded-lg border-l-4 px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
-                    isActive("/dashboard/profile")
+                  className={`flex min-h-[48px] w-full items-center gap-3 rounded-lg border-l-4 px-3 py-2.5 text-sm font-medium transition-all duration-200 ${isActive("/dashboard/profile")
                       ? "border-primary bg-bg-secondary text-text font-semibold"
                       : "border-transparent text-text-light hover:bg-bg hover:text-text"
-                  }`}
+                    }`}
                 >
                   <UserPlus className="w-5 h-5" /> {/* You can change icon if needed */}
                   {t("nav.viewProfile") || "My Profile"}
@@ -160,11 +157,10 @@ const MobileDrawer = ({
                 <Link
                   to="/notifications"
                   onClick={closeMenu}
-                  className={`flex min-h-[48px] w-full items-center gap-3 rounded-lg border-l-4 px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
-                    isActive("/notifications")
+                  className={`flex min-h-[48px] w-full items-center gap-3 rounded-lg border-l-4 px-3 py-2.5 text-sm font-medium transition-all duration-200 ${isActive("/notifications")
                       ? "border-primary bg-bg-secondary text-text font-semibold"
                       : "border-transparent text-text-light hover:bg-bg hover:text-text"
-                  }`}
+                    }`}
                 >
                   <Bell className="w-5 h-5" />
                   Notifications
@@ -178,11 +174,10 @@ const MobileDrawer = ({
                 <Link
                   to="/about"
                   onClick={closeMenu}
-                  className={`flex min-h-[48px] w-full items-center gap-3 rounded-lg border-l-4 px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
-                    isActive("/about")
+                  className={`flex min-h-[48px] w-full items-center gap-3 rounded-lg border-l-4 px-3 py-2.5 text-sm font-medium transition-all duration-200 ${isActive("/about")
                       ? "border-primary bg-bg-secondary text-text font-semibold"
                       : "border-transparent text-text-light hover:bg-bg hover:text-text"
-                  }`}
+                    }`}
                 >
                   <Info className="w-5 h-5" />
                   {t("nav.about")}
@@ -205,11 +200,10 @@ const MobileDrawer = ({
                 <Link
                   to="/about"
                   onClick={closeMenu}
-                  className={`flex min-h-[48px] w-full items-center gap-3 rounded-lg border-l-4 px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
-                    isActive("/about")
+                  className={`flex min-h-[48px] w-full items-center gap-3 rounded-lg border-l-4 px-3 py-2.5 text-sm font-medium transition-all duration-200 ${isActive("/about")
                       ? "border-primary text-text font-semibold"
                       : "border-transparent text-text-light hover:text-text"
-                  }`}
+                    }`}
                 >
                   <Info className="w-5 h-5" />
                   {t("nav.about")}
@@ -217,11 +211,10 @@ const MobileDrawer = ({
                 <Link
                   to="/faq"
                   onClick={closeMenu}
-                  className={`flex min-h-[48px] w-full items-center gap-3 rounded-lg border-l-4 px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
-                    isActive("/faq")
+                  className={`flex min-h-[48px] w-full items-center gap-3 rounded-lg border-l-4 px-3 py-2.5 text-sm font-medium transition-all duration-200 ${isActive("/faq")
                       ? "border-primary text-text font-semibold"
                       : "border-transparent text-text-light hover:text-text"
-                  }`}
+                    }`}
                 >
                   <HelpCircle className="w-5 h-5" />
                   {t("nav.faqFull")}
@@ -229,11 +222,10 @@ const MobileDrawer = ({
                 <Link
                   to="/login"
                   onClick={closeMenu}
-                  className={`flex min-h-[48px] w-full items-center gap-3 rounded-lg border-l-4 px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
-                    isActive("/login")
+                  className={`flex min-h-[48px] w-full items-center gap-3 rounded-lg border-l-4 px-3 py-2.5 text-sm font-medium transition-all duration-200 ${isActive("/login")
                       ? "border-primary text-text font-semibold"
                       : "border-transparent text-text-light hover:text-text"
-                  }`}
+                    }`}
                 >
                   <LogIn className="w-5 h-5" />
                   {t("nav.signIn")}
@@ -241,11 +233,10 @@ const MobileDrawer = ({
                 <Link
                   to="/signup"
                   onClick={closeMenu}
-                  className={`flex min-h-[48px] w-full items-center gap-3 rounded-lg border-l-4 px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
-                    isActive("/signup")
+                  className={`flex min-h-[48px] w-full items-center gap-3 rounded-lg border-l-4 px-3 py-2.5 text-sm font-medium transition-all duration-200 ${isActive("/signup")
                       ? "border-primary text-text font-semibold"
                       : "border-transparent text-text-light hover:text-text"
-                  }`}
+                    }`}
                 >
                   <UserPlus className="w-5 h-5" />
                   {t("nav.signUp")}
@@ -286,19 +277,10 @@ const MobileDrawer = ({
               </div>
 
               <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={toggleCursor}
-                  aria-pressed={cursorEnabled}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
-                    cursorEnabled
-                      ? "border-primary/40 bg-primary/10 text-primary"
-                      : "border-border hover:bg-bg-secondary"
-                  }`}
-                >
-                  <MousePointer size={18} />
-                  <span>Cursor {cursorEnabled ? "On" : "Off"}</span>
-                </button>
+                <div className="flex items-center justify-between py-2 px-1">
+                  <span className="text-sm font-medium text-text">Cursor Style</span>
+                  <CursorToggle cursorStyle={cursorStyle} setCursorStyle={setCursorStyle} />
+                </div>
               </div>
             </div>
           </div>

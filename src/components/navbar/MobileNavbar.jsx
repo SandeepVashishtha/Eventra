@@ -7,8 +7,8 @@ const MobileNavbar = ({
   isAuthenticated,
   user,
   logout,
-  cursorEnabled,
-  toggleCursor,
+  cursorStyle,
+  setCursorStyle,
 }) => {
   return (
     <>
@@ -34,8 +34,8 @@ const MobileNavbar = ({
         isAuthenticated={isAuthenticated}
         user={user}
         logout={logout}
-        cursorEnabled={cursorEnabled}
-        toggleCursor={toggleCursor}
+        cursorStyle={cursorStyle}
+        setCursorStyle={setCursorStyle}
       />
     </>
   );

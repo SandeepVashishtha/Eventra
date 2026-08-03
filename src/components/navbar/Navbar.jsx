@@ -11,7 +11,7 @@ import useBodyScrollLock from "./hooks/useBodyScrollLock";
 import useKeyboardShortcuts from "hooks/useKeyboardShortcuts";
 import { motion, useScroll, useSpring } from "framer-motion";
 
-const Navbar = ({ cursorEnabled, toggleCursor }) => {
+const Navbar = ({ cursorStyle, setCursorStyle }) => {
   const navRef = useRef(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -144,8 +144,8 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
                 isAuthenticated={authenticated}
                 user={user}
                 logout={logout}
-                cursorEnabled={cursorEnabled}
-                toggleCursor={toggleCursor}
+                cursorStyle={cursorStyle}
+                setCursorStyle={setCursorStyle}
               />
             </div>
           </div>

@@ -43,6 +43,8 @@ const ExploreEvents = lazy(() => import("./Pages/Events/EventsPage"));
 
 // Non-critical UI - deferred after first paint
 const FluidCursor = lazy(() => import("./components/visual/FluidCursor"));
+const GlowCursor = lazy(() => import("./components/visual/GlowCursor"));
+const SparkleCursor = lazy(() => import("./components/visual/SparkleCursor"));
 const KeyboardShortcutsModal = lazy(() => import("./components/common/KeyboardShortcutsModal"));
 const OnboardingChecklist = lazy(() => import("./components/user/OnboardingChecklist"));
 const FeedbackButton = lazy(() => import("./components/FeedbackButton"));
@@ -68,13 +70,14 @@ function App() {
       {t("app.loading")}
     </div>
   );
-  const [cursorEnabled, setCursorEnabled] = useState(() => {
-    try {
-      return localStorage.getItem("cursor") !== "off";
-    } catch {
-      return true; // fallback safe default
-    }
-  });
+  // Enhancement (Issue #11127): Replace boolean with style string
+const [cursorStyle, setCursorStyle] = useState(() => {
+  try {
+    return localStorage.getItem("cursorStyle") || "fluid";
+  } catch {
+    return "fluid";
+  }
+});
   const [showKeyboardModal, setShowKeyboardModal] = useState(false);
   const [showChatbot, setShowChatbot] = useState(false);
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
@@ -173,7 +176,7 @@ function App() {
 <ScrollRestoration />
               <div className="App">
                 <ErrorBoundary level="section" label="Navigation Bar">
-                  <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
+                  <Navbar cursorStyle={cursorStyle} setCursorStyle={setCursorStyle} />
                 </ErrorBoundary>
 
                 <OfflineBanner />
@@ -279,7 +282,9 @@ function App() {
                 {isDesktop && (
                   <ErrorBoundary level="section" label="Custom Cursor" silent>
                     <Suspense fallback={null}>
-                      <FluidCursor enabled={cursorEnabled && !isHomePage} />
+                      <FluidCursor enabled={cursorStyle === "fluid" && !isHomePage} />
+                      <GlowCursor enabled={cursorStyle === "glow" && !isHomePage} />
+                      <SparkleCursor enabled={cursorStyle === "sparkle" && !isHomePage} />
                     </Suspense>
                   </ErrorBoundary>
                 )}
