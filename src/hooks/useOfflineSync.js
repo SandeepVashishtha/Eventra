@@ -322,7 +322,7 @@ const useOfflineSync = () => {
 
           if (retries >= MAX_RETRIES) {
             droppedCount++;
-            failedQueue.push(item);
+            logger.warn(`[useOfflineSync] Item ${item.id} exceeded MAX_RETRIES (${MAX_RETRIES}). Dropping from queue.`);
             continue;
           }
 
