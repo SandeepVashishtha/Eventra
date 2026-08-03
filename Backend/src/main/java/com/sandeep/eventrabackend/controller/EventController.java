@@ -1,5 +1,6 @@
 package com.sandeep.eventrabackend.controller;
 
+import com.sandeep.eventrabackend.dto.request.CancelEventRequest;
 import com.sandeep.eventrabackend.dto.request.EventCreateRequest;
 import com.sandeep.eventrabackend.dto.request.EventUpdateRequest;
 import com.sandeep.eventrabackend.dto.request.RegistrationRequest;
@@ -410,6 +411,70 @@ public class EventController {
             @PathVariable Long id) {
 
         return ResponseEntity.ok(eventService.getOccupiedSeats(id));
+    }
+
+    // ── Event cancellation ─ POST /api/events/{id}/cancel ─────────────────
+
+    @PostMapping("/{id}/cancel")
+    @PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN', 'SUPER_ADMIN')")
+    @Operation(
+            summary = "Cancel an event",
+            description = "Cancels an event. Only the event's own organizer or an " +
+                          "administrator (ADMIN / SUPER_ADMIN) may cancel an event.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Event cancelled successfully",
+                    content = @Content(
+                            schema = @Schema(implementation = EventResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid payload (validation failed)",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - JWT token missing or invalid",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Forbidden - User is not the event owner or an administrator",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Event not found",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Event is already cancelled",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            )
+    })
+    public ResponseEntity<EventResponse> cancelEvent(
+            @Parameter(description = "ID of the event to cancel")
+            @PathVariable Long id,
+            @Valid @RequestBody CancelEventRequest request,
+            Authentication authentication) {
+
+        return ResponseEntity.ok(
+                eventService.cancelEvent(id, authentication.getName(), request));
     }
 
     // ── Issue #2100 — DELETE /api/events/{id} ───────────────────────────────
