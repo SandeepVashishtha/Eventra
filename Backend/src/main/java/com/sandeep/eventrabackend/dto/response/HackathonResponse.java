@@ -47,4 +47,7 @@ public class HackathonResponse {
 
     @Schema(description = "URL to the hackathon's promotional image", example = "https://example.com/hackathon.png")
     private String imageUrl;
+
+    @Schema(description = "ID of the user who owns/created this hackathon", example = "10")
+    private Long ownerId;
 }
