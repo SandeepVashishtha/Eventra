@@ -161,7 +161,7 @@ const ReminderControls = ({ event, canSetReminder, compact = false }) => {
         {REMINDER_TIMINGS.map((timing) => {
           const isActive = activeTimingSet.has(timing.value);
           // 🔥 FIX: Disable if event passed OR if this specific button is currently processing
-          const isDisabled = eventHasPassed || processingTiming === timing.value;
+          const isDisabled = eventHasPassed || processingTiming !== null;
 
           return (
             <button
