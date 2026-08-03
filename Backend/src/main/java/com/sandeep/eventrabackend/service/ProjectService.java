@@ -5,6 +5,12 @@ import com.sandeep.eventrabackend.dto.response.ProjectResponse;
 import com.sandeep.eventrabackend.exception.ProjectNotFoundException;
 import com.sandeep.eventrabackend.model.Project;
 import com.sandeep.eventrabackend.repository.ProjectRepository;
+import com.sandeep.eventrabackend.model.ProjectUpvote;
+import com.sandeep.eventrabackend.model.User;
+import com.sandeep.eventrabackend.repository.ProjectUpvoteRepository;
+import com.sandeep.eventrabackend.repository.UserRepository;
+import com.sandeep.eventrabackend.exception.RegistrationConflictException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,9 +21,15 @@ import java.util.stream.Collectors;
 public class ProjectService {
 
     private final ProjectRepository projectRepository;
+    private final ProjectUpvoteRepository projectUpvoteRepository;
+    private final UserRepository userRepository;
 
-    public ProjectService(ProjectRepository projectRepository) {
+    public ProjectService(ProjectRepository projectRepository,
+                          ProjectUpvoteRepository projectUpvoteRepository,
+                          UserRepository userRepository) {
         this.projectRepository = projectRepository;
+        this.projectUpvoteRepository = projectUpvoteRepository;
+        this.userRepository = userRepository;
     }
 
     @Transactional
@@ -49,10 +61,24 @@ public class ProjectService {
     }
 
     @Transactional
-    public ProjectResponse upvoteProject(Long id) {
-        if (projectRepository.incrementUpvotes(id) == 0) {
-            throw new ProjectNotFoundException("Project not found with id: " + id);
+    public ProjectResponse upvoteProject(Long id, String userEmail) {
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new ProjectNotFoundException("Project not found with id: " + id));
+
+        User user = userRepository.findByEmail(userEmail).orElse(null);
+        if (user != null) {
+            if (projectUpvoteRepository.existsByProject_IdAndUser_Id(id, user.getId())) {
+                throw new RegistrationConflictException("You have already upvoted this project.");
+            }
+
+            ProjectUpvote upvote = ProjectUpvote.builder()
+                    .project(project)
+                    .user(user)
+                    .build();
+            projectUpvoteRepository.save(upvote);
         }
+
+        projectRepository.incrementUpvotes(id);
         return getProjectById(id);
     }
 
