@@ -52,21 +52,22 @@ public class AuthService {
             throw new PasswordMismatchException("Password and confirm password do not match");
         }
 
-        // 2. Check for duplicate email
-        if (userRepository.existsByEmail(request.getEmail())) {
+        // 2. Check for duplicate email (case-insensitive)
+        String normalizedEmail = request.getEmail().toLowerCase();
+        if (userRepository.existsByEmail(normalizedEmail)) {
             throw new UserAlreadyExistsException(
-                    "An account with email '" + request.getEmail() + "' already exists");
+                    "An account with email '" + normalizedEmail + "' already exists");
         }
 
         // 3. Derive username from email (local part) and ensure uniqueness
-        String baseUsername = request.getEmail().split("@")[0].toLowerCase();
+        String baseUsername = normalizedEmail.split("@")[0].toLowerCase();
         String username = generateUniqueUsername(baseUsername);
 
         // 4. Persist the user
         User user = User.builder()
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
-                .email(request.getEmail().toLowerCase())
+                .email(normalizedEmail)
                 .username(username)
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(Role.CLIENT)
