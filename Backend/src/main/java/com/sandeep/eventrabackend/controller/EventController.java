@@ -7,6 +7,7 @@ import com.sandeep.eventrabackend.dto.response.ErrorResponse;
 import com.sandeep.eventrabackend.dto.response.EventAvailabilityResponse;
 import com.sandeep.eventrabackend.dto.response.EventResponse;
 import com.sandeep.eventrabackend.dto.response.RegistrationResponse;
+import com.sandeep.eventrabackend.dto.response.WaitlistResponse;
 import com.sandeep.eventrabackend.model.Event;
 import com.sandeep.eventrabackend.service.EventService;
 import com.sandeep.eventrabackend.service.EventStreamService;
@@ -250,12 +251,75 @@ public class EventController {
     })
     public ResponseEntity<EventAvailabilityResponse> getEventAvailability(
             @Parameter(description = "ID of the event")
-            @PathVariable Long id) {
+            @PathVariable Long id,
+            Authentication authentication) {
 
         EventAvailabilityResponse response =
-                eventService.getEventAvailability(id);
+                eventService.getEventAvailability(
+                        id,
+                        authentication == null ? null : authentication.getName());
 
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{id}/waitlist")
+    @Operation(
+            summary = "Join an event waitlist",
+            description = "Adds the authenticated user to the waitlist when an event is full.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<WaitlistResponse> joinWaitlist(
+            @Parameter(description = "ID of the event")
+            @PathVariable Long id,
+            Authentication authentication) {
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(eventService.joinWaitlist(id, authentication.getName()));
+    }
+
+    @GetMapping("/{id}/waitlist")
+    @PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN', 'SUPER_ADMIN')")
+    @Operation(
+            summary = "List waitlisted users for an event",
+            description = "Admin and organizer view of active waitlist entries.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<List<WaitlistResponse>> getWaitlist(
+            @Parameter(description = "ID of the event")
+            @PathVariable Long id) {
+
+        return ResponseEntity.ok(eventService.getEventWaitlist(id));
+    }
+
+    @DeleteMapping("/{id}/waitlist")
+    @Operation(
+            summary = "Leave an event waitlist",
+            description = "Removes the authenticated user's active waitlist entry.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<Void> leaveWaitlist(
+            @Parameter(description = "ID of the event")
+            @PathVariable Long id,
+            Authentication authentication) {
+
+        eventService.leaveWaitlist(id, authentication.getName());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/waitlist/{waitlistId}/promote")
+    @PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN', 'SUPER_ADMIN')")
+    @Operation(
+            summary = "Manually promote a waitlisted user",
+            description = "Registers a waitlisted user when a spot is available.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<RegistrationResponse> promoteWaitlistedUser(
+            @Parameter(description = "ID of the event")
+            @PathVariable Long id,
+            @Parameter(description = "ID of the waitlist entry")
+            @PathVariable Long waitlistId) {
+
+        return ResponseEntity.ok(eventService.promoteWaitlistedUser(id, waitlistId));
     }
 
     // ── Issue #2102 — POST /api/events/{id}/register ─────────────────────────
@@ -313,6 +377,21 @@ public class EventController {
                 eventService.registerUserForEvent(id, userEmail, seatId);
 
         return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{id}/registration")
+    @Operation(
+            summary = "Cancel the authenticated user's event registration",
+            description = "Cancels a confirmed registration and auto-promotes the first waitlisted user.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<Void> cancelRegistration(
+            @Parameter(description = "ID of the event")
+            @PathVariable Long id,
+            Authentication authentication) {
+
+        eventService.cancelRegistration(id, authentication.getName());
+        return ResponseEntity.noContent().build();
     }
 
     // ── Issue #11025 — GET /api/events/{id}/seats ───────────────────────────

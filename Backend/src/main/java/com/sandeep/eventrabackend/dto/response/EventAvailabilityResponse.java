@@ -54,6 +54,12 @@ public class EventAvailabilityResponse {
     )
     private boolean eventPassed;
 
+    @Schema(description = "Authenticated user's active waitlist position, if queued.")
+    private Integer waitlistPosition;
+
+    @Schema(description = "True when the authenticated user is currently queued for this event.")
+    private boolean waitlisted;
+
     // ── Alias fields (issue #2101 spec names) ────────────────────────────────
 
     /**
