@@ -286,9 +286,10 @@ public class EventController {
     )
     public ResponseEntity<List<WaitlistResponse>> getWaitlist(
             @Parameter(description = "ID of the event")
-            @PathVariable Long id) {
+            @PathVariable Long id,
+            Authentication authentication) {
 
-        return ResponseEntity.ok(eventService.getEventWaitlist(id));
+        return ResponseEntity.ok(eventService.getEventWaitlist(id, authentication.getName()));
     }
 
     @DeleteMapping("/{id}/waitlist")

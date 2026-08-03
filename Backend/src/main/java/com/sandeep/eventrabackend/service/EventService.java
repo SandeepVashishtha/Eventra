@@ -318,9 +318,17 @@ public class EventService {
     }
 
     @Transactional(readOnly = true)
-    public List<WaitlistResponse> getEventWaitlist(Long eventId) {
-        if (!eventRepository.existsById(eventId)) {
-            throw new EventNotFoundException("Event not found with id: " + eventId);
+    public List<WaitlistResponse> getEventWaitlist(Long eventId, String userEmail) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + eventId));
+
+        User currentUser = userRepository.findByEmail(userEmail).orElse(null);
+        if (currentUser != null) {
+            boolean isAdmin = currentUser.getRole() == Role.ADMIN || currentUser.getRole() == Role.SUPER_ADMIN;
+            if (!isAdmin && event.getOwnerId() != null && !event.getOwnerId().equals(currentUser.getId())) {
+                throw new AccessDeniedException(
+                        "Only the event's own organizer (or an administrator) can view this waitlist.");
+            }
         }
 
         return eventWaitlistRepository
