@@ -26,6 +26,14 @@ import { validateTicket, recordCheckIn, fetchCheckInHistory, fetchScannerEvents,
 import "./TicketScanner.css";
 const HISTORY_CACHE_KEY = "eventra_checkins_cache";
 
+const triggerScanFeedback = (status) => {
+  if (typeof window === "undefined") return;
+  if ("vibrate" in navigator) {
+    if (status === "verified") navigator.vibrate(100);
+    else navigator.vibrate([150, 50, 150]);
+  }
+};
+
 export default function TicketScanner() {
   const { user } = useAuth();
   const [devices, setDevices] = useState([]);
@@ -230,6 +238,7 @@ export default function TicketScanner() {
     }
 
     if (!ticketData || typeof ticketData !== 'object' || !ticketData.ticketId) {
+      triggerScanFeedback("flagged");
       setScanResult({
         status: "flagged",
         message: "Invalid QR Code format. Ticket is secure and cannot be verified.",
@@ -333,6 +342,7 @@ export default function TicketScanner() {
 
       await recordCheckIn(ticketId, eventId, { validatedAt: new Date().toISOString() });
 
+      triggerScanFeedback("verified");
       setScanResult({
         status: "verified",
         data: ticketData,
