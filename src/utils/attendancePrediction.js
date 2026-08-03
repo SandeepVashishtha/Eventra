@@ -1,4 +1,7 @@
-const clamp01 = (value) => Math.max(0, Math.min(1, Number(value) || 0));
+const clamp01 = (value) => {
+  const n = Number(value);
+  return Number.isNaN(n) ? 0 : Math.max(0, Math.min(1, n));
+};
 
 const parseEventDate = (event) => {
   if (!event) return null;
@@ -156,8 +159,8 @@ export const computeAttendancePrediction = (event = {}, options = {}) => {
       getEngagementScore(event) * weights.engagement
   );
 
-  const attendanceProbability = Math.round(probability * 100);
-  const noShowProbability = Math.round((1 - probability) * 100);
+  const attendanceProbability = Number.isNaN(probability) ? 0 : Math.round(probability * 100);
+  const noShowProbability = Number.isNaN(probability) ? 100 : Math.round((1 - probability) * 100);
   
   // Deep Fix: Predict attendees based on *actual registrants*, not total venue capacity
   const predictedAttendees = attendees > 0 ? Math.round(probability * attendees) : 0;
