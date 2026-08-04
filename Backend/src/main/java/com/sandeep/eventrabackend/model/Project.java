@@ -32,5 +32,5 @@ public class Project {
     private String githubUrl;
 
     @Builder.Default
-    private int upvotes = 0;
+    private long upvotes = 0;
 }
