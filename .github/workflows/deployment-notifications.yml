@@ -8,6 +8,7 @@ jobs:
     # Only notify when the deployment has reached a terminal state
     if: github.event.deployment_status.state == 'success' || github.event.deployment_status.state == 'failure' || github.event.deployment_status.state == 'error'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@v2

@@ -12,6 +12,7 @@ jobs:
   label:
     name: Auto Label PR Size
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Ensure jq is available
         run: |

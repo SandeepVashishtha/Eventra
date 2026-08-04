@@ -11,6 +11,7 @@ permissions:
 jobs:
   unassign-stale:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Unassign stale assignees (nuanced)
         uses: actions/github-script@v7
