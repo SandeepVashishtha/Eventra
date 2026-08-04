@@ -135,12 +135,17 @@ export default function TicketScanner() {
   }, [selectedEventId, fetchStats]);
 
   const stopScanner = async () => {
-    if (qrCodeInstanceRef.current && qrCodeInstanceRef.current.isScanning) {
+    if (qrCodeInstanceRef.current) {
       try {
-        await qrCodeInstanceRef.current.stop();
-        if (isMountedRef.current) setScannerStatus("stopped");
+        if (qrCodeInstanceRef.current.isScanning) {
+          await qrCodeInstanceRef.current.stop();
+        }
+        await qrCodeInstanceRef.current.clear();
       } catch (err) {
         console.error("Failed to stop scanner:", err);
+      } finally {
+        qrCodeInstanceRef.current = null;
+        if (isMountedRef.current) setScannerStatus("stopped");
       }
     }
   };
@@ -660,7 +665,7 @@ export default function TicketScanner() {
               {scanResult.status === "flagged" && (
                 <>
                   <XCircle className="w-16 h-16 text-rose-500 animate-bounce mb-3" />
-                  <span className="text-[10px] font-black tracking-widest uppercase bg-rose-500/20 text-rose-455 px-3 py-1 rounded-full mb-2">Flagged / Security Alert</span>
+                  <span className="text-[10px] font-black tracking-widest uppercase bg-rose-500/20 text-rose-500 px-3 py-1 rounded-full mb-2">Flagged / Security Alert</span>
                 </>
               )}
               {scanResult.status === "duplicate" && (
@@ -699,7 +704,7 @@ export default function TicketScanner() {
               )}
 
               {scanResult.raw && (
-                <div className="my-3 p-3 border border-red-500/20 bg-red-950/20 rounded-xl w-full max-w-sm text-xs font-mono text-rose-455 text-left truncate">Raw content: {scanResult.raw}</div>
+                <div className="my-3 p-3 border border-red-500/20 bg-red-950/20 rounded-xl w-full max-w-sm text-xs font-mono text-rose-500 text-left truncate">Raw content: {scanResult.raw}</div>
               )}
 
               <button onClick={handleResetScan} className="mt-2 inline-flex items-center gap-1.5 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white rounded-xl shadow-lg hover:shadow-indigo-500/25 transition-all" aria-label="Scan next ticket">
@@ -745,7 +750,7 @@ export default function TicketScanner() {
                     <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider ${
                       item.status === "Verified" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-450" :
                       item.status === "Queued" ? "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400" :
-                      "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-455"
+                      "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-500"
                     }`}>{item.status}</span>
                   </div>
                 </div>
