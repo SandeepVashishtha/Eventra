@@ -24,6 +24,7 @@ import com.sandeep.eventrabackend.repository.NotificationRepository;
 import com.sandeep.eventrabackend.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -502,14 +503,6 @@ public class EventService {
                     "You are already registered for this event.");
         }
 
-        if (seatId != null && !seatId.isBlank()) {
-            eventRegistrationRepository.findByEvent_IdAndSeatId(eventId, seatId)
-                    .ifPresent(existing -> {
-                        throw new RegistrationConflictException(
-                                "Seat " + seatId + " is already taken.");
-                    });
-        }
-
         if (event.getCapacity() != null
                 && event.getRegisteredCount() >= event.getCapacity()) {
 
@@ -529,7 +522,12 @@ public class EventService {
         registration.setStatus("CONFIRMED");
         registration.setSeatId(seatId);
 
-        registration = eventRegistrationRepository.save(registration);
+        try {
+            registration = eventRegistrationRepository.saveAndFlush(registration);
+        } catch (DataIntegrityViolationException ex) {
+            throw new RegistrationConflictException(
+                    "Seat " + seatId + " is already taken.");
+        }
 
         Integer spotsRemaining =
                 (saved.getCapacity() == null)
