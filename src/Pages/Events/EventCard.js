@@ -56,7 +56,7 @@ const getCapacityStyles = (ratio, isFull) => {
   };
 };
 
-const EventCard = ({ event }) => {
+const EventCard = ({ event, position }) => {
   const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
   const titleId = useId();
   const { myEvents, isRegistered } = useMyEvents();
@@ -246,6 +246,9 @@ const durationText = getEventDuration(event);
 
       {/* Header */}
       <div className="flex items-center px-5 py-4 gap-4 bg-linear-to-r from-white/80 to-indigo-50/60 dark:from-gray-900/80 dark:to-indigo-950/60 border-b border-gray-100 dark:border-gray-800 rounded-t-3xl">
+      <div className="absolute left-3 top-3 z-20 rounded-full bg-indigo-600 px-2 py-1 text-xs font-bold text-white shadow">
+  #{position}
+</div>
         <div className="p-2 bg-linear-to-br from-gray-100 to-white dark:from-gray-800 dark:to-gray-700 rounded-xl shadow-inner shrink-0">
           {randomIcon}
         </div>
