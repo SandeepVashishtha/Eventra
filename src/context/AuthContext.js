@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useCallback, useRef, use
 import { setOnUnauthorizedHandler, setRequiresReauthHandler, setAuthToken, apiUtils } from "../config/api.js";
 import { authService } from "../services/authService.js";
 import { syncSecureStorage } from "../utils/secureStorage.js";
+import { clearWaitlistCache } from "../utils/waitlistUtils.js";
 import { usePermissions, normalizeRoles } from "../hooks/usePermissions.js";
 import { useTokenExpiry } from "../hooks/useTokenExpiry.js";
 import { isTokenValid } from "../utils/tokenUtils.js";
@@ -28,7 +29,24 @@ export const useAuth = () => {
     typeof globalThis !== "undefined" &&
     typeof globalThis.mockAuth === "function"
   ) {
-    return globalThis.mockAuth();
+    const mock = globalThis.mockAuth();
+    // Even in development, the forged session is validated against the real
+    // permission model so the test seam resolves roles/permissions exactly like
+    // a production session instead of trusting arbitrary mock claims.
+    if (mock && typeof mock === "object") {
+      const rawUser = mock.user ?? {};
+      const rawRoles = mock.roles ?? rawUser.roles ?? (rawUser.role ? [rawUser.role] : []);
+      const roles = normalizeRoles(rawRoles);
+      const permissions = Array.from(
+        new Set([
+          ...(Array.isArray(mock.permissions) ? mock.permissions.map((p) => String(p)) : []),
+          ...(Array.isArray(rawUser.permissions) ? rawUser.permissions.map((p) => String(p)) : []),
+          ...roles.flatMap((role) => ROLE_PERMISSIONS[role] || []),
+        ])
+      );
+      return { ...mock, roles, permissions, user: { ...rawUser, roles, permissions } };
+    }
+    return mock;
   }
   if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
@@ -90,6 +108,12 @@ export const AuthProvider = ({ children }) => {
   // Ref to track mounting status and prevent setting state on unmounted components
   const isMountedRef = useRef(true);
 
+  // Ref so session-clear flows can purge the current user's waitlist PII cache
+  const userIdRef = useRef(null);
+  useEffect(() => {
+    userIdRef.current = user?.id || user?.email || null;
+  }, [user]);
+
   // Ref to track whether session expired toast has already been displayed to prevent spamming
   const expiryToastShownRef = useRef(false);
 
@@ -121,6 +145,11 @@ export const AuthProvider = ({ children }) => {
 
     // Clear user metadata from secure/local storage manager
     syncSecureStorage.removeItem("user");
+
+    // Purge the current user's waitlist PII cache so it does not outlive the session
+    if (userIdRef.current) {
+      clearWaitlistCache(userIdRef.current);
+    }
     return true;
   }, []);
 
@@ -260,32 +289,7 @@ export const AuthProvider = ({ children }) => {
    * Monitor token age and expiry limits dynamically.
    * Auto-schedules logout timers or fallback verification intervals.
    */
-  useEffect(() => {
-    if (!token || token === "cookie-managed") return;
-    expiryToastShownRef.current = false;
-
-    const expSeconds = user?.exp;
-    let timerId;
-
-    if (typeof expSeconds === "number") {
-      const msUntilExpiry = expSeconds * 1000 - Date.now() + 1000;
-      timerId = setTimeout(() => {
-        clearExpiredSession();
-      }, Math.max(msUntilExpiry, 0));
-    } else {
-      timerId = setInterval(() => {
-        if (!isTokenValid(token)) clearExpiredSession();
-      }, 60000);
-    }
-
-    return () => {
-      if (typeof expSeconds === "number") {
-        clearTimeout(timerId);
-      } else {
-        clearInterval(timerId);
-      }
-    };
-  }, [token, user?.exp, clearExpiredSession]);
+  // Session expiry timer is centrally managed by useTokenExpiry above to avoid duplicate execution.
 
   /**
    * Persists the active session state to local variables and secure cache.

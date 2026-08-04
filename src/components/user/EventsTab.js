@@ -248,9 +248,8 @@ const WaitlistCard = memo(({ event, index, onLeaveWaitlist }) => {
   useEffect(() => {
     if (!user) return;
     import("utils/waitlistUtils")
-      .then(({ getQueuePosition }) => {
-        setQueuePos(getQueuePosition(event.id, user.id || user.email));
-      })
+      .then(({ getQueuePosition }) => getQueuePosition(event.id, user.id || user.email))
+      .then(setQueuePos)
       .catch(() => setQueuePos(-1));
   }, [event.id, user]);
 
@@ -444,8 +443,8 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
     setIsLoading(true);
     if (user) {
       import("utils/waitlistUtils.js")
-        .then(({ getGlobalWaitlist }) => {
-          const records = getGlobalWaitlist();
+        .then(async ({ getGlobalWaitlist }) => {
+          const records = await getGlobalWaitlist(user.id || user.email);
           const userId = user.id || user.email;
           const userWaitlists = records.filter(r => r.userId === userId && r.status === 'waiting');
           const resolved = userWaitlists.map(w => {
@@ -563,7 +562,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
     try {
       const { getGlobalWaitlist, saveGlobalWaitlist, leaveWaitlist } = await import("utils/waitlistUtils.js");
       const userId = user.id || user.email;
-      const records = getGlobalWaitlist();
+      const records = await getGlobalWaitlist(userId);
       const recordIndex = records.findIndex(
         (record) => String(record.eventId) === String(eventId) && record.userId === userId && record.status === "waiting"
       );
@@ -576,22 +575,22 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
           status: "removed",
           removedAt: new Date().toISOString(),
         };
-        saveGlobalWaitlist(optimisticRecords);
+        await saveGlobalWaitlist(optimisticRecords, userId);
       }
 
       triggerWaitlistUpdate();
       showUndoToast({
         message: `Left the waitlist for "${eventTitle}".`,
         toastId: `dashboard-leave-waitlist-${eventId}`,
-        onUndo: () => {
+        onUndo: async () => {
           if (!previousRecord) return;
-          const latest = getGlobalWaitlist();
+          const latest = await getGlobalWaitlist(userId);
           const restoreIndex = latest.findIndex(
             (record) => String(record.eventId) === String(eventId) && record.userId === userId
           );
           const restored = restoreIndex >= 0 ? [...latest] : [previousRecord, ...latest];
           if (restoreIndex >= 0) restored[restoreIndex] = previousRecord;
-          saveGlobalWaitlist(restored);
+          await saveGlobalWaitlist(restored, userId);
           triggerWaitlistUpdate();
         },
         onCommit: async () => {
@@ -599,9 +598,9 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
             await leaveWaitlist(eventId, userId);
           } catch (err) {
             if (previousRecord) {
-              const latest = getGlobalWaitlist();
+              const latest = await getGlobalWaitlist(userId);
               if (!latest.some((record) => String(record.eventId) === String(eventId) && record.userId === userId && record.status === "waiting")) {
-                saveGlobalWaitlist([previousRecord, ...latest]);
+                await saveGlobalWaitlist([previousRecord, ...latest], userId);
               }
               triggerWaitlistUpdate();
             }

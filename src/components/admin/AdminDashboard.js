@@ -141,13 +141,13 @@ const AdminDashboard = () => {
         getWaitlistAnalytics,
         syncWaitlistFromServer,
       }) => {
-        await syncWaitlistFromServer(eventId);
+        await syncWaitlistFromServer(eventId, user?.id);
         setWaitlistUsers(
-          getEventWaitlist(eventId)
+          await getEventWaitlist(eventId, user?.id)
         );
 
         setWaitlistAnalytics(
-          getWaitlistAnalytics(eventId)
+          await getWaitlistAnalytics(eventId, user?.id)
         );
       }
     )
@@ -155,7 +155,7 @@ const AdminDashboard = () => {
       setWaitlistUsers([]);
       setWaitlistAnalytics(null);
     });
-}, []);
+}, [user]);
 
   const openWaitlistModal = (event) => {
     setSelectedWaitlistEvent(event);
@@ -167,7 +167,7 @@ const AdminDashboard = () => {
     if (window.confirm("Are you sure you want to remove this user from the waitlist?")) {
       try {
         const { organizerRemoveUser } = await import("utils/waitlistUtils.js");
-        await organizerRemoveUser(selectedWaitlistEvent.id, userId);
+        await organizerRemoveUser(selectedWaitlistEvent.id, userId, user?.id);
         toast.success("User removed from waitlist.");
         loadWaitlist(selectedWaitlistEvent.id);
       } catch (err) {
@@ -195,7 +195,7 @@ const AdminDashboard = () => {
         attendees: selectedWaitlistEvent.attendees
       };
 
-      const promotedCount = await handleCapacityIncrease(updatedEvent, newCap);
+      const promotedCount = await handleCapacityIncrease(updatedEvent, newCap, user?.id);
 
       const cacheKey = `event_detail_${selectedWaitlistEvent.id}`;
       const raw = localStorage.getItem(cacheKey);

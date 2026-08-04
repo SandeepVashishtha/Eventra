@@ -58,8 +58,8 @@ export function validateImageFile(file, options = {}) {
   }
 
   // Check file extension
-  const fileName = file.name.toLowerCase();
-  const ext = "." + fileName.split(".").pop();
+  const cleanName = file.name.trim().replace(/\.+$/, "");
+  const ext = "." + cleanName.split(".").pop().toLowerCase();
 
   if (DANGEROUS_EXTENSIONS.includes(ext)) {
     return {
@@ -101,8 +101,8 @@ export function validateFile(file, options = {}) {
     };
   }
 
-  const fileName = file.name.toLowerCase();
-  const ext = "." + fileName.split(".").pop();
+  const cleanName = file.name.trim().replace(/\.+$/, "");
+  const ext = "." + cleanName.split(".").pop().toLowerCase();
 
   if (DANGEROUS_EXTENSIONS.includes(ext)) {
     return {

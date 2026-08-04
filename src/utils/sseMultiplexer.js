@@ -112,8 +112,12 @@ class SseMultiplexer {
       window.addEventListener("beforeunload", this.boundTeardown);
       window.addEventListener("pagehide", this.boundTeardown);
       this.boundVisibilityChange = () => {
-        if (typeof document !== "undefined" && document.visibilityState === "hidden") {
-          this.teardown();
+        if (typeof document !== "undefined") {
+          if (document.visibilityState === "hidden") {
+            this.teardown(true);
+          } else if (document.visibilityState === "visible") {
+            this.reconnect();
+          }
         }
       };
       if (typeof document !== "undefined") {
@@ -284,7 +288,7 @@ class SseMultiplexer {
           })
         );
       } catch {
-        // localStorage unavailable — non-fatal, leadership still held in memory
+        // localStorage unavailable — non-fatal
       }
     };
     writeHeartbeat();
@@ -704,33 +708,64 @@ class SseMultiplexer {
     this.lastSeenFollowers = null;
   }
 
+  reconnect() {
+    logger.log(`[SSE Multiplexer] Tab ${this.tabId} became visible, reconnecting...`);
+    if (typeof window !== "undefined") {
+      if (!this.channel) {
+        this.channel = new BroadcastChannel(MULTIPLEX_CHANNEL_NAME);
+        this.channel.onmessage = (e) => this.handleBroadcastMessage(e.data);
+      }
+
+      this.isLeader = false;
+
+      // Ensure pageclose/unload listeners are attached
+      window.removeEventListener("beforeunload", this.boundTeardown);
+      window.addEventListener("beforeunload", this.boundTeardown);
+      window.removeEventListener("pagehide", this.boundTeardown);
+      window.addEventListener("pagehide", this.boundTeardown);
+
+      this.setupLeaderElection();
+    }
+  }
+
   // --- 5. Unload Cleanup ---
-  teardown() {
+  teardown(isVisibilityChange = false) {
     logger.log(`[SSE Multiplexer] Teardown triggered for tab: ${this.tabId}`);
 
     this.stopHeartbeatChecks();
 
     if (this.channel) {
-      this.broadcastMessage({
-        type: "UNSUBSCRIBE_ALL",
-        tabId: this.tabId,
-        paths: Array.from(this.localSubscriptions.keys()),
-      });
-      this.channel.close();
+      try {
+        this.broadcastMessage({
+          type: "UNSUBSCRIBE_ALL",
+          tabId: this.tabId,
+          paths: Array.from(this.localSubscriptions.keys()),
+        });
+      } catch {}
+      try {
+        this.channel.close();
+      } catch {}
+      if (isVisibilityChange) {
+        this.channel = null;
+      }
     }
 
     // Close all physical EventSources if we were the leader
     for (const source of this.activeEventSources.values()) {
-      source.close();
+      try {
+        source.close();
+      } catch {}
     }
     this.activeEventSources.clear();
 
-    if (this.boundTeardown) {
-      window.removeEventListener("beforeunload", this.boundTeardown);
-      window.removeEventListener("pagehide", this.boundTeardown);
-    }
-    if (this.boundVisibilityChange) {
-      document.removeEventListener("visibilitychange", this.boundVisibilityChange);
+    if (!isVisibilityChange) {
+      if (this.boundTeardown) {
+        window.removeEventListener("beforeunload", this.boundTeardown);
+        window.removeEventListener("pagehide", this.boundTeardown);
+      }
+      if (this.boundVisibilityChange) {
+        document.removeEventListener("visibilitychange", this.boundVisibilityChange);
+      }
     }
 
     // Cancel all pending backoff timers on teardown to prevent reconnection
@@ -743,23 +778,23 @@ class SseMultiplexer {
 
     if (this.releaseLockPromise) {
       this.releaseLockPromise();
+      this.releaseLockPromise = null;
     }
 
-    if (this.localStorageInterval) clearInterval(this.localStorageInterval);
-    if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
-    if (this.localStorageClaimTimeout) clearTimeout(this.localStorageClaimTimeout);
+    if (this.localStorageInterval) {
+      clearInterval(this.localStorageInterval);
+      this.localStorageInterval = null;
+    }
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
+    }
+    if (this.localStorageClaimTimeout) {
+      clearTimeout(this.localStorageClaimTimeout);
+      this.localStorageClaimTimeout = null;
+    }
 
     // Remove the heartbeat key from localStorage when this tab was the leader.
-    //
-    // Without this, the stale heartbeat persists after the tab closes. Remaining
-    // tabs read it in checkLeader() and see `now - parsed.timestamp < HEARTBEAT_TIMEOUT`
-    // (7 000 ms) as still valid, so they refuse to claim leadership for up to 7
-    // seconds. During that window no tab owns an SSE connection and real-time
-    // updates are silently dropped for all users.
-    //
-    // A browser crash bypasses beforeunload so the key may still linger —
-    // setupLocalStorageElection already handles that via the HEARTBEAT_TIMEOUT
-    // expiry. This removal covers the clean-close path.
     if (this.isLeader) {
       try {
         localStorage.removeItem(HEARTBEAT_KEY);
@@ -767,6 +802,7 @@ class SseMultiplexer {
         // Non-fatal — the timeout mechanism in checkLeader will handle expiry
       }
     }
+    this.isLeader = false;
   }
 }
 

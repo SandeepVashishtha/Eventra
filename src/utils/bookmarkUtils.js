@@ -126,3 +126,13 @@ export const subscribeToBookmarkChanges = (callback) => {
     window.removeEventListener("storage", handleStorageChange);
   };
 };
+export const importBookmarksJSON = (jsonString) => {
+  try {
+    const parsed = JSON.parse(jsonString);
+    if (Array.isArray(parsed)) {
+      writeBookmarks(parsed.slice(0, MAX_BOOKMARKS));
+      return true;
+    }
+  } catch (e) { console.error(e); }
+  return false;
+};

@@ -14,6 +14,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -76,10 +79,23 @@ public class AdminService {
      */
     @Transactional
     public AdminUserResponse updateUserRole(Long id, String newRole) {
-        User user = userRepository.findById(id)
+        Role requestedRole = parseRole(newRole);
+        User targetUser = userRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
-        user.setRole(parseRole(newRole));
-        return toAdminUserResponse(userRepository.save(user));
+
+        Role callerRole = getAuthenticatedRole();
+
+        if (callerRole != Role.SUPER_ADMIN) {
+            if (requestedRole == Role.SUPER_ADMIN) {
+                throw new AccessDeniedException("Only SUPER_ADMIN users can assign the SUPER_ADMIN role");
+            }
+            if (targetUser.getRole() == Role.SUPER_ADMIN) {
+                throw new AccessDeniedException("Only SUPER_ADMIN users can modify SUPER_ADMIN accounts");
+            }
+        }
+
+        targetUser.setRole(requestedRole);
+        return toAdminUserResponse(userRepository.save(targetUser));
     }
 
     /**
@@ -318,5 +334,13 @@ public class AdminService {
             throw new IllegalArgumentException("Invalid role: " + role +
                     ". Must be one of: CLIENT, ORGANIZER, ADMIN, SUPER_ADMIN");
         }
+    }
+
+    private Role getAuthenticatedRole() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getAuthorities().isEmpty()) {
+            throw new AccessDeniedException("Unable to determine the authenticated user's role");
+        }
+        return Role.valueOf(authentication.getAuthorities().iterator().next().getAuthority());
     }
 }
