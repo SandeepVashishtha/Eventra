@@ -46,6 +46,7 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [isFormValid, setIsFormValid] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
 
   const clearValidationTimer = useCallback(() => {
     validationRunRef.current += 1;
@@ -168,6 +169,7 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
   }, [clearValidationTimer]);
 
   return {
+    isValidating,
     values,
     errors,
     touched,
