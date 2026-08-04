@@ -58,7 +58,8 @@ const TeamWorkspace = () => {
   // SSE Simulator & Fallback Hook
   useEffect(() => {
     let sseSource = null;
-    let fallbackInterval = null;\n      let isMounted = true;
+    let fallbackInterval = null;
+    let isMounted = true;
     let idleTimeout = null;
 
     setConnectionStatus("connecting");
@@ -70,7 +71,8 @@ const TeamWorkspace = () => {
         "SSE connection error. Started HTTP short-polling fallback stream every 4s.",
       ]);
 
-      const fetchState = async () => {\n          if (!isMounted) return;
+      const fetchState = async () => {
+        if (!isMounted) return;
         try {
           const response = await fetch("/api/hackathons/team/sync", {
             method: "POST",

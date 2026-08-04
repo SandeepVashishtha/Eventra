@@ -4,6 +4,8 @@ import { ENV } from "../config/env.js";
 const MULTIPLEX_CHANNEL_NAME = "eventra_sse_multiplexer";
 const LOCK_NAME = "eventra_sse_leader_lock";
 const HEARTBEAT_KEY = "eventra_sse_leader_heartbeat";
+const LOCAL_STORAGE_CONFIRM_MIN_MS = 25;
+const LOCAL_STORAGE_CONFIRM_JITTER_MS = 75;
 // Unique identifier for this tab instance
 const TAB_ID = Math.random().toString(36).substring(2, 9);
 
@@ -72,6 +74,8 @@ class SseMultiplexer {
   constructor() {
     this.tabId = TAB_ID;
     this.isLeader = false;
+    this.localStorageLeadershipToken = null;
+    this.localStorageClaimTimeout = null;
     this.localSubscriptions = new Map(); // path -> Set of local callbacks
     this.globalSubscribers = new Map(); // path -> Set of tabIds
     this.activeEventSources = new Map(); // path -> EventSource instance
@@ -108,11 +112,13 @@ class SseMultiplexer {
       window.addEventListener("beforeunload", this.boundTeardown);
       window.addEventListener("pagehide", this.boundTeardown);
       this.boundVisibilityChange = () => {
-        if (document.visibilityState === "hidden") {
+        if (typeof document !== "undefined" && document.visibilityState === "hidden") {
           this.teardown();
         }
       };
-      document.addEventListener("visibilitychange", this.boundVisibilityChange);
+      if (typeof document !== "undefined") {
+        document.addEventListener("visibilitychange", this.boundVisibilityChange);
+      }
     }
   }
 
@@ -200,17 +206,82 @@ class SseMultiplexer {
     checkLeader();
   }
 
-  claimLocalStorageLeadership() {
+  claimLocalStorageLeadership(heartbeatTimeout = 7000) {
+    if (this.localStorageClaimTimeout || this.isLeader) return;
+
+    const token = `${this.tabId}:${Date.now()}:${Math.random().toString(36).substring(2, 9)}`;
+    const timestamp = Date.now();
+
+    try {
+      const current = localStorage.getItem(HEARTBEAT_KEY);
+      const parsed = current ? JSON.parse(current) : null;
+      if (
+        parsed &&
+        parsed.tabId !== this.tabId &&
+        timestamp - parsed.timestamp < heartbeatTimeout
+      ) {
+        return;
+      }
+
+      localStorage.setItem(HEARTBEAT_KEY, JSON.stringify({ tabId: this.tabId, token, timestamp }));
+    } catch {
+      this.becomeLocalStorageLeader(token);
+      return;
+    }
+
+    const confirmDelay =
+      LOCAL_STORAGE_CONFIRM_MIN_MS + Math.floor(Math.random() * LOCAL_STORAGE_CONFIRM_JITTER_MS);
+
+    this.localStorageClaimTimeout = setTimeout(() => {
+      this.localStorageClaimTimeout = null;
+
+      try {
+        const heartbeat = JSON.parse(localStorage.getItem(HEARTBEAT_KEY) || "null");
+        if (heartbeat?.tabId !== this.tabId || heartbeat?.token !== token) return;
+      } catch {
+        return;
+      }
+
+      this.becomeLocalStorageLeader(token);
+    }, confirmDelay);
+  }
+
+  becomeLocalStorageLeader(token) {
     this.isLeader = true;
+    this.localStorageLeadershipToken = token;
     logger.log(`[SSE Multiplexer] Tab ${this.tabId} claimed leadership via LocalStorage.`);
 
     // Write an immediate heartbeat so other tabs see the new leader without
     // waiting up to HEARTBEAT_INTERVAL (3 s) for the first interval tick.
     const writeHeartbeat = () => {
       try {
+        const current = JSON.parse(localStorage.getItem(HEARTBEAT_KEY) || "null");
+        if (
+          current?.tabId &&
+          current.tabId !== this.tabId &&
+          Date.now() - current.timestamp < 7000
+        ) {
+          for (const source of this.activeEventSources.values()) {
+            source.close();
+          }
+          this.activeEventSources.clear();
+          this.isLeader = false;
+          this.localStorageLeadershipToken = null;
+          if (this.heartbeatInterval) {
+            clearInterval(this.heartbeatInterval);
+            this.heartbeatInterval = null;
+          }
+          this.stopHeartbeatChecks();
+          return;
+        }
+
         localStorage.setItem(
           HEARTBEAT_KEY,
-          JSON.stringify({ tabId: this.tabId, timestamp: Date.now() })
+          JSON.stringify({
+            tabId: this.tabId,
+            token: this.localStorageLeadershipToken,
+            timestamp: Date.now(),
+          })
         );
       } catch {
         // localStorage unavailable — non-fatal, leadership still held in memory
@@ -676,6 +747,7 @@ class SseMultiplexer {
 
     if (this.localStorageInterval) clearInterval(this.localStorageInterval);
     if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
+    if (this.localStorageClaimTimeout) clearTimeout(this.localStorageClaimTimeout);
 
     // Remove the heartbeat key from localStorage when this tab was the leader.
     //
