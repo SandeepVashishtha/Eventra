@@ -7,7 +7,16 @@ import { sanitizeMarkdown } from "../../utils/sanitizeHtml";
 import { toast } from "react-toastify";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
-import { Calendar, MapPin, Clock, Tag, CalendarPlus, Link2, Check } from "lucide-react";
+import {
+  Calendar,
+  MapPin,
+  Clock,
+  Tag,
+  CalendarPlus,
+  Link2,
+  Check,
+  ArrowLeft,
+} from "lucide-react";
 import { getEventStatus, isEventRegistrationClosed } from "../../utils/eventUtils";
 import { isEventBookmarked } from "../../utils/bookmarkUtils";
 import { DRAFT_KEY } from "../../constants/eventDefaults";
@@ -519,9 +528,15 @@ const showClosingSoon =
                 </div>
               )}
 
-              <Link to="/events" className="inline-flex items-center justify-center rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800">
-                Back to Events
-              </Link>
+              
+      
+      <button
+  onClick={() => navigate(-1)}
+  className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
+>
+  <ArrowLeft size={16} />
+  Back to Results
+</button>
             </div>
           </div>
 
