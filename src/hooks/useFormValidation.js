@@ -83,6 +83,9 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
     } else if (typeof validator === 'object' && validator.validate) {
       error = validator.validate(value, allValues);
     }
+    if (error && typeof error.then === 'function') {
+      return error.then(resolved => resolved === true ? null : resolved);
+    }
     return error === true ? null : error;
   }, []);
 
