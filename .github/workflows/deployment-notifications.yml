@@ -3,6 +3,9 @@ name: Deployment Notifications
 on:
   deployment_status:
 
+permissions:
+  contents: read
+
 jobs:
   notify:
     # Only notify when the deployment has reached a terminal state
