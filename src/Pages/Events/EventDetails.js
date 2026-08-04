@@ -33,6 +33,7 @@ import { downloadICSFile, generateGoogleCalendarLink, generateOutlookLink } from
 import { RecentlyViewedTracker } from "components/common/RecentlyViewedEvents";
 import { apiUtils, API_ENDPOINTS } from "config/api";
 import { getLastUpdated } from "utils/LastUpdatedUtils";
+import { getUserTimezone } from "utils/timezoneUtils";
 import mockEvents from "./eventsMockData.json";
 import CopyButton from 'components/ui/CopyButton';
 
@@ -593,6 +594,9 @@ const lastUpdated = getLastUpdated(event.updatedAt);
                   <Calendar className="h-5 w-5 text-indigo-600" />
                   <div>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Date</p>
+<<<<<<< HEAD
+                    <p className="font-semibold">{new Date(event.date).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}</p>
+=======
                     <p className="font-semibold">
                       {eventDate && !isNaN(new Date(eventDate).getTime())
                         ? new Date(eventDate).toLocaleDateString("en-US", {
@@ -603,6 +607,7 @@ const lastUpdated = getLastUpdated(event.updatedAt);
                           })
                         : "Date TBA"}
                     </p>
+>>>>>>> upstream/master
                   </div>
                 </div>
 
@@ -610,7 +615,11 @@ const lastUpdated = getLastUpdated(event.updatedAt);
                   <Clock className="h-5 w-5 text-indigo-600" />
                   <div>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Time</p>
+<<<<<<< HEAD
+                    <p className="font-semibold">{event.time} ({getUserTimezone()})</p>
+=======
                     <p className="font-semibold">{event.time || dateInfo.time || "N/A"}</p>
+>>>>>>> upstream/master
                   </div>
                 </div>
 
