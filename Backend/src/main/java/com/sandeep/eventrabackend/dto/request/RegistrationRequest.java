@@ -25,4 +25,12 @@ public class RegistrationRequest {
             example = "table-1:3"
     )
     private String seatId;
+
+    @Schema(
+            description = "Whether this attendee explicitly opted in to appear in this event's attendee directory.",
+            example = "false",
+            defaultValue = "false"
+    )
+    @Builder.Default
+    private Boolean showProfileInAttendeeDirectory = false;
 }

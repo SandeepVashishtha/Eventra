@@ -132,6 +132,9 @@ public class UserController {
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setUsername(request.getUsername());
+        user.setProfileHeadline(request.getProfileHeadline());
+        user.setLinkedinUrl(request.getLinkedinUrl());
+        user.setGithubUrl(request.getGithubUrl());
 
         User updatedUser = userRepository.save(user);
         return ResponseEntity.ok(mapToUserProfileResponse(updatedUser));
@@ -240,6 +243,9 @@ public class UserController {
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .role(user.getRole() != null ? user.getRole().name() : null)
+                .profileHeadline(user.getProfileHeadline())
+                .linkedinUrl(user.getLinkedinUrl())
+                .githubUrl(user.getGithubUrl())
                 .build();
     }
 }

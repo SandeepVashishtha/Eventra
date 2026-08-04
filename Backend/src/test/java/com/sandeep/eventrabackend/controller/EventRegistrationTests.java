@@ -33,6 +33,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -156,6 +157,61 @@ public class EventRegistrationTests {
                 .andExpect(jsonPath("$.userEmail").value("user1@example.com"))
                 .andExpect(jsonPath("$.registrationStatus").value("CONFIRMED"))
                 .andExpect(jsonPath("$.spotsRemaining").value(4));
+    }
+
+    @Test
+    @DisplayName("#8600 - registrations are private in attendee directory by default")
+    void testAttendeeDirectoryDefaultPrivate() throws Exception {
+        mockMvc.perform(post("/api/events/" + eventId + "/register")
+                        .with(user("user1@example.com")))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/events/" + eventId + "/attendees")
+                        .with(user("user1@example.com")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$").isEmpty());
+    }
+
+    @Test
+    @DisplayName("#8600 - opted-in registered attendees appear in attendee directory")
+    void testAttendeeDirectoryShowsOptedInProfiles() throws Exception {
+        User attendee = userRepository.findByEmail("user1@example.com").orElseThrow();
+        attendee.setProfileHeadline("Full Stack Developer looking for a team");
+        attendee.setLinkedinUrl("https://www.linkedin.com/in/user1");
+        attendee.setGithubUrl("https://github.com/user1");
+        userRepository.save(attendee);
+
+        mockMvc.perform(post("/api/events/" + eventId + "/register")
+                        .with(user("user1@example.com"))
+                        .contentType(APPLICATION_JSON)
+                        .content("{\"showProfileInAttendeeDirectory\":true}"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/events/" + eventId + "/attendees")
+                        .with(user("user1@example.com")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].userId").value(attendee.getId()))
+                .andExpect(jsonPath("$[0].displayName").value("User1 Test"))
+                .andExpect(jsonPath("$[0].username").value("user1"))
+                .andExpect(jsonPath("$[0].profileHeadline").value("Full Stack Developer looking for a team"))
+                .andExpect(jsonPath("$[0].linkedinUrl").value("https://www.linkedin.com/in/user1"))
+                .andExpect(jsonPath("$[0].githubUrl").value("https://github.com/user1"))
+                .andExpect(jsonPath("$[0].email").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("#8600 - unregistered users cannot view attendee directory")
+    void testAttendeeDirectoryRequiresRegistration() throws Exception {
+        mockMvc.perform(post("/api/events/" + eventId + "/register")
+                        .with(user("user1@example.com"))
+                        .contentType(APPLICATION_JSON)
+                        .content("{\"showProfileInAttendeeDirectory\":true}"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/events/" + eventId + "/attendees")
+                        .with(user("user2@example.com")))
+                .andExpect(status().isForbidden());
     }
 
     @Test
