@@ -906,9 +906,9 @@ const EventCreation = () => {
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {formData.tags.map((tag, index) => (
+                  {formData.tags.map((tag) => (
                     <span
-                      key={index}
+                      key={tag}
                       className="inline-flex items-center gap-1 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full text-sm font-medium"
                     >
                       #{tag}
