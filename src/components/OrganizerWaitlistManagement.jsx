@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
+import { useAuth } from 'context/AuthContext';
 import {
-  getEventWaitlist,
+  syncWaitlistFromServer,
   organizerRemoveUser,
   promoteNextUser,
   handleCapacityIncrease,
@@ -13,6 +14,7 @@ import {
  * Provides organizers with tools to manage event waitlists and auto-promotions
  */
 const OrganizerWaitlistManagement = ({ eventId, eventName, currentAttendees = 0, maxAttendees = 0 }) => {
+  const { user } = useAuth();
   const [waitlist, setWaitlist] = useState([]);
   const [analytics, setAnalytics] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -27,12 +29,12 @@ const OrganizerWaitlistManagement = ({ eventId, eventName, currentAttendees = 0,
     return () => clearInterval(interval);
   }, [eventId]);
 
-  const loadWaitlistData = () => {
+  const loadWaitlistData = async () => {
     try {
-      const data = getEventWaitlist(eventId);
+      const data = await syncWaitlistFromServer(eventId, user?.id);
       setWaitlist(data);
 
-      const analyticsData = getWaitlistAnalytics(eventId);
+      const analyticsData = await getWaitlistAnalytics(eventId, user?.id);
       setAnalytics(analyticsData);
     } catch (error) {
       console.error('Failed to load waitlist data:', error);
@@ -52,7 +54,7 @@ const OrganizerWaitlistManagement = ({ eventId, eventName, currentAttendees = 0,
     setIsProcessing(true);
     try {
       const event = { id: eventId, title: eventName };
-      const promoted = await promoteNextUser(eventId, event);
+      const promoted = await promoteNextUser(eventId, event, user?.id);
 
       if (promoted) {
         toast.success(`${promoted.userName} has been promoted from the waitlist!`);
@@ -83,7 +85,7 @@ const OrganizerWaitlistManagement = ({ eventId, eventName, currentAttendees = 0,
         attendees: currentAttendees,
       };
 
-      const promotedCount = await handleCapacityIncrease(event, newCapacity);
+      const promotedCount = await handleCapacityIncrease(event, newCapacity, user?.id);
 
       if (promotedCount > 0) {
         toast.success(`${promotedCount} user(s) promoted from waitlist!`);
@@ -109,7 +111,7 @@ const OrganizerWaitlistManagement = ({ eventId, eventName, currentAttendees = 0,
     }
 
     try {
-      await organizerRemoveUser(eventId, userId);
+      await organizerRemoveUser(eventId, userId, user?.id);
       toast.success(`${userName} has been removed from the waitlist`);
       loadWaitlistData();
     } catch (error) {

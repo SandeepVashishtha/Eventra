@@ -48,6 +48,9 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
         aria-label="Notification panel"
       >
         <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50/80 px-4 py-3 dark:border-gray-800 dark:bg-gray-800/50">
+          <button type="button" onClick={() => { const csv = "Timestamp,Message\n" + notifications.map(n => `"${n.timestamp}","${n.message}"`).join("\n"); const blob = new Blob([csv], { type: "text/csv" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "notifications.csv"; a.click(); }} className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-white hover:text-indigo-600 dark:hover:bg-gray-700" title="Export to CSV">
+            Export
+          </button>
           <div>
             <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
               Notifications

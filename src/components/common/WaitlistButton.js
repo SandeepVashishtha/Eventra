@@ -18,8 +18,8 @@ const useWaitlist = ({ eventId, isFullyBooked, waitlistEnabled, isAuthenticated,
       .then(data => {
         if (!cancelled) setWaitlistCount(data.count);
       })
-      .catch(() => {
-        // Silently ignore — default count of 0 is already set
+      .catch((err) => {
+        console.warn('Failed to fetch waitlist data:', err);
       });
 
     if (isAuthenticated && token) {

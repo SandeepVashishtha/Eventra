@@ -33,7 +33,6 @@ import { downloadICSFile, generateGoogleCalendarLink, generateOutlookLink } from
 import { RecentlyViewedTracker } from "components/common/RecentlyViewedEvents";
 import { apiUtils, API_ENDPOINTS } from "config/api";
 import { getLastUpdated } from "utils/LastUpdatedUtils";
-import mockEvents from "./eventsMockData.json";
 import CopyButton from 'components/ui/CopyButton';
 
 const formatEventDate = (dateValue) => {
@@ -94,6 +93,15 @@ const EventDetails = () => {
   const [fetchError, setFetchError] = useState(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
 
+  // Issue #11021 — organizer actions (cancel/archive/export) must be gated by
+  // event ownership, not role alone. Without this, any ORGANIZER/ADMIN could
+  // manage another organization's event by swapping the id in the URL.
+  const isEventOwner =
+    event?.ownerId != null &&
+    user?.id != null &&
+    String(event.ownerId) === String(user.id);
+  const canManageEvent = isOrganizer && isEventOwner;
+
   const { isRegistered } = useMyEvents();
   const [linkCopied, setLinkCopied] = useState(false);
   const latestRequestIdRef = useRef(0);
@@ -128,18 +136,13 @@ const EventDetails = () => {
       if (!isLatestRequest()) return;
       if (isRequestCanceled(error, controller.signal)) return;
 
-      const fallback = mockEvents.find((item) => String(item.id) === eventId);
-      if (fallback) {
-        setEvent({ ...fallback, status: getEventStatus(fallback) });
+      const status = error?.status || error?.response?.status;
+      if (status >= 500) {
+        setFetchError("Something went wrong on our end. Please try again later.");
+      } else if (status === 404) {
+        setFetchError("Event not found.");
       } else {
-        const status = error?.status || error?.response?.status;
-        if (status >= 500) {
-          setFetchError("Something went wrong on our end. Please try again later.");
-        } else if (status === 404) {
-          setFetchError("Event not found.");
-        } else {
-          setFetchError("Could not load event details. Please try again.");
-        }
+        setFetchError("Could not load event details. Please try again.");
       }
     } finally {
       const shouldFinishLoading = isLatestRequest();
@@ -418,7 +421,7 @@ const lastUpdated = getLastUpdated(event.updatedAt);
                 Share Event
               </button>
 
-              {isOrganizer && event.status !== "cancelled" && (
+              {canManageEvent && event.status !== "cancelled" && (
                 <button
                   onClick={() => setShowCancelModal(true)}
                   className="inline-flex items-center justify-center rounded-full border border-red-500 px-6 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
@@ -426,7 +429,7 @@ const lastUpdated = getLastUpdated(event.updatedAt);
                   Cancel Event
                 </button>
               )}
-              {isOrganizer && event.status !== "cancelled" && event.status !== "archived" && (
+              {canManageEvent && event.status !== "cancelled" && event.status !== "archived" && (
                 <button
                   onClick={() => { setEvent({ ...event, status: "archived" }); toast.success("Event Archived!"); }}
                   className="inline-flex items-center justify-center gap-2 rounded-full border border-orange-500 px-6 py-3 text-sm font-semibold text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition"
@@ -451,7 +454,7 @@ const lastUpdated = getLastUpdated(event.updatedAt);
                 {isPrinting ? "Preparing..." : "Print / Save as PDF"}
               </button>
 
-              {isOrganizer && (
+              {canManageEvent && (
                 <div className="flex flex-wrap gap-3 items-center">
                   <button
                     onClick={handleDuplicateEvent}

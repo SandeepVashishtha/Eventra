@@ -7,10 +7,12 @@ import hackathonsData from "./hackathonMockData.json";
 
 import useReducedMotion from "hooks/useReducedMotion.js";
 const getHackathonStatus = (hackathon) => {
+  if (!hackathon?.startDate || !hackathon?.endDate) return "upcoming";
   const now = new Date();
   const startDate = new Date(hackathon.startDate);
   const endDate = new Date(hackathon.endDate);
 
+  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return "upcoming";
   if (endDate < now) return "completed";
   if (startDate <= now && now <= endDate) return "live";
   return "upcoming";

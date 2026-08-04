@@ -320,7 +320,7 @@ const EventRegistration = () => {
       try {
         const { joinWaitlist, getQueuePosition } = await import("utils/waitlistUtils");
         await joinWaitlist(eventId, user, { ...formData, eventTitle: event?.title || "the event" });
-        const pos = getQueuePosition(eventId, user.id);
+        const pos = await getQueuePosition(eventId, user.id);
         toast.success(t("eventRegistration.toastWaitlistSuccess"));
         clearSession();
         return { success: true, error: null, waitlistPosition: pos };
@@ -336,6 +336,12 @@ const EventRegistration = () => {
 
     const idempotencyKey = generateSecureUUID();
 
+    // The selected seat travels with the registration so the server can
+    // persist and atomically reserve it (format elementId:seatIndex).
+    const selectedSeatId = selectedSeat
+      ? `${selectedSeat.elementId}:${selectedSeat.seatIndex}`
+      : null;
+
     try {
       const response = await apiUtils.post(
         endpoint,
@@ -344,6 +350,7 @@ const EventRegistration = () => {
           priority: formData.priority,
           eventId: parseInt(eventId, 10),
           idempotencyKey,
+          seatId: selectedSeatId,
         },
         token
       );
@@ -371,6 +378,7 @@ const EventRegistration = () => {
           ...formData,
           eventId: parseInt(eventId, 10),
           idempotencyKey,
+          seatId: selectedSeatId,
         };
 
         const success = await pushToQueue(
@@ -450,7 +458,7 @@ const EventRegistration = () => {
           const isFull = await checkEventCapacity(eventId, event);
           if (isFull) {
             const { getGlobalWaitlist } = await import("utils/waitlistUtils");
-            const records = getGlobalWaitlist();
+            const records = await getGlobalWaitlist(user.id);
             const onWaitlist = records.some(
               (r) => r.userId === user.id && r.eventId === parseInt(eventId, 10) && r.status === "waiting"
             );
@@ -1057,6 +1065,8 @@ const EventRegistration = () => {
                 <button
                   type="submit"
                   disabled={isPending || !isFormValid}
+                  aria-disabled={isPending || !isFormValid}
+                  aria-busy={isPending}
                   className="flex-1 px-6 py-3 bg-black text-white rounded-lg hover:bg-zinc-800 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   aria-label={t("eventRegistration.formSubmitAriaLabel")}
                 >

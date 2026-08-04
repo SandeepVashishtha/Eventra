@@ -1,17 +1,26 @@
 export const getTicketHolderName = (user) =>
   user?.fullName || `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || user?.username || "Eventra Guest";
 
-export const buildTicketQrPayload = ({ event, user, registration, serialNumber }) => {
-  const ticketId = registration?.qrToken || registration?.registrationId || serialNumber;
-  const eventId = event?.id ?? event?.eventId;
-
-  return {
-    ticketId,
-    registrationId: registration?.registrationId || serialNumber,
-    eventId,
-    eventName: event?.title || "Eventra Event",
-    userName: getTicketHolderName(user),
-  };
+/**
+ * Build the QR payload for an event ticket.
+ *
+ * SECURITY: The QR encodes ONLY the opaque, server-issued ticket token
+ * (qrToken, or registrationId as a fallback) — no PII such as attendee names,
+ * event names, or registrations is embedded. Attendee/event details are
+ * display-only and are resolved server-side during ticket validation.
+ *
+ * Returns null when no server-issued token is available; callers must not
+ * render a QR code in that case (a generated pseudo-serial would be forgeable).
+ */
+export const buildTicketQrPayload = ({ registration, serialNumber }) => {
+  const ticketId = registration?.qrToken || registration?.registrationId || serialNumber || null;
+  if (!ticketId) return null;
+  return { ticketId };
 };
 
-export const buildTicketQrValue = (ticketData) => JSON.stringify(ticketData);
+export const buildTicketQrValue = (ticketData) => {
+  if (!ticketData || typeof ticketData !== "object" || !ticketData.ticketId) {
+    return "";
+  }
+  return JSON.stringify(ticketData);
+};

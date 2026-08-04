@@ -220,7 +220,7 @@ export default function Chatbot() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [handleClose, isOpen]);
+  }, [isOpen, handleClose]);
 
   const wasOpenRef = useRef(false);
   const wasMinimizedRef = useRef(false);
@@ -494,9 +494,7 @@ export default function Chatbot() {
                   </motion.div>
                 </div>
               )}
-              
-              {/* 🔥 FIX: Added the missing dummy div to act as the scroll target for messagesEndRef */}
-              <div ref={messagesEndRef} />
+               <div ref={messagesEndRef} />
             </div>
 
             {/* Footer controls */}

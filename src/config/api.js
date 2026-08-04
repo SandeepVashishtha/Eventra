@@ -87,6 +87,8 @@ export const API_ENDPOINTS = {
     AVAILABILITY: (id) => buildApiUrl(`/events/${id}/availability`),
 
     REGISTRANTS: (id) => buildApiUrl(`/events/${id}/registrants`),
+    WAITLIST: (id) => buildApiUrl(`/events/${id}/waitlist`),
+    SCHEDULE: buildApiUrl('/events/schedule'),
     // Convenience helper — appends ?page=&size= for callers that build the
     // URL manually rather than going through eventFetchUtils.buildPaginatedUrl.
     PAGINATED: (page, size) => buildApiUrl(`/events?page=${page}&size=${size}`),
@@ -135,6 +137,19 @@ export const API_ENDPOINTS = {
     VALIDATE: buildApiUrl("/tickets/validate"),
     CHECK_IN: buildApiUrl("/tickets/checkin"),
     HISTORY: buildApiUrl("/tickets/checkins"),
+    STATS: buildApiUrl("/tickets/stats"),
+  },
+  SESSION_RECOVERY: {
+    BASE: buildApiUrl("/session-recovery"),
+    SESSION: (id) => buildApiUrl(`/session-recovery/${id}`),
+    RESTORE: (id) => buildApiUrl(`/session-recovery/${id}/restore`),
+    CLEANUP_EXPIRED: buildApiUrl("/session-recovery/cleanup"),
+  },
+  WAITLIST: {
+    BASE: buildApiUrl("/waitlist"),
+    JOIN: buildApiUrl("/waitlist/join"),
+    LEAVE: (id) => buildApiUrl(`/waitlist/${id}/leave`),
+    STATUS: (id) => buildApiUrl(`/waitlist/${id}/status`),
   },
   FEEDBACK: {
     BASE: buildApiUrl("/feedback"),
@@ -196,7 +211,6 @@ const wrapAxiosResponse = (response) => {
       typeof response.data === "string" ? response.data : JSON.stringify(response.data),
   };
 };
-
 export const apiUtils = {
   get: (url, config = {}) =>
     API.get(url, normalizeRequestConfig(config)).then(wrapAxiosResponse),

@@ -2,13 +2,14 @@ import { createContext, useContext, useEffect, useMemo, useCallback, useRef, use
 import { setOnUnauthorizedHandler, setRequiresReauthHandler, setAuthToken, apiUtils } from "../config/api.js";
 import { authService } from "../services/authService.js";
 import { syncSecureStorage } from "../utils/secureStorage.js";
+import { clearWaitlistCache } from "../utils/waitlistUtils.js";
 import { usePermissions, normalizeRoles } from "../hooks/usePermissions.js";
 import { useTokenExpiry } from "../hooks/useTokenExpiry.js";
 import { isTokenValid } from "../utils/tokenUtils.js";
 import { toast } from "react-toastify";
 import { ROLES, ROLE_PERMISSIONS } from "../config/roles.js";
 import { getSessionChannel, closeSessionChannel, SESSION_TERMINATED, broadcastSessionTerminated } from "../utils/sessionBroadcast.js";
-import { deleteCookie, setCookie } from "../utils/cookieUtils.js";
+import { deleteCookie } from "../utils/cookieUtils.js";
 import ReAuthModal from "../components/auth/ReAuthModal";
 
 // Create context for Authentication
@@ -22,8 +23,30 @@ const AuthContext = createContext();
  */
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (typeof globalThis !== "undefined" && typeof globalThis.mockAuth === "function") {
-    return globalThis.mockAuth();
+  // Development-only backdoor for storybook/testing. Never active in production.
+  if (
+    import.meta.env?.DEV &&
+    typeof globalThis !== "undefined" &&
+    typeof globalThis.mockAuth === "function"
+  ) {
+    const mock = globalThis.mockAuth();
+    // Even in development, the forged session is validated against the real
+    // permission model so the test seam resolves roles/permissions exactly like
+    // a production session instead of trusting arbitrary mock claims.
+    if (mock && typeof mock === "object") {
+      const rawUser = mock.user ?? {};
+      const rawRoles = mock.roles ?? rawUser.roles ?? (rawUser.role ? [rawUser.role] : []);
+      const roles = normalizeRoles(rawRoles);
+      const permissions = Array.from(
+        new Set([
+          ...(Array.isArray(mock.permissions) ? mock.permissions.map((p) => String(p)) : []),
+          ...(Array.isArray(rawUser.permissions) ? rawUser.permissions.map((p) => String(p)) : []),
+          ...roles.flatMap((role) => ROLE_PERMISSIONS[role] || []),
+        ])
+      );
+      return { ...mock, roles, permissions, user: { ...rawUser, roles, permissions } };
+    }
+    return mock;
   }
   if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
@@ -70,9 +93,6 @@ const extractSession = (data, fallbackEmail) => {
   return { sessionToken, sessionUser };
 };
 
-  return { sessionUser };
-};
-
 /**
  * AuthProvider component wrapper.
  * Manages the core authenticated state, token management, session expiry timing,
@@ -87,6 +107,12 @@ export const AuthProvider = ({ children }) => {
 
   // Ref to track mounting status and prevent setting state on unmounted components
   const isMountedRef = useRef(true);
+
+  // Ref so session-clear flows can purge the current user's waitlist PII cache
+  const userIdRef = useRef(null);
+  useEffect(() => {
+    userIdRef.current = user?.id || user?.email || null;
+  }, [user]);
 
   // Ref to track whether session expired toast has already been displayed to prevent spamming
   const expiryToastShownRef = useRef(false);
@@ -119,6 +145,11 @@ export const AuthProvider = ({ children }) => {
 
     // Clear user metadata from secure/local storage manager
     syncSecureStorage.removeItem("user");
+
+    // Purge the current user's waitlist PII cache so it does not outlive the session
+    if (userIdRef.current) {
+      clearWaitlistCache(userIdRef.current);
+    }
     return true;
   }, []);
 
@@ -215,11 +246,10 @@ export const AuthProvider = ({ children }) => {
             const cachedUser = await syncSecureStorage.getItemAsync("user");
             if (cachedUser) {
               setUser(JSON.parse(cachedUser));
-              const cookieToken = document.cookie
-                .split("; ")
-                .find((row) => row.startsWith("token="))
-                ?.split("=")[1];
-              setToken(cookieToken || "cookie-managed");
+              // Never read a JS-readable token cookie (httpOnlyStorage policy).
+              // The active token is held in JS memory by setAuthToken or by
+              // the backend's HttpOnly Set-Cookie flow.
+              setToken("cookie-managed");
             } else {
               clearSession();
             }
@@ -259,32 +289,7 @@ export const AuthProvider = ({ children }) => {
    * Monitor token age and expiry limits dynamically.
    * Auto-schedules logout timers or fallback verification intervals.
    */
-  useEffect(() => {
-    if (!token || token === "cookie-managed") return;
-    expiryToastShownRef.current = false;
-
-    const expSeconds = user?.exp;
-    let timerId;
-
-    if (typeof expSeconds === "number") {
-      const msUntilExpiry = expSeconds * 1000 - Date.now() + 1000;
-      timerId = setTimeout(() => {
-        clearExpiredSession();
-      }, Math.max(msUntilExpiry, 0));
-    } else {
-      timerId = setInterval(() => {
-        if (!isTokenValid(token)) clearExpiredSession();
-      }, 60000);
-    }
-
-    return () => {
-      if (typeof expSeconds === "number") {
-        clearTimeout(timerId);
-      } else {
-        clearInterval(timerId);
-      }
-    };
-  }, [token, user?.exp, clearExpiredSession]);
+  // Session expiry timer is centrally managed by useTokenExpiry above to avoid duplicate execution.
 
   /**
    * Persists the active session state to local variables and secure cache.
@@ -299,17 +304,10 @@ export const AuthProvider = ({ children }) => {
     setUser(sessionUser);
     setAuthToken(sessionToken);
 
-    try {
-      if (sessionToken && sessionToken !== "cookie-managed") {
-        setCookie("token", sessionToken, {
-          path: "/",
-          secure: window.location.protocol === "https:",
-          maxAge: 7 * 24 * 60 * 60, // Persist for 7 days
-        });
-      }
-    } catch (err) {
-      console.warn("[AuthContext] Failed to write cookie:", err);
-    }
+    // Security Contract (src/utils/httpOnlyStorage.js): the bearer token is
+    // held in JS memory only via setAuthToken above — it is never written to
+    // a JS-readable document.cookie. HttpOnly cookie sessions are established
+    // solely by the backend's Set-Cookie flow (axios uses withCredentials).
 
     try {
       // Security Contract: Strip authorization keys from display profile object stored in localStorage
