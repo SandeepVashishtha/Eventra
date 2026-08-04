@@ -75,28 +75,26 @@ export const API_ENDPOINTS = {
     CREATE: buildApiUrl("/events/create"),
     ALL: buildApiUrl("/events"),
     LIST: buildApiUrl("/events"),
-    DETAIL: (id) => buildApiUrl(`/events/${id}`),
-    SCHEDULE: (id) => buildApiUrl(`/events/${id}/schedule`),
-    REGISTER: (id) => buildApiUrl(`/events/${id}/register`),
-    AVAILABILITY: (id) => buildApiUrl(`/events/${id}/availability`),
-    CANCEL: (id) => buildApiUrl(`/events/${id}/cancel`),
-    REGISTRANTS: (id) => buildApiUrl(`/events/${id}/registrants`),
-    // Convenience helper — appends ?page=&size= for callers that build the
-    // URL manually rather than going through eventFetchUtils.buildPaginatedUrl.
+    DETAIL: (id) => (id ? buildApiUrl(`/events/${id}`) : ""),
+    SCHEDULE: (id) => (id ? buildApiUrl(`/events/${id}/schedule`) : ""),
+    REGISTER: (id) => (id ? buildApiUrl(`/events/${id}/register`) : ""),
+    AVAILABILITY: (id) => (id ? buildApiUrl(`/events/${id}/availability`) : ""),
+    CANCEL: (id) => (id ? buildApiUrl(`/events/${id}/cancel`) : ""),
+    REGISTRANTS: (id) => (id ? buildApiUrl(`/events/${id}/registrants`) : ""),
     PAGINATED: (page, size) => buildApiUrl(`/events?page=${page}&size=${size}`),
   },
   PROJECTS: {
     ALL: buildApiUrl("/projects"),
     LIST: buildApiUrl("/projects"),
-    DETAIL: (id) => buildApiUrl(`/projects/${id}`),
+    DETAIL: (id) => (id ? buildApiUrl(`/projects/${id}`) : ""),
     CATEGORIES: buildApiUrl("/projects/categories"),
     SUBMIT: buildApiUrl("/projects"),
-    UPVOTE: (id) => buildApiUrl(`/projects/${id}/upvote`),
-    FORK: (id) => buildApiUrl(`/projects/${id}/fork`),
+    UPVOTE: (id) => (id ? buildApiUrl(`/projects/${id}/upvote`) : ""),
+    FORK: (id) => (id ? buildApiUrl(`/projects/${id}/fork`) : ""),
   },
   HACKATHONS: {
     LIST: buildApiUrl("/hackathons"),
-    DETAIL: (id) => buildApiUrl(`/hackathons/${id}`),
+    DETAIL: (id) => (id ? buildApiUrl(`/hackathons/${id}`) : ""),
     HOST: buildApiUrl("/hackathons"),
   },
   NOTIFICATIONS: {
@@ -116,9 +114,9 @@ export const API_ENDPOINTS = {
   SESSION_RECOVERY: {
     BASE: buildApiUrl("/session-recovery"),
     SESSION: (sessionId) =>
-      buildApiUrl(`/session-recovery/${encodeURIComponent(sessionId)}`),
+      sessionId ? buildApiUrl(`/session-recovery/${encodeURIComponent(sessionId)}`) : "",
     RESTORE: (sessionId) =>
-      buildApiUrl(`/session-recovery/${encodeURIComponent(sessionId)}/restore`),
+      sessionId ? buildApiUrl(`/session-recovery/${encodeURIComponent(sessionId)}/restore`) : "",
     CLEANUP_EXPIRED: buildApiUrl("/session-recovery/expired"),
   },
   TICKETS: {
@@ -129,20 +127,21 @@ export const API_ENDPOINTS = {
   FEEDBACK: {
     BASE: buildApiUrl("/feedback"),
     BY_EVENT: (eventId) => {
+      if (!eventId) return "";
       const params = new URLSearchParams({ eventId: String(eventId) });
       return buildApiUrl(`/feedback?${params.toString()}`);
     },
   },
   ADMIN: {
     USERS: buildApiUrl("/admin/users"),
-    USER: (id) => buildApiUrl(`/admin/users/${id}`),
+    USER: (id) => (id ? buildApiUrl(`/admin/users/${id}`) : ""),
     EVENTS: buildApiUrl("/admin/events"),
-    EVENT: (id) => buildApiUrl(`/admin/events/${id}`),
+    EVENT: (id) => (id ? buildApiUrl(`/admin/events/${id}`) : ""),
     STATS: buildApiUrl("/admin/stats"),
   },
   VALIDATION: {
-    EMAIL: (email) => buildApiUrl(`/validate/email/${encodeURIComponent(email)}`),
-    USERNAME: (username) => buildApiUrl(`/validate/username/${encodeURIComponent(username)}`),
+    EMAIL: (email) => (email ? buildApiUrl(`/validate/email/${encodeURIComponent(email)}`) : ""),
+    USERNAME: (username) => (username ? buildApiUrl(`/validate/username/${encodeURIComponent(username)}`) : ""),
     PHONE: buildApiUrl("/validate/phone"),
     CONTACT: buildApiUrl("/contact"),
   },
