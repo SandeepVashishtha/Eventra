@@ -264,7 +264,10 @@ function App() {
                 </ErrorBoundary>
 
                 <Suspense fallback={null}>
-                  <BackToTop />
+              {/* Fix (Issue #10496): Pass chatbot open state directly to BackToTop so it
+    reliably shifts up when the chatbot FAB is visible, instead of relying
+    on DOM-based detection which can race with React rendering. */}
+<BackToTop avoidChatbot={showChatbot} />
                 </Suspense>
                 <Suspense fallback={null}>
                   <FeedbackButton />
