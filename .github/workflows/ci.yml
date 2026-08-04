@@ -37,3 +37,14 @@ jobs:
 
       - name: Run Automated Tests
         run: npm run test
+
+      - name: Build Project
+        run: npm run build
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: build-artifacts
+          path: dist
+          retention-days: 7
