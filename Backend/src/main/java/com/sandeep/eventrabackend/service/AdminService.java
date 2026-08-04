@@ -203,12 +203,13 @@ public class AdminService {
     }
 
     /**
-     * Returns user registration growth trend (monthly by default).
+     * Returns user growth trend (monthly new signups by default).
+     * Counts newly created {@link User} accounts grouped by the month of
+     * their {@code createdAt}, not event registrations (Issue #11232).
      */
     public List<RegistrationTrendDTO> getUserGrowthTrend(int months) {
-        // Reuse existing registration trend from AnalyticsService logic
         LocalDateTime from = LocalDateTime.now().minusMonths(months);
-        List<Object[]> raw = regRepo.findMonthlyTrend(from);
+        List<Object[]> raw = userRepository.findMonthlySignupTrend(from);
 
         final long[] cumulative = {0};
         return raw.stream().map(row -> {
