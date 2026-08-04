@@ -19,22 +19,10 @@ permissions:
 jobs:
   npm-audit:
     name: NPM Audit
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run npm audit
-        run: npm audit --audit-level=high
+    uses: ./.github/workflows/reusable-setup.yml
+    with:
+      node-version: '22'
+      test-command: npm audit --audit-level=high
 
   dependency-review:
     name: Dependency Review

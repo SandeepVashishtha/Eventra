@@ -19,55 +19,14 @@ permissions:
 
 jobs:
   validate:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Cache node modules
-        id: cache-npm
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-build-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-build-
-
-      - name: Install Project Dependencies
-        if: steps.cache-npm.outputs.cache-hit != 'true'
-        run: npm ci
-
-      - name: Run Code Quality Checks
-        run: npm run lint
-
-      - name: Run Automated Tests
-        run: npm run test
-
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps
-
-      - name: Run Playwright E2E tests
-        run: npm run test:e2e
-
-      - name: Build Project
-        run: npm run build
-
-      - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v4
-        if: success()
-        with:
-          name: build-artifacts
-          path: dist
-          retention-days: 7
+    uses: ./.github/workflows/reusable-setup.yml
+    with:
+      node-version: '22'
+      test-command: |
+        npm run lint
+        npm run test
+        npx playwright install --with-deps
+        npm run test:e2e
+      build-command: npm run build
+      artifact-name: build-artifacts
+      artifact-path: dist
