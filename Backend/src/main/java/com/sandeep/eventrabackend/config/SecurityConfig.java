@@ -127,7 +127,14 @@ public class SecurityConfig {
                         // ── Public: Event read-only endpoints ────────────────
                         // Anyone can view an event or check its availability;
                         // only authenticated users can register (POST).
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/events/**").permitAll()
+                        .requestMatchers(
+                                org.springframework.http.HttpMethod.GET,
+                                "/api/events",
+                                "/api/events/{id}",
+                                "/api/events/{id}/availability",
+                                "/api/events/{id}/seats",
+                                "/api/events/stream"
+                        ).permitAll()
                         // ── Public: Projects endpoint ────────────────────────
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/projects").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/projects/{id}").permitAll()
