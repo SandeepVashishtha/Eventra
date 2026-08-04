@@ -108,6 +108,11 @@ public AuthResponse googleLogin(GoogleAuthRequest request) {
 
         String email = payload.getEmail();
 
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Google account must provide a valid email address.");
+        }
+
        String firstName =
         (String) payload.get("given_name");
 
