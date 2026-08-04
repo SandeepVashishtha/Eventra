@@ -72,7 +72,8 @@ public class AdminController {
             @Parameter(description = "Filter by role: CLIENT | ORGANIZER | ADMIN | SUPER_ADMIN")
             @RequestParam(required = false) String role
     ) {
-        return ResponseEntity.ok(adminService.getUsers(page, size, role));
+        int clampedSize = Math.min(Math.max(size, 1), 100);
+        return ResponseEntity.ok(adminService.getUsers(page, clampedSize, role));
     }
 
     @GetMapping("/users/{id}")
@@ -156,7 +157,8 @@ public class AdminController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        return ResponseEntity.ok(adminService.getEvents(page, size));
+        int clampedSize = Math.min(Math.max(size, 1), 100);
+        return ResponseEntity.ok(adminService.getEvents(page, clampedSize));
     }
 
     @GetMapping("/events/{id}/attendees")
@@ -216,7 +218,8 @@ public class AdminController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        return ResponseEntity.ok(adminService.getHackathons(page, size));
+        int clampedSize = Math.min(Math.max(size, 1), 100);
+        return ResponseEntity.ok(adminService.getHackathons(page, clampedSize));
     }
 
     @DeleteMapping("/hackathons/{id}")
@@ -315,7 +318,8 @@ public class AdminController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        return ResponseEntity.ok(adminService.getAllFeedback(page, size));
+        int clampedSize = Math.min(Math.max(size, 1), 100);
+        return ResponseEntity.ok(adminService.getAllFeedback(page, clampedSize));
     }
 
     @DeleteMapping("/feedback/{id}")
