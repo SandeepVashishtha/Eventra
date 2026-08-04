@@ -117,7 +117,7 @@ public class SecurityConfig {
                 // Disable CSRF — stateless REST API, no session cookies
                 .csrf(AbstractHttpConfigurer::disable)
                 // Disable CORS — open for testing; re-enable before production
-                .cors(cors -> {})
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 // Stateless sessions — JWT handles auth
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
