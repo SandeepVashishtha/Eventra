@@ -144,6 +144,40 @@ public class EventRegistrationTests {
                 .andExpect(jsonPath("$.availabilityStatus").value("PAST"));
     }
 
+    // ── Issue #11230 — Public events only on public read endpoints ───────────
+
+    @Test
+    @DisplayName("#11230 — GET /api/events excludes events marked not public")
+    void testGetAllEventsExcludesPrivateEvents() throws Exception {
+        Event privateEvent = new Event();
+        privateEvent.setTitle("Private Event");
+        privateEvent.setCapacity(100);
+        privateEvent.setEventDate(LocalDateTime.now().plusDays(1));
+        privateEvent.setPublic(false);
+        privateEvent = eventRepository.save(privateEvent);
+
+        mockMvc.perform(get("/api/events"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.id == " + privateEvent.getId() + ")]").isEmpty());
+    }
+
+    @Test
+    @DisplayName("#11230 — GET /api/events/{id} returns 404 for a non-public event")
+    void testGetPublicEventByIdExcludesPrivateEvent() throws Exception {
+        Event privateEvent = new Event();
+        privateEvent.setTitle("Private Event");
+        privateEvent.setCapacity(100);
+        privateEvent.setEventDate(LocalDateTime.now().plusDays(1));
+        privateEvent.setPublic(false);
+        privateEvent = eventRepository.save(privateEvent);
+
+        mockMvc.perform(get("/api/events/" + privateEvent.getId()))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(get("/api/events/" + eventId))
+                .andExpect(status().isOk());
+    }
+
     // ── Issue #2102 — Registration endpoint ──────────────────────────────────
 
     @Test

@@ -129,12 +129,17 @@ public class EventService {
     // ── Issue #2102 — Event Fetch ─────────────────────────────────────
 
     /**
-     * Retrieves an event by ID.
+     * Retrieves a public event by ID.
      *
-     * @throws EventNotFoundException if the event does not exist
+     * <p>Events that are explicitly marked not public are excluded from the
+     * public read path (Issue #11230); they are only visible to their
+     * organizer or an admin via the admin endpoints.</p>
+     *
+     * @throws EventNotFoundException if the event does not exist or is not public
      */
     public EventResponse getPublicEventById(long id) {
         return eventRepository.findById(id)
+                .filter(Event::isPublic)
                 .map(this::toEventResponse)
                 .orElseThrow(() ->
                         new EventNotFoundException(
@@ -142,13 +147,14 @@ public class EventService {
     }
 
     /**
-     * Retrieves all events.
+     * Retrieves all public events.
      *
-     * @return list of all events
+     * @return list of all events with {@code isPublic} set to true
      */
     @Transactional(readOnly = true)
     public List<EventResponse> getAllEvents() {
         return eventRepository.findAll().stream()
+                .filter(Event::isPublic)
                 .map(this::toEventResponse)
                 .toList();
     }
