@@ -285,7 +285,7 @@ export default function UserDashboard() {
           <div className="ud-topbar-right">
             <div className="ud-search-wrap">
               <Search size={15} className="ud-search-icon" />
-              <input className="ud-search" placeholder="Search…" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+              <input className="ud-search" aria-label="Search dashboard" placeholder="Search…" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
               {searchQuery && (
                 <button className="ud-search-clear" onClick={() => setSearchQuery("")} aria-label="Clear search query"><X size={13} /></button>
               )}
