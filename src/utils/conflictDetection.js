@@ -290,8 +290,9 @@ export const formatTimeRange = (timeStr, durationMinutes = 60, dateStr, timezone
   const endMinutes = startMinutes + durationMinutes;
 
   const formatMinutes = (mins) => {
-    const h = Math.floor(mins / 60) % 24;
-    const m = mins % 60;
+    const safeMins = ((mins % 1440) + 1440) % 1440;
+    const h = Math.floor(safeMins / 60);
+    const m = Math.floor(safeMins % 60);
     const period = h >= 12 ? "PM" : "AM";
     const displayH = h > 12 ? h - 12 : h === 0 ? 12 : h;
     return `${displayH}:${String(m).padStart(2, "0")} ${period}`;
