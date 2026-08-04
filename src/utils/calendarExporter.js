@@ -330,3 +330,12 @@ export const generateWebCalLink = (httpsUrl) => {
     return null;
   }
 };
+
+export const downloadHackathonMilestonesICS = (hackathon) => {
+  if (!hackathon) return;
+  const milestones = [
+    { title: `${hackathon.title} - Hacking Starts`, date: hackathon.startDate, description: "Official start of hacking phase." },
+    { title: `${hackathon.title} - Submission Deadline`, date: hackathon.endDate, description: "Project submission deadline." }
+  ];
+  downloadBulkICSFile(milestones, `${hackathon.title}-milestones`);
+};
