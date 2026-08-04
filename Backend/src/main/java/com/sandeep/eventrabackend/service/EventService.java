@@ -1,11 +1,13 @@
 package com.sandeep.eventrabackend.service;
 
+import com.sandeep.eventrabackend.dto.request.CancelEventRequest;
 import com.sandeep.eventrabackend.dto.request.EventCreateRequest;
 import com.sandeep.eventrabackend.dto.request.EventUpdateRequest;
 import com.sandeep.eventrabackend.dto.response.EventAvailabilityResponse;
 import com.sandeep.eventrabackend.dto.response.EventResponse;
 import com.sandeep.eventrabackend.dto.response.MyRegisteredEventResponse;
 import com.sandeep.eventrabackend.dto.response.RegistrationResponse;
+import com.sandeep.eventrabackend.dto.response.WaitlistResponse;
 import com.sandeep.eventrabackend.exception.EventFullException;
 import com.sandeep.eventrabackend.exception.EventNotFoundException;
 import com.sandeep.eventrabackend.exception.RegistrationConflictException;
@@ -15,6 +17,9 @@ import com.sandeep.eventrabackend.model.EventRole;
 import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.EventRegistrationRepository;
 import com.sandeep.eventrabackend.repository.EventRepository;
+import com.sandeep.eventrabackend.model.Role;
+import com.sandeep.eventrabackend.repository.EventWaitlistRepository;
+import com.sandeep.eventrabackend.repository.NotificationRepository;
 import com.sandeep.eventrabackend.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,6 +60,8 @@ public class EventService {
 
     private final EventRepository eventRepository;
     private final EventRegistrationRepository eventRegistrationRepository;
+    private final EventWaitlistRepository eventWaitlistRepository;
+    private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
     private final EventRoleService eventRoleService;
 
@@ -65,6 +72,8 @@ public class EventService {
             EventRoleService eventRoleService) {
         this.eventRepository = eventRepository;
         this.eventRegistrationRepository = eventRegistrationRepository;
+        this.eventWaitlistRepository = eventWaitlistRepository;
+        this.notificationRepository = notificationRepository;
         this.userRepository = userRepository;
         this.eventRoleService = eventRoleService;
     }
@@ -78,6 +87,10 @@ public class EventService {
      * @throws EventNotFoundException if no event with {@code id} exists
      */
     public EventAvailabilityResponse getEventAvailability(Long id) {
+        return getEventAvailability(id, null);
+    }
+
+    public EventAvailabilityResponse getEventAvailability(Long id, String userEmail) {
         Event event = eventRepository.findById(id)
                 .orElseThrow(() ->
                         new EventNotFoundException("Event not found with id: " + id));
@@ -93,12 +106,22 @@ public class EventService {
         boolean isFull =
                 (capacity != null) && (registeredCount >= capacity);
 
+        Integer waitlistPosition = null;
+        if (userEmail != null) {
+            waitlistPosition = eventWaitlistRepository
+                    .findByEvent_IdAndUser_EmailAndStatus(id, userEmail, "WAITING")
+                    .map(EventWaitlist::getPosition)
+                    .orElse(null);
+        }
+
         return EventAvailabilityResponse.builder()
                 .capacity(capacity)
                 .registeredCount(registeredCount)
                 .spotsLeft(spotsLeft)
                 .isFull(isFull)
                 .eventPassed(event.isEventPast())
+                .waitlistPosition(waitlistPosition)
+                .waitlisted(waitlistPosition != null)
                 .build();
     }
 
@@ -219,6 +242,57 @@ public class EventService {
     }
 
     /**
+     * Cancels an existing event.
+     *
+     * <p>Authorization (Issue #11021): only the event's own organizer or an
+     * administrator (ADMIN / SUPER_ADMIN) may cancel an event. This closes the
+     * broken object-level authorization hole where any ORGANIZER could cancel
+     * events created by other organizers.</p>
+     *
+     * @param id        ID of the event to cancel
+     * @param userEmail email extracted from JWT principal
+     * @param request   cancellation details (reason, refund policy)
+     * @return the updated (cancelled) event
+     * @throws EventNotFoundException if the event does not exist
+     */
+    @Transactional
+    public EventResponse cancelEvent(Long id, String userEmail, CancelEventRequest request) {
+        Event event = eventRepository.findById(id)
+                .orElseThrow(() ->
+                        new EventNotFoundException("Event not found with id: " + id));
+
+        User currentUser = userRepository.findByEmail(userEmail)
+                .orElseThrow(() ->
+                        new UsernameNotFoundException("User not found with email: " + userEmail));
+
+        boolean isAdmin = currentUser.getRole() == Role.ADMIN || currentUser.getRole() == Role.SUPER_ADMIN;
+        if (!isAdmin && (event.getOwnerId() == null || !event.getOwnerId().equals(currentUser.getId()))) {
+            throw new AccessDeniedException(
+                    "Only the event's own organizer (or an administrator) can cancel this event.");
+        }
+
+        if ("CANCELLED".equals(event.getStatus())) {
+            throw new RegistrationConflictException("Event is already cancelled.");
+        }
+
+        String refundPolicy = request.getRefundPolicy().toUpperCase();
+        if ("PARTIAL".equals(refundPolicy)) {
+            if (request.getRefundPercent() == null) {
+                throw new IllegalArgumentException(
+                        "Refund percentage is required when the refund policy is PARTIAL.");
+            }
+        }
+
+        event.setStatus("CANCELLED");
+        event.setCancellationReason(request.getReason());
+        event.setCancelledAt(request.getCancelledAt() != null ? request.getCancelledAt() : LocalDateTime.now());
+        event.setRefundPolicy(refundPolicy);
+        event.setRefundPercent("PARTIAL".equals(refundPolicy) ? request.getRefundPercent() : null);
+
+        return toEventResponse(eventRepository.save(event));
+    }
+
+    /**
      * Deletes an existing event and its registrations.
      *
      * @param id ID of the event to delete
@@ -231,7 +305,122 @@ public class EventService {
                         new EventNotFoundException("Event not found with id: " + id));
 
         eventRegistrationRepository.deleteByEventId(id);
+        eventWaitlistRepository.deleteByEvent_Id(id);
         eventRepository.delete(event);
+    }
+
+    @Transactional
+    public WaitlistResponse joinWaitlist(Long eventId, String userEmail) {
+        Event event = eventRepository.findByIdWithLock(eventId)
+                .orElseThrow(() ->
+                        new EventNotFoundException("Event not found with id: " + eventId));
+
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() ->
+                        new UsernameNotFoundException("User not found with email: " + userEmail));
+
+        if (eventRegistrationRepository.existsByEvent_IdAndUser_Email(eventId, userEmail)) {
+            throw new RegistrationConflictException("You are already registered for this event.");
+        }
+
+        if (eventWaitlistRepository.existsByEvent_IdAndUser_EmailAndStatus(eventId, userEmail, "WAITING")) {
+            throw new RegistrationConflictException("You are already on the waitlist for this event.");
+        }
+
+        if (event.getCapacity() == null || event.getRegisteredCount() < event.getCapacity()) {
+            throw new RegistrationConflictException("This event still has open spots. Please register directly.");
+        }
+
+        EventWaitlist entry = new EventWaitlist();
+        entry.setEvent(event);
+        entry.setUser(user);
+        entry.setPosition(eventWaitlistRepository.findMaxPositionByEventId(eventId) + 1);
+        entry.setStatus("WAITING");
+
+        return toWaitlistResponse(eventWaitlistRepository.save(entry));
+    }
+
+    @Transactional
+    public void cancelRegistration(Long eventId, String userEmail) {
+        Event event = eventRepository.findByIdWithLock(eventId)
+                .orElseThrow(() ->
+                        new EventNotFoundException("Event not found with id: " + eventId));
+
+        EventRegistration registration = eventRegistrationRepository
+                .findByEvent_IdAndUser_Email(eventId, userEmail)
+                .orElseThrow(() ->
+                        new RegistrationConflictException("You are not registered for this event."));
+
+        User user = registration.getUser();
+        eventRegistrationRepository.delete(registration);
+        event.getAttendees().removeIf(attendee -> attendee.getId().equals(user.getId()));
+        event.setRegisteredCount(Math.max(0, event.getRegisteredCount() - 1));
+        eventRepository.save(event);
+
+        promoteFirstWaitingUser(event);
+    }
+
+    @Transactional(readOnly = true)
+    public List<WaitlistResponse> getEventWaitlist(Long eventId, String userEmail) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + eventId));
+
+        User currentUser = userRepository.findByEmail(userEmail).orElse(null);
+        if (currentUser != null) {
+            boolean isAdmin = currentUser.getRole() == Role.ADMIN || currentUser.getRole() == Role.SUPER_ADMIN;
+            if (!isAdmin && event.getOwnerId() != null && !event.getOwnerId().equals(currentUser.getId())) {
+                throw new AccessDeniedException(
+                        "Only the event's own organizer (or an administrator) can view this waitlist.");
+            }
+        }
+
+        return eventWaitlistRepository
+                .findByEvent_IdAndStatusOrderByPositionAscJoinedAtAsc(eventId, "WAITING")
+                .stream()
+                .map(this::toWaitlistResponse)
+                .toList();
+    }
+
+    @Transactional
+    public void leaveWaitlist(Long eventId, String userEmail) {
+        EventWaitlist entry = eventWaitlistRepository
+                .findByEvent_IdAndUser_EmailAndStatus(eventId, userEmail, "WAITING")
+                .orElseThrow(() ->
+                        new RegistrationConflictException("You are not on the waitlist for this event."));
+
+        entry.setStatus("REMOVED");
+        eventWaitlistRepository.save(entry);
+    }
+
+    @Transactional
+    public RegistrationResponse promoteWaitlistedUser(Long eventId, Long waitlistId, String userEmail) {
+        Event event = eventRepository.findByIdWithLock(eventId)
+                .orElseThrow(() ->
+                        new EventNotFoundException("Event not found with id: " + eventId));
+
+        User currentUser = userRepository.findByEmail(userEmail).orElse(null);
+        if (currentUser != null) {
+            boolean isAdmin = currentUser.getRole() == Role.ADMIN || currentUser.getRole() == Role.SUPER_ADMIN;
+            if (!isAdmin && event.getOwnerId() != null && !event.getOwnerId().equals(currentUser.getId())) {
+                throw new AccessDeniedException(
+                        "Only the event's own organizer (or an administrator) can manage this event.");
+            }
+        }
+
+        EventWaitlist entry = eventWaitlistRepository.findById(waitlistId)
+                .filter(waitlist -> waitlist.getEvent().getId().equals(eventId))
+                .orElseThrow(() ->
+                        new EventNotFoundException("Waitlist entry not found with id: " + waitlistId));
+
+        if (!"WAITING".equals(entry.getStatus())) {
+            throw new RegistrationConflictException("Waitlist entry is not waiting for promotion.");
+        }
+
+        if (event.getCapacity() != null && event.getRegisteredCount() >= event.getCapacity()) {
+            throw new EventFullException("Event is already full. Capacity: " + event.getCapacity());
+        }
+
+        return promoteEntry(event, entry);
     }
 
     /**
@@ -351,6 +540,64 @@ public class EventService {
                 .build();
     }
 
+    private RegistrationResponse promoteFirstWaitingUser(Event event) {
+        if (event.getCapacity() != null && event.getRegisteredCount() >= event.getCapacity()) {
+            return null;
+        }
+
+        return eventWaitlistRepository.findWaitingByEventIdWithLock(event.getId())
+                .stream()
+                .findFirst()
+                .map(entry -> promoteEntry(event, entry))
+                .orElse(null);
+    }
+
+    private RegistrationResponse promoteEntry(Event event, EventWaitlist entry) {
+        User user = entry.getUser();
+
+        if (eventRegistrationRepository.existsByEvent_IdAndUser_Email(event.getId(), user.getEmail())) {
+            entry.setStatus("REMOVED");
+            eventWaitlistRepository.save(entry);
+            return null;
+        }
+
+        event.getAttendees().add(user);
+        event.setRegisteredCount(event.getAttendees().size());
+        Event saved = eventRepository.save(event);
+
+        EventRegistration registration = new EventRegistration();
+        registration.setEvent(saved);
+        registration.setUser(user);
+        registration.setRegisteredAt(LocalDateTime.now());
+        registration.setStatus("CONFIRMED");
+        registration = eventRegistrationRepository.save(registration);
+
+        entry.setStatus("PROMOTED");
+        entry.setPromotedAt(LocalDateTime.now());
+        eventWaitlistRepository.save(entry);
+
+        notificationRepository.save(Notification.builder()
+                .user(user)
+                .title("Waitlist spot opened")
+                .message("A spot opened for " + saved.getTitle() + ". You have been automatically registered.")
+                .build());
+
+        Integer spotsRemaining =
+                (saved.getCapacity() == null)
+                        ? null
+                        : Math.max(0, saved.getCapacity() - saved.getRegisteredCount());
+
+        return RegistrationResponse.builder()
+                .eventId(saved.getId())
+                .eventTitle(saved.getTitle())
+                .userEmail(user.getEmail())
+                .registeredAt(registration.getRegisteredAt())
+                .spotsRemaining(spotsRemaining)
+                .registrationStatus(registration.getStatus())
+                .seatId(registration.getSeatId())
+                .build();
+    }
+
     /**
      * Returns the seat identifiers already reserved for an event, used by the
      * seat selector to derive live, cross-browser occupancy.
@@ -397,6 +644,23 @@ public class EventService {
                 .isPublic(event.isPublic())
                 .imageUrl(event.getImageUrl())
                 .ownerId(event.getOwnerId())
+                .status(event.getStatus())
+                .cancellationReason(event.getCancellationReason())
+                .cancelledAt(event.getCancelledAt())
+                .refundPolicy(event.getRefundPolicy())
+                .refundPercent(event.getRefundPercent())
+                .build();
+    }
+
+    private WaitlistResponse toWaitlistResponse(EventWaitlist entry) {
+        return WaitlistResponse.builder()
+                .id(entry.getId())
+                .eventId(entry.getEvent().getId())
+                .eventTitle(entry.getEvent().getTitle())
+                .userEmail(entry.getUser().getEmail())
+                .position(entry.getPosition())
+                .status(entry.getStatus())
+                .joinedAt(entry.getJoinedAt())
                 .build();
     }
 }

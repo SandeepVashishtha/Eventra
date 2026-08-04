@@ -499,29 +499,67 @@ export const rotateKey = async () => {
     throw new Error('Key rotation requires Web Crypto API support');
   }
 
+  const METADATA_KEYS = new Set([MATERIAL_STORAGE_KEY, SALT_STORAGE_KEY, KEY_METADATA_KEY]);
+
+  // 1. Decrypt existing records using the current key
+  const decryptedItems = {};
   try {
-    // Generate new key material and salt
-    const newMaterial = crypto.getRandomValues(new Uint8Array(SECRET_BYTE_LENGTH));
-    const newSalt = crypto.getRandomValues(new Uint8Array(SECRET_BYTE_LENGTH));
-
-    // Validate generated values
-    if (newMaterial.length !== SECRET_BYTE_LENGTH) {
-      throw new Error(`Generated key material has invalid length: ${newMaterial.length}`);
+    for (let i = 0; i < localStorage.length; i++) {
+      const keyName = localStorage.key(i);
+      if (!keyName || METADATA_KEYS.has(keyName)) continue;
+      
+      const rawValue = localStorage.getItem(keyName);
+      if (!rawValue) continue;
+      
+      try {
+        const decrypted = await decryptValue(keyName, rawValue);
+        decryptedItems[keyName] = decrypted;
+      } catch {
+        // Not encrypted or already corrupt/plaintext - skip
+      }
     }
-    if (newSalt.length !== SECRET_BYTE_LENGTH) {
-      throw new Error(`Generated salt has invalid length: ${newSalt.length}`);
-    }
+  } catch (error) {
+    throw new Error(`Failed to decrypt existing records: ${error.message}`);
+  }
 
-    // Persist new material to localStorage
+  // 2. Generate new key material and salt
+  const newMaterial = crypto.getRandomValues(new Uint8Array(SECRET_BYTE_LENGTH));
+  const newSalt = crypto.getRandomValues(new Uint8Array(SECRET_BYTE_LENGTH));
+
+  if (newMaterial.length !== SECRET_BYTE_LENGTH || newSalt.length !== SECRET_BYTE_LENGTH) {
+    throw new Error('Generated key material or salt has invalid length');
+  }
+
+  // 3. Temporarily switch in-memory key materials to encrypt the records
+  const oldMaterial = DERIVED_KEY_MATERIAL;
+  const oldSalt = DERIVED_KEY_SALT;
+  const oldKeyPromise = _keyPromise;
+
+  const newEncryptedItems = {};
+  try {
+    DERIVED_KEY_MATERIAL = newMaterial;
+    DERIVED_KEY_SALT = newSalt;
+    _keyPromise = null;
+
+    for (const [keyName, plaintext] of Object.entries(decryptedItems)) {
+      newEncryptedItems[keyName] = await encryptValue(keyName, plaintext);
+    }
+  } catch (error) {
+    // Rollback in-memory state on error
+    DERIVED_KEY_MATERIAL = oldMaterial;
+    DERIVED_KEY_SALT = oldSalt;
+    _keyPromise = oldKeyPromise;
+    throw new Error(`Failed to re-encrypt records with new key: ${error.message}`);
+  }
+
+  // 4. Save new key materials and migrated records to localStorage
+  try {
+    // Persist new key materials
     localStorage.setItem(MATERIAL_STORAGE_KEY, btoa(String.fromCharCode(...newMaterial)));
     localStorage.setItem(SALT_STORAGE_KEY, btoa(String.fromCharCode(...newSalt)));
 
-    // Refresh in-memory cryptographic state from localStorage
-    // This ensures DERIVED_KEY_MATERIAL and DERIVED_KEY_SALT point to the new values
+    // Refresh in-memory cryptographic state from localStorage to validate
     refreshKeyMaterial();
-
-    // Reset key promise to force re-derivation with new material
-    _keyPromise = null;
 
     // Update metadata with rotation timestamp
     const previousMetadata = _keyMetadata;
@@ -535,9 +573,24 @@ export const rotateKey = async () => {
     };
     localStorage.setItem(KEY_METADATA_KEY, JSON.stringify(_keyMetadata));
 
+    // Persist all migrated records
+    for (const [keyName, encryptedValue] of Object.entries(newEncryptedItems)) {
+      localStorage.setItem(keyName, encryptedValue);
+    }
+
     return _keyMetadata;
   } catch (error) {
-    console.error('[secureStorage] Key rotation failed:', error);
+    // Rollback in-memory state
+    DERIVED_KEY_MATERIAL = oldMaterial;
+    DERIVED_KEY_SALT = oldSalt;
+    _keyPromise = oldKeyPromise;
+    
+    // Attempt to restore old key materials in localStorage to keep it consistent
+    try {
+      localStorage.setItem(MATERIAL_STORAGE_KEY, btoa(String.fromCharCode(...oldMaterial)));
+      localStorage.setItem(SALT_STORAGE_KEY, btoa(String.fromCharCode(...oldSalt)));
+    } catch {}
+
     throw new Error(`Key rotation failed: ${error.message}`);
   }
 };

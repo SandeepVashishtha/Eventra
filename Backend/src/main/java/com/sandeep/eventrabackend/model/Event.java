@@ -45,6 +45,32 @@ public class Event {
     private Long ownerId;
 
     /**
+     * Lifecycle status of the event. Defaults to SCHEDULED; set to CANCELLED
+     * when the event owner (or an administrator) cancels it.
+     */
+    private String status = "SCHEDULED";
+
+    /**
+     * Reason provided by the organizer when the event was cancelled.
+     */
+    private String cancellationReason;
+
+    /**
+     * Timestamp recorded when the event was cancelled.
+     */
+    private LocalDateTime cancelledAt;
+
+    /**
+     * Refund policy chosen at cancellation time (FULL / PARTIAL / NONE).
+     */
+    private String refundPolicy;
+
+    /**
+     * Refund percentage when the refund policy is PARTIAL.
+     */
+    private Integer refundPercent;
+
+    /**
      * Optimistic-lock version field.
      * Acts as a safety net alongside the pessimistic write-lock used in the
      * registration flow: if two transactions somehow both pass the capacity
@@ -103,6 +129,21 @@ public class Event {
 
     public Long getOwnerId() { return ownerId; }
     public void setOwnerId(Long ownerId) { this.ownerId = ownerId; }
+
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+
+    public String getCancellationReason() { return cancellationReason; }
+    public void setCancellationReason(String cancellationReason) { this.cancellationReason = cancellationReason; }
+
+    public LocalDateTime getCancelledAt() { return cancelledAt; }
+    public void setCancelledAt(LocalDateTime cancelledAt) { this.cancelledAt = cancelledAt; }
+
+    public String getRefundPolicy() { return refundPolicy; }
+    public void setRefundPolicy(String refundPolicy) { this.refundPolicy = refundPolicy; }
+
+    public Integer getRefundPercent() { return refundPercent; }
+    public void setRefundPercent(Integer refundPercent) { this.refundPercent = refundPercent; }
 
     public Long getVersion() { return version; }
     public void setVersion(Long version) { this.version = version; }

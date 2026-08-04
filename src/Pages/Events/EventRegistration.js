@@ -320,7 +320,7 @@ const EventRegistration = () => {
       try {
         const { joinWaitlist, getQueuePosition } = await import("utils/waitlistUtils");
         await joinWaitlist(eventId, user, { ...formData, eventTitle: event?.title || "the event" });
-        const pos = getQueuePosition(eventId, user.id);
+        const pos = await getQueuePosition(eventId, user.id);
         toast.success(t("eventRegistration.toastWaitlistSuccess"));
         clearSession();
         return { success: true, error: null, waitlistPosition: pos };
@@ -458,7 +458,7 @@ const EventRegistration = () => {
           const isFull = await checkEventCapacity(eventId, event);
           if (isFull) {
             const { getGlobalWaitlist } = await import("utils/waitlistUtils");
-            const records = getGlobalWaitlist();
+            const records = await getGlobalWaitlist(user.id);
             const onWaitlist = records.some(
               (r) => r.userId === user.id && r.eventId === parseInt(eventId, 10) && r.status === "waiting"
             );

@@ -32,7 +32,7 @@ function PollResultsList({ activePoll, totalVotes }) {
   return (
     <div className="flex flex-col gap-4">
       {activePoll.options.map((opt) => {
-        const votes = activePoll.results[opt] || 0;
+        const votes = activePoll.results?.[opt] || 0;
         const percentage = totalVotes > 0 ? Math.round((votes / totalVotes) * 100) : 0;
         return (
           <div key={opt} className="flex flex-col gap-1">

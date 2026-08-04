@@ -17,6 +17,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -180,7 +181,8 @@ public class ProjectController {
     })
     public ResponseEntity<ProjectResponse> upvoteProject(
             @Parameter(description = "ID of the project to upvote")
-            @PathVariable Long id) {
-        return ResponseEntity.ok(projectService.upvoteProject(id));
+            @PathVariable Long id,
+            Authentication authentication) {
+        return ResponseEntity.ok(projectService.upvoteProject(id, authentication.getName()));
     }
 }

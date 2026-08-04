@@ -14,6 +14,8 @@ import com.sandeep.eventrabackend.repository.HackathonRepository;
 import com.sandeep.eventrabackend.repository.UserRepository;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.security.access.AccessDeniedException;
+import com.sandeep.eventrabackend.model.Role;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -50,7 +52,9 @@ public class HackathonService {
     }
 
     @Transactional
-    public HackathonResponse createHackathon(HackathonCreateRequest request) {
+    public HackathonResponse createHackathon(HackathonCreateRequest request, String userEmail) {
+        User creator = userRepository.findByEmail(userEmail).orElse(null);
+
         Hackathon hackathon = Hackathon.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
@@ -62,6 +66,7 @@ public class HackathonService {
                 .prizePool(request.getPrizePool())
                 .registrationDeadline(request.getRegistrationDeadline())
                 .imageUrl(request.getImageUrl())
+                .ownerId(creator != null ? creator.getId() : null)
                 .build();
 
         Hackathon saved = hackathonRepository.save(hackathon);
@@ -69,9 +74,19 @@ public class HackathonService {
     }
 
     @Transactional
-    public HackathonResponse updateHackathon(Long id, com.sandeep.eventrabackend.dto.request.HackathonUpdateRequest request) {
+    public HackathonResponse updateHackathon(Long id, com.sandeep.eventrabackend.dto.request.HackathonUpdateRequest request, String userEmail) {
         Hackathon hackathon = hackathonRepository.findById(id)
                 .orElseThrow(() -> new HackathonNotFoundException("Hackathon not found with id: " + id));
+
+        User currentUser = userRepository.findByEmail(userEmail).orElse(null);
+
+        if (currentUser != null) {
+            boolean isAdmin = currentUser.getRole() == Role.ADMIN || currentUser.getRole() == Role.SUPER_ADMIN;
+            if (!isAdmin && hackathon.getOwnerId() != null && !hackathon.getOwnerId().equals(currentUser.getId())) {
+                throw new AccessDeniedException(
+                        "Only the hackathon's own organizer (or an administrator) can manage this hackathon.");
+            }
+        }
 
         hackathon.setTitle(request.getTitle());
         hackathon.setDescription(request.getDescription());
@@ -146,6 +161,7 @@ public class HackathonService {
                 .prizePool(hackathon.getPrizePool())
                 .registrationDeadline(hackathon.getRegistrationDeadline())
                 .imageUrl(hackathon.getImageUrl())
+                .ownerId(hackathon.getOwnerId())
                 .build();
     }
 }

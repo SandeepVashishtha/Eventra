@@ -42,4 +42,7 @@ public class Hackathon {
     private LocalDateTime registrationDeadline;
 
     private String imageUrl;
+
+    @Column(name = "owner_id")
+    private Long ownerId;
 }

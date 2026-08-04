@@ -33,7 +33,6 @@ import { downloadICSFile, generateGoogleCalendarLink, generateOutlookLink } from
 import { RecentlyViewedTracker } from "components/common/RecentlyViewedEvents";
 import { apiUtils, API_ENDPOINTS } from "config/api";
 import { getLastUpdated } from "utils/LastUpdatedUtils";
-import mockEvents from "./eventsMockData.json";
 import CopyButton from 'components/ui/CopyButton';
 
 const formatEventDate = (dateValue) => {
@@ -137,18 +136,13 @@ const EventDetails = () => {
       if (!isLatestRequest()) return;
       if (isRequestCanceled(error, controller.signal)) return;
 
-      const fallback = mockEvents.find((item) => String(item.id) === eventId);
-      if (fallback) {
-        setEvent({ ...fallback, status: getEventStatus(fallback) });
+      const status = error?.status || error?.response?.status;
+      if (status >= 500) {
+        setFetchError("Something went wrong on our end. Please try again later.");
+      } else if (status === 404) {
+        setFetchError("Event not found.");
       } else {
-        const status = error?.status || error?.response?.status;
-        if (status >= 500) {
-          setFetchError("Something went wrong on our end. Please try again later.");
-        } else if (status === 404) {
-          setFetchError("Event not found.");
-        } else {
-          setFetchError("Could not load event details. Please try again.");
-        }
+        setFetchError("Could not load event details. Please try again.");
       }
     } finally {
       const shouldFinishLoading = isLatestRequest();

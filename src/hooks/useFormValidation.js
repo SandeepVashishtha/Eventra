@@ -46,6 +46,7 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [isFormValid, setIsFormValid] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
 
   const clearValidationTimer = useCallback(() => {
     validationRunRef.current += 1;
@@ -81,6 +82,9 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
       error = validator(value, allValues);
     } else if (typeof validator === 'object' && validator.validate) {
       error = validator.validate(value, allValues);
+    }
+    if (error && typeof error.then === 'function') {
+      return error.then(resolved => resolved === true ? null : resolved);
     }
     return error === true ? null : error;
   }, []);
@@ -168,6 +172,7 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
   }, [clearValidationTimer]);
 
   return {
+    isValidating,
     values,
     errors,
     touched,
