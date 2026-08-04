@@ -703,7 +703,7 @@ export const syncSecureStorage = {
         this._writeQueue.clear();
         for (const [key, plaintext] of entries) {
           try {
-            const encrypted = await encryptValue(plaintext);
+            const encrypted = await encryptValue(key, plaintext);
             localStorage.setItem(key, encrypted);
           } catch (err) {
             console.error('[secureStorage] Encryption failed for', key, err);
