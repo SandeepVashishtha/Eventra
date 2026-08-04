@@ -38,7 +38,11 @@ const isRequestCanceled = (error, signal) =>
   error?.name === "AbortError" ||
   error?.name === "CanceledError" ||
   error?.code === "ERR_CANCELED";
-
+const getReadingTime = (text = "") => {
+  const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
+  const minutes = Math.max(1, Math.ceil(wordCount / 200));
+  return `${minutes} min read`;
+};
 const EventDetails = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
@@ -638,7 +642,15 @@ const showClosingSoon =
               </div>
 
               <div className="rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
-                <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Summary</h3>
+                <div className="flex items-center justify-between">
+  <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">
+    Summary
+  </h3>
+
+  <span className="text-xs text-gray-500 dark:text-gray-400">
+    📖 {getReadingTime(event.description)}
+  </span>
+</div>
                 <div
                   className="mt-3 text-gray-700 dark:text-gray-300 text-sm leading-6 prose prose-indigo dark:prose-invert"
                   dangerouslySetInnerHTML={{ __html: sanitizeMarkdown(event.description, marked.parse) }}
