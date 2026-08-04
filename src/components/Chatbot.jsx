@@ -298,7 +298,7 @@ export default function Chatbot() {
             <div
               data-chatbot-launcher
               className="
-                fixed bottom-6 right-6 z-100
+                fixed bottom-[calc(1.5rem+var(--safe-area-bottom))] right-6 z-100
                 hidden sm:flex              /* hide strip on mobile, show FAB instead */
                 items-center justify-between gap-3
                 w-72 rounded-2xl
