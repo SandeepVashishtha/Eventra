@@ -1,4 +1,4 @@
-name: CI
+name: CI Validation
 
 on:
   push:
@@ -23,10 +23,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: '22.x'
+          node-version: 22
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -51,6 +51,12 @@ jobs:
 
       - name: Run Automated Tests
         run: npm run test
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Run Playwright E2E tests
+        run: npm run test:e2e
 
       - name: Build Project
         run: npm run build
