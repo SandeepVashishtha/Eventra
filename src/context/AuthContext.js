@@ -260,32 +260,7 @@ export const AuthProvider = ({ children }) => {
    * Monitor token age and expiry limits dynamically.
    * Auto-schedules logout timers or fallback verification intervals.
    */
-  useEffect(() => {
-    if (!token || token === "cookie-managed") return;
-    expiryToastShownRef.current = false;
-
-    const expSeconds = user?.exp;
-    let timerId;
-
-    if (typeof expSeconds === "number") {
-      const msUntilExpiry = expSeconds * 1000 - Date.now() + 1000;
-      timerId = setTimeout(() => {
-        clearExpiredSession();
-      }, Math.max(msUntilExpiry, 0));
-    } else {
-      timerId = setInterval(() => {
-        if (!isTokenValid(token)) clearExpiredSession();
-      }, 60000);
-    }
-
-    return () => {
-      if (typeof expSeconds === "number") {
-        clearTimeout(timerId);
-      } else {
-        clearInterval(timerId);
-      }
-    };
-  }, [token, user?.exp, clearExpiredSession]);
+  // Session expiry timer is centrally managed by useTokenExpiry above to avoid duplicate execution.
 
   /**
    * Persists the active session state to local variables and secure cache.
