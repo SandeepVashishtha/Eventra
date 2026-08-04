@@ -17,6 +17,10 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 @Service
 @RequiredArgsConstructor
 public class FeedbackService {
@@ -33,6 +37,10 @@ public class FeedbackService {
 
         Event event = eventRepository.findById(request.getEventId())
                 .orElseThrow(() -> new EventNotFoundException("Event not found with ID: " + request.getEventId()));
+
+        if (!event.isEventPast()) {
+            throw new IllegalArgumentException("Feedback can only be submitted after the event has ended.");
+        }
 
         // Validate user is registered for the event
         if (!registrationRepository.existsByEvent_IdAndUser_Email(event.getId(), userEmail)) {
@@ -53,6 +61,25 @@ public class FeedbackService {
         Feedback savedFeedback = feedbackRepository.save(feedback);
 
         return mapToResponse(savedFeedback);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> getOrganizerScore(Long organizerId) {
+        Double averageRating = feedbackRepository.findAverageRatingByOrganizer(organizerId);
+        long reviewCount = feedbackRepository.countByOrganizer(organizerId);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("organizerId", organizerId);
+        response.put("averageRating", averageRating == null ? 0.0 : Math.round(averageRating * 10.0) / 10.0);
+        response.put("reviewCount", reviewCount);
+        return response;
+    }
+
+    @Transactional(readOnly = true)
+    public List<FeedbackResponse> getOrganizerFeedback(Long organizerId) {
+        return feedbackRepository.findByOrganizer(organizerId).stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
     private FeedbackResponse mapToResponse(Feedback feedback) {

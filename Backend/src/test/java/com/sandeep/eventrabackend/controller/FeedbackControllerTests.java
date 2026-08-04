@@ -21,6 +21,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.LocalDateTime;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -58,6 +59,7 @@ public class FeedbackControllerTests {
     private PasswordEncoder passwordEncoder;
 
     private Long eventId;
+    private Long organizerId;
     private final String testUserEmail = "feedbackuser@example.com";
 
     @BeforeEach
@@ -79,12 +81,14 @@ public class FeedbackControllerTests {
                 .role(Role.CLIENT)
                 .build();
         userRepository.save(user);
+        organizerId = user.getId();
 
         // Create a test event
         Event event = new Event();
         event.setTitle("Feedback Test Event");
         event.setCapacity(10);
-        event.setEventDate(LocalDateTime.now().plusDays(5));
+        event.setEventDate(LocalDateTime.now().minusDays(1));
+        event.setOwnerId(organizerId);
         event.setPublic(true);
         event = eventRepository.save(event);
         eventId = event.getId();
@@ -191,6 +195,60 @@ public class FeedbackControllerTests {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value("You have already submitted feedback for this event."));
+    }
+
+    @Test
+    @DisplayName("POST /api/feedback — 400 Bad Request (Event Not Ended)")
+    void testFeedbackBeforeEventEnds() throws Exception {
+        Event upcoming = new Event();
+        upcoming.setTitle("Upcoming Event");
+        upcoming.setCapacity(10);
+        upcoming.setEventDate(LocalDateTime.now().plusDays(3));
+        upcoming.setOwnerId(organizerId);
+        upcoming = eventRepository.save(upcoming);
+
+        EventRegistration registration = new EventRegistration();
+        registration.setEvent(upcoming);
+        registration.setUser(userRepository.findByEmail(testUserEmail).orElseThrow());
+        eventRegistrationRepository.save(registration);
+
+        FeedbackRequest request = FeedbackRequest.builder()
+                .eventId(upcoming.getId())
+                .rating(5)
+                .build();
+
+        mockMvc.perform(post("/api/feedback")
+                        .with(user(testUserEmail))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Feedback can only be submitted after the event has ended."));
+    }
+
+    @Test
+    @DisplayName("GET /api/feedback/organizers/{organizerId}/score — Success")
+    void testOrganizerScore() throws Exception {
+        EventRegistration registration = new EventRegistration();
+        registration.setEvent(eventRepository.findById(eventId).orElseThrow());
+        registration.setUser(userRepository.findByEmail(testUserEmail).orElseThrow());
+        eventRegistrationRepository.save(registration);
+
+        FeedbackRequest request = FeedbackRequest.builder()
+                .eventId(eventId)
+                .rating(4)
+                .build();
+
+        mockMvc.perform(post("/api/feedback")
+                        .with(user(testUserEmail))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(get("/api/feedback/organizers/{organizerId}/score", organizerId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.organizerId").value(organizerId))
+                .andExpect(jsonPath("$.averageRating").value(4.0))
+                .andExpect(jsonPath("$.reviewCount").value(1));
     }
 
     @Test

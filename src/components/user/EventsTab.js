@@ -13,6 +13,7 @@ import {
   Trash2,
   Activity,
   Copy,
+  Star,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useMyEvents } from "context/MyEventsContext";
@@ -27,6 +28,7 @@ import { useOfflineStatus } from "hooks/useOfflineStatus";
 import LazyImage from "../common/LazyImage";
 import { showUndoToast } from "utils/toast";
 import toast from "react-hot-toast";
+import EventFeedbackModal from "../feedback/EventFeedbackModal";
 
 /* ---------------- Helper Functions (Extracted to reduce complexity) ---------------- */
 
@@ -117,6 +119,7 @@ const EventCard = memo(({
   onRemoveRegistration,
   showCancel,
   onViewTicket,
+  onLeaveReview,
   addToRecentEvents,
   onCopyLink,
 }) => {
@@ -125,6 +128,7 @@ const EventCard = memo(({
   const fadeUpVariants = fadeUp(prefersReducedMotion);
   const status = getEventStatus(event);
   const shortDate = formatShortDate(event?.date);
+  const isCompleted = status === "Completed";
 
   // Render tags
   const renderTags = () => {
@@ -148,22 +152,33 @@ const EventCard = memo(({
     if (showCancel) {
       return (
         <>
-          <button
-            className="group/btn w-full sm:flex-1 inline-flex items-center justify-center gap-2 rounded-2xl bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/50 px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold transition-all duration-300 hover:scale-105"
-            onClick={() => onRemoveRegistration?.(event?.id || event?.eventId, event?.title)}
-            disabled={isOffline}
-          >
-            <Trash2 size={13} /> Cancel Registration
-          </button>
-          <button
-            className="group/btn w-full sm:flex-1"
-            onClick={() => onViewTicket?.(event)}
-          >
-            <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-indigo-650 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
-              <Ticket size={13} className="relative" />
-              <span className="relative">Ticket</span>
-            </div>
-          </button>
+          {isCompleted ? (
+            <button
+              className="group/btn w-full sm:flex-1 inline-flex items-center justify-center gap-2 rounded-2xl bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-950/50 px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold transition-all duration-300 hover:scale-105"
+              onClick={() => onLeaveReview?.(event)}
+            >
+              <Star size={13} /> Leave Review
+            </button>
+          ) : (
+            <>
+              <button
+                className="group/btn w-full sm:flex-1 inline-flex items-center justify-center gap-2 rounded-2xl bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/50 px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold transition-all duration-300 hover:scale-105"
+                onClick={() => onRemoveRegistration?.(event?.id || event?.eventId, event?.title)}
+                disabled={isOffline}
+              >
+                <Trash2 size={13} /> Cancel Registration
+              </button>
+              <button
+                className="group/btn w-full sm:flex-1"
+                onClick={() => onViewTicket?.(event)}
+              >
+                <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-indigo-650 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
+                  <Ticket size={13} className="relative" />
+                  <span className="relative">Ticket</span>
+                </div>
+              </button>
+            </>
+          )}
         </>
       );
     }
@@ -376,6 +391,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const [waitlistUpdated, setWaitlistUpdated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [cancelTarget, setCancelTarget] = useState(null);
+  const [reviewTarget, setReviewTarget] = useState(null);
   const [recentSearches, setRecentSearches] = useState([]);
 
   const [filterStatus, setFilterStatus] = useState("All");
@@ -793,6 +809,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
                       onRemoveRegistration={handleCancelClick}
                       showCancel
                       onViewTicket={onViewTicket}
+                      onLeaveReview={setReviewTarget}
                       addToRecentEvents={addToRecentEvents}
                       onCopyLink={handleCopyLink}
                     />
@@ -854,6 +871,13 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
 
       {/* Cancel Modal */}
       <AnimatePresence>
+        {reviewTarget && (
+          <EventFeedbackModal
+            isOpen={Boolean(reviewTarget)}
+            event={reviewTarget}
+            onClose={() => setReviewTarget(null)}
+          />
+        )}
         {cancelTarget && ReactDOM.createPortal(
           <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
