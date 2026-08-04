@@ -292,6 +292,7 @@ export const syncPendingRecoverySessions = async (
       synced.push(saved);
     } catch (err) {
       console.error('[sessionRecoveryService] Sync failed for session', session?.sessionId, err);
+      failed.push(session);
     }
   }
 
