@@ -26,7 +26,6 @@ Cell.displayName = "Cell";
 // grid fills its container and responds to window resize. Fixed dimensions
 // caused the grid to overflow on mobile and never reclaim space on resize,
 // contributing to layout thrash and memory growth.
-import AutoSizer from "react-virtualized-auto-sizer";
 
 const VirtualizedEventGrid = ({ events }) => {
   const rowCount = Math.ceil(events.length / COLUMN_COUNT);
