@@ -109,8 +109,12 @@ const renderCardSection = (
         }`}
     >
       {paginatedEvents.map((event) => (
-        <EventCard key={event.id} event={event} />
-      ))}
+  <EventCard
+    key={event.id}
+    event={event}
+    isHighlighted={listing.highlightedEventIds.includes(event.id)}
+  />
+))}
     </div>
   );
 };

@@ -56,7 +56,7 @@ const getCapacityStyles = (ratio, isFull) => {
   };
 };
 
-const EventCard = ({ event, position }) => {
+const EventCard = ({ event, position, isHighlighted = false }) => {
   const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
   const titleId = useId();
   const { myEvents, isRegistered } = useMyEvents();
@@ -143,7 +143,11 @@ const durationText = getEventDuration(event);
       data-aos="zoom-in"
       data-aos-duration="800"
       aria-labelledby={titleId}
-      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-lg backdrop-blur-sm transition-all duration-300 flex flex-col z-10 event-card-hoverable overflow-hidden border border-gray-100 dark:border-gray-800"
+     className={`group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-lg backdrop-blur-sm transition-all duration-300 flex flex-col z-10 event-card-hoverable overflow-hidden border ${
+  isHighlighted
+    ? "border-indigo-500 ring-2 ring-indigo-300 animate-pulse"
+    : "border-gray-100 dark:border-gray-800"
+}`}
     >
       {/* Action buttons */}
       <div className="absolute top-3 right-3 z-200 flex space-x-1.5 items-center">

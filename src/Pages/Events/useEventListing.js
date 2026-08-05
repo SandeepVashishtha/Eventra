@@ -33,6 +33,7 @@ const normalizeEvent = (event) => ({
 
 const useEventListing = () => {
   const [events, setEvents] = useState([]);
+  const [highlightedEventIds, setHighlightedEventIds] = useState([]);
   const [filterType, setFilterType] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [viewMode, setViewMode] = useState("grid");
@@ -137,6 +138,11 @@ const useEventListing = () => {
 
       const normalizedEvents = apiEvents.map(normalizeEvent);
       setEvents(normalizedEvents);
+      setHighlightedEventIds(normalizedEvents.map((event) => event.id));
+    
+      setTimeout(() => {
+  setHighlightedEventIds([]);
+}, 3000);
       setLastUpdated(new Date());
 
       setPagination({
@@ -313,6 +319,7 @@ const useEventListing = () => {
     eventsPerPage,
     fetchEvents,
     filteredEvents,
+    highlightedEventIds,
     filterType,
     categoryFilter,
     loadError,
