@@ -50,7 +50,7 @@ jobs:
 
       - name: Cache node modules
         id: cache-npm
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ inputs.working-directory }}/node_modules
           key: ${{ runner.os }}-build-${{ hashFiles(format('{0}/**/package-lock.json', inputs.working-directory)) }}
