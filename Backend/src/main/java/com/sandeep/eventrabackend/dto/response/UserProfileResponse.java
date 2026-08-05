@@ -28,4 +28,13 @@ public class UserProfileResponse {
 
     @Schema(description = "User role", example = "CLIENT")
     private String role;
+
+    @Schema(description = "Short professional headline", example = "Full Stack Developer looking for a team")
+    private String profileHeadline;
+
+    @Schema(description = "LinkedIn profile URL", example = "https://www.linkedin.com/in/john-doe")
+    private String linkedinUrl;
+
+    @Schema(description = "GitHub profile URL", example = "https://github.com/johndoe")
+    private String githubUrl;
 }

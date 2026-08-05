@@ -20,6 +20,8 @@ public interface EventRegistrationRepository extends JpaRepository<EventRegistra
 
     List<EventRegistration> findByEvent_Id(Long eventId);
 
+    List<EventRegistration> findByEvent_IdAndShowProfileInAttendeeDirectoryTrueOrderByRegisteredAtAsc(Long eventId);
+
     void deleteByEventId(Long eventId);
 
     void deleteByUser_Id(Long userId);

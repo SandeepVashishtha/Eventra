@@ -41,6 +41,15 @@ public class User {
     @Column(nullable = false)
     private String password;
 
+    @Column(name = "profile_headline", length = 160)
+    private String profileHeadline;
+
+    @Column(name = "linkedin_url", length = 255)
+    private String linkedinUrl;
+
+    @Column(name = "github_url", length = 255)
+    private String githubUrl;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private Role role;

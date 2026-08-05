@@ -4,6 +4,7 @@ import com.sandeep.eventrabackend.dto.request.CancelEventRequest;
 import com.sandeep.eventrabackend.dto.request.EventCreateRequest;
 import com.sandeep.eventrabackend.dto.request.EventUpdateRequest;
 import com.sandeep.eventrabackend.dto.response.EventAvailabilityResponse;
+import com.sandeep.eventrabackend.dto.response.AttendeeDirectoryResponse;
 import com.sandeep.eventrabackend.dto.response.EventResponse;
 import com.sandeep.eventrabackend.dto.response.MyRegisteredEventResponse;
 import com.sandeep.eventrabackend.dto.response.RegistrationResponse;
@@ -449,12 +450,21 @@ public class EventService {
      */
     @Transactional
     public RegistrationResponse registerUserForEvent(Long eventId, String userEmail, String seatId) {
+        return registerUserForEvent(eventId, userEmail, seatId, false);
+    }
+
+    @Transactional
+    public RegistrationResponse registerUserForEvent(
+            Long eventId,
+            String userEmail,
+            String seatId,
+            boolean showProfileInAttendeeDirectory) {
 
         ObjectOptimisticLockingFailureException lastConflict = null;
 
         for (int attempt = 1; attempt <= MAX_REGISTRATION_RETRIES; attempt++) {
             try {
-                return executeRegistration(eventId, userEmail, seatId);
+                return executeRegistration(eventId, userEmail, seatId, showProfileInAttendeeDirectory);
 
             } catch (ObjectOptimisticLockingFailureException ex) {
                 lastConflict = ex;
@@ -483,7 +493,8 @@ public class EventService {
     private RegistrationResponse executeRegistration(
             Long eventId,
             String userEmail,
-            String seatId) {
+            String seatId,
+            boolean showProfileInAttendeeDirectory) {
 
         Event event = eventRepository.findByIdWithLock(eventId)
                 .orElseThrow(() ->
@@ -520,6 +531,7 @@ public class EventService {
         registration.setRegisteredAt(LocalDateTime.now());
         registration.setStatus("CONFIRMED");
         registration.setSeatId(seatId);
+        registration.setShowProfileInAttendeeDirectory(showProfileInAttendeeDirectory);
 
         try {
             registration = eventRegistrationRepository.saveAndFlush(registration);
@@ -544,6 +556,31 @@ public class EventService {
                 .registrationStatus(registration.getStatus())
                 .seatId(registration.getSeatId())
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    public List<AttendeeDirectoryResponse> getAttendeeDirectory(Long eventId, String userEmail) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() ->
+                        new EventNotFoundException("Event not found with id: " + eventId));
+
+        User currentUser = userRepository.findByEmail(userEmail)
+                .orElseThrow(() ->
+                        new UsernameNotFoundException("User not found with email: " + userEmail));
+
+        boolean isAdmin = currentUser.getRole() == Role.ADMIN || currentUser.getRole() == Role.SUPER_ADMIN;
+        boolean isOwner = event.getOwnerId() != null && event.getOwnerId().equals(currentUser.getId());
+        boolean isRegistered = eventRegistrationRepository.existsByEvent_IdAndUser_Email(eventId, userEmail);
+
+        if (!isAdmin && !isOwner && !isRegistered) {
+            throw new AccessDeniedException("Only registered attendees can view this event's attendee directory.");
+        }
+
+        return eventRegistrationRepository
+                .findByEvent_IdAndShowProfileInAttendeeDirectoryTrueOrderByRegisteredAtAsc(eventId)
+                .stream()
+                .map(this::toAttendeeDirectoryResponse)
+                .toList();
     }
 
     private RegistrationResponse promoteFirstWaitingUser(Event event) {
@@ -667,6 +704,21 @@ public class EventService {
                 .position(entry.getPosition())
                 .status(entry.getStatus())
                 .joinedAt(entry.getJoinedAt())
+                .build();
+    }
+
+    private AttendeeDirectoryResponse toAttendeeDirectoryResponse(EventRegistration registration) {
+        User user = registration.getUser();
+        String displayName = (user.getFirstName() + " " + user.getLastName()).trim();
+
+        return AttendeeDirectoryResponse.builder()
+                .userId(user.getId())
+                .displayName(displayName.isBlank() ? user.getUsername() : displayName)
+                .username(user.getUsername())
+                .profileHeadline(user.getProfileHeadline())
+                .linkedinUrl(user.getLinkedinUrl())
+                .githubUrl(user.getGithubUrl())
+                .registeredAt(registration.getRegisteredAt())
                 .build();
     }
 }
