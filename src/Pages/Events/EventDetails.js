@@ -356,14 +356,68 @@ const lastUpdated = getLastUpdated(event.updatedAt);
     <ReadingProgressBar />
     <RecentlyViewedTracker event={event} />
       <Helmet>
-        <title>{event.title} | Eventra</title>
-        <meta property="og:title" content={event.title} />
-        <meta property="og:description" content={event.description?.slice(0, 160) || ""} />
-        <meta property="og:image" content={event.image} />
-        <meta property="og:url" content={window.location.href} />
-        <meta name="twitter:card" content="summary_large_image" />
-      </Helmet>
+  <title>{event.title} | Eventra</title>
 
+  <meta
+    name="description"
+    content={event.description?.slice(0,160) || ""}
+  />
+
+  <meta
+    property="og:type"
+    content="website"
+  />
+
+  <meta
+    property="og:title"
+    content={event.title}
+  />
+
+  <meta
+    property="og:description"
+    content={event.description?.slice(0,160) || ""}
+  />
+
+  <meta
+    property="og:image"
+    content={event.image}
+  />
+
+  <meta
+    property="og:url"
+    content={window.location.href}
+  />
+
+  <meta
+    property="og:site_name"
+    content="Eventra"
+  />
+
+  <meta
+    name="twitter:card"
+    content="summary_large_image"
+  />
+
+  <meta
+    name="twitter:title"
+    content={event.title}
+  />
+
+  <meta
+    name="twitter:description"
+    content={event.description?.slice(0,160) || ""}
+  />
+
+  <meta
+    name="twitter:image"
+    content={event.image}
+  />
+
+  <meta
+    name="twitter:url"
+    content={window.location.href}
+  />
+</Helmet>
       <div className="min-h-screen bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100 py-16 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl space-y-8">
 
