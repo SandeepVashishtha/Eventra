@@ -73,7 +73,7 @@ assert.match(
 );
 
 const offlinePayloadSection = source.slice(
-  source.indexOf("const payload = {"),
+  source.indexOf("const payload = isFreshlyFull"),
   source.indexOf("const success = await pushToQueue")
 );
 
@@ -85,7 +85,31 @@ assert.match(
 
 assert.match(
   source,
-  /addRegistration\(event, formData\)/,
+  /actionType: isFreshlyFull \? "JOIN_WAITLIST" : "REGISTER_EVENT"/,
+  "The offline queued item must switch to JOIN_WAITLIST when the event filled up"
+);
+
+assert.match(
+  offlinePayloadSection,
+  /userId: user\.id \|\| user\.email/,
+  "The offline queued JOIN_WAITLIST payload must carry the waitlist contract userId"
+);
+
+assert.match(
+  offlinePayloadSection,
+  /email: user\.email/,
+  "The offline queued JOIN_WAITLIST payload must carry the waitlist contract email"
+);
+
+assert.match(
+  offlinePayloadSection,
+  /eventTitle: event\?\.title \|\| "the event"/,
+  "The offline queued JOIN_WAITLIST payload must carry the waitlist contract eventTitle"
+);
+
+assert.match(
+  source,
+  /addRegistration\(event, formData(?:,|\))/,
   "Local registration state must continue receiving the submitted formData"
 );
 

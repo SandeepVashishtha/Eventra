@@ -374,12 +374,24 @@ const EventRegistration = () => {
       const isAlreadyRegistered = failureMessage === "You are already registered for this event.";
 
       if (isOfflineFailure) {
-        const payload = {
-          ...formData,
-          eventId: parseInt(eventId, 10),
-          idempotencyKey,
-          seatId: selectedSeatId,
-        };
+        const payload = isFreshlyFull
+          ? {
+              userId: user.id || user.email,
+              name:
+                user.fullName ||
+                `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
+                user.username ||
+                "Anonymous",
+              email: user.email,
+              phone: formData.phone || "",
+              eventTitle: event?.title || "the event",
+            }
+          : {
+              ...formData,
+              eventId: parseInt(eventId, 10),
+              idempotencyKey,
+              seatId: selectedSeatId,
+            };
 
         const success = await pushToQueue(
           {
