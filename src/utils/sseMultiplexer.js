@@ -116,7 +116,7 @@ class SseMultiplexer {
           if (document.visibilityState === "hidden") {
             this.teardown(true);
           } else if (document.visibilityState === "visible") {
-            this.reconnect();
+            this.reconnectOnVisibility();
           }
         }
       };
@@ -708,7 +708,7 @@ class SseMultiplexer {
     this.lastSeenFollowers = null;
   }
 
-  reconnect() {
+  reconnectOnVisibility() {
     logger.log(`[SSE Multiplexer] Tab ${this.tabId} became visible, reconnecting...`);
     if (typeof window !== "undefined") {
       if (!this.channel) {
