@@ -311,6 +311,10 @@ const useOfflineSync = () => {
         });
 
         for (const item of sessionValidatedQueue) {
+        if (Date.now() - syncStartTime > SYNC_BUDGET_MS) {
+          logger.warn("[useOfflineSync] Sync budget exceeded, stopping.");
+          break;
+        }
           // Halt the zombie loop immediately if the session changed or component unmounted.
           // This prevents making requests with stale tokens and protects IndexedDB from being falsely overwritten below.
           if (conflictController.signal.aborted) {
