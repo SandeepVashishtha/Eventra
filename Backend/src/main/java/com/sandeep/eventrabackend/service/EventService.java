@@ -13,8 +13,7 @@ import com.sandeep.eventrabackend.exception.EventNotFoundException;
 import com.sandeep.eventrabackend.exception.RegistrationConflictException;
 import com.sandeep.eventrabackend.model.Event;
 import com.sandeep.eventrabackend.model.EventRegistration;
-import com.sandeep.eventrabackend.model.EventWaitlist;
-import com.sandeep.eventrabackend.model.Notification;
+import com.sandeep.eventrabackend.model.EventRole;
 import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.EventRegistrationRepository;
 import com.sandeep.eventrabackend.repository.EventRepository;
@@ -26,7 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -66,18 +64,19 @@ public class EventService {
     private final EventWaitlistRepository eventWaitlistRepository;
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final EventRoleService eventRoleService;
 
     public EventService(
             EventRepository eventRepository,
             EventRegistrationRepository eventRegistrationRepository,
-            EventWaitlistRepository eventWaitlistRepository,
-            NotificationRepository notificationRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            EventRoleService eventRoleService) {
         this.eventRepository = eventRepository;
         this.eventRegistrationRepository = eventRegistrationRepository;
         this.eventWaitlistRepository = eventWaitlistRepository;
         this.notificationRepository = notificationRepository;
         this.userRepository = userRepository;
+        this.eventRoleService = eventRoleService;
     }
 
     /**
@@ -210,6 +209,7 @@ public class EventService {
         event.setOwnerId(owner.getId());
 
         Event saved = eventRepository.save(event);
+        eventRoleService.assignOwner(saved, owner);
         return toEventResponse(saved);
     }
 
@@ -227,16 +227,7 @@ public class EventService {
                 .orElseThrow(() ->
                         new EventNotFoundException("Event not found with id: " + id));
 
-        // Issue #11021 — event management is owner-scoped: a user may only update
-        // an event they created. This closes the cross-tenant IDOR where any
-        // ORGANIZER could mutate any event by swapping the id.
-        Long principalId = userRepository.findByEmail(userEmail)
-                .map(User::getId)
-                .orElse(null);
-        if (event.getOwnerId() != null && !event.getOwnerId().equals(principalId)) {
-            throw new AccessDeniedException(
-                    "Only the event's own organizer can manage this event.");
-        }
+        eventRoleService.requireRole(id, userEmail, EventRole.ORGANIZER);
 
         // Business Rule: Capacity cannot be less than current registrations
         if (request.getCapacity() != null && request.getCapacity() < event.getRegisteredCount()) {
