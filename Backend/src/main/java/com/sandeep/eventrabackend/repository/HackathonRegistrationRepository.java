@@ -10,4 +10,6 @@ public interface HackathonRegistrationRepository extends JpaRepository<Hackathon
     boolean existsByHackathon_IdAndUser_Email(Long hackathonId, String userEmail);
 
     void deleteByHackathonId(Long hackathonId);
+
+    void deleteByUser_Id(Long userId);
 }

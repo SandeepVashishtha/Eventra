@@ -1,6 +1,6 @@
 import { createContext, useContext, useCallback, useMemo, useEffect, useRef } from "react";
 import { useAuth } from "./AuthContext";
-import useRealTimeConnection from "../hooks/useRealTimeConnection";
+import useRealTimeConnection, { SSE_STATUS } from "../hooks/useRealTimeConnection";
 import { getNotificationCategory, getNotificationMessage, getNotificationTitle } from "../utils/notificationPreferences";
 import { useNotificationPreferences } from "../hooks/useNotificationPreferences";
 import { usePushSubscription } from "../hooks/usePushSubscription";
@@ -23,7 +23,7 @@ const normalizeNotification = (n = {}) => ({
 const useBackgroundInterval = (realtimeStatus, fetchNotifications) => {
   useEffect(() => {
     const intervalId = setInterval(() => {
-      if (realtimeStatus === "IDLE") {
+      if (realtimeStatus === SSE_STATUS.IDLE) {
         fetchNotifications?.();
       }
     }, 30000);

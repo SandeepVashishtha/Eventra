@@ -86,10 +86,12 @@ export const API_ENDPOINTS = {
     REGISTER: (id) => buildApiUrl(`/events/${id}/register`),
     CANCEL: (id) => buildApiUrl(`/events/${id}/cancel`),
     AVAILABILITY: (id) => buildApiUrl(`/events/${id}/availability`),
+    ROLES: (id) => buildApiUrl(`/events/${id}/roles`),
+    ROLE_AUDIT: (id) => buildApiUrl(`/events/${id}/roles/audit`),
 
     REGISTRANTS: (id) => buildApiUrl(`/events/${id}/registrants`),
     WAITLIST: (id) => buildApiUrl(`/events/${id}/waitlist`),
-    SCHEDULE: buildApiUrl('/events/schedule'),
+    SCHEDULE: (id) => buildApiUrl(`/events/${id}/schedule`),
     // Convenience helper — appends ?page=&size= for callers that build the
     // URL manually rather than going through eventFetchUtils.buildPaginatedUrl.
     PAGINATED: (page, size) => buildApiUrl(`/events?page=${page}&size=${size}`),

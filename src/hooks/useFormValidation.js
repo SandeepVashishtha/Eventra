@@ -29,6 +29,7 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
   // Also keep validateOnBlur and debounceMs in a ref so handleChange
   // doesn't need them in its dependency array and is never recreated.
   const optionsRef = useRef({ debounceMs, validateOnBlur });
+  const valuesRef = useRef(initialState);
 
   useEffect(() => {
     validationRulesRef.current = validationRules;
@@ -41,6 +42,10 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
   useEffect(() => {
     optionsRef.current = { debounceMs, validateOnBlur };
   }, [debounceMs, validateOnBlur]);
+
+  useEffect(() => {
+    valuesRef.current = values;
+  }, [values]);
 
   const [values, setValues] = useState(initialState);
   const [errors, setErrors] = useState({});
@@ -147,9 +152,9 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
     const { name, value } = e.target;
     setTouched((prev) => ({ ...prev, [name]: true }));
     if (!validationRulesRef.current[name]) return;
-    const error = validateField(name, value, values);
+    const error = validateField(name, value, valuesRef.current);
     setErrors((prev) => ({ ...prev, [name]: error }));
-  }, [validateField, values]);
+  }, [validateField]);
 
   // Derive overall form validity whenever field values, errors, or touch
   // state changes. A field is considered satisfied when it has been touched

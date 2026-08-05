@@ -79,7 +79,7 @@ export const invalidateSession = async () => {
         await Promise.all(
           cacheNames.map((name) => caches.delete(name))
         );
-      } catch {}
+      } catch { console.warn("[sessionManager] Cache cleanup failed"); }
     }
   }
 };

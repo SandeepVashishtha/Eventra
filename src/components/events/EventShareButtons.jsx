@@ -27,8 +27,7 @@
 import { useCallback, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Share2, Twitter, Linkedin, MessageCircle, Link2, Check, Eye, X, Calendar, MapPin, Mail } from "lucide-react";
-import { toast } from "react-toastify";
-import useCopyToClipboard from "../../hooks/useCopyToClipboard";
+import useEventShare from "../../hooks/useEventShare";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -57,7 +56,9 @@ function getDynamicOgImageUrl(event) {
 // ---------------------------------------------------------------------------
 
 export default function EventShareButtons({ event }) {
-  const { copy, copied } = useCopyToClipboard({ resetMs: 2500 });
+  const { canNativeShare, copied, copyInviteLink, isSharing, shareEvent } = useEventShare({
+    fallbackMessage: "Event invite link copied to clipboard",
+  });
   const [showPreview, setShowPreview] = useState(false);
 
   const url = getEventUrl(event);
@@ -103,28 +104,18 @@ export default function EventShareButtons({ event }) {
 
   // Native Web Share API
   const handleNativeShare = useCallback(async () => {
-    if (!navigator.share) return;
-    try {
-      await navigator.share({ title: event.title, text, url });
-    } catch (err) {
-      if (err.name !== "AbortError") {
-        toast.error("Could not share this event.");
-      }
-    }
-  }, [event.title, text, url]);
+    await shareEvent({ title: event.title, text, url });
+  }, [event.title, shareEvent, text, url]);
 
   // Copy link
   const handleCopyLink = useCallback(async () => {
-    const ok = await copy(url);
-    if (ok) toast.success("Link copied to clipboard!");
-  }, [copy, url]);
+    await copyInviteLink(url);
+  }, [copyInviteLink, url]);
 
   // Social share URLs
   const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
   const linkedinUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
   const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(`${text} ${url}`)}`;
-
-  const supportsWebShare = typeof navigator !== "undefined" && Boolean(navigator.share);
 
   const containerVariants = {
     hidden: { opacity: 0, y: 8 },
@@ -157,16 +148,17 @@ export default function EventShareButtons({ event }) {
         className="flex flex-wrap items-center gap-2"
       >
         {/* Native Web Share */}
-        {supportsWebShare && (
+        {canNativeShare && (
           <motion.button
             variants={itemVariants}
             type="button"
             onClick={handleNativeShare}
+            disabled={isSharing}
             aria-label="Share this event using your device's native share menu"
-            className="share-btn inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow transition-all hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-300"
+            className="share-btn inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow transition-all hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-300 disabled:cursor-not-allowed disabled:opacity-70"
           >
             <Share2 className="h-4 w-4" aria-hidden="true" />
-            Share
+            {isSharing ? "Sharing..." : "Share"}
           </motion.button>
         )}
 
