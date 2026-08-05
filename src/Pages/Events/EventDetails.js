@@ -416,6 +416,7 @@ const dateInfo = formatLocalDateTime(eventDate);
   };
 
 
+
 const hoursLeft = registrationEnd
   ? Math.ceil((registrationEnd - new Date()) / (1000 * 60 * 60))
   : null;
