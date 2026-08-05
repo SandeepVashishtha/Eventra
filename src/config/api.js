@@ -20,7 +20,8 @@ const buildApiUrl = (path = "") => {
   if (/^https?:\/\//i.test(path)) return path;
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   if (!API_BASE_URL) return normalizedPath;
-  return `${API_BASE_URL}${normalizedPath}`;
+  const url = `${API_BASE_URL}${normalizedPath}`;
+  return url.replace(/([^:]\/)\/+/g, "$1");
 };
 
 // ---------------------------------------------------------------------------
