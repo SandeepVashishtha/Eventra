@@ -62,10 +62,11 @@ const renderCardSection = (
   loadError,
   onRetry,
   paginatedEvents,
+  filteredEvents,
   viewMode,
   searchQuery,
   onClearSearch,
-  matchScoreMap       // (#7437) Map of eventId → { score, reasons }
+  matchScoreMap
 ) => {
   if (isLoading) {
     return <ExploreEventsSkeleton />;
@@ -409,15 +410,16 @@ const EventsPage = () => {
         />
 
         <ErrorBoundary level="section" label="Events">
-     {renderCardSection(
+    {renderCardSection(
   isLoading,
   listing.loadError,
   listing.fetchEvents,
   listing.paginatedEvents,
+  listing.filteredEvents,
   listing.viewMode,
   listing.searchQuery,
   clearSearchAndFilters,
-  listing.matchScoreMap   // (#7437) pass score map for badge rendering
+  listing.matchScoreMap
 )}
 
           {!listing.isLoading && listing.totalPages > 1 && (
