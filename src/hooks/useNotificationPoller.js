@@ -211,17 +211,19 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
   const markAllAsRead = useCallback(async () => {
     if (!token) return;
     const t = token;
-    let hasUnread = false;
+    // Read unread state from the ref OUTSIDE the state updater. Reading it
+    // inside setNotifications would be deferred by React until the render
+    // phase, so the check below would always see false and the action would
+    // become a no-op (#11774).
+    const hasUnread = notificationsRef.current.some((n) => !n.isRead);
+    if (!hasUnread) return;
+    const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.READ_ALL;
+    if (!endpoint) return;
     setNotifications((prev) => {
-      hasUnread = prev.some((n) => !n.isRead);
-      if (!hasUnread) return prev;
       const updated = prev.map((n) => ({ ...n, isRead: true }));
       persist(updated, storageKeyRef.current);
       return updated;
     });
-    if (!hasUnread) return;
-    const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.READ_ALL;
-    if (!endpoint) return;
     setUnreadCount(0);
     try {
       await apiUtils.put(endpoint, {});
