@@ -20,7 +20,6 @@ import com.sandeep.eventrabackend.model.Notification;
 import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.EventRegistrationRepository;
 import com.sandeep.eventrabackend.repository.EventRepository;
-import com.sandeep.eventrabackend.model.Role;
 import com.sandeep.eventrabackend.repository.EventWaitlistRepository;
 import com.sandeep.eventrabackend.repository.NotificationRepository;
 import com.sandeep.eventrabackend.repository.UserRepository;
@@ -276,15 +275,7 @@ public class EventService {
                 .orElseThrow(() ->
                         new EventNotFoundException("Event not found with id: " + id));
 
-        User currentUser = userRepository.findByEmail(userEmail)
-                .orElseThrow(() ->
-                        new UsernameNotFoundException("User not found with email: " + userEmail));
-
-        boolean isAdmin = currentUser.getRole() == Role.ADMIN || currentUser.getRole() == Role.SUPER_ADMIN;
-        if (!isAdmin && (event.getOwnerId() == null || !event.getOwnerId().equals(currentUser.getId()))) {
-            throw new AccessDeniedException(
-                    "Only the event's own organizer (or an administrator) can cancel this event.");
-        }
+        eventRoleService.requireRole(id, userEmail, EventRole.ORGANIZER);
 
         if ("CANCELLED".equals(event.getStatus())) {
             throw new RegistrationConflictException("Event is already cancelled.");
