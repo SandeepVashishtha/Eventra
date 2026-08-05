@@ -521,12 +521,9 @@ public class EventService {
         }
 
         event.getAttendees().add(user);
-        event.setRegisteredCount(event.getAttendees().size());
-
-        Event saved = eventRepository.save(event);
 
         EventRegistration registration = new EventRegistration();
-        registration.setEvent(saved);
+        registration.setEvent(event);
         registration.setUser(user);
         registration.setRegisteredAt(LocalDateTime.now());
         registration.setStatus("CONFIRMED");
@@ -539,6 +536,10 @@ public class EventService {
             throw new RegistrationConflictException(
                     "Seat " + seatId + " is already taken.");
         }
+
+        event.setRegisteredCount((int) eventRegistrationRepository
+                .countByEvent_IdAndStatus(eventId, "CONFIRMED"));
+        Event saved = eventRepository.save(event);
 
         Integer spotsRemaining =
                 (saved.getCapacity() == null)
@@ -605,15 +606,17 @@ public class EventService {
         }
 
         event.getAttendees().add(user);
-        event.setRegisteredCount(event.getAttendees().size());
-        Event saved = eventRepository.save(event);
 
         EventRegistration registration = new EventRegistration();
-        registration.setEvent(saved);
+        registration.setEvent(event);
         registration.setUser(user);
         registration.setRegisteredAt(LocalDateTime.now());
         registration.setStatus("CONFIRMED");
         registration = eventRegistrationRepository.save(registration);
+
+        event.setRegisteredCount((int) eventRegistrationRepository
+                .countByEvent_IdAndStatus(event.getId(), "CONFIRMED"));
+        Event saved = eventRepository.save(event);
 
         entry.setStatus("PROMOTED");
         entry.setPromotedAt(LocalDateTime.now());
