@@ -1,5 +1,5 @@
 export const getTicketHolderName = (user) =>
-  user?.fullName || `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || user?.username || "Eventra Guest";
+  user?.fullName?.trim() || `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || user?.username || "Eventra Guest";
 
 /**
  * Build the QR payload for an event ticket.

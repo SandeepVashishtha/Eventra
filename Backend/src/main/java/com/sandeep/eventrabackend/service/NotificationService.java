@@ -36,6 +36,13 @@ public class NotificationService {
         return mapToResponse(updatedNotification);
     }
 
+    @Transactional
+    public void deleteNotification(Long id, String email) {
+        Notification notification = notificationRepository.findByIdAndUserEmail(id, email)
+                .orElseThrow(() -> new NotificationNotFoundException("Notification not found with id: " + id));
+        notificationRepository.delete(notification);
+    }
+
     private NotificationResponse mapToResponse(Notification notification) {
         return NotificationResponse.builder()
                 .id(notification.getId())

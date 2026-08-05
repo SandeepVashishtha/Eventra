@@ -20,7 +20,8 @@ const buildApiUrl = (path = "") => {
   if (/^https?:\/\//i.test(path)) return path;
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   if (!API_BASE_URL) return normalizedPath;
-  return `${API_BASE_URL}${normalizedPath}`;
+  const url = `${API_BASE_URL}${normalizedPath}`;
+  return url.replace(/([^:]\/)\/+/g, "$1");
 };
 
 // ---------------------------------------------------------------------------
@@ -85,10 +86,11 @@ export const API_ENDPOINTS = {
     REGISTER: (id) => buildApiUrl(`/events/${id}/register`),
     CANCEL: (id) => buildApiUrl(`/events/${id}/cancel`),
     AVAILABILITY: (id) => buildApiUrl(`/events/${id}/availability`),
+    ATTENDEES: (id) => buildApiUrl(`/events/${id}/attendees`),
 
     REGISTRANTS: (id) => buildApiUrl(`/events/${id}/registrants`),
     WAITLIST: (id) => buildApiUrl(`/events/${id}/waitlist`),
-    SCHEDULE: buildApiUrl('/events/schedule'),
+    SCHEDULE: (id) => buildApiUrl(`/events/${id}/schedule`),
     // Convenience helper — appends ?page=&size= for callers that build the
     // URL manually rather than going through eventFetchUtils.buildPaginatedUrl.
     PAGINATED: (page, size) => buildApiUrl(`/events?page=${page}&size=${size}`),

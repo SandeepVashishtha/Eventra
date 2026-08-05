@@ -5,6 +5,7 @@ import com.sandeep.eventrabackend.dto.request.EventCreateRequest;
 import com.sandeep.eventrabackend.dto.request.EventUpdateRequest;
 import com.sandeep.eventrabackend.dto.request.RegistrationRequest;
 import com.sandeep.eventrabackend.dto.response.ErrorResponse;
+import com.sandeep.eventrabackend.dto.response.AttendeeDirectoryResponse;
 import com.sandeep.eventrabackend.dto.response.EventAvailabilityResponse;
 import com.sandeep.eventrabackend.dto.response.EventResponse;
 import com.sandeep.eventrabackend.dto.response.RegistrationResponse;
@@ -293,6 +294,20 @@ public class EventController {
         return ResponseEntity.ok(eventService.getEventWaitlist(id, authentication.getName()));
     }
 
+    @GetMapping("/{id}/attendees")
+    @Operation(
+            summary = "List opted-in attendees for an event",
+            description = "Returns attendees who explicitly opted into the event attendee directory. Only registered attendees, event owners, and administrators can view it.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<List<AttendeeDirectoryResponse>> getAttendeeDirectory(
+            @Parameter(description = "ID of the event")
+            @PathVariable Long id,
+            Authentication authentication) {
+
+        return ResponseEntity.ok(eventService.getAttendeeDirectory(id, authentication.getName()));
+    }
+
     @DeleteMapping("/{id}/waitlist")
     @Operation(
             summary = "Leave an event waitlist",
@@ -375,9 +390,15 @@ public class EventController {
 
         String userEmail = authentication.getName();
         String seatId = (request != null) ? request.getSeatId() : null;
+        boolean showProfileInAttendeeDirectory =
+                request != null && Boolean.TRUE.equals(request.getShowProfileInAttendeeDirectory());
 
         RegistrationResponse response =
-                eventService.registerUserForEvent(id, userEmail, seatId);
+                eventService.registerUserForEvent(
+                        id,
+                        userEmail,
+                        seatId,
+                        showProfileInAttendeeDirectory);
 
         return ResponseEntity.ok(response);
     }

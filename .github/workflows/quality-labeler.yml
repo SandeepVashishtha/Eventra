@@ -12,6 +12,7 @@ jobs:
   assign-quality-label:
     name: Assign quality label
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Detect and apply quality label

@@ -4,17 +4,26 @@ import com.sandeep.eventrabackend.dto.DashboardStatsDTO;
 import com.sandeep.eventrabackend.dto.FeedbackAnalyticsDTO;
 import com.sandeep.eventrabackend.dto.OrganizerInsightDTO;
 import com.sandeep.eventrabackend.dto.RegistrationTrendDTO;
+import com.sandeep.eventrabackend.model.Event;
+import com.sandeep.eventrabackend.model.Role;
+import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.EventAnalyticsRepository;
 import com.sandeep.eventrabackend.repository.FeedbackAnalyticsRepository;
 import com.sandeep.eventrabackend.repository.RegistrationAnalyticsRepository;
+import com.sandeep.eventrabackend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -25,6 +34,7 @@ public class AnalyticsService {
     private final EventAnalyticsRepository eventRepo;
     private final RegistrationAnalyticsRepository regRepo;
     private final FeedbackAnalyticsRepository feedbackRepo;
+    private final UserRepository userRepository;
 
     // ── 1. Dashboard ──────────────────────────────────────────────────────────
     public DashboardStatsDTO getDashboardStats() {
@@ -138,8 +148,71 @@ public class AnalyticsService {
     }
 
     // ── 6. Organizer insights ────────────────────────────────────────────────
+    /**
+     * Returns analytics scoped to the events the caller owns or manages.
+     * ADMIN / SUPER_ADMIN receive the full per-organizer breakdown; a
+     * regular ORGANIZER only sees their own events (ownerId or event team).
+     */
     public List<OrganizerInsightDTO> getOrganizerInsights() {
-        return List.of();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new AccessDeniedException("Unable to determine the authenticated user");
+        }
+
+        User caller = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new UsernameNotFoundException(
+                        "User not found with email: " + authentication.getName()));
+
+        if (caller.getRole() == Role.ADMIN || caller.getRole() == Role.SUPER_ADMIN) {
+            return eventRepo.findDistinctOwnerIds().stream()
+                    .map(ownerId -> userRepository.findById(ownerId)
+                            .map(owner -> buildOrganizerInsight(
+                                    owner.getId(),
+                                    owner.getFirstName(),
+                                    owner.getLastName(),
+                                    eventRepo.findAccessibleToUser(owner.getId())))
+                            .orElse(null))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+        }
+
+        return List.of(buildOrganizerInsight(
+                caller.getId(),
+                caller.getFirstName(),
+                caller.getLastName(),
+                eventRepo.findAccessibleToUser(caller.getId())));
+    }
+
+    private OrganizerInsightDTO buildOrganizerInsight(
+            Long organizerId,
+            String firstName,
+            String lastName,
+            List<Event> events) {
+
+        List<Long> eventIds = events.stream()
+                .map(Event::getId)
+                .collect(Collectors.toList());
+
+        Double avgRating = eventIds.isEmpty()
+                ? null
+                : feedbackRepo.findAverageRatingForEvents(eventIds);
+
+        double avgCapacityUtilization = events.stream()
+                .filter(e -> e.getCapacity() != null && e.getCapacity() > 0)
+                .mapToDouble(e -> (double) e.getRegisteredCount() / e.getCapacity())
+                .average()
+                .orElse(0.0);
+
+        return OrganizerInsightDTO.builder()
+                .organizerId(organizerId)
+                .organizerName(firstName + " " + lastName)
+                .totalEvents(events.size())
+                .totalRegistrations(events.stream()
+                        .mapToLong(Event::getRegisteredCount)
+                        .sum())
+                .averageRating(avgRating != null ? avgRating : 0.0)
+                .avgCapacityUtilization(avgCapacityUtilization)
+                .build();
     }
 }
 

@@ -16,7 +16,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/analytics")
-@PreAuthorize("hasAnyAuthority('ADMIN', 'SUPER_ADMIN', 'ORGANIZER')")
+@PreAuthorize("hasAnyAuthority('ADMIN', 'SUPER_ADMIN')")
 public class AnalyticsController {
 
     private final AnalyticsService analyticsService;
@@ -43,6 +43,7 @@ public class AnalyticsController {
     }
 
     @GetMapping("/organizers")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPER_ADMIN', 'ORGANIZER')")
     public ResponseEntity<List<OrganizerInsightDTO>> getOrganizerInsights() {
         return ResponseEntity.ok(analyticsService.getOrganizerInsights());
     }

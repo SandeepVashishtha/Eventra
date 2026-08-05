@@ -32,4 +32,6 @@ public interface EventWaitlistRepository extends JpaRepository<EventWaitlist, Lo
     int findMaxPositionByEventId(@Param("eventId") Long eventId);
 
     void deleteByEvent_Id(Long eventId);
+
+    void deleteByUser_Id(Long userId);
 }

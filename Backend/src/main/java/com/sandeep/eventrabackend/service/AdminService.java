@@ -39,6 +39,11 @@ public class AdminService {
     private final FeedbackAnalyticsRepository feedbackRepository;
     private final EventAnalyticsRepository    eventAnalyticsRepo;
     private final RegistrationAnalyticsRepository regRepo;
+    private final EventRegistrationRepository eventRegistrationRepository;
+    private final EventWaitlistRepository     eventWaitlistRepository;
+    private final HackathonRegistrationRepository hackathonRegistrationRepository;
+    private final ProjectUpvoteRepository     projectUpvoteRepository;
+    private final NotificationRepository      notificationRepository;
 
     // ══════════════════════════════════════════════════════════════════════
     // 1. USER MANAGEMENT
@@ -103,9 +108,22 @@ public class AdminService {
      */
     @Transactional
     public void deleteUser(Long id) {
-        if (!userRepository.existsById(id)) {
-            throw new EntityNotFoundException("User not found with id: " + id);
+        User targetUser = userRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
+
+        Role callerRole = getAuthenticatedRole();
+        if (callerRole != Role.SUPER_ADMIN && targetUser.getRole() == Role.SUPER_ADMIN) {
+            throw new AccessDeniedException("Only SUPER_ADMIN users can delete SUPER_ADMIN accounts");
         }
+
+        eventRegistrationRepository.deleteByUser_Id(id);
+        eventWaitlistRepository.deleteByUser_Id(id);
+        hackathonRegistrationRepository.deleteByUser_Id(id);
+        projectUpvoteRepository.deleteByUser_Id(id);
+        notificationRepository.deleteByUser_Id(id);
+        feedbackRepository.deleteByUser_Id(id);
+        eventRepository.deleteAttendeeRowsByUserId(id);
+
         userRepository.deleteById(id);
     }
 
@@ -203,12 +221,13 @@ public class AdminService {
     }
 
     /**
-     * Returns user registration growth trend (monthly by default).
+     * Returns user growth trend (monthly new signups by default).
+     * Counts newly created {@link User} accounts grouped by the month of
+     * their {@code createdAt}, not event registrations (Issue #11232).
      */
     public List<RegistrationTrendDTO> getUserGrowthTrend(int months) {
-        // Reuse existing registration trend from AnalyticsService logic
         LocalDateTime from = LocalDateTime.now().minusMonths(months);
-        List<Object[]> raw = regRepo.findMonthlyTrend(from);
+        List<Object[]> raw = userRepository.findMonthlySignupTrend(from);
 
         final long[] cumulative = {0};
         return raw.stream().map(row -> {
@@ -332,7 +351,7 @@ public class AdminService {
             return Role.valueOf(role.toUpperCase());
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid role: " + role +
-                    ". Must be one of: CLIENT, ORGANIZER, ADMIN, SUPER_ADMIN");
+                    ". Must be one of: CLIENT, ATTENDEE, MODERATOR, OWNER, ORGANIZER, ADMIN, SUPER_ADMIN");
         }
     }
 
