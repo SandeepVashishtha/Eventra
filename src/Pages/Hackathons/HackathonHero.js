@@ -23,7 +23,14 @@ const StatCounter = ({ stat, shouldAnimate, delay = 0 }) => {
   }
 
   return (
+    // Fix (Issue #10485): Add key prop to force CountUp to remount when
+    // shouldAnimate becomes true. Without this, CountUp renders once with
+    // shouldAnimate=false (static "0"), then when isStatsInView fires,
+    // React re-renders the parent but CountUp never restarts its animation
+    // because the component instance was already mounted — causing the 3rd
+    // and 4th counters (Projects Built, Prizes Awarded) to stay frozen at 0.
     <CountUp
+      key={`${stat.label}-animated`}
       start={0}
       end={stat.value}
       duration={2.5}
