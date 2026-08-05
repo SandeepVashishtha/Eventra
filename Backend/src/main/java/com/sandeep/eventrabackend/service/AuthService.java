@@ -106,7 +106,7 @@ public AuthResponse googleLogin(GoogleAuthRequest request) {
         GoogleIdToken.Payload payload =
                 googleAuthService.verifyToken(request.getToken());
 
-        String email = payload.getEmail();
+        String email = payload.getEmail().toLowerCase();
 
        String firstName =
         (String) payload.get("given_name");
