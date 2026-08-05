@@ -241,7 +241,9 @@ public class EventService {
         event.setLocation(request.getLocation());
         event.setEventDate(request.getEventDate());
         event.setCapacity(request.getCapacity());
-        event.setPublic(request.getIsPublic() == null || request.getIsPublic());
+        if (request.getIsPublic() != null) {
+            event.setPublic(request.getIsPublic());
+        }
         event.setImageUrl(request.getImageUrl());
 
         Event saved = eventRepository.save(event);
