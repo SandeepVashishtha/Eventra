@@ -23,6 +23,12 @@ import { Link } from "react-router-dom";
 import { useMyEvents } from "context/MyEventsContext";
 import { useAuth } from "context/AuthContext";
 import StatusBadge from "../common/StatusBadge";
+import {
+  DashboardSectionTitleSkeleton,
+  DashboardStatCardSkeleton,
+  SkeletonBlock,
+  SkeletonEventCard,
+} from "../common/SkeletonLoaders";
 import { safeParseJson } from "utils/jsonUtils";
 import StyledDropdown from "../StyledDropdown";
 import SearchEmptyState from "../common/SearchEmptyState";
@@ -351,10 +357,47 @@ const EventsLoading = () => (
     <div className="ud-tab-header">
       <h2><Calendar /> Events</h2>
     </div>
-    <div className="flex items-center justify-center min-h-[400px]">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto" />
-        <p className="mt-4 text-gray-600 dark:text-gray-400">Loading your events...</p>
+
+    <div role="status" aria-live="polite" aria-label="Loading your events">
+      <div className="ud-stats-grid">
+        {[...Array(4)].map((_, i) => (
+          <DashboardStatCardSkeleton key={`event-stat-skeleton-${i}`} />
+        ))}
+      </div>
+
+      <div className="my-events-container mt-8">
+        <div className="my-events-toolbar">
+          <div className="ud-search-wrap my-events-search">
+            <SkeletonBlock className="h-10 w-full rounded-2xl" />
+          </div>
+          {[...Array(3)].map((_, i) => (
+            <SkeletonBlock key={`event-filter-skeleton-${i}`} className="h-10 w-36 rounded-2xl" />
+          ))}
+        </div>
+
+        <section className="space-y-4 mt-6">
+          <div className="ud-tab-header">
+            <DashboardSectionTitleSkeleton />
+            <SkeletonBlock className="h-5 w-20 rounded-full" />
+          </div>
+          <div className="ud-items-grid">
+            {[...Array(3)].map((_, i) => (
+              <SkeletonEventCard key={`registered-event-card-skeleton-${i}`} />
+            ))}
+          </div>
+        </section>
+
+        <section className="space-y-4 mt-8">
+          <div className="ud-tab-header">
+            <DashboardSectionTitleSkeleton />
+            <SkeletonBlock className="h-5 w-20 rounded-full" />
+          </div>
+          <div className="ud-items-grid">
+            {[...Array(3)].map((_, i) => (
+              <SkeletonEventCard key={`hosted-event-card-skeleton-${i}`} />
+            ))}
+          </div>
+        </section>
       </div>
     </div>
   </div>
