@@ -118,6 +118,7 @@ public class AdminService {
         projectUpvoteRepository.deleteByUser_Id(id);
         notificationRepository.deleteByUser_Id(id);
         feedbackRepository.deleteByUser_Id(id);
+        eventRepository.deleteAttendeeRowsByUserId(id);
 
         userRepository.deleteById(id);
     }
