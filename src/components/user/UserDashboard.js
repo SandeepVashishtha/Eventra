@@ -35,6 +35,7 @@ import EmptyState from "../common/EmptyState";
 import DashboardEmptyState from "./DashboardEmptyState";
 import OfflineIndicator from "../common/OfflineIndicator";
 import RecentlyViewedEvents from "../common/RecentlyViewedEvents";
+import DashboardRecommendedEvents from "./DashboardRecommendedEvents";
 
 const fadeUp = (prefersReducedMotion) => ({
   hidden: { opacity: 0, y: 24 },
@@ -411,6 +412,8 @@ export default function UserDashboard() {
                       </Link>
                     </div>
                   </motion.section>
+
+                  <DashboardRecommendedEvents allEvents={MOCK_DATA} prefersReducedMotion={prefersReducedMotion} />
 
                   <RecentlyViewedWrapper prefersReducedMotion={prefersReducedMotion} />
 
