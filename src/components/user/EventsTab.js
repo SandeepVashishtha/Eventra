@@ -15,10 +15,17 @@ import {
   Copy,
   Star,
 } from "lucide-react";
+import CountUp from "react-countup";
 import { Link } from "react-router-dom";
 import { useMyEvents } from "context/MyEventsContext";
 import { useAuth } from "context/AuthContext";
 import StatusBadge from "../common/StatusBadge";
+import {
+  DashboardSectionTitleSkeleton,
+  DashboardStatCardSkeleton,
+  SkeletonBlock,
+  SkeletonEventCard,
+} from "../common/SkeletonLoaders";
 import { safeParseJson } from "utils/jsonUtils";
 import StyledDropdown from "../StyledDropdown";
 import SearchEmptyState from "../common/SearchEmptyState";
@@ -89,6 +96,43 @@ const sortEvents = (events, sortBy) => {
     return 0;
   });
   return sorted;
+};
+
+const normalizeCategory = (event) => {
+  const source = event?.category || event?.type || event?.tags?.[0] || "General";
+  return String(source).trim() || "General";
+};
+
+const isWithinCurrentMonth = (event) => {
+  if (!event?.date) return false;
+  const eventDate = new Date(event.date);
+  if (Number.isNaN(eventDate.getTime())) return false;
+  const now = new Date();
+  return eventDate.getMonth() === now.getMonth() && eventDate.getFullYear() === now.getFullYear();
+};
+
+const getRegistrationStreak = (events) => {
+  const registeredDays = new Set(
+    events
+      .map((event) => event?.registeredAt)
+      .filter(Boolean)
+      .map((date) => {
+        const parsed = new Date(date);
+        return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString().slice(0, 10);
+      })
+      .filter(Boolean)
+  );
+
+  let streak = 0;
+  const cursor = new Date();
+  cursor.setHours(0, 0, 0, 0);
+
+  while (registeredDays.has(cursor.toISOString().slice(0, 10))) {
+    streak += 1;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
+  return streak;
 };
 
 /* ---------------- Animations ---------------- */
@@ -324,39 +368,119 @@ const EventsLoading = () => (
     <div className="ud-tab-header">
       <h2><Calendar /> Events</h2>
     </div>
-    <div className="flex items-center justify-center min-h-[400px]">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto" />
-        <p className="mt-4 text-gray-600 dark:text-gray-400">Loading your events...</p>
+
+    <div role="status" aria-live="polite" aria-label="Loading your events">
+      <div className="ud-stats-grid">
+        {[...Array(4)].map((_, i) => (
+          <DashboardStatCardSkeleton key={`event-stat-skeleton-${i}`} />
+        ))}
+      </div>
+
+      <div className="my-events-container mt-8">
+        <div className="my-events-toolbar">
+          <div className="ud-search-wrap my-events-search">
+            <SkeletonBlock className="h-10 w-full rounded-2xl" />
+          </div>
+          {[...Array(3)].map((_, i) => (
+            <SkeletonBlock key={`event-filter-skeleton-${i}`} className="h-10 w-36 rounded-2xl" />
+          ))}
+        </div>
+
+        <section className="space-y-4 mt-6">
+          <div className="ud-tab-header">
+            <DashboardSectionTitleSkeleton />
+            <SkeletonBlock className="h-5 w-20 rounded-full" />
+          </div>
+          <div className="ud-items-grid">
+            {[...Array(3)].map((_, i) => (
+              <SkeletonEventCard key={`registered-event-card-skeleton-${i}`} />
+            ))}
+          </div>
+        </section>
+
+        <section className="space-y-4 mt-8">
+          <div className="ud-tab-header">
+            <DashboardSectionTitleSkeleton />
+            <SkeletonBlock className="h-5 w-20 rounded-full" />
+          </div>
+          <div className="ud-items-grid">
+            {[...Array(3)].map((_, i) => (
+              <SkeletonEventCard key={`hosted-event-card-skeleton-${i}`} />
+            ))}
+          </div>
+        </section>
       </div>
     </div>
   </div>
 );
 
 /* ---------------- Stats Component ---------------- */
-const EventStats = ({ registeredCount, hostedCount, upcomingCount, completedCount, prefersReducedMotion }) => {
+const AnimatedMetric = memo(({ value }) => {
+  const prefersReducedMotion = useReducedMotion();
+
+  if (prefersReducedMotion) {
+    return value;
+  }
+
+  return <CountUp end={value} duration={0.8} preserveValue />;
+});
+AnimatedMetric.displayName = "AnimatedMetric";
+
+const EventStats = ({ insights, prefersReducedMotion }) => {
   const stats = [
-    { label: "Registered", value: registeredCount, color: "#6366f1" },
-    { label: "Hosted", value: hostedCount, color: "#ec4899" },
-    { label: "Upcoming", value: upcomingCount, color: "#10b981" },
-    { label: "Completed", value: completedCount, color: "#94a3b8" },
+    { label: "Registered", value: insights.registeredCount, color: "#4f46e5", icon: Ticket, note: "events joined" },
+    { label: "Hosted", value: insights.hostedCount, color: "#db2777", icon: Users, note: "created by you" },
+    { label: "Waitlist", value: insights.waitlistCount, color: "#d97706", icon: Clock, note: "pending seats" },
+    { label: "This month", value: insights.upcomingThisMonth, color: "#059669", icon: Calendar, note: "upcoming soon" },
   ];
 
   const staggerVariants = stagger(prefersReducedMotion);
+  const upcomingRatio = insights.totalDatedEvents > 0
+    ? Math.round((insights.upcomingCount / insights.totalDatedEvents) * 100)
+    : 0;
+  const completedRatio = insights.totalDatedEvents > 0 ? 100 - upcomingRatio : 0;
 
   return (
-    <motion.div className="my-events-summary" variants={staggerVariants} initial="hidden" animate="visible">
-      {stats.map((pill) => (
-        <motion.div
-          key={pill.label}
-          className="my-events-pill"
-          variants={fadeUp(prefersReducedMotion)}
-          style={{ "--pill-color": pill.color }}
-        >
-          <span className="my-events-pill-value">{pill.value}</span>
-          <span className="my-events-pill-label">{pill.label}</span>
-        </motion.div>
-      ))}
+    <motion.div className="my-events-insights" variants={staggerVariants} initial="hidden" animate="visible">
+      <div className="my-events-summary" aria-label="Events dashboard participation insights">
+        {stats.map((stat) => {
+          const Icon = stat.icon;
+          return (
+            <motion.div
+              key={stat.label}
+              className="my-events-pill"
+              variants={fadeUp(prefersReducedMotion)}
+              style={{ "--pill-color": stat.color }}
+            >
+              <span className="my-events-pill-icon" aria-hidden="true"><Icon size={16} /></span>
+              <span className="my-events-pill-value"><AnimatedMetric value={stat.value} /></span>
+              <span className="my-events-pill-label">{stat.label}</span>
+              <span className="my-events-pill-note">{stat.note}</span>
+            </motion.div>
+          );
+        })}
+      </div>
+
+      <motion.div className="my-events-analytics-panel" variants={fadeUp(prefersReducedMotion)}>
+        <div className="my-events-analytics-heading">
+          <div>
+            <span className="my-events-eyebrow"><BarChart3 size={14} /> Participation overview</span>
+            <h3>Upcoming vs completed</h3>
+          </div>
+          <span className="my-events-ratio">{upcomingRatio}% upcoming</span>
+        </div>
+
+        <div className="my-events-progress-track" aria-label={`${upcomingRatio}% upcoming events and ${completedRatio}% completed events`}>
+          <span className="my-events-progress-upcoming" style={{ width: `${upcomingRatio}%` }} />
+          <span className="my-events-progress-completed" style={{ width: `${completedRatio}%` }} />
+        </div>
+
+        <div className="my-events-smart-summaries">
+          <span><TrendingUp size={14} /> Most active: {insights.mostActiveCategory}</span>
+          <span><ListChecks size={14} /> Streak: {insights.registrationStreak} day{insights.registrationStreak === 1 ? "" : "s"}</span>
+          <span><Calendar size={14} /> {insights.recentSummary}</span>
+        </div>
+      </motion.div>
     </motion.div>
   );
 };
@@ -532,10 +656,39 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const filteredRegisteredEvents = filteredEvents.filter((event) => event.isRegistered || event.registeredAt);
   const filteredHostedEvents = filteredEvents.filter((event) => !event.isRegistered && !event.registeredAt);
 
-  const registeredCount = registeredEvents.length;
-  const hostedCount = hostedEvents.length;
-  const upcomingCount = [...registeredEvents, ...hostedEvents].filter((event) => getEventStatus(event) === "Upcoming").length;
-  const completedCount = [...registeredEvents, ...hostedEvents].filter((event) => getEventStatus(event) === "Completed").length;
+  const eventInsights = useMemo(() => {
+    const dashboardEvents = [...registeredEvents, ...hostedEvents];
+    const upcomingCount = dashboardEvents.filter((event) => getEventStatus(event) !== "Completed").length;
+    const completedCount = dashboardEvents.filter((event) => getEventStatus(event) === "Completed").length;
+    const categoryCounts = dashboardEvents.reduce((counts, event) => {
+      const category = normalizeCategory(event);
+      counts.set(category, (counts.get(category) || 0) + 1);
+      return counts;
+    }, new Map());
+    const mostActiveCategory = Array.from(categoryCounts.entries()).sort((a, b) => b[1] - a[1])?.[0]?.[0] || "General";
+    const upcomingThisMonth = dashboardEvents.filter(
+      (event) => getEventStatus(event) !== "Completed" && isWithinCurrentMonth(event)
+    ).length;
+    const registrationStreak = getRegistrationStreak(registeredEvents);
+    const recentSummary = recentEvents.length > 0
+      ? `${recentEvents.length} recently viewed`
+      : `${dashboardEvents.length + waitlistEvents.length} total activities`;
+
+    return {
+      registeredCount: registeredEvents.length,
+      hostedCount: hostedEvents.length,
+      waitlistCount: waitlistEvents.length,
+      upcomingCount,
+      completedCount,
+      totalDatedEvents: upcomingCount + completedCount,
+      upcomingThisMonth,
+      mostActiveCategory,
+      registrationStreak,
+      recentSummary,
+    };
+  }, [registeredEvents, hostedEvents, waitlistEvents, recentEvents]);
+
+  const { registeredCount, hostedCount } = eventInsights;
 
   // Handlers
   const triggerWaitlistUpdate = () => setWaitlistUpdated(prev => !prev);
@@ -660,10 +813,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
       </div>
 
       <EventStats
-        registeredCount={registeredCount}
-        hostedCount={hostedCount}
-        upcomingCount={upcomingCount}
-        completedCount={completedCount}
+        insights={eventInsights}
         prefersReducedMotion={prefersReducedMotion}
       />
 

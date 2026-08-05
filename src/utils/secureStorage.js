@@ -504,8 +504,8 @@ export const rotateKey = async () => {
   // 1. Decrypt existing records using the current key
   const decryptedItems = {};
   try {
-    for (let i = 0; i < localStorage.length; i++) {
-      const keyName = localStorage.key(i);
+    const keysToProcess = Array.from({ length: localStorage.length }, (_, i) => localStorage.key(i));
+    for (const keyName of keysToProcess) {
       if (!keyName || METADATA_KEYS.has(keyName)) continue;
       
       const rawValue = localStorage.getItem(keyName);

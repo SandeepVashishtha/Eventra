@@ -170,6 +170,24 @@ describe('EventDetails — stale request cancellation', () => {
   });
 });
 
+describe('EventDetails — add to calendar utility', () => {
+  it('renders the shared AddToCalendar action on the event details page', () => {
+    assert.ok(
+      src.includes('components/common/AddToCalendar') && src.includes('<AddToCalendar event={calendarEvent}'),
+      'EventDetails should render the shared AddToCalendar utility with normalized event data',
+    );
+  });
+
+  it('normalizes loaded event details for calendar URL and iCal generation', () => {
+    assert.ok(
+      src.includes('const calendarEvent = {') &&
+        src.includes('durationMinutes') &&
+        src.includes('joiningLink'),
+      'EventDetails should pass title, dates, duration, location, and link data into AddToCalendar',
+    );
+  });
+});
+
 describe('EventDetails — API fetch logic unit tests', () => {
   // Simulate the core loadEvent logic in isolation
   const buildFetchResult = (ok, status, data) => ({
