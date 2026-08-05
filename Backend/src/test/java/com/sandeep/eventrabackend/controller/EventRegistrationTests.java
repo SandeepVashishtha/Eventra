@@ -370,6 +370,22 @@ public class EventRegistrationTests {
     }
 
     @Test
+    @DisplayName("#11781 — POST /register returns 400 for an event that has already ended")
+    void testRegistrationPastEventRejected() throws Exception {
+        Event past = new Event();
+        past.setTitle("Past Event");
+        past.setCapacity(100);
+        past.setEventDate(LocalDateTime.now().minusDays(1)); // already ended
+        past.setPublic(true);
+        past = eventRepository.save(past);
+
+        mockMvc.perform(post("/api/events/" + past.getId() + "/register")
+                        .with(user("user1@example.com")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Registration is closed for this event."));
+    }
+
+    @Test
     @DisplayName("#2102 — POST /register returns 409 when event is full")
     void testRegistrationEventFull() throws Exception {
         // Fill the event (capacity = 5) with users 1..5
