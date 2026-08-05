@@ -39,6 +39,11 @@ public class AdminService {
     private final FeedbackAnalyticsRepository feedbackRepository;
     private final EventAnalyticsRepository    eventAnalyticsRepo;
     private final RegistrationAnalyticsRepository regRepo;
+    private final EventRegistrationRepository eventRegistrationRepository;
+    private final EventWaitlistRepository     eventWaitlistRepository;
+    private final HackathonRegistrationRepository hackathonRegistrationRepository;
+    private final ProjectUpvoteRepository     projectUpvoteRepository;
+    private final NotificationRepository      notificationRepository;
 
     // ══════════════════════════════════════════════════════════════════════
     // 1. USER MANAGEMENT
@@ -106,6 +111,14 @@ public class AdminService {
         if (!userRepository.existsById(id)) {
             throw new EntityNotFoundException("User not found with id: " + id);
         }
+
+        eventRegistrationRepository.deleteByUser_Id(id);
+        eventWaitlistRepository.deleteByUser_Id(id);
+        hackathonRegistrationRepository.deleteByUser_Id(id);
+        projectUpvoteRepository.deleteByUser_Id(id);
+        notificationRepository.deleteByUser_Id(id);
+        feedbackRepository.deleteByUser_Id(id);
+
         userRepository.deleteById(id);
     }
 
