@@ -116,7 +116,20 @@ const EventDetails = () => {
   const [linkCopied, setLinkCopied] = useState(false);
   const latestRequestIdRef = useRef(0);
   const abortControllerRef = useRef(null);
+const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setLinkCopied(true);
 
+      setTimeout(() => {
+        setLinkCopied(false);
+      }, 2000);
+
+      alert("Link copied successfully!");
+    } catch (error) {
+      alert("Unable to copy link.");
+    }
+  };
   const loadEvent = useCallback(async () => {
     abortControllerRef.current?.abort();
 
@@ -515,6 +528,14 @@ const lastUpdated = getLastUpdated(event.updatedAt);
                   >
                     <CalendarPlus size={18} /> Duplicate Event
                   </button>
+                  <button
+    type="button"
+    onClick={copyLink}
+    className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
+    aria-label="Copy event link"
+  >
+    {linkCopied ? "Copied!" : "Copy Link"}
+  </button>
                   <div className="relative print-hide">
                     <button
                       onClick={() => setShowExportDropdown(!showExportDropdown)}
