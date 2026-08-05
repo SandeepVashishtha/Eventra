@@ -1,4 +1,5 @@
 import { useRef, useEffect, useMemo, useState } from "react";
+import BackToTopButton from "components/common/BackToTopButton";
 import { useSearchParams, useLocation } from "react-router-dom";
 import VirtualizedEventGrid from "components/common/VirtualizedEventGrid";
 import EventHero from "./EventHero";
@@ -433,7 +434,8 @@ const EventsPage = () => {
       </div>
 
       <EventCTA />
-      <FeedbackButton />
+<FeedbackButton />
+<BackToTopButton />
     </div>
   );
 };
