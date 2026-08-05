@@ -11,6 +11,24 @@ const usedNonces = new Map();
 
 const MAX_REQUEST_AGE_MS = 5 * 60 * 1000;
 
+/**
+ * Deterministically serialize an object by sorting its keys.
+ * Ensures equivalent payloads always produce the same JSON string.
+ */
+const deterministicStringify = (obj) => {
+  if (obj === null || typeof obj !== "object") {
+    return JSON.stringify(obj);
+  }
+  return JSON.stringify(
+    Object.keys(obj)
+      .sort()
+      .reduce((acc, key) => {
+        acc[key] = obj[key];
+        return acc;
+      }, {})
+  );
+};
+
 // Resolve a crypto-like object available in the current environment.
 const getCrypto = () => {
   if (typeof globalThis !== "undefined" && globalThis.crypto?.subtle) {
@@ -80,7 +98,7 @@ export async function validateSignature(
 
   const expectedSignature = await hmacSha256Hex(
     secret,
-    JSON.stringify(payload) + timestamp + nonce
+    deterministicStringify(payload) + timestamp + nonce
   );
 
   if (expectedSignature !== signature) {
