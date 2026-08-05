@@ -3,13 +3,18 @@ package com.sandeep.eventrabackend.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sandeep.eventrabackend.dto.request.ProjectCreateRequest;
 import com.sandeep.eventrabackend.model.Project;
+import com.sandeep.eventrabackend.model.Role;
+import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.ProjectRepository;
+import com.sandeep.eventrabackend.repository.ProjectUpvoteRepository;
+import com.sandeep.eventrabackend.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -18,6 +23,7 @@ import java.util.List;
 
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -34,11 +40,22 @@ public class ProjectControllerTests {
     private ProjectRepository projectRepository;
 
     @Autowired
+    private ProjectUpvoteRepository projectUpvoteRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
     private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
+        projectUpvoteRepository.deleteAll();
         projectRepository.deleteAll();
+        userRepository.deleteAll();
     }
 
     @Test
@@ -231,5 +248,39 @@ public class ProjectControllerTests {
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("Project not found with id: 999"));
+    }
+
+    @Test
+    void testUpvoteProject_DuplicateUpvote_Returns409() throws Exception {
+        userRepository.save(User.builder()
+                .firstName("Upvote")
+                .lastName("Client")
+                .email("upvote@example.com")
+                .username("upvoteclient")
+                .password(passwordEncoder.encode("password"))
+                .role(Role.CLIENT)
+                .build());
+
+        Project project = Project.builder()
+                .title("Duplicate Upvote")
+                .description("Description")
+                .category("Web Development")
+                .thumbnailUrl("http://example.com/thumb.png")
+                .githubUrl("http://github.com/test/duplicate")
+                .upvotes(5)
+                .build();
+        project = projectRepository.save(project);
+
+        // First upvote succeeds and reflects the post-increment count (#11776)
+        mockMvc.perform(post("/api/projects/" + project.getId() + "/upvote")
+                        .with(user("upvote@example.com")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.upvotes").value(6));
+
+        // A duplicate upvote returns a friendly 409, not a 500 (#11776)
+        mockMvc.perform(post("/api/projects/" + project.getId() + "/upvote")
+                        .with(user("upvote@example.com")))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("You have already upvoted this project."));
     }
 }
