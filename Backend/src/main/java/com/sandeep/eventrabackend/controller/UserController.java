@@ -130,9 +130,9 @@ public class UserController {
             throw new UserAlreadyExistsException("Username already exists: " + request.getUsername());
         }
 
-        user.setFirstName(request.getFirstName());
-        user.setLastName(request.getLastName());
-        user.setUsername(request.getUsername());
+        user.setFirstName(request.getFirstName().trim());
+        user.setLastName(request.getLastName().trim());
+        user.setUsername(request.getUsername().trim());
 
         User updatedUser = userRepository.save(user);
         return ResponseEntity.ok(mapToUserProfileResponse(updatedUser));
