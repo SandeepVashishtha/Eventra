@@ -4,7 +4,12 @@ import "./EventDetails.print.css";
 import CountdownTimer from "components/common/CountdownTimer";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Helmet } from "react-helmet-async";
+<<<<<<< HEAD
+import { sanitizeMarkdown } from "../../utils/sanitizeHtml";
+import { getReadingTime } from "../../utils/readingTimeUtils";
+=======
 import { sanitizeMarkdown } from "utils/sanitizeHtml";
+>>>>>>> upstream/master
 import { toast } from "react-toastify";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import useKeyboardShortcuts from "hooks/useKeyboardShortcuts";
@@ -414,6 +419,9 @@ const showClosingSoon =
   hoursLeft !== null &&
   hoursLeft > 0 &&
   hoursLeft <= 48;
+
+const readingTime= getReadingTime(event.description);
+
 const lastUpdated = getLastUpdated(event.updatedAt);
 
   return (
@@ -779,6 +787,9 @@ const lastUpdated = getLastUpdated(event.updatedAt);
                   dangerouslySetInnerHTML={{ __html: sanitizeMarkdown(event.description, marked.parse) }}
                 />
               </div>
+              <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-indigo-100 dark:bg-indigo-900/30 px-3 py-1 text-sm font-medium text-indigo-700 dark:text-indigo-300">
+  📖 {readingTime}
+</div>
 
               <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
                 <div className="flex items-center justify-between gap-3">

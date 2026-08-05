@@ -48,7 +48,11 @@ const EventFiltersToolbar = ({
   // const { clearPresetError } = useEventFilterPresets();
 
   useFilterSuggestions({
+<<<<<<< HEAD
+  currentFilters: {
+=======
   currentFilters: currentFilterConfig ?? {
+>>>>>>> upstream/master
     searchQuery,
     filterType,
     categoryFilter,
@@ -59,8 +63,22 @@ const EventFiltersToolbar = ({
   visibleEvents,
   presets: [],
 });
+<<<<<<< HEAD
+    currentFilters: {
+  searchQuery,
+  filterType,
+  categoryFilter,
+  sortType,
+  viewMode,
+  advancedFilters,
+},
+    visibleEvents,
+    presets: [],
+  });
+=======
 
 
+>>>>>>> upstream/master
 
   useEffect(() => {
     setLocalQuery(searchQuery || "");
