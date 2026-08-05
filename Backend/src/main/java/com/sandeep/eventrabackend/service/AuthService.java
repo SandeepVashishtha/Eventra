@@ -19,7 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.sandeep.eventrabackend.dto.request.GoogleAuthRequest;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
-import java.util.UUID;
+import java.security.SecureRandom;
+import java.util.Base64;
 
 @Service
 public class AuthService {
@@ -140,16 +141,17 @@ if (lastName == null || lastName.isBlank()) {
             String username =
                     generateUniqueUsername(baseUsername);
 
+            SecureRandom secureRandom = new SecureRandom();
+            byte[] randomBytes = new byte[32];
+            secureRandom.nextBytes(randomBytes);
+            String securePassword = Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
+
             user = User.builder()
                     .firstName(firstName)
                     .lastName(lastName)
                     .email(email.toLowerCase())
                     .username(username)
-                    .password(
-                            passwordEncoder.encode(
-                                    UUID.randomUUID().toString()
-                            )
-                    )
+                    .password(passwordEncoder.encode(securePassword))
                     .role(Role.CLIENT)
                     .build();
 
