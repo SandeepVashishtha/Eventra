@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X, CheckCircle, ThumbsUp, ThumbsDown } from 'lucide-react';
 import StarRating from './StarRating';
-import { saveFeedback, getUserFeedback } from 'utils/feedbackUtils';
+import { saveFeedback, getUserFeedback, submitEventFeedback } from 'utils/feedbackUtils';
 import { toast } from 'react-toastify';
 import { useFocusTrap } from 'hooks/useFocusTrap';
 
@@ -32,7 +32,7 @@ const EventFeedbackModal = ({ isOpen, onClose, event }) => {
   // Load existing feedback if editing
   useEffect(() => {
     if (isOpen && event) {
-      const existingFeedback = getUserFeedback(event.id);
+      const existingFeedback = getUserFeedback(event.id || event.eventId);
       if (existingFeedback) {
         setRating(existingFeedback.rating || 0);
         setComment(existingFeedback.comment || '');
@@ -66,7 +66,19 @@ const EventFeedbackModal = ({ isOpen, onClose, event }) => {
         userId: `user_${Date.now()}`, // Simple user identification
       };
 
-      const success = saveFeedback(event.id, feedbackData);
+      let success = false;
+      try {
+        await submitEventFeedback({
+          eventId: event.id || event.eventId,
+          rating,
+          comment: comment.trim(),
+          tags: selectedTags,
+        });
+        success = true;
+      } catch (apiError) {
+        console.warn('Backend feedback submission failed, saving locally:', apiError);
+        success = saveFeedback(event.id || event.eventId, feedbackData);
+      }
 
       if (success) {
         toast.success(isEditing ? 'Feedback updated!' : 'Thank you for your feedback!', {
