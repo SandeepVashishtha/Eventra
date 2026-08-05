@@ -20,7 +20,8 @@ const buildApiUrl = (path = "") => {
   if (/^https?:\/\//i.test(path)) return path;
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   if (!API_BASE_URL) return normalizedPath;
-  return `${API_BASE_URL}${normalizedPath}`;
+  const url = `${API_BASE_URL}${normalizedPath}`;
+  return url.replace(/([^:]\/)\/+/g, "$1");
 };
 
 // ---------------------------------------------------------------------------
@@ -51,12 +52,18 @@ export const setAuthToken = (token) => {
   _authToken = token;
 };
 
-const getAuthToken = () => _authToken;
-const getOnUnauthorized = () => onUnauthorized;
-const getOnRequiresReauth = () => onRequiresReauth;
-
-setupRequestInterceptor(API, { isDev, buildApiUrl, getAuthToken, getOnUnauthorized });
-setupResponseInterceptor(API, { isDev, timeoutMs: REQUEST_TIMEOUT_MS, getOnUnauthorized, getOnRequiresReauth });
+setupRequestInterceptor(API, {
+  isDev,
+  buildApiUrl,
+  getAuthToken: () => _authToken,
+  getOnUnauthorized: () => onUnauthorized,
+});
+setupResponseInterceptor(API, {
+  isDev,
+  timeoutMs: REQUEST_TIMEOUT_MS,
+  getOnUnauthorized: () => onUnauthorized,
+  getOnRequiresReauth: () => onRequiresReauth,
+});
 
 // ---------------------------------------------------------------------------
 // API Endpoints
@@ -76,11 +83,14 @@ export const API_ENDPOINTS = {
     ALL: buildApiUrl("/events"),
     LIST: buildApiUrl("/events"),
     DETAIL: (id) => buildApiUrl(`/events/${id}`),
-    SCHEDULE: (id) => buildApiUrl(`/events/${id}/schedule`),
     REGISTER: (id) => buildApiUrl(`/events/${id}/register`),
-    AVAILABILITY: (id) => buildApiUrl(`/events/${id}/availability`),
     CANCEL: (id) => buildApiUrl(`/events/${id}/cancel`),
+    AVAILABILITY: (id) => buildApiUrl(`/events/${id}/availability`),
+    ATTENDEES: (id) => buildApiUrl(`/events/${id}/attendees`),
+
     REGISTRANTS: (id) => buildApiUrl(`/events/${id}/registrants`),
+    WAITLIST: (id) => buildApiUrl(`/events/${id}/waitlist`),
+    SCHEDULE: (id) => buildApiUrl(`/events/${id}/schedule`),
     // Convenience helper — appends ?page=&size= for callers that build the
     // URL manually rather than going through eventFetchUtils.buildPaginatedUrl.
     PAGINATED: (page, size) => buildApiUrl(`/events?page=${page}&size=${size}`),
@@ -122,19 +132,26 @@ export const API_ENDPOINTS = {
   USERS: {
     PROFILE: buildApiUrl("/users/profile"),
     ACHIEVEMENTS: buildApiUrl("/users/achievements"),
-  },
-  SESSION_RECOVERY: {
-    BASE: buildApiUrl("/session-recovery"),
-    SESSION: (sessionId) =>
-      buildApiUrl(`/session-recovery/${encodeURIComponent(sessionId)}`),
-    RESTORE: (sessionId) =>
-      buildApiUrl(`/session-recovery/${encodeURIComponent(sessionId)}/restore`),
-    CLEANUP_EXPIRED: buildApiUrl("/session-recovery/expired"),
+    // (#7653) Endpoint for persisting user preferences (theme, etc.) across devices
+    PREFERENCES: buildApiUrl("/users/preferences"),
   },
   TICKETS: {
     VALIDATE: buildApiUrl("/tickets/validate"),
     CHECK_IN: buildApiUrl("/tickets/checkin"),
     HISTORY: buildApiUrl("/tickets/checkins"),
+    STATS: buildApiUrl("/tickets/stats"),
+  },
+  SESSION_RECOVERY: {
+    BASE: buildApiUrl("/session-recovery"),
+    SESSION: (id) => buildApiUrl(`/session-recovery/${id}`),
+    RESTORE: (id) => buildApiUrl(`/session-recovery/${id}/restore`),
+    CLEANUP_EXPIRED: buildApiUrl("/session-recovery/cleanup"),
+  },
+  WAITLIST: {
+    BASE: buildApiUrl("/waitlist"),
+    JOIN: buildApiUrl("/waitlist/join"),
+    LEAVE: (id) => buildApiUrl(`/waitlist/${id}/leave`),
+    STATUS: (id) => buildApiUrl(`/waitlist/${id}/status`),
   },
   FEEDBACK: {
     BASE: buildApiUrl("/feedback"),
@@ -154,10 +171,15 @@ export const API_ENDPOINTS = {
     EMAIL: (email) => buildApiUrl(`/validate/email/${encodeURIComponent(email)}`),
     USERNAME: (username) => buildApiUrl(`/validate/username/${encodeURIComponent(username)}`),
     PHONE: buildApiUrl("/validate/phone"),
-    CONTACT: buildApiUrl("/contact"),
   },
 };
 
+/**
+ * Normalise the optional config/token argument accepted by apiUtils methods.
+ *
+ * Authentication is carried automatically via the HttpOnly session cookie
+ * (withCredentials: true on the Axios instance).
+ */
 const normalizeRequestConfig = (configOrToken = {}) => {
   const config = typeof configOrToken === "string" ? {} : { ...configOrToken };
   if ("skipAuth" in config) delete config.skipAuth;
@@ -181,7 +203,7 @@ const wrapAxiosResponse = (response) => {
       if (typeof response.data === "string") {
         try {
           return JSON.parse(response.data);
-        } catch (_e) {
+        } catch {
           throw new Error("Received non-JSON response from server");
         }
       }
@@ -191,7 +213,6 @@ const wrapAxiosResponse = (response) => {
       typeof response.data === "string" ? response.data : JSON.stringify(response.data),
   };
 };
-
 export const apiUtils = {
   get: (url, config = {}) =>
     API.get(url, normalizeRequestConfig(config)).then(wrapAxiosResponse),

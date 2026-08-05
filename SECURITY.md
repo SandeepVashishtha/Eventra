@@ -48,5 +48,34 @@ Encrypt sensitive details if possible. Do not share reproduction steps or proof-
 - Issues requiring physical access to a device
 - Social engineering attacks
 
+### JWT Refresh Token Expiration Rules
+- Enforce secure cookie attributes for persistent auth sessions.
+
+## Client-side Security Configuration Validation
+
+Eventra performs a lightweight validation of important client-side security configuration during application startup.
+
+The validator checks:
+
+- HTTPS API endpoint configuration
+- Required environment variables
+- Authentication configuration
+- Content Security Policy (CSP) presence
+
+The validation utility reports configuration warnings during development to help contributors identify missing or insecure settings. It complements existing backend security controls and should not be considered a replacement for server-side validation.
+
+## Client-side Log Redaction
+
+Eventra sanitizes payloads sent through shared client-side logging utilities before they are written to the console or persisted in browser storage.
+
+The redaction utility covers:
+
+- JWT tokens embedded in messages or metadata
+- Password fields and password-like inline values
+- API key fields and API-key-like inline values
+- Authorization headers, including bearer/basic/token values
+- Email addresses in free-form strings
+
+Sensitive object keys such as `password`, `apiKey`, `authorization`, `accessToken`, `refreshToken`, `jwt`, `secret`, and similar variants are replaced with redaction placeholders. This reduces accidental exposure in development logs, but contributors should still avoid intentionally logging credentials or personally identifiable information.
 ---
 _For general bugs or feature requests, open a regular [GitHub issue](../../issues/new/choose)._

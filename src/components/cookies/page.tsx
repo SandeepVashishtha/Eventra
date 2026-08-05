@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslation } from "react-i18next";
-import Link from "next/link";
+import { Link } from "react-router-dom";
 import { FaCookie, FaShieldAlt, FaChartBar, FaCog, FaGlobe, FaUsers } from "react-icons/fa";
 
 export default function CookiesPage() {
@@ -164,13 +164,13 @@ export default function CookiesPage() {
         {/* Footer Navigation */}
         <div className="mt-12 flex flex-wrap justify-center gap-x-8 gap-y-3 text-sm text-gray-500 dark:text-gray-400">
           <Link
-            href="/privacy"
+            to="/privacy"
             className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
           >
             Privacy Policy
           </Link>
           <Link
-            href="/terms"
+            to="/terms"
             className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
           >
             Terms of Service

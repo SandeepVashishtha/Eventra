@@ -4,11 +4,12 @@ import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { useNavigate, Link } from "react-router-dom";
 
-import useReducedMotion from "../../hooks/useReducedMotion.js";
-import { useAuth } from "../../context/AuthContext";
+import useReducedMotion from "hooks/useReducedMotion.js";
+import { useAuth } from "context/AuthContext";
 
-import { hostHackathon } from "../../services/hackathonService";
-import { sanitizeInputText } from "../../utils/inputSanitization";
+import { hostHackathon } from "services/hackathonService";
+import { sanitizeInputText } from "utils/inputSanitization";
+import { REQUIRED_FIELDS, validateHostHackathonForm } from "utils/hostHackathonValidation";
 
 const HostHackathon = () => {
   const prefersReducedMotion = useReducedMotion();
@@ -67,78 +68,7 @@ const HostHackathon = () => {
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-  const requiredFields = [
-    "hackathonName",
-    "organizerName",
-    "email",
-    "location",
-    "startDate",
-    "endDate",
-    "description",
-  ];
-
-  const validateForm = (data) => {
-    const newErrors = {};
-
-    // Required fields
-    for (const field of requiredFields) {
-      if (!data[field]?.trim()) {
-        newErrors[field] = `${field.replace(/([A-Z])/g, " $1")} is required!`;
-      }
-    }
-
-    // Hackathon Name validation
-    if (data.hackathonName && (data.hackathonName.trim().length < 3 || data.hackathonName.trim().length > 100)) {
-      newErrors.hackathonName = "Hackathon Name must be between 3 and 100 characters long!";
-    }
-
-    // Organizer validation
-    if (data.organizerName && (data.organizerName.trim().length < 3 || data.organizerName.trim().length > 100)) {
-      newErrors.organizerName = "Organizer Name must be between 3 and 100 characters long!";
-    }
-
-    // Location validation
-    if (data.location && (data.location.trim().length < 3 || data.location.trim().length > 100)) {
-      newErrors.location = "Location must be between 3 and 100 characters long!";
-    }
-
-    // ✅ Email validation — stricter regex to prevent invalid TLDs
-    if (data.email) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
-      if (!emailRegex.test(data.email.trim())) {
-        newErrors.email = "Please enter a valid email address!";
-      }
-    }
-
-    // Website (optional)
-    if (data.website?.trim()) {
-      const urlRegex = /^(https?:\/\/)?([\w-]+(\.[\w-]+)+)(\/[\w-./?%&=]*)?$/i;
-      if (!urlRegex.test(data.website)) {
-        newErrors.website = "Please enter a valid URL!";
-      }
-    }
-
-    // Date validations
-    if (data.startDate && data.startDate < today) {
-      newErrors.startDate = "Start date cannot be in the past!";
-    }
-    if (data.endDate && data.startDate && data.endDate < data.startDate) {
-      newErrors.endDate = "End date cannot be before start date!";
-    }
-
-    // Description validation
-    if (data.description && (data.description.trim().length < 20 || data.description.trim().length > 2000)) {
-      newErrors.description =
-        "Description must be between 20 and 2000 characters long!";
-    }
-
-    // Participant Limit validation
-    if (data.participantLimit && Number(data.participantLimit) < 1) {
-      newErrors.participantLimit = "Participant limit must be at least 1!";
-    }
-
-    return newErrors;
-  };
+  const requiredFields = REQUIRED_FIELDS;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -149,7 +79,7 @@ const HostHackathon = () => {
       return;
     }
 
-    const validationErrors = validateForm({ ...formData });
+    const validationErrors = validateHostHackathonForm({ ...formData }, today);
 
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
@@ -420,11 +350,11 @@ const HostHackathon = () => {
                   value={formData[name]}
                   onChange={handleChange}
                   min={today}
-                  className="w-full text-gray-700 dark:text-gray-300 
-        bg-bg 
-        rounded-lg p-3 
+                  className="w-full text-gray-700 dark:text-gray-300
+        bg-bg
+        rounded-lg p-3
         border border-gray-300 dark:border-gray-600
-        focus:outline-none 
+        focus:outline-none
         focus:ring-2 focus:ring-primary focus:border-primary
         transition duration-150 ease-in-out"
                 />

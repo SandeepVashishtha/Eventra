@@ -51,7 +51,7 @@ const useLocalStorage = (key, initialValue) => {
     const item = window.localStorage.getItem(key);
     return safeJsonParse(item, initialValue);
   } catch (error) {
-    console.warn(`useLocalStorage: error reading key "${key}":`, error);
+    logger.warn(`useLocalStorage: error reading key "${key}":`, error);
     return initialValue;
   }
   });
@@ -132,7 +132,8 @@ export const isLocalStorageAvailable = () => {
     window.localStorage.setItem(testKey, testKey);
     window.localStorage.removeItem(testKey);
     return true;
-  } catch {
+  } catch (err) {
+    console.warn("[useLocalStorage] Storage operation failed:", err);
     return false;
   }
 };

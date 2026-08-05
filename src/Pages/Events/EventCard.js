@@ -1,134 +1,84 @@
+<<<<<<< HEAD
 import EventDuration from "../../components/common/EventDuration";
 import { getEventDuration } from "../../utils/eventDurationUtils";
 import { getReadingTime } from "../../utils/readingTimeUtils";
 import { memo, useCallback, useEffect, useId, useState } from "react";
 import { logger } from "../../utils/logger";
 import { getUserTimezone } from "../../utils/timezoneUtils";
+=======
+import React, { memo, useCallback, useId, useState } from "react";
+import { logger } from "utils/logger";
+import LazyImage from "components/common/LazyImage";
+import ShareModal from "components/common/ShareModal";
+import StatusBadge from "components/common/StatusBadge";
+import { getEventStatus } from "utils/eventUtils";
+import SocialShareButtons from "components/common/SocialShareButtons";
+import AddToCalendar from "components/common/AddToCalendar";
+import { useMyEvents } from "context/MyEventsContext";
+>>>>>>> upstream/master
 import { Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { getSmartDateLabel } from "../../utils/relativeTime";
-import {
-  Bookmark,
-  BookmarkCheck,
-  Calendar,
-  MapPin,
-  Tag,
-  Star,
-  Heart,
-  Zap,
-  BookOpen,
-  Gift,
-  Share2,
-  AlertTriangle,
-} from "lucide-react";
+import { motion } from "framer-motion";
 import { toast } from "react-toastify";
-import LazyImage from "../../components/common/LazyImage";
-import ShareModal from "../../components/common/ShareModal";
-import StatusBadge from "../../components/common/StatusBadge";
-import { getEventStatus } from "../../utils/eventUtils";
-import { useMyEvents } from "../../context/MyEventsContext";
-import ReminderControls from "../../components/reminders/ReminderControls";
-import AddToCalendar from "../../components/common/AddToCalendar";
-import SocialShareButtons from "../../components/common/SocialShareButtons";
 import {
-  addBookmarkedEvent,
+  BookmarkCheck,
+  Bookmark,
+  MapPin,
+  Calendar,
+  Clock,
+  ArrowRight,
+} from "lucide-react";
+
+import {
   isEventBookmarked,
+  addBookmarkedEvent,
   removeBookmarkedEvent,
-  subscribeToBookmarkChanges,
-} from "../../utils/bookmarkUtils";
-import { checkRegistrationConflict } from "../../utils/conflictDetection";
+} from "utils/bookmarkUtils";
 
-const getCapacityStyles = (ratio, isFull) => {
-  if (isFull || ratio >= 0.85) {
-    return {
-      barColor: "bg-red-500",
-      textColor: "text-red-600 dark:text-red-400",
-    };
+const formatEventDate = (dateValue) => {
+  if (!dateValue) return { short: "TBD", full: "Date TBD", relative: "" };
+  const d = new Date(dateValue);
+  if (isNaN(d.getTime())) return { short: "TBD", full: "Date TBD", relative: "" };
+
+  const now = new Date();
+  const diffMs = d - now;
+  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+  let relative = "";
+  if (diffMs < 0) {
+    relative = "Past";
+  } else if (diffDays === 0) {
+    relative = "Today";
+  } else if (diffDays === 1) {
+    relative = "Tomorrow";
+  } else if (diffDays < 7) {
+    relative = `In ${diffDays} days`;
+  } else if (diffDays < 30) {
+    relative = `In ${Math.round(diffDays / 7)} w`;
+  } else {
+    relative = `In ${Math.round(diffDays / 30)} m`;
   }
-  if (ratio >= 0.6) {
-    return {
-      barColor: "bg-amber-500",
-      textColor: "text-amber-600 dark:text-amber-400",
-    };
-  }
-  return {
-    barColor: "bg-emerald-500",
-    textColor: "text-emerald-600 dark:text-emerald-400",
-  };
-};
 
-const EventCapacity = ({ attendees, maxAttendees }) => {
-  const registered = Number(attendees) || 0;
-  const capacity = Number(maxAttendees);
-  const isFull = registered >= capacity;
-  const ratio = Math.min(registered / capacity, 1);
-  const percent = Math.round(ratio * 100);
-  const spotsLeft = Math.max(capacity - registered, 0);
-  const { barColor, textColor } = getCapacityStyles(ratio, isFull);
+  const short = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const full = d.toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+  const time = d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
 
-  return (
-    <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
-      <div className="flex items-center justify-between mb-1.5">
-        <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
-          Seats
-        </span>
-        {isFull ? (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300">
-            Full
-          </span>
-        ) : (
-          <span className={`text-xs font-semibold tabular-nums ${textColor}`}>
-            {spotsLeft} spot{spotsLeft === 1 ? "" : "s"} left
-          </span>
-        )}
-      </div>
-      <div
-        className="w-full h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden"
-        role="progressbar"
-        aria-valuenow={percent}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-label={`${registered} of ${capacity} seats filled`}
-      >
-        <div
-          className={`h-full ${barColor} transition-all duration-500 ease-out`}
-          style={{ width: `${percent}%` }}
-        />
-      </div>
-      <div className="mt-1 text-[11px] text-gray-500 dark:text-gray-500 tabular-nums">
-        {registered} / {capacity} registered
-      </div>
-    </div>
-  );
+  return { short, full, relative, time };
 };
 
 const EventCard = ({ event }) => {
   const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
+  const [imageFailed, setImageFailed] = useState(false);
   const titleId = useId();
-  const { myEvents, isRegistered } = useMyEvents();
-  const [showBookmarkTooltip, setShowBookmarkTooltip] = useState(false);
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [randomIcon] = useState(() => {
-    const icons = [
-      <Star key="star" size={16} className="text-yellow-500" />,
-      <Heart key="heart" size={16} className="text-red-500" />,
-      <Zap key="zap" size={16} className="text-pink-500" />,
-      <BookOpen key="book-open" size={16} className="text-indigo-500" />,
-      <Gift key="gift" size={16} className="text-pink-500" />,
-    ];
+  const { isRegistered } = useMyEvents();
 
-    return icons[Math.floor(Math.random() * icons.length)];
-  });
-
-  // Check if this event conflicts with registered events
-  const conflictCheck = checkRegistrationConflict(event, myEvents);
-  const hasConflict = conflictCheck.hasConflict;
   const isUserRegistered = isRegistered(event.id);
-
   const computedStatus = getEventStatus(event);
-  const isPastEvent = computedStatus === "past" || computedStatus === "ended";
-  const canSetReminder = isEventBookmarked(event.id) || isUserRegistered;
 
+<<<<<<< HEAD
   const handleCopyLink = (e) => {
     e.preventDefault();
     const shareUrl = `${window.location.origin}/events/${event.id}`;
@@ -158,44 +108,39 @@ const readingTimeText = getReadingTime(event.description);
       setIsBookmarked(isEventBookmarked(event.id));
     });
   }, [event.id]);
+=======
+  const eventImage = event.image || event.imageUrl || null;
+  const eventDate = event.date || event.eventDate || event.startDate || null;
+  const dateInfo = formatEventDate(eventDate);
+>>>>>>> upstream/master
 
   const handleBookmarkToggle = useCallback(
     (e) => {
       e.preventDefault();
       e.stopPropagation();
-
       if (isBookmarked) {
         removeBookmarkedEvent(event.id);
-        toast.info("Removed from bookmarked events.", {
-          toastId: `bookmark-${event.id}`,
-          autoClose: 1800,
-          className: "custom-toast",
-        });
-        return;
+        setIsBookmarked(false);
+        toast.info("Removed from saved events.", { toastId: `bookmark-${event.id}`, autoClose: 1800 });
+      } else {
+        addBookmarkedEvent({ ...event, status: computedStatus });
+        setIsBookmarked(true);
+        toast.success("Event saved!", { toastId: `bookmark-${event.id}`, autoClose: 1800 });
       }
-
-      addBookmarkedEvent({
-        ...event,
-        status: computedStatus,
-      });
-      toast.success("Event bookmarked.", {
-        toastId: `bookmark-${event.id}`,
-        autoClose: 1800,
-        className: "custom-toast",
-      });
     },
     [isBookmarked, event, computedStatus]
   );
 
   return (
     <motion.article
-      data-aos="zoom-in"
-      data-aos-duration="800"
       aria-labelledby={titleId}
-      whileHover={{ scale: 1.02, y: -5, boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15)" }}
-      transition={{ type: "spring", stiffness: 300, damping: 20 }}
-      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-lg backdrop-blur-sm flex flex-col z-10 event-card-hoverable overflow-hidden border border-gray-100 dark:border-gray-800"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -4 }}
+      transition={{ type: "spring", stiffness: 300, damping: 24 }}
+      className="group relative flex flex-col rounded-2xl overflow-hidden bg-card-bg border border-border hover:border-primary shadow-premium-sm hover:shadow-premium-md transition-all duration-300"
     >
+<<<<<<< HEAD
       {/* Action buttons */}
       <div className="absolute top-3 right-3 z-200 flex space-x-1.5 items-center">
         <div className="relative flex items-center">
@@ -406,18 +351,95 @@ const readingTimeText = getReadingTime(event.description);
           <div className="flex-1 inline-flex items-center justify-center rounded-2xl bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-4 py-3 text-sm font-semibold shadow-md cursor-not-allowed">
             Event Ended
           </div>
+=======
+      {/* Banner / Cover image */}
+      <div className="relative h-48 overflow-hidden bg-bg-secondary">
+        {eventImage && !imageFailed ? (
+          <LazyImage
+            src={eventImage}
+            alt=""
+            className="absolute inset-0 w-full h-full"
+            imgClassName="object-cover w-full h-full opacity-90 group-hover:scale-102 transition-transform duration-700"
+            onError={() => setImageFailed(true)}
+          />
+>>>>>>> upstream/master
         ) : (
-          <Link to={`/events/${event.id}/register`} className="flex-1 inline-flex items-center justify-center rounded-2xl bg-linear-to-r from-indigo-600 via-indigo-700 to-slate-900 hover:from-indigo-500 hover:via-indigo-600 hover:to-slate-800 text-white px-4 py-3 text-sm font-semibold shadow-lg transition-all duration-300 hover:scale-[1.03] hover:shadow-xl">
-            <span>
-              Register Now
-            </span>
-          </Link>
+          <div className="absolute inset-0 bg-linear-to-br from-indigo-500/10 to-violet-500/10 flex items-center justify-center">
+            <span className="text-4xl font-extrabold text-primary/10 select-none">Eventra</span>
+          </div>
         )}
 
-        <Link to={`/events/${event.id}`} className="flex-1 inline-flex items-center justify-center rounded-2xl bg-slate-50/80 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 px-4 py-3 text-sm font-semibold shadow-md hover:bg-slate-100 dark:hover:bg-slate-700/80 hover:scale-[1.03] hover:shadow-lg transition-all duration-300">
-          <span>
-            View Details
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+
+        {/* Overlay badges */}
+        <div className="absolute top-4 left-4 flex flex-wrap gap-2">
+          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider bg-black/40 backdrop-blur-md text-white border border-white/10">
+            {event.type || event.category || "Event"}
           </span>
+          {isUserRegistered && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider bg-emerald-500/90 text-white shadow-md">
+              Registered
+            </span>
+          )}
+        </div>
+
+        {/* Save Toggle button */}
+        <button
+          onClick={handleBookmarkToggle}
+          aria-label={isBookmarked ? "Remove bookmark" : "Bookmark event"}
+          aria-pressed={isBookmarked}
+          className={`absolute top-4 right-4 rounded-lg p-2 backdrop-blur-md border transition-all duration-200 ${
+            isBookmarked
+              ? "bg-primary text-white border-primary/20"
+              : "bg-black/40 border-white/10 text-white/80 hover:bg-white/10 hover:text-white"
+          }`}
+        >
+          {isBookmarked ? <BookmarkCheck size={14} /> : <Bookmark size={14} />}
+        </button>
+      </div>
+
+      {/* Info Body */}
+      <div className="flex flex-col flex-1 p-5 sm:p-6">
+        <h3
+          id={titleId}
+          className="text-text font-bold text-lg sm:text-xl leading-snug mb-2 group-hover:text-primary transition-colors duration-200 line-clamp-2"
+        >
+          <Link to={`/events/${event.id}`}>
+            {event.title}
+          </Link>
+        </h3>
+
+        <p className="text-text-light text-sm font-normal leading-relaxed mb-6 line-clamp-2">
+          {event.description}
+        </p>
+
+        <div className="flex flex-col gap-2 mt-auto border-t border-border pt-4 text-xs font-semibold text-text-light">
+          {event.location && (
+            <div className="flex items-center gap-2 truncate">
+              <MapPin size={14} className="text-text-light/50 shrink-0" />
+              <span>{event.location}</span>
+            </div>
+          )}
+
+          <div className="flex items-center gap-2 truncate">
+            <Calendar size={14} className="text-text-light/50 shrink-0" />
+            <span>{dateInfo.full}</span>
+            {dateInfo.time && dateInfo.full !== "Date TBD" && (
+              <>
+                <span className="text-border">|</span>
+                <Clock size={12} className="text-text-light/40 shrink-0" />
+                <span>{dateInfo.time}</span>
+              </>
+            )}
+          </div>
+        </div>
+
+        <Link
+          to={`/events/${event.id}`}
+          className="mt-6 inline-flex items-center justify-center gap-1 w-full px-4 py-2.5 rounded-lg bg-text text-bg hover:opacity-90 text-sm font-semibold transition-all duration-200"
+        >
+          View Details
+          <ArrowRight size={14} className="transition-transform duration-200 group-hover:translate-x-0.5" />
         </Link>
       </div>
     </motion.article>
@@ -425,4 +447,3 @@ const readingTimeText = getReadingTime(event.description);
 };
 
 export default memo(EventCard);
-// OPTIMIZATION: Implemented image lazy-loading, decoding='async' and standard aspect-ratio styles to minimize Cumulative Layout Shift (CLS).

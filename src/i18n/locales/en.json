@@ -244,9 +244,17 @@
   },
   "landing": {
     "hero": {
+      "badge": "The home for developers & tech events",
+      "headlineBefore": "Build.",
+      "headlineHighlight": "Learn.",
+      "headlineAfter": "Network.",
+      "tagline": "Discover hackathons, tech events, workshops, projects, and developer communities—all in one place.",
+      "description": "Eventra helps developers discover hackathons, attend tech events, collaborate on projects, and grow through community-driven experiences.",
+      "differentiator": "Open-source, developer-first, and built for hackathons—not another generic ticketing site.",
+      "ctaExplore": "Explore Events",
+      "ctaCreate": "Create Event",
       "title": "Discover & Join Amazing Events",
       "subtitle": "The ultimate platform for event discovery, registration, and management.",
-      "description": "Connect with developers, learn new skills, and grow your network at curated tech events, hackathons, and workshops.",
       "searchPlaceholder": "Search events, hackathons, projects...",
       "searchResults": "Search results",
       "resultsCount": "Results ({{count}})",
@@ -262,15 +270,28 @@
         "Cutting-Edge Tech Meetups"
       ],
       "stats": {
-        "developers": "Developers Joined",
-        "events": "Events Organized",
-        "partners": "Partners & Sponsors"
+        "developers": "Developers",
+        "events": "Events Hosted",
+        "partners": "Partners"
+      },
+      "categories": {
+        "hackathons": "Hackathons",
+        "ai": "AI",
+        "webDev": "Web Development",
+        "openSource": "Open Source",
+        "workshops": "Workshops"
       },
       "searchTypes": {
         "Events": "Events",
         "Hackathons": "Hackathons",
         "Projects": "Projects"
       }
+    },
+    "search": {
+      "title": "Find your next event",
+      "subtitle": "Search hackathons, workshops, and community events",
+      "placeholder": "Search events, hackathons, projects...",
+      "ariaLabel": "Find your next event"
     },
     "stats": {
       "events": "Events Hosted",

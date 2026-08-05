@@ -2,7 +2,10 @@ import { defineConfig, loadEnv, transformWithOxc } from "vite";
 import react from "@vitejs/plugin-react";
 
 import path from "path";
+import { fileURLToPath } from "url";
 import dotenv from "dotenv";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 dotenv.config();
 
@@ -47,6 +50,25 @@ export default defineConfig(({ mode }) => {
         // Only .jsx/.tsx — .js files are handled above
         include: /\.(jsx|tsx)$/,
       }),
+      // Fail the build if an un-substituted %PLACEHOLDER% survives into the
+      // final index.html. Vite only auto-replaces %VITE_*% values, so any other
+      // %...% token is a build mistake — historically a literal %CSRF_TOKEN%
+      // was shipped and sent as the CSRF header on every mutating request.
+      {
+        name: "assert-no-html-placeholders",
+        enforce: "post",
+        transformIndexHtml(html) {
+          const placeholder = html.match(/%[A-Z_][A-Z0-9_]*%/g);
+          if (placeholder && placeholder.length > 0) {
+            throw new Error(
+              `[assert-no-html-placeholders] Un-substituted build placeholder(s) found in index.html: ` +
+                `${placeholder.join(", ")}. Vite only replaces %VITE_*% tokens; remove the ` +
+                `placeholder or define it as a VITE_ prefixed environment variable.`,
+            );
+          }
+          return html;
+        },
+      },
     ],
 
     // Path aliases — cleaner imports and faster resolution
@@ -58,6 +80,16 @@ export default defineConfig(({ mode }) => {
         "@hooks": path.resolve(__dirname, "src/hooks"),
         "@utils": path.resolve(__dirname, "src/utils"),
         "@context": path.resolve(__dirname, "src/context"),
+        "components": path.resolve(__dirname, "src/components"),
+        "Pages": path.resolve(__dirname, "src/Pages"),
+        "hooks": path.resolve(__dirname, "src/hooks"),
+        "utils": path.resolve(__dirname, "src/utils"),
+        "context": path.resolve(__dirname, "src/context"),
+        "services": path.resolve(__dirname, "src/services"),
+        "config": path.resolve(__dirname, "src/config"),
+        "constants": path.resolve(__dirname, "src/constants"),
+        "storage": path.resolve(__dirname, "src/storage"),
+        "validation": path.resolve(__dirname, "src/validation"),
       },
     },
 
@@ -129,7 +161,6 @@ export default defineConfig(({ mode }) => {
       },
       manifest: true,
       rollupOptions: {
-        cache: true,
         onwarn(warning, warn) {
           if (warning.code === "MODULE_LEVEL_DIRECTIVE") return;
           warn(warning);
@@ -200,7 +231,7 @@ export default defineConfig(({ mode }) => {
       treeShaking: true,
     },
 
-    logLevel: "warn",
+    // logLevel: "warn",
     define: {
       __APP_VERSION__: JSON.stringify(process.env.npm_package_version || "0.0.0"),
       __BUILD_TIME__: JSON.stringify(new Date().toISOString()),

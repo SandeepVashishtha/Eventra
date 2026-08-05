@@ -1,7 +1,7 @@
 import { useMemo, useCallback } from "react";
 import { Copy, Facebook, Linkedin, Mail, MessageCircle, Send, Twitter } from "lucide-react";
 import { toast } from "react-toastify";
-import { isValidShareUrl } from "../../utils/shareUtils";
+import { isValidShareUrl } from "utils/shareUtils";
 
 const SocialShareButtons = ({ event, layout = "grid" }) => {
   const shareData = useMemo(() => {
@@ -9,7 +9,7 @@ const SocialShareButtons = ({ event, layout = "grid" }) => {
 
     const shareUrl = `${window.location.origin}/events/${event.id}`;
     if (!isValidShareUrl(shareUrl)) return null;
-    
+
     const shareText = `Check out this event: ${event.title}`;
 
     return {

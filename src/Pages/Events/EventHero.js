@@ -1,16 +1,15 @@
 import { AnimatePresence, motion, useInView } from "framer-motion";
-import useReducedMotion from "../../hooks/useReducedMotion.js";
+import useReducedMotion from "hooks/useReducedMotion.js";
 import { Award, Calendar, Clock, Code2, Sparkles, TrendingUp, Trash2, Users } from "lucide-react";
 import { useEffect, useRef, useState, useCallback, memo } from "react";
 import { useNavigate } from "react-router-dom";
-import ModernSearchInput from "../../components/common/ModernSearchInput";
+import ModernSearchInput from "components/common/ModernSearchInput";
 import CountUpLib from "react-countup";
-import { darkTheme } from "../../components/styles/theme";
-import { safeParseJson } from "../../utils/jsonUtils";
-import { SkeletonBlock } from "../../components/common/SkeletonLoaders";
+import { darkTheme } from "components/styles/theme";
+import { safeParseJson } from "utils/jsonUtils";
+import { SkeletonBlock } from "components/common/SkeletonLoaders";
 const CountUp = CountUpLib.default || CountUpLib;
 
-// 🔥 THE FIX: Single, clean declarations placed in the correct order 🔥
 const SEARCH_HISTORY_KEY = "eventra.events.searchHistory";
 
 const getStoredSearchHistory = () => {
@@ -27,7 +26,7 @@ const TRENDING_SEARCHES = [
   "Web Development",
 ];
 
-const StatCounter = ({ stat, shouldAnimate }) => {
+const StatCounter = ({ stat, shouldAnimate, delay = 0 }) => {
   const prefix = stat.prefix || "";
   const suffix = stat.suffix || "";
 
@@ -47,6 +46,7 @@ const StatCounter = ({ stat, shouldAnimate }) => {
       prefix={prefix}
       suffix={suffix}
       startOnMount
+      delay={delay}
     />
   );
 };
@@ -110,11 +110,9 @@ function EventHero({
   const selectSearchQuery = (query) => {
     handleSearch(query);
     saveSearchQuery(query);
-    // Note: Assuming saveRecentSearch is handled upstream or passed correctly in full context
   };
 
   useEffect(() => {
-    // Preload hero background image for better LCP
     const preloadLink = document.createElement("link");
     preloadLink.rel = "preload";
     preloadLink.as = "image";
@@ -151,23 +149,19 @@ function EventHero({
 
   return (
     <div className="w-full bg-white dark:bg-slate-950">
-      {/* ========================================================================= */}
-      {/* 1. HERO SECTION (Clean, Lower Z-Index Context, Reduced Height)             */}
-      {/* ========================================================================= */}
       <section
         className="relative min-h-[60vh] md:min-h-[70vh] w-full overflow-hidden flex flex-col items-center justify-center"
         role="search"
         aria-label="Search events"
-        style={{zIndex: 1}} /*🔥 Kept low so Header dropdown stays on top */
+        style={{zIndex: 1}}
       >
-        {/* Background + Overlay */}
         <div
         className="absolute inset-0 bg-[url('/assets/eventbg.png')] bg-cover bg-center bg-no-repeat"
         aria-hidden="true"
       />
       <div className="absolute inset-0 bg-gradient-to-b from-blue-50/80 via-indigo-50/40 to-white dark:from-slate-950/90 dark:via-slate-900/70 dark:to-slate-950/95" />
       <div className="relative z-10 flex flex-col items-center justify-center px-4 py-12 sm:py-16 md:py-20 max-w-4xl mx-auto w-full">
-        <h1 
+        <h1
           className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight text-slate-900 dark:text-white drop-shadow-sm text-center"
           style={{fontFamily: '"Big Shoulders Display", sans-serif'}}
         >
@@ -209,7 +203,7 @@ function EventHero({
                     exit={{ opacity: 0, y: 8, scale: 0.98 }}
                     transition={{ duration: prefersReducedMotion ? 0 : 0.18, ease: "easeOut" }}
                     className={`
-                      absolute left-0 right-0 top-full z-50 mt-3 overflow-y-auto max-h-96 rounded-3xl
+                      relative w-full z-50 mt-3 overflow-y-auto max-h-96 rounded-3xl
                       border border-slate-200 dark:border-slate-700/60 ${darkTheme.card}
                       text-left shadow-2xl backdrop-blur-xl ring-1 ring-black/5 dark:ring-white/10
                     `}
@@ -308,9 +302,6 @@ function EventHero({
           </div>
         </div>
       </section>
-      {/* ========================================================================= */}
-      {/* 2. TRENDING TAGS ROW (Moved below the fold into its own clean layout)      */}
-      {/* ========================================================================= */}
       <section className="border-y border-slate-100 dark:border-slate-900 bg-slate-50/50 dark:bg-slate-950 py-5">
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-2 flex-wrap">
@@ -334,9 +325,6 @@ function EventHero({
         </div>
       </section>
 
-      {/* ========================================================================= */}
-      {/* 3. STATISTICS SECTION (Repositioned below the Hero section elements)       */}
-      {/* ========================================================================= */}
       {searchQuery.trim() === "" && (
         <section ref={statsRef} className="max-w-7xl mx-auto px-4 sm:px-6 py-12 md:py-16">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
@@ -362,7 +350,11 @@ function EventHero({
                   <stat.icon className={`h-5 w-5 sm:h-6 sm:w-6 ${darkTheme.textSecondary}`} />
                 </div>
                 <p className={`text-xl sm:text-2xl md:text-3xl font-bold tracking-tight ${darkTheme.textPrimary}`}>
-                  <StatCounter stat={stat} shouldAnimate={hasMounted && isStatsInView} />
+                  <StatCounter
+                    stat={stat}
+                    shouldAnimate={hasMounted && isStatsInView}
+                    delay={prefersReducedMotion ? 0 : i * 0.1}
+                  />
                 </p>
                 <p className={`mt-1 text-xs sm:text-sm font-medium ${darkTheme.textSecondary}`}>
                   {stat.label}

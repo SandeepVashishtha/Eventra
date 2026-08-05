@@ -40,6 +40,21 @@ const getDB = () => {
     };
     request.onsuccess = (e) => {
       dbInstance = e.target.result;
+
+      // Reset the singleton if another tab upgrades the DB version.
+      // Failing to close here blocks the other tab's upgrade indefinitely.
+      dbInstance.onversionchange = () => {
+        dbInstance.close();
+        dbInstance = null;
+        logger.warn("[P2P Cache] IndexedDB version change detected. Connection closed — will reopen on next access.");
+      };
+
+      // Reset the singleton if the connection is closed for any other reason.
+      dbInstance.onclose = () => {
+        dbInstance = null;
+        logger.warn("[P2P Cache] IndexedDB connection closed unexpectedly. Will reopen on next access.");
+      };
+
       resolve(dbInstance);
     };
     request.onerror = (e) => {
@@ -184,28 +199,26 @@ export async function saveChunkToCache(fileId, fileName, chunkIndex, totalChunks
 // @param {string} fileId - Unique identifier for the file being simulated.
 // @param {string} fileName - Display name of the file.
 // @param {function} [onProgress] - Called with progress percentage on each step.
-// @param {AbortController} [signal] - Optional abort signal to cancel the simulation early.
+// @param {AbortSignal} [signal] - Optional AbortSignal to cancel the simulation early. Pass controller.signal, not the controller itself.
 // @returns {Promise<boolean>} Resolves true on completion, false if aborted or on error.
 export async function simulateServerDownload(fileId, fileName, onProgress, signal) {
   const steps = 10;
   const totalChunks = 5;
   const dummyChunkData = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-
+  // Normalise: accept either an AbortSignal or an AbortController (defensive)
+  const abortSignal = signal instanceof AbortController ? signal.signal : signal;
   for (let i = 1; i <= steps; i++) {
-    if (signal?.aborted) return false;
+    if (abortSignal?.aborted) return false;
     await new Promise((r) => setTimeout(r, 250)); // Simulating transfer speed
     if (onProgress) onProgress(Math.round((i / steps) * 100));
   }
-
-  if (signal?.aborted) return false;
-
+  if (abortSignal?.aborted) return false;
   // Once fully downloaded from "server", split and write to IndexedDB cache
   for (let c = 0; c < totalChunks; c++) {
-    if (signal?.aborted) return false;
+    if (abortSignal?.aborted) return false;
     const chunkStr = Array(1000).fill(dummyChunkData).join("") + `[CHUNK_${c}]`;
     await saveChunkToCache(fileId, fileName, c, totalChunks, chunkStr);
   }
-
   return true;
 }
 
@@ -279,7 +292,11 @@ export class P2PFileTransferCoordinator {
 
   handleP2PAvailable(msg) {
     if (msg.to === peerId && !this.pc) {
-      this.connectToPeer(msg.from);
+      this.connectToPeer(msg.from).catch((err) => {
+        logger.error("handleP2PAvailable: connectToPeer rejected unexpectedly:", err);
+        this.updateState("failed");
+        this.cleanup();
+      });
     }
   }
 
@@ -385,16 +402,20 @@ export class P2PFileTransferCoordinator {
         }
       }, 2500);
 
-      // Add a secondary connection safety timer of 5 seconds total
+      // Add a secondary connection safety timer of 5 seconds total.
+      // Only resolve for "completed" — if still "transferring", let checkInterval
+      // continue polling until the transfer finishes or fails.
       connectionSafetyTimeout = setTimeout(() => {
         if (this.currentState === "connecting" || this.currentState === "searching") {
           this.cleanup();
           clearAllTimers();
           resolve(false); // WebRTC connection handshakes timed out, fallback to server
-        } else if (this.currentState === "completed" || this.currentState === "transferring") {
+        } else if (this.currentState === "completed") {
           clearAllTimers();
-          resolve(true);
+          resolve(true); // Transfer already confirmed complete
         }
+        // "transferring" → stay alive; checkInterval will resolve on "completed" or "failed"
+        // "failed" → checkInterval already handled it
       }, 5000);
 
       // Attach state listener check to resolve immediately if completed
@@ -418,36 +439,42 @@ export class P2PFileTransferCoordinator {
     }
     this.isInitiator = true;
     this.updateState("connecting", 0, "-", targetPeerId, 1);
-    
-    this.pc = new RTCPeerConnection();
-    this.queuedRemoteCandidates = [];
-    
-    // Create data channel
-    this.channel = this.pc.createDataChannel("file-transfer");
-    this.setupDataChannel();
 
-    this.pc.onicecandidate = (e) => {
-      if (e.candidate) {
-        this.bc.postMessage({
-          type: "P2P_ICE",
-          fileId: this.fileId,
-          from: peerId,
-          to: targetPeerId,
-          candidate: e.candidate
-        });
-      }
-    };
+    try {
+      this.pc = new RTCPeerConnection();
+      this.queuedRemoteCandidates = [];
 
-    const offer = await this.pc.createOffer();
-    await this.pc.setLocalDescription(offer);
+      // Create data channel
+      this.channel = this.pc.createDataChannel("file-transfer");
+      this.setupDataChannel();
 
-    this.bc.postMessage({
-      type: "P2P_OFFER",
-      fileId: this.fileId,
-      from: peerId,
-      to: targetPeerId,
-      offer: offer
-    });
+      this.pc.onicecandidate = (e) => {
+        if (e.candidate) {
+          this.bc.postMessage({
+            type: "P2P_ICE",
+            fileId: this.fileId,
+            from: peerId,
+            to: targetPeerId,
+            candidate: e.candidate
+          });
+        }
+      };
+
+      const offer = await this.pc.createOffer();
+      await this.pc.setLocalDescription(offer);
+
+      this.bc.postMessage({
+        type: "P2P_OFFER",
+        fileId: this.fileId,
+        from: peerId,
+        to: targetPeerId,
+        offer: offer
+      });
+    } catch (err) {
+      logger.error("connectToPeer: WebRTC negotiation failed:", err);
+      this.updateState("failed");
+      this.cleanup();
+    }
   }
 
   // Target peer receives connection offer and replies with answer
@@ -459,38 +486,44 @@ export class P2PFileTransferCoordinator {
     this.isInitiator = false;
     this.updateState("connecting", 0, "-", senderId, 1);
 
-    this.pc = new RTCPeerConnection();
-    this.queuedRemoteCandidates = [];
+    try {
+      this.pc = new RTCPeerConnection();
+      this.queuedRemoteCandidates = [];
 
-    this.pc.ondatachannel = (e) => {
-      this.channel = e.channel;
-      this.setupDataChannel();
-    };
+      this.pc.ondatachannel = (e) => {
+        this.channel = e.channel;
+        this.setupDataChannel();
+      };
 
-    this.pc.onicecandidate = (e) => {
-      if (e.candidate) {
-        this.bc.postMessage({
-          type: "P2P_ICE",
-          fileId: this.fileId,
-          from: peerId,
-          to: senderId,
-          candidate: e.candidate
-        });
-      }
-    };
+      this.pc.onicecandidate = (e) => {
+        if (e.candidate) {
+          this.bc.postMessage({
+            type: "P2P_ICE",
+            fileId: this.fileId,
+            from: peerId,
+            to: senderId,
+            candidate: e.candidate
+          });
+        }
+      };
 
-    await this.pc.setRemoteDescription(new RTCSessionDescription(offer));
-    await this.processQueuedCandidates();
-    const answer = await this.pc.createAnswer();
-    await this.pc.setLocalDescription(answer);
+      await this.pc.setRemoteDescription(new RTCSessionDescription(offer));
+      await this.processQueuedCandidates();
+      const answer = await this.pc.createAnswer();
+      await this.pc.setLocalDescription(answer);
 
-    this.bc.postMessage({
-      type: "P2P_ANSWER",
-      fileId: this.fileId,
-      from: peerId,
-      to: senderId,
-      answer: answer
-    });
+      this.bc.postMessage({
+        type: "P2P_ANSWER",
+        fileId: this.fileId,
+        from: peerId,
+        to: senderId,
+        answer: answer
+      });
+    } catch (err) {
+      logger.error("handleOffer: WebRTC answer negotiation failed:", err);
+      this.updateState("failed");
+      this.cleanup();
+    }
   }
 
   // Initiator sets target's answer description
@@ -557,12 +590,18 @@ export class P2PFileTransferCoordinator {
 
     this.channel.onopen = async () => {
       this.updateState("transferring", 0, "15.4 MB/s");
-      
+
       // If we already have the file cached, we act as the sender!
       if (!this.isInitiator) {
         const fileChunks = await getCachedFile(this.fileId);
         if (fileChunks) {
-          this.sendChunks(fileChunks);
+          try {
+            await this.sendChunks(fileChunks);
+          } catch (err) {
+            logger.error("sendChunks failed during P2P transfer:", err);
+            this.updateState("failed");
+            this.cleanup();
+          }
         }
       }
     };
@@ -647,7 +686,7 @@ this.channel.onmessage = async (e) => {
     };
 
     this.channel.onclose = () => {
-      if (this.currentState !== "completed") {
+      if (this.currentState !== "completed" && this.currentState !== "failed") {
         this.updateState("failed");
       }
       this.cleanup();

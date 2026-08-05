@@ -887,13 +887,9 @@ describe('Key Rotation', () => {
       // Rotate key
       await rotateKey();
       
-      // The ciphertext should still be in storage (not overwritten)
-      const ciphertextAfter = mockStorage.getItem(testKey);
-      assert.strictEqual(ciphertextBefore, ciphertextAfter, 'Ciphertext should remain unchanged');
-      
-      // Note: With the current implementation, the old ciphertext may not decrypt
-      // with the new key. This is expected behavior - callers should re-encrypt
-      // sensitive data after rotation. The test verifies the ciphertext is preserved.
+      // The decrypted value should be preserved and correct after rotation
+      const decryptedAfter = await syncSecureStorage.getItemAsync(testKey);
+      assert.strictEqual(decryptedAfter, testValue, 'Decrypted value should be preserved');
     });
 
     it('should not leave stale key references after rotation', async () => {

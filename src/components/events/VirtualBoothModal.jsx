@@ -4,8 +4,8 @@ import {
   Send, MessageSquare, ArrowLeft
 } from "lucide-react";
 import { toast } from "react-toastify";
-import { safeJsonParse } from "../../utils/safeJsonParse";
-import { useAuth } from "../../context/AuthContext";
+import { safeJsonParse } from "utils/safeJsonParse";
+import { useAuth } from "context/AuthContext";
 import ErrorBoundary from "../common/ErrorBoundary";
 
 const VirtualBoothModal = ({ isOpen, onClose, booth }) => {

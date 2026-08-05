@@ -40,7 +40,7 @@ export function calculatePrPoints(labels) {
 
   const difficultyPts =
     difficultyValues.length > 0
-      ? Math.min(...difficultyValues)
+      ? Math.max(...difficultyValues)
       : DEFAULT_MERGED_PR_POINTS;
 
   const multiplier = normalised.reduce((best, label) => {
@@ -130,6 +130,8 @@ export function computeLeaderboardStats(contributors) {
     totalContributors: contributors.length,
     totalPRs,
     totalPoints,
+    flooredTotalPRs: Math.floor(totalPRs),
+    flooredTotalPoints: Math.floor(totalPoints),
   };
 }
 

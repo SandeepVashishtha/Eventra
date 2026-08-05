@@ -3,8 +3,11 @@ import { safeJsonParse } from "./safeJsonParse.js";
 import { apiUtils, API_ENDPOINTS } from "../config/api.js";
 import { logger } from "./logger.js";
 import { getOrMigrateKey } from "./storageKeyManager.js";
+import { syncSecureStorage } from "./secureStorage.js";
 
 const GLOBAL_WAITLIST_KEY = "eventra_global_waitlists";
+const NOTIFICATION_INBOX_PREFIX = "eventra_notification_inbox";
+const CANONICAL_NOTIFICATION_INBOX_KEY = NOTIFICATION_INBOX_PREFIX;
 
 
 /**
@@ -31,17 +34,65 @@ const parseEventId = (eventId) => {
   return id;
 };
 
+/**
+ * Resolve the per-user storage key for the waitlist offline cache.
+ *
+ * The legacy key was a single unscoped, shared value (`eventra_global_waitlists`)
+ * that mixed every user's waitlist records in one place. The key is now scoped
+ * to the current user so a logged-in browser only ever holds the current
+ * user's own waitlist data. `getOrMigrateKey` migrates any legacy plaintext
+ * into the new scoped key once and then removes the legacy key.
+ *
+ * @param {string} userId - The current user id (falls back to email in the app).
+ * @returns {string} The user-scoped storage key.
+ */
+export const getWaitlistStorageKey = (userId) => {
+  return getOrMigrateKey("waitlists", userId, GLOBAL_WAITLIST_KEY);
+};
+
+/**
+ * Strip PII fields that must never be persisted to localStorage.
+ *
+ * The server remains the source of truth for contact details. The offline
+ * cache only needs enough data to render positions, status and timestamps, so
+ * emails and phone numbers are removed on every write. Combined with the
+ * AES-GCM encryption applied by `syncSecureStorage`, this ensures no contact
+ * PII can leak out of a localStorage read even when Web Crypto is unavailable.
+ *
+ * @param {Object} record - A raw waitlist record.
+ * @returns {Object} The record without `userEmail` / `phone` fields.
+ */
+const sanitizeRecord = (record) => {
+  if (!record || typeof record !== "object") return record;
+  const safe = { ...record };
+  delete safe.userEmail;
+  delete safe.phone;
+  return safe;
+};
+
+const getNotificationStorageKeys = (userId) => {
+  const keys = new Set([CANONICAL_NOTIFICATION_INBOX_KEY]);
+  if (userId) {
+    keys.add(`${NOTIFICATION_INBOX_PREFIX}_${userId}`);
+  }
+  return [...keys];
+};
+
+const writeNotificationToStorage = (notification, storageKey) => {
+  const raw = localStorage.getItem(storageKey);
+  const notifications = raw ? safeJsonParse(raw, []) : [];
+  notifications.unshift(notification);
+  localStorage.setItem(storageKey, JSON.stringify(notifications));
+};
+
 // Helper to add local notifications using localStorage
-export const addLocalNotification = async (title, message) => {
+export const addLocalNotification = async (title, message, options = {}) => {
   // SSR guard: localStorage and window are not available in Node.js/SSR environments
   if (typeof window === "undefined" || typeof localStorage === "undefined") {
     return;
   }
 
   try {
-    const canonicalKey = "eventra_notification_inbox";
-    const raw = localStorage.getItem(canonicalKey);
-    const notifications = raw ? safeJsonParse(raw, []) : [];
     const newNotification = {
       id: typeof crypto !== "undefined" && crypto.randomUUID
         ? `local-${crypto.randomUUID()}`
@@ -51,10 +102,14 @@ export const addLocalNotification = async (title, message) => {
       timestamp: new Date().toISOString(),
       title,
       message,
-      category: "registrations",
+      category: options.category || "registrations",
+      link: options.link,
+      recipientUserId: options.userId,
+      metadata: options.metadata,
     };
-    notifications.unshift(newNotification);
-    localStorage.setItem(canonicalKey, JSON.stringify(notifications));
+    getNotificationStorageKeys(options.userId).forEach((storageKey) => {
+      writeNotificationToStorage(newNotification, storageKey);
+    });
     // Trigger cross-component real-time sync
     window.dispatchEvent(new CustomEvent("eventra-notifications-updated"));
   } catch (error) {
@@ -62,11 +117,70 @@ export const addLocalNotification = async (title, message) => {
   }
 };
 
-// Retrieve all waitlist entries across all events and users
-export const getGlobalWaitlist = () => {
+const getWaitlistEventTitle = (eventId, eventOrTitle, records = []) => {
+  if (typeof eventOrTitle === "string" && eventOrTitle.trim()) return eventOrTitle.trim();
+  if (eventOrTitle?.title) return eventOrTitle.title;
+  const recordTitle = records.find((record) => record.eventTitle)?.eventTitle;
+  return recordTitle || `Event #${eventId}`;
+};
+
+const getPositionMap = (waitlist) =>
+  waitlist.reduce((positions, record, index) => {
+    positions.set(record.userId, index + 1);
+    return positions;
+  }, new Map());
+
+const notifyWaitlistPositionChanges = async (eventId, beforeWaitlist, eventOrTitle, cacheOwnerId) => {
+  const afterWaitlist = await getEventWaitlist(eventId, cacheOwnerId);
+  if (!beforeWaitlist.length || !afterWaitlist.length) return;
+
+  const previousPositions = getPositionMap(beforeWaitlist);
+  const eventTitle = getWaitlistEventTitle(eventId, eventOrTitle, beforeWaitlist);
+
+  await Promise.all(
+    afterWaitlist.map(async (record, index) => {
+      const previousPosition = previousPositions.get(record.userId);
+      const currentPosition = index + 1;
+      if (!previousPosition || currentPosition >= previousPosition) return;
+
+      await addLocalNotification(
+        "Waitlist Position Updated",
+        `Your waitlist position for ${eventTitle} moved from #${previousPosition} to #${currentPosition}!`,
+        {
+          userId: record.userId,
+          category: "registrations",
+          metadata: {
+            type: "waitlist_position_changed",
+            eventId,
+            eventTitle,
+            previousPosition,
+            currentPosition,
+          },
+        }
+      );
+    })
+  );
+};
+
+// Retrieve the current user's waitlist entries across all events
+export const getGlobalWaitlist = async (userId) => {
   try {
-    const raw = localStorage.getItem(GLOBAL_WAITLIST_KEY);
-    return raw ? safeJsonParse(raw, []) : [];
+    const key = getWaitlistStorageKey(userId);
+    const stored = await syncSecureStorage.getItemAsync(key);
+    let records = stored ? safeJsonParse(stored, []) : [];
+    if (!Array.isArray(records)) records = [];
+
+    const sanitized = records.map(sanitizeRecord);
+
+    // One-time migration: if the scoped key still holds plaintext (copied over
+    // from the legacy unscoped key by getOrMigrateKey), re-encrypt the
+    // sanitized copy so no plaintext PII survives on disk.
+    const raw = syncSecureStorage.getItem(key);
+    if (raw !== null && !raw.includes('"version"')) {
+      await saveGlobalWaitlist(sanitized, userId);
+    }
+
+    return sanitized;
   } catch (err) {
     // localStorage throws SecurityError or QuotaExceededError — never HTTP errors.
     // Log and return empty array so the UI degrades gracefully.
@@ -75,43 +189,74 @@ export const getGlobalWaitlist = () => {
   }
 };
 
-// Persist waitlist entries globally (offline cache only)
-export const saveGlobalWaitlist = (records) => {
+// Persist the current user's waitlist entries (encrypted offline cache only)
+export const saveGlobalWaitlist = async (records, userId) => {
   try {
-    localStorage.setItem(GLOBAL_WAITLIST_KEY, JSON.stringify(records));
+    const key = getWaitlistStorageKey(userId);
+    const sanitized = (Array.isArray(records) ? records : []).map(sanitizeRecord);
+    await syncSecureStorage.setItem(key, JSON.stringify(sanitized));
   } catch (error) {
+    if (error.name === 'QuotaExceededError') {
+      throw error;
+    }
     logger.error("[WaitlistUtils] Failed to save global waitlist:", error);
   }
 };
 
-// Sync waitlist from server, falling back to localStorage cache
-export const syncWaitlistFromServer = async (eventId) => {
+/**
+ * Purge the current user's waitlist cache.
+ *
+ * Invoked on logout / session clear so waitlist PII does not outlive the
+ * session in the browser. Removal is synchronous and targeted to the
+ * user-scoped key.
+ *
+ * @param {string} userId - The user whose cache should be purged.
+ */
+export const clearWaitlistCache = (userId) => {
+  if (!userId) return;
   try {
-    const response = await apiUtils.get(`${API_ENDPOINTS.EVENTS.ALL}/${eventId}/waitlist`);
+    syncSecureStorage.removeItem(getWaitlistStorageKey(userId));
+  } catch (error) {
+    logger.error("[WaitlistUtils] Failed to clear waitlist cache:", error);
+  }
+};
+
+// Sync waitlist from server, falling back to localStorage cache
+export const syncWaitlistFromServer = async (eventId, cacheOwnerId) => {
+  const id = parseEventId(eventId);
+  try {
+    const response = await apiUtils.get(`${API_ENDPOINTS.EVENTS.ALL}/${id}/waitlist`);
     if (response.ok && response.data) {
-      const serverData = Array.isArray(response.data) ? response.data : response.data.entries || [];
-      const existing = getGlobalWaitlist().filter(r => r.eventId !== eventId);
-      saveGlobalWaitlist([...existing, ...serverData]);
+      const serverData = (
+        Array.isArray(response.data) ? response.data : response.data.entries || []
+      ).map((r) => ({ ...r, eventId: parseInt(r.eventId, 10) }));
+      // Reconcile: replace stale local records for this event with server state
+      const records = await getGlobalWaitlist(cacheOwnerId);
+      const reconciled = [
+        ...records.filter((r) => r.eventId !== id),
+        ...serverData,
+      ];
+      await saveGlobalWaitlist(reconciled, cacheOwnerId);
       return serverData;
     }
   } catch {
     logger.warn("[WaitlistUtils] Server sync failed, using localStorage cache");
   }
-  return getGlobalWaitlist();
+  return getEventWaitlist(id, cacheOwnerId);
 };
 
 // Get waitlist entries for a specific event with 'waiting' status
-export const getEventWaitlist = (eventId) => {
+export const getEventWaitlist = async (eventId, userId) => {
   const id = parseEventId(eventId);
-  const records = getGlobalWaitlist();
+  const records = await getGlobalWaitlist(userId);
   return records
     .filter((r) => r.eventId === id && r.status === "waiting")
     .sort((a, b) => new Date(a.joinedAt) - new Date(b.joinedAt));
 };
 
 // Calculate queue position (1-indexed) for a user on a specific event
-export const getQueuePosition = (eventId, userId) => {
-  const eventWaitlist = getEventWaitlist(eventId);
+export const getQueuePosition = async (eventId, userId) => {
+  const eventWaitlist = await getEventWaitlist(eventId, userId);
   const index = eventWaitlist.findIndex((r) => r.userId === userId);
   return index !== -1 ? index + 1 : -1;
 };
@@ -187,14 +332,19 @@ export const joinWaitlist = async (eventId, user, registrationForm = {}) => {
           "Anonymous",
         userEmail: user.email,
         phone: registrationForm.phone || "",
+        eventTitle: registrationForm.eventTitle || "the event",
         eventId: id,
         joinedAt: new Date().toISOString(),
         status: "waiting",
       };
-      const records = getGlobalWaitlist();
+      const records = await getGlobalWaitlist(userId);
       records.push(newEntry);
-      saveGlobalWaitlist(records);
-      await addLocalNotification("Waitlist Joined", `You have successfully joined the waitlist for ${registrationForm.eventTitle || "the event"}.`);
+      await saveGlobalWaitlist(records, userId);
+      await addLocalNotification(
+        "Waitlist Joined",
+        `You have successfully joined the waitlist for ${registrationForm.eventTitle || "the event"}.`,
+        { userId }
+      );
       return newEntry;
     }
     throw new Error(response.data?.message || "Server rejected waitlist join");
@@ -222,7 +372,7 @@ export const joinWaitlist = async (eventId, user, registrationForm = {}) => {
     if (e.message.includes("already registered")) throw e;
   }
 
-  const records = getGlobalWaitlist();
+  const records = await getGlobalWaitlist(userId);
   const existing = records.find(
     (r) => r.userId === userId && r.eventId === id && r.status === "waiting"
   );
@@ -239,17 +389,19 @@ export const joinWaitlist = async (eventId, user, registrationForm = {}) => {
       "Anonymous",
     userEmail: user.email,
     phone: registrationForm.phone || "",
+    eventTitle: registrationForm.eventTitle || "the event",
     eventId: id,
     joinedAt: new Date().toISOString(),
     status: "waiting",
   };
 
   records.push(newEntry);
-  saveGlobalWaitlist(records);
+  await saveGlobalWaitlist(records, userId);
 
   await addLocalNotification(
     "Waitlist Joined (Offline)",
-    `You have been added to the offline waitlist for ${registrationForm.eventTitle || "the event"}. It will sync when you are back online.`
+    `You have been added to the offline waitlist for ${registrationForm.eventTitle || "the event"}. It will sync when you are back online.`,
+    { userId }
   );
 
   return newEntry;
@@ -258,27 +410,29 @@ export const joinWaitlist = async (eventId, user, registrationForm = {}) => {
 // Leave waitlist - tries server first, falls back to localStorage
 export const leaveWaitlist = async (eventId, userId) => {
   const id = parseEventId(eventId);
+  const beforeWaitlist = await getEventWaitlist(id, userId);
 
   try {
     const response = await apiUtils.post(`${API_ENDPOINTS.EVENTS.ALL}/${id}/waitlist/leave`, { userId });
     if (response.ok) {
-      const records = getGlobalWaitlist();
+      const records = await getGlobalWaitlist(userId);
       const matchIndex = records.findIndex(
         (r) => r.userId === userId && r.eventId === id && r.status === "waiting"
       );
       if (matchIndex !== -1) {
         records[matchIndex].status = "removed";
         records[matchIndex].removedAt = new Date().toISOString();
-        saveGlobalWaitlist(records);
+        await saveGlobalWaitlist(records, userId);
       }
-      await addLocalNotification("Left Waitlist", "You have left the waitlist.");
+      await addLocalNotification("Left Waitlist", "You have left the waitlist.", { userId });
+      await notifyWaitlistPositionChanges(id, beforeWaitlist, undefined, userId);
       return true;
     }
   } catch {
     // Fall through to localStorage-only path
   }
 
-  const records = getGlobalWaitlist();
+  const records = await getGlobalWaitlist(userId);
   const matchIndex = records.findIndex(
     (r) => r.userId === userId && r.eventId === id && r.status === "waiting"
   );
@@ -287,28 +441,45 @@ export const leaveWaitlist = async (eventId, userId) => {
   }
   records[matchIndex].status = "removed";
   records[matchIndex].removedAt = new Date().toISOString();
-  saveGlobalWaitlist(records);
-  await addLocalNotification("Left Waitlist", "You have left the waitlist.");
+  await saveGlobalWaitlist(records, userId);
+  await addLocalNotification("Left Waitlist", "You have left the waitlist.", { userId });
+  await notifyWaitlistPositionChanges(id, beforeWaitlist, undefined, userId);
   return true;
 };
 
 // Helper to perform local waitlist status promotion and updates
-const performLocalPromotion = async (record, event) => {
-  const records = getGlobalWaitlist();
+const performLocalPromotion = async (record, event, cacheOwnerId) => {
+  const records = await getGlobalWaitlist(cacheOwnerId);
   const match = records.find(
     (r) => r.userId === record.userId && r.eventId === record.eventId && r.status === "waiting"
   );
   if (match) {
     match.status = "promoted";
     match.promotedAt = new Date().toISOString();
-    saveGlobalWaitlist(records);
+    await saveGlobalWaitlist(records, cacheOwnerId);
   }
   addRegistrationToUserStorage(record.userId, event);
   incrementEventAttendees(event.id);
   await addLocalNotification(
     "Waitlist Promotion",
-    `Good news! You have been promoted from the waitlist to a confirmed attendee for: ${event.title || "your event"}.`
+    `Good news! You have been promoted from the waitlist to a confirmed attendee for: ${event.title || "your event"}.`,
+    { userId: record.userId }
   );
+  return !!match;
+};
+
+// Mark a waitlist record as pending server sync (offline path).
+// The record stays "waiting" — a confirmed promotion is never fabricated, so
+// no fake registration or attendee count is created while offline.
+const markPromotionPendingSync = async (record, cacheOwnerId) => {
+  const records = await getGlobalWaitlist(cacheOwnerId);
+  const match = records.find(
+    (r) => r.userId === record.userId && r.eventId === record.eventId && r.status === "waiting"
+  );
+  if (match) {
+    match.promotionPendingSync = true;
+    await saveGlobalWaitlist(records, cacheOwnerId);
+  }
   return !!match;
 };
 
@@ -324,13 +495,20 @@ const checkIfOffline = (error) => {
 };
 
 // Promote a specific record to a confirmed registration
-export const promoteRecord = async (record, event) => {
+export const promoteRecord = async (record, event, options = {}, cacheOwnerId) => {
+  const shouldNotifyPositionChanges = options.notifyPositionChanges !== false;
+  const beforeWaitlist = shouldNotifyPositionChanges
+    ? await getEventWaitlist(record.eventId, cacheOwnerId)
+    : [];
   try {
     const response = await apiUtils.post(`${API_ENDPOINTS.EVENTS.ALL}/${event.id}/waitlist/promote`, {
       userId: record.userId,
     });
     if (response.ok) {
-      await performLocalPromotion(record, event);
+      const promoted = await performLocalPromotion(record, event, cacheOwnerId);
+      if (promoted && shouldNotifyPositionChanges) {
+        await notifyWaitlistPositionChanges(record.eventId, beforeWaitlist, event, cacheOwnerId);
+      }
       return true;
     }
     // Explicit server rejection
@@ -341,13 +519,22 @@ export const promoteRecord = async (record, event) => {
     }
   }
 
-  return performLocalPromotion(record, event);
+  // Offline: do not fabricate a confirmed promotion — the server never issued
+  // a registration. Clearly mark the record as pending sync and report the
+  // failure so the organizer can retry once the connection is restored.
+  await markPromotionPendingSync(record, cacheOwnerId);
+  await addLocalNotification(
+    "Waitlist Promotion Pending",
+    `The promotion for "${event.title || "your event"}" is pending — it will complete once the connection is restored.`,
+    { userId: record.userId }
+  );
+  return false;
 };
 
 // Promote the next user in queue when a spot opens up
-export const promoteNextUser = async (eventId, eventData = null) => {
+export const promoteNextUser = async (eventId, eventData = null, cacheOwnerId) => {
   const id = parseEventId(eventId);
-  const eventWaitlist = getEventWaitlist(id);
+  const eventWaitlist = await getEventWaitlist(id, cacheOwnerId);
   if (eventWaitlist.length === 0) return null;
 
   const nextUserRecord = eventWaitlist[0];
@@ -371,11 +558,11 @@ export const promoteNextUser = async (eventId, eventData = null) => {
     event = { id, title: "Event" };
   }
 
-  const success = await promoteRecord(nextUserRecord, event);
+  const success = await promoteRecord(nextUserRecord, event, {}, cacheOwnerId);
   if (!success) {
     return null;
   }
-  const updatedRecord = getGlobalWaitlist().find(
+  const updatedRecord = (await getGlobalWaitlist(cacheOwnerId)).find(
     (r) =>
       r.userId === nextUserRecord.userId &&
       r.eventId === nextUserRecord.eventId
@@ -385,47 +572,56 @@ export const promoteNextUser = async (eventId, eventData = null) => {
 };
 
 // Handle event capacity increase by promoting N users to confirmed attendees
-export const handleCapacityIncrease = async (event, newCapacity) => {
+export const handleCapacityIncrease = async (event, newCapacity, cacheOwnerId) => {
   const currentAttendees = Number(event.attendees || 0);
   const spotsToFill = newCapacity - currentAttendees;
   if (spotsToFill <= 0) return 0;
 
-  const eventWaitlist = getEventWaitlist(event.id);
+  const eventWaitlist = await getEventWaitlist(event.id, cacheOwnerId);
+  const beforeWaitlist = [...eventWaitlist];
   const countToPromote = Math.min(spotsToFill, eventWaitlist.length);
 
   for (let i = 0; i < countToPromote; i++) {
-    await promoteRecord(eventWaitlist[i], event);
+    await promoteRecord(eventWaitlist[i], event, { notifyPositionChanges: false }, cacheOwnerId);
   }
+
+  await notifyWaitlistPositionChanges(event.id, beforeWaitlist, event, cacheOwnerId);
 
   return countToPromote;
 };
 
 // Organizer action to manually remove a user
-export const organizerRemoveUser = async (eventId, userId) => {
+export const organizerRemoveUser = async (eventId, userId, cacheOwnerId) => {
   const id = parseEventId(eventId);
+  const beforeWaitlist = await getEventWaitlist(id, cacheOwnerId);
 
   try {
     const response = await apiUtils.post(`${API_ENDPOINTS.EVENTS.ALL}/${id}/waitlist/remove`, {
       userId,
     });
     if (response.ok) {
-      const records = getGlobalWaitlist();
+      const records = await getGlobalWaitlist(cacheOwnerId);
       const matchIndex = records.findIndex(
         (r) => r.userId === userId && r.eventId === id && r.status === "waiting"
       );
       if (matchIndex !== -1) {
         records[matchIndex].status = "removed_by_organizer";
         records[matchIndex].removedAt = new Date().toISOString();
-        saveGlobalWaitlist(records);
+        await saveGlobalWaitlist(records, cacheOwnerId);
       }
-      await addLocalNotification("Removed from Waitlist", `You have been removed from the waitlist for Event #${id} by the organizer.`);
+      await addLocalNotification(
+        "Removed from Waitlist",
+        `You have been removed from the waitlist for Event #${id} by the organizer.`,
+        { userId }
+      );
+      await notifyWaitlistPositionChanges(id, beforeWaitlist, undefined, cacheOwnerId);
       return true;
     }
   } catch {
     // Fall through to localStorage-only path
   }
 
-  const records = getGlobalWaitlist();
+  const records = await getGlobalWaitlist(cacheOwnerId);
   const matchIndex = records.findIndex(
     (r) => r.userId === userId && r.eventId === id && r.status === "waiting"
   );
@@ -436,20 +632,22 @@ export const organizerRemoveUser = async (eventId, userId) => {
 
   records[matchIndex].status = "removed_by_organizer";
   records[matchIndex].removedAt = new Date().toISOString();
-  saveGlobalWaitlist(records);
+  await saveGlobalWaitlist(records, cacheOwnerId);
 
   await addLocalNotification(
     "Removed from Waitlist",
-    `You have been removed from the waitlist for Event #${id} by the organizer.`
+    `You have been removed from the waitlist for Event #${id} by the organizer.`,
+    { userId }
   );
+  await notifyWaitlistPositionChanges(id, beforeWaitlist, undefined, cacheOwnerId);
 
   return true;
 };
 
 // Waitlist Analytics
-export const getWaitlistAnalytics = (eventId) => {
+export const getWaitlistAnalytics = async (eventId, cacheOwnerId) => {
   const id = parseEventId(eventId);
-  const records = getGlobalWaitlist();
+  const records = await getGlobalWaitlist(cacheOwnerId);
 
   const eventRecords = records.filter(
     (record) => record.eventId === id

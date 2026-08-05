@@ -37,7 +37,9 @@ const keywordIndex = knowledgeBaseConfig.reduce((acc, item) => {
 const sortedKeywords = [...keywordIndex.keys()].sort((a, b) => b.length - a.length);
 
 const keywordPattern = new RegExp(
-  sortedKeywords.map((kw) => kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"),
+  sortedKeywords
+    .map((kw) => `\\b${kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`)
+    .join("|"),
   "i"
 );
 
@@ -88,6 +90,15 @@ export function getInitialMessages(t, pathname = "") {
 }
 
 export function getAssistantReply(input, t) {
+  if (!input || typeof input !== "string") {
+    return {
+      answer: t("chatbot.knowledge.default"),
+      actions: [
+        { label: t("chatbot.knowledge.exploreEvents"), to: "/events", icon: "CalendarDays" },
+      ],
+    };
+  }
+
   const match = input.match(keywordPattern);
   const matchedKeyword = match ? match[0].toLowerCase() : null;
   const matchedItem = matchedKeyword ? keywordIndex.get(matchedKeyword) : null;
@@ -111,7 +122,6 @@ export function getAssistantReply(input, t) {
   };
 }
 
-// Backward-compatible exports for tests or legacy imports
 export const quickPrompts = getQuickPromptKeys();
 export const knowledgeBase = knowledgeBaseConfig;
 export const defaultAnswer = "chatbot.knowledge.default";

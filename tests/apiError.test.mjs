@@ -45,6 +45,12 @@ try {
   assert.equal(normalized.name, "ApiError");
   assert.equal(normalized.isTimeout, true);
   assert.ok(normalized.message.includes("timed out"));
+  assert.ok(normalized.message.includes("after 5s"), "timeout should be shown in seconds");
+  assert.ok(!normalized.message.includes("after 5000s"), "timeout must not show raw milliseconds");
+
+  const defaultTimeoutErr = { code: "ECONNABORTED", config: { method: "get", url: "/events" } };
+  const defaultNormalized = normalizeApiError(defaultTimeoutErr);
+  assert.ok(defaultNormalized.message.includes("after 15s"));
 
   // --- normalizeApiError: network error (no response) ---
   const netErr = { message: "Failed to fetch", config: { method: "post", url: "/api/login" } };

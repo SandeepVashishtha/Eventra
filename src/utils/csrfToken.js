@@ -44,12 +44,23 @@ export const getCSRFEnforcementMode = () => {
 /**
  * Reads the CSRF token from the page's <meta> tag.
  * Expected: <meta name="csrf-token" content="TOKEN_VALUE">
+ *
+ * Build placeholders (e.g. "%CSRF_TOKEN%") are treated as absent: a literal
+ * placeholder is a predictable constant and must never be used as a token.
+ *
  * @returns {string|null}
  */
+const PLACEHOLDER_PATTERN = /^%[A-Z_][A-Z0-9_]*%$/;
+
 export function getCSRFTokenFromMeta() {
   if (typeof document === "undefined") return null;
   const meta = document.querySelector(`meta[name="${CSRF_META_NAME}"]`);
-  return meta ? meta.getAttribute("content") : null;
+  if (!meta) return null;
+  const content = meta.getAttribute("content");
+  if (typeof content !== "string" || PLACEHOLDER_PATTERN.test(content)) {
+    return null;
+  }
+  return content;
 }
 
 /**
@@ -69,12 +80,17 @@ export function getCSRFTokenFromCookie(name = CSRF_COOKIE_NAME) {
 }
 
 /**
- * Gets the CSRF token from meta tag or cookie (in that order).
+ * Gets the CSRF token from cookie or meta tag (in that order).
+ *
+ * The cookie is the source of truth: it is the per-session token issued by the
+ * server. The meta tag is only consulted as a fallback for environments that
+ * inject a real token server-side (e.g. server-rendered pages).
+ *
  * @returns {string|null}
  */
 export function getCSRFToken() {
   if (typeof document === "undefined") return null;
-  return getCSRFTokenFromMeta() || getCSRFTokenFromCookie();
+  return getCSRFTokenFromCookie() || getCSRFTokenFromMeta();
 }
 
 /**
@@ -158,7 +174,7 @@ export function rotateCSRFToken(newToken) {
     // Update cookies
     setCookie(CSRF_COOKIE_NAME, newToken, {
       path: "/",
-      secure: true,
+      secure: typeof location !== "undefined" && location.protocol === "https:",
     });
   }
 }

@@ -3,6 +3,17 @@ export function sanitizeFilename(name) {
   return name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
 }
 
+const CSV_FORMULA_TRIGGERS = /^[=+\-@\t\r]/;
+
+// Prevent CSV/formula injection: spreadsheet applications treat cells that
+// start with =, +, -, @, Tab, or Carriage Return as formula directives.
+// Prefixing those cells with a single quote makes the spreadsheet render the
+// value as plain text instead of executing it (e.g. =HYPERLINK("http://evil.com","x")).
+const sanitizeCsvCell = (value) => {
+  const str = value === null || value === undefined ? "" : String(value);
+  return CSV_FORMULA_TRIGGERS.test(str) ? `'${str}` : str;
+};
+
 export function exportToCSV(data, filename) {
   if (!data || !data.length) return;
   const headers = Object.keys(data[0]);
@@ -14,7 +25,7 @@ export function exportToCSV(data, filename) {
   // Add data rows
   for (const row of data) {
     const values = headers.map(header => {
-      const escape = ('' + (row[header] ?? '')).replace(/"/g, '""');
+      const escape = sanitizeCsvCell(row[header]).replace(/"/g, '""');
       return `"${escape}"`;
     });
     csvRows.push(values.join(','));

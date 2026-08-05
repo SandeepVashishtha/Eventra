@@ -2,15 +2,15 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "../../context/AuthContext";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
+import { useAuth } from "context/AuthContext";
+import useDocumentTitle from "hooks/useDocumentTitle";
 import { toast } from "react-toastify";
-import { showAuthToast } from "../../utils/toast";
-import { getPublicErrorMessage, AUTH_ERRORS } from "../../utils/errorMessages";
-import useReducedMotion from "../../hooks/useReducedMotion";
+import { showAuthToast } from "utils/toast";
+import { getPublicErrorMessage, AUTH_ERRORS } from "utils/errorMessages";
+import useReducedMotion from "hooks/useReducedMotion";
 import FieldError from '../common/FieldError';
-import useLoginRateLimit from '../../hooks/useLoginRateLimit';
-import { MAX_LOGIN_ATTEMPTS, parseRetryAfterMs } from '../../utils/rateLimitUtils';
+import useLoginRateLimit from 'hooks/useLoginRateLimit';
+import { MAX_LOGIN_ATTEMPTS, parseRetryAfterMs } from 'utils/rateLimitUtils';
 import '../../styles/auth.css';
 import { emailPattern } from '../../validation';
 import {
@@ -19,13 +19,13 @@ import {
   incrementFailures,
   resetFailures,
   getBackoffDelay,
-} from "../../utils/authRateLimiter";
+} from "utils/authRateLimiter";
 
 const Login = () => {
   useDocumentTitle("Login | Eventra");
   const { t } = useTranslation();
   const prefersReducedMotion = useReducedMotion();
-  const [formData, setFormData] = useState({ usernameOrEmail: "", password: "" });
+  const [formData, setFormData] = useState({ usernameOrEmail: "", password: "", role: "team leader" });
   const [error, setError] = useState({});
   const [showPassword, setShowPassword] = useState(false);
 
@@ -100,7 +100,7 @@ const Login = () => {
           "Login successful! Redirecting to dashboard...",
           () => navigate("/dashboard", { replace: true })
         );
-      } 
+      }
       else {
         incrementFailures("login");
 
@@ -332,6 +332,40 @@ const Login = () => {
                     {t('auth.forgotPassword')}
                   </Link>
                 </div>
+              </div>
+
+              {/* Role Selection */}
+              <div className="space-y-2">
+                <label
+                  htmlFor="role"
+                  className="block text-sm font-semibold"
+                  style={{ color: "var(--text-color)" }}
+                >
+                  {t('auth.role') || "Role"} <sup className="ml-1 text-sm text-red-500">*</sup>
+                </label>
+                <div className="relative group">
+                  <select
+                    id="role"
+                    name="role"
+                    value={formData.role}
+                    onChange={handleChange}
+                    required
+                    disabled={isSubmitDisabled}
+                    className={`w-full pl-3 pr-4 py-3 bg-white dark:bg-gray-800 border ${
+                      error.role
+                        ? "border-red-500 dark:border-red-500"
+                        : "border-gray-200 dark:border-gray-600"
+                    } rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 hover:shadow-md text-gray-900 dark:text-white appearance-none cursor-pointer`}
+                  >
+                    <option value="team leader">Team Leader</option>
+                    <option value="evaluator">Evaluator</option>
+                    <option value="superadmin">Superadmin</option>
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                    <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                  </div>
+                </div>
+                <FieldError id="role-error" message={error.role} />
               </div>
 
               {/* Auth error */}

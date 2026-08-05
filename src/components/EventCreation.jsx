@@ -245,7 +245,7 @@ const EventCreation = () => {
 
                 <div className="p-8 space-y-8">
                   <div className="space-y-4">
-                    <h2 className="text-3xl font-bold text-gray-900 dark:text-white wrap-break-word">
+                    <h2 className="text-3xl font-bold text-gray-900 dark:text-white break-words">
                       {formData.title}
                     </h2>
                     <div className="flex flex-wrap gap-2">

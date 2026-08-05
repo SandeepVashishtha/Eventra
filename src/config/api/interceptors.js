@@ -1,23 +1,65 @@
-import { syncServerTimeFromHeader } from "../../utils/timeSync.js";
-import { getCSRFToken, requiresCSRF, getCSRFEnforcementMode } from "../../utils/csrfToken.js";
-import { logger } from "../../utils/logger.js";
+import { syncServerTimeFromHeader } from "utils/timeSync.js";
+import { getCSRFToken, requiresCSRF, getCSRFEnforcementMode } from "utils/csrfToken.js";
+import { signRequest } from "utils/requestSigner.js";
+import { logger } from "utils/logger.js";
 import { ApiError, RateLimitError, CSRFError } from "./errors.js";
-import { logCategorizedError } from "../../utils/errorRecovery.js";
+import { logCategorizedError } from "utils/errorRecovery.js";
 
 const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504];
 const RETRYABLE_METHODS = new Set(["GET", "HEAD", "OPTIONS", "TRACE"]);
 const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 1_000;
 
+const SIGNED_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+const REQUEST_SIGNING_SECRET_KEY = "VITE_REQUEST_SIGNING_SECRET";
+
+const getRequestSigningSecret = () => {
+  if (typeof import.meta !== "undefined" && import.meta.env) {
+    return import.meta.env[REQUEST_SIGNING_SECRET_KEY] || "";
+  }
+  if (typeof process !== "undefined" && process.env) {
+    return process.env[REQUEST_SIGNING_SECRET_KEY] || "";
+  }
+  return "";
+};
+
+const isSignableBody = (data) =>
+  data != null && !(typeof FormData !== "undefined" && data instanceof FormData);
+
+const signRequestConfig = async (config) => {
+  const method = config.method?.toUpperCase();
+  const secret = getRequestSigningSecret();
+
+  if (!SIGNED_METHODS.has(method) || !secret || !isSignableBody(config.data)) {
+    return config;
+  }
+
+  try {
+    const { timestamp, nonce, signature } = await signRequest(config.data, secret);
+    config.headers["x-timestamp"] = timestamp;
+    config.headers["x-nonce"] = nonce;
+    config.headers["x-signature"] = signature;
+  } catch (error) {
+    logger.security("request_signing_failed", {
+      method,
+      url: config.url || "unknown",
+      error: error?.message || String(error),
+    });
+  }
+
+  return config;
+};
+
 let onUnauthorized = null;
 let _onRequiresReauth = null;
+
 let _authToken = null;
 
 export const setOnUnauthorizedHandler = (handler) => { onUnauthorized = handler; };
 export const setOnRequiresReauthHandler = (handler) => { _onRequiresReauth = handler; };
 export const setAuthToken = (token) => { _authToken = token; };
 
-export const createRequestInterceptor = (isDev) => (config) => {
+export const createRequestInterceptor = (isDev) => async (config) => {
   if (isDev) {
     logger.info(`[API ${config.method?.toUpperCase()}]`, config.url || "");
   }
@@ -45,7 +87,7 @@ export const createRequestInterceptor = (isDev) => (config) => {
             });
     }
   }
-  return config;
+  return signRequestConfig(config);
 };
 
 export const createResponseInterceptor = (API) => {
@@ -58,8 +100,15 @@ export const createResponseInterceptor = (API) => {
   const reject = async (error) => {
     const config = error.config || {};
     const status = error?.response?.status;
+    const errorCode = error?.response?.data?.code;
 
-    if (status === 401 && onUnauthorized) onUnauthorized();
+    if (status === 401) {
+      if (errorCode === "REQUIRES_REAUTH" && _onRequiresReauth) {
+        _onRequiresReauth();
+      } else if (onUnauthorized) {
+        onUnauthorized();
+      }
+    }
 
     const retryCount = config._retryCount || 0;
     const isNonMutating = RETRYABLE_METHODS.has(config.method?.toUpperCase() ?? "");
@@ -129,8 +178,8 @@ const normalizeApiErrorWithTimeout = (error, timeoutMs) => {
   );
 };
 
-export function setupRequestInterceptor(api, { isDev, buildApiUrl, getAuthToken, getOnUnauthorized: _getOnUnauthorized }) {
-  api.interceptors.request.use((config) => {
+export function setupRequestInterceptor(api, { isDev, buildApiUrl, getAuthToken,   }) {
+  api.interceptors.request.use(async (config) => {
     if (isDev) {
       logger.info(`[API ${config.method?.toUpperCase()}]`, buildApiUrl(config.url || ""));
     }
@@ -178,7 +227,7 @@ export function setupRequestInterceptor(api, { isDev, buildApiUrl, getAuthToken,
       }
     }
 
-    return config;
+    return signRequestConfig(config);
   });
 }
 
@@ -198,7 +247,7 @@ export function setupResponseInterceptor(api, { isDev, timeoutMs, getOnUnauthori
 
       const onUnauthorized = getOnUnauthorized();
       const onRequiresReauth = getOnRequiresReauth ? getOnRequiresReauth() : null;
-      
+
       if (status === 401) {
         if (errorCode === "REQUIRES_REAUTH") {
           if (onRequiresReauth) onRequiresReauth();

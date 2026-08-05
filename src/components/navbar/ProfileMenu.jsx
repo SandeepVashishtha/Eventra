@@ -13,7 +13,7 @@ import {
 
 const menuItems = [
   { labelKey: "nav.dashboard", path: "/dashboard", icon: LayoutDashboard },
-  { labelKey: "nav.createEvent", path: "/events/create", icon: PlusCircle },
+  { labelKey: "nav.createEvent", path: "/create-event", icon: PlusCircle },
   { labelKey: "nav.viewProfile", path: "/dashboard/profile", icon: User },
   { labelKey: "nav.about", path: "/about", icon: Info },
   { labelKey: "nav.faqFull", path: "/faq", icon: HelpCircle },

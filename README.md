@@ -10,6 +10,11 @@ Modern event and hackathon platform for communities, organizers, and contributor
 [![Contributors](https://img.shields.io/github/contributors/SandeepVashishtha/Eventra?style=flat&color=green)](https://github.com/SandeepVashishtha/Eventra/graphs/contributors)
 [![Open Issues](https://img.shields.io/github/issues/SandeepVashishtha/Eventra?style=flat&color=red)](https://github.com/SandeepVashishtha/Eventra/issues)
 [![Open PRs](https://img.shields.io/github/issues-pr/SandeepVashishtha/Eventra?style=flat&color=blue)](https://github.com/SandeepVashishtha/Eventra/pulls)
+[![CI Validation](https://github.com/SandeepVashishtha/Eventra/actions/workflows/ci.yml/badge.svg)](https://github.com/SandeepVashishtha/Eventra/actions/workflows/ci.yml)
+[![Docker Build](https://github.com/SandeepVashishtha/Eventra/actions/workflows/docker-ci.yml/badge.svg)](https://github.com/SandeepVashishtha/Eventra/actions/workflows/docker-ci.yml)
+[![Docker Publish](https://github.com/SandeepVashishtha/Eventra/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/SandeepVashishtha/Eventra/actions/workflows/docker-publish.yml)
+[![Security Validation](https://github.com/SandeepVashishtha/Eventra/actions/workflows/security-ci.yml/badge.svg)](https://github.com/SandeepVashishtha/Eventra/actions/workflows/security-ci.yml)
+[![CodeQL Analysis](https://github.com/SandeepVashishtha/Eventra/actions/workflows/codeql.yml/badge.svg)](https://github.com/SandeepVashishtha/Eventra/actions/workflows/codeql.yml)
 
 ---
 
@@ -30,7 +35,7 @@ npm run dev
 
 App runs at `http://localhost:3000`.
 
-> See [Local Development](#local-development) for detailed setup instructions and [Common Setup Issues](#common-setup-issues) for troubleshooting.
+> See [Local Development](#local-development) for detailed setup instructions and [Troubleshooting](#-troubleshooting) for common fixes.
 
 ## Table of Contents
 
@@ -48,10 +53,10 @@ App runs at `http://localhost:3000`.
 - [Prerequisites](#prerequisites)
 - [Local Development](#local-development)
 - [Docker Development](#docker-development)
+- [Troubleshooting](#-troubleshooting)
 - [Environment Variables](#environment-variables)
 - [Available Scripts](#available-scripts)
 - [Testing and Quality](#testing-and-quality)
-- [SSE Mock Server (Optional)](#sse-mock-server-optional)
 - [Deployment](#deployment)
 - [Roadmap](#roadmap)
 - [Documentation](#documentation)
@@ -71,7 +76,7 @@ App runs at `http://localhost:3000`.
 
 Eventra is an open-source frontend application built with React and Vite. It supports event discovery, registration, dashboards, hackathons, collaboration features, feedback flows, and role-based access experiences.
 
-This repository contains the frontend application. The Spring Boot backend is maintained in a separate repository — all API traffic is proxied to it both in production (via Vercel rewrites) and in local development (via Vite proxy).
+This repository contains the frontend application only. The Spring Boot backend is maintained in a separate repository, and all API traffic is proxied to that backend in production via Vercel rewrites and in local development via the Vite proxy.
 
 - Frontend repo: <https://github.com/SandeepVashishtha/Eventra>
 - Backend repo: <https://github.com/SandeepVashishtha/Eventra-Backend>
@@ -141,7 +146,7 @@ Below is the high-level architecture of Eventra:
 graph TD
     Client[Client: React/Vite] --> Assets[Assets: public/]
     Client --> State[State: Context/Hooks]
-    Client --> Backend[Backend: Spring Boot API]
+    Client --> Backend[Separate Spring Boot API]
     Backend --> Azure[Azure Spring Boot]
     Client -.-> VercelRewrite[Vercel /api/* Rewrite]
     VercelRewrite --> Backend
@@ -154,7 +159,7 @@ graph TD
 
 ### Frontend–Backend Communication
 
-- The React app communicates with the Spring Boot backend via REST API calls.
+- The React app communicates with the separate Spring Boot backend via REST API calls.
 - In production, `/api/*` requests are rewritten to the Azure-hosted backend via Vercel rewrites.
 - In development, Vite proxies API calls to `http://localhost:8080` (see `vite.config.js`).
 - Backend URL resolution priority: `BACKEND_URL` → `VITE_API_URL` → `REACT_APP_API_URL` (configured in `src/config/backendConfig.js`).
@@ -171,11 +176,11 @@ graph TD
 - Route-level guards in `src/components/` enforce authentication and role requirements.
 - Public routes (home, events, hackathons) are accessible without authentication.
 - Protected routes (dashboards, organizer panels) require a valid JWT and optionally specific roles.
-- Middleware runs at the edge for production builds, validating tokens before requests reach the app.
+- Production deployment uses Vercel rewrites and headers for routing and security; there is no local middleware implementation in this repository.
 
 ## Project Structure
 
-```text
+text
 Eventra/
 |-- docs/                # Architecture, env setup, onboarding, security docs
 |-- public/              # Static assets (images, icons, manifests)
@@ -317,6 +322,8 @@ rm -rf node_modules package-lock.json
 npm install
 ```
 
+If peer dependency errors appear on a fresh machine, make sure you are using the Node.js version declared in `package.json` before reinstalling.
+
 ---
 
 ### Vite Development Server Issues
@@ -327,7 +334,12 @@ If the development server fails to start:
 npm run dev
 ```
 
-If problems persist, reinstall dependencies and clear the Vite cache if necessary.
+If problems persist, reinstall dependencies and clear the Vite cache:
+
+```bash
+rm -rf node_modules/.vite
+npm run dev
+```
 
 ---
 
@@ -357,6 +369,39 @@ If port `3000` is occupied, start the development server on another port:
 ```bash
 npm run dev -- --port 3001
 ```
+
+If Docker is also running, check that `3000` or `8080` is not already bound by another Eventra container before restarting the app.
+
+---
+
+### Node.js Version Mismatch
+
+Eventra expects Node.js `22.x`. If you see unexpected install failures, missing globals, or Vite startup errors, verify your runtime first:
+
+```bash
+node -v
+```
+
+If the version does not start with `v22`, switch to Node 22 and reinstall dependencies.
+
+---
+
+### Windows Setup Notes
+
+On Windows PowerShell, replace Unix-style cleanup commands with:
+
+```powershell
+Remove-Item -Recurse -Force node_modules, package-lock.json
+npm install
+```
+
+If file watching feels unreliable in Docker or on mounted drives, try running `npm run dev` directly outside the container once to confirm the problem is environment-specific.
+
+---
+
+### API Configuration Mismatch
+
+If the frontend loads but API requests fail, confirm that one of `BACKEND_URL`, `VITE_API_URL`, or `REACT_APP_API_URL` points at a reachable backend. For local development, the default backend origin is `http://localhost:8080`.
 
 ---
 
@@ -452,32 +497,14 @@ npm run test
 npm run test:e2e
 ```
 
-## SSE Mock Server (Optional)
-
-For local realtime testing:
-
-```bash
-node sse-mock-server.js
-```
-
-Required environment variables:
-
-- `JWT_SECRET` - JWT signing secret for token generation and validation. Generate with: `openssl rand -base64 32`
-
-Optional environment flags:
-
-- `SSE_MOCK_PORT` (default `8080`)
-- `ALLOWED_ORIGIN` (default `http://localhost:3000`)
-- `SSE_DEBUG` (`true` or `false`)
-
 ## Deployment
 
 Vercel configuration is checked in via [`vercel.json`](vercel.json):
 
 - Build command: `npm run lint && GENERATE_SOURCEMAP=false npm run build`
 - Output directory: `build`
-- `/api/*` is rewritten to the hosted Spring Boot backend (the sole API provider)
-- No serverless functions are deployed — the `api/` directory was removed as dead code
+- `/api/*` is rewritten to the hosted Spring Boot backend
+- The repository does not contain a local serverless API or middleware implementation
 
 ## Roadmap
 
@@ -506,7 +533,7 @@ Vercel configuration is checked in via [`vercel.json`](vercel.json):
 - [Frontend Onboarding](docs/frontend-onboarding.md)
 - [Security Migration Notes](docs/SECURITY_MIGRATION.md)
 - [API Documentation Notes](docs/API_DOCUMENTATION.md)
-
+- Client-side authentication audit logging utilities for development and debugging.
 ## Contributing
 
 We welcome contributions from the community! Please follow our guidelines to keep the project maintainable.
@@ -570,6 +597,20 @@ Licensed under Apache 2.0. See [LICENSE](LICENSE).
     <img src="https://contrib.rocks/image?repo=SandeepVashishtha/Eventra&max=1000" alt="Contributors" />
   </a>
 </p>
+
+## Release Management
+
+Eventra uses [Release Drafter](https://github.com/release-drafter/release-drafter) to automate the generation of release notes. When a pull request is merged into the `master` branch, a draft release is automatically created or updated. The draft categorizes merged pull requests based on their labels (e.g., Features, Bug Fixes, Documentation) and acknowledges contributors automatically. Maintainers can review the draft and publish the release with minimal manual effort.
+
+## Deployment Security
+
+Before deploying Eventra, review the deployment checklist:
+
+- docs/SECURE_DEPLOYMENT_CHECKLIST.md
+
+### Software Bill of Materials (SBOM)
+
+Eventra automatically generates a Software Bill of Materials (SBOM) during the CI process for every push to `master` and release. The SBOM is provided in SPDX format and can be found as an attached artifact named `sbom` in the GitHub Actions run summary. This improves our software supply chain transparency and helps identify affected components when new vulnerabilities are disclosed.
 
 ### Maintainers
 

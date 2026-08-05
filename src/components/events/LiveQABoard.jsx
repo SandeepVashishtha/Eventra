@@ -1,10 +1,9 @@
-import React, { useState } from "react";
-import { useAuth } from "../../context/AuthContext.js";
-import useLiveAudience from "../../hooks/useLiveAudience.js";
+import { useState } from "react";
+import { useAuth } from "context/AuthContext.js";
+import useLiveAudience from "hooks/useLiveAudience.js";
 import { ThumbsUp, Trash, Flag, Send, AlertTriangle, HelpCircle, Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 function formatTime(isoString) {
   try {
     return new Date(isoString).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -17,7 +16,6 @@ function isMod(user) {
   return user?.role === "admin" || user?.role === "organizer" || user?.role === "developer";
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
 function QuestionInputForm({ onSubmit, questionText, setQuestionText, submitting }) {
   return (
     <form onSubmit={onSubmit} className="relative flex flex-col gap-2">
@@ -36,7 +34,7 @@ function QuestionInputForm({ onSubmit, questionText, setQuestionText, submitting
         <button
           type="submit"
           disabled={submitting || !questionText.trim()}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-slate-950 bg-gradient-to-r from-cyan-400 to-primary hover:brightness-110 active:scale-95 disabled:opacity-50 disabled:scale-100 disabled:brightness-100 transition-all duration-300 shadow-glow-sm cursor-pointer"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-slate-950 bg-linear-to-r from-cyan-400 to-primary hover:brightness-110 active:scale-95 disabled:opacity-50 disabled:scale-100 disabled:brightness-100 transition-all duration-300 shadow-glow-sm cursor-pointer"
         >
           {submitting ? (
             <Loader2 className="h-4 w-4 animate-spin text-slate-950" />
@@ -73,6 +71,25 @@ function ModeratorButtons({ q, onFlag, onDelete }) {
   );
 }
 
+function formatText(text, isModerator) {
+  const keywords = ['bug', 'feature', 'question', 'pricing', 'roadmap'];
+  const regex = isModerator 
+    ? new RegExp(`(@\\w+)|\\b(${keywords.join('|')})\\b`, 'gi')
+    : /(@\w+)/gi;
+
+  const parts = text.split(regex);
+  return parts.map((part, i) => {
+    if (!part) return null;
+    if (/^@\w+$/.test(part)) {
+      return <span key={i} className="font-bold text-blue-500">{part}</span>;
+    }
+    if (isModerator && keywords.includes(part.toLowerCase())) {
+      return <span key={i} className="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-400 font-bold border border-indigo-500/30 text-[10px] uppercase tracking-widest mx-0.5">{part}</span>;
+    }
+    return part;
+  });
+}
+
 function QuestionCard({ q, isModerator, onUpvote, onFlag, onDelete }) {
   return (
     <div
@@ -86,8 +103,13 @@ function QuestionCard({ q, isModerator, onUpvote, onFlag, onDelete }) {
             <AlertTriangle className="h-3 w-3" /> Flagged for moderation
           </span>
         )}
-        <p className="text-sm text-slate-200 break-words leading-relaxed font-sans">{q.text}</p>
-        <span className="text-[10px] text-slate-500 font-medium">{formatTime(q.createdAt)}</span>
+        <p className="text-sm text-slate-200 break-words leading-relaxed font-sans">{formatText(q.text, isModerator)}</p>
+        <span className="text-[10px] text-slate-500 font-medium">
+          {formatTime(q.createdAt)}
+          {q.isSpeaker && (
+            <span className="ml-2 px-1.5 py-0.5 rounded-full bg-primary/20 text-primary text-[10px] font-bold uppercase tracking-wider">Speaker</span>
+          )}
+        </span>
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
@@ -130,7 +152,6 @@ function QuestionList({ loading, visibleQuestions, isModerator, handlers }) {
   ));
 }
 
-// ─── Action helpers (outside component to reduce hook body complexity) ─────────
 async function sendQuestion(submitQuestion, text, setSubmitting, setQuestionText) {
   setSubmitting(true);
   try {
@@ -171,7 +192,6 @@ async function sendDelete(deleteQuestion, qId) {
   }
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
 export default function LiveQABoard({ eventId }) {
   const { user } = useAuth();
   const { questions, status, loading, error, submitQuestion, upvoteQuestion, deleteQuestion, flagQuestion } =
@@ -231,7 +251,7 @@ export default function LiveQABoard({ eventId }) {
         submitting={submitting}
       />
 
-      <div className="flex flex-col gap-3 max-h-[400px] overflow-y-auto pr-1">
+      <div className="flex flex-col gap-3 max-h-100 overflow-y-auto pr-1">
         <QuestionList
           loading={loading}
           visibleQuestions={visibleQuestions}

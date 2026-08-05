@@ -229,10 +229,12 @@ export const requestValidation = async (endpoint, options = {}) => {
     }
   }
 
+  // Fail closed: never treat unreachable validation as success (would allow
+  // registration with already-taken email/username when the API is down).
   const timedOut = lastError?.isTimeout || lastError?.name === "AbortError";
   return createValidationResponse(
-    true,
-    "",
+    false,
+    networkMessage,
     {
       error: lastError,
       isTimeout: timedOut,

@@ -121,7 +121,7 @@ export default function useLiveAudience(eventId) {
     [eventData?.questions]
   );
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   const actions = useMemo(() => bindActions(eventId), [eventId]);
 
   return {

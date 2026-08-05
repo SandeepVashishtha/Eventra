@@ -11,7 +11,7 @@ import {
   slugifyRepoName,
   extractGitHubUsername,
   bootstrapWorkspace,
-} from "../../utils/githubWorkspace";
+} from "utils/githubWorkspace";
 
 // ─── Step indicator ──────────────────────────────────────────────────────────
 const STEPS = [
@@ -169,7 +169,7 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
         },
         (phase) => {
           setCurrentPhase(phase);
-          setDonePhases((_prev) => {
+          setDonePhases(() => {
             const phaseOrder = BOOTSTRAP_PHASES.map((p) => p.key);
             const idx = phaseOrder.indexOf(phase);
             return phaseOrder.slice(0, idx);

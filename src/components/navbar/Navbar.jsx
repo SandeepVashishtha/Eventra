@@ -1,34 +1,23 @@
 import { memo, useRef, useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
-
-import { useAuth } from "../../context/AuthContext";
-import { useTheme } from "../../context/ThemeContext";
-
+import { useAuth } from "context/AuthContext";
 import DesktopNavbar from "./DesktopNavbar";
 import MobileNavbar from "./MobileNavbar";
-import CursorToggle from "./CursorToggle"; 
-import ThemeToggleButton from "../Layout/ThemeToggleButton";
-import InstallAppButton from "../common/InstallAppButton";
 import AuthButtons from "./AuthButtons";
-import LanguageSelector from "../LanguageSelector";
 import ProfileMenu from "./ProfileMenu";
+import LanguageSelector from "../LanguageSelector";
 import NotificationBell from "../notifications/NotificationBell";
-
 import useBodyScrollLock from "./hooks/useBodyScrollLock";
-import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
+import useKeyboardShortcuts from "hooks/useKeyboardShortcuts";
+import { motion, useScroll, useSpring } from "framer-motion";
 
 const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const navRef = useRef(null);
-
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [scrolled, setScrolled] = useState(false);
-
   const { user, isAuthenticated, logout } = useAuth();
   const authenticated = isAuthenticated();
-
-  const { isDarkMode, toggleTheme, setIsCustomizerOpen } = useTheme();
-
   useBodyScrollLock(isMobileMenuOpen);
 
   const handleCloseModals = useCallback(() => {
@@ -37,7 +26,6 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
 
   const handleSearchFocus = useCallback(() => {
     const searchInput = navRef.current?.querySelector('input[type="text"], input[type="search"]');
-
     if (searchInput) {
       searchInput.focus();
     }
@@ -47,7 +35,6 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
     const createButton = navRef.current?.querySelector(
       '[aria-label*="Create Event"], [aria-label*="create"]'
     );
-
     if (createButton) {
       createButton.click();
     }
@@ -61,34 +48,35 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
 
   useEffect(() => {
     let ticking = false;
-
     const handleScroll = () => {
       if (ticking) return;
-
       ticking = true;
-
       window.requestAnimationFrame(() => {
         const scrollTop = window.scrollY;
         const docHeight = document.documentElement.scrollHeight - window.innerHeight;
         const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
-
         setScrollProgress(progress);
         setScrolled(scrollTop > 12);
-
         ticking = false;
       });
     };
 
-    window.addEventListener("scroll", handleScroll, {
-      passive: true,
-    });
-
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => {
       window.removeEventListener("scroll", handleScroll);
     };
   }, []);
 
-  
+  /* SCROLL PROGRESSBAR */
+
+  const { scrollYProgress } = useScroll();
+
+  const scaleX = useSpring(scrollYProgress, {
+    stiffness: 140,
+    damping: 28,
+    mass: 0.2,
+  });
+
   return (
     <>
       <a
@@ -101,90 +89,92 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
       <nav
         ref={navRef}
         aria-label="Primary navigation"
-        className={`sticky top-0 z-50 w-full transition-all duration-300 bg-white/85 dark:bg-slate-950/85 backdrop-blur-xl border-b border-slate-200/40 dark:border-slate-800/40 ${
-          scrolled ? "shadow-md shadow-primary/5 dark:shadow-blue-900/10" : "shadow-sm shadow-primary/2 dark:shadow-blue-900/5"
-        }`}
+        className={`fixed top-0 left-0 right-0 z-50 w-full transition-all duration-300 bg-navbar border-b border-transparent ${scrolled ? "shadow-premium-md border-primary/10" : "shadow-premium-sm border-transparent"
+          }`}
       >
         <div className="mx-auto max-w-screen-2xl px-3 sm:px-4 lg:px-6">
-          <div className="flex h-16 items-center justify-between gap-2">
-            {/* Logo */}
-            <Link to="/" aria-label="Eventra Home" className="flex items-center shrink-0 group">
+          <div className="flex h-16 min-w-0 items-center justify-between gap-2 overflow-visible">
+
+            {/* Logo - Fixed width */}
+            <Link to="/" aria-label="Eventra Home" className="flex items-center shrink-0">
               <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-950 p-1 shadow-md shadow-primary/10 ring-1 ring-primary/20 dark:ring-blue-500/30 transition-transform duration-300 group-hover:scale-105">
+                <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-900 dark:to-slate-950 p-1 shadow-md shadow-primary/10 ring-1 ring-primary/20 dark:ring-blue-500/30 transition-transform duration-300 group-hover:scale-105">
                   <img
                     src="/favicon.png"
                     alt="Eventra Logo"
-                    className="h-full w-full object-contain"
+                    className="h-full w-full object-contain scale-110"
                     width="32"
                     height="32"
                   />
                 </div>
-
-                <span className="font-heading text-base font-bold tracking-wider bg-gradient-to-r from-primary to-blue-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
+                <span className="font-heading text-base font-bold tracking-wider text-primary dark:text-blue-400">
                   Eventra
                 </span>
               </div>
             </Link>
 
-            {/* Desktop Navigation */}
             <div className="hidden lg:flex flex-1 justify-center min-w-0 mx-1">
               <DesktopNavbar />
             </div>
 
-            {/* Right Controls */}
-            <div className="flex items-center justify-end gap-1.5 shrink-0">
-              <div className="hidden lg:flex items-center gap-1.5">
-                <InstallAppButton />
-                <ThemeToggleButton
-                  isDarkMode={isDarkMode}
-                  toggleTheme={toggleTheme}
-                  isMobile={false}
-                  setIsCustomizerOpen={setIsCustomizerOpen}
-                />
+            {/* Controls & CTAs */}
+            <div className="flex items-center justify-end gap-2 shrink-0">
+              {/* Desktop CTAs & Profile */}
+              <div className="hidden lg:flex items-center gap-2">
+                <LanguageSelector compact />
                 {authenticated ? (
                   <>
                     <NotificationBell />
-                    <LanguageSelector compact />
                     <ProfileMenu user={user} logout={logout} />
                   </>
                 ) : (
-                  <>
-                    <LanguageSelector compact />
-                    <AuthButtons />
-                  </>
+                  <AuthButtons />
                 )}
               </div>
 
+              {/* Mobile Notifications */}
               <div className="flex items-center gap-2 lg:hidden">
-                <InstallAppButton />
-                <ThemeToggleButton
-                  isDarkMode={isDarkMode}
-                  toggleTheme={toggleTheme}
-                  isMobile={false}
-                  setIsCustomizerOpen={setIsCustomizerOpen}
-                />
                 {authenticated && <NotificationBell />}
-
-                <MobileNavbar
-                  isOpen={isMobileMenuOpen}
-                  setIsOpen={setIsMobileMenuOpen}
-                  isAuthenticated={authenticated}
-                  user={user}
-                  logout={logout}
-                />
               </div>
+
+              {/* Navigation Drawer Toggle */}
+              <MobileNavbar
+                isOpen={isMobileMenuOpen}
+                setIsOpen={setIsMobileMenuOpen}
+                isAuthenticated={authenticated}
+                user={user}
+                logout={logout}
+                cursorEnabled={cursorEnabled}
+                toggleCursor={toggleCursor}
+              />
             </div>
           </div>
         </div>
-
         <div aria-hidden="true" className="absolute bottom-0 left-0 h-[2px] w-full">
-          <div
-            className="h-full bg-primary transition-all duration-100 ease-out"
-            style={{
-              width: `${scrollProgress}%`,
-            }}
-          />
         </div>
+        <motion.div
+          aria-hidden="true"
+          style={{
+            scaleX,
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: "2px",
+            borderRadius: "9999px",
+            transformOrigin: "left center",
+            willChange: "transform",
+            pointerEvents: "none",
+            zIndex: 9999,
+            background:
+              "linear-gradient(90deg, #38bdf8 0%, #3b82f6 50%, #6366f1 100%)",
+            boxShadow: `
+      0 0 6px rgba(59,130,246,0.35),
+      0 0 12px rgba(59,130,246,0.20),
+      0 0 20px rgba(99,102,241,0.15)
+    `,
+          }}
+        />
       </nav>
     </>
   );

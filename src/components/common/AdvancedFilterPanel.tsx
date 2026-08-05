@@ -16,7 +16,7 @@ import {
   hasActiveFilters,
   getDefaultFilters,
   normalizeAdvancedFilters,
-} from "../../utils/advancedFilterUtils";
+} from "utils/advancedFilterUtils";
 
 interface PriceRange {
   min: number;

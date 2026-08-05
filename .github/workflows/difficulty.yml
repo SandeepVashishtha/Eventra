@@ -12,6 +12,7 @@ jobs:
   detect-difficulty:
     name: Assign difficulty label
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Analyze PR and assign difficulty label

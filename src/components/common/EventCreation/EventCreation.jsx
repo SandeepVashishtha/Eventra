@@ -36,10 +36,20 @@ import { buildEventPayload } from "../../../utils/eventCreationUtils";
 import { validateForm } from "../../../utils/eventFormValidation";
 import { safeJsonParse } from "../../../utils/safeJsonParse";
 
+
 const EventCreation = () => {
   const prefersReducedMotion = useReducedMotion();
+  const location = useLocation();
 
   const [currentStep, setCurrentStep] = useState(CREATION_STEPS.FORM);
+  const [formData, setFormData] = useState(initialFormData);
+  const [errors, setErrors] = useState({});
+  const [newTag, setNewTag] = useState("");
+  const [isDraftLoaded, setIsDraftLoaded] = useState(false);
+  const [showRestoreModal, setShowRestoreModal] = useState(false);
+  const [restoreDraftMessage, setRestoreDraftMessage] = useState(
+    "A previously saved event draft was found. Would you like to restore it?"
+  );
 
   const {
     handleSubmit: submitEventForm,
@@ -77,16 +87,6 @@ const EventCreation = () => {
       });
     }
   }, [submitSuccess]);
-
-  const [formData, setFormData] = useState(initialFormData);
-  const [errors, setErrors] = useState({});
-  const [newTag, setNewTag] = useState("");
-  const [isDraftLoaded, setIsDraftLoaded] = useState(false);
-  const [showRestoreModal, setShowRestoreModal] = useState(false);
-  const [restoreDraftMessage, setRestoreDraftMessage] = useState(
-    "A previously saved event draft was found. Would you like to restore it?"
-  );
-  const location = useLocation();
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -906,9 +906,9 @@ const EventCreation = () => {
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {formData.tags.map((tag, index) => (
+                  {formData.tags.map((tag) => (
                     <span
-                      key={index}
+                      key={tag}
                       className="inline-flex items-center gap-1 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full text-sm font-medium"
                     >
                       #{tag}
@@ -953,4 +953,3 @@ const EventCreation = () => {
 };
 
 export default EventCreation;
-

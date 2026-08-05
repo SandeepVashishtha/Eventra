@@ -6,7 +6,7 @@ import {
   FeedbackButton,
   FeedbackSummary,
   StarRating,
-} from '../../components/feedback';
+} from 'components/feedback';
 import {
   getEventFeedback,
   getAverageRating,
@@ -15,7 +15,7 @@ import {
   exportFeedbackAsCSV,
   clearAllFeedback,
   saveFeedback,
-} from '../../utils/feedbackUtils';
+} from 'utils/feedbackUtils';
 
 // Demo event definition moved outside the component for a stable reference
 const demoEvent = {
@@ -28,7 +28,7 @@ const demoEvent = {
 /**
  * FeedbackSystemDemo
  * Demonstration page for the post-event feedback system
- * 
+ *
  * This page showcases all feedback components and utilities
  * Remove this file after confirming the feature works in production
  */

@@ -1,12 +1,12 @@
 import { GitBranch, ChevronLeft, ChevronRight } from "lucide-react";
 import { FaMedal, FaCodeBranch, FaUserFriends, FaBuilding, FaMapMarkerAlt, FaGithub, FaExternalLinkAlt } from "react-icons/fa";
 import { useState, useEffect, useCallback, useRef, memo } from "react";
-import useReducedMotion from "../../../hooks/useReducedMotion.js";
+import useReducedMotion from "../hooks/useReducedMotion.js";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { fetchWithTimeout } from "../../../utils/fetchWithTimeout";
-import { ContributorCardSkeleton } from "../../../components/common/SkeletonLoaders";
-import { safeJsonParse } from "../../../utils/safeJsonParse";
+import { fetchWithTimeout } from "../utils/fetchWithTimeout";
+import { ContributorCardSkeleton } from "../components/common/SkeletonLoaders";
+import { safeJsonParse } from "../utils/safeJsonParse";
 
 // GitHub repo
 const GITHUB_REPO = "sandeepvashishtha/Eventra";
@@ -40,12 +40,12 @@ const fetchInBatches = async (items, asyncFn, batchSize = PROFILE_BATCH_SIZE) =>
   const results = [];
   for (let i = 0; i < items.length; i += batchSize) {
     const batch = items.slice(i, i + batchSize);
-     
+
     const batchResults = await Promise.allSettled(batch.map(asyncFn));
     results.push(...batchResults);
     // Insert a delay between batches (but not after the last one)
     if (i + batchSize < items.length) {
-       
+
       await new Promise((resolve) => setTimeout(resolve, BATCH_DELAY_MS));
     }
   }
@@ -85,7 +85,7 @@ const cacheContributors = (data) => {
       STORAGE_KEY,
       JSON.stringify({ data, timestamp: Date.now() })
     );
-  } catch { }
+  } catch { console.warn("[ContributorsCarousel] Cache write failed"); }
 };
 
 const Contributors = () => {
@@ -232,7 +232,7 @@ const Contributors = () => {
       if (!backgroundRefresh) setContributors([]);
 
       if (error.name === "AbortError") {
-        //console.error("Contributor request timed out");
+        console.error("Contributor request timed out");
       }
     } finally {
       if (!backgroundRefresh) setLoading(false);
@@ -501,7 +501,7 @@ const Contributors = () => {
               <FaExternalLinkAlt className="text-sm" />
             </Link>
             <Link
-              to="/ContributorGuide"
+              to="/contributorguide"
               className="inline-flex items-center justify-center gap-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-8 py-3 w-full sm:w-auto rounded-full font-semibold shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-105 transition-all duration-300 ease-out"
             >
               <span>Guide</span>
