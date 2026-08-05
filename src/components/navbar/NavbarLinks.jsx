@@ -10,7 +10,7 @@ const NavbarLinks = ({ vertical = false, items = PRIMARY_NAV_ITEMS, onClick }) =
   const { t } = useTranslation();
   const location = useLocation();
   const navRef = useRef(null);
-
+  const menuRefs = useRef({});
   const [openMenu, setOpenMenu] = useState(null);
 
   useEffect(() => {
@@ -44,6 +44,14 @@ const NavbarLinks = ({ vertical = false, items = PRIMARY_NAV_ITEMS, onClick }) =
       document.removeEventListener("mousedown", handleOutsideClick);
     };
   }, [vertical]);
+useEffect(() => {
+  if (!openMenu) return;
+
+  const firstItem =
+    menuRefs.current[openMenu]?.querySelector('[role="menuitem"]');
+
+  firstItem?.focus();
+}, [openMenu]);
 
   const handlePrefetch = (href) => {
     const routes = {
@@ -137,20 +145,27 @@ const NavbarLinks = ({ vertical = false, items = PRIMARY_NAV_ITEMS, onClick }) =
 
                 {!vertical && (
                   <button
+                   id={`${menuId}-button`}
                     type="button"
                     aria-expanded={isOpen}
                     aria-haspopup="menu"
                     aria-controls={menuId}
                     onClick={() => setOpenMenu(isOpen ? null : item.nameKey)}
                     onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                        setOpenMenu(
-                          isOpen
-                            ? null
-                            : item.nameKey
-                        );
-                      }
-                    }}
+    if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+
+        setOpenMenu(
+            isOpen
+                ? null
+                : item.nameKey
+        );
+    }
+
+    if (event.key === "Escape") {
+        setOpenMenu(null);
+    }
+}}
                     className="ml-0.5 flex-shrink-0 rounded-full p-1.5 hover:bg-bg-secondary transition-colors"
                     aria-label={`Toggle ${t(item.nameKey)} menu`}
                   >
@@ -166,7 +181,11 @@ const NavbarLinks = ({ vertical = false, items = PRIMARY_NAV_ITEMS, onClick }) =
               {/* Dropdown / Submenu */}
               {(vertical || isOpen) && (
                 <div
+                ref={(el) => (menuRefs.current[item.nameKey] = el)}
                   id={menuId}
+                  role="menu"
+                  aria-labelledby={`${menuId}-button`}
+                  role="menu"
                   className={
                     vertical
                       ? "mt-1 ml-6 space-y-1"
@@ -175,7 +194,40 @@ const NavbarLinks = ({ vertical = false, items = PRIMARY_NAV_ITEMS, onClick }) =
                 >
                   {item.subItems.map((sub) => (
                     <NavLink
+
+onKeyDown={(event)=>{
+
+    const items =
+        Array.from(
+            event.currentTarget
+            .parentElement
+            .querySelectorAll('[role="menuitem"]')
+        );
+
+    const index =
+        items.indexOf(event.currentTarget);
+
+    if(event.key==="ArrowDown"){
+
+        event.preventDefault();
+
+        items[(index+1)%items.length].focus();
+
+    }
+
+    if(event.key==="ArrowUp"){
+
+        event.preventDefault();
+
+        items[
+            (index-1+items.length)%items.length
+        ].focus();
+
+    }
+
+}}
                       key={sub.nameKey}
+                      role="menuitem"
                       to={sub.href}
                       onClick={(e) => handleClick(sub.href, e)}
                       className={({ isActive }) =>
