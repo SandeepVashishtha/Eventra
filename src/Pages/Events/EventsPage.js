@@ -426,6 +426,11 @@ const category =
         listing.filteredEvents.length === 1 ? "event" : "events"
       }`}
 </div>
+{listing.lastUpdated && (
+  <div className="mb-4 text-xs text-slate-500 dark:text-slate-400">
+    Last updated: Just now
+  </div>
+)}
         <ErrorBoundary level="section" label="Events">
           {renderCardSection(
             isLoading,
