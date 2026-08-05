@@ -171,6 +171,7 @@ const useEventListing = () => {
             "Failed to load events. Please try again later.",
           );
         }
+
     } finally {
       setIsLoading(false);
     }
