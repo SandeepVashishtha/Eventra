@@ -1,6 +1,7 @@
 import React, { memo, useCallback, useId, useState } from "react";
 import { logger } from "utils/logger";
 import LazyImage from "components/common/LazyImage";
+import { formatLocalDateTime } from "utils/localDateTime";import { formatLocalDateTime } from "utils/localDateTime";
 import ShareModal from "components/common/ShareModal";
 import StatusBadge from "components/common/StatusBadge";
 import { getEventStatus } from "utils/eventUtils";
@@ -25,40 +26,6 @@ import {
   removeBookmarkedEvent,
 } from "utils/bookmarkUtils";
 
-const formatEventDate = (dateValue) => {
-  if (!dateValue) return { short: "TBD", full: "Date TBD", relative: "" };
-  const d = new Date(dateValue);
-  if (isNaN(d.getTime())) return { short: "TBD", full: "Date TBD", relative: "" };
-
-  const now = new Date();
-  const diffMs = d - now;
-  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
-
-  let relative = "";
-  if (diffMs < 0) {
-    relative = "Past";
-  } else if (diffDays === 0) {
-    relative = "Today";
-  } else if (diffDays === 1) {
-    relative = "Tomorrow";
-  } else if (diffDays < 7) {
-    relative = `In ${diffDays} days`;
-  } else if (diffDays < 30) {
-    relative = `In ${Math.round(diffDays / 7)} w`;
-  } else {
-    relative = `In ${Math.round(diffDays / 30)} m`;
-  }
-
-  const short = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  const full = d.toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
-  const time = d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
-
-  return { short, full, relative, time };
-};
 
 const EventCard = ({ event }) => {
   const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
@@ -70,8 +37,13 @@ const EventCard = ({ event }) => {
   const computedStatus = getEventStatus(event);
 
   const eventImage = event.image || event.imageUrl || null;
-  const eventDate = event.date || event.eventDate || event.startDate || null;
-  const dateInfo = formatEventDate(eventDate);
+  const eventDate =
+  event.date ||
+  event.eventDate ||
+  event.startDate ||
+  null;
+
+const dateInfo = formatLocalDateTime(eventDate);
 
   const handleBookmarkToggle = useCallback(
     (e) => {
@@ -169,14 +141,19 @@ const EventCard = ({ event }) => {
 
           <div className="flex items-center gap-2 truncate">
             <Calendar size={14} className="text-text-light/50 shrink-0" />
-            <span>{dateInfo.full}</span>
-            {dateInfo.time && dateInfo.full !== "Date TBD" && (
-              <>
-                <span className="text-border">|</span>
-                <Clock size={12} className="text-text-light/40 shrink-0" />
-                <span>{dateInfo.time}</span>
-              </>
-            )}
+            <span>{dateInfo.date}</span>
+
+{dateInfo.time && dateInfo.date !== "Date TBD" && (
+  <>
+    <span className="text-border">|</span>
+    <Clock size={12} className="text-text-light/40 shrink-0" />
+    <span>{dateInfo.time}</span>
+
+    <span className="text-xs text-text-light">
+      ({dateInfo.timezone})
+    </span>
+  </>
+)}
           </div>
         </div>
 
