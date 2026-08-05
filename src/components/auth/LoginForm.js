@@ -43,20 +43,7 @@ export default function LoginForm() {
 
     return ""; // Valid username
   };
-  const handleEmailOrUsernameChange = (e) => {
-  ...
-};
-
-const handlePasswordChange = (e) => {
-  const value = e.target.value;
-
-  setPassword(value);
-
-  setErrors((prev) => ({
-    ...prev,
-    password: validatePassword(value),
-  }));
-};
+  
   const validatePassword = (value) => {
   if (!value.trim()) {
     return "Password is required.";
