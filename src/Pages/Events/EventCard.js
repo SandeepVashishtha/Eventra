@@ -404,7 +404,16 @@ const durationText = getEventDuration(event);
           </Link>
         )}
 
-        <Link to={`/events/${event.id}`} className="flex-1 inline-flex items-center justify-center rounded-2xl bg-slate-50/80 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 px-4 py-3 text-sm font-semibold shadow-md hover:bg-slate-100 dark:hover:bg-slate-700/80 hover:scale-[1.03] hover:shadow-lg transition-all duration-300">
+        <Link
+  to={`/events/${event.id}`}
+  onClick={() =>
+    sessionStorage.setItem(
+      "eventra:events-scroll-position",
+      String(window.scrollY)
+    )
+  }
+  className="..."
+>
           <span>
             View Details
           </span>

@@ -291,6 +291,22 @@ const category =
       }, 100);
     }
   }, [isLoading, routeSearchQuery]);
+  useEffect(() => {
+  const savedScroll = sessionStorage.getItem("eventra:events-scroll-position");
+
+  if (!savedScroll) return;
+
+  const timeout = setTimeout(() => {
+    window.scrollTo({
+      top: Number(savedScroll),
+      behavior: "auto",
+    });
+
+    sessionStorage.removeItem("eventra:events-scroll-position");
+  }, 100);
+
+  return () => clearTimeout(timeout);
+}, []);
 
   const scrollToCard = () => {
     cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
