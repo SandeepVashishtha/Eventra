@@ -419,6 +419,13 @@ const category =
             Showing results for: <span className="font-semibold">"{localSearchInput}"</span>
           </div>
         )}
+        <div className="mb-4 text-sm text-slate-600 dark:text-slate-300">
+  {listing.filteredEvents.length === 0
+    ? "No events found"
+    : `Showing ${listing.filteredEvents.length} ${
+        listing.filteredEvents.length === 1 ? "event" : "events"
+      }`}
+</div>
         <ErrorBoundary level="section" label="Events">
           {renderCardSection(
             isLoading,
