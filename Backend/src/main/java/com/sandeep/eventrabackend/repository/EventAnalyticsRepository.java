@@ -45,4 +45,16 @@ public interface EventAnalyticsRepository extends JpaRepository<Event, Long> {
     // Total unique participants via the join table
     @Query("SELECT COUNT(DISTINCT a.id) FROM Event e JOIN e.attendees a")
     long countUniqueParticipants();
+
+    // Events a user owns or manages (owner or member of the event team)
+    @Query("""
+        SELECT DISTINCT e
+        FROM Event e
+        WHERE e.ownerId = :userId
+           OR e.id IN (SELECT tm.event.id FROM EventTeamMember tm WHERE tm.user.id = :userId)
+        """)
+    List<Event> findAccessibleToUser(@Param("userId") Long userId);
+
+    @Query("SELECT DISTINCT e.ownerId FROM Event e WHERE e.ownerId IS NOT NULL")
+    List<Long> findDistinctOwnerIds();
 }
