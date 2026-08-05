@@ -5,6 +5,7 @@ import com.sandeep.eventrabackend.dto.request.SignupRequest;
 import com.sandeep.eventrabackend.dto.response.AuthResponse;
 import com.sandeep.eventrabackend.exception.PasswordMismatchException;
 import com.sandeep.eventrabackend.exception.UserAlreadyExistsException;
+import com.sandeep.eventrabackend.exception.InvalidGoogleTokenException;
 import com.sandeep.eventrabackend.model.Role;
 import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.UserRepository;
@@ -155,11 +156,10 @@ if (lastName == null || lastName.isBlank()) {
 
         return buildAuthResponse(user, token);
 
+    } catch (InvalidGoogleTokenException e) {
+        throw e;
     } catch (Exception e) {
-
-        throw new RuntimeException(
-                "Google authentication failed"
-        );
+        throw new RuntimeException("Google authentication failed", e);
     }
 }
 
