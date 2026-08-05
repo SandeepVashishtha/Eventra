@@ -3,6 +3,10 @@ export const getEventDuration = (event) => {
     ? new Date(event.startDate)
     : new Date(event.date);
 
+  if (!startDate || Number.isNaN(startDate.getTime())) {
+    return "";
+  }
+
   const endDate = event.endDate
     ? new Date(event.endDate)
     : null;
