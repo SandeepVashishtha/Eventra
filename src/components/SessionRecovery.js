@@ -160,7 +160,7 @@ const SessionRecovery = () => {
 
   if (!isOnline && !showRecoveryPrompt) {
     return (
-      <div className="fixed bottom-4 right-4 z-[45] animate-slide-up">
+      <div className="fixed bottom-[calc(1rem+var(--safe-area-bottom))] right-4 z-[45] animate-slide-up">
         <div className="bg-red-500 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3">
           <WifiOff size={20} className="animate-pulse" />
           <div>
