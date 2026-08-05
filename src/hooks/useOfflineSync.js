@@ -53,6 +53,11 @@ const notify = new Proxy(toast, {
   },
 });
 
+// Total time budget (ms) for a single sync run. When exceeded, the loop stops
+// processing further items and leaves them queued for the next sync run so the
+// browser tab is never monopolised by a huge offline backlog.
+const SYNC_BUDGET_MS = 15_000;
+
 // Message types the service worker may post to request an offline queue sync.
 // EVENTRA_BACKGROUND_SYNC is posted by public/service-worker.js when the
 // browser fires the "sync" event for the eventra-offline-queue-sync tag.
@@ -345,11 +350,13 @@ const useOfflineSync = () => {
           autoClose: 2000,
         });
 
+        const syncStartTime = Date.now();
+
         for (const item of sessionValidatedQueue) {
-        if (Date.now() - syncStartTime > SYNC_BUDGET_MS) {
-          logger.warn("[useOfflineSync] Sync budget exceeded, stopping.");
-          break;
-        }
+          if (Date.now() - syncStartTime > SYNC_BUDGET_MS) {
+            logger.warn("[useOfflineSync] Sync budget exceeded, stopping.");
+            break;
+          }
           // Halt the zombie loop immediately if the session changed or component unmounted.
           // This prevents making requests with stale tokens and protects IndexedDB from being falsely overwritten below.
           if (conflictController.signal.aborted) {
@@ -430,6 +437,20 @@ const useOfflineSync = () => {
           notify.error(
             `${droppedCount} registration(s) paused after ${MAX_RETRIES} failed attempts. Retained in local drafts.`,
           );
+        }
+      } catch (error) {
+        // A crash anywhere in the replay run must never surface as a
+        // successful sync. Report every item that was not already processed as
+        // still-remaining and persist the queue so nothing is silently lost.
+        logger.error("[useOfflineSync] Sync run failed:", error);
+        const processedIds = new Set(failedQueue.map((failed) => failed.id));
+        for (const item of sessionValidatedQueue) {
+          if (!processedIds.has(item.id)) {
+            failedQueue.push(item);
+          }
+        }
+        if (failedQueue.length > 0) {
+          await setQueue(failedQueue);
         }
       } finally {
         isSyncing.current = false;
