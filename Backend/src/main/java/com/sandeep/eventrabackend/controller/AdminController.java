@@ -261,7 +261,7 @@ public class AdminController {
     @GetMapping("/analytics/users/growth")
     @Operation(
             summary = "User growth trend",
-            description = "Returns monthly registration trend data for the past N months. " +
+            description = "Returns the number of newly created user accounts per month for the past N months. " +
                           "Useful for plotting user growth charts in the admin panel."
     )
     @ApiResponses({
