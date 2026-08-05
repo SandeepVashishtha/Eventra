@@ -1,6 +1,11 @@
-import { safeJsonParse } from "../utils/safeJsonParse";
+import { safeJsonParse } from "../utils/safeJsonParse.js";
 export const getUserProfile = () => {
-  if (typeof window === "undefined" || !window.localStorage) {
+  const storage =
+    typeof window !== "undefined" && window.localStorage
+      ? window.localStorage
+      : globalThis.localStorage;
+
+  if (!storage) {
     return {
       interests: [],
       techStack: [],
@@ -11,7 +16,7 @@ export const getUserProfile = () => {
 
   let saved = {};
   try {
-    saved = safeJsonParse(localStorage.getItem("eventra_user_profile"), {}) || {};
+    saved = safeJsonParse(storage.getItem("eventra_user_profile"), {}) || {};
   } catch {
     saved = {};
   }
