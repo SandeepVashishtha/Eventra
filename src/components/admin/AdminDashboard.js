@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { ENV } from "../../config/env";
 import { exportToCSV, exportToJSON } from "../../utils/exportUtils";
+import { generateMockParticipants } from "../../utils/participantMockUtils";
 import {
   AdminListCardSkeleton,
   AdminStatCardSkeleton,
@@ -651,6 +652,14 @@ const AdminDashboard = () => {
                               <td><StatusBadge status={ev.status || "Upcoming"} /></td>
                               <td>
                                 <div className="ad-action-btns">
+                                  <button 
+                                    className="ad-icon-action" 
+                                    title="Export CSV" 
+                                    onClick={() => exportToCSV(generateMockParticipants(ev.id, ev.participantCount || 20), `event_${ev.id}_participants`)} 
+                                    style={{ color: "#10b981" }}
+                                  >
+                                    <Download size={14} />
+                                  </button>
                                   <button className="ad-icon-action" title="Waitlist" onClick={() => openWaitlistModal(ev)} style={{ color: "#f59e0b" }}>
                                     <Clock size={14} />
                                   </button>
