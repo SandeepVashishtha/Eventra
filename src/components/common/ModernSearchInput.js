@@ -16,6 +16,7 @@ const ModernSearchInput = ({
   containerClassName = "",
   inputClassName = "",
   showClearButton = true,
+  onClear,
   leftIcon = <Search className="h-5 w-5" />,
   tags = null,
   children,
