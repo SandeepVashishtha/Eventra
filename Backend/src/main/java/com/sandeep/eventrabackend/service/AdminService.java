@@ -41,6 +41,8 @@ public class AdminService {
     private final RegistrationAnalyticsRepository regRepo;
     private final EventRegistrationRepository eventRegistrationRepository;
     private final EventWaitlistRepository     eventWaitlistRepository;
+    private final EventTeamMemberRepository   eventTeamMemberRepository;
+    private final EventRoleAuditLogRepository eventRoleAuditLogRepository;
     private final HackathonRegistrationRepository hackathonRegistrationRepository;
     private final ProjectUpvoteRepository     projectUpvoteRepository;
     private final NotificationRepository      notificationRepository;
@@ -153,6 +155,12 @@ public class AdminService {
         if (!eventRepository.existsById(id)) {
             throw new EntityNotFoundException("Event not found with id: " + id);
         }
+        eventRegistrationRepository.deleteByEventId(id);
+        eventWaitlistRepository.deleteByEvent_Id(id);
+        eventRepository.deleteAttendeeRowsByEventId(id);
+        eventTeamMemberRepository.deleteByEvent_Id(id);
+        feedbackRepository.deleteByEvent_Id(id);
+        eventRoleAuditLogRepository.deleteByEventId(id);
         eventRepository.deleteById(id);
     }
 
