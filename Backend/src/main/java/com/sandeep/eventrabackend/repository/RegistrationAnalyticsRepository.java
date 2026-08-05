@@ -16,7 +16,7 @@ public interface RegistrationAnalyticsRepository
     // ── Trends — note: field is registeredAt, NOT createdAt ──────────────────
 
     @Query("""
-        SELECT FUNCTION('DATE_FORMAT', r.registeredAt, '%Y-%m') AS period,
+        SELECT FUNCTION('FORMATDATETIME', r.registeredAt, 'yyyy-MM') AS period,
                COUNT(r) AS regCount
         FROM EventRegistration r
         WHERE r.registeredAt >= :from
@@ -27,7 +27,8 @@ public interface RegistrationAnalyticsRepository
     List<Object[]> findMonthlyTrend(@Param("from") LocalDateTime from);
 
     @Query("""
-        SELECT FUNCTION('YEARWEEK', r.registeredAt, 1) AS period,
+        SELECT CAST(FUNCTION('YEAR', r.registeredAt) AS int) * 100
+             + CAST(FUNCTION('WEEK', r.registeredAt) AS int) AS period,
                COUNT(r) AS regCount
         FROM EventRegistration r
         WHERE r.registeredAt >= :from
@@ -50,7 +51,7 @@ public interface RegistrationAnalyticsRepository
 
     // ── Peak registration periods ─────────────────────────────────────────────
     @Query("""
-        SELECT FUNCTION('DAYOFWEEK', r.registeredAt) AS dow,
+        SELECT FUNCTION('DAY_OF_WEEK', r.registeredAt) AS dow,
                FUNCTION('HOUR', r.registeredAt)      AS hr,
                COUNT(r)                              AS cnt
         FROM EventRegistration r
