@@ -27,6 +27,7 @@ import useKeyboardShortcuts from "./hooks/useKeyboardShortcuts";
 import { useRoutePrefetch } from "./hooks/useRoutePrefetch";
 import PageTransition from "./components/common/PageTransition";
 import Breadcrumbs from "./components/common/Breadcrumbs";
+import SkipToContent from "./components/accessibility/SkipToContent";
 import { getAuthRoutes, getProtectedRoutes } from "./components/routes/ProtectedRoutes";
 import {
   AuthFormSkeleton,
@@ -117,7 +118,8 @@ function App() {
       setShowChatbot(true);
     }, 3000);
 
-    return () => clearTimeout(timer);
+    return (
+    <SkipToContent />) => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -127,7 +129,8 @@ function App() {
 
     window.addEventListener("resize", handleResize);
 
-    return () => {
+    return (
+    <SkipToContent />) => {
       window.removeEventListener("resize", handleResize);
     };
   }, []);
@@ -140,7 +143,8 @@ function App() {
     };
 
     window.addEventListener("cursorPreferenceChanged", handleCursorPreference);
-    return () => {
+    return (
+    <SkipToContent />) => {
       window.removeEventListener("cursorPreferenceChanged", handleCursorPreference);
     };
   }, []);
@@ -165,13 +169,15 @@ function App() {
       handleOffline();
     }
 
-    return () => {
+    return (
+    <SkipToContent />) => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
   }, [t]);
 
   return (
+    <SkipToContent />
     
     <ErrorBoundary>
       <AuthProvider>
@@ -185,7 +191,7 @@ function App() {
               </Suspense>
               <OfflineSyncManager />
 <ScrollRestoration />
-              <div className="App">
+              <div id="main-content" className="App">
                 <ErrorBoundary level="section" label="Navigation Bar">
                   <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
                 </ErrorBoundary>
