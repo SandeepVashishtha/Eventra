@@ -71,6 +71,13 @@ public class GlobalExceptionHandler {
         return buildError(HttpStatus.BAD_REQUEST, "Bad Request", ex.getMessage(), request);
     }
 
+    @ExceptionHandler(InvalidGoogleTokenException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidGoogleToken(
+            InvalidGoogleTokenException ex,
+            HttpServletRequest request) {
+        return buildError(HttpStatus.BAD_REQUEST, "Bad Request", ex.getMessage(), request);
+    }
+
     @ExceptionHandler(RegistrationClosedException.class)
     public ResponseEntity<ErrorResponse> handleRegistrationClosed(
             RegistrationClosedException ex,
@@ -90,6 +97,13 @@ public class GlobalExceptionHandler {
             RegistrationConflictException ex,
             HttpServletRequest request) {
         return buildError(HttpStatus.CONFLICT, "Conflict", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(
+            IllegalArgumentException ex,
+            HttpServletRequest request) {
+        return buildError(HttpStatus.BAD_REQUEST, "Bad Request", ex.getMessage(), request);
     }
 
     @ExceptionHandler(FeedbackAlreadyExistsException.class)

@@ -250,9 +250,10 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
 
       const restoreNotification = () => {
         if (!isMounted.current) return;
+        if (!target) return;
         setNotifications((prev) => {
           if (prev.some((n) => n.id === id)) return prev;
-          const updated = [...prev, removedNotification].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+          const updated = [...prev, target].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
           persist(updated, storageKeyRef.current);
           notificationsRef.current = updated;
           return updated;

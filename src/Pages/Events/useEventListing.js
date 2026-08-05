@@ -171,6 +171,7 @@ const useEventListing = () => {
             "Failed to load events. Please try again later.",
           );
         }
+
     } finally {
       setIsLoading(false);
     }
@@ -188,7 +189,7 @@ const useEventListing = () => {
     setCurrentPage(1);
   }, [searchQuery, filterType, sortType, advancedFilters, eventsPerPage]);
 
-  const setSafePage = (page) => {
+  const setSafePage = useCallback((page) => {
     if (page < 1) {
       setCurrentPage(1);
       return;
@@ -198,11 +199,11 @@ const useEventListing = () => {
       return;
     }
     setCurrentPage(page);
-  };
+  }, [pagination.totalPages]);
 
   const setAdvancedFilters = useCallback((filters) => {
     setAdvancedFiltersState(normalizeAdvancedFilters(filters));
-  }, [setAdvancedFiltersState, normalizeAdvancedFilters]);
+  }, [setAdvancedFiltersState]);
 
   const priceStats = useMemo(() => getPriceStats(events), [events]);
   const dateRangeStats = useMemo(() => getDateRange(events), [events]);

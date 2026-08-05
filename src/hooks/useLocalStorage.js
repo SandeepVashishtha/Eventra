@@ -133,8 +133,7 @@ export const isLocalStorageAvailable = () => {
     window.localStorage.removeItem(testKey);
     return true;
   } catch (err) {
-      console.warn("[useLocalStorage] Storage operation failed:", err);
-    }
+    console.warn("[useLocalStorage] Storage operation failed:", err);
     return false;
   }
 };

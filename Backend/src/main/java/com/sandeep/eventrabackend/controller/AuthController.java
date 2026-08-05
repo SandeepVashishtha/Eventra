@@ -159,7 +159,10 @@ public ResponseEntity<AuthResponse> googleLogin(
     })
     public ResponseEntity<String> logout(@RequestHeader("Authorization") String bearerToken) {
         if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-            String token = bearerToken.substring(7);
+            String token = bearerToken.substring(7).trim();
+            if (token.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Bearer token cannot be empty");
+            }
             authService.logout(token);
             return ResponseEntity.ok("Logged out successfully");
         }

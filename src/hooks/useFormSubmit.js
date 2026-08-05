@@ -43,7 +43,14 @@ export function useFormSubmit(submitFn, offlineOptions = defaultOfflineOptions) 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
-  const isInFlight = useRef(false);\n  const submitFnRef = useRef(submitFn);\n  const offlineOptionsRef = useRef(offlineOptions);\n\n  useEffect(() => {\n    submitFnRef.current = submitFn;\n    offlineOptionsRef.current = offlineOptions;\n  }, [submitFn, offlineOptions]);
+  const isInFlight = useRef(false);
+  const submitFnRef = useRef(submitFn);
+  const offlineOptionsRef = useRef(offlineOptions);
+
+  useEffect(() => {
+    submitFnRef.current = submitFn;
+    offlineOptionsRef.current = offlineOptions;
+  }, [submitFn, offlineOptions]);
   const isMounted = useRef(true);
 
   useEffect(() => {

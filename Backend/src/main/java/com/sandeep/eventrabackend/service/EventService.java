@@ -14,8 +14,7 @@ import com.sandeep.eventrabackend.exception.EventNotFoundException;
 import com.sandeep.eventrabackend.exception.RegistrationConflictException;
 import com.sandeep.eventrabackend.model.Event;
 import com.sandeep.eventrabackend.model.EventRegistration;
-import com.sandeep.eventrabackend.model.EventWaitlist;
-import com.sandeep.eventrabackend.model.Notification;
+import com.sandeep.eventrabackend.model.EventRole;
 import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.EventRegistrationRepository;
 import com.sandeep.eventrabackend.repository.EventRepository;
@@ -25,8 +24,8 @@ import com.sandeep.eventrabackend.repository.NotificationRepository;
 import com.sandeep.eventrabackend.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -66,18 +65,19 @@ public class EventService {
     private final EventWaitlistRepository eventWaitlistRepository;
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final EventRoleService eventRoleService;
 
     public EventService(
             EventRepository eventRepository,
             EventRegistrationRepository eventRegistrationRepository,
-            EventWaitlistRepository eventWaitlistRepository,
-            NotificationRepository notificationRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            EventRoleService eventRoleService) {
         this.eventRepository = eventRepository;
         this.eventRegistrationRepository = eventRegistrationRepository;
         this.eventWaitlistRepository = eventWaitlistRepository;
         this.notificationRepository = notificationRepository;
         this.userRepository = userRepository;
+        this.eventRoleService = eventRoleService;
     }
 
     /**
@@ -130,12 +130,17 @@ public class EventService {
     // ── Issue #2102 — Event Fetch ─────────────────────────────────────
 
     /**
-     * Retrieves an event by ID.
+     * Retrieves a public event by ID.
      *
-     * @throws EventNotFoundException if the event does not exist
+     * <p>Events that are explicitly marked not public are excluded from the
+     * public read path (Issue #11230); they are only visible to their
+     * organizer or an admin via the admin endpoints.</p>
+     *
+     * @throws EventNotFoundException if the event does not exist or is not public
      */
     public EventResponse getPublicEventById(long id) {
         return eventRepository.findById(id)
+                .filter(Event::isPublic)
                 .map(this::toEventResponse)
                 .orElseThrow(() ->
                         new EventNotFoundException(
@@ -143,13 +148,14 @@ public class EventService {
     }
 
     /**
-     * Retrieves all events.
+     * Retrieves all public events.
      *
-     * @return list of all events
+     * @return list of all events with {@code isPublic} set to true
      */
     @Transactional(readOnly = true)
     public List<EventResponse> getAllEvents() {
         return eventRepository.findAll().stream()
+                .filter(Event::isPublic)
                 .map(this::toEventResponse)
                 .toList();
     }
@@ -204,6 +210,7 @@ public class EventService {
         event.setOwnerId(owner.getId());
 
         Event saved = eventRepository.save(event);
+        eventRoleService.assignOwner(saved, owner);
         return toEventResponse(saved);
     }
 
@@ -221,16 +228,7 @@ public class EventService {
                 .orElseThrow(() ->
                         new EventNotFoundException("Event not found with id: " + id));
 
-        // Issue #11021 — event management is owner-scoped: a user may only update
-        // an event they created. This closes the cross-tenant IDOR where any
-        // ORGANIZER could mutate any event by swapping the id.
-        Long principalId = userRepository.findByEmail(userEmail)
-                .map(User::getId)
-                .orElse(null);
-        if (event.getOwnerId() != null && !event.getOwnerId().equals(principalId)) {
-            throw new AccessDeniedException(
-                    "Only the event's own organizer can manage this event.");
-        }
+        eventRoleService.requireRole(id, userEmail, EventRole.ORGANIZER);
 
         // Business Rule: Capacity cannot be less than current registrations
         if (request.getCapacity() != null && request.getCapacity() < event.getRegisteredCount()) {
@@ -244,7 +242,9 @@ public class EventService {
         event.setLocation(request.getLocation());
         event.setEventDate(request.getEventDate());
         event.setCapacity(request.getCapacity());
-        event.setPublic(request.getIsPublic() == null || request.getIsPublic());
+        if (request.getIsPublic() != null) {
+            event.setPublic(request.getIsPublic());
+        }
         event.setImageUrl(request.getImageUrl());
 
         Event saved = eventRepository.save(event);
@@ -513,14 +513,6 @@ public class EventService {
                     "You are already registered for this event.");
         }
 
-        if (seatId != null && !seatId.isBlank()) {
-            eventRegistrationRepository.findByEvent_IdAndSeatId(eventId, seatId)
-                    .ifPresent(existing -> {
-                        throw new RegistrationConflictException(
-                                "Seat " + seatId + " is already taken.");
-                    });
-        }
-
         if (event.getCapacity() != null
                 && event.getRegisteredCount() >= event.getCapacity()) {
 
@@ -541,7 +533,12 @@ public class EventService {
         registration.setSeatId(seatId);
         registration.setShowProfileInAttendeeDirectory(showProfileInAttendeeDirectory);
 
-        registration = eventRegistrationRepository.save(registration);
+        try {
+            registration = eventRegistrationRepository.saveAndFlush(registration);
+        } catch (DataIntegrityViolationException ex) {
+            throw new RegistrationConflictException(
+                    "Seat " + seatId + " is already taken.");
+        }
 
         Integer spotsRemaining =
                 (saved.getCapacity() == null)

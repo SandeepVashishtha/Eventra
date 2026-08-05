@@ -1,10 +1,12 @@
+import { NOTIFICATION_PREFERENCES_KEY } from "./notificationPreferences";
+
 export const isDndActive = () => {
   if (typeof window === "undefined" || !window.localStorage) {
     return false;
   }
 
   try {
-    const prefs = JSON.parse(localStorage.getItem('eventra_notification_prefs') || '{}');
+    const prefs = JSON.parse(localStorage.getItem(NOTIFICATION_PREFERENCES_KEY) || '{}');
     if (!prefs.dndEnabled) return false;
     const now = new Date();
     const currentHour = now.getHours();
