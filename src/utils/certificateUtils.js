@@ -1,8 +1,8 @@
 import { API_BASE_URL, validateBackendConfig } from "../config/backendConfig.js";
 
 const sanitizeUid = (uid) => {
-  if (typeof uid !== "string") return "";
-  return uid.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 128);
+  if (uid === null || uid === undefined) return "";
+  return String(uid).replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 128);
 };
 
 export async function verifyCertificate(uid) {
