@@ -173,8 +173,14 @@ const EventsPage = () => {
       parseInt(searchParams.get("perPage"), 10) || savedFilters.perPage || 6;
     const filter =
       searchParams.get("filter") || savedFilters.filterType || "all";
-    const category =
-      searchParams.get("category") || savedFilters.categoryFilter || "all";
+    const savedCategory =
+  window.localStorage.getItem("eventra:last-category") || "all";
+
+const category =
+  searchParams.get("category") ||
+  savedFilters.categoryFilter ||
+  savedCategory ||
+  "all";
     const sort = searchParams.get("sort") || savedFilters.sortType || "Newest";
     const view = searchParams.get("view") || savedFilters.viewMode || "grid";
     const urlAdvancedFilters = searchParams.get("filters");
@@ -230,6 +236,10 @@ const EventsPage = () => {
           advancedFilters: serializeAdvancedFilters(listing.advancedFilters),
         })
       );
+      window.localStorage.setItem(
+  "eventra:last-category",
+  listing.categoryFilter
+);
     } catch {
       // sessionStorage can be unavailable in private browsing or embedded views.
     }
