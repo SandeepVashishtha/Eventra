@@ -14,6 +14,8 @@ import com.sandeep.eventrabackend.exception.RegistrationConflictException;
 import com.sandeep.eventrabackend.model.Event;
 import com.sandeep.eventrabackend.model.EventRegistration;
 import com.sandeep.eventrabackend.model.EventRole;
+import com.sandeep.eventrabackend.model.EventWaitlist;
+import com.sandeep.eventrabackend.model.Notification;
 import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.EventRegistrationRepository;
 import com.sandeep.eventrabackend.repository.EventRepository;
@@ -25,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -69,6 +72,8 @@ public class EventService {
     public EventService(
             EventRepository eventRepository,
             EventRegistrationRepository eventRegistrationRepository,
+            EventWaitlistRepository eventWaitlistRepository,
+            NotificationRepository notificationRepository,
             UserRepository userRepository,
             EventRoleService eventRoleService) {
         this.eventRepository = eventRepository;
@@ -372,14 +377,7 @@ public class EventService {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + eventId));
 
-        User currentUser = userRepository.findByEmail(userEmail).orElse(null);
-        if (currentUser != null) {
-            boolean isAdmin = currentUser.getRole() == Role.ADMIN || currentUser.getRole() == Role.SUPER_ADMIN;
-            if (!isAdmin && event.getOwnerId() != null && !event.getOwnerId().equals(currentUser.getId())) {
-                throw new AccessDeniedException(
-                        "Only the event's own organizer (or an administrator) can view this waitlist.");
-            }
-        }
+        eventRoleService.requireRole(eventId, userEmail, EventRole.ORGANIZER);
 
         return eventWaitlistRepository
                 .findByEvent_IdAndStatusOrderByPositionAscJoinedAtAsc(eventId, "WAITING")
@@ -405,14 +403,7 @@ public class EventService {
                 .orElseThrow(() ->
                         new EventNotFoundException("Event not found with id: " + eventId));
 
-        User currentUser = userRepository.findByEmail(userEmail).orElse(null);
-        if (currentUser != null) {
-            boolean isAdmin = currentUser.getRole() == Role.ADMIN || currentUser.getRole() == Role.SUPER_ADMIN;
-            if (!isAdmin && event.getOwnerId() != null && !event.getOwnerId().equals(currentUser.getId())) {
-                throw new AccessDeniedException(
-                        "Only the event's own organizer (or an administrator) can manage this event.");
-            }
-        }
+        eventRoleService.requireRole(eventId, userEmail, EventRole.ORGANIZER);
 
         EventWaitlist entry = eventWaitlistRepository.findById(waitlistId)
                 .filter(waitlist -> waitlist.getEvent().getId().equals(eventId))
