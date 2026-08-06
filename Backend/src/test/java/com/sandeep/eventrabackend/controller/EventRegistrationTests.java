@@ -179,6 +179,40 @@ public class EventRegistrationTests {
                 .andExpect(status().isOk());
     }
 
+    @Test
+    @DisplayName("#12081 — GET /api/events excludes cancelled events")
+    void testGetAllEventsExcludesCancelledEvents() throws Exception {
+        Event cancelled = new Event();
+        cancelled.setTitle("Cancelled Event");
+        cancelled.setCapacity(100);
+        cancelled.setEventDate(LocalDateTime.now().plusDays(1));
+        cancelled.setPublic(true);
+        cancelled.setStatus("CANCELLED");
+        cancelled = eventRepository.save(cancelled);
+
+        mockMvc.perform(get("/api/events"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.id == " + cancelled.getId() + ")]").isEmpty());
+    }
+
+    @Test
+    @DisplayName("#12081 — GET /api/events/{id} returns 404 for a cancelled event")
+    void testGetPublicEventByIdExcludesCancelledEvent() throws Exception {
+        Event cancelled = new Event();
+        cancelled.setTitle("Cancelled Event");
+        cancelled.setCapacity(100);
+        cancelled.setEventDate(LocalDateTime.now().plusDays(1));
+        cancelled.setPublic(true);
+        cancelled.setStatus("CANCELLED");
+        cancelled = eventRepository.save(cancelled);
+
+        mockMvc.perform(get("/api/events/" + cancelled.getId()))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(get("/api/events/" + eventId))
+                .andExpect(status().isOk());
+    }
+
     // ── Issue #2102 — Registration endpoint ──────────────────────────────────
 
     @Test
