@@ -1,6 +1,7 @@
 name: Docker Build Validation
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - master

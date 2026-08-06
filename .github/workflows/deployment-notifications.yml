@@ -1,6 +1,7 @@
 name: Deployment Notifications
 
 on:
+  workflow_dispatch:
   deployment_status:
 
 permissions:

@@ -1,6 +1,7 @@
 name: Welcome new issues
 
 on:
+  workflow_dispatch:
   issues:
     types:
       - opened
