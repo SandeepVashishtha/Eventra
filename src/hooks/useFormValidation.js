@@ -28,6 +28,7 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
   const validationRulesRef = useRef(validationRules);
   const initialStateRef = useRef(initialState);
   const optionsRef = useRef({ debounceMs, validateOnBlur });
+  const valuesRef = useRef(initialState);
 
   const [values, setValues] = useState(initialState);
   const [errors, setErrors] = useState({});
@@ -55,21 +56,12 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
     valuesRef.current = values;
   }, [values]);
 
-  // ── Async validation ───────────────────────────────────────────────────────
-  // Powered by useAsyncValidation which handles debouncing, AbortController
-  // cancellation, and per-field loading state correctly.
-  const {
-    asyncErrors,
-    asyncTouched,
-    isAsyncValidating,
-    isAnyAsyncValidating,
-    hasAsyncErrors,
-    validateAsync,
-    clearAsyncError,
-    cleanup: cleanupAsync,
-  } = useAsyncValidation(asyncValidators, { debounceMs: debounceMs * 2 });
+  const [values, setValues] = useState(initialState);
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
+  const [isFormValid, setIsFormValid] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
 
-  // ── Lifecycle ──────────────────────────────────────────────────────────────
   const clearValidationTimer = useCallback(() => {
     validationRunRef.current += 1;
     if (timeoutRef.current) {
@@ -105,14 +97,8 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
     } else if (typeof validator === 'object' && validator.validate) {
       error = validator.validate(value, allValues);
     }
-    // If a sync validator mistakenly returns a Promise, warn and return null
-    // rather than surfacing a raw Promise object as an error string.
     if (error && typeof error.then === 'function') {
-      console.warn(
-        `[useFormValidation] Validator for "${name}" returned a Promise. ` +
-        'Use the asyncValidators option for async validation.'
-      );
-      return null;
+      return error.then(resolved => resolved === true ? null : resolved);
     }
     return error === true ? null : error;
   }, []);
@@ -202,7 +188,6 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
   }, [clearValidationTimer, asyncValidators, clearAsyncError]);
 
   return {
-    // Sync state
     isValidating,
     values,
     errors,

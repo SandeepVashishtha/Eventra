@@ -4,8 +4,10 @@
  * the rotated half-extents so the box tightly wraps the actual footprint.
  */
 const getRotatedAABB = (el) => {
-  const cx = el.x + el.width / 2;
-  const cy = el.y + el.height / 2;
+  const posX = typeof el.x === 'number' && isFinite(el.x) ? el.x : 0;
+  const posY = typeof el.y === 'number' && isFinite(el.y) ? el.y : 0;
+  const cx = posX + el.width / 2;
+  const cy = posY + el.height / 2;
   const rad = ((el.rotation || 0) * Math.PI) / 180;
   const cos = Math.abs(Math.cos(rad));
   const sin = Math.abs(Math.sin(rad));
@@ -52,13 +54,15 @@ export const getSeatPositions = (el) => {
   const width = typeof el.width === 'number' && isFinite(el.width) && el.width > 0 ? el.width : 100;
   const height = typeof el.height === 'number' && isFinite(el.height) && el.height > 0 ? el.height : 100;
   const rotation = typeof el.rotation === 'number' && isFinite(el.rotation) ? el.rotation : 0;
+  const posX = typeof el.x === 'number' && isFinite(el.x) ? el.x : 0;
+  const posY = typeof el.y === 'number' && isFinite(el.y) ? el.y : 0;
 
   const projOffset = 10;
 
   if (el.type === "round-table") {
     const radius = width / 2;
-    const centerX = el.x + radius - projOffset;
-    const centerY = el.y + radius - projOffset;
+    const centerX = posX + radius - projOffset;
+    const centerY = posY + radius - projOffset;
     const chairDistance = radius + 22;
 
     for (let i = 0; i < count; i++) {
@@ -73,8 +77,8 @@ export const getSeatPositions = (el) => {
     const halfW = width / 2;
     const halfH = height / 2;
 
-    const cX = el.x + halfW - projOffset;
-    const cY = el.y + halfH - projOffset;
+    const cX = posX + halfW - projOffset;
+    const cY = posY + halfH - projOffset;
 
     const seatsPerSide = Math.ceil(count / 2);
     const bottomCount = count - seatsPerSide;
@@ -100,9 +104,9 @@ export const getSeatPositions = (el) => {
 
       let p;
       if (isTop) {
-        p = rotatePt(el.x - projOffset + halfW + relativeX, el.y - projOffset - 18);
+        p = rotatePt(posX - projOffset + halfW + relativeX, posY - projOffset - 18);
       } else {
-        p = rotatePt(el.x - projOffset + halfW + relativeX, el.y - projOffset + height + 18);
+        p = rotatePt(posX - projOffset + halfW + relativeX, posY - projOffset + height + 18);
       }
 
       positions.push({ x: p.x, y: p.y, index: i });

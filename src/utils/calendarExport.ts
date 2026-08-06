@@ -21,7 +21,7 @@ import type { Event } from "../components/EventTimeline";
  *
  * Falls back to midnight on the given date when `timeStr` is absent or unparseable.
  */
-const parseEventDateTime = (dateStr: string, timeStr: string): Date => {
+export const parseEventDateTime = (dateStr: string, timeStr = ""): Date => {
   const base = new Date(dateStr);
   if (isNaN(base.getTime())) return new Date(0);
 

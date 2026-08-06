@@ -1,10 +1,14 @@
-import { parseTimeString, resolveEventInstant } from "./timezoneUtils";
+import { parseTimeString, resolveEventInstant } from "./timezoneUtils.js";
 
 export const parseTimeToMinutes = (timeStr) => {
   if (!timeStr) return 0;
 
   const parsed = parseTimeString(timeStr);
   if (!parsed) return 0;
+
+  if (isNaN(lat) || isNaN(lng)) {
+    return null;
+  }
 
   return parsed.hours * 60 + parsed.minutes;
 };

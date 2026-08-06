@@ -45,7 +45,8 @@ const EventCancellationModal = ({ event, onClose, onSuccess }) => {
     (updatedEvent) => {
       onSuccess?.(updatedEvent);
       onClose();
-    }
+    },
+    event?.ownerId
   );
 
   const handleSubmit = async () => {

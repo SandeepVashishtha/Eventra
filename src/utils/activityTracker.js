@@ -18,7 +18,8 @@ const isStorageAvailable = () => {
       localStorage.removeItem(testKey);
     }
     return true;
-  } catch {
+  } catch (err) {
+    console.warn("[activityTracker] Failed to track activity:", err);
     return false;
   }
 };
