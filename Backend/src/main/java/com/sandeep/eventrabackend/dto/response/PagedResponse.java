@@ -34,6 +34,9 @@ public class PagedResponse<T> {
     @Schema(description = "Whether this is the last page", example = "false")
     private boolean last;
 
+    @Schema(description = "Whether this is the first page", example = "true")
+    private boolean first;
+
     /**
      * Convenience factory — builds a PagedResponse from a Spring {@link Page}.
      */
@@ -45,6 +48,7 @@ public class PagedResponse<T> {
                 .totalElements(page.getTotalElements())
                 .totalPages(page.getTotalPages())
                 .last(page.isLast())
+                .first(page.isFirst())
                 .build();
     }
 }
