@@ -4,6 +4,7 @@ import { Trophy, Calendar, MapPin, Plus } from "lucide-react";
 import StatusBadge from "../common/StatusBadge";
 import { DashboardItemCardSkeleton } from "../common/SkeletonLoaders";
 import SearchEmptyState from "../common/SearchEmptyState";
+import EmptyState from "../common/EmptyState";
 
 const HackathonsTab = ({ hackathons, loading, fadeUp }) => (
   <motion.div key="hackathons" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="ud-content">
