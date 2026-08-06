@@ -282,11 +282,24 @@ public class EventService {
             throw new RegistrationConflictException("Event is already cancelled.");
         }
 
-        String refundPolicy = request.getRefundPolicy().toUpperCase();
+        String refundPolicy = request.getRefundPolicy() == null
+                ? null
+                : request.getRefundPolicy().toUpperCase();
+        if (refundPolicy == null
+                || !("FULL".equals(refundPolicy)
+                || "PARTIAL".equals(refundPolicy)
+                || "NONE".equals(refundPolicy))) {
+            throw new IllegalArgumentException(
+                    "Refund policy is required and must be one of: FULL, PARTIAL, NONE");
+        }
         if ("PARTIAL".equals(refundPolicy)) {
             if (request.getRefundPercent() == null) {
                 throw new IllegalArgumentException(
                         "Refund percentage is required when the refund policy is PARTIAL.");
+            }
+            if (request.getRefundPercent() < 1 || request.getRefundPercent() > 100) {
+                throw new IllegalArgumentException(
+                        "Refund percentage must be between 1 and 100 when the refund policy is PARTIAL.");
             }
         }
 
