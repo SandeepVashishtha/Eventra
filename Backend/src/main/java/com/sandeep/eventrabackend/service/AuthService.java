@@ -72,7 +72,7 @@ public class AuthService {
                 .email(normalizedEmail)
                 .username(username)
                 .password(passwordEncoder.encode(request.getPassword()))
-                .role(Role.CLIENT)
+                .role(Role.ATTENDEE)
                 .build();
 
         user = userRepository.save(user);
@@ -157,7 +157,7 @@ if (lastName == null || lastName.isBlank()) {
                     .email(email.toLowerCase())
                     .username(username)
                     .password(passwordEncoder.encode(securePassword))
-                    .role(Role.CLIENT)
+                    .role(Role.ATTENDEE)
                     .build();
 
             user = userRepository.save(user);
