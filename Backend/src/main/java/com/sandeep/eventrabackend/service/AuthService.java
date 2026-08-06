@@ -84,9 +84,14 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
+        // Signup normalizes the email to lowercase before persisting, so the
+        // login/lookup path must normalize the identifier the same way.
+        // Otherwise a user who registered with a mixed-case email can never log in.
+        String identifier = request.getUsernameOrEmail().toLowerCase();
+
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        request.getUsernameOrEmail(),
+                        identifier,
                         request.getPassword()
                 )
         );
@@ -95,7 +100,7 @@ public class AuthService {
 
         // Reload user for profile info
         User user = userRepository
-                .findByEmailOrUsername(request.getUsernameOrEmail(), request.getUsernameOrEmail())
+                .findByEmailOrUsername(identifier, identifier)
                 .orElseThrow();
 
         return buildAuthResponse(user, token);
