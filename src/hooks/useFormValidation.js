@@ -1,34 +1,43 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import useAsyncValidation from './useAsyncValidation';
 
 /**
  * useFormValidation
  *
  * Generic form state + validation hook.
  *
- * @param {object}  initialState     - Initial field values keyed by field name
- * @param {object}  validationRules  - Validator per field: function(value, allValues) → error string | null
+ * @param {object}  initialState      - Initial field values keyed by field name
+ * @param {object}  validationRules   - Sync validator per field: fn(value, allValues) → string|null
  * @param {object}  [options]
- * @param {number}  [options.debounceMs=300]    - Debounce delay for inline validation on change
- * @param {boolean} [options.validateOnBlur=false] - When true, validation fires on blur only
+ * @param {number}  [options.debounceMs=300]       - Debounce delay for inline validation on change
+ * @param {boolean} [options.validateOnBlur=false]  - When true, validation fires on blur only
+ * @param {object}  [options.asyncValidators={}]
+ *   Fix (Issue): Map of field → async fn(value, signal) → string|null.
+ *   Previously, async validators returned a Promise object which was
+ *   displayed raw as "[object Promise]" in the error field. Now they are
+ *   properly awaited via the new useAsyncValidation hook, with debouncing,
+ *   AbortController cancellation, and per-field loading state.
  */
 export const useFormValidation = (initialState, validationRules, options = {}) => {
-  const { debounceMs = 300, validateOnBlur = false } = options;
+  const { debounceMs = 300, validateOnBlur = false, asyncValidators = {} } = options;
 
-  // Use a ref for the debounce timer so clearTimeout can reach it from
-  // the cleanup effect regardless of which render created the timer.
   const timeoutRef = useRef(null);
   const isMountedRef = useRef(false);
   const validationRunRef = useRef(0);
 
-  // Keep the latest rule set and initial state in refs so callbacks that
-  // close over them do not need to list them as dependencies — which would
-  // cause handleChange / handleBlur to be recreated on every render.
   const validationRulesRef = useRef(validationRules);
   const initialStateRef = useRef(initialState);
-
-  // Also keep validateOnBlur and debounceMs in a ref so handleChange
-  // doesn't need them in its dependency array and is never recreated.
   const optionsRef = useRef({ debounceMs, validateOnBlur });
+
+  const [values, setValues] = useState(initialState);
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
+  const [isFormValid, setIsFormValid] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
+
+  // Fix: valuesRef must be declared AFTER values useState to avoid
+  // "used before declared" React Compiler error.
+  const valuesRef = useRef(initialState);
 
   useEffect(() => {
     validationRulesRef.current = validationRules;
@@ -42,15 +51,27 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
     optionsRef.current = { debounceMs, validateOnBlur };
   }, [debounceMs, validateOnBlur]);
 
-  const [values, setValues] = useState(initialState);
-  const [errors, setErrors] = useState({});
-  const [touched, setTouched] = useState({});
-const [isFormValid, setIsFormValid] = useState(false);
-  const [isValidating, setIsValidating] = useState(false);
+  useEffect(() => {
+    valuesRef.current = values;
+  }, [values]);
 
+  // ── Async validation ───────────────────────────────────────────────────────
+  // Powered by useAsyncValidation which handles debouncing, AbortController
+  // cancellation, and per-field loading state correctly.
+  const {
+    asyncErrors,
+    asyncTouched,
+    isAsyncValidating,
+    isAnyAsyncValidating,
+    hasAsyncErrors,
+    validateAsync,
+    clearAsyncError,
+    cleanup: cleanupAsync,
+  } = useAsyncValidation(asyncValidators, { debounceMs: debounceMs * 2 });
+
+  // ── Lifecycle ──────────────────────────────────────────────────────────────
   const clearValidationTimer = useCallback(() => {
     validationRunRef.current += 1;
-
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
@@ -59,20 +80,22 @@ const [isFormValid, setIsFormValid] = useState(false);
 
   useEffect(() => {
     isMountedRef.current = true;
-
     return () => {
       isMountedRef.current = false;
       clearValidationTimer();
+      cleanupAsync();
     };
-  }, [clearValidationTimer]);
+  }, [clearValidationTimer, cleanupAsync]);
 
   useEffect(() => {
-    return () => {
-      clearValidationTimer();
-    };
+    return () => { clearValidationTimer(); };
   }, [clearValidationTimer, debounceMs, validateOnBlur]);
 
-  // Validate a single field against its rule. Returns the error string or null.
+  // ── Sync validation ────────────────────────────────────────────────────────
+  // Fix: previously this returned a raw Promise when a validator was async,
+  // which React then rendered as "[object Promise]" in the error field.
+  // Async validators are now handled exclusively via useAsyncValidation above.
+  // This function only handles synchronous validators.
   const validateField = useCallback((name, value, allValues) => {
     if (!validationRulesRef.current[name]) return null;
     const validator = validationRulesRef.current[name];
@@ -82,10 +105,19 @@ const [isFormValid, setIsFormValid] = useState(false);
     } else if (typeof validator === 'object' && validator.validate) {
       error = validator.validate(value, allValues);
     }
+    // If a sync validator mistakenly returns a Promise, warn and return null
+    // rather than surfacing a raw Promise object as an error string.
+    if (error && typeof error.then === 'function') {
+      console.warn(
+        `[useFormValidation] Validator for "${name}" returned a Promise. ` +
+        'Use the asyncValidators option for async validation.'
+      );
+      return null;
+    }
     return error === true ? null : error;
   }, []);
 
-  // Validate all fields synchronously. Returns true when all pass.
+  // Validate all sync fields. Returns true when all pass.
   const validateAll = useCallback(() => {
     const newErrors = {};
     const newTouched = {};
@@ -98,15 +130,14 @@ const [isFormValid, setIsFormValid] = useState(false);
         isValid = false;
       }
     });
+    if (hasAsyncErrors) isValid = false;
     setTouched((prev) => ({ ...prev, ...newTouched }));
     setErrors(newErrors);
     setIsFormValid(isValid);
     return isValid;
-  }, [values, validateField]);
+  }, [values, validateField, hasAsyncErrors]);
 
-  // Handle input change — clears the field error immediately for responsiveness
-  // then schedules a debounced validation run. Uses optionsRef so this callback
-  // is never recreated when debounceMs or validateOnBlur changes.
+  // ── Handlers ───────────────────────────────────────────────────────────────
   const handleChange = useCallback((e) => {
     const { name, value } = e.target;
 
@@ -114,16 +145,16 @@ const [isFormValid, setIsFormValid] = useState(false);
     setTouched((prev) => ({ ...prev, [name]: true }));
     setErrors((prev) => ({ ...prev, [name]: null }));
 
+    // Trigger async validation if a validator is registered for this field
+    if (asyncValidators[name]) {
+      validateAsync(name, value);
+    }
+
     if (!validationRulesRef.current[name]) return;
     if (optionsRef.current.validateOnBlur) return;
 
-    // Fix (Issue #11837): Set isValidating true before the debounced run and
-    // false after, so the flag is actually meaningful to consumers. Previously
-    // it was declared but never set, causing React Compiler to warn about a
-    // stale closure and making the returned value permanently false.
     setIsValidating(true);
     clearValidationTimer();
-
     const validationRun = validationRunRef.current + 1;
     validationRunRef.current = validationRun;
 
@@ -134,47 +165,44 @@ const [isFormValid, setIsFormValid] = useState(false);
       setValues((prev) => {
         const currentValues = { ...prev, [name]: value };
         const error = validateField(name, value, currentValues);
-      if (isMountedRef.current && validationRunRef.current === validationRun) {
+        if (isMountedRef.current && validationRunRef.current === validationRun) {
           setErrors((errs) => ({ ...errs, [name]: error }));
           setIsValidating(false);
         }
         return prev;
       });
     }, optionsRef.current.debounceMs);
-  }, [validateField, clearValidationTimer]);
+  }, [validateField, clearValidationTimer, validateAsync, asyncValidators]);
 
-  // Cleanup handled by the unified clearValidationTimer effect above
-
-  // Handle blur — run validation immediately without waiting for the debounce.
   const handleBlur = useCallback((e) => {
     const { name, value } = e.target;
     setTouched((prev) => ({ ...prev, [name]: true }));
     if (!validationRulesRef.current[name]) return;
-    const error = validateField(name, value, values);
+    const error = validateField(name, value, valuesRef.current);
     setErrors((prev) => ({ ...prev, [name]: error }));
-  }, [validateField, values]);
+  }, [validateField]);
 
-  // Derive overall form validity whenever field values, errors, or touch
-  // state changes. A field is considered satisfied when it has been touched
-  // OR when it already has a non-empty initial value.
+  // ── Derived validity ───────────────────────────────────────────────────────
   useEffect(() => {
-    const hasErrors = Object.values(errors).some((error) => error !== null);
+    const hasSyncErrors = Object.values(errors).some((error) => error !== null);
     const allRequiredFieldsSatisfied = Object.keys(validationRulesRef.current).every(
       (key) => touched[key] || values[key] !== '',
     );
-    setIsFormValid(!hasErrors && allRequiredFieldsSatisfied);
-  }, [errors, touched, values]);
+    setIsFormValid(!hasSyncErrors && !hasAsyncErrors && allRequiredFieldsSatisfied);
+  }, [errors, touched, values, hasAsyncErrors]);
 
-  // Reset form to initial state and clear all validation state.
+  // ── Reset ──────────────────────────────────────────────────────────────────
   const resetForm = useCallback(() => {
     clearValidationTimer();
     setValues(initialStateRef.current);
     setErrors({});
     setTouched({});
     setIsFormValid(false);
-  }, [clearValidationTimer]);
+    Object.keys(asyncValidators).forEach(clearAsyncError);
+  }, [clearValidationTimer, asyncValidators, clearAsyncError]);
 
-return {
+  return {
+    // Sync state
     isValidating,
     values,
     errors,
@@ -185,6 +213,11 @@ return {
     validateAll,
     resetForm,
     setValues,
+    // Async state
+    asyncErrors,
+    asyncTouched,
+    isAsyncValidating,
+    isAnyAsyncValidating,
   };
 };
 

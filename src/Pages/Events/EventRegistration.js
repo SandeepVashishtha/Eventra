@@ -117,28 +117,51 @@ const EventRegistration = () => {
   }), []);
 
   const {
-    values: formData,
-    errors,
-    touched,
-    isValid: isFormValid,
-    handleChange,
-    handleBlur,
-    validateAll,
-    setValues,
-  } = useFormValidation(
-    {
-      fullName: "",
-      email: "",
-      phone: "",
-      organization: "",
-      designation: "",
-      additionalInfo: "",
-      priority: "Medium",
+  values: formData,
+  errors,
+  touched,
+  isValid: isFormValid,
+  handleChange,
+  handleBlur,
+  validateAll,
+  setValues,
+  asyncErrors,
+  isAnyAsyncValidating,
+} = useFormValidation(
+  {
+    fullName: "",
+    email: "",
+    phone: "",
+    organization: "",
+    designation: "",
+    additionalInfo: "",
+    priority: "Medium",
+    showProfileInAttendeeDirectory: false,
+  },
+  validationRules,
+  {
+    debounceMs: 300,
+    asyncValidators: {
+      // Fix: async email uniqueness check — previously async validators
+      // returned "[object Promise]" as the error string. Now properly awaited.
+      email: async (value, signal) => {
+        if (!value || !value.includes('@')) return null;
+        try {
+          const res = await apiUtils.post(
+            API_ENDPOINTS.AUTH.CHECK_EMAIL,
+            { email: value },
+            { signal }
+          );
+          return res.data?.exists
+            ? 'This email is already registered for this event.'
+            : null;
+        } catch {
+          return null;
+        }
+      },
     },
-    validationRules,
-    { debounceMs: 300 }
-  );
-
+  }
+);
   // Load event data from backend API
   useEffect(() => {
     let isCancelled = false;
