@@ -103,10 +103,10 @@ public class EventController {
     // ── Issue #2099 — PUT /api/events/{id} ──────────────────────────────────
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN', 'SUPER_ADMIN')")
     @Operation(
             summary = "Update an existing event",
-            description = "Allows an ORGANIZER or ADMIN to update event details.",
+            description = "Allows an ORGANIZER, ADMIN or SUPER_ADMIN to update event details.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses({
@@ -133,7 +133,7 @@ public class EventController {
             ),
             @ApiResponse(
                     responseCode = "403",
-                    description = "Forbidden - User does not have ORGANIZER or ADMIN role",
+                    description = "Forbidden - User does not have ORGANIZER, ADMIN or SUPER_ADMIN role",
                     content = @Content(
                             schema = @Schema(implementation = ErrorResponse.class)
                     )
