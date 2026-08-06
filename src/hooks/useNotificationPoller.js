@@ -30,7 +30,7 @@ const getStorageKey = (userId) => {
 
 const normalize = (n = {}) => ({
   ...n,
-  id: n.id || n._id || `${n.timestamp || n.createdAt || Date.now()}-${getNotificationMessage(n)}`,
+  id: n.id || n._id || `${n.timestamp || n.createdAt || Date.now()}-${Math.random().toString(36).slice(2)}`,
   timestamp: n.timestamp || n.createdAt || n.updatedAt || new Date().toISOString(),
 });
 
