@@ -239,7 +239,13 @@ export const syncWaitlistFromServer = async (eventId, cacheOwnerId) => {
       await saveGlobalWaitlist(reconciled, cacheOwnerId);
       return serverData;
     }
-  } catch {
+  } catch (err) {
+    if (err?.response?.status === 401 || err?.response?.status === 403) {
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("eventra-session-expired"));
+      }
+      throw err;
+    }
     logger.warn("[WaitlistUtils] Server sync failed, using localStorage cache");
   }
   return getEventWaitlist(id, cacheOwnerId);
