@@ -341,7 +341,12 @@ public class EventService {
         EventWaitlist entry = new EventWaitlist();
         entry.setEvent(event);
         entry.setUser(user);
-        entry.setPosition(eventWaitlistRepository.findMaxPositionByEventId(eventId) + 1);
+        int maxPosition = eventWaitlistRepository.findByEvent_IdWithLock(eventId)
+                .stream()
+                .mapToInt(EventWaitlist::getPosition)
+                .max()
+                .orElse(0);
+        entry.setPosition(maxPosition + 1);
         entry.setStatus("WAITING");
 
         return toWaitlistResponse(eventWaitlistRepository.save(entry));

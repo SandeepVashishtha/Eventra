@@ -28,6 +28,10 @@ public interface EventWaitlistRepository extends JpaRepository<EventWaitlist, Lo
             """)
     List<EventWaitlist> findWaitingByEventIdWithLock(@Param("eventId") Long eventId);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT w FROM EventWaitlist w WHERE w.event.id = :eventId")
+    List<EventWaitlist> findByEvent_IdWithLock(@Param("eventId") Long eventId);
+
     @Query("SELECT COALESCE(MAX(w.position), 0) FROM EventWaitlist w WHERE w.event.id = :eventId")
     int findMaxPositionByEventId(@Param("eventId") Long eventId);
 
