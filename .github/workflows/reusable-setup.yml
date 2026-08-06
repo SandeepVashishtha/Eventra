@@ -79,3 +79,20 @@ jobs:
           name: ${{ inputs.artifact-name }}
           path: ${{ inputs.artifact-path }}
           retention-days: 7
+
+      - name: Generate Job Summary
+        if: always()
+        run: |
+          echo "## CI Job Summary 🚀" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Details |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|---------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Node Version** | ${{ inputs.node-version }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Job Status** | ${{ job.status }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Artifact Generated** | ${{ inputs.artifact-name || 'None' }} |" >> $GITHUB_STEP_SUMMARY
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "### ✅ All tasks completed successfully!" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ❌ Some tasks failed. Please review the step logs." >> $GITHUB_STEP_SUMMARY
+          fi
