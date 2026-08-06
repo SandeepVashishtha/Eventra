@@ -23,13 +23,13 @@ export const getUserProfile = () => {
 
   return {
     interests:
-      saved.interests || [],
+      Array.isArray(saved.interests) ? saved.interests : [],
 
     techStack:
-      saved.techStack || [],
+      Array.isArray(saved.techStack) ? saved.techStack : [],
 
     eventTypes:
-      saved.eventTypes || [],
+      Array.isArray(saved.eventTypes) ? saved.eventTypes : [],
 
     level:
       saved.level || "Beginner",
