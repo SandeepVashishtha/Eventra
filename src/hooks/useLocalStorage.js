@@ -113,13 +113,18 @@ const useLocalStorage = (key, initialValue) => {
       }
     };
 
-    window.addEventListener("storage", handleStorageChange);
-    window.addEventListener("local-storage", handleStorageChange);
-
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
-      window.removeEventListener("local-storage", handleStorageChange);
-    };
+    const handlerRef = useRef(handleStorageChange);
+    handlerRef.current = handleStorageChange;
+    
+    useEffect(() => {
+      const handler = (e) => handlerRef.current(e);
+      window.addEventListener("storage", handler);
+      window.addEventListener("local-storage", handler);
+      return () => {
+        window.removeEventListener("storage", handler);
+        window.removeEventListener("local-storage", handler);
+      };
+    }, []);
   }, [key, readValue]);
 
   return [storedValue, setValue, removeValue];
