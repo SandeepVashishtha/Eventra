@@ -45,7 +45,8 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
   const [values, setValues] = useState(initialState);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
-  const [isFormValid, setIsFormValid] = useState(false);
+const [isFormValid, setIsFormValid] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
 
   const clearValidationTimer = useCallback(() => {
     validationRunRef.current += 1;
@@ -71,7 +72,6 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
     };
   }, [clearValidationTimer, debounceMs, validateOnBlur]);
 
-  // Validate a single field
   // Validate a single field against its rule. Returns the error string or null.
   const validateField = useCallback((name, value, allValues) => {
     if (!validationRulesRef.current[name]) return null;
@@ -117,7 +117,13 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
     if (!validationRulesRef.current[name]) return;
     if (optionsRef.current.validateOnBlur) return;
 
+    // Fix (Issue #11837): Set isValidating true before the debounced run and
+    // false after, so the flag is actually meaningful to consumers. Previously
+    // it was declared but never set, causing React Compiler to warn about a
+    // stale closure and making the returned value permanently false.
+    setIsValidating(true);
     clearValidationTimer();
+
     const validationRun = validationRunRef.current + 1;
     validationRunRef.current = validationRun;
 
@@ -128,8 +134,9 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
       setValues((prev) => {
         const currentValues = { ...prev, [name]: value };
         const error = validateField(name, value, currentValues);
-        if (isMountedRef.current && validationRunRef.current === validationRun) {
+      if (isMountedRef.current && validationRunRef.current === validationRun) {
           setErrors((errs) => ({ ...errs, [name]: error }));
+          setIsValidating(false);
         }
         return prev;
       });
@@ -167,7 +174,8 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
     setIsFormValid(false);
   }, [clearValidationTimer]);
 
-  return {
+return {
+    isValidating,
     values,
     errors,
     touched,
