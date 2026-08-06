@@ -7,6 +7,7 @@ import com.sandeep.eventrabackend.model.Role;
 import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.HackathonRegistrationRepository;
 import com.sandeep.eventrabackend.repository.NotificationRepository;
+import com.sandeep.eventrabackend.repository.TokenBlacklistRepository;
 import com.sandeep.eventrabackend.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -23,6 +24,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -49,6 +51,9 @@ public class AuthLogoutTests {
 
     @Autowired
     private com.sandeep.eventrabackend.security.TokenBlacklistService tokenBlacklistService;
+
+    @Autowired
+    private TokenBlacklistRepository tokenBlacklistRepository;
 
     private String jwtToken;
 
@@ -105,6 +110,31 @@ public class AuthLogoutTests {
         mockMvc.perform(get("/api/users/profile")
                         .header("Authorization", "Bearer " + jwtToken))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("Revoked token stays rejected after in-memory cache is lost (DB-backed)")
+    void testBlacklistPersistedInDatabase() throws Exception {
+        // 1. Logout -> token is revoked
+        mockMvc.perform(post("/api/auth/logout")
+                        .header("Authorization", "Bearer " + jwtToken))
+                .andExpect(status().isOk());
+
+        // 2. The revoked entry is persisted to the database
+        assertTrue(tokenBlacklistRepository.count() >= 1,
+                "blacklist row should be persisted to the database");
+
+        // 3. Simulate a restart: drop the in-memory cache
+        java.lang.reflect.Field cache = com.sandeep.eventrabackend.security.TokenBlacklistService.class
+                .getDeclaredField("blacklist");
+        cache.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        java.util.Map<String, ?> inMemory = (java.util.Map<String, ?>) cache.get(tokenBlacklistService);
+        inMemory.clear();
+
+        // 4. The token is still rejected, served from the persisted store
+        assertTrue(tokenBlacklistService.isBlacklisted(jwtToken),
+                "revoked token must still be rejected after the in-memory cache is lost");
     }
 
     @Test
