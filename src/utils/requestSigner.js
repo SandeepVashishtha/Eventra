@@ -61,8 +61,22 @@ async function hmacSha256Hex(secret, data) {
     .join("");
 }
 
+const deterministicStringify = (obj) => {
+  if (obj === null || typeof obj !== "object") {
+    return JSON.stringify(obj);
+  }
+  return JSON.stringify(
+    Object.keys(obj)
+      .sort()
+      .reduce((acc, key) => {
+        acc[key] = obj[key];
+        return acc;
+      }, {})
+  );
+};
+
 export async function createSignature(payload, timestamp, nonce, secret) {
-  const data = JSON.stringify(payload) + timestamp + nonce;
+  const data = deterministicStringify(payload) + timestamp + nonce;
   return hmacSha256Hex(secret, data);
 }
 
