@@ -39,7 +39,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     /** Returns the number of newly created user accounts grouped by month. */
     @Query("""
-        SELECT FUNCTION('DATE_FORMAT', u.createdAt, '%Y-%m') AS period,
+        SELECT FUNCTION('FORMATDATETIME', u.createdAt, 'yyyy-MM') AS period,
                COUNT(u) AS userCount
         FROM User u
         WHERE u.createdAt >= :from

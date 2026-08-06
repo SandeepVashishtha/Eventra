@@ -5,5 +5,6 @@ export const getTrendingBadge = (index) => {
     2: "🥉 #3 Trending",
   };
 
-  return badges[index] || `#${index + 1} Trending`;
+  const numIndex = Number(index);
+  return badges[numIndex] || `#${numIndex + 1} Trending`;
 };

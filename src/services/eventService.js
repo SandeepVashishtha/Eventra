@@ -25,6 +25,10 @@ export const eventService = {
   getAvailability: async (eventId) => {
     return apiUtils.get(API_ENDPOINTS.EVENTS.AVAILABILITY(eventId));
   },
+
+  getAttendees: async (eventId, config = {}) => {
+    return apiUtils.get(API_ENDPOINTS.EVENTS.ATTENDEES(eventId), config);
+  },
   
   getRegistrants: async (eventId) => {
     return apiUtils.get(API_ENDPOINTS.EVENTS.REGISTRANTS(eventId));

@@ -14,6 +14,9 @@ public interface FeedbackAnalyticsRepository extends JpaRepository<Feedback, Lon
     @Query("SELECT AVG(f.rating) FROM Feedback f")
     Double findOverallAverageRating();
 
+    @Query("SELECT AVG(f.rating) FROM Feedback f WHERE f.event.id IN :eventIds")
+    Double findAverageRatingForEvents(@Param("eventIds") java.util.Collection<Long> eventIds);
+
     @Query("SELECT COUNT(f) FROM Feedback f")
     long countTotalFeedback();
 
@@ -41,5 +44,25 @@ public interface FeedbackAnalyticsRepository extends JpaRepository<Feedback, Lon
 
     boolean existsByEvent_IdAndUser_Email(Long eventId, String email);
 
-    void deleteByUser_Id(Long userId);
+    @Query("""
+        SELECT AVG(f.rating)
+        FROM Feedback f
+        WHERE f.event.ownerId = :organizerId
+        """)
+    Double findAverageRatingByOrganizer(@Param("organizerId") Long organizerId);
+
+    @Query("""
+        SELECT COUNT(f)
+        FROM Feedback f
+        WHERE f.event.ownerId = :organizerId
+        """)
+    long countByOrganizer(@Param("organizerId") Long organizerId);
+
+    @Query("""
+        SELECT f
+        FROM Feedback f
+        WHERE f.event.ownerId = :organizerId
+        ORDER BY f.submittedAt DESC
+        """)
+    List<Feedback> findByOrganizer(@Param("organizerId") Long organizerId);
 }

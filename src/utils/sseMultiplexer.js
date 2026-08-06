@@ -7,7 +7,7 @@ const HEARTBEAT_KEY = "eventra_sse_leader_heartbeat";
 const LOCAL_STORAGE_CONFIRM_MIN_MS = 25;
 const LOCAL_STORAGE_CONFIRM_JITTER_MS = 75;
 // Unique identifier for this tab instance
-const TAB_ID = Math.random().toString(36).substring(2, 9);
+const TAB_ID = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : Math.random().toString(36).substring(2, 9);
 
 const ALLOWED_MESSAGE_TYPES = new Set([
   "SUBSCRIBE",
@@ -116,7 +116,7 @@ class SseMultiplexer {
           if (document.visibilityState === "hidden") {
             this.teardown(true);
           } else if (document.visibilityState === "visible") {
-            this.reconnect();
+            this.reconnectOnVisibility();
           }
         }
       };
@@ -541,7 +541,8 @@ class SseMultiplexer {
     logger.log(`[SSE Multiplexer] Leader tab opening physical EventSource: ${sseBaseUrl}${path}`);
     this.updatePathStatus(path, "connecting");
 
-    const source = new EventSource(`${sseBaseUrl}${path}`, { withCredentials: true });
+    const sseUrl = new URL(path, sseBaseUrl).href;
+    const source = new EventSource(sseUrl, { withCredentials: true });
     this.activeEventSources.set(path, source);
 
     source.onopen = () => {
@@ -708,7 +709,7 @@ class SseMultiplexer {
     this.lastSeenFollowers = null;
   }
 
-  reconnect() {
+  reconnectOnVisibility() {
     logger.log(`[SSE Multiplexer] Tab ${this.tabId} became visible, reconnecting...`);
     if (typeof window !== "undefined") {
       if (!this.channel) {
@@ -797,7 +798,13 @@ class SseMultiplexer {
     // Remove the heartbeat key from localStorage when this tab was the leader.
     if (this.isLeader) {
       try {
-        localStorage.removeItem(HEARTBEAT_KEY);
+        const raw = localStorage.getItem(HEARTBEAT_KEY);
+        if (raw) {
+           const parsed = JSON.parse(raw);
+           if (parsed.tabId === this.tabId) {
+             localStorage.removeItem(HEARTBEAT_KEY);
+           }
+        }
       } catch {
         // Non-fatal — the timeout mechanism in checkLeader will handle expiry
       }

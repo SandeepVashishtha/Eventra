@@ -29,4 +29,16 @@ public class UserProfileUpdateRequest {
     @Size(min = 3, max = 50, message = "Username must be between 3 and 50 characters")
     @Schema(description = "User's unique username", example = "johndoe123")
     private String username;
+
+    @Size(max = 160, message = "Profile headline must be 160 characters or fewer")
+    @Schema(description = "Short professional headline shown when the user opts into attendee directories", example = "Full Stack Developer looking for a hackathon team")
+    private String profileHeadline;
+
+    @Size(max = 255, message = "LinkedIn URL must be 255 characters or fewer")
+    @Schema(description = "LinkedIn profile URL", example = "https://www.linkedin.com/in/johndoe")
+    private String linkedinUrl;
+
+    @Size(max = 255, message = "GitHub URL must be 255 characters or fewer")
+    @Schema(description = "GitHub profile URL", example = "https://github.com/johndoe")
+    private String githubUrl;
 }

@@ -108,8 +108,12 @@ public class AdminService {
      */
     @Transactional
     public void deleteUser(Long id) {
-        if (!userRepository.existsById(id)) {
-            throw new EntityNotFoundException("User not found with id: " + id);
+        User targetUser = userRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
+
+        Role callerRole = getAuthenticatedRole();
+        if (callerRole != Role.SUPER_ADMIN && targetUser.getRole() == Role.SUPER_ADMIN) {
+            throw new AccessDeniedException("Only SUPER_ADMIN users can delete SUPER_ADMIN accounts");
         }
 
         eventRegistrationRepository.deleteByUser_Id(id);
@@ -118,6 +122,7 @@ public class AdminService {
         projectUpvoteRepository.deleteByUser_Id(id);
         notificationRepository.deleteByUser_Id(id);
         feedbackRepository.deleteByUser_Id(id);
+        eventRepository.deleteAttendeeRowsByUserId(id);
 
         userRepository.deleteById(id);
     }

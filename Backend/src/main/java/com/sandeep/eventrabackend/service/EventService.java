@@ -4,20 +4,23 @@ import com.sandeep.eventrabackend.dto.request.CancelEventRequest;
 import com.sandeep.eventrabackend.dto.request.EventCreateRequest;
 import com.sandeep.eventrabackend.dto.request.EventUpdateRequest;
 import com.sandeep.eventrabackend.dto.response.EventAvailabilityResponse;
+import com.sandeep.eventrabackend.dto.response.AttendeeDirectoryResponse;
 import com.sandeep.eventrabackend.dto.response.EventResponse;
 import com.sandeep.eventrabackend.dto.response.MyRegisteredEventResponse;
 import com.sandeep.eventrabackend.dto.response.RegistrationResponse;
 import com.sandeep.eventrabackend.dto.response.WaitlistResponse;
 import com.sandeep.eventrabackend.exception.EventFullException;
 import com.sandeep.eventrabackend.exception.EventNotFoundException;
+import com.sandeep.eventrabackend.exception.RegistrationClosedException;
 import com.sandeep.eventrabackend.exception.RegistrationConflictException;
 import com.sandeep.eventrabackend.model.Event;
 import com.sandeep.eventrabackend.model.EventRegistration;
 import com.sandeep.eventrabackend.model.EventRole;
+import com.sandeep.eventrabackend.model.EventWaitlist;
+import com.sandeep.eventrabackend.model.Notification;
 import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.EventRegistrationRepository;
 import com.sandeep.eventrabackend.repository.EventRepository;
-import com.sandeep.eventrabackend.model.Role;
 import com.sandeep.eventrabackend.repository.EventWaitlistRepository;
 import com.sandeep.eventrabackend.repository.NotificationRepository;
 import com.sandeep.eventrabackend.repository.UserRepository;
@@ -25,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -69,6 +73,8 @@ public class EventService {
     public EventService(
             EventRepository eventRepository,
             EventRegistrationRepository eventRegistrationRepository,
+            EventWaitlistRepository eventWaitlistRepository,
+            NotificationRepository notificationRepository,
             UserRepository userRepository,
             EventRoleService eventRoleService) {
         this.eventRepository = eventRepository;
@@ -241,7 +247,9 @@ public class EventService {
         event.setLocation(request.getLocation());
         event.setEventDate(request.getEventDate());
         event.setCapacity(request.getCapacity());
-        event.setPublic(request.getIsPublic() == null || request.getIsPublic());
+        if (request.getIsPublic() != null) {
+            event.setPublic(request.getIsPublic());
+        }
         event.setImageUrl(request.getImageUrl());
 
         Event saved = eventRepository.save(event);
@@ -268,15 +276,7 @@ public class EventService {
                 .orElseThrow(() ->
                         new EventNotFoundException("Event not found with id: " + id));
 
-        User currentUser = userRepository.findByEmail(userEmail)
-                .orElseThrow(() ->
-                        new UsernameNotFoundException("User not found with email: " + userEmail));
-
-        boolean isAdmin = currentUser.getRole() == Role.ADMIN || currentUser.getRole() == Role.SUPER_ADMIN;
-        if (!isAdmin && (event.getOwnerId() == null || !event.getOwnerId().equals(currentUser.getId()))) {
-            throw new AccessDeniedException(
-                    "Only the event's own organizer (or an administrator) can cancel this event.");
-        }
+        eventRoleService.requireRole(id, userEmail, EventRole.ORGANIZER);
 
         if ("CANCELLED".equals(event.getStatus())) {
             throw new RegistrationConflictException("Event is already cancelled.");
@@ -372,14 +372,7 @@ public class EventService {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + eventId));
 
-        User currentUser = userRepository.findByEmail(userEmail).orElse(null);
-        if (currentUser != null) {
-            boolean isAdmin = currentUser.getRole() == Role.ADMIN || currentUser.getRole() == Role.SUPER_ADMIN;
-            if (!isAdmin && event.getOwnerId() != null && !event.getOwnerId().equals(currentUser.getId())) {
-                throw new AccessDeniedException(
-                        "Only the event's own organizer (or an administrator) can view this waitlist.");
-            }
-        }
+        eventRoleService.requireRole(eventId, userEmail, EventRole.ORGANIZER);
 
         return eventWaitlistRepository
                 .findByEvent_IdAndStatusOrderByPositionAscJoinedAtAsc(eventId, "WAITING")
@@ -405,14 +398,7 @@ public class EventService {
                 .orElseThrow(() ->
                         new EventNotFoundException("Event not found with id: " + eventId));
 
-        User currentUser = userRepository.findByEmail(userEmail).orElse(null);
-        if (currentUser != null) {
-            boolean isAdmin = currentUser.getRole() == Role.ADMIN || currentUser.getRole() == Role.SUPER_ADMIN;
-            if (!isAdmin && event.getOwnerId() != null && !event.getOwnerId().equals(currentUser.getId())) {
-                throw new AccessDeniedException(
-                        "Only the event's own organizer (or an administrator) can manage this event.");
-            }
-        }
+        eventRoleService.requireRole(eventId, userEmail, EventRole.ORGANIZER);
 
         EventWaitlist entry = eventWaitlistRepository.findById(waitlistId)
                 .filter(waitlist -> waitlist.getEvent().getId().equals(eventId))
@@ -447,12 +433,21 @@ public class EventService {
      */
     @Transactional
     public RegistrationResponse registerUserForEvent(Long eventId, String userEmail, String seatId) {
+        return registerUserForEvent(eventId, userEmail, seatId, false);
+    }
+
+    @Transactional
+    public RegistrationResponse registerUserForEvent(
+            Long eventId,
+            String userEmail,
+            String seatId,
+            boolean showProfileInAttendeeDirectory) {
 
         ObjectOptimisticLockingFailureException lastConflict = null;
 
         for (int attempt = 1; attempt <= MAX_REGISTRATION_RETRIES; attempt++) {
             try {
-                return executeRegistration(eventId, userEmail, seatId);
+                return executeRegistration(eventId, userEmail, seatId, showProfileInAttendeeDirectory);
 
             } catch (ObjectOptimisticLockingFailureException ex) {
                 lastConflict = ex;
@@ -481,12 +476,20 @@ public class EventService {
     private RegistrationResponse executeRegistration(
             Long eventId,
             String userEmail,
-            String seatId) {
+            String seatId,
+            boolean showProfileInAttendeeDirectory) {
 
         Event event = eventRepository.findByIdWithLock(eventId)
                 .orElseThrow(() ->
                         new EventNotFoundException(
                                 "Event not found with id: " + eventId));
+
+        // Registration is only valid for events that have not already ended.
+        // Without this guard the API accepted registrations for past events,
+        // inflating registeredCount and creating stale registration rows (#11781).
+        if (event.isEventPast()) {
+            throw new RegistrationClosedException("Registration is closed for this event.");
+        }
 
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() ->
@@ -508,16 +511,14 @@ public class EventService {
         }
 
         event.getAttendees().add(user);
-        event.setRegisteredCount(event.getAttendees().size());
-
-        Event saved = eventRepository.save(event);
 
         EventRegistration registration = new EventRegistration();
-        registration.setEvent(saved);
+        registration.setEvent(event);
         registration.setUser(user);
         registration.setRegisteredAt(LocalDateTime.now());
         registration.setStatus("CONFIRMED");
         registration.setSeatId(seatId);
+        registration.setShowProfileInAttendeeDirectory(showProfileInAttendeeDirectory);
 
         try {
             registration = eventRegistrationRepository.saveAndFlush(registration);
@@ -525,6 +526,10 @@ public class EventService {
             throw new RegistrationConflictException(
                     "Seat " + seatId + " is already taken.");
         }
+
+        event.setRegisteredCount((int) eventRegistrationRepository
+                .countByEvent_IdAndStatus(eventId, "CONFIRMED"));
+        Event saved = eventRepository.save(event);
 
         Integer spotsRemaining =
                 (saved.getCapacity() == null)
@@ -542,6 +547,31 @@ public class EventService {
                 .registrationStatus(registration.getStatus())
                 .seatId(registration.getSeatId())
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    public List<AttendeeDirectoryResponse> getAttendeeDirectory(Long eventId, String userEmail) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() ->
+                        new EventNotFoundException("Event not found with id: " + eventId));
+
+        User currentUser = userRepository.findByEmail(userEmail)
+                .orElseThrow(() ->
+                        new UsernameNotFoundException("User not found with email: " + userEmail));
+
+        boolean isAdmin = currentUser.getRole() == Role.ADMIN || currentUser.getRole() == Role.SUPER_ADMIN;
+        boolean isOwner = event.getOwnerId() != null && event.getOwnerId().equals(currentUser.getId());
+        boolean isRegistered = eventRegistrationRepository.existsByEvent_IdAndUser_Email(eventId, userEmail);
+
+        if (!isAdmin && !isOwner && !isRegistered) {
+            throw new AccessDeniedException("Only registered attendees can view this event's attendee directory.");
+        }
+
+        return eventRegistrationRepository
+                .findByEvent_IdAndShowProfileInAttendeeDirectoryTrueOrderByRegisteredAtAsc(eventId)
+                .stream()
+                .map(this::toAttendeeDirectoryResponse)
+                .toList();
     }
 
     private RegistrationResponse promoteFirstWaitingUser(Event event) {
@@ -566,15 +596,17 @@ public class EventService {
         }
 
         event.getAttendees().add(user);
-        event.setRegisteredCount(event.getAttendees().size());
-        Event saved = eventRepository.save(event);
 
         EventRegistration registration = new EventRegistration();
-        registration.setEvent(saved);
+        registration.setEvent(event);
         registration.setUser(user);
         registration.setRegisteredAt(LocalDateTime.now());
         registration.setStatus("CONFIRMED");
         registration = eventRegistrationRepository.save(registration);
+
+        event.setRegisteredCount((int) eventRegistrationRepository
+                .countByEvent_IdAndStatus(event.getId(), "CONFIRMED"));
+        Event saved = eventRepository.save(event);
 
         entry.setStatus("PROMOTED");
         entry.setPromotedAt(LocalDateTime.now());
@@ -665,6 +697,21 @@ public class EventService {
                 .position(entry.getPosition())
                 .status(entry.getStatus())
                 .joinedAt(entry.getJoinedAt())
+                .build();
+    }
+
+    private AttendeeDirectoryResponse toAttendeeDirectoryResponse(EventRegistration registration) {
+        User user = registration.getUser();
+        String displayName = (user.getFirstName() + " " + user.getLastName()).trim();
+
+        return AttendeeDirectoryResponse.builder()
+                .userId(user.getId())
+                .displayName(displayName.isBlank() ? user.getUsername() : displayName)
+                .username(user.getUsername())
+                .profileHeadline(user.getProfileHeadline())
+                .linkedinUrl(user.getLinkedinUrl())
+                .githubUrl(user.getGithubUrl())
+                .registeredAt(registration.getRegisteredAt())
                 .build();
     }
 }

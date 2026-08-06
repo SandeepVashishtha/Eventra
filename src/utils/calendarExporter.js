@@ -16,11 +16,15 @@
  */
 
 // Helper to format Date objects into YYYYMMDDTHHmmSSZ format required by RFC 5545
-const formatToICSDate = (dateStr) => {
-  if (!dateStr) return null;
-  const date = new Date(dateStr);
+const formatToICSDate = (dateInput) => {
+  if (!dateInput) return null;
+  const str =
+    dateInput instanceof Date
+      ? dateInput.toISOString()
+      : String(dateInput || "");
+  const date = new Date(str);
   if (isNaN(date.getTime())) return null;
-  return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+  return str.replace(/[-:]/g, "").split(".")[0] + "Z";
 };
 
 // Helper to safely escape special characters in ICS strings (RFC 5545 compliant).
@@ -38,6 +42,7 @@ const escapeICSText = (text = "") => {
  * @param {CalendarEvent} event - The event object to export.
  */
 export const downloadICSFile = (event) => {
+  if (typeof window === "undefined" || typeof document === "undefined") return;
   const { title, description, date, endDate, location, id } = event;
   
   const formattedStart = formatToICSDate(date);
@@ -191,6 +196,7 @@ export const generateYahooCalendarLink = (event) => {
  * @param {string} [filename="registered-events"] - Custom filename for the downloaded file.
  */
 export const downloadBulkICSFile = (events, filename = "registered-events") => {
+  if (typeof window === "undefined" || typeof document === "undefined") return;
   if (!Array.isArray(events) || events.length === 0) return;
 
   const createdDate = formatToICSDate(new Date());
