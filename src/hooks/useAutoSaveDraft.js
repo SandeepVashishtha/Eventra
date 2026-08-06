@@ -19,12 +19,14 @@ export const useAutoSaveDraft = (formData, onSave, intervalMs = 30000, enabled =
     formDataRef.current = formData;
   }, [formData]);
 
+  const isMounted = useRef(true);
+  useEffect(() => { return () => { isMounted.current = false; }; }, []);
   const save = useCallback(() => {
     const ok = saveDraft(formDataRef.current);
     if (ok) {
       const ts = new Date().toISOString();
       lastSavedRef.current = ts;
-      onSave?.(ts);
+      if (isMounted.current) onSave?.(ts);
     }
   }, [onSave]);
 
