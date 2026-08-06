@@ -361,6 +361,13 @@ public class EventController {
                     )
             ),
             @ApiResponse(
+                    responseCode = "400",
+                    description = "Registration closed - the event has already ended",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )
+            ),
+            @ApiResponse(
                     responseCode = "401",
                     description = "Unauthorized - JWT token missing or invalid",
                     content = @Content(

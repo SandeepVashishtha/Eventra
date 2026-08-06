@@ -11,6 +11,7 @@ import com.sandeep.eventrabackend.dto.response.RegistrationResponse;
 import com.sandeep.eventrabackend.dto.response.WaitlistResponse;
 import com.sandeep.eventrabackend.exception.EventFullException;
 import com.sandeep.eventrabackend.exception.EventNotFoundException;
+import com.sandeep.eventrabackend.exception.RegistrationClosedException;
 import com.sandeep.eventrabackend.exception.RegistrationConflictException;
 import com.sandeep.eventrabackend.model.Event;
 import com.sandeep.eventrabackend.model.EventRegistration;
@@ -482,6 +483,13 @@ public class EventService {
                 .orElseThrow(() ->
                         new EventNotFoundException(
                                 "Event not found with id: " + eventId));
+
+        // Registration is only valid for events that have not already ended.
+        // Without this guard the API accepted registrations for past events,
+        // inflating registeredCount and creating stale registration rows (#11781).
+        if (event.isEventPast()) {
+            throw new RegistrationClosedException("Registration is closed for this event.");
+        }
 
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() ->
