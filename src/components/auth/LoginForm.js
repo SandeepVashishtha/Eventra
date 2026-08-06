@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from 'context/AuthContext';
 import './Auth.css';
 import { Eye, EyeOff } from 'lucide-react';
+import SocialLogin from './SocialLogin';
 
 export default function LoginForm() {
   const navigate = useNavigate();
@@ -256,6 +257,8 @@ if (emailError || passwordError) {
         >
           {isSubmitDisabled ? 'Authenticating...' : 'Login'}
         </button>
+
+        <SocialLogin />
 
         <p className="text-center text-sm text-gray-500 mt-6">
           Don&apos;t have an account?
