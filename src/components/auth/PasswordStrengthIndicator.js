@@ -4,7 +4,7 @@ import useReducedMotion from 'hooks/useReducedMotion';
 
 const assessStrength = (password) => {
   const criteria = [
-    { label: "At least 8 characters", met: password ? password.length >= 8 : false },
+    { label: "At least 8 characters", met: password ? password.length >= minLength : false },
     { label: "Contains a number", met: password ? /\d/.test(password) : false },
     { label: "Contains uppercase letter", met: password ? /[A-Z]/.test(password) : false },
     { label: "Contains lowercase letter", met: password ? /[a-z]/.test(password) : false },
@@ -33,7 +33,7 @@ const assessStrength = (password) => {
   return { score, feedback, criteriaMet, criteria };
 };
 
-const PasswordStrengthIndicator = ({ password }) => {
+const PasswordStrengthIndicator = ({ password, minLength = 8, requireSpecialChar = true }) => {
   const prefersReducedMotion = useReducedMotion();
   const { score, feedback, criteriaMet, criteria } = assessStrength(password);
 

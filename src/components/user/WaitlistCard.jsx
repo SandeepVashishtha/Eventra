@@ -1,5 +1,5 @@
 // src/components/user/WaitlistCard.jsx
-import React, { memo, useState, useEffect } from "react";
+import { memo, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Calendar, MapPin } from "lucide-react";
 import { useAuth } from "context/AuthContext";
@@ -28,9 +28,8 @@ const WaitlistCard = memo(({ event, index, onLeaveWaitlist }) => {
   useEffect(() => {
     if (!user) return;
     import("utils/waitlistUtils")
-      .then(({ getQueuePosition }) => {
-        setQueuePos(getQueuePosition(event.id, user.id || user.email));
-      })
+      .then(({ getQueuePosition }) => getQueuePosition(event.id, user.id || user.email))
+      .then(setQueuePos)
       .catch(() => setQueuePos(-1));
   }, [event.id, user]);
 

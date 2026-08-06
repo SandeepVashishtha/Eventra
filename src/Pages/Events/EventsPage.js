@@ -1,4 +1,5 @@
 import { useRef, useEffect, useMemo, useState } from "react";
+import BackToTopButton from "components/common/BackToTopButton";
 import { useSearchParams, useLocation } from "react-router-dom";
 import VirtualizedEventGrid from "components/common/VirtualizedEventGrid";
 import EventHero from "./EventHero";
@@ -62,10 +63,11 @@ const renderCardSection = (
   loadError,
   onRetry,
   paginatedEvents,
+  filteredEvents,
   viewMode,
   searchQuery,
   onClearSearch,
-  matchScoreMap       // (#7437) Map of eventId → { score, reasons }
+  matchScoreMap
 ) => {
   if (isLoading) {
     return <ExploreEventsSkeleton />;
@@ -166,7 +168,17 @@ const EventsPage = () => {
   }
 
   const listing = useEventListing();
-  const { isLoading } = listing;
+  const {
+    isLoading,
+    setAdvancedFilters,
+    setCategoryFilter,
+    setEventsPerPage,
+    setFilterType,
+    setSafePage,
+    setSearchQuery,
+    setSortType,
+    setViewMode,
+  } = listing;
   const cardSectionRef = useRef();
   const hasHydratedFilters = useRef(false);
   const [filtersHydrated, setFiltersHydrated] = useState(false);
@@ -175,8 +187,8 @@ const EventsPage = () => {
   const debouncedSearchQuery = useDebouncedValue(localSearchInput, 300);
 
   useEffect(() => {
-    listing.setSearchQuery(debouncedSearchQuery);
-  }, [debouncedSearchQuery]);
+    setSearchQuery(debouncedSearchQuery);
+  }, [debouncedSearchQuery, setSearchQuery]);
 
   useEffect(() => {
     if (hasHydratedFilters.current) return;
@@ -210,18 +222,29 @@ const EventsPage = () => {
 
     if (initialSearch) {
       setLocalSearchInput(initialSearch);
-      listing.setSearchQuery(initialSearch);
+      setSearchQuery(initialSearch);
     }
-    listing.setFilterType(filter);
-    listing.setCategoryFilter(category);
-    listing.setSortType(sort);
-    listing.setViewMode(view);
-    listing.setEventsPerPage(perPage);
-    listing.setAdvancedFilters(advancedFilters);
-    if (page !== 1) listing.setSafePage(page);
+    setFilterType(filter);
+    setCategoryFilter(category);
+    setSortType(sort);
+    setViewMode(view);
+    setEventsPerPage(perPage);
+    setAdvancedFilters(advancedFilters);
+    if (page !== 1) setSafePage(page);
     hasHydratedFilters.current = true;
     setFiltersHydrated(true);
-  }, [searchParams, routeSearchQuery, listing]);
+  }, [
+    searchParams,
+    routeSearchQuery,
+    setAdvancedFilters,
+    setCategoryFilter,
+    setEventsPerPage,
+    setFilterType,
+    setSafePage,
+    setSearchQuery,
+    setSortType,
+    setViewMode,
+  ]);
 
   useEffect(() => {
     if (!filtersHydrated) return;
@@ -252,7 +275,8 @@ const EventsPage = () => {
           advancedFilters: serializeAdvancedFilters(listing.advancedFilters),
         })
       );
-    } catch {
+    } catch (err) {
+      console.error("Failed to persist filter params:", err);
     }
   }, [
     listing.currentPage,
@@ -273,13 +297,13 @@ const EventsPage = () => {
     const safeQuery = prepareSafeSearchQuery(routeSearchQuery);
     if (safeQuery !== listing.searchQuery) {
       setLocalSearchInput(safeQuery);
-      listing.setSearchQuery(safeQuery);
+      setSearchQuery(safeQuery);
     }
   }, [
     rawSearchParam,
     routeSearchQuery,
     listing.searchQuery,
-    listing.setSearchQuery,
+    setSearchQuery,
   ]);
 
   const handleSearch = (query = "") => {
@@ -408,15 +432,16 @@ const EventsPage = () => {
         />
 
         <ErrorBoundary level="section" label="Events">
-     {renderCardSection(
+    {renderCardSection(
   isLoading,
   listing.loadError,
   listing.fetchEvents,
   listing.paginatedEvents,
+  listing.filteredEvents,
   listing.viewMode,
   listing.searchQuery,
   clearSearchAndFilters,
-  listing.matchScoreMap   // (#7437) pass score map for badge rendering
+  listing.matchScoreMap
 )}
 
           {!listing.isLoading && listing.totalPages > 1 && (
@@ -432,7 +457,8 @@ const EventsPage = () => {
       </div>
 
       <EventCTA />
-      <FeedbackButton />
+<FeedbackButton />
+<BackToTopButton />
     </div>
   );
 };

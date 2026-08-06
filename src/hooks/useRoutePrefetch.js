@@ -26,7 +26,7 @@ import { prefetchRoute } from "../utils/prefetchUtils";
  * prefetchManual(() => import('../Pages/Events/EventDetails'), 'details');
  */
 
-export const useRoutePrefetch = (_config = {}) => {
+export const useRoutePrefetch = () => {
   const location = useLocation();
 
   const prefetch = useCallback((importFn, key) => {

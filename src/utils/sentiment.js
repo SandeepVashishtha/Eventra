@@ -30,7 +30,7 @@ export const analyzeSentiment = (text) => {
 
   // Strip apostrophes before tokenizing so contractions like "don't" → "dont",
   // "doesn't" → "doesnt", "can't" → "cant" match NEGATION_WORDS correctly
-  const normalized = text.toLowerCase().replace(/'/g, "");
+  const normalized = text.toLowerCase().replace(/['']/g, "");
 
   // Simple word tokenization matching alphabetic sequences
   const words = normalized.match(/[a-z]+/g) || [];

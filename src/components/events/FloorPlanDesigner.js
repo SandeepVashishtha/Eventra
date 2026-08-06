@@ -547,6 +547,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
             <button onClick={() => loadPreset("conference")} className="text-xs font-semibold px-2 py-0.5 hover:text-indigo-400 text-gray-300 transition-colors">Keynote</button>
           </div>
           <button onClick={() => navigate(`/events/${eventId}/virtual-venue-walkthrough`)} className="fp-btn fp-btn-primary" aria-label="3D Walkthrough">3D Walkthrough</button>
+          {lastSavedElementsStr && !isDirty && <span className="text-emerald-500 text-sm font-medium mr-3">All changes saved</span>}
           <button onClick={saveLayout} className="fp-btn fp-btn-primary" aria-label="button"><Save size={16} /> Save Layout</button>
         </div>
       </div>

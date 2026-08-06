@@ -13,7 +13,7 @@ export function getRelativeTime(dateInput) {
   if (typeof dateInput === "string" && dateInput.trim() === "") {
     return RELATIVE_TIME_FALLBACK;
   }
-  const now = new Date();
+  const now = new Date(getServerNow());
   const date = new Date(dateInput);
 
   if (Number.isNaN(date.getTime())) return RELATIVE_TIME_FALLBACK;
