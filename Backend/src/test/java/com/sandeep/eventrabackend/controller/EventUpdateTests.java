@@ -78,6 +78,15 @@ public class EventUpdateTests {
                 .build());
 
         userRepository.save(User.builder()
+                .firstName("Super")
+                .lastName("Admin")
+                .email("superadmin@example.com")
+                .username("superadmin")
+                .password(passwordEncoder.encode("password"))
+                .role(Role.SUPER_ADMIN)
+                .build());
+
+        userRepository.save(User.builder()
                 .firstName("Organizer")
                 .lastName("User")
                 .email("organizer@example.com")
@@ -146,6 +155,26 @@ public class EventUpdateTests {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title").value("Admin Updated Title"));
+    }
+
+    @Test
+    @DisplayName("SUPER_ADMIN can update any event (#11780)")
+    void testSuperAdminCanUpdateEvent() throws Exception {
+        EventUpdateRequest request = EventUpdateRequest.builder()
+                .title("Super Admin Updated Title")
+                .description("Updated Description")
+                .location("Updated Location")
+                .eventDate(LocalDateTime.now().plusDays(10))
+                .capacity(250)
+                .isPublic(true)
+                .build();
+
+        mockMvc.perform(put("/api/events/" + existingEvent.getId())
+                        .with(user("superadmin@example.com").authorities(() -> "SUPER_ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("Super Admin Updated Title"));
     }
 
     @Test

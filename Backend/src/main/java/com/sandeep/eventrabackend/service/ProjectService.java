@@ -10,6 +10,7 @@ import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.ProjectUpvoteRepository;
 import com.sandeep.eventrabackend.repository.UserRepository;
 import com.sandeep.eventrabackend.exception.RegistrationConflictException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -75,9 +76,21 @@ public class ProjectService {
                     .project(project)
                     .user(user)
                     .build();
-            projectUpvoteRepository.save(upvote);
+
+            // Two concurrent requests from the same user can both pass the
+            // existsBy guard before either insert commits; the second insert
+            // then violates the (project_id, user_id) unique constraint.
+            // Surface that as a friendly conflict instead of a 500 (#11776).
+            try {
+                projectUpvoteRepository.save(upvote);
+            } catch (DataIntegrityViolationException ex) {
+                throw new RegistrationConflictException("You have already upvoted this project.");
+            }
         }
 
+        // The bulk UPDATE below is marked clearAutomatically so the subsequent
+        // read reflects the post-increment count rather than the stale entity
+        // loaded before the increment (#11776).
         projectRepository.incrementUpvotes(id);
         return getProjectById(id);
     }

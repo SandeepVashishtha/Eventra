@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ProjectRepository extends JpaRepository<Project, Long> {
 
-    @Modifying
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE Project p SET p.upvotes = p.upvotes + 1 WHERE p.id = :id")
     int incrementUpvotes(@Param("id") Long id);
 }

@@ -34,8 +34,9 @@ function readPersistedWaitlist(storageKey) {
     const raw = safeLocalStorage.getItem(storageKey);
     return raw ? JSON.parse(raw) : {};
   } catch (err) {
-      console.warn("[useWaitlist] Waitlist operation failed:", err);
-    }
+    console.warn("[useWaitlist] Waitlist operation failed:", err);
+    return {};
+  }
 }
 
 let persistTimeout = null;

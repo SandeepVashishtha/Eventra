@@ -30,7 +30,7 @@ const getStorageKey = (userId) => {
 
 const normalize = (n = {}) => ({
   ...n,
-  id: n.id || n._id || `${n.timestamp || n.createdAt || Date.now()}-${getNotificationMessage(n)}`,
+  id: n.id || n._id || `${n.timestamp || n.createdAt || Date.now()}-${Math.random().toString(36).slice(2)}`,
   timestamp: n.timestamp || n.createdAt || n.updatedAt || new Date().toISOString(),
 });
 
@@ -169,13 +169,18 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
     fetchNotifications({ isBackground: true }).then(() => {
       if (isMounted.current && tokenRef.current === t) setLoading(false);
     });
+    }, [token, fetchNotifications, hasCompletedInitialFetchRef]);
+
+  useEffect(() => {
+    if (!isPageVisible || !token) return;
+    const t = token;
     const interval = setInterval(() => {
-      if (isMounted.current && tokenRef.current === t && isPageVisibleRef.current) {
+      if (isMounted.current && tokenRef.current === t) {
         refetchRef.current({ isBackground: true });
       }
     }, POLLING_INTERVAL_MS);
     return () => clearInterval(interval);
-  }, [token, fetchNotifications, hasCompletedInitialFetchRef]);
+  }, [isPageVisible, token]);
 
   useEffect(() => {
     if (!isPageVisible || !token) return;
@@ -211,17 +216,19 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
   const markAllAsRead = useCallback(async () => {
     if (!token) return;
     const t = token;
-    let hasUnread = false;
+    // Read unread state from the ref OUTSIDE the state updater. Reading it
+    // inside setNotifications would be deferred by React until the render
+    // phase, so the check below would always see false and the action would
+    // become a no-op (#11774).
+    const hasUnread = notificationsRef.current.some((n) => !n.isRead);
+    if (!hasUnread) return;
+    const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.READ_ALL;
+    if (!endpoint) return;
     setNotifications((prev) => {
-      hasUnread = prev.some((n) => !n.isRead);
-      if (!hasUnread) return prev;
       const updated = prev.map((n) => ({ ...n, isRead: true }));
       persist(updated, storageKeyRef.current);
       return updated;
     });
-    if (!hasUnread) return;
-    const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.READ_ALL;
-    if (!endpoint) return;
     setUnreadCount(0);
     try {
       await apiUtils.put(endpoint, {});

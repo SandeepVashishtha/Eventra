@@ -27,6 +27,10 @@ export const logSecurityEvent = (
       localStorage.removeItem(STORAGE_KEY);
     }
 
+    if (!Array.isArray(existing)) {
+      existing = [];
+    }
+
     existing.unshift(event);
 
     localStorage.setItem(

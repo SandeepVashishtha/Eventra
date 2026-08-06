@@ -393,6 +393,15 @@ ${window.location.href}
   const registrationEnd = event.registrationEnd
   ? new Date(event.registrationEnd)
   : null;
+
+  const eventDate =
+  event.date ||
+  event.eventDate ||
+  event.startDate ||
+  null;
+
+const dateInfo = formatLocalDateTime(eventDate);
+
   const eventDate = event.date || event.eventDate || event.startDate || null;
   const dateInfo = formatEventDate(eventDate);
   const calendarEvent = {
@@ -405,6 +414,8 @@ ${window.location.href}
     location: getCalendarLocation(event),
     joiningLink: event.joiningLink || event.virtualLink || window.location.href,
   };
+
+
 
 const hoursLeft = registrationEnd
   ? Math.ceil((registrationEnd - new Date()) / (1000 * 60 * 60))

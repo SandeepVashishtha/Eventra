@@ -12,7 +12,7 @@ const FEEDBACK_STORAGE_KEY = 'eventra_feedback';
 
 export const fetchEventFeedback = async (eventId) => {
   const response = await apiUtils.get(API_ENDPOINTS.FEEDBACK.BY_EVENT(eventId));
-  return response.json();
+  return response.data;
 };
 
 export const submitEventFeedback = async ({ eventId, rating, comment, tags = [] }) => {
@@ -22,7 +22,7 @@ export const submitEventFeedback = async ({ eventId, rating, comment, tags = [] 
     comment,
     tags,
   });
-  return response.json();
+  return response.data;
 };
 
 /**
@@ -60,12 +60,14 @@ export const saveFeedback = (eventId, feedback) => {
     // Use a Map for O(1) userId lookups instead of O(N) findIndex
     const feedbackMap = new Map(rawList.map((f) => [f.userId, f]));
 
+    const userId = feedback.userId || crypto.randomUUID();
     const feedbackObject = {
       ...feedback,
+      userId,
       submittedAt: new Date().toISOString(),
     };
 
-    feedbackMap.set(feedback.userId, feedbackObject);
+    feedbackMap.set(userId, feedbackObject);
     allFeedback[eventId] = Array.from(feedbackMap.values());
     localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(allFeedback));
     return true;

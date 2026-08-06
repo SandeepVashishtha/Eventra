@@ -49,15 +49,7 @@ const dispatchOne = async (item, apiUtils) => {
   if (item.action === 'delete') return apiUtils.delete(item.payload.endpoint);
 };
 
-const trySyncItem = async (item, apiUtils) => {
-  try {
-    await dispatchOne(item, apiUtils);
-    return false; // success
-  } catch (e) {
-    console.error('Failed to sync queued notification action', e);
-    return true; // failed
-  }
-};
+
 
 export const syncNotificationQueue = async (apiUtils) => {
   const queue = safeGetQueue();
@@ -69,9 +61,15 @@ export const syncNotificationQueue = async (apiUtils) => {
   // attempted.
   let remaining = [];
   for (const item of queue) {
-    const failed = await trySyncItem(item, apiUtils);
-    if (failed) remaining.push(item);
+    try {
+      await dispatchOne(item, apiUtils);
+    } catch (e) {
+      console.error('Failed to sync queued notification action', e);
+      remaining.push(item);
+    }
   }
 
   persistRemaining(remaining);
 };
+
+// Queue logic refactored for improved reliability

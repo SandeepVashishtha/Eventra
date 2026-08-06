@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.FieldError;
@@ -99,11 +100,14 @@ public class GlobalExceptionHandler {
         return buildError(HttpStatus.CONFLICT, "Conflict", ex.getMessage(), request);
     }
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorResponse> handleIllegalArgument(
-            IllegalArgumentException ex,
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(
+            DataIntegrityViolationException ex,
             HttpServletRequest request) {
-        return buildError(HttpStatus.BAD_REQUEST, "Bad Request", ex.getMessage(), request);
+        // e.g. a concurrent duplicate upvote hitting the (project_id, user_id)
+        // unique constraint should surface as a conflict, not a 500 (#11776).
+        return buildError(HttpStatus.CONFLICT, "Conflict",
+                "This resource already exists or was modified concurrently. Please try again.", request);
     }
 
     @ExceptionHandler(FeedbackAlreadyExistsException.class)
