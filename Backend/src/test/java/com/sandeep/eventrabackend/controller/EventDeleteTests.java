@@ -2,10 +2,17 @@ package com.sandeep.eventrabackend.controller;
 
 import com.sandeep.eventrabackend.model.Event;
 import com.sandeep.eventrabackend.model.EventRegistration;
+import com.sandeep.eventrabackend.model.EventRole;
+import com.sandeep.eventrabackend.model.EventTeamMember;
+import com.sandeep.eventrabackend.model.EventWaitlist;
+import com.sandeep.eventrabackend.model.Feedback;
 import com.sandeep.eventrabackend.model.Role;
 import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.EventRegistrationRepository;
 import com.sandeep.eventrabackend.repository.EventRepository;
+import com.sandeep.eventrabackend.repository.EventTeamMemberRepository;
+import com.sandeep.eventrabackend.repository.EventWaitlistRepository;
+import com.sandeep.eventrabackend.repository.FeedbackAnalyticsRepository;
 import com.sandeep.eventrabackend.repository.HackathonRegistrationRepository;
 import com.sandeep.eventrabackend.repository.NotificationRepository;
 import com.sandeep.eventrabackend.repository.UserRepository;
@@ -22,6 +29,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -42,6 +50,15 @@ public class EventDeleteTests {
     private EventRegistrationRepository eventRegistrationRepository;
 
     @Autowired
+    private EventWaitlistRepository eventWaitlistRepository;
+
+    @Autowired
+    private EventTeamMemberRepository eventTeamMemberRepository;
+
+    @Autowired
+    private FeedbackAnalyticsRepository feedbackRepository;
+
+    @Autowired
     private HackathonRegistrationRepository hackathonRegistrationRepository;
 
     @Autowired
@@ -59,6 +76,9 @@ public class EventDeleteTests {
     void setUp() {
         notificationRepository.deleteAll();
         hackathonRegistrationRepository.deleteAll();
+        feedbackRepository.deleteAll();
+        eventWaitlistRepository.deleteAll();
+        eventTeamMemberRepository.deleteAll();
         eventRegistrationRepository.deleteAll();
         eventRepository.deleteAll();
         userRepository.deleteAll();
@@ -148,6 +168,41 @@ public class EventDeleteTests {
 
         assertFalse(eventRepository.existsById(existingEvent.getId()));
         assertFalse(eventRegistrationRepository.existsByEvent_IdAndUser_Email(existingEvent.getId(), client.getEmail()));
+    }
+
+    @Test
+    @DisplayName("Deletion cleans up waitlist, team members and feedback as well")
+    void deleteEvent_AsAdmin_CleansUpAllDependents() throws Exception {
+        User client = userRepository.findByEmail("client@example.com").orElseThrow();
+
+        EventWaitlist waitlist = new EventWaitlist();
+        waitlist.setEvent(existingEvent);
+        waitlist.setUser(client);
+        waitlist.setPosition(1);
+        waitlist.setStatus("WAITING");
+        eventWaitlistRepository.save(waitlist);
+
+        EventTeamMember teamMember = new EventTeamMember();
+        teamMember.setEvent(existingEvent);
+        teamMember.setUser(client);
+        teamMember.setRole(EventRole.ORGANIZER);
+        eventTeamMemberRepository.save(teamMember);
+
+        Feedback feedback = new Feedback();
+        feedback.setEvent(existingEvent);
+        feedback.setUser(client);
+        feedback.setRating(5);
+        feedback.setComment("Great event");
+        feedbackRepository.save(feedback);
+
+        mockMvc.perform(delete("/api/events/" + existingEvent.getId())
+                        .with(user("admin@example.com").authorities(new org.springframework.security.core.authority.SimpleGrantedAuthority("ADMIN"))))
+                .andExpect(status().isNoContent());
+
+        assertFalse(eventRepository.existsById(existingEvent.getId()));
+        assertTrue(eventWaitlistRepository.findByEvent_IdAndStatusOrderByPositionAscJoinedAtAsc(existingEvent.getId(), "WAITING").isEmpty());
+        assertTrue(eventTeamMemberRepository.findByEvent_IdOrderByRoleDescAssignedAtDesc(existingEvent.getId()).isEmpty());
+        assertFalse(feedbackRepository.existsByEvent_IdAndUser_Email(existingEvent.getId(), client.getEmail()));
     }
 
     @Test

@@ -44,6 +44,8 @@ public interface FeedbackAnalyticsRepository extends JpaRepository<Feedback, Lon
 
     boolean existsByEvent_IdAndUser_Email(Long eventId, String email);
 
+    void deleteByEvent_Id(Long eventId);
+
     @Query("""
         SELECT AVG(f.rating)
         FROM Feedback f
