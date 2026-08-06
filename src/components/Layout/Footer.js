@@ -297,12 +297,15 @@ const Newsletter = () => {
 const Footer = () => {
   const { t } = useTranslation();
   return (
-    <footer className="relative z-50 bg-white dark:bg-gray-950 border-t border-gray-100 dark:border-gray-800 transition-colors duration-300 hover:border-indigo-100 dark:hover:border-indigo-900">
+    
+    <footer
+     className="relative z-50 bg-white dark:bg-gray-950 border-t border-gray-100 dark:border-gray-800 transition-colors duration-300 hover:border-indigo-100 dark:hover:border-indigo-900">
+      
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* ── Main grid ── */}
-        <div className="py-10 grid grid-cols-3 lg:grid-cols-[1.8fr_1fr_1fr_1fr] gap-3 sm:gap-6 lg:gap-12">
+        <div className="py-10 grid grid-cols-1 lg:grid-cols-[1.8fr_1fr_1fr_1fr] gap-8 lg:gap-12">
           {/* Brand + newsletter */}
-          <div className="space-y-5 col-span-3 lg:col-span-1">
+         <div className="space-y-5 md:col-span-2 lg:col-span-1">
             {/* Logo + tagline */}
             <div>
               <Link
@@ -350,8 +353,8 @@ const Footer = () => {
 
           {/* Link columns */}
           {footerColumns.map((col) => (
-            <div key={col.heading} className="min-w-0">
-              <h4 className="text-[12px] leading-tight truncate sm:text-xs font-semibold uppercase tracking-wide sm:tracking-widest text-gray-400 dark:text-gray-500 mb-2 sm:mb-4">
+            <div key={col.heading} className="min-w-[140px]">
+              <h4 className="text-[12px] leading-tight sm:text-xs font-semibold uppercase tracking-wide sm:tracking-widest text-gray-400 dark:text-gray-500 mb-2 sm:mb-4">
                 {t(col.heading)}
               </h4>
               <ul className="space-y-0.05 sm:space-y-2.5">
@@ -374,7 +377,7 @@ const Footer = () => {
         </div>
 
         {/* ── Bottom bar ── */}
-        <div className="py-5 border-t border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="py-5 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-gray-400 dark:text-gray-500 transition-colors duration-200 hover:text-gray-600 dark:hover:text-gray-300">
             © {new Date().getFullYear()} Eventra. <span>{t("footer.rights")}</span>
           </p>

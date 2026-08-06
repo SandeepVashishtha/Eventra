@@ -1,3 +1,5 @@
+import { redactSensitiveData } from "./security/redactSensitiveData.js";
+
 /**
  * Determines if the current environment is for development.
  * Safe in both browser (Vite via import.meta.env) and Node-like environments
@@ -31,6 +33,8 @@ const formatMessage = (level, message) => {
   return `[${level.toUpperCase()}] ${message}`;
 };
 
+const redactLogArgs = (args) => args.map((arg) => redactSensitiveData(arg));
+
 /**
  * A logger utility that wraps console methods.
  * Only logs messages when in a development environment.
@@ -43,7 +47,8 @@ export const logger = {
    */
   log: (...args) => {
     if (isDevelopment) {
-      console.log(formatMessage("log", args[0]), ...args.slice(1));
+      const safeArgs = redactLogArgs(args);
+      console.log(formatMessage("log", safeArgs[0]), ...safeArgs.slice(1));
     }
   },
 
@@ -54,7 +59,8 @@ export const logger = {
    */
   info: (...args) => {
     if (isDevelopment) {
-      console.info(formatMessage("info", args[0]), ...args.slice(1));
+      const safeArgs = redactLogArgs(args);
+      console.info(formatMessage("info", safeArgs[0]), ...safeArgs.slice(1));
     }
   },
 
@@ -65,7 +71,8 @@ export const logger = {
    */
   warn: (...args) => {
     if (isDevelopment) {
-      console.warn(formatMessage("warn", args[0]), ...args.slice(1));
+      const safeArgs = redactLogArgs(args);
+      console.warn(formatMessage("warn", safeArgs[0]), ...safeArgs.slice(1));
     }
   },
 
@@ -76,20 +83,21 @@ export const logger = {
    */
   error: (...args) => {
     if (isDevelopment) {
-      console.error(formatMessage("error", args[0]), ...args.slice(1));
+      const safeArgs = redactLogArgs(args);
+      console.error(formatMessage("error", safeArgs[0]), ...safeArgs.slice(1));
     }
   },
 
   security: (event, data = {}) => {
     const timestamp = new Date().toISOString();
-    const logEntry = {
+    const logEntry = redactSensitiveData({
       timestamp,
       event,
       ...data,
-    };
+    });
 
     if (isDevelopment) {
-      console.warn(formatMessage("security", event), data);
+      console.warn(formatMessage("security", event), redactSensitiveData(data));
     } else {
       console.warn(JSON.stringify(logEntry));
     }

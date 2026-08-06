@@ -12,19 +12,15 @@ dotenv.config();
 // Quick regex to detect JSX syntax — lets us skip transformWithOxc
 // on plain .js files that have no JSX (the common case).
 const JSX_HINT_RE = /<[A-Za-z][A-Za-z0-9.]*[\s\n\r/>]|<>/;
+const DEFAULT_BACKEND_TARGET = "http://localhost:8080";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const backendTarget =
     env.BACKEND_URL ||
     env.VITE_API_URL?.replace(/\/api\/?$/, "") ||
-    env.REACT_APP_API_URL?.replace(/\/api\/?$/, "");
-
-  if (!backendTarget) {
-    throw new Error(
-      "Backend URL is not configured. Set BACKEND_URL, VITE_API_URL, or REACT_APP_API_URL before starting the application."
-    );
-  }
+    env.REACT_APP_API_URL?.replace(/\/api\/?$/, "") ||
+    DEFAULT_BACKEND_TARGET;
 
   return {
     appType: "spa",
@@ -50,6 +46,25 @@ export default defineConfig(({ mode }) => {
         // Only .jsx/.tsx — .js files are handled above
         include: /\.(jsx|tsx)$/,
       }),
+      // Fail the build if an un-substituted %PLACEHOLDER% survives into the
+      // final index.html. Vite only auto-replaces %VITE_*% values, so any other
+      // %...% token is a build mistake — historically a literal %CSRF_TOKEN%
+      // was shipped and sent as the CSRF header on every mutating request.
+      {
+        name: "assert-no-html-placeholders",
+        enforce: "post",
+        transformIndexHtml(html) {
+          const placeholder = html.match(/%[A-Z_][A-Z0-9_]*%/g);
+          if (placeholder && placeholder.length > 0) {
+            throw new Error(
+              `[assert-no-html-placeholders] Un-substituted build placeholder(s) found in index.html: ` +
+                `${placeholder.join(", ")}. Vite only replaces %VITE_*% tokens; remove the ` +
+                `placeholder or define it as a VITE_ prefixed environment variable.`,
+            );
+          }
+          return html;
+        },
+      },
     ],
 
     // Path aliases — cleaner imports and faster resolution

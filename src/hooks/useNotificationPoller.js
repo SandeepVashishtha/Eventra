@@ -7,9 +7,10 @@ import seedNotifications from "../data/mockNotifications.json";
 import { safeJsonParse } from "../utils/safeJsonParse.js";
 import { getNotificationMessage } from "../utils/notificationPreferences.js";
 import { get as idbGet, del as idbDel } from "idb-keyval";
+import { showUndoToast } from "../utils/toast.js";
 
 const POLLING_INTERVAL_MS = 60_000;
-const MAX_SEEN_IDS = 500;
+const MAX_SEEN_IDS = 10000; // Increased to prevent eviction loops
 const NOTIFICATION_INBOX_PREFIX = "eventra_notification_inbox";
 const GUEST_INBOX_KEY = `${NOTIFICATION_INBOX_PREFIX}_guest`;
 
@@ -29,13 +30,13 @@ const getStorageKey = (userId) => {
 
 const normalize = (n = {}) => ({
   ...n,
-  id: n.id || n._id || `${n.timestamp || n.createdAt || Date.now()}-${getNotificationMessage(n)}`,
+  id: n.id || n._id || `${n.timestamp || n.createdAt || Date.now()}-${Math.random().toString(36).slice(2)}`,
   timestamp: n.timestamp || n.createdAt || n.updatedAt || new Date().toISOString(),
 });
 
 const persist = (items, storageKey) => {
   if (typeof window === "undefined" || !window.localStorage || !storageKey) return;
-  try { window.localStorage.setItem(storageKey, JSON.stringify(items)); } catch {}
+  try { window.localStorage.setItem(storageKey, JSON.stringify(items)); } catch (e) { console.warn("[useNotificationPoller] Failed to persist notifications", e); }
 };
 
 const loadPersisted = (storageKey) => {
@@ -59,11 +60,13 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
   const tokenRef = useRef(token);
   const isPageVisibleRef = useRef(isPageVisible);
   const storageKeyRef = useRef(getStorageKey(user?.id));
+  const notificationsRef = useRef(notifications);
 
   useEffect(() => { isMounted.current = true; return () => { isMounted.current = false; }; }, []);
   useEffect(() => { tokenRef.current = token; }, [token]);
   useEffect(() => { isPageVisibleRef.current = isPageVisible; }, [isPageVisible]);
   useEffect(() => { storageKeyRef.current = getStorageKey(user?.id); }, [user?.id]);
+  useEffect(() => { notificationsRef.current = notifications; }, [notifications]);
 
   // One-shot migration: when a user first logs in, adopt any inbox that was
   // still sitting under the guest key (because the old code path routed every
@@ -93,7 +96,7 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
       });
       window.localStorage.setItem(userKey, JSON.stringify(merged));
       window.localStorage.removeItem(GUEST_INBOX_KEY);
-    } catch {}
+    } catch (e) { console.warn("[useNotificationPoller] Failed to persist notifications", e); }
   }, [user?.id]);
 
   const addSeenId = (id) => {
@@ -166,13 +169,18 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
     fetchNotifications({ isBackground: true }).then(() => {
       if (isMounted.current && tokenRef.current === t) setLoading(false);
     });
+    }, [token, fetchNotifications, hasCompletedInitialFetchRef]);
+
+  useEffect(() => {
+    if (!isPageVisible || !token) return;
+    const t = token;
     const interval = setInterval(() => {
-      if (isMounted.current && tokenRef.current === t && isPageVisibleRef.current) {
+      if (isMounted.current && tokenRef.current === t) {
         refetchRef.current({ isBackground: true });
       }
     }, POLLING_INTERVAL_MS);
     return () => clearInterval(interval);
-  }, [token, fetchNotifications, hasCompletedInitialFetchRef]);
+  }, [isPageVisible, token]);
 
   useEffect(() => {
     if (!isPageVisible || !token) return;
@@ -208,17 +216,19 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
   const markAllAsRead = useCallback(async () => {
     if (!token) return;
     const t = token;
-    let hasUnread = false;
+    // Read unread state from the ref OUTSIDE the state updater. Reading it
+    // inside setNotifications would be deferred by React until the render
+    // phase, so the check below would always see false and the action would
+    // become a no-op (#11774).
+    const hasUnread = notificationsRef.current.some((n) => !n.isRead);
+    if (!hasUnread) return;
+    const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.READ_ALL;
+    if (!endpoint) return;
     setNotifications((prev) => {
-      hasUnread = prev.some((n) => !n.isRead);
-      if (!hasUnread) return prev;
       const updated = prev.map((n) => ({ ...n, isRead: true }));
       persist(updated, storageKeyRef.current);
       return updated;
     });
-    if (!hasUnread) return;
-    const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.READ_ALL;
-    if (!endpoint) return;
     setUnreadCount(0);
     try {
       await apiUtils.put(endpoint, {});
@@ -234,27 +244,46 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
     async (id) => {
       if (!id) return;
       const t = token;
-      let removedWasUnread = false;
+      const target = notificationsRef.current.find((n) => n.id === id);
+      const removedWasUnread = target ? !target.isRead : false;
       setNotifications((prev) => {
-        const target = prev.find((n) => n.id === id);
-        removedWasUnread = target ? !target.isRead : false;
         const updated = prev.filter((n) => n.id !== id);
         persist(updated, storageKeyRef.current);
         return updated;
       });
       if (removedWasUnread) setUnreadCount((p) => Math.max(0, p - 1));
       const fn = API_ENDPOINTS?.NOTIFICATIONS?.DELETE;
-      if (!token || typeof fn !== "function") return;
-      const endpoint = fn(id);
-      if (!endpoint) return;
-      try { await apiUtils.delete(endpoint); }
-      catch (err) {
-        pushToNotificationQueue("delete", { endpoint });
-        if (isMounted.current && tokenRef.current === t) {
-          console.error("[useNotificationPoller] delete:", err);
-          refetchRef.current({ isBackground: true });
-        }
-      }
+      const endpoint = token && typeof fn === "function" ? fn(id) : null;
+
+      const restoreNotification = () => {
+        if (!isMounted.current) return;
+        if (!target) return;
+        setNotifications((prev) => {
+          if (prev.some((n) => n.id === id)) return prev;
+          const updated = [...prev, target].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+          persist(updated, storageKeyRef.current);
+          notificationsRef.current = updated;
+          return updated;
+        });
+        if (removedWasUnread) setUnreadCount((p) => p + 1);
+      };
+
+      showUndoToast({
+        message: "Notification deleted.",
+        toastId: `delete-notification-${id}`,
+        onUndo: restoreNotification,
+        onCommit: async () => {
+          if (!endpoint) return;
+          try { await apiUtils.delete(endpoint); }
+          catch (err) {
+            pushToNotificationQueue("delete", { endpoint });
+            if (isMounted.current && tokenRef.current === t) {
+              console.error("[useNotificationPoller] delete:", err);
+              refetchRef.current({ isBackground: true });
+            }
+          }
+        },
+      });
     },
     [token],
   );
@@ -268,16 +297,23 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
     const handleUpdate = () => {
       const persisted = loadPersisted(storageKeyRef.current);
       if (persisted) {
+        const incomingUnread = persisted.filter(
+          (n) => n.id && !seenIds.current.has(n.id) && !n.isRead
+        );
         setNotifications(persisted);
         setUnreadCount(persisted.filter((n) => !n.isRead).length);
         persisted.forEach((n) => {
-          if (n.id) seenIds.current.add(n.id);
+          if (n.id) addSeenId(n.id);
         });
+        if (hasCompletedInitialFetchRef.current && incomingUnread.length > 0) {
+          deliverNew(incomingUnread);
+        }
+        hasCompletedInitialFetchRef.current = true;
       }
     };
     window.addEventListener("eventra-notifications-updated", handleUpdate);
     return () => window.removeEventListener("eventra-notifications-updated", handleUpdate);
-  }, []);
+  }, [deliverNew, hasCompletedInitialFetchRef]);
 
   // Legacy IndexedDB eventra_notifications migration
   useEffect(() => {
@@ -328,8 +364,8 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
           }
           await idbDel("eventra_notifications");
         }
-      } catch {
-        // fail silently in environments without IndexedDB support
+      } catch (e) {
+        console.warn('[useNotificationPoller] Legacy IndexedDB migration failed', e);
       }
     };
 

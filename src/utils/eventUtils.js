@@ -31,7 +31,7 @@ const mapStatusKey = (status = "") => {
   return explicitStatusMap[normalized] ?? null;
 };
 
-import { getServerTime } from "./timeSync";
+import { getServerTime } from "./timeSync.js";
 
 const parseEventDate = (dateValue) => {
   if (!dateValue) return null;

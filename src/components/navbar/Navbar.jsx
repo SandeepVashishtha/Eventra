@@ -5,9 +5,11 @@ import DesktopNavbar from "./DesktopNavbar";
 import MobileNavbar from "./MobileNavbar";
 import AuthButtons from "./AuthButtons";
 import ProfileMenu from "./ProfileMenu";
+import LanguageSelector from "../LanguageSelector";
 import NotificationBell from "../notifications/NotificationBell";
 import useBodyScrollLock from "./hooks/useBodyScrollLock";
 import useKeyboardShortcuts from "hooks/useKeyboardShortcuts";
+import { motion, useScroll, useSpring } from "framer-motion";
 
 const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const navRef = useRef(null);
@@ -65,6 +67,16 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
     };
   }, []);
 
+  /* SCROLL PROGRESSBAR */
+
+  const { scrollYProgress } = useScroll();
+
+  const scaleX = useSpring(scrollYProgress, {
+    stiffness: 140,
+    damping: 28,
+    mass: 0.2,
+  });
+
   return (
     <>
       <a
@@ -81,8 +93,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           }`}
       >
         <div className="mx-auto max-w-screen-2xl px-3 sm:px-4 lg:px-6">
-          {/* FIXED: Added overflow-hidden and min-width-0 to prevent overflow */}
-          <div className="flex h-16 items-center justify-between gap-2 overflow-hidden min-w-0">
+          <div className="flex h-16 min-w-0 items-center justify-between gap-2 overflow-visible">
 
             {/* Logo - Fixed width */}
             <Link to="/" aria-label="Eventra Home" className="flex items-center shrink-0">
@@ -102,8 +113,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
               </div>
             </Link>
 
-            {/* FIXED: Desktop Navigation - Added flex-shrink and min-width-0 */}
-            <div className="hidden lg:flex flex-1 justify-center min-w-0 mx-1 overflow-hidden">
+            <div className="hidden lg:flex flex-1 justify-center min-w-0 mx-1">
               <DesktopNavbar />
             </div>
 
@@ -111,6 +121,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             <div className="flex items-center justify-end gap-2 shrink-0">
               {/* Desktop CTAs & Profile */}
               <div className="hidden lg:flex items-center gap-2">
+                <LanguageSelector compact />
                 {authenticated ? (
                   <>
                     <NotificationBell />
@@ -139,13 +150,31 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             </div>
           </div>
         </div>
-
         <div aria-hidden="true" className="absolute bottom-0 left-0 h-[2px] w-full">
-          <div
-            className="h-full bg-primary transition-all duration-100 ease-out"
-            style={{ width: `${scrollProgress}%` }}
-          />
         </div>
+        <motion.div
+          aria-hidden="true"
+          style={{
+            scaleX,
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: "2px",
+            borderRadius: "9999px",
+            transformOrigin: "left center",
+            willChange: "transform",
+            pointerEvents: "none",
+            zIndex: 9999,
+            background:
+              "linear-gradient(90deg, #38bdf8 0%, #3b82f6 50%, #6366f1 100%)",
+            boxShadow: `
+      0 0 6px rgba(59,130,246,0.35),
+      0 0 12px rgba(59,130,246,0.20),
+      0 0 20px rgba(99,102,241,0.15)
+    `,
+          }}
+        />
       </nav>
     </>
   );

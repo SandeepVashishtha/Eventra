@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
+import { useAuth } from 'context/AuthContext';
 import {
-  getEventWaitlist,
+  syncWaitlistFromServer,
   organizerRemoveUser,
   promoteNextUser,
   handleCapacityIncrease,
@@ -13,6 +14,7 @@ import {
  * Provides organizers with tools to manage event waitlists and auto-promotions
  */
 const OrganizerWaitlistManagement = ({ eventId, eventName, currentAttendees = 0, maxAttendees = 0 }) => {
+  const { user } = useAuth();
   const [waitlist, setWaitlist] = useState([]);
   const [analytics, setAnalytics] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -20,19 +22,13 @@ const OrganizerWaitlistManagement = ({ eventId, eventName, currentAttendees = 0,
   const [newCapacity, setNewCapacity] = useState(maxAttendees);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Load waitlist data
-  useEffect(() => {
-    loadWaitlistData();
-    const interval = setInterval(loadWaitlistData, 10000); // Refresh every 10 seconds
-    return () => clearInterval(interval);
-  }, [eventId]);
 
-  const loadWaitlistData = () => {
+  const loadWaitlistData = useCallback(async () => {
     try {
-      const data = getEventWaitlist(eventId);
+      const data = await syncWaitlistFromServer(eventId, user?.id);
       setWaitlist(data);
 
-      const analyticsData = getWaitlistAnalytics(eventId);
+      const analyticsData = await getWaitlistAnalytics(eventId, user?.id);
       setAnalytics(analyticsData);
     } catch (error) {
       console.error('Failed to load waitlist data:', error);
@@ -40,7 +36,14 @@ const OrganizerWaitlistManagement = ({ eventId, eventName, currentAttendees = 0,
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [eventId, user?.id]);
+
+  // Load waitlist data
+  useEffect(() => {
+    loadWaitlistData();
+    const interval = setInterval(loadWaitlistData, 10000); // Refresh every 10 seconds
+    return () => clearInterval(interval);
+  }, [loadWaitlistData]);
 
   // Promote the next user manually
   const handlePromoteNext = async () => {
@@ -52,7 +55,7 @@ const OrganizerWaitlistManagement = ({ eventId, eventName, currentAttendees = 0,
     setIsProcessing(true);
     try {
       const event = { id: eventId, title: eventName };
-      const promoted = await promoteNextUser(eventId, event);
+      const promoted = await promoteNextUser(eventId, event, user?.id);
 
       if (promoted) {
         toast.success(`${promoted.userName} has been promoted from the waitlist!`);
@@ -83,7 +86,7 @@ const OrganizerWaitlistManagement = ({ eventId, eventName, currentAttendees = 0,
         attendees: currentAttendees,
       };
 
-      const promotedCount = await handleCapacityIncrease(event, newCapacity);
+      const promotedCount = await handleCapacityIncrease(event, newCapacity, user?.id);
 
       if (promotedCount > 0) {
         toast.success(`${promotedCount} user(s) promoted from waitlist!`);
@@ -109,7 +112,7 @@ const OrganizerWaitlistManagement = ({ eventId, eventName, currentAttendees = 0,
     }
 
     try {
-      await organizerRemoveUser(eventId, userId);
+      await organizerRemoveUser(eventId, userId, user?.id);
       toast.success(`${userName} has been removed from the waitlist`);
       loadWaitlistData();
     } catch (error) {
@@ -244,7 +247,7 @@ const OrganizerWaitlistManagement = ({ eventId, eventName, currentAttendees = 0,
                   type="number"
                   min={maxAttendees + 1}
                   value={newCapacity}
-                  onChange={(e) => setNewCapacity(parseInt(e.target.value) || 0)}
+                  onChange={(e) => setNewCapacity(parseInt(e.target.value, 10) || 0)}
                   disabled={isProcessing}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                 />
@@ -362,3 +365,4 @@ const OrganizerWaitlistManagement = ({ eventId, eventName, currentAttendees = 0,
 };
 
 export default OrganizerWaitlistManagement;
+

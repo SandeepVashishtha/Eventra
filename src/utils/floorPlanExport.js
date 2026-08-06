@@ -8,10 +8,9 @@ export const getCleanExportSvgString = (canvasRef) => {
   clonedSvg.style.transition = "none";
   clonedSvg.setAttribute("width", "1000");
   clonedSvg.setAttribute("height", "800");
-  const selectedShape = clonedSvg.querySelector(".fp-svg-element-selected");
-  if (selectedShape) {
-    selectedShape.classList.remove("fp-svg-element-selected");
-  }
+  clonedSvg.querySelectorAll(".fp-svg-element-selected").forEach((el) => {
+    el.classList.remove("fp-svg-element-selected");
+  });
   const serializer = new XMLSerializer();
   return serializer.serializeToString(clonedSvg);
 };
