@@ -4,6 +4,7 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
+import com.sandeep.eventrabackend.exception.InvalidGoogleTokenException;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -35,6 +36,6 @@ public class GoogleAuthService {
             return idToken.getPayload();
         }
 
-        throw new RuntimeException("Invalid Google token");
+        throw new InvalidGoogleTokenException("Invalid Google token");
     }
 }

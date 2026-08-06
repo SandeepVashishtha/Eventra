@@ -78,14 +78,13 @@ public class HackathonService {
         Hackathon hackathon = hackathonRepository.findById(id)
                 .orElseThrow(() -> new HackathonNotFoundException("Hackathon not found with id: " + id));
 
-        User currentUser = userRepository.findByEmail(userEmail).orElse(null);
+        User currentUser = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + userEmail));
 
-        if (currentUser != null) {
-            boolean isAdmin = currentUser.getRole() == Role.ADMIN || currentUser.getRole() == Role.SUPER_ADMIN;
-            if (!isAdmin && hackathon.getOwnerId() != null && !hackathon.getOwnerId().equals(currentUser.getId())) {
-                throw new AccessDeniedException(
-                        "Only the hackathon's own organizer (or an administrator) can manage this hackathon.");
-            }
+        boolean isAdmin = currentUser.getRole() == Role.ADMIN || currentUser.getRole() == Role.SUPER_ADMIN;
+        if (!isAdmin && hackathon.getOwnerId() != null && !hackathon.getOwnerId().equals(currentUser.getId())) {
+            throw new AccessDeniedException(
+                    "Only the hackathon's own organizer (or an administrator) can manage this hackathon.");
         }
 
         hackathon.setTitle(request.getTitle());

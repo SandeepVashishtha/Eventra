@@ -44,7 +44,7 @@ const handleWebAuthn = async () => {
     }
   }
 };
-\n  const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!password) {
       setError("Password is required");

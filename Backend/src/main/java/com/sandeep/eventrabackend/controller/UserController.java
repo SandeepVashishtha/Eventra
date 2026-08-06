@@ -1,5 +1,6 @@
 package com.sandeep.eventrabackend.controller;
 
+import com.sandeep.eventrabackend.dto.request.ChangePasswordRequest;
 import com.sandeep.eventrabackend.dto.request.UserProfileUpdateRequest;
 import com.sandeep.eventrabackend.dto.response.ErrorResponse;
 import com.sandeep.eventrabackend.dto.response.MyRegisteredEventResponse;
@@ -132,6 +133,9 @@ public class UserController {
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setUsername(request.getUsername());
+        user.setProfileHeadline(request.getProfileHeadline());
+        user.setLinkedinUrl(request.getLinkedinUrl());
+        user.setGithubUrl(request.getGithubUrl());
 
         User updatedUser = userRepository.save(user);
         return ResponseEntity.ok(mapToUserProfileResponse(updatedUser));
@@ -232,6 +236,26 @@ public class UserController {
         return ResponseEntity.ok(eventService.getRegisteredEventsForUser(authentication.getName()));
     }
 
+    @PutMapping("/change-password")
+    @Operation(
+            summary = "Change authenticated user password",
+            description = "Changes the password for the currently authenticated user. All existing tokens will be invalidated.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Password changed successfully"),
+            @ApiResponse(responseCode = "400", description = "Validation error or passwords don't match",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - JWT token missing or invalid",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<String> changePassword(
+            @Valid @RequestBody ChangePasswordRequest request,
+            Authentication authentication) {
+        userService.changePassword(authentication.getName(), request);
+        return ResponseEntity.ok("Password changed successfully. Please login again.");
+    }
+
     private UserProfileResponse mapToUserProfileResponse(User user) {
         return UserProfileResponse.builder()
                 .id(user.getId())
@@ -240,6 +264,9 @@ public class UserController {
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .role(user.getRole() != null ? user.getRole().name() : null)
+                .profileHeadline(user.getProfileHeadline())
+                .linkedinUrl(user.getLinkedinUrl())
+                .githubUrl(user.getGithubUrl())
                 .build();
     }
 }

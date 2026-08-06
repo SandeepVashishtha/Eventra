@@ -14,11 +14,16 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/feedback")
@@ -53,5 +58,17 @@ public class FeedbackController {
         
         FeedbackResponse response = feedbackService.submitFeedback(authentication.getName(), request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @GetMapping("/organizers/{organizerId}/score")
+    @Operation(summary = "Get organizer score", description = "Returns the average rating and review count for an organizer.")
+    public ResponseEntity<Map<String, Object>> getOrganizerScore(@PathVariable Long organizerId) {
+        return ResponseEntity.ok(feedbackService.getOrganizerScore(organizerId));
+    }
+
+    @GetMapping("/organizers/{organizerId}")
+    @Operation(summary = "Get organizer feedback", description = "Returns feedback submitted for past events owned by an organizer.")
+    public ResponseEntity<List<FeedbackResponse>> getOrganizerFeedback(@PathVariable Long organizerId) {
+        return ResponseEntity.ok(feedbackService.getOrganizerFeedback(organizerId));
     }
 }

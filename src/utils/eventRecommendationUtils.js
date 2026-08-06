@@ -110,11 +110,11 @@ export const getRecommendedEvents = ({
   referenceDate = new Date(),
 }) => {
   const currentEvent =
-    events.find((event) => event.id === currentEventId) ||
+    events.find((event) => String(event.id) === String(currentEventId)) ||
     (currentCategory ? { category: currentCategory, type: currentCategory, tags: [] } : null);
 
   return events
-    .filter((event) => event.id !== currentEventId)
+    .filter((event) => String(event.id) !== String(currentEventId))
     .map((event) => ({
       ...event,
       recommendationScore: scoreRecommendedEvent({

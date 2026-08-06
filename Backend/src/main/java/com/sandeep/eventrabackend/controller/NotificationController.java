@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -74,5 +75,54 @@ public class NotificationController {
             Authentication authentication) {
         String email = authentication.getName();
         return ResponseEntity.ok(notificationService.markAsRead(id, email));
+    }
+
+    @PutMapping("/read-all")
+    @Operation(
+            summary = "Mark all notifications as read",
+            description = "Marks every notification of the authenticated user as read.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "All notifications marked as read successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - JWT token missing or invalid"
+            )
+    })
+    public ResponseEntity<List<NotificationResponse>> markAllAsRead(Authentication authentication) {
+        String email = authentication.getName();
+        return ResponseEntity.ok(notificationService.markAllAsRead(email));
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(
+            summary = "Delete a notification",
+            description = "Deletes the specified notification for the authenticated user.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "204",
+                    description = "Notification deleted successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - JWT token missing or invalid"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Notification not found or does not belong to the user"
+            )
+    })
+    public ResponseEntity<Void> deleteNotification(
+            @PathVariable Long id,
+            Authentication authentication) {
+        String email = authentication.getName();
+        notificationService.deleteNotification(id, email);
+        return ResponseEntity.noContent().build();
     }
 }

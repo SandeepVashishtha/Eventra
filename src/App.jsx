@@ -52,6 +52,20 @@ const SessionRecovery = lazy(() => import("./components/SessionRecovery"));
 // const MatchmakingHub = lazy(() => import("./Pages/Networking/MatchmakingHub"));
 const ThemeCustomizer = lazy(() => import("./components/Layout/ThemeCustomizer"));
 
+function ErrorButton() {
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        throw new Error("This is your first error!");
+      }}
+      className="fixed bottom-4 left-4 z-50 rounded bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-lg"
+    >
+      Test Error
+    </button>
+  );
+}
+
 const OfflineSyncManager = () => {
   useOfflineSync();
   return null;
@@ -77,7 +91,10 @@ function App() {
   });
   const [showKeyboardModal, setShowKeyboardModal] = useState(false);
   const [showChatbot, setShowChatbot] = useState(false);
-  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
+  const [isDesktop, setIsDesktop] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth >= 1024;
+  });
 
   useLenis();
   useRoutePrefetch(); // Predictive route pre-loading
@@ -264,7 +281,10 @@ function App() {
                 </ErrorBoundary>
 
                 <Suspense fallback={null}>
-                  <BackToTop />
+              {/* Fix (Issue #10496): Pass chatbot open state directly to BackToTop so it
+    reliably shifts up when the chatbot FAB is visible, instead of relying
+    on DOM-based detection which can race with React rendering. */}
+<BackToTop avoidChatbot={showChatbot} />
                 </Suspense>
                 <Suspense fallback={null}>
                   <FeedbackButton />
@@ -275,6 +295,7 @@ function App() {
                 <Suspense fallback={null}>
                   <SessionRecovery />
                 </Suspense>
+                {import.meta.env.DEV && <ErrorButton />}
 
                 {isDesktop && (
                   <ErrorBoundary level="section" label="Custom Cursor" silent>

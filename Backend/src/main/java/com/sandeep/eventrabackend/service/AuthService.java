@@ -5,6 +5,7 @@ import com.sandeep.eventrabackend.dto.request.SignupRequest;
 import com.sandeep.eventrabackend.dto.response.AuthResponse;
 import com.sandeep.eventrabackend.exception.PasswordMismatchException;
 import com.sandeep.eventrabackend.exception.UserAlreadyExistsException;
+import com.sandeep.eventrabackend.exception.InvalidGoogleTokenException;
 import com.sandeep.eventrabackend.model.Role;
 import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.UserRepository;
@@ -18,7 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.sandeep.eventrabackend.dto.request.GoogleAuthRequest;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
-import java.util.UUID;
+import java.security.SecureRandom;
+import java.util.Base64;
 
 @Service
 public class AuthService {
@@ -82,9 +84,14 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
+        // Signup normalizes the email to lowercase before persisting, so the
+        // login/lookup path must normalize the identifier the same way.
+        // Otherwise a user who registered with a mixed-case email can never log in.
+        String identifier = request.getUsernameOrEmail().toLowerCase();
+
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        request.getUsernameOrEmail(),
+                        identifier,
                         request.getPassword()
                 )
         );
@@ -93,7 +100,7 @@ public class AuthService {
 
         // Reload user for profile info
         User user = userRepository
-                .findByEmailOrUsername(request.getUsernameOrEmail(), request.getUsernameOrEmail())
+                .findByEmailOrUsername(identifier, identifier)
                 .orElseThrow();
 
         return buildAuthResponse(user, token);
@@ -106,7 +113,12 @@ public AuthResponse googleLogin(GoogleAuthRequest request) {
         GoogleIdToken.Payload payload =
                 googleAuthService.verifyToken(request.getToken());
 
-        String email = payload.getEmail();
+        String email = payload.getEmail().toLowerCase();
+
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Google account must provide a valid email address.");
+        }
 
        String firstName =
         (String) payload.get("given_name");
@@ -134,16 +146,17 @@ if (lastName == null || lastName.isBlank()) {
             String username =
                     generateUniqueUsername(baseUsername);
 
+            SecureRandom secureRandom = new SecureRandom();
+            byte[] randomBytes = new byte[32];
+            secureRandom.nextBytes(randomBytes);
+            String securePassword = Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
+
             user = User.builder()
                     .firstName(firstName)
                     .lastName(lastName)
                     .email(email.toLowerCase())
                     .username(username)
-                    .password(
-                            passwordEncoder.encode(
-                                    UUID.randomUUID().toString()
-                            )
-                    )
+                    .password(passwordEncoder.encode(securePassword))
                     .role(Role.CLIENT)
                     .build();
 
@@ -155,11 +168,10 @@ if (lastName == null || lastName.isBlank()) {
 
         return buildAuthResponse(user, token);
 
+    } catch (InvalidGoogleTokenException e) {
+        throw e;
     } catch (Exception e) {
-
-        throw new RuntimeException(
-                "Google authentication failed"
-        );
+        throw new RuntimeException("Google authentication failed", e);
     }
 }
 

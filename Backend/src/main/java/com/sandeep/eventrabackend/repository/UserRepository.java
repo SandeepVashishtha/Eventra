@@ -5,9 +5,12 @@ import com.sandeep.eventrabackend.model.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -33,4 +36,15 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     /** Count users by role — used for admin dashboard breakdown. */
     long countByRole(Role role);
+
+    /** Returns the number of newly created user accounts grouped by month. */
+    @Query("""
+        SELECT FUNCTION('FORMATDATETIME', u.createdAt, 'yyyy-MM') AS period,
+               COUNT(u) AS userCount
+        FROM User u
+        WHERE u.createdAt >= :from
+        GROUP BY period
+        ORDER BY period ASC
+        """)
+    List<Object[]> findMonthlySignupTrend(@Param("from") LocalDateTime from);
 }
