@@ -1,0 +1,26 @@
+name: Actionlint
+
+on:
+  push:
+    paths:
+      - '.github/workflows/**/*.yml'
+      - '.github/workflows/**/*.yaml'
+  pull_request:
+    paths:
+      - '.github/workflows/**/*.yml'
+      - '.github/workflows/**/*.yaml'
+  workflow_dispatch:
+
+jobs:
+  actionlint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Run actionlint
+        uses: reviewdog/action-actionlint@v1
+        with:
+          fail_on_error: true
+          filter_mode: nofilter
+          level: error
