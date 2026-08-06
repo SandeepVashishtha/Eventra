@@ -66,6 +66,7 @@ const sanitizeCSVField = (field) => {
  * @param {string} [filename]       - Desired download filename (will be sanitized)
  */
 export const exportAttendeesToCSV = (attendees, filename = "event-attendees.csv") => {
+  if (typeof window === "undefined" || typeof document === "undefined") return;
   if (!attendees || attendees.length === 0) {
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("eventra-toast", { detail: { message: "No attendees to export", type: "warning" } }));
@@ -130,6 +131,7 @@ export const exportAttendeesToCSV = (attendees, filename = "event-attendees.csv"
  * @param {string} surveyTitle       - Raw title of the survey (will be sanitized)
  */
 export const exportSurveyToCSV = (questions, responses, surveyTitle = "Survey") => {
+  if (typeof window === "undefined" || typeof document === "undefined") return;
   if (!questions || questions.length === 0 || !responses || responses.length === 0) {
     return;
   }
@@ -179,6 +181,7 @@ export const exportSurveyToCSV = (questions, responses, surveyTitle = "Survey") 
  * @param {string} [filename]        - Desired download filename (will be sanitized)
  */
 export const exportEventsToCSV = (events, filename = "eventra-events.csv") => {
+  if (typeof window === "undefined" || typeof document === "undefined") return;
   if (!events || events.length === 0) {
     return;
   }
