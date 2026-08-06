@@ -21,7 +21,8 @@ public class CancelEventRequest {
     private String reason;
 
     @NotBlank(message = "Refund policy is required (FULL, PARTIAL or NONE)")
-    @Pattern(regexp = "FULL|PARTIAL|NONE", message = "Refund policy must be one of: FULL, PARTIAL, NONE")
+    @Pattern(regexp = "FULL|PARTIAL|NONE", flags = Pattern.Flag.CASE_INSENSITIVE,
+            message = "Refund policy must be one of: FULL, PARTIAL, NONE")
     @Schema(description = "Refund policy for registered attendees (FULL, PARTIAL, NONE)", example = "FULL")
     private String refundPolicy;
 
