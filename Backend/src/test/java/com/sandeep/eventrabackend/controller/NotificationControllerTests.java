@@ -223,4 +223,71 @@ public class NotificationControllerTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.read").value(true));
     }
+
+    @Test
+    @DisplayName("PUT /api/notifications/read-all marks every notification as read (#11774)")
+    void testMarkAllAsRead() throws Exception {
+        Notification n1 = Notification.builder()
+                .user(testUser1)
+                .title("Unread 1")
+                .message("Msg")
+                .isRead(false)
+                .build();
+        notificationRepository.save(n1);
+
+        Notification n2 = Notification.builder()
+                .user(testUser1)
+                .title("Unread 2")
+                .message("Msg")
+                .isRead(false)
+                .build();
+        notificationRepository.save(n2);
+
+        mockMvc.perform(put("/api/notifications/read-all")
+                        .with(user("user1@example.com")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].read").value(true))
+                .andExpect(jsonPath("$[1].read").value(true));
+    }
+
+    @Test
+    @DisplayName("PUT /api/notifications/read-all only affects the authenticated user (#11774)")
+    void testMarkAllAsReadIsolation() throws Exception {
+        Notification n1 = Notification.builder()
+                .user(testUser1)
+                .title("User 1 Unread")
+                .message("Msg")
+                .isRead(false)
+                .build();
+        notificationRepository.save(n1);
+
+        Notification n2 = Notification.builder()
+                .user(testUser2)
+                .title("User 2 Unread")
+                .message("Msg")
+                .isRead(false)
+                .build();
+        notificationRepository.save(n2);
+
+        mockMvc.perform(put("/api/notifications/read-all")
+                        .with(user("user1@example.com")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].title").value("User 1 Unread"))
+                .andExpect(jsonPath("$[0].read").value(true));
+
+        // User 2's notification must remain unread
+        mockMvc.perform(get("/api/notifications")
+                        .with(user("user2@example.com")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].read").value(false));
+    }
+
+    @Test
+    @DisplayName("PUT /api/notifications/read-all returns 401 for unauthenticated request (#11774)")
+    void testMarkAllAsReadUnauthorized() throws Exception {
+        mockMvc.perform(put("/api/notifications/read-all"))
+                .andExpect(status().isUnauthorized());
+    }
 }

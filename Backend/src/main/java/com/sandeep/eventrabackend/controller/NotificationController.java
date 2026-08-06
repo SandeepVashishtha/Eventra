@@ -77,6 +77,27 @@ public class NotificationController {
         return ResponseEntity.ok(notificationService.markAsRead(id, email));
     }
 
+    @PutMapping("/read-all")
+    @Operation(
+            summary = "Mark all notifications as read",
+            description = "Marks every notification of the authenticated user as read.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "All notifications marked as read successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - JWT token missing or invalid"
+            )
+    })
+    public ResponseEntity<List<NotificationResponse>> markAllAsRead(Authentication authentication) {
+        String email = authentication.getName();
+        return ResponseEntity.ok(notificationService.markAllAsRead(email));
+    }
+
     @DeleteMapping("/{id}")
     @Operation(
             summary = "Delete a notification",
