@@ -79,6 +79,13 @@ public class GlobalExceptionHandler {
         return buildError(HttpStatus.BAD_REQUEST, "Bad Request", ex.getMessage(), request);
     }
 
+    @ExceptionHandler(InvalidGoogleTokenException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidGoogleToken(
+            InvalidGoogleTokenException ex,
+            HttpServletRequest request) {
+        return buildError(HttpStatus.BAD_REQUEST, "Bad Request", ex.getMessage(), request);
+    }
+
     @ExceptionHandler(RegistrationClosedException.class)
     public ResponseEntity<ErrorResponse> handleRegistrationClosed(
             RegistrationClosedException ex,
