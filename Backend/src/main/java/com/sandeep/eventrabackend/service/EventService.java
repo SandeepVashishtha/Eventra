@@ -326,6 +326,11 @@ public class EventService {
                 .orElseThrow(() ->
                         new UsernameNotFoundException("User not found with email: " + userEmail));
 
+        // A cancelled event must never accept new waitlist joins (#12080).
+        if ("CANCELLED".equals(event.getStatus())) {
+            throw new RegistrationConflictException("This event has been cancelled.");
+        }
+
         if (eventRegistrationRepository.existsByEvent_IdAndUser_Email(eventId, userEmail)) {
             throw new RegistrationConflictException("You are already registered for this event.");
         }
@@ -489,6 +494,11 @@ public class EventService {
         // inflating registeredCount and creating stale registration rows (#11781).
         if (event.isEventPast()) {
             throw new RegistrationClosedException("Registration is closed for this event.");
+        }
+
+        // A cancelled event must never accept new registrations (#12080).
+        if ("CANCELLED".equals(event.getStatus())) {
+            throw new RegistrationConflictException("This event has been cancelled.");
         }
 
         User user = userRepository.findByEmail(userEmail)

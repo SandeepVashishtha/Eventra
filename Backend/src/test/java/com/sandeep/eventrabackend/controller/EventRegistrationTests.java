@@ -386,6 +386,40 @@ public class EventRegistrationTests {
     }
 
     @Test
+    @DisplayName("#12080 — POST /register returns 409 for a cancelled event")
+    void testRegistrationCancelledEventRejected() throws Exception {
+        Event cancelled = new Event();
+        cancelled.setTitle("Cancelled Event");
+        cancelled.setCapacity(100);
+        cancelled.setEventDate(LocalDateTime.now().plusDays(1));
+        cancelled.setPublic(true);
+        cancelled.setStatus("CANCELLED");
+        cancelled = eventRepository.save(cancelled);
+
+        mockMvc.perform(post("/api/events/" + cancelled.getId() + "/register")
+                        .with(user("user1@example.com")))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("This event has been cancelled."));
+    }
+
+    @Test
+    @DisplayName("#12080 — POST /waitlist returns 409 for a cancelled event")
+    void testWaitlistCancelledEventRejected() throws Exception {
+        Event cancelled = new Event();
+        cancelled.setTitle("Cancelled Event");
+        cancelled.setCapacity(1);
+        cancelled.setEventDate(LocalDateTime.now().plusDays(1));
+        cancelled.setPublic(true);
+        cancelled.setStatus("CANCELLED");
+        cancelled = eventRepository.save(cancelled);
+
+        mockMvc.perform(post("/api/events/" + cancelled.getId() + "/waitlist")
+                        .with(user("user1@example.com")))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("This event has been cancelled."));
+    }
+
+    @Test
     @DisplayName("#2102 — POST /register returns 409 when event is full")
     void testRegistrationEventFull() throws Exception {
         // Fill the event (capacity = 5) with users 1..5
