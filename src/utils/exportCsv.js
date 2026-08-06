@@ -67,7 +67,10 @@ const sanitizeCSVField = (field) => {
  */
 export const exportAttendeesToCSV = (attendees, filename = "event-attendees.csv") => {
   if (!attendees || attendees.length === 0) {
-    return;
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("eventra-toast", { detail: { message: "No attendees to export", type: "warning" } }));
+    }
+    return { success: false, reason: "empty" };
   }
 
   // Sanitize the filename: strip OS reserved characters and path separators.
