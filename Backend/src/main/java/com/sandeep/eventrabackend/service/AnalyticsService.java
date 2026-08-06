@@ -55,10 +55,11 @@ public class AnalyticsService {
 
     // ── 2. Registration trends ────────────────────────────────────────────────
     public List<RegistrationTrendDTO> getRegistrationTrend(String granularity, int periods) {
+        int safePeriods = Math.max(1, Math.min(periods, 365));
         LocalDateTime from = switch (granularity.toLowerCase()) {
-            case "daily"  -> LocalDateTime.now().minusDays(periods);
-            case "weekly" -> LocalDateTime.now().minusWeeks(periods);
-            default       -> LocalDateTime.now().minusMonths(periods);
+            case "daily"  -> LocalDateTime.now().minusDays(safePeriods);
+            case "weekly" -> LocalDateTime.now().minusWeeks(safePeriods);
+            default       -> LocalDateTime.now().minusMonths(safePeriods);
         };
 
         List<Object[]> raw = switch (granularity.toLowerCase()) {
