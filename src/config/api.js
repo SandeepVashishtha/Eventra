@@ -1,5 +1,5 @@
 import axios from "axios";
-import { ApiError, RateLimitError, normalizeApiError } from "./api/errors.js";
+import { ApiError, RateLimitError } from "./api/errors.js";
 import { setupRequestInterceptor, setupResponseInterceptor, setOnRequiresReauthHandler } from "./api/interceptors.js";
 import { API_BASE_URL, validateBackendConfig } from "./backendConfig.js";
 
