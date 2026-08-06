@@ -358,10 +358,9 @@ public class EventService {
                 .orElseThrow(() ->
                         new RegistrationConflictException("You are not registered for this event."));
 
-        User user = registration.getUser();
         eventRegistrationRepository.delete(registration);
-        event.getAttendees().removeIf(attendee -> attendee.getId().equals(user.getId()));
-        event.setRegisteredCount(Math.max(0, event.getRegisteredCount() - 1));
+        event.setRegisteredCount((int) eventRegistrationRepository
+                .countByEvent_IdAndStatus(eventId, "CONFIRMED"));
         eventRepository.save(event);
 
         promoteFirstWaitingUser(event);
@@ -496,9 +495,7 @@ public class EventService {
                         new UsernameNotFoundException(
                                 "User not found with email: " + userEmail));
 
-        if (event.getAttendees().contains(user)
-                || eventRegistrationRepository.existsByEvent_IdAndUser_Email(eventId, userEmail)) {
-
+        if (eventRegistrationRepository.existsByEvent_IdAndUser_Email(eventId, userEmail)) {
             throw new RegistrationConflictException(
                     "You are already registered for this event.");
         }
@@ -509,8 +506,6 @@ public class EventService {
             throw new EventFullException(
                     "Event is already full. Capacity: " + event.getCapacity());
         }
-
-        event.getAttendees().add(user);
 
         EventRegistration registration = new EventRegistration();
         registration.setEvent(event);
@@ -594,8 +589,6 @@ public class EventService {
             eventWaitlistRepository.save(entry);
             return null;
         }
-
-        event.getAttendees().add(user);
 
         EventRegistration registration = new EventRegistration();
         registration.setEvent(event);
