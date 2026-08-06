@@ -797,7 +797,13 @@ class SseMultiplexer {
     // Remove the heartbeat key from localStorage when this tab was the leader.
     if (this.isLeader) {
       try {
-        localStorage.removeItem(HEARTBEAT_KEY);
+        const raw = localStorage.getItem(HEARTBEAT_KEY);
+        if (raw) {
+           const parsed = JSON.parse(raw);
+           if (parsed.tabId === this.tabId) {
+             localStorage.removeItem(HEARTBEAT_KEY);
+           }
+        }
       } catch {
         // Non-fatal — the timeout mechanism in checkLeader will handle expiry
       }
