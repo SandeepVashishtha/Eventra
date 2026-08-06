@@ -230,7 +230,16 @@ export const syncWaitlistFromServer = async (eventId, cacheOwnerId) => {
     if (response.ok && response.data) {
       const serverData = (
         Array.isArray(response.data) ? response.data : response.data.entries || []
-      ).map((r) => ({ ...r, eventId: parseInt(r.eventId, 10) }));
+      ).map((r) => ({
+        ...r,
+        id: r.id,
+        waitlistId: r.id,
+        eventId: parseInt(r.eventId, 10),
+        userId: r.userId ?? r.userEmail,
+        status: String(r.status || "waiting").toLowerCase(),
+        joinedAt: r.joinedAt,
+        position: r.position,
+      }));
       // Reconcile: replace stale local records for this event with server state
       const records = await getGlobalWaitlist(cacheOwnerId);
       const reconciled = [
@@ -252,6 +261,28 @@ export const syncWaitlistFromServer = async (eventId, cacheOwnerId) => {
   return getEventWaitlist(id, cacheOwnerId);
 };
 
+/** Attendee: fetch own waitlist entry/position from GET /api/events/{id}/waitlist/me */
+export const getMyWaitlistEntry = async (eventId) => {
+  const id = parseEventId(eventId);
+  const response = await apiUtils.get(`${API_ENDPOINTS.EVENTS.ALL}/${id}/waitlist/me`);
+  if (!response.ok) {
+    return null;
+  }
+  const data = response.data;
+  return data
+    ? {
+        id: data.id,
+        waitlistId: data.id,
+        eventId: data.eventId,
+        userId: data.userId ?? data.userEmail,
+        position: data.position,
+        status: String(data.status || "waiting").toLowerCase(),
+        eventTitle: data.eventTitle,
+        joinedAt: data.joinedAt,
+      }
+    : null;
+};
+
 // Get waitlist entries for a specific event with 'waiting' status
 export const getEventWaitlist = async (eventId, userId) => {
   const id = parseEventId(eventId);
@@ -263,6 +294,17 @@ export const getEventWaitlist = async (eventId, userId) => {
 
 // Calculate queue position (1-indexed) for a user on a specific event
 export const getQueuePosition = async (eventId, userId) => {
+  try {
+    const mine = await getMyWaitlistEntry(eventId);
+    if (mine?.position != null) {
+      return mine.position;
+    }
+  } catch (error) {
+    if (error?.response?.status === 401 || error?.response?.status === 403) {
+      throw error;
+    }
+    // Fall back to local cache for offline / not-on-waitlist
+  }
   const eventWaitlist = await getEventWaitlist(eventId, userId);
   const index = eventWaitlist.findIndex((r) => r.userId === userId);
   return index !== -1 ? index + 1 : -1;
@@ -415,14 +457,14 @@ export const joinWaitlist = async (eventId, user, registrationForm = {}) => {
   return newEntry;
 };
 
-// Leave waitlist - tries server first, falls back to localStorage
+// Leave waitlist - DELETE /api/events/{id}/waitlist (matches backend)
 export const leaveWaitlist = async (eventId, userId) => {
   const id = parseEventId(eventId);
   const beforeWaitlist = await getEventWaitlist(id, userId);
 
   try {
-    const response = await apiUtils.post(`${API_ENDPOINTS.EVENTS.ALL}/${id}/waitlist/leave`, { userId });
-    if (response.ok) {
+    const response = await apiUtils.delete(`${API_ENDPOINTS.EVENTS.ALL}/${id}/waitlist`);
+    if (response.ok || response.status === 204) {
       const records = await getGlobalWaitlist(userId);
       const matchIndex = records.findIndex(
         (r) => r.userId === userId && r.eventId === id && r.status === "waiting"
@@ -436,8 +478,14 @@ export const leaveWaitlist = async (eventId, userId) => {
       await notifyWaitlistPositionChanges(id, beforeWaitlist, undefined, userId);
       return true;
     }
-  } catch {
-    // Fall through to localStorage-only path
+  } catch (error) {
+    if (error?.response?.status === 401 || error?.response?.status === 403) {
+      throw error;
+    }
+    if (!checkIfOffline(error)) {
+      throw error;
+    }
+    // Fall through to localStorage-only path for genuine offline
   }
 
   const records = await getGlobalWaitlist(userId);
@@ -508,10 +556,15 @@ export const promoteRecord = async (record, event, options = {}, cacheOwnerId) =
   const beforeWaitlist = shouldNotifyPositionChanges
     ? await getEventWaitlist(record.eventId, cacheOwnerId)
     : [];
+  const waitlistId = record.id ?? record.waitlistId;
+  if (!waitlistId) {
+    logger.error("[WaitlistUtils] promoteRecord missing waitlist entry id");
+    return false;
+  }
   try {
-    const response = await apiUtils.post(`${API_ENDPOINTS.EVENTS.ALL}/${event.id}/waitlist/promote`, {
-      userId: record.userId,
-    });
+    const response = await apiUtils.post(
+      `${API_ENDPOINTS.EVENTS.ALL}/${event.id}/waitlist/${waitlistId}/promote`
+    );
     if (response.ok) {
       const promoted = await performLocalPromotion(record, event, cacheOwnerId);
       if (promoted && shouldNotifyPositionChanges) {
@@ -522,6 +575,9 @@ export const promoteRecord = async (record, event, options = {}, cacheOwnerId) =
     // Explicit server rejection
     return false;
   } catch (error) {
+    if (error?.response?.status === 401 || error?.response?.status === 403) {
+      throw error;
+    }
     if (!checkIfOffline(error)) {
       return false;
     }
@@ -602,12 +658,17 @@ export const handleCapacityIncrease = async (event, newCapacity, cacheOwnerId) =
 export const organizerRemoveUser = async (eventId, userId, cacheOwnerId) => {
   const id = parseEventId(eventId);
   const beforeWaitlist = await getEventWaitlist(id, cacheOwnerId);
+  const target = beforeWaitlist.find((r) => String(r.userId) === String(userId));
+  const waitlistId = target?.id ?? target?.waitlistId;
 
   try {
-    const response = await apiUtils.post(`${API_ENDPOINTS.EVENTS.ALL}/${id}/waitlist/remove`, {
-      userId,
-    });
-    if (response.ok) {
+    if (!waitlistId) {
+      throw new Error("User is not in the active waitlist.");
+    }
+    const response = await apiUtils.delete(
+      `${API_ENDPOINTS.EVENTS.ALL}/${id}/waitlist/${waitlistId}`
+    );
+    if (response.ok || response.status === 204) {
       const records = await getGlobalWaitlist(cacheOwnerId);
       const matchIndex = records.findIndex(
         (r) => r.userId === userId && r.eventId === id && r.status === "waiting"
@@ -625,8 +686,14 @@ export const organizerRemoveUser = async (eventId, userId, cacheOwnerId) => {
       await notifyWaitlistPositionChanges(id, beforeWaitlist, undefined, cacheOwnerId);
       return true;
     }
-  } catch {
-    // Fall through to localStorage-only path
+  } catch (error) {
+    if (error?.response?.status === 401 || error?.response?.status === 403) {
+      throw error;
+    }
+    if (!checkIfOffline(error)) {
+      throw error;
+    }
+    // Fall through to localStorage-only path for genuine offline
   }
 
   const records = await getGlobalWaitlist(cacheOwnerId);
