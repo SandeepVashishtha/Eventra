@@ -17,7 +17,9 @@ import {
   ChevronRight
 } from "lucide-react";
 import confetti from "canvas-confetti";
+import { toast } from "react-toastify";
 import TeamWorkspace from "components/hackathons/TeamWorkspace";
+import { resolveHackathonResourceAction, openHackathonResource } from "utils/hackathonResourceUtils";
 
 const PHASES = [
   {
@@ -34,8 +36,8 @@ const PHASES = [
       { id: "p4", text: "Draft comprehensive rules & code of conduct", done: true }
     ],
     resources: [
-      { name: "Organizer Handbook.pdf", type: "PDF", size: "2.4 MB" },
-      { name: "Sponsor Pitch Template.key", type: "Slides", size: "12.1 MB" }
+      { name: "Organizer Handbook.pdf", type: "PDF", size: "2.4 MB", url: null },
+      { name: "Sponsor Pitch Template.key", type: "Slides", size: "12.1 MB", url: null }
     ]
   },
   {
@@ -52,8 +54,8 @@ const PHASES = [
       { id: "t4", text: "Release mentor and judging sign-up forms", done: false }
     ],
     resources: [
-      { name: "Team_Formation_Guide.md", type: "Markdown", size: "12 KB" },
-      { name: "Eventra Discord Invite Link", type: "External Link", size: "N/A" }
+      { name: "Team_Formation_Guide.md", type: "Markdown", size: "12 KB", url: null },
+      { name: "Eventra Discord Invite Link", type: "External Link", size: "N/A", url: null }
     ]
   },
   {
@@ -70,8 +72,8 @@ const PHASES = [
       { id: "h4", text: "Host Git & deployment troubleshooting workshop", done: false }
     ],
     resources: [
-      { name: "API_Starter_Boilerplates.zip", type: "ZIP", size: "15.4 MB" },
-      { name: "Mentor ticketing dashboard login", type: "External", size: "N/A" }
+      { name: "API_Starter_Boilerplates.zip", type: "ZIP", size: "15.4 MB", url: null },
+      { name: "Mentor ticketing dashboard login", type: "External", size: "N/A", url: null }
     ]
   },
   {
@@ -88,8 +90,8 @@ const PHASES = [
       { id: "s4", text: "Aggregate scoreboard & flag anomaly ratings", done: false }
     ],
     resources: [
-      { name: "Judging_Rubric_v1.0.pdf", type: "PDF", size: "1.1 MB" },
-      { name: "Devpost submission tutorial", type: "Video Link", size: "4 mins" }
+      { name: "Judging_Rubric_v1.0.pdf", type: "PDF", size: "1.1 MB", url: null },
+      { name: "Devpost submission tutorial", type: "Video Link", size: "4 mins", url: null }
     ]
   },
   {
@@ -106,7 +108,7 @@ const PHASES = [
       { id: "w4", text: "Publish post-event summary newsletter and feedback loop", done: false }
     ],
     resources: [
-      { name: "Prizes_Claim_Instructions.pdf", type: "PDF", size: "850 KB" }
+      { name: "Prizes_Claim_Instructions.pdf", type: "PDF", size: "850 KB", url: null }
     ]
   }
 ];
@@ -177,6 +179,16 @@ const HackathonLifecycle = () => {
         origin: { y: 0.6 }
       });
     }
+  };
+
+  const handleFetchResource = (resource) => {
+    const action = resolveHackathonResourceAction(resource);
+    if (!action.available) {
+      toast.info(action.message);
+      return;
+    }
+
+    openHackathonResource(action.url);
   };
 
   return (
@@ -366,7 +378,9 @@ const HackathonLifecycle = () => {
                 </h3>
                 <div className="mt-4 space-y-3">
                   {selectedPhase.resources && selectedPhase.resources.length > 0 ? (
-                    selectedPhase.resources.map((res, i) => (
+                    selectedPhase.resources.map((res, i) => {
+                      const action = resolveHackathonResourceAction(res);
+                      return (
                       <div
                         key={i}
                         className="flex items-center justify-between p-3.5 bg-bg hover:bg-card-bg rounded-2xl border border-border transition-colors"
@@ -381,17 +395,30 @@ const HackathonLifecycle = () => {
                             </div>
                             <div className="text-xs text-text-light">
                               Format: {res.type} &bull; Size: {res.size}
+                              {!action.available ? " • Not available yet" : ""}
                             </div>
                           </div>
                         </div>
                         <button
                           type="button"
-                          className="px-3 py-1.5 rounded-xl bg-bg hover:bg-card-bg border border-border text-xs font-bold text-primary shadow-sm"
-                         aria-label="button">
-                          Fetch File
+                          onClick={() => handleFetchResource(res)}
+                          title={action.available ? action.label : action.message}
+                          aria-label={
+                            action.available
+                              ? `${action.label}: ${res.name}`
+                              : `${res.name} unavailable`
+                          }
+                          className={`px-3 py-1.5 rounded-xl border text-xs font-bold shadow-sm cursor-pointer ${
+                            action.available
+                              ? "bg-bg hover:bg-card-bg border-border text-primary"
+                              : "bg-bg/60 border-border text-text-light hover:bg-card-bg"
+                          }`}
+                        >
+                          {action.label}
                         </button>
                       </div>
-                    ))
+                      );
+                    })
                   ) : (
                     <div className="text-slate-400 text-sm py-4 text-center">
                       No document downloads available for this phase.
