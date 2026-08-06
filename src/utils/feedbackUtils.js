@@ -4,15 +4,15 @@
  * Handles localStorage-based feedback management for events
  */
 
-import { safeJsonParse } from './safeJsonParse';
-import { sanitizeHtml } from './sanitizeHtml';
-import { API_ENDPOINTS, apiUtils } from '../config/api';
+import { safeJsonParse } from "./safeJsonParse.js";
+import { sanitizeHtml } from "./sanitizeHtml.js";
+import { API_ENDPOINTS, apiUtils } from "../config/api.js";
 
 const FEEDBACK_STORAGE_KEY = 'eventra_feedback';
 
 export const fetchEventFeedback = async (eventId) => {
   const response = await apiUtils.get(API_ENDPOINTS.FEEDBACK.BY_EVENT(eventId));
-  return response.json();
+  return response.data;
 };
 
 export const submitEventFeedback = async ({ eventId, rating, comment, tags = [] }) => {
@@ -22,7 +22,7 @@ export const submitEventFeedback = async ({ eventId, rating, comment, tags = [] 
     comment,
     tags,
   });
-  return response.json();
+  return response.data;
 };
 
 /**
@@ -39,8 +39,8 @@ export const getEventFeedback = (eventId) => {
       ...f,
       comment: f.comment ? sanitizeHtml(f.comment) : f.comment
     }));
-  } catch {
-    console.warn("Error retrieving feedback:", error)', error);
+  } catch (error) {
+    console.warn("Error retrieving feedback:", error);
     return [];
   }
 };
@@ -60,17 +60,19 @@ export const saveFeedback = (eventId, feedback) => {
     // Use a Map for O(1) userId lookups instead of O(N) findIndex
     const feedbackMap = new Map(rawList.map((f) => [f.userId, f]));
 
+    const userId = feedback.userId || crypto.randomUUID();
     const feedbackObject = {
       ...feedback,
+      userId,
       submittedAt: new Date().toISOString(),
     };
 
-    feedbackMap.set(feedback.userId, feedbackObject);
+    feedbackMap.set(userId, feedbackObject);
     allFeedback[eventId] = Array.from(feedbackMap.values());
     localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(allFeedback));
     return true;
-  } catch {
-    console.warn("Error saving feedback:", error)', error);
+  } catch (error) {
+    console.warn("Error saving feedback:", error);
     return false;
   }
 };
@@ -89,8 +91,8 @@ export const hasUserSubmittedFeedback = (eventId, userId = null) => {
     }
     const userIdSet = new Set(feedback.map((f) => f.userId));
     return userIdSet.has(userId);
-  } catch {
-    console.warn("Error checking feedback status:", error)', error);
+  } catch (error) {
+    console.warn("Error checking feedback status:", error);
     return false;
   }
 };
@@ -107,8 +109,8 @@ export const getUserFeedback = (eventId, userId = null) => {
     if (!userId) return feedback[0] || null;
     const feedbackMap = new Map(feedback.map((f) => [f.userId, f]));
     return feedbackMap.get(userId) || null;
-  } catch {
-    console.warn("Error retrieving user feedback:", error)', error);
+  } catch (error) {
+    console.warn("Error retrieving user feedback:", error);
     return null;
   }
 };
@@ -135,8 +137,8 @@ export const getAverageRating = (eventId) => {
       count: ratings.length,
       total,
     };
-  } catch {
-    console.warn("Error calculating average rating:", error)', error);
+  } catch (error) {
+    console.warn("Error calculating average rating:", error);
     return { average: 0, count: 0, total: 0 };
   }
 };
@@ -168,8 +170,8 @@ export const getRatingBreakdown = (eventId) => {
     });
 
     return breakdown;
-  } catch {
-    console.warn("Error calculating rating breakdown:", error)', error);
+  } catch (error) {
+    console.warn("Error calculating rating breakdown:", error);
     return { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
   }
 };
@@ -215,8 +217,8 @@ export const getRecommendationStats = (eventId) => {
       total,
       percentage,
     };
-  } catch {
-    console.warn("Error calculating recommendation stats:", error)', error);
+  } catch (error) {
+    console.warn("Error calculating recommendation stats:", error);
     return { recommendCount: 0, notRecommendCount: 0, total: 0, percentage: 0 };
   }
 };
@@ -240,8 +242,8 @@ export const getTagStats = (eventId) => {
     });
 
     return tagCounts;
-  } catch {
-    console.warn("Error calculating tag stats:", error)', error);
+  } catch (error) {
+    console.warn("Error calculating tag stats:", error);
     return {};
   }
 };
@@ -266,8 +268,8 @@ export const deleteFeedback = (eventId, userId = null) => {
 
     localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(allFeedback));
     return true;
-  } catch {
-    console.warn("Error deleting feedback:", error)', error);
+  } catch (error) {
+    console.warn("Error deleting feedback:", error);
     return false;
   }
 };
@@ -296,8 +298,8 @@ export const exportFeedbackAsCSV = (eventId) => {
 
     const csv = [headers, ...rows].map((row) => row.join(',')).join('\n');
     return csv;
-  } catch {
-    console.warn("Error exporting feedback:", error)', error);
+  } catch (error) {
+    console.warn("Error exporting feedback:", error);
     return '';
   }
 };
@@ -310,8 +312,8 @@ export const clearAllFeedback = () => {
   try {
     localStorage.removeItem(FEEDBACK_STORAGE_KEY);
     return true;
-  } catch {
-    console.warn("Error clearing feedback:", error)', error);
+  } catch (error) {
+    console.warn("Error clearing feedback:", error);
     return false;
   }
 };

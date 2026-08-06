@@ -18,18 +18,28 @@ const getEnv = () =>
 const VAPID_PUBLIC_KEY =
   getEnv().VITE_VAPID_PUBLIC_KEY || getEnv().REACT_APP_VAPID_PUBLIC_KEY || "";
 
+// The backend does not yet implement /api/notifications/push-subscriptions
+// (push delivery is tracked separately), so the push-subscribe flow must not
+// POST the raw subscription (including keys.auth / keys.p256dh) to routes
+// that do not exist. Server registration is only attempted when the backend
+// actually supports it and the deployment explicitly opts in (#11775).
+const PUSH_REGISTRATION_ENABLED =
+  getEnv().VITE_ENABLE_PUSH_REGISTRATION === "true" ||
+  getEnv().REACT_APP_ENABLE_PUSH_REGISTRATION === "true";
+
 const getRegistration = async () => {
   if (!("serviceWorker" in navigator)) return null;
   const existing = await navigator.serviceWorker.getRegistration();
   if (existing) return existing;
   try {
     return await navigator.serviceWorker.register("/service-worker.js");
-    try {
-      return await navigator.serviceWorker.register('/service-worker.js');
-    } catch (err) {
-      logger.warn('[usePushSubscription] SW registration failed:', err);
-      return null;
-    }
+  } catch (err) {
+    logger.warn('[usePushSubscription] SW registration failed:', err);
+    return null;
+  }
+};
+
+export function usePushSubscription(updatePreferences) {
   const { token } = useAuth();
   const [pushStatus, setPushStatus] = useState({
     supported: false,
@@ -119,13 +129,22 @@ const getRegistration = async () => {
       try {
         const existing = window.localStorage.getItem(PUSH_SUBSCRIPTION_KEY);
         if (existing) {
-          try { if (safeJsonParse(existing, {}).keys) logger.info("[usePushSubscription] Migrating legacy record."); }
-      try { if (safeJsonParse(existing, {}).keys) logger.info('[usePushSubscription] Migrating legacy record.'); }
-      catch (err) { logger.warn('[usePushSubscription] Legacy migration failed:', err); }
+          try {
+            if (safeJsonParse(existing, {}).keys) {
+              logger.info("[usePushSubscription] Migrating legacy record.");
+            }
+          } catch (err) {
+            logger.warn("[usePushSubscription] Legacy migration failed:", err);
+          }
+        }
         window.localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(safeLocalRecord));
-      window.localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(safeLocalRecord));
-      } catch (err) { logger.warn('[usePushSubscription] Failed to persist subscription:', err); }
-      if (token && endpoint) await apiUtils.post(endpoint, subscription);
+      } catch (err) {
+        logger.warn("[usePushSubscription] Failed to persist subscription:", err);
+      }
+      if (token && PUSH_REGISTRATION_ENABLED) {
+        const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.PUSH_SUBSCRIBE;
+        if (endpoint) await apiUtils.post(endpoint, subscription);
+      }
       updatePreferences((c) => ({ ...c, push: true }));
       await updatePushStatus();
       return { subscribed: true, subscription };
@@ -140,8 +159,10 @@ const getRegistration = async () => {
       const subscription = await updatePushStatus();
       if (subscription) await subscription.unsubscribe();
       window.localStorage.removeItem(PUSH_SUBSCRIPTION_KEY);
-      const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.PUSH_UNSUBSCRIBE;
-      if (token && endpoint) await apiUtils.post(endpoint, {});
+      if (token && PUSH_REGISTRATION_ENABLED) {
+        const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.PUSH_UNSUBSCRIBE;
+        if (endpoint) await apiUtils.post(endpoint, {});
+      }
       updatePreferences((c) => ({ ...c, push: false }));
       await updatePushStatus();
       return { unsubscribed: true };

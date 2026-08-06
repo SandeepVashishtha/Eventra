@@ -28,9 +28,8 @@ const WaitlistCard = memo(({ event, index, onLeaveWaitlist }) => {
   useEffect(() => {
     if (!user) return;
     import("utils/waitlistUtils")
-      .then(({ getQueuePosition }) => {
-        setQueuePos(getQueuePosition(event.id, user.id || user.email));
-      })
+      .then(({ getQueuePosition }) => getQueuePosition(event.id, user.id || user.email))
+      .then(setQueuePos)
       .catch(() => setQueuePos(-1));
   }, [event.id, user]);
 

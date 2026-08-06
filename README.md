@@ -10,6 +10,11 @@ Modern event and hackathon platform for communities, organizers, and contributor
 [![Contributors](https://img.shields.io/github/contributors/SandeepVashishtha/Eventra?style=flat&color=green)](https://github.com/SandeepVashishtha/Eventra/graphs/contributors)
 [![Open Issues](https://img.shields.io/github/issues/SandeepVashishtha/Eventra?style=flat&color=red)](https://github.com/SandeepVashishtha/Eventra/issues)
 [![Open PRs](https://img.shields.io/github/issues-pr/SandeepVashishtha/Eventra?style=flat&color=blue)](https://github.com/SandeepVashishtha/Eventra/pulls)
+[![CI Validation](https://github.com/SandeepVashishtha/Eventra/actions/workflows/ci.yml/badge.svg)](https://github.com/SandeepVashishtha/Eventra/actions/workflows/ci.yml)
+[![Docker Build](https://github.com/SandeepVashishtha/Eventra/actions/workflows/docker-ci.yml/badge.svg)](https://github.com/SandeepVashishtha/Eventra/actions/workflows/docker-ci.yml)
+[![Docker Publish](https://github.com/SandeepVashishtha/Eventra/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/SandeepVashishtha/Eventra/actions/workflows/docker-publish.yml)
+[![Security Validation](https://github.com/SandeepVashishtha/Eventra/actions/workflows/security-ci.yml/badge.svg)](https://github.com/SandeepVashishtha/Eventra/actions/workflows/security-ci.yml)
+[![CodeQL Analysis](https://github.com/SandeepVashishtha/Eventra/actions/workflows/codeql.yml/badge.svg)](https://github.com/SandeepVashishtha/Eventra/actions/workflows/codeql.yml)
 
 ---
 
@@ -585,6 +590,12 @@ Before opening a pull request:
 
 Licensed under Apache 2.0. See [LICENSE](LICENSE).
 
+## Environment Security
+
+See the following guide for securely managing environment variables:
+
+- docs/ENVIRONMENT_SECURITY.md
+
 ## Contributors
 
 <p align="left">
@@ -593,11 +604,19 @@ Licensed under Apache 2.0. See [LICENSE](LICENSE).
   </a>
 </p>
 
+## Release Management
+
+Eventra uses [Release Drafter](https://github.com/release-drafter/release-drafter) to automate the generation of release notes. When a pull request is merged into the `master` branch, a draft release is automatically created or updated. The draft categorizes merged pull requests based on their labels (e.g., Features, Bug Fixes, Documentation) and acknowledges contributors automatically. Maintainers can review the draft and publish the release with minimal manual effort.
+
 ## Deployment Security
 
 Before deploying Eventra, review the deployment checklist:
 
 - docs/SECURE_DEPLOYMENT_CHECKLIST.md
+
+### Software Bill of Materials (SBOM)
+
+Eventra automatically generates a Software Bill of Materials (SBOM) during the CI process for every push to `master` and release. The SBOM is provided in SPDX format and can be found as an attached artifact named `sbom` in the GitHub Actions run summary. This improves our software supply chain transparency and helps identify affected components when new vulnerabilities are disclosed.
 
 ### Maintainers
 

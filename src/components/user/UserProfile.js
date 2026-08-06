@@ -122,7 +122,9 @@ export default function UserProfile() {
     .toUpperCase();
 
   const skills    = profile?.skills || [];
-  const hasSocials = profile?.github || profile?.linkedin || profile?.portfolio;
+  const githubUrl = profile?.github || profile?.githubUrl;
+  const linkedinUrl = profile?.linkedin || profile?.linkedinUrl;
+  const hasSocials = githubUrl || linkedinUrl || profile?.portfolio;
 
   if (loading) {
     return (
@@ -184,6 +186,9 @@ export default function UserProfile() {
               )}
               {profile?.bio && (
                 <p className="upv-bio">{profile.bio}</p>
+              )}
+              {profile?.profileHeadline && !profile?.bio && (
+                <p className="upv-bio">{profile.profileHeadline}</p>
               )}
             </div>
 
@@ -254,15 +259,15 @@ export default function UserProfile() {
                   <h2 className="upv-card-title">Social Links</h2>
                 </div>
                 <div className="upv-socials">
-                  {profile?.github && (
-                    <a href={sanitizeUrl(profile.github)} target="_blank" rel="noopener noreferrer" className="upv-social-link upv-social-github">
+                  {githubUrl && (
+                    <a href={sanitizeUrl(githubUrl)} target="_blank" rel="noopener noreferrer" className="upv-social-link upv-social-github">
                       <Github size={16} />
                       <span>GitHub</span>
                       <ChevronRight size={13} className="upv-social-arrow" />
                     </a>
                   )}
-                  {profile?.linkedin && (
-                    <a href={sanitizeUrl(profile.linkedin)} target="_blank" rel="noopener noreferrer" className="upv-social-link upv-social-linkedin">
+                  {linkedinUrl && (
+                    <a href={sanitizeUrl(linkedinUrl)} target="_blank" rel="noopener noreferrer" className="upv-social-link upv-social-linkedin">
                       <Linkedin size={16} />
                       <span>LinkedIn</span>
                       <ChevronRight size={13} className="upv-social-arrow" />

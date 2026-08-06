@@ -14,6 +14,7 @@ import {
   Calendar,
   CheckCircle,
   Clock,
+  Eye,
   Loader2,
   Mail,
   MapPin,
@@ -134,6 +135,7 @@ const EventRegistration = () => {
       designation: "",
       additionalInfo: "",
       priority: "Medium",
+      showProfileInAttendeeDirectory: false,
     },
     validationRules,
     { debounceMs: 300 }
@@ -320,7 +322,7 @@ const EventRegistration = () => {
       try {
         const { joinWaitlist, getQueuePosition } = await import("utils/waitlistUtils");
         await joinWaitlist(eventId, user, { ...formData, eventTitle: event?.title || "the event" });
-        const pos = getQueuePosition(eventId, user.id);
+        const pos = await getQueuePosition(eventId, user.id);
         toast.success(t("eventRegistration.toastWaitlistSuccess"));
         clearSession();
         return { success: true, error: null, waitlistPosition: pos };
@@ -336,6 +338,12 @@ const EventRegistration = () => {
 
     const idempotencyKey = generateSecureUUID();
 
+    // The selected seat travels with the registration so the server can
+    // persist and atomically reserve it (format elementId:seatIndex).
+    const selectedSeatId = selectedSeat
+      ? `${selectedSeat.elementId}:${selectedSeat.seatIndex}`
+      : null;
+
     try {
       const response = await apiUtils.post(
         endpoint,
@@ -344,6 +352,8 @@ const EventRegistration = () => {
           priority: formData.priority,
           eventId: parseInt(eventId, 10),
           idempotencyKey,
+          seatId: selectedSeatId,
+          showProfileInAttendeeDirectory: Boolean(formData.showProfileInAttendeeDirectory),
         },
         token
       );
@@ -371,6 +381,8 @@ const EventRegistration = () => {
           ...formData,
           eventId: parseInt(eventId, 10),
           idempotencyKey,
+          seatId: selectedSeatId,
+          showProfileInAttendeeDirectory: Boolean(formData.showProfileInAttendeeDirectory),
         };
 
         const success = await pushToQueue(
@@ -403,7 +415,7 @@ const EventRegistration = () => {
       if (isAlreadyRegistered) {
         toast.success(isFreshlyFull ? t("eventRegistration.toastWaitlistSuccess") : t("eventRegistration.toastRegistrationSuccess"));
         const existingRegId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `reg-existing-${Date.now()}`;
-        addRegistration(event, {}, existingRegId, "");
+        addRegistration(event, formData);
         clearSession();
         toast.info(failureMessage);
         return { success: true, error: null, waitlistPosition: -1 };
@@ -450,7 +462,7 @@ const EventRegistration = () => {
           const isFull = await checkEventCapacity(eventId, event);
           if (isFull) {
             const { getGlobalWaitlist } = await import("utils/waitlistUtils");
-            const records = getGlobalWaitlist();
+            const records = await getGlobalWaitlist(user.id);
             const onWaitlist = records.some(
               (r) => r.userId === user.id && r.eventId === parseInt(eventId, 10) && r.status === "waiting"
             );
@@ -629,7 +641,7 @@ const EventRegistration = () => {
           </p>
 
           <div className="bg-slate-50/80 dark:bg-slate-950/40 border border-slate-200/40 dark:border-slate-800/50 rounded-3xl p-5 mb-8 text-left">
-            <h3 title={event.title} className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-3 line-clamp-2 wrap-break-word min-w-0">
+            <h3 title={event.title} className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-3 line-clamp-2 break-words wrap-break-word min-w-0">
               {event.title}
             </h3>
 
@@ -799,7 +811,7 @@ const EventRegistration = () => {
             />
             <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent"></div>
             <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-              <h1 title={event.title} className="text-3xl font-bold mb-2 wrap-break-word">{event.title}</h1>
+              <h1 title={event.title} className="text-3xl font-bold mb-2 break-words wrap-break-word">{event.title}</h1>
               <div className="flex flex-wrap gap-4 text-sm">
                 <span className="flex items-center gap-1">
                   <Calendar className="w-4 h-4" />
@@ -1045,6 +1057,30 @@ const EventRegistration = () => {
                 </div>
               </div>
 
+              <label className="flex items-start gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
+                <input
+                  type="checkbox"
+                  name="showProfileInAttendeeDirectory"
+                  checked={Boolean(formData.showProfileInAttendeeDirectory)}
+                  onChange={(event) =>
+                    setValues((prev) => ({
+                      ...prev,
+                      showProfileInAttendeeDirectory: event.target.checked,
+                    }))
+                  }
+                  className="mt-1 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span>
+                  <span className="flex items-center gap-2 font-semibold text-gray-900 dark:text-white">
+                    <Eye className="h-4 w-4" />
+                    Show my profile on the attendee list for this event.
+                  </span>
+                  <span className="mt-1 block text-xs text-gray-500 dark:text-gray-400">
+                    Your name, username, headline, LinkedIn, and GitHub can be seen by registered attendees only.
+                  </span>
+                </span>
+              </label>
+
               {/* Submit Button */}
               <div className="flex gap-4">
                 <button
@@ -1057,6 +1093,8 @@ const EventRegistration = () => {
                 <button
                   type="submit"
                   disabled={isPending || !isFormValid}
+                  aria-disabled={isPending || !isFormValid}
+                  aria-busy={isPending}
                   className="flex-1 px-6 py-3 bg-black text-white rounded-lg hover:bg-zinc-800 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   aria-label={t("eventRegistration.formSubmitAriaLabel")}
                 >

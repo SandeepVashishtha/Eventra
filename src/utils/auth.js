@@ -65,3 +65,7 @@ export function getTokenTTL(token) {
   const now = Math.floor(Date.now() / 1000);
   return payload.exp - now - CLOCK_SKEW_BUFFER;
 }
+
+export function isAuthSessionValid(token) {
+  return token === "cookie-managed" || isTokenValid(token);
+}

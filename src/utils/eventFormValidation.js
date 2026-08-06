@@ -81,16 +81,16 @@ export const validateForm = (formData) => {
   }
 
   if (formData.ticketTiers && formData.ticketTiers.length > 0) {
-    formData.ticketTiers.forEach((tier, index) => {
+    formData.ticketTiers.forEach((tier) => {
       if (tier.name && tier.name.trim()) {
         const price = Number(tier.price);
         if (price < 0) {
-          newErrors[`ticketPrice_${index}`] = "Ticket price cannot be negative";
+          newErrors[`ticketPrice_${tier.id}`] = "Ticket price cannot be negative";
         }
         if (tier.capacity) {
           const capacity = Number(tier.capacity);
           if (capacity <= 0) {
-            newErrors[`ticketCapacity_${index}`] = "Ticket capacity must be greater than 0";
+            newErrors[`ticketCapacity_${tier.id}`] = "Ticket capacity must be greater than 0";
           }
         }
       }

@@ -79,7 +79,7 @@ const createSafeStorage = (getStorage) => {
 
     getJson(key, fallback = null) {
       const raw = this.getItem(key);
-      if (raw == null) return fallback;
+      if (raw === null || raw === undefined) return fallback;
 
       try {
         return safeJsonParse(raw, {});

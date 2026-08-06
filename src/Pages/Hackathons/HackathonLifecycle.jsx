@@ -167,17 +167,6 @@ const HackathonLifecycle = () => {
   // Change overall active phase (organizer simulation)
   const setGlobalActivePhase = (index) => {
     setActivePhaseIndex(index);
-    setPhasesList((prev) =>
-      prev.map((phase) => {
-        if (phase.id === selectedPhaseId) {
-          return {
-            ...phase,
-            tasks: [...phase.tasks, newTask],
-          };
-        }
-        return phase;
-      })
-    );
     setSelectedPhaseId(index + 1);
 
     if (index === 4) {
