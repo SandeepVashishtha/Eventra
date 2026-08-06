@@ -15,6 +15,9 @@ Modern event and hackathon platform for communities, organizers, and contributor
 [![Docker Publish](https://github.com/SandeepVashishtha/Eventra/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/SandeepVashishtha/Eventra/actions/workflows/docker-publish.yml)
 [![Security Validation](https://github.com/SandeepVashishtha/Eventra/actions/workflows/security-ci.yml/badge.svg)](https://github.com/SandeepVashishtha/Eventra/actions/workflows/security-ci.yml)
 [![CodeQL Analysis](https://github.com/SandeepVashishtha/Eventra/actions/workflows/codeql.yml/badge.svg)](https://github.com/SandeepVashishtha/Eventra/actions/workflows/codeql.yml)
+[![Dependency Review](https://github.com/SandeepVashishtha/Eventra/actions/workflows/dependency-review.yml/badge.svg)](https://github.com/SandeepVashishtha/Eventra/actions/workflows/dependency-review.yml)
+[![Markdown Lint](https://github.com/SandeepVashishtha/Eventra/actions/workflows/markdown-lint.yml/badge.svg)](https://github.com/SandeepVashishtha/Eventra/actions/workflows/markdown-lint.yml)
+[![Gitleaks](https://github.com/SandeepVashishtha/Eventra/actions/workflows/gitleaks.yml/badge.svg)](https://github.com/SandeepVashishtha/Eventra/actions/workflows/gitleaks.yml)
 
 ---
 
