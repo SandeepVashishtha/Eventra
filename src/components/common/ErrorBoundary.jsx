@@ -266,7 +266,7 @@ class ErrorBoundary extends React.Component {
         const blob = new Blob([report], { type: "text/plain" });
         const url = URL.createObjectURL(blob);
         window.open(url, "_blank", "noopener,noreferrer");
-      } catch {}
+      } catch { console.warn("[ErrorBoundary] Recovery/snapshot operation failed"); }
     }
   };
 
@@ -319,7 +319,7 @@ class ErrorBoundary extends React.Component {
     saveAppStateSnapshot();
     try {
       await invalidateCorruptedAssetCache();
-    } catch {}
+    } catch { console.warn("[ErrorBoundary] Recovery/snapshot operation failed"); }
     setTimeout(() => window.location.reload(), 300);
   };
 
@@ -344,7 +344,7 @@ class ErrorBoundary extends React.Component {
         for (let i = 0; i < localStorage.length; i++) {
           const k = localStorage.key(i);
           if (k && !k.includes("token") && !k.includes("password") && !k.includes("eventra:key-material") && !k.includes("eventra:key-salt")) {
-            try { snap[k] = process.env.NODE_ENV === "production" ? "[redacted]" : (localStorage.getItem(k)?.slice(0, 200)); } catch {}
+            try { snap[k] = process.env.NODE_ENV === "production" ? "[redacted]" : (localStorage.getItem(k)?.slice(0, 200)); } catch { console.warn("[ErrorBoundary] Recovery/snapshot operation failed"); }
           }
         }
         return JSON.stringify(snap, null, 2);
