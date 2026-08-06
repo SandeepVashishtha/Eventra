@@ -6,6 +6,7 @@ app:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173,https://eventra-psi.vercel.app,https://eventra.sandeepvashishtha.in}
   rate-limit:
     enabled: ${RATE_LIMIT_ENABLED:true}
+    trusted-proxy-hops: ${RATE_LIMIT_TRUSTED_PROXY_HOPS:1}
     login:
       capacity: ${RATE_LIMIT_LOGIN_CAPACITY:5}
       window: ${RATE_LIMIT_LOGIN_WINDOW:1m}
