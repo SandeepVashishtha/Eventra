@@ -7,7 +7,7 @@ const HEARTBEAT_KEY = "eventra_sse_leader_heartbeat";
 const LOCAL_STORAGE_CONFIRM_MIN_MS = 25;
 const LOCAL_STORAGE_CONFIRM_JITTER_MS = 75;
 // Unique identifier for this tab instance
-const TAB_ID = Math.random().toString(36).substring(2, 9);
+const TAB_ID = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : Math.random().toString(36).substring(2, 9);
 
 const ALLOWED_MESSAGE_TYPES = new Set([
   "SUBSCRIBE",
