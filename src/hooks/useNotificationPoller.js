@@ -169,13 +169,18 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
     fetchNotifications({ isBackground: true }).then(() => {
       if (isMounted.current && tokenRef.current === t) setLoading(false);
     });
+    }, [token, fetchNotifications, hasCompletedInitialFetchRef]);
+
+  useEffect(() => {
+    if (!isPageVisible || !token) return;
+    const t = token;
     const interval = setInterval(() => {
-      if (isMounted.current && tokenRef.current === t && isPageVisibleRef.current) {
+      if (isMounted.current && tokenRef.current === t) {
         refetchRef.current({ isBackground: true });
       }
     }, POLLING_INTERVAL_MS);
     return () => clearInterval(interval);
-  }, [token, fetchNotifications, hasCompletedInitialFetchRef]);
+  }, [isPageVisible, token]);
 
   useEffect(() => {
     if (!isPageVisible || !token) return;
