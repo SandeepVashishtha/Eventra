@@ -676,7 +676,7 @@ const cleanupPlaintextFallbacks = () => {
 
 if (typeof window !== 'undefined') {
   // Best-effort: errors here must never prevent module load
-  try { cleanupPlaintextFallbacks(); } catch { /* ignore */ }
+  try { cleanupPlaintextFallbacks(); } catch { console.warn("[secureStorage] Cleanup failed"); }
 }
 
 // In-memory cache for pending writes — the sole mechanism for serving reads
