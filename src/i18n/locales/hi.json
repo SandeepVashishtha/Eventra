@@ -556,6 +556,21 @@
     "toastWaitlistSuccess": "Added to waitlist successfully!",
     "toastValidationError": "Please fix the errors before submitting."
   },
+  "askOrganizer": {
+    "title": "Ask the Organizer",
+    "subtitle": "Ask event-specific questions and see organizer answers in one public feed.",
+    "placeholder": "Is there vegan catering? Is there parking? Ask your question here.",
+    "send": "Ask Question",
+    "publicQA": "Public Q&A",
+    "noQuestions": "No public questions yet. Be the first to ask!",
+    "answeredBadge": "Answered",
+    "organizerResponseLabel": "Response from organizer",
+    "pendingAnswer": "Waiting for organizer response...",
+    "successSent": "Question sent! It is now visible in the public queue.",
+    "errorSending": "Could not send your question. Please try again.",
+    "errorLoading": "Unable to load public Q&A right now. Please try again shortly.",
+    "loginRequired": "Please log in to ask the organizer a question."
+  },
   "userAchievements": {
     "pageTitle": "Eventra | Achievements",
     "progressionStudio": "Progression Studio",
