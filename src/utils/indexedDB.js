@@ -41,7 +41,7 @@ const checkStorageQuota = async () => {
       if (quota > 0 && usage / quota > 0.95) {
         console.warn("[IndexedDB] Storage quota is running extremely low (over 95% full).");
       }
-    } catch {}
+    } catch { console.warn("[indexedDB] Storage quota check failed"); }
   }
 };
 

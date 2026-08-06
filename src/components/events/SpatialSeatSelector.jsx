@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import "./SpatialSeatSelector.css";
 import { safeJsonParse } from "utils/safeJsonParse";
+import { API_ENDPOINTS, apiUtils } from "config/api";
 
 // Fallback presets if no venue layout is stored yet
 const DEFAULT_PRESETS = {
@@ -51,7 +52,7 @@ const DEFAULT_PRESETS = {
       rotation: 0,
       seatsCount: 8,
       tier: "VIP Front Row",
-      assignedAttendees: { 0: "Amit Sharma", 1: "Priya Singh" },
+      assignedAttendees: {},
     },
     {
       id: "table-2",
@@ -64,7 +65,7 @@ const DEFAULT_PRESETS = {
       rotation: 0,
       seatsCount: 8,
       tier: "VIP Front Row",
-      assignedAttendees: { 2: "Rohit Verma", 3: "Neha Kapoor" },
+      assignedAttendees: {},
     },
     {
       id: "table-3",
@@ -142,6 +143,9 @@ const SpatialSeatSelector = ({
   const [zoom, setZoom] = useState(0.85);
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [hoveredSeat, setHoveredSeat] = useState(null);
+  // Occupied seat keys ("elementId:seatIndex") loaded from the backend so
+  // occupancy is shared across browsers instead of per-browser localStorage.
+  const [occupiedSeats, setOccupiedSeats] = useState([]);
 
   const containerRef = useRef(null);
   const isDraggingRef = useRef(false);
@@ -190,6 +194,61 @@ const SpatialSeatSelector = ({
     }
     setElements(initialElements);
   }, [eventId]);
+
+  // Fetch reserved seats from the backend for real events. Skipped for the
+  // "default" fallback layout (e.g. virtual venue walkthrough) which has no
+  // event id. Best-effort: on failure the seat map still renders locally.
+  useEffect(() => {
+    if (!eventId || eventId === "default") return;
+    let isCancelled = false;
+    (async () => {
+      try {
+        const res = await apiUtils.get(
+          `${API_ENDPOINTS.EVENTS.DETAIL(eventId)}/seats`
+        );
+        if (isCancelled) return;
+        setOccupiedSeats(Array.isArray(res?.data) ? res.data : []);
+      } catch {
+        // Occupancy is best-effort; the layout remains usable without it.
+      }
+    })();
+    return () => {
+      isCancelled = true;
+    };
+  }, [eventId]);
+
+  // Map backend seat keys ("elementId:seatIndex") to their owning elements.
+  const occupiedSeatsByElement = useMemo(() => {
+    const map = new Map();
+    occupiedSeats.forEach((key) => {
+      if (typeof key !== "string") return;
+      const sep = key.lastIndexOf(":");
+      if (sep <= 0 || sep === key.length - 1) return;
+      const elId = key.slice(0, sep);
+      const idx = Number(key.slice(sep + 1));
+      if (!Number.isInteger(idx)) return;
+      if (!map.has(elId)) map.set(elId, new Set());
+      map.get(elId).add(idx);
+    });
+    return map;
+  }, [occupiedSeats]);
+
+  // Mark backend-reserved seats as occupied (anonymous) so all users see the
+  // same live occupancy instead of stale per-browser presets.
+  useEffect(() => {
+    if (!occupiedSeatsByElement.size) return;
+    setElements((prev) =>
+      prev.map((el) => {
+        const idxSet = occupiedSeatsByElement.get(el.id);
+        if (!idxSet || !idxSet.size) return el;
+        const assignedAttendees = { ...(el.assignedAttendees || {}) };
+        idxSet.forEach((idx) => {
+          if (idx >= 0 && idx < el.seatsCount) assignedAttendees[idx] = true;
+        });
+        return { ...el, assignedAttendees };
+      })
+    );
+  }, [occupiedSeatsByElement]);
 
   // Stable math projection function for seat coordinates
   const getSeatPositions = useCallback((el) => {

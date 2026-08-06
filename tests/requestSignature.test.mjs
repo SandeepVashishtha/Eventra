@@ -15,7 +15,7 @@ const signed = await signRequest(
   secret
 );
 
-const result = validateSignature(
+const result = await validateSignature(
   payload,
   signed.timestamp,
   signed.nonce,

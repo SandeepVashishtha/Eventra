@@ -7,10 +7,12 @@ import hackathonsData from "./hackathonMockData.json";
 
 import useReducedMotion from "hooks/useReducedMotion.js";
 const getHackathonStatus = (hackathon) => {
+  if (!hackathon?.startDate || !hackathon?.endDate) return "upcoming";
   const now = new Date();
   const startDate = new Date(hackathon.startDate);
   const endDate = new Date(hackathon.endDate);
 
+  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return "upcoming";
   if (endDate < now) return "completed";
   if (startDate <= now && now <= endDate) return "live";
   return "upcoming";
@@ -20,7 +22,14 @@ const HackathonDetailsPage = () => {
   const prefersReducedMotion = useReducedMotion();
   const { hackathonId } = useParams();
   const foundHackathon = hackathonsData.find((item) => String(item.id) === hackathonId);
-
+  const copyLink = async () => {
+  try {
+    await navigator.clipboard.writeText(window.location.href);
+    alert("Link copied successfully!");
+  } catch (error) {
+    alert("Unable to copy link.");
+  }
+};
   if (!foundHackathon) {
     return (
       <div className="min-h-screen bg-bg text-text flex items-center justify-center px-4 py-24">
@@ -122,6 +131,13 @@ const HackathonDetailsPage = () => {
                 >
                   Browse Hackathons
                 </Link>
+                <button
+    onClick={copyLink}
+    className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-100"
+  >
+    Copy Link
+  </button>
+
               </div>
             </div>
 

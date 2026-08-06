@@ -29,6 +29,7 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
   // Also keep validateOnBlur and debounceMs in a ref so handleChange
   // doesn't need them in its dependency array and is never recreated.
   const optionsRef = useRef({ debounceMs, validateOnBlur });
+  const valuesRef = useRef(initialState);
 
   useEffect(() => {
     validationRulesRef.current = validationRules;
@@ -42,10 +43,14 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
     optionsRef.current = { debounceMs, validateOnBlur };
   }, [debounceMs, validateOnBlur]);
 
+  useEffect(() => {
+    valuesRef.current = values;
+  }, [values]);
+
   const [values, setValues] = useState(initialState);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
-const [isFormValid, setIsFormValid] = useState(false);
+  const [isFormValid, setIsFormValid] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
 
   const clearValidationTimer = useCallback(() => {
@@ -81,6 +86,9 @@ const [isFormValid, setIsFormValid] = useState(false);
       error = validator(value, allValues);
     } else if (typeof validator === 'object' && validator.validate) {
       error = validator.validate(value, allValues);
+    }
+    if (error && typeof error.then === 'function') {
+      return error.then(resolved => resolved === true ? null : resolved);
     }
     return error === true ? null : error;
   }, []);
@@ -150,9 +158,9 @@ const [isFormValid, setIsFormValid] = useState(false);
     const { name, value } = e.target;
     setTouched((prev) => ({ ...prev, [name]: true }));
     if (!validationRulesRef.current[name]) return;
-    const error = validateField(name, value, values);
+    const error = validateField(name, value, valuesRef.current);
     setErrors((prev) => ({ ...prev, [name]: error }));
-  }, [validateField, values]);
+  }, [validateField]);
 
   // Derive overall form validity whenever field values, errors, or touch
   // state changes. A field is considered satisfied when it has been touched
@@ -174,7 +182,7 @@ const [isFormValid, setIsFormValid] = useState(false);
     setIsFormValid(false);
   }, [clearValidationTimer]);
 
-return {
+  return {
     isValidating,
     values,
     errors,

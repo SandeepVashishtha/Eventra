@@ -302,7 +302,7 @@ class ErrorBoundary extends React.Component {
     saveAppStateSnapshot();
     try {
       const preserved = {};
-      ["theme", "cursor", "eventra_user_prefs"].forEach((key) => {
+      ["theme", "cursor", "eventra_user_prefs", "token", "user", "eventra:key-material", "eventra:key-salt"].forEach((key) => {
         const val = localStorage.getItem(key);
         if (val) preserved[key] = val;
       });

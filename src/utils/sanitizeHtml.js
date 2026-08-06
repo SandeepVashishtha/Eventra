@@ -107,8 +107,29 @@ const getDOMPurify = () => {
  * @param {string} dirty - Raw HTML from an untrusted source (API, user input)
  * @returns {string} Sanitised HTML safe for injection into the DOM
  */
-const stripAllHtml = (text) =>
-  text.replace(/<[^>]*>/g, '');
+const stripAllHtml = (text) => {
+  if (typeof window !== "undefined" && typeof DOMParser !== "undefined") {
+    try {
+      const parser = new DOMParser();
+      const parsedDoc = parser.parseFromString(text, "text/html");
+      return parsedDoc.body.textContent || "";
+    } catch {
+      // Fallback if parsing fails
+    }
+  }
+
+  // Safe fallback if DOMParser is unavailable (e.g. Node.js environment)
+  // Strips tags recursively to prevent nested tag bypass, and handles unclosed tags
+  let sanitized = text;
+  let previous;
+  let limit = 0;
+  do {
+    previous = sanitized;
+    sanitized = sanitized.replace(/<[^>]*>?/g, '');
+    limit++;
+  } while (sanitized !== previous && limit < 10);
+  return sanitized;
+};
 
 export function sanitizeHtml(dirty) {
   if (!dirty || typeof dirty !== "string") return "";

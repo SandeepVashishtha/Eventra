@@ -14,7 +14,7 @@
 const DEFAULT_OPTIONS = {
   path: "/",
   sameSite: import.meta.env?.VITE_COOKIE_SAME_SITE || "Strict",
-  secure: false,
+  
 };
 
 /**

@@ -46,6 +46,7 @@ const SignupForm = () => {
   });
 
   const [errors, setErrors] = useState({});
+  useEffect(() => { setErrors({}); }, []); // Clear errors on mount
   const [submitError, setSubmitError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);

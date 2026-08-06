@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { joinWaitlist, leaveWaitlist, getWaitlistStatus, getWaitlistCount } from 'services/waitlistService';
+import { showUndoToast } from 'utils/toast';
 
 // Custom hook - args grouped into single options object (fixes Excess Function Arguments)
 const useWaitlist = ({ eventId, isFullyBooked, waitlistEnabled, isAuthenticated, token }) => {
@@ -17,8 +18,8 @@ const useWaitlist = ({ eventId, isFullyBooked, waitlistEnabled, isAuthenticated,
       .then(data => {
         if (!cancelled) setWaitlistCount(data.count);
       })
-      .catch(() => {
-        // Silently ignore — default count of 0 is already set
+      .catch((err) => {
+        console.warn('Failed to fetch waitlist data:', err);
       });
 
     if (isAuthenticated && token) {
@@ -45,10 +46,28 @@ const useWaitlist = ({ eventId, isFullyBooked, waitlistEnabled, isAuthenticated,
     setLoading(true);
     try {
       if (onWaitlist) {
-        await leaveWaitlist(eventId, token);
         setOnWaitlist(false);
         setPosition(null);
         setWaitlistCount(prev => prev - 1);
+        showUndoToast({
+          message: 'Removed from waitlist.',
+          toastId: `common-leave-waitlist-${eventId}`,
+          onUndo: () => {
+            setOnWaitlist(true);
+            setPosition(position);
+            setWaitlistCount(prev => prev + 1);
+          },
+          onCommit: async () => {
+            try {
+              await leaveWaitlist(eventId, token);
+            } catch (err) {
+              setOnWaitlist(true);
+              setPosition(position);
+              setWaitlistCount(prev => prev + 1);
+              alert(err.message);
+            }
+          },
+        });
       } else {
         const data = await joinWaitlist(eventId, token);
         setOnWaitlist(true);
