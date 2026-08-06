@@ -22,6 +22,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -90,7 +91,8 @@ public class AuthLogoutTests {
     void testLogoutSuccess() throws Exception {
         mockMvc.perform(post("/api/auth/logout")
                         .header("Authorization", "Bearer " + jwtToken))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(cookie().maxAge("token", 0));
     }
 
     @Test
@@ -104,6 +106,23 @@ public class AuthLogoutTests {
         // 2. Try to access protected endpoint
         mockMvc.perform(get("/api/users/profile")
                         .header("Authorization", "Bearer " + jwtToken))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("Cookie-only session authenticates profile and logout clears cookie (#11974)")
+    void testCookieSessionAndLogout() throws Exception {
+        mockMvc.perform(get("/api/users/profile")
+                        .cookie(new jakarta.servlet.http.Cookie("token", jwtToken)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/auth/logout")
+                        .cookie(new jakarta.servlet.http.Cookie("token", jwtToken)))
+                .andExpect(status().isOk())
+                .andExpect(cookie().maxAge("token", 0));
+
+        mockMvc.perform(get("/api/users/profile")
+                        .cookie(new jakarta.servlet.http.Cookie("token", jwtToken)))
                 .andExpect(status().isUnauthorized());
     }
 
