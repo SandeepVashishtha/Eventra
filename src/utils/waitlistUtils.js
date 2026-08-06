@@ -82,6 +82,7 @@ const writeNotificationToStorage = (notification, storageKey) => {
   const raw = localStorage.getItem(storageKey);
   const notifications = raw ? safeJsonParse(raw, []) : [];
   notifications.unshift(notification);
+  if (notifications.length > 200) notifications.length = 200;
   localStorage.setItem(storageKey, JSON.stringify(notifications));
 };
 
