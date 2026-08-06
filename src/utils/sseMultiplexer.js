@@ -541,7 +541,8 @@ class SseMultiplexer {
     logger.log(`[SSE Multiplexer] Leader tab opening physical EventSource: ${sseBaseUrl}${path}`);
     this.updatePathStatus(path, "connecting");
 
-    const source = new EventSource(`${sseBaseUrl}${path}`, { withCredentials: true });
+    const sseUrl = new URL(path, sseBaseUrl).href;
+    const source = new EventSource(sseUrl, { withCredentials: true });
     this.activeEventSources.set(path, source);
 
     source.onopen = () => {
