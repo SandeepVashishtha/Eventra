@@ -12,6 +12,7 @@ jobs:
   assign-type-label:
     name: Assign type label(s)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Detect and apply type labels

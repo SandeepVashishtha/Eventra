@@ -1,3 +1,4 @@
+import { showSuccessToast } from "./toast.js";
 // ---------------------------------------------------------------------------
 // Self-Healing Offline Queue Utility (IndexedDB backed with LocalStorage Backup)
 // ---------------------------------------------------------------------------
@@ -79,19 +80,23 @@ const _rescueFromLocalStorage = () => {
 // Internal: notify the UI that a schema upgrade occurred
 // ---------------------------------------------------------------------------
 const _dispatchUpgradeEvent = (rescuedCount) => {
+  const message =
+    rescuedCount > 0
+      ? `IndexedDB schema upgraded. ${rescuedCount} queued action(s) were safely migrated.`
+      : "IndexedDB schema upgraded. No queued actions were affected.";
+
   if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
     window.dispatchEvent(
       new CustomEvent("eventra-offline-queue-upgraded", {
         detail: {
           rescuedItems: rescuedCount,
-          message:
-            rescuedCount > 0
-              ? `IndexedDB schema upgraded. ${rescuedCount} queued action(s) were safely migrated.`
-              : "IndexedDB schema upgraded. No queued actions were affected.",
+          message,
         },
       })
     );
   }
+
+  showSuccessToast(message);
 };
 
 // ---------------------------------------------------------------------------
@@ -322,21 +327,39 @@ export const pushToQueue = async (item, userId = null) => {
     return false;
   }
   const isDuplicate = queue.some((existing) => {
-  if (actionItem.idempotencyKey && existing.idempotencyKey) {
-    return existing.idempotencyKey === actionItem.idempotencyKey;
-  }
+    if (actionItem.idempotencyKey && existing.idempotencyKey) {
+      return existing.idempotencyKey === actionItem.idempotencyKey;
+    }
 
-  return (
-    existing.eventId === actionItem.eventId &&
-    existing.userId === actionItem.userId &&
-    existing.actionType === actionItem.actionType
-  );
-});
+    // SECURITY (Issue #11074): offline check-ins must dedupe per attendee
+    // ticket, not per operator. Every offline scan for the same event shares
+    // the same eventId + operator userId + actionType, so the generic key
+    // below would collapse the second and every later attendee into the first
+    // item and they would never be synced.
+    if (actionItem.actionType === "TICKET_CHECK_IN") {
+      return (
+        existing.actionType === "TICKET_CHECK_IN" &&
+        existing.eventId === actionItem.eventId &&
+        Boolean(actionItem.payload?.ticketId) &&
+        existing.payload?.ticketId === actionItem.payload?.ticketId
+      );
+    }
+
+    return (
+      existing.eventId === actionItem.eventId &&
+      existing.userId === actionItem.userId &&
+      existing.actionType === actionItem.actionType
+    );
+  });
 
 if (isDuplicate) {
+  const identity =
+    actionItem.actionType === "TICKET_CHECK_IN"
+      ? `ticket ${actionItem.payload?.ticketId}`
+      : `user ${actionItem.userId}`;
   logger.warn(
     `[OfflineQueue] Duplicate action detected for event ${actionItem.eventId} ` +
-      `(user ${actionItem.userId}, type ${actionItem.actionType}). Skipping enqueue.`
+      `(${identity}, type ${actionItem.actionType}). Skipping enqueue.`
   );
   return true;
 }
@@ -409,7 +432,12 @@ export const setQueue = async (newQueue) => {
           return;
         }
 
-        newQueue.forEach((item) => store.put(item));
+        try {
+          newQueue.forEach((item) => store.put(item));
+        } catch (err) {
+          if (err.name === "QuotaExceededError") logger.error("[OfflineQueue] IndexedDB quota exceeded during setQueue", err);
+          throw err;
+        }
 
         tx.oncomplete = () => resolve();
         tx.onerror = (e) => reject(e.target?.error || new Error('IndexedDB transaction failed'));
@@ -726,7 +754,10 @@ export const processQueue = async (currentUserId, fetchFn, options = {}) => {
 
     if (result.status === "success") {
       succeeded.push(item);
-    } else if (result.status === "dropped") {
+    } else if (result.status === "dropped" || result.status === "conflict") {
+      if (result.status === "conflict") {
+        logger.warn(`[OfflineQueue] Unresolved 409 conflict for item ${item.id} — dropping.`);
+      }
       dropped.push(item);
     } else {
       failed.push({ ...item, retryCount: (item.retryCount || 0) + 1 });

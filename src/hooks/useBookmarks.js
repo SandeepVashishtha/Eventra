@@ -171,7 +171,13 @@ const useBookmarks = (userId = "guest") => {
           const p = JSON.parse(e.newValue); 
           if (!Array.isArray(p)) return [];
           // Deep merge: combine existing local state with incoming storage state, keeping newest by savedAt
-          const merged = new Map([...bookmarksRef.current.map(b => [b.id, b]), ...p.map(b => [b.id, b])]);
+          const merged = new Map();
+          bookmarksRef.current.forEach(b => merged.set(b.id, b));
+          p.forEach(b => {
+            if (!merged.has(b.id) || (b.savedAt || 0) > (merged.get(b.id).savedAt || 0)) {
+              merged.set(b.id, b);
+            }
+          });
           return Array.from(merged.values()).sort((a, b) => (a.savedAt || 0) - (b.savedAt || 0));
         } catch { return []; }
       })() : [];

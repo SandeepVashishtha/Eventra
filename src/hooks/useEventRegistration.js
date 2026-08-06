@@ -310,7 +310,7 @@ const useEventRegistration = (eventIdParam) => {
       ...formData,
       additionalInfo: formData.additionalInfo.slice(0, MAX_NOTES_CHARS),
       priority: formData.priority,
-      eventId: parseInt(eventId),
+      eventId: parseInt(eventId, 10),
     };
 
     try {
@@ -329,14 +329,14 @@ const useEventRegistration = (eventIdParam) => {
         const queuePayload = {
           ...formData,
           additionalInfo: formData.additionalInfo.slice(0, MAX_NOTES_CHARS),
-          eventId: parseInt(eventId),
+          eventId: parseInt(eventId, 10),
         };
 
         const success = await pushToQueue(
           {
             actionType: "REGISTER_EVENT",
-            // Fixed: Removed undefined 'endpoint' variable which would cause a crash
-            eventId: parseInt(eventId),
+            endpoint: `/api/events/${eventId}/register`,
+            eventId: parseInt(eventId, 10),
             payload: queuePayload,
           },
           user.id

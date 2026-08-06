@@ -51,7 +51,7 @@ const useLocalStorage = (key, initialValue) => {
     const item = window.localStorage.getItem(key);
     return safeJsonParse(item, initialValue);
   } catch (error) {
-    console.warn(`useLocalStorage: error reading key "${key}":`, error);
+    logger.warn(`useLocalStorage: error reading key "${key}":`, error);
     return initialValue;
   }
   });
@@ -113,13 +113,18 @@ const useLocalStorage = (key, initialValue) => {
       }
     };
 
-    window.addEventListener("storage", handleStorageChange);
-    window.addEventListener("local-storage", handleStorageChange);
-
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
-      window.removeEventListener("local-storage", handleStorageChange);
-    };
+    const handlerRef = useRef(handleStorageChange);
+    handlerRef.current = handleStorageChange;
+    
+    useEffect(() => {
+      const handler = (e) => handlerRef.current(e);
+      window.addEventListener("storage", handler);
+      window.addEventListener("local-storage", handler);
+      return () => {
+        window.removeEventListener("storage", handler);
+        window.removeEventListener("local-storage", handler);
+      };
+    }, []);
   }, [key, readValue]);
 
   return [storedValue, setValue, removeValue];
@@ -132,7 +137,8 @@ export const isLocalStorageAvailable = () => {
     window.localStorage.setItem(testKey, testKey);
     window.localStorage.removeItem(testKey);
     return true;
-  } catch {
+  } catch (err) {
+    console.warn("[useLocalStorage] Storage operation failed:", err);
     return false;
   }
 };

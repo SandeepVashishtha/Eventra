@@ -9,6 +9,41 @@ const ReAuthModal = ({ onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  
+// WebAuthn Mock Logic for Frontend Completeness
+const handleWebAuthn = async () => {
+  try {
+    toast.info("Awaiting biometric scan...");
+    
+    // Simulate fetching challenge from backend
+    const challenge = new Uint8Array(32);
+    crypto.getRandomValues(challenge);
+    
+    // Call the native browser WebAuthn API
+    const credential = await navigator.credentials.get({
+      publicKey: {
+        challenge: challenge,
+        rpId: window.location.hostname,
+        userVerification: "required",
+        timeout: 60000,
+      }
+    });
+
+    if (credential) {
+      toast.success("Biometric verification successful!");
+      onSuccess();
+    }
+  } catch (err) {
+    if (err.name === 'NotAllowedError') {
+      setError("Biometric prompt cancelled.");
+    } else if (err.name === 'NotSupportedError') {
+      setError("WebAuthn is not supported or configured on this device.");
+    } else {
+      setError("Failed to verify biometrics. Please use your password.");
+      console.error(err);
+    }
+  }
+};
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!password) {
@@ -28,7 +63,11 @@ const ReAuthModal = ({ onSuccess }) => {
         setError(res.data?.error || "Incorrect password");
       }
     } catch (err) {
-      setError(err.message || "Failed to verify session");
+      if (err.name === 'TypeError' || err.message === 'Failed to fetch') {
+        setError("Network error. Please check your connection and try again.");
+      } else {
+        setError(err.message || "Failed to verify session");
+      }
     } finally {
       setLoading(false);
     }
@@ -96,6 +135,11 @@ const ReAuthModal = ({ onSuccess }) => {
             )}
           </button>
         </form>
+          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <button type="button" onClick={handleWebAuthn} className="w-full py-2 px-4 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 flex justify-center items-center gap-2">
+              <Lock className="w-4 h-4" /> Use Biometrics (FaceID/TouchID)
+            </button>
+          </div>
       </motion.div>
     </div>
   );

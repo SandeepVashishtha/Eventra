@@ -58,7 +58,9 @@ export function buildPaginatedUrl(baseUrl, page, size) {
   // The old logic used string concatenation which blindly appended duplicate 'page' parameters
   // (e.g., ?category=tech&page=0&page=1). Backend frameworks (like Spring) often extract the
   // *first* instance of a parameter, permanently freezing the UI on page 0.
-  const [urlWithoutHash, hash] = baseUrl.split("#");
+  const hashIdx = baseUrl.indexOf("#");
+  const urlWithoutHash = hashIdx === -1 ? baseUrl : baseUrl.slice(0, hashIdx);
+  const hash = hashIdx === -1 ? "" : baseUrl.slice(hashIdx + 1);
   const [path, queryString] = urlWithoutHash.split("?");
 
   const params = new URLSearchParams(queryString || "");
