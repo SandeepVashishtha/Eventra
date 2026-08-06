@@ -23,10 +23,13 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
-        User user = userRepository.findByEmailOrUsername(usernameOrEmail, usernameOrEmail)
+        // Emails and usernames are always persisted in lowercase, so normalize the
+        // lookup input the same way signup does to match mixed-case logins.
+        String identifier = usernameOrEmail.toLowerCase();
+        User user = userRepository.findByEmailOrUsername(identifier, identifier)
                 .orElseThrow(() ->
                         new UsernameNotFoundException(
-                                "User not found with username or email: " + usernameOrEmail));
+                                "User not found with username or email: " + identifier));
 
         return org.springframework.security.core.userdetails.User.builder()
                 .username(user.getEmail())   // use email as principal

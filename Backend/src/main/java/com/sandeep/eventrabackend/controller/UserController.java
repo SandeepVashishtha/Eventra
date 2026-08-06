@@ -130,9 +130,12 @@ public class UserController {
             throw new UserAlreadyExistsException("Username already exists: " + request.getUsername());
         }
 
-        user.setFirstName(request.getFirstName().trim());
-        user.setLastName(request.getLastName().trim());
-        user.setUsername(request.getUsername().trim());
+        user.setFirstName(request.getFirstName());
+        user.setLastName(request.getLastName());
+        user.setUsername(request.getUsername());
+        user.setProfileHeadline(request.getProfileHeadline());
+        user.setLinkedinUrl(request.getLinkedinUrl());
+        user.setGithubUrl(request.getGithubUrl());
 
         User updatedUser = userRepository.save(user);
         return ResponseEntity.ok(mapToUserProfileResponse(updatedUser));
@@ -261,6 +264,9 @@ public class UserController {
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .role(user.getRole() != null ? user.getRole().name() : null)
+                .profileHeadline(user.getProfileHeadline())
+                .linkedinUrl(user.getLinkedinUrl())
+                .githubUrl(user.getGithubUrl())
                 .build();
     }
 }

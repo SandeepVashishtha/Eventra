@@ -16,7 +16,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/analytics")
-@PreAuthorize("hasAnyAuthority('ADMIN', 'SUPER_ADMIN', 'ORGANIZER')")
 public class AnalyticsController {
 
     private final AnalyticsService analyticsService;
@@ -26,11 +25,13 @@ public class AnalyticsController {
     }
 
     @GetMapping("/dashboard")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<DashboardStatsDTO> getDashboardStats() {
         return ResponseEntity.ok(analyticsService.getDashboardStats());
     }
 
     @GetMapping("/registrations/trends")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<List<RegistrationTrendDTO>> getRegistrationTrends(
             @RequestParam(defaultValue = "monthly") String granularity,
             @RequestParam(defaultValue = "6") int periods) {
@@ -38,11 +39,13 @@ public class AnalyticsController {
     }
 
     @GetMapping("/feedback")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<List<FeedbackAnalyticsDTO>> getFeedbackAnalytics() {
         return ResponseEntity.ok(analyticsService.getFeedbackAnalytics());
     }
 
     @GetMapping("/organizers")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPER_ADMIN', 'ORGANIZER')")
     public ResponseEntity<List<OrganizerInsightDTO>> getOrganizerInsights() {
         return ResponseEntity.ok(analyticsService.getOrganizerInsights());
     }

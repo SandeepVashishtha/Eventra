@@ -82,6 +82,7 @@ const writeNotificationToStorage = (notification, storageKey) => {
   const raw = localStorage.getItem(storageKey);
   const notifications = raw ? safeJsonParse(raw, []) : [];
   notifications.unshift(notification);
+  if (notifications.length > 200) notifications.length = 200;
   localStorage.setItem(storageKey, JSON.stringify(notifications));
 };
 
@@ -239,7 +240,13 @@ export const syncWaitlistFromServer = async (eventId, cacheOwnerId) => {
       await saveGlobalWaitlist(reconciled, cacheOwnerId);
       return serverData;
     }
-  } catch {
+  } catch (err) {
+    if (err?.response?.status === 401 || err?.response?.status === 403) {
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("eventra-session-expired"));
+      }
+      throw err;
+    }
     logger.warn("[WaitlistUtils] Server sync failed, using localStorage cache");
   }
   return getEventWaitlist(id, cacheOwnerId);
@@ -251,7 +258,7 @@ export const getEventWaitlist = async (eventId, userId) => {
   const records = await getGlobalWaitlist(userId);
   return records
     .filter((r) => r.eventId === id && r.status === "waiting")
-    .sort((a, b) => new Date(a.joinedAt) - new Date(b.joinedAt));
+    .sort((a, b) => (new Date(a.joinedAt).getTime() || Infinity) - (new Date(b.joinedAt).getTime() || Infinity));
 };
 
 // Calculate queue position (1-indexed) for a user on a specific event
@@ -349,7 +356,8 @@ export const joinWaitlist = async (eventId, user, registrationForm = {}) => {
     }
     throw new Error(response.data?.message || "Server rejected waitlist join");
   } catch (error) {
-    if (error.response?.status === 409) {
+    const status = error?.status || error?.response?.status;
+    if (status === 409) {
       throw new Error("You are already on the waitlist for this event.");
     }
     if (error.isNetworkError || error.isTimeout) {

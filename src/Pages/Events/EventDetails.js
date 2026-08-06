@@ -8,7 +8,7 @@ import { sanitizeMarkdown } from "utils/sanitizeHtml";
 import { toast } from "react-toastify";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import useKeyboardShortcuts from "hooks/useKeyboardShortcuts";
-import { Calendar, MapPin, Clock, Tag, CalendarPlus, Link2, Check, Archive } from "lucide-react";
+import { Calendar, MapPin, Clock, Tag, CalendarPlus, Link2, Check, Archive, ExternalLink, Github, Linkedin, Users } from "lucide-react";
 import { getEventStatus, isEventRegistrationClosed } from "utils/eventUtils";
 import { useAuth } from "context/AuthContext";
 import useBookmarks from "hooks/useBookmarks";
@@ -76,44 +76,11 @@ const isRequestCanceled = (error, signal) =>
   error?.name === "CanceledError" ||
   error?.code === "ERR_CANCELED";
 
-const toCalendarDate = (dateValue) => {
-  if (!dateValue) return "";
-  const date = new Date(dateValue);
-  if (Number.isNaN(date.getTime())) return "";
-  return date.toISOString().slice(0, 10);
-};
-
-const toCalendarTime = (event, dateValue) => {
-  if (event?.time) return event.time;
-
-  if (!dateValue) return "";
-  const date = new Date(dateValue);
-  if (Number.isNaN(date.getTime())) return "";
-
-  return date.toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-  });
-};
-
-const getDurationMinutes = (startValue, endValue) => {
-  if (!startValue || !endValue) return 60;
-  const start = new Date(startValue);
-  const end = new Date(endValue);
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) {
-    return 60;
-  }
-  return Math.round((end - start) / (1000 * 60));
-};
-
-const getCalendarLocation = (event) => {
-  if (!event?.location) return event?.venue || "Online";
-  if (typeof event.location === "string") return event.location;
-
-  return [event.location.name, event.location.address]
-    .filter(Boolean)
-    .join(", ") || event.venue || "Online";
+const sanitizeProfileUrl = (url) => {
+  if (!url) return "";
+  const trimmed = String(url).trim();
+  if (/^(javascript|data|vbscript):/i.test(trimmed)) return "";
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
 };
 
 const EventDetails = () => {
@@ -129,6 +96,9 @@ const EventDetails = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
   const [event, setEvent] = useState(null);
+  const [attendees, setAttendees] = useState([]);
+  const [attendeesLoading, setAttendeesLoading] = useState(false);
+  const [attendeesError, setAttendeesError] = useState(null);
   const [fetchLoading, setFetchLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -146,7 +116,20 @@ const EventDetails = () => {
   const [linkCopied, setLinkCopied] = useState(false);
   const latestRequestIdRef = useRef(0);
   const abortControllerRef = useRef(null);
+const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setLinkCopied(true);
 
+      setTimeout(() => {
+        setLinkCopied(false);
+      }, 2000);
+
+      alert("Link copied successfully!");
+    } catch (error) {
+      alert("Unable to copy link.");
+    }
+  };
   const loadEvent = useCallback(async () => {
     abortControllerRef.current?.abort();
 
@@ -201,6 +184,38 @@ const EventDetails = () => {
       abortControllerRef.current?.abort();
     };
   }, [loadEvent]);
+
+  useEffect(() => {
+    if (!eventId || !user) {
+      setAttendees([]);
+      return;
+    }
+
+    let isActive = true;
+    const loadAttendees = async () => {
+      setAttendeesLoading(true);
+      setAttendeesError(null);
+
+      try {
+        const response = await apiUtils.get(API_ENDPOINTS.EVENTS.ATTENDEES(eventId));
+        if (!isActive) return;
+        const data = response.data?.data || response.data || [];
+        setAttendees(Array.isArray(data) ? data : []);
+      } catch (error) {
+        if (!isActive) return;
+        const status = error?.status || error?.response?.status;
+        setAttendees([]);
+        setAttendeesError(status === 403 ? "Register for this event to view opted-in attendees." : "Attendee directory is unavailable right now.");
+      } finally {
+        if (isActive) setAttendeesLoading(false);
+      }
+    };
+
+    loadAttendees();
+    return () => {
+      isActive = false;
+    };
+  }, [eventId, user]);
 
   const handlePrint = () => {
     setIsPrinting(true);
@@ -378,6 +393,15 @@ ${window.location.href}
   const registrationEnd = event.registrationEnd
   ? new Date(event.registrationEnd)
   : null;
+
+  const eventDate =
+  event.date ||
+  event.eventDate ||
+  event.startDate ||
+  null;
+
+const dateInfo = formatLocalDateTime(eventDate);
+
   const eventDate = event.date || event.eventDate || event.startDate || null;
   const dateInfo = formatEventDate(eventDate);
   const calendarEvent = {
@@ -390,6 +414,8 @@ ${window.location.href}
     location: getCalendarLocation(event),
     joiningLink: event.joiningLink || event.virtualLink || window.location.href,
   };
+
+
 
 const hoursLeft = registrationEnd
   ? Math.ceil((registrationEnd - new Date()) / (1000 * 60 * 60))
@@ -406,14 +432,68 @@ const lastUpdated = getLastUpdated(event.updatedAt);
     <ReadingProgressBar />
     <RecentlyViewedTracker event={event} />
       <Helmet>
-        <title>{event.title} | Eventra</title>
-        <meta property="og:title" content={event.title} />
-        <meta property="og:description" content={event.description?.slice(0, 160) || ""} />
-        <meta property="og:image" content={event.image} />
-        <meta property="og:url" content={window.location.href} />
-        <meta name="twitter:card" content="summary_large_image" />
-      </Helmet>
+  <title>{event.title} | Eventra</title>
 
+  <meta
+    name="description"
+    content={event.description?.slice(0,160) || ""}
+  />
+
+  <meta
+    property="og:type"
+    content="website"
+  />
+
+  <meta
+    property="og:title"
+    content={event.title}
+  />
+
+  <meta
+    property="og:description"
+    content={event.description?.slice(0,160) || ""}
+  />
+
+  <meta
+    property="og:image"
+    content={event.image}
+  />
+
+  <meta
+    property="og:url"
+    content={window.location.href}
+  />
+
+  <meta
+    property="og:site_name"
+    content="Eventra"
+  />
+
+  <meta
+    name="twitter:card"
+    content="summary_large_image"
+  />
+
+  <meta
+    name="twitter:title"
+    content={event.title}
+  />
+
+  <meta
+    name="twitter:description"
+    content={event.description?.slice(0,160) || ""}
+  />
+
+  <meta
+    name="twitter:image"
+    content={event.image}
+  />
+
+  <meta
+    name="twitter:url"
+    content={window.location.href}
+  />
+</Helmet>
       <div className="min-h-screen bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100 py-16 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl space-y-8">
 
@@ -513,6 +593,14 @@ const lastUpdated = getLastUpdated(event.updatedAt);
                   >
                     <CalendarPlus size={18} /> Duplicate Event
                   </button>
+                  <button
+    type="button"
+    onClick={copyLink}
+    className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
+    aria-label="Copy event link"
+  >
+    {linkCopied ? "Copied!" : "Copy Link"}
+  </button>
                   <div className="relative print-hide">
                     <button
                       onClick={() => setShowExportDropdown(!showExportDropdown)}
@@ -701,6 +789,70 @@ const lastUpdated = getLastUpdated(event.updatedAt);
                   className="mt-3 text-gray-700 dark:text-gray-300 text-sm leading-6 prose prose-indigo dark:prose-invert"
                   dangerouslySetInnerHTML={{ __html: sanitizeMarkdown(event.description, marked.parse) }}
                 />
+              </div>
+
+              <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">
+                      <Users className="h-4 w-4" />
+                      Attendees
+                    </h3>
+                    <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                      Opted-in registered attendees for this event.
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-200">
+                    {attendees.length}
+                  </span>
+                </div>
+
+                <div className="mt-4 space-y-3">
+                  {attendeesLoading ? (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Loading attendees...</p>
+                  ) : attendeesError ? (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{attendeesError}</p>
+                  ) : attendees.length === 0 ? (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">No attendees have opted into the directory yet.</p>
+                  ) : (
+                    attendees.map((attendee) => (
+                      <div key={attendee.userId} className="rounded-2xl border border-gray-200 p-4 dark:border-gray-800">
+                        {(() => {
+                          const githubUrl = sanitizeProfileUrl(attendee.githubUrl);
+                          const linkedinUrl = sanitizeProfileUrl(attendee.linkedinUrl);
+                          return (
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <div>
+                            <p className="font-semibold text-gray-900 dark:text-white">{attendee.displayName}</p>
+                            {attendee.username && (
+                              <p className="text-xs text-gray-500 dark:text-gray-400">@{attendee.username}</p>
+                            )}
+                            {attendee.profileHeadline && (
+                              <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">{attendee.profileHeadline}</p>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            {githubUrl && (
+                              <a href={githubUrl} target="_blank" rel="noopener noreferrer" className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800" aria-label={`${attendee.displayName} GitHub`}>
+                                <Github className="h-4 w-4" />
+                              </a>
+                            )}
+                            {linkedinUrl && (
+                              <a href={linkedinUrl} target="_blank" rel="noopener noreferrer" className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-blue-700 hover:bg-blue-50 dark:border-gray-700 dark:text-blue-300 dark:hover:bg-blue-950/30" aria-label={`${attendee.displayName} LinkedIn`}>
+                                <Linkedin className="h-4 w-4" />
+                              </a>
+                            )}
+                            {(githubUrl || linkedinUrl) && (
+                              <ExternalLink className="mt-2 h-4 w-4 text-gray-400" aria-hidden="true" />
+                            )}
+                          </div>
+                        </div>
+                          );
+                        })()}
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             </div>
           </div>

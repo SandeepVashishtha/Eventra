@@ -47,6 +47,9 @@ public class EventRegistration {
     @Column(name = "seat_id", length = 100)
     private String seatId;
 
+    @Column(name = "show_profile_in_attendee_directory", nullable = false)
+    private boolean showProfileInAttendeeDirectory = false;
+
     public Long getId() {
         return id;
     }
@@ -93,5 +96,13 @@ public class EventRegistration {
 
     public void setSeatId(String seatId) {
         this.seatId = seatId;
+    }
+
+    public boolean isShowProfileInAttendeeDirectory() {
+        return showProfileInAttendeeDirectory;
+    }
+
+    public void setShowProfileInAttendeeDirectory(boolean showProfileInAttendeeDirectory) {
+        this.showProfileInAttendeeDirectory = showProfileInAttendeeDirectory;
     }
 }

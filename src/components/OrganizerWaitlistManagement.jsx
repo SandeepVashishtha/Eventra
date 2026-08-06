@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import { useAuth } from 'context/AuthContext';
 import {
@@ -22,14 +22,8 @@ const OrganizerWaitlistManagement = ({ eventId, eventName, currentAttendees = 0,
   const [newCapacity, setNewCapacity] = useState(maxAttendees);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Load waitlist data
-  useEffect(() => {
-    loadWaitlistData();
-    const interval = setInterval(loadWaitlistData, 10000); // Refresh every 10 seconds
-    return () => clearInterval(interval);
-  }, [eventId]);
 
-  const loadWaitlistData = async () => {
+  const loadWaitlistData = useCallback(async () => {
     try {
       const data = await syncWaitlistFromServer(eventId, user?.id);
       setWaitlist(data);
@@ -42,7 +36,14 @@ const OrganizerWaitlistManagement = ({ eventId, eventName, currentAttendees = 0,
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [eventId, user?.id]);
+
+  // Load waitlist data
+  useEffect(() => {
+    loadWaitlistData();
+    const interval = setInterval(loadWaitlistData, 10000); // Refresh every 10 seconds
+    return () => clearInterval(interval);
+  }, [loadWaitlistData]);
 
   // Promote the next user manually
   const handlePromoteNext = async () => {

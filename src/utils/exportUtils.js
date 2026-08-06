@@ -45,9 +45,8 @@ export function exportToCSV(data, filename) {
   link.click();
   document.body.removeChild(link);
 
-  // 🔥 FIX: Free up browser memory after download triggers
-  // (100ms delay ensures the browser starts the download before the blob is destroyed)
-  setTimeout(() => URL.revokeObjectURL(url), 100);
+  // Sync revokeObjectURL fixes memory leak when tab closes quickly
+  URL.revokeObjectURL(url);
 }
 
 export function exportToJSON(data, filename) {
@@ -64,6 +63,6 @@ export function exportToJSON(data, filename) {
   link.click();
   document.body.removeChild(link);
 
-  // 🔥 FIX: Free up browser memory after download triggers
-  setTimeout(() => URL.revokeObjectURL(url), 100);
+  // Sync revokeObjectURL fixes memory leak when tab closes quickly
+  URL.revokeObjectURL(url);
 }
