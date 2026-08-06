@@ -49,15 +49,13 @@ const dispatchOne = async (item, apiUtils) => {
   if (item.action === 'delete') return apiUtils.delete(item.payload.endpoint);
 };
 
-const trySyncItem = async (item, queue, apiUtils) => {
+const trySyncItem = async (item, apiUtils) => {
   try {
     await dispatchOne(item, apiUtils);
-    return null; // success — not remaining
+    return false; // success
   } catch (e) {
     console.error('Failed to sync queued notification action', e);
-    // Build the remaining list: failed item + everything after it
-    const failedIndex = queue.indexOf(item);
-    return [item, ...queue.slice(failedIndex + 1)];
+    return true; // failed
   }
 };
 
@@ -71,11 +69,8 @@ export const syncNotificationQueue = async (apiUtils) => {
   // attempted.
   let remaining = [];
   for (const item of queue) {
-    const failedTail = await trySyncItem(item, queue, apiUtils);
-    if (failedTail) {
-      remaining = failedTail;
-      break;
-    }
+    const failed = await trySyncItem(item, apiUtils);
+    if (failed) remaining.push(item);
   }
 
   persistRemaining(remaining);
