@@ -17,6 +17,10 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     @Query("SELECT e FROM Event e WHERE e.id = :id")
     Optional<Event> findByIdWithLock(@Param("id") Long id);
 
+    @Modifying
+    @Query(value = "DELETE FROM event_attendees WHERE event_id = :eventId", nativeQuery = true)
+    void deleteAttendeeRowsByEventId(@Param("eventId") Long eventId);
+
     /**
      * Removes the given user from the event_attendees join table.
      * Used before deleting a user so no orphaned attendee rows remain.
