@@ -420,4 +420,42 @@ console.log("Running Waitlist System unit tests...");
   console.log("✓ Test 11: Promote Record Online Server Error");
 }
 
+// 12. Offline join enqueues a JOIN_WAITLIST item for later sync (Issue #11538)
+{
+  resetAll();
+  navigator.onLine = false;
+  const eventId = 1;
+  const user = { id: "user-1", email: "user1@example.com", fullName: "User One" };
+  const form = { phone: "123456", eventTitle: "React Conf" };
+
+  const entry = await joinWaitlist(eventId, user, form);
+  assert.equal(entry.status, "waiting");
+
+  const queue = JSON.parse(localStorage.getItem("eventra_offline_queue")) || [];
+  assert.equal(queue.length, 1, "Offline join should enqueue exactly one queue item");
+
+  const item = queue[0];
+  assert.equal(item.actionType, "JOIN_WAITLIST");
+  assert.equal(item.eventId, 1);
+  assert.equal(item.userId, "user-1");
+  assert.equal(item.idempotencyKey, "waitlist-join-user-1-1");
+  assert.ok(/\/events\/1\/waitlist$/.test(item.endpoint), `endpoint should hit the waitlist route (got ${item.endpoint})`);
+  assert.equal(item.payload.userId, "user-1");
+  assert.equal(item.payload.name, "User One");
+  assert.equal(item.payload.email, "user1@example.com");
+  assert.equal(item.payload.phone, "123456");
+  assert.equal(item.payload.eventTitle, "React Conf");
+
+  // A duplicate offline join is rejected and must not enqueue a second item
+  await assert.rejects(
+    async () => {
+      await joinWaitlist(eventId, user, form);
+    },
+    /already on the waitlist/
+  );
+  const queueAfter = JSON.parse(localStorage.getItem("eventra_offline_queue")) || [];
+  assert.equal(queueAfter.length, 1, "Duplicate join must not create a second queue item");
+  console.log("✓ Test 12: Offline join enqueues JOIN_WAITLIST for sync");
+}
+
 console.log("\nAll Waitlist unit tests passed successfully! ✓");
