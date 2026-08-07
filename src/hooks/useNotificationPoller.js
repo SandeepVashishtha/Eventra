@@ -6,6 +6,7 @@ import usePageVisibility from "./usePageVisibility.js";
 import seedNotifications from "../data/mockNotifications.json";
 import { safeJsonParse } from "../utils/safeJsonParse.js";
 import { getNotificationMessage } from "../utils/notificationPreferences.js";
+import { mergeNotificationLists } from "../utils/notificationMerge.js";
 import { get as idbGet, del as idbDel } from "idb-keyval";
 import { showUndoToast } from "../utils/toast.js";
 
@@ -109,16 +110,19 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
   };
 
   const applyList = useCallback(
-    (list, { deliverNew: shouldDeliver = false } = {}) => {
+    (list, { deliverNew: shouldDeliver = false, merge = false } = {}) => {
       const normalized = list.map(normalize);
       const incomingUnread = normalized.filter((n) => {
         const isNew = !seenIds.current.has(n.id);
         return isNew && !n.isRead;
       });
       normalized.forEach((n) => addSeenId(n.id));
-      setNotifications(normalized);
-      setUnreadCount(normalized.filter((n) => !n.isRead).length);
-      persist(normalized, storageKeyRef.current);
+      const merged = merge
+        ? mergeNotificationLists(notificationsRef.current, normalized)
+        : normalized;
+      setNotifications(merged);
+      setUnreadCount(merged.filter((n) => !n.isRead).length);
+      persist(merged, storageKeyRef.current);
       if (shouldDeliver && hasCompletedInitialFetchRef.current && incomingUnread.length > 0) {
         deliverNew(incomingUnread);
       }
