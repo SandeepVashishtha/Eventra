@@ -118,13 +118,22 @@ public class AdminService {
             throw new AccessDeniedException("Only SUPER_ADMIN users can delete SUPER_ADMIN accounts");
         }
 
+        List<Long> affectedEventIds = eventRegistrationRepository.findEventIdsByUser_Id(id);
+
         eventRegistrationRepository.deleteByUser_Id(id);
         eventWaitlistRepository.deleteByUser_Id(id);
         hackathonRegistrationRepository.deleteByUser_Id(id);
         projectUpvoteRepository.deleteByUser_Id(id);
         notificationRepository.deleteByUser_Id(id);
         feedbackRepository.deleteByUser_Id(id);
-        eventRepository.deleteAttendeeRowsByUserId(id);
+
+        for (Long eventId : affectedEventIds) {
+            eventRepository.findById(eventId).ifPresent(event -> {
+                event.setRegisteredCount((int) eventRegistrationRepository
+                        .countByEvent_IdAndStatus(eventId, "CONFIRMED"));
+                eventRepository.save(event);
+            });
+        }
 
         userRepository.deleteById(id);
     }
@@ -145,10 +154,12 @@ public class AdminService {
      * Returns all attendees registered for a specific event.
      */
     public List<AdminUserResponse> getEventAttendees(Long eventId) {
-        var event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new EntityNotFoundException("Event not found with id: " + eventId));
-        return event.getAttendees().stream()
-                .map(this::toAdminUserResponse)
+        if (!eventRepository.existsById(eventId)) {
+            throw new EntityNotFoundException("Event not found with id: " + eventId);
+        }
+        return eventRegistrationRepository.findByEvent_Id(eventId).stream()
+                .filter(registration -> "CONFIRMED".equals(registration.getStatus()))
+                .map(registration -> toAdminUserResponse(registration.getUser()))
                 .collect(Collectors.toList());
     }
 
@@ -162,7 +173,6 @@ public class AdminService {
         }
         eventRegistrationRepository.deleteByEventId(id);
         eventWaitlistRepository.deleteByEvent_Id(id);
-        eventRepository.deleteAttendeeRowsByEventId(id);
         eventTeamMemberRepository.deleteByEvent_Id(id);
         feedbackRepository.deleteByEvent_Id(id);
         eventRoleAuditLogRepository.deleteByEventId(id);

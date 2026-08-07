@@ -2,8 +2,6 @@ package com.sandeep.eventrabackend.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
 
 @Entity
 @Table(name = "events")
@@ -32,7 +30,8 @@ public class Event {
     private Integer capacity;
 
     /**
-     * Current number of confirmed registrations — kept in sync with attendees.size().
+     * Current number of confirmed registrations — derived from event_registrations
+     * (status = CONFIRMED) and updated on register / cancel / promote / user delete.
      */
     private int registeredCount = 0;
 
@@ -80,15 +79,6 @@ public class Event {
      */
     @Version
     private Long version;
-
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-        name = "event_attendees",
-        joinColumns = @JoinColumn(name = "event_id"),
-        inverseJoinColumns = @JoinColumn(name = "user_id"),
-        uniqueConstraints = @UniqueConstraint(columnNames = {"event_id", "user_id"})
-    )
-    private Set<User> attendees = new HashSet<>();
 
     // ── Helpers ─────────────────────────────────────────────────────────────
 
@@ -147,9 +137,6 @@ public class Event {
 
     public Long getVersion() { return version; }
     public void setVersion(Long version) { this.version = version; }
-
-    public Set<User> getAttendees() { return attendees; }
-    public void setAttendees(Set<User> attendees) { this.attendees = attendees; }
 
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
