@@ -8,6 +8,7 @@ import com.sandeep.eventrabackend.dto.response.ErrorResponse;
 import com.sandeep.eventrabackend.dto.response.AttendeeDirectoryResponse;
 import com.sandeep.eventrabackend.dto.response.EventAvailabilityResponse;
 import com.sandeep.eventrabackend.dto.response.EventResponse;
+import com.sandeep.eventrabackend.dto.response.PagedResponse;
 import com.sandeep.eventrabackend.dto.response.RegistrationResponse;
 import com.sandeep.eventrabackend.dto.response.WaitlistResponse;
 import com.sandeep.eventrabackend.model.Event;
@@ -175,20 +176,28 @@ public class EventController {
 
     @GetMapping
     @Operation(
-            summary = "Get all events",
-            description = "Returns a list of all available events."
+            summary = "Get public events (paginated)",
+            description = "Returns a page of public events. Supports page/size/search/status/sort query params."
     )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
                     description = "Events fetched successfully",
-                    content = @Content(
-                            array = @ArraySchema(schema = @Schema(implementation = EventResponse.class))
-                    )
+                    content = @Content(schema = @Schema(implementation = PagedResponse.class))
             )
     })
-    public ResponseEntity<List<EventResponse>> getAllEvents() {
-        return ResponseEntity.ok(eventService.getAllEvents());
+    public ResponseEntity<PagedResponse<EventResponse>> getAllEvents(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) List<String> status,
+            @RequestParam(required = false) String sort
+    ) {
+        int clampedSize = Math.min(Math.max(size, 1), 100);
+        int safePage = Math.max(page, 0);
+        return ResponseEntity.ok(
+                eventService.getAllEvents(safePage, clampedSize, search, status, sort)
+        );
     }
 
     // ── Issue #2101 — GET /api/events/{id} ──────────────────────────────────

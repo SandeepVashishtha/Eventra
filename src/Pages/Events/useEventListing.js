@@ -57,6 +57,7 @@ const useEventListing = () => {
     first: true,
     last: true,
   });
+  const [serverPaged, setServerPaged] = useState(false);
 
   const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
   const isInitialMount = useRef(true);
@@ -138,7 +139,8 @@ const useEventListing = () => {
 
       const responseData = response?.data || {};
 
-      const apiEvents = Array.isArray(responseData.content)
+      const isPaged = Array.isArray(responseData.content);
+      const apiEvents = isPaged
         ? responseData.content
         : Array.isArray(responseData)
           ? responseData
@@ -146,6 +148,7 @@ const useEventListing = () => {
 
       const normalizedEvents = apiEvents.map(normalizeEventItem);
       setEvents(normalizedEvents);
+      setServerPaged(isPaged);
 
       setPagination({
         totalPages: responseData.totalPages || 1,
@@ -155,6 +158,7 @@ const useEventListing = () => {
       });
     } catch (error) {
         setEvents([]);
+        setServerPaged(false);
         setPagination({
           totalPages: 1,
           totalElements: 0,
@@ -319,12 +323,20 @@ filtered = filtered.filter((event) => {
   }, [filteredEvents, scoredEvents, sortType]);
 
   const paginatedEvents = useMemo(() => {
+    // Server already returned one page — do not re-slice client-side.
+    if (serverPaged) {
+      return sortedEvents;
+    }
     const startIndex = (currentPage - 1) * eventsPerPage;
     return sortedEvents.slice(startIndex, startIndex + eventsPerPage);
-  }, [sortedEvents, currentPage, eventsPerPage]);
+  }, [sortedEvents, currentPage, eventsPerPage, serverPaged]);
 
-  const totalElements = pagination.totalPages > 1 ? pagination.totalElements : sortedEvents.length;
-  const totalPages = pagination.totalPages > 1 ? pagination.totalPages : Math.ceil(sortedEvents.length / eventsPerPage) || 1;
+  const totalElements = serverPaged
+    ? pagination.totalElements
+    : sortedEvents.length;
+  const totalPages = serverPaged
+    ? pagination.totalPages || 1
+    : Math.ceil(sortedEvents.length / eventsPerPage) || 1;
 
   return {
     currentPage,
