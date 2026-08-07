@@ -13,6 +13,8 @@
     "@heroicons/react": "^2.2.0",
     "@sentry/browser": "^10.69.0",
     "@sentry/react": "^10.69.0",
+    "@sendgrid/mail": "^8.1.4",
+    "@aws-sdk/client-ses": "^3.658.1",
     "@tailwindcss/postcss": "4.3.3",
     "@vercel/analytics": "^2.0.1",
     "aos": "^2.3.4",
