@@ -274,8 +274,17 @@ const EventRegistration = () => {
     const conflictCheck = checkRegistrationConflict(event, myEvents);
     if (conflictCheck.hasConflict) {
       try {
-        const res = await apiUtils.get(API_ENDPOINTS.EVENTS.LIST);
-        const realEvents = res.status === 200 ? res.data : [];
+        const around =
+          event.eventDate || event.date || event.startDate || undefined;
+        const params = new URLSearchParams();
+        if (event?.id != null) params.set("excludeId", String(event.id));
+        if (around) params.set("around", around);
+        params.set("windowDays", "14");
+        params.set("limit", "20");
+        const res = await apiUtils.get(
+          `${API_ENDPOINTS.EVENTS.ALTERNATIVES}?${params.toString()}`
+        );
+        const realEvents = Array.isArray(res?.data) ? res.data : [];
         const suggestions = suggestAlternativeEvents(event, realEvents, myEvents);
         setConflictData({
           conflicts: conflictCheck.conflicts,
