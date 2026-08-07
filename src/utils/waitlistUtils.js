@@ -4,6 +4,7 @@ import { apiUtils, API_ENDPOINTS } from "../config/api.js";
 import { logger } from "./logger.js";
 import { getOrMigrateKey } from "./storageKeyManager.js";
 import { syncSecureStorage } from "./secureStorage.js";
+import { pushToQueue } from "./offlineQueue.js";
 
 const GLOBAL_WAITLIST_KEY = "eventra_global_waitlists";
 const NOTIFICATION_INBOX_PREFIX = "eventra_notification_inbox";
@@ -447,6 +448,25 @@ export const joinWaitlist = async (eventId, user, registrationForm = {}) => {
 
   records.push(newEntry);
   await saveGlobalWaitlist(records, userId);
+
+  // Issue #11538: enqueue the join so it is replayed by useOfflineSync once
+  // connectivity returns; otherwise the server never receives the waitlist join.
+  await pushToQueue(
+    {
+      actionType: "JOIN_WAITLIST",
+      endpoint: `${API_ENDPOINTS.EVENTS.ALL}/${id}/waitlist`,
+      eventId: id,
+      idempotencyKey: `waitlist-join-${userId}-${id}`,
+      payload: {
+        userId,
+        name: newEntry.userName,
+        email: newEntry.userEmail,
+        phone: newEntry.phone,
+        eventTitle: newEntry.eventTitle,
+      },
+    },
+    userId
+  );
 
   await addLocalNotification(
     "Waitlist Joined (Offline)",
