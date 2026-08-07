@@ -55,10 +55,10 @@ public class EventController {
     // ── Issue #2102 — POST /api/events/create ────────────────────────────────
 
     @PostMapping("/create")
-    @PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN', 'SUPER_ADMIN')")
     @Operation(
             summary = "Create a new event",
-            description = "Allows an ORGANIZER or ADMIN to create a new event. " +
+            description = "Allows an ORGANIZER, ADMIN or SUPER_ADMIN to create a new event. " +
                           "The event registeredCount defaults to 0.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
@@ -86,7 +86,7 @@ public class EventController {
             ),
             @ApiResponse(
                     responseCode = "403",
-                    description = "Forbidden - User does not have ORGANIZER or ADMIN role",
+                    description = "Forbidden - User does not have ORGANIZER, ADMIN or SUPER_ADMIN role",
                     content = @Content(
                             schema = @Schema(implementation = ErrorResponse.class)
                     )
