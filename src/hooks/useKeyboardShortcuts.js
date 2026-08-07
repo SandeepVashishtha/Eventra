@@ -42,10 +42,7 @@ const useRef = (...args) => getReactHook("useRef", reactUseRef)(...args);
  * });
  */
 export const useKeyboardShortcuts = (shortcuts = {}, disabled = false) => {
-  const rrdNavigate =
-    typeof globalThis.ReactRouterDomMock !== "undefined"
-      ? null
-      : useNavigate();
+  const rrdNavigate = useNavigate();
   const navigate =
     typeof globalThis.ReactRouterDomMock !== "undefined"
       ? globalThis.ReactRouterDomMock.navigate

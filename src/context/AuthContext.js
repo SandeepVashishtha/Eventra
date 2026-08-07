@@ -227,7 +227,7 @@ export const AuthProvider = ({ children }) => {
         if (!isMountedRef.current) return;
 
         if (res.ok && res.data) {
-          const { sessionToken, sessionUser } = extractSession(res.data, res.data?.user?.email || null);
+          const { sessionUser } = extractSession(res.data, res.data?.user?.email || null);
           if (!isMountedRef.current) return;
           setToken(activeToken);
           setUser(sessionUser);
