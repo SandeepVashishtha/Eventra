@@ -37,6 +37,7 @@ import { API_ENDPOINTS, apiUtils } from "config/api";
 import { useSessionRecovery } from "context/SessionRecoveryContext";
 import CalendarView from "components/CalendarView";
 import EventConflictModal from "components/EventConflictModal";
+import AskTheOrganizer from "components/events/AskTheOrganizer";
 import ConfettiCanvas from "components/common/ConfettiCanvas";
 import { SkeletonEventCard, WaitlistSkeleton, WaitlistPositionSkeleton } from "components/common/SkeletonLoaders";
 import { logger } from "utils/logger";
@@ -829,6 +830,10 @@ const EventRegistration = () => {
                   {event.location}
                 </span>
               </div>
+            </div>
+
+            <div className="mt-8">
+              <AskTheOrganizer eventId={event.id || eventId} />
             </div>
           </div>
 
