@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import useClipboard from "hooks/useClipboard"; // Fix: replace raw clipboard with hook
+import useClipboard from "hooks/useClipboard";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X, Github, Rocket, ChevronRight, ChevronLeft,

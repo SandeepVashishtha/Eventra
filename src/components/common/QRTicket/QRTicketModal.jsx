@@ -7,8 +7,6 @@ import { useRef, useEffect } from "react";
 import QRTicket from "./QRTicket";
 import { useTicketDownload } from "./useTicketDownload";
 import { toast } from "react-toastify";
-// Fix: Import useClipboard to replace 40-line raw clipboard boilerplate
-// in handleShare. Now handles Clipboard API + execCommand fallback in one call.
 import useClipboard from "hooks/useClipboard";
 
 export default function QRTicketModal({ isOpen, onClose, ticket }) {
