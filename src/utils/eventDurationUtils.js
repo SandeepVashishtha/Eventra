@@ -15,13 +15,24 @@ export const getEventDuration = (event) => {
     return "";
   }
 
-  const diffDays = Math.ceil(
-    (endDate - startDate) / (1000 * 60 * 60 * 24)
+  // Same start/end instant → no real duration; flag it explicitly.
+  if (startDate.getTime() === endDate.getTime()) {
+    return "Same Day";
+  }
+
+  // Compute the span from calendar-day boundaries (local date components
+  // normalized to UTC midnight) instead of dividing raw milliseconds by
+  // 86400000, so DST transitions never skew the result.
+  const startOfDayMs = (d) => Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+  const calendarDaySpan = Math.round(
+    (startOfDayMs(endDate) - startOfDayMs(startDate)) / (1000 * 60 * 60 * 24)
   );
 
-  if (diffDays <= 1) return "1 Day";
-  if (diffDays < 7) return `${diffDays} Days`;
+  const totalDays = Math.max(calendarDaySpan + 1, 1);
 
-  const weeks = Math.ceil(diffDays / 7);
+  if (totalDays <= 1) return "1 Day";
+  if (totalDays < 7) return `${totalDays} Days`;
+
+  const weeks = Math.ceil(totalDays / 7);
   return `${weeks} Week${weeks > 1 ? "s" : ""}`;
 };
