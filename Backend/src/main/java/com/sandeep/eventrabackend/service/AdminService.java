@@ -111,6 +111,11 @@ public class AdminService {
         User targetUser = userRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
 
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && targetUser.getEmail().equalsIgnoreCase(auth.getName())) {
+            throw new IllegalArgumentException("Administrators cannot delete their own active account.");
+        }
+
         Role callerRole = getAuthenticatedRole();
         if (callerRole != Role.SUPER_ADMIN && targetUser.getRole() == Role.SUPER_ADMIN) {
             throw new AccessDeniedException("Only SUPER_ADMIN users can delete SUPER_ADMIN accounts");
