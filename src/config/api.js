@@ -2,7 +2,7 @@ import axios from "axios";
 import { ENV } from "./env";
 import { syncServerTimeFromHeader } from "../utils/timeSync";
 import { createIntegrityHeader } from "../utils/security/requestIntegrity";
-import { ApiError, RateLimitError, normalizeApiError } from "./api/errors.js";
+import { ApiError, RateLimitError } from "./api/errors.js";
 import { setupRequestInterceptor, setupResponseInterceptor, setOnRequiresReauthHandler } from "./api/interceptors.js";
 import { API_BASE_URL, validateBackendConfig } from "./backendConfig.js";
 
@@ -68,34 +68,6 @@ export const setAuthToken = (token) => {
  * backend must derive identity from the verified JWT, not from client-supplied
  * body fields.
  */
-const normalizeRequestConfig = (configOrToken = {}) => {
-  const config = typeof configOrToken === "string" ? {} : { ...configOrToken };
-
-  if ("skipAuth" in config) {
-    delete config.skipAuth;
-  }
-  return config;
-};
-
-const wrapHeaders = (headers) => {
-  if (!headers) return { get: () => null };
-  if (typeof headers.get === "function") return headers;
-  return {
-    get: (key) => headers[key] || headers[key.toLowerCase()] || null,
-  };
-};
-
-const wrapAxiosResponse = (response) => {
-  const wrappedHeaders = wrapHeaders(response.headers);
-  return {
-    ...response,
-    headers: wrappedHeaders,
-    ok: response.status >= 200 && response.status < 300,
-    json: async () => response.data,
-    text: async () =>
-      typeof response.data === "string" ? response.data : JSON.stringify(response.data),
-  };
-};
 const normalizeApiError = (error) => {
   const config = error.config || {};
   const status = error?.response?.status;
@@ -179,42 +151,15 @@ API.interceptors.response.use(
     }
     return response;
   },
-  async (error) => {
-    const config = error.config || {};
+  (error) => {
     const status = error?.response?.status;
-
     if (status === 401 && onUnauthorized) {
       onUnauthorized();
     }
-
-    const retryCount = config._retryCount || 0;
-    const isNonMutating = RETRYABLE_METHODS.has(config.method?.toUpperCase() ?? "");
-    const isRetryableStatus = RETRYABLE_STATUS_CODES.includes(status);
-    
-    // Retry only idempotent reads/probes. Do not blind-retry mutations or 429s,
-    // because those can duplicate writes or worsen server-side rate limiting.
-    if (isNonMutating && isRetryableStatus && retryCount < MAX_RETRIES) {
-      config._retryCount = retryCount + 1;
-      const delay = RETRY_DELAY_MS * Math.pow(2, retryCount);
-API.interceptors.request.use((config) => {
-  if (isDev) {
-    logger.info(`[API ${config.method?.toUpperCase()}]`, buildApiUrl(config.url || ""));
+    return Promise.reject(error);
   }
+);
 
-  if (_authToken && _authToken !== "cookie-managed") {
-    config.headers["Authorization"] = `Bearer ${_authToken}`;
-  }
-
-  const method = config.method?.toUpperCase();
-  if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
-    const csrf = getCSRFToken();
-    if (csrf) {
-      config.headers["X-CSRF-Token"] = csrf;
-    }
-  }
-
-setupRequestInterceptor(API, { isDev, buildApiUrl, getAuthToken, getOnUnauthorized });
-setupResponseInterceptor(API, { isDev, timeoutMs: REQUEST_TIMEOUT_MS, getOnUnauthorized, getOnRequiresReauth });
 setupRequestInterceptor(API, {
   isDev,
   buildApiUrl,
