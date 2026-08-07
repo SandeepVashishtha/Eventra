@@ -3,6 +3,10 @@ app:
     secret: ${JWT_SECRET}
     expiration-ms: ${JWT_EXPIRATION_MS:86400000}
     refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:604800000}
+  auth:
+    cookie:
+      # Secure=true required with SameSite=None for cross-origin SPA sessions
+      secure: ${COOKIE_SECURE:true}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173,https://eventra-psi.vercel.app,https://eventra.sandeepvashishtha.in}
   rate-limit:

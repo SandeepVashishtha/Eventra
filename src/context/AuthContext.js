@@ -357,10 +357,12 @@ export const AuthProvider = ({ children }) => {
 
         const data = res.data;
 
-        const { sessionToken, refreshToken, sessionUser } = extractSession(data, usernameOrEmail);
+        const { refreshToken, sessionUser } = extractSession(data, usernameOrEmail);
 
-        const tokenValue = sessionToken || data?.token || "cookie-managed";
-        const persisted = await persistSession(tokenValue, sessionUser, refreshToken);
+        // Session auth is the HttpOnly `token` cookie set by the backend.
+        // Do not promote response-body JWTs into client-readable state.
+        // Refresh tokens are still returned in the body for silent renew.
+        const persisted = await persistSession("cookie-managed", sessionUser, refreshToken);
         if (!persisted) return false;
 
         setAuthRequest({ loading: false, error: null });

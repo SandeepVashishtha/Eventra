@@ -5,6 +5,7 @@ import com.sandeep.eventrabackend.dto.request.SignupRequest;
 import com.sandeep.eventrabackend.dto.request.GoogleAuthRequest;
 import com.sandeep.eventrabackend.dto.response.AuthResponse;
 import com.sandeep.eventrabackend.dto.response.ErrorResponse;
+import com.sandeep.eventrabackend.security.AuthCookieHelper;
 import com.sandeep.eventrabackend.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -14,8 +15,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,9 +30,11 @@ import java.time.LocalDateTime;
 public class AuthController {
 
     private final AuthService authService;
+    private final AuthCookieHelper authCookieHelper;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, AuthCookieHelper authCookieHelper) {
         this.authService = authService;
+        this.authCookieHelper = authCookieHelper;
     }
 
     // ─── SIGNUP ─────────────────────────────────────────────────────────────────
@@ -48,6 +53,7 @@ public class AuthController {
                     - `confirmPassword` — must exactly match `password`
                     
                     On success returns a **JWT token** that can be used immediately.
+                    Also sets an HttpOnly `token` cookie for browser sessions.
                     """
     )
     @ApiResponses({
@@ -62,7 +68,7 @@ public class AuthController {
     })
     public ResponseEntity<AuthResponse> signup(@Valid @RequestBody SignupRequest request) {
         AuthResponse response = authService.signup(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return withAuthCookie(ResponseEntity.status(HttpStatus.CREATED), response);
     }
 
     // ─── LOGIN ──────────────────────────────────────────────────────────────────
@@ -78,7 +84,8 @@ public class AuthController {
                     - Email address  (e.g. `john@example.com`)
                     - Username       (e.g. `john_doe`)
                     
-                    Use the returned `token` as `Authorization: Bearer <token>` for protected endpoints.
+                    Use the returned `token` as `Authorization: Bearer <token>` for protected endpoints,
+                    or rely on the HttpOnly `token` cookie set on this response for browser sessions.
                     """
     )
 
@@ -95,7 +102,7 @@ public class AuthController {
     })
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         AuthResponse response = authService.login(request);
-        return ResponseEntity.ok(response);
+        return withAuthCookie(ResponseEntity.ok(), response);
     }
 
     @PostMapping("/refresh")
@@ -138,6 +145,7 @@ public class AuthController {
                 a new account is automatically created.
                 
                 Returns JWT token on success.
+                Also sets an HttpOnly `token` cookie for browser sessions.
                 """
 )
 @ApiResponses({
@@ -152,16 +160,15 @@ public ResponseEntity<AuthResponse> googleLogin(
 
     AuthResponse response = authService.googleLogin(request);
 
-    return ResponseEntity.ok(response);
+    return withAuthCookie(ResponseEntity.ok(), response);
 }
 
     @PostMapping("/logout")
     @Operation(
             summary = "Logout user and invalidate token",
             description = """
-                    Blacklists the provided JWT token so it cannot be used again until it expires.
-                    
-                    Requires `Authorization: Bearer <token>` header.
+                    Blacklists the JWT (from Authorization header or HttpOnly cookie)
+                    and clears the auth cookie.
                     """
     )
     @ApiResponses({
@@ -169,15 +176,39 @@ public ResponseEntity<AuthResponse> googleLogin(
             @ApiResponse(responseCode = "401", description = "Missing or invalid token",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    public ResponseEntity<String> logout(@RequestHeader("Authorization") String bearerToken) {
+    public ResponseEntity<String> logout(
+            @RequestHeader(value = "Authorization", required = false) String bearerToken,
+            HttpServletRequest request) {
+        String token = extractBearerToken(bearerToken);
+        if (token == null) {
+            token = authCookieHelper.extractToken(request);
+        }
+
+        if (!StringUtils.hasText(token)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .header(HttpHeaders.SET_COOKIE, authCookieHelper.clearAuthCookie().toString())
+                    .body("Missing auth token");
+        }
+
+        authService.logout(token);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, authCookieHelper.clearAuthCookie().toString())
+                .body("Logged out successfully");
+    }
+
+    private ResponseEntity<AuthResponse> withAuthCookie(
+            ResponseEntity.BodyBuilder builder, AuthResponse response) {
+        return builder
+                .header(HttpHeaders.SET_COOKIE,
+                        authCookieHelper.createAuthCookie(response.getToken()).toString())
+                .body(response);
+    }
+
+    private static String extractBearerToken(String bearerToken) {
         if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
             String token = bearerToken.substring(7).trim();
-            if (token.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Bearer token cannot be empty");
-            }
-            authService.logout(token);
-            return ResponseEntity.ok("Logged out successfully");
+            return token.isEmpty() ? null : token;
         }
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token format");
+        return null;
     }
 }

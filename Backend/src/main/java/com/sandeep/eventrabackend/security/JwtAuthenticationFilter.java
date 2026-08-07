@@ -30,15 +30,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final UserDetailsService userDetailsService;
     private final TokenBlacklistService tokenBlacklistService;
     private final UserRepository userRepository;
+    private final AuthCookieHelper authCookieHelper;
 
     public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider,
                                    UserDetailsService userDetailsService,
                                    TokenBlacklistService tokenBlacklistService,
-                                   UserRepository userRepository) {
+                                   UserRepository userRepository,
+                                   AuthCookieHelper authCookieHelper) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.userDetailsService = userDetailsService;
         this.tokenBlacklistService = tokenBlacklistService;
         this.userRepository = userRepository;
+        this.authCookieHelper = authCookieHelper;
     }
 
     @Override
@@ -96,6 +99,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7);
         }
-        return null;
+        // Browser sessions: HttpOnly cookie set on login/signup/google
+        return authCookieHelper.extractToken(request);
     }
 }
