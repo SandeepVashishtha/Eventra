@@ -89,21 +89,51 @@ export default async function handler(req, res) {
   }
 }
 
+const DEFAULT_FROM_EMAIL = 'noreply@eventra.app';
+
 /**
  * Get email service implementation
- * Abstracts email provider for testing and flexibility
+ * Abstracts email provider for testing and flexibility.
+ *
+ * `mock` is only available outside production. In production a real provider
+ * (sendgrid | ses) must be configured, otherwise we fail loudly instead of
+ * silently pretending an email was delivered.
  */
 function getEmailService() {
-  const provider = process.env.EMAIL_PROVIDER || 'mock';
+  const provider = process.env.EMAIL_PROVIDER;
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  if (provider === 'mock') {
+    if (isProduction) {
+      throw new Error('Mock email service cannot be used in production');
+    }
+    return new MockEmailService();
+  }
 
   switch (provider) {
     case 'sendgrid':
+      if (!process.env.SENDGRID_API_KEY) {
+        throw new Error('EMAIL_PROVIDER=sendgrid but SENDGRID_API_KEY is not set');
+      }
       return new SendGridEmailService();
     case 'ses':
+      if (
+        !process.env.AWS_REGION ||
+        !process.env.AWS_ACCESS_KEY_ID ||
+        !process.env.AWS_SECRET_ACCESS_KEY
+      ) {
+        throw new Error(
+          'EMAIL_PROVIDER=ses but AWS_REGION / AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY are not set'
+        );
+      }
       return new AWSEmailService();
-    case 'mock':
-    default:
+    case undefined:
+      if (isProduction) {
+        throw new Error('EMAIL_PROVIDER must be set to a real provider in production');
+      }
       return new MockEmailService();
+    default:
+      throw new Error(`Unknown email provider: ${provider}`);
   }
 }
 
@@ -140,28 +170,51 @@ class MockEmailService {
  */
 class SendGridEmailService {
   async sendEmail(emailData) {
-    // This would use the SendGrid SDK in production
-    // Placeholder implementation
-    console.warn('SendGrid email service not fully implemented');
+    const { default: sgMail } = await import('@sendgrid/mail');
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+    const from = process.env.EMAIL_FROM || process.env.SENDGRID_FROM_EMAIL || DEFAULT_FROM_EMAIL;
+    const [response] = await sgMail.send({
+      to: emailData.to,
+      from,
+      subject: emailData.subject,
+      text: emailData.body,
+    });
+
     return {
       success: true,
-      messageId: `sg_${Date.now()}`,
+      messageId:
+        (response && response.headers && response.headers['x-message-id']) ||
+        `sg_${Date.now()}`,
     };
   }
 }
 
 /**
  * AWS SES email service
- * Requires AWS credentials configured
+ * Requires AWS_REGION plus AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY configured
  */
 class AWSEmailService {
   async sendEmail(emailData) {
-    // This would use the AWS SDK in production
-    // Placeholder implementation
-    console.warn('AWS SES email service not fully implemented');
+    const { SESClient, SendEmailCommand } = await import('@aws-sdk/client-ses');
+
+    const client = new SESClient({ region: process.env.AWS_REGION });
+    const from = process.env.EMAIL_FROM || process.env.SES_FROM_EMAIL || DEFAULT_FROM_EMAIL;
+
+    const result = await client.send(
+      new SendEmailCommand({
+        Source: from,
+        Destination: { ToAddresses: [emailData.to] },
+        Message: {
+          Subject: { Data: emailData.subject },
+          Body: { Text: { Data: emailData.body } },
+        },
+      })
+    );
+
     return {
       success: true,
-      messageId: `ses_${Date.now()}`,
+      messageId: result.MessageId || `ses_${Date.now()}`,
     };
   }
 }
