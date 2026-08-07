@@ -72,11 +72,11 @@ public class GetEventByIdTests {
     @Test
     @WithMockUser
     void testGetPrivateEventById() throws Exception {
-        // This should pass after implementation. Currently it might fail (return 404).
+        // Issue #12071 — a private event must not be retrievable through the
+        // public GET /api/events/{id} endpoint.
         mockMvc.perform(get("/api/events/" + privateEventId))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.title").value("Private Event"))
-                .andExpect(jsonPath("$.public").value(false));
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Event not found with id: " + privateEventId));
     }
 
     @Test
