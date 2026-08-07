@@ -41,6 +41,8 @@ public class AdminService {
     private final RegistrationAnalyticsRepository regRepo;
     private final EventRegistrationRepository eventRegistrationRepository;
     private final EventWaitlistRepository     eventWaitlistRepository;
+    private final EventTeamMemberRepository   eventTeamMemberRepository;
+    private final EventRoleAuditLogRepository eventRoleAuditLogRepository;
     private final HackathonRegistrationRepository hackathonRegistrationRepository;
     private final ProjectUpvoteRepository     projectUpvoteRepository;
     private final NotificationRepository      notificationRepository;
@@ -171,6 +173,9 @@ public class AdminService {
         }
         eventRegistrationRepository.deleteByEventId(id);
         eventWaitlistRepository.deleteByEvent_Id(id);
+        eventTeamMemberRepository.deleteByEvent_Id(id);
+        feedbackRepository.deleteByEvent_Id(id);
+        eventRoleAuditLogRepository.deleteByEventId(id);
         eventRepository.deleteById(id);
     }
 

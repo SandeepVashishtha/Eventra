@@ -155,7 +155,13 @@
     "viewMode": "दृश्य मोड",
     "timeline": "टाइमलाइन",
     "recommendations": "आपके लिए सुझाव",
-    "saved": "सहेजे गए इवेंट्स"
+    "saved": "सहेजे गए इवेंट्स",
+    "noEventsScheduled": "कोई इवेंट शेड्यूल नहीं",
+    "noUpcomingEvents": "इस दिन के लिए कोई आगामी इवेंट शेड्यूल नहीं है।",
+    "noEventsMatch": "कोई इवेंट आपके फ़िल्टर से मेल नहीं खाता",
+    "noBookmarked": "कोई बुकमार्क किया गया इवेंट नहीं",
+    "noBookmarkedDesc": "अन्वेषण शुरू करें और जिन इवेंट में आपकी रुचि है उन्हें बुकमार्क करें!",
+    "noEventsMatchDesc": "अपने फ़िल्टर समायोजित करें या सभी उपलब्ध इवेंट देखने के लिए उन्हें साफ़ करें।"
   },
   "hackathon": {
     "title": "Hackathons",
@@ -556,6 +562,21 @@
     "toastWaitlistSuccess": "Added to waitlist successfully!",
     "toastValidationError": "Please fix the errors before submitting."
   },
+  "askOrganizer": {
+    "title": "Ask the Organizer",
+    "subtitle": "Ask event-specific questions and see organizer answers in one public feed.",
+    "placeholder": "Is there vegan catering? Is there parking? Ask your question here.",
+    "send": "Ask Question",
+    "publicQA": "Public Q&A",
+    "noQuestions": "No public questions yet. Be the first to ask!",
+    "answeredBadge": "Answered",
+    "organizerResponseLabel": "Response from organizer",
+    "pendingAnswer": "Waiting for organizer response...",
+    "successSent": "Question sent! It is now visible in the public queue.",
+    "errorSending": "Could not send your question. Please try again.",
+    "errorLoading": "Unable to load public Q&A right now. Please try again shortly.",
+    "loginRequired": "Please log in to ask the organizer a question."
+  },
   "userAchievements": {
     "pageTitle": "Eventra | Achievements",
     "progressionStudio": "Progression Studio",
@@ -632,7 +653,128 @@
     "ctaHeading": "Need Help or Have Feedback?",
     "ctaSubtitle": "Reach out to our support team and we will get back to you within 24 hours",
     "ctaContactUs": "Contact Us",
-    "ctaGiveFeedback": "Give Feedback"
+    "ctaGiveFeedback": "Give Feedback",
+    "categories": {
+      "hostingHackathons": {
+        "title": "हैकाथॉन होस्ट करना",
+        "description": "Eventra पर हैकाथॉन बनाना और प्रबंधित करना सीखें।"
+      },
+      "projectSubmission": {
+        "title": "प्रोजेक्ट सबमिशन",
+        "description": "अपने प्रोजेक्ट सबमिट करने के बारे में सब कुछ जानें।"
+      },
+      "exploreProjects": {
+        "title": "प्रोजेक्ट एक्सप्लोर करें",
+        "description": "समुदाय के प्रोजेक्ट खोजें और ब्राउज़ करें।"
+      },
+      "contributing": {
+        "title": "योगदान देना",
+        "description": "Eventra पर ओपन सोर्स प्रोजेक्ट में योगदान कैसे करें।"
+      },
+      "leaderboard": {
+        "title": "लीडरबोर्ड",
+        "description": "लीडरबोर्ड रैंकिंग कैसे काम करती है यह समझें।"
+      },
+      "tipsBestPractices": {
+        "title": "टिप्स और सर्वोत्तम प्रथाएं",
+        "description": "इन टिप्स से Eventra का अधिकतम लाभ उठाएं।"
+      },
+      "events": {
+        "title": "इवेंट",
+        "description": "समुदाय में होने वाले इवेंट खोजें और उनमें शामिल हों।"
+      },
+      "seeOnGitHub": {
+        "title": "GitHub पर देखें",
+        "description": "सोर्स कोड एक्सेस करें और GitHub पर योगदान दें।"
+      },
+      "apiDocs": {
+        "title": "API दस्तावेज़ीकरण",
+        "description": "हमारे REST API का उपयोग करके Eventra के साथ एकीकृत करें।"
+      },
+      "contributors": {
+        "title": "योगदानकर्ता",
+        "description": "Eventra बनाने और बनाए रखने वाले लोगों से मिलें।"
+      },
+      "communityEvents": {
+        "title": "सामुदायिक इवेंट",
+        "description": "Eventra समुदाय द्वारा आयोजित इवेंट खोजें।"
+      },
+      "contactUs": {
+        "title": "हमसे संपर्क करें",
+        "description": "सहायता के लिए Eventra टीम से संपर्क करें।"
+      }
+    },
+    "faqs": {
+      "1": {
+        "category": "इवेंट",
+        "question": "मैं किसी इवेंट या हैकाथॉन के लिए पंजीकरण कैसे करूं?",
+        "answer": "इवेंट या हैकाथॉन पृष्ठ पर जाएं, वह खोजें जो आप चाहते हैं, और रजिस्टर बटन पर क्लिक करें। आवश्यक विवरण भरें और अपना पंजीकरण सबमिट करें।"
+      },
+      "2": {
+        "category": "प्रोजेक्ट",
+        "question": "मैं प्रोजेक्ट कैसे सबमिट करूं?",
+        "answer": "प्रोजेक्ट अनुभाग पर जाएं, प्रोजेक्ट सबमिट करें पर क्लिक करें, और अपने प्रोजेक्ट का शीर्षक, विवरण और रिपॉजिटरी लिंक सहित आवश्यक विवरण भरें।"
+      },
+      "3": {
+        "category": "हैकाथॉन",
+        "question": "मैं हैकाथॉन में कैसे शामिल होऊं?",
+        "answer": "हैकाथॉन पृष्ठ ब्राउज़ करें और किसी भी खुले हैकाथॉन पर शामिल हों पर क्लिक करें। आप अकेले या टीम के हिस्से के रूप में भाग ले सकते हैं।"
+      },
+      "4": {
+        "category": "समुदाय",
+        "question": "लीडरबोर्ड स्कोर की गणना कैसे की जाती है?",
+        "answer": "स्कोर प्लेटफ़ॉर्म पर आपके योगदान, इवेंट भागीदारी, मर्ज किए गए पुल रिक्वेस्ट और प्रोजेक्ट सबमिशन पर आधारित हैं।"
+      },
+      "5": {
+        "category": "योगदान",
+        "question": "मैं Eventra में ओपन सोर्स प्रोजेक्ट के रूप में कैसे योगदान करूं?",
+        "answer": "प्रोजेक्ट को स्थानीय रूप से सेट अप करने, मुद्दे चुनने और पुल रिक्वेस्ट सबमिट करने के विस्तृत निर्देशों के लिए योगदानकर्ता गाइड पृष्ठ देखें।"
+      }
+    },
+    "tutorials": {
+      "hostingHackathon": {
+        "title": "हैकाथॉन होस्ट करना",
+        "description": "Eventra पर अपना हैकाथॉन बनाने और प्रकाशित करने के लिए चरण-दर-चरण मार्गदर्शिका।"
+      },
+      "submittingProject": {
+        "title": "प्रोजेक्ट सबमिट करना",
+        "description": "Eventra प्लेटफ़ॉर्म पर प्रोजेक्ट सबमिट करके अपना काम प्रदर्शित करना सीखें।"
+      },
+      "creatingEvent": {
+        "title": "इवेंट बनाना",
+        "description": "प्रतिभागियों को आवश्यक सभी विवरणों के साथ सामुदायिक इवेंट सेट अप और प्रकाशित करें।"
+      },
+      "contributingGsoc": {
+        "title": "GSSoC के माध्यम से योगदान देना",
+        "description": "Eventra पर GirlScript Summer of Code के माध्यम से ओपन सोर्स योगदान शुरू करें।"
+      }
+    },
+    "guidelines": {
+      "checkHackathonRules": {
+        "title": "हैकाथॉन नियम जांचें",
+        "description": "हैकाथॉन में शामिल होने से पहले हमेशा नियम और पात्रता मानदंड पढ़ें।"
+      },
+      "documentYourWork": {
+        "title": "अपना काम दस्तावेज़ करें",
+        "description": "स्पष्ट README फ़ाइलें और प्रोजेक्ट विवरण लिखें ताकि अन्य लोग आपके काम को समझ और उपयोग कर सकें।"
+      },
+      "followContributionGuidelines": {
+        "title": "योगदान दिशानिर्देशों का पालन करें",
+        "description": "पुल रिक्वेस्ट सबमिट करने से पहले योगदानकर्ता गाइड पढ़ें।"
+      },
+      "respectDeadlines": {
+        "title": "समय सीमा का सम्मान करें",
+        "description": "समय सीमा से पहले अपने प्रोजेक्ट और पंजीकरण सबमिट करें — देर से प्रविष्टियां स्वीकार नहीं की जा सकती हैं।"
+      },
+      "avoidDuplicates": {
+        "title": "डुप्लिकेट से बचें",
+        "description": "नए बनाने से पहले मौजूदा प्रोजेक्ट और मुद्दे खोजें।"
+      },
+      "getSupport": {
+        "title": "सहायता प्राप्त करें",
+        "description": "यदि आप अटके हुए हैं, तो संपर्क पृष्ठ या सामुदायिक चैनलों के माध्यम से संपर्क करें — हम मदद करने में खुश हैं।"
+      }
+    }
   },
   "contactUs": {
     "pageTitle": "Contact Us",
