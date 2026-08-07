@@ -64,4 +64,8 @@ public interface RegistrationAnalyticsRepository
     // Total confirmed registrations
     @Query("SELECT COUNT(r) FROM EventRegistration r WHERE r.status = 'CONFIRMED'")
     long countConfirmedRegistrations();
+
+    // Earliest confirmed registration — used to derive "hours active"
+    @Query("SELECT MIN(r.registeredAt) FROM EventRegistration r WHERE r.status = 'CONFIRMED'")
+    LocalDateTime findEarliestRegistration();
 }
