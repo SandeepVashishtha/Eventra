@@ -76,6 +76,7 @@ public class EventService {
     private final EventRoleAuditLogRepository eventRoleAuditLogRepository;
     private final UserRepository userRepository;
     private final EventRoleService eventRoleService;
+    private final EventRegistrationAttemptService registrationAttemptService;
 
     public EventService(
             EventRepository eventRepository,
@@ -86,7 +87,8 @@ public class EventService {
             FeedbackAnalyticsRepository feedbackRepository,
             EventRoleAuditLogRepository eventRoleAuditLogRepository,
             UserRepository userRepository,
-            EventRoleService eventRoleService) {
+            EventRoleService eventRoleService,
+            EventRegistrationAttemptService registrationAttemptService) {
         this.eventRepository = eventRepository;
         this.eventRegistrationRepository = eventRegistrationRepository;
         this.eventWaitlistRepository = eventWaitlistRepository;
@@ -96,6 +98,7 @@ public class EventService {
         this.eventRoleAuditLogRepository = eventRoleAuditLogRepository;
         this.userRepository = userRepository;
         this.eventRoleService = eventRoleService;
+        this.registrationAttemptService = registrationAttemptService;
     }
 
     /**
@@ -448,27 +451,26 @@ public class EventService {
      * @param userEmail email extracted from JWT principal
      * @return registration confirmation response
      */
-    @Transactional
     public RegistrationResponse registerUserForEvent(Long eventId, String userEmail, String seatId) {
         return registerUserForEvent(eventId, userEmail, seatId, false);
     }
 
-    @Transactional
+    /**
+     * Retries optimistic-lock conflicts outside any outer transaction so each
+     * attempt runs in a fresh REQUIRES_NEW persistence context.
+     */
     public RegistrationResponse registerUserForEvent(
             Long eventId,
             String userEmail,
             String seatId,
             boolean showProfileInAttendeeDirectory) {
 
-        ObjectOptimisticLockingFailureException lastConflict = null;
-
         for (int attempt = 1; attempt <= MAX_REGISTRATION_RETRIES; attempt++) {
             try {
-                return executeRegistration(eventId, userEmail, seatId, showProfileInAttendeeDirectory);
+                return registrationAttemptService.execute(
+                        eventId, userEmail, seatId, showProfileInAttendeeDirectory);
 
             } catch (ObjectOptimisticLockingFailureException ex) {
-                lastConflict = ex;
-
                 log.warn(
                         "Optimistic lock conflict on event {} (attempt {}/{})",
                         eventId,
@@ -487,83 +489,6 @@ public class EventService {
 
         throw new RegistrationConflictException(
                 "Registration could not be completed due to high demand. Please try again.");
-    }
-
-
-    private RegistrationResponse executeRegistration(
-            Long eventId,
-            String userEmail,
-            String seatId,
-            boolean showProfileInAttendeeDirectory) {
-
-        Event event = eventRepository.findByIdWithLock(eventId)
-                .orElseThrow(() ->
-                        new EventNotFoundException(
-                                "Event not found with id: " + eventId));
-
-        // Registration is only valid for events that have not already ended.
-        // Without this guard the API accepted registrations for past events,
-        // inflating registeredCount and creating stale registration rows (#11781).
-        if (event.isEventPast()) {
-            throw new RegistrationClosedException("Registration is closed for this event.");
-        }
-
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() ->
-                        new UsernameNotFoundException(
-                                "User not found with email: " + userEmail));
-
-        if (event.getAttendees().contains(user)
-                || eventRegistrationRepository.existsByEvent_IdAndUser_Email(eventId, userEmail)) {
-
-            throw new RegistrationConflictException(
-                    "You are already registered for this event.");
-        }
-
-        if (event.getCapacity() != null
-                && event.getRegisteredCount() >= event.getCapacity()) {
-
-            throw new EventFullException(
-                    "Event is already full. Capacity: " + event.getCapacity());
-        }
-
-        event.getAttendees().add(user);
-
-        EventRegistration registration = new EventRegistration();
-        registration.setEvent(event);
-        registration.setUser(user);
-        registration.setRegisteredAt(LocalDateTime.now());
-        registration.setStatus("CONFIRMED");
-        registration.setSeatId(seatId);
-        registration.setShowProfileInAttendeeDirectory(showProfileInAttendeeDirectory);
-
-        try {
-            registration = eventRegistrationRepository.saveAndFlush(registration);
-        } catch (DataIntegrityViolationException ex) {
-            throw new RegistrationConflictException(
-                    "Seat " + seatId + " is already taken.");
-        }
-
-        event.setRegisteredCount((int) eventRegistrationRepository
-                .countByEvent_IdAndStatus(eventId, "CONFIRMED"));
-        Event saved = eventRepository.save(event);
-
-        Integer spotsRemaining =
-                (saved.getCapacity() == null)
-                        ? null
-                        : Math.max(
-                                0,
-                                saved.getCapacity() - saved.getRegisteredCount());
-
-        return RegistrationResponse.builder()
-                .eventId(saved.getId())
-                .eventTitle(saved.getTitle())
-                .userEmail(userEmail)
-                .registeredAt(registration.getRegisteredAt())
-                .spotsRemaining(spotsRemaining)
-                .registrationStatus(registration.getStatus())
-                .seatId(registration.getSeatId())
-                .build();
     }
 
     @Transactional(readOnly = true)
