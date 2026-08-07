@@ -188,6 +188,18 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(TicketNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleTicketNotFound(
+            TicketNotFoundException ex,
+            HttpServletRequest request) {
+        return buildError(
+                HttpStatus.NOT_FOUND,
+                "Not Found",
+                ex.getMessage(),
+                request
+        );
+    }
+
     private ResponseEntity<ErrorResponse> buildError(HttpStatus status, String error,
             String message, HttpServletRequest request) {
         ErrorResponse response = ErrorResponse.builder()

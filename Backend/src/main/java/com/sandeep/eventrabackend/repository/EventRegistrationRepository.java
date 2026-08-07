@@ -14,6 +14,8 @@ public interface EventRegistrationRepository extends JpaRepository<EventRegistra
 
     long countByEvent_IdAndStatus(Long eventId, String status);
 
+    long countByEvent_IdAndStatusNot(Long eventId, String status);
+
     List<EventRegistration> findByUser_EmailOrderByRegisteredAtDesc(String userEmail);
 
     Optional<EventRegistration> findByEvent_IdAndSeatId(Long eventId, String seatId);
