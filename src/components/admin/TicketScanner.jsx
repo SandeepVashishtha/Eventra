@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 import { safeJsonParse } from "utils/safeJsonParse";
+import useNetworkStatus from "hooks/useNetworkStatus";
 import {
   Camera,
   CameraOff,
@@ -31,7 +32,7 @@ export default function TicketScanner() {
   const [manualMode, setManualMode] = useState(false);
   const [checkinHistory, setCheckinHistory] = useState([]);
   const [events, setEvents] = useState([]);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const { isOnline } = useNetworkStatus();
   const [manualTicketId, setManualTicketId] = useState("");
   const [manualAttendeeName, setManualAttendeeName] = useState("");
   const [manualEventId, setManualEventId] = useState("");
@@ -56,17 +57,6 @@ export default function TicketScanner() {
     } finally {
       setStatsLoading(false);
     }
-  }, []);
-
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-    return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
-    };
   }, []);
 
   useEffect(() => {
