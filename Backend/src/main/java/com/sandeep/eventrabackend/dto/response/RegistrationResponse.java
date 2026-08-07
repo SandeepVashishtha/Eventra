@@ -24,6 +24,16 @@ import java.time.LocalDateTime;
 @Schema(description = "Response returned after successfully registering for an event")
 public class RegistrationResponse {
 
+    @Schema(description = "Server-issued registration identifier (persisted row id).", example = "42")
+    private Long registrationId;
+
+    /**
+     * Signed JWT ticket token embedded in the QR code. Carries the event and
+     * registration identity so the ticket can be validated server-side.
+     */
+    @Schema(description = "Signed JWT ticket token for QR validation.", example = "eyJhbGciOi...")
+    private String qrToken;
+
     @Schema(description = "ID of the event the user registered for.", example = "42")
     private Long eventId;
 

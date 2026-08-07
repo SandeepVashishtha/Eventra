@@ -25,6 +25,9 @@ public class JwtTokenProvider {
     @Value("${app.jwt.expiration-ms}")
     private long jwtExpirationMs;
 
+    @Value("${app.jwt.ticket-expiration-ms:2592000000}")
+    private long ticketExpirationMs;
+
     @PostConstruct
     public void validateSecret() {
         if (jwtSecret == null || jwtSecret.isBlank()) {
@@ -53,6 +56,26 @@ public class JwtTokenProvider {
 
     public String generateToken(String username) {
         return buildToken(username);
+    }
+
+    /**
+     * Signs a short-lived ticket token embedded in the registration QR code.
+     * Carries the event/registration identity so the ticket can be validated
+     * server-side without trusting any client-supplied value.
+     */
+    public String generateTicketToken(Long eventId, Long registrationId, String userEmail) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + ticketExpirationMs);
+
+        return Jwts.builder()
+                .subject(userEmail)
+                .claim("type", "ticket")
+                .claim("eventId", eventId)
+                .claim("registrationId", registrationId)
+                .issuedAt(now)
+                .expiration(expiryDate)
+                .signWith(getSigningKey())
+                .compact();
     }
 
     private String buildToken(String subject) {

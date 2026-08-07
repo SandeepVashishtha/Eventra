@@ -138,8 +138,9 @@ const EventRegistration = () => {
       priority: "Medium",
       showProfileInAttendeeDirectory: false,
     },
-  }
-);
+    validationRules,
+    { debounceMs: 300 }
+  );
   // Load event data from backend API
   useEffect(() => {
     let isCancelled = false;
@@ -358,7 +359,15 @@ const EventRegistration = () => {
       );
 
       const regData = response.data || {};
-      const registrationId = regData.registrationId || generateSecureUUID();
+      // Only accept a server-issued registrationId — never fabricate one. The
+      // server issues the id and a signed qrToken so the ticket can be
+      // validated server-side; substituting a client UUID would produce a
+      // ticket the server has no record of.
+      if (!regData.registrationId) {
+        toast.error(t("eventRegistration.toastRegistrationIdMissing"));
+        return { success: false, error: t("eventRegistration.toastRegistrationIdMissing"), waitlistPosition: -1 };
+      }
+      const registrationId = regData.registrationId;
       const qrToken = regData.qrToken || "";
 
       toast.success(t("eventRegistration.toastRegistrationSuccess"));
