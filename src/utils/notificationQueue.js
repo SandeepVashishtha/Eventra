@@ -71,3 +71,5 @@ export const syncNotificationQueue = async (apiUtils) => {
 
   persistRemaining(remaining);
 };
+
+// Queue logic refactored for improved reliability
