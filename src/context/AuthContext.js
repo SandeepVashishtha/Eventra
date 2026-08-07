@@ -364,10 +364,11 @@ export const AuthProvider = ({ children }) => {
 
         const data = res.data;
 
-        const { sessionToken, sessionUser } = extractSession(data, usernameOrEmail);
+        const { sessionUser } = extractSession(data, usernameOrEmail);
 
-        const tokenValue = sessionToken || data?.token || "cookie-managed";
-        const persisted = await persistSession(tokenValue, sessionUser);
+        // Session auth is the HttpOnly `token` cookie set by the backend.
+        // Do not promote response-body JWTs into client-readable state.
+        const persisted = await persistSession("cookie-managed", sessionUser);
         if (!persisted) return false;
 
         setAuthRequest({ loading: false, error: null });

@@ -95,37 +95,36 @@ const useLocalStorage = (key, initialValue) => {
     }
   }, [key]);
 
-  useEffect(() => {
-    const handleStorageChange = (event) => {
-      // 🔥 FIX: Reset the internal-write flag UNCONDITIONALLY first.
-      // Previously the flag was only reset when bailing out at this check,
-      // so if a foreign `local-storage` event arrived for a different key
-      // (another useLocalStorage instance on the page) the flag would get
-      // stuck at `true` and every subsequent legitimate cross-tab update for
-      // THIS key would be silently dropped.
-      if (isInternalWrite.current) {
-        isInternalWrite.current = false;
-        return;
-      }
+  const handleStorageChange = useCallback((event) => {
+    // 🔥 FIX: Reset the internal-write flag UNCONDITIONALLY first.
+    // Previously the flag was only reset when bailing out at this check,
+    // so if a foreign `local-storage` event arrived for a different key
+    // (another useLocalStorage instance on the page) the flag would get
+    // stuck at `true` and every subsequent legitimate cross-tab update for
+    // THIS key would be silently dropped.
+    if (isInternalWrite.current) {
+      isInternalWrite.current = false;
+      return;
+    }
 
-      if (event.key === key || (event.type === "local-storage" && event.detail?.key === key)) {
-        setStoredValue(readValue());
-      }
-    };
-
-    const handlerRef = useRef(handleStorageChange);
-    handlerRef.current = handleStorageChange;
-    
-    useEffect(() => {
-      const handler = (e) => handlerRef.current(e);
-      window.addEventListener("storage", handler);
-      window.addEventListener("local-storage", handler);
-      return () => {
-        window.removeEventListener("storage", handler);
-        window.removeEventListener("local-storage", handler);
-      };
-    }, []);
+    if (event.key === key || (event.type === "local-storage" && event.detail?.key === key)) {
+      setStoredValue(readValue());
+    }
   }, [key, readValue]);
+
+  const handlerRef = useRef(handleStorageChange);
+  handlerRef.current = handleStorageChange;
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handler = (e) => handlerRef.current(e);
+    window.addEventListener("storage", handler);
+    window.addEventListener("local-storage", handler);
+    return () => {
+      window.removeEventListener("storage", handler);
+      window.removeEventListener("local-storage", handler);
+    };
+  }, []);
 
   return [storedValue, setValue, removeValue];
 };
