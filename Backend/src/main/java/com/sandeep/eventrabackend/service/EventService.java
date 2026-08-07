@@ -540,8 +540,7 @@ public class EventService {
         try {
             registration = eventRegistrationRepository.saveAndFlush(registration);
         } catch (DataIntegrityViolationException ex) {
-            throw new RegistrationConflictException(
-                    "Seat " + seatId + " is already taken.");
+            throw mapRegistrationIntegrityViolation(ex, seatId);
         }
 
         event.setRegisteredCount((int) eventRegistrationRepository
@@ -730,5 +729,27 @@ public class EventService {
                 .githubUrl(user.getGithubUrl())
                 .registeredAt(registration.getRegisteredAt())
                 .build();
+    }
+
+    private RegistrationConflictException mapRegistrationIntegrityViolation(
+            DataIntegrityViolationException ex, String seatId) {
+        String details = String.valueOf(ex.getMostSpecificCause() != null
+                ? ex.getMostSpecificCause().getMessage()
+                : ex.getMessage()).toLowerCase();
+
+        if (details.contains("uk_event_registration_event_user")
+                || (details.contains("event_id") && details.contains("user_id"))) {
+            return new RegistrationConflictException(
+                    "You are already registered for this event.");
+        }
+
+        if (details.contains("uk_event_registration_event_seat")
+                || (seatId != null && !seatId.isBlank() && details.contains("seat"))) {
+            return new RegistrationConflictException(
+                    "Seat " + seatId + " is already taken.");
+        }
+
+        return new RegistrationConflictException(
+                "Registration could not be completed due to a conflict. Please try again.");
     }
 }
