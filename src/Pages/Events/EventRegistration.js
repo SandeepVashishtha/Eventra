@@ -137,10 +137,8 @@ const EventRegistration = () => {
       priority: "Medium",
       showProfileInAttendeeDirectory: false,
     },
-    validationRules,
-    { debounceMs: 300 }
-  );
-
+  }
+);
   // Load event data from backend API
   useEffect(() => {
     let isCancelled = false;
