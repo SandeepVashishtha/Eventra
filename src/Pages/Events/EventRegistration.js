@@ -37,6 +37,7 @@ import { API_ENDPOINTS, apiUtils } from "config/api";
 import { useSessionRecovery } from "context/SessionRecoveryContext";
 import CalendarView from "components/CalendarView";
 import EventConflictModal from "components/EventConflictModal";
+import AskTheOrganizer from "components/events/AskTheOrganizer";
 import ConfettiCanvas from "components/common/ConfettiCanvas";
 import { SkeletonEventCard, WaitlistSkeleton, WaitlistPositionSkeleton } from "components/common/SkeletonLoaders";
 import { logger } from "utils/logger";
@@ -137,10 +138,8 @@ const EventRegistration = () => {
       priority: "Medium",
       showProfileInAttendeeDirectory: false,
     },
-    validationRules,
-    { debounceMs: 300 }
-  );
-
+  }
+);
   // Load event data from backend API
   useEffect(() => {
     let isCancelled = false;
@@ -386,13 +385,25 @@ const EventRegistration = () => {
       const isAlreadyRegistered = failureMessage === "You are already registered for this event.";
 
       if (isOfflineFailure) {
-        const payload = {
-          ...formData,
-          eventId: parseInt(eventId, 10),
-          idempotencyKey,
-          seatId: selectedSeatId,
-          showProfileInAttendeeDirectory: Boolean(formData.showProfileInAttendeeDirectory),
-        };
+        const payload = isFreshlyFull
+          ? {
+              userId: user.id || user.email,
+              name:
+                user.fullName ||
+                `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
+                user.username ||
+                "Anonymous",
+              email: user.email,
+              phone: formData.phone || "",
+              eventTitle: event?.title || "the event",
+            }
+          : {
+              ...formData,
+              eventId: parseInt(eventId, 10),
+              idempotencyKey,
+              seatId: selectedSeatId,
+              showProfileInAttendeeDirectory: Boolean(formData.showProfileInAttendeeDirectory),
+            };
 
         const success = await pushToQueue(
           {
@@ -840,6 +851,10 @@ const EventRegistration = () => {
                   {event.location}
                 </span>
               </div>
+            </div>
+
+            <div className="mt-8">
+              <AskTheOrganizer eventId={event.id || eventId} />
             </div>
           </div>
 
