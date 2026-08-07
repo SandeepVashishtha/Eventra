@@ -35,6 +35,7 @@ import { apiUtils, API_ENDPOINTS } from "config/api";
 import { getLastUpdated } from "utils/LastUpdatedUtils";
 import mockEvents from "./eventsMockData.json";
 import CopyButton from 'components/ui/CopyButton';
+import useClipboard from "hooks/useClipboard";
 
 const formatEventDate = (dateValue) => {
   if (!dateValue) return { short: "TBD", full: "Date TBD", relative: "" };
@@ -95,8 +96,7 @@ const EventDetails = () => {
   const [showCancelModal, setShowCancelModal] = useState(false);
 
   const { isRegistered } = useMyEvents();
-  const [linkCopied, setLinkCopied] = useState(false);
-  const latestRequestIdRef = useRef(0);
+ const { copy, isCopied } = useClipboard({ resetMs: 2000 });
   const abortControllerRef = useRef(null);
 
   const loadEvent = useCallback(async () => {
@@ -274,30 +274,12 @@ Location: ${event.location}
 
 ${window.location.href}
 `;
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(link);
-      } else {
-        const textArea = document.createElement("textarea");
-        textArea.value = link;
-        textArea.style.position = "absolute";
-        textArea.style.left = "-999999px";
-        document.body.prepend(textArea);
-        textArea.select();
-        try {
-          document.execCommand("copy");
-        } finally {
-          textArea.remove();
-        }
-      }
-      toast.success("Event link copied to clipboard!");
-      setLinkCopied(true);
-      setTimeout(() => setLinkCopied(false), 2000);
-    } catch {
-      toast.error("Failed to copy link. Please copy the URL from your browser's address bar.");
-    }
+    const success = await copy(link, "eventLink");
+    if (success) toast.success("Event link copied to clipboard!");
+    else toast.error("Failed to copy link. Please copy the URL from your browser's address bar.");
   };
 
+  
   useKeyboardShortcuts({
     r: () => { if (event && !isEventRegistrationClosed(event)) navigate(`/events/${event.id}/register`); },
     c: handleCopy,

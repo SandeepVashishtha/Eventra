@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import useClipboard from "hooks/useClipboard";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X, Github, Rocket, ChevronRight, ChevronLeft,
@@ -185,11 +186,7 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
     }
   };
 
-  const copyCloneUrl = () => {
-    navigator.clipboard.writeText(result?.cloneUrl || "");
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  const copyCloneUrl = () => copy(result?.cloneUrl || "", "cloneUrl");
 
   // ─────────────────────────────────────────────────────────────────────────
   // Render
