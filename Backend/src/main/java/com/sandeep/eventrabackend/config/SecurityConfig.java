@@ -112,7 +112,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // Disable CSRF — stateless REST API, no session cookies
+                // Disable CSRF — JWT auth (Bearer or SameSite=None HttpOnly cookie).
+                // Cookie is not readable by JS; SPA uses withCredentials for cookie sessions.
                 .csrf(AbstractHttpConfigurer::disable)
                 // Disable CORS — open for testing; re-enable before production
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
