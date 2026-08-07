@@ -11,4 +11,6 @@ public interface EventTeamMemberRepository extends JpaRepository<EventTeamMember
     Optional<EventTeamMember> findByEvent_IdAndUser_Id(Long eventId, Long userId);
 
     List<EventTeamMember> findByEvent_IdOrderByRoleDescAssignedAtDesc(Long eventId);
+
+    void deleteByEvent_Id(Long eventId);
 }

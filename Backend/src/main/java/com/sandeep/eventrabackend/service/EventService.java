@@ -18,10 +18,14 @@ import com.sandeep.eventrabackend.model.EventRegistration;
 import com.sandeep.eventrabackend.model.EventRole;
 import com.sandeep.eventrabackend.model.EventWaitlist;
 import com.sandeep.eventrabackend.model.Notification;
+import com.sandeep.eventrabackend.model.Role;
 import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.EventRegistrationRepository;
 import com.sandeep.eventrabackend.repository.EventRepository;
+import com.sandeep.eventrabackend.repository.EventRoleAuditLogRepository;
+import com.sandeep.eventrabackend.repository.EventTeamMemberRepository;
 import com.sandeep.eventrabackend.repository.EventWaitlistRepository;
+import com.sandeep.eventrabackend.repository.FeedbackAnalyticsRepository;
 import com.sandeep.eventrabackend.repository.NotificationRepository;
 import com.sandeep.eventrabackend.repository.UserRepository;
 import org.slf4j.Logger;
@@ -67,6 +71,9 @@ public class EventService {
     private final EventRegistrationRepository eventRegistrationRepository;
     private final EventWaitlistRepository eventWaitlistRepository;
     private final NotificationRepository notificationRepository;
+    private final EventTeamMemberRepository eventTeamMemberRepository;
+    private final FeedbackAnalyticsRepository feedbackRepository;
+    private final EventRoleAuditLogRepository eventRoleAuditLogRepository;
     private final UserRepository userRepository;
     private final EventRoleService eventRoleService;
     private final EventRegistrationAttemptService registrationAttemptService;
@@ -76,6 +83,9 @@ public class EventService {
             EventRegistrationRepository eventRegistrationRepository,
             EventWaitlistRepository eventWaitlistRepository,
             NotificationRepository notificationRepository,
+            EventTeamMemberRepository eventTeamMemberRepository,
+            FeedbackAnalyticsRepository feedbackRepository,
+            EventRoleAuditLogRepository eventRoleAuditLogRepository,
             UserRepository userRepository,
             EventRoleService eventRoleService,
             EventRegistrationAttemptService registrationAttemptService) {
@@ -83,6 +93,9 @@ public class EventService {
         this.eventRegistrationRepository = eventRegistrationRepository;
         this.eventWaitlistRepository = eventWaitlistRepository;
         this.notificationRepository = notificationRepository;
+        this.eventTeamMemberRepository = eventTeamMemberRepository;
+        this.feedbackRepository = feedbackRepository;
+        this.eventRoleAuditLogRepository = eventRoleAuditLogRepository;
         this.userRepository = userRepository;
         this.eventRoleService = eventRoleService;
         this.registrationAttemptService = registrationAttemptService;
@@ -316,6 +329,10 @@ public class EventService {
 
         eventRegistrationRepository.deleteByEventId(id);
         eventWaitlistRepository.deleteByEvent_Id(id);
+        eventRepository.deleteAttendeeRowsByEventId(id);
+        eventTeamMemberRepository.deleteByEvent_Id(id);
+        feedbackRepository.deleteByEvent_Id(id);
+        eventRoleAuditLogRepository.deleteByEventId(id);
         eventRepository.delete(event);
     }
 
