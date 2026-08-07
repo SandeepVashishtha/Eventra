@@ -1,7 +1,9 @@
 export const simpleCompress = (str) => {
   try {
     return btoa(encodeURIComponent(str));
-  } catch {
+  } catch (err) {
+      console.warn("[compressor] Compression failed:", err);
+    }
     return str;
   }
 };
@@ -9,7 +11,9 @@ export const simpleCompress = (str) => {
 export const simpleDecompress = (compressed) => {
   try {
     return decodeURIComponent(atob(compressed));
-  } catch {
+  } catch (err) {
+      console.warn("[compressor] Compression failed:", err);
+    }
     return compressed;
   }
 };

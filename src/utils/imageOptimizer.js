@@ -44,7 +44,7 @@ export const getOptimizedImageUrl = (originalUrl, options = {}) => {
   // Relative paths (/images/hero.jpg), blob: URLs, and data: URIs cannot
   // be Cloudinary-transformed and are returned unchanged.
   if (originalUrl.startsWith("http")) {
-    return `https://res.cloudinary.com/${cloudName}/image/fetch/${transformations}/${encodeURIComponent(originalUrl)}`;
+    return `https://res.cloudinary.com/${cloudName}/image/fetch/${transformations}/${originalUrl}`;
   }
 
   // Fallback for local assets

@@ -14,8 +14,12 @@ import {
 } from "utils/advancedFilterUtils";
 import { getRouteSearchResults } from "utils/searchUtils.mjs";
 import { getBookmarkedEvents } from "utils/bookmarkUtils";
+import { sanitizeFilterQuery } from "utils/querySanitizer";
 
 const DEFAULT_EVENTS_PER_PAGE = 20;
+
+const MAX_SEARCH_LENGTH = 100;
+const MAX_TAG_LENGTH = 50;
 
 const SORT_MAPPING = {
   Newest: "date,desc",
@@ -64,42 +68,48 @@ const useEventListing = () => {
     params.append("page", currentPage - 1);
     params.append("size", eventsPerPage);
 
-    if (debouncedSearchQuery.trim()) {
-      params.append("search", debouncedSearchQuery.trim());
+    // Sanitize every user-supplied filter before it reaches the backend query
+    // string. sanitizeFilterQuery strips $, &, <, > (src/utils/querySanitizer.js)
+    // and length caps reject oversized values, closing the injection/DoS surface.
+    const safeFilters = sanitizeFilterQuery(advancedFilters);
+    const safeSearch = sanitizeFilterQuery({ search: debouncedSearchQuery }).search || "";
+
+    if (safeSearch.trim()) {
+      params.append("search", safeSearch.trim().slice(0, MAX_SEARCH_LENGTH));
     }
 
     if (filterType && filterType !== "all") {
       params.append("status", filterType.toUpperCase());
     }
 
-    if (advancedFilters?.categories?.length) {
-      advancedFilters.categories.forEach((category) => {
-        params.append("category", category);
+    if (safeFilters?.categories?.length) {
+      safeFilters.categories.forEach((category) => {
+        if (category) params.append("category", category);
       });
     }
 
-    if (advancedFilters?.statuses?.length) {
-      advancedFilters.statuses.forEach((status) => {
+    if (safeFilters?.statuses?.length) {
+      safeFilters.statuses.forEach((status) => {
         params.append("status", status.toUpperCase());
       });
     }
 
-    if (advancedFilters?.skillLevels?.length) {
-      advancedFilters.skillLevels.forEach((level) => {
+    if (safeFilters?.skillLevels?.length) {
+      safeFilters.skillLevels.forEach((level) => {
         params.append("skillLevel", level.toLowerCase());
       });
     }
 
-    if (advancedFilters?.tags?.length) {
-      advancedFilters.tags.forEach((tag) => {
-        params.append("tag", tag);
+    if (safeFilters?.tags?.length) {
+      safeFilters.tags.forEach((tag) => {
+        if (tag) params.append("tag", tag.slice(0, MAX_TAG_LENGTH));
       });
     }
 
-    const sortValue = SORT_MAPPING[sortType];
-    if (sortValue) {
-      params.append("sort", sortValue);
-    }
+    // Whitelist-guard the sort: only known SORT_MAPPING keys are honored,
+    // any other value falls back to the safe default instead of being echoed.
+    const sortValue = SORT_MAPPING[sortType] ?? SORT_MAPPING.Newest;
+    params.append("sort", sortValue);
 
     return params.toString();
   }, [
@@ -161,6 +171,7 @@ const useEventListing = () => {
             "Failed to load events. Please try again later.",
           );
         }
+
     } finally {
       setIsLoading(false);
     }
@@ -178,7 +189,7 @@ const useEventListing = () => {
     setCurrentPage(1);
   }, [searchQuery, filterType, sortType, advancedFilters, eventsPerPage]);
 
-  const setSafePage = (page) => {
+  const setSafePage = useCallback((page) => {
     if (page < 1) {
       setCurrentPage(1);
       return;
@@ -188,11 +199,11 @@ const useEventListing = () => {
       return;
     }
     setCurrentPage(page);
-  };
+  }, [pagination.totalPages]);
 
   const setAdvancedFilters = useCallback((filters) => {
     setAdvancedFiltersState(normalizeAdvancedFilters(filters));
-  }, [setAdvancedFiltersState, normalizeAdvancedFilters]);
+  }, [setAdvancedFiltersState]);
 
   const priceStats = useMemo(() => getPriceStats(events), [events]);
   const dateRangeStats = useMemo(() => getDateRange(events), [events]);

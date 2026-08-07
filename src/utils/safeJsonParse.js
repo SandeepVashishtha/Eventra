@@ -25,11 +25,8 @@ export function safeJsonParseFromStorage(key, fallback = null) {
     return parsed;
   } catch (error) {
     console.error(`[safeJsonParseFromStorage] Failed to parse localStorage key "${key}":`, error);
-    console.error('[safeJsonParseFromStorage] Removing corrupted entry and returning fallback');
-    try {
-      localStorage.removeItem(key);
-    } catch (removeError) {
-      console.error('[safeJsonParseFromStorage] Failed to remove corrupted entry:', removeError);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("eventra-storage-parse-error", { detail: { key } }));
     }
     return fallback;
   }

@@ -28,7 +28,7 @@ const FEEDBACK_COMMENTS_POOL = [
 ];
 
 const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
-  const isActive = true;
+  const isActive = true; // survey is always active in this context; no dynamic toggling needed
 
   // Hook handles mock data generation - decoupled from UI components
   const {
@@ -60,7 +60,7 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
         let total = 0;
         let sum = 0;
         Object.entries(distribution).forEach(([score, count]) => {
-          sum += parseInt(score) * count;
+          sum += parseInt(score, 10) * count;
           total += count;
         });
         ratings[q.id] = {
@@ -72,11 +72,16 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
     return ratings;
   }, [questions, simulatedData]);
 
+  // Compute overall satisfaction average across all rating questions
   const overallSatisfaction = useMemo(() => {
-    const ratings = Object.values(analyzedRatings);
-    if (ratings.length === 0) return "0.0 / 5.0";
-    const avg = ratings.reduce((sum, r) => sum + parseFloat(r.average), 0) / ratings.length;
-    return `${avg.toFixed(1)} / 5.0`;
+    const ratingEntries = Object.values(analyzedRatings);
+    if (ratingEntries.length === 0) return null;
+    const totalWeightedSum = ratingEntries.reduce(
+      (sum, r) => sum + parseFloat(r.average) * r.total,
+      0
+    );
+    const totalVotes = ratingEntries.reduce((sum, r) => sum + r.total, 0);
+    return totalVotes > 0 ? (totalWeightedSum / totalVotes).toFixed(1) : null;
   }, [analyzedRatings]);
 
   // Reconstruct individual rows corresponding to each submission per question distribution
@@ -95,36 +100,26 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
       questions.forEach((q) => {
         if (q.type === "rating") {
           const distribution = simulatedData[q.id] || { 5: 50, 4: 30, 3: 10, 2: 3, 1: 1 };
-          const total = Object.values(distribution).reduce((a, b) => a + b, 0) || 1;
-          const rand = Math.floor(Math.random() * total);
-
-          let cumulative = 0;
-          let selectedScore = 4;
+          // Build a flat ordered list so each submission index maps deterministically
+          // to a score — no re-randomization between exports (CSV matches charts).
+          const pool = [];
           for (const score of [5, 4, 3, 2, 1]) {
-            cumulative += distribution[score];
-            if (rand < cumulative) {
-              selectedScore = score;
-              break;
-            }
+            const count = distribution[score] || 0; // ← guard: undefined → 0, prevents NaN
+            for (let c = 0; c < count; c++) pool.push(score);
           }
+          const selectedScore = pool.length > 0 ? pool[i % pool.length] : 4;
           answers[q.id] = `${selectedScore} Stars`;
         } else if (q.type === "choice") {
           const distribution = simulatedData[q.id] || {};
           const options = Object.keys(distribution);
           if (options.length > 0) {
-            const total = Object.values(distribution).reduce((a, b) => a + b, 0) || 1;
-            const rand = Math.floor(Math.random() * total);
-
-            let cumulative = 0;
-            let selectedOpt = options[0];
+            // Build flat deterministic pool from distribution (same approach as rating)
+            const pool = [];
             for (const opt of options) {
-              cumulative += distribution[opt];
-              if (rand < cumulative) {
-                selectedOpt = opt;
-                break;
-              }
+              const count = distribution[opt] || 0;
+              for (let c = 0; c < count; c++) pool.push(opt);
             }
-            answers[q.id] = selectedOpt;
+            answers[q.id] = pool.length > 0 ? pool[i % pool.length] : options[0];
           } else {
             answers[q.id] = "";
           }
@@ -219,8 +214,8 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
           },
           {
             label: "Attendee Satisfaction",
-            value: overallSatisfaction,
-            sub: "Highly positive feedback",
+            value: overallSatisfaction ? `${overallSatisfaction} / 5.0` : "N/A",
+            sub: overallSatisfaction ? "Based on live rating responses" : "No rating questions yet",
             icon: <Smile className="w-5 h-5" />,
             color: "text-rose-500 bg-rose-50 dark:bg-rose-950/40 border-rose-100/50 dark:border-rose-900/30",
           },

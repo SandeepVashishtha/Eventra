@@ -1,5 +1,5 @@
 // src/components/user/EventCard.jsx
-import React, { memo } from "react";
+import { memo } from "react";
 import { motion } from "framer-motion";
 import {
   Calendar,
@@ -120,7 +120,7 @@ const EventCard = memo(({
 
   return (
     <motion.div
-      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl flex flex-col overflow-hidden"
+      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl flex flex-col"
       custom={index}
       variants={fadeUpVariants}
       initial="hidden"
@@ -128,7 +128,7 @@ const EventCard = memo(({
       layout
     >
       {event?.image && (
-        <div className="relative h-48 overflow-hidden">
+        <div className="relative h-48 overflow-hidden rounded-t-3xl">
           <LazyImage
             src={event.image}
             alt={event.title}

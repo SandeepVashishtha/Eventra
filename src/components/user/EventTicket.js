@@ -9,6 +9,7 @@ import { useMyEvents } from "context/MyEventsContext";
 import SpatialSeatSelector from "../events/SpatialSeatSelector";
 import { AnimatePresence } from "framer-motion";
 import { useOfflineStatus } from "hooks/useOfflineStatus";
+import { buildTicketQrPayload, buildTicketQrValue, getTicketHolderName } from "utils/ticketQrPayload";
 
 const EventTicket = ({ event, user, onClose }) => {
   const ticketRef = useRef(null);
@@ -23,19 +24,13 @@ const EventTicket = ({ event, user, onClose }) => {
   const registration = myEvents.find((r) => r.eventId === event.id);
   const selectedSeat = registration?.formData?.selectedSeat;
 
-  // No backend ticket-token endpoint exists — the QR encodes the local
-  // registration ID (or a generated serial) as the pass identifier.
-  const qrToken = registration?.qrToken || "";
-
-  // Generate a mock ticket serial code based on event and user details
-  const generateSerial = () => {
-    const eventPart = (event?.title || "EVT").slice(0, 3).toUpperCase();
-    const userPart = (user?.firstName || user?.username || "USR").slice(0, 3).toUpperCase();
-    const randomPart = Math.random().toString(36).substring(2, 7).toUpperCase();
-    return `${eventPart}-${userPart}-${randomPart}`;
-  };
-
-  const [serialNumber] = useState(() => registration?.registrationId || generateSerial());
+  // The QR encodes only the opaque server-issued token (qrToken/registrationId).
+  // No PII is embedded, and no client-side pseudo-serial is generated: without
+  // a server-issued registration the ticket renders with no scannable QR.
+  const [serialNumber] = useState(() => registration?.registrationId || registration?.qrToken || null);
+  const qrPayload = buildTicketQrPayload({ registration, serialNumber });
+  const qrValue = buildTicketQrValue(qrPayload);
+  const attendeeName = getTicketHolderName(user);
 
   // Dynamic category themes
   const getThemeColors = () => {
@@ -106,7 +101,6 @@ const EventTicket = ({ event, user, onClose }) => {
       const canvas = await html2canvas(ticketRef.current, {
         scale: 3,
         useCORS: true,
-        allowTaint: true,
         backgroundColor: null,
         logging: false,
         onclone: (clonedDoc) => {
@@ -304,7 +298,7 @@ const EventTicket = ({ event, user, onClose }) => {
                     <span className="ud-ticket-info-label">ATTENDEE</span>
                     <span className="ud-ticket-info-value flex items-center gap-1.5 font-semibold text-white">
                       <User size={13} style={{ color: theme.accent }} />
-                      {user?.fullName || `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || "Eventra Guest"}
+                      {attendeeName}
                     </span>
                   </div>
 
@@ -344,30 +338,24 @@ const EventTicket = ({ event, user, onClose }) => {
               <div className="ud-ticket-footer">
                 <div className="ud-ticket-qr-wrap">
                   <div className="ud-ticket-qr-border flex items-center justify-center bg-zinc-950/20 dark:bg-white/5 rounded-xl border border-white/10" style={{ width: 110, height: 110 }}>
-                    {isOffline && !qrToken ? (
-                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
-                        <QRCode
-                          value={registration?.registrationId || serialNumber}
-                          size={80}
-                          bgColor="transparent"
-                          fgColor="#ffffff"
-                          className="ud-ticket-qr"
-                        />
-                      </div>
-                    ) : (
+                    {qrValue ? (
                       <QRCode
-                        value={qrToken || registration?.qrToken || registration?.registrationId || serialNumber}
+                        value={qrValue}
                         size={90}
                         bgColor="transparent"
                         fgColor="#ffffff"
                         className="ud-ticket-qr"
                       />
+                    ) : (
+                      <span className="text-[9px] font-bold text-zinc-400 text-center px-1 leading-tight">
+                        QR unavailable — no server-issued ticket token
+                      </span>
                     )}
                   </div>
                 </div>
 
                 <div className="ud-ticket-stub-details">
-                  <div className="ud-ticket-serial">{serialNumber}</div>
+                  <div className="ud-ticket-serial">{serialNumber || "N/A"}</div>
                   <div className="ud-ticket-status">
                     <ShieldCheck size={14} className={isOffline ? "text-amber-400 animate-pulse" : "text-emerald-400 animate-pulse"} />
                     <span>{isOffline ? "CACHED TICKET" : "SECURE VALID PASS"}</span>
@@ -421,7 +409,7 @@ const EventTicket = ({ event, user, onClose }) => {
                 </div>
 
                 <div className="ud-ticket-back-footer mt-auto pt-4 border-t border-white/5 flex flex-col items-center gap-2">
-                  <div className="ud-ticket-serial text-center text-xs opacity-75">{serialNumber}</div>
+                  <div className="ud-ticket-serial text-center text-xs opacity-75">{serialNumber || "N/A"}</div>
                   <div className="text-[10px] text-zinc-500 uppercase tracking-widest text-center">
                     Powered by Eventra Engine
                   </div>
