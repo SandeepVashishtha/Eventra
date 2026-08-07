@@ -61,8 +61,16 @@ public class ListEventsTests {
     void testGetAllEvents() throws Exception {
         mockMvc.perform(get("/api/events"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[0].title").value("First Event"))
-                .andExpect(jsonPath("$[1].title").value("Second Event"));
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].title").value("First Event"));
+    }
+
+    @Test
+    @WithMockUser
+    void testGetAllEventsExcludesPrivateEvents() throws Exception {
+        // Issue #12071 — private (isPublic=false) events must not be listed publicly.
+        mockMvc.perform(get("/api/events"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.title == 'Second Event')]").isEmpty());
     }
 }
