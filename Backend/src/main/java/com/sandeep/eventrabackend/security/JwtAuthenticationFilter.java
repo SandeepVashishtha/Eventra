@@ -60,6 +60,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
 
             if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
+                if (!jwtTokenProvider.isAccessToken(token)) {
+                    logger.warn("Rejected non-access JWT on API request");
+                    filterChain.doFilter(request, response);
+                    return;
+                }
                 String username = jwtTokenProvider.getUsernameFromToken(token);
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
