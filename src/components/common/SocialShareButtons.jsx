@@ -2,8 +2,13 @@ import { useMemo, useCallback } from "react";
 import { Copy, Facebook, Linkedin, Mail, MessageCircle, Send, Twitter } from "lucide-react";
 import { toast } from "react-toastify";
 import { isValidShareUrl } from "utils/shareUtils";
+// Fix: Replace raw navigator.clipboard call with useClipboard hook
+// which adds execCommand fallback for HTTP contexts and proper error handling.
+import useClipboard from "hooks/useClipboard";
 
 const SocialShareButtons = ({ event, layout = "grid" }) => {
+  const { copy } = useClipboard();
+
   const shareData = useMemo(() => {
     if (!event || !event.id) return null;
 
@@ -27,19 +32,10 @@ const SocialShareButtons = ({ event, layout = "grid" }) => {
 
   const copyLink = useCallback(async () => {
     if (!shareData?.shareUrl) return;
-
-    try {
-      if (!navigator?.clipboard) {
-        throw new Error("Clipboard API unavailable.");
-      }
-
-      await navigator.clipboard.writeText(shareData.shareUrl);
-      toast.success("Link copied to clipboard");
-    } catch (error) {
-      console.error("Failed to copy share link:", error);
-      toast.error("Could not copy the link");
-    }
-  }, [shareData]);
+    const success = await copy(shareData.shareUrl);
+    if (success) toast.success("Link copied to clipboard");
+    else toast.error("Could not copy the link");
+  }, [shareData, copy]);
 
   if (!shareData) return null;
 
