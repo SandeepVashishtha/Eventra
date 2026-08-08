@@ -23,21 +23,20 @@ export const eventCancellationAPI = {
     }
 
     const payload = {
-      status: "CANCELLED",
       cancelledAt: new Date().toISOString(),
       reason: options.reason.trim(),
-      refundDetails: options.refundDetails || null,
+      refundPolicy: options.refundPolicy || (options.refundDetails ? "FULL" : "NONE"),
       notifyAttendees: options.notifyAttendees !== false,
     };
 
-    return apiUtils.put(`/api/events/${eventId}/cancel`, payload);
+    return apiUtils.post(`/api/events/${eventId}/cancel`, payload);
   },
 
   /**
    * Get cancellation details for an event
    */
   getCancellationDetails: async (eventId) => {
-    return apiUtils.get(`/api/events/${eventId}/cancellation-details`);
+    return apiUtils.get(`/api/events/${eventId}`);
   },
 
   /**

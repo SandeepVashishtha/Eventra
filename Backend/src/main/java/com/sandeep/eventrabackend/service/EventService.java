@@ -387,7 +387,18 @@ public class EventService {
                 event.setRefundPolicy(refundPolicy);
                 event.setRefundPercent("PARTIAL".equals(refundPolicy) ? request.getRefundPercent() : null);
 
-                return toEventResponse(eventRepository.save(event));
+                Event saved = eventRepository.save(event);
+                if (!Boolean.FALSE.equals(request.getNotifyAttendees())) {
+                        eventRegistrationRepository.findByEvent_IdAndStatus(id, "CONFIRMED")
+                                        .forEach(registration -> notificationRepository.save(Notification.builder()
+                                                        .user(registration.getUser())
+                                                        .title("Event cancelled")
+                                                        .message(saved.getTitle() + " has been cancelled. Reason: "
+                                                                        + request.getReason())
+                                                        .build()));
+                }
+
+                return toEventResponse(saved);
         }
 
         /**
