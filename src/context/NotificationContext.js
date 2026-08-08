@@ -56,7 +56,7 @@ export const NotificationProvider = ({ children }) => {
       if (!payload || typeof payload !== "object") return;
       const n = normalizeNotification(payload);
       const isNewUnread = !n.isRead && !seenIds.current.has(n.id);
-      applyList([n], { deliverNew: false });
+      applyList([n], { deliverNew: false, merge: true });
       if (isNewUnread) {
         deliverNew([n]);
       }
