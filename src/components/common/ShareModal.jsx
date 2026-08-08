@@ -55,12 +55,7 @@ const ShareModal = ({ isOpen, onClose, event }) => {
     };
 
     window.addEventListener("keydown", handleEsc);
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      window.removeEventListener("keydown", handleEsc);
-      document.body.style.overflow = "";
-    };
+    useScrollLock(isOpen);
   }, [isOpen, onClose]);
 
   return (
