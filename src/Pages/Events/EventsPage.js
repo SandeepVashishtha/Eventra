@@ -344,6 +344,22 @@ const category =
       }, 100);
     }
   }, [isLoading, routeSearchQuery]);
+  useEffect(() => {
+  const savedScroll = sessionStorage.getItem("eventra:events-scroll-position");
+
+  if (!savedScroll) return;
+
+  const timeout = setTimeout(() => {
+    window.scrollTo({
+      top: Number(savedScroll),
+      behavior: "auto",
+    });
+
+    sessionStorage.removeItem("eventra:events-scroll-position");
+  }, 100);
+
+  return () => clearTimeout(timeout);
+}, []);
 
   const scrollToCard = () => {
     cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -456,6 +472,18 @@ const category =
             Showing results for: <span className="font-semibold">"{localSearchInput}"</span>
           </div>
         )}
+        <div className="mb-4 text-sm text-slate-600 dark:text-slate-300">
+  {listing.filteredEvents.length === 0
+    ? "No events found"
+    : `Showing ${listing.filteredEvents.length} ${
+        listing.filteredEvents.length === 1 ? "event" : "events"
+      }`}
+</div>
+{listing.lastUpdated && (
+  <div className="mb-4 text-xs text-slate-500 dark:text-slate-400">
+    Last updated: Just now
+  </div>
+)}
         <ErrorBoundary level="section" label="Events">
     {renderCardSection(
   isLoading,
