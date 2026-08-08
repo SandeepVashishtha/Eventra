@@ -77,6 +77,8 @@ public class EventRoleService {
             throw new AccessDeniedException("Only the event owner can transfer ownership.");
         }
 
+        User target = findUser(request.getUserEmail());
+
         // If assigning OWNER, downgrade the current owner to ORGANIZER
         if (newRole == EventRole.OWNER) {
             eventTeamMemberRepository.findByEvent_IdAndRole(eventId, EventRole.OWNER)
@@ -87,9 +89,10 @@ public class EventRoleService {
                         eventTeamMemberRepository.save(currentOwner);
                         auditLogRepository.save(toAuditLog(eventId, currentOwner.getUser().getId(), actor, EventRole.OWNER, EventRole.ORGANIZER, "DOWNGRADED"));
                     });
+            event.setOwnerId(target.getId());
+            eventRepository.save(event);
         }
 
-        User target = findUser(request.getUserEmail());
         EventTeamMember member = upsertRole(event, target, newRole, actor, "ASSIGNED");
         return toTeamMemberResponse(member);
     }
