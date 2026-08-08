@@ -113,12 +113,12 @@ public AuthResponse googleLogin(GoogleAuthRequest request) {
         GoogleIdToken.Payload payload =
                 googleAuthService.verifyToken(request.getToken());
 
-        String email = payload.getEmail().toLowerCase();
-
-        if (email == null || email.isBlank()) {
+        if (payload == null || payload.getEmail() == null || payload.getEmail().isBlank()) {
             throw new IllegalArgumentException(
                     "Google account must provide a valid email address.");
         }
+
+        String email = payload.getEmail().toLowerCase();
 
        String firstName =
         (String) payload.get("given_name");
