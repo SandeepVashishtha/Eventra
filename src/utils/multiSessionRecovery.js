@@ -205,26 +205,30 @@ export const groupRecoverySessionsByType = (sessions = []) =>
   }, {});
 
 export const readMultiSessions = (
-  storage = globalThis.localStorage,
+  storage = null,
   key = MULTI_SESSION_RECOVERY_KEY,
 ) => {
-  if (!storage?.getItem) return [];
+  const resolvedStorage =
+    storage ?? (typeof globalThis !== "undefined" ? globalThis.localStorage : null);
+  if (!resolvedStorage?.getItem) return [];
   try {
-    const raw = storage.getItem(key);
+    const raw = resolvedStorage.getItem(key);
     if (!raw) return [];
     return normalizeMultiSessions(JSON.parse(raw));
   } catch {
-    storage.removeItem?.(key);
+    resolvedStorage.removeItem?.(key);
     return [];
   }
 };
 
 export const writeMultiSessions = (
   sessions = [],
-  storage = globalThis.localStorage,
+  storage = null,
   key = MULTI_SESSION_RECOVERY_KEY,
 ) => {
+  const resolvedStorage =
+    storage ?? (typeof globalThis !== "undefined" ? globalThis.localStorage : null);
   const normalized = normalizeMultiSessions(sessions);
-  storage?.setItem?.(key, JSON.stringify(normalized));
+  resolvedStorage?.setItem?.(key, JSON.stringify(normalized));
   return normalized;
 };
