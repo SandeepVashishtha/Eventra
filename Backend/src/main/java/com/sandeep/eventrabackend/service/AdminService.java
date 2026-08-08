@@ -131,6 +131,9 @@ public class AdminService {
         projectUpvoteRepository.deleteByUser_Id(id);
         notificationRepository.deleteByUser_Id(id);
         feedbackRepository.deleteByUser_Id(id);
+        eventRepository.deleteAttendeeRowsByUserId(id);
+        eventTeamMemberRepository.clearAssignedByUserId(id);
+        eventTeamMemberRepository.deleteByUser_Id(id);
 
         for (Long eventId : affectedEventIds) {
             eventRepository.findById(eventId).ifPresent(event -> {
