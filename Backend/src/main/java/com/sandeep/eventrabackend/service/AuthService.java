@@ -21,6 +21,8 @@ import com.sandeep.eventrabackend.dto.request.GoogleAuthRequest;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import java.security.SecureRandom;
 import java.util.Base64;
+import java.time.ZoneId;
+import java.util.Date;
 
 @Service
 public class AuthService {
@@ -230,6 +232,18 @@ if (lastName == null || lastName.isBlank()) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new org.springframework.security.core.userdetails.UsernameNotFoundException(
                         "User not found with email: " + email));
+
+        if (user.getPasswordChangedAt() != null) {
+            Date tokenIssuedAt = jwtTokenProvider.getIssuedAtDateFromToken(refreshToken);
+            long tokenIssuedSec = tokenIssuedAt.getTime() / 1000;
+            long passwordChangedSec = user.getPasswordChangedAt()
+                    .atZone(ZoneId.systemDefault())
+                    .toEpochSecond();
+            if (tokenIssuedSec < passwordChangedSec) {
+                throw new org.springframework.security.authentication.BadCredentialsException(
+                        "Refresh token invalidated by password change");
+            }
+        }
 
         // Rotate: blacklist the presented refresh token, then mint a new pair.
         tokenBlacklistService.addToBlacklist(
