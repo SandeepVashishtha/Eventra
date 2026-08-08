@@ -156,13 +156,7 @@ API.interceptors.response.use(
     }
     return response;
   },
-  (error) => {
-    const status = error?.response?.status;
-    if (status === 401 && onUnauthorized) {
-      onUnauthorized();
-    }
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 setupRequestInterceptor(API, {
