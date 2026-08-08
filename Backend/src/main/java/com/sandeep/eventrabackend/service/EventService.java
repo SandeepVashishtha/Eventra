@@ -544,6 +544,10 @@ public class EventService {
                 Event event = eventRepository.findByIdWithLock(eventId)
                                 .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + eventId));
 
+                if (!event.isPublic()) {
+                        throw new EventNotFoundException("Event not found with id: " + eventId);
+                }
+
                 User user = userRepository.findByEmail(userEmail)
                                 .orElseThrow(() -> new UsernameNotFoundException(
                                                 "User not found with email: " + userEmail));
@@ -753,6 +757,10 @@ public class EventService {
                 Event event = eventRepository.findByIdWithLock(eventId)
                                 .orElseThrow(() -> new EventNotFoundException(
                                                 "Event not found with id: " + eventId));
+
+                if (!event.isPublic()) {
+                        throw new EventNotFoundException("Event not found with id: " + eventId);
+                }
 
                 // Registration is only valid for events that have not already ended.
                 // Without this guard the API accepted registrations for past events,
