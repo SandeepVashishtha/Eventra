@@ -358,7 +358,8 @@ public class EventService {
         EventWaitlist entry = new EventWaitlist();
         entry.setEvent(event);
         entry.setUser(user);
-        entry.setPosition(eventWaitlistRepository.findMaxPositionByEventId(eventId) + 1);
+        Integer maxPos = eventWaitlistRepository.findMaxPositionByEventId(eventId);
+        entry.setPosition((maxPos == null ? 0 : maxPos) + 1);
         entry.setStatus("WAITING");
 
         return toWaitlistResponse(eventWaitlistRepository.save(entry));
@@ -596,11 +597,14 @@ public class EventService {
             return null;
         }
 
-        return eventWaitlistRepository.findWaitingByEventIdWithLock(event.getId())
-                .stream()
-                .findFirst()
-                .map(entry -> promoteEntry(event, entry))
-                .orElse(null);
+        List<EventWaitlist> waitingUsers = eventWaitlistRepository.findWaitingByEventIdWithLock(event.getId());
+        for (EventWaitlist entry : waitingUsers) {
+            RegistrationResponse result = promoteEntry(event, entry);
+            if (result != null) {
+                return result;
+            }
+        }
+        return null;
     }
 
     private RegistrationResponse promoteEntry(Event event, EventWaitlist entry) {

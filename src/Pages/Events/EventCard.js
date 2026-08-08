@@ -27,7 +27,7 @@ import {
 } from "utils/bookmarkUtils";
 
 
-const EventCard = ({ event }) => {
+const EventCard = ({ event, position }) => {
   const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
   const [imageFailed, setImageFailed] = useState(false);
   const titleId = useId();

@@ -135,6 +135,11 @@ const EventFiltersToolbar = ({
               Reset Filters
             </button>
           )}
+          {!hasAnyFilterActive && (
+  <div className="w-full sm:w-auto flex items-center justify-center px-4 py-2.5 text-xs font-medium rounded-2xl border border-slate-800 bg-slate-900/40 text-slate-400">
+    No filters applied
+  </div>
+)}
           <button
             type="button"
             onClick={() => onToggleAdvancedFilters?.((isOpen) => !isOpen)}
