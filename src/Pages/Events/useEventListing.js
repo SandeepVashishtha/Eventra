@@ -112,14 +112,7 @@ const useEventListing = () => {
     params.append("sort", sortValue);
 
     return params.toString();
-  }, [
-    currentPage,
-    eventsPerPage,
-    debouncedSearchQuery,
-    filterType,
-    advancedFilters,
-    sortType,
-  ]);
+  }, [currentPage, eventsPerPage, debouncedSearchQuery, filterType, advancedFilters, sortType]);
 
   const fetchEvents = useCallback(async () => {
     const requestId = ++latestRequestRef.current;
@@ -129,9 +122,7 @@ const useEventListing = () => {
     try {
       const query = buildQueryParams();
 
-      const response = await apiUtils.get(
-        `${API_ENDPOINTS.EVENTS.LIST}?${query}`,
-      );
+      const response = await apiUtils.get(`${API_ENDPOINTS.EVENTS.LIST}?${query}`);
 
       // Discard stale responses from earlier requests
       if (requestId !== latestRequestRef.current) return;
@@ -154,24 +145,19 @@ const useEventListing = () => {
         last: responseData.last ?? true,
       });
     } catch (error) {
-        setEvents([]);
-        setPagination({
-          totalPages: 1,
-          totalElements: 0,
-          first: true,
-          last: true,
-        });
+      setEvents([]);
+      setPagination({
+        totalPages: 1,
+        totalElements: 0,
+        first: true,
+        last: true,
+      });
 
-        if (error?.response?.status === 403) {
-          setLoadError(
-            "Access to events is currently restricted. Please try again later.",
-          );
-        } else {
-          setLoadError(
-            "Failed to load events. Please try again later.",
-          );
-        }
-
+      if (error?.response?.status === 403) {
+        setLoadError("Access to events is currently restricted. Please try again later.");
+      } else {
+        setLoadError("Failed to load events. Please try again later.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -189,21 +175,27 @@ const useEventListing = () => {
     setCurrentPage(1);
   }, [searchQuery, filterType, sortType, advancedFilters, eventsPerPage]);
 
-  const setSafePage = useCallback((page) => {
-    if (page < 1) {
-      setCurrentPage(1);
-      return;
-    }
-    if (page > pagination.totalPages) {
-      setCurrentPage(pagination.totalPages);
-      return;
-    }
-    setCurrentPage(page);
-  }, [pagination.totalPages]);
+  const setSafePage = useCallback(
+    (page) => {
+      if (page < 1) {
+        setCurrentPage(1);
+        return;
+      }
+      if (page > pagination.totalPages) {
+        setCurrentPage(pagination.totalPages);
+        return;
+      }
+      setCurrentPage(page);
+    },
+    [pagination.totalPages]
+  );
 
-  const setAdvancedFilters = useCallback((filters) => {
-    setAdvancedFiltersState(normalizeAdvancedFilters(filters));
-  }, [setAdvancedFiltersState]);
+  const setAdvancedFilters = useCallback(
+    (filters) => {
+      setAdvancedFiltersState(normalizeAdvancedFilters(filters));
+    },
+    [setAdvancedFiltersState]
+  );
 
   const priceStats = useMemo(() => getPriceStats(events), [events]);
   const dateRangeStats = useMemo(() => getDateRange(events), [events]);
@@ -211,68 +203,75 @@ const useEventListing = () => {
   const filteredEvents = useMemo(() => {
     // 1. Fuzzy search first (or all events if no query)
     let filtered = debouncedSearchQuery.trim()
-      ? getRouteSearchResults(
-          events,
-          debouncedSearchQuery,
-          [
-            { name: "title", weight: 0.8 },
-            { name: "category", weight: 0.5 },
-            { name: "tags", weight: 0.4 },
-            { name: "location.name", weight: 0.3 },
-            { name: "location.city", weight: 0.3 },
-            { name: "description", weight: 0.1 },
-          ]
-        )
+      ? getRouteSearchResults(events, debouncedSearchQuery, [
+          { name: "title", weight: 0.8 },
+          { name: "category", weight: 0.5 },
+          { name: "tags", weight: 0.4 },
+          { name: "location.name", weight: 0.3 },
+          { name: "location.city", weight: 0.3 },
+          { name: "description", weight: 0.1 },
+        ])
       : [...events];
 
     // 2. Status timing filter
-filtered = filtered.filter((event) => {
-  const status = getEventStatus(event);
+    filtered = filtered.filter((event) => {
+      const status = getEventStatus(event);
 
-  if (filterType === "live" && status !== "live") return false;
+      if (filterType === "live" && status !== "live") return false;
 
-  if (filterType === "upcoming" && status !== "upcoming") return false;
+      if (filterType === "upcoming" && status !== "upcoming") return false;
 
-  if (filterType === "past" && status !== "past" && status !== "ended") return false;
+      if (filterType === "past" && status !== "past" && status !== "ended") return false;
 
-  if (filterType === "bookmarked") {
-    const bookmarks = getBookmarkedEvents();
+      if (filterType === "bookmarked") {
+        const bookmarks = getBookmarkedEvents();
 
-    return bookmarks.some(
-      (bookmark) => String(bookmark.id) === String(event.id)
-    );
-  }
+        return bookmarks.some((bookmark) => String(bookmark.id) === String(event.id));
+      }
 
-  return true;
-});
+      return true;
+    });
 
     // 3. Category filter
-    const target = categoryFilter && categoryFilter !== "all"
-      ? categoryFilter.toLowerCase()
-      : null;
+    const target = categoryFilter && categoryFilter !== "all" ? categoryFilter.toLowerCase() : null;
 
     if (target) {
       filtered = filtered.filter((event) => {
         const cat = event.category?.toLowerCase() || "";
         const type = event.type?.toLowerCase() || "";
 
+        // Normalize for fuzzy matching (strip non-alphanumerics)
+        const norm = (s) => s.replace(/[^a-z0-9]+/g, "");
+        const nTarget = norm(target);
+        const nCat = norm(cat);
+        const nType = norm(type);
+
+        // Exact category match takes priority (backend enum values)
+        if (nCat === nTarget) return true;
+
+        // Legacy / fuzzy fallback for older event data
         if (target === "hackathon" || target === "hackathons") {
           return type === "hackathon" || cat.includes("hackathon");
         } else if (["tech talks", "tech-talks", "conference"].includes(target)) {
           return (
-            type === "conference" || type === "summit" ||
-            cat.includes("tech") || cat.includes("conference") || cat.includes("summit")
+            type === "conference" ||
+            type === "summit" ||
+            cat.includes("tech") ||
+            cat.includes("conference") ||
+            cat.includes("summit")
           );
         } else if (["cultural", "networking", "cultural & networking"].includes(target)) {
-          return cat.includes("networking") || cat.includes("cultural") || cat.includes("community");
-        } else {
-          const norm = (s) => s.replace(/[^a-z0-9]+/g, "");
-          const nTarget = norm(target), nCat = norm(cat), nType = norm(type);
           return (
-            nCat.includes(nTarget) || nType.includes(nTarget) ||
-            nTarget.includes(nCat) || nTarget.includes(nType)
+            cat.includes("networking") || cat.includes("cultural") || cat.includes("community")
           );
         }
+
+        return (
+          nCat.includes(nTarget) ||
+          nType.includes(nTarget) ||
+          nTarget.includes(nCat) ||
+          nTarget.includes(nType)
+        );
       });
     }
 
@@ -324,7 +323,10 @@ filtered = filtered.filter((event) => {
   }, [sortedEvents, currentPage, eventsPerPage]);
 
   const totalElements = pagination.totalPages > 1 ? pagination.totalElements : sortedEvents.length;
-  const totalPages = pagination.totalPages > 1 ? pagination.totalPages : Math.ceil(sortedEvents.length / eventsPerPage) || 1;
+  const totalPages =
+    pagination.totalPages > 1
+      ? pagination.totalPages
+      : Math.ceil(sortedEvents.length / eventsPerPage) || 1;
 
   return {
     currentPage,
@@ -335,7 +337,7 @@ filtered = filtered.filter((event) => {
     categoryFilter,
     loadError,
     isLoading,
-    matchScoreMap,      // eventId → { score, reasons } for badge rendering
+    matchScoreMap, // eventId → { score, reasons } for badge rendering
     paginatedEvents,
     searchQuery,
     sortType,
