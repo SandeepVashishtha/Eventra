@@ -1,4 +1,5 @@
 export const DRAFT_KEY = "eventra_create_event_draft";
+export const DUPLICATED_DRAFT_KEY = "eventra_duplicate_event_draft";
 export const CREATION_STEPS = { FORM: "form", PREVIEW: "preview" };
 
 export const categories = [
@@ -35,7 +36,9 @@ export const mockAttendees = [
   },
 ];
 
-export const initialFormData = {
+// Factory function - always returns a fresh object so callers never share
+// references to nested arrays/objects across form sessions.
+export const getInitialFormData = () => ({
   title: "",
   description: "",
   category: "",
@@ -61,6 +64,7 @@ export const initialFormData = {
   tags: [],
   ticketTiers: [
     {
+      id: crypto.randomUUID(),
       name: "General Admission",
       price: 0,
       capacity: "",
@@ -69,6 +73,14 @@ export const initialFormData = {
   ],
   banner: null,
   bannerPreview: null,
-};
+});
 
-export const todayString = new Date().toISOString().split("T")[0];
+// Backward-compatible alias for existing callers - each access returns a new copy
+export const initialFormData = getInitialFormData();
+
+// Computed on every call so date validations stay accurate across midnight
+// on long-running sessions without a page refresh.
+export const getTodayString = () => new Date().toISOString().split("T")[0];
+
+// Backward-compatible alias - evaluates fresh on access via getter
+export const todayString = getTodayString();

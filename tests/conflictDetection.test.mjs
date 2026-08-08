@@ -1,11 +1,7 @@
 import assert from "node:assert/strict";
 
-const {
-  doEventsOverlap,
-  findConflictingEvents,
-  checkRegistrationConflict,
-  parseTimeToMinutes,
-} = await import("../src/utils/conflictDetection.js");
+const { doEventsOverlap, findConflictingEvents, checkRegistrationConflict, parseTimeToMinutes } =
+  await import("../src/utils/conflictDetection.js");
 
 assert.equal(parseTimeToMinutes("10:00 AM"), 600);
 assert.equal(parseTimeToMinutes(""), 0);
@@ -42,13 +38,17 @@ const conflicts = findConflictingEvents(
 );
 assert.equal(conflicts.length, 1);
 
-const check = checkRegistrationConflict(
-  baseEvent,
-  [{ event: overlapping }],
+const check = checkRegistrationConflict(baseEvent, [{ event: overlapping }], 60, "UTC");
+assert.equal(check.hasConflict, true);
+assert.equal(check.conflicts.length, 1);
+
+const baseEventWithId = { ...baseEvent, id: 99 };
+const selfConflictCheck = findConflictingEvents(
+  baseEventWithId,
+  [{ event: baseEventWithId }],
   60,
   "UTC"
 );
-assert.equal(check.hasConflict, true);
-assert.equal(check.conflicts.length, 1);
+assert.equal(selfConflictCheck.length, 0);
 
 console.log("conflictDetection tests passed ✓");

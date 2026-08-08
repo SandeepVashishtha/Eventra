@@ -4,7 +4,7 @@
  * The backend accepts optional `page` (0-indexed) and `size` query params.
  * When the backend returns a Spring-style Page envelope the response looks like:
  *
- *   { content: [...], totalElements: N, totalPages: P, number: 0, size: 20 }
+ * { content: [...], totalElements: N, totalPages: P, number: 0, size: 20 }
  *
  * When it returns a plain array (no pagination metadata), all results arrived
  * in one shot — totalElements is inferred from the array length and only one
@@ -54,8 +54,23 @@ export const SERVER_PAGE_SIZE = 20;
 export function buildPaginatedUrl(baseUrl, page, size) {
   if (!baseUrl) return baseUrl;
 
-  const separator = baseUrl.includes("?") ? "&" : "?";
-  return `${baseUrl}${separator}page=${page}&size=${size}`;
+  // 🔥 FIX: Prevent URL Parameter Pollution and Pagination Freezing.
+  // The old logic used string concatenation which blindly appended duplicate 'page' parameters
+  // (e.g., ?category=tech&page=0&page=1). Backend frameworks (like Spring) often extract the
+  // *first* instance of a parameter, permanently freezing the UI on page 0.
+  const hashIdx = baseUrl.indexOf("#");
+  const urlWithoutHash = hashIdx === -1 ? baseUrl : baseUrl.slice(0, hashIdx);
+  const hash = hashIdx === -1 ? "" : baseUrl.slice(hashIdx + 1);
+  const [path, queryString] = urlWithoutHash.split("?");
+
+  const params = new URLSearchParams(queryString || "");
+  
+  // .set() explicitly overwrites existing keys, eliminating duplicate parameter pollution
+  params.set("page", page);
+  params.set("size", size);
+
+  const newUrl = `${path}?${params.toString()}`;
+  return hash ? `${newUrl}#${hash}` : newUrl;
 }
 
 /**
@@ -66,9 +81,26 @@ export function buildPaginatedUrl(baseUrl, page, size) {
  * @returns {object}
  */
 export function normalizeEvent(rawEvent) {
-  return {
+  if (!rawEvent) return rawEvent;
+
+  // Map backend API field names → internal field names used by components.
+  // The backend returns:  eventDate, imageUrl, capacity, registeredCount
+  // Components expect:   date,       image,    maxAttendees, attendees
+  const mapped = {
     ...rawEvent,
-    status: getEventStatus(rawEvent),
+    // Date field: prefer startDate > date > eventDate
+    date: rawEvent.date || rawEvent.startDate || rawEvent.eventDate || null,
+    startDate: rawEvent.startDate || rawEvent.date || rawEvent.eventDate || null,
+    // Image field: prefer image > imageUrl > banner
+    image: rawEvent.image || rawEvent.imageUrl || rawEvent.banner || null,
+    // Capacity fields
+    maxAttendees: rawEvent.maxAttendees ?? rawEvent.capacity ?? null,
+    attendees: rawEvent.attendees ?? rawEvent.registeredCount ?? rawEvent.participants ?? 0,
+  };
+
+  return {
+    ...mapped,
+    status: getEventStatus(mapped),
   };
 }
 

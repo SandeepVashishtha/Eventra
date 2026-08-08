@@ -1,244 +1,274 @@
-import { lazy, Suspense, useRef, useState, useEffect } from "react";
-
+import { useState, useEffect, useRef } from "react";
 import { NavLink, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { ChevronDown } from "lucide-react";
 
-import { Moon, Sun, Search, ChevronDown, Plus, HelpCircle, X } from "lucide-react";
+import { PRIMARY_NAV_ITEMS } from "./constants/navItems";
+import { prefetchRoute } from "utils/routePrefetch";
 
-import { useTheme } from "../../context/ThemeContext";
-import { NAV_ITEMS } from "./constants/navItems";
-
-const KeyboardShortcutsModal = lazy(() =>
-  import("../common/KeyboardShortcutsModal")
-);
-
-const NavbarLinks = ({ vertical = false, onClick }) => {
+const NavbarLinks = ({ vertical = false, items = PRIMARY_NAV_ITEMS, onClick }) => {
+  const { t } = useTranslation();
   const location = useLocation();
   const navRef = useRef(null);
-
-  const [openGroup, setOpenGroup] = useState(null);
-  const [showShortcuts, setShowShortcuts] = useState(false);
-
-  const { isDarkMode } = useTheme();
+  const menuRefs = useRef({});
+  const [openMenu, setOpenMenu] = useState(null);
 
   useEffect(() => {
-    setOpenGroup(null);
+    setOpenMenu(null);
   }, [location.pathname]);
 
   useEffect(() => {
-    if (vertical) return undefined;
-
-    const handlePointerDown = (event) => {
-      if (navRef.current && !navRef.current.contains(event.target)) {
-        setOpenGroup(null);
-      }
-    };
-
     const handleKeyDown = (event) => {
       if (event.key === "Escape") {
-        setOpenGroup(null);
+        setOpenMenu(null);
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (vertical) return;
+
+    const handleOutsideClick = (event) => {
+      if (navRef.current && !navRef.current.contains(event.target)) {
+        setOpenMenu(null);
       }
     };
 
-    document.addEventListener("pointerdown", handlePointerDown);
-    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("mousedown", handleOutsideClick);
 
     return () => {
-      document.removeEventListener("pointerdown", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("mousedown", handleOutsideClick);
     };
   }, [vertical]);
+useEffect(() => {
+  if (!openMenu) return;
 
-  const getNavLinkClasses = (active) => {
-    return vertical
-      ? `mobile-drawer-link flex min-h-[44px] gap-2 items-center text-sm font-medium transition-all duration-200 w-full py-2 px-3 border-l-2 rounded-lg focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:outline-none dark:focus-visible:ring-indigo-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 ${
-          active
-            ? "text-black dark:text-white border-black dark:border-white font-semibold bg-gray-100 dark:bg-gray-800"
-            : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white border-transparent hover:bg-gray-50 dark:hover:bg-gray-800/50"
-        }`
-      : `flex gap-1 items-center text-xs xl:text-sm font-medium transition-all duration-200 px-1.5 xl:px-2 py-2 border-b-2 rounded-t-md whitespace-nowrap focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:outline-none dark:focus-visible:ring-indigo-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 focus-visible:rounded-lg ${
-          active
-            ? "text-black dark:text-white border-black dark:border-white font-semibold"
-            : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white border-transparent hover:border-gray-300 dark:hover:border-gray-600"
-        }`;
+  const firstItem =
+    menuRefs.current[openMenu]?.querySelector('[role="menuitem"]');
+
+  firstItem?.focus();
+}, [openMenu]);
+
+  const handlePrefetch = (href) => {
+    const routes = {
+      "/": "home",
+      "/events": "events",
+      "/hackathons": "hackathons",
+      "/projects": "projects",
+      "/profile": "profile",
+      "/dashboard": "dashboard",
+    };
+
+    if (routes[href]) {
+      prefetchRoute(routes[href]);
+    }
   };
+
+  const handleClick = (href, e) => {
+    try {
+      if (href === "/events") {
+        sessionStorage.removeItem("eventra:event-filters:v1");
+      }
+      if (href === "/hackathons") {
+        sessionStorage.removeItem("eventra:hackathon-filters:v1");
+      }
+    } catch {
+      // ignore
+    }
+    onClick?.(e);
+  };
+
+  const navLinkClasses = (isActive) =>
+    vertical
+      ? `
+        flex items-center gap-2
+        w-full px-3 py-2.5
+        rounded-lg
+        text-sm font-semibold
+        transition-all duration-200
+        ${
+          isActive
+            ? "bg-primary/10 text-primary dark:bg-blue-500/15 dark:text-blue-400 border-l-4 border-primary font-bold"
+            : "text-text-secondary hover:bg-bg hover:text-primary"
+        }
+      `
+      : `
+        inline-flex flex-none items-center gap-1.5
+        shrink-0
+        min-w-max
+        whitespace-nowrap
+        px-3.5 sm:px-4 py-1.5 sm:py-2
+        rounded-full
+        text-[12px] sm:text-[13px]
+        font-semibold
+        uppercase
+        tracking-wider
+        border border-transparent
+        transition-all duration-300 ease-out hover:scale-[1.03] active:scale-[0.97]
+        ${
+          isActive
+            ? "bg-primary/10 text-primary dark:bg-blue-500/15 dark:text-blue-400 border-primary/20 dark:border-blue-500/20 shadow-sm shadow-primary/5"
+            : "text-text-secondary hover:text-primary dark:hover:text-blue-400 hover:bg-primary/5 dark:hover:bg-white/5"
+        }
+      `;
 
   return (
     <nav
       ref={navRef}
-      className={`flex ${
-        vertical
-          ? "flex-col items-start w-full gap-2"
-          : "items-center gap-1.5 xl:gap-3 mx-1 xl:mx-3 min-w-0 flex-nowrap"
-      }`}
-      aria-label={vertical ? "Mobile primary links" : "Primary links"}
+      aria-label={vertical ? t("nav.mobilePrimaryLinks") : t("nav.primaryLinks")}
+      className={`flex ${vertical ? "flex-col w-full gap-1" : "flex-nowrap items-center justify-center gap-2 lg:gap-2.5 xl:gap-3"}`}
     >
-      {NAV_ITEMS.map((item) => {
-        const isSubItemActive = item.subItems?.some(
-          (sub) => location.pathname === sub.href
-        );
+      {items.map((item) => {
+        const isOpen = openMenu === item.nameKey;
+        const hasChildren = item.subItems && item.subItems.length > 0;
+        const menuId = `menu-${item.nameKey}`;
 
-        const isOpen = openGroup === item.name;
-
-        if (item.subItems) {
+        if (hasChildren) {
           return (
             <div
-              key={item.name}
-              className={`relative group/nav flex items-center shrink-0 ${
-                vertical ? "w-full flex-col items-start" : "flex-none"
-              }`}
+              key={item.nameKey}
+              className={`relative ${vertical ? "w-full" : "flex flex-shrink-0 items-center"}`}
             >
-              <div className="flex w-full items-center">
+              <div className="flex items-center">
                 <NavLink
                   to={item.href}
-                  onClick={onClick}
-                  aria-haspopup={!vertical ? "menu" : undefined}
-                  aria-expanded={!vertical ? isOpen : undefined}
-                  aria-controls={
-                    !vertical
-                      ? `navbar-links-menu-${item.name
-                          .toLowerCase()
-                          .replace(/\s+/g, "-")}`
-                      : undefined
-                  }
-                  className={({ isActive }) =>
-                    getNavLinkClasses(isActive || isSubItemActive)
-                  }
+                  onClick={(e) => handleClick(item.href, e)}
+                  className={({ isActive }) => navLinkClasses(isActive)}
                 >
-                  {item.icon}
-                  <span>{item.name}</span>
+                  {vertical && item.icon}
+                  <span>{t(item.nameKey)}</span>
                 </NavLink>
 
                 {!vertical && (
                   <button
+                   id={`${menuId}-button`}
                     type="button"
-                    onClick={() =>
-                      setOpenGroup((current) =>
-                        current === item.name ? null : item.name
-                      )
-                    }
-                    onKeyDown={(event) => {
-                      if (
-                        event.key === "Enter" ||
-                        event.key === " "
-                      ) {
-                        event.preventDefault();
-
-                        setOpenGroup((current) =>
-                          current === item.name ? null : item.name
-                        );
-                      }
-                    }}
                     aria-expanded={isOpen}
-                    aria-controls={`navbar-links-menu-${item.name
-                      .toLowerCase()
-                      .replace(/\s+/g, "-")}`}
-                    aria-label={`${
-                      isOpen ? "Collapse" : "Expand"
-                    } ${item.name} submenu`}
-                    className={`ml-auto inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg p-2 transition-colors focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:outline-none dark:focus-visible:ring-indigo-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 ${
-                      isSubItemActive
-                        ? "text-black dark:text-white"
-                        : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white"
-                    }`}
+                    aria-haspopup="menu"
+                    aria-controls={menuId}
+                    onClick={() => setOpenMenu(isOpen ? null : item.nameKey)}
+                    onKeyDown={(event) => {
+    if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+
+        setOpenMenu(
+            isOpen
+                ? null
+                : item.nameKey
+        );
+    }
+
+    if (event.key === "Escape") {
+        setOpenMenu(null);
+    }
+}}
+                    className="ml-0.5 flex-shrink-0 rounded-full p-1.5 hover:bg-bg-secondary transition-colors"
+                    aria-label={`Toggle ${t(item.nameKey)} menu`}
                   >
                     <ChevronDown
-                      className={`w-4 h-4 opacity-70 transition-transform duration-200 ${
-                        isOpen
-                          ? "rotate-180"
-                          : "group-hover/nav:rotate-180"
+                      className={`h-4 w-4 transition-transform duration-200 ${
+                        isOpen ? "rotate-180" : ""
                       }`}
                     />
                   </button>
                 )}
               </div>
 
-              <div
-                id={`navbar-links-menu-${item.name
-                  .toLowerCase()
-                  .replace(/\s+/g, "-")}`}
-                className={
-                  vertical
-                    ? "mt-1 block w-full space-y-1 rounded-lg bg-gray-50 p-2 dark:bg-gray-800/60"
-                    : `${
-                        isOpen
-                          ? "block"
-                          : "hidden group-hover/nav:block"
-                      } absolute top-full left-0 bg-white dark:bg-gray-800 shadow-lg rounded-md p-2 min-w-55 z-50 border border-gray-100 dark:border-gray-700 mt-1 animate-in fade-in slide-in-from-top-1 duration-200`
-                }
-                role={!vertical ? "menu" : undefined}
-                aria-label={`${item.name} submenu`}
-              >
-                {item.subItems.map((sub) => (
-                  <NavLink
-                    key={sub.name}
-                    to={sub.href}
-                    onClick={onClick}
-                    role={!vertical ? "menuitem" : undefined}
-                    className={({ isActive }) =>
-                      `mobile-drawer-link flex min-h-11 items-center gap-2 rounded-md p-2 text-sm font-medium transition-all duration-200 focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:outline-none dark:focus-visible:ring-indigo-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 focus-visible:rounded-lg ${
-                        isActive
-                          ? "bg-gray-100 dark:bg-gray-700 text-black dark:text-white font-semibold"
-                          : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                      }`
-                    }
-                  >
-                    {sub.icon}
-                    <span>{sub.name}</span>
-                  </NavLink>
-                ))}
-              </div>
+              {/* Dropdown / Submenu */}
+              {(vertical || isOpen) && (
+                <div
+                ref={(el) => (menuRefs.current[item.nameKey] = el)}
+                  id={menuId}
+                  role="menu"
+                  aria-labelledby={`${menuId}-button`}
+                  role="menu"
+                  className={
+                    vertical
+                      ? "mt-1 ml-6 space-y-1"
+                      : "absolute left-0 top-full mt-3 w-56 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md p-2 shadow-lg z-50 animate-in fade-in zoom-in-95"
+                  }
+                >
+                  {item.subItems.map((sub) => (
+                    <NavLink
+
+onKeyDown={(event)=>{
+
+    const items =
+        Array.from(
+            event.currentTarget
+            .parentElement
+            .querySelectorAll('[role="menuitem"]')
+        );
+
+    const index =
+        items.indexOf(event.currentTarget);
+
+    if(event.key==="ArrowDown"){
+
+        event.preventDefault();
+
+        items[(index+1)%items.length].focus();
+
+    }
+
+    if(event.key==="ArrowUp"){
+
+        event.preventDefault();
+
+        items[
+            (index-1+items.length)%items.length
+        ].focus();
+
+    }
+
+}}
+                      key={sub.nameKey}
+                      role="menuitem"
+                      to={sub.href}
+                      onClick={(e) => handleClick(sub.href, e)}
+                      className={({ isActive }) =>
+                        `
+                          flex items-center gap-2
+                          rounded-md
+                          px-3 py-2
+                          text-sm
+                          transition-all duration-200
+                          ${
+                            isActive
+                              ? "bg-bg-secondary text-indigo-600 dark:text-indigo-400 font-semibold"
+                              : "text-text-secondary hover:bg-bg hover:text-indigo-600 dark:hover:text-indigo-400"
+                          }
+                        `
+                      }
+                    >
+                      {sub.icon}
+                      <span>{t(sub.nameKey)}</span>
+                    </NavLink>
+                  ))}
+                </div>
+              )}
             </div>
           );
         }
 
+        // Simple top-level link
         return (
           <NavLink
-            key={item.name}
+            key={item.nameKey}
             to={item.href}
-            onClick={onClick}
-            className={({ isActive }) =>
-              getNavLinkClasses(isActive)
-            }
+            onMouseEnter={() => handlePrefetch(item.href)}
+            onClick={(e) => handleClick(item.href, e)}
+            className={({ isActive }) => navLinkClasses(isActive)}
           >
             {item.icon}
-            <span>{item.name}</span>
+            <span>{t(item.nameKey)}</span>
           </NavLink>
         );
       })}
-
-      <Suspense fallback={null}>
-        <KeyboardShortcutsModal
-          isOpen={showShortcuts}
-          onClose={() => setShowShortcuts(false)}
-          shortcuts={[
-            {
-              keys: ["Ctrl", "K"],
-              action: "Open search",
-              icon: Search,
-            },
-            {
-              keys: ["Ctrl", "N"],
-              action: "Create new event",
-              icon: Plus,
-            },
-            {
-              keys: ["T"],
-              action: "Toggle theme",
-              icon: isDarkMode ? Sun : Moon,
-            },
-            {
-              keys: ["?"],
-              action: "Show shortcuts",
-              icon: HelpCircle,
-            },
-            {
-              keys: ["Esc"],
-              action: "Close modals",
-              icon: X,
-            },
-          ]}
-        />
-      </Suspense>
     </nav>
   );
 };

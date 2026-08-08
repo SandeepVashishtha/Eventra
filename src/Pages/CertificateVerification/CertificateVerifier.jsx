@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { Input } from '../../components/common/Input';
-import { exportToCSV } from '../../utils/exportUtils';
-import { verifyCertificate } from '../../utils/certificateUtils';
+import { useState } from 'react';
+import { Input } from 'components/common/Input';
+import { exportToCSV } from 'utils/exportUtils';
+import { verifyCertificate } from 'utils/certificateUtils';
 import { toast } from 'react-toastify';
-import { LinkedInShareButton } from '../../components/common/LinkedInShareButton';
+import { LinkedInShareButton } from 'components/common/LinkedInShareButton';
 
 // Glassmorphic container style
 const containerStyle = {
@@ -21,12 +21,12 @@ export const CertificateVerifier = () => {
   const [result, setResult] = useState(null);
 
   const handleSearch = async () => {
-    try {
-      const data = await verifyCertificate(uid.trim());
+    const { success, data, error } = await verifyCertificate(uid.trim());
+    if (success) {
       setResult(data);
       toast.success('Certificate verified!');
-    } catch (e) {
-      toast.error('Verification failed');
+    } else {
+      toast.error(error || 'Verification failed');
       setResult(null);
     }
   };

@@ -1,42 +1,43 @@
 import { memo, useRef, useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { Moon, Sun } from "lucide-react";
-import { useAuth } from "../../context/AuthContext";
-import { useTheme } from "../../context/ThemeContext";
+import { useAuth } from "context/AuthContext";
 import DesktopNavbar from "./DesktopNavbar";
 import MobileNavbar from "./MobileNavbar";
-import CursorToggle from "./CursorToggle";
+import AuthButtons from "./AuthButtons";
+import ProfileMenu from "./ProfileMenu";
+import LanguageSelector from "../LanguageSelector";
+import NotificationBell from "../notifications/NotificationBell";
 import useBodyScrollLock from "./hooks/useBodyScrollLock";
-import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
+import useKeyboardShortcuts from "hooks/useKeyboardShortcuts";
+import { motion, useScroll, useSpring } from "framer-motion";
 
 const Navbar = ({ cursorEnabled, toggleCursor }) => {
+  const navRef = useRef(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
-  const navRef = useRef(null);
-
+  const [scrolled, setScrolled] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
   const authenticated = isAuthenticated();
-  const { isDarkMode, toggleTheme } = useTheme();
-
   useBodyScrollLock(isMobileMenuOpen);
+
   const handleCloseModals = useCallback(() => {
     setIsMobileMenuOpen(false);
   }, []);
 
   const handleSearchFocus = useCallback(() => {
-    const searchInput = document.querySelector(
-      'input[type="text"], input[type="search"]'
-    );
-
-    if (searchInput) searchInput.focus();
+    const searchInput = navRef.current?.querySelector('input[type="text"], input[type="search"]');
+    if (searchInput) {
+      searchInput.focus();
+    }
   }, []);
 
   const handleNewEvent = useCallback(() => {
-    const createEventBtn = document.querySelector(
+    const createButton = navRef.current?.querySelector(
       '[aria-label*="Create Event"], [aria-label*="create"]'
     );
-
-    if (createEventBtn) createEventBtn.click();
+    if (createButton) {
+      createButton.click();
+    }
   }, []);
 
   useKeyboardShortcuts({
@@ -47,80 +48,133 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
 
   useEffect(() => {
     let ticking = false;
-
     const handleScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          const scrollTop = window.scrollY;
-          const docHeight =
-            document.documentElement.scrollHeight - window.innerHeight;
-
-          const progress =
-            docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
-
-          setScrollProgress(progress);
-          ticking = false;
-        });
-
-        ticking = true;
-      }
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(() => {
+        const scrollTop = window.scrollY;
+        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+        setScrollProgress(progress);
+        setScrolled(scrollTop > 12);
+        ticking = false;
+      });
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
-
     return () => {
       window.removeEventListener("scroll", handleScroll);
     };
   }, []);
 
+  /* SCROLL PROGRESSBAR */
+
+  const { scrollYProgress } = useScroll();
+
+  const scaleX = useSpring(scrollYProgress, {
+    stiffness: 140,
+    damping: 28,
+    mass: 0.2,
+  });
+
   return (
     <>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-white"
+      >
+        Skip to main content
+      </a>
+
       <nav
         ref={navRef}
         aria-label="Primary navigation"
-        className="sticky top-0 left-0 w-full h-20 bg-white dark:bg-gray-900 border-b border-border z-[200] transition-all duration-300"
+        className={`fixed top-0 left-0 right-0 z-50 w-full transition-all duration-300 bg-navbar border-b border-transparent ${scrolled ? "shadow-premium-md border-primary/10" : "shadow-premium-sm border-transparent"
+          }`}
       >
-        <div className="h-full px-4 flex items-center justify-between gap-4">
-          <Link to="/" aria-label="Eventra home logo template" className="flex items-center shrink-0 min-w-0">
-            <div className="flex min-w-0 items-center gap-2 xl:gap-3">
-              <div className="flex h-10 w-10 xl:h-11 xl:w-11 flex-none items-center justify-center overflow-hidden rounded-xl bg-gray-100 p-1 shadow-sm ring-1 ring-gray-200 dark:bg-gray-800 dark:ring-gray-700">
-                <img
-                  src="/favicon.png"
-                  alt="Eventra Brand Logo"
-                  className="block h-full w-full object-contain"
-                  loading="lazy"
-                />
-              </div>
-              <h1 className="truncate text-lg sm:text-xl xl:text-2xl font-heading font-bold text-text">Eventra</h1>
-            </div>
-          </Link>
+        <div className="mx-auto max-w-screen-2xl px-3 sm:px-4 lg:px-6">
+          <div className="flex h-16 min-w-0 items-center justify-between gap-2 overflow-visible">
 
-          {/* Desktop Links should be in the middle of the navbar */}
-          <DesktopNavbar isAuthenticated={authenticated} user={user} logout={logout} />
-
-          {/* Right Controls Container */}
-          <div className="flex items-center gap-2 xl:gap-4 shrink-0">
-          {/* Hide these on mobile */}
-          <div className="hidden sm:flex items-center gap-2 xl:gap-4">
-            <button
-              type="button"
-              onClick={toggleTheme}
-              aria-label={isDarkMode ? "Switch to light theme" : "Switch to dark theme"}
-              aria-pressed={isDarkMode}
-              className="theme-toggle relative flex items-center justify-center w-11 h-11 rounded-full bg-gray-200 dark:bg-gray-800 text-black dark:text-white shadow-md hover:scale-110 hover:shadow-lg transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-            >
-              <div className="transition-transform duration-500">
-                {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+            {/* Logo - Fixed width */}
+            <Link to="/" aria-label="Eventra Home" className="flex items-center shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-900 dark:to-slate-950 p-1 shadow-md shadow-primary/10 ring-1 ring-primary/20 dark:ring-blue-500/30 transition-transform duration-300 group-hover:scale-105">
+                  <img
+                    src="/favicon.png"
+                    alt="Eventra Logo"
+                    className="h-full w-full object-contain scale-110"
+                    width="32"
+                    height="32"
+                  />
+                </div>
+                <span className="font-heading text-base font-bold tracking-wider text-primary dark:text-blue-400">
+                  Eventra
+                </span>
               </div>
-            </button>
-            <CursorToggle cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
+            </Link>
+
+            <div className="hidden lg:flex flex-1 justify-center min-w-0 mx-1">
+              <DesktopNavbar />
             </div>
-            <MobileNavbar isOpen={isMobileMenuOpen} setIsOpen={setIsMobileMenuOpen} isAuthenticated={authenticated} user={user} logout={logout} />
+
+            {/* Controls & CTAs */}
+            <div className="flex items-center justify-end gap-2 shrink-0">
+              {/* Desktop CTAs & Profile */}
+              <div className="hidden lg:flex items-center gap-2">
+                <LanguageSelector compact />
+                {authenticated ? (
+                  <>
+                    <NotificationBell />
+                    <ProfileMenu user={user} logout={logout} />
+                  </>
+                ) : (
+                  <AuthButtons />
+                )}
+              </div>
+
+              {/* Mobile Notifications */}
+              <div className="flex items-center gap-2 lg:hidden">
+                {authenticated && <NotificationBell />}
+              </div>
+
+              {/* Navigation Drawer Toggle */}
+              <MobileNavbar
+                isOpen={isMobileMenuOpen}
+                setIsOpen={setIsMobileMenuOpen}
+                isAuthenticated={authenticated}
+                user={user}
+                logout={logout}
+                cursorEnabled={cursorEnabled}
+                toggleCursor={toggleCursor}
+              />
+            </div>
           </div>
         </div>
-        <div className="absolute bottom-0 left-0 w-full h-1 bg-transparent" aria-hidden="true">
-          <div className="h-full bg-blue-500 transition-all duration-100 ease-out" style={{ width: `${scrollProgress}%` }} />
+        <div aria-hidden="true" className="absolute bottom-0 left-0 h-[2px] w-full">
         </div>
+        <motion.div
+          aria-hidden="true"
+          style={{
+            scaleX,
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: "2px",
+            borderRadius: "9999px",
+            transformOrigin: "left center",
+            willChange: "transform",
+            pointerEvents: "none",
+            zIndex: 9999,
+            background:
+              "linear-gradient(90deg, #38bdf8 0%, #3b82f6 50%, #6366f1 100%)",
+            boxShadow: `
+      0 0 6px rgba(59,130,246,0.35),
+      0 0 12px rgba(59,130,246,0.20),
+      0 0 20px rgba(99,102,241,0.15)
+    `,
+          }}
+        />
       </nav>
     </>
   );

@@ -1,13 +1,6 @@
-import { useState, useMemo } from "react";
-import {
-  FiUsers,
-  FiActivity,
-  FiSmile,
-  FiPlay,
-  FiStar,
-  FiDownload,
-} from "react-icons/fi";
-import { exportSurveyToCSV } from "../../utils/exportCsv";
+import { Users, Activity, Smile, Play, Star, Download } from "lucide-react";
+import { useMemo } from "react";
+import { exportSurveyToCSV } from "utils/exportCsv";
 import {
   ResponsiveContainer,
   BarChart,
@@ -35,7 +28,7 @@ const FEEDBACK_COMMENTS_POOL = [
 ];
 
 const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
-  const [isActive] = useState(true);
+  const isActive = true; // survey is always active in this context; no dynamic toggling needed
 
   // Hook handles mock data generation - decoupled from UI components
   const {
@@ -67,7 +60,7 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
         let total = 0;
         let sum = 0;
         Object.entries(distribution).forEach(([score, count]) => {
-          sum += parseInt(score) * count;
+          sum += parseInt(score, 10) * count;
           total += count;
         });
         ratings[q.id] = {
@@ -78,6 +71,18 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
     });
     return ratings;
   }, [questions, simulatedData]);
+
+  // Compute overall satisfaction average across all rating questions
+  const overallSatisfaction = useMemo(() => {
+    const ratingEntries = Object.values(analyzedRatings);
+    if (ratingEntries.length === 0) return null;
+    const totalWeightedSum = ratingEntries.reduce(
+      (sum, r) => sum + parseFloat(r.average) * r.total,
+      0
+    );
+    const totalVotes = ratingEntries.reduce((sum, r) => sum + r.total, 0);
+    return totalVotes > 0 ? (totalWeightedSum / totalVotes).toFixed(1) : null;
+  }, [analyzedRatings]);
 
   // Reconstruct individual rows corresponding to each submission per question distribution
   const handleExportCSV = () => {
@@ -95,36 +100,26 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
       questions.forEach((q) => {
         if (q.type === "rating") {
           const distribution = simulatedData[q.id] || { 5: 50, 4: 30, 3: 10, 2: 3, 1: 1 };
-          const total = Object.values(distribution).reduce((a, b) => a + b, 0) || 1;
-          const rand = Math.floor(Math.random() * total);
-
-          let cumulative = 0;
-          let selectedScore = 4;
+          // Build a flat ordered list so each submission index maps deterministically
+          // to a score — no re-randomization between exports (CSV matches charts).
+          const pool = [];
           for (const score of [5, 4, 3, 2, 1]) {
-            cumulative += distribution[score];
-            if (rand < cumulative) {
-              selectedScore = score;
-              break;
-            }
+            const count = distribution[score] || 0; // ← guard: undefined → 0, prevents NaN
+            for (let c = 0; c < count; c++) pool.push(score);
           }
+          const selectedScore = pool.length > 0 ? pool[i % pool.length] : 4;
           answers[q.id] = `${selectedScore} Stars`;
         } else if (q.type === "choice") {
           const distribution = simulatedData[q.id] || {};
           const options = Object.keys(distribution);
           if (options.length > 0) {
-            const total = Object.values(distribution).reduce((a, b) => a + b, 0) || 1;
-            const rand = Math.floor(Math.random() * total);
-
-            let cumulative = 0;
-            let selectedOpt = options[0];
+            // Build flat deterministic pool from distribution (same approach as rating)
+            const pool = [];
             for (const opt of options) {
-              cumulative += distribution[opt];
-              if (rand < cumulative) {
-                selectedOpt = opt;
-                break;
-              }
+              const count = distribution[opt] || 0;
+              for (let c = 0; c < count; c++) pool.push(opt);
             }
-            answers[q.id] = selectedOpt;
+            answers[q.id] = pool.length > 0 ? pool[i % pool.length] : options[0];
           } else {
             answers[q.id] = "";
           }
@@ -174,15 +169,15 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
             onClick={handleExportCSV}
             className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 font-semibold hover:border-indigo-500 dark:hover:border-indigo-400 text-xs text-slate-700 dark:text-slate-350 hover:text-indigo-650 dark:hover:text-indigo-400 hover:shadow-md transition active:scale-95 cursor-pointer"
            aria-label="button">
-            <FiDownload className="w-4 h-4 text-indigo-500" />
+            <Download className="w-4 h-4 text-indigo-500" />
             Export Results to CSV
           </button>
-          
+
           <button
             onClick={handleSimulateSubmission}
             className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-xs font-bold text-white shadow-lg shadow-indigo-600/15 transition self-start sm:self-auto cursor-pointer"
            aria-label="button">
-            <FiPlay className="w-4 h-4 fill-white" />
+            <Play className="w-4 h-4 fill-white" />
             Inject Survey Response
           </button>
         </div>
@@ -195,14 +190,14 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
             label: "Total Submissions",
             value: totalSubmissions,
             sub: "+12 submissions today",
-            icon: <FiUsers className="w-5 h-5" />,
+            icon: <Users className="w-5 h-5" />,
             color: "text-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 border-indigo-100/50 dark:border-indigo-900/30",
           },
           {
             label: "Completion Rate",
             value: `${completionRate}%`,
             sub: "Average time: 2m 45s",
-            icon: <FiActivity className="w-5 h-5" />,
+            icon: <Activity className="w-5 h-5" />,
             color: "text-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-100/50 dark:border-emerald-900/30",
           },
           {
@@ -219,9 +214,9 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
           },
           {
             label: "Attendee Satisfaction",
-            value: "4.4 / 5.0",
-            sub: "Highly positive feedback",
-            icon: <FiSmile className="w-5 h-5" />,
+            value: overallSatisfaction ? `${overallSatisfaction} / 5.0` : "N/A",
+            sub: overallSatisfaction ? "Based on live rating responses" : "No rating questions yet",
+            icon: <Smile className="w-5 h-5" />,
             color: "text-rose-500 bg-rose-50 dark:bg-rose-950/40 border-rose-100/50 dark:border-rose-900/30",
           },
         ].map((stat, i) => (
@@ -246,7 +241,7 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
       {/* DYNAMIC ANALYTICS CONTROLLER */}
       {questions.length === 0 ? (
         <div className="p-12 text-center border-2 border-dashed border-slate-200 dark:border-slate-850 bg-white dark:bg-slate-900 rounded-3xl">
-          <FiSmile className="w-12 h-12 text-slate-355 dark:text-slate-600 mx-auto mb-4" />
+          <Smile className="w-12 h-12 text-slate-355 dark:text-slate-600 mx-auto mb-4" />
           <p className="text-lg font-medium text-slate-400 dark:text-slate-500">
             No active questions found in your survey.
           </p>
@@ -320,11 +315,11 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
                           return (
                             <div key={star} className="flex items-center gap-3 text-xs">
                               <span className="w-10 font-bold text-slate-400 shrink-0 flex items-center gap-0.5">
-                                {star} <FiStar className="w-3 h-3 fill-slate-300 dark:fill-slate-650" />
+                                {star} <Star className="w-3 h-3 fill-slate-300 dark:fill-slate-650" />
                               </span>
                               <div className="flex-1 h-2.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                                 <div
-                                  className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-sky-400 transition-all duration-500"
+                                  className="h-full rounded-full bg-linear-to-r from-indigo-500 to-sky-400 transition-all duration-500"
                                   style={{ width: `${percent}%` }}
                                 />
                               </div>
@@ -341,7 +336,7 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
                   {/* B. MULTIPLE CHOICE BAR CHART */}
                   {question.type === "choice" && hasData && (
                     <div className="w-full h-44">
-                      {question.options.length === 0 ? (
+                      {!question.options || question.options.length === 0 ? (
                         <div className="text-center py-6 text-xs text-slate-400">
                           No options defined for this choice question.
                         </div>
@@ -408,7 +403,7 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
                             key={comment.id}
                             className="p-3 bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/40 rounded-2xl space-y-1.5 flex items-start gap-2.5 hover:bg-slate-100/50 dark:hover:bg-slate-900/30 transition"
                           >
-                            <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-500 to-sky-400 text-white flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5 shadow-sm">
+                            <div className="w-7 h-7 rounded-full bg-linear-to-tr from-indigo-500 to-sky-400 text-white flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5 shadow-sm">
                               {comment.author.charAt(0)}
                             </div>
                             <div className="flex-1 space-y-0.5">

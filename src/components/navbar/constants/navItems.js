@@ -1,82 +1,92 @@
 import {
-  Home,
   Calendar,
   FolderKanban,
   Users,
   Trophy,
-  Info,
   MessageSquare,
-  HelpCircle,
   Book,
-  Bookmark,
+  Info,
+  HelpCircle,
+  MoreHorizontal,
 } from "lucide-react";
 
-export const NAV_ITEMS = [
+export const PRIMARY_NAV_ITEMS = [
+  // Fix (Issue #10497): Remove unused/misleading dropdown from Events nav item.
+// The subItems (Explore Events, Calendar, Scheduler) were either duplicating
+// the parent link or pointing to pages accessible via other nav items,
+// causing a chevron to appear with no meaningful dropdown content.
+// Events is now a direct nav link with no dropdown.
+{
+  nameKey: "nav.events",
+  href: "/events",
+  icon: <Calendar className="w-5 h-5" />,
+},
+
   {
-    name: "Home",
-    href: "/",
-    icon: <Home className="w-5 h-5" />,
-  },
-  {
-    name: "Events",
-    href: "/events",
-    icon: <Calendar className="w-5 h-5" />,
-  },
-  {
-    name: "Hackathons",
+    nameKey: "nav.hackathons",
     href: "/hackathons",
     icon: <Trophy className="w-5 h-5" />,
   },
   {
-    name: "Projects",
+    nameKey: "nav.projects",
     href: "/projects",
     icon: <FolderKanban className="w-5 h-5" />,
   },
+];
+
+export const SECONDARY_NAV_ITEMS = [
   {
-    name: "Saved",
-    href: "/saved-events",
-    icon: <Bookmark className="w-5 h-5" />,
+    nameKey: "nav.networking",
+    href: "/networking",
+    icon: <Users className="w-5 h-5" />,
   },
   {
-    name: "Community",
-    href: "/communityEvent",
+    nameKey: "nav.community",
+    href: "/community-event",
     icon: <Users className="w-5 h-5" />,
     subItems: [
       {
-        name: "Community Events",
-        href: "/communityEvent",
+        nameKey: "nav.communityEvents",
+        href: "/community-event",
         icon: <Users className="w-5 h-5" />,
       },
       {
-        name: "Leaderboard",
-        href: "/leaderBoard",
+        nameKey: "nav.leaderboard",
+        href: "/leaderboard",
         icon: <Trophy className="w-5 h-5" />,
       },
       {
-        name: "Contributors",
+        nameKey: "nav.contributors",
         href: "/contributors",
         icon: <Users className="w-5 h-5" />,
       },
       {
-        name: "Contributors Guide",
+        nameKey: "nav.contributorsGuide",
         href: "/contributorguide",
         icon: <Book className="w-5 h-5" />,
       },
     ],
   },
   {
-    name: "About",
+    nameKey: "nav.more",
     href: "/about",
-    icon: <Info className="w-5 h-5" />,
-  },
-  {
-    name: "FAQ",
-    href: "/faq",
-    icon: <HelpCircle className="w-5 h-5" />,
-  },
-  {
-    name: "Contact",
-    href: "/contact",
-    icon: <MessageSquare className="w-5 h-5" />,
+    icon: <MoreHorizontal className="w-5 h-5" />,
+    subItems: [
+      {
+        nameKey: "nav.about",
+        href: "/about",
+        icon: <Info className="w-5 h-5" />,
+      },
+      {
+        nameKey: "nav.faq",
+        href: "/faq",
+        icon: <HelpCircle className="w-5 h-5" />,
+      },
+      {
+        nameKey: "nav.contact",
+        href: "/contact",
+        icon: <MessageSquare className="w-5 h-5" />,
+      },
+    ],
   },
 ];

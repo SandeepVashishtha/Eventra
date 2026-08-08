@@ -1,19 +1,38 @@
 import { useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { LogIn, UserPlus } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import {
+  LogIn,
+  UserPlus,
+  Info,
+  HelpCircle,
+  Sun,
+  Moon,
+  MousePointer,
+  Bell,
+  LayoutDashboard,
+} from "lucide-react";
+import { useNotification } from "context/NotificationContext";
 import NavbarLinks from "./NavbarLinks";
+import { PRIMARY_NAV_ITEMS, SECONDARY_NAV_ITEMS } from "./constants/navItems";
+import LanguageSelector from "../LanguageSelector";
+import { useTheme } from "context/ThemeContext";
 
 const MobileDrawer = ({
   isOpen,
   closeMenu,
   isAuthenticated,
-  user,
   logout,
+  cursorEnabled,
+  toggleCursor,
 }) => {
+  const { t } = useTranslation();
   const location = useLocation();
   const drawerRef = useRef(null);
   const closeButtonRef = useRef(null);
   const isActive = (path) => location.pathname === path;
+  const { isDarkMode, toggleTheme, setIsCustomizerOpen } = useTheme();
+  const { unreadCount } = useNotification();
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -52,15 +71,17 @@ const MobileDrawer = ({
     };
   }, [closeMenu, isOpen]);
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 xl:hidden">
+    <div
+      className={`fixed inset-0 z-50 ${
+        isOpen ? "visible pointer-events-auto" : "invisible pointer-events-none"
+      }`}
+    >
       <button
         type="button"
         aria-label="Close navigation menu"
         onClick={closeMenu}
-        className={`absolute inset-0 h-full w-full bg-black/50 transition-opacity duration-200 ${
+        className={`absolute inset-0 h-full w-full bg-black/50 transition-opacity duration-300 ease-in-out ${
           isOpen ? "opacity-100" : "opacity-0"
         }`}
       />
@@ -71,105 +92,215 @@ const MobileDrawer = ({
         role="dialog"
         aria-modal="true"
         aria-label="Mobile navigation"
-        className={`mobile-drawer-panel absolute right-0 top-0 flex w-[min(92vw,24rem)] max-w-drawer flex-col bg-white shadow-2xl transition-transform duration-200 ease-out dark:bg-gray-900 ${
+        className={`mobile-drawer-panel fixed right-0 top-0 inset-y-0 flex h-dvh w-full max-w-sm flex-col bg-navbar shadow-premium-lg transition-transform duration-200 ease-out ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        <div className="mobile-landscape-compact flex min-h-[64px] items-center justify-between gap-3 border-b border-gray-200 px-4 py-3 dark:border-gray-800">
+        {/* Header */}
+        <div className="sticky top-0 z-10 flex min-h-[64px] shrink-0 items-center justify-between gap-3 border-b border-border bg-navbar px-4 py-3">
           <div className="flex min-w-0 items-center gap-2">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gray-100 p-1 ring-1 ring-gray-200 dark:bg-gray-800 dark:ring-gray-700">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-card-bg p-1 ring-1 ring-border">
               <img
                 src="/favicon.png"
                 alt=""
                 aria-hidden="true"
                 className="block h-full w-full object-contain"
+                loading="lazy"
               />
             </div>
-            <h2 className="truncate text-xl font-bold text-gray-900 dark:text-white xs:text-2xl">
-              Eventra
-            </h2>
+            <h2 className="truncate text-xl font-bold text-text xs:text-2xl">Eventra</h2>
           </div>
           <button
             ref={closeButtonRef}
             type="button"
             onClick={closeMenu}
             aria-label="Close navigation menu"
-            className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl px-3 text-xl font-semibold text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+            className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl px-3 text-xl font-semibold text-text-light transition-colors hover:bg-bg-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <span aria-hidden="true">X</span>
           </button>
         </div>
 
-        <div className="flex h-[calc(100%-73px)] flex-col overflow-y-auto px-4 py-5">
-          <NavbarLinks
-            vertical
-            onClick={closeMenu}
-          />
+        <div className="mobile-drawer-scroll flex flex-1 flex-col overflow-y-auto px-4 py-5 overscroll-contain">
+          <div className="lg:hidden mb-2">
+            <NavbarLinks vertical items={PRIMARY_NAV_ITEMS} onClick={closeMenu} />
+          </div>
 
-          <div className="mt-6 border-t border-gray-200 pt-4 dark:border-gray-800">
+          <NavbarLinks vertical items={SECONDARY_NAV_ITEMS} onClick={closeMenu} />
+
+          {/* User Section */}
+          <div className="mt-6 border-t border-border pt-4">
             {isAuthenticated ? (
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1">
                 <Link
                   to="/dashboard"
                   onClick={closeMenu}
-                  className={`mobile-drawer-link flex min-h-[48px] w-full items-center gap-2 rounded-lg border-l-2 px-3 py-2 text-sm font-medium transition-all duration-200 ${
+                  className={`flex min-h-[48px] w-full items-center gap-3 rounded-lg border-l-4 px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                     isActive("/dashboard")
-                      ? "border-black bg-gray-100 text-black dark:border-white dark:bg-gray-800 dark:text-white"
-                      : "border-transparent text-gray-600 hover:bg-gray-50 hover:text-black dark:text-gray-300 dark:hover:bg-gray-800/70 dark:hover:text-white"
+                      ? "border-primary bg-bg-secondary text-text font-semibold"
+                      : "border-transparent text-text-light hover:bg-bg hover:text-text"
                   }`}
                 >
-                  Dashboard
+                  <LayoutDashboard className="w-5 h-5" />
+                  {t("nav.dashboard")}
                 </Link>
                 <Link
                   to="/dashboard/profile"
                   onClick={closeMenu}
-                  className={`mobile-drawer-link flex min-h-[48px] w-full items-center gap-2 rounded-lg border-l-2 px-3 py-2 text-sm font-medium transition-all duration-200 ${
+                  className={`flex min-h-[48px] w-full items-center gap-3 rounded-lg border-l-4 px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                     isActive("/dashboard/profile")
-                      ? "border-black bg-gray-100 text-black dark:border-white dark:bg-gray-800 dark:text-white"
-                      : "border-transparent text-gray-600 hover:bg-gray-50 hover:text-black dark:text-gray-300 dark:hover:bg-gray-800/70 dark:hover:text-white"
+                      ? "border-primary bg-bg-secondary text-text font-semibold"
+                      : "border-transparent text-text-light hover:bg-bg hover:text-text"
                   }`}
                 >
-                  View Profile
+                  <UserPlus className="w-5 h-5" /> {/* You can change icon if needed */}
+                  {t("nav.viewProfile") || "My Profile"}
                 </Link>
+
+                <Link
+                  to="/notifications"
+                  onClick={closeMenu}
+                  className={`flex min-h-[48px] w-full items-center gap-3 rounded-lg border-l-4 px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+                    isActive("/notifications")
+                      ? "border-primary bg-bg-secondary text-text font-semibold"
+                      : "border-transparent text-text-light hover:bg-bg hover:text-text"
+                  }`}
+                >
+                  <Bell className="w-5 h-5" />
+                  Notifications
+                  {unreadCount > 0 && (
+                    <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
+                </Link>
+
+                <Link
+                  to="/about"
+                  onClick={closeMenu}
+                  className={`flex min-h-[48px] w-full items-center gap-3 rounded-lg border-l-4 px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+                    isActive("/about")
+                      ? "border-primary bg-bg-secondary text-text font-semibold"
+                      : "border-transparent text-text-light hover:bg-bg hover:text-text"
+                  }`}
+                >
+                  <Info className="w-5 h-5" />
+                  {t("nav.about")}
+                </Link>
+
                 <button
                   type="button"
                   onClick={() => {
                     logout();
                     closeMenu();
                   }}
-                  className="mobile-drawer-link flex min-h-[48px] w-full items-center gap-2 rounded-lg border-l-2 border-transparent px-3 py-2 text-left text-sm font-medium text-gray-600 transition-all duration-200 hover:bg-gray-50 hover:text-black dark:text-gray-300 dark:hover:bg-gray-800/70 dark:hover:text-white"
+                  className="flex min-h-[48px] w-full items-center gap-3 rounded-lg border-l-4 border-transparent px-3 py-2.5 text-sm font-medium text-red-500 hover:bg-bg hover:text-red-600 transition-all"
                 >
-                  Logout
+                  <LogIn className="w-5 h-5" />
+                  {t("nav.signOut")}
                 </button>
               </div>
             ) : (
-              <div className="flex flex-col gap-4 mt-4">
+              <div className="flex flex-col gap-1">
+                <Link
+                  to="/about"
+                  onClick={closeMenu}
+                  className={`flex min-h-[48px] w-full items-center gap-3 rounded-lg border-l-4 px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+                    isActive("/about")
+                      ? "border-primary text-text font-semibold"
+                      : "border-transparent text-text-light hover:text-text"
+                  }`}
+                >
+                  <Info className="w-5 h-5" />
+                  {t("nav.about")}
+                </Link>
+                <Link
+                  to="/faq"
+                  onClick={closeMenu}
+                  className={`flex min-h-[48px] w-full items-center gap-3 rounded-lg border-l-4 px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+                    isActive("/faq")
+                      ? "border-primary text-text font-semibold"
+                      : "border-transparent text-text-light hover:text-text"
+                  }`}
+                >
+                  <HelpCircle className="w-5 h-5" />
+                  {t("nav.faqFull")}
+                </Link>
                 <Link
                   to="/login"
                   onClick={closeMenu}
-                  className={`flex items-center gap-1.5 py-2 text-sm font-medium transition-all duration-200 pl-3 border-l-2 w-full ${
+                  className={`flex min-h-[48px] w-full items-center gap-3 rounded-lg border-l-4 px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                     isActive("/login")
-                      ? "text-black dark:text-white border-black dark:border-white font-semibold"
-                      : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white border-transparent"
+                      ? "border-primary text-text font-semibold"
+                      : "border-transparent text-text-light hover:text-text"
                   }`}
                 >
                   <LogIn className="w-5 h-5" />
-                  Login
+                  {t("nav.signIn")}
                 </Link>
                 <Link
                   to="/signup"
                   onClick={closeMenu}
-                  className={`flex items-center gap-1.5 py-2 text-sm font-medium transition-all duration-200 pl-3 border-l-2 w-full ${
+                  className={`flex min-h-[48px] w-full items-center gap-3 rounded-lg border-l-4 px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                     isActive("/signup")
-                      ? "text-black dark:text-white border-black dark:border-white font-semibold"
-                      : "text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white border-transparent"
+                      ? "border-primary text-text font-semibold"
+                      : "border-transparent text-text-light hover:text-text"
                   }`}
                 >
                   <UserPlus className="w-5 h-5" />
-                  Sign Up
+                  {t("nav.signUp")}
                 </Link>
               </div>
             )}
+          </div>
+
+          {/* Settings Section */}
+          <div className="mt-6 border-t border-border pt-4">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-text-light/80 mb-3 px-1">
+              Settings
+            </h3>
+            <div className="flex flex-col gap-4 px-1">
+              <LanguageSelector className="w-full" />
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  aria-pressed={isDarkMode}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border border-border text-sm font-medium hover:bg-bg-secondary transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+                  <span>{isDarkMode ? "Light" : "Dark"}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCustomizerOpen(true);
+                    closeMenu();
+                  }}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border border-border text-sm font-medium hover:bg-bg-secondary transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  <Sun size={18} className="text-primary" />
+                  <span>Appearance</span>
+                </button>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={toggleCursor}
+                  aria-pressed={cursorEnabled}
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                    cursorEnabled
+                      ? "border-primary/40 bg-primary/10 text-primary"
+                      : "border-border hover:bg-bg-secondary"
+                  }`}
+                >
+                  <MousePointer size={18} />
+                  <span>Cursor {cursorEnabled ? "On" : "Off"}</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>

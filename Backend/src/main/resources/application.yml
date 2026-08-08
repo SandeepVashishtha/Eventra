@@ -1,0 +1,52 @@
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+  auth:
+    cookie:
+      # Secure=true required with SameSite=None for cross-origin SPA sessions
+      secure: ${COOKIE_SECURE:true}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173,https://eventra-psi.vercel.app,https://eventra.sandeepvashishtha.in}
+  rate-limit:
+    enabled: ${RATE_LIMIT_ENABLED:true}
+    login:
+      capacity: ${RATE_LIMIT_LOGIN_CAPACITY:5}
+      window: ${RATE_LIMIT_LOGIN_WINDOW:1m}
+    signup:
+      capacity: ${RATE_LIMIT_SIGNUP_CAPACITY:3}
+      window: ${RATE_LIMIT_SIGNUP_WINDOW:10m}
+    forgot-password:
+      capacity: ${RATE_LIMIT_FORGOT_PASSWORD_CAPACITY:3}
+      window: ${RATE_LIMIT_FORGOT_PASSWORD_WINDOW:15m}
+    contact:
+      capacity: ${RATE_LIMIT_CONTACT_CAPACITY:5}
+      window: ${RATE_LIMIT_CONTACT_WINDOW:10m}
+    
+
+google:
+  client:
+    id: <Your google client id>
+
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driverClassName: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+    database-platform: org.hibernate.dialect.H2Dialect
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+server:
+  forward-headers-strategy: framework

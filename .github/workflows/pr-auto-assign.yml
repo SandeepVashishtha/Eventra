@@ -12,6 +12,7 @@ jobs:
   assign-and-label:
     name: Assign PR to author & add GSSoC label
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Assign PR to creator and add gssoc:approved label

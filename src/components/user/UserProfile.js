@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useReducedMotion } from '../../hooks/useReducedMotion';
+import { useReducedMotion } from 'hooks/useReducedMotion';
 import {
   User,
   AtSign,
@@ -20,9 +20,21 @@ import {
   Star,
   Zap,
 } from "lucide-react";
-import { useAuth } from "../../context/AuthContext";
-import { syncSecureStorage } from "../../utils/secureStorage";
+import { useAuth } from "context/AuthContext";
+import { syncSecureStorage } from "utils/secureStorage";
+import LazyImage from "../common/LazyImage";
 import "./UserProfile.css";
+import { safeJsonParse } from "utils/safeJsonParse";
+import { userService } from "../../services/userService";
+
+// 🔥 FIX 1: Safe URL Sanitizer to prevent Stored XSS via malicious URI schemes
+const sanitizeUrl = (url) => {
+  if (!url) return undefined;
+  const sanitized = url.trim();
+  if (/^(javascript|data|vbscript):/i.test(sanitized)) return undefined;
+  if (!/^https?:\/\//i.test(sanitized)) return `https://${sanitized}`;
+  return sanitized;
+};
 
 const fadeUp = (prefersReducedMotion) => ({
   hidden: { opacity: 0, y: 20 },
@@ -38,12 +50,12 @@ const stagger = {
   visible: { transition: { staggerChildren: 0.07 } },
 };
 
-/* ── Mock activity stats (mirrors dashboard MOCK_DATA) ── */
+// 🔥 FIX 2: Replaced static hex codes with dynamic Tailwind classes for Dark Mode support
 const ACTIVITY_STATS = [
-  { label: "Events",      value: 5,  sub: "2 hosted · 3 joined",  icon: <Calendar  size={18} />, accent: "#6366f1" },
-  { label: "Hackathons",  value: 4,  sub: "2 hosted · 2 joined",  icon: <Trophy    size={18} />, accent: "#ec4899" },
-  { label: "Projects",    value: 2,  sub: "1 done · 1 active",    icon: <FolderOpen size={18}/>, accent: "#8b5cf6" },
-  { label: "Achievements",value: 7,  sub: "badges earned",        icon: <Star      size={18} />, accent: "#f59e0b" },
+  { label: "Events",      value: 5,  sub: "2 hosted · 3 joined",  icon: <Calendar  size={18} />, colorClass: "text-indigo-600 bg-indigo-500/10 dark:text-indigo-400 dark:bg-indigo-500/20" },
+  { label: "Hackathons",  value: 4,  sub: "2 hosted · 2 joined",  icon: <Trophy    size={18} />, colorClass: "text-pink-600 bg-pink-500/10 dark:text-pink-400 dark:bg-pink-500/20" },
+  { label: "Projects",    value: 2,  sub: "1 done · 1 active",    icon: <FolderOpen size={18}/>, colorClass: "text-purple-600 bg-purple-500/10 dark:text-purple-400 dark:bg-purple-500/20" },
+  { label: "Achievements",value: 7,  sub: "badges earned",        icon: <Star      size={18} />, colorClass: "text-amber-600 bg-amber-500/10 dark:text-amber-400 dark:bg-amber-500/20" },
 ];
 
 export default function UserProfile() {
@@ -53,21 +65,49 @@ export default function UserProfile() {
   const [loading, setLoading]   = useState(true);
 
   /* Load profile from localStorage (same source as EditProfile) */
-  useEffect(() => {
-    const saved = syncSecureStorage.getItem("user");
-    let merged = user || {};
-    if (saved) {
+ useEffect(() => {
+  let active = true;
+
+  const loadProfileData = async () => {
+    setLoading(true);
+
+    try {
+      const response = await userService.getProfile();
+
+      if (active) {
+        setProfile(response.data || response);
+      }
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+
+      let merged = user || {};
+
       try {
-        merged = { ...user, ...JSON.parse(saved) };
-      } catch (error) {
-        console.error('Error parsing user profile from localStorage:', error);
+        const saved = await syncSecureStorage.getItemAsync("user");
+
+        if (saved && active) {
+          merged = { ...user, ...safeJsonParse(saved, {}) };
+        }
+      } catch (err) {
+        console.error("Error loading local profile:", err);
+      }
+
+      if (active) {
+        setProfile(merged);
+      }
+    } finally {
+      if (active) {
+        setLoading(false);
       }
     }
-    setProfile(merged);
-    const t = setTimeout(() => setLoading(false), 600);
-    return () => clearTimeout(t);
-  }, [user]);
+  };
 
+  loadProfileData();
+
+  return () => {
+    active = false;
+  };
+}, [user]);
   /* Derived helpers */
   const displayName = profile?.fullName
     || `${profile?.firstName || ""} ${profile?.lastName || ""}`.trim()
@@ -82,7 +122,9 @@ export default function UserProfile() {
     .toUpperCase();
 
   const skills    = profile?.skills || [];
-  const hasSocials = profile?.github || profile?.linkedin || profile?.portfolio;
+  const githubUrl = profile?.github || profile?.githubUrl;
+  const linkedinUrl = profile?.linkedin || profile?.linkedinUrl;
+  const hasSocials = githubUrl || linkedinUrl || profile?.portfolio;
 
   if (loading) {
     return (
@@ -112,10 +154,19 @@ export default function UserProfile() {
             {/* Avatar */}
             <div className="upv-avatar-wrap">
               {profile?.avatarBase64 || profile?.profilePicture ? (
-                <img
-                  src={profile.avatarBase64 || profile.profilePicture}
-                  alt={displayName}
-                  className="upv-avatar-img" loading="lazy"/>
+               <LazyImage
+  src={profile.avatarBase64 || profile.profilePicture}
+  alt={displayName}
+  aspectRatio="1/1"
+  className="upv-avatar-img"
+  loading="lazy"
+  onError={(e) => {
+    e.target.onerror = null;
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%239ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>';
+    e.target.src = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
+    e.target.style.backgroundColor = "#f3f4f6";
+  }}
+/>
               ) : (
                 <div className="upv-avatar-placeholder">
                   <span className="upv-avatar-initials">{initials}</span>
@@ -136,6 +187,9 @@ export default function UserProfile() {
               {profile?.bio && (
                 <p className="upv-bio">{profile.bio}</p>
               )}
+              {profile?.profileHeadline && !profile?.bio && (
+                <p className="upv-bio">{profile.profileHeadline}</p>
+              )}
             </div>
 
             {/* Edit Profile button */}
@@ -152,9 +206,9 @@ export default function UserProfile() {
           <div className="upv-left">
 
             {/* Contact Info card */}
-            <motion.div custom={1} variants={fadeUp} className="upv-card">
+            <motion.div custom={1} variants={fadeUp(prefersReducedMotion)} className="upv-card">
               <div className="upv-card-header">
-                <span className="upv-card-icon" style={{ background: "#6366f118", color: "#6366f1" }}>
+                <span className="upv-card-icon text-indigo-600 bg-indigo-500/10 dark:text-indigo-400 dark:bg-indigo-500/20">
                   <User size={16} />
                 </span>
                 <h2 className="upv-card-title">Personal Info</h2>
@@ -184,9 +238,9 @@ export default function UserProfile() {
 
             {/* Bio card (if exists separately from hero) */}
             {profile?.bio && (
-              <motion.div custom={2} variants={fadeUp} className="upv-card">
+              <motion.div custom={2} variants={fadeUp(prefersReducedMotion)} className="upv-card">
                 <div className="upv-card-header">
-                  <span className="upv-card-icon" style={{ background: "#8b5cf618", color: "#8b5cf6" }}>
+                  <span className="upv-card-icon text-purple-600 bg-purple-500/10 dark:text-purple-400 dark:bg-purple-500/20">
                     <FileText size={16} />
                   </span>
                   <h2 className="upv-card-title">About</h2>
@@ -197,30 +251,30 @@ export default function UserProfile() {
 
             {/* Social Links */}
             {hasSocials && (
-              <motion.div custom={3} variants={fadeUp} className="upv-card">
+              <motion.div custom={3} variants={fadeUp(prefersReducedMotion)} className="upv-card">
                 <div className="upv-card-header">
-                  <span className="upv-card-icon" style={{ background: "#10b98118", color: "#10b981" }}>
+                  <span className="upv-card-icon text-emerald-600 bg-emerald-500/10 dark:text-emerald-400 dark:bg-emerald-500/20">
                     <Globe size={16} />
                   </span>
                   <h2 className="upv-card-title">Social Links</h2>
                 </div>
                 <div className="upv-socials">
-                  {profile?.github && (
-                    <a href={profile.github} target="_blank" rel="noopener noreferrer" className="upv-social-link upv-social-github">
+                  {githubUrl && (
+                    <a href={sanitizeUrl(githubUrl)} target="_blank" rel="noopener noreferrer" className="upv-social-link upv-social-github">
                       <Github size={16} />
                       <span>GitHub</span>
                       <ChevronRight size={13} className="upv-social-arrow" />
                     </a>
                   )}
-                  {profile?.linkedin && (
-                    <a href={profile.linkedin} target="_blank" rel="noopener noreferrer" className="upv-social-link upv-social-linkedin">
+                  {linkedinUrl && (
+                    <a href={sanitizeUrl(linkedinUrl)} target="_blank" rel="noopener noreferrer" className="upv-social-link upv-social-linkedin">
                       <Linkedin size={16} />
                       <span>LinkedIn</span>
                       <ChevronRight size={13} className="upv-social-arrow" />
                     </a>
                   )}
                   {profile?.portfolio && (
-                    <a href={profile.portfolio} target="_blank" rel="noopener noreferrer" className="upv-social-link upv-social-portfolio">
+                    <a href={sanitizeUrl(profile.portfolio)} target="_blank" rel="noopener noreferrer" className="upv-social-link upv-social-portfolio">
                       <Globe size={16} />
                       <span>Portfolio</span>
                       <ChevronRight size={13} className="upv-social-arrow" />
@@ -235,9 +289,9 @@ export default function UserProfile() {
           <div className="upv-right">
 
             {/* Activity stats */}
-            <motion.div custom={1} variants={fadeUp} className="upv-card">
+            <motion.div custom={1} variants={fadeUp(prefersReducedMotion)} className="upv-card">
               <div className="upv-card-header">
-                <span className="upv-card-icon" style={{ background: "#f59e0b18", color: "#f59e0b" }}>
+                <span className="upv-card-icon text-amber-600 bg-amber-500/10 dark:text-amber-400 dark:bg-amber-500/20">
                   <Activity size={16} />
                 </span>
                 <h2 className="upv-card-title">Activity Stats</h2>
@@ -247,11 +301,10 @@ export default function UserProfile() {
                   <motion.div
                     key={s.label}
                     custom={i}
-                    variants={fadeUp}
-                    className="upv-stat-card"
-                    style={{ "--stat-accent": s.accent }}
+                    variants={fadeUp(prefersReducedMotion)}
+                    className="upv-stat-card relative overflow-hidden"
                   >
-                    <span className="upv-stat-icon" style={{ background: s.accent + "18", color: s.accent }}>
+                    <span className={`upv-stat-icon ${s.colorClass}`}>
                       {s.icon}
                     </span>
                     <div className="upv-stat-body">
@@ -265,9 +318,9 @@ export default function UserProfile() {
             </motion.div>
 
             {/* Skills / Interests */}
-            <motion.div custom={2} variants={fadeUp} className="upv-card">
+            <motion.div custom={2} variants={fadeUp(prefersReducedMotion)} className="upv-card">
               <div className="upv-card-header">
-                <span className="upv-card-icon" style={{ background: "#6366f118", color: "#6366f1" }}>
+                <span className="upv-card-icon text-indigo-600 bg-indigo-500/10 dark:text-indigo-400 dark:bg-indigo-500/20">
                   <Zap size={16} />
                 </span>
                 <h2 className="upv-card-title">Skills &amp; Interests</h2>
@@ -290,9 +343,9 @@ export default function UserProfile() {
             </motion.div>
 
             {/* Achievements quick link */}
-            <motion.div custom={3} variants={fadeUp} className="upv-card upv-achievements-card">
+            <motion.div custom={3} variants={fadeUp(prefersReducedMotion)} className="upv-card upv-achievements-card">
               <div className="upv-card-header">
-                <span className="upv-card-icon" style={{ background: "#ec489918", color: "#ec4899" }}>
+                <span className="upv-card-icon text-pink-600 bg-pink-500/10 dark:text-pink-400 dark:bg-pink-500/20">
                   <Trophy size={16} />
                 </span>
                 <h2 className="upv-card-title">Achievements</h2>
@@ -313,5 +366,3 @@ export default function UserProfile() {
     </div>
   );
 }
-
-// ACCESSIBILITY COMPLIANCE: Linked form labels to corresponding inputs and added high-contrast focus indicators for keyboard users.

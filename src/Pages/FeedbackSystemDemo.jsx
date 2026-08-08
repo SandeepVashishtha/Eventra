@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { RefreshCw, Download, Trash2 } from 'lucide-react';
 import {
@@ -6,7 +6,7 @@ import {
   FeedbackButton,
   FeedbackSummary,
   StarRating,
-} from '../../components/feedback';
+} from 'components/feedback';
 import {
   getEventFeedback,
   getAverageRating,
@@ -15,12 +15,20 @@ import {
   exportFeedbackAsCSV,
   clearAllFeedback,
   saveFeedback,
-} from '../../utils/feedbackUtils';
+} from 'utils/feedbackUtils';
+
+// Demo event definition moved outside the component for a stable reference
+const demoEvent = {
+  id: 'demo-event-001',
+  title: 'React Best Practices Workshop',
+  date: new Date(Date.now() - 86400000).toISOString(), // Yesterday (past event)
+  description: 'Learn advanced React patterns and hooks',
+};
 
 /**
  * FeedbackSystemDemo
  * Demonstration page for the post-event feedback system
- * 
+ *
  * This page showcases all feedback components and utilities
  * Remove this file after confirming the feature works in production
  */
@@ -30,24 +38,16 @@ const FeedbackSystemDemo = () => {
   const [feedback, setFeedback] = useState([]);
   const [stats, setStats] = useState(null);
 
-  // Demo event
-  const demoEvent = {
-    id: 'demo-event-001',
-    title: 'React Best Practices Workshop',
-    date: new Date(Date.now() - 86400000).toISOString(), // Yesterday (past event)
-    description: 'Learn advanced React patterns and hooks',
-  };
-
-  useEffect(() => {
-    loadFeedback();
-  }, []);
-
-  const loadFeedback = () => {
+  const loadFeedback = useCallback(() => {
     const allFeedback = getEventFeedback(demoEvent.id);
     const averageStats = getAverageRating(demoEvent.id);
     setFeedback(allFeedback);
     setStats(averageStats);
-  };
+  }, []);
+
+  useEffect(() => {
+    loadFeedback();
+  }, [loadFeedback]);
 
   const generateDemoUserId = () => {
     const bytes = new Uint32Array(1);
@@ -125,7 +125,7 @@ const FeedbackSystemDemo = () => {
   const tagStats = getTagStats(demoEvent.id);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-8">
+    <div className="min-h-screen bg-linear-to-br from-slate-900 to-slate-800 p-8">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <motion.div
@@ -356,7 +356,7 @@ const FeedbackSystemDemo = () => {
                     .map(([tag, count]) => (
                       <div
                         key={tag}
-                        className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-full text-sm font-medium shadow-md"
+                        className="px-4 py-2 bg-linear-to-r from-indigo-500 to-purple-500 text-white rounded-full text-sm font-medium shadow-md"
                       >
                         {tag} ×{count}
                       </div>
