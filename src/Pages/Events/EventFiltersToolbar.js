@@ -34,9 +34,15 @@ const EventFiltersToolbar = ({
   searchQuery,
   onSearchChange,
   onResetFilters,
+  savedFilters = [],
+  onSaveFilter,
+  onApplySavedFilter,
+  onRenameSavedFilter,
+  onDeleteSavedFilter,
 }) => {
   const [localQuery, setLocalQuery] = useState(searchQuery || "");
   const debounceRef = useRef(null);
+  const [selectedSavedFilter, setSelectedSavedFilter] = useState("");
 
   useEffect(() => {
     setLocalQuery(searchQuery || "");
@@ -107,6 +113,13 @@ const EventFiltersToolbar = ({
           >
             <Sparkles size={14} className={isAdvancedFiltersOpen ? "animate-pulse" : ""} />
             Advanced Options
+          </button>
+                    <button
+            type="button"
+            onClick={onSaveFilter}
+            className="flex items-center gap-2 px-4 py-2.5 text-xs font-bold uppercase rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white transition cursor-pointer"
+          >
+            💾 Save Filter
           </button>
 
           {/* Reset Filters Action Button */}
@@ -253,6 +266,60 @@ const EventFiltersToolbar = ({
             placeholder="Sort by Date"
           />
         </div>
+
+        <div className="w-full sm:w-64">
+  <select
+    value={selectedSavedFilter}
+    onChange={(e) => {
+      const id = e.target.value;
+      setSelectedSavedFilter(id);
+
+      const filter = savedFilters.find(
+        (item) => String(item.id) === id
+      );
+
+      if (filter) {
+        onApplySavedFilter(filter);
+      }
+    }}
+    className="w-full px-4 py-3 rounded-xl bg-slate-900 text-slate-100 border border-slate-800"
+  >
+    <option value="">
+      Saved Filters
+    </option>
+
+    {savedFilters.map((filter) => (
+      <option
+        key={filter.id}
+        value={filter.id}
+      >
+        {filter.name}
+      </option>
+    ))}
+  </select>
+</div>
+
+{selectedSavedFilter && (
+  <div className="flex gap-2 mt-2">
+    <button
+      onClick={() =>
+        onRenameSavedFilter(selectedSavedFilter)
+      }
+      className="px-3 py-2 rounded-lg bg-blue-600 text-white text-xs"
+    >
+      Rename
+    </button>
+
+    <button
+      onClick={() =>
+        onDeleteSavedFilter(selectedSavedFilter)
+      }
+      className="px-3 py-2 rounded-lg bg-red-600 text-white text-xs"
+    >
+      Delete
+    </button>
+  </div>
+)}
 
         {/* Grid / List switcher */}
         <div className="flex items-center space-x-2 bg-slate-900/60 border border-slate-800/80 rounded-xl p-1 shadow-inner shrink-0 self-end sm:self-center">

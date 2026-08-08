@@ -29,6 +29,7 @@ import {
 } from "../../utils/advancedFilterUtils";
 
 const FILTER_STORAGE_KEY = "eventra:event-filters:v1";
+const SAVED_FILTERS_KEY = "eventra:saved-search-filters";
 
 const renderCardSection = (
   isLoading,
@@ -132,6 +133,8 @@ const EventsPage = () => {
   const cardSectionRef = useRef();
   const hasHydratedFilters = useRef(false);
   const [filtersHydrated, setFiltersHydrated] = useState(false);
+  const [savedFilters, setSavedFilters] = useState([]);
+  const [showSavedFilters, setShowSavedFilters] = useState(false);
 
   // Local input value updates immediately on each keystroke so the input
   // feels responsive. The debounced value is passed to the listing hook so
@@ -160,6 +163,14 @@ const EventsPage = () => {
     listing.setSearchQuery(debouncedSearchQuery);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearchQuery]);
+
+  useEffect(() => {
+    const saved = JSON.parse(
+        localStorage.getItem(SAVED_FILTERS_KEY) || "[]"
+    );
+
+    setSavedFilters(saved);
+}, []);
 
   // Initialize state from URL params, falling back to persisted filters.
   useEffect(() => {
@@ -359,7 +370,11 @@ const EventsPage = () => {
   listing.paginatedEvents,
   listing.viewMode,
   listing.searchQuery,
-  clearSearchAndFilters
+  clearSearchAndFilters,
+  saveCurrentFilter,
+  applySavedFilter,
+  renameSavedFilter,
+  deleteSavedFilter
 )}
 
           {!listing.isLoading && listing.totalPages > 1 && (
