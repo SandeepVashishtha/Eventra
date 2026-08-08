@@ -189,6 +189,7 @@ public class AdminService {
         if (!hackathonRepository.existsById(id)) {
             throw new EntityNotFoundException("Hackathon not found with id: " + id);
         }
+        hackathonRegistrationRepository.deleteByHackathonId(id);
         hackathonRepository.deleteById(id);
     }
 
