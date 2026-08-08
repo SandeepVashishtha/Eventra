@@ -245,6 +245,13 @@ export const API_ENDPOINTS = {
     // (#7653) Endpoint for persisting user preferences (theme, etc.) across devices
     PREFERENCES: buildApiUrl("/users/preferences"),
   },
+  ANALYTICS: {
+    SUMMARY: buildApiUrl("/analytics/summary"),
+    DASHBOARD: buildApiUrl("/analytics/dashboard"),
+    REGISTRATION_TRENDS: buildApiUrl("/analytics/registrations/trends"),
+    FEEDBACK: buildApiUrl("/analytics/feedback"),
+    ORGANIZERS: buildApiUrl("/analytics/organizers"),
+  },
   TICKETS: {
     VALIDATE: buildApiUrl("/tickets/validate"),
     CHECK_IN: buildApiUrl("/tickets/checkin"),
