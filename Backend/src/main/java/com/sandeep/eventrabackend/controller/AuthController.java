@@ -173,9 +173,9 @@ public ResponseEntity<AuthResponse> googleLogin(
         }
 
         if (!StringUtils.hasText(token)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+            return ResponseEntity.ok()
                     .header(HttpHeaders.SET_COOKIE, authCookieHelper.clearAuthCookie().toString())
-                    .body("Missing auth token");
+                    .body("Logged out successfully");
         }
 
         authService.logout(token);
