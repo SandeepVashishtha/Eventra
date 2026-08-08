@@ -16,6 +16,7 @@ import { ensureSessionSnapshot } from "../utils/sessionSnapshot.js";
 // from AuthContext, which handles both token-based and cookie-managed sessions.
 import { fetchWithTimeout } from "../utils/fetchWithTimeout.js";
 import { safeJsonParse } from "../utils/safeJsonParse.js";
+import { reconcileReplayResponse } from "../utils/registrationReconciliation.js";
 
 const MAX_RETRIES = 3;
 const BASE_BACKOFF_MS = 1_000;
@@ -226,7 +227,7 @@ const useOfflineSync = () => {
         return { status: "conflict", serverState };
       }
 
-      if (response.ok) return { status: "success" };
+      if (response.ok) return { status: "success", data };
 
       if (response.status >= 400 && response.status < 500) {
         logger.warn(
@@ -412,6 +413,9 @@ const useOfflineSync = () => {
 
             if (res.status === "success" || res.status === "dropped") {
               successCount++;
+              // Replace the offline placeholder with the server record once a
+              // queued registration replays (issue 12233).
+              reconcileReplayResponse(item.actionType, item.eventId, res.data);
             } else {
               failedQueue.push({ ...item, retryCount: retries + 1 });
             }

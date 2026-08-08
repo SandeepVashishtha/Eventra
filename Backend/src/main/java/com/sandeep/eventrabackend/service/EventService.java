@@ -28,6 +28,7 @@ import com.sandeep.eventrabackend.repository.EventWaitlistRepository;
 import com.sandeep.eventrabackend.repository.FeedbackAnalyticsRepository;
 import com.sandeep.eventrabackend.repository.NotificationRepository;
 import com.sandeep.eventrabackend.repository.UserRepository;
+import com.sandeep.eventrabackend.security.JwtTokenProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -76,6 +77,7 @@ public class EventService {
     private final EventRoleAuditLogRepository eventRoleAuditLogRepository;
     private final UserRepository userRepository;
     private final EventRoleService eventRoleService;
+    private final JwtTokenProvider jwtTokenProvider;
 
     public EventService(
             EventRepository eventRepository,
@@ -86,7 +88,8 @@ public class EventService {
             FeedbackAnalyticsRepository feedbackRepository,
             EventRoleAuditLogRepository eventRoleAuditLogRepository,
             UserRepository userRepository,
-            EventRoleService eventRoleService) {
+            EventRoleService eventRoleService,
+            JwtTokenProvider jwtTokenProvider) {
         this.eventRepository = eventRepository;
         this.eventRegistrationRepository = eventRegistrationRepository;
         this.eventWaitlistRepository = eventWaitlistRepository;
@@ -96,6 +99,7 @@ public class EventService {
         this.eventRoleAuditLogRepository = eventRoleAuditLogRepository;
         this.userRepository = userRepository;
         this.eventRoleService = eventRoleService;
+        this.jwtTokenProvider = jwtTokenProvider;
     }
 
     /**
@@ -556,6 +560,11 @@ public class EventService {
                                 saved.getCapacity() - saved.getRegisteredCount());
 
         return RegistrationResponse.builder()
+                .registrationId(registration.getId())
+                .qrToken(jwtTokenProvider.generateTicketToken(
+                        saved.getId(),
+                        registration.getId(),
+                        userEmail))
                 .eventId(saved.getId())
                 .eventTitle(saved.getTitle())
                 .userEmail(userEmail)

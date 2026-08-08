@@ -546,6 +546,7 @@
     "formCompleteRegistration": "Complete Registration",
     "formSubmitAriaLabel": "Submit registration",
     "toastRegistrationSuccess": "Successfully registered for the event!",
+    "toastRegistrationIdMissing": "Registration succeeded but the server did not return ticket details. Please refresh to see your ticket.",
     "toastRegistrationError": "Failed to register. Please try again.",
     "toastWaitlistSuccess": "Added to waitlist successfully!",
     "toastValidationError": "Please fix the errors before submitting."

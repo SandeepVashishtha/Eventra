@@ -40,6 +40,7 @@ import { useAuth } from "./AuthContext";
 
 import { saveToOfflineCache, getFromOfflineCache, removeFromOfflineCache } from "../utils/indexedDB";
 import { getOrMigrateKey } from "../utils/storageKeyManager";
+import { REGISTRATION_SYNCED_EVENT } from "../utils/registrationReconciliation";
 
 const MyEventsContext = createContext(null);
 
@@ -208,6 +209,34 @@ export const MyEventsProvider = ({ children }) => {
   }, []);
 
   /**
+   * reconcileRegistration — replaces the offline placeholder id/qrToken on a
+   * registration with the authoritative server values once the offline queue
+   * has replayed (issue 12233). No-op if the event isn't tracked locally or if
+   * the record already carries the server id.
+   */
+  const reconcileRegistration = useCallback((eventId, registrationId, qrToken) => {
+    if (!eventId || !registrationId) return;
+    setMyEvents((prev) => {
+      const idx = prev.findIndex((r) => r.eventId === eventId);
+      if (idx === -1 || prev[idx].registrationId === registrationId) return prev;
+      const next = prev.slice();
+      next[idx] = { ...prev[idx], registrationId, qrToken: qrToken || prev[idx].qrToken || "" };
+      return next;
+    });
+  }, []);
+
+  // Listen for offline replay completion so the placeholder registration is
+  // replaced with the server-issued registrationId + qrToken.
+  useEffect(() => {
+    const onRegistrationSynced = (e) => {
+      const { eventId, registrationId, qrToken } = e?.detail || {};
+      reconcileRegistration(eventId, registrationId, qrToken);
+    };
+    window.addEventListener(REGISTRATION_SYNCED_EVENT, onRegistrationSynced);
+    return () => window.removeEventListener(REGISTRATION_SYNCED_EVENT, onRegistrationSynced);
+  }, [reconcileRegistration]);
+
+  /**
    * isRegistered — returns true if the user is already registered for eventId.
    */
   const isRegistered = useCallback(
@@ -228,6 +257,7 @@ export const MyEventsProvider = ({ children }) => {
         addRegistration,
         removeRegistration,
         restoreRegistration,
+        reconcileRegistration,
         isRegistered,
         loading,
         waitlistUpdated,
