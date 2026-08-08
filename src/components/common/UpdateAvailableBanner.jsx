@@ -3,9 +3,13 @@ import { RefreshCw, X } from "lucide-react";
 
 export default function UpdateAvailableBanner() {
   const [updateAvailable, setUpdateAvailable] = useState(false);
+  const [registration, setRegistration] = useState(null);
 
   useEffect(() => {
-    const handler = () => {
+    const handler = (e) => {
+      if (e.detail && e.detail.registration) {
+        setRegistration(e.detail.registration);
+      }
       setUpdateAvailable(true);
     };
 
@@ -17,7 +21,19 @@ export default function UpdateAvailableBanner() {
   }, []);
 
   const handleRefresh = () => {
-    window.location.reload();
+    if (registration && registration.waiting) {
+      registration.waiting.postMessage({ type: "SKIP_WAITING" });
+    }
+    
+    // Listen for the new active service worker and reload
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      window.location.reload();
+    });
+
+    // Fallback reload if controllerchange doesn't fire within 2 seconds
+    setTimeout(() => {
+      window.location.reload();
+    }, 2000);
   };
 
   const handleDismiss = () => {
@@ -27,7 +43,7 @@ export default function UpdateAvailableBanner() {
   if (!updateAvailable) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex items-center gap-3 bg-blue-600 text-white px-4 py-3 rounded-xl shadow-lg">
+    <div className="fixed bottom-[calc(1rem+var(--safe-area-bottom))] right-4 z-50 flex items-center gap-3 bg-blue-600 text-white px-4 py-3 rounded-xl shadow-lg">
       <span className="text-sm font-medium">New version available!</span>
       <button
         onClick={handleRefresh}

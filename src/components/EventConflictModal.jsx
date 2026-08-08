@@ -20,6 +20,8 @@ import { useFocusTrap } from '../hooks/useFocusTrap';
  * @param {Function} props.onSelectAlternative - Callback when user selects an alternative event
  * @param {boolean} props.strictMode - If true, blocks registration (no proceed option)
  */
+import ErrorBoundary from "./common/ErrorBoundary";
+
 const EventConflictModal = ({
   isOpen,
   newEvent,
@@ -271,4 +273,10 @@ const EventConflictModal = ({
   );
 };
 
-export default EventConflictModal;
+export default function SafeEventConflictModal(props) {
+  return (
+    <ErrorBoundary level="feature" label="Event Conflict Modal">
+      <EventConflictModal {...props} />
+    </ErrorBoundary>
+  );
+}

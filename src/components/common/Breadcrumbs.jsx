@@ -1,4 +1,4 @@
-import React from "react";
+
 import { Link, useLocation } from "react-router-dom";
 import { ChevronRight, Home } from "lucide-react";
 
@@ -52,9 +52,14 @@ const Breadcrumbs = () => {
                   {name}
                 </span>
               ) : (
-                <Link to={to} className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
-                  {name}
-                </Link>
+               <Link
+  to={to}
+  title={`Navigate to ${name}`}
+  aria-label={`Navigate to ${name}`}
+  className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+>
+  {name}
+</Link>
               )}
             </li>
           );

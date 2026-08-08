@@ -22,10 +22,13 @@ const Dashboard = () => {
         url={currentUrl}
       />
       <ErrorBoundary level="feature">
+        {/* Contrast Fix: Added a wrapper with explicit background and text styling to ensure all nested layout statements meet WCAG AA contrast guidelines. */}
+        <div className="min-h-screen p-6 bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-200">
         <Suspense fallback={<Loading text="Loading dashboard..." />}>
           {/* 🔥 FIX: Safely invoked isAdmin with optional chaining to prevent TypeError crashes */}
           {isAdmin?.() ? <AdminDashboard /> : <UserDashboard />}
         </Suspense>
+        </div>
       </ErrorBoundary>
     </>
   );

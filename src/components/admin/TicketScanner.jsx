@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Html5Qrcode } from "html5-qrcode";
-import { safeParseJson } from "../../utils/jsonUtils";
+import { safeJsonParse } from "utils/safeJsonParse";
+import useNetworkStatus from "hooks/useNetworkStatus";
 import {
   Camera,
   CameraOff,
@@ -16,14 +17,26 @@ import {
   Search,
   Wifi,
   WifiOff,
+  Clock,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import { pushToQueue } from "../../utils/offlineQueue";
-import { validateTicket, recordCheckIn, fetchCheckInHistory, fetchScannerEvents, fetchTicketStats } from "../../services/ticketService";
+import { useAuth } from "context/AuthContext";
+import { API_ENDPOINTS } from "config/api";
+import { pushToQueue } from "utils/offlineQueue";
+import { validateTicket, recordCheckIn, fetchCheckInHistory, fetchScannerEvents, fetchTicketStats } from "services/ticketService";
 import "./TicketScanner.css";
 const HISTORY_CACHE_KEY = "eventra_checkins_cache";
 
+const triggerScanFeedback = (status) => {
+  if (typeof window === "undefined") return;
+  if ("vibrate" in navigator) {
+    if (status === "verified") navigator.vibrate(100);
+    else navigator.vibrate([150, 50, 150]);
+  }
+};
+
 export default function TicketScanner() {
+  const { user } = useAuth();
   const [devices, setDevices] = useState([]);
   const [selectedCameraId, setSelectedCameraId] = useState("");
   const [scannerStatus, setScannerStatus] = useState("idle");
@@ -31,7 +44,7 @@ export default function TicketScanner() {
   const [manualMode, setManualMode] = useState(false);
   const [checkinHistory, setCheckinHistory] = useState([]);
   const [events, setEvents] = useState([]);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const { isOnline } = useNetworkStatus();
   const [manualTicketId, setManualTicketId] = useState("");
   const [manualAttendeeName, setManualAttendeeName] = useState("");
   const [manualEventId, setManualEventId] = useState("");
@@ -56,17 +69,6 @@ export default function TicketScanner() {
     } finally {
       setStatsLoading(false);
     }
-  }, []);
-
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-    return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
-    };
   }, []);
 
   useEffect(() => {
@@ -99,6 +101,7 @@ export default function TicketScanner() {
   useEffect(() => {
     fetchScannerEvents()
       .then((data) => {
+        if (!isMountedRef.current) return;
         setEvents(data);
         if (data.length > 0) {
           setManualEventId(data[0].id);
@@ -107,6 +110,7 @@ export default function TicketScanner() {
         }
       })
       .catch(() => {
+        if (!isMountedRef.current) return;
         setEvents([]);
       });
   }, []);
@@ -116,20 +120,30 @@ export default function TicketScanner() {
       fetchStats(selectedEventId);
       fetchCheckInHistory(selectedEventId)
         .then((data) => {
+          if (!isMountedRef.current) return;
           const items = Array.isArray(data) ? data : data.content || data.checkins || [];
           setCheckinHistory(items);
         })
-        .catch(() => {});
+        .catch((err) => {
+          if (!isMountedRef.current) return;
+          console.error("Failed to load check-in history:", err);
+          toast.error("Failed to load check-in history. The data shown may be stale.");
+        });
     }
   }, [selectedEventId, fetchStats]);
 
   const stopScanner = async () => {
-    if (qrCodeInstanceRef.current && qrCodeInstanceRef.current.isScanning) {
+    if (qrCodeInstanceRef.current) {
       try {
-        await qrCodeInstanceRef.current.stop();
-        if (isMountedRef.current) setScannerStatus("stopped");
+        if (qrCodeInstanceRef.current.isScanning) {
+          await qrCodeInstanceRef.current.stop();
+        }
+        await qrCodeInstanceRef.current.clear();
       } catch (err) {
         console.error("Failed to stop scanner:", err);
+      } finally {
+        qrCodeInstanceRef.current = null;
+        if (isMountedRef.current) setScannerStatus("stopped");
       }
     }
   };
@@ -179,7 +193,7 @@ export default function TicketScanner() {
   const addToHistory = useCallback((entry) => {
     setCheckinHistory((prev) => [entry, ...prev].slice(0, 50));
     try {
-      const updated = [entry, ...safeParseJson(localStorage.getItem(HISTORY_CACHE_KEY), [])].slice(0, 50);
+      const updated = [entry, ...safeJsonParse(localStorage.getItem(HISTORY_CACHE_KEY), [])].slice(0, 50);
       localStorage.setItem(HISTORY_CACHE_KEY, JSON.stringify(updated));
     } catch { /* ignore */ }
   }, []);
@@ -190,8 +204,22 @@ export default function TicketScanner() {
     let ticketData = null;
     try {
       ticketData = JSON.parse(decodedText);
+      // SECURITY (Issue #11073): only accept opaque, server-issued ticket
+      // tokens ({ ticketId }) that carry no forgeable claims. Any other JSON
+      // shape — e.g. {"ticketId":"x","userName":"Guest","role":"ADMIN"} — is
+      // rejected and routed to the same flagged path as a malformed QR.
+      const opaqueKeys = Object.keys(ticketData || {});
+      if (
+        !ticketData ||
+        typeof ticketData !== "object" ||
+        Array.isArray(ticketData) ||
+        opaqueKeys.length !== 1 ||
+        opaqueKeys[0] !== "ticketId"
+      ) {
+        throw new Error("Opaque ticket token required");
+      }
     } catch {
-      if (decodedText.startsWith("eyJ")) {
+      if (decodedText.startsWith("eyJ") && decodedText.split(".").length === 3) {
         const activeEvent = events.find(e => String(e.id) === String(selectedEventId));
         ticketData = {
           ticketId: decodedText,
@@ -219,6 +247,7 @@ export default function TicketScanner() {
     }
 
     if (!ticketData || typeof ticketData !== 'object' || !ticketData.ticketId) {
+      triggerScanFeedback("flagged");
       setScanResult({
         status: "flagged",
         message: "Invalid QR Code format. Ticket is secure and cannot be verified.",
@@ -248,17 +277,21 @@ export default function TicketScanner() {
 
     if (!isOnline) {
       setScanResult({
-        status: "verified",
+        status: "queued",
         data: ticketData,
-        message: "Check-in queued offline — will sync when connection resumes.",
+        message: "Check-in queued offline — will be verified when connection resumes.",
       });
       toast.info(`Offline check-in queued for ${userName}.`);
-      await pushToQueue({
-        actionType: "TICKET_CHECK_IN",
-        ticketId,
-        eventId: eventId || "unknown",
-        payload: ticketData,
-      });
+      await pushToQueue(
+        {
+          actionType: "TICKET_CHECK_IN",
+          ticketId,
+          eventId: eventId || "unknown",
+          endpoint: API_ENDPOINTS.TICKETS.CHECK_IN,
+          payload: ticketData,
+        },
+        user?.id
+      );
       addToHistory({
         id: `offline-${Date.now()}`,
         ticketId,
@@ -318,6 +351,7 @@ export default function TicketScanner() {
 
       await recordCheckIn(ticketId, eventId, { validatedAt: new Date().toISOString() });
 
+      triggerScanFeedback("verified");
       setScanResult({
         status: "verified",
         data: ticketData,
@@ -636,10 +670,16 @@ export default function TicketScanner() {
                   <span className="text-[10px] font-black tracking-widest uppercase bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full mb-2">Verified Entry</span>
                 </>
               )}
+              {scanResult.status === "queued" && (
+                <>
+                  <Clock className="w-16 h-16 text-amber-500 animate-pulse mb-3" />
+                  <span className="text-[10px] font-black tracking-widest uppercase bg-amber-500/20 text-amber-400 px-3 py-1 rounded-full mb-2">Queued for Verification</span>
+                </>
+              )}
               {scanResult.status === "flagged" && (
                 <>
                   <XCircle className="w-16 h-16 text-rose-500 animate-bounce mb-3" />
-                  <span className="text-[10px] font-black tracking-widest uppercase bg-rose-500/20 text-rose-455 px-3 py-1 rounded-full mb-2">Flagged / Security Alert</span>
+                  <span className="text-[10px] font-black tracking-widest uppercase bg-rose-500/20 text-rose-500 px-3 py-1 rounded-full mb-2">Flagged / Security Alert</span>
                 </>
               )}
               {scanResult.status === "duplicate" && (
@@ -678,7 +718,7 @@ export default function TicketScanner() {
               )}
 
               {scanResult.raw && (
-                <div className="my-3 p-3 border border-red-500/20 bg-red-950/20 rounded-xl w-full max-w-sm text-xs font-mono text-rose-455 text-left truncate">Raw content: {scanResult.raw}</div>
+                <div className="my-3 p-3 border border-red-500/20 bg-red-950/20 rounded-xl w-full max-w-sm text-xs font-mono text-rose-500 text-left truncate">Raw content: {scanResult.raw}</div>
               )}
 
               <button onClick={handleResetScan} className="mt-2 inline-flex items-center gap-1.5 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white rounded-xl shadow-lg hover:shadow-indigo-500/25 transition-all" aria-label="Scan next ticket">
@@ -724,7 +764,7 @@ export default function TicketScanner() {
                     <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider ${
                       item.status === "Verified" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-450" :
                       item.status === "Queued" ? "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400" :
-                      "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-455"
+                      "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-500"
                     }`}>{item.status}</span>
                   </div>
                 </div>

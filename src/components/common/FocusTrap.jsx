@@ -1,5 +1,4 @@
-import React from 'react';
-import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { useFocusTrap } from 'hooks/useFocusTrap';
 
 /**
  * FocusTrap
@@ -32,4 +31,3 @@ const FocusTrap = ({ isActive, onEscape, children, className = '' }) => {
 };
 
 export default FocusTrap;
-// Optimized for lazy loading

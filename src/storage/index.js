@@ -1,3 +1,4 @@
+import { logger } from "../utils/logger";
 import { safeParseJson } from "../utils/jsonUtils";
 
 const STORAGE_TYPES = {
@@ -8,7 +9,8 @@ const STORAGE_TYPES = {
 function getStorage(type) {
   try {
     return type === STORAGE_TYPES.SESSION ? sessionStorage : localStorage;
-  } catch {
+  } catch (e) {
+    logger.warn("[storage] Storage API not available:", e);
     return null;
   }
 }
@@ -20,7 +22,8 @@ export const storage = {
       if (!store) return fallback;
       const raw = store.getItem(key);
       return raw !== null ? safeParseJson(raw, raw) : fallback;
-    } catch {
+    } catch (e) {
+      logger.warn("[storage.get] Failed to read key:", key, e);
       return fallback;
     }
   },
@@ -31,7 +34,9 @@ export const storage = {
       if (!store) return;
       const raw = typeof value === "string" ? value : JSON.stringify(value);
       store.setItem(key, raw);
-    } catch {}
+    } catch (e) {
+      logger.warn("[storage.set] Failed to write key:", key, e);
+    }
   },
 
   remove(key, type = STORAGE_TYPES.LOCAL) {
@@ -39,7 +44,9 @@ export const storage = {
       const store = getStorage(type);
       if (!store) return;
       store.removeItem(key);
-    } catch {}
+    } catch (e) {
+      logger.warn("[storage.remove] Failed to remove key:", key, e);
+    }
   },
 
   clear(type = STORAGE_TYPES.LOCAL) {
@@ -47,7 +54,9 @@ export const storage = {
       const store = getStorage(type);
       if (!store) return;
       store.clear();
-    } catch {}
+    } catch (e) {
+      logger.warn("[storage.clear] Failed to clear storage:", e);
+    }
   },
 
   keys(type = STORAGE_TYPES.LOCAL) {
@@ -55,7 +64,8 @@ export const storage = {
       const store = getStorage(type);
       if (!store) return [];
       return Object.keys(store);
-    } catch {
+    } catch (e) {
+      logger.warn("[storage.keys] Failed to enumerate keys:", e);
       return [];
     }
   },

@@ -1,4 +1,4 @@
-import React from "react";
+
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Trash2, Ticket } from "lucide-react";
 import CharacterCounter from "../CharacterCounter";
