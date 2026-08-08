@@ -220,13 +220,50 @@ export default function TicketScanner() {
       }
     } catch {
       if (decodedText.startsWith("eyJ") && decodedText.split(".").length === 3) {
-        const activeEvent = events.find(e => String(e.id) === String(selectedEventId));
-        ticketData = {
-          ticketId: decodedText,
-          eventId: selectedEventId,
-          userName: "Attendee",
-          eventName: activeEvent ? activeEvent.title : "Active Event"
-        };
+        try {
+          const payload = JSON.parse(atob(decodedText.split(".")[1]));
+          const activeEvent = events.find(e => String(e.id) === String(selectedEventId));
+          const ticketEventId = payload.eventId || payload.event_id;
+          if (ticketEventId && String(ticketEventId) !== String(selectedEventId)) {
+            setScanResult({
+              status: "flagged",
+              message: "This ticket is for a different event.",
+              raw: decodedText,
+            });
+            toast.error("Security Alert: Ticket does not match selected event!");
+            addToHistory({
+              id: `flagged-${Date.now()}`,
+              ticketId: decodedText.slice(0, 20),
+              name: "Unknown",
+              event: activeEvent ? activeEvent.title : "Unknown",
+              status: "Flagged",
+              time: new Date().toISOString(),
+            });
+            return;
+          }
+          ticketData = {
+            ticketId: decodedText,
+            eventId: ticketEventId || selectedEventId,
+            userName: payload.userName || payload.name || "Attendee",
+            eventName: activeEvent ? activeEvent.title : "Active Event"
+          };
+        } catch {
+          setScanResult({
+            status: "flagged",
+            message: "Invalid ticket format.",
+            raw: decodedText,
+          });
+          toast.error("Security Alert: Invalid Ticket QR Code scanned!");
+          addToHistory({
+            id: `flagged-${Date.now()}`,
+            ticketId: decodedText.slice(0, 20),
+            name: "Unknown",
+            event: "Unknown",
+            status: "Flagged",
+            time: new Date().toISOString(),
+          });
+          return;
+        }
       } else {
         setScanResult({
           status: "flagged",
