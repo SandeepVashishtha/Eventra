@@ -57,6 +57,7 @@ const useEventListing = () => {
     totalElements: 0,
     first: true,
     last: true,
+    serverPaginated: false,
   });
   const [serverPaged, setServerPaged] = useState(false);
 
@@ -148,6 +149,7 @@ const useEventListing = () => {
         totalElements: responseData.totalElements || 0,
         first: responseData.first ?? true,
         last: responseData.last ?? true,
+        serverPaginated: Array.isArray(responseData.content),
       });
     } catch (error) {
       setEvents([]);
@@ -157,6 +159,7 @@ const useEventListing = () => {
         totalElements: 0,
         first: true,
         last: true,
+        serverPaginated: false,
       });
 
       if (error?.response?.status === 403) {
@@ -325,12 +328,12 @@ const useEventListing = () => {
 
   const paginatedEvents = useMemo(() => {
     // Server already returned one page — do not re-slice client-side.
-    if (serverPaged) {
+    if (serverPaged || pagination.serverPaginated) {
       return sortedEvents;
     }
     const startIndex = (currentPage - 1) * eventsPerPage;
     return sortedEvents.slice(startIndex, startIndex + eventsPerPage);
-  }, [sortedEvents, currentPage, eventsPerPage, serverPaged]);
+  }, [sortedEvents, currentPage, eventsPerPage, serverPaged, pagination.serverPaginated]);
 
   const totalElements = serverPaged
     ? pagination.totalElements
