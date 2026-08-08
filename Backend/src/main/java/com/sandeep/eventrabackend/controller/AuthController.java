@@ -121,7 +121,7 @@ public class AuthController {
                 }
             }
             AuthResponse response = authService.refresh(refreshToken);
-            return ResponseEntity.ok(response);
+            return withAuthCookie(ResponseEntity.ok(), response);
         } catch (Exception ex) {
             ErrorResponse error = ErrorResponse.builder()
                     .status(HttpStatus.UNAUTHORIZED.value())
