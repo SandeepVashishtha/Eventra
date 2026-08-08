@@ -223,8 +223,14 @@ const EventsPage = () => {
       parseInt(searchParams.get("perPage"), 10) || savedFilters.perPage || 20;
     const filter =
       searchParams.get("filter") || savedFilters.filterType || "all";
-    const category =
-      searchParams.get("category") || savedFilters.categoryFilter || "all";
+    const savedCategory =
+  window.localStorage.getItem("eventra:last-category") || "all";
+
+const category =
+  searchParams.get("category") ||
+  savedFilters.categoryFilter ||
+  savedCategory ||
+  "all";
     const sort = searchParams.get("sort") || savedFilters.sortType || "Newest";
     const view = searchParams.get("view") || savedFilters.viewMode || "grid";
     const urlAdvancedFilters = searchParams.get("filters");
@@ -445,7 +451,11 @@ const EventsPage = () => {
           advancedFilters={listing.advancedFilters}
           onAdvancedFiltersChange={listing.setAdvancedFilters}
         />
-
+        {localSearchInput.trim() && (
+          <div className="mb-4 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950/30 dark:text-indigo-300">
+            Showing results for: <span className="font-semibold">"{localSearchInput}"</span>
+          </div>
+        )}
         <ErrorBoundary level="section" label="Events">
     {renderCardSection(
   isLoading,
