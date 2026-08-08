@@ -1,8 +1,11 @@
+import useDateFormatter from "hooks/useDateFormatter";
 
 // import React from 'react';
 import { motion } from 'framer-motion';
 
 const EventTimelineViz = ({ events }) => {
+  // Fix: useDateFormatter replaces raw toLocaleDateString
+  const { formatDate } = useDateFormatter();
   return (
     <div className="w-full overflow-x-auto py-8 hide-scrollbar">
       <div className="min-w-max flex items-center gap-4 px-4 relative">
@@ -17,7 +20,7 @@ const EventTimelineViz = ({ events }) => {
           >
             <div className="w-4 h-4 rounded-full bg-indigo-500 ring-4 ring-white dark:ring-gray-900 group-hover:scale-125 transition-transform" />
             <div className="absolute top-8 w-48 p-4 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-              <p className="text-xs font-bold text-indigo-500 mb-1">{new Date(event.date).toLocaleDateString()}</p>
+              <p className="text-xs font-bold text-indigo-500 mb-1">{formatDate(event.date)}</p>
               <h4 className="text-sm font-bold text-gray-900 dark:text-white line-clamp-2">{event.title}</h4>
             </div>
           </motion.div>
