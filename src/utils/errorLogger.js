@@ -28,14 +28,7 @@ if (isSentryEnabled && typeof window !== "undefined") {
     try {
       // Dynamically import @sentry/browser to minimize bundle size on initial load
       const SentryModule = await import("@sentry/browser");
-      Sentry = SentryModule.default || SentryModule;
-
-      const runtimeEnv =
-        typeof import.meta !== "undefined" && import.meta.env
-          ? import.meta.env
-          : typeof process !== "undefined" && process.env
-            ? process.env
-            : {};
+      Sentry = SentryModule;
 
       // Initialize the Sentry client with performance and replay metrics
       Sentry.init({
@@ -59,6 +52,7 @@ if (isSentryEnabled && typeof window !== "undefined") {
       logger.warn("[ErrorLogger] Sentry SDK unavailable or failed to initialize. Falling back to local logging.", importError);
     }
   })();
+})();
 }
 
 /**
