@@ -40,6 +40,7 @@ public class EventStreamService {
         } catch (IOException e) {
             log.error("Failed to send initial connection event", e);
             emitter.completeWithError(e);
+            throw new RuntimeException("Failed to initialize SSE connection", e);
         }
 
         return emitter;

@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.validator.constraints.URL;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Data
 @Builder
@@ -42,7 +43,12 @@ public class EventUpdateRequest {
     private Boolean isPublic;
 
     @URL(message = "Image URL must be a valid URL")
-    @Schema(description = "Optional URL to the event's banner or thumbnail image (link only)",
-            example = "https://example.com/images/event-banner.jpg")
+    @Schema(description = "Optional URL to the event's banner or thumbnail image (link only)", example = "https://example.com/images/event-banner.jpg")
     private String imageUrl;
+
+    @Schema(description = "Event category for filtering and discovery", example = "Tech")
+    private String category;
+
+    @Schema(description = "Optional tags for the event to enable granular filtering and search", example = "AI,Conference,2026")
+    private Set<String> tags;
 }
