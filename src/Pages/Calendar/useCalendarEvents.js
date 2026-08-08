@@ -16,7 +16,12 @@ const useCalendarEvents = () => {
 
     try {
       const response = await eventService.getAllEvents();
-      const apiEvents = Array.isArray(response.data) ? response.data : [];
+      const raw = response?.data;
+      const apiEvents = Array.isArray(raw?.content)
+        ? raw.content
+        : Array.isArray(raw)
+          ? raw
+          : [];
       setEvents(normalizeEvents(apiEvents));
     } catch (error) {
       if (process.env.NODE_ENV === "development") {
