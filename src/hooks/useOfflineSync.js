@@ -15,7 +15,7 @@ import { getQueueIndexedDB, setQueue, clearQueue, filterQueueByOwnership, valida
 import { ensureSessionSnapshot } from "../utils/sessionSnapshot.js";
 // isTokenValid import removed; authentication is now checked via isAuthenticated()
 // from AuthContext, which handles both token-based and cookie-managed sessions.
-import { fetchWithTimeout } from "../utils/fetchWithTimeout.js";
+import { fetchWithTimeout, FetchError } from "../utils/fetchWithTimeout.js";
 import { safeJsonParse } from "../utils/safeJsonParse.js";
 
 const MAX_RETRIES = 3;
@@ -200,18 +200,37 @@ const useOfflineSync = () => {
       if (forceOverride) headers['X-Override-Conflict'] = 'true';
       if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey;
 
-      const { response, data } = await postQueuedRequest(
-        url,
-        {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(payload),
-          signal // 🔥 FIX: Passed signal so network request aborts if component unmounts mid-sync
-        },
-        10000
-      );
+      let response;
+      let data;
+      try {
+        ({ response, data } = await postQueuedRequest(
+          url,
+          {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(payload),
+            signal // 🔥 FIX: Passed signal so network request aborts if component unmounts mid-sync
+          },
+          10000
+        ));
+      } catch (error) {
+        if (error instanceof FetchError && error.status != null) {
+          if (error.status === 409) {
+            return { status: "conflict", serverState: error.data || {} };
+          }
+          if (error.status >= 400 && error.status < 500) {
+            logger.warn(
+              `Offline queue: server rejected item with ${error.status} — dropping.`,
+              error.data || error.message
+            );
+            return { status: "dropped" };
+          }
+          throw new Error(`Sync failed with status: ${error.status}`);
+        }
+        throw error;
+      }
 
-      // Handle 409 Conflict specifically
+      // Handle 409 Conflict specifically (non-throwing adapters / mocks)
       if (response.status === 409) {
         const serverState = data || {};
         return { status: "conflict", serverState };
@@ -222,7 +241,7 @@ const useOfflineSync = () => {
       if (response.status >= 400 && response.status < 500) {
         logger.warn(
           `Offline queue: server rejected item with ${response.status} — dropping.`,
-          await response.text().catch(() => '')
+          data || ''
         );
         return { status: "dropped" };
       }
