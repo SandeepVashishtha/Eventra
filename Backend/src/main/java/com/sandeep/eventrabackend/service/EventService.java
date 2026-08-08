@@ -526,6 +526,39 @@ public class EventService {
                 eventWaitlistRepository.save(entry);
         }
 
+        @Transactional(readOnly = true)
+        public WaitlistResponse getMyWaitlistEntry(Long eventId, String userEmail) {
+                eventRepository.findById(eventId)
+                                .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + eventId));
+
+                EventWaitlist entry = eventWaitlistRepository
+                                .findByEvent_IdAndUser_EmailAndStatus(eventId, userEmail, "WAITING")
+                                .orElseThrow(() -> new EventNotFoundException(
+                                                "You are not on the waitlist for this event."));
+
+                return toWaitlistResponse(entry);
+        }
+
+        @Transactional
+        public void removeWaitlistEntry(Long eventId, Long waitlistId, String userEmail) {
+                eventRepository.findById(eventId)
+                                .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + eventId));
+
+                eventRoleService.requireRole(eventId, userEmail, EventRole.ORGANIZER);
+
+                EventWaitlist entry = eventWaitlistRepository.findById(waitlistId)
+                                .filter(waitlist -> waitlist.getEvent().getId().equals(eventId))
+                                .orElseThrow(() -> new EventNotFoundException(
+                                                "Waitlist entry not found with id: " + waitlistId));
+
+                if (!"WAITING".equals(entry.getStatus())) {
+                        throw new RegistrationConflictException("Waitlist entry is not active.");
+                }
+
+                entry.setStatus("REMOVED");
+                eventWaitlistRepository.save(entry);
+        }
+
         @Transactional
         public RegistrationResponse promoteWaitlistedUser(Long eventId, Long waitlistId, String userEmail) {
                 Event event = eventRepository.findByIdWithLock(eventId)
@@ -823,6 +856,7 @@ public class EventService {
                                 .id(entry.getId())
                                 .eventId(entry.getEvent().getId())
                                 .eventTitle(entry.getEvent().getTitle())
+                                .userId(entry.getUser().getId())
                                 .userEmail(entry.getUser().getEmail())
                                 .position(entry.getPosition())
                                 .status(entry.getStatus())

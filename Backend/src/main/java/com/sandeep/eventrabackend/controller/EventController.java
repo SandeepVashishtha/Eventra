@@ -212,6 +212,27 @@ public class EventController {
                 return ResponseEntity.noContent().build();
         }
 
+        @GetMapping("/{id}/waitlist/me")
+        @Operation(summary = "Get my waitlist position for an event", description = "Returns the authenticated user's active waitlist entry and position.", security = @SecurityRequirement(name = "bearerAuth"))
+        public ResponseEntity<WaitlistResponse> getMyWaitlistEntry(
+                        @Parameter(description = "ID of the event") @PathVariable Long id,
+                        Authentication authentication) {
+
+                return ResponseEntity.ok(eventService.getMyWaitlistEntry(id, authentication.getName()));
+        }
+
+        @DeleteMapping("/{id}/waitlist/{waitlistId}")
+        @PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN', 'SUPER_ADMIN')")
+        @Operation(summary = "Remove a waitlisted user", description = "Organizer/admin removes a waitlist entry without promoting them.", security = @SecurityRequirement(name = "bearerAuth"))
+        public ResponseEntity<Void> removeWaitlistEntry(
+                        @Parameter(description = "ID of the event") @PathVariable Long id,
+                        @Parameter(description = "ID of the waitlist entry") @PathVariable Long waitlistId,
+                        Authentication authentication) {
+
+                eventService.removeWaitlistEntry(id, waitlistId, authentication.getName());
+                return ResponseEntity.noContent().build();
+        }
+
         @PostMapping("/{id}/waitlist/{waitlistId}/promote")
         @PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN', 'SUPER_ADMIN')")
         @Operation(summary = "Manually promote a waitlisted user", description = "Registers a waitlisted user when a spot is available.", security = @SecurityRequirement(name = "bearerAuth"))
