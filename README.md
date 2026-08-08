@@ -529,6 +529,7 @@ Vercel configuration is checked in via [`vercel.json`](vercel.json):
 ## Documentation
 
 - [Architecture and Roles](docs/ARCHITECTURE_AND_ROLES.md)
+- [CI/CD Workflow Architecture](docs/ci-cd-architecture.md)
 - [Environment Setup Guide](docs/ENV_SETUP_GUIDE.md)
 - [Frontend Onboarding](docs/frontend-onboarding.md)
 - [Security Migration Notes](docs/SECURITY_MIGRATION.md)
