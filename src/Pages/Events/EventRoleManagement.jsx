@@ -1,3 +1,4 @@
+import usePaginatedFetch from "hooks/usePaginatedFetch";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { ShieldCheck } from "lucide-react";
@@ -9,32 +10,34 @@ const EVENT_ROLES = ["ORGANIZER", "MODERATOR", "ATTENDEE"];
 
 export default function EventRoleManagement() {
   const { eventId } = useParams();
-  const [members, setMembers] = useState([]);
-  const [auditLog, setAuditLog] = useState([]);
   const [userEmail, setUserEmail] = useState("");
   const [role, setRole] = useState("MODERATOR");
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const loadRoles = async () => {
-    setLoading(true);
-    try {
+  // Fix: usePaginatedFetch replaces manual loading/error/data state +
+  // bare fetch calls with no AbortController. Auto-cancels on unmount.
+  const {
+    data: rolesData,
+    isLoading: loading,
+    error: rolesError,
+    refetch: loadRoles,
+  } = usePaginatedFetch(
+    async (signal) => {
       const [teamResponse, auditResponse] = await Promise.all([
-        apiUtils.get(API_ENDPOINTS.EVENTS.ROLES(eventId)),
-        apiUtils.get(API_ENDPOINTS.EVENTS.ROLE_AUDIT(eventId)),
+        apiUtils.get(API_ENDPOINTS.EVENTS.ROLES(eventId), { signal }),
+        apiUtils.get(API_ENDPOINTS.EVENTS.ROLE_AUDIT(eventId), { signal }),
       ]);
-      setMembers(await teamResponse.json());
-      setAuditLog(await auditResponse.json());
-    } catch (error) {
-      toast.error(error.message || "Unable to load event roles.");
-    } finally {
-      setLoading(false);
-    }
-  };
+      return { data: { members: teamResponse.data, auditLog: auditResponse.data } };
+    },
+    { dependencies: [eventId], enabled: !!eventId }
+  );
+
+  const members = rolesData?.members ?? [];
+  const auditLog = rolesData?.auditLog ?? [];
 
   useEffect(() => {
-    if (eventId) loadRoles();
-  }, [eventId]);
+    if (rolesError) toast.error(rolesError);
+  }, [rolesError]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
