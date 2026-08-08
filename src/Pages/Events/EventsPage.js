@@ -17,6 +17,8 @@ import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
 import ErrorBoundary from "../../components/common/ErrorBoundary";
 import ErrorMessage from "../../components/common/ErrorMessage";
 import { EventTimeline } from "../../components/EventTimeline";
+import EventComparison from "./EventComparison";
+import { toast } from "react-toastify";
 import {
   decodeAdvancedFilters,
   encodeAdvancedFilters,
@@ -80,8 +82,23 @@ const renderCardSection = (
           : "grid-cols-1 max-w-4xl mx-auto"
       }`}
     >
+
+      {selectedEvents.length >= 2 && (
+          <button
+              onClick={() => setShowComparison(true)}
+              className="mb-6 px-5 py-2 bg-indigo-600 text-white rounded-lg"
+          >
+              Compare {selectedEvents.length} Events
+          </button>
+      )}
+
       {paginatedEvents.map((event) => (
-        <EventCard key={event.id} event={event} />
+        <EventCard
+            key={event.id}
+            event={event}
+            onCompare={toggleCompare}
+            isSelected={selectedEvents.some(e => e.id === event.id)}
+        />
       ))}
     </div>
   );
@@ -109,6 +126,8 @@ const EventsPage = () => {
   }
 
   const listing = useEventListing();
+  const [selectedEvents, setSelectedEvents] = useState([]);
+  const [showComparison, setShowComparison] = useState(false);
   const { isLoading } = listing;
   const cardSectionRef = useRef();
   const hasHydratedFilters = useRef(false);
@@ -119,6 +138,22 @@ const EventsPage = () => {
   // the Fuse.js search pipeline only runs after the user pauses typing.
   const [localSearchInput, setLocalSearchInput] = useState(listing.searchQuery);
   const debouncedSearchQuery = useDebouncedValue(localSearchInput, 300);
+
+  const toggleCompare = (event) => {
+  const exists = selectedEvents.find((e) => e.id === event.id);
+
+  if (exists) {
+    setSelectedEvents(selectedEvents.filter((e) => e.id !== event.id));
+    return;
+  }
+
+  if (selectedEvents.length >= 3) {
+    toast.error("You can compare only 3 events.");
+    return;
+  }
+
+  setSelectedEvents([...selectedEvents, event]);
+};
 
   // Sync the debounced value into the listing hook whenever it settles.
   useEffect(() => {
@@ -345,6 +380,13 @@ const EventsPage = () => {
           </ErrorBoundary>
         </div>
       </div>
+
+      {showComparison && (
+          <EventComparison
+              events={selectedEvents}
+              onClose={() => setShowComparison(false)}
+          />
+      )}
 
       <EventCTA />
       <FeedbackButton />
