@@ -7,6 +7,7 @@ import com.sandeep.eventrabackend.dto.response.EventAvailabilityResponse;
 import com.sandeep.eventrabackend.dto.response.AttendeeDirectoryResponse;
 import com.sandeep.eventrabackend.dto.response.EventResponse;
 import com.sandeep.eventrabackend.dto.response.MyRegisteredEventResponse;
+import com.sandeep.eventrabackend.dto.response.PagedResponse;
 import com.sandeep.eventrabackend.dto.response.RegistrationResponse;
 import com.sandeep.eventrabackend.dto.response.WaitlistResponse;
 import com.sandeep.eventrabackend.exception.EventFullException;
@@ -23,6 +24,7 @@ import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.EventRegistrationRepository;
 import com.sandeep.eventrabackend.repository.EventRepository;
 import com.sandeep.eventrabackend.repository.EventRoleAuditLogRepository;
+import com.sandeep.eventrabackend.repository.EventSpecifications;
 import com.sandeep.eventrabackend.repository.EventTeamMemberRepository;
 import com.sandeep.eventrabackend.repository.EventWaitlistRepository;
 import com.sandeep.eventrabackend.repository.FeedbackAnalyticsRepository;
@@ -31,16 +33,25 @@ import com.sandeep.eventrabackend.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -69,6 +80,14 @@ public class EventService {
 
         /** Maximum number of automatic retries on optimistic-lock conflict. */
         private static final int MAX_REGISTRATION_RETRIES = 3;
+
+        private static final Set<String> ALLOWED_SORT_PROPERTIES = Set.of("eventDate", "title", "id");
+
+        private static final Map<String, String> SORT_ALIASES = Map.of(
+                        "date", "eventDate",
+                        "eventdate", "eventDate",
+                        "title", "title",
+                        "id", "id");
 
         private final EventRepository eventRepository;
         private final EventRegistrationRepository eventRegistrationRepository;
@@ -167,16 +186,38 @@ public class EventService {
         }
 
         /**
-         * Retrieves all public events.
-         *
-         * @return list of all events with {@code isPublic} set to true
+         * Retrieves a page of public events with optional search / status / sort.
          */
         @Transactional(readOnly = true)
-        public List<EventResponse> getAllEvents() {
-                return eventRepository.findAll().stream()
-                                .filter(Event::isPublic)
-                                .map(this::toEventResponse)
-                                .toList();
+        public PagedResponse<EventResponse> getAllEvents(
+                        int page,
+                        int size,
+                        String search,
+                        List<String> statuses,
+                        String sort) {
+                Pageable pageable = PageRequest.of(page, size, resolveSort(sort));
+                Specification<Event> spec = EventSpecifications.publicListing(search, statuses);
+                Page<EventResponse> result = eventRepository.findAll(spec, pageable).map(this::toEventResponse);
+                return PagedResponse.from(result);
+        }
+
+        private Sort resolveSort(String sort) {
+                if (!StringUtils.hasText(sort)) {
+                        return Sort.by(Sort.Direction.DESC, "eventDate");
+                }
+
+                String[] parts = sort.split(",", 2);
+                String rawProperty = parts[0].trim();
+                String mapped = SORT_ALIASES.getOrDefault(rawProperty.toLowerCase(Locale.ROOT), rawProperty);
+                if (!ALLOWED_SORT_PROPERTIES.contains(mapped)) {
+                        return Sort.by(Sort.Direction.DESC, "eventDate");
+                }
+
+                Sort.Direction direction = Sort.Direction.DESC;
+                if (parts.length > 1 && "asc".equalsIgnoreCase(parts[1].trim())) {
+                        direction = Sort.Direction.ASC;
+                }
+                return Sort.by(direction, mapped);
         }
 
         /**
