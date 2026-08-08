@@ -32,17 +32,6 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     @Query(value = "DELETE FROM event_attendees WHERE user_id = :userId", nativeQuery = true)
     void deleteAttendeeRowsByUserId(@Param("userId") Long userId);
 
-    @Query("""
-            SELECT e FROM Event e
-            WHERE e.isPublic = true
-              AND (:excludeId IS NULL OR e.id <> :excludeId)
-              AND e.eventDate >= :from
-              AND e.eventDate <= :to
-            ORDER BY e.eventDate ASC
-            """)
-    List<Event> findPublicAlternativesInWindow(
-            @Param("excludeId") Long excludeId,
-            @Param("from") LocalDateTime from,
-            @Param("to") LocalDateTime to,
-            org.springframework.data.domain.Pageable pageable);
+
+import java.time.LocalDateTime;
 }
