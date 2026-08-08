@@ -18,6 +18,7 @@ import ErrorBoundary from "../../components/common/ErrorBoundary";
 import ErrorMessage from "../../components/common/ErrorMessage";
 import { EventTimeline } from "../../components/EventTimeline";
 import EventComparison from "./EventComparison";
+import SavedFiltersModal from "./SavedFiltersModal";
 import { toast } from "react-toastify";
 import {
   decodeAdvancedFilters,
@@ -30,6 +31,7 @@ import {
 
 const FILTER_STORAGE_KEY = "eventra:event-filters:v1";
 const SAVED_FILTERS_KEY = "eventra:saved-search-filters";
+
 
 const renderCardSection = (
   isLoading,
