@@ -1,0 +1,60 @@
+name: Artifact Cleanup
+
+on:
+  schedule:
+    - cron: '0 0 * * 0' # Run weekly on Sunday at midnight
+  workflow_dispatch:    # Allow manual triggering
+
+permissions:
+  actions: write # Required to delete artifacts
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cleanup Expired Artifacts
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const retentionDays = 30; // configurable retention period
+            const keepDate = new Date();
+            keepDate.setDate(keepDate.getDate() - retentionDays);
+            
+            console.log(`Starting cleanup of artifacts older than ${retentionDays} days (${keepDate.toISOString()})...`);
+            
+            let artifactsDeleted = 0;
+            
+            try {
+              // Iterate over all artifacts using pagination
+              const iterator = github.paginate.iterator(github.rest.actions.listArtifactsForRepo, {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                per_page: 100
+              });
+              
+              for await (const { data: artifacts } of iterator) {
+                for (const artifact of artifacts) {
+                  const createdAt = new Date(artifact.created_at);
+                  
+                  if (createdAt < keepDate) {
+                    try {
+                      await github.rest.actions.deleteArtifact({
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        artifact_id: artifact.id,
+                      });
+                      console.log(`✅ Deleted artifact: ${artifact.name} (ID: ${artifact.id}) created at ${artifact.created_at}`);
+                      artifactsDeleted++;
+                    } catch (err) {
+                      console.error(`❌ Failed to delete artifact: ${artifact.name} (ID: ${artifact.id})`, err);
+                    }
+                  }
+                }
+              }
+              
+              console.log(`🎉 Cleanup complete. Total artifacts deleted: ${artifactsDeleted}`);
+            } catch (error) {
+              console.error("Error fetching artifacts:", error);
+              core.setFailed(`Artifact cleanup failed: ${error.message}`);
+            }
