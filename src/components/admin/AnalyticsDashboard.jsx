@@ -72,6 +72,7 @@ const AnalyticsDashboard = () => {
   const [activeTab] = useState('analytics');
 
   const categoryData = analytics?.categoryBreakdown || FALLBACK_CATEGORY_DATA;
+  const isShowingFallbackData = !analyticsLoading && (!analytics || !analytics.categoryBreakdown);
 
   // Real-time SSE stream — takes priority over local simulation when connected
   const { recentCheckins: streamCheckins, status: streamStatus } = useAnalyticsStream();
@@ -207,6 +208,20 @@ const AnalyticsDashboard = () => {
 
   return (
     <div className="space-y-8 text-slate-800 dark:text-slate-100">
+      {isShowingFallbackData && (
+        <div className="flex items-start gap-3 p-4 border rounded-2xl bg-amber-50 border-amber-200 dark:bg-amber-950/40 dark:border-amber-800">
+          <span className="mt-0.5 w-2 h-2 rounded-full bg-amber-400 shrink-0" aria-hidden="true" />
+          <div>
+            <h4 className="text-xs font-bold text-amber-800 dark:text-amber-300">
+              Showing simulated data — live analytics unavailable
+            </h4>
+            <p className="mt-0.5 text-[11px] text-amber-700 dark:text-amber-400/80">
+              The analytics summary could not be loaded from the backend, so the
+              numbers below are placeholder values, not real registrations or check-ins.
+            </p>
+          </div>
+        </div>
+      )}
       {/* Tab Navigation */}
       <div className="flex gap-2 mb-4">
         <button

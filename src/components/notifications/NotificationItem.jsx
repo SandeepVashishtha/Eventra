@@ -1,3 +1,4 @@
+import useDateFormatter from "hooks/useDateFormatter";
 import { memo } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -24,6 +25,8 @@ const CATEGORY_ICONS = {
 };
 
 const NotificationItem = ({
+  // Fix: useDateFormatter replaces raw toLocaleDateString
+  const { formatDate, getRelativeTime } = useDateFormatter();
   notification,
   onMarkRead,
   onDelete,
@@ -79,7 +82,7 @@ const NotificationItem = ({
           title={new Date(notification.timestamp).toLocaleString()}
         >
           {getRelativeTime(notification.timestamp) ||
-            new Date(notification.timestamp).toLocaleDateString()}
+            formatDate(notification.timestamp)}
         </p>
       </div>
     </>

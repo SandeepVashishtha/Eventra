@@ -39,12 +39,19 @@ const AiProfileGeneratorModal = ({ isOpen, onClose, onApplyProfile }) => {
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
-    if (file && file.type === "application/pdf") {
-      setResumeFile(file);
-      setError("");
-    } else {
+    if (!file) return;
+    if (file.type !== "application/pdf") {
       setError("Please upload a valid PDF file.");
+      setResumeFile(null);
+      return;
     }
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Resume PDF must be 5MB or smaller.");
+      setResumeFile(null);
+      return;
+    }
+    setResumeFile(file);
+    setError("");
   };
 
   const handleProcess = async () => {
@@ -214,6 +221,12 @@ const AiProfileGeneratorModal = ({ isOpen, onClose, onApplyProfile }) => {
                           {resumeFile ? `${(resumeFile.size / 1024 / 1024).toFixed(2)} MB` : "Maximum file size 5MB. PDF format only."}
                         </p>
                       </div>
+                      <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-500/20 rounded-xl p-4 flex gap-3 text-sm text-amber-900 dark:text-amber-200">
+                        <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+                        <p className="text-xs leading-relaxed">
+                          We extract readable text from the PDF locally. Only values found in the document are filled in — skills, bio, and links are never invented from the filename.
+                        </p>
+                      </div>
                     </div>
                   )}
 
@@ -262,13 +275,34 @@ const AiProfileGeneratorModal = ({ isOpen, onClose, onApplyProfile }) => {
                 animate={{ opacity: 1, x: 0 }}
                 className="space-y-6"
               >
-                <div className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-xl p-4 flex gap-3 text-sm text-emerald-800 dark:text-emerald-300">
-                  <CheckCircle2 size={18} className="shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-bold mb-1 text-sm">Extraction Successful!</p>
-                    <p className="text-xs opacity-90">Review and edit the extracted details below before applying them to your profile. Nothing is saved permanently yet.</p>
-                  </div>
-                </div>
+                {(() => {
+                  const status = parsedData.extractionStatus;
+                  const isDemo = status === "demo";
+                  const isEmpty = status === "empty";
+                  const bannerClass = isDemo || isEmpty
+                    ? "bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20 text-amber-900 dark:text-amber-200"
+                    : "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20 text-emerald-800 dark:text-emerald-300";
+                  const title = isDemo
+                    ? "Demo sample data"
+                    : isEmpty
+                      ? "No profile fields extracted"
+                      : "Extraction complete";
+                  const detail = parsedData.extractionMessage
+                    || "Review and edit the details below before applying them to your profile. Nothing is saved permanently yet.";
+                  return (
+                    <div className={`border rounded-xl p-4 flex gap-3 text-sm ${bannerClass}`}>
+                      {isDemo || isEmpty ? (
+                        <AlertTriangle size={18} className="shrink-0 mt-0.5" />
+                      ) : (
+                        <CheckCircle2 size={18} className="shrink-0 mt-0.5" />
+                      )}
+                      <div>
+                        <p className="font-bold mb-1 text-sm">{title}</p>
+                        <p className="text-xs opacity-90">{detail}</p>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 <div className="space-y-5 bg-slate-50 dark:bg-slate-950/50 p-5 rounded-2xl border border-slate-200 dark:border-white/5">
                   {/* Bio */}
