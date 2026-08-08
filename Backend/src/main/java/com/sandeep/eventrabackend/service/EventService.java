@@ -279,13 +279,15 @@ public class EventService {
         @Transactional(readOnly = true)
         public List<EventResponse> searchEvents(String search, String category, String startDate, String endDate,
                         Boolean free) {
-                List<Event> events = new ArrayList<>();
+                List<Event> events;
 
                 // Build query based on search criteria
                 if (search != null && !search.trim().isEmpty()) {
                         // Full-text search on title and description
                         events = eventRepository.findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
                                         search, search);
+                } else {
+                        events = eventRepository.findAll();
                 }
 
                 // Apply additional filters
@@ -322,11 +324,10 @@ public class EventService {
                         }
                 }
 
+                // Events do not currently model price, so a free filter cannot be applied.
+                // Do not use capacity as a proxy for price.
                 if (free != null && free) {
-                        List<Event> filteredEvents = events.stream()
-                                        .filter(event -> event.getCapacity() != null && event.getCapacity() == 0)
-                                        .collect(Collectors.toList());
-                        events = filteredEvents;
+                        // Intentionally no-op until pricing data is available.
                 }
 
                 return events.stream()
