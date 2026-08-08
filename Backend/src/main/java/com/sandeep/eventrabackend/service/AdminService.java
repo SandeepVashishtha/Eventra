@@ -125,6 +125,8 @@ public class AdminService {
         notificationRepository.deleteByUser_Id(id);
         feedbackRepository.deleteByUser_Id(id);
         eventRepository.deleteAttendeeRowsByUserId(id);
+        eventTeamMemberRepository.clearAssignedByUserId(id);
+        eventTeamMemberRepository.deleteByUser_Id(id);
 
         userRepository.deleteById(id);
     }
