@@ -186,9 +186,15 @@ const EventsPage = () => {
   const [localSearchInput, setLocalSearchInput] = useState(listing.searchQuery);
   const debouncedSearchQuery = useDebouncedValue(localSearchInput, 300);
 
+  const prevRouteQueryRef = useRef(routeSearchQuery);
+
   useEffect(() => {
-    setSearchQuery(debouncedSearchQuery);
-  }, [debouncedSearchQuery, setSearchQuery]);
+    if (localSearchInput === "") {
+      setSearchQuery("");
+    } else {
+      setSearchQuery(debouncedSearchQuery);
+    }
+  }, [localSearchInput, debouncedSearchQuery, setSearchQuery]);
 
   useEffect(() => {
     if (hasHydratedFilters.current) return;
@@ -292,17 +298,14 @@ const EventsPage = () => {
   ]);
 
   useEffect(() => {
-    if (!rawSearchParam) return;
-
     const safeQuery = prepareSafeSearchQuery(routeSearchQuery);
-    if (safeQuery !== listing.searchQuery) {
+    if (routeSearchQuery !== prevRouteQueryRef.current) {
+      prevRouteQueryRef.current = routeSearchQuery;
       setLocalSearchInput(safeQuery);
       setSearchQuery(safeQuery);
     }
   }, [
-    rawSearchParam,
     routeSearchQuery,
-    listing.searchQuery,
     setSearchQuery,
   ]);
 
@@ -398,7 +401,7 @@ const EventsPage = () => {
             viewMode={listing.viewMode}
             onViewModeChange={listing.setViewMode}
             searchQuery={localSearchInput}
-            onSearchChange={setLocalSearchInput}
+              onSearchChange={setLocalSearchInput}
             advancedFilters={listing.advancedFilters}
             onAdvancedFiltersChange={listing.setAdvancedFilters}
             isAdvancedFiltersOpen={listing.isAdvancedFiltersOpen}

@@ -1,7 +1,7 @@
 import React, { memo, useCallback, useId, useState } from "react";
 import { logger } from "utils/logger";
 import LazyImage from "components/common/LazyImage";
-import { formatLocalDateTime } from "utils/localDateTime";import { formatLocalDateTime } from "utils/localDateTime";
+import { formatLocalDateTime } from "utils/localDateTime";
 import ShareModal from "components/common/ShareModal";
 import StatusBadge from "components/common/StatusBadge";
 import { getEventStatus } from "utils/eventUtils";

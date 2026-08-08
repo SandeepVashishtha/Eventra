@@ -213,7 +213,7 @@ const ActiveFilters = ({
       <div>
         <button
           onClick={clearAll}
-          className="text-sm text-red-600 hover:underline dark:text-red-400"
+          className="text-xs font-semibold px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition duration-300 shadow-sm cursor-pointer"
           aria-label="Clear all filters"
         >
           Clear All

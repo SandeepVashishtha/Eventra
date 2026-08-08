@@ -91,13 +91,19 @@ const ModernSearchInput = ({
         </div>
 
         {/* Clear Button */}
-        {showClearButton && value && (
+        {showClearButton && (value || onClear) && (
           <motion.button
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             whileHover={{ rotate: 90, scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
-            onClick={() => onChange({ target: { value: "" } })}
+            onClick={() => {
+              if (onClear) {
+                onClear();
+              } else {
+                onChange?.({ target: { value: "" } });
+              }
+            }}
             className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
             aria-label="Clear search input"
           >

@@ -1,7 +1,7 @@
 import { memo } from "react";
-import { FixedSizeGrid as Grid } from "react-window";
+import { Grid } from "react-window";
 import EventCard from "../../Pages/Events/EventCard";
-import AutoSizer from "react-virtualized-auto-sizer";
+import { AutoSizer } from "react-virtualized-auto-sizer";
 
 const COLUMN_COUNT = 3;
 const CARD_WIDTH = 380;

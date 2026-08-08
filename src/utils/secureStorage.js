@@ -247,7 +247,7 @@ const initializeKeyMetadata = () => {
 let _keyMetadata = null;
 let _keyPromise = null;
 
-const getKeyMetadata = () => {
+export const getKeyMetadata = () => {
   if (_keyMetadata) return _keyMetadata;
   if (typeof localStorage === "undefined") {
     _keyMetadata = {
@@ -619,9 +619,6 @@ export const rotateKey = async () => {
   }
 };
 
-export const getKeyMetadata = () => {
-  return _keyMetadata;
-};
 
 export const getCryptoConfig = () => {
   return { ...CRYPTO_CONFIG };
