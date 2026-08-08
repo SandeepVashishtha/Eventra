@@ -15,7 +15,7 @@ const LENGTH_RULES = [
 ];
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const GITHUB_REGEX = /^(https?:\/\/)?(www\.)?github\.com\/[\w-]+\/[\w-]+(\/)?$/i;
+const GITHUB_REGEX = /^(https?:\/\/)?(www\.)?github\.com\/[\w.-]+\/[\w.-]+(\/.*)?$/i;
 const URL_REGEX = /^(https?:\/\/)?([\w-]+(\.[\w-]+)+)(\/[\w-./?%&=]*)?$/i;
 
 const isValidProjectImage = (value) => value.startsWith("data:image/") || URL_REGEX.test(value);

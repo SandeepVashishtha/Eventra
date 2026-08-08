@@ -127,12 +127,17 @@ export const generateEventSharingData = (event, baseUrl = null) => {
   }
 
   // Determine the correct base URL for sharing
-  const rawPublicUrl = baseUrl ? ENV.PUBLIC_URL || DEFAULT_EVENT_SHARE_HOST : DEFAULT_EVENT_SHARE_HOST;
-  const deployedOrigin = rawPublicUrl.startsWith("http")
-    ? rawPublicUrl.replace(/\/$/, "")
-    : `https://${rawPublicUrl}`;
+  const currentOrigin =
+    typeof window !== "undefined"
+      ? window.location.origin
+      : "";
 
-  // If baseUrl is provided, use it. Otherwise use the public share host so
+  const effectiveBase = baseUrl || currentOrigin || ENV.PUBLIC_URL || `https://${DEFAULT_EVENT_SHARE_HOST}`;
+  const deployedOrigin = effectiveBase.startsWith("http")
+    ? effectiveBase.replace(/\/$/, "")
+    : `https://${effectiveBase}`;
+
+  // If baseUrl is provided, use it. Otherwise use the current origin or public share host so
   // copied/shared event links stay stable across local and production renders.
   if (!baseUrl) {
     baseUrl = deployedOrigin;

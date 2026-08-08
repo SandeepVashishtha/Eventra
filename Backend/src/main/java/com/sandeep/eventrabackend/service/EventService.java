@@ -7,6 +7,7 @@ import com.sandeep.eventrabackend.dto.response.EventAvailabilityResponse;
 import com.sandeep.eventrabackend.dto.response.AttendeeDirectoryResponse;
 import com.sandeep.eventrabackend.dto.response.EventResponse;
 import com.sandeep.eventrabackend.dto.response.MyRegisteredEventResponse;
+import com.sandeep.eventrabackend.dto.response.PagedResponse;
 import com.sandeep.eventrabackend.dto.response.RegistrationResponse;
 import com.sandeep.eventrabackend.dto.response.WaitlistResponse;
 import com.sandeep.eventrabackend.exception.EventFullException;
@@ -23,6 +24,7 @@ import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.EventRegistrationRepository;
 import com.sandeep.eventrabackend.repository.EventRepository;
 import com.sandeep.eventrabackend.repository.EventRoleAuditLogRepository;
+import com.sandeep.eventrabackend.repository.EventSpecifications;
 import com.sandeep.eventrabackend.repository.EventTeamMemberRepository;
 import com.sandeep.eventrabackend.repository.EventWaitlistRepository;
 import com.sandeep.eventrabackend.repository.FeedbackAnalyticsRepository;
@@ -31,16 +33,25 @@ import com.sandeep.eventrabackend.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -69,6 +80,14 @@ public class EventService {
 
         /** Maximum number of automatic retries on optimistic-lock conflict. */
         private static final int MAX_REGISTRATION_RETRIES = 3;
+
+        private static final Set<String> ALLOWED_SORT_PROPERTIES = Set.of("eventDate", "title", "id");
+
+        private static final Map<String, String> SORT_ALIASES = Map.of(
+                        "date", "eventDate",
+                        "eventdate", "eventDate",
+                        "title", "title",
+                        "id", "id");
 
         private final EventRepository eventRepository;
         private final EventRegistrationRepository eventRegistrationRepository;
@@ -167,14 +186,64 @@ public class EventService {
         }
 
         /**
-         * Retrieves all public events.
-         *
-         * @return list of all events with {@code isPublic} set to true
+         * Retrieves a page of public events with optional search / status / sort.
          */
         @Transactional(readOnly = true)
-        public List<EventResponse> getAllEvents() {
-                return eventRepository.findAll().stream()
-                                .filter(Event::isPublic)
+        public PagedResponse<EventResponse> getAllEvents(
+                        int page,
+                        int size,
+                        String search,
+                        List<String> statuses,
+                        String sort) {
+                Pageable pageable = PageRequest.of(page, size, resolveSort(sort));
+                Specification<Event> spec = EventSpecifications.publicListing(search, statuses);
+                Page<EventResponse> result = eventRepository.findAll(spec, pageable).map(this::toEventResponse);
+                return PagedResponse.from(result);
+        }
+
+        private Sort resolveSort(String sort) {
+                if (!StringUtils.hasText(sort)) {
+                        return Sort.by(Sort.Direction.DESC, "eventDate");
+                }
+
+                String[] parts = sort.split(",", 2);
+                String rawProperty = parts[0].trim();
+                String mapped = SORT_ALIASES.getOrDefault(rawProperty.toLowerCase(Locale.ROOT), rawProperty);
+                if (!ALLOWED_SORT_PROPERTIES.contains(mapped)) {
+                        return Sort.by(Sort.Direction.DESC, "eventDate");
+                }
+
+                Sort.Direction direction = Sort.Direction.DESC;
+                if (parts.length > 1 && "asc".equalsIgnoreCase(parts[1].trim())) {
+                        direction = Sort.Direction.ASC;
+                }
+                return Sort.by(direction, mapped);
+        }
+
+        /**
+         * Returns a bounded window of public events near {@code around} for conflict
+         * alternative suggestions (avoids loading the entire catalog).
+         */
+        @Transactional(readOnly = true)
+        public List<EventResponse> findAlternativeEvents(
+                        Long excludeEventId,
+                        LocalDateTime around,
+                        int windowDays,
+                        int limit) {
+
+                LocalDateTime center = around != null ? around : LocalDateTime.now();
+                int days = Math.min(Math.max(windowDays, 1), 90);
+                int size = Math.min(Math.max(limit, 1), 50);
+                LocalDateTime from = center.minusDays(days);
+                LocalDateTime to = center.plusDays(days);
+
+                return eventRepository
+                                .findPublicAlternativesInWindow(
+                                                excludeEventId,
+                                                from,
+                                                to,
+                                                org.springframework.data.domain.PageRequest.of(0, size))
+                                .stream()
                                 .map(this::toEventResponse)
                                 .toList();
         }
@@ -432,8 +501,7 @@ public class EventService {
 
                 eventRegistrationRepository.deleteByEventId(id);
                 eventWaitlistRepository.deleteByEvent_Id(id);
-                eventRepository.deleteAttendeeRowsByEventId(id);
-                eventTeamMemberRepository.deleteByEvent_Id(id);
+                        eventTeamMemberRepository.deleteByEvent_Id(id);
                 feedbackRepository.deleteByEvent_Id(id);
                 eventRoleAuditLogRepository.deleteByEventId(id);
                 eventRepository.delete(event);
@@ -461,13 +529,33 @@ public class EventService {
                                         "This event still has open spots. Please register directly.");
                 }
 
-                EventWaitlist entry = new EventWaitlist();
-                entry.setEvent(event);
-                entry.setUser(user);
-                entry.setPosition(eventWaitlistRepository.findMaxPositionByEventId(eventId) + 1);
-                entry.setStatus("WAITING");
+                for (int attempt = 1; attempt <= MAX_REGISTRATION_RETRIES; attempt++) {
+                        EventWaitlist entry = new EventWaitlist();
+                        entry.setEvent(event);
+                        entry.setUser(user);
+                        entry.setPosition(eventWaitlistRepository.findMaxPositionByEventId(eventId) + 1);
+                        entry.setStatus("WAITING");
 
-                return toWaitlistResponse(eventWaitlistRepository.save(entry));
+                        try {
+                                return toWaitlistResponse(eventWaitlistRepository.saveAndFlush(entry));
+                        } catch (DataIntegrityViolationException ex) {
+                                String details = String.valueOf(ex.getMostSpecificCause() != null
+                                                ? ex.getMostSpecificCause().getMessage()
+                                                : ex.getMessage()).toLowerCase();
+                                if (details.contains("uk_event_waitlist_event_position")
+                                                || details.contains("position")) {
+                                        continue;
+                                }
+                                if (details.contains("user") || details.contains("event_id")) {
+                                        throw new RegistrationConflictException(
+                                                        "You are already on the waitlist for this event.");
+                                }
+                                throw ex;
+                        }
+                }
+
+                throw new RegistrationConflictException(
+                                "Could not join waitlist due to high demand. Please try again.");
         }
 
         @Transactional
@@ -480,10 +568,9 @@ public class EventService {
                                 .orElseThrow(() -> new RegistrationConflictException(
                                                 "You are not registered for this event."));
 
-                User user = registration.getUser();
                 eventRegistrationRepository.delete(registration);
-                event.getAttendees().removeIf(attendee -> attendee.getId().equals(user.getId()));
-                event.setRegisteredCount(Math.max(0, event.getRegisteredCount() - 1));
+                event.setRegisteredCount((int) eventRegistrationRepository
+                                .countByEvent_IdAndStatus(eventId, "CONFIRMED"));
                 eventRepository.save(event);
 
                 promoteFirstWaitingUser(event);
@@ -509,6 +596,39 @@ public class EventService {
                                 .findByEvent_IdAndUser_EmailAndStatus(eventId, userEmail, "WAITING")
                                 .orElseThrow(() -> new RegistrationConflictException(
                                                 "You are not on the waitlist for this event."));
+
+                entry.setStatus("REMOVED");
+                eventWaitlistRepository.save(entry);
+        }
+
+        @Transactional(readOnly = true)
+        public WaitlistResponse getMyWaitlistEntry(Long eventId, String userEmail) {
+                eventRepository.findById(eventId)
+                                .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + eventId));
+
+                EventWaitlist entry = eventWaitlistRepository
+                                .findByEvent_IdAndUser_EmailAndStatus(eventId, userEmail, "WAITING")
+                                .orElseThrow(() -> new EventNotFoundException(
+                                                "You are not on the waitlist for this event."));
+
+                return toWaitlistResponse(entry);
+        }
+
+        @Transactional
+        public void removeWaitlistEntry(Long eventId, Long waitlistId, String userEmail) {
+                eventRepository.findById(eventId)
+                                .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + eventId));
+
+                eventRoleService.requireRole(eventId, userEmail, EventRole.ORGANIZER);
+
+                EventWaitlist entry = eventWaitlistRepository.findById(waitlistId)
+                                .filter(waitlist -> waitlist.getEvent().getId().equals(eventId))
+                                .orElseThrow(() -> new EventNotFoundException(
+                                                "Waitlist entry not found with id: " + waitlistId));
+
+                if (!"WAITING".equals(entry.getStatus())) {
+                        throw new RegistrationConflictException("Waitlist entry is not active.");
+                }
 
                 entry.setStatus("REMOVED");
                 eventWaitlistRepository.save(entry);
@@ -613,8 +733,7 @@ public class EventService {
                                 .orElseThrow(() -> new UsernameNotFoundException(
                                                 "User not found with email: " + userEmail));
 
-                if (event.getAttendees().contains(user)
-                                || eventRegistrationRepository.existsByEvent_IdAndUser_Email(eventId, userEmail)) {
+                if (eventRegistrationRepository.existsByEvent_IdAndUser_Email(eventId, userEmail)) {
 
                         throw new RegistrationConflictException(
                                         "You are already registered for this event.");
@@ -627,8 +746,6 @@ public class EventService {
                                         "Event is already full. Capacity: " + event.getCapacity());
                 }
 
-                event.getAttendees().add(user);
-
                 EventRegistration registration = new EventRegistration();
                 registration.setEvent(event);
                 registration.setUser(user);
@@ -640,8 +757,7 @@ public class EventService {
                 try {
                         registration = eventRegistrationRepository.saveAndFlush(registration);
                 } catch (DataIntegrityViolationException ex) {
-                        throw new RegistrationConflictException(
-                                        "Seat " + seatId + " is already taken.");
+                        throw mapRegistrationIntegrityViolation(ex, seatId);
                 }
 
                 event.setRegisteredCount((int) eventRegistrationRepository
@@ -710,8 +826,6 @@ public class EventService {
                         eventWaitlistRepository.save(entry);
                         return null;
                 }
-
-                event.getAttendees().add(user);
 
                 EventRegistration registration = new EventRegistration();
                 registration.setEvent(event);
@@ -811,6 +925,7 @@ public class EventService {
                                 .id(entry.getId())
                                 .eventId(entry.getEvent().getId())
                                 .eventTitle(entry.getEvent().getTitle())
+                                .userId(entry.getUser().getId())
                                 .userEmail(entry.getUser().getEmail())
                                 .position(entry.getPosition())
                                 .status(entry.getStatus())
@@ -831,5 +946,27 @@ public class EventService {
                                 .githubUrl(user.getGithubUrl())
                                 .registeredAt(registration.getRegisteredAt())
                                 .build();
+        }
+
+        private RegistrationConflictException mapRegistrationIntegrityViolation(
+                        DataIntegrityViolationException ex, String seatId) {
+                String details = String.valueOf(ex.getMostSpecificCause() != null
+                                ? ex.getMostSpecificCause().getMessage()
+                                : ex.getMessage()).toLowerCase();
+
+                if (details.contains("uk_event_registration_event_user")
+                                || (details.contains("event_id") && details.contains("user_id"))) {
+                        return new RegistrationConflictException(
+                                        "You are already registered for this event.");
+                }
+
+                if (details.contains("uk_event_registration_event_seat")
+                                || (seatId != null && !seatId.isBlank() && details.contains("seat"))) {
+                        return new RegistrationConflictException(
+                                        "Seat " + seatId + " is already taken.");
+                }
+
+                return new RegistrationConflictException(
+                                "Registration could not be completed due to a conflict. Please try again.");
         }
 }

@@ -5,6 +5,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
 
+import java.util.Map;
+
 @Data
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -37,4 +39,7 @@ public class UserProfileResponse {
 
     @Schema(description = "GitHub profile URL", example = "https://github.com/johndoe")
     private String githubUrl;
+
+    @Schema(description = "User preferences, e.g. { \"theme\": \"dark\" }")
+    private Map<String, Object> preferences;
 }
