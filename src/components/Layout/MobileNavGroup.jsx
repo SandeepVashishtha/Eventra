@@ -2,13 +2,16 @@ import { Link } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
 
 const MobileNavGroup = ({ item, isActive, isOpen, onToggle, closeAllMenus, location }) => (
-  <div key={item.name}>
+  // 🔥 FIX 1: Removed illegal key={item.name} from the root element. 
+  // Keys belong in the parent's .map() function, not inside the child definition.
+  <div>
     <button
       type="button"
       onClick={onToggle}
       aria-expanded={isOpen}
       aria-controls={`mobile-nav-group-${item.name.toLowerCase().replace(/\s+/g, "-")}`}
-      className={`flex items-center justify-between w-full px-4 py-2.5 rounded-lg transition-colors text-left text-base font-medium border ${
+      // 🔥 FIX 2: Added explicit focus-visible states for keyboard accessibility
+      className={`flex items-center justify-between w-full px-4 py-2.5 rounded-lg transition-colors text-left text-base font-medium border focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-zinc-900 ${
         isActive
           ? "bg-indigo-100/60 dark:bg-indigo-500/20 border-indigo-200/80 dark:border-indigo-500/50 text-indigo-600 dark:text-indigo-400 font-semibold shadow-sm"
           : "text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 border-transparent"
@@ -31,7 +34,8 @@ const MobileNavGroup = ({ item, isActive, isOpen, onToggle, closeAllMenus, locat
               key={sub.name}
               to={sub.href}
               onClick={closeAllMenus}
-              className={`flex items-center gap-3 px-4 py-2 rounded-md text-base font-medium border ${
+              // 🔥 FIX 2: Added explicit focus-visible states for keyboard accessibility
+              className={`flex items-center gap-3 px-4 py-2 rounded-md text-base font-medium border focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-zinc-900 ${
                 isSubActive
                   ? "bg-indigo-100/40 dark:bg-indigo-500/15 border-indigo-200/50 dark:border-indigo-500/30 text-indigo-600 dark:text-indigo-400 font-semibold shadow-sm"
                   : "text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white border-transparent"
