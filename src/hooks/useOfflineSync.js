@@ -396,22 +396,39 @@ const useOfflineSync = () => {
             // Handle Conflict loop — pass the abort signal so the waiter
             // is cancelled cleanly if the component unmounts mid-sync
             if (res.status === "conflict") {
-              const resolution = await resolveConflict(item, res.serverState, conflictController.signal);
-
-              if (resolution.resolution === "local") {
-                // Retry with force flag
-                res = await postWithBackoff(url, item.payload, authToken, 0, true, conflictController.signal, item.id);
-              } else if (resolution.resolution === "merge") {
-                // Post merged content
-                res = await postWithBackoff(url, resolution.mergedPayload, authToken, 0, true, conflictController.signal, item.id);
-              } else {
-                // Discard local (treated as handled success so we proceed)
+              if (item.actionType === "TICKET_CHECK_IN") {
+                // A 409 from the check-in endpoint means "already checked in":
+                // the attendee's entry is already recorded server-side, so the
+                // offline check-in is fulfilled. Treat it as handled success
+                // instead of opening a conflict modal that can never be resolved.
                 res = { status: "success" };
+              } else {
+                const resolution = await resolveConflict(item, res.serverState, conflictController.signal);
+
+                if (resolution.resolution === "local") {
+                  // Retry with force flag
+                  res = await postWithBackoff(url, item.payload, authToken, 0, true, conflictController.signal, item.id);
+                } else if (resolution.resolution === "merge") {
+                  // Post merged content
+                  res = await postWithBackoff(url, resolution.mergedPayload, authToken, 0, true, conflictController.signal, item.id);
+                } else {
+                  // Discard local (treated as handled success so we proceed)
+                  res = { status: "success" };
+                }
               }
             }
 
-            if (res.status === "success" || res.status === "dropped") {
+            if (res.status === "success") {
               successCount++;
+            } else if (res.status === "dropped") {
+              // Server rejected the item (4xx). It is removed from the queue
+              // here, so surface it explicitly — previously a dropped item was
+              // counted as a success and silently lost (e.g. offline ticket
+              // check-ins that could never be replayed).
+              droppedCount++;
+              logger.warn(
+                `[useOfflineSync] Item ${item.id} (${item.actionType || "unknown"}) was rejected by the server and dropped from the queue.`,
+              );
             } else {
               failedQueue.push({ ...item, retryCount: retries + 1 });
             }
@@ -424,7 +441,7 @@ const useOfflineSync = () => {
         if (failedQueue.length > 0) {
         await saveQueue(failedQueue);
           notify.warning(
-            `Synced ${successCount} registration(s). ${failedQueue.length} remaining in local draft queue.`,
+            `Synced ${successCount} action(s). ${failedQueue.length} remaining in local draft queue.`,
           );
         } else {
           await emptyQueue();
@@ -435,7 +452,8 @@ const useOfflineSync = () => {
 
         if (droppedCount > 0) {
           notify.error(
-            `${droppedCount} registration(s) paused after ${MAX_RETRIES} failed attempts. Retained in local drafts.`,
+            `${droppedCount} offline action(s) could not be synchronized and were NOT applied. Please review and retry them manually.`,
+            { autoClose: 8000 }
           );
         }
       } catch (error) {
