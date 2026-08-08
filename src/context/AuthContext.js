@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useCallback, useRef, useState } from "react";
-import { setOnUnauthorizedHandler, setRequiresReauthHandler, setAuthToken, apiUtils } from "../config/api.js";
+import { setOnUnauthorizedHandler, setRequiresReauthHandler, setAuthToken, setRefreshToken, apiUtils } from "../config/api.js";
 import { authService } from "../services/authService.js";
 import { syncSecureStorage } from "../utils/secureStorage.js";
 import { clearWaitlistCache } from "../utils/waitlistUtils.js";
@@ -64,6 +64,7 @@ export const useAuth = () => {
  */
 const extractSession = (data, fallbackEmail) => {
   const sessionToken = data?.token ?? data?.accessToken ?? null;
+  const refreshToken = data?.refreshToken ?? null;
   const rawUser = data?.user ?? data?.data ?? data ?? null;
   const rawRoles = rawUser?.roles ?? (rawUser?.role ? [rawUser.role] : []);
   const resolvedRoles = normalizeRoles(rawRoles);
@@ -90,7 +91,7 @@ const extractSession = (data, fallbackEmail) => {
     permissions,
     scopes,
   };
-  return { sessionToken, sessionUser };
+  return { sessionToken, refreshToken, sessionUser };
 };
 
 /**
@@ -136,6 +137,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setToken(null);
     setAuthToken(null);
+    setRefreshToken(null);
 
     // Invalidate token cookie (must match the name used in persistSession)
     deleteCookie("token", {
@@ -227,7 +229,7 @@ export const AuthProvider = ({ children }) => {
         if (!isMountedRef.current) return;
 
         if (res.ok && res.data) {
-          const { sessionToken, sessionUser } = extractSession(res.data, res.data?.user?.email || null);
+          const { sessionUser } = extractSession(res.data, res.data?.user?.email || null);
           if (!isMountedRef.current) return;
           setToken(activeToken);
           setUser(sessionUser);
@@ -310,10 +312,13 @@ export const AuthProvider = ({ children }) => {
    * @param {Object} sessionUser - The complete user profile object containing credentials.
    * @returns {boolean} Successful persistence state.
    */
-  const persistSession = useCallback(async (sessionToken, sessionUser) => {
+  const persistSession = useCallback(async (sessionToken, sessionUser, refreshToken = null) => {
     setToken(sessionToken);
     setUser(sessionUser);
     setAuthToken(sessionToken);
+    if (refreshToken) {
+      setRefreshToken(refreshToken);
+    }
 
     // Security Contract (src/utils/httpOnlyStorage.js): the bearer token is
     // held in JS memory only via setAuthToken above — it is never written to
@@ -333,8 +338,8 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const setAuthSession = useCallback(
-    (sessionToken, sessionUser) => {
-      return persistSession(sessionToken, sessionUser);
+    (sessionToken, sessionUser, refreshToken = null) => {
+      return persistSession(sessionToken, sessionUser, refreshToken);
     },
     [persistSession]
   );
@@ -364,11 +369,12 @@ export const AuthProvider = ({ children }) => {
 
         const data = res.data;
 
-        const { sessionUser } = extractSession(data, usernameOrEmail);
+        const { refreshToken, sessionUser } = extractSession(data, usernameOrEmail);
 
         // Session auth is the HttpOnly `token` cookie set by the backend.
         // Do not promote response-body JWTs into client-readable state.
-        const persisted = await persistSession("cookie-managed", sessionUser);
+        // Refresh tokens are still returned in the body for silent renew.
+        const persisted = await persistSession("cookie-managed", sessionUser, refreshToken);
         if (!persisted) return false;
 
         setAuthRequest({ loading: false, error: null });

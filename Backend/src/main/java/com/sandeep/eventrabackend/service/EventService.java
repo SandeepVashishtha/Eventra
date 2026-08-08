@@ -221,6 +221,34 @@ public class EventService {
         }
 
         /**
+         * Returns a bounded window of public events near {@code around} for conflict
+         * alternative suggestions (avoids loading the entire catalog).
+         */
+        @Transactional(readOnly = true)
+        public List<EventResponse> findAlternativeEvents(
+                        Long excludeEventId,
+                        LocalDateTime around,
+                        int windowDays,
+                        int limit) {
+
+                LocalDateTime center = around != null ? around : LocalDateTime.now();
+                int days = Math.min(Math.max(windowDays, 1), 90);
+                int size = Math.min(Math.max(limit, 1), 50);
+                LocalDateTime from = center.minusDays(days);
+                LocalDateTime to = center.plusDays(days);
+
+                return eventRepository
+                                .findPublicAlternativesInWindow(
+                                                excludeEventId,
+                                                from,
+                                                to,
+                                                org.springframework.data.domain.PageRequest.of(0, size))
+                                .stream()
+                                .map(this::toEventResponse)
+                                .toList();
+        }
+
+        /**
          * Retrieves events registered by the authenticated user.
          *
          * @param userEmail authenticated user's email
