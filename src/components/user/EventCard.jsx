@@ -1,3 +1,4 @@
+import useDateFormatter from "hooks/useDateFormatter";
 // src/components/user/EventCard.jsx
 import { memo } from "react";
 import { motion } from "framer-motion";
@@ -29,14 +30,7 @@ const getEventStatus = (event) => {
   return "Upcoming";
 };
 
-const formatShortDate = (date) => {
-  if (!date) return "—";
-  return new Date(date).toLocaleDateString("en-US", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-  });
-};
+// Fix: formatShortDate moved inside component via useDateFormatter hook
 
 const fadeUp = (prefersReducedMotion) => ({
   hidden: { opacity: 0, y: 20 },
