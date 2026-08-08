@@ -86,23 +86,42 @@ export async function parseGithubProfile(githubUrl) {
  * @param {File} file - The uploaded PDF file.
  * @returns {Promise<Object>} - The structured profile data.
  */
-export async function parseResumePDF(file) {
-  return new Promise((resolve, reject) => {
+/**
+ * Deterministically simulates parsing a Resume PDF.
+ * In a full production environment, this would hit an API endpoint that uses pdf-parse and an LLM.
+ * @param {File} file - The uploaded PDF file.
+ * @returns {{ promise: Promise<Object>, cleanup: () => void }} Object with the parse promise and a cleanup function.
+ */
+export function parseResumePDF(file) {
+  let settled = false;
+  let timeoutId = null;
+
+  const cleanup = () => {
+    if (!settled && timeoutId !== null) {
+      clearTimeout(timeoutId);
+      timeoutId = null;
+    }
+  };
+
+  const promise = new Promise((resolve, reject) => {
     if (!file || file.type !== "application/pdf") {
-      return reject(new Error("Please upload a valid PDF resume."));
+      reject(new Error("Please upload a valid PDF resume."));
+      return;
     }
 
     // Simulate network/parsing delay
-    setTimeout(() => {
+    timeoutId = setTimeout(() => {
+      settled = true;
+      timeoutId = null;
       // Create deterministic mock data based on the file name length
       // to give the illusion of processing different files differently.
       const nameLen = file.name.length;
-      
+
       let mockSkills = ["JavaScript", "React", "Node.js", "Git", "HTML5", "CSS3"];
       if (nameLen % 2 === 0) {
         mockSkills = ["Python", "Django", "PostgreSQL", "Docker", "AWS", "Machine Learning"];
       }
-      
+
       let mockBio = "Results-driven software engineer with experience building scalable web applications and RESTful APIs.";
       if (nameLen % 3 === 0) {
         mockBio = "Creative frontend developer passionate about UI/UX design, accessibility, and modern JavaScript frameworks.";
@@ -117,4 +136,6 @@ export async function parseResumePDF(file) {
       });
     }, 2500);
   });
+
+  return { promise, cleanup };
 }

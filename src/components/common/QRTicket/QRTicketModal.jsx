@@ -32,6 +32,7 @@ import { useRef, useEffect } from "react";
 import QRTicket from "./QRTicket";
 import { useTicketDownload } from "./useTicketDownload";
 import { toast } from "react-toastify";
+import useClipboard from "hooks/useClipboard";
 
 export default function QRTicketModal({ isOpen, onClose, ticket }) {
   const ticketRef = useRef(null);
@@ -97,16 +98,15 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
       }
     };
 
-    modalRef.current.addEventListener("keydown", handleFocusTrap);
+    const modalElement = modalRef.current;
+    modalElement.addEventListener("keydown", handleFocusTrap);
     // Focus the modal automatically
-    modalRef.current.focus();
+    modalElement.focus();
 
     return () => {
-      if (modalRef.current) {
-        modalRef.current.removeEventListener("keydown", handleFocusTrap);
-      }
+      modalElement.removeEventListener("keydown", handleFocusTrap);
     };
-  }, [isOpen, handleFocusTrap]);
+  }, [isOpen]);
 
   const handleShare = async () => {
     const shareUrl = ticket?.qrValue || window.location.href;

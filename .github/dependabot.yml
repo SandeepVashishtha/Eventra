@@ -12,31 +12,15 @@ updates:
     open-pull-requests-limit: 5
 
     groups:
-      react-ecosystem:
+      dependencies:
         patterns:
-          - "react*"
-          - "@types/react*"
-          - "react-dom"
-          - "react-router*"
-          - "react-error-boundary"
-
-      framer-motion:
-        patterns:
-          - "framer-motion"
-
-      tailwind:
-        patterns:
-          - "tailwindcss"
-          - "autoprefixer"
-          - "postcss"
-
-      testing:
-        patterns:
-          - "@testing-library/*"
-          - "jest*"
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
     ignore:
-      - dependency-name: "react-scripts"
+      - dependency-name: "*"
         update-types:
           - "version-update:semver-major"
 
@@ -54,7 +38,7 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "monthly"
+      interval: "weekly"
 
     labels:
       - "dependencies"

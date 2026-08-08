@@ -1,15 +1,15 @@
 import { apiUtils, API_ENDPOINTS } from "../config/api";
 
 export const eventService = {
-  getAllEvents: async (page, size) => {
+  getAllEvents: async (page, size, config = {}) => {
     if (page !== undefined && size !== undefined) {
-      return apiUtils.get(API_ENDPOINTS.EVENTS.PAGINATED(page, size));
+      return apiUtils.get(API_ENDPOINTS.EVENTS.PAGINATED(page, size), config);
     }
-    return apiUtils.get(API_ENDPOINTS.EVENTS.LIST);
+    return apiUtils.get(API_ENDPOINTS.EVENTS.LIST, config);
   },
   
-  getEventDetails: async (eventId) => {
-    return apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId));
+  getEventDetails: async (eventId, config = {}) => {
+    return apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId), config);
   },
   
   createEvent: async (eventData) => {
@@ -25,12 +25,12 @@ export const eventService = {
   getAvailability: async (eventId) => {
     return apiUtils.get(API_ENDPOINTS.EVENTS.AVAILABILITY(eventId));
   },
+
+  getAttendees: async (eventId, config = {}) => {
+    return apiUtils.get(API_ENDPOINTS.EVENTS.ATTENDEES(eventId), config);
+  },
   
   getRegistrants: async (eventId) => {
     return apiUtils.get(API_ENDPOINTS.EVENTS.REGISTRANTS(eventId));
-  },
-  
-  waitlistForEvent: async (eventId, data = {}) => {
-    return apiUtils.post(`/api/events/${eventId}/waitlist`, data);
   }
 };

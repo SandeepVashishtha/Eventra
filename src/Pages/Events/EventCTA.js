@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { CalendarDays, Users } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const EventCTA = () => {
   const [showModal, setShowModal] = useState(false);
@@ -43,12 +44,12 @@ const EventCTA = () => {
 
         {/* Buttons */}
         <div className="flex flex-col md:flex-row gap-4">
-          <a
-            href="/events"
+          <Link
+            to="/events"
             className="inline-flex items-center justify-center gap-2 bg-blue-600 text-white font-semibold px-8 py-4 rounded-lg shadow-lg hover:scale-105 hover:bg-blue-700 transition-transform duration-300"
           >
             Explore Events <CalendarDays size={20} />
-          </a>
+          </Link>
 
           {/* UPDATED: The secondary button needs dark mode styles for when the main page is dark. */}
           <button

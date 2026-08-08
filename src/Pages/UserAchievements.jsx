@@ -23,6 +23,11 @@ import {
   X,
 } from 'lucide-react';
 
+// Escape XML special characters before embedding user-controlled values
+// into the generated SVG, preventing XML structure injection.
+const escapeXml = (unsafe) =>
+  String(unsafe ?? '').replace(/[<>&'"]/g, (c) => `&#${c.charCodeAt(0)};`);
+
 export default function UserAchievements() {
   const { t } = useTranslation();
   useDocumentTitle(t("userAchievements.pageTitle"));
@@ -165,10 +170,10 @@ export default function UserAchievements() {
     const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="250" viewBox="0 0 400 250">
       <rect width="100%" height="100%" fill="#0f172a" rx="20"/>
       <circle cx="200" cy="80" r="40" fill="#1e1b4b" stroke="#6366f1" stroke-width="2"/>
-      <text x="200" y="88" font-family="Arial" font-size="36" text-anchor="middle" fill="#fff">${badge.icon}</text>
-      <text x="200" y="150" font-family="Arial" font-size="20" font-weight="bold" text-anchor="middle" fill="#e2e8f0">${badge.name}</text>
+      <text x="200" y="88" font-family="Arial" font-size="36" text-anchor="middle" fill="#fff">${escapeXml(badge.icon)}</text>
+      <text x="200" y="150" font-family="Arial" font-size="20" font-weight="bold" text-anchor="middle" fill="#e2e8f0">${escapeXml(badge.name)}</text>
       <text x="200" y="175" font-family="Arial" font-size="12" text-anchor="middle" fill="#94a3b8">EVENTRA ACHIEVER TOKEN</text>
-      <text x="200" y="205" font-family="Arial" font-size="10" text-anchor="middle" fill="#6366f1">Level ${currentLevel} Developer</text>
+      <text x="200" y="205" font-family="Arial" font-size="10" text-anchor="middle" fill="#6366f1">Level ${escapeXml(String(currentLevel))} Developer</text>
     </svg>`;
     const blob = new Blob([svgContent], { type: "image/svg+xml" });
     const url = URL.createObjectURL(blob);

@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Archive, Calendar, Users, Star, ChevronDown, Search, ExternalLink, Trophy, Clock } from 'lucide-react';
+import { Archive, Calendar, Users, Star, Search, ExternalLink, Trophy, Clock } from 'lucide-react';
 
 // Mock archived events data - in production this comes from API
 const ARCHIVED_EVENTS = [

@@ -11,16 +11,16 @@ import {
   X,
   RefreshCw,
   AlertTriangle,
+  UserPlus,
+  Briefcase
 } from "lucide-react";
 import { toast } from "react-toastify";
 import InteractiveWhiteboard from "./InteractiveWhiteboard";
 import PomodoroTimer from "./PomodoroTimer";
-import { logger } from "../../utils/logger";
+import { logger } from "utils/logger";
 
-// Initial constants removed to support real-time sync database values
-
-const TEAM_MEMBERS = [
-  { name: "Sricharan (You)", role: "Frontend Developer", status: "online" },
+const MY_SENDER_ID = "Sricharan (You)";
+const INITIAL_TEAM_MEMBERS = [
   { name: "Alex Rivera", role: "Backend Developer", status: "online" },
   { name: "Sophia Chen", role: "UI/UX Designer", status: "online" },
   { name: "Marcus Dupont", role: "Product Manager", status: "away" },
@@ -28,6 +28,15 @@ const TEAM_MEMBERS = [
 
 const TeamWorkspace = () => {
   const [activeTab, setActiveTab] = useState("dashboard"); // 'dashboard' | 'whiteboard'
+
+  // Team recruitment slots state
+  const [recruitmentSlots, setRecruitmentSlots] = useState([
+    { id: 1, role: "Frontend Developer", status: "Open", applicant: null },
+    { id: 2, role: "DevOps Engineer", status: "Occupied", applicant: "Jane Doe" }
+  ]);
+  const [newSlotRole, setNewSlotRole] = useState("");
+
+  const [teamMembers, setTeamMembers] = useState(INITIAL_TEAM_MEMBERS);
 
   // Checklist & Pins state
   const [tasks, setTasks] = useState([]);
@@ -50,6 +59,7 @@ const TeamWorkspace = () => {
   useEffect(() => {
     let sseSource = null;
     let fallbackInterval = null;
+    let isMounted = true;
     let idleTimeout = null;
 
     setConnectionStatus("connecting");
@@ -62,6 +72,7 @@ const TeamWorkspace = () => {
       ]);
 
       const fetchState = async () => {
+        if (!isMounted) return;
         try {
           const response = await fetch("/api/hackathons/team/sync", {
             method: "POST",
@@ -151,7 +162,6 @@ const TeamWorkspace = () => {
 
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        // Close connections after 60 seconds of inactivity
         idleTimeout = setTimeout(() => {
           logger.info(`${logPrefix} Tab idle. Closing real-time connections.`);
           disconnectStream();
@@ -161,7 +171,6 @@ const TeamWorkspace = () => {
           clearTimeout(idleTimeout);
           idleTimeout = null;
         }
-        // Reconnect if it was closed
         if (!sseSource && !fallbackInterval) {
           logger.info(`${logPrefix} Tab active. Reconnecting real-time stream.`);
           connectStream();
@@ -305,7 +314,7 @@ const TeamWorkspace = () => {
       const response = await fetch("/api/hackathons/team/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: messageText, sender: "Sricharan (You)" }),
+        body: JSON.stringify({ text: messageText, sender: MY_SENDER_ID }),
       });
       if (response.ok) {
         const data = await response.json();
@@ -316,6 +325,49 @@ const TeamWorkspace = () => {
     } catch (err) {
       toast.error(`Network error: ${err.message}`);
     }
+  };
+
+  // Team recruitment slot actions
+  const handleAddSlot = (e) => {
+    e.preventDefault();
+    if (!newSlotRole.trim()) return;
+    setRecruitmentSlots((prev) => [
+      ...prev,
+      { id: Date.now(), role: newSlotRole.trim(), status: "Open", applicant: null }
+    ]);
+    setNewSlotRole("");
+    toast.success("Recruitment slot created.");
+  };
+
+  const handleSimulateApply = (slotId) => {
+    const names = ["Emily Watson", "Daniel Craig", "Robert Downey", "Natasha Romanoff"];
+    const randomName = names[Math.floor(Math.random() * names.length)];
+
+    setRecruitmentSlots((prev) =>
+      prev.map((s) => (s.id === slotId ? { ...s, status: "Pending", applicant: randomName } : s))
+    );
+    toast.info(`${randomName} applied for the role!`);
+  };
+
+  const handleAcceptApplicant = (slotId) => {
+    const slot = recruitmentSlots.find((s) => s.id === slotId);
+    if (!slot || !slot.applicant) return;
+
+    setTeamMembers((prev) => [
+      ...prev,
+      { name: slot.applicant, role: slot.role, status: "online" }
+    ]);
+
+    setRecruitmentSlots((prev) =>
+      prev.map((s) => (s.id === slotId ? { ...s, status: "Occupied" } : s))
+    );
+
+    toast.success(`${slot.applicant} added to the squad!`);
+  };
+
+  const handleRemoveSlot = (slotId) => {
+    setRecruitmentSlots((prev) => prev.filter((s) => s.id !== slotId));
+    toast.info("Recruitment slot removed.");
   };
 
   return (
@@ -336,7 +388,7 @@ const TeamWorkspace = () => {
               </span>
             </div>
             <p className="text-xs text-gray-400 mt-0.5">
-              Manage tasks, share announcements, brainstorm on the canvas, and chat in real-time.
+              Manage tasks, recruit squad members, brainstorm on the canvas, and chat in real-time.
             </p>
           </div>
         </div>
@@ -436,7 +488,7 @@ const TeamWorkspace = () => {
                   {tasks.map((task) => (
                     <div
                       key={task.id}
-                      className={`flex items-center justify-between p-3.5 bg-slate-950 border rounded-2xl transition-all ${
+                      className={`group flex items-center justify-between p-2 bg-slate-950/60 rounded-xl border border-white/[0.02] transition-all duration-300 ease-out hover:-translate-y-1.5 hover:scale-[1.02] hover:border-indigo-500/40 hover:bg-slate-900 hover:shadow-[0_12px_30px_rgba(99,102,241,0.25)] cursor-pointer ${
                         task.done
                           ? "border-emerald-500/10 bg-emerald-500/[0.01] text-emerald-400"
                           : "border-slate-800 text-gray-300 hover:border-slate-700"
@@ -475,25 +527,71 @@ const TeamWorkspace = () => {
                 </div>
               </div>
 
-              {/* Real-time Fallback Logs Console */}
-              {connectionStatus === "polling_fallback" && pollingLogs.length > 0 && (
-                <div className="bg-black/90 border border-slate-800 rounded-2xl p-4 mt-6">
-                  <div className="text-[10px] font-bold tracking-widest text-indigo-400 uppercase mb-2 flex items-center justify-between">
-                    <span>Synchronizer Fallback Console Logs</span>
-                    <span className="text-gray-600 font-mono">
-                      Status: Connected via short-polling
-                    </span>
-                  </div>
-                  <div className="font-mono text-[9px] text-gray-500 space-y-1 max-h-24 overflow-y-auto pr-1">
-                    {pollingLogs.slice(-6).map((log, i) => (
-                      <div key={i} className="flex gap-2">
-                        <span className="text-indigo-600/70 shrink-0">⚡</span>
-                        <span className="break-all">{log}</span>
+              {/* Team Formation & Recruitment Slots */}
+              <div className="bg-slate-900/40 border border-slate-800/60 rounded-3xl p-5 md:p-6 shadow-sm mt-6">
+                <h3 className="text-sm font-extrabold text-gray-300 uppercase tracking-widest flex items-center gap-2 mb-4">
+                  <Briefcase size={16} className="text-indigo-400" />
+                  <span>Team Formation & Recruitment Slots</span>
+                </h3>
+
+                {/* Add Slot Form */}
+                <form onSubmit={handleAddSlot} className="flex gap-2 mb-4">
+                  <input
+                    type="text"
+                    className="flex-1 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-4 py-2 text-xs text-white outline-none transition-all placeholder-slate-500"
+                    placeholder="Enter role needed (e.g., Designer)..."
+                    value={newSlotRole}
+                    onChange={(e) => setNewSlotRole(e.target.value)}
+                    maxLength={50}
+                  />
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all"
+                  >
+                    Open Slot
+                  </button>
+                </form>
+
+                {/* Recruitment Slots list */}
+                <div className="space-y-3 max-h-[180px] overflow-y-auto pr-1">
+                  {recruitmentSlots.map((slot) => (
+                    <div key={slot.id} className="flex items-center justify-between p-3 bg-slate-950/60 rounded-xl border border-slate-800">
+                      <div>
+                        <span className="text-xs font-semibold text-gray-200 block">{slot.role}</span>
+                        <span className={`text-[9px] uppercase tracking-wider font-bold ${
+                          slot.status === "Open" ? "text-indigo-400" : slot.status === "Pending" ? "text-amber-400" : "text-slate-500"
+                        }`}>
+                          {slot.status === "Pending" ? `Pending App: ${slot.applicant}` : slot.status}
+                        </span>
                       </div>
-                    ))}
-                  </div>
+                      <div className="flex gap-2">
+                        {slot.status === "Open" && (
+                          <button
+                            onClick={() => handleSimulateApply(slot.id)}
+                            className="px-2.5 py-1 bg-indigo-500/10 hover:bg-indigo-500/25 border border-indigo-500/20 text-indigo-400 text-[10px] rounded-lg transition-colors font-semibold"
+                          >
+                            Mock Applicant Apply
+                          </button>
+                        )}
+                        {slot.status === "Pending" && (
+                          <button
+                            onClick={() => handleAcceptApplicant(slot.id)}
+                            className="px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500/25 border border-emerald-500/20 text-emerald-400 text-[10px] rounded-lg transition-colors font-semibold"
+                          >
+                            Accept Candidate
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleRemoveSlot(slot.id)}
+                          className="p-1 text-gray-500 hover:text-red-400 rounded-lg hover:bg-white/5 transition-all"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Right Column: Pinned Announcements & Team info */}
@@ -531,7 +629,7 @@ const TeamWorkspace = () => {
                   </div>
                   <button
                     type="submit"
-                    className="w-full py-2 bg-indigo-650/15 hover:bg-indigo-650/30 border border-indigo-500/20 text-indigo-400 font-bold rounded-xl text-xs uppercase tracking-wider transition-all cursor-pointer"
+                    className="w-full py-2 bg-indigo-600/15 hover:bg-indigo-600/30 border border-indigo-500/20 text-indigo-400 font-bold rounded-xl text-xs uppercase tracking-wider transition-all cursor-pointer"
                   >
                     Pin Announcement
                   </button>
@@ -573,17 +671,19 @@ const TeamWorkspace = () => {
                   Hackathon Squad
                 </h4>
                 <div className="space-y-2">
-                  {TEAM_MEMBERS.map((member, i) => (
+                  {teamMembers.map((member, i) => (
                     <div
                       key={i}
-                      className="flex items-center justify-between p-2 bg-slate-950/60 rounded-xl border border-white/[0.02]"
+                      className="group flex items-center justify-between p-2 bg-slate-950/60 rounded-xl border border-white/[0.02]"
                     >
                       <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-full bg-slate-900 border border-indigo-500/20 flex items-center justify-center text-xs font-bold text-indigo-400">
+                        <div className="w-7 h-7 rounded-full bg-slate-900 border border-indigo-500/20 flex items-center justify-center text-xs font-bold text-indigo-400 transition-all duration-300 group-hover:scale-110 group-hover:border-indigo-500 group-hover:bg-indigo-500/10">
                           <User size={12} />
                         </div>
                         <div>
-                          <div className="text-xs font-bold text-gray-200">{member.name}</div>
+                          <div className="text-xs font-bold text-gray-200 transition-colors duration-300 group-hover:text-indigo-400">
+                            {member.name}
+                          </div>
                           <div className="text-[9px] text-gray-500">{member.role}</div>
                         </div>
                       </div>
@@ -609,7 +709,7 @@ const TeamWorkspace = () => {
 
       {/* Slide-out Team Chat Drawer (Framer-Motion style CSS) */}
       {isChatOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/70 backdrop-blur-sm transition-all duration-350 animate-fade-in">
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/70 backdrop-blur-sm transition-all duration-300 animate-fade-in">
           {/* Backdrop closer */}
           <div className="absolute inset-0 cursor-default" onClick={() => setIsChatOpen(false)} />
 
@@ -639,11 +739,11 @@ const TeamWorkspace = () => {
 
             {/* Chat History Panel */}
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
-              {chatHistory.map((msg, i) => {
-                const isMe = msg.sender.includes("You");
+              {chatHistory.map((msg) => {
+                const isMe = msg.sender === MY_SENDER_ID;
                 return (
                   <div
-                    key={i}
+                    key={msg.id}
                     className={`flex gap-3 max-w-[85%] ${isMe ? "ml-auto flex-row-reverse" : ""}`}
                   >
                     {/* Member Avatar */}
@@ -664,8 +764,8 @@ const TeamWorkspace = () => {
                       <div
                         className={`px-3 py-2 rounded-2xl text-xs leading-relaxed ${
                           isMe
-                            ? "bg-indigo-650 text-white rounded-tr-none"
-                            : "bg-slate-900 text-gray-250 border border-slate-800/80 rounded-tl-none"
+                            ? "bg-indigo-600 text-white rounded-tr-none"
+                            : "bg-slate-900 text-gray-200 border border-slate-800/80 rounded-tl-none"
                         }`}
                       >
                         {msg.text}

@@ -2,12 +2,12 @@ import { CalendarIcon, MapPinIcon, ClockIcon, UserGroupIcon, TrophyIcon, Buildin
 import { motion } from "framer-motion";
 import { useState, useEffect, useCallback, useMemo, memo } from "react";
 import { useNavigate } from "react-router-dom";
-import useReducedMotion from "../../hooks/useReducedMotion.js";
-import { getServerTime } from "../../utils/timeSync";
+import useReducedMotion from "hooks/useReducedMotion.js";
+import { getServerTime } from "utils/timeSync";
 
-import ShareMenu from "../../components/common/ShareMenu";
-import { addHackathonToGoogleCalendar } from "../../utils/calendarUtils";
-import { generateEventSharingData } from "../../utils/shareUtils";
+import ShareMenu from "components/common/ShareMenu";
+import { addHackathonToGoogleCalendar } from "utils/calendarUtils";
+import { generateEventSharingData } from "utils/shareUtils";
 
 const useCountdown = (targetDate) => {
   useReducedMotion();

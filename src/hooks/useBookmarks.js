@@ -5,6 +5,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { safeJsonParse } from "../utils/safeJsonParse";
 import { getOrMigrateKey } from "../utils/storageKeyManager";
+import { getServerNow } from "../utils/timeSync.js";
 
 // Simple synchronous hash to avoid exposing raw userId (email) in localStorage keys.
 const hashUserId = (userId) => {
@@ -32,10 +33,14 @@ const cache = new Map(); // Map<storageKey, BookmarkEntry[]>
 
 const readStorage = (key) => {
   try {
-    const stored = localStorage.getItem(key);
-    if (!stored) return [];
-    const parsed = safeJsonParse(stored, []);
-    return Array.isArray(parsed) ? parsed : [];
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(key);
+      if (!stored) return [];
+      const parsed = safeJsonParse(stored, []);
+      return Array.isArray(parsed) ? parsed : [];
+    } else {
+      return [];
+    }
   } catch {
     return [];
   }
@@ -43,15 +48,60 @@ const readStorage = (key) => {
 
 const writeStorage = (key, value) => {
   try {
-    localStorage.setItem(key, JSON.stringify(value));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(key, JSON.stringify(value));
+    }
   } catch {
     // localStorage quota exceeded — in-memory state remains correct
   }
 };
 
+const LEGACY_BOOKMARKS_KEY = "eventra_bookmarked_events";
+
+const normalizeLegacyEntry = (entry) => ({
+  id: entry?.id,
+  title: entry?.title ?? "",
+  date: entry?.date ?? "",
+  location: entry?.location ?? "",
+  type: entry?.type ?? entry?.category ?? "",
+  image: entry?.image ?? entry?.imageUrl ?? "",
+  status: entry?.status ?? "",
+  savedAt: entry?.savedAt ?? entry?.bookmarkedAt ?? getServerNow(),
+});
+
+const migrateLegacyBookmarks = (bookmarks) => {
+  if (typeof window === "undefined") return bookmarks;
+
+  try {
+    const legacyRaw = localStorage.getItem(LEGACY_BOOKMARKS_KEY);
+    if (!legacyRaw) return bookmarks;
+
+    const legacyParsed = safeJsonParse(legacyRaw, []);
+    const legacy = Array.isArray(legacyParsed) ? legacyParsed : [];
+    localStorage.removeItem(LEGACY_BOOKMARKS_KEY);
+
+    if (legacy.length === 0) return bookmarks;
+
+    const merged = new Map(bookmarks.map((bookmark) => [bookmark.id, bookmark]));
+    legacy.forEach((entry) => {
+      if (!entry?.id || merged.has(entry.id)) return;
+      merged.set(entry.id, normalizeLegacyEntry(entry));
+    });
+
+    return Array.from(merged.values());
+  } catch {
+    return bookmarks;
+  }
+};
+
 const getOrPopulateCache = (key) => {
   if (!cache.has(key)) {
-    cache.set(key, readStorage(key));
+    const stored = readStorage(key);
+    const migrated = migrateLegacyBookmarks(stored);
+    if (migrated !== stored) {
+      writeStorage(key, migrated);
+    }
+    cache.set(key, migrated);
   }
   return cache.get(key);
 };
@@ -64,7 +114,7 @@ const toBookmarkEntry = (event) => ({
   type: event?.type ?? event?.category ?? "",
   image: event?.image ?? event?.imageUrl ?? "",
   status: event?.status ?? "",
-  savedAt: Date.now(),
+  savedAt: getServerNow(),
 });
 
 /**
@@ -121,7 +171,13 @@ const useBookmarks = (userId = "guest") => {
           const p = JSON.parse(e.newValue); 
           if (!Array.isArray(p)) return [];
           // Deep merge: combine existing local state with incoming storage state, keeping newest by savedAt
-          const merged = new Map([...bookmarksRef.current.map(b => [b.id, b]), ...p.map(b => [b.id, b])]);
+          const merged = new Map();
+          bookmarksRef.current.forEach(b => merged.set(b.id, b));
+          p.forEach(b => {
+            if (!merged.has(b.id) || (b.savedAt || 0) > (merged.get(b.id).savedAt || 0)) {
+              merged.set(b.id, b);
+            }
+          });
           return Array.from(merged.values()).sort((a, b) => (a.savedAt || 0) - (b.savedAt || 0));
         } catch { return []; }
       })() : [];
@@ -174,6 +230,7 @@ const useBookmarks = (userId = "guest") => {
    * Removes all bookmarks for the current user from both state and localStorage.
    */
   const clearBookmarks = useCallback(() => {
+    if (typeof window === "undefined") return;
     setBookmarks([]);
     cache.set(storageKeyRef.current, []);
     try {

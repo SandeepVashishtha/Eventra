@@ -10,7 +10,7 @@
 // ---------------------------------------------------------------------------
 
 import { useState, useCallback } from "react";
-import { apiUtils, API_ENDPOINTS } from "../config/api";
+import { apiUtils, API_ENDPOINTS } from "../config/api.js";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "react-toastify";
 import { logger } from "../utils/logger";
@@ -36,6 +36,7 @@ export const REFUND_POLICY_LABELS = {
  *
  * @param {string|number} eventId  - The event to cancel
  * @param {Function}      onSuccess - Called with updated event object after success
+ * @param {number}        ownerId   - ID of the user who owns the event (Issue #11021)
  *
  * @returns {{
  *   cancel: Function,
@@ -43,8 +44,8 @@ export const REFUND_POLICY_LABELS = {
  *   cancellationError: string|null,
  * }}
  */
-const useEventCancellation = (eventId, onSuccess) => {
-  const { isAdmin, isOrganizer } = useAuth();
+const useEventCancellation = (eventId, onSuccess, ownerId) => {
+  const { isAdmin, isOrganizer, user } = useAuth();
   const [isCancelling, setIsCancelling] = useState(false);
   const [cancellationError, setCancellationError] = useState(null);
 
@@ -64,6 +65,14 @@ const useEventCancellation = (eventId, onSuccess) => {
         return false;
       }
 
+      // Guard (Issue #11021): role alone is not enough — only the event's own
+      // organizer may cancel it. Prevents cross-tenant cancellation by swapping
+      // the event id in the URL.
+      if (ownerId != null && user?.id != null && String(ownerId) !== String(user.id)) {
+        setCancellationError("Only the event's own organizer can cancel this event.");
+        return false;
+      }
+
       if (!reason?.trim()) {
         setCancellationError("A cancellation reason is required.");
         return false;
@@ -80,6 +89,16 @@ const useEventCancellation = (eventId, onSuccess) => {
           setCancellationError("Partial refund percentage must be between 1 and 99.");
           return false;
         }
+      }
+
+      // Fail fast with a readable message if the cancel endpoint isn't wired
+      // up on this build (older configs, misconfigured environments, or a
+      // future refactor that drops the key). Without this guard the raw
+      // `TypeError: API_ENDPOINTS.EVENTS.CANCEL is not a function` bubbles
+      // through the catch below and reaches the toast.
+      if (typeof API_ENDPOINTS.EVENTS.CANCEL !== "function") {
+        setCancellationError("Cancel endpoint is not configured.");
+        return false;
       }
 
       setIsCancelling(true);
@@ -132,7 +151,7 @@ const useEventCancellation = (eventId, onSuccess) => {
         setIsCancelling(false);
       }
     },
-    [eventId, isAdmin, isOrganizer, onSuccess]
+    [eventId, isAdmin, isOrganizer, user, ownerId, onSuccess]
   );
 
   return { cancel, isCancelling, cancellationError };

@@ -144,24 +144,28 @@ export const validate = {
   /**
    * Survey sanitizers & XSS guards.
    * Capped to 150 chars for prompts, 80 for options.
+   * Input is truncated before regex evaluation to prevent ReDoS.
    */
   sanitizeSurveyPrompt: (val) => {
     if (typeof val !== "string") return "";
-    let cleaned = val.replace(/<\/?[^>]+(>|$)/g, "");
+    let cleaned = val.length > 300 ? val.substring(0, 300) : val;
+    cleaned = cleaned.replace(/<\/?[^>]+(>|$)/g, "");
     if (cleaned.length > 150) cleaned = cleaned.substring(0, 150);
     return cleaned;
   },
 
   sanitizeSurveyOption: (val) => {
     if (typeof val !== "string") return "";
-    let cleaned = val.replace(/<\/?[^>]+(>|$)/g, "");
+    let cleaned = val.length > 200 ? val.substring(0, 200) : val;
+    cleaned = cleaned.replace(/<\/?[^>]+(>|$)/g, "");
     if (cleaned.length > 80) cleaned = cleaned.substring(0, 80);
     return cleaned;
   },
 
   detectHTML: (val) => {
     if (typeof val !== "string") return false;
-    return /<\/?[^>]+(>|$)/g.test(val);
+    const bounded = val.length > 300 ? val.substring(0, 300) : val;
+    return /<\/?[^>]+(>|$)/g.test(bounded);
   },
 };
 

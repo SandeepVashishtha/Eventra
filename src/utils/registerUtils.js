@@ -3,10 +3,18 @@ import { safeJsonParse } from "./safeJsonParse.js";
 const STORAGE_KEY = "eventRegistrations";
 
 const normalizeEmail = (email) => (email || "").trim().toLowerCase();
+const getStorage = () => {
+  if (typeof window !== "undefined" && window.localStorage) {
+    return window.localStorage;
+  }
+  return globalThis.localStorage;
+};
 
 const readRegistrations = () => {
+  const storage = getStorage();
+  if (!storage) return {};
   try {
-    const data = localStorage.getItem(STORAGE_KEY);
+    const data = storage.getItem(STORAGE_KEY);
     const parsed = safeJsonParse(data, {});
     // Migrate legacy array-based storage to Set-based storage
     const migrated = {};
@@ -22,8 +30,10 @@ const readRegistrations = () => {
 };
 
 const writeRegistrations = (registrations) => {
+  const storage = getStorage();
+  if (!storage) return;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(registrations));
+    storage.setItem(STORAGE_KEY, JSON.stringify(registrations));
   } catch {
     // localStorage may be unavailable or full; keep the UI functional.
   }

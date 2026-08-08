@@ -10,12 +10,12 @@ const payload = {
 
 const secret = "test-secret";
 
-const signed = signRequest(
+const signed = await signRequest(
   payload,
   secret
 );
 
-const result = validateSignature(
+const result = await validateSignature(
   payload,
   signed.timestamp,
   signed.nonce,

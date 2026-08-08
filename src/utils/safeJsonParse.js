@@ -10,3 +10,24 @@ export function safeJsonParse(str, fallback = null, validator = null) {
     return fallback;
   }
 }
+
+/**
+ * Safely parse JSON from localStorage with error logging and cleanup
+ * @param {string} key - localStorage key to parse
+ * @param {*} fallback - Value to return on parse failure
+ * @returns {*} Parsed value or fallback
+ */
+export function safeJsonParseFromStorage(key, fallback = null) {
+  try {
+    const value = localStorage.getItem(key);
+    if (value === null) return fallback;
+    const parsed = JSON.parse(value);
+    return parsed;
+  } catch (error) {
+    console.error(`[safeJsonParseFromStorage] Failed to parse localStorage key "${key}":`, error);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("eventra-storage-parse-error", { detail: { key } }));
+    }
+    return fallback;
+  }
+}

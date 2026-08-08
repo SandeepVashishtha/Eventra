@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
-import { isTokenValid } from "../../utils/auth";
+import { useAuth } from "context/AuthContext";
+import { isTokenValid } from "utils/auth";
 import Loading from "../common/Loading";
 
 const Gate = ({
@@ -13,7 +13,7 @@ const Gate = ({
   permissionsMatch = "all",
   validateContext = null,
   redirectTo = "/login",
-  fallback = null,
+  fallback = undefined,
 }) => {
   const { isAuthenticated, hasRole, hasPermission, loading, user, token, logout } = useAuth();
   const location = useLocation();

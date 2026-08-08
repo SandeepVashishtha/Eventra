@@ -1,10 +1,14 @@
-import { parseTimeString } from "./timezoneUtils";
+import { parseTimeString, resolveEventInstant } from "./timezoneUtils.js";
 
 export const parseTimeToMinutes = (timeStr) => {
   if (!timeStr) return 0;
 
   const parsed = parseTimeString(timeStr);
   if (!parsed) return 0;
+
+  if (isNaN(lat) || isNaN(lng)) {
+    return null;
+  }
 
   return parsed.hours * 60 + parsed.minutes;
 };
@@ -57,16 +61,27 @@ export const buildEventPayload = (formData) => {
     );
   }
 
-  const eventStartDate = new Date(
-    `${formData.isMultiDay ? formData.startDate : formData.date}T${formData.startTime}`
+  const eventStartDate = resolveEventInstant(
+    formData.isMultiDay ? formData.startDate : formData.date,
+    formData.startTime,
+    formData.timezone,
   );
-  const eventEndDate = new Date(
-    `${formData.isMultiDay ? formData.endDate : formData.date}T${formData.endTime}`
+  const eventEndDate = resolveEventInstant(
+    formData.isMultiDay ? formData.endDate : formData.date,
+    formData.endTime,
+    formData.timezone,
   );
 
   if (isNaN(eventStartDate.getTime()) || isNaN(eventEndDate.getTime())) {
     throw new Error("Invalid date or time format");
   }
+
+  const registrationStart = formData.registrationStart
+    ? resolveEventInstant(formData.registrationStart, "12:00 AM", formData.timezone)
+    : null;
+  const registrationEnd = formData.registrationEnd
+    ? resolveEventInstant(formData.registrationEnd, "11:59 PM", formData.timezone)
+    : null;
 
   return {
     title: formData.title.trim(),
@@ -86,12 +101,8 @@ export const buildEventPayload = (formData) => {
     capacity: formData.capacity ? Number(formData.capacity) : null,
     isPublic: formData.isPublic,
     requiresApproval: formData.requiresApproval,
-    registrationStart: formData.registrationStart
-      ? new Date(formData.registrationStart).toISOString()
-      : null,
-    registrationEnd: formData.registrationEnd
-      ? new Date(formData.registrationEnd).toISOString()
-      : null,
+    registrationStart: registrationStart ? registrationStart.toISOString() : null,
+    registrationEnd: registrationEnd ? registrationEnd.toISOString() : null,
     category: formData.category,
     tags: formData.tags.filter((tag) => tag.trim()),
     ticketTiers: formData.ticketTiers

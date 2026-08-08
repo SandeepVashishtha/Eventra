@@ -1,8 +1,8 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
-import { useTheme } from "../../context/ThemeContext";
-import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "context/ThemeContext";
+import { useAuth } from "context/AuthContext";
 import BrandMark from "./BrandMark";
 import MobileNavLink from "./MobileNavLink";
 import MobileNavGroup from "./MobileNavGroup";

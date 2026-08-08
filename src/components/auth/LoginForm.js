@@ -1,10 +1,14 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { authService } from '../../services/authService';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from 'context/AuthContext';
 import './Auth.css';
 import { Eye, EyeOff } from 'lucide-react';
+import SocialLogin from './SocialLogin';
 
 export default function LoginForm() {
+  const navigate = useNavigate();
+  const { login, authRequest } = useAuth();
+
   const [emailOrUsername, setEmailOrUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -16,14 +20,52 @@ export default function LoginForm() {
     if (!value.trim()) {
       return "Username or Email is required.";
     }
-    // Allow letters, numbers, @, ., _, - only
-    const validChars = /^[a-zA-Z0-9@._-]+$/;
-    if (!validChars.test(value)) {
-      return "Only letters, numbers, @, ., _, - are allowed.";
-    }
-    return "";
-  };
 
+    const isEmail = value.includes('@');
+
+    // Handle Email Validation
+    if (isEmail) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(value)) {
+        return "Please enter a valid email address.";
+      }
+      return ""; // Valid email
+    }
+
+    // Handle Username Validation
+    if (value.trim().length < 3) {
+      return "Username must be at least 3 characters long.";
+    }
+
+    const validChars = /^[a-zA-Z0-9._-]+$/;
+    if (!validChars.test(value)) {
+      return "Only letters, numbers, ., _, - are allowed in usernames.";
+    }
+
+    return ""; // Valid username
+  };
+  
+  const validatePassword = (value) => {
+  if (!value.trim()) {
+    return "Password is required.";
+  }
+
+  if (value.length < 8) {
+    return "Password must be at least 8 characters.";
+  }
+
+  return "";
+};
+const handlePasswordChange = (e) => {
+    const value = e.target.value;
+
+    setPassword(value);
+
+    setErrors((prev) => ({
+        ...prev,
+        password: validatePassword(value),
+    }));
+};
   const handleEmailOrUsernameChange = (e) => {
     const value = e.target.value;
     setEmailOrUsername(value);
@@ -35,23 +77,27 @@ export default function LoginForm() {
     e.preventDefault();
 
     const emailError = validateEmailOrUsername(emailOrUsername);
-    if (emailError) {
-      setErrors({ emailOrUsername: emailError });
-      return;
-    }
+const passwordError = validatePassword(password);
+
+if (emailError || passwordError) {
+  setErrors({
+    emailOrUsername: emailError,
+    password: passwordError,
+  });
+  return;
+}
 
     setErrors({});
     setLoading(true);
     setError('');
 
-    const credentials = {
-      usernameOrEmail: emailOrUsername,
-      password,
-    };
-
     try {
-      await authService.login(credentials);
-      window.location.href = '/dashboard';
+      const success = await login(emailOrUsername.trim(), password);
+      if (success) {
+        navigate('/dashboard', { replace: true });
+      } else {
+        setError(authRequest.error || 'Login failed. Please check your credentials.');
+      }
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -61,6 +107,8 @@ export default function LoginForm() {
       setLoading(false);
     }
   };
+
+  const isSubmitDisabled = loading || (authRequest?.loading || false);
 
   return (
     <div className="login-form-container">
@@ -74,13 +122,13 @@ export default function LoginForm() {
           Sign in to continue your Eventra journey
         </p>
 
-        {error && (
+        {(error || authRequest.error) && (
           <div
             className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-xl mb-4"
             role="alert"
             aria-live="polite"
           >
-            {error}
+            {error || authRequest.error}
           </div>
         )}
 
@@ -91,7 +139,7 @@ export default function LoginForm() {
             type="text"
             value={emailOrUsername}
             onChange={handleEmailOrUsernameChange}
-            disabled={loading}
+            disabled={isSubmitDisabled}
             placeholder="Enter your username or email"
             className={`
               w-full
@@ -120,12 +168,18 @@ export default function LoginForm() {
           <label htmlFor="login-password">Password</label>
           <div className="relative">
             <input
-              id="login-password"
-              type={showPassword ? 'text' : 'password'}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={loading}
-              required
+  id="login-password"
+  type={showPassword ? "text" : "password"}
+  value={password}
+  onChange={handlePasswordChange}
+  onBlur={() =>
+    setErrors((prev) => ({
+      ...prev,
+      password: validatePassword(password),
+    }))
+  }
+  disabled={isSubmitDisabled}
+  required
               placeholder="Enter your password"
               className="
                 w-full
@@ -152,6 +206,11 @@ export default function LoginForm() {
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
+          {errors.password && (
+            <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+              ⚠ {errors.password}
+            </p>
+          )}
         </div>
 
         <div className="text-right mt-2">
@@ -165,7 +224,7 @@ export default function LoginForm() {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={isSubmitDisabled}
           className="
             w-full
             py-4
@@ -183,8 +242,10 @@ export default function LoginForm() {
             duration-300
           "
         >
-          {loading ? 'Authenticating...' : 'Login'}
+          {isSubmitDisabled ? 'Authenticating...' : 'Login'}
         </button>
+
+        <SocialLogin />
 
         <p className="text-center text-sm text-gray-500 mt-6">
           Don&apos;t have an account?

@@ -1,7 +1,7 @@
 import { memo, useMemo } from "react";
 import EventCard from "./EventCard";
-import SkeletonEventCard from "../../components/common/SkeletonEventCard";
-import EmptyState from "../../components/common/EmptyState";
+import SkeletonEventCard from "components/common/SkeletonEventCard";
+import EmptyState from "components/common/EmptyState";
 import { Search } from "lucide-react";
 
 const EventCardSection = ({ isLoading, events, viewMode, filterType, onClearFilters, cacheInfo }) => {

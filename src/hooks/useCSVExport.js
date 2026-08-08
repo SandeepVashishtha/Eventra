@@ -1,6 +1,16 @@
 
 import { useCallback } from 'react';
 
+const CSV_FORMULA_TRIGGERS = /^[=+\-@\t\r]/;
+
+// Prevent CSV/formula injection: cells starting with =, +, -, @, Tab, or CR
+// are treated as formulas by spreadsheet apps. A leading single quote forces
+// the spreadsheet to render the value as plain text.
+const sanitizeCsvCell = (value) => {
+  const cell = value === null || value === undefined ? '' : String(value);
+  return CSV_FORMULA_TRIGGERS.test(cell) ? `'${cell}` : cell;
+};
+
 export const useCSVExport = () => {
   const exportToCSV = useCallback((data, filename = 'export.csv') => {
     if (!data || !data.length) return;
@@ -10,8 +20,7 @@ export const useCSVExport = () => {
       headers.join(','),
       ...data.map(row => 
         headers.map(header => {
-          const cell = row[header] === null || row[header] === undefined ? '' : String(row[header]);
-          return `"${cell.replace(/"/g, '""')}"`;
+          return `"${sanitizeCsvCell(row[header]).replace(/"/g, '""')}"`;
         }).join(',')
       )
     ].join('\n');
