@@ -1,3 +1,4 @@
+import useWindowSize from "hooks/useWindowSize";
 import { useState, useEffect, lazy, Suspense } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -123,17 +124,8 @@ function App() {
     return () => clearTimeout(timer);
   }, []);
 
-  useEffect(() => {
-    const handleResize = () => {
-      setIsDesktop(window.innerWidth >= 1024);
-    };
-
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
+  // Fix: useWindowSize replaces manual resize listener — debounced, SSR-safe
+  const { isLarge: isDesktop } = useWindowSize();
 
   useEffect(() => {
     const handleCursorPreference = (event) => {
