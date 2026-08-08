@@ -51,15 +51,15 @@ public class EventController {
         // ── Issue #2102 — POST /api/events/create ────────────────────────────────
 
         @PostMapping("/create")
-        @PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN')")
-        @Operation(summary = "Create a new event", description = "Allows an ORGANIZER or ADMIN to create a new event. "
+        @PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN', 'SUPER_ADMIN')")
+        @Operation(summary = "Create a new event", description = "Allows an ORGANIZER, ADMIN or SUPER_ADMIN to create a new event. "
                         +
                         "The event registeredCount defaults to 0.", security = @SecurityRequirement(name = "bearerAuth"))
         @ApiResponses({
                         @ApiResponse(responseCode = "201", description = "Event created successfully", content = @Content(schema = @Schema(implementation = EventResponse.class))),
                         @ApiResponse(responseCode = "400", description = "Invalid payload (validation failed)", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
                         @ApiResponse(responseCode = "401", description = "Unauthorized - JWT token missing or invalid", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-                        @ApiResponse(responseCode = "403", description = "Forbidden - User does not have ORGANIZER or ADMIN role", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+                        @ApiResponse(responseCode = "403", description = "Forbidden - User does not have ORGANIZER, ADMIN or SUPER_ADMIN role", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
         })
         public ResponseEntity<EventResponse> createEvent(
                         @Valid @RequestBody EventCreateRequest request,
