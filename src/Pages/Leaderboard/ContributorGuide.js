@@ -25,8 +25,8 @@ import {
   Target,
   Rocket,
 } from "lucide-react";
-import useReducedMotion from "../../hooks/useReducedMotion.js";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
+import useReducedMotion from "hooks/useReducedMotion.js";
+import useDocumentTitle from "hooks/useDocumentTitle";
 
 // Static data moved outside component to prevent re-creation on every render
 const COMMANDS = [
@@ -149,7 +149,7 @@ const ContributorGuide = () => {
   return (
     <div className="min-h-screen bg-linear-to-br from-zinc-50 via-white to-blue-50/30 dark:from-zinc-950 dark:via-zinc-900 dark:to-blue-950/20 pt-24 pb-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto space-y-16">
-        
+
         {/* HERO SECTION */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -179,13 +179,13 @@ const ContributorGuide = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration }}
-          className="relative overflow-hidden rounded-3xl bg-linear-to-br from-violet-600 via-indigo-600 to-blue-600 p-[1px]"
+          className="relative overflow-hidden rounded-3xl bg-linear-to-br from-violet-600 via-indigo-600 to-blue-600 p-px"
         >
           <div className="relative bg-zinc-950 rounded-3xl p-6 md:p-10 overflow-hidden">
             {/* Decorative glow */}
             <div className="absolute -top-20 -right-20 w-64 h-64 bg-violet-500/20 rounded-full blur-3xl"></div>
             <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl"></div>
-            
+
             <div className="relative">
               <div className="flex items-center justify-center gap-3 mb-3">
                 <Trophy className="text-amber-400" size={28} />
@@ -521,7 +521,7 @@ Closes #<issue_number>`}
                         transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
                         className="overflow-hidden"
                       >
-                        <div className="px-5 pb-5 pl-[72px] text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                        <div className="px-5 pb-5 pl-18 text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
                           {faq.answer}
                         </div>
                       </motion.div>

@@ -160,6 +160,52 @@ assert.deepEqual(
   "validateQueueSession() still rejects stale session snapshots"
 );
 
+// ── TICKET_CHECK_IN dedupe (Issue #11074) ───────────────────────────────────
+// Offline check-ins for the same event share the same eventId + operator
+// userId + actionType, so they must dedupe per attendee ticket — never per
+// operator — otherwise every attendee after the first is silently dropped.
+reset();
+await pushToQueue(
+  {
+    actionType: "TICKET_CHECK_IN",
+    eventId: "evt-checkin",
+    endpoint: "/api/tickets/checkin",
+    payload: { ticketId: "ticket-1" },
+  },
+  "operator-1"
+);
+assert.equal(getQueue().length, 1, "first offline check-in is queued");
+
+await pushToQueue(
+  {
+    actionType: "TICKET_CHECK_IN",
+    eventId: "evt-checkin",
+    endpoint: "/api/tickets/checkin",
+    payload: { ticketId: "ticket-2" },
+  },
+  "operator-1"
+);
+assert.equal(
+  getQueue().length,
+  2,
+  "second attendee for the same event is queued, not collapsed as a duplicate"
+);
+
+await pushToQueue(
+  {
+    actionType: "TICKET_CHECK_IN",
+    eventId: "evt-checkin",
+    endpoint: "/api/tickets/checkin",
+    payload: { ticketId: "ticket-1" },
+  },
+  "operator-1"
+);
+assert.equal(
+  getQueue().length,
+  2,
+  "re-scanning the same ticket is still deduped to a single queue item"
+);
+
 reset();
 localStorage.setItem(
   "eventra_offline_queue",

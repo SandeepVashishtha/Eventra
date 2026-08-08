@@ -149,7 +149,8 @@ export default function LeaderboardTable({
   loading,
   error,
   currentContributors,
-  sortedContributors,
+  // eslint-disable-next-line no-unused-vars
+  sortedContributors: _sortedContributors,
   ranksMap,
   streaks,
   currentPage,

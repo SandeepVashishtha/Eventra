@@ -1,4 +1,7 @@
+import { useState } from "react";
+import { Link } from "react-router-dom";
 const RecommendationBanner = () => {
+  const [activeFilter, setActiveFilter] = useState("AI/ML");
   return (
     <section
       className="relative overflow-hidden px-4 md:px-8 py-16 text-slate-900 dark:text-white border-t border-slate-200/60 dark:border-slate-800/60 transition-colors duration-300"
@@ -59,19 +62,26 @@ const RecommendationBanner = () => {
                 'Hackathons',
                 'Beginner Friendly',
               ].map((tag, index) => (
-                <span
-                  key={index}
-                  className="px-3 py-1.5 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-700 dark:text-slate-300 shadow-sm hover:border-brand-violet/50 transition-colors duration-200"
-                >
-                  {tag}
-                </span>
+                <button
+    key={index}
+    type="button"
+    onClick={() => setActiveFilter(tag)}
+    className={`px-3 py-1.5 rounded-full text-sm shadow-sm transition-all duration-300 border ${
+      activeFilter === tag
+        ? "bg-brand-violet text-white border-brand-violet shadow-[0_0_15px_rgba(139,92,246,0.35)] scale-105"
+        : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-brand-violet/50"
+    }`}
+  >
+    {tag}
+  </button>
+
               ))}
             </div>
 
             {/* Buttons */}
             <div className="flex flex-wrap gap-4 mt-8">
-              <a
-                href="/event-recommendation"
+              <Link
+                to="/event-recommendation"
                 className="
     px-6 py-3
     rounded-full
@@ -84,14 +94,14 @@ const RecommendationBanner = () => {
   "
               >
                 Try Recommendation Assistant
-              </a>
+              </Link>
 
-              <a
-                href="/events"
+              <Link
+                to="/events"
                 className="px-6 py-3 rounded-full border border-slate-300 dark:border-slate-700 bg-white/40 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-200"
               >
                 Explore Events
-              </a>
+              </Link>
             </div>
           </div>
         </div>

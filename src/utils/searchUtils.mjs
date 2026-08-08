@@ -110,11 +110,11 @@
       _searchScore: result.score,
     }));
 
-    const matchedIds = new Set(fuseResults.map((item) => item.id));
+    const matchedIds = new Set(fuseResults.map((item) => item.id).filter((id) => id !== undefined && id !== null));
 
     const tokenResults = items
       .filter((item) => {
-        if (matchedIds.has(item.id)) return false;
+        if (item.id !== undefined && item.id !== null && matchedIds.has(item.id)) return false;
 
         const combinedText = normalizeSearchText(
           searchKeys.map((key) => getSearchableValue(item, key)).join(" ")

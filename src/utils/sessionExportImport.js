@@ -103,7 +103,7 @@ export const validateSessionBackup = (backup) => {
     return { ok: false, error: "Unsupported session backup version." };
   }
 
-  if (!backup.exportedAt || Number.isNaN(new Date(backup.exportedAt).getTime())) {
+  if (typeof backup.exportedAt !== "string" || Number.isNaN(new Date(backup.exportedAt).getTime())) {
     return { ok: false, error: "Backup export timestamp is missing or invalid." };
   }
 

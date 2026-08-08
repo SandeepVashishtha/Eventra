@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { AlertTriangle, Server, X, Edit3 } from "lucide-react";
 import "./OfflineConflictModal.css";
-import { useFocusTrap } from "../../hooks/useFocusTrap";
+import { useFocusTrap } from "hooks/useFocusTrap";
 
 export default function OfflineConflictModal() {
   const [isOpen, setIsOpen] = useState(false);
@@ -110,22 +110,22 @@ export default function OfflineConflictModal() {
 
         {/* Footer resolutions */}
         <div className="ocm-footer">
-          <button 
-            className="ocm-btn ocm-btn-secondary" 
+          <button
+            className="ocm-btn ocm-btn-secondary"
             onClick={() => handleResolve("server")}
           >
             Discard Local & Keep Server
           </button>
-          
-          <button 
-            className="ocm-btn ocm-btn-primary" 
+
+          <button
+            className="ocm-btn ocm-btn-primary"
             onClick={() => handleResolve("local")}
           >
             Overwrite Server with Local
           </button>
-          
-          <button 
-            className="ocm-btn ocm-btn-accent" 
+
+          <button
+            className="ocm-btn ocm-btn-accent"
             onClick={() => handleResolve("merge")}
           >
             Merge Both Changes

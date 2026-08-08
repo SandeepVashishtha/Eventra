@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import useClipboard from "hooks/useClipboard";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X, Github, Rocket, ChevronRight, ChevronLeft,
@@ -11,7 +12,7 @@ import {
   slugifyRepoName,
   extractGitHubUsername,
   bootstrapWorkspace,
-} from "../../utils/githubWorkspace";
+} from "utils/githubWorkspace";
 
 // ─── Step indicator ──────────────────────────────────────────────────────────
 const STEPS = [
@@ -169,7 +170,7 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
         },
         (phase) => {
           setCurrentPhase(phase);
-          setDonePhases((prev) => {
+          setDonePhases(() => {
             const phaseOrder = BOOTSTRAP_PHASES.map((p) => p.key);
             const idx = phaseOrder.indexOf(phase);
             return phaseOrder.slice(0, idx);
@@ -185,11 +186,7 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
     }
   };
 
-  const copyCloneUrl = () => {
-    navigator.clipboard.writeText(result?.cloneUrl || "");
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  const copyCloneUrl = () => copy(result?.cloneUrl || "", "cloneUrl");
 
   // ─────────────────────────────────────────────────────────────────────────
   // Render

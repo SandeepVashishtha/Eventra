@@ -270,18 +270,7 @@ export const generateIcsFileBlobUrl = (event, timezone) => {
   try {
     const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `${(event.title || 'event').toLowerCase().replace(/[^a-z0-9]/g, '-')}.ics`);
-    try {
-      document.body.appendChild(link);
-      link.click();
-    } finally {
-      if (document.body.contains(link)) document.body.removeChild(link);
-      // Revoke after a short delay to allow the browser to start the download
-      setTimeout(() => URL.revokeObjectURL(url), 200);
-    }
-    return true;
+    return url;
   } catch (error) {
     logger.error("[calendarUrlUtils] Failed to generate ICS file:", error);
     return null;

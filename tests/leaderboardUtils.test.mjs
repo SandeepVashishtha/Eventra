@@ -10,37 +10,37 @@ import {
   buildRanksMap,
   computeLeaderboardStats,
   getAchievementBadge,
-  LABEL_POINTS,
+  DIFFICULTY_POINTS,
+  QUALITY_MULTIPLIERS,
+  TYPE_BONUSES,
   DEFAULT_MERGED_PR_POINTS,
   ACHIEVEMENT_THRESHOLDS,
 } from "../src/utils/leaderboardUtils.js";
 
 // ─── normalizeLabel ───────────────────────────────────────────────────────────
 
-assert.equal(normalizeLabel("GSSoC-level-1"), "gssoclevel1", "strips hyphens and lowercases");
-assert.equal(normalizeLabel("GSSoC Level1"), "gssoclevel1", "strips spaces and lowercases");
-assert.equal(normalizeLabel("GSSOCLEVEL1"), "gssoclevel1", "lowercases only");
-assert.equal(normalizeLabel("gssoclevel2"), "gssoclevel2", "already normalised passes through");
+assert.equal(normalizeLabel(" level:beginner "), "level:beginner", "lowercases and trims");
+assert.equal(normalizeLabel("QUALITY:exceptional"), "quality:exceptional", "lowercases only");
 assert.equal(normalizeLabel(""), "", "empty string returns empty string");
 assert.equal(normalizeLabel(), "", "undefined input defaults to empty string");
 
 // ─── calculatePrPoints ────────────────────────────────────────────────────────
 
-assert.equal(calculatePrPoints(["gssoclevel1"]), LABEL_POINTS.gssoclevel1, "level-1 label");
-assert.equal(calculatePrPoints(["gssoclevel2"]), LABEL_POINTS.gssoclevel2, "level-2 label");
-assert.equal(calculatePrPoints(["gssoclevel3"]), LABEL_POINTS.gssoclevel3, "level-3 label");
-assert.equal(calculatePrPoints(["GSSoC-level-1"]), LABEL_POINTS.gssoclevel1, "denormalised level-1 label");
+assert.equal(calculatePrPoints(["level:beginner"]), DIFFICULTY_POINTS["level:beginner"], "level:beginner label");
+assert.equal(calculatePrPoints(["level:intermediate"]), DIFFICULTY_POINTS["level:intermediate"], "level:intermediate label");
+assert.equal(calculatePrPoints(["level:advanced"]), DIFFICULTY_POINTS["level:advanced"], "level:advanced label");
+assert.equal(calculatePrPoints(["level:critical"]), DIFFICULTY_POINTS["level:critical"], "level:critical label");
 assert.equal(calculatePrPoints([]), DEFAULT_MERGED_PR_POINTS, "no labels → default points");
 assert.equal(calculatePrPoints(["bug", "good-first-issue"]), DEFAULT_MERGED_PR_POINTS, "non-level labels → default");
 assert.equal(
-  calculatePrPoints(["gssoclevel1", "gssoclevel2"]),
-  LABEL_POINTS.gssoclevel1 + LABEL_POINTS.gssoclevel2,
-  "multiple level labels are summed"
+  calculatePrPoints(["level:beginner", "quality:exceptional"]),
+  Math.floor(DIFFICULTY_POINTS["level:beginner"] * QUALITY_MULTIPLIERS["quality:exceptional"]),
+  "difficulty with multiplier"
 );
 assert.equal(
-  calculatePrPoints(["gssoclevel3", "documentation"]),
-  LABEL_POINTS.gssoclevel3,
-  "level label mixed with other labels"
+  calculatePrPoints(["level:advanced", "type:security"]),
+  DIFFICULTY_POINTS["level:advanced"] + TYPE_BONUSES["type:security"],
+  "difficulty with type bonus"
 );
 
 // ─── applyAchievementBonus ────────────────────────────────────────────────────
@@ -51,15 +51,22 @@ assert.equal(noBonus.points, 10, "no bonus below lowest threshold");
 const smallBonus = applyAchievementBonus({ username: "bob", prs: 5, points: 20 });
 assert.equal(
   smallBonus.points,
-  20 + ACHIEVEMENT_THRESHOLDS[1].bonus,
-  "5+ PRs earns the smaller bonus"
+  20 + ACHIEVEMENT_THRESHOLDS[2].bonus,
+  "5+ PRs earns the bronze bonus"
 );
 
-const largeBonus = applyAchievementBonus({ username: "carol", prs: 10, points: 30 });
+const mediumBonus = applyAchievementBonus({ username: "carol", prs: 10, points: 30 });
+assert.equal(
+  mediumBonus.points,
+  30 + ACHIEVEMENT_THRESHOLDS[1].bonus,
+  "10+ PRs earns the silver bonus"
+);
+
+const largeBonus = applyAchievementBonus({ username: "dave", prs: 20, points: 40 });
 assert.equal(
   largeBonus.points,
-  30 + ACHIEVEMENT_THRESHOLDS[0].bonus,
-  "10+ PRs earns the larger bonus"
+  40 + ACHIEVEMENT_THRESHOLDS[0].bonus,
+  "20+ PRs earns the gold bonus"
 );
 
 // Must not mutate input

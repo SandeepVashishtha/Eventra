@@ -1,10 +1,10 @@
 // src/components/auth/PasswordStrengthIndicator.js
 import { AnimatePresence, motion } from 'framer-motion';
-import useReducedMotion from '../../hooks/useReducedMotion';
+import useReducedMotion from 'hooks/useReducedMotion';
 
 const assessStrength = (password) => {
   const criteria = [
-    { label: "At least 8 characters", met: password ? password.length >= 8 : false },
+    { label: "At least 8 characters", met: password ? password.length >= minLength : false },
     { label: "Contains a number", met: password ? /\d/.test(password) : false },
     { label: "Contains uppercase letter", met: password ? /[A-Z]/.test(password) : false },
     { label: "Contains lowercase letter", met: password ? /[a-z]/.test(password) : false },
@@ -12,7 +12,7 @@ const assessStrength = (password) => {
   ];
 
   const criteriaMet = criteria.filter(c => c.met).length;
-  
+
   let score;
   let feedback;
 
@@ -29,11 +29,11 @@ const assessStrength = (password) => {
     score = 1;
     feedback = 'Weak password. Follow the validation checklist below.';
   }
-  
+
   return { score, feedback, criteriaMet, criteria };
 };
 
-const PasswordStrengthIndicator = ({ password }) => {
+const PasswordStrengthIndicator = ({ password, minLength = 8, requireSpecialChar = true }) => {
   const prefersReducedMotion = useReducedMotion();
   const { score, feedback, criteriaMet, criteria } = assessStrength(password);
 
@@ -50,10 +50,10 @@ const PasswordStrengthIndicator = ({ password }) => {
     }
   };
 
-  const strengthColorClass = score === 3 
-    ? "text-emerald-600 dark:text-emerald-400" 
-    : score === 2 
-      ? "text-amber-600 dark:text-amber-400" 
+  const strengthColorClass = score === 3
+    ? "text-emerald-600 dark:text-emerald-400"
+    : score === 2
+      ? "text-amber-600 dark:text-amber-400"
       : "text-red-500 dark:text-red-400";
 
   const getStrengthLabel = (currentScore) => {

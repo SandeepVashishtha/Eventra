@@ -1,7 +1,9 @@
 export function getCountdown(eventDate) {
+  if (!eventDate || Number.isNaN(new Date(eventDate).getTime())) {
+    return { status: "INVALID", text: "Date unavailable" };
+  }
   const now = new Date().getTime();
   const target = new Date(eventDate).getTime();
-
   const diff = target - now;
 
   if (diff <= 0) {
@@ -14,6 +16,13 @@ export function getCountdown(eventDate) {
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
   const minutes = Math.floor((diff / (1000 * 60)) % 60);
+
+  if (days === 0 && hours === 0 && minutes === 0) {
+    return {
+      status: "UPCOMING",
+      text: "Starting in under a minute",
+    };
+  }
 
   return {
     status: "UPCOMING",

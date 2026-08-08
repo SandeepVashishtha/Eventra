@@ -5,30 +5,62 @@
  * a helper to attach it to fetch requests.
  */
 
+import { setCookie } from "./cookieUtils.js";
+
 const CSRF_META_NAME = "csrf-token";
 const CSRF_COOKIE_NAME = "XSRF-TOKEN";
 const CSRF_HEADER_NAME = "X-CSRF-Token";
 
 const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
-const getCSRFEnforcementMode = () => {
+export const getCSRFEnforcementMode = () => {
+  const validModes = ["strict", "warning", "disabled"];
+
+  const isProduction =
+    (typeof process !== "undefined" && process.env?.NODE_ENV === "production") ||
+    (typeof import.meta.env !== "undefined" && import.meta.env?.MODE === "production");
+
+  const defaultMode = isProduction ? "strict" : "warning";
+
+  let configuredMode;
   if (typeof import.meta.env !== "undefined" && import.meta.env.VITE_CSRF_ENFORCEMENT_MODE) {
-    return import.meta.env.VITE_CSRF_ENFORCEMENT_MODE;
+    configuredMode = import.meta.env.VITE_CSRF_ENFORCEMENT_MODE;
+  } else if (typeof process !== "undefined" && process.env?.VITE_CSRF_ENFORCEMENT_MODE) {
+    configuredMode = process.env.VITE_CSRF_ENFORCEMENT_MODE;
   }
-  if (typeof process !== "undefined" && process.env?.VITE_CSRF_ENFORCEMENT_MODE) {
-    return process.env.VITE_CSRF_ENFORCEMENT_MODE;
+
+  if (configuredMode && !validModes.includes(configuredMode)) {
+    console.warn(
+      `[CSRF] Invalid VITE_CSRF_ENFORCEMENT_MODE value: "${configuredMode}". ` +
+      `Valid values are: ${validModes.join(", ")}. ` +
+      `Falling back to environment default: "${defaultMode}".`
+    );
+    return defaultMode;
   }
-  return "warning";
+
+  return configuredMode || defaultMode;
 };
 
 /**
  * Reads the CSRF token from the page's <meta> tag.
  * Expected: <meta name="csrf-token" content="TOKEN_VALUE">
+ *
+ * Build placeholders (e.g. "%CSRF_TOKEN%") are treated as absent: a literal
+ * placeholder is a predictable constant and must never be used as a token.
+ *
  * @returns {string|null}
  */
+const PLACEHOLDER_PATTERN = /^%[A-Z_][A-Z0-9_]*%$/;
+
 export function getCSRFTokenFromMeta() {
+  if (typeof document === "undefined") return null;
   const meta = document.querySelector(`meta[name="${CSRF_META_NAME}"]`);
-  return meta ? meta.getAttribute("content") : null;
+  if (!meta) return null;
+  const content = meta.getAttribute("content");
+  if (typeof content !== "string" || PLACEHOLDER_PATTERN.test(content)) {
+    return null;
+  }
+  return content;
 }
 
 /**
@@ -37,6 +69,7 @@ export function getCSRFTokenFromMeta() {
  * @returns {string|null}
  */
 export function getCSRFTokenFromCookie(name = CSRF_COOKIE_NAME) {
+  if (typeof document === "undefined") return null;
   const cookies = document.cookie.split(";").map((c) => c.trim());
   for (const cookie of cookies) {
     if (cookie.startsWith(`${name}=`)) {
@@ -47,11 +80,17 @@ export function getCSRFTokenFromCookie(name = CSRF_COOKIE_NAME) {
 }
 
 /**
- * Gets the CSRF token from meta tag or cookie (in that order).
+ * Gets the CSRF token from cookie or meta tag (in that order).
+ *
+ * The cookie is the source of truth: it is the per-session token issued by the
+ * server. The meta tag is only consulted as a fallback for environments that
+ * inject a real token server-side (e.g. server-rendered pages).
+ *
  * @returns {string|null}
  */
 export function getCSRFToken() {
-  return getCSRFTokenFromMeta() || getCSRFTokenFromCookie();
+  if (typeof document === "undefined") return null;
+  return getCSRFTokenFromCookie() || getCSRFTokenFromMeta();
 }
 
 /**
@@ -133,8 +172,9 @@ export function csrfFetch(url, options = {}) {
 export function rotateCSRFToken(newToken) {
   if (newToken && typeof newToken === "string") {
     // Update cookies
-    if (typeof document !== "undefined") {
-      document.cookie = `${CSRF_COOKIE_NAME}=${encodeURIComponent(newToken)}; path=/; SameSite=Strict; Secure`;
-    }
+    setCookie(CSRF_COOKIE_NAME, newToken, {
+      path: "/",
+      secure: typeof location !== "undefined" && location.protocol === "https:",
+    });
   }
 }
