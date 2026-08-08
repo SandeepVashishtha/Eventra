@@ -138,8 +138,8 @@ const EventRegistration = () => {
       priority: "Medium",
       showProfileInAttendeeDirectory: false,
     },
-  }
-);
+    validationRules
+  );
   // Load event data from backend API
   useEffect(() => {
     let isCancelled = false;
