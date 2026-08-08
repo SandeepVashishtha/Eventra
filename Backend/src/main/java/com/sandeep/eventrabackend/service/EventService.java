@@ -133,8 +133,7 @@ public class EventService {
         }
 
         public EventAvailabilityResponse getEventAvailability(Long id, String userEmail) {
-                Event event = eventRepository.findById(id)
-                                .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + id));
+                Event event = requirePublicEvent(id);
 
                 Integer capacity = event.getCapacity();
                 int registeredCount = event.getRegisteredCount();
@@ -189,6 +188,14 @@ public class EventService {
          * Retrieves a page of public events with optional search / status / sort.
          */
         @Transactional(readOnly = true)
+
+        private Event requirePublicEvent(Long id) {
+                return eventRepository.findById(id)
+                                .filter(Event::isPublic)
+                                .orElseThrow(() -> new EventNotFoundException(
+                                                "Event not found with id: " + id));
+        }
+
         public PagedResponse<EventResponse> getAllEvents(
                         int page,
                         int size,
@@ -898,6 +905,7 @@ public class EventService {
          */
         @Transactional(readOnly = true)
         public List<String> getOccupiedSeats(Long eventId) {
+                requirePublicEvent(eventId);
                 return eventRegistrationRepository.findByEvent_Id(eventId)
                                 .stream()
                                 .map(EventRegistration::getSeatId)
