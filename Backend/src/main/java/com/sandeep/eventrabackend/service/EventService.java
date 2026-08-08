@@ -152,13 +152,14 @@ public class EventService {
      *
      * <p>Events that are explicitly marked not public are excluded from the
      * public read path (Issue #11230); they are only visible to their
-     * organizer or an admin via the admin endpoints.</p>
+     * organizer or an admin via the admin endpoints. Cancelled events are
+     * likewise excluded from the public read path (Issue #12081).</p>
      *
      * @throws EventNotFoundException if the event does not exist or is not public
      */
     public EventResponse getPublicEventById(long id) {
         return eventRepository.findById(id)
-                .filter(Event::isPublic)
+                .filter(event -> event.isPublic() && !"CANCELLED".equals(event.getStatus()))
                 .map(this::toEventResponse)
                 .orElseThrow(() ->
                         new EventNotFoundException(
@@ -168,12 +169,13 @@ public class EventService {
     /**
      * Retrieves all public events.
      *
-     * @return list of all events with {@code isPublic} set to true
+     * @return list of all events with {@code isPublic} set to true,
+     *         excluding cancelled events
      */
     @Transactional(readOnly = true)
     public List<EventResponse> getAllEvents() {
         return eventRepository.findAll().stream()
-                .filter(Event::isPublic)
+                .filter(event -> event.isPublic() && !"CANCELLED".equals(event.getStatus()))
                 .map(this::toEventResponse)
                 .toList();
     }
