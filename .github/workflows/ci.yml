@@ -19,9 +19,18 @@ permissions:
 
 jobs:
   validate:
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version:
+          - '20.x'
+          - '22.x'
+          - '24.x'
+
     uses: ./.github/workflows/reusable-setup.yml
+
     with:
-      node-version: '22'
+      node-version: ${{ matrix.node-version }}
       test-command: |
         npm run lint
         npm run test
