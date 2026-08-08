@@ -1,3 +1,4 @@
+import useModalManager from "hooks/useModalManager";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
@@ -125,18 +126,20 @@ export default function CommandPalette({
     setActiveIndex(0);
   }, [query]);
 
+  // Fix: useModalManager handles escape key and scroll lock
+  // disableFocusTrap=true because CommandPalette has its own custom
+  // keyboard navigation for the results list
+  useModalManager(isOpen, onClose, { disableFocusTrap: true });
+
   // Auto focus input on open
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => inputRef.current?.focus(), 150);
-      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = "";
       setQuery("");
       setActiveIndex(0);
     }
     return () => {
-      document.body.style.overflow = "";
     };
   }, [isOpen]);
 
