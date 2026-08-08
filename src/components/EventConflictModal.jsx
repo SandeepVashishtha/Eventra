@@ -1,3 +1,4 @@
+import useDateFormatter from "hooks/useDateFormatter";
 import { useRef, useEffect } from 'react';
 import { AlertTriangle, Clock, Calendar, X, ArrowRight, Globe } from 'lucide-react';
 import { formatTimeRange } from '../utils/conflictDetection';
