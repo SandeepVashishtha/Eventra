@@ -14,15 +14,13 @@ const getSessionStorage = () => {
 };
 
 const createSessionId = () => {
-  if (typeof crypto !== "undefined") {
-    if (typeof crypto.randomUUID === "function") {
-      return crypto.randomUUID();
-    }
-    if (typeof crypto.getRandomValues === "function") {
-      const values = new Uint32Array(4);
-      crypto.getRandomValues(values);
-      return `session-${Date.now()}-${Array.from(values).join("-")}`;
-    }
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+    const values = new Uint32Array(4);
+    crypto.getRandomValues(values);
+    return `session-${Date.now()}-${Array.from(values).join("-")}`;
   }
   return `session-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 };
@@ -40,7 +38,7 @@ export const rotateSessionSnapshot = (userId = null) => {
   if (!storage) return null;
 
   const sessionId = createSessionId();
-  const normalizedUserId = userId == null ? "" : String(userId);
+  const normalizedUserId = userId === null || userId === undefined ? "" : String(userId);
 
   try {
     storage.setItem(SESSION_ID_KEY, sessionId);
@@ -55,7 +53,7 @@ export const ensureSessionSnapshot = (userId = null) => {
   const storage = getSessionStorage();
   if (!storage) return null;
 
-  const normalizedUserId = userId == null ? "" : String(userId);
+  const normalizedUserId = userId === null || userId === undefined ? "" : String(userId);
 
   try {
     const existingSessionId = storage.getItem(SESSION_ID_KEY);

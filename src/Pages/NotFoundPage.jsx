@@ -2,7 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Home, Calendar, Search, ArrowLeft, Zap } from "lucide-react";
 import { Helmet } from "react-helmet-async";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // ─── Animation variants ───────────────────────────────────────────────────────
 const containerVariants = {
@@ -34,7 +34,10 @@ const quickLinks = [
 
 const NotFoundPage = () => {
   const navigate = useNavigate();
+
   const [searchQuery, setSearchQuery] = useState("");
+
+  const [countdown, setCountdown] = useState(10);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -43,7 +46,21 @@ const NotFoundPage = () => {
       navigate(`/events?q=${encodeURIComponent(q)}`);
     }
   };
+useEffect(() => {
+  const timer = setInterval(() => {
+    setCountdown((prev) => {
+      if (prev === 1) {
+        clearInterval(timer);
+        navigate("/");
+        return 0;
+      }
 
+      return prev - 1;
+    });
+  }, 1000);
+
+  return () => clearInterval(timer);
+}, [navigate]);
   return (
     <>
       <Helmet>
@@ -118,6 +135,16 @@ const NotFoundPage = () => {
             moved, or the event was called off. Don&apos;t worry — there are
             plenty more events waiting for you.
           </motion.p>
+          <motion.p
+  variants={itemVariants}
+  className="text-sm font-medium text-indigo-300"
+>
+  Redirecting to the homepage in{" "}
+  <span className="font-bold text-white">
+    {countdown}
+  </span>{" "}
+  seconds...
+</motion.p>
 
           {/* ── Primary CTA: Go to Homepage ── */}
           <motion.div variants={itemVariants} className="mt-2 w-full">
@@ -177,6 +204,18 @@ const NotFoundPage = () => {
               <ArrowLeft className="h-4 w-4" aria-hidden="true" />
               Go Back
             </button>
+            <Link
+  to="/contact"
+  className="inline-flex items-center gap-1.5 rounded-lg
+             bg-red-500 px-4 py-2 text-sm font-medium text-white
+             transition-all duration-200
+             hover:bg-red-600 hover:scale-105
+             focus-visible:outline
+             focus-visible:outline-2
+             focus-visible:outline-red-300"
+>
+  🚨 Report Broken Link
+</Link>
           </motion.div>
 
           {/* ── Inline event search hint ── */}
@@ -208,6 +247,38 @@ const NotFoundPage = () => {
             </form>
             <p id="search-hint" className="sr-only">Type an event name to be taken to the events page with results filtered.</p>
           </motion.div>
+          {/* ── Recommended Events ── */}
+<motion.div
+  variants={itemVariants}
+  className="mt-8 w-full rounded-xl bg-white/10 p-5 backdrop-blur-sm ring-1 ring-white/20"
+>
+  <h3 className="mb-4 text-lg font-semibold text-white">
+    🔥 Recommended Events
+  </h3>
+
+  <div className="space-y-3">
+    <Link
+      to="/events"
+      className="block rounded-lg bg-indigo-500/20 px-4 py-3 text-white hover:bg-indigo-500/30 transition"
+    >
+      🚀 AI Hackathon 2026
+    </Link>
+
+    <Link
+      to="/events"
+      className="block rounded-lg bg-indigo-500/20 px-4 py-3 text-white hover:bg-indigo-500/30 transition"
+    >
+      💻 React Developer Summit
+    </Link>
+
+    <Link
+      to="/events"
+      className="block rounded-lg bg-indigo-500/20 px-4 py-3 text-white hover:bg-indigo-500/30 transition"
+    >
+      🌍 Open Source Meetup
+    </Link>
+  </div>
+</motion.div>
         </motion.div>
       </section>
     </>

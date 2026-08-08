@@ -1,4 +1,4 @@
-import { safeJsonParse } from "../utils/safeJsonParse";
+import { safeJsonParse } from "./safeJsonParse.js";
 export const NOTIFICATION_CATEGORIES = {
   registrations: {
     label: "Registrations",
@@ -39,6 +39,9 @@ export const PUSH_SUBSCRIPTION_KEY = "eventra_push_subscription";
 export const DEFAULT_NOTIFICATION_PREFERENCES = {
   inApp: true,
   push: false,
+  marketing: true,
+  social: true,
+  updates: true,
   email: true,
   emailDigest: "daily",
   sound: "chime",
@@ -155,7 +158,9 @@ export const playNotificationSound = (soundKey) => {
 };
 
 export const urlBase64ToUint8Array = (base64String) => {
-  if (typeof window === "undefined") return new Uint8Array();
+  if (typeof window === "undefined" || !base64String || typeof base64String !== "string") {
+    return new Uint8Array();
+  }
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
   const rawData = window.atob(base64);

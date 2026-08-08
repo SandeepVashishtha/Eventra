@@ -1,47 +1,27 @@
 import {
-  Home,
   Calendar,
-  CalendarDays,
-  Clock,
   FolderKanban,
   Users,
   Trophy,
   MessageSquare,
   Book,
-  Bookmark,
   Info,
   HelpCircle,
   MoreHorizontal,
 } from "lucide-react";
 
-export const NAV_ITEMS = [
-  {
-    nameKey: "nav.home",
-    href: "/",
-    icon: <Home className="w-5 h-5" />,
-  },
-  {
-    nameKey: "nav.events",
-    href: "/events",
-    icon: <Calendar className="w-5 h-5" />,
-    subItems: [
-      {
-        nameKey: "nav.exploreEvents",
-        href: "/events",
-        icon: <Calendar className="w-5 h-5" />,
-      },
-      {
-        nameKey: "nav.eventCalendar",
-        href: "/calendar",
-        icon: <CalendarDays className="w-5 h-5" />,
-      },
-      {
-        nameKey: "nav.scheduler",
-        href: "/events/scheduler",
-        icon: <Clock className="w-5 h-5" />,
-      },
-    ],
-  },
+export const PRIMARY_NAV_ITEMS = [
+  // Fix (Issue #10497): Remove unused/misleading dropdown from Events nav item.
+// The subItems (Explore Events, Calendar, Scheduler) were either duplicating
+// the parent link or pointing to pages accessible via other nav items,
+// causing a chevron to appear with no meaningful dropdown content.
+// Events is now a direct nav link with no dropdown.
+{
+  nameKey: "nav.events",
+  href: "/events",
+  icon: <Calendar className="w-5 h-5" />,
+},
+
   {
     nameKey: "nav.hackathons",
     href: "/hackathons",
@@ -52,15 +32,13 @@ export const NAV_ITEMS = [
     href: "/projects",
     icon: <FolderKanban className="w-5 h-5" />,
   },
+];
+
+export const SECONDARY_NAV_ITEMS = [
   {
     nameKey: "nav.networking",
     href: "/networking",
     icon: <Users className="w-5 h-5" />,
-  },
-  {
-    nameKey: "nav.saved",
-    href: "/bookmarks",
-    icon: <Bookmark className="w-5 h-5" />,
   },
   {
     nameKey: "nav.community",

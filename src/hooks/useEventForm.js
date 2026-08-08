@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { toast } from "react-toastify";
-import { API_ENDPOINTS } from "../config/api";
-import { eventService } from "../services/eventService";
+import { API_ENDPOINTS, apiUtils } from "../config/api.js";
 import { useFormSubmit } from "./useFormSubmit";
 import {
   DRAFT_KEY,
@@ -305,10 +304,12 @@ export const useEventForm = () => {
       return { id: "mock-event-id", success: true };
     }
 
-    const response = await eventService.createEvent(sanitized);
+    const response = await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, sanitized);
     const result = response.data;
 
-    if (!(response.status === 200 && result?.success)) {
+    // The backend returns 201 Created (and no `success` flag), so treat both
+    // 200 and 201 with a response body as a successful creation (#11773).
+    if (![200, 201].includes(response.status)) {
       const errorMessage = result?.message || result?.error || `Server error: ${response.status}`;
       throw new Error(errorMessage);
     }

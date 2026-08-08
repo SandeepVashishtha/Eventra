@@ -43,7 +43,7 @@ export default function UpdateAvailableBanner() {
   if (!updateAvailable) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex items-center gap-3 bg-blue-600 text-white px-4 py-3 rounded-xl shadow-lg">
+    <div className="fixed bottom-[calc(1rem+var(--safe-area-bottom))] right-4 z-50 flex items-center gap-3 bg-blue-600 text-white px-4 py-3 rounded-xl shadow-lg">
       <span className="text-sm font-medium">New version available!</span>
       <button
         onClick={handleRefresh}

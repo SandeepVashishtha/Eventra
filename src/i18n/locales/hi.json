@@ -20,6 +20,7 @@
     "signUp": "साइन अप",
     "signOut": "साइन आउट",
     "profile": "प्रोफ़ाइल",
+    "account": "खाता",
     "settings": "सेटिंग्स",
     "projects": "प्रोजेक्ट्स",
     "networking": "नेटवर्किंग",
@@ -92,7 +93,12 @@
     "feedbackTypeRequired": "Please select a feedback type",
     "feedbackMessageRequired": "Message is required",
     "feedbackMessageMinLength": "Message must be at least 20 characters",
-    "feedbackRatingRequired": "Please provide a rating"
+    "feedbackRatingRequired": "Please provide a rating",
+    "featureTitleRequired": "Feature title is required",
+    "featureTitleMinLength": "Feature title must be at least 5 characters",
+    "featureProblemRequired": "Please describe the problem this feature would solve",
+    "featureProblemMinLength": "Problem description must be at least 20 characters",
+    "featurePriorityRequired": "Please select a priority level"
   },
   "error": {
     "generic": "An unexpected error occurred. Please try again.",
@@ -149,7 +155,13 @@
     "viewMode": "दृश्य मोड",
     "timeline": "टाइमलाइन",
     "recommendations": "आपके लिए सुझाव",
-    "saved": "सहेजे गए इवेंट्स"
+    "saved": "सहेजे गए इवेंट्स",
+    "noEventsScheduled": "कोई इवेंट शेड्यूल नहीं",
+    "noUpcomingEvents": "इस दिन के लिए कोई आगामी इवेंट शेड्यूल नहीं है।",
+    "noEventsMatch": "कोई इवेंट आपके फ़िल्टर से मेल नहीं खाता",
+    "noBookmarked": "कोई बुकमार्क किया गया इवेंट नहीं",
+    "noBookmarkedDesc": "अन्वेषण शुरू करें और जिन इवेंट में आपकी रुचि है उन्हें बुकमार्क करें!",
+    "noEventsMatchDesc": "अपने फ़िल्टर समायोजित करें या सभी उपलब्ध इवेंट देखने के लिए उन्हें साफ़ करें।"
   },
   "hackathon": {
     "title": "Hackathons",
@@ -232,9 +244,17 @@
   },
   "landing": {
     "hero": {
+      "badge": "डेवलपर्स और टेक इवेंट्स का घर",
+      "headlineBefore": "बनाएं।",
+      "headlineHighlight": "सीखें।",
+      "headlineAfter": "जुड़ें।",
+      "tagline": "हैकाथॉन, टेक इवेंट्स, वर्कशॉप, प्रोजेक्ट्स और डेवलपर समुदाय—सब एक जगह खोजें।",
+      "description": "Eventra डेवलपर्स को हैकाथॉन खोजने, टेक इवेंट्स में भाग लेने, प्रोजेक्ट्स पर सहयोग करने और समुदाय-चालित अनुभवों से बढ़ने में मदद करता है।",
+      "differentiator": "ओपन-सोर्स, डेवलपर-प्रथम, और हैकाथॉन के लिए बना—कोई और जेनेरिक टिकटिंग साइट नहीं।",
+      "ctaExplore": "इवेंट्स देखें",
+      "ctaCreate": "इवेंट बनाएं",
       "title": "अद्भुत इवेंट्स खोजें और जुड़ें",
       "subtitle": "इवेंट खोज, पंजीकरण और प्रबंधन के लिए अंतिम प्लेटफ़ॉर्म।",
-      "description": "डेवलपर्स से जुड़ें, नए कौशल सीखें, और क्यूरेटेड टेक इवेंट्स, हैकाथॉन और वर्कशॉप में अपना नेटवर्क बढ़ाएं।",
       "searchPlaceholder": "इवेंट्स, हैकाथॉन, प्रोजेक्ट्स खोजें...",
       "searchResults": "खोज परिणाम",
       "resultsCount": "परिणाम ({{count}})",
@@ -255,15 +275,28 @@
         "अत्याधुनिक टेक मीटअप"
       ],
       "stats": {
-        "developers": "डेवलपर्स जुड़े",
-        "events": "इवेंट्स आयोजित",
-        "partners": "साझेदार और प्रायोजक"
+        "developers": "डेवलपर्स",
+        "events": "आयोजित इवेंट्स",
+        "partners": "साझेदार"
+      },
+      "categories": {
+        "hackathons": "हैकाथॉन",
+        "ai": "AI",
+        "webDev": "वेब डेवलपमेंट",
+        "openSource": "ओपन सोर्स",
+        "workshops": "वर्कशॉप"
       },
       "searchTypes": {
         "Events": "इवेंट्स",
         "Hackathons": "हैकाथॉन",
         "Projects": "प्रोजेक्ट्स"
       }
+    },
+    "search": {
+      "title": "अपना अगला इवेंट खोजें",
+      "subtitle": "हैकाथॉन, वर्कशॉप और समुदाय इवेंट्स खोजें",
+      "placeholder": "इवेंट्स, हैकाथॉन, प्रोजेक्ट्स खोजें...",
+      "ariaLabel": "अपना अगला इवेंट खोजें"
     },
     "stats": {
       "events": "Events Hosted",
@@ -529,6 +562,21 @@
     "toastWaitlistSuccess": "Added to waitlist successfully!",
     "toastValidationError": "Please fix the errors before submitting."
   },
+  "askOrganizer": {
+    "title": "Ask the Organizer",
+    "subtitle": "Ask event-specific questions and see organizer answers in one public feed.",
+    "placeholder": "Is there vegan catering? Is there parking? Ask your question here.",
+    "send": "Ask Question",
+    "publicQA": "Public Q&A",
+    "noQuestions": "No public questions yet. Be the first to ask!",
+    "answeredBadge": "Answered",
+    "organizerResponseLabel": "Response from organizer",
+    "pendingAnswer": "Waiting for organizer response...",
+    "successSent": "Question sent! It is now visible in the public queue.",
+    "errorSending": "Could not send your question. Please try again.",
+    "errorLoading": "Unable to load public Q&A right now. Please try again shortly.",
+    "loginRequired": "Please log in to ask the organizer a question."
+  },
   "userAchievements": {
     "pageTitle": "Eventra | Achievements",
     "progressionStudio": "Progression Studio",
@@ -605,7 +653,128 @@
     "ctaHeading": "Need Help or Have Feedback?",
     "ctaSubtitle": "Reach out to our support team and we will get back to you within 24 hours",
     "ctaContactUs": "Contact Us",
-    "ctaGiveFeedback": "Give Feedback"
+    "ctaGiveFeedback": "Give Feedback",
+    "categories": {
+      "hostingHackathons": {
+        "title": "हैकाथॉन होस्ट करना",
+        "description": "Eventra पर हैकाथॉन बनाना और प्रबंधित करना सीखें।"
+      },
+      "projectSubmission": {
+        "title": "प्रोजेक्ट सबमिशन",
+        "description": "अपने प्रोजेक्ट सबमिट करने के बारे में सब कुछ जानें।"
+      },
+      "exploreProjects": {
+        "title": "प्रोजेक्ट एक्सप्लोर करें",
+        "description": "समुदाय के प्रोजेक्ट खोजें और ब्राउज़ करें।"
+      },
+      "contributing": {
+        "title": "योगदान देना",
+        "description": "Eventra पर ओपन सोर्स प्रोजेक्ट में योगदान कैसे करें।"
+      },
+      "leaderboard": {
+        "title": "लीडरबोर्ड",
+        "description": "लीडरबोर्ड रैंकिंग कैसे काम करती है यह समझें।"
+      },
+      "tipsBestPractices": {
+        "title": "टिप्स और सर्वोत्तम प्रथाएं",
+        "description": "इन टिप्स से Eventra का अधिकतम लाभ उठाएं।"
+      },
+      "events": {
+        "title": "इवेंट",
+        "description": "समुदाय में होने वाले इवेंट खोजें और उनमें शामिल हों।"
+      },
+      "seeOnGitHub": {
+        "title": "GitHub पर देखें",
+        "description": "सोर्स कोड एक्सेस करें और GitHub पर योगदान दें।"
+      },
+      "apiDocs": {
+        "title": "API दस्तावेज़ीकरण",
+        "description": "हमारे REST API का उपयोग करके Eventra के साथ एकीकृत करें।"
+      },
+      "contributors": {
+        "title": "योगदानकर्ता",
+        "description": "Eventra बनाने और बनाए रखने वाले लोगों से मिलें।"
+      },
+      "communityEvents": {
+        "title": "सामुदायिक इवेंट",
+        "description": "Eventra समुदाय द्वारा आयोजित इवेंट खोजें।"
+      },
+      "contactUs": {
+        "title": "हमसे संपर्क करें",
+        "description": "सहायता के लिए Eventra टीम से संपर्क करें।"
+      }
+    },
+    "faqs": {
+      "1": {
+        "category": "इवेंट",
+        "question": "मैं किसी इवेंट या हैकाथॉन के लिए पंजीकरण कैसे करूं?",
+        "answer": "इवेंट या हैकाथॉन पृष्ठ पर जाएं, वह खोजें जो आप चाहते हैं, और रजिस्टर बटन पर क्लिक करें। आवश्यक विवरण भरें और अपना पंजीकरण सबमिट करें।"
+      },
+      "2": {
+        "category": "प्रोजेक्ट",
+        "question": "मैं प्रोजेक्ट कैसे सबमिट करूं?",
+        "answer": "प्रोजेक्ट अनुभाग पर जाएं, प्रोजेक्ट सबमिट करें पर क्लिक करें, और अपने प्रोजेक्ट का शीर्षक, विवरण और रिपॉजिटरी लिंक सहित आवश्यक विवरण भरें।"
+      },
+      "3": {
+        "category": "हैकाथॉन",
+        "question": "मैं हैकाथॉन में कैसे शामिल होऊं?",
+        "answer": "हैकाथॉन पृष्ठ ब्राउज़ करें और किसी भी खुले हैकाथॉन पर शामिल हों पर क्लिक करें। आप अकेले या टीम के हिस्से के रूप में भाग ले सकते हैं।"
+      },
+      "4": {
+        "category": "समुदाय",
+        "question": "लीडरबोर्ड स्कोर की गणना कैसे की जाती है?",
+        "answer": "स्कोर प्लेटफ़ॉर्म पर आपके योगदान, इवेंट भागीदारी, मर्ज किए गए पुल रिक्वेस्ट और प्रोजेक्ट सबमिशन पर आधारित हैं।"
+      },
+      "5": {
+        "category": "योगदान",
+        "question": "मैं Eventra में ओपन सोर्स प्रोजेक्ट के रूप में कैसे योगदान करूं?",
+        "answer": "प्रोजेक्ट को स्थानीय रूप से सेट अप करने, मुद्दे चुनने और पुल रिक्वेस्ट सबमिट करने के विस्तृत निर्देशों के लिए योगदानकर्ता गाइड पृष्ठ देखें।"
+      }
+    },
+    "tutorials": {
+      "hostingHackathon": {
+        "title": "हैकाथॉन होस्ट करना",
+        "description": "Eventra पर अपना हैकाथॉन बनाने और प्रकाशित करने के लिए चरण-दर-चरण मार्गदर्शिका।"
+      },
+      "submittingProject": {
+        "title": "प्रोजेक्ट सबमिट करना",
+        "description": "Eventra प्लेटफ़ॉर्म पर प्रोजेक्ट सबमिट करके अपना काम प्रदर्शित करना सीखें।"
+      },
+      "creatingEvent": {
+        "title": "इवेंट बनाना",
+        "description": "प्रतिभागियों को आवश्यक सभी विवरणों के साथ सामुदायिक इवेंट सेट अप और प्रकाशित करें।"
+      },
+      "contributingGsoc": {
+        "title": "GSSoC के माध्यम से योगदान देना",
+        "description": "Eventra पर GirlScript Summer of Code के माध्यम से ओपन सोर्स योगदान शुरू करें।"
+      }
+    },
+    "guidelines": {
+      "checkHackathonRules": {
+        "title": "हैकाथॉन नियम जांचें",
+        "description": "हैकाथॉन में शामिल होने से पहले हमेशा नियम और पात्रता मानदंड पढ़ें।"
+      },
+      "documentYourWork": {
+        "title": "अपना काम दस्तावेज़ करें",
+        "description": "स्पष्ट README फ़ाइलें और प्रोजेक्ट विवरण लिखें ताकि अन्य लोग आपके काम को समझ और उपयोग कर सकें।"
+      },
+      "followContributionGuidelines": {
+        "title": "योगदान दिशानिर्देशों का पालन करें",
+        "description": "पुल रिक्वेस्ट सबमिट करने से पहले योगदानकर्ता गाइड पढ़ें।"
+      },
+      "respectDeadlines": {
+        "title": "समय सीमा का सम्मान करें",
+        "description": "समय सीमा से पहले अपने प्रोजेक्ट और पंजीकरण सबमिट करें — देर से प्रविष्टियां स्वीकार नहीं की जा सकती हैं।"
+      },
+      "avoidDuplicates": {
+        "title": "डुप्लिकेट से बचें",
+        "description": "नए बनाने से पहले मौजूदा प्रोजेक्ट और मुद्दे खोजें।"
+      },
+      "getSupport": {
+        "title": "सहायता प्राप्त करें",
+        "description": "यदि आप अटके हुए हैं, तो संपर्क पृष्ठ या सामुदायिक चैनलों के माध्यम से संपर्क करें — हम मदद करने में खुश हैं।"
+      }
+    }
   },
   "contactUs": {
     "pageTitle": "Contact Us",
@@ -675,5 +844,99 @@
     "toastValidationError": "Please fill in all required fields correctly",
     "toastSuccess": "Thank you for your feedback! We appreciate your input.",
     "toastError": "There was an error submitting your feedback. Please try again."
+  },
+  "about": {
+    "pageTitle": "हमारे बारे में",
+    "pageDescription": "इवेंट्रा के बारे में जानें — दुनिया भर में समुदायों, कॉलेजों और संगठनों के लिए खुला स्रोत (open-source) इवेंट प्रबंधन मंच।",
+    "documentTitle": "इवेंट्रा | हमारे बारे में",
+    "errorBoundaryLabel": "आंकड़े",
+    "hero": {
+      "tagline": "ओपन सोर्स • समुदाय संचालित • हमेशा के लिए मुफ्त",
+      "title": "बेहतर इवेंट्स का निर्माण",
+      "subtitle": "एक साथ",
+      "description": "इवेंट्रा समुदायों, कॉलेजों, संगठनों और ओपन-सोर्स टीमों को सुलभ, आधुनिक और सहयोगी इवेंट प्रबंधन टूल के माध्यम से प्रभावशाली इवेंट बनाने, प्रबंधित करने और विकसित करने के लिए सशक्त बनाता है।"
+    },
+    "stats": {
+      "events": "आयोजित इवेंट्स",
+      "builders": "समुदाय के सदस्य",
+      "partners": "समुदाय की पहुंच"
+    },
+    "values": {
+      "heading": "क्या इवेंट्रा को प्रेरित करता है",
+      "description": "हमारे मूल्य हमारे हर निर्णय का मार्गदर्शन करते हैं, यह सुनिश्चित करते हुए कि इवेंट्रा सुलभ, समुदाय-केंद्रित और दीर्घकालिक प्रभाव के लिए निर्मित रहे।",
+      "eventManagement": {
+        "title": "ओपन सोर्स",
+        "description": "दुनिया भर के समुदायों के लिए पारदर्शी रूप से निर्मित और स्वतंत्र रूप से उपलब्ध।"
+      },
+      "hackathonGrowth": {
+        "title": "समुदाय पहले",
+        "description": "सहयोग, समावेश और सार्थक संबंधों के इर्द-गिर्द डिज़ाइन किया गया।"
+      },
+      "projectCollaboration": {
+        "title": "नवाचार (Innovation)",
+        "description": "सामुदायिक प्रतिक्रिया और आधुनिक तकनीक के माध्यम से लगातार विकसित हो रहा है।"
+      },
+      "networking": {
+        "title": "सुलभता (Accessibility)",
+        "description": "हर कौशल स्तर के आयोजकों के लिए सरल, सहज और सुलभ।"
+      }
+    },
+    "cta": {
+      "badge": "इवेंट्रा समुदाय में शामिल हों",
+      "heading": "निर्माण करें, सहयोग करें और बढ़ें",
+      "subtitle": "इवेंट्रा के साथ मिलकर",
+      "description": "इवेंट्रा छात्रों, डेवलपर्स, आयोजकों और समुदायों को अवसरों की खोज करने, सार्थक परियोजनाओं पर सहयोग करने और प्रौद्योगिकी संचालित इवेंट्स के माध्यम से प्रभाव पैदा करने के लिए सशक्त बनाता है।",
+      "socialProof": {
+        "community": "बढ़ता समुदाय",
+        "openSource": "ओपन सोर्स संचालित",
+        "learning": "सीखना और सहयोग"
+      },
+      "getStartedFree": "मुफ्त में शुरू करें",
+      "documentation": "दस्तावेज़ (Docs)",
+      "contactUs": "संपर्क करें"
+    },
+    "features": {
+      "heading": "सुविधाएं जो हर इवेंट को शक्ति प्रदान करती हैं",
+      "description": "इवेंट्रा मजबूत समुदायों को बढ़ावा देने के साथ-साथ सफल इवेंट्स बनाने, प्रबंधित करने, स्केल करने और बढ़ाने के लिए आवश्यक सब कुछ प्रदान करता है।",
+      "ctaAriaLabel": "{{cta}} - {{title}}",
+      "items": {
+        "events": {
+          "stat": "90% तेज़ सेटअप",
+          "title": "स्मार्ट इवेंट निर्माण",
+          "description": "इंटेलिजेंट टेम्प्लेट, सुव्यवस्थित वर्कफ़्लो और स्वचालित टूल का उपयोग करके इवेंट्स को तेज़ी से लॉन्च करें।",
+          "cta": "बनाना शुरू करें"
+        },
+        "hackathons": {
+          "stat": "त्वरित पंजीकरण",
+          "title": "हैकाथॉन और चुनौतियां",
+          "description": "हैकाथॉन में शामिल हों, टीमें बनाएं, प्रोजेक्ट बनाएं और पुरस्कार जीतने के लिए अपने कौशल का प्रदर्शन करें।",
+          "cta": "हैकाथॉन देखें"
+        },
+        "projects": {
+          "stat": "साथ मिलकर बनाएं",
+          "title": "परियोजना सहयोग",
+          "description": "ओपन-सोर्स परियोजनाओं पर सहयोग करें, वास्तविक कोड में योगदान करें, और अपना पोर्टफोलियो बनाएं।",
+          "cta": "परियोजनाएं खोजें"
+        },
+        "connections": {
+          "stat": "नेटवर्क बढ़ाएं",
+          "title": "सामुदायिक नेटवर्किंग",
+          "description": "दुनिया भर के डेवलपर्स, डिज़ाइनरों, उत्पाद प्रबंधकों और निर्माताओं से जुड़ें।",
+          "cta": "समुदाय में शामिल हों"
+        },
+        "manage": {
+          "stat": "एंटरप्राइज-ग्रेड",
+          "title": "सुरक्षित डिज़ाइन",
+          "description": "सुरक्षित क्यूआर कोड और वास्तविक समय में उपस्थिति ट्रैकिंग का उपयोग करके उपस्थित लोगों को निर्बाध चेक-इन प्रदान करें।",
+          "cta": "अधिक जानें"
+        },
+        "benefits": {
+          "stat": "विश्वव्यापी पहुंच",
+          "title": "डेवलपर लाभ",
+          "description": "सत्यापित प्रमाण पत्र प्राप्त करें, अपनी प्रोफ़ाइल का स्तर बढ़ाएं और अपने योगदान के लिए बैज अर्जित करें।",
+          "cta": "अभी साइन अप करें"
+        }
+      }
+    }
   }
 }

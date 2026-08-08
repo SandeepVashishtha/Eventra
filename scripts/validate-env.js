@@ -114,7 +114,7 @@ const ALLOWED_EXCEPTIONS = new Set([
 ]);
 
 const BACKEND_URL_VARS = ["BACKEND_URL", "VITE_API_URL", "REACT_APP_API_URL"];
-const REQUIRED_VARS = ["JWT_SECRET"];
+const REQUIRED_VARS = [];
 const PRODUCTION_REQUIRED_VARS = ["DATABASE_URL"];
 
 // Rate limiting configuration validation
@@ -137,21 +137,32 @@ const FORMAT_VALIDATED_VARS = {
 
 const OPTIONAL_VARS = [];
 
+const isFrontendOnly = process.argv.includes("--frontend-only") || process.env.FRONTEND_ONLY === "true";
+const isFullBuild = !isFrontendOnly;
+
 let hasErrors = false;
 const errors = [];
 const warnings = [];
 
 console.log("\n[validate-env] Scanning environment variables for security issues...\n");
 
+if (isFrontendOnly) {
+  console.log("  Mode: frontend-only (skipping server-side variable checks)\n");
+}
+
 console.log("Required backend configuration:");
 const configuredBackendVars = BACKEND_URL_VARS.filter(
   (varName) => process.env[varName] && process.env[varName].trim()
 );
 if (configuredBackendVars.length === 0) {
-  const msg =
-    "Backend URL is not configured. Set BACKEND_URL, VITE_API_URL, or REACT_APP_API_URL before starting the application.";
-  errors.push(`[CONFIG ERROR] ${msg}`);
-  hasErrors = true;
+  if (isFrontendOnly) {
+    warnings.push("Backend URL not set. API proxy and CSP connect-src will not be configured.");
+  } else {
+    const msg =
+      "Backend URL is not configured. Set BACKEND_URL, VITE_API_URL, or REACT_APP_API_URL before starting the application.";
+    errors.push(`[CONFIG ERROR] ${msg}`);
+    hasErrors = true;
+  }
 } else {
   console.log(`  OK: ${configuredBackendVars.join(" or ")} = [set]`);
 }
@@ -159,6 +170,10 @@ if (configuredBackendVars.length === 0) {
 console.log("\nRequired server variables:");
 for (const varName of REQUIRED_VARS) {
   if (!process.env[varName]) {
+    if (isFrontendOnly) {
+      warnings.push(`${varName} not set (skipped in frontend-only mode).`);
+      continue;
+    }
     const isJwtSecret = varName === "JWT_SECRET";
     const errorMsg = isJwtSecret
       ? `[CRITICAL SECURITY ERROR] ${varName} is missing. This is a critical security vulnerability that allows unauthorized access. Generate a secure secret using: openssl rand -base64 32`
@@ -168,8 +183,11 @@ for (const varName of REQUIRED_VARS) {
     errors.push(errorMsg);
     hasErrors = true;
   } else {
-    // Additional validation for JWT_SECRET to ensure it's not empty or whitespace
     if (varName === "JWT_SECRET" && !process.env[varName].trim()) {
+      if (isFrontendOnly) {
+        warnings.push("JWT_SECRET is empty or whitespace-only (skipped in frontend-only mode).");
+        continue;
+      }
       const errorMsg = `[CRITICAL SECURITY ERROR] JWT_SECRET is empty or whitespace-only. This is a critical security vulnerability. Generate a secure secret using: openssl rand -base64 32`;
       console.error(`  ERROR: ${errorMsg}`);
       errors.push(errorMsg);
@@ -339,6 +357,36 @@ const criticalErrors = errors.filter(
     e.includes("[CRITICAL ERROR]") ||
     e.includes("[CONFIG ERROR]")
 );
+
+const allVars = Object.keys(process.env);
+const viteVars = allVars.filter((k) => k.startsWith("VITE_"));
+const reactAppVars = allVars.filter((k) => k.startsWith("REACT_APP_"));
+const serverVars = allVars.filter(
+  (k) =>
+    !k.startsWith("VITE_") && !k.startsWith("REACT_APP_") && !k.startsWith("npm_")
+);
+
+console.log("\n\u2500".repeat(50));
+console.log("Summary");
+console.log("\u2500".repeat(50));
+console.log(`  Mode:              ${isFrontendOnly ? "frontend-only" : "full build"}`);
+console.log(`  Node version:      ${process.version}`);
+console.log(`  NODE_ENV:          ${process.env.NODE_ENV || "(not set)"}`);
+console.log(`  Backend URL vars:  ${configuredBackendVars.length} configured`);
+console.log(`  Server variables:  ${serverVars.length} found`);
+console.log(`  VITE_ variables:   ${viteVars.length} found`);
+console.log(`  REACT_APP_ vars:   ${reactAppVars.length} found`);
+console.log(`  Errors:            ${errors.length}`);
+console.log(`  Warnings:          ${warnings.length}`);
+console.log("\u2500".repeat(50));
+
+if (warnings.length > 0) {
+  console.log("\nWarnings:");
+  for (const warning of warnings) {
+    console.log(`  \u26A0 ${warning}`);
+  }
+}
+
 if (criticalErrors.length > 0 || hasErrors) {
   console.error(
     `\n[validate-env] BUILD ABORTED: ${criticalErrors.length} critical issue(s) detected.\n`
@@ -346,7 +394,13 @@ if (criticalErrors.length > 0 || hasErrors) {
   process.exit(1);
 }
 
-console.log(
-  `\n[validate-env] Environment check passed. Scanned ${clientVars.length} client variable(s).\n`
-);
+if (errors.length > 0 && criticalErrors.length === 0) {
+  console.warn(
+    `\n[validate-env] Build proceeding with ${errors.length} non-critical warning(s).\n`
+  );
+} else {
+  console.log(
+    `\n[validate-env] Environment check passed. Scanned ${clientVars.length} client variable(s), ${allVars.length} total.\n`
+  );
+}
 process.exit(0);

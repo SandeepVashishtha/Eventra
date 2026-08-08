@@ -1,418 +1,172 @@
-import EventDuration from "../../components/common/EventDuration";
-import { getEventDuration } from "../../utils/eventDurationUtils";
-import { memo, useCallback, useEffect, useId, useState } from "react";
-import { logger } from "../../utils/logger";
-import { getUserTimezone } from "../../utils/timezoneUtils";
+import React, { memo, useCallback, useId, useState } from "react";
+import { logger } from "utils/logger";
+import LazyImage from "components/common/LazyImage";
+import { formatLocalDateTime } from "utils/localDateTime";import { formatLocalDateTime } from "utils/localDateTime";
+import ShareModal from "components/common/ShareModal";
+import StatusBadge from "components/common/StatusBadge";
+import { getEventStatus } from "utils/eventUtils";
+import SocialShareButtons from "components/common/SocialShareButtons";
+import AddToCalendar from "components/common/AddToCalendar";
+import { useMyEvents } from "context/MyEventsContext";
 import { Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { getSmartDateLabel } from "../../utils/relativeTime";
-import {
-  Bookmark,
-  BookmarkCheck,
-  Calendar,
-  MapPin,
-  Tag,
-  Star,
-  Heart,
-  Zap,
-  BookOpen,
-  Gift,
-  Share2,
-  AlertTriangle,
-} from "lucide-react";
+import { motion } from "framer-motion";
 import { toast } from "react-toastify";
-import LazyImage from "../../components/common/LazyImage";
-import ShareModal from "../../components/common/ShareModal";
-import StatusBadge from "../../components/common/StatusBadge";
-import { getEventStatus } from "../../utils/eventUtils";
-import { useMyEvents } from "../../context/MyEventsContext";
-import ReminderControls from "../../components/reminders/ReminderControls";
-import AddToCalendar from "../../components/common/AddToCalendar";
-import SocialShareButtons from "../../components/common/SocialShareButtons";
 import {
-  addBookmarkedEvent,
-  isEventBookmarked,
-  removeBookmarkedEvent,
-  subscribeToBookmarkChanges,
-} from "../../utils/bookmarkUtils";
-import { checkRegistrationConflict } from "../../utils/conflictDetection";
+  BookmarkCheck,
+  Bookmark,
+  MapPin,
+  Calendar,
+  Clock,
+  ArrowRight,
+} from "lucide-react";
 
-const getCapacityStyles = (ratio, isFull) => {
-  if (isFull || ratio >= 0.85) {
-    return {
-      barColor: "bg-red-500",
-      textColor: "text-red-600 dark:text-red-400",
-    };
-  }
-  if (ratio >= 0.6) {
-    return {
-      barColor: "bg-amber-500",
-      textColor: "text-amber-600 dark:text-amber-400",
-    };
-  }
-  return {
-    barColor: "bg-emerald-500",
-    textColor: "text-emerald-600 dark:text-emerald-400",
-  };
-};
+import {
+  isEventBookmarked,
+  addBookmarkedEvent,
+  removeBookmarkedEvent,
+} from "utils/bookmarkUtils";
+
 
 const EventCard = ({ event, position }) => {
   const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
+  const [imageFailed, setImageFailed] = useState(false);
   const titleId = useId();
-  const { myEvents, isRegistered } = useMyEvents();
-  const [showBookmarkTooltip, setShowBookmarkTooltip] = useState(false);
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [randomIcon] = useState(() => {
-    const icons = [
-      <Star key="star" size={16} className="text-yellow-500" />,
-      <Heart key="heart" size={16} className="text-red-500" />,
-      <Zap key="zap" size={16} className="text-pink-500" />,
-      <BookOpen key="book-open" size={16} className="text-indigo-500" />,
-      <Gift key="gift" size={16} className="text-pink-500" />,
-    ];
+  const { isRegistered } = useMyEvents();
 
-    return icons[Math.floor(Math.random() * icons.length)];
-  });
-
-  // Check if this event conflicts with registered events
-  const conflictCheck = checkRegistrationConflict(event, myEvents);
-  const hasConflict = conflictCheck.hasConflict;
   const isUserRegistered = isRegistered(event.id);
+  const computedStatus = getEventStatus(event);
 
-  const isPastEvent = getEventStatus(event) === "past" || getEventStatus(event) === "ended";
+  const eventImage = event.image || event.imageUrl || null;
+  const eventDate =
+  event.date ||
+  event.eventDate ||
+  event.startDate ||
+  null;
 
-  const handleCopyLink = (e) => {
-    e.preventDefault();
-    const shareUrl = `${window.location.origin}/events/${event.id}`;
-
-    navigator.clipboard
-      .writeText(shareUrl)
-      .then(() => {
-        toast.success("Event link copied to clipboard!", {
-          autoClose: 2000,
-        });
-      })
-      .catch((err) => {
-        logger.error("Failed to copy: ", err);
-        toast.error("Could not copy link. Please try again.", {
-          autoClose: 2500,
-        });
-      });
-  };
-
-const durationText = getEventDuration(event);
-
-  useEffect(() => {
-    setIsBookmarked(isEventBookmarked(event.id));
-
-    return subscribeToBookmarkChanges(() => {
-      setIsBookmarked(isEventBookmarked(event.id));
-    });
-  }, [event.id]);
+const dateInfo = formatLocalDateTime(eventDate);
 
   const handleBookmarkToggle = useCallback(
     (e) => {
       e.preventDefault();
       e.stopPropagation();
-
       if (isBookmarked) {
         removeBookmarkedEvent(event.id);
-        toast.info("Removed from bookmarked events.", {
-          toastId: `bookmark-${event.id}`,
-          autoClose: 1800,
-          className: "custom-toast",
-        });
-        return;
+        setIsBookmarked(false);
+        toast.info("Removed from saved events.", { toastId: `bookmark-${event.id}`, autoClose: 1800 });
+      } else {
+        addBookmarkedEvent({ ...event, status: computedStatus });
+        setIsBookmarked(true);
+        toast.success("Event saved!", { toastId: `bookmark-${event.id}`, autoClose: 1800 });
       }
-
-      addBookmarkedEvent({
-        ...event,
-        status: computedStatus,
-      });
-      toast.success("Event bookmarked.", {
-        toastId: `bookmark-${event.id}`,
-        autoClose: 1800,
-        className: "custom-toast",
-      });
     },
     [isBookmarked, event, computedStatus]
   );
 
   return (
-    <article
-      data-aos="zoom-in"
-      data-aos-duration="800"
+    <motion.article
       aria-labelledby={titleId}
-      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-lg backdrop-blur-sm transition-all duration-300 flex flex-col z-10 event-card-hoverable overflow-hidden border border-gray-100 dark:border-gray-800"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -4 }}
+      transition={{ type: "spring", stiffness: 300, damping: 24 }}
+      className="group relative flex flex-col rounded-2xl overflow-hidden bg-card-bg border border-border hover:border-primary shadow-premium-sm hover:shadow-premium-md transition-all duration-300"
     >
-      {/* Action buttons */}
-      <div className="absolute top-3 right-3 z-200 flex space-x-1.5 items-center">
-        <div className="relative flex items-center">
-          <motion.button
-            whileHover={{ scale: 1.12 }}
-            whileTap={{ scale: 0.88 }}
-            type="button"
-            onClick={handleBookmarkToggle}
-            onMouseEnter={() => setShowBookmarkTooltip(true)}
-            onMouseLeave={() => setShowBookmarkTooltip(false)}
-            aria-label={isBookmarked ? "Remove event bookmark" : "Bookmark event"}
-            aria-pressed={isBookmarked}
-            className={`rounded-full p-2 shadow cursor-pointer border transition-all duration-300 relative flex items-center justify-center ${
-              isBookmarked
-                ? "border-indigo-400 dark:border-indigo-500 text-white bg-linear-to-r from-indigo-500 to-indigo-600 shadow-[0_0_12px_rgba(99,102,241,0.45)]"
-                : "border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 bg-white/90 dark:bg-gray-900/90 hover:border-indigo-500 hover:text-indigo-600 dark:hover:border-indigo-400 dark:hover:text-indigo-400 hover:shadow-[0_0_12px_rgba(99,102,241,0.35)]"
-            }`}
-          >
-            <motion.div
-              key={isBookmarked ? "bookmarked" : "unbookmarked"}
-              initial={{ scale: 0.65, rotate: isBookmarked ? 15 : -15 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ type: "spring", stiffness: 350, damping: 15 }}
-              className="flex items-center justify-center"
-            >
-              {isBookmarked ? (
-                <BookmarkCheck size={14} className="stroke-[2.5]" />
-              ) : (
-                <Bookmark size={14} className="stroke-2" />
-              )}
-            </motion.div>
-          </motion.button>
-
-          <AnimatePresence>
-            {showBookmarkTooltip && (
-              <motion.div
-                initial={{ opacity: 0, y: 4, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 4, scale: 0.95 }}
-                transition={{ duration: 0.15, ease: "easeOut" }}
-                className="absolute bottom-full right-0 mb-2 px-2.5 py-1 text-[10px] font-bold text-white bg-slate-900 dark:bg-slate-950 border border-slate-800 rounded-lg shadow-xl whitespace-nowrap pointer-events-none z-300"
-              >
-                {isBookmarked ? "Remove Bookmark" : "Save to Bookmarks"}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        <button
-          type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setIsShareModalOpen(true);
-          }}
-          className="bg-white/90 backdrop-blur-sm rounded-full p-2 shadow cursor-pointer hover:shadow-md border border-gray-200 group/share transition-all duration-200"
-          aria-label={`Share ${event.title}`}
-        >
-          <Share2 size={14} className="text-gray-600" aria-hidden="true" />
-        </button>
-
-        <AnimatePresence>
-          {isShareModalOpen && (
-            <ShareModal
-              isOpen={isShareModalOpen}
-              onClose={() => setIsShareModalOpen(false)}
-              event={event}
-            />
-          )}
-        </AnimatePresence>
-
-        <button
-          type="button"
-          onClick={handleCopyLink}
-          className="rounded-full border border-gray-200 bg-white/90 p-2 shadow backdrop-blur-sm hover:border-indigo-200 dark:border-gray-700 dark:bg-gray-800/90 dark:hover:border-indigo-500 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-indigo-500"
-          title="Copy Event Link"
-          aria-label={`Copy link for ${event.title}`}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="text-gray-600 dark:text-gray-300"
-            aria-hidden="true"
-          >
-            <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
-            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
-          </svg>
-        </button>
-
-        <AddToCalendar event={event} iconOnly={true} />
-      </div>
-
-      {/* Header */}
-      <div className="flex items-center px-5 py-4 gap-4 bg-linear-to-r from-white/80 to-indigo-50/60 dark:from-gray-900/80 dark:to-indigo-950/60 border-b border-gray-100 dark:border-gray-800 rounded-t-3xl">
-      <div className="absolute left-3 top-3 z-20 rounded-full bg-indigo-600 px-2 py-1 text-xs font-bold text-white shadow">
-  #{position}
-</div>
-        <div className="p-2 bg-linear-to-br from-gray-100 to-white dark:from-gray-800 dark:to-gray-700 rounded-xl shadow-inner shrink-0">
-          {randomIcon}
-        </div>
-
-        <h3 id={titleId} title={event.title} className="text-gray-900 dark:text-white font-bold text-lg tracking-tight line-clamp-2 break-words group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-300 flex-1 min-w-0">
-          {event.title}
-        </h3>
-        <div className="ml-auto flex items-center gap-1.5 shrink-0">
-          {/* Conflict Indicator */}
-          {hasConflict && !isUserRegistered && (
-            <div
-              className="inline-flex items-center gap-[5px] py-1 px-[10px] bg-amber-100 dark:bg-amber-900/30 rounded-[6px] border border-amber-300 dark:border-amber-700 shrink-0 text-[12px] font-medium leading-none text-amber-700 dark:text-amber-300"
-              title="This event conflicts with your registered events"
-            >
-              <AlertTriangle size={12} className="text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" />
-              <span>Conflict</span>
-            </div>
-          )}
-          {/* Registered Indicator */}
-          {isUserRegistered && (
-            <div
-              className="inline-flex items-center gap-[5px] py-1 px-[10px] bg-green-100 dark:bg-green-900/30 rounded-[6px] border border-green-300 dark:border-green-700 shrink-0 text-[12px] font-medium leading-none text-green-700 dark:text-green-300"
-              title="You are registered for this event"
-            >
-              <BookmarkCheck size={12} className="text-green-600 dark:text-green-400 shrink-0" aria-hidden="true" />
-              <span>Registered</span>
-            </div>
-          )}
-          <StatusBadge status={computedStatus} />
-        </div>
-      </div>
-
-      {/* Image */}
-      <div className="relative h-40 overflow-hidden">
-        <LazyImage
-          src={event.image}
-          alt={event.imageAlt || `${event.title} event thumbnail`}
-          aspectRatio="5/1"
-          className="w-full h-full"
-          imgClassName="object-cover transition-transform duration-500 group-hover:scale-105"
-        />
-        <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent" />
-      </div>
-
-      {/* Description */}
-      <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
-        <p className="text-gray-500 dark:text-gray-400 text-sm leading-6 line-clamp-2">
-          {event.description}
-        </p>
-      </div>
-
-      {/* Info Grid */}
-      <div className="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4 text-gray-600 dark:text-gray-400 text-sm bg-gray-50/50 dark:bg-gray-800/30">
-        {/* Location */}
-        <div className="flex items-start gap-2 sm:col-span-2">
-          <MapPin size={14} className="text-pink-500 shrink-0" />
-          <div className="flex flex-col min-w-0">
-            <span className="truncate">{event.location}</span>
-            <span className="text-[11px] text-gray-500 dark:text-gray-400">
-              {getUserTimezone()}
-            </span>
-          </div>
-        </div>
-
-        {/* Event Type */}
-        <div className="flex items-center gap-2">
-          <Tag size={14} className="text-green-500 shrink-0" aria-hidden="true" />
-          <span className="truncate">{event.type}</span>
-        </div>
-
-        {/* Event Date */}
-        <div className="flex items-start gap-2">
-          <Calendar size={14} className="text-indigo-500 shrink-0 mt-0.5" />
-          <div className="flex flex-col">
-            <span className="truncate">
-              {getSmartDateLabel(event.date, event.time)}
-            </span>
-            <span className="text-[11px] text-gray-500 dark:text-gray-400">
-              {new Date(event.date).toLocaleDateString("en-US", {
-                weekday: "short", day: "numeric", month: "short", year: "numeric",
-              })}
-              <EventDuration duration={durationText} /><EventDuration duration={durationText} />
-            </span>
-          </div>
-        </div>
-      </div>
-      <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
-        <ReminderControls event={event} canSetReminder={canSetReminder} compact />
-      </div>
-      {/* Seats / Capacity */}
-      {typeof event.maxAttendees === "number" && event.maxAttendees > 0 && (() => {
-        const registered = Number(event.attendees) || 0;
-        const capacity = Number(event.maxAttendees);
-        const isFull = registered >= capacity;
-        const ratio = Math.min(registered / capacity, 1);
-        const percent = Math.round(ratio * 100);
-        const spotsLeft = Math.max(capacity - registered, 0);
-
-        const { barColor, textColor } = getCapacityStyles(ratio, isFull);
-
-        return (
-          <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                Seats
-              </span>
-              {isFull ? (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300">
-                  Full
-                </span>
-              ) : (
-                <span className={`text-xs font-semibold tabular-nums ${textColor}`}>
-                  {spotsLeft} spot{spotsLeft === 1 ? "" : "s"} left
-                </span>
-              )}
-            </div>
-            <div
-              className="w-full h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden"
-              role="progressbar"
-              aria-valuenow={percent}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-label={`${registered} of ${capacity} seats filled`}
-            >
-              <div
-                className={`h-full ${barColor} transition-all duration-500 ease-out`}
-                style={{ width: `${percent}%` }}
-              />
-            </div>
-            <div className="mt-1 text-[11px] text-gray-500 dark:text-gray-500 tabular-nums">
-              {registered} / {capacity} registered
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* Social Sharing */}
-      <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 flex justify-center">
-        <SocialShareButtons event={event} layout="inline" />
-      </div>
-
-      {/* CTA */}
-      <div className="px-5 py-4 flex gap-3 mt-auto">
-        {isPastEvent ? (
-          <div className="flex-1 inline-flex items-center justify-center rounded-2xl bg-gray-300 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-4 py-3 text-sm font-semibold shadow-md cursor-not-allowed">
-            Event Ended
-          </div>
+      {/* Banner / Cover image */}
+      <div className="relative h-48 overflow-hidden bg-bg-secondary">
+        {eventImage && !imageFailed ? (
+          <LazyImage
+            src={eventImage}
+            alt=""
+            className="absolute inset-0 w-full h-full"
+            imgClassName="object-cover w-full h-full opacity-90 group-hover:scale-102 transition-transform duration-700"
+            onError={() => setImageFailed(true)}
+          />
         ) : (
-          <Link to={`/events/${event.id}/register`} className="flex-1 inline-flex items-center justify-center rounded-2xl bg-linear-to-r from-indigo-600 via-indigo-700 to-slate-900 hover:from-indigo-500 hover:via-indigo-600 hover:to-slate-800 text-white px-4 py-3 text-sm font-semibold shadow-lg transition-all duration-300 hover:scale-[1.03] hover:shadow-xl">
-            <span>
-              Register Now
-            </span>
-          </Link>
+          <div className="absolute inset-0 bg-linear-to-br from-indigo-500/10 to-violet-500/10 flex items-center justify-center">
+            <span className="text-4xl font-extrabold text-primary/10 select-none">Eventra</span>
+          </div>
         )}
 
-        <Link to={`/events/${event.id}`} className="flex-1 inline-flex items-center justify-center rounded-2xl bg-slate-50/80 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 px-4 py-3 text-sm font-semibold shadow-md hover:bg-slate-100 dark:hover:bg-slate-700/80 hover:scale-[1.03] hover:shadow-lg transition-all duration-300">
-          <span>
-            View Details
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+
+        {/* Overlay badges */}
+        <div className="absolute top-4 left-4 flex flex-wrap gap-2">
+          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider bg-black/40 backdrop-blur-md text-white border border-white/10">
+            {event.type || event.category || "Event"}
           </span>
+          {isUserRegistered && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider bg-emerald-500/90 text-white shadow-md">
+              Registered
+            </span>
+          )}
+        </div>
+
+        {/* Save Toggle button */}
+        <button
+          onClick={handleBookmarkToggle}
+          aria-label={isBookmarked ? "Remove bookmark" : "Bookmark event"}
+          aria-pressed={isBookmarked}
+          className={`absolute top-4 right-4 rounded-lg p-2 backdrop-blur-md border transition-all duration-200 ${
+            isBookmarked
+              ? "bg-primary text-white border-primary/20"
+              : "bg-black/40 border-white/10 text-white/80 hover:bg-white/10 hover:text-white"
+          }`}
+        >
+          {isBookmarked ? <BookmarkCheck size={14} /> : <Bookmark size={14} />}
+        </button>
+      </div>
+
+      {/* Info Body */}
+      <div className="flex flex-col flex-1 p-5 sm:p-6">
+        <h3
+          id={titleId}
+          className="text-text font-bold text-lg sm:text-xl leading-snug mb-2 group-hover:text-primary transition-colors duration-200 line-clamp-2"
+        >
+          <Link to={`/events/${event.id}`}>
+            {event.title}
+          </Link>
+        </h3>
+
+        <p className="text-text-light text-sm font-normal leading-relaxed mb-6 line-clamp-2">
+          {event.description}
+        </p>
+
+        <div className="flex flex-col gap-2 mt-auto border-t border-border pt-4 text-xs font-semibold text-text-light">
+          {event.location && (
+            <div className="flex items-center gap-2 truncate">
+              <MapPin size={14} className="text-text-light/50 shrink-0" />
+              <span>{event.location}</span>
+            </div>
+          )}
+
+          <div className="flex items-center gap-2 truncate">
+            <Calendar size={14} className="text-text-light/50 shrink-0" />
+            <span>{dateInfo.date}</span>
+
+{dateInfo.time && dateInfo.date !== "Date TBD" && (
+  <>
+    <span className="text-border">|</span>
+    <Clock size={12} className="text-text-light/40 shrink-0" />
+    <span>{dateInfo.time}</span>
+
+    <span className="text-xs text-text-light">
+      ({dateInfo.timezone})
+    </span>
+  </>
+)}
+          </div>
+        </div>
+
+        <Link
+          to={`/events/${event.id}`}
+          className="mt-6 inline-flex items-center justify-center gap-1 w-full px-4 py-2.5 rounded-lg bg-text text-bg hover:opacity-90 text-sm font-semibold transition-all duration-200"
+        >
+          View Details
+          <ArrowRight size={14} className="transition-transform duration-200 group-hover:translate-x-0.5" />
         </Link>
       </div>
-    </article>
+    </motion.article>
   );
 };
 
 export default memo(EventCard);
-// OPTIMIZATION: Implemented image lazy-loading, decoding='async' and standard aspect-ratio styles to minimize Cumulative Layout Shift (CLS).

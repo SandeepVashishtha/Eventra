@@ -1,6 +1,6 @@
 import { isValidShareUrl } from "./shareUtils.js";
 
-export const createShareModalData = (event, origin = window.location.origin) => {
+export const createShareModalData = (event, origin) => {
   if (!event) {
     return null;
   }
@@ -10,7 +10,14 @@ export const createShareModalData = (event, origin = window.location.origin) => 
     return null;
   }
 
-  const shareUrl = `${origin}/events/${event.id}`;
+  // Resolve origin SSR-safely: use the passed value, fall back to window,
+  // and finally a known-good default for environments where window is unavailable.
+  const resolvedOrigin =
+    origin ||
+    (typeof window !== "undefined" ? window.location?.origin : null) ||
+    "https://eventra.sandeepvashishtha.in";
+
+  const shareUrl = `${resolvedOrigin}/events/${event.id}`;
   if (!isValidShareUrl(shareUrl)) {
     console.warn("[ShareModal] Rejected invalid share URL:", shareUrl);
     return null;

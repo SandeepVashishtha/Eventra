@@ -21,14 +21,52 @@ const DANGEROUS_EXTENSIONS = [
 const DEFAULT_MAX_SIZE_MB = 5;
 
 /**
+ * Magic byte signatures for file type verification.
+ * Each entry maps a MIME type to its expected byte pattern.
+ */
+const FILE_SIGNATURES = {
+  "image/jpeg": [0xFF, 0xD8, 0xFF],
+  "image/png": [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A],
+  "image/gif": [0x47, 0x49, 0x46, 0x38],
+  "image/webp": [0x52, 0x49, 0x46, 0x46],
+};
+
+/**
+ * Checks if file bytes match expected magic bytes for a given MIME type.
+ * @param {Uint8Array} bytes - First bytes of the file
+ * @param {string} mimeType - The MIME type to verify
+ * @returns {boolean}
+ */
+function matchesMagicBytes(bytes, mimeType) {
+  const signature = FILE_SIGNATURES[mimeType];
+  if (!signature) return true; // No signature defined, skip check
+  return signature.every((byte, index) => bytes[index] === byte);
+}
+
+/**
+ * Reads the first bytes of a file and returns them as a Uint8Array.
+ * @param {File} file
+ * @param {number} length - Number of bytes to read
+ * @returns {Promise<Uint8Array>}
+ */
+function readFirstBytes(file, length = 8) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(new Uint8Array(reader.result));
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file.slice(0, length));
+  });
+}
+
+/**
  * Validates an image file for upload.
  * @param {File} file - The file to validate
  * @param {Object} options - Validation options
  * @param {number} options.maxSizeMB - Maximum file size in MB (default: 5)
  * @param {string[]} options.allowedTypes - Allowed MIME types
- * @returns {{ valid: boolean, error?: string }}
+ * @returns {Promise<{ valid: boolean, error?: string }>}
  */
-export function validateImageFile(file, options = {}) {
+export async function validateImageFile(file, options = {}) {
   const maxSizeMB = options.maxSizeMB || DEFAULT_MAX_SIZE_MB;
   const allowedTypes = options.allowedTypes || ALLOWED_IMAGE_TYPES;
 
@@ -57,9 +95,25 @@ export function validateImageFile(file, options = {}) {
     };
   }
 
+  // Verify file signature matches declared MIME type
+  try {
+    const bytes = await readFirstBytes(file);
+    if (!matchesMagicBytes(bytes, file.type)) {
+      return {
+        valid: false,
+        error: `File content does not match declared type "${file.type}"`,
+      };
+    }
+  } catch {
+    return {
+      valid: false,
+      error: "Unable to read file for validation",
+    };
+  }
+
   // Check file extension
-  const fileName = file.name.toLowerCase();
-  const ext = "." + fileName.split(".").pop();
+  const cleanName = file.name.trim().replace(/\.+$/, "");
+  const ext = "." + cleanName.split(".").pop().toLowerCase();
 
   if (DANGEROUS_EXTENSIONS.includes(ext)) {
     return {
@@ -101,8 +155,8 @@ export function validateFile(file, options = {}) {
     };
   }
 
-  const fileName = file.name.toLowerCase();
-  const ext = "." + fileName.split(".").pop();
+  const cleanName = file.name.trim().replace(/\.+$/, "");
+  const ext = "." + cleanName.split(".").pop().toLowerCase();
 
   if (DANGEROUS_EXTENSIONS.includes(ext)) {
     return {

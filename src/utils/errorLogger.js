@@ -72,7 +72,7 @@ if (isSentryEnabled && typeof window !== "undefined") {
 function buildErrorEntry(error, errorInfo, extra = {}) {
   return {
     timestamp: new Date().toISOString(),
-    url: typeof window !== "undefined" ? window.location.href : "",
+    url: typeof window !== "undefined" && window.location ? window.location.href : "",
     userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "",
     message: error ? error.toString() : "Unknown error",
     stack: isDevelopment ? (error?.stack || "") : "Redacted in production",

@@ -1,11 +1,11 @@
 import { Github, ExternalLink, Plus, X } from "lucide-react";
-import { getPublicErrorMessage, FORM_ERRORS } from "../../utils/errorMessages";
+import { getPublicErrorMessage, FORM_ERRORS } from "utils/errorMessages";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "context/AuthContext";
 
-import { projectService } from "../../services/projectService";
-import { getUserFullName } from "../../utils/userNameUtils.mjs";
+import { projectService } from "services/projectService";
+import { getUserFullName } from "utils/userNameUtils.mjs";
 import CharacterCounter from "./CharacterCounter";
 import "./ProjectSubmission.css";
 
@@ -181,6 +181,9 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
               aria-describedby="description-counter"
               placeholder="Describe your project, its features, and purpose"
             />
+            <p className="text-xs text-gray-500 mt-1 text-right">
+  {description.length}/500 characters
+</p>
             <div className="flex justify-end mt-1">
               <CharacterCounter id="description-counter" value={formData.description} maxLength={1000} />
             </div>

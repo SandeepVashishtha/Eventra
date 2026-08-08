@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  
+
   Users,
   Award,
   Terminal,
   FileText,
   Settings,
   Lock,
-  
+
   CheckCircle2,
   Clock,
   ArrowRight,
@@ -17,7 +17,7 @@ import {
   ChevronRight
 } from "lucide-react";
 import confetti from "canvas-confetti";
-import TeamWorkspace from "../../components/hackathons/TeamWorkspace";
+import TeamWorkspace from "components/hackathons/TeamWorkspace";
 
 const PHASES = [
   {
@@ -149,8 +149,8 @@ const HackathonLifecycle = () => {
 
   // Toggle dynamic checklist tasks
   const toggleTask = (phaseId, taskId) => {
-    setPhasesList(
-      phasesList.map((phase) => {
+    setPhasesList((prev) =>
+      prev.map((phase) => {
         if (phase.id === phaseId) {
           return {
             ...phase,
@@ -167,14 +167,6 @@ const HackathonLifecycle = () => {
   // Change overall active phase (organizer simulation)
   const setGlobalActivePhase = (index) => {
     setActivePhaseIndex(index);
-    setPhasesList(
-      phasesList.map((phase, idx) => {
-        let status = "upcoming";
-        if (idx < index) status = "completed";
-        else if (idx === index) status = "active";
-        return { ...phase, status };
-      })
-    );
     setSelectedPhaseId(index + 1);
 
     if (index === 4) {
@@ -190,7 +182,7 @@ const HackathonLifecycle = () => {
   return (
     <div className="min-h-screen bg-bg text-text py-20 px-4 md:px-8 transition-colors duration-300">
       <div className="max-w-6xl mx-auto space-y-10">
-        
+
         {/* HEADER SECTION */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 border-b border-border pb-8">
           <div>
@@ -292,7 +284,7 @@ const HackathonLifecycle = () => {
                 <h3 className="font-bold text-sm text-text-light uppercase tracking-widest">
                   Phase {phase.id}
                 </h3>
-                
+
                 <h2 className="font-extrabold text-base tracking-tight mt-1 text-text">
                   {phase.name}
                 </h2>
@@ -315,10 +307,10 @@ const HackathonLifecycle = () => {
         {/* SELECTED PHASE WORKSPACE */}
         {selectedPhase && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
+
             {/* LEFT COLUMN: PHASE OVERVIEW & RESOURCES */}
             <div className="lg:col-span-2 space-y-6">
-              
+
               {/* DESCRIPTION BOARD */}
               <div className="bg-card-bg border border-border rounded-3xl p-6 md:p-8 shadow-sm">
                 <div className="flex items-center gap-3">
@@ -411,7 +403,7 @@ const HackathonLifecycle = () => {
 
             {/* RIGHT COLUMN: DYNAMIC COMPONENT ACTIONS / CHECKLIST */}
             <div className="space-y-6">
-              
+
               {/* CHECKLIST */}
               <div className="bg-card-bg border border-border rounded-3xl p-6 shadow-sm">
                 <h3 className="text-lg font-bold text-text border-b border-border pb-3">
