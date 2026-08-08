@@ -96,7 +96,7 @@ public class EventRoleService {
 
     @Transactional(readOnly = true)
     public List<EventTeamMemberResponse> getTeam(Long eventId, String actorEmail) {
-        requireRole(eventId, actorEmail, EventRole.OWNER);
+        requireRole(eventId, actorEmail, EventRole.ORGANIZER);
         return eventTeamMemberRepository.findByEvent_IdOrderByRoleDescAssignedAtDesc(eventId)
                 .stream()
                 .map(this::toTeamMemberResponse)
@@ -105,7 +105,7 @@ public class EventRoleService {
 
     @Transactional(readOnly = true)
     public List<EventRoleAuditResponse> getAuditLog(Long eventId, String actorEmail) {
-        requireRole(eventId, actorEmail, EventRole.OWNER);
+        requireRole(eventId, actorEmail, EventRole.ORGANIZER);
         return auditLogRepository.findByEventIdOrderByChangedAtDesc(eventId)
                 .stream()
                 .map(this::toAuditResponse)
