@@ -8,6 +8,7 @@ import {
 } from 'react';
 import { toast } from 'react-toastify';
 import { API_ENDPOINTS } from '../config/api.js';
+import { useAuth } from "context/AuthContext";
 
 import { logger } from "../utils/logger.js";
 import { getQueueIndexedDB, setQueue, clearQueue, filterQueueByOwnership, validateQueueSession } from '../utils/offlineQueue.js';
@@ -23,18 +24,6 @@ const getReactHook = (name, fallback) => globalThis.React?.[name] || fallback;
 const useEffect = (...args) => getReactHook("useEffect", reactUseEffect)(...args);
 const useRef = (...args) => getReactHook("useRef", reactUseRef)(...args);
 
-const getAuthSnapshot = () => {
-  if (typeof globalThis.mockAuth === "function") {
-    return globalThis.mockAuth();
-  }
-
-  return {
-    token: null,
-    user: null,
-    isAuthenticated: () => false,
-    loading: false,
-  };
-};
 const getQueue = () =>
   typeof globalThis.mockGetQueueIndexedDB === "function"
     ? globalThis.mockGetQueueIndexedDB()
@@ -83,7 +72,9 @@ const SYNC_MESSAGE_TYPES = new Set(["SYNC_REQUESTED", "EVENTRA_BACKGROUND_SYNC"]
  */
 
 const useOfflineSync = () => {
-  const { token, user, isAuthenticated, loading } = getAuthSnapshot();
+  const authFromContext = useAuth();
+  const { token, user, isAuthenticated, loading } =
+    typeof globalThis.mockAuth === "function" ? globalThis.mockAuth() : authFromContext;
   const isSyncing = useRef(false);
   const isLockPending = useRef(false); // 🔥 FIX: Protects against asynchronous race conditions during Web Lock acquisition
   const conflictControllerRef = useRef(new AbortController());
