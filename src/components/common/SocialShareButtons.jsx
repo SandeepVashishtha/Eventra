@@ -5,6 +5,8 @@ import { isValidShareUrl } from "utils/shareUtils";
 import useClipboard from "hooks/useClipboard";
 
 const SocialShareButtons = ({ event, layout = "grid" }) => {
+  const { copy } = useClipboard();
+
   const shareData = useMemo(() => {
     if (!event || !event.id) return null;
 

@@ -18,12 +18,18 @@ import java.util.Date;
 public class JwtTokenProvider {
 
     private static final Logger logger = LoggerFactory.getLogger(JwtTokenProvider.class);
+    public static final String CLAIM_TOKEN_TYPE = "typ";
+    public static final String TYPE_ACCESS = "access";
+    public static final String TYPE_REFRESH = "refresh";
 
     @Value("${app.jwt.secret}")
     private String jwtSecret;
 
     @Value("${app.jwt.expiration-ms}")
     private long jwtExpirationMs;
+
+    @Value("${app.jwt.refresh-expiration-ms:604800000}")
+    private long jwtRefreshExpirationMs;
 
     @PostConstruct
     public void validateSecret() {
@@ -48,19 +54,24 @@ public class JwtTokenProvider {
 
     public String generateToken(Authentication authentication) {
         UserDetails userPrincipal = (UserDetails) authentication.getPrincipal();
-        return buildToken(userPrincipal.getUsername());
+        return generateToken(userPrincipal.getUsername());
     }
 
     public String generateToken(String username) {
-        return buildToken(username);
+        return buildToken(username, TYPE_ACCESS, jwtExpirationMs);
     }
 
-    private String buildToken(String subject) {
+    public String generateRefreshToken(String username) {
+        return buildToken(username, TYPE_REFRESH, jwtRefreshExpirationMs);
+    }
+
+    private String buildToken(String subject, String type, long expirationMs) {
         Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
+        Date expiryDate = new Date(now.getTime() + expirationMs);
 
         return Jwts.builder()
                 .subject(subject)
+                .claim(CLAIM_TOKEN_TYPE, type)
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(getSigningKey())
@@ -68,39 +79,31 @@ public class JwtTokenProvider {
     }
 
     public String getUsernameFromToken(String token) {
-        return Jwts.parser()
-                .verifyWith(getSigningKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload()
-                .getSubject();
+        return parseClaims(token).getSubject();
     }
 
-    // NEW METHOD: Extracts the expiration date for the logout blacklist
     public Date getExpirationDateFromToken(String token) {
-        return Jwts.parser()
-                .verifyWith(getSigningKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload()
-                .getExpiration();
+        return parseClaims(token).getExpiration();
     }
 
     public Date getIssuedAtDateFromToken(String token) {
-        return Jwts.parser()
-                .verifyWith(getSigningKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload()
-                .getIssuedAt();
+        return parseClaims(token).getIssuedAt();
+    }
+
+    public boolean isRefreshToken(String token) {
+        Object type = parseClaims(token).get(CLAIM_TOKEN_TYPE);
+        return TYPE_REFRESH.equals(type);
+    }
+
+    public boolean isAccessToken(String token) {
+        Object type = parseClaims(token).get(CLAIM_TOKEN_TYPE);
+        // Tokens minted before typ claim existed are treated as access tokens.
+        return type == null || TYPE_ACCESS.equals(type);
     }
 
     public boolean validateToken(String token) {
         try {
-            Jwts.parser()
-                    .verifyWith(getSigningKey())
-                    .build()
-                    .parseSignedClaims(token);
+            parseClaims(token);
             return true;
         } catch (MalformedJwtException ex) {
             logger.error("Invalid JWT token: {}", ex.getMessage());
@@ -112,5 +115,13 @@ public class JwtTokenProvider {
             logger.error("JWT claims string is empty: {}", ex.getMessage());
         }
         return false;
+    }
+
+    private Claims parseClaims(String token) {
+        return Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
     }
 }
