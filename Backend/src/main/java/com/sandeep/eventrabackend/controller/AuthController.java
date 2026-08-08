@@ -105,26 +105,38 @@ public class AuthController {
         return withAuthCookie(ResponseEntity.ok(), response);
     }
 
-        @PostMapping("/refresh")
-        @GetMapping("/refresh")
-        @SecurityRequirements
-        @Operation(summary = "Refresh access token",
-                        description = "Currently returns 401 — refresh-token flow not yet implemented.")
-        public ResponseEntity<ErrorResponse> refresh(HttpServletRequest request) {
-                ErrorResponse error = ErrorResponse.builder()
-                                .status(HttpStatus.UNAUTHORIZED.value())
-                                .error("Unauthorized")
-                                .message("No valid session. Please log in.")
-                                .path(request.getRequestURI())
-                                .timestamp(LocalDateTime.now())
-                                .build();
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+    @PostMapping("/refresh")
+    @SecurityRequirements
+    @Operation(summary = "Refresh access token",
+            description = "Exchanges a valid refresh token for a new access + refresh pair. The old refresh token is blacklisted.")
+    public ResponseEntity<?> refresh(
+            @RequestBody(required = false) com.sandeep.eventrabackend.dto.request.RefreshTokenRequest body,
+            HttpServletRequest request) {
+        try {
+            String refreshToken = body != null ? body.getRefreshToken() : null;
+            if (refreshToken == null || refreshToken.isBlank()) {
+                String auth = request.getHeader("Authorization");
+                if (auth != null && auth.startsWith("Bearer ")) {
+                    refreshToken = auth.substring(7).trim();
+                }
+            }
+            AuthResponse response = authService.refresh(refreshToken);
+            return ResponseEntity.ok(response);
+        } catch (Exception ex) {
+            ErrorResponse error = ErrorResponse.builder()
+                    .status(HttpStatus.UNAUTHORIZED.value())
+                    .error("Unauthorized")
+                    .message("No valid session. Please log in.")
+                    .path(request.getRequestURI())
+                    .timestamp(LocalDateTime.now())
+                    .build();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
         }
+    }
 
-
-@PostMapping("/google")
-@SecurityRequirements
-@Operation(
+    @PostMapping("/google")
+    @SecurityRequirements
+    @Operation(
         summary = "Login/Register using Google",
         description = """
                 Authenticates user using Google OAuth token.

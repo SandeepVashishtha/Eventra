@@ -36,10 +36,6 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
   const [isFormValid, setIsFormValid] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
 
-  // Fix: valuesRef must be declared AFTER values useState to avoid
-  // "used before declared" React Compiler error.
-  const valuesRef = useRef(initialState);
-
   useEffect(() => {
     validationRulesRef.current = validationRules;
   }, [validationRules]);
@@ -55,12 +51,6 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
   useEffect(() => {
     valuesRef.current = values;
   }, [values]);
-
-  const [values, setValues] = useState(initialState);
-  const [errors, setErrors] = useState({});
-  const [touched, setTouched] = useState({});
-  const [isFormValid, setIsFormValid] = useState(false);
-  const [isValidating, setIsValidating] = useState(false);
 
   const clearValidationTimer = useCallback(() => {
     validationRunRef.current += 1;
@@ -141,6 +131,7 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
 
     setIsValidating(true);
     clearValidationTimer();
+
     const validationRun = validationRunRef.current + 1;
     validationRunRef.current = validationRun;
 
@@ -151,7 +142,7 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
       setValues((prev) => {
         const currentValues = { ...prev, [name]: value };
         const error = validateField(name, value, currentValues);
-        if (isMountedRef.current && validationRunRef.current === validationRun) {
+      if (isMountedRef.current && validationRunRef.current === validationRun) {
           setErrors((errs) => ({ ...errs, [name]: error }));
           setIsValidating(false);
         }

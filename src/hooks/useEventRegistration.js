@@ -253,7 +253,12 @@ const useEventRegistration = (eventIdParam) => {
     if (conflictCheck.hasConflict) {
       try {
         const res = await eventService.getAllEvents();
-        const realEvents = res.status === 200 ? res.data : [];
+        const raw = res.status === 200 ? res.data : null;
+        const realEvents = Array.isArray(raw?.content)
+          ? raw.content
+          : Array.isArray(raw)
+            ? raw
+            : [];
         const suggestions = suggestAlternativeEvents(event, realEvents, myEvents);
         setConflictData({
           conflicts: conflictCheck.conflicts,
