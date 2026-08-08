@@ -12,7 +12,8 @@ export const createCollaborationTransport = (
     onMessage,
   } = {},
 ) => {
-  const channelName = `eventra-collaboration-${roomId}`;
+  const normalizedRoomId = String(roomId);
+  const channelName = `eventra-collaboration-${normalizedRoomId}`;
   const channel = BroadcastChannelImpl
     ? new BroadcastChannelImpl(channelName)
     : null;
@@ -48,7 +49,7 @@ export const createCollaborationTransport = (
       channel.postMessage({
         action,
         data,
-        roomId,
+        roomId: normalizedRoomId,
         clientId,
       });
 

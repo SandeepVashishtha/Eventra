@@ -16,7 +16,7 @@ import { BookmarkCheck, Bookmark, MapPin, Calendar, Clock, ArrowRight } from "lu
 
 import { isEventBookmarked, addBookmarkedEvent, removeBookmarkedEvent } from "utils/bookmarkUtils";
 
-const EventCard = ({ event }) => {
+const EventCard = ({ event, position }) => {
   const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
   const [imageFailed, setImageFailed] = useState(false);
   const titleId = useId();

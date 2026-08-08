@@ -45,6 +45,7 @@ const useEventListing = () => {
   const [sortType, setSortType] = useState("Newest");
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState("");
+  const [lastUpdated, setLastUpdated] = useState(null);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [eventsPerPage, setEventsPerPage] = useState(DEFAULT_EVENTS_PER_PAGE);
@@ -137,6 +138,7 @@ const useEventListing = () => {
 
       const normalizedEvents = apiEvents.map(normalizeEventItem);
       setEvents(normalizedEvents);
+      setLastUpdated(new Date());
 
       setPagination({
         totalPages: responseData.totalPages || 1,
@@ -348,6 +350,7 @@ const useEventListing = () => {
     isAdvancedFiltersOpen,
     priceStats,
     dateRangeStats,
+    lastUpdated,
     setEventsPerPage,
     setFilterType,
     setCategoryFilter,
