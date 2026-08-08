@@ -473,13 +473,33 @@ public class EventService {
                                         "This event still has open spots. Please register directly.");
                 }
 
-                EventWaitlist entry = new EventWaitlist();
-                entry.setEvent(event);
-                entry.setUser(user);
-                entry.setPosition(eventWaitlistRepository.findMaxPositionByEventId(eventId) + 1);
-                entry.setStatus("WAITING");
+                for (int attempt = 1; attempt <= MAX_REGISTRATION_RETRIES; attempt++) {
+                        EventWaitlist entry = new EventWaitlist();
+                        entry.setEvent(event);
+                        entry.setUser(user);
+                        entry.setPosition(eventWaitlistRepository.findMaxPositionByEventId(eventId) + 1);
+                        entry.setStatus("WAITING");
 
-                return toWaitlistResponse(eventWaitlistRepository.save(entry));
+                        try {
+                                return toWaitlistResponse(eventWaitlistRepository.saveAndFlush(entry));
+                        } catch (DataIntegrityViolationException ex) {
+                                String details = String.valueOf(ex.getMostSpecificCause() != null
+                                                ? ex.getMostSpecificCause().getMessage()
+                                                : ex.getMessage()).toLowerCase();
+                                if (details.contains("uk_event_waitlist_event_position")
+                                                || details.contains("position")) {
+                                        continue;
+                                }
+                                if (details.contains("user") || details.contains("event_id")) {
+                                        throw new RegistrationConflictException(
+                                                        "You are already on the waitlist for this event.");
+                                }
+                                throw ex;
+                        }
+                }
+
+                throw new RegistrationConflictException(
+                                "Could not join waitlist due to high demand. Please try again.");
         }
 
         @Transactional
