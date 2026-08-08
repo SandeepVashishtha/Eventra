@@ -231,9 +231,6 @@ public class Event {
         this.version = version;
     }
 
-        this.attendees = attendees;
-    }
-
     public String getImageUrl() {
         return imageUrl;
     }
