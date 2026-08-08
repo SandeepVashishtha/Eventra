@@ -8,6 +8,7 @@ import com.sandeep.eventrabackend.dto.response.ErrorResponse;
 import com.sandeep.eventrabackend.dto.response.AttendeeDirectoryResponse;
 import com.sandeep.eventrabackend.dto.response.EventAvailabilityResponse;
 import com.sandeep.eventrabackend.dto.response.EventResponse;
+import com.sandeep.eventrabackend.dto.response.PagedResponse;
 import com.sandeep.eventrabackend.dto.response.RegistrationResponse;
 import com.sandeep.eventrabackend.dto.response.WaitlistResponse;
 import com.sandeep.eventrabackend.service.EventService;
@@ -50,15 +51,15 @@ public class EventController {
         // ── Issue #2102 — POST /api/events/create ────────────────────────────────
 
         @PostMapping("/create")
-        @PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN')")
-        @Operation(summary = "Create a new event", description = "Allows an ORGANIZER or ADMIN to create a new event. "
+        @PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN', 'SUPER_ADMIN')")
+        @Operation(summary = "Create a new event", description = "Allows an ORGANIZER, ADMIN or SUPER_ADMIN to create a new event. "
                         +
                         "The event registeredCount defaults to 0.", security = @SecurityRequirement(name = "bearerAuth"))
         @ApiResponses({
                         @ApiResponse(responseCode = "201", description = "Event created successfully", content = @Content(schema = @Schema(implementation = EventResponse.class))),
                         @ApiResponse(responseCode = "400", description = "Invalid payload (validation failed)", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
                         @ApiResponse(responseCode = "401", description = "Unauthorized - JWT token missing or invalid", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-                        @ApiResponse(responseCode = "403", description = "Forbidden - User does not have ORGANIZER or ADMIN role", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+                        @ApiResponse(responseCode = "403", description = "Forbidden - User does not have ORGANIZER, ADMIN or SUPER_ADMIN role", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
         })
         public ResponseEntity<EventResponse> createEvent(
                         @Valid @RequestBody EventCreateRequest request,
@@ -101,12 +102,21 @@ public class EventController {
         }
 
         @GetMapping
-        @Operation(summary = "Get all events", description = "Returns a list of all available events.")
+        @Operation(summary = "Get public events (paginated)", description = "Returns a page of public events. Supports page/size/search/status/sort query params.")
         @ApiResponses({
-                        @ApiResponse(responseCode = "200", description = "Events fetched successfully", content = @Content(array = @ArraySchema(schema = @Schema(implementation = EventResponse.class))))
+                        @ApiResponse(responseCode = "200", description = "Events fetched successfully", content = @Content(schema = @Schema(implementation = PagedResponse.class)))
         })
-        public ResponseEntity<List<EventResponse>> getAllEvents() {
-                return ResponseEntity.ok(eventService.getAllEvents());
+        public ResponseEntity<PagedResponse<EventResponse>> getAllEvents(
+                        @RequestParam(defaultValue = "0") int page,
+                        @RequestParam(defaultValue = "20") int size,
+                        @RequestParam(required = false) String search,
+                        @RequestParam(required = false) List<String> status,
+                        @RequestParam(required = false) String sort) {
+
+                int clampedSize = Math.min(Math.max(size, 1), 100);
+                int safePage = Math.max(page, 0);
+                return ResponseEntity.ok(
+                                eventService.getAllEvents(safePage, clampedSize, search, status, sort));
         }
 
         // ── Issue #12229 — GET /api/events/search ─────────────────────────────
@@ -199,6 +209,27 @@ public class EventController {
                         Authentication authentication) {
 
                 eventService.leaveWaitlist(id, authentication.getName());
+                return ResponseEntity.noContent().build();
+        }
+
+        @GetMapping("/{id}/waitlist/me")
+        @Operation(summary = "Get my waitlist position for an event", description = "Returns the authenticated user's active waitlist entry and position.", security = @SecurityRequirement(name = "bearerAuth"))
+        public ResponseEntity<WaitlistResponse> getMyWaitlistEntry(
+                        @Parameter(description = "ID of the event") @PathVariable Long id,
+                        Authentication authentication) {
+
+                return ResponseEntity.ok(eventService.getMyWaitlistEntry(id, authentication.getName()));
+        }
+
+        @DeleteMapping("/{id}/waitlist/{waitlistId}")
+        @PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN', 'SUPER_ADMIN')")
+        @Operation(summary = "Remove a waitlisted user", description = "Organizer/admin removes a waitlist entry without promoting them.", security = @SecurityRequirement(name = "bearerAuth"))
+        public ResponseEntity<Void> removeWaitlistEntry(
+                        @Parameter(description = "ID of the event") @PathVariable Long id,
+                        @Parameter(description = "ID of the waitlist entry") @PathVariable Long waitlistId,
+                        Authentication authentication) {
+
+                eventService.removeWaitlistEntry(id, waitlistId, authentication.getName());
                 return ResponseEntity.noContent().build();
         }
 
