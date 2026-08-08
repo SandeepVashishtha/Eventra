@@ -18,6 +18,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.Optional;
 
@@ -71,7 +72,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 Date tokenIssuedAt = jwtTokenProvider.getIssuedAtDateFromToken(token);
                 Optional<User> userOpt = userRepository.findByEmail(username);
                 if (userOpt.isPresent() && userOpt.get().getPasswordChangedAt() != null) {
-                    if (tokenIssuedAt.before(userOpt.get().getPasswordChangedAt())) {
+                    long tokenIssuedSec = tokenIssuedAt.getTime() / 1000;
+                    long passwordChangedSec = userOpt.get().getPasswordChangedAt()
+                            .atZone(ZoneId.systemDefault())
+                            .toEpochSecond();
+                    if (tokenIssuedSec < passwordChangedSec) {
                         logger.warn("Token issued before password change for user: {}", username);
                         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                         response.getWriter().write("Token invalidated by password change");
