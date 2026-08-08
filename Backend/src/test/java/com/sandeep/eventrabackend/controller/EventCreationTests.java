@@ -91,6 +91,15 @@ public class EventCreationTests {
                 .password(passwordEncoder.encode("password"))
                 .role(Role.CLIENT)
                 .build());
+
+        userRepository.save(User.builder()
+                .firstName("Super")
+                .lastName("Admin")
+                .email("superadmin@example.com")
+                .username("superadmin")
+                .password(passwordEncoder.encode("password"))
+                .role(Role.SUPER_ADMIN)
+                .build());
     }
 
     @Test
@@ -132,6 +141,26 @@ public class EventCreationTests {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.title").value("Admin Event"));
+    }
+
+    @Test
+    @DisplayName("#11981 — SUPER_ADMIN can create event and gets 201")
+    void testSuperAdminCanCreateEvent() throws Exception {
+        EventCreateRequest request = EventCreateRequest.builder()
+                .title("Super Admin Event")
+                .description("Description")
+                .location("Location")
+                .eventDate(LocalDateTime.now().plusDays(1))
+                .capacity(25)
+                .isPublic(true)
+                .build();
+
+        mockMvc.perform(post("/api/events/create")
+                        .with(user("superadmin@example.com").authorities(() -> "SUPER_ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.title").value("Super Admin Event"));
     }
 
     @Test

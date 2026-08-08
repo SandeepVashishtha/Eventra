@@ -54,15 +54,52 @@ public class ListEventsTests {
         event2.setPublic(false);
         event2.setEventDate(LocalDateTime.now().plusDays(2));
         eventRepository.save(event2);
+
+        Event event3 = new Event();
+        event3.setTitle("Alpha Conference");
+        event3.setDescription("Searchable description");
+        event3.setLocation("Delhi");
+        event3.setPublic(true);
+        event3.setEventDate(LocalDateTime.now().plusDays(5));
+        eventRepository.save(event3);
     }
 
     @Test
     @WithMockUser
-    void testGetAllEvents() throws Exception {
+    void testGetAllEventsReturnsPublicPageOnly() throws Exception {
         mockMvc.perform(get("/api/events"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[0].title").value("First Event"))
-                .andExpect(jsonPath("$[1].title").value("Second Event"));
+                .andExpect(jsonPath("$.content", hasSize(2)))
+                .andExpect(jsonPath("$.totalElements").value(2))
+                .andExpect(jsonPath("$.totalPages").value(1))
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.first").value(true))
+                .andExpect(jsonPath("$.last").value(true))
+                .andExpect(jsonPath("$.content[0].title").exists());
+    }
+
+    @Test
+    @WithMockUser
+    void testGetAllEventsRespectsPagination() throws Exception {
+        mockMvc.perform(get("/api/events")
+                        .param("page", "0")
+                        .param("size", "1")
+                        .param("sort", "title,asc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.totalElements").value(2))
+                .andExpect(jsonPath("$.totalPages").value(2))
+                .andExpect(jsonPath("$.content[0].title").value("Alpha Conference"))
+                .andExpect(jsonPath("$.last").value(false));
+    }
+
+    @Test
+    @WithMockUser
+    void testGetAllEventsSearch() throws Exception {
+        mockMvc.perform(get("/api/events").param("search", "Alpha"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].title").value("Alpha Conference"))
+                .andExpect(jsonPath("$.totalElements").value(1));
     }
 }
