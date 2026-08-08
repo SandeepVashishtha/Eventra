@@ -245,7 +245,18 @@ export const AuthProvider = ({ children }) => {
           try {
             const cachedUser = await syncSecureStorage.getItemAsync("user");
             if (cachedUser) {
-              setUser(JSON.parse(cachedUser));
+              const parsed = JSON.parse(cachedUser);
+              const resolvedRoles = normalizeRoles(
+                parsed.roles ?? (parsed.role ? [parsed.role] : [])
+              );
+              const rolePermissions = resolvedRoles.flatMap(
+                (role) => ROLE_PERMISSIONS[role] || []
+              );
+              setUser({
+                ...parsed,
+                roles: resolvedRoles,
+                permissions: rolePermissions,
+              });
               // Never read a JS-readable token cookie (httpOnlyStorage policy).
               // The active token is held in JS memory by setAuthToken or by
               // the backend's HttpOnly Set-Cookie flow.
@@ -310,9 +321,10 @@ export const AuthProvider = ({ children }) => {
     // solely by the backend's Set-Cookie flow (axios uses withCredentials).
 
     try {
-      // Security Contract: Strip authorization keys from display profile object stored in localStorage
+      // Persist role names for offline Gate checks. Strip permissions/scopes —
+      // those are re-derived from roles via ROLE_PERMISSIONS on restore.
       // eslint-disable-next-line no-unused-vars
-      const { roles: _roles, permissions: _permissions, scopes: _scopes, ...displayProfile } = sessionUser;
+      const { permissions: _permissions, scopes: _scopes, ...displayProfile } = sessionUser;
       await syncSecureStorage.setItem("user", JSON.stringify(displayProfile));
     } catch (error) {
       console.error("[AuthContext] Error persisting user profile safely:", error);
