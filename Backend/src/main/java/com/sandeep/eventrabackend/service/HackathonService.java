@@ -53,7 +53,8 @@ public class HackathonService {
 
     @Transactional
     public HackathonResponse createHackathon(HackathonCreateRequest request, String userEmail) {
-        User creator = userRepository.findByEmail(userEmail).orElse(null);
+        User creator = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + userEmail));
 
         Hackathon hackathon = Hackathon.builder()
                 .title(request.getTitle())
@@ -66,7 +67,7 @@ public class HackathonService {
                 .prizePool(request.getPrizePool())
                 .registrationDeadline(request.getRegistrationDeadline())
                 .imageUrl(request.getImageUrl())
-                .ownerId(creator != null ? creator.getId() : null)
+                .ownerId(creator.getId())
                 .build();
 
         Hackathon saved = hackathonRepository.save(hackathon);
@@ -82,7 +83,9 @@ public class HackathonService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + userEmail));
 
         boolean isAdmin = currentUser.getRole() == Role.ADMIN || currentUser.getRole() == Role.SUPER_ADMIN;
-        if (!isAdmin && hackathon.getOwnerId() != null && !hackathon.getOwnerId().equals(currentUser.getId())) {
+        Long ownerId = hackathon.getOwnerId();
+        // Null ownerId must not open the event to any authenticated organizer.
+        if (!isAdmin && (ownerId == null || !ownerId.equals(currentUser.getId()))) {
             throw new AccessDeniedException(
                     "Only the hackathon's own organizer (or an administrator) can manage this hackathon.");
         }
