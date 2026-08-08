@@ -1,12 +1,12 @@
 // Flag to ensure initialization only runs once (Idempotency Guard)
 let isInitialized = false;
-let appLogger = null; // 🟢 Add this line
+let appLogger = null;
 
 /**
  * Initializes global runtime error and unhandled promise rejection monitoring.
  * Safe to be called multiple times due to HMR or React StrictMode.
  */
-export function initializeGlobalErrorHandling(logger) { // 🟢 Updated this line
+export function initializeGlobalErrorHandling(logger) {
   appLogger = logger || { log: console.error };
   // If already initialized, exit early to prevent duplicate listeners
   if (isInitialized) {
@@ -19,15 +19,14 @@ export function initializeGlobalErrorHandling(logger) { // 🟢 Updated this lin
 
   // Set flag to true
   isInitialized = true;
-
 }
 
 // Named handler for standard runtime errors
 function handleGlobalError(event) {
-  // 🟢 Guard to prevent double-reporting errors already caught by React
+  // Guard to prevent double-reporting errors already caught by React
   if (event.error && event.error.__isReactHandled) return;
 
-  // 🟢 Standardized payload structure
+  // Standardized payload structure
   const payload = {
     event: 'app_crash',
     level: 'error',
@@ -41,12 +40,27 @@ function handleGlobalError(event) {
     }
   };
 
-  appLogger.log(payload); 
+  if (appLogger) appLogger.log(payload); 
 }
+
+// Helper to safely parse unknown rejection reasons without crashing
+const safelyParseReason = (reason) => {
+  if (!reason) return 'Unknown Reason';
+  if (reason instanceof Error) return reason.toString();
+  
+  if (typeof reason === 'object') {
+    try {
+      return JSON.stringify(reason);
+    } catch (err) {
+      return '[Unserializable/Circular Object]';
+    }
+  }
+  return String(reason);
+};
 
 // Named handler for unhandled async promise rejections
 function handleUnhandledRejection(event) {
-  // 🟢 Standardized payload structure for unhandled promises
+  // Standardized payload structure for unhandled promises
   const payload = {
     event: 'app_crash',
     level: 'error',
@@ -54,11 +68,11 @@ function handleUnhandledRejection(event) {
     message: event.reason?.message || 'Unhandled Promise Rejection',
     metadata: {
       stack: event.reason?.stack || null,
-      reason: typeof event.reason === 'object' ? JSON.stringify(event.reason) : event.reason
+      reason: safelyParseReason(event.reason)
     }
   };
 
-  appLogger.log(payload);
+  if (appLogger) appLogger.log(payload);
 }
 
 /**
