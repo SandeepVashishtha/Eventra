@@ -1,6 +1,7 @@
 name: PR Size Labeler
 
 on:
+  workflow_dispatch:
   pull_request_target:
     types: [opened, synchronize, reopened]
 
