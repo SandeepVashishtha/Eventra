@@ -12,7 +12,12 @@ const isBrowser = () => typeof window !== "undefined";
  */
 export const scrollToElement = (selector, options = {}) => {
   if (!isBrowser()) return;
-  const element = document.querySelector(selector);
+  let element;
+  try {
+    element = document.querySelector(selector);
+  } catch {
+    return;
+  }
   if (element && window.lenis) {
     window.lenis.scrollTo(element, {
       offset: 0,

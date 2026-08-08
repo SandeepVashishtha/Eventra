@@ -35,8 +35,11 @@ const highlightMatch = (text, query) => {
   // Nothing to highlight — return the original text unchanged
   if (!query || !text) return text;
 
+  const normalizedQuery = query.trim();
+  if (!normalizedQuery) return text;
+
   // Escape the query so metacharacters are treated as literals, not regex syntax
-  const safeQuery = escapeRegex(query);
+  const safeQuery = escapeRegex(normalizedQuery);
 
   // Capture group around safeQuery so Array.split() retains the matched segments
   const regex = new RegExp(`(${safeQuery})`, "gi");
@@ -44,7 +47,7 @@ const highlightMatch = (text, query) => {
   const parts = text.split(regex);
 
   return parts.map((part, index) =>
-    part.toLowerCase() === query.toLowerCase() ? (
+    part.toLowerCase() === normalizedQuery.toLowerCase() ? (
       <span
         key={`${part}-${index}`}
         className="

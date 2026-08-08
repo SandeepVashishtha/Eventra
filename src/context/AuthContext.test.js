@@ -14,7 +14,9 @@ vi.mock('../config/api', () => ({
   },
   apiUtils: { post: vi.fn(), get: vi.fn() },
   setOnUnauthorizedHandler: vi.fn(),
+  setRequiresReauthHandler: vi.fn(),
   setAuthToken: vi.fn(),
+  setRefreshToken: vi.fn(),
 }));
 
 vi.mock('../utils/tokenUtils', () => ({
