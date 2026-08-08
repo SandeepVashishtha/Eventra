@@ -79,6 +79,7 @@ public class EventService {
         private final EventRoleAuditLogRepository eventRoleAuditLogRepository;
         private final UserRepository userRepository;
         private final EventRoleService eventRoleService;
+        private final EventStreamService eventStreamService;
 
         public EventService(
                         EventRepository eventRepository,
@@ -89,7 +90,8 @@ public class EventService {
                         FeedbackAnalyticsRepository feedbackRepository,
                         EventRoleAuditLogRepository eventRoleAuditLogRepository,
                         UserRepository userRepository,
-                        EventRoleService eventRoleService) {
+                        EventRoleService eventRoleService,
+                        EventStreamService eventStreamService) {
                 this.eventRepository = eventRepository;
                 this.eventRegistrationRepository = eventRegistrationRepository;
                 this.eventWaitlistRepository = eventWaitlistRepository;
@@ -99,6 +101,7 @@ public class EventService {
                 this.eventRoleAuditLogRepository = eventRoleAuditLogRepository;
                 this.userRepository = userRepository;
                 this.eventRoleService = eventRoleService;
+                this.eventStreamService = eventStreamService;
         }
 
         /**
@@ -457,6 +460,8 @@ public class EventService {
                 event.setRegisteredCount(Math.max(0, event.getRegisteredCount() - 1));
                 eventRepository.save(event);
 
+                broadcastAvailability(event);
+
                 promoteFirstWaitingUser(event);
         }
 
@@ -619,6 +624,8 @@ public class EventService {
                                 .countByEvent_IdAndStatus(eventId, "CONFIRMED"));
                 Event saved = eventRepository.save(event);
 
+                broadcastAvailability(saved);
+
                 Integer spotsRemaining = (saved.getCapacity() == null)
                                 ? null
                                 : Math.max(
@@ -695,6 +702,8 @@ public class EventService {
                                 .countByEvent_IdAndStatus(event.getId(), "CONFIRMED"));
                 Event saved = eventRepository.save(event);
 
+                broadcastAvailability(saved);
+
                 entry.setStatus("PROMOTED");
                 entry.setPromotedAt(LocalDateTime.now());
                 eventWaitlistRepository.save(entry);
@@ -753,6 +762,22 @@ public class EventService {
                                 .status(registration.getStatus())
                                 .imageUrl(event.getImageUrl())
                                 .build();
+        }
+
+        /**
+         * Broadcasts the latest availability for an event to all connected SSE
+         * clients so seat counters update in real-time without a page reload.
+         *
+         * @param event the event whose availability just changed
+         */
+        private void broadcastAvailability(Event event) {
+                if (event == null) {
+                        return;
+                }
+
+                EventAvailabilityResponse availability = getEventAvailability(event.getId());
+
+                eventStreamService.broadcastAvailability(event.getId(), availability);
         }
 
         private EventResponse toEventResponse(Event event) {

@@ -2,7 +2,6 @@ import React, { memo, useCallback, useId, useState } from "react";
 import { logger } from "utils/logger";
 import LazyImage from "components/common/LazyImage";
 import { formatLocalDateTime } from "utils/localDateTime";
-import { formatLocalDateTime } from "utils/localDateTime";
 import ShareModal from "components/common/ShareModal";
 import StatusBadge from "components/common/StatusBadge";
 import { getEventStatus } from "utils/eventUtils";
@@ -15,12 +14,21 @@ import { toast } from "react-toastify";
 import { BookmarkCheck, Bookmark, MapPin, Calendar, Clock, ArrowRight } from "lucide-react";
 
 import { isEventBookmarked, addBookmarkedEvent, removeBookmarkedEvent } from "utils/bookmarkUtils";
+import SeatsRemaining from "components/common/SeatsRemaining";
+import useEventAvailability from "hooks/useEventAvailability";
 
 const EventCard = ({ event, position }) => {
   const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
   const [imageFailed, setImageFailed] = useState(false);
   const titleId = useId();
   const { isRegistered } = useMyEvents();
+
+  // Live, real-time seat availability for this event. Subscribes to the shared
+  // SSE stream and falls back to polling so seat counters stay fresh without a
+  // full page reload.
+  const { availability } = useEventAvailability(event.id, {
+    enabled: event.capacity != null && event.capacity > 0,
+  });
 
   const isUserRegistered = isRegistered(event.id);
   const computedStatus = getEventStatus(event);
@@ -128,6 +136,18 @@ const EventCard = ({ event, position }) => {
               </span>
             ))}
           </div>
+        )}
+
+        {/* Live seat availability indicator */}
+        {event.capacity != null && event.capacity > 0 && (
+          <SeatsRemaining
+            capacity={availability?.capacity ?? event.capacity}
+            registered={
+              availability?.registeredCount ?? event.registeredCount ?? event.attendees?.length ?? 0
+            }
+            compact
+            className="mb-4"
+          />
         )}
 
         <div className="flex flex-col gap-2 mt-auto border-t border-border pt-4 text-xs font-semibold text-text-light">

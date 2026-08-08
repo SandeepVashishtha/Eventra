@@ -8,7 +8,21 @@ import { sanitizeMarkdown } from "utils/sanitizeHtml";
 import { toast } from "react-toastify";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import useKeyboardShortcuts from "hooks/useKeyboardShortcuts";
-import { Calendar, MapPin, Clock, Tag, CalendarPlus, Link2, Check, Archive, ExternalLink, Github, Linkedin, Users } from "lucide-react";
+import {
+  Calendar,
+  MapPin,
+  Clock,
+  Tag,
+  CalendarPlus,
+  Link2,
+  Check,
+  Archive,
+  ExternalLink,
+  Github,
+  Linkedin,
+  Users,
+  ArrowLeft,
+} from "lucide-react";
 import { getEventStatus, isEventRegistrationClosed } from "utils/eventUtils";
 import { useAuth } from "context/AuthContext";
 import useBookmarks from "hooks/useBookmarks";
@@ -21,6 +35,8 @@ import EventCancellationModal from "components/events/EventCancellationModal";
 import SimilarEvents from "components/events/SimilarEvents";
 import LiveQABoard from "components/events/LiveQABoard";
 import EventRegistrationProgress from "components/common/EventRegistrationProgress";
+import SeatsRemaining from "components/common/SeatsRemaining";
+import useEventAvailability from "hooks/useEventAvailability";
 import LivePollController from "components/admin/LivePollController";
 import { EventDetailSkeleton } from "components/common/SkeletonLoaders";
 import LazyImage from "components/common/LazyImage";
@@ -32,7 +48,7 @@ import SocialShareButtons from "components/common/SocialShareButtons";
 import { RecentlyViewedTracker } from "components/common/RecentlyViewedEvents";
 import { apiUtils, API_ENDPOINTS } from "config/api";
 import { getLastUpdated } from "utils/LastUpdatedUtils";
-import CopyButton from 'components/ui/CopyButton';
+import CopyButton from "components/ui/CopyButton";
 import AddToCalendar from "components/common/AddToCalendar";
 
 const formatEventDate = (dateValue) => {
@@ -107,15 +123,20 @@ const EventDetails = () => {
   // event ownership, not role alone. Without this, any ORGANIZER/ADMIN could
   // manage another organization's event by swapping the id in the URL.
   const isEventOwner =
-    event?.ownerId != null &&
-    user?.id != null &&
-    String(event.ownerId) === String(user.id);
+    event?.ownerId != null && user?.id != null && String(event.ownerId) === String(user.id);
   const canManageEvent = isOrganizer && isEventOwner;
 
   const { isRegistered } = useMyEvents();
- const { copy, isCopied } = useClipboard({ resetMs: 2000 });
+  const { copy, isCopied } = useClipboard({ resetMs: 2000 });
   const abortControllerRef = useRef(null);
-const copyLink = async () => {
+
+  // Live, real-time seat availability for this event. Subscribes to the shared
+  // SSE stream and falls back to polling. Safe to call with a null eventId
+  // (returns early) before the event details finish loading.
+  const { availability: liveAvailability } = useEventAvailability(eventId, {
+    enabled: eventId != null,
+  });
+  const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
       setLinkCopied(true);
@@ -204,7 +225,11 @@ const copyLink = async () => {
         if (!isActive) return;
         const status = error?.status || error?.response?.status;
         setAttendees([]);
-        setAttendeesError(status === 403 ? "Register for this event to view opted-in attendees." : "Attendee directory is unavailable right now.");
+        setAttendeesError(
+          status === 403
+            ? "Register for this event to view opted-in attendees."
+            : "Attendee directory is unavailable right now."
+        );
       } finally {
         if (isActive) setAttendeesLoading(false);
       }
@@ -263,13 +288,9 @@ const copyLink = async () => {
         address: typeof locationData === "string" ? "" : locationData.address || "",
         coordinates: {
           latitude:
-            typeof locationData === "string"
-              ? ""
-              : locationData.coordinates?.latitude ?? "",
+            typeof locationData === "string" ? "" : (locationData.coordinates?.latitude ?? ""),
           longitude:
-            typeof locationData === "string"
-              ? ""
-              : locationData.coordinates?.longitude ?? "",
+            typeof locationData === "string" ? "" : (locationData.coordinates?.longitude ?? ""),
         },
       },
       isVirtual: Boolean(sourceEvent.virtualLink),
@@ -280,25 +301,23 @@ const copyLink = async () => {
       registrationStart: sourceEvent.registrationStart
         ? parseISODate(sourceEvent.registrationStart)
         : "",
-      registrationEnd: sourceEvent.registrationEnd
-        ? parseISODate(sourceEvent.registrationEnd)
-        : "",
+      registrationEnd: sourceEvent.registrationEnd ? parseISODate(sourceEvent.registrationEnd) : "",
       tags: Array.isArray(sourceEvent.tags) ? sourceEvent.tags : [],
       ticketTiers: Array.isArray(sourceEvent.ticketTiers)
         ? sourceEvent.ticketTiers.map((tier) => ({
-          name: tier.name || "",
-          price: tier.price ?? 0,
-          capacity: tier.capacity ?? "",
-          description: tier.description || "",
-        }))
+            name: tier.name || "",
+            price: tier.price ?? 0,
+            capacity: tier.capacity ?? "",
+            description: tier.description || "",
+          }))
         : [
-          {
-            name: "General Admission",
-            price: 0,
-            capacity: "",
-            description: "Standard event access",
-          },
-        ],
+            {
+              name: "General Admission",
+              price: 0,
+              capacity: "",
+              description: "Standard event access",
+            },
+          ],
       banner: null,
       bannerPreview: sourceEvent.image || sourceEvent.banner || "",
     };
@@ -336,9 +355,10 @@ ${window.location.href}
     else toast.error("Failed to copy link. Please copy the URL from your browser's address bar.");
   };
 
-  
   useKeyboardShortcuts({
-    r: () => { if (event && !isEventRegistrationClosed(event)) navigate(`/events/${event.id}/register`); },
+    r: () => {
+      if (event && !isEventRegistrationClosed(event)) navigate(`/events/${event.id}/register`);
+    },
     c: handleCopy,
     s: () => setShowShareModal(true),
     p: handlePrint,
@@ -360,7 +380,10 @@ ${window.location.href}
             >
               Try Again
             </button>
-            <Link to="/events" className="inline-flex rounded-full border border-gray-300 px-6 py-3 font-semibold hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800 transition">
+            <Link
+              to="/events"
+              className="inline-flex rounded-full border border-gray-300 px-6 py-3 font-semibold hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800 transition"
+            >
               Browse Events
             </Link>
           </div>
@@ -371,17 +394,7 @@ ${window.location.href}
 
   const canSetReminder = isBookmarked(event.id) || isRegistered(event.id);
   const isRegistrationClosed = isEventRegistrationClosed(event);
-  const registrationEnd = event.registrationEnd
-  ? new Date(event.registrationEnd)
-  : null;
-
-  const eventDate =
-  event.date ||
-  event.eventDate ||
-  event.startDate ||
-  null;
-
-const dateInfo = formatLocalDateTime(eventDate);
+  const registrationEnd = event.registrationEnd ? new Date(event.registrationEnd) : null;
 
   const eventDate = event.date || event.eventDate || event.startDate || null;
   const dateInfo = formatEventDate(eventDate);
@@ -396,88 +409,46 @@ const dateInfo = formatLocalDateTime(eventDate);
     joiningLink: event.joiningLink || event.virtualLink || window.location.href,
   };
 
+  const hoursLeft = registrationEnd
+    ? Math.ceil((registrationEnd - new Date()) / (1000 * 60 * 60))
+    : null;
 
-
-const hoursLeft = registrationEnd
-  ? Math.ceil((registrationEnd - new Date()) / (1000 * 60 * 60))
-  : null;
-
-const showClosingSoon =
-  hoursLeft !== null &&
-  hoursLeft > 0 &&
-  hoursLeft <= 48;
-const lastUpdated = getLastUpdated(event.updatedAt);
+  const showClosingSoon = hoursLeft !== null && hoursLeft > 0 && hoursLeft <= 48;
+  const lastUpdated = getLastUpdated(event.updatedAt);
 
   return (
-  <>
-    <ReadingProgressBar />
-    <RecentlyViewedTracker event={event} />
+    <>
+      <ReadingProgressBar />
+      <RecentlyViewedTracker event={event} />
       <Helmet>
-  <title>{event.title} | Eventra</title>
+        <title>{event.title} | Eventra</title>
 
-  <meta
-    name="description"
-    content={event.description?.slice(0,160) || ""}
-  />
+        <meta name="description" content={event.description?.slice(0, 160) || ""} />
 
-  <meta
-    property="og:type"
-    content="website"
-  />
+        <meta property="og:type" content="website" />
 
-  <meta
-    property="og:title"
-    content={event.title}
-  />
+        <meta property="og:title" content={event.title} />
 
-  <meta
-    property="og:description"
-    content={event.description?.slice(0,160) || ""}
-  />
+        <meta property="og:description" content={event.description?.slice(0, 160) || ""} />
 
-  <meta
-    property="og:image"
-    content={event.image}
-  />
+        <meta property="og:image" content={event.image} />
 
-  <meta
-    property="og:url"
-    content={window.location.href}
-  />
+        <meta property="og:url" content={window.location.href} />
 
-  <meta
-    property="og:site_name"
-    content="Eventra"
-  />
+        <meta property="og:site_name" content="Eventra" />
 
-  <meta
-    name="twitter:card"
-    content="summary_large_image"
-  />
+        <meta name="twitter:card" content="summary_large_image" />
 
-  <meta
-    name="twitter:title"
-    content={event.title}
-  />
+        <meta name="twitter:title" content={event.title} />
 
-  <meta
-    name="twitter:description"
-    content={event.description?.slice(0,160) || ""}
-  />
+        <meta name="twitter:description" content={event.description?.slice(0, 160) || ""} />
 
-  <meta
-    name="twitter:image"
-    content={event.image}
-  />
+        <meta name="twitter:image" content={event.image} />
 
-  <meta
-    name="twitter:url"
-    content={window.location.href}
-  />
-</Helmet>
+        <meta name="twitter:url" content={window.location.href} />
+      </Helmet>
       <div className="min-h-screen bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100 py-16 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl space-y-8">
-
           {/* Header */}
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
@@ -485,13 +456,19 @@ const lastUpdated = getLastUpdated(event.updatedAt);
                 {event.type}
               </p>
               <div className="mt-4 flex items-center gap-3">
-                <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight break-words" title={event.title}>{event.title}</h1>
+                <h1
+                  className="text-4xl sm:text-5xl font-extrabold tracking-tight break-words"
+                  title={event.title}
+                >
+                  {event.title}
+                </h1>
                 <button
                   onClick={handleCopy}
-                  className={`p-2 rounded-full transition-colors ${linkCopied
-                    ? "text-green-600 bg-green-50 dark:bg-green-900/30"
-                    : "text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
-                    }`}
+                  className={`p-2 rounded-full transition-colors ${
+                    linkCopied
+                      ? "text-green-600 bg-green-50 dark:bg-green-900/30"
+                      : "text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
+                  }`}
                   aria-label={linkCopied ? "Link copied!" : "Copy event link"}
                   title={linkCopied ? "Copied!" : "Copy link"}
                 >
@@ -500,30 +477,29 @@ const lastUpdated = getLastUpdated(event.updatedAt);
               </div>
               <div
                 className="mt-4 max-w-2xl text-gray-600 dark:text-gray-300 prose prose-indigo dark:prose-invert"
-                dangerouslySetInnerHTML={{ __html: sanitizeMarkdown(event.description, marked.parse) }}
+                dangerouslySetInnerHTML={{
+                  __html: sanitizeMarkdown(event.description, marked.parse),
+                }}
               />
             </div>
 
-           <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-3">
+              {showClosingSoon && (
+                <span className="inline-flex items-center rounded-full bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                  Registration closes {hoursLeft <= 24 ? "today" : `in ${hoursLeft} hours`}
+                </span>
+              )}
 
-  {showClosingSoon && (
-    <span className="inline-flex items-center rounded-full bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
-      Registration closes {hoursLeft <= 24 ? "today" : `in ${hoursLeft} hours`}
-    </span>
-  )}
-
-  {isRegistrationClosed ? (
-    <>
-      ...
-    </>
-  ) : (
-    <Link
-      to={`/events/${event.id}/register`}
-      className="inline-flex items-center justify-center rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-slate-800 transition"
-    >
-      Register Now
-    </Link>
-  )}
+              {isRegistrationClosed ? (
+                <>...</>
+              ) : (
+                <Link
+                  to={`/events/${event.id}/register`}
+                  className="inline-flex items-center justify-center rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow hover:bg-slate-800 transition"
+                >
+                  Register Now
+                </Link>
+              )}
 
               <button
                 onClick={() => setShowShareModal(true)}
@@ -542,7 +518,10 @@ const lastUpdated = getLastUpdated(event.updatedAt);
               )}
               {canManageEvent && event.status !== "cancelled" && event.status !== "archived" && (
                 <button
-                  onClick={() => { setEvent({ ...event, status: "archived" }); toast.success("Event Archived!"); }}
+                  onClick={() => {
+                    setEvent({ ...event, status: "archived" });
+                    toast.success("Event Archived!");
+                  }}
                   className="inline-flex items-center justify-center gap-2 rounded-full border border-orange-500 px-6 py-3 text-sm font-semibold text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition"
                 >
                   <Archive size={16} /> Archive Event
@@ -575,13 +554,13 @@ const lastUpdated = getLastUpdated(event.updatedAt);
                     <CalendarPlus size={18} /> Duplicate Event
                   </button>
                   <button
-    type="button"
-    onClick={copyLink}
-    className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
-    aria-label="Copy event link"
-  >
-    {linkCopied ? "Copied!" : "Copy Link"}
-  </button>
+                    type="button"
+                    onClick={copyLink}
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
+                    aria-label="Copy event link"
+                  >
+                    {linkCopied ? "Copied!" : "Copy Link"}
+                  </button>
                   <div className="relative print-hide">
                     <button
                       onClick={() => setShowExportDropdown(!showExportDropdown)}
@@ -592,7 +571,10 @@ const lastUpdated = getLastUpdated(event.updatedAt);
                     </button>
                     {showExportDropdown && (
                       <>
-                        <div className="fixed inset-0 z-10" onClick={() => setShowExportDropdown(false)} />
+                        <div
+                          className="fixed inset-0 z-10"
+                          onClick={() => setShowExportDropdown(false)}
+                        />
                         <div className="absolute right-0 mt-2 w-40 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-lg py-1.5 z-20 animate-fadeIn text-left">
                           <button
                             onClick={async () => {
@@ -620,7 +602,7 @@ const lastUpdated = getLastUpdated(event.updatedAt);
                                   }
                                 }
                                 exportToCSV(allRegistrants, `${event.title}_registrants`);
-                              } catch  {
+                              } catch {
                                 toast.error("Failed to fetch registrants");
                               } finally {
                                 setExportingRegistrants(false);
@@ -677,21 +659,57 @@ const lastUpdated = getLastUpdated(event.updatedAt);
                 </div>
               )}
 
-              
-      
-      <button
-  onClick={() => navigate(-1)}
-  className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
->
-  <ArrowLeft size={16} />
-  Back to Results
-</button>
+              <button
+                onClick={() => navigate(-1)}
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
+              >
+                <ArrowLeft size={16} />
+                Back to Results
+              </button>
             </div>
           </div>
 
           <section className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
             <ReminderControls event={event} canSetReminder={canSetReminder} />
           </section>
+
+          {/* Live seat availability panel */}
+          {event.capacity != null && event.capacity > 0 && (
+            <section
+              className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900"
+              aria-label="Live seat availability"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">
+                  Live Seat Availability
+                </h2>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                  </span>
+                  Live
+                </span>
+              </div>
+
+              <div className="mt-4">
+                <SeatsRemaining
+                  capacity={liveAvailability?.capacity ?? event.capacity}
+                  registered={
+                    liveAvailability?.registeredCount ??
+                    event.registeredCount ??
+                    event.attendees?.length ??
+                    0
+                  }
+                  showProgressBar
+                />
+              </div>
+
+              <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+                Seat counts update in real time as attendees register.
+              </p>
+            </section>
+          )}
 
           {/* Main Grid */}
           <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr] items-start">
@@ -747,20 +765,26 @@ const lastUpdated = getLastUpdated(event.updatedAt);
                     <p className="text-sm text-gray-500 dark:text-gray-400">Status</p>
                     <div className="mt-1">
                       <StatusBadge status={event.status} />
-                      </div>
-                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Event Countdown */}
                 <div className="sm:col-span-2">
-                  <CountdownTimer date={eventDate} time={event.time || dateInfo.time} timezone={event.timezone} />
+                  <CountdownTimer
+                    date={eventDate}
+                    time={event.time || dateInfo.time}
+                    timezone={event.timezone}
+                  />
                 </div>
               </div>
 
               {/* Add to Calendar & Copy Link */}
               <div className="rounded-3xl bg-slate-50 p-5 dark:bg-gray-800 space-y-4">
-                <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Add to Calendar</h3>
-                
+                <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">
+                  Add to Calendar
+                </h3>
+
                 <div className="flex flex-col gap-2">
                   <AddToCalendar event={calendarEvent} className="w-full" />
                 </div>
@@ -772,17 +796,19 @@ const lastUpdated = getLastUpdated(event.updatedAt);
 
               <div className="rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
                 <div className="flex items-center justify-between">
-  <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">
-    Summary
-  </h3>
+                  <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">
+                    Summary
+                  </h3>
 
-  <span className="text-xs text-gray-500 dark:text-gray-400">
-    📖 {getReadingTime(event.description)}
-  </span>
-</div>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    📖 {getReadingTime(event.description)}
+                  </span>
+                </div>
                 <div
                   className="mt-3 text-gray-700 dark:text-gray-300 text-sm leading-6 prose prose-indigo dark:prose-invert"
-                  dangerouslySetInnerHTML={{ __html: sanitizeMarkdown(event.description, marked.parse) }}
+                  dangerouslySetInnerHTML={{
+                    __html: sanitizeMarkdown(event.description, marked.parse),
+                  }}
                 />
               </div>
 
@@ -808,40 +834,66 @@ const lastUpdated = getLastUpdated(event.updatedAt);
                   ) : attendeesError ? (
                     <p className="text-sm text-gray-500 dark:text-gray-400">{attendeesError}</p>
                   ) : attendees.length === 0 ? (
-                    <p className="text-sm text-gray-500 dark:text-gray-400">No attendees have opted into the directory yet.</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      No attendees have opted into the directory yet.
+                    </p>
                   ) : (
                     attendees.map((attendee) => (
-                      <div key={attendee.userId} className="rounded-2xl border border-gray-200 p-4 dark:border-gray-800">
+                      <div
+                        key={attendee.userId}
+                        className="rounded-2xl border border-gray-200 p-4 dark:border-gray-800"
+                      >
                         {(() => {
                           const githubUrl = sanitizeProfileUrl(attendee.githubUrl);
                           const linkedinUrl = sanitizeProfileUrl(attendee.linkedinUrl);
                           return (
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                          <div>
-                            <p className="font-semibold text-gray-900 dark:text-white">{attendee.displayName}</p>
-                            {attendee.username && (
-                              <p className="text-xs text-gray-500 dark:text-gray-400">@{attendee.username}</p>
-                            )}
-                            {attendee.profileHeadline && (
-                              <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">{attendee.profileHeadline}</p>
-                            )}
-                          </div>
-                          <div className="flex gap-2">
-                            {githubUrl && (
-                              <a href={githubUrl} target="_blank" rel="noopener noreferrer" className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800" aria-label={`${attendee.displayName} GitHub`}>
-                                <Github className="h-4 w-4" />
-                              </a>
-                            )}
-                            {linkedinUrl && (
-                              <a href={linkedinUrl} target="_blank" rel="noopener noreferrer" className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-blue-700 hover:bg-blue-50 dark:border-gray-700 dark:text-blue-300 dark:hover:bg-blue-950/30" aria-label={`${attendee.displayName} LinkedIn`}>
-                                <Linkedin className="h-4 w-4" />
-                              </a>
-                            )}
-                            {(githubUrl || linkedinUrl) && (
-                              <ExternalLink className="mt-2 h-4 w-4 text-gray-400" aria-hidden="true" />
-                            )}
-                          </div>
-                        </div>
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                              <div>
+                                <p className="font-semibold text-gray-900 dark:text-white">
+                                  {attendee.displayName}
+                                </p>
+                                {attendee.username && (
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                                    @{attendee.username}
+                                  </p>
+                                )}
+                                {attendee.profileHeadline && (
+                                  <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
+                                    {attendee.profileHeadline}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="flex gap-2">
+                                {githubUrl && (
+                                  <a
+                                    href={githubUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                                    aria-label={`${attendee.displayName} GitHub`}
+                                  >
+                                    <Github className="h-4 w-4" />
+                                  </a>
+                                )}
+                                {linkedinUrl && (
+                                  <a
+                                    href={linkedinUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-blue-700 hover:bg-blue-50 dark:border-gray-700 dark:text-blue-300 dark:hover:bg-blue-950/30"
+                                    aria-label={`${attendee.displayName} LinkedIn`}
+                                  >
+                                    <Linkedin className="h-4 w-4" />
+                                  </a>
+                                )}
+                                {(githubUrl || linkedinUrl) && (
+                                  <ExternalLink
+                                    className="mt-2 h-4 w-4 text-gray-400"
+                                    aria-hidden="true"
+                                  />
+                                )}
+                              </div>
+                            </div>
                           );
                         })()}
                       </div>
