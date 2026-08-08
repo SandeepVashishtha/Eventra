@@ -6,7 +6,7 @@
  * @returns {any} The parsed object or the fallback value.
  */
 export const safeParseJson = (jsonString, fallback = null) => {
-  if (!jsonString) return fallback;
+  if (jsonString === null || jsonString === undefined || jsonString === "") return fallback;
   try {
     return JSON.parse(jsonString);
   } catch {

@@ -96,7 +96,7 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
   const [launching, setLaunching]         = useState(false);
   const [result, setResult]               = useState(null); // success result
   const [launchError, setLaunchError]     = useState("");
-  const [copied, setCopied]               = useState(false);
+  const { copy, isCopied } = useClipboard({ resetMs: 2000 }); // Fix: replaces copied state
 
   // Close on Escape
   useEffect(() => {
@@ -580,7 +580,7 @@ const WorkspaceBootstrapModal = ({ team, onClose }) => {
                         className="shrink-0 p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition text-slate-500"
                         aria-label="Copy clone URL"
                       >
-                        {copied ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} />}
+                        {isCopied("cloneUrl") ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} />}
                       </button>
                     </div>
 

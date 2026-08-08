@@ -1,6 +1,7 @@
 package com.sandeep.eventrabackend.controller;
 
 import com.sandeep.eventrabackend.dto.request.ChangePasswordRequest;
+import com.sandeep.eventrabackend.dto.request.PreferencesUpdateRequest;
 import com.sandeep.eventrabackend.dto.request.UserProfileUpdateRequest;
 import com.sandeep.eventrabackend.dto.response.ErrorResponse;
 import com.sandeep.eventrabackend.dto.response.MyRegisteredEventResponse;
@@ -27,7 +28,10 @@ import com.sandeep.eventrabackend.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/users")
@@ -256,6 +260,77 @@ public class UserController {
         return ResponseEntity.ok("Password changed successfully. Please login again.");
     }
 
+    @GetMapping("/preferences")
+    @Operation(
+            summary = "Get authenticated user preferences",
+            description = "Returns the stored preferences (e.g. theme) for the currently authenticated JWT user.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "User preferences fetched successfully",
+                    content = @Content(schema = @Schema(example = "{ \"theme\": \"dark\" }"))
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - JWT token missing or invalid",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+            )
+    })
+    public ResponseEntity<Map<String, Object>> getUserPreferences(Authentication authentication) {
+        User user = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + authentication.getName()));
+        return ResponseEntity.ok(user.getPreferences() != null ? user.getPreferences() : Map.of());
+    }
+
+    @PutMapping("/preferences")
+    @Operation(
+            summary = "Update authenticated user preferences",
+            description = "Merges the provided preferences (e.g. { \"theme\": \"dark\" }) into the authenticated user's stored preferences.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "User preferences updated successfully",
+                    content = @Content(schema = @Schema(example = "{ \"theme\": \"dark\" }"))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Validation error (e.g. invalid theme value)",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - JWT token missing or invalid",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+            )
+    })
+    public ResponseEntity<Map<String, Object>> updateUserPreferences(
+            @Valid @RequestBody PreferencesUpdateRequest request,
+            Authentication authentication) {
+        User user = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + authentication.getName()));
+
+        Map<String, Object> incoming = request.getPreferences();
+        if (incoming == null || incoming.isEmpty()) {
+            return ResponseEntity.ok(user.getPreferences() != null ? user.getPreferences() : Map.of());
+        }
+
+        String theme = (String) incoming.get("theme");
+        if (theme != null && !Set.of("light", "dark", "system").contains(theme)) {
+            throw new IllegalArgumentException("Invalid theme value: " + theme + ". Allowed values are light, dark, system.");
+        }
+
+        Map<String, Object> merged = new HashMap<>(user.getPreferences() != null ? user.getPreferences() : Map.of());
+        merged.putAll(incoming);
+        user.setPreferences(merged);
+
+        User updatedUser = userRepository.save(user);
+        return ResponseEntity.ok(updatedUser.getPreferences());
+    }
+
     private UserProfileResponse mapToUserProfileResponse(User user) {
         return UserProfileResponse.builder()
                 .id(user.getId())
@@ -267,6 +342,7 @@ public class UserController {
                 .profileHeadline(user.getProfileHeadline())
                 .linkedinUrl(user.getLinkedinUrl())
                 .githubUrl(user.getGithubUrl())
+                .preferences(user.getPreferences())
                 .build();
     }
 }
