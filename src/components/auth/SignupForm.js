@@ -275,6 +275,7 @@ const SignupForm = () => {
 
       const responseData = response.data || {};
       const sessionToken = "cookie-managed";
+      const refreshToken = responseData.refreshToken || null;
       // Under the HttpOnly-cookie auth model the server sets the session
       // cookie on the signup response. The client never sees a raw JWT.
 
@@ -290,7 +291,7 @@ const SignupForm = () => {
         permissions: responseData?.permissions ?? [],
       };
 
-      setAuthSession(sessionToken, sessionUser);
+      setAuthSession(sessionToken, sessionUser, refreshToken);
       setLoading(false);
       setSuccess("Account created successfully. Redirecting to dashboard...");
       toast.success("Account created successfully!");

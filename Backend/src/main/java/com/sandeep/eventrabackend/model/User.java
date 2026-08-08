@@ -7,8 +7,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import com.sandeep.eventrabackend.config.JsonMapAttributeConverter;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 @Data
 @Builder
@@ -64,4 +67,8 @@ public class User {
 
     @Column(name = "password_changed_at")
     private LocalDateTime passwordChangedAt;
+
+    @Convert(converter = JsonMapAttributeConverter.class)
+    @Column(name = "preferences", columnDefinition = "TEXT")
+    private Map<String, Object> preferences = new HashMap<>();
 }

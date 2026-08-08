@@ -54,10 +54,13 @@ let onUnauthorized = null;
 let _onRequiresReauth = null;
 
 let _authToken = null;
+let _refreshToken = null;
 
 export const setOnUnauthorizedHandler = (handler) => { onUnauthorized = handler; };
 export const setOnRequiresReauthHandler = (handler) => { _onRequiresReauth = handler; };
 export const setAuthToken = (token) => { _authToken = token; };
+export const setRefreshToken = (token) => { _refreshToken = token; };
+export const getRefreshToken = () => _refreshToken;
 
 export const createRequestInterceptor = (isDev) => async (config) => {
   if (isDev) {
@@ -231,7 +234,7 @@ export function setupRequestInterceptor(api, { isDev, buildApiUrl, getAuthToken,
   });
 }
 
-export function setupResponseInterceptor(api, { isDev, timeoutMs, getOnUnauthorized, getOnRequiresReauth }) {
+export function setupResponseInterceptor(api, { isDev, timeoutMs, getOnUnauthorized, getOnRequiresReauth, setAuthToken: applyAuthToken, setRefreshToken: applyRefreshToken }) {
   api.interceptors.response.use(
     (response) => {
       const headerValue = response.headers?.["x-server-time"] || response.headers?.["date"] || (typeof response.headers?.get === 'function' ? (response.headers.get("x-server-time") || response.headers.get("date")) : null);
@@ -257,11 +260,32 @@ export function setupResponseInterceptor(api, { isDev, timeoutMs, getOnUnauthori
         if (!config._retry && !config.url?.includes("/auth/refresh")) {
           config._retry = true;
           try {
-            if (isDev) logger.info(`[API] Attempting OAuth token refresh...`);
-            await api.post("/auth/refresh");
+            if (!_refreshToken) {
+              throw new Error("No refresh token available");
+            }
+            if (isDev) logger.info(`[API] Attempting token refresh...`);
+            const refreshRes = await api.post("/auth/refresh", {
+              refreshToken: _refreshToken,
+            });
+            const nextAccess = refreshRes?.data?.token;
+            const nextRefresh = refreshRes?.data?.refreshToken;
+            if (nextAccess) {
+              if (applyAuthToken) applyAuthToken(nextAccess);
+              else setAuthToken(nextAccess);
+              config.headers = config.headers || {};
+              config.headers["Authorization"] = `Bearer ${nextAccess}`;
+            }
+            if (nextRefresh) {
+              if (applyRefreshToken) applyRefreshToken(nextRefresh);
+              else setRefreshToken(nextRefresh);
+            }
             return api(config);
           } catch (refreshError) {
-            logger.error("OAuth token refresh failed. Locking user out.", refreshError);
+            logger.error("Token refresh failed. Locking user out.", refreshError);
+            if (applyAuthToken) applyAuthToken(null);
+            else setAuthToken(null);
+            if (applyRefreshToken) applyRefreshToken(null);
+            else setRefreshToken(null);
             if (onUnauthorized) {
               onUnauthorized();
             }
