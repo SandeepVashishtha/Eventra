@@ -85,6 +85,10 @@ const useEventListing = () => {
       params.append("status", filterType.toUpperCase());
     }
 
+    if (categoryFilter && categoryFilter !== "all") {
+      params.append("category", categoryFilter);
+    }
+
     if (safeFilters?.categories?.length) {
       safeFilters.categories.forEach((category) => {
         if (category) params.append("category", category);
@@ -115,7 +119,7 @@ const useEventListing = () => {
     params.append("sort", sortValue);
 
     return params.toString();
-  }, [currentPage, eventsPerPage, debouncedSearchQuery, filterType, advancedFilters, sortType]);
+  }, [currentPage, eventsPerPage, debouncedSearchQuery, filterType, categoryFilter, advancedFilters, sortType]);
 
   const fetchEvents = useCallback(async () => {
     const requestId = ++latestRequestRef.current;
@@ -182,7 +186,7 @@ const useEventListing = () => {
       return;
     }
     setCurrentPage(1);
-  }, [searchQuery, filterType, sortType, advancedFilters, eventsPerPage]);
+  }, [searchQuery, filterType, categoryFilter, sortType, advancedFilters, eventsPerPage]);
 
   const setSafePage = useCallback(
     (page) => {
@@ -241,8 +245,11 @@ const useEventListing = () => {
       return true;
     });
 
-    // 3. Category filter
-    const target = categoryFilter && categoryFilter !== "all" ? categoryFilter.toLowerCase() : null;
+    // 3. Category filter (client-side only when the API did not page/filter for us)
+    const target =
+      !serverPaged && categoryFilter && categoryFilter !== "all"
+        ? categoryFilter.toLowerCase()
+        : null;
 
     if (target) {
       filtered = filtered.filter((event) => {
@@ -286,7 +293,7 @@ const useEventListing = () => {
 
     // 4. Advanced filters
     return applyAdvancedFilters(filtered, advancedFilters);
-  }, [events, filterType, categoryFilter, debouncedSearchQuery, advancedFilters]);
+  }, [events, filterType, categoryFilter, debouncedSearchQuery, advancedFilters, serverPaged]);
 
   // FIX (#7437): Enrich all events with AI recommendation scores so the
   // "Best Match" sort can rank events by personalised relevance.
