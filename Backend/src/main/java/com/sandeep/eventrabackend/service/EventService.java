@@ -188,6 +188,14 @@ public class EventService {
          * Retrieves a page of public events with optional search / status / sort.
          */
         @Transactional(readOnly = true)
+
+        private Event requirePublicEvent(Long id) {
+                return eventRepository.findById(id)
+                                .filter(Event::isPublic)
+                                .orElseThrow(() -> new EventNotFoundException(
+                                                "Event not found with id: " + id));
+        }
+
         public PagedResponse<EventResponse> getAllEvents(
                         int page,
                         int size,
