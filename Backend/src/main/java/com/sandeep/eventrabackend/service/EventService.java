@@ -36,6 +36,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -448,12 +449,10 @@ public class EventService {
      * @param userEmail email extracted from JWT principal
      * @return registration confirmation response
      */
-    @Transactional
     public RegistrationResponse registerUserForEvent(Long eventId, String userEmail, String seatId) {
         return registerUserForEvent(eventId, userEmail, seatId, false);
     }
 
-    @Transactional
     public RegistrationResponse registerUserForEvent(
             Long eventId,
             String userEmail,
@@ -464,7 +463,7 @@ public class EventService {
 
         for (int attempt = 1; attempt <= MAX_REGISTRATION_RETRIES; attempt++) {
             try {
-                return executeRegistration(eventId, userEmail, seatId, showProfileInAttendeeDirectory);
+                return executeRegistrationInNewTransaction(eventId, userEmail, seatId, showProfileInAttendeeDirectory);
 
             } catch (ObjectOptimisticLockingFailureException ex) {
                 lastConflict = ex;
@@ -487,6 +486,15 @@ public class EventService {
 
         throw new RegistrationConflictException(
                 "Registration could not be completed due to high demand. Please try again.");
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public RegistrationResponse executeRegistrationInNewTransaction(
+            Long eventId,
+            String userEmail,
+            String seatId,
+            boolean showProfileInAttendeeDirectory) {
+        return executeRegistration(eventId, userEmail, seatId, showProfileInAttendeeDirectory);
     }
 
 
