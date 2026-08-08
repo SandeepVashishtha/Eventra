@@ -846,6 +846,18 @@ public class EventService {
                                 .toList();
         }
 
+        /**
+         * Promotes the first waitlisted user when capacity is available.
+         * Used after registration cancel and admin user deletion frees seats.
+         */
+        @Transactional
+        public void promoteWaitlistAfterVacancy(Long eventId) {
+                Event event = eventRepository.findByIdWithLock(eventId)
+                                .orElseThrow(() -> new EventNotFoundException(
+                                                "Event not found with id: " + eventId));
+                promoteFirstWaitingUser(event);
+        }
+
         private RegistrationResponse promoteFirstWaitingUser(Event event) {
                 if (event.getCapacity() != null && event.getRegisteredCount() >= event.getCapacity()) {
                         return null;
