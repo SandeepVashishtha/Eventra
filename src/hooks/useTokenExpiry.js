@@ -74,7 +74,7 @@ export function useTokenExpiry({ token, user, onExpired }) {
       };
 
       scheduleExpiryCheck();
-    } else {
+    } else if (token !== "cookie-managed") {
       timeoutId = setInterval(() => {
         if (!isTokenValid(token)) {
           clearExpiredSession();
