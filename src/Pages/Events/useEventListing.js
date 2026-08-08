@@ -57,6 +57,7 @@ const useEventListing = () => {
     totalElements: 0,
     first: true,
     last: true,
+    serverPaginated: false,
   });
 
   const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
@@ -145,6 +146,7 @@ const useEventListing = () => {
         totalElements: responseData.totalElements || 0,
         first: responseData.first ?? true,
         last: responseData.last ?? true,
+        serverPaginated: Array.isArray(responseData.content),
       });
     } catch (error) {
       setEvents([]);
@@ -153,6 +155,7 @@ const useEventListing = () => {
         totalElements: 0,
         first: true,
         last: true,
+        serverPaginated: false,
       });
 
       if (error?.response?.status === 403) {
@@ -320,9 +323,13 @@ const useEventListing = () => {
   }, [filteredEvents, scoredEvents, sortType]);
 
   const paginatedEvents = useMemo(() => {
+    if (pagination.serverPaginated || pagination.totalPages > 1) {
+      return sortedEvents;
+    }
+
     const startIndex = (currentPage - 1) * eventsPerPage;
     return sortedEvents.slice(startIndex, startIndex + eventsPerPage);
-  }, [sortedEvents, currentPage, eventsPerPage]);
+  }, [sortedEvents, currentPage, eventsPerPage, pagination.serverPaginated, pagination.totalPages]);
 
   const totalElements = pagination.totalPages > 1 ? pagination.totalElements : sortedEvents.length;
   const totalPages =
