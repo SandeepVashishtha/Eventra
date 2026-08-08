@@ -457,7 +457,60 @@ public class EventService {
                 event.setRefundPolicy(refundPolicy);
                 event.setRefundPercent("PARTIAL".equals(refundPolicy) ? request.getRefundPercent() : null);
 
-                return toEventResponse(eventRepository.save(event));
+                Event saved = eventRepository.save(event);
+                if (!Boolean.FALSE.equals(request.getNotifyAttendees())) {
+                        notifyCancellation(saved, request.getReason());
+                }
+
+                return toEventResponse(saved);
+        }
+
+        @Transactional
+        public void resendCancellationNotice(Long eventId, String actorEmail, String attendeeEmail) {
+                Event event = eventRepository.findById(eventId)
+                                .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + eventId));
+                eventRoleService.requireRole(eventId, actorEmail, EventRole.ORGANIZER);
+
+                if (!"CANCELLED".equals(event.getStatus())) {
+                        throw new RegistrationConflictException("Event is not cancelled.");
+                }
+
+                EventRegistration registration = eventRegistrationRepository
+                                .findByEvent_IdAndUser_Email(eventId, attendeeEmail)
+                                .orElseThrow(() -> new UsernameNotFoundException(
+                                                "No registration found for attendee: " + attendeeEmail));
+
+                String reason = event.getCancellationReason() != null ? event.getCancellationReason()
+                                : "Event cancelled";
+                notificationRepository.save(Notification.builder()
+                                .user(registration.getUser())
+                                .title("Event cancelled")
+                                .message(event.getTitle() + " has been cancelled. Reason: " + reason)
+                                .build());
+        }
+
+        @Transactional(readOnly = true)
+        public List<String> getNotifiedAttendees(Long eventId, String actorEmail) {
+                Event event = eventRepository.findById(eventId)
+                                .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + eventId));
+                eventRoleService.requireRole(eventId, actorEmail, EventRole.ORGANIZER);
+
+                if (!"CANCELLED".equals(event.getStatus())) {
+                        return List.of();
+                }
+
+                return eventRegistrationRepository.findByEvent_IdAndStatus(eventId, "CONFIRMED").stream()
+                                .map(registration -> registration.getUser().getEmail())
+                                .toList();
+        }
+
+        private void notifyCancellation(Event event, String reason) {
+                eventRegistrationRepository.findByEvent_IdAndStatus(event.getId(), "CONFIRMED")
+                                .forEach(registration -> notificationRepository.save(Notification.builder()
+                                                .user(registration.getUser())
+                                                .title("Event cancelled")
+                                                .message(event.getTitle() + " has been cancelled. Reason: " + reason)
+                                                .build()));
         }
 
         /**

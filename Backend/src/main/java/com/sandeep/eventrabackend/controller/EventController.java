@@ -322,6 +322,26 @@ public class EventController {
                                 eventService.cancelEvent(id, authentication.getName(), request));
         }
 
+        @PostMapping("/{id}/resend-cancellation-notice")
+        @PreAuthorize("isAuthenticated()")
+        @Operation(summary = "Resend cancellation notice", description = "Resends the cancellation notification to a specific attendee.", security = @SecurityRequirement(name = "bearerAuth"))
+        public ResponseEntity<Void> resendCancellationNotice(
+                        @PathVariable Long id,
+                        @RequestBody java.util.Map<String, String> body,
+                        Authentication authentication) {
+                eventService.resendCancellationNotice(id, authentication.getName(), body.get("attendeeEmail"));
+                return ResponseEntity.ok().build();
+        }
+
+        @GetMapping("/{id}/notified-attendees")
+        @PreAuthorize("isAuthenticated()")
+        @Operation(summary = "List notified attendees", description = "Returns emails of confirmed attendees for a cancelled event.", security = @SecurityRequirement(name = "bearerAuth"))
+        public ResponseEntity<List<String>> getNotifiedAttendees(
+                        @PathVariable Long id,
+                        Authentication authentication) {
+                return ResponseEntity.ok(eventService.getNotifiedAttendees(id, authentication.getName()));
+        }
+
         // ── Issue #2100 — DELETE /api/events/{id} ───────────────────────────────
 
         @DeleteMapping("/{id}")
