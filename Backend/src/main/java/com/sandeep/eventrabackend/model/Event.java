@@ -96,8 +96,6 @@ public class Event {
     @Version
     private Long version;
 
-    private Set<User> attendees = new HashSet<>();
-
     // ── Helpers ─────────────────────────────────────────────────────────────
 
     /**
