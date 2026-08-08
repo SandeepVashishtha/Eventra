@@ -378,7 +378,8 @@ const useOfflineSync = () => {
 
           if (retries >= MAX_RETRIES) {
             droppedCount++;
-            logger.warn(`[useOfflineSync] Item ${item.id} exceeded MAX_RETRIES (${MAX_RETRIES}). Dropping from queue.`);
+            logger.warn(`[useOfflineSync] Item ${item.id} exceeded MAX_RETRIES (${MAX_RETRIES}). Retaining in failed queue.`);
+            failedQueue.push({ ...item, retryCount: retries, exhausted: true });
             continue;
           }
 
@@ -420,8 +421,11 @@ const useOfflineSync = () => {
               }
             }
 
-            if (res.status === "success" || res.status === "dropped") {
+            if (res.status === "success") {
               successCount++;
+            } else if (res.status === "dropped") {
+              droppedCount++;
+              failedQueue.push({ ...item, retryCount: retries + 1, exhausted: true });
             } else {
               failedQueue.push({ ...item, retryCount: retries + 1 });
             }
@@ -432,21 +436,20 @@ const useOfflineSync = () => {
         }
 
         if (failedQueue.length > 0) {
-        await saveQueue(failedQueue);
+          await saveQueue(failedQueue);
           notify.warning(
             `Synced ${successCount} registration(s). ${failedQueue.length} remaining in local draft queue.`,
           );
+          if (droppedCount > 0) {
+            notify.error(
+              `${droppedCount} registration(s) paused after ${MAX_RETRIES} failed attempts. Retained in local drafts.`,
+            );
+          }
         } else {
           await emptyQueue();
           if (successCount > 0) {
             notify.success("All offline actions successfully synchronized!");
           }
-        }
-
-        if (droppedCount > 0) {
-          notify.error(
-            `${droppedCount} registration(s) paused after ${MAX_RETRIES} failed attempts. Retained in local drafts.`,
-          );
         }
       } catch (error) {
         // A crash anywhere in the replay run must never surface as a
