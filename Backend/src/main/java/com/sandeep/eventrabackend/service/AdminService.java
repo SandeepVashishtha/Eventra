@@ -46,6 +46,7 @@ public class AdminService {
     private final HackathonRegistrationRepository hackathonRegistrationRepository;
     private final ProjectUpvoteRepository     projectUpvoteRepository;
     private final NotificationRepository      notificationRepository;
+    private final EventService                eventService;
 
     // ══════════════════════════════════════════════════════════════════════
     // 1. USER MANAGEMENT
@@ -141,6 +142,7 @@ public class AdminService {
                         .countByEvent_IdAndStatus(eventId, "CONFIRMED"));
                 eventRepository.save(event);
             });
+            eventService.promoteWaitlistAfterVacancy(eventId);
         }
 
         userRepository.deleteById(id);
