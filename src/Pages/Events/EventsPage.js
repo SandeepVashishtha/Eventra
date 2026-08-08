@@ -184,26 +184,15 @@ const EventsPage = () => {
   const [localSearchInput, setLocalSearchInput] = useState(listing.searchQuery);
   const debouncedSearchQuery = useDebouncedValue(localSearchInput, 300);
 
-  const toggleCompare = (event) => {
-  const exists = selectedEvents.find((e) => e.id === event.id);
+  const prevRouteQueryRef = useRef(routeSearchQuery);
 
-  if (exists) {
-    setSelectedEvents(selectedEvents.filter((e) => e.id !== event.id));
-    return;
-  }
-
-  if (selectedEvents.length >= 3) {
-    toast.error("You can compare only 3 events.");
-    return;
-  }
-
-  setSelectedEvents([...selectedEvents, event]);
-};
-
-  // Sync the debounced value into the listing hook whenever it settles.
   useEffect(() => {
-    setSearchQuery(debouncedSearchQuery);
-  }, [debouncedSearchQuery, setSearchQuery]);
+    if (localSearchInput === "") {
+      setSearchQuery("");
+    } else {
+      setSearchQuery(debouncedSearchQuery);
+    }
+  }, [localSearchInput, debouncedSearchQuery, setSearchQuery]);
 
   useEffect(() => {
     if (hasHydratedFilters.current) return;
@@ -313,17 +302,14 @@ const category =
   ]);
 
   useEffect(() => {
-    if (!rawSearchParam) return;
-
     const safeQuery = prepareSafeSearchQuery(routeSearchQuery);
-    if (safeQuery !== listing.searchQuery) {
+    if (routeSearchQuery !== prevRouteQueryRef.current) {
+      prevRouteQueryRef.current = routeSearchQuery;
       setLocalSearchInput(safeQuery);
       setSearchQuery(safeQuery);
     }
   }, [
-    rawSearchParam,
     routeSearchQuery,
-    listing.searchQuery,
     setSearchQuery,
   ]);
 
@@ -435,7 +421,7 @@ const category =
             viewMode={listing.viewMode}
             onViewModeChange={listing.setViewMode}
             searchQuery={localSearchInput}
-            onSearchChange={setLocalSearchInput}
+              onSearchChange={setLocalSearchInput}
             advancedFilters={listing.advancedFilters}
             onAdvancedFiltersChange={listing.setAdvancedFilters}
             isAdvancedFiltersOpen={listing.isAdvancedFiltersOpen}

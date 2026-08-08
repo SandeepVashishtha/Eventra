@@ -28,16 +28,12 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
   const validationRulesRef = useRef(validationRules);
   const initialStateRef = useRef(initialState);
   const optionsRef = useRef({ debounceMs, validateOnBlur });
-  const valuesRef = useRef(initialState);
-
   const [values, setValues] = useState(initialState);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [isFormValid, setIsFormValid] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
 
-  // Fix: valuesRef must be declared AFTER values useState to avoid
-  // "used before declared" React Compiler error.
   const valuesRef = useRef(initialState);
 
   useEffect(() => {
@@ -55,12 +51,6 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
   useEffect(() => {
     valuesRef.current = values;
   }, [values]);
-
-  const [values, setValues] = useState(initialState);
-  const [errors, setErrors] = useState({});
-  const [touched, setTouched] = useState({});
-  const [isFormValid, setIsFormValid] = useState(false);
-  const [isValidating, setIsValidating] = useState(false);
 
   const clearValidationTimer = useCallback(() => {
     validationRunRef.current += 1;

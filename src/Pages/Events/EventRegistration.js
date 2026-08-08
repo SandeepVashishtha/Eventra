@@ -137,9 +137,8 @@ const EventRegistration = () => {
       additionalInfo: "",
       priority: "Medium",
       showProfileInAttendeeDirectory: false,
-    },
-  }
-);
+    }
+  );
   // Load event data from backend API
   useEffect(() => {
     let isCancelled = false;

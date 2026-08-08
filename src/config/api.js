@@ -68,6 +68,7 @@ export const setAuthToken = (token) => {
  * backend must derive identity from the verified JWT, not from client-supplied
  * body fields.
  */
+
 const normalizeApiError = (error) => {
   const config = error.config || {};
   const status = error?.response?.status;
@@ -141,23 +142,6 @@ API.interceptors.request.use(
     return config;
   },
   (error) => Promise.reject(error)
-);
-
-API.interceptors.response.use(
-  (response) => {
-    const headerValue = response.headers.get("x-server-time") || response.headers.get("date");
-    if (headerValue) {
-      syncServerTimeFromHeader(headerValue);
-    }
-    return response;
-  },
-  (error) => {
-    const status = error?.response?.status;
-    if (status === 401 && onUnauthorized) {
-      onUnauthorized();
-    }
-    return Promise.reject(error);
-  }
 );
 
 setupRequestInterceptor(API, {

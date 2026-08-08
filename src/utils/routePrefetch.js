@@ -21,7 +21,7 @@ const loadRouteModule = (importFn) => {
 };
 
 const ROUTE_REGISTRY = {
-  home: () => import("../Pages/Home/HomePage.js"),
+  home: () => import("../Pages/Home/HomePage.jsx"),
   events: () => import("../Pages/Events/EventsPage.js"),
   dashboard: () => import("../components/Dashboard.js"),
   hackathons: () => import("../Pages/Hackathons/HackathonPage.js"),

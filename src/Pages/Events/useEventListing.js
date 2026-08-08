@@ -42,6 +42,7 @@ const useEventListing = () => {
   const [viewMode, setViewMode] = useState("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 400);
+  const activeSearchQuery = searchQuery.trim() === "" ? "" : debouncedSearchQuery;
   const [sortType, setSortType] = useState("Newest");
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState("");
@@ -73,7 +74,7 @@ const useEventListing = () => {
     // string. sanitizeFilterQuery strips $, &, <, > (src/utils/querySanitizer.js)
     // and length caps reject oversized values, closing the injection/DoS surface.
     const safeFilters = sanitizeFilterQuery(advancedFilters);
-    const safeSearch = sanitizeFilterQuery({ search: debouncedSearchQuery }).search || "";
+    const safeSearch = sanitizeFilterQuery({ search: activeSearchQuery }).search || "";
 
     if (safeSearch.trim()) {
       params.append("search", safeSearch.trim().slice(0, MAX_SEARCH_LENGTH));
@@ -113,7 +114,14 @@ const useEventListing = () => {
     params.append("sort", sortValue);
 
     return params.toString();
-  }, [currentPage, eventsPerPage, debouncedSearchQuery, filterType, advancedFilters, sortType]);
+  }, [
+    currentPage,
+    eventsPerPage,
+    activeSearchQuery,
+    filterType,
+    advancedFilters,
+    sortType,
+  ]);
 
   const fetchEvents = useCallback(async () => {
     const requestId = ++latestRequestRef.current;
@@ -203,16 +211,19 @@ const useEventListing = () => {
   const dateRangeStats = useMemo(() => getDateRange(events), [events]);
 
   const filteredEvents = useMemo(() => {
-    // 1. Fuzzy search first (or all events if no query)
-    let filtered = debouncedSearchQuery.trim()
-      ? getRouteSearchResults(events, debouncedSearchQuery, [
-          { name: "title", weight: 0.8 },
-          { name: "category", weight: 0.5 },
-          { name: "tags", weight: 0.4 },
-          { name: "location.name", weight: 0.3 },
-          { name: "location.city", weight: 0.3 },
-          { name: "description", weight: 0.1 },
-        ])
+    let filtered = activeSearchQuery.trim()
+      ? getRouteSearchResults(
+          events,
+          activeSearchQuery,
+          [
+            { name: "title", weight: 0.8 },
+            { name: "category", weight: 0.5 },
+            { name: "tags", weight: 0.4 },
+            { name: "location.name", weight: 0.3 },
+            { name: "location.city", weight: 0.3 },
+            { name: "description", weight: 0.1 },
+          ]
+        )
       : [...events];
 
     // 2. Status timing filter
@@ -277,9 +288,8 @@ const useEventListing = () => {
       });
     }
 
-    // 4. Advanced filters
     return applyAdvancedFilters(filtered, advancedFilters);
-  }, [events, filterType, categoryFilter, debouncedSearchQuery, advancedFilters]);
+  }, [events, filterType, categoryFilter, activeSearchQuery, advancedFilters]);
 
   // FIX (#7437): Enrich all events with AI recommendation scores so the
   // "Best Match" sort can rank events by personalised relevance.

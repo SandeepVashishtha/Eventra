@@ -116,7 +116,10 @@ const EventFiltersToolbar = ({
           {hasAnyFilterActive && (
             <button
               type="button"
-              onClick={onResetFilters}
+              onClick={() => {
+                setLocalQuery("");
+                onResetFilters?.();
+              }}
               className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-bold uppercase tracking-wider rounded-2xl bg-red-950/20 text-red-400 hover:text-red-300 hover:bg-red-950/40 border border-red-500/20 hover:border-red-500/40 transition duration-300 shadow-md cursor-pointer"
             >
               <RotateCcw size={13} />

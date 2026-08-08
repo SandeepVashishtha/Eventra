@@ -375,14 +375,6 @@ ${window.location.href}
   ? new Date(event.registrationEnd)
   : null;
 
-  const eventDate =
-  event.date ||
-  event.eventDate ||
-  event.startDate ||
-  null;
-
-const dateInfo = formatLocalDateTime(eventDate);
-
   const eventDate = event.date || event.eventDate || event.startDate || null;
   const dateInfo = formatEventDate(eventDate);
   const calendarEvent = {
