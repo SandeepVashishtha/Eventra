@@ -26,7 +26,7 @@ const writeBookmarks = (bookmarks) => {
 export const addSessionBookmark = (event) => {
   if (!event?.id) return readBookmarks();
   const bookmarks = readBookmarks();
-  if (bookmarks.some((b) => b.id === event.id)) return bookmarks;
+  if (bookmarks.some((b) => String(b.id) === String(event.id))) return bookmarks;
   const entry = {
     id: event.id,
     title: event.title || "",
@@ -40,7 +40,7 @@ export const addSessionBookmark = (event) => {
 };
 
 export const removeSessionBookmark = (eventId) => {
-  const next = readBookmarks().filter((b) => b.id !== eventId);
+  const next = readBookmarks().filter((b) => String(b.id) !== String(eventId));
   writeBookmarks(next);
   return next;
 };
@@ -48,7 +48,7 @@ export const removeSessionBookmark = (eventId) => {
 export const getSessionBookmarks = () => readBookmarks();
 
 export const isSessionBookmarked = (eventId) => {
-  return readBookmarks().some((b) => b.id === eventId);
+  return readBookmarks().some((b) => String(b.id) === String(eventId));
 };
 
 export const clearSessionBookmarks = () => {

@@ -15,14 +15,13 @@ import useDocumentTitle from "hooks/useDocumentTitle";
 import ActiveFilters from "./ActiveFilters";
 import PaginationControls from "./PaginationControls";
 import useEventListing from "./useEventListing";
-import { useDebouncedValue } from "hooks/useDebouncedValue";
-import { prepareSafeSearchQuery } from "utils/inputSanitization";
-import ErrorBoundary from "components/common/ErrorBoundary";
-import ErrorMessage from "components/common/ErrorMessage";
-import { EventTimeline } from "components/EventTimeline";
-import TrendingEvents from "components/TrendingEvents/TrendingEvents";
-import RecentlyViewedEvents from "components/common/RecentlyViewedEvents";
-import { safeJsonParse } from "utils/safeJsonParse";
+import { useDebouncedValue } from "../../hooks/useDebouncedValue";
+import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
+import ErrorBoundary from "../../components/common/ErrorBoundary";
+import ErrorMessage from "../../components/common/ErrorMessage";
+import { EventTimeline } from "../../components/EventTimeline";
+import EventComparison from "./EventComparison";
+import { toast } from "react-toastify";
 import {
   decodeAdvancedFilters,
   encodeAdvancedFilters,
@@ -70,8 +69,8 @@ const renderCardSection = (
   matchScoreMap
 ) => {
   if (isLoading) {
-    return <ExploreEventsSkeleton />;
-  }
+  return <ExploreEventsSkeleton />;
+}
 
   if (loadError) {
     return (
@@ -127,17 +126,24 @@ const renderCardSection = (
         : "grid-cols-1 max-w-4xl mx-auto"
         }`}
     >
-      {paginatedEvents.map((event) => {
-          const match = matchScoreMap?.get(String(event.id));
-          return (
-            <EventCard
-              key={event.id}
-              event={event}
-              matchScore={match?.score}
-              matchReasons={match?.reasons}
-            />
-          );
-        })}
+
+      {selectedEvents.length >= 2 && (
+          <button
+              onClick={() => setShowComparison(true)}
+              className="mb-6 px-5 py-2 bg-indigo-600 text-white rounded-lg"
+          >
+              Compare {selectedEvents.length} Events
+          </button>
+      )}
+
+      {paginatedEvents.map((event) => (
+        <EventCard
+            key={event.id}
+            event={event}
+            onCompare={toggleCompare}
+            isSelected={selectedEvents.some(e => e.id === event.id)}
+        />
+      ))}
     </div>
   );
 };
@@ -168,17 +174,9 @@ const EventsPage = () => {
   }
 
   const listing = useEventListing();
-  const {
-    isLoading,
-    setAdvancedFilters,
-    setCategoryFilter,
-    setEventsPerPage,
-    setFilterType,
-    setSafePage,
-    setSearchQuery,
-    setSortType,
-    setViewMode,
-  } = listing;
+  const [selectedEvents, setSelectedEvents] = useState([]);
+  const [showComparison, setShowComparison] = useState(false);
+  const { isLoading } = listing;
   const cardSectionRef = useRef();
   const hasHydratedFilters = useRef(false);
   const [filtersHydrated, setFiltersHydrated] = useState(false);
@@ -214,8 +212,14 @@ const EventsPage = () => {
       parseInt(searchParams.get("perPage"), 10) || savedFilters.perPage || 20;
     const filter =
       searchParams.get("filter") || savedFilters.filterType || "all";
-    const category =
-      searchParams.get("category") || savedFilters.categoryFilter || "all";
+    const savedCategory =
+  window.localStorage.getItem("eventra:last-category") || "all";
+
+const category =
+  searchParams.get("category") ||
+  savedFilters.categoryFilter ||
+  savedCategory ||
+  "all";
     const sort = searchParams.get("sort") || savedFilters.sortType || "Newest";
     const view = searchParams.get("view") || savedFilters.viewMode || "grid";
     const urlAdvancedFilters = searchParams.get("filters");
@@ -326,6 +330,22 @@ const EventsPage = () => {
       }, 100);
     }
   }, [isLoading, routeSearchQuery]);
+  useEffect(() => {
+  const savedScroll = sessionStorage.getItem("eventra:events-scroll-position");
+
+  if (!savedScroll) return;
+
+  const timeout = setTimeout(() => {
+    window.scrollTo({
+      top: Number(savedScroll),
+      behavior: "auto",
+    });
+
+    sessionStorage.removeItem("eventra:events-scroll-position");
+  }, 100);
+
+  return () => clearTimeout(timeout);
+}, []);
 
   const scrollToCard = () => {
     cardSectionRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -433,7 +453,23 @@ const EventsPage = () => {
           advancedFilters={listing.advancedFilters}
           onAdvancedFiltersChange={listing.setAdvancedFilters}
         />
-
+        {localSearchInput.trim() && (
+          <div className="mb-4 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950/30 dark:text-indigo-300">
+            Showing results for: <span className="font-semibold">"{localSearchInput}"</span>
+          </div>
+        )}
+        <div className="mb-4 text-sm text-slate-600 dark:text-slate-300">
+  {listing.filteredEvents.length === 0
+    ? "No events found"
+    : `Showing ${listing.filteredEvents.length} ${
+        listing.filteredEvents.length === 1 ? "event" : "events"
+      }`}
+</div>
+{listing.lastUpdated && (
+  <div className="mb-4 text-xs text-slate-500 dark:text-slate-400">
+    Last updated: Just now
+  </div>
+)}
         <ErrorBoundary level="section" label="Events">
     {renderCardSection(
   isLoading,
@@ -458,6 +494,13 @@ const EventsPage = () => {
           </ErrorBoundary>
         </div>
       </div>
+
+      {showComparison && (
+          <EventComparison
+              events={selectedEvents}
+              onClose={() => setShowComparison(false)}
+          />
+      )}
 
       <EventCTA />
 <FeedbackButton />
