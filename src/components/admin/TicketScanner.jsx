@@ -322,7 +322,7 @@ export default function TicketScanner() {
       await pushToQueue(
         {
           actionType: "TICKET_CHECK_IN",
-          ticketId,
+          ticketId: ticketData.ticketId,
           eventId: eventId || "unknown",
           endpoint: API_ENDPOINTS.TICKETS.CHECK_IN,
           payload: ticketData,
@@ -386,7 +386,7 @@ export default function TicketScanner() {
         return;
       }
 
-      await recordCheckIn(ticketId, eventId, { validatedAt: new Date().toISOString() });
+      await recordCheckIn(ticketData.ticketId, eventId, { validatedAt: new Date().toISOString() });
 
       triggerScanFeedback("verified");
       setScanResult({
