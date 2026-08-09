@@ -205,7 +205,7 @@ const ModernTestimonialTrain = () => {
           text: testimonial.quote,
           url: testimonial.shareUrl,
         });
-      } catch {}
+      } catch { console.warn("[Testimonials] Share handler failed"); }
     } else {
       // Fallback: copy to clipboard
       navigator.clipboard.writeText(`${testimonial.quote} — ${testimonial.author}, ${testimonial.company}`);
