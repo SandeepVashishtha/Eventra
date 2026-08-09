@@ -342,7 +342,7 @@ const EventRegistration = () => {
         {
           ...formData,
           priority: formData.priority,
-          eventId: parseInt(eventId),
+          eventId: parseInt(eventId, 10),
           idempotencyKey,
         },
         token
@@ -369,7 +369,7 @@ const EventRegistration = () => {
       if (isOfflineFailure) {
         const payload = {
           ...formData,
-          eventId: parseInt(eventId),
+          eventId: parseInt(eventId, 10),
           idempotencyKey,
         };
 
@@ -377,7 +377,7 @@ const EventRegistration = () => {
           {
             actionType: isFreshlyFull ? "JOIN_WAITLIST" : "REGISTER_EVENT",
             endpoint,
-            eventId: parseInt(eventId),
+            eventId: parseInt(eventId, 10),
             idempotencyKey,
             payload,
           },
@@ -452,7 +452,7 @@ const EventRegistration = () => {
             const { getGlobalWaitlist } = await import("utils/waitlistUtils");
             const records = getGlobalWaitlist();
             const onWaitlist = records.some(
-              (r) => r.userId === user.id && r.eventId === parseInt(eventId) && r.status === "waiting"
+              (r) => r.userId === user.id && r.eventId === parseInt(eventId, 10) && r.status === "waiting"
             );
             if (onWaitlist) {
               toast.error(t("eventRegistration.toastAlreadyWaitlisted"));
