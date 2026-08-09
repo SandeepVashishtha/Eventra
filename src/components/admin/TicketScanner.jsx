@@ -349,6 +349,24 @@ export default function TicketScanner() {
         ticketData.ticketId = result.registrationId || ticketId;
       }
 
+      if (!result.valid) {
+        setScanResult({
+          status: "flagged",
+          data: ticketData,
+          message: result.message || "This ticket is not valid for entry.",
+        });
+        toast.error(`Invalid Ticket: ${ticketData.userName}`);
+        addToHistory({
+          id: `invalid-${Date.now()}`,
+          ticketId: ticketData.ticketId,
+          name: ticketData.userName,
+          event: eventName,
+          status: "Flagged",
+          time: new Date().toISOString(),
+        });
+        return;
+      }
+
       if (result.alreadyCheckedIn) {
         setScanResult({
           status: "duplicate",
@@ -365,24 +383,6 @@ export default function TicketScanner() {
           time: new Date().toISOString(),
         });
         if (selectedEventId) fetchStats(selectedEventId);
-        return;
-      }
-
-      if (!result.valid) {
-        setScanResult({
-          status: "flagged",
-          data: ticketData,
-          message: result.message || "This ticket is not valid for entry.",
-        });
-        toast.error(`Invalid Ticket: ${ticketData.userName}`);
-        addToHistory({
-          id: `invalid-${Date.now()}`,
-          ticketId: ticketData.ticketId,
-          name: ticketData.userName,
-          event: eventName,
-          status: "Flagged",
-          time: new Date().toISOString(),
-        });
         return;
       }
 
