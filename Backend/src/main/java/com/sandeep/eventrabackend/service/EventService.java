@@ -217,7 +217,9 @@ public class EventService {
                 String rawProperty = parts[0].trim();
                 String mapped = SORT_ALIASES.getOrDefault(rawProperty.toLowerCase(Locale.ROOT), rawProperty);
                 if (!ALLOWED_SORT_PROPERTIES.contains(mapped)) {
-                        return Sort.by(Sort.Direction.DESC, "eventDate");
+                        throw new IllegalArgumentException(
+                                        "Unsupported sort property '" + rawProperty + "'. Allowed values: "
+                                                        + String.join(", ", ALLOWED_SORT_PROPERTIES));
                 }
 
                 Sort.Direction direction = Sort.Direction.DESC;
