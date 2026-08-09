@@ -128,7 +128,9 @@ const getWaitlistEventTitle = (eventId, eventOrTitle, records = []) => {
 
 const getPositionMap = (waitlist) =>
   waitlist.reduce((positions, record, index) => {
-    positions.set(record.userId, index + 1);
+    if (record && record.userId != null) {
+      positions.set(String(record.userId), index + 1);
+    }
     return positions;
   }, new Map());
 
@@ -141,7 +143,9 @@ const notifyWaitlistPositionChanges = async (eventId, beforeWaitlist, eventOrTit
 
   await Promise.all(
     afterWaitlist.map(async (record, index) => {
-      const previousPosition = previousPositions.get(record.userId);
+      if (!record || record.userId == null) return;
+
+      const previousPosition = previousPositions.get(String(record.userId));
       const currentPosition = index + 1;
       if (!previousPosition || currentPosition >= previousPosition) return;
 
