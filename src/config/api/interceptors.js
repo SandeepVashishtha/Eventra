@@ -1,22 +1,68 @@
-import { syncServerTimeFromHeader } from "../../utils/timeSync.js";
-import { getCSRFToken, requiresCSRF } from "../../utils/csrfToken.js";
-import { logger } from "../../utils/logger.js";
+import { syncServerTimeFromHeader } from "utils/timeSync.js";
+import { getCSRFToken, requiresCSRF, getCSRFEnforcementMode } from "utils/csrfToken.js";
+import { signRequest } from "utils/requestSigner.js";
+import { logger } from "utils/logger.js";
 import { ApiError, RateLimitError, CSRFError } from "./errors.js";
+import { logCategorizedError } from "utils/errorRecovery.js";
 
-const RETRYABLE_STATUS_CODES = [500, 502, 503, 504];
+const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504];
 const RETRYABLE_METHODS = new Set(["GET", "HEAD", "OPTIONS", "TRACE"]);
-const MAX_RETRIES = 1;
+const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 1_000;
 
+const SIGNED_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+const REQUEST_SIGNING_SECRET_KEY = "VITE_REQUEST_SIGNING_SECRET";
+
+const getRequestSigningSecret = () => {
+  if (typeof import.meta !== "undefined" && import.meta.env) {
+    return import.meta.env[REQUEST_SIGNING_SECRET_KEY] || "";
+  }
+  if (typeof process !== "undefined" && process.env) {
+    return process.env[REQUEST_SIGNING_SECRET_KEY] || "";
+  }
+  return "";
+};
+
+const isSignableBody = (data) =>
+  data != null && !(typeof FormData !== "undefined" && data instanceof FormData);
+
+const signRequestConfig = async (config) => {
+  const method = config.method?.toUpperCase();
+  const secret = getRequestSigningSecret();
+
+  if (!SIGNED_METHODS.has(method) || !secret || !isSignableBody(config.data)) {
+    return config;
+  }
+
+  try {
+    const { timestamp, nonce, signature } = await signRequest(config.data, secret);
+    config.headers["x-timestamp"] = timestamp;
+    config.headers["x-nonce"] = nonce;
+    config.headers["x-signature"] = signature;
+  } catch (error) {
+    logger.security("request_signing_failed", {
+      method,
+      url: config.url || "unknown",
+      error: error?.message || String(error),
+    });
+  }
+
+  return config;
+};
+
 let onUnauthorized = null;
-let onRequiresReauth = null;
+let _onRequiresReauth = null;
+
 let _authToken = null;
+let _refreshToken = null;
 
 export const setOnUnauthorizedHandler = (handler) => { onUnauthorized = handler; };
-export const setOnRequiresReauthHandler = (handler) => { onRequiresReauth = handler; };
+export const setOnRequiresReauthHandler = (handler) => { _onRequiresReauth = handler; };
 export const setAuthToken = (token) => { _authToken = token; };
+export const setRefreshToken = (token) => { _refreshToken = token; };
+export const getRefreshToken = () => _refreshToken;
 
-export const createRequestInterceptor = (isDev) => (config) => {
+export const createRequestInterceptor = (isDev) => async (config) => {
   if (isDev) {
     logger.info(`[API ${config.method?.toUpperCase()}]`, config.url || "");
   }
@@ -44,7 +90,7 @@ export const createRequestInterceptor = (isDev) => (config) => {
             });
     }
   }
-  return config;
+  return signRequestConfig(config);
 };
 
 export const createResponseInterceptor = (API) => {
@@ -57,15 +103,27 @@ export const createResponseInterceptor = (API) => {
   const reject = async (error) => {
     const config = error.config || {};
     const status = error?.response?.status;
+    const errorCode = error?.response?.data?.code;
 
-    if (status === 401 && onUnauthorized) onUnauthorized();
+    if (status === 401) {
+      if (errorCode === "REQUIRES_REAUTH" && _onRequiresReauth) {
+        _onRequiresReauth();
+      } else if (onUnauthorized) {
+        onUnauthorized();
+      }
+    }
 
     const retryCount = config._retryCount || 0;
     const isNonMutating = RETRYABLE_METHODS.has(config.method?.toUpperCase() ?? "");
-    const isRetryableStatus = RETRYABLE_STATUS_CODES.includes(status);
+    const isNetworkFailure = !error.response;
+    const isRetryableStatus = RETRYABLE_STATUS_CODES.includes(status) || isNetworkFailure;
 
     if (isNonMutating && isRetryableStatus && retryCount < MAX_RETRIES) {
       config._retryCount = retryCount + 1;
+      config.headers = {
+        ...config.headers,
+        "X-Eventra-Recovery-Attempt": String(config._retryCount),
+      };
       const delay = RETRY_DELAY_MS * Math.pow(2, retryCount);
       if (process.env.NODE_ENV === "development") {
         logger.info(
@@ -75,7 +133,15 @@ export const createResponseInterceptor = (API) => {
       await new Promise((r) => setTimeout(r, delay));
       return API(config);
     }
-    throw normalizeApiError(error);
+    const normalized = normalizeApiError(error);
+    logCategorizedError(normalized, null, {
+      type: "api",
+      method: config.method?.toUpperCase(),
+      url: config.url,
+      status,
+      retryCount,
+    });
+    throw normalized;
   };
 
   return { fulfill, reject };
@@ -115,18 +181,8 @@ const normalizeApiErrorWithTimeout = (error, timeoutMs) => {
   );
 };
 
-const getCSRFEnforcementMode = () => {
-  if (typeof import.meta.env !== "undefined" && import.meta.env.VITE_CSRF_ENFORCEMENT_MODE) {
-    return import.meta.env.VITE_CSRF_ENFORCEMENT_MODE;
-  }
-  if (typeof process !== "undefined" && process.env?.VITE_CSRF_ENFORCEMENT_MODE) {
-    return process.env.VITE_CSRF_ENFORCEMENT_MODE;
-  }
-  return "warning";
-};
-
-export function setupRequestInterceptor(api, { isDev, buildApiUrl, getAuthToken, getOnUnauthorized }) {
-  api.interceptors.request.use((config) => {
+export function setupRequestInterceptor(api, { isDev, buildApiUrl, getAuthToken,   }) {
+  api.interceptors.request.use(async (config) => {
     if (isDev) {
       logger.info(`[API ${config.method?.toUpperCase()}]`, buildApiUrl(config.url || ""));
     }
@@ -174,11 +230,11 @@ export function setupRequestInterceptor(api, { isDev, buildApiUrl, getAuthToken,
       }
     }
 
-    return config;
+    return signRequestConfig(config);
   });
 }
 
-export function setupResponseInterceptor(api, { isDev, timeoutMs, getOnUnauthorized, getOnRequiresReauth }) {
+export function setupResponseInterceptor(api, { isDev, timeoutMs, getOnUnauthorized, getOnRequiresReauth, setAuthToken: applyAuthToken, setRefreshToken: applyRefreshToken }) {
   api.interceptors.response.use(
     (response) => {
       const headerValue = response.headers?.["x-server-time"] || response.headers?.["date"] || (typeof response.headers?.get === 'function' ? (response.headers.get("x-server-time") || response.headers.get("date")) : null);
@@ -194,7 +250,7 @@ export function setupResponseInterceptor(api, { isDev, timeoutMs, getOnUnauthori
 
       const onUnauthorized = getOnUnauthorized();
       const onRequiresReauth = getOnRequiresReauth ? getOnRequiresReauth() : null;
-      
+
       if (status === 401) {
         if (errorCode === "REQUIRES_REAUTH") {
           if (onRequiresReauth) onRequiresReauth();
@@ -204,11 +260,32 @@ export function setupResponseInterceptor(api, { isDev, timeoutMs, getOnUnauthori
         if (!config._retry && !config.url?.includes("/auth/refresh")) {
           config._retry = true;
           try {
-            if (isDev) logger.info(`[API] Attempting OAuth token refresh...`);
-            await api.post("/auth/refresh");
+            if (!_refreshToken) {
+              throw new Error("No refresh token available");
+            }
+            if (isDev) logger.info(`[API] Attempting token refresh...`);
+            const refreshRes = await api.post("/auth/refresh", {
+              refreshToken: _refreshToken,
+            });
+            const nextAccess = refreshRes?.data?.token;
+            const nextRefresh = refreshRes?.data?.refreshToken;
+            if (nextAccess) {
+              if (applyAuthToken) applyAuthToken(nextAccess);
+              else setAuthToken(nextAccess);
+              config.headers = config.headers || {};
+              config.headers["Authorization"] = `Bearer ${nextAccess}`;
+            }
+            if (nextRefresh) {
+              if (applyRefreshToken) applyRefreshToken(nextRefresh);
+              else setRefreshToken(nextRefresh);
+            }
             return api(config);
           } catch (refreshError) {
-            logger.error("OAuth token refresh failed. Locking user out.", refreshError);
+            logger.error("Token refresh failed. Locking user out.", refreshError);
+            if (applyAuthToken) applyAuthToken(null);
+            else setAuthToken(null);
+            if (applyRefreshToken) applyRefreshToken(null);
+            else setRefreshToken(null);
             if (onUnauthorized) {
               onUnauthorized();
             }
@@ -222,10 +299,15 @@ export function setupResponseInterceptor(api, { isDev, timeoutMs, getOnUnauthori
 
       const retryCount = config._retryCount || 0;
       const isNonMutating = RETRYABLE_METHODS.has(config.method?.toUpperCase() ?? "");
-      const isRetryableStatus = RETRYABLE_STATUS_CODES.includes(status);
+      const isNetworkFailure = !error.response;
+      const isRetryableStatus = RETRYABLE_STATUS_CODES.includes(status) || isNetworkFailure;
 
       if (isNonMutating && isRetryableStatus && retryCount < MAX_RETRIES) {
         config._retryCount = retryCount + 1;
+        config.headers = {
+          ...config.headers,
+          "X-Eventra-Recovery-Attempt": String(config._retryCount),
+        };
         const delay = RETRY_DELAY_MS * Math.pow(2, retryCount);
 
         if (isDev) {
@@ -237,7 +319,15 @@ export function setupResponseInterceptor(api, { isDev, timeoutMs, getOnUnauthori
         await new Promise((resolve) => setTimeout(resolve, delay));
         return api(config);
       }
-      throw normalizeApiErrorWithTimeout(error, timeoutMs);
+      const normalized = normalizeApiErrorWithTimeout(error, timeoutMs);
+      logCategorizedError(normalized, null, {
+        type: "api",
+        method: config.method?.toUpperCase(),
+        url: config.url,
+        status,
+        retryCount,
+      });
+      throw normalized;
     },
   );
 }

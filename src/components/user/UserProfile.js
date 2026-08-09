@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useReducedMotion } from '../../hooks/useReducedMotion';
+import { useReducedMotion } from 'hooks/useReducedMotion';
 import {
   User,
   AtSign,
@@ -20,11 +20,12 @@ import {
   Star,
   Zap,
 } from "lucide-react";
-import { useAuth } from "../../context/AuthContext";
-import { syncSecureStorage } from "../../utils/secureStorage";
+import { useAuth } from "context/AuthContext";
+import { syncSecureStorage } from "utils/secureStorage";
 import LazyImage from "../common/LazyImage";
 import "./UserProfile.css";
-import { safeJsonParse } from "../../utils/safeJsonParse";
+import { safeJsonParse } from "utils/safeJsonParse";
+import { userService } from "../../services/userService";
 
 // 🔥 FIX 1: Safe URL Sanitizer to prevent Stored XSS via malicious URI schemes
 const sanitizeUrl = (url) => {
@@ -64,32 +65,49 @@ export default function UserProfile() {
   const [loading, setLoading]   = useState(true);
 
   /* Load profile from localStorage (same source as EditProfile) */
-  useEffect(() => {
-    let active = true;
-    const loadProfileData = async () => {
+ useEffect(() => {
+  let active = true;
+
+  const loadProfileData = async () => {
+    setLoading(true);
+
+    try {
+      const response = await userService.getProfile();
+
+      if (active) {
+        setProfile(response.data || response);
+      }
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+
       let merged = user || {};
+
       try {
-        const [saved] = await Promise.all([
-          syncSecureStorage.getItemAsync("user"),
-          new Promise((resolve) => setTimeout(resolve, 600))
-        ]);
+        const saved = await syncSecureStorage.getItemAsync("user");
+
         if (saved && active) {
           merged = { ...user, ...safeJsonParse(saved, {}) };
         }
-      } catch (error) {
-        console.error('Error parsing user profile from localStorage:', error);
+      } catch (err) {
+        console.error("Error loading local profile:", err);
       }
+
       if (active) {
         setProfile(merged);
+      }
+    } finally {
+      if (active) {
         setLoading(false);
       }
-    };
-    loadProfileData();
-    return () => {
-      active = false;
-    };
-  }, [user]);
+    }
+  };
 
+  loadProfileData();
+
+  return () => {
+    active = false;
+  };
+}, [user]);
   /* Derived helpers */
   const displayName = profile?.fullName
     || `${profile?.firstName || ""} ${profile?.lastName || ""}`.trim()
@@ -104,7 +122,9 @@ export default function UserProfile() {
     .toUpperCase();
 
   const skills    = profile?.skills || [];
-  const hasSocials = profile?.github || profile?.linkedin || profile?.portfolio;
+  const githubUrl = profile?.github || profile?.githubUrl;
+  const linkedinUrl = profile?.linkedin || profile?.linkedinUrl;
+  const hasSocials = githubUrl || linkedinUrl || profile?.portfolio;
 
   if (loading) {
     return (
@@ -142,8 +162,8 @@ export default function UserProfile() {
   loading="lazy"
   onError={(e) => {
     e.target.onerror = null;
-    e.target.src =
-      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%239ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>';
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%239ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>';
+    e.target.src = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
     e.target.style.backgroundColor = "#f3f4f6";
   }}
 />
@@ -166,6 +186,9 @@ export default function UserProfile() {
               )}
               {profile?.bio && (
                 <p className="upv-bio">{profile.bio}</p>
+              )}
+              {profile?.profileHeadline && !profile?.bio && (
+                <p className="upv-bio">{profile.profileHeadline}</p>
               )}
             </div>
 
@@ -236,15 +259,15 @@ export default function UserProfile() {
                   <h2 className="upv-card-title">Social Links</h2>
                 </div>
                 <div className="upv-socials">
-                  {profile?.github && (
-                    <a href={sanitizeUrl(profile.github)} target="_blank" rel="noopener noreferrer" className="upv-social-link upv-social-github">
+                  {githubUrl && (
+                    <a href={sanitizeUrl(githubUrl)} target="_blank" rel="noopener noreferrer" className="upv-social-link upv-social-github">
                       <Github size={16} />
                       <span>GitHub</span>
                       <ChevronRight size={13} className="upv-social-arrow" />
                     </a>
                   )}
-                  {profile?.linkedin && (
-                    <a href={sanitizeUrl(profile.linkedin)} target="_blank" rel="noopener noreferrer" className="upv-social-link upv-social-linkedin">
+                  {linkedinUrl && (
+                    <a href={sanitizeUrl(linkedinUrl)} target="_blank" rel="noopener noreferrer" className="upv-social-link upv-social-linkedin">
                       <Linkedin size={16} />
                       <span>LinkedIn</span>
                       <ChevronRight size={13} className="upv-social-arrow" />

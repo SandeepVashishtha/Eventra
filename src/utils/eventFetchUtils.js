@@ -58,14 +58,27 @@ export function buildPaginatedUrl(baseUrl, page, size) {
   // The old logic used string concatenation which blindly appended duplicate 'page' parameters
   // (e.g., ?category=tech&page=0&page=1). Backend frameworks (like Spring) often extract the
   // *first* instance of a parameter, permanently freezing the UI on page 0.
-  const [urlWithoutHash, hash] = baseUrl.split("#");
+  const hashIdx = baseUrl.indexOf("#");
+  const urlWithoutHash = hashIdx === -1 ? baseUrl : baseUrl.slice(0, hashIdx);
+  const hash = hashIdx === -1 ? "" : baseUrl.slice(hashIdx + 1);
   const [path, queryString] = urlWithoutHash.split("?");
 
   const params = new URLSearchParams(queryString || "");
   
+  // Validate and normalize pagination parameters
+  const validPage =
+    Number.isFinite(Number(page)) && Number(page) >= 0
+      ? Math.floor(Number(page))
+      : 0;
+
+  const validSize =
+    Number.isFinite(Number(size)) && Number(size) > 0
+      ? Math.floor(Number(size))
+      : SERVER_PAGE_SIZE;
+
   // .set() explicitly overwrites existing keys, eliminating duplicate parameter pollution
-  params.set("page", page);
-  params.set("size", size);
+  params.set("page", validPage);
+  params.set("size", validSize);
 
   const newUrl = `${path}?${params.toString()}`;
   return hash ? `${newUrl}#${hash}` : newUrl;
@@ -79,9 +92,26 @@ export function buildPaginatedUrl(baseUrl, page, size) {
  * @returns {object}
  */
 export function normalizeEvent(rawEvent) {
-  return {
+  if (!rawEvent) return rawEvent;
+
+  // Map backend API field names → internal field names used by components.
+  // The backend returns:  eventDate, imageUrl, capacity, registeredCount
+  // Components expect:   date,       image,    maxAttendees, attendees
+  const mapped = {
     ...rawEvent,
-    status: getEventStatus(rawEvent),
+    // Date field: prefer startDate > date > eventDate
+    date: rawEvent.date || rawEvent.startDate || rawEvent.eventDate || null,
+    startDate: rawEvent.startDate || rawEvent.date || rawEvent.eventDate || null,
+    // Image field: prefer image > imageUrl > banner
+    image: rawEvent.image || rawEvent.imageUrl || rawEvent.banner || null,
+    // Capacity fields
+    maxAttendees: rawEvent.maxAttendees ?? rawEvent.capacity ?? null,
+    attendees: rawEvent.attendees ?? rawEvent.registeredCount ?? rawEvent.participants ?? 0,
+  };
+
+  return {
+    ...mapped,
+    status: getEventStatus(mapped),
   };
 }
 

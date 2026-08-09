@@ -148,6 +148,55 @@ const testStatusSyncOnSubscribe = async () => {
   }
 };
 
+const testReconnectRequestUsesPerPathReconnect = async () => {
+  // A RECONNECT_REQUEST from a follower must re-establish only the requested
+  // path via the parameterized reconnect(path) -> openEventSource(path) flow,
+  // not the no-arg visibility reconnect that re-runs leader election.
+  sseMultiplexer.isLeader = true;
+  sseMultiplexer.channel = new globalThis.BroadcastChannel("eventra_sse_multiplexer");
+  sseMultiplexer.channel.onmessage = (e) => sseMultiplexer.handleBroadcastMessage(e.data);
+  sseMultiplexer.activeEventSources.clear();
+
+  const opened = [];
+  const originalOpen = sseMultiplexer.openEventSource.bind(sseMultiplexer);
+  sseMultiplexer.openEventSource = (path) => {
+    opened.push(path);
+    return originalOpen(path);
+  };
+
+  try {
+    sseMultiplexer.activeEventSources.set(
+      "/stream/leaderboard",
+      new globalThis.EventSource("https://api.example.test/stream/leaderboard")
+    );
+
+    sseMultiplexer.handleReconnectRequest({
+      type: "RECONNECT_REQUEST",
+      tabId: "tab_b",
+      path: "/stream/leaderboard",
+    });
+
+    assert.ok(
+      opened.includes("/stream/leaderboard"),
+      "Reconnect request must re-open the requested path's EventSource"
+    );
+    assert.equal(
+      opened.length,
+      1,
+      "Only the requested path should be re-opened, not every path"
+    );
+    assert.equal(
+      sseMultiplexer.isLeader,
+      true,
+      "Per-path reconnect must not re-run the visibility/leader-election flow"
+    );
+  } finally {
+    sseMultiplexer.openEventSource = originalOpen;
+    sseMultiplexer.channel?.close();
+    channels.clear();
+  }
+};
+
 const runTests = async () => {
   process.env.REACT_APP_API_URL = "https://api.example.test";
 
@@ -340,6 +389,8 @@ const runTests = async () => {
   }
 
   await testStatusSyncOnSubscribe();
+
+  await testReconnectRequestUsesPerPathReconnect();
 
   console.log("🟢 All SSE Multiplexer unit tests completed successfully!");
 };

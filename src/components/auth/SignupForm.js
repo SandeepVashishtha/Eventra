@@ -2,15 +2,15 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
-import { authService } from "../../services/authService";
+import { authService } from "services/authService";
 
-import { ROLES } from "../../config/roles";
-import { useAuth } from "../../context/AuthContext";
+import { ROLES } from "config/roles";
+import { useAuth } from "context/AuthContext";
 import { FormFieldWrapper, ValidationMessage } from "../forms";
 import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
 import { User, AtSign, Lock, Eye, EyeOff, Zap, LoaderCircle } from "lucide-react";
 import { validate, validateEmailAvailability, validatePasswordStrength } from "../../validation";
-import { getPublicErrorMessage, AUTH_ERRORS } from "../../utils/errorMessages";
+import { getPublicErrorMessage, AUTH_ERRORS } from "utils/errorMessages";
 
 const getResultMessage = (result, fallback) => (result?.isValid ? "" : result?.message || fallback);
 
@@ -46,6 +46,7 @@ const SignupForm = () => {
   });
 
   const [errors, setErrors] = useState({});
+  useEffect(() => { setErrors({}); }, []); // Clear errors on mount
   const [submitError, setSubmitError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -98,7 +99,7 @@ const SignupForm = () => {
         setFieldState("email", "error");
       } else {
         const emailAvailability = await validateEmailAvailability(emailValue);
-        if (!emailAvailability?.isValid) {
+        if (!emailAvailability?.isValid && !emailAvailability?.skippedDueToError) {
           nextErrors.email = getResultMessage(
             emailAvailability,
             "This email is already registered. Please log in."
@@ -190,8 +191,6 @@ const SignupForm = () => {
       return;
     }
 
-    // Set validating/loading state immediately
-    setErrors((prev) => ({ ...prev, email: "Checking email availability..." }));
     setFieldState("email", "loading");
 
     const timer = setTimeout(async () => {
@@ -214,8 +213,8 @@ const SignupForm = () => {
           setFieldState("email", "error");
         }
       } catch {
-        setErrors((prev) => ({ ...prev, email: "Validation failed" }));
-        setFieldState("email", "error");
+        setErrors((prev) => ({ ...prev, email: "" }));
+        setFieldState("email", "idle");
       }
     }, 500);
 
@@ -275,7 +274,8 @@ const SignupForm = () => {
       }
 
       const responseData = response.data || {};
-      const sessionToken = responseData.token || "cookie-managed";
+      const sessionToken = "cookie-managed";
+      const refreshToken = responseData.refreshToken || null;
       // Under the HttpOnly-cookie auth model the server sets the session
       // cookie on the signup response. The client never sees a raw JWT.
 
@@ -291,7 +291,7 @@ const SignupForm = () => {
         permissions: responseData?.permissions ?? [],
       };
 
-      setAuthSession(sessionToken, sessionUser);
+      setAuthSession(sessionToken, sessionUser, refreshToken);
       setLoading(false);
       setSuccess("Account created successfully. Redirecting to dashboard...");
       toast.success("Account created successfully!");

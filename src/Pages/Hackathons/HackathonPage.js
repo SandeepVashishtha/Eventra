@@ -1,23 +1,24 @@
-import { Code2, RefreshCw, Compass, ChevronDown, X, Rocket, PlusCircle } from "lucide-react";
+import { ChevronDown, X } from "lucide-react";
+import { FiRotateCw } from "react-icons/fi";
 import TeamMatchmaking from "./components/TeamMatchmaking";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link, useSearchParams } from "react-router-dom";
-import { fetchHackathons } from "../../services/hackathonService";
+import { Link } from "react-router-dom";
+import { fetchHackathons } from "services/hackathonService";
 import HackathonHero from "./HackathonHero";
 import HackathonCard from "./HackathonCard";
 import HackathonCTA from "./HackathonCTA";
 import Fuse from "fuse.js";
 import { createPortal } from "react-dom";
-import BackToTopButton from "../../components/common/BackToTopButton";
-// import VirtualizedHackathonGrid from "../../components/common/VirtualizedHackathonGrid";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
+import BackToTopButton from "components/common/BackToTopButton";
+// import VirtualizedHackathonGrid from "components/common/VirtualizedHackathonGrid";
+import useDocumentTitle from "hooks/useDocumentTitle";
 import { filterHackathons } from "./hackathonFilterUtils.mjs";
-import { HackathonCardSkeleton } from "../../components/common/SkeletonLoaders";
-import useReducedMotion from "../../hooks/useReducedMotion.js";
-import useDebounce from "../../hooks/useDebounce";
-import ErrorBoundary from "../../components/common/ErrorBoundary";
-import { safeJsonParse } from "../../utils/safeJsonParse";
+import { HackathonCardSkeleton } from "components/common/SkeletonLoaders";
+import useReducedMotion from "hooks/useReducedMotion.js";
+import useDebounce from "hooks/useDebounce";
+import ErrorBoundary from "components/common/ErrorBoundary";
+import { safeJsonParse } from "utils/safeJsonParse";
 
 // NEW: Tag component for selected tags in search bar
 const Tag = ({ tag, onRemove }) => (
@@ -43,7 +44,6 @@ const Tag = ({ tag, onRemove }) => (
 const CustomDropdown = ({ label, value, options, onChange, placeholder = "Select" }) => {
   const [open, setOpen] = useState(false);
   const [menuCoords, setMenuCoords] = useState({ top: 0, left: 0, width: 0, showAbove: false });
-  
   const buttonRef = useRef(null);
   const dropdownRef = useRef(null);
   // Safe ID generation compatible with all React versions
@@ -58,10 +58,10 @@ const CustomDropdown = ({ label, value, options, onChange, placeholder = "Select
       const rect = buttonRef.current.getBoundingClientRect();
       const spaceBelow = window.innerHeight - rect.bottom;
       const spaceAbove = rect.top;
-      
+
       // Smart positioning: Open above if not enough space below
       const showAbove = spaceBelow < 250 && spaceAbove > spaceBelow;
-      
+
       setMenuCoords({
         top: showAbove ? rect.top - 8 : rect.bottom + 8,
         left: rect.left,
@@ -114,13 +114,12 @@ const CustomDropdown = ({ label, value, options, onChange, placeholder = "Select
 
   const selectedOption = options.find((o) => getOptionValue(o) === value);
   const displayText = selectedOption ? getOptionLabel(selectedOption) : placeholder;
-
   return (
     <div className="relative">
       {label && (
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <span className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           {label}
-        </label>
+        </span>
       )}
 
       <button
@@ -185,9 +184,8 @@ const CustomDropdown = ({ label, value, options, onChange, placeholder = "Select
                   key={optValue}
                   role="option"
                   aria-selected={optValue === value}
-                  className={`px-4 py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-primary/10 text-text-light text-sm transition-colors ${
-                    optValue === value ? "font-semibold bg-primary/10 text-primary" : ""
-                  }`}
+                  className={`px-4 py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-primary/10 text-text-light text-sm transition-colors ${optValue === value ? "font-semibold bg-primary/10 text-primary" : ""
+                    }`}
                   onClick={() => {
                     onChange(optValue);
                     setOpen(false);
@@ -224,14 +222,10 @@ const HackathonHub = () => {
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   const [selectedTags, setSelectedTags] = useState([]);
   const [availableTags, setAvailableTags] = useState([]);
-  
   // NEW: Sort state
   const [sortBy, setSortBy] = useState("default");
 
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [filtersHydrated, setFiltersHydrated] = useState(false);
-  const hasHydratedFilters = useRef(false);
-  
+
   // FIX: Prevent state updates on unmounted component
   const isMountedRef = useRef(true);
   useEffect(() => {
@@ -240,70 +234,55 @@ const HackathonHub = () => {
     };
   }, []);
 
+  // Fix: useEventFilters centralises URL sync + sessionStorage persistence
+  // replacing the 80-line manual hydration and sync useEffects above.
+  const { filters: urlFilters, setFilter: setUrlFilter, isHydrated } = useEventFilters({
+    storageKey: HACKATHON_FILTER_STORAGE_KEY,
+    defaults: {
+      tab: "all",
+      search: "",
+      difficulty: "",
+      prize: "",
+      location: "",
+      tags: "",
+      sort: "default",
+    },
+  });
+
+  // Sync URL filters into local state once hydrated
+  useEffect(() => {
+    if (!isHydrated) return;
+    setActiveTab(urlFilters.tab || "all");
+    setSearchQuery(urlFilters.search || "");
+    setFilters({
+      difficulty: urlFilters.difficulty || "",
+      prize: urlFilters.prize || "",
+      location: urlFilters.location || "",
+    });
+    setSelectedTags(urlFilters.tags ? urlFilters.tags.split(",").filter(Boolean) : []);
+    setSortBy(urlFilters.sort || "default");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isHydrated]);
+
+  // Sync local state changes back to URL via useEventFilters
+  useEffect(() => {
+    if (!isHydrated) return;
+    setUrlFilter({
+      tab: activeTab,
+      search: debouncedSearchQuery,
+      difficulty: filters.difficulty,
+      prize: filters.prize,
+      location: filters.location,
+      tags: selectedTags.join(","),
+      sort: sortBy,
+    });
+  }, [activeTab, debouncedSearchQuery, filters, selectedTags, sortBy, isHydrated, setUrlFilter]);
+
   useDocumentTitle("Eventra | Hackathons");
 
-  // Initialize state from URL params, falling back to persisted filters
-  useEffect(() => {
-    if (hasHydratedFilters.current) return;
 
-    let savedFilters = {};
-    try {
-      savedFilters = safeJsonParse(
-        window.sessionStorage.getItem(HACKATHON_FILTER_STORAGE_KEY) || "{}"
-      );
-    } catch {
-      savedFilters = {};
-    }
 
-    const tab = searchParams.get("tab") || savedFilters.activeTab || "all";
-    const search = searchParams.get("search") || savedFilters.searchQuery || "";
-    const difficulty = searchParams.get("difficulty") || savedFilters.filters?.difficulty || "";
-    const prize = searchParams.get("prize") || savedFilters.filters?.prize || "";
-    const locationVal = searchParams.get("location") || savedFilters.filters?.location || "";
-    const tagsParam = searchParams.get("tags");
-    const tags = tagsParam ? tagsParam.split(",") : savedFilters.selectedTags || [];
-    const sort = searchParams.get("sort") || savedFilters.sortBy || "default";
 
-    setActiveTab(tab);
-    setSearchQuery(search);
-    setFilters({ difficulty, prize, location: locationVal });
-    setSelectedTags(tags);
-    setSortBy(sort);
-
-    hasHydratedFilters.current = true;
-    setFiltersHydrated(true);
-  }, [searchParams]);
-
-  // Sync state back to sessionStorage and URL query params
-  useEffect(() => {
-    if (!filtersHydrated) return;
-
-    const params = {};
-    if (activeTab !== "all") params.tab = activeTab;
-    if (debouncedSearchQuery) params.search = debouncedSearchQuery;
-    if (filters.difficulty) params.difficulty = filters.difficulty;
-    if (filters.prize) params.prize = filters.prize;
-    if (filters.location) params.location = filters.location;
-    if (selectedTags.length > 0) params.tags = selectedTags.join(",");
-    if (sortBy && sortBy !== "default") params.sort = sortBy;
-
-    setSearchParams(params, { replace: true });
-
-    try {
-      window.sessionStorage.setItem(
-        HACKATHON_FILTER_STORAGE_KEY,
-        JSON.stringify({
-          activeTab,
-          searchQuery: debouncedSearchQuery,
-          filters,
-          selectedTags,
-          sortBy,
-        })
-      );
-    } catch {
-      // Ignored
-    }
-  }, [activeTab, debouncedSearchQuery, filters, selectedTags, sortBy, filtersHydrated, setSearchParams]);
 
   const cardsSectionRef = useRef(null);
   const searchInputRef = useRef(null);
@@ -358,8 +337,8 @@ const HackathonHub = () => {
   }, [loadHackathons]);
 
   const positionClass = `
-    ${isScrollVisible ? "bottom-[calc(2.5rem+var(--safe-area-bottom))] sm:bottom-40" : "bottom-[calc(1rem+var(--safe-area-bottom))] sm:bottom-24"}
-    ${isChatbotOpen ? "left-[calc(1rem+var(--safe-area-left))] sm:left-6" : "right-[calc(1rem+var(--safe-area-right))] sm:right-6"}
+    ${isScrollVisible ? "bottom-[calc(2.5rem+var(--safe-area-bottom))] sm:bottom-37" : "bottom-[calc(1rem+var(--safe-area-bottom))] sm:bottom-21"}
+    ${isChatbotOpen ? "left-[calc(1rem+var(--safe-area-left))] sm:left-15" : "right-[calc(1rem+var(--safe-area-right))] sm:right-15"}
   `;
 
   const containerVariants = {
@@ -455,6 +434,8 @@ const HackathonHub = () => {
     setSearchQuery("");
     setSelectedTags([]);
     setSortBy("default");
+    // Also clear URL and storage via useEventFilters
+    setUrlFilter({ tab: "all", search: "", difficulty: "", prize: "", location: "", tags: "", sort: "default" });
   };
 
   useEffect(() => {
@@ -537,10 +518,11 @@ const HackathonHub = () => {
         </div>
       )}
 
-      {/* Hackathons Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Section header + Filters toggle */}
-        <div className="mb-8" data-aos="fade-up" data-aos-delay="200">
+      <div
+        ref={cardsSectionRef}
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+      >
+        <div className="mb-8">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-1">
@@ -553,7 +535,7 @@ const HackathonHub = () => {
                 </span>
               </h2>
             </div>
-            
+
             <div className="flex flex-wrap items-center gap-3">
               {/* NEW: Sort Dropdown */}
               <div className="w-36">
@@ -574,12 +556,12 @@ const HackathonHub = () => {
               <button
                 type="button"
                 onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${
-                  showFilters
-                    ? "bg-primary text-white border-primary shadow-glow-sm"
-                    : "bg-white dark:bg-white/5 text-text-light border-border hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/50 shadow-sm dark:shadow-none"
-                }`}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${showFilters
+                  ? "bg-primary text-white border-primary shadow-glow-sm"
+                  : "bg-white dark:bg-white/5 text-text-light border-border hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/50 shadow-sm dark:shadow-none"
+                  }`}
                 aria-expanded={showFilters}
+                aria-controls="hackathon-filters-panel"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
@@ -622,6 +604,7 @@ const HackathonHub = () => {
           <AnimatePresence>
             {showFilters && (
               <motion.div
+                id="hackathon-filters-panel"
                 initial={{ opacity: 0, y: -12, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -12, scale: 0.98 }}
@@ -654,9 +637,9 @@ const HackathonHub = () => {
 
                 {availableTags.length > 0 && (
                   <div className="mt-8 pt-6 border-t border-border">
-                    <label className="block text-xs font-semibold uppercase tracking-widest text-text-light mb-4">
+                    <span className="block text-xs font-semibold uppercase tracking-widest text-text-light mb-4">
                       Filter by Technology
-                    </label>
+                    </span>
                     <div className="flex flex-wrap gap-2">
                       {availableTags.map((tag) => (
                         <button
@@ -772,90 +755,30 @@ const HackathonHub = () => {
                   }}
                 />
 
-                <div className="absolute inset-0 z-0 overflow-hidden">
-                  {[...Array(6)].map((_, i) => {
-                    const positions = [
-                      { left: "10%", top: "20%" }, { left: "70%", top: "15%" },
-                      { left: "30%", top: "70%" }, { left: "80%", top: "60%" },
-                      { left: "50%", top: "40%" }, { left: "20%", top: "50%" },
-                    ];
-                    const size = 30 + Math.random() * 40;
-                    return (
-                      <motion.div
-                        key={i}
-                        className="absolute rounded-full bg-primary/20 dark:bg-primary/20"
-                        style={{ width: size, height: size, left: positions[i].left, top: positions[i].top, opacity: 0.3 }}
-                        animate={{ y: [0, -30, 0], x: [0, 10, -10, 0], scale: [1, 1.2, 1] }}
-                        transition={{ duration: prefersReducedMotion ? 0 : 6 + i, repeat: Infinity, ease: "easeInOut", delay: i * 0.5 }}
-                      />
-                    );
-                  })}
-                </div>
-
-                <div className="mx-auto max-w-md relative z-10">
-                  <motion.div
-                    animate={{ y: [0, -8, 0] }}
-                    transition={{ duration: prefersReducedMotion ? 0 : 3, repeat: Infinity, ease: "easeInOut" }}
-                    className="flex justify-center items-center w-24 h-24 rounded-full bg-indigo-50 dark:bg-indigo-950/30 shadow-sm mx-auto border border-indigo-100 dark:border-indigo-800/50"
-                  >
-                    <Rocket className="h-12 w-12 text-indigo-600 dark:text-indigo-400" />
-                  </motion.div>
-
-                  <h3 className="mt-6 text-2xl font-bold text-slate-900 dark:text-gray-100">
-                    No hackathons available right now 🚀
-                  </h3>
-
-                  <p className="mt-3 text-sm text-gray-600 dark:text-gray-400 leading-relaxed max-w-sm mx-auto">
-                    {debouncedSearchQuery || filters.difficulty || filters.prize || filters.location || selectedTags.length > 0
-                      ? "No hackathons match your current filters. Try adjusting your search or clearing your filters."
-                      : "Be the first to host one or check back later for upcoming opportunities."}
-                  </p>
-
-                  <div className="mt-8 flex flex-col sm:flex-row flex-wrap gap-4 justify-center items-center">
-                    <motion.button
-                      type="button"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={scrollToCards}
-                      className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium rounded-xl text-white bg-linear-to-r from-blue-600 via-indigo-600 to-violet-600 hover:opacity-90 shadow-lg transition-all"
-                    >
-                      <Compass className="w-4 h-4" />
-                      Explore Hackathons
-                    </motion.button>
-
-                    <motion.div
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <Link 
-                        to="/host-hackathon"
-                        className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium rounded-xl text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-gray-900 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 shadow-sm transition-all"
-                      >
-                        <PlusCircle className="w-4 h-4" />
-                        Host a Hackathon
-                      </Link>
-                    </motion.div>
-
-                    {(debouncedSearchQuery || filters.difficulty || filters.prize || filters.location || selectedTags.length > 0) && (
-                      <motion.button
-                        type="button"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
+                {/* Reset Filters Button */}
+                {(searchQuery ||
+                  filters.difficulty ||
+                  filters.prize ||
+                  filters.location ||
+                  selectedTags.length > 0) && (
+                    <div className="mt-6 flex justify-center">
+                      <button
                         onClick={resetFilters}
-                        className="flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-medium rounded-xl text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-all w-full sm:w-auto"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-black hover:bg-zinc-800 text-white text-sm font-medium shadow-md transition-all duration-300"
                       >
-                        <RefreshCw className="w-4 h-4" />
+                        <FiRotateCw className="w-4 h-4" />
                         Reset Filters
-                      </motion.button>
-                    )}
-                  </div>
-                </div>
+                      </button>
+                    </div>
+                  )}
               </motion.div>
             )}
           </AnimatePresence>
         </ErrorBoundary>
+
       </div>
-      
+
+      <BackToTopButton positionClass={positionClass} />
       <HackathonCTA />
     </div>
   );

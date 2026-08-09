@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import {
-  X, Briefcase, Mail, Globe, Linkedin, Twitter, Github,
-  Send, User, MessageSquare, ArrowLeft
+  X, Briefcase, Globe, Linkedin, Twitter, Github,
+  Send, MessageSquare, ArrowLeft
 } from "lucide-react";
 import { toast } from "react-toastify";
-import { safeJsonParse } from "../../utils/safeJsonParse";
-import { useAuth } from "../../context/AuthContext";
+import { safeJsonParse } from "utils/safeJsonParse";
+import { useAuth } from "context/AuthContext";
 import ErrorBoundary from "../common/ErrorBoundary";
 
 const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
@@ -18,6 +18,8 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
 
   const modalRef = useRef(null);
   const chatEndRef = useRef(null);
+  const replyTimerRef = useRef(null);
+  const chatLeadCapturedRef = useRef(false);
 
   /* ---------------- Lead Capture ---------------- */
   const captureLead = (action) => {
@@ -63,6 +65,7 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
 
     setShowChat(false);
     setChatMessage("");
+    chatLeadCapturedRef.current = false;
     setChatHistory([
       {
         id: 1,
@@ -75,9 +78,17 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
       },
     ]);
 
+    captureLead("Booth Visit");
+
     return () => {
       document.body.style.overflow = "unset";
+      if (replyTimerRef.current) {
+        clearTimeout(replyTimerRef.current);
+        replyTimerRef.current = null;
+      }
     };
+    // captureLead reads current user from closure; booth label only affects welcome text
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- record one visit per open
   }, [isOpen, booth]);
 
   /* ---------------- Auto Scroll Chat ---------------- */
@@ -106,11 +117,13 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
     setChatMessage("");
     setIsTyping(true);
 
-    setTimeout(() => {
+    if (replyTimerRef.current) clearTimeout(replyTimerRef.current);
+    replyTimerRef.current = setTimeout(() => {
+      replyTimerRef.current = null;
       setIsTyping(false);
 
       const replies = [
-        "We’re hiring! Check our careers section.",
+        "We're hiring! Check our careers section.",
         "Feel free to reach out via email or LinkedIn.",
         "Our team works with React, Node.js, and TypeScript.",
       ];
@@ -177,16 +190,16 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
 
                 <div className="flex gap-3 text-gray-400">
                   {booth.sponsorWebsite && (
-                    <a href={booth.sponsorWebsite}><Globe size={16} /></a>
+                    <a href={booth.sponsorWebsite} target="_blank" rel="noopener noreferrer" aria-label={`${booth.label} website`}><Globe size={16} /></a>
                   )}
                   {booth.sponsorLinkedin && (
-                    <a href={booth.sponsorLinkedin}><Linkedin size={16} /></a>
+                    <a href={booth.sponsorLinkedin} target="_blank" rel="noopener noreferrer" aria-label={`${booth.label} LinkedIn`}><Linkedin size={16} /></a>
                   )}
                   {booth.sponsorTwitter && (
-                    <a href={booth.sponsorTwitter}><Twitter size={16} /></a>
+                    <a href={booth.sponsorTwitter} target="_blank" rel="noopener noreferrer" aria-label={`${booth.label} Twitter`}><Twitter size={16} /></a>
                   )}
                   {booth.sponsorGithub && (
-                    <a href={booth.sponsorGithub}><Github size={16} /></a>
+                    <a href={booth.sponsorGithub} target="_blank" rel="noopener noreferrer" aria-label={`${booth.label} GitHub`}><Github size={16} /></a>
                   )}
                 </div>
               </div>
@@ -221,7 +234,13 @@ const VirtualBoothModal = ({ isOpen, onClose, booth }) => {
                 </div>
 
                 <button
-                  onClick={() => setShowChat(true)}
+                  onClick={() => {
+                    setShowChat(true);
+                    if (!chatLeadCapturedRef.current) {
+                      chatLeadCapturedRef.current = true;
+                      captureLead("Chat Initiated");
+                    }
+                  }}
                   className="w-full bg-indigo-600 hover:bg-indigo-700 py-3 rounded-xl text-xs uppercase font-bold"
                 >
                   <MessageSquare size={14} /> Chat

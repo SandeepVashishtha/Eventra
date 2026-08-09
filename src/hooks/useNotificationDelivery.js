@@ -37,8 +37,8 @@ export function useNotificationDelivery(preferences) {
           new Notification(title, options);
         }
         return true;
-      } catch {
-        return false;
+      } catch (err) {
+        console.warn("[useNotificationDelivery] Delivery check failed:", err);
       }
     },
     [preferences],

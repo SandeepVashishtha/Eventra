@@ -5,7 +5,7 @@ import {
   getRecommendationStats,
   getTagStats,
   getRatingBreakdown,
-} from '../../utils/feedbackUtils';
+} from 'utils/feedbackUtils';
 
 /**
  * FeedbackSummary Component

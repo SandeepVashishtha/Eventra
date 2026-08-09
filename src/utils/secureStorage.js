@@ -136,7 +136,33 @@ const SALT_STORAGE_KEY = 'eventra:key-salt';
 const KEY_METADATA_KEY = 'eventra:key-metadata';
 const SECRET_BYTE_LENGTH = CRYPTO_CONFIG.SECRET_BYTE_LENGTH;
 
-/** Generate or restore a random 256-bit secret from localStorage. */
+/**
+ * Generate or restore a random 256-bit secret from localStorage.
+ *
+ * SECURITY CRITICAL: This function generates cryptographic secrets used for:
+ * - AES-256-GCM encryption keys
+ * - PBKDF2 key derivation
+ * - Initialization vectors (IVs)
+ *
+ * Why Math.random() is insecure:
+ * - Math.random() is a pseudo-random number generator (PRNG) with predictable output
+ * - It does not provide cryptographically secure entropy
+ * - Its internal state can be reconstructed from observed outputs
+ * - It is suitable only for non-security purposes (UI effects, test data, etc.)
+ * - Using it for cryptographic secrets allows attackers to predict keys and decrypt data
+ *
+ * Why fail-closed behavior is required:
+ * - If secure randomness is unavailable, continuing with weak secrets is worse than failing
+ * - Silent degradation to insecure randomness exposes encrypted data to attack
+ * - Encryption without secure entropy provides a false sense of security
+ * - Failing explicitly allows callers to handle the security requirement appropriately
+ *
+ * Why cryptographic secrets require secure entropy:
+ * - Encryption key strength depends entirely on randomness quality
+ * - Predictable keys negate the security of AES-256-GCM regardless of key length
+ * - PBKDF2 iterations cannot compensate for weak initial entropy
+ * - Secure entropy ensures keys cannot be guessed or predicted even with massive compute
+ */
 const getOrCreateSecret = (storageKey) => {
   try {
     const stored = localStorage.getItem(storageKey);
@@ -147,16 +173,20 @@ const getOrCreateSecret = (storageKey) => {
     // localStorage unavailable — fall through to generate a session-scoped value
   }
 
-  let secret;
-  if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
-    secret = crypto.getRandomValues(new Uint8Array(SECRET_BYTE_LENGTH));
-  } else {
-    // Fallback: generate pseudorandom array if Web Crypto is unavailable (SSR / non-secure)
-    secret = new Uint8Array(SECRET_BYTE_LENGTH);
-    for (let i = 0; i < SECRET_BYTE_LENGTH; i++) {
-      secret[i] = Math.floor(Math.random() * 256);
-    }
+  // SECURITY: Fail-closed if cryptographic randomness is unavailable
+  if (
+    typeof crypto === "undefined" ||
+    typeof crypto.getRandomValues !== "function"
+  ) {
+    throw new Error(
+      "Secure cryptographic randomness is unavailable. " +
+      "Encryption requires a secure context (HTTPS) and Web Crypto API support. " +
+      "Cannot proceed without secure entropy for key generation."
+    );
   }
+
+  const secret = crypto.getRandomValues(new Uint8Array(SECRET_BYTE_LENGTH));
+
   try {
     localStorage.setItem(storageKey, btoa(String.fromCharCode(...secret)));
   } catch {
@@ -166,11 +196,19 @@ const getOrCreateSecret = (storageKey) => {
   return secret;
 };
 
-// Both values are initialised eagerly at module load so every call to
-// getDerivedKey() within a page session operates on the same key.
-// These are declared as 'let' to allow refreshing from localStorage after key rotation.
-let DERIVED_KEY_MATERIAL = cryptoSupported ? getOrCreateSecret(MATERIAL_STORAGE_KEY) : null;
-let DERIVED_KEY_SALT = cryptoSupported ? getOrCreateSecret(SALT_STORAGE_KEY) : null;
+// Lazy-init key material on first use so module import does not touch localStorage (SSR-safe).
+let DERIVED_KEY_MATERIAL = null;
+let DERIVED_KEY_SALT = null;
+
+const ensureKeySecrets = () => {
+  if (!cryptoSupported || typeof localStorage === "undefined") return;
+  if (!DERIVED_KEY_MATERIAL) {
+    DERIVED_KEY_MATERIAL = getOrCreateSecret(MATERIAL_STORAGE_KEY);
+  }
+  if (!DERIVED_KEY_SALT) {
+    DERIVED_KEY_SALT = getOrCreateSecret(SALT_STORAGE_KEY);
+  }
+};
 
 /**
  * Initialize or load key metadata.
@@ -184,7 +222,7 @@ const initializeKeyMetadata = () => {
     if (stored) {
       return JSON.parse(stored);
     }
-  } catch (_e) {
+  } catch {
     // localStorage unavailable or corrupted
   }
 
@@ -199,15 +237,31 @@ const initializeKeyMetadata = () => {
 
   try {
     localStorage.setItem(KEY_METADATA_KEY, JSON.stringify(metadata));
-  } catch (_e) {
+  } catch {
     // Persistence failure - non-critical
   }
 
   return metadata;
 };
 
-let _keyMetadata = initializeKeyMetadata();
+let _keyMetadata = null;
 let _keyPromise = null;
+
+const getKeyMetadata = () => {
+  if (_keyMetadata) return _keyMetadata;
+  if (typeof localStorage === "undefined") {
+    _keyMetadata = {
+      version: CRYPTO_CONFIG.VERSION,
+      createdAt: new Date().toISOString(),
+      iterations: CRYPTO_CONFIG.PBKDF2_ITERATIONS,
+      algorithm: CRYPTO_CONFIG.ALGORITHM,
+      keyLength: CRYPTO_CONFIG.KEY_LENGTH,
+    };
+    return _keyMetadata;
+  }
+  _keyMetadata = initializeKeyMetadata();
+  return _keyMetadata;
+};
 
 /**
  * Refresh in-memory key material and salt from localStorage.
@@ -254,10 +308,10 @@ const getDerivedKey = () => {
   if (_keyPromise) return _keyPromise;
 
   _keyPromise = (async () => {
-    // Import the random per-browser key material as the PBKDF2 "password".
-    // This replaces the previous window.location.origin usage, which was a
-    // public value that allowed any attacker who knew the origin to precompute
-    // PBKDF2 offline once they obtained the salt.
+    ensureKeySecrets();
+    if (!DERIVED_KEY_MATERIAL || !DERIVED_KEY_SALT) {
+      throw new Error("Secure storage is unavailable in this environment");
+    }
     const keyMaterial = await crypto.subtle.importKey(
       'raw',
       DERIVED_KEY_MATERIAL,
@@ -267,7 +321,7 @@ const getDerivedKey = () => {
     );
 
     // Use the iteration count from metadata for future compatibility
-    const iterations = _keyMetadata?.iterations || CRYPTO_CONFIG.PBKDF2_ITERATIONS;
+    const iterations = getKeyMetadata()?.iterations || CRYPTO_CONFIG.PBKDF2_ITERATIONS;
 
     return crypto.subtle.deriveKey(
       {
@@ -411,6 +465,7 @@ const decryptV1 = async (storageKey, payload, key, encoder) => {
  * @param {string} plaintext - The decrypted plaintext
  * @returns {Promise<string>} Re-encrypted value with new version
  */
+// eslint-disable-next-line no-unused-vars
 const migratePayload = async (fromVersion, toVersion, storageKey, plaintext) => {
   // Future migrations can be implemented here
   // For now, v1 is current, so no migration needed
@@ -468,29 +523,67 @@ export const rotateKey = async () => {
     throw new Error('Key rotation requires Web Crypto API support');
   }
 
+  const METADATA_KEYS = new Set([MATERIAL_STORAGE_KEY, SALT_STORAGE_KEY, KEY_METADATA_KEY]);
+
+  // 1. Decrypt existing records using the current key
+  const decryptedItems = {};
   try {
-    // Generate new key material and salt
-    const newMaterial = crypto.getRandomValues(new Uint8Array(SECRET_BYTE_LENGTH));
-    const newSalt = crypto.getRandomValues(new Uint8Array(SECRET_BYTE_LENGTH));
-
-    // Validate generated values
-    if (newMaterial.length !== SECRET_BYTE_LENGTH) {
-      throw new Error(`Generated key material has invalid length: ${newMaterial.length}`);
+    const keysToProcess = Array.from({ length: localStorage.length }, (_, i) => localStorage.key(i));
+    for (const keyName of keysToProcess) {
+      if (!keyName || METADATA_KEYS.has(keyName)) continue;
+      
+      const rawValue = localStorage.getItem(keyName);
+      if (!rawValue) continue;
+      
+      try {
+        const decrypted = await decryptValue(keyName, rawValue);
+        decryptedItems[keyName] = decrypted;
+      } catch {
+        // Not encrypted or already corrupt/plaintext - skip
+      }
     }
-    if (newSalt.length !== SECRET_BYTE_LENGTH) {
-      throw new Error(`Generated salt has invalid length: ${newSalt.length}`);
-    }
+  } catch (error) {
+    throw new Error(`Failed to decrypt existing records: ${error.message}`);
+  }
 
-    // Persist new material to localStorage
+  // 2. Generate new key material and salt
+  const newMaterial = crypto.getRandomValues(new Uint8Array(SECRET_BYTE_LENGTH));
+  const newSalt = crypto.getRandomValues(new Uint8Array(SECRET_BYTE_LENGTH));
+
+  if (newMaterial.length !== SECRET_BYTE_LENGTH || newSalt.length !== SECRET_BYTE_LENGTH) {
+    throw new Error('Generated key material or salt has invalid length');
+  }
+
+  // 3. Temporarily switch in-memory key materials to encrypt the records
+  const oldMaterial = DERIVED_KEY_MATERIAL;
+  const oldSalt = DERIVED_KEY_SALT;
+  const oldKeyPromise = _keyPromise;
+
+  const newEncryptedItems = {};
+  try {
+    DERIVED_KEY_MATERIAL = newMaterial;
+    DERIVED_KEY_SALT = newSalt;
+    _keyPromise = null;
+
+    for (const [keyName, plaintext] of Object.entries(decryptedItems)) {
+      newEncryptedItems[keyName] = await encryptValue(keyName, plaintext);
+    }
+  } catch (error) {
+    // Rollback in-memory state on error
+    DERIVED_KEY_MATERIAL = oldMaterial;
+    DERIVED_KEY_SALT = oldSalt;
+    _keyPromise = oldKeyPromise;
+    throw new Error(`Failed to re-encrypt records with new key: ${error.message}`);
+  }
+
+  // 4. Save new key materials and migrated records to localStorage
+  try {
+    // Persist new key materials
     localStorage.setItem(MATERIAL_STORAGE_KEY, btoa(String.fromCharCode(...newMaterial)));
     localStorage.setItem(SALT_STORAGE_KEY, btoa(String.fromCharCode(...newSalt)));
 
-    // Refresh in-memory cryptographic state from localStorage
-    // This ensures DERIVED_KEY_MATERIAL and DERIVED_KEY_SALT point to the new values
+    // Refresh in-memory cryptographic state from localStorage to validate
     refreshKeyMaterial();
-
-    // Reset key promise to force re-derivation with new material
-    _keyPromise = null;
 
     // Update metadata with rotation timestamp
     const previousMetadata = _keyMetadata;
@@ -504,9 +597,24 @@ export const rotateKey = async () => {
     };
     localStorage.setItem(KEY_METADATA_KEY, JSON.stringify(_keyMetadata));
 
+    // Persist all migrated records
+    for (const [keyName, encryptedValue] of Object.entries(newEncryptedItems)) {
+      localStorage.setItem(keyName, encryptedValue);
+    }
+
     return _keyMetadata;
   } catch (error) {
-    console.error('[secureStorage] Key rotation failed:', error);
+    // Rollback in-memory state
+    DERIVED_KEY_MATERIAL = oldMaterial;
+    DERIVED_KEY_SALT = oldSalt;
+    _keyPromise = oldKeyPromise;
+    
+    // Attempt to restore old key materials in localStorage to keep it consistent
+    try {
+      localStorage.setItem(MATERIAL_STORAGE_KEY, btoa(String.fromCharCode(...oldMaterial)));
+      localStorage.setItem(SALT_STORAGE_KEY, btoa(String.fromCharCode(...oldSalt)));
+    } catch {}
+
     throw new Error(`Key rotation failed: ${error.message}`);
   }
 };
@@ -602,6 +710,35 @@ const writeWithEncryption = async (key, value) => {
 };
 
 export const syncSecureStorage = {
+  // Serialized write queue: ensures last-write-wins and no plaintext window.
+  // Each key enqueues its latest value; the queue processes one at a time,
+  // writing only the ciphertext to localStorage. If the queue is already
+  // processing, a new enqueue updates the pending value for that key without
+  // starting a new chain, so the final write always reflects the last call.
+  _writeQueue: new Map(),
+  _processing: false,
+
+  _processQueue: async function () {
+    if (this._processing) return;
+    this._processing = true;
+    try {
+      while (this._writeQueue.size > 0) {
+        const entries = [...this._writeQueue.entries()];
+        this._writeQueue.clear();
+        for (const [key, plaintext] of entries) {
+          try {
+            const encrypted = await encryptValue(key, plaintext);
+            localStorage.setItem(key, encrypted);
+          } catch (err) {
+            console.error('[secureStorage] Encryption failed for', key, err);
+          }
+        }
+      }
+    } finally {
+      this._processing = false;
+    }
+  },
+
   /**
    * Encrypts `value` and stores it under `key` in localStorage.
    *
@@ -627,12 +764,16 @@ export const syncSecureStorage = {
     try {
       pendingWrites.set(key, value);
       await writeWithEncryption(key, value);
-      pendingWrites.delete(key);
+      if (pendingWrites.get(key) === value) {
+        pendingWrites.delete(key);
+      }
       return true;
     } catch (error) {
       console.error('[secureStorage] setItem failed:', error);
       /* Removed destructive cleanup to prevent queued writes from being dropped silently */
-      pendingWrites.delete(key);
+      if (pendingWrites.get(key) === value) {
+        pendingWrites.delete(key);
+      }
       return false;
     }
   },

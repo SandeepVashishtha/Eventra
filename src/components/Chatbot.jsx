@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useMemo, useState, Fragment } from "react";
 import { createPortal } from "react-dom";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
 import {
@@ -97,14 +97,16 @@ const MAX_STORED_MESSAGES = 100;
 
 export default function Chatbot() {
   const { t, i18n } = useTranslation();
+  const { pathname } = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [draft, setDraft] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [messages, setMessages] = useLocalStorage("eventra_chatbot_history", getInitialMessages(t));
+  const [messages, setMessages] = useLocalStorage("eventra_chatbot_history", getInitialMessages(t, pathname));
   const replyTimerRef = useRef(null);
   const prevLangRef = useRef(i18n.language);
-  const quickPrompts = useMemo(() => getQuickPrompts(t), [t]);
+  const quickPrompts = useMemo(() => getQuickPrompts(t, pathname), [t, pathname]);
+  const hasInteracted = messages.length > 1;
 
   const clearReplyTimer = useCallback(() => {
     if (replyTimerRef.current) {
@@ -115,10 +117,10 @@ export default function Chatbot() {
 
   useEffect(() => {
     if (prevLangRef.current !== i18n.language) {
-      setMessages(getInitialMessages(t));
+      setMessages(getInitialMessages(t, pathname));
       prevLangRef.current = i18n.language;
     }
-  }, [i18n.language, setMessages, t]);
+  }, [i18n.language, setMessages, t, pathname]);
 
   // Expiration check on mount (2 hours threshold)
   useEffect(() => {
@@ -126,13 +128,13 @@ export default function Chatbot() {
       const lastActive = localStorage.getItem("eventra_chatbot_last_active");
       const twoHours = 2 * 60 * 60 * 1000;
       if (lastActive && Date.now() - parseInt(lastActive, 10) > twoHours) {
-        setMessages(getInitialMessages(t));
+        setMessages(getInitialMessages(t, pathname));
       }
       localStorage.setItem("eventra_chatbot_last_active", Date.now().toString());
     } catch {
       console.warn("localStorage unavailable for Chatbot expiration check");
     }
-  }, [setMessages, t]);
+  }, [setMessages, t, pathname]);
 
   useEffect(() => {
     return () => {
@@ -158,7 +160,7 @@ export default function Chatbot() {
           <div className="flex gap-2">
             <button
               onClick={() => {
-                setMessages(getInitialMessages(t));
+                setMessages(getInitialMessages(t, pathname));
                 toast.success(t("chatbot.clearSuccess"));
                 closeToast();
               }}
@@ -218,7 +220,7 @@ export default function Chatbot() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [handleClose, isOpen]);
+  }, [isOpen, handleClose]);
 
   const wasOpenRef = useRef(false);
   const wasMinimizedRef = useRef(false);
@@ -296,7 +298,7 @@ export default function Chatbot() {
             <div
               data-chatbot-launcher
               className="
-                fixed bottom-6 right-6 z-100
+                fixed bottom-[calc(1.5rem+var(--safe-area-bottom))] right-6 z-100
                 hidden sm:flex              /* hide strip on mobile, show FAB instead */
                 items-center justify-between gap-3
                 w-72 rounded-2xl
@@ -492,9 +494,7 @@ export default function Chatbot() {
                   </motion.div>
                 </div>
               )}
-              
-              {/* 🔥 FIX: Added the missing dummy div to act as the scroll target for messagesEndRef */}
-              <div ref={messagesEndRef} />
+               <div ref={messagesEndRef} />
             </div>
 
             {/* Footer controls */}
@@ -507,18 +507,20 @@ export default function Chatbot() {
             "
             >
               {/* Quick prompts */}
-              <div className="mb-3.5 flex flex-wrap gap-1.5">
-                {quickPrompts.map((prompt) => (
-                  <button
-                    key={prompt}
-                    type="button"
-                    onClick={() => sendMessage(prompt)}
-                    className="rounded-full border border-slate-200/60 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-950/40 px-3 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-linear-to-r hover:from-indigo-600 hover:to-pink-600 hover:text-white hover:border-transparent transition-all duration-300 transform hover:scale-[1.03] focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                  >
-                    {prompt}
-                  </button>
-                ))}
-              </div>
+              {!hasInteracted && (
+                <div className="mb-3.5 flex flex-wrap gap-1.5">
+                  {quickPrompts.map((prompt) => (
+                    <button
+                      key={prompt}
+                      type="button"
+                      onClick={() => sendMessage(prompt)}
+                      className="rounded-full border border-slate-200/60 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-950/40 px-3 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-linear-to-r hover:from-indigo-600 hover:to-pink-600 hover:text-white hover:border-transparent transition-all duration-300 transform hover:scale-[1.03] focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+              )}
 
               {/* Contextual action links */}
               {latestActions.length > 0 && (

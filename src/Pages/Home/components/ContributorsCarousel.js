@@ -1,12 +1,13 @@
+import useWindowSize from "hooks/useWindowSize";
 import { GitBranch, ChevronLeft, ChevronRight } from "lucide-react";
 import { FaMedal, FaCodeBranch, FaUserFriends, FaBuilding, FaMapMarkerAlt, FaGithub, FaExternalLinkAlt } from "react-icons/fa";
-import { useState, useEffect, useCallback, useRef } from "react";
-import useReducedMotion from "../../../hooks/useReducedMotion.js";
+import { useState, useEffect, useCallback, useRef, memo } from "react";
+import useReducedMotion from "../hooks/useReducedMotion.js";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { fetchWithTimeout } from "../../../utils/fetchWithTimeout";
-import { ContributorCardSkeleton } from "../../../components/common/SkeletonLoaders";
-import { safeJsonParse } from "../../../utils/safeJsonParse";
+import { fetchWithTimeout } from "../utils/fetchWithTimeout";
+import { ContributorCardSkeleton } from "../components/common/SkeletonLoaders";
+import { safeJsonParse } from "../utils/safeJsonParse";
 
 // GitHub repo
 const GITHUB_REPO = "sandeepvashishtha/Eventra";
@@ -40,12 +41,12 @@ const fetchInBatches = async (items, asyncFn, batchSize = PROFILE_BATCH_SIZE) =>
   const results = [];
   for (let i = 0; i < items.length; i += batchSize) {
     const batch = items.slice(i, i + batchSize);
-     
+
     const batchResults = await Promise.allSettled(batch.map(asyncFn));
     results.push(...batchResults);
     // Insert a delay between batches (but not after the last one)
     if (i + batchSize < items.length) {
-       
+
       await new Promise((resolve) => setTimeout(resolve, BATCH_DELAY_MS));
     }
   }
@@ -85,7 +86,7 @@ const cacheContributors = (data) => {
       STORAGE_KEY,
       JSON.stringify({ data, timestamp: Date.now() })
     );
-  } catch { }
+  } catch { console.warn("[ContributorsCarousel] Cache write failed"); }
 };
 
 const Contributors = () => {
@@ -93,7 +94,6 @@ const Contributors = () => {
   const [contributors, setContributors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [itemsPerView, setItemsPerView] = useState(4);
   const sectionRef = useRef(null);
 
   useEffect(() => {
@@ -116,22 +116,9 @@ const Contributors = () => {
     };
   }, []);
 
-  // Replace your previous `useEffect` for itemsPerView with this:
-  useEffect(() => {
-    const updateItemsPerView = () => {
-      if (window.innerWidth < 640) {
-        setItemsPerView(1); // Mobile: 1 item
-      } else if (window.innerWidth < 1024) {
-        setItemsPerView(2); // Tablet: 2 items
-      } else {
-        setItemsPerView(3); // Desktop: 3 items instead of 4
-      }
-    };
-
-    updateItemsPerView();
-    window.addEventListener("resize", updateItemsPerView);
-    return () => window.removeEventListener("resize", updateItemsPerView);
-  }, []);
+  // Fix: useWindowSize replaces manual resize listener
+  const { width } = useWindowSize();
+  const itemsPerView = width < 640 ? 1 : width < 1024 ? 2 : 3;
 
   // Fetches a single GitHub user profile via the backend proxy.
   const fetchGitHubProfile = useCallback(async (username) => {
@@ -232,7 +219,7 @@ const Contributors = () => {
       if (!backgroundRefresh) setContributors([]);
 
       if (error.name === "AbortError") {
-        //console.error("Contributor request timed out");
+        console.error("Contributor request timed out");
       }
     } finally {
       if (!backgroundRefresh) setLoading(false);
@@ -495,15 +482,13 @@ const Contributors = () => {
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6 mt-8 w-full max-w-md mx-auto sm:max-w-none">
             <Link
               to="/contributors"
-              onClick={() => window.scrollTo(0, 0)}
               className="inline-flex items-center justify-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-8 py-3 w-full sm:w-auto rounded-full font-semibold shadow-lg hover:bg-zinc-800 dark:hover:bg-gray-200 hover:scale-105 transition-all duration-300 ease-out"
             >
               <span>View All Contributors</span>
               <FaExternalLinkAlt className="text-sm" />
             </Link>
             <Link
-              to="/ContributorGuide"
-              onClick={() => window.scrollTo(0, 0)}
+              to="/contributorguide"
               className="inline-flex items-center justify-center gap-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-8 py-3 w-full sm:w-auto rounded-full font-semibold shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-105 transition-all duration-300 ease-out"
             >
               <span>Guide</span>
@@ -516,4 +501,4 @@ const Contributors = () => {
   );
 };
 
-export default Contributors;
+export default memo(Contributors);

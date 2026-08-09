@@ -28,10 +28,7 @@ const ConfirmationModal = ({
   useEffect(() => {
     if (!isOpen) return;
 
-    const prevOverflow = document.body.style.overflow;
     previouslyFocusedElementRef.current = document.activeElement;
-
-    document.body.style.overflow = "hidden";
     cancelButtonRef.current?.focus();
 
     const handleKeyDown = (event) => {

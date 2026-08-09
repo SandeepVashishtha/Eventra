@@ -1,14 +1,16 @@
+import { redactSensitiveData } from "./security/redactSensitiveData.js";
+
 export function logSecurityEvent(eventType, data) {
   if (!eventType || typeof eventType !== "string") {
     eventType = "UNKNOWN_SECURITY_EVENT";
   }
   
-  const formattedData = {
+  const formattedData = redactSensitiveData({
     timestamp: new Date().toISOString(),
     userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "unknown",
     url: typeof window !== "undefined" ? window.location.href : "unknown",
     payload: data || {}
-  };
+  });
 
   console.warn(`[SECURITY EVENT] ${eventType}`, formattedData);
 
@@ -26,7 +28,7 @@ export function logSecurityEvent(eventType, data) {
       
       localStorage.setItem("eventra_security_events", JSON.stringify(logs));
     }
-  } catch (err) {
+  } catch {
     // Ignore storage failures (e.g. QuotaExceededError or private browsing)
   }
 }

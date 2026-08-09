@@ -16,11 +16,20 @@
  */
 
 // Helper to format Date objects into YYYYMMDDTHHmmSSZ format required by RFC 5545
-const formatToICSDate = (dateStr) => {
-  if (!dateStr) return null;
-  const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return null;
-  return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+const formatToICSDate = (dateInput) => {
+  if (!dateInput) return null;
+
+  let dateObj;
+  if (dateInput instanceof Date) {
+    dateObj = dateInput;
+  } else {
+    dateObj = new Date(dateInput);
+  }
+
+  if (Number.isNaN(dateObj.getTime())) return null;
+
+  const iso = dateObj.toISOString();
+  return iso.replace(/[-:]/g, "").split(".")[0] + "Z";
 };
 
 // Helper to safely escape special characters in ICS strings (RFC 5545 compliant).
@@ -38,6 +47,7 @@ const escapeICSText = (text = "") => {
  * @param {CalendarEvent} event - The event object to export.
  */
 export const downloadICSFile = (event) => {
+  if (typeof window === "undefined" || typeof document === "undefined") return;
   const { title, description, date, endDate, location, id } = event;
   
   const formattedStart = formatToICSDate(date);
@@ -191,6 +201,7 @@ export const generateYahooCalendarLink = (event) => {
  * @param {string} [filename="registered-events"] - Custom filename for the downloaded file.
  */
 export const downloadBulkICSFile = (events, filename = "registered-events") => {
+  if (typeof window === "undefined" || typeof document === "undefined") return;
   if (!Array.isArray(events) || events.length === 0) return;
 
   const createdDate = formatToICSDate(new Date());
@@ -203,6 +214,7 @@ export const downloadBulkICSFile = (events, filename = "registered-events") => {
     "METHOD:PUBLISH"
   ];
 
+  let validEventsCount = 0;
   events.forEach((item) => {
     const eventObj = item.event ? item.event : item;
     const { title, description, date, endDate, location, id } = eventObj;
@@ -210,6 +222,7 @@ export const downloadBulkICSFile = (events, filename = "registered-events") => {
     const formattedStart = formatToICSDate(date);
     if (!formattedStart) return;
     
+    validEventsCount++;
     const formattedEnd = endDate ? formatToICSDate(endDate) : formatToICSDate(new Date(new Date(date).getTime() + 2 * 60 * 60 * 1000));
 
     icsLines.push(
@@ -231,6 +244,11 @@ export const downloadBulkICSFile = (events, filename = "registered-events") => {
       "END:VEVENT"
     );
   });
+
+  if (validEventsCount === 0) {
+    console.error("No valid event dates found for bulk ICS export.");
+    return;
+  }
 
   icsLines.push("END:VCALENDAR");
 
@@ -322,4 +340,13 @@ export const generateWebCalLink = (httpsUrl) => {
   } catch {
     return null;
   }
+};
+
+export const downloadHackathonMilestonesICS = (hackathon) => {
+  if (!hackathon) return;
+  const milestones = [
+    { title: `${hackathon.title} - Hacking Starts`, date: hackathon.startDate, description: "Official start of hacking phase." },
+    { title: `${hackathon.title} - Submission Deadline`, date: hackathon.endDate, description: "Project submission deadline." }
+  ];
+  downloadBulkICSFile(milestones, `${hackathon.title}-milestones`);
 };

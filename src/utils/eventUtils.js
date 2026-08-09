@@ -31,7 +31,7 @@ const mapStatusKey = (status = "") => {
   return explicitStatusMap[normalized] ?? null;
 };
 
-import { getServerTime } from "./timeSync";
+import { getServerTime } from "./timeSync.js";
 
 const parseEventDate = (dateValue) => {
   if (!dateValue) return null;
@@ -39,21 +39,18 @@ const parseEventDate = (dateValue) => {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 };
 
-const asEndOfDay = (date) => {
-  if (!date) return null;
-  const clone = new Date(date.valueOf());
-  clone.setHours(23, 59, 59, 999);
-  return clone;
-};
-
 export const computeDateStatus = (event) => {
-  const startDate = parseEventDate(event.startDate || event.date);
-  const endDate = asEndOfDay(parseEventDate(event.endDate || event.date));
+  const startDate = parseEventDate(event.startDate || event.date || event.eventDate);
   const now = getServerTime();
 
   if (!startDate) return "upcoming";
   if (now < startDate) return "upcoming";
-  if (endDate && now <= endDate) return "live";
+
+  // Moment-based, matching the backend's Event.isEventPast(): once the
+  // event's start time has passed it is no longer "live" — even when it is
+  // still the same calendar day. The old day-granular "live until midnight"
+  // kept the registration form enabled for hours after the event started
+  // while the server rejected every submission. (#12462)
   return "past";
 };
 
@@ -95,7 +92,18 @@ export const isEventRegistrationClosed = (eventOrStatus) => {
   return status === "past" || status === "ended" || status === "cancelled";
 };
 
-export const normalizeEvent = (event) => ({
-  ...event,
-  status: getEventStatus(event),
-});
+export const normalizeEvent = (event) => {
+  if (!event) return event;
+  const mapped = {
+    ...event,
+    date: event.date || event.startDate || event.eventDate || null,
+    startDate: event.startDate || event.date || event.eventDate || null,
+    image: event.image || event.imageUrl || event.banner || null,
+    maxAttendees: event.maxAttendees ?? event.capacity ?? null,
+    attendees: event.attendees ?? event.registeredCount ?? event.participants ?? 0,
+  };
+  return {
+    ...mapped,
+    status: getEventStatus(mapped),
+  };
+};

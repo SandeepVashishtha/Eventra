@@ -65,7 +65,11 @@ const valueMatchesAny = (value) =>
   SENSITIVE_VALUE_PATTERNS.some(({ pattern }) => pattern.test(value));
 
 const baseEnv = () => {
-  const env = { ...process.env, NODE_ENV: "development" };
+  const env = {
+    ...process.env,
+    NODE_ENV: "development",
+    JWT_SECRET: "mock_jwt_secret_value_for_testing_purposes_only_123456",
+  };
   delete env.BACKEND_URL;
   delete env.VITE_API_URL;
   delete env.REACT_APP_API_URL;
@@ -74,7 +78,7 @@ const baseEnv = () => {
 
 const runValidateEnv = (envOverrides = {}) =>
   spawnSync(process.execPath, [scriptPath], {
-    cwd: path.resolve(__dirname, ".."),
+    cwd: __dirname,
     env: { ...baseEnv(), ...envOverrides },
     encoding: "utf8",
   });

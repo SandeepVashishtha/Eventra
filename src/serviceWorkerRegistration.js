@@ -95,7 +95,7 @@ function registerValidSW(swUrl, config) {
       if ('periodicSync' in registration && registration.periodicSync) {
         registration.periodicSync.register('eventra-data-sync', {
           minInterval: 24 * 60 * 60 * 1000,
-        }).catch(() => {});
+        }).catch((err) => logger.warn("[SW] PeriodicSync registration failed:", err));
       }
 
       registration.onupdatefound = () => {

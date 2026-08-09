@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
-import { logAbuseAttempt } from "../src/utils/abuseLogger.js";
 
 globalThis.localStorage = {
   store: {},
   getItem(key) { return this.store[key] || null; },
   setItem(key, value) { this.store[key] = String(value); }
 };
+
+const { logAbuseAttempt } = await import("../src/utils/abuseLogger.js");
 
 try {
   localStorage.setItem("eventra_abuse_logs", "[]");

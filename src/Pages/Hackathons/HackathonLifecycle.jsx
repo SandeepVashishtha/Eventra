@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  
+
   Users,
   Award,
   Terminal,
   FileText,
   Settings,
   Lock,
-  
+
   CheckCircle2,
   Clock,
   ArrowRight,
@@ -17,7 +17,9 @@ import {
   ChevronRight
 } from "lucide-react";
 import confetti from "canvas-confetti";
-import TeamWorkspace from "../../components/hackathons/TeamWorkspace";
+import { toast } from "react-toastify";
+import TeamWorkspace from "components/hackathons/TeamWorkspace";
+import { resolveHackathonResourceAction, openHackathonResource } from "utils/hackathonResourceUtils";
 
 const PHASES = [
   {
@@ -34,8 +36,8 @@ const PHASES = [
       { id: "p4", text: "Draft comprehensive rules & code of conduct", done: true }
     ],
     resources: [
-      { name: "Organizer Handbook.pdf", type: "PDF", size: "2.4 MB" },
-      { name: "Sponsor Pitch Template.key", type: "Slides", size: "12.1 MB" }
+      { name: "Organizer Handbook.pdf", type: "PDF", size: "2.4 MB", url: null },
+      { name: "Sponsor Pitch Template.key", type: "Slides", size: "12.1 MB", url: null }
     ]
   },
   {
@@ -52,8 +54,8 @@ const PHASES = [
       { id: "t4", text: "Release mentor and judging sign-up forms", done: false }
     ],
     resources: [
-      { name: "Team_Formation_Guide.md", type: "Markdown", size: "12 KB" },
-      { name: "Eventra Discord Invite Link", type: "External Link", size: "N/A" }
+      { name: "Team_Formation_Guide.md", type: "Markdown", size: "12 KB", url: null },
+      { name: "Eventra Discord Invite Link", type: "External Link", size: "N/A", url: null }
     ]
   },
   {
@@ -70,8 +72,8 @@ const PHASES = [
       { id: "h4", text: "Host Git & deployment troubleshooting workshop", done: false }
     ],
     resources: [
-      { name: "API_Starter_Boilerplates.zip", type: "ZIP", size: "15.4 MB" },
-      { name: "Mentor ticketing dashboard login", type: "External", size: "N/A" }
+      { name: "API_Starter_Boilerplates.zip", type: "ZIP", size: "15.4 MB", url: null },
+      { name: "Mentor ticketing dashboard login", type: "External", size: "N/A", url: null }
     ]
   },
   {
@@ -88,8 +90,8 @@ const PHASES = [
       { id: "s4", text: "Aggregate scoreboard & flag anomaly ratings", done: false }
     ],
     resources: [
-      { name: "Judging_Rubric_v1.0.pdf", type: "PDF", size: "1.1 MB" },
-      { name: "Devpost submission tutorial", type: "Video Link", size: "4 mins" }
+      { name: "Judging_Rubric_v1.0.pdf", type: "PDF", size: "1.1 MB", url: null },
+      { name: "Devpost submission tutorial", type: "Video Link", size: "4 mins", url: null }
     ]
   },
   {
@@ -106,7 +108,7 @@ const PHASES = [
       { id: "w4", text: "Publish post-event summary newsletter and feedback loop", done: false }
     ],
     resources: [
-      { name: "Prizes_Claim_Instructions.pdf", type: "PDF", size: "850 KB" }
+      { name: "Prizes_Claim_Instructions.pdf", type: "PDF", size: "850 KB", url: null }
     ]
   }
 ];
@@ -149,8 +151,8 @@ const HackathonLifecycle = () => {
 
   // Toggle dynamic checklist tasks
   const toggleTask = (phaseId, taskId) => {
-    setPhasesList(
-      phasesList.map((phase) => {
+    setPhasesList((prev) =>
+      prev.map((phase) => {
         if (phase.id === phaseId) {
           return {
             ...phase,
@@ -167,14 +169,6 @@ const HackathonLifecycle = () => {
   // Change overall active phase (organizer simulation)
   const setGlobalActivePhase = (index) => {
     setActivePhaseIndex(index);
-    setPhasesList(
-      phasesList.map((phase, idx) => {
-        let status = "upcoming";
-        if (idx < index) status = "completed";
-        else if (idx === index) status = "active";
-        return { ...phase, status };
-      })
-    );
     setSelectedPhaseId(index + 1);
 
     if (index === 4) {
@@ -187,10 +181,20 @@ const HackathonLifecycle = () => {
     }
   };
 
+  const handleFetchResource = (resource) => {
+    const action = resolveHackathonResourceAction(resource);
+    if (!action.available) {
+      toast.info(action.message);
+      return;
+    }
+
+    openHackathonResource(action.url);
+  };
+
   return (
     <div className="min-h-screen bg-bg text-text py-20 px-4 md:px-8 transition-colors duration-300">
       <div className="max-w-6xl mx-auto space-y-10">
-        
+
         {/* HEADER SECTION */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 border-b border-border pb-8">
           <div>
@@ -292,7 +296,7 @@ const HackathonLifecycle = () => {
                 <h3 className="font-bold text-sm text-text-light uppercase tracking-widest">
                   Phase {phase.id}
                 </h3>
-                
+
                 <h2 className="font-extrabold text-base tracking-tight mt-1 text-text">
                   {phase.name}
                 </h2>
@@ -315,10 +319,10 @@ const HackathonLifecycle = () => {
         {/* SELECTED PHASE WORKSPACE */}
         {selectedPhase && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
+
             {/* LEFT COLUMN: PHASE OVERVIEW & RESOURCES */}
             <div className="lg:col-span-2 space-y-6">
-              
+
               {/* DESCRIPTION BOARD */}
               <div className="bg-card-bg border border-border rounded-3xl p-6 md:p-8 shadow-sm">
                 <div className="flex items-center gap-3">
@@ -374,7 +378,9 @@ const HackathonLifecycle = () => {
                 </h3>
                 <div className="mt-4 space-y-3">
                   {selectedPhase.resources && selectedPhase.resources.length > 0 ? (
-                    selectedPhase.resources.map((res, i) => (
+                    selectedPhase.resources.map((res, i) => {
+                      const action = resolveHackathonResourceAction(res);
+                      return (
                       <div
                         key={i}
                         className="flex items-center justify-between p-3.5 bg-bg hover:bg-card-bg rounded-2xl border border-border transition-colors"
@@ -389,17 +395,30 @@ const HackathonLifecycle = () => {
                             </div>
                             <div className="text-xs text-text-light">
                               Format: {res.type} &bull; Size: {res.size}
+                              {!action.available ? " • Not available yet" : ""}
                             </div>
                           </div>
                         </div>
                         <button
                           type="button"
-                          className="px-3 py-1.5 rounded-xl bg-bg hover:bg-card-bg border border-border text-xs font-bold text-primary shadow-sm"
-                         aria-label="button">
-                          Fetch File
+                          onClick={() => handleFetchResource(res)}
+                          title={action.available ? action.label : action.message}
+                          aria-label={
+                            action.available
+                              ? `${action.label}: ${res.name}`
+                              : `${res.name} unavailable`
+                          }
+                          className={`px-3 py-1.5 rounded-xl border text-xs font-bold shadow-sm cursor-pointer ${
+                            action.available
+                              ? "bg-bg hover:bg-card-bg border-border text-primary"
+                              : "bg-bg/60 border-border text-text-light hover:bg-card-bg"
+                          }`}
+                        >
+                          {action.label}
                         </button>
                       </div>
-                    ))
+                      );
+                    })
                   ) : (
                     <div className="text-slate-400 text-sm py-4 text-center">
                       No document downloads available for this phase.
@@ -411,7 +430,7 @@ const HackathonLifecycle = () => {
 
             {/* RIGHT COLUMN: DYNAMIC COMPONENT ACTIONS / CHECKLIST */}
             <div className="space-y-6">
-              
+
               {/* CHECKLIST */}
               <div className="bg-card-bg border border-border rounded-3xl p-6 shadow-sm">
                 <h3 className="text-lg font-bold text-text border-b border-border pb-3">

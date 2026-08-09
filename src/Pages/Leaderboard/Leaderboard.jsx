@@ -1,11 +1,11 @@
 import { useMemo, useRef, useState, useEffect, useCallback } from "react";
 
-import ErrorBoundary from "../../components/common/ErrorBoundary";
-import { fetchWithTimeout } from "../../utils/fetchWithTimeout";
+import ErrorBoundary from "components/common/ErrorBoundary";
+import { fetchLeaderboardData, getCacheTimestamp, clearLeaderboardCache } from "services/githubLeaderboardService";
 import confetti from "canvas-confetti";
 import GSSoCContribution from "./GSSoCContribution";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
-import { useLeaderboardStream } from "../../context/RealTimeContext";
+import useDocumentTitle from "hooks/useDocumentTitle";
+import { useLeaderboardStream } from "context/RealTimeContext";
 import {
   filterContributors,
   sortContributors,
@@ -14,13 +14,13 @@ import {
   buildRanksMap,
   computeLeaderboardStats,
   applyAchievementBonus,
-} from "../../utils/leaderboardUtils";
+} from "utils/leaderboardUtils";
 
 import { useTranslation } from "react-i18next";
-import { logger } from "../../utils/logger";
-import { storageManager } from "../../utils/storage/storageManager";
-import { STORAGE_KEYS } from "../../utils/storage/storageKeys";
-import { validators } from "../../utils/storage/storageValidators";
+import { logger } from "utils/logger";
+import { storageManager } from "utils/storage/storageManager";
+import { STORAGE_KEYS } from "utils/storage/storageKeys";
+import { validators } from "utils/storage/storageValidators";
 
 import LeaderboardHero from "./components/LeaderboardHero";
 import LeaderboardPodium from "./components/LeaderboardPodium";
@@ -29,7 +29,6 @@ import LeaderboardControls from "./components/LeaderboardControls";
 import LeaderboardStatsCards from "./components/LeaderboardStatsCards";
 import LeaderboardTable from "./components/LeaderboardTable";
 
-const LEADERBOARD_CACHE_TTL = 60 * 60 * 1000;
 const CONTRIBUTORS_PER_PAGE = 10;
 const SEARCH_DEBOUNCE_MS = 400;
 const CONFETTI_CONFIG = {
@@ -89,12 +88,12 @@ const useLocalStorage = (key, initialValue) => {
   return [storedValue, setValue];
 };
 
-// ─── Main Component ───────────────────────────────────────────────
 export default function LeaderBoard() {
   const { t } = useTranslation();
   useDocumentTitle(t("leaderboard.pageTitle"));
 
-  const CATEGORY_FILTERS = useMemo(() => [
+  // eslint-disable-next-line no-unused-vars
+  const _CATEGORY_FILTERS = useMemo(() => [
     { id: "overall", label: t("leaderboard.filters.overall"), icon: "🏆", description: t("leaderboard.filters.overallDesc") },
     { id: "monthly", label: t("leaderboard.filters.monthly"), icon: "⭐", description: t("leaderboard.filters.monthlyDesc") },
     { id: "mentors", label: t("leaderboard.filters.mentors"), icon: "🎓", description: t("leaderboard.filters.mentorsDesc") },
@@ -104,7 +103,10 @@ export default function LeaderBoard() {
   const [streaks, setStreaks] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [lastUpdated, setLastUpdated] = useState("");
+  const [lastUpdated, setLastUpdated] = useState(() => {
+    const ts = getCacheTimestamp();
+    return ts ? t("leaderboard.statusCached", { time: formatLastUpdated(ts, t) }) : "";
+  });
   const [search, setSearch] = useState("");
   const [, setRecentSearches] = useLocalStorage(
     STORAGE_KEYS.RECENT_SEARCHES,
@@ -159,7 +161,8 @@ export default function LeaderBoard() {
 
   const top3 = useMemo(() => sortedContributors.slice(0, 3), [sortedContributors]);
 
-  const sortOptions = useMemo(
+  // eslint-disable-next-line no-unused-vars
+  const _sortOptions = useMemo(
     () => [
       { label: t("leaderboard.sortOptions.points"), value: "points" },
       { label: t("leaderboard.sortOptions.prs"), value: "prs" },
@@ -168,9 +171,6 @@ export default function LeaderBoard() {
     [t]
   );
 
-  // ─── Effects ───────────────────────────────────────────────
-
-  // Initial confetti celebration
   useEffect(() => {
     const timer = setTimeout(() => {
       confetti(CONFETTI_CONFIG);
@@ -239,45 +239,22 @@ export default function LeaderBoard() {
         setLoading(true);
         setError(null);
 
-        const cached = storageManager.get(
-          STORAGE_KEYS.LEADERBOARD_CACHE,
-          validators.isObject
-        );
-
-        if (cached?.data && cached?.timestamp) {
-          const age = Date.now() - cached.timestamp;
-          if (age < LEADERBOARD_CACHE_TTL) {
-            if (isMounted) {
-              setContributors(cached.data);
-              setLastUpdated(t("leaderboard.statusCached", { time: formatLastUpdated(cached.timestamp, t) }));
-              setLoading(false);
-              return;
-            }
-          }
-        }
-
-        const { data } = await fetchWithTimeout("/api/leaderboard", {}, 15000);
-
-        if (!Array.isArray(data)) {
-          throw new Error("Invalid leaderboard data format");
-        }
-
-        const preparedData = prepareLeaderboardEntries(data);
+        const contributors = await fetchLeaderboardData(false);
 
         if (isMounted) {
-          const sorted = [...preparedData].sort((a, b) => b.points - a.points);
-          setContributors(sorted);
-          setLastUpdated(t("leaderboard.statusUpdated", { time: formatLastUpdated(Date.now(), t) }));
-
-          storageManager.set(STORAGE_KEYS.LEADERBOARD_CACHE, {
-            data: sorted,
-            timestamp: Date.now(),
-          });
+          const cacheTs = getCacheTimestamp();
+          const preparedData = prepareLeaderboardEntries(contributors);
+          setContributors(preparedData);
+          setLastUpdated(
+            cacheTs
+              ? t("leaderboard.statusCached", { time: formatLastUpdated(cacheTs, t) })
+              : t("leaderboard.statusUpdated", { time: formatLastUpdated(Date.now(), t) })
+          );
         }
       } catch (err) {
         logger.error("Failed to load leaderboard:", err);
         if (isMounted) {
-          setError(t("leaderboard.errorLoadFailed"));
+          setError(err.message || t("leaderboard.errorLoadFailed"));
           setContributors([]);
         }
       } finally {
@@ -292,7 +269,6 @@ export default function LeaderBoard() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Listen for background updates from the service worker
   useEffect(() => {
     const handleServiceWorkerMessage = (event) => {
       if (event.data && event.data.type === "LEADERBOARD_UPDATED") {
@@ -345,20 +321,13 @@ export default function LeaderBoard() {
 
     setIsRefreshing(true);
     try {
-      const { data } = await fetchWithTimeout("/api/leaderboard", {}, 10000);
-      if (Array.isArray(data)) {
-        const preparedData = prepareLeaderboardEntries(data);
-        const sorted = [...preparedData].sort((a, b) => b.points - a.points);
-        setContributors(sorted);
-        setLastUpdated(t("leaderboard.statusRefreshed", { time: formatLastUpdated(Date.now(), t) }));
+      clearLeaderboardCache();
+      const contributors = await fetchLeaderboardData(true);
+      const preparedData = prepareLeaderboardEntries(contributors);
+      setContributors(preparedData);
+      setLastUpdated(t("leaderboard.statusRefreshed", { time: formatLastUpdated(Date.now(), t) }));
 
-        storageManager.set(STORAGE_KEYS.LEADERBOARD_CACHE, {
-          data: sorted,
-          timestamp: Date.now(),
-        });
-
-        confetti({ ...CONFETTI_CONFIG, particleCount: 50, spread: 50 });
-      }
+      confetti({ ...CONFETTI_CONFIG, particleCount: 50, spread: 50 });
     } catch (err) {
       logger.error("Refresh failed:", err);
     } finally {
@@ -431,7 +400,6 @@ export default function LeaderBoard() {
     setSortBy(value);
   }, []);
 
-  // ─── Podium Configuration ───────────────────────────────────────────────
   const podiumConfig = useMemo(() => [
     {
       position: t("leaderboard.podiumPositions.2nd"),

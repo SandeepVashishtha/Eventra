@@ -50,12 +50,44 @@ const formatUTCtoCalendarString = (utcMs, mode = 'compact') => {
 };
 
 /**
+ * Parse a full ISO timestamp to UTC epoch ms.
+ *
+ * Handles both explicit-offset timestamps (e.g. "2026-06-01T10:00:00Z" or
+ * "2026-06-01T10:00:00+05:30", which are self-describing) and naive local
+ * wall-clock timestamps ("2026-06-01T10:00:00"), which are interpreted in the
+ * event's timezone via parseEventToUTC.
+ *
+ * @param {string} iso  - Full ISO timestamp, not a bare "YYYY-MM-DD" date
+ * @param {string} tz   - IANA timezone used for naive timestamps
+ * @returns {number|null}
+ */
+const parseIsoTimestampUTC = (iso, tz) => {
+  if (!iso || typeof iso !== 'string') return null;
+
+  // Explicit offset or Z suffix → the instant is self-describing
+  if (/[zZ]|[+-]\d{2}:?\d{2}$/.test(iso)) {
+    const ms = new Date(iso).getTime();
+    return Number.isNaN(ms) ? null : ms;
+  }
+
+  // Naive "YYYY-MM-DDTHH:MM[:ss]" → treat wall-clock as local in `tz`
+  const match = iso.match(/^(\d{4}-\d{2}-\d{2})T(\d{1,2}):(\d{2})/);
+  if (!match) return null;
+
+  return parseEventToUTC(match[1], `${match[2]}:${match[3]}`, tz);
+};
+
+/**
  * Convert a local event time to { startMs, endMs } in UTC epoch ms.
+ *
+ * Prefers the explicit { date, time } pair used by mock/hackathon events, then
+ * falls back to the single full ISO timestamp returned by the real API
+ * (event.eventDate / event.startDate / event.date).
  *
  * Falls back gracefully to a naive UTC interpretation (assumes UTC) when
  * timezone detection fails — better than producing a wildly wrong timestamp.
  *
- * @param {object} event  - Event object with .date, .time, .durationMinutes
+ * @param {object} event  - Event object with a .date/.time pair or an ISO timestamp
  * @param {string} [timezone]  - IANA timezone string; defaults to getUserTimezone()
  * @returns {{ startMs: number, endMs: number } | null}
  *   Returns null when date/time are unparseable.
@@ -65,20 +97,22 @@ const getEventUTCRange = (event, timezone) => {
     logger.error("[getEventUTCRange] Invalid event argument: must be an object.");
     return null;
   }
-  
-  if (!event.date || !event.time) {
-    logger.warn("[getEventUTCRange] Missing required event fields: 'date' and 'time' are mandatory.");
-    return null;
-  }
 
   // Fallback to detected browser timezone if none provided
   const tz = timezone || getUserTimezone();
 
   // parseEventToUTC handles all date formats (ISO, YYYY-MM-DD, Month DD YYYY)
   // and 12h/24h time strings, with DST-correct conversion via Intl.DateTimeFormat.
-  const startMs = parseEventToUTC(event.date, event.time, tz);
+  let startMs = parseEventToUTC(event.date, event.time, tz);
+
+  // Real API events carry only a full ISO timestamp (event.eventDate), with no
+  // separate event.time field. Parse it directly so calendar links stay valid.
   if (startMs === null || isNaN(startMs)) {
-    logger.warn(`[getEventUTCRange] Date '${event.date}' or time '${event.time}' could not be parsed.`);
+    startMs = parseIsoTimestampUTC(event.eventDate || event.startDate || event.date, tz);
+  }
+
+  if (startMs === null || isNaN(startMs)) {
+    logger.warn(`[getEventUTCRange] Date '${event.date || event.eventDate}' or time '${event.time}' could not be parsed.`);
     return null;
   }
 
@@ -270,18 +304,7 @@ export const generateIcsFileBlobUrl = (event, timezone) => {
   try {
     const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `${(event.title || 'event').toLowerCase().replace(/[^a-z0-9]/g, '-')}.ics`);
-    try {
-      document.body.appendChild(link);
-      link.click();
-    } finally {
-      if (document.body.contains(link)) document.body.removeChild(link);
-      // Revoke after a short delay to allow the browser to start the download
-      setTimeout(() => URL.revokeObjectURL(url), 200);
-    }
-    return true;
+    return url;
   } catch (error) {
     logger.error("[calendarUrlUtils] Failed to generate ICS file:", error);
     return null;

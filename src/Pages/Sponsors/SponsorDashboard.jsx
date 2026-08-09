@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   BarChart, Users, Link as LinkIcon, MessageSquare,
   Save, Layout, Shield, Mail, Briefcase, Info, Download, Trash2, CheckCircle2
 } from "lucide-react";
 import { toast } from "react-toastify";
-import { safeJsonParse } from "../../utils/safeJsonParse";
+import { safeJsonParse } from "utils/safeJsonParse";
+import { computeSponsorBoothMetrics } from "utils/sponsorAnalyticsUtils";
 
 const DEFAULT_SETTINGS = {
   id: "sp-custom",
@@ -16,15 +17,20 @@ const DEFAULT_SETTINGS = {
   sponsorJobs: "Senior Frontend Engineer, Backend Developer, UI/UX Designer"
 };
 
+const EMPTY_ANALYTICS = {
+  boothVisits: 0,
+  footfall: 0,
+  jobClicks: 0,
+  chatInitiations: 0,
+  qrScans: 0,
+  engagementRate: 0,
+};
+
 const SponsorDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [leads, setLeads] = useState([]);
-  const [analytics, setAnalytics] = useState({
-  boothVisits: 0,
-  qrScans: 0,
-  engagementRate: 0,
-});
+  const [analytics, setAnalytics] = useState(EMPTY_ANALYTICS);
   const [isSaving, setIsSaving] = useState(false);
   const saveTimeoutRef = useRef(null);
 
@@ -33,13 +39,6 @@ const SponsorDashboard = () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     };
   }, []);
-
-  // Mock analytics for the dashboard
-  const [stats] = useState({
-    footfall: Math.floor(Math.random() * 500) + 120,
-    jobClicks: Math.floor(Math.random() * 200) + 45,
-    chatInitiations: Math.floor(Math.random() * 100) + 20,
-  });
 
  useEffect(() => {
   // Load custom settings
@@ -59,21 +58,10 @@ const SponsorDashboard = () => {
   if (savedLeads) {
     try {
       const parsedLeads = safeJsonParse(savedLeads, []);
+      const list = Array.isArray(parsedLeads) ? parsedLeads : [];
 
-      setLeads([...parsedLeads].reverse());
-
-      setAnalytics({
-        boothVisits: parsedLeads.length * 3,
-        qrScans: parsedLeads.length,
-        engagementRate:
-          parsedLeads.length > 0
-            ? (
-                (parsedLeads.length /
-                  (parsedLeads.length * 3)) *
-                100
-              ).toFixed(1)
-            : 0,
-      });
+      setLeads([...list].reverse());
+      setAnalytics(computeSponsorBoothMetrics(list));
     } catch (e) {
       console.error(
         "Failed to parse sponsor leads",
@@ -86,7 +74,7 @@ const SponsorDashboard = () => {
   const handleSaveSettings = (e) => {
     e.preventDefault();
     setIsSaving(true);
-    
+
     saveTimeoutRef.current = setTimeout(() => {
       localStorage.setItem("eventra_sponsor_settings", JSON.stringify(settings));
       setIsSaving(false);
@@ -101,11 +89,11 @@ const SponsorDashboard = () => {
       toast.error("No leads available to export.");
       return;
     }
-    
-    const csvContent = "data:text/csv;charset=utf-8," 
+
+    const csvContent = "data:text/csv;charset=utf-8,"
       + "Name,Action,Contact,Time\n"
       + leads.map(l => `${l.name},${l.action},${l.contact},${l.time}`).join("\n");
-      
+
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -113,7 +101,7 @@ const SponsorDashboard = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
+
     toast.success(`Exported ${leads.length} leads successfully!`);
   };
 
@@ -121,19 +109,14 @@ const SponsorDashboard = () => {
     if (window.confirm("Are you sure you want to clear all leads? This cannot be undone.")) {
       localStorage.removeItem("eventra_sponsor_leads");
       setLeads([]);
-
-      setAnalytics({
-        boothVisits: 0,
-        qrScans: 0,
-        engagementRate: 0,
-      });
+      setAnalytics({ ...EMPTY_ANALYTICS });
       toast.success("Leads cleared.");
     }
   };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#07070c] text-slate-900 dark:text-white pb-12 transition-colors">
-      
+
       {/* Top Navigation / Header */}
       <div className="bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-white/10 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -144,23 +127,23 @@ const SponsorDashboard = () => {
               </div>
               <h1 className="text-xl font-extrabold tracking-tight">Sponsor Portal</h1>
             </div>
-            
+
             <div className="flex gap-2">
-              <button 
+              <button
                 onClick={() => setActiveTab("overview")}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                  activeTab === "overview" 
-                    ? "bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white" 
+                  activeTab === "overview"
+                    ? "bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white"
                     : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5"
                 }`}
               >
                 Overview & Leads
               </button>
-              <button 
+              <button
                 onClick={() => setActiveTab("customize")}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                  activeTab === "customize" 
-                    ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20" 
+                  activeTab === "customize"
+                    ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20"
                     : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5"
                 }`}
               >
@@ -172,15 +155,18 @@ const SponsorDashboard = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
-        
+
         {activeTab === "overview" && (
           <div className="space-y-8 animate-fade-in">
             {/* Analytics Cards */}
             <div>
-              <h2 className="text-lg font-black mb-4 flex items-center gap-2">
+              <h2 className="text-lg font-black mb-1 flex items-center gap-2">
                 <BarChart size={18} className="text-indigo-500" />
-                Real-Time Booth Analytics
+                Booth Analytics
               </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+                Counts are based on captured booth interactions. Metrics stay at zero until attendees visit, apply, or start a chat.
+              </p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
   <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-3xl p-6 shadow-sm">
     <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
@@ -193,7 +179,7 @@ const SponsorDashboard = () => {
 
   <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-3xl p-6 shadow-sm">
     <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
-      QR Lead Scans
+      Captured Interactions
     </h3>
     <p className="text-3xl font-black">
       {analytics.qrScans}
@@ -216,21 +202,21 @@ const SponsorDashboard = () => {
                     <Users size={16} />
                     <span className="text-xs font-bold uppercase tracking-wider">Total Footfall</span>
                   </div>
-                  <div className="text-4xl font-black">{stats.footfall}</div>
-                  <div className="text-[10px] text-emerald-500 font-bold mt-2 flex items-center gap-1">
-                    +12% from last hour
+                  <div className="text-4xl font-black">{analytics.footfall}</div>
+                  <div className="text-[10px] text-slate-400 font-bold mt-2 flex items-center gap-1">
+                    From recorded booth visits
                   </div>
                 </div>
-                
+
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-3xl p-6 shadow-sm relative overflow-hidden group">
                   <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl -mr-10 -mt-10" />
                   <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400 mb-4">
                     <LinkIcon size={16} />
                     <span className="text-xs font-bold uppercase tracking-wider">Job Links Clicked</span>
                   </div>
-                  <div className="text-4xl font-black">{stats.jobClicks}</div>
-                  <div className="text-[10px] text-emerald-500 font-bold mt-2 flex items-center gap-1">
-                    High engagement rate
+                  <div className="text-4xl font-black">{analytics.jobClicks}</div>
+                  <div className="text-[10px] text-slate-400 font-bold mt-2 flex items-center gap-1">
+                    From apply actions
                   </div>
                 </div>
 
@@ -240,9 +226,9 @@ const SponsorDashboard = () => {
                     <MessageSquare size={16} />
                     <span className="text-xs font-bold uppercase tracking-wider">Chat Initiations</span>
                   </div>
-                  <div className="text-4xl font-black">{stats.chatInitiations}</div>
+                  <div className="text-4xl font-black">{analytics.chatInitiations}</div>
                   <div className="text-[10px] text-slate-400 font-bold mt-2 flex items-center gap-1">
-                    Live chat active
+                    From chat starts
                   </div>
                 </div>
               </div>
@@ -256,14 +242,14 @@ const SponsorDashboard = () => {
                   Collected Leads ({leads.length})
                 </h2>
                 <div className="flex gap-2">
-                  <button 
+                  <button
                     onClick={clearLeads}
                     className="px-3 py-1.5 rounded-xl border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors text-xs font-bold flex items-center gap-1.5"
                   >
                     <Trash2 size={12} />
                     Clear
                   </button>
-                  <button 
+                  <button
                     onClick={handleExportLeads}
                     className="px-3 py-1.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors text-xs font-bold flex items-center gap-1.5 shadow-sm"
                   >
@@ -296,7 +282,7 @@ const SponsorDashboard = () => {
                             </td>
                             <td className="px-6 py-4">
                               <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                                lead.action.includes("Applied") 
+                                lead.action.includes("Applied")
                                   ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20"
                                   : "bg-purple-100 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400 border border-purple-200 dark:border-purple-500/20"
                               }`}>
@@ -343,7 +329,7 @@ const SponsorDashboard = () => {
             </div>
 
             <form onSubmit={handleSaveSettings} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">

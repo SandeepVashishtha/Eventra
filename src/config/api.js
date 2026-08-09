@@ -1,7 +1,9 @@
 import axios from "axios";
-import { logger } from "../utils/logger.js";
-import { ApiError, RateLimitError, normalizeApiError } from "./api/errors.js";
-import { setupRequestInterceptor, setupResponseInterceptor, setOnRequiresReauthHandler } from "./api/interceptors.js";
+import { ENV } from "./env";
+import { syncServerTimeFromHeader } from "../utils/timeSync";
+import { createIntegrityHeader } from "../utils/security/requestIntegrity";
+import { ApiError, RateLimitError } from "./api/errors.js";
+import { setupRequestInterceptor, setupResponseInterceptor, setOnRequiresReauthHandler, setAuthToken as setInterceptorAuthToken, setRefreshToken as setInterceptorRefreshToken } from "./api/interceptors.js";
 import { API_BASE_URL, validateBackendConfig } from "./backendConfig.js";
 
 // ---------------------------------------------------------------------------
@@ -21,7 +23,8 @@ const buildApiUrl = (path = "") => {
   if (/^https?:\/\//i.test(path)) return path;
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   if (!API_BASE_URL) return normalizedPath;
-  return `${API_BASE_URL}${normalizedPath}`;
+  const url = `${API_BASE_URL}${normalizedPath}`;
+  return url.replace(/([^:]\/)\/+/g, "$1");
 };
 
 // ---------------------------------------------------------------------------
@@ -50,14 +53,129 @@ export const setRequiresReauthHandler = (handler) => {
 };
 export const setAuthToken = (token) => {
   _authToken = token;
+  setInterceptorAuthToken(token);
 };
 
-const getAuthToken = () => _authToken;
-const getOnUnauthorized = () => onUnauthorized;
-const getOnRequiresReauth = () => onRequiresReauth;
+export const setRefreshToken = (token) => {
+  setInterceptorRefreshToken(token);
+};
 
-setupRequestInterceptor(API, { isDev, buildApiUrl, getAuthToken, getOnUnauthorized });
-setupResponseInterceptor(API, { isDev, timeoutMs: REQUEST_TIMEOUT_MS, getOnUnauthorized, getOnRequiresReauth });
+/**
+ * Normalise the optional config/token argument accepted by apiUtils methods.
+ *
+ * IMPORTANT — do not pass a raw JWT string as the third argument to
+ * apiUtils.post / .put / .patch:
+ *   apiUtils.post(url, data, token)   ← WRONG: token is silently discarded
+ *
+ * Authentication is carried automatically via the HttpOnly session cookie
+ * (withCredentials: true on the Axios instance). Callers must never include
+ * user identity fields (userId, adminId) in the request body either — the
+ * backend must derive identity from the verified JWT, not from client-supplied
+ * body fields.
+ */
+const normalizeApiError = (error) => {
+  const config = error.config || {};
+  const status = error?.response?.status;
+
+  if (
+    error.code === "ECONNABORTED" ||
+    error.name === "AbortError" ||
+    error.message?.includes("timeout")
+  ) {
+    return new ApiError(
+      `Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s: ${config.method?.toUpperCase()} ${config.url}`,
+      {
+        status,
+        isTimeout: true,
+      }
+    );
+  }
+
+  if (!error.response) {
+    return new ApiError(
+      error.message ||
+        `Network error: ${config.method?.toUpperCase()} ${config.url}`,
+      {
+        status,
+        isNetworkError: true,
+      }
+    );
+  }
+
+  if (status === 429) {
+    return new RateLimitError(
+      error.response?.data?.message || "Too many requests, please try again later.",
+      { status, data: error.response?.data || null }
+    );
+  }
+
+  return new ApiError(
+    error.response?.data?.message ||
+      error.message ||
+      `Request failed with status ${status}`,
+    {
+      status,
+      data: error.response?.data || null,
+    }
+  );
+};
+
+// We completely removed the `if (!config.signal)` block that was generating the Ghost AbortController.
+API.interceptors.request.use(
+  async (config) => {
+    if (isDev) {
+      console.debug(
+        `[API ${config.method?.toUpperCase()}]`,
+        buildApiUrl(config.url || "")
+      );
+    }
+
+    try {
+      const integrity = await createIntegrityHeader(config.data);
+
+      config.headers = {
+        ...config.headers,
+        "X-Request-Integrity": integrity,
+      };
+    } catch (error) {
+      if (isDev) {
+        console.warn("Failed to generate request integrity header.", error);
+      }
+    }
+
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+API.interceptors.response.use(
+  (response) => {
+    const headerValue = response.headers.get("x-server-time") || response.headers.get("date");
+    if (headerValue) {
+      syncServerTimeFromHeader(headerValue);
+    }
+    return response;
+  },
+  (error) => Promise.reject(error)
+);
+
+setupRequestInterceptor(API, {
+  isDev,
+  buildApiUrl,
+  getAuthToken: () => _authToken,
+  getOnUnauthorized: () => onUnauthorized,
+});
+setupResponseInterceptor(API, {
+  isDev,
+  timeoutMs: REQUEST_TIMEOUT_MS,
+  getOnUnauthorized: () => onUnauthorized,
+  getOnRequiresReauth: () => onRequiresReauth,
+  setAuthToken: (token) => {
+    _authToken = token;
+    setInterceptorAuthToken(token);
+  },
+  setRefreshToken: setInterceptorRefreshToken,
+});
 
 // ---------------------------------------------------------------------------
 // API Endpoints
@@ -71,20 +189,36 @@ export const API_ENDPOINTS = {
     LOGOUT: buildApiUrl("/auth/logout"),
     RESET_PASSWORD: buildApiUrl("/auth/reset-password"),
     REFRESH: buildApiUrl("/auth/refresh"),
+    GOOGLE: buildApiUrl("/auth/google"),
+    GITHUB: buildApiUrl("/auth/github"),
   },
   EVENTS: {
     CREATE: buildApiUrl("/events/create"),
     ALL: buildApiUrl("/events"),
     LIST: buildApiUrl("/events"),
     DETAIL: (id) => buildApiUrl(`/events/${id}`),
-    SCHEDULE: (id) => buildApiUrl(`/events/${id}/schedule`),
     REGISTER: (id) => buildApiUrl(`/events/${id}/register`),
-    AVAILABILITY: (id) => buildApiUrl(`/events/${id}/availability`),
     CANCEL: (id) => buildApiUrl(`/events/${id}/cancel`),
+    AVAILABILITY: (id) => buildApiUrl(`/events/${id}/availability`),
+    ATTENDEES: (id) => buildApiUrl(`/events/${id}/attendees`),
+
     REGISTRANTS: (id) => buildApiUrl(`/events/${id}/registrants`),
+    WAITLIST: (id) => buildApiUrl(`/events/${id}/waitlist`),
+    SCHEDULE: (id) => buildApiUrl(`/events/${id}/schedule`),
+    ALTERNATIVES: buildApiUrl("/events/alternatives"),
     // Convenience helper — appends ?page=&size= for callers that build the
     // URL manually rather than going through eventFetchUtils.buildPaginatedUrl.
     PAGINATED: (page, size) => buildApiUrl(`/events?page=${page}&size=${size}`),
+  },
+  LIVE_AUDIENCE: {
+    BASE: (eventId) => buildApiUrl(`/events/${eventId}/live-audience`),
+    QUESTIONS: (eventId) => buildApiUrl(`/events/${eventId}/live-audience/questions`),
+    UPVOTE: (eventId, questionId) => buildApiUrl(`/events/${eventId}/live-audience/questions/${questionId}/upvote`),
+    FLAG: (eventId, questionId) => buildApiUrl(`/events/${eventId}/live-audience/questions/${questionId}/flag`),
+    QUESTION_DETAIL: (eventId, questionId) => buildApiUrl(`/events/${eventId}/live-audience/questions/${questionId}`),
+    POLLS: (eventId) => buildApiUrl(`/events/${eventId}/live-audience/polls`),
+    POLL_STATUS: (eventId, pollId) => buildApiUrl(`/events/${eventId}/live-audience/polls/${pollId}/status`),
+    POLL_VOTE: (eventId, pollId) => buildApiUrl(`/events/${eventId}/live-audience/polls/${pollId}/vote`),
   },
   PROJECTS: {
     ALL: buildApiUrl("/projects"),
@@ -113,19 +247,33 @@ export const API_ENDPOINTS = {
   USERS: {
     PROFILE: buildApiUrl("/users/profile"),
     ACHIEVEMENTS: buildApiUrl("/users/achievements"),
+    // (#7653) Endpoint for persisting user preferences (theme, etc.) across devices
+    PREFERENCES: buildApiUrl("/users/preferences"),
   },
-  SESSION_RECOVERY: {
-    BASE: buildApiUrl("/session-recovery"),
-    SESSION: (sessionId) =>
-      buildApiUrl(`/session-recovery/${encodeURIComponent(sessionId)}`),
-    RESTORE: (sessionId) =>
-      buildApiUrl(`/session-recovery/${encodeURIComponent(sessionId)}/restore`),
-    CLEANUP_EXPIRED: buildApiUrl("/session-recovery/expired"),
+  ANALYTICS: {
+    SUMMARY: buildApiUrl("/analytics/summary"),
+    DASHBOARD: buildApiUrl("/analytics/dashboard"),
+    REGISTRATION_TRENDS: buildApiUrl("/analytics/registrations/trends"),
+    FEEDBACK: buildApiUrl("/analytics/feedback"),
+    ORGANIZERS: buildApiUrl("/analytics/organizers"),
   },
   TICKETS: {
     VALIDATE: buildApiUrl("/tickets/validate"),
     CHECK_IN: buildApiUrl("/tickets/checkin"),
     HISTORY: buildApiUrl("/tickets/checkins"),
+    STATS: buildApiUrl("/tickets/stats"),
+  },
+  SESSION_RECOVERY: {
+    BASE: buildApiUrl("/session-recovery"),
+    SESSION: (id) => buildApiUrl(`/session-recovery/${id}`),
+    RESTORE: (id) => buildApiUrl(`/session-recovery/${id}/restore`),
+    CLEANUP_EXPIRED: buildApiUrl("/session-recovery/cleanup"),
+  },
+  WAITLIST: {
+    BASE: buildApiUrl("/waitlist"),
+    JOIN: buildApiUrl("/waitlist/join"),
+    LEAVE: (id) => buildApiUrl(`/waitlist/${id}/leave`),
+    STATUS: (id) => buildApiUrl(`/waitlist/${id}/status`),
   },
   FEEDBACK: {
     BASE: buildApiUrl("/feedback"),
@@ -145,10 +293,15 @@ export const API_ENDPOINTS = {
     EMAIL: (email) => buildApiUrl(`/validate/email/${encodeURIComponent(email)}`),
     USERNAME: (username) => buildApiUrl(`/validate/username/${encodeURIComponent(username)}`),
     PHONE: buildApiUrl("/validate/phone"),
-    CONTACT: buildApiUrl("/contact"),
   },
 };
 
+/**
+ * Normalise the optional config/token argument accepted by apiUtils methods.
+ *
+ * Authentication is carried automatically via the HttpOnly session cookie
+ * (withCredentials: true on the Axios instance).
+ */
 const normalizeRequestConfig = (configOrToken = {}) => {
   const config = typeof configOrToken === "string" ? {} : { ...configOrToken };
   if ("skipAuth" in config) delete config.skipAuth;
@@ -172,7 +325,7 @@ const wrapAxiosResponse = (response) => {
       if (typeof response.data === "string") {
         try {
           return JSON.parse(response.data);
-        } catch (e) {
+        } catch {
           throw new Error("Received non-JSON response from server");
         }
       }
@@ -182,7 +335,6 @@ const wrapAxiosResponse = (response) => {
       typeof response.data === "string" ? response.data : JSON.stringify(response.data),
   };
 };
-
 export const apiUtils = {
   get: (url, config = {}) =>
     API.get(url, normalizeRequestConfig(config)).then(wrapAxiosResponse),

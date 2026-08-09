@@ -18,7 +18,7 @@ import {
   ArrowDown,
   CornerDownLeft
 } from "lucide-react";
-import { useModalStack } from "../../hooks/useModalStack";
+import { useModalStack } from "hooks/useModalStack";
 
 const trendTags = ["AI", "Web3", "Hackathons", "Workshops", "Community", "Auth"];
 
@@ -126,19 +126,15 @@ export default function CommandPalette({
   }, [query]);
 
   // Auto focus input on open
-  useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => inputRef.current?.focus(), 150);
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-      setQuery("");
-      setActiveIndex(0);
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [isOpen]);
+ useEffect(() => {
+  if (isOpen) {
+    setTimeout(() => inputRef.current?.focus(), 150);
+  } else {
+    setQuery("");
+    setActiveIndex(0);
+  }
+  return () => {};
+}, [isOpen]);
 
   // Handle selected item action
   const handleSelect = useCallback((item) => {
