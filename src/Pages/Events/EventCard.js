@@ -72,7 +72,7 @@ const EventCard = ({ event, position }) => {
         {eventImage && !imageFailed ? (
           <LazyImage
             src={eventImage}
-            alt=""
+            alt={event.title ? `${event.title} event cover` : "Event cover image"}
             className="absolute inset-0 w-full h-full"
             imgClassName="object-cover w-full h-full opacity-90 group-hover:scale-102 transition-transform duration-700"
             onError={() => setImageFailed(true)}

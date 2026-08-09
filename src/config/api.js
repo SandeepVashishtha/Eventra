@@ -3,7 +3,7 @@ import { ENV } from "./env";
 import { syncServerTimeFromHeader } from "../utils/timeSync";
 import { createIntegrityHeader } from "../utils/security/requestIntegrity";
 import { ApiError, RateLimitError } from "./api/errors.js";
-import { setupRequestInterceptor, setupResponseInterceptor, setOnRequiresReauthHandler } from "./api/interceptors.js";
+import { setupRequestInterceptor, setupResponseInterceptor, setOnRequiresReauthHandler, setAuthToken as setInterceptorAuthToken, setRefreshToken as setInterceptorRefreshToken } from "./api/interceptors.js";
 import { API_BASE_URL, validateBackendConfig } from "./backendConfig.js";
 
 // ---------------------------------------------------------------------------
@@ -53,6 +53,11 @@ export const setRequiresReauthHandler = (handler) => {
 };
 export const setAuthToken = (token) => {
   _authToken = token;
+  setInterceptorAuthToken(token);
+};
+
+export const setRefreshToken = (token) => {
+  setInterceptorRefreshToken(token);
 };
 
 /**
@@ -151,13 +156,7 @@ API.interceptors.response.use(
     }
     return response;
   },
-  (error) => {
-    const status = error?.response?.status;
-    if (status === 401 && onUnauthorized) {
-      onUnauthorized();
-    }
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 setupRequestInterceptor(API, {
@@ -171,6 +170,11 @@ setupResponseInterceptor(API, {
   timeoutMs: REQUEST_TIMEOUT_MS,
   getOnUnauthorized: () => onUnauthorized,
   getOnRequiresReauth: () => onRequiresReauth,
+  setAuthToken: (token) => {
+    _authToken = token;
+    setInterceptorAuthToken(token);
+  },
+  setRefreshToken: setInterceptorRefreshToken,
 });
 
 // ---------------------------------------------------------------------------
@@ -201,6 +205,7 @@ export const API_ENDPOINTS = {
     REGISTRANTS: (id) => buildApiUrl(`/events/${id}/registrants`),
     WAITLIST: (id) => buildApiUrl(`/events/${id}/waitlist`),
     SCHEDULE: (id) => buildApiUrl(`/events/${id}/schedule`),
+    ALTERNATIVES: buildApiUrl("/events/alternatives"),
     // Convenience helper — appends ?page=&size= for callers that build the
     // URL manually rather than going through eventFetchUtils.buildPaginatedUrl.
     PAGINATED: (page, size) => buildApiUrl(`/events?page=${page}&size=${size}`),

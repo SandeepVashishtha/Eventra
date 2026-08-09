@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,6 +21,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/notifications")
+@PreAuthorize("isAuthenticated()")
 @Tag(name = "Notifications", description = "Endpoints for user notifications")
 public class NotificationController {
 
@@ -46,6 +48,9 @@ public class NotificationController {
             )
     })
     public ResponseEntity<List<NotificationResponse>> getNotifications(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(401).build();
+        }
         String email = authentication.getName();
         return ResponseEntity.ok(notificationService.getNotificationsForUser(email));
     }
@@ -73,6 +78,9 @@ public class NotificationController {
     public ResponseEntity<NotificationResponse> markAsRead(
             @PathVariable Long id,
             Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(401).build();
+        }
         String email = authentication.getName();
         return ResponseEntity.ok(notificationService.markAsRead(id, email));
     }
@@ -94,6 +102,9 @@ public class NotificationController {
             )
     })
     public ResponseEntity<List<NotificationResponse>> markAllAsRead(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(401).build();
+        }
         String email = authentication.getName();
         return ResponseEntity.ok(notificationService.markAllAsRead(email));
     }
@@ -121,6 +132,9 @@ public class NotificationController {
     public ResponseEntity<Void> deleteNotification(
             @PathVariable Long id,
             Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(401).build();
+        }
         String email = authentication.getName();
         notificationService.deleteNotification(id, email);
         return ResponseEntity.noContent().build();

@@ -46,6 +46,7 @@ public class AdminService {
     private final HackathonRegistrationRepository hackathonRegistrationRepository;
     private final ProjectUpvoteRepository     projectUpvoteRepository;
     private final NotificationRepository      notificationRepository;
+    private final EventService                eventService;
 
     // ══════════════════════════════════════════════════════════════════════
     // 1. USER MANAGEMENT
@@ -113,10 +114,17 @@ public class AdminService {
         User targetUser = userRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
 
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && targetUser.getEmail().equalsIgnoreCase(auth.getName())) {
+            throw new IllegalArgumentException("Administrators cannot delete their own active account.");
+        }
+
         Role callerRole = getAuthenticatedRole();
         if (callerRole != Role.SUPER_ADMIN && targetUser.getRole() == Role.SUPER_ADMIN) {
             throw new AccessDeniedException("Only SUPER_ADMIN users can delete SUPER_ADMIN accounts");
         }
+
+        List<Long> affectedEventIds = eventRegistrationRepository.findEventIdsByUser_Id(id);
 
         eventRegistrationRepository.deleteByUser_Id(id);
         eventWaitlistRepository.deleteByUser_Id(id);
@@ -125,6 +133,17 @@ public class AdminService {
         notificationRepository.deleteByUser_Id(id);
         feedbackRepository.deleteByUser_Id(id);
         eventRepository.deleteAttendeeRowsByUserId(id);
+        eventTeamMemberRepository.clearAssignedByUserId(id);
+        eventTeamMemberRepository.deleteByUser_Id(id);
+
+        for (Long eventId : affectedEventIds) {
+            eventRepository.findById(eventId).ifPresent(event -> {
+                event.setRegisteredCount((int) eventRegistrationRepository
+                        .countByEvent_IdAndStatus(eventId, "CONFIRMED"));
+                eventRepository.save(event);
+            });
+            eventService.promoteWaitlistAfterVacancy(eventId);
+        }
 
         userRepository.deleteById(id);
     }
@@ -145,10 +164,12 @@ public class AdminService {
      * Returns all attendees registered for a specific event.
      */
     public List<AdminUserResponse> getEventAttendees(Long eventId) {
-        var event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new EntityNotFoundException("Event not found with id: " + eventId));
-        return event.getAttendees().stream()
-                .map(this::toAdminUserResponse)
+        if (!eventRepository.existsById(eventId)) {
+            throw new EntityNotFoundException("Event not found with id: " + eventId);
+        }
+        return eventRegistrationRepository.findByEvent_Id(eventId).stream()
+                .filter(registration -> "CONFIRMED".equals(registration.getStatus()))
+                .map(registration -> toAdminUserResponse(registration.getUser()))
                 .collect(Collectors.toList());
     }
 
@@ -162,7 +183,6 @@ public class AdminService {
         }
         eventRegistrationRepository.deleteByEventId(id);
         eventWaitlistRepository.deleteByEvent_Id(id);
-        eventRepository.deleteAttendeeRowsByEventId(id);
         eventTeamMemberRepository.deleteByEvent_Id(id);
         feedbackRepository.deleteByEvent_Id(id);
         eventRoleAuditLogRepository.deleteByEventId(id);
@@ -189,6 +209,7 @@ public class AdminService {
         if (!hackathonRepository.existsById(id)) {
             throw new EntityNotFoundException("Hackathon not found with id: " + id);
         }
+        hackathonRegistrationRepository.deleteByHackathonId(id);
         hackathonRepository.deleteById(id);
     }
 

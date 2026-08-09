@@ -10,16 +10,24 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Service to manage Server-Sent Events (SSE) emitters for real-time updates.
+ * Multiplexed SSE emitter registry keyed by topic
+ * ({@code events}, {@code leaderboard}, {@code analytics}, …).
+ * Caps concurrent emitters per topic to avoid unbounded growth.
  */
 @Service
 public class EventStreamService {
     private static final Logger log = LoggerFactory.getLogger(EventStreamService.class);
     private static final Long DEFAULT_TIMEOUT = 300_000L; // 5 minutes
+    private static final int MAX_EMITTERS_PER_TOPIC = 200;
+    private static final Set<String> KNOWN_TOPICS = Set.of(
+            "events", "leaderboard", "analytics", "notifications", "live-audience"
+    );
 
-    private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
+    private final Map<String, CopyOnWriteArrayList<SseEmitter>> emittersByTopic = new ConcurrentHashMap<>();
+    private final Map<String, AtomicInteger> emitterCounts = new ConcurrentHashMap<>();
 
     /**
      * Creates a new SseEmitter, registers cleanup hooks, and sends an initial
@@ -28,20 +36,37 @@ public class EventStreamService {
      * @return a configured SseEmitter
      */
     public SseEmitter createEmitter() {
-        SseEmitter emitter = new SseEmitter(DEFAULT_TIMEOUT);
+        return createEmitter("events");
+    }
 
-        emitter.onCompletion(() -> removeEmitter(emitter));
-        emitter.onTimeout(() -> removeEmitter(emitter));
-        emitter.onError((ex) -> removeEmitter(emitter));
+    public SseEmitter createEmitter(String topic) {
+        String normalized = normalizeTopic(topic);
+        CopyOnWriteArrayList<SseEmitter> emitters =
+                emittersByTopic.computeIfAbsent(normalized, key -> new CopyOnWriteArrayList<>());
+        AtomicInteger count = emitterCounts.computeIfAbsent(normalized, key -> new AtomicInteger());
+
+        int current = count.incrementAndGet();
+        if (current > MAX_EMITTERS_PER_TOPIC) {
+            count.decrementAndGet();
+            throw new IllegalStateException(
+                    "SSE emitter limit reached for topic '" + normalized + "'");
+        }
+
+        SseEmitter emitter = new SseEmitter(DEFAULT_TIMEOUT);
+        Runnable cleanup = () -> removeEmitter(normalized, emitter);
+        emitter.onCompletion(cleanup);
+        emitter.onTimeout(cleanup);
+        emitter.onError((ex) -> cleanup.run());
 
         emitters.add(emitter);
 
         try {
             emitter.send(SseEmitter.event()
                     .name("connected")
-                    .data("Stream connected successfully"));
+                    .data("{\"topic\":\"" + normalized + "\",\"status\":\"connected\"}"));
         } catch (IOException e) {
-            log.error("Failed to send initial connection event", e);
+            log.error("Failed to send initial connection event for topic {}", normalized, e);
+            cleanup.run();
             emitter.completeWithError(e);
             throw new RuntimeException("Failed to initialize SSE connection", e);
         }

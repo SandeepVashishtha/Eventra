@@ -120,7 +120,6 @@ public class SecurityConfig {
                 // Stateless sessions — JWT handles auth
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/logout").authenticated()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(
                                 "/actuator",
@@ -141,6 +140,7 @@ public class SecurityConfig {
                                 "/api/events/{id}/seats",
                                 "/api/events/stream"
                         ).permitAll()
+                        .requestMatchers("/stream", "/stream/**").permitAll()
                         // ── Public: Projects endpoint ────────────────────────
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/projects").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/projects/{id}").permitAll()

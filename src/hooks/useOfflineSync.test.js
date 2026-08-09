@@ -122,13 +122,11 @@ describe("useOfflineSync", () => {
       return null;
     };
 
-     
     await act(async () => {
       root = createRoot(container);
       root.render(<TestComponent />);
     });
 
-     
     await act(async () => {
       window.dispatchEvent(new Event("online"));
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -139,6 +137,49 @@ describe("useOfflineSync", () => {
     // Verify setQueue was called to preserve the item
     expect(setQueue).toHaveBeenCalledWith(queue);
     expect(clearQueue).not.toHaveBeenCalled();
+  });
+
+  it("preserves the unattempted remainder of the queue when the sync budget is exceeded (#12455)", async () => {
+    const queue = [
+      { id: "b1", userId: "mock-user-id", retryCount: 0, payload: { name: "b1" } },
+      { id: "b2", userId: "mock-user-id", retryCount: 0, payload: { name: "b2" } },
+      { id: "b3", userId: "mock-user-id", retryCount: 0, payload: { name: "b3" } },
+    ];
+    getQueueIndexedDB.mockResolvedValue(queue);
+
+    // Every Date.now() call advances the clock beyond SYNC_BUDGET_MS, so the
+    // budget check fails before the first item is even attempted.
+    const nowSpy = jest.spyOn(Date, "now");
+    let now = nowSpy();
+    nowSpy.mockImplementation(() => {
+      now += 16_000;
+      return now;
+    });
+
+    try {
+      const TestComponent = () => {
+        useOfflineSync();
+        return null;
+      };
+
+      await act(async () => {
+        root = createRoot(container);
+        root.render(<TestComponent />);
+      });
+
+      await act(async () => {
+        window.dispatchEvent(new Event("online"));
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      });
+
+      // No item was attempted because the budget was already exhausted.
+      expect(global.fetch).not.toHaveBeenCalled();
+      // The untouched tail must be re-persisted for the next run, not dropped.
+      expect(setQueue).toHaveBeenCalledWith(queue);
+      expect(clearQueue).not.toHaveBeenCalled();
+    } finally {
+      nowSpy.mockRestore();
+    }
   });
 
   // ── Security: Issue #5727 — cross-user action replay prevention ───────────

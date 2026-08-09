@@ -35,10 +35,6 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
   const [isFormValid, setIsFormValid] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
 
-  // Fix: valuesRef must be declared AFTER values useState to avoid
-  // "used before declared" React Compiler error.
-  const valuesRef = useRef(initialState);
-
   useEffect(() => {
     validationRulesRef.current = validationRules;
   }, [validationRules]);

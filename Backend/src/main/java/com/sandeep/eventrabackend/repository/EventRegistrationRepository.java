@@ -2,6 +2,8 @@ package com.sandeep.eventrabackend.repository;
 
 import com.sandeep.eventrabackend.model.EventRegistration;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -22,7 +24,12 @@ public interface EventRegistrationRepository extends JpaRepository<EventRegistra
 
     List<EventRegistration> findByEvent_Id(Long eventId);
 
+    List<EventRegistration> findByEvent_IdAndStatus(Long eventId, String status);
+
     List<EventRegistration> findByEvent_IdAndShowProfileInAttendeeDirectoryTrueOrderByRegisteredAtAsc(Long eventId);
+
+    @Query("SELECT DISTINCT r.event.id FROM EventRegistration r WHERE r.user.id = :userId")
+    List<Long> findEventIdsByUser_Id(@Param("userId") Long userId);
 
     void deleteByEventId(Long eventId);
 

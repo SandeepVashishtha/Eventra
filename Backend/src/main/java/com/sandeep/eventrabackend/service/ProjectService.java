@@ -34,13 +34,17 @@ public class ProjectService {
     }
 
     @Transactional
-    public ProjectResponse createProject(ProjectCreateRequest request) {
+    public ProjectResponse createProject(ProjectCreateRequest request, String userEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + userEmail));
+
         Project project = Project.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .category(request.getCategory())
                 .thumbnailUrl(request.getThumbnailUrl())
                 .githubUrl(request.getGithubUrl())
+                .ownerId(user.getId())
                 .build();
 
         Project savedProject = projectRepository.save(project);
@@ -66,26 +70,26 @@ public class ProjectService {
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new ProjectNotFoundException("Project not found with id: " + id));
 
-        User user = userRepository.findByEmail(userEmail).orElse(null);
-        if (user != null) {
-            if (projectUpvoteRepository.existsByProject_IdAndUser_Id(id, user.getId())) {
-                throw new RegistrationConflictException("You have already upvoted this project.");
-            }
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + userEmail));
 
-            ProjectUpvote upvote = ProjectUpvote.builder()
-                    .project(project)
-                    .user(user)
-                    .build();
+        if (projectUpvoteRepository.existsByProject_IdAndUser_Id(id, user.getId())) {
+            throw new RegistrationConflictException("You have already upvoted this project.");
+        }
 
-            // Two concurrent requests from the same user can both pass the
-            // existsBy guard before either insert commits; the second insert
-            // then violates the (project_id, user_id) unique constraint.
-            // Surface that as a friendly conflict instead of a 500 (#11776).
-            try {
-                projectUpvoteRepository.save(upvote);
-            } catch (DataIntegrityViolationException ex) {
-                throw new RegistrationConflictException("You have already upvoted this project.");
-            }
+        ProjectUpvote upvote = ProjectUpvote.builder()
+                .project(project)
+                .user(user)
+                .build();
+
+        // Two concurrent requests from the same user can both pass the
+        // existsBy guard before either insert commits; the second insert
+        // then violates the (project_id, user_id) unique constraint.
+        // Surface that as a friendly conflict instead of a 500 (#11776).
+        try {
+            projectUpvoteRepository.save(upvote);
+        } catch (DataIntegrityViolationException ex) {
+            throw new RegistrationConflictException("You have already upvoted this project.");
         }
 
         // The bulk UPDATE below is marked clearAutomatically so the subsequent

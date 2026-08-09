@@ -1,5 +1,5 @@
-import { memo, useCallback, useEffect, useMemo } from "react";
-import { useFocusTrap } from "hooks/useFocusTrap";
+import { memo, useCallback, useMemo } from "react";
+import useModalManager from "hooks/useModalManager";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Copy,
@@ -28,7 +28,7 @@ const ModalCloseButton = memo(({ onClick }) => (
 ModalCloseButton.displayName = "ModalCloseButton";
 
 const ShareModal = ({ isOpen, onClose, event }) => {
-  const { containerRef } = useFocusTrap(isOpen, onClose);
+  const { modalRef: containerRef } = useModalManager(isOpen, onClose);
   const shareData = useMemo(() => {
     return createShareModalData(event);
   }, [event]);
@@ -55,12 +55,7 @@ const ShareModal = ({ isOpen, onClose, event }) => {
     };
 
     window.addEventListener("keydown", handleEsc);
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      window.removeEventListener("keydown", handleEsc);
-      document.body.style.overflow = "";
-    };
+    useScrollLock(isOpen);
   }, [isOpen, onClose]);
 
   return (

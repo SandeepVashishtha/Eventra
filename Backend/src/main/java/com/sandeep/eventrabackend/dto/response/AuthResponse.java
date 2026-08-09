@@ -14,6 +14,9 @@ public class AuthResponse {
     @Schema(description = "JWT bearer token")
     private String token;
 
+    @Schema(description = "Long-lived refresh token used for silent renew")
+    private String refreshToken;
+
     @Schema(description = "Token type", example = "Bearer")
     private String tokenType;
 
