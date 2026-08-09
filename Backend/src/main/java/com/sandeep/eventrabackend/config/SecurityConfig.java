@@ -146,6 +146,7 @@ public class SecurityConfig {
                                 "/api/events/{id}",
                                 "/api/events/{id}/availability",
                                 "/api/events/{id}/seats",
+                                "/api/events/{id}/feed.ics",
                                 "/api/events/stream"
                         ).permitAll()
                         .requestMatchers("/stream", "/stream/**").permitAll()
