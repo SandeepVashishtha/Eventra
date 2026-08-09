@@ -92,10 +92,6 @@ function App() {
   });
   const [showKeyboardModal, setShowKeyboardModal] = useState(false);
   const [showChatbot, setShowChatbot] = useState(false);
-  const [isDesktop, setIsDesktop] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return window.innerWidth >= 1024;
-  });
 
   useLenis();
   useRoutePrefetch(); // Predictive route pre-loading

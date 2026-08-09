@@ -12,7 +12,6 @@ import {
   Trash2,
 } from "lucide-react";
 import { NOTIFICATION_CATEGORIES } from "utils/notificationPreferences";
-import { getRelativeTime } from "utils/relativeTime";
 
 const CATEGORY_ICONS = {
   registrations: Calendar,
@@ -25,14 +24,13 @@ const CATEGORY_ICONS = {
 };
 
 const NotificationItem = ({
-  // Fix: useDateFormatter replaces raw toLocaleDateString
-  const { formatDate, getRelativeTime } = useDateFormatter();
   notification,
   onMarkRead,
   onDelete,
   compact = false,
   showActions = true,
 }) => {
+  const { formatDate, getRelativeTime } = useDateFormatter();
   const category = notification.category || "system";
   const Icon = CATEGORY_ICONS[category] || Bell;
   const isUnread = !notification.isRead;

@@ -4,6 +4,16 @@ const SECURITY_CONFIG_KEYS = {
   CSP_CONFIGURATION: "REACT_APP_CSP_REPORT_URI",
 };
 
+const getRuntimeEnv = () => {
+  if (typeof import.meta !== "undefined" && import.meta.env) {
+    return import.meta.env;
+  }
+  if (typeof process !== "undefined" && process.env) {
+    return process.env;
+  }
+  return {};
+};
+
 export function getSecurityConfigurationWarnings(
   config = {},
   environment = "development"
@@ -37,8 +47,8 @@ export function getSecurityConfigurationWarnings(
 }
 
 export function validateSecurityConfiguration(
-  config = process.env,
-  environment = process.env.NODE_ENV
+  config = getRuntimeEnv(),
+  environment = getRuntimeEnv().NODE_ENV || getRuntimeEnv().MODE || "development"
 ) {
   const warnings = getSecurityConfigurationWarnings(
     config,
@@ -49,27 +59,18 @@ export function validateSecurityConfiguration(
     console.warn(`[Security Configuration] ${warning}`);
   });
 
-  return {
-    valid: warnings.length === 0,
-    warnings,
-    checkedKeys: Object.values(SECURITY_CONFIG_KEYS),
-  };
-}
-export const validateSecurityConfiguration = () => {
-  const isDev = import.meta.env.DEV || process.env.NODE_ENV === "development";
-  const isProd = import.meta.env.PROD || process.env.NODE_ENV === "production";
-
-  const backendUrl = import.meta.env.VITE_API_URL || "";
+  const runtimeEnv = getRuntimeEnv();
+  const isDev = runtimeEnv.DEV || environment === "development";
+  const isProd = runtimeEnv.PROD || environment === "production";
+  const backendUrl = runtimeEnv.VITE_API_URL || config.VITE_API_URL || "";
   const hasSecureProtocol = backendUrl.startsWith("https://") || backendUrl.startsWith("/");
 
-  // Check 1: HTTPS API endpoint configuration in production
   if (isProd && backendUrl && !hasSecureProtocol) {
     console.warn(
       `[Security Warning] Backend API URL is configured to use insecure protocol: "${backendUrl}". In production, HTTPS must be used.`
     );
   }
 
-  // Check 2: Content Security Policy (CSP) presence
   if (typeof document !== "undefined") {
     const hasCspMeta = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
     if (!hasCspMeta && isDev) {
@@ -79,11 +80,16 @@ export const validateSecurityConfiguration = () => {
     }
   }
 
-  // Check 3: Authentication configuration warnings if Google Client ID is placeholder
-  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+  const googleClientId = runtimeEnv.VITE_GOOGLE_CLIENT_ID || config.VITE_GOOGLE_CLIENT_ID || "";
   if (googleClientId && googleClientId.includes("your_google_client_id")) {
     console.warn(
       "[Security Warning] Google Client ID is using a placeholder value. Social login might not work."
     );
   }
-};
+
+  return {
+    valid: warnings.length === 0,
+    warnings,
+    checkedKeys: Object.values(SECURITY_CONFIG_KEYS),
+  };
+}

@@ -26,7 +26,8 @@
 
 import { useCallback, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Share2, Twitter, Linkedin, MessageCircle, Link2, Check, Eye, X, Calendar, MapPin, Mail } from "lucide-react";
+import { Share2, MessageCircle, Link2, Check, Eye, X, Calendar, MapPin, Mail } from "lucide-react";
+import { FaTwitter as Twitter, FaLinkedin as Linkedin } from "react-icons/fa";
 import useEventShare from "../../hooks/useEventShare";
 
 // ---------------------------------------------------------------------------

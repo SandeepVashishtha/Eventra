@@ -1,4 +1,3 @@
-import useDateFormatter from "hooks/useDateFormatter";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import ReactDOM from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -15,6 +14,9 @@ import {
   Activity,
   Copy,
   Star,
+  BarChart3,
+  TrendingUp,
+  ListChecks,
 } from "lucide-react";
 import CountUp from "react-countup";
 import { Link } from "react-router-dom";
@@ -505,9 +507,7 @@ const EventsEmptyState = () => (
 );
 
 /* ---------------- Main EventsTab Component ---------------- */
-const EventsTab = ({
-  const { formatDate, formatShort } = useDateFormatter();
- hostedEvents = [], onViewTicket }) => {
+const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const prefersReducedMotion = useReducedMotion();
   const staggerVariants = stagger(prefersReducedMotion);
   const { myEvents, removeRegistration, restoreRegistration, loading: myEventsLoading } = useMyEvents();

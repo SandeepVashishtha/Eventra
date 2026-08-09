@@ -8,7 +8,8 @@ import { sanitizeMarkdown } from "utils/sanitizeHtml";
 import { toast } from "react-toastify";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import useKeyboardShortcuts from "hooks/useKeyboardShortcuts";
-import { Calendar, MapPin, Clock, Tag, CalendarPlus, Link2, Check, Archive, ExternalLink, Github, Linkedin, Users } from "lucide-react";
+import { Calendar, MapPin, Clock, Tag, CalendarPlus, Link2, Check, Archive, ExternalLink, Users, ArrowLeft } from "lucide-react";
+import { FaGithub as Github, FaLinkedin as Linkedin } from "react-icons/fa";
 import { getEventStatus, isEventRegistrationClosed } from "utils/eventUtils";
 import { useAuth } from "context/AuthContext";
 import useBookmarks from "hooks/useBookmarks";
@@ -374,14 +375,6 @@ ${window.location.href}
   const registrationEnd = event.registrationEnd
   ? new Date(event.registrationEnd)
   : null;
-
-  const eventDate =
-  event.date ||
-  event.eventDate ||
-  event.startDate ||
-  null;
-
-const dateInfo = formatLocalDateTime(eventDate);
 
   const eventDate = event.date || event.eventDate || event.startDate || null;
   const dateInfo = formatEventDate(eventDate);
