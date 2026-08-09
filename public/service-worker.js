@@ -53,6 +53,11 @@ const SENSITIVE_API_PATTERNS = [
   '/api/attendances',
   '/api/my-events',
   '/api/event-registrations',
+  '/api/events/*/attendees',
+  '/api/events/*/notified-attendees',
+  '/api/events/*/registration',
+  '/api/events/*/roles',
+  '/api/events/*/waitlist',
 
   // Volunteer/organizer only
   '/api/admin/',
@@ -75,12 +80,33 @@ const SENSITIVE_API_PATTERNS = [
  * - Static configuration
  */
 const PUBLIC_API_PATTERNS = [
-  '/api/events',
   '/api/categories',
-  '/api/locations',
   '/api/config',
+  '/api/locations',
   '/api/public',
 ];
+
+const PUBLIC_EVENT_ROUTE_PATTERNS = [
+  /^\/api\/events$/,
+  /^\/api\/events\/search$/,
+  /^\/api\/events\/alternatives$/,
+  /^\/api\/events\/stream$/,
+  /^\/api\/events\/\d+$/,
+  /^\/api\/events\/\d+\/availability$/,
+  /^\/api\/events\/\d+\/seats$/,
+];
+
+function matchesPathPattern(pathname, pattern) {
+  if (pattern.includes('*')) {
+    const expression = new RegExp(`^${pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace('\\*', '[^/]+')}$`);
+    return expression.test(pathname);
+  }
+  return pathname.startsWith(pattern);
+}
+
+function isPublicEventRoute(pathname) {
+  return PUBLIC_EVENT_ROUTE_PATTERNS.some((pattern) => pattern.test(pathname));
+}
 
 /**
  * Check if an API endpoint should be cached based on security rules.
@@ -92,7 +118,11 @@ const PUBLIC_API_PATTERNS = [
  * @param {Response} response - The response object (to check headers)
  * @returns {boolean} True if safe to cache, false if should skip cache
  */
-function isSafeToCache(pathname, response) {
+function isSafeToCache(pathname, response, request) {
+  if (request?.headers?.has('Authorization') || request?.headers?.has('Cookie')) {
+    return false;
+  }
+
   // Always respect Cache-Control header from server (most important)
   const cacheControl = response?.headers?.get('Cache-Control') || '';
 
@@ -108,9 +138,13 @@ function isSafeToCache(pathname, response) {
 
   // SECURITY: Never cache sensitive/authenticated endpoints
   for (const pattern of SENSITIVE_API_PATTERNS) {
-    if (pathname.startsWith(pattern)) {
+    if (matchesPathPattern(pathname, pattern)) {
       return false;
     }
+  }
+
+  if (isPublicEventRoute(pathname)) {
+    return true;
   }
 
   // Only cache endpoints explicitly marked as public
@@ -444,7 +478,7 @@ function handleApiFetch(event, requestUrl) {
     fetch(event.request)
       .then((response) => {
         // SECURITY: Only cache responses that are safe according to security rules
-        if (response.status === 200 && isSafeToCache(requestUrl.pathname, response)) {
+        if (response.status === 200 && isSafeToCache(requestUrl.pathname, response, event.request)) {
           const responseCopy = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
             log(`[Service Worker] Caching public API response: ${requestUrl.pathname}`);
@@ -459,7 +493,7 @@ function handleApiFetch(event, requestUrl) {
         // Only serve cached response if it was safe to cache (public endpoint)
         return caches.match(event.request).then((cachedResponse) => {
           // Only return cached response if it's from a public endpoint
-          if (cachedResponse && isSafeToCache(requestUrl.pathname, cachedResponse)) {
+          if (cachedResponse && isSafeToCache(requestUrl.pathname, cachedResponse, event.request)) {
             log(`[Service Worker] Serving cached public API response: ${requestUrl.pathname}`);
             return cachedResponse;
           }
