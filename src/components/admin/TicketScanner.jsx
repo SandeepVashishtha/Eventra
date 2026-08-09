@@ -221,7 +221,14 @@ export default function TicketScanner() {
     } catch {
       if (decodedText.startsWith("eyJ") && decodedText.split(".").length === 3) {
         try {
-          const payload = JSON.parse(atob(decodedText.split(".")[1]));
+          // JWT payloads are base64url (RFC 4648): '-'/'_' instead of '+'/'/'
+          // and no padding. Convert to standard base64 before atob.
+          const encodedPayload = decodedText.split(".")[1];
+          const b64 = encodedPayload
+            .replace(/-/g, "+")
+            .replace(/_/g, "/")
+            .padEnd(Math.ceil(encodedPayload.length / 4) * 4, "=");
+          const payload = JSON.parse(atob(b64));
           const activeEvent = events.find(e => String(e.id) === String(selectedEventId));
           const ticketEventId = payload.eventId || payload.event_id;
           if (ticketEventId && String(ticketEventId) !== String(selectedEventId)) {
