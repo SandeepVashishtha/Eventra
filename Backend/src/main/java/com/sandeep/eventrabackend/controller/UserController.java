@@ -6,6 +6,7 @@ import com.sandeep.eventrabackend.dto.request.UserProfileUpdateRequest;
 import com.sandeep.eventrabackend.dto.response.ErrorResponse;
 import com.sandeep.eventrabackend.dto.response.MyRegisteredEventResponse;
 import com.sandeep.eventrabackend.dto.response.UserProfileResponse;
+import com.sandeep.eventrabackend.dto.response.UserAchievementsResponse;
 import com.sandeep.eventrabackend.exception.UserAlreadyExistsException;
 import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.UserRepository;
@@ -238,6 +239,16 @@ public class UserController {
             Authentication authentication) {
 
         return ResponseEntity.ok(eventService.getRegisteredEventsForUser(authentication.getName()));
+    }
+
+    @GetMapping("/achievements")
+    @Operation(
+            summary = "Get authenticated user achievements",
+            description = "Returns achievement progress for the currently authenticated JWT user.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<UserAchievementsResponse> getUserAchievements(Authentication authentication) {
+        return ResponseEntity.ok(eventService.getAchievementsForUser(authentication.getName()));
     }
 
     @PutMapping("/change-password")
