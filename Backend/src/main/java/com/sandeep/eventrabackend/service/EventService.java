@@ -6,8 +6,10 @@ import com.sandeep.eventrabackend.dto.request.EventUpdateRequest;
 import com.sandeep.eventrabackend.dto.response.EventAvailabilityResponse;
 import com.sandeep.eventrabackend.dto.response.AttendeeDirectoryResponse;
 import com.sandeep.eventrabackend.dto.response.EventResponse;
+import com.sandeep.eventrabackend.dto.response.EventRegistrantResponse;
 import com.sandeep.eventrabackend.dto.response.MyRegisteredEventResponse;
 import com.sandeep.eventrabackend.dto.response.PagedResponse;
+import com.sandeep.eventrabackend.dto.response.RegistrantsPageResponse;
 import com.sandeep.eventrabackend.dto.response.RegistrationResponse;
 import com.sandeep.eventrabackend.dto.response.WaitlistResponse;
 import com.sandeep.eventrabackend.exception.EventFullException;
@@ -663,6 +665,34 @@ public class EventService {
                                 .toList();
         }
 
+        /**
+         * Returns a paginated list of event registrants for organizer/admin export.
+         *
+         * <p>Pages are 1-based to match the frontend export contract
+         * ({@code src/Pages/Events/EventDetails.js} uses {@code page} starting at 1).
+         */
+        @Transactional(readOnly = true)
+        public RegistrantsPageResponse getEventRegistrants(Long eventId, String userEmail, int page, int limit) {
+                eventRepository.findById(eventId)
+                                .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + eventId));
+
+                eventRoleService.requireRole(eventId, userEmail, EventRole.ORGANIZER);
+
+                int safePage = Math.max(page, 1);
+                int safeLimit = Math.min(Math.max(limit, 1), 1000);
+                Pageable pageable = PageRequest.of(safePage - 1, safeLimit);
+
+                Page<EventRegistration> result = eventRegistrationRepository
+                                .findByEvent_Id(eventId, pageable);
+
+                return RegistrantsPageResponse.builder()
+                                .data(result.getContent().stream()
+                                                .map(this::toRegistrantResponse)
+                                                .toList())
+                                .totalPages(result.getTotalPages())
+                                .build();
+        }
+
         @Transactional
         public void leaveWaitlist(Long eventId, String userEmail) {
                 EventWaitlist entry = eventWaitlistRepository
@@ -1020,6 +1050,21 @@ public class EventService {
                                 .position(entry.getPosition())
                                 .status(entry.getStatus())
                                 .joinedAt(entry.getJoinedAt())
+                                .build();
+        }
+
+        private EventRegistrantResponse toRegistrantResponse(EventRegistration registration) {
+                User user = registration.getUser();
+                String displayName = (user.getFirstName() + " " + user.getLastName()).trim();
+
+                return EventRegistrantResponse.builder()
+                                .userId(user.getId())
+                                .name(displayName.isBlank() ? user.getUsername() : displayName)
+                                .email(user.getEmail())
+                                .username(user.getUsername())
+                                .registeredAt(registration.getRegisteredAt())
+                                .status(registration.getStatus())
+                                .seatId(registration.getSeatId())
                                 .build();
         }
 
