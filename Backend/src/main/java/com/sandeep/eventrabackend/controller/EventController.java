@@ -2,12 +2,14 @@ package com.sandeep.eventrabackend.controller;
 
 import com.sandeep.eventrabackend.dto.request.CancelEventRequest;
 import com.sandeep.eventrabackend.dto.request.EventCreateRequest;
+import com.sandeep.eventrabackend.dto.request.EventScheduleRequest;
 import com.sandeep.eventrabackend.dto.request.EventUpdateRequest;
 import com.sandeep.eventrabackend.dto.request.RegistrationRequest;
 import com.sandeep.eventrabackend.dto.response.ErrorResponse;
 import com.sandeep.eventrabackend.dto.response.AttendeeDirectoryResponse;
 import com.sandeep.eventrabackend.dto.response.EventAvailabilityResponse;
 import com.sandeep.eventrabackend.dto.response.EventResponse;
+import com.sandeep.eventrabackend.dto.response.EventScheduleResponse;
 import com.sandeep.eventrabackend.dto.response.PagedResponse;
 import com.sandeep.eventrabackend.dto.response.RegistrationResponse;
 import com.sandeep.eventrabackend.dto.response.WaitlistResponse;
@@ -88,6 +90,23 @@ public class EventController {
 
                 EventResponse updatedEvent = eventService.updateEvent(id, request, authentication.getName());
                 return ResponseEntity.ok(updatedEvent);
+        }
+
+        @GetMapping("/{id}/schedule")
+        @Operation(summary = "Get event schedule", description = "Returns the persisted schedule for an event.")
+        public ResponseEntity<EventScheduleResponse> getEventSchedule(
+                        @Parameter(description = "ID of the event") @PathVariable Long id) {
+                return ResponseEntity.ok(eventService.getEventSchedule(id));
+        }
+
+        @PatchMapping("/{id}/schedule")
+        @PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN', 'SUPER_ADMIN')")
+        @Operation(summary = "Update event schedule", description = "Persists the event schedule start time.", security = @SecurityRequirement(name = "bearerAuth"))
+        public ResponseEntity<EventScheduleResponse> updateEventSchedule(
+                        @Parameter(description = "ID of the event") @PathVariable Long id,
+                        @Valid @RequestBody EventScheduleRequest request,
+                        Authentication authentication) {
+                return ResponseEntity.ok(eventService.updateEventSchedule(id, request, authentication.getName()));
         }
 
         // ── GET /api/events/stream ───────────────────────────────────────────────

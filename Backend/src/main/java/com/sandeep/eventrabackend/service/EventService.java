@@ -2,10 +2,12 @@ package com.sandeep.eventrabackend.service;
 
 import com.sandeep.eventrabackend.dto.request.CancelEventRequest;
 import com.sandeep.eventrabackend.dto.request.EventCreateRequest;
+import com.sandeep.eventrabackend.dto.request.EventScheduleRequest;
 import com.sandeep.eventrabackend.dto.request.EventUpdateRequest;
 import com.sandeep.eventrabackend.dto.response.EventAvailabilityResponse;
 import com.sandeep.eventrabackend.dto.response.AttendeeDirectoryResponse;
 import com.sandeep.eventrabackend.dto.response.EventResponse;
+import com.sandeep.eventrabackend.dto.response.EventScheduleResponse;
 import com.sandeep.eventrabackend.dto.response.MyRegisteredEventResponse;
 import com.sandeep.eventrabackend.dto.response.PagedResponse;
 import com.sandeep.eventrabackend.dto.response.RegistrationResponse;
@@ -458,6 +460,39 @@ public class EventService {
 
                 Event saved = eventRepository.save(event);
                 return toEventResponse(saved);
+        }
+
+        @Transactional(readOnly = true)
+        public EventScheduleResponse getEventSchedule(Long id) {
+                Event event = eventRepository.findById(id)
+                                .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + id));
+                return toEventScheduleResponse(event, null);
+        }
+
+        @Transactional
+        public EventScheduleResponse updateEventSchedule(Long id, EventScheduleRequest request, String userEmail) {
+                Event event = eventRepository.findById(id)
+                                .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + id));
+                eventRoleService.requireRole(id, userEmail, EventRole.ORGANIZER);
+
+                if (request.getStartDate() == null) {
+                        throw new IllegalArgumentException("Schedule startDate is required.");
+                }
+                if (request.getEndDate() != null && request.getEndDate().isBefore(request.getStartDate())) {
+                        throw new IllegalArgumentException("Schedule endDate must be after startDate.");
+                }
+
+                event.setEventDate(request.getStartDate());
+                Event saved = eventRepository.save(event);
+                return toEventScheduleResponse(saved, request.getEndDate());
+        }
+
+        private EventScheduleResponse toEventScheduleResponse(Event event, LocalDateTime endDate) {
+                return EventScheduleResponse.builder()
+                                .eventId(event.getId())
+                                .startDate(event.getEventDate())
+                                .endDate(endDate != null ? endDate : event.getEventDate())
+                                .build();
         }
 
         /**
