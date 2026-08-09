@@ -44,7 +44,7 @@ public class ProjectService {
                 .category(request.getCategory())
                 .thumbnailUrl(request.getThumbnailUrl())
                 .githubUrl(request.getGithubUrl())
-                .createdBy(user)
+                .ownerId(user.getId())
                 .build();
 
         Project savedProject = projectRepository.save(project);
