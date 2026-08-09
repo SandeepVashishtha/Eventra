@@ -68,11 +68,18 @@ const usePomodoroStorage = ({ mode, timeLeft, isActive, setMode, setTimeLeft, se
 
 const usePomodoroInterval = ({ isActive, timeLeft, setTimeLeft, setIsActive }) => {
   const timerRef = useRef(null);
+  const lastTickRef = useRef(Date.now());
 
   useEffect(() => {
     if (isActive && timeLeft > 0) {
+      lastTickRef.current = Date.now();
       timerRef.current = setInterval(() => {
-        setTimeLeft((prev) => prev - 1);
+        const now = Date.now();
+        const elapsedSeconds = Math.floor((now - lastTickRef.current) / 1000);
+        if (elapsedSeconds > 0) {
+          lastTickRef.current = now;
+          setTimeLeft((prev) => Math.max(0, prev - elapsedSeconds));
+        }
       }, 1000);
     } else if (timeLeft === 0 && isActive) {
       setIsActive(false);
@@ -81,6 +88,26 @@ const usePomodoroInterval = ({ isActive, timeLeft, setTimeLeft, setIsActive }) =
 
     return () => clearInterval(timerRef.current);
   }, [isActive, timeLeft, setTimeLeft, setIsActive]);
+
+  useEffect(() => {
+    if (!isActive) return;
+
+    const reconcile = () => {
+      const now = Date.now();
+      const elapsedSeconds = Math.floor((now - lastTickRef.current) / 1000);
+      if (elapsedSeconds > 0) {
+        lastTickRef.current = now;
+        setTimeLeft((prev) => Math.max(0, prev - elapsedSeconds));
+      }
+    };
+
+    document.addEventListener("visibilitychange", reconcile);
+    window.addEventListener("focus", reconcile);
+    return () => {
+      document.removeEventListener("visibilitychange", reconcile);
+      window.removeEventListener("focus", reconcile);
+    };
+  }, [isActive, setTimeLeft]);
 };
 
 const ModeSelectors = ({ mode, switchMode }) => (
