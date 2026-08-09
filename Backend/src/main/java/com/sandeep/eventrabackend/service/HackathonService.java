@@ -13,6 +13,7 @@ import com.sandeep.eventrabackend.repository.HackathonRegistrationRepository;
 import com.sandeep.eventrabackend.repository.HackathonRepository;
 import com.sandeep.eventrabackend.repository.UserRepository;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.security.access.AccessDeniedException;
 import com.sandeep.eventrabackend.model.Role;
@@ -129,7 +130,11 @@ public class HackathonService {
                 .status("CONFIRMED")
                 .build();
 
-        registration = hackathonRegistrationRepository.save(registration);
+        try {
+            registration = hackathonRegistrationRepository.saveAndFlush(registration);
+        } catch (DataIntegrityViolationException ex) {
+            throw new RegistrationConflictException("You are already registered for this hackathon.");
+        }
 
         return HackathonRegistrationResponse.builder()
                 .registrationId(registration.getId())
