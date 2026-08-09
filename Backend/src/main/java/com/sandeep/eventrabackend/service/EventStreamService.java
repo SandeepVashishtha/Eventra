@@ -77,9 +77,13 @@ public class EventStreamService {
         for (SseEmitter emitter : emitters) {
             try {
                 emitter.send(SseEmitter.event().name(eventName).data(payload));
-            } catch (IOException ex) {
+            } catch (Exception ex) {
                 removeEmitter(normalized, emitter);
-                emitter.completeWithError(ex);
+                try {
+                    emitter.completeWithError(ex);
+                } catch (IllegalStateException ignored) {
+                    // Emitter already completed or closed; nothing left to clean up.
+                }
             }
         }
     }
