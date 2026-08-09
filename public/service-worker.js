@@ -534,13 +534,14 @@ function handleStaticFetch(event, requestUrl) {
           .then((response) => {
             if (response && response.status === 200 && response.type === 'basic') {
               caches.open(CACHE_NAME).then((cache) => {
+                cache.put(event.request, response).catch(() => console.warn("[SW] Cache put failed"));
                 cache.put(event.request, response).catch((err) => {
       console.warn('[Service Worker] Cache put failed:', err);
     });
               });
             }
           })
-          .catch(() => {/* Ignore bg fetch failures when offline */ });
+          .catch(() => console.warn("[SW] Background fetch failed"));
 
         return cachedResponse;
       }

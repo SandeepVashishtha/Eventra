@@ -205,6 +205,7 @@ const ModernTestimonialTrain = () => {
           text: testimonial.quote,
           url: testimonial.shareUrl,
         });
+      } catch { console.warn("[Testimonials] Share handler failed"); }
       } catch (err) {
         if (err.name !== 'AbortError') {
           console.error('Failed to share testimonial:', err);
