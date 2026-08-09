@@ -74,9 +74,7 @@ export const getDeviceFingerprint = () => {
 
     const fingerprintRaw = `${screenInfo}_${navInfo}_${canvasHash}`;
 
-    // Per-origin salt: different for each deployment and never a static literal
-    // in the bundle. Combining the origin with a domain-specific namespace
-    // avoids salt collisions if two deployments share the same hostname root.
+    // Per-origin salt — stable across sessions and UTC day boundaries.
     const salt = `eventra:fingerprint:${window.location.origin}`;
 
     _memoizedFingerprint = CryptoJS.SHA256(fingerprintRaw + salt).toString();

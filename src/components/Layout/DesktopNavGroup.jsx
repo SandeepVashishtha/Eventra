@@ -30,6 +30,7 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown }) 
     return () => {
       window.removeEventListener("resize", updatePosition);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   const handleKeyDown = (event) => {
@@ -55,7 +56,7 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown }) 
         aria-haspopup="menu"
         aria-controls={menuId}
         // 🔥 FIX 3: Added focus-visible states for keyboard accessibility
-        className={`relative group flex items-center gap-1 text-[12px] xl:text-[13px] font-medium transition-all duration-200 whitespace-nowrap px-2.5 py-1.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-900 ${
+        className={`relative group flex items-center gap-1 text-[11px] xl:text-[12px] font-medium transition-all duration-200 whitespace-nowrap px-2.5 py-1.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-900 ${
           isActive || isOpen
             ? "text-indigo-600 dark:text-indigo-400 font-semibold"
             : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
@@ -77,7 +78,7 @@ const DesktopNavGroup = ({ item, isActive, isOpen, onToggle, setOpenDropdown }) 
             />
             <motion.span
               layoutId="activeBoxGlow"
-              className="absolute -bottom-0.5 left-3 right-3 h-[2px] bg-gradient-to-r from-indigo-500/0 via-indigo-500 to-indigo-500/0 dark:via-indigo-400 blur-[1.5px] -z-0"
+              className="absolute -bottom-0.5 left-3 right-3 h-[2px] bg-linear-to-r from-indigo-500/0 via-indigo-500 to-indigo-500/0 dark:via-indigo-400 blur-[1.5px] -z-0"
               transition={{ type: "spring", stiffness: 380, damping: 30 }}
             />
           </>

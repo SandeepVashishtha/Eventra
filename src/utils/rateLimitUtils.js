@@ -10,7 +10,7 @@
 /** sessionStorage key names for persisted rate-limit state. */
 export const STORAGE_KEY_ATTEMPTS = 'eventra:login:attempts';
 export const STORAGE_KEY_LOCKOUT_UNTIL = 'eventra:login:lockoutUntil';
-
+export const STORAGE_KEY_RESET_LAST_SUBMIT = 'eventra:reset:lastSubmit';
 /** Maximum number of failed login attempts before a lockout is imposed. */
 export const MAX_LOGIN_ATTEMPTS = 5;
 
@@ -30,6 +30,12 @@ export function readPersistedRateLimit() {
     const lockoutUntil = rawLockout !== null ? parseInt(rawLockout, 10) : 0;
 
     if (!Number.isFinite(attempts) || attempts < 0) return { attempts: 0, lockoutUntil: 0 };
+
+    // If lockout has expired, reset both attempts and lockout
+    if (Number.isFinite(lockoutUntil) && lockoutUntil > 0 && lockoutUntil <= Date.now()) {
+      clearPersistedRateLimit();
+      return { attempts: 0, lockoutUntil: 0 };
+    }
 
     // Discard expired lockouts — don't start with a stale "locked" state
     const validLockout = Number.isFinite(lockoutUntil) && lockoutUntil > Date.now()

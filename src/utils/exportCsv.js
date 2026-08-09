@@ -66,8 +66,12 @@ const sanitizeCSVField = (field) => {
  * @param {string} [filename]       - Desired download filename (will be sanitized)
  */
 export const exportAttendeesToCSV = (attendees, filename = "event-attendees.csv") => {
+  if (typeof window === "undefined" || typeof document === "undefined") return;
   if (!attendees || attendees.length === 0) {
-    return;
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("eventra-toast", { detail: { message: "No attendees to export", type: "warning" } }));
+    }
+    return { success: false, reason: "empty" };
   }
 
   // Sanitize the filename: strip OS reserved characters and path separators.
@@ -87,7 +91,8 @@ export const exportAttendeesToCSV = (attendees, filename = "event-attendees.csv"
     .map((row) => row.map(sanitizeCSVField).join(","))
     .join("\n");
 
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const BOM = "\uFEFF";
+  const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
   const url = window.URL.createObjectURL(blob);
   const link = document.createElement("a");
 
@@ -126,6 +131,7 @@ export const exportAttendeesToCSV = (attendees, filename = "event-attendees.csv"
  * @param {string} surveyTitle       - Raw title of the survey (will be sanitized)
  */
 export const exportSurveyToCSV = (questions, responses, surveyTitle = "Survey") => {
+  if (typeof window === "undefined" || typeof document === "undefined") return;
   if (!questions || questions.length === 0 || !responses || responses.length === 0) {
     return;
   }
@@ -141,14 +147,15 @@ export const exportSurveyToCSV = (questions, responses, surveyTitle = "Survey") 
   // Rows: Each anonymous attendee submission
   const rows = responses.map((resp) => [
     resp.timestamp || "",
-    ...questions.map((q) => resp.answers[q.id] ?? ""),
+    ...questions.map((q) => resp.answers?.[q.id] ?? ""),
   ]);
 
   const csvContent = [headers, ...rows]
     .map((row) => row.map(sanitizeCSVField).join(","))
     .join("\n");
 
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const BOM = "\uFEFF";
+  const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
   const url = window.URL.createObjectURL(blob);
   const link = document.createElement("a");
 
@@ -174,6 +181,7 @@ export const exportSurveyToCSV = (questions, responses, surveyTitle = "Survey") 
  * @param {string} [filename]        - Desired download filename (will be sanitized)
  */
 export const exportEventsToCSV = (events, filename = "eventra-events.csv") => {
+  if (typeof window === "undefined" || typeof document === "undefined") return;
   if (!events || events.length === 0) {
     return;
   }
@@ -213,7 +221,8 @@ export const exportEventsToCSV = (events, filename = "eventra-events.csv") => {
     .map((row) => row.map(sanitizeCSVField).join(","))
     .join("\n");
 
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const BOM = "\uFEFF";
+  const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
   const url = window.URL.createObjectURL(blob);
   const link = document.createElement("a");
 

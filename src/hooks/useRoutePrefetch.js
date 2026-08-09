@@ -2,12 +2,15 @@
  * @fileoverview useRoutePrefetch - Route prefetching hook based on current location
  * @module hooks/useRoutePrefetch
  */
-import { useEffect, useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { prefetchRoute } from "../utils/prefetchUtils";
 
 /**
-<<<<<<< HEAD
+ * useRoutePrefetch Hook
+ *
+ * Automatically pre-fetches high-priority routes based on the current location.
+ * For example, if the user is on the Home page, we might pre-fetch the Explore page.
  * A custom React hook that automatically prefetches high-priority
  * routes based on the current page location.
  *
@@ -20,20 +23,16 @@ import { prefetchRoute } from "../utils/prefetchUtils";
  *
  * @example
  * const { prefetchManual } = useRoutePrefetch();
- * // Manually prefetch a route on hover
  * prefetchManual(() => import('../Pages/Events/EventDetails'), 'details');
-=======
- * useRoutePrefetch Hook
- *
- * Automatically pre-fetches high-priority routes based on the current location.
- * For example, if the user is on the Home page, we might pre-fetch the Explore page.
->>>>>>> upstream/master
  */
 
-export const useRoutePrefetch = (config = {}) => {
+export const useRoutePrefetch = () => {
   const location = useLocation();
 
   const prefetch = useCallback((importFn, key) => {
+    // Guard: window is only available in browser environments.
+    if (typeof window === "undefined") return;
+
     // Wrap in requestIdleCallback to not block the main thread
     if ("requestIdleCallback" in window) {
       window.requestIdleCallback(() => prefetchRoute(importFn, key));

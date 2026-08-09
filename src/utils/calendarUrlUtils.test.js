@@ -9,10 +9,28 @@
  * URL values are deterministic regardless of the test runner's locale.
  */
 
+import { describe, test, expect} from "vitest";
 import {
   getGoogleCalendarUrl,
   getOutlookCalendarUrl,
-} from './calendarUrlUtils';
+  getYahooCalendarUrl,
+  generateIcsFileBlobUrl,
+  extractMeetingLink,
+} from './calendarUrlUtils.js';
+
+// Stub standard Web APIs that are missing or restricted in test runners
+if (typeof global.Blob === 'undefined') {
+  global.Blob = class Blob {
+    constructor(content, options) {
+      this.content = content;
+      this.options = options;
+    }
+  };
+}
+if (typeof global.URL === 'undefined' || typeof global.URL.createObjectURL === 'undefined') {
+  global.URL = global.URL || class URL {};
+  global.URL.createObjectURL = () => `blob:http://localhost/${Math.random().toString(36).substring(2)}`;
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -129,6 +147,18 @@ describe('getGoogleCalendarUrl — duration', () => {
     const url = getGoogleCalendarUrl(mkEvent({ durationMinutes: 0 }), 'UTC');
     const { durationMs } = parseDates(url);
     expect(durationMs).toBe(60 * 60 * 1000);
+  });
+
+  test('negative durationMinutes falls back to 60 minutes', () => {
+    const url = getGoogleCalendarUrl(mkEvent({ durationMinutes: -30 }), 'UTC');
+    const { durationMs } = parseDates(url);
+    expect(durationMs).toBe(60 * 60 * 1000);
+  });
+
+  test('string durationMinutes is parsed correctly', () => {
+    const url = getGoogleCalendarUrl(mkEvent({ durationMinutes: '120' }), 'UTC');
+    const { durationMs } = parseDates(url);
+    expect(durationMs).toBe(120 * 60 * 1000);
   });
 });
 
@@ -257,7 +287,177 @@ describe('getOutlookCalendarUrl — duration', () => {
 });
 
 // ---------------------------------------------------------------------------
-// 5. Edge cases
+// 5. getYahooCalendarUrl — basic structure and duration
+// ---------------------------------------------------------------------------
+describe('getYahooCalendarUrl', () => {
+  test('returns Yahoo calendar url structure', () => {
+    const url = getYahooCalendarUrl(mkEvent());
+    expect(url).toContain('calendar.yahoo.com');
+    expect(url).toContain('TITLE=');
+    expect(url).toContain('ST=');
+    expect(url).toContain('ET=');
+  });
+
+  test('returns empty string on null event', () => {
+    expect(getYahooCalendarUrl(null)).toBe('');
+  });
+
+  test('date parameters are in compact UTC format', () => {
+    const url = getYahooCalendarUrl(mkEvent(), 'UTC');
+    const match = url.match(/ST=([^&]+)/);
+    expect(match).not.toBeNull();
+    expect(decodeURIComponent(match[1])).toMatch(/^\d{8}T\d{6}Z$/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 6. generateIcsFileBlobUrl — ICS payload content
+// ---------------------------------------------------------------------------
+describe('generateIcsFileBlobUrl', () => {
+  test('returns standard blob URL string', () => {
+    const url = generateIcsFileBlobUrl(mkEvent());
+    expect(url).toBeTypeOf('string');
+    expect(url).toContain('blob:');
+  });
+
+  test('returns null on null event', () => {
+    expect(generateIcsFileBlobUrl(null)).toBeNull();
+  });
+
+  test('emits a VALARM reflecting the requested reminder minutes', async () => {
+    const originalCreate = URL.createObjectURL;
+    const captured = [];
+    URL.createObjectURL = (blob) => {
+      captured.push(blob);
+      return 'blob:mock';
+    };
+    try {
+      const url = generateIcsFileBlobUrl(mkEvent(), undefined, 10);
+      expect(url).toBe('blob:mock');
+      expect(captured.length).toBe(1);
+      const content = await captured[0].text();
+      expect(content).toContain('BEGIN:VALARM');
+      expect(content).toContain('TRIGGER:-PT10M');
+      expect(content).toContain('ACTION:DISPLAY');
+      expect(content).toContain('END:VALARM');
+    } finally {
+      URL.createObjectURL = originalCreate;
+    }
+  });
+
+  test('omits VALARM when no reminder minutes are requested', async () => {
+    const originalCreate = URL.createObjectURL;
+    const captured = [];
+    URL.createObjectURL = (blob) => {
+      captured.push(blob);
+      return 'blob:mock';
+    };
+    try {
+      generateIcsFileBlobUrl(mkEvent(), undefined, 0);
+      const content = await captured[0].text();
+      expect(content).not.toContain('VALARM');
+    } finally {
+      URL.createObjectURL = originalCreate;
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 7. extractMeetingLink — regex matching
+// ---------------------------------------------------------------------------
+describe('extractMeetingLink', () => {
+  test('matches valid zoom links', () => {
+    const desc = 'Please join via Zoom: https://us02web.zoom.us/j/123456789';
+    expect(extractMeetingLink(desc)).toBe('https://us02web.zoom.us/j/123456789');
+  });
+
+  test('matches valid teams links', () => {
+    const desc = 'Join Teams: https://teams.microsoft.com/l/meetup-join/abc';
+    expect(extractMeetingLink(desc)).toBe('https://teams.microsoft.com/l/meetup-join/abc');
+  });
+
+  test('matches valid Google Meet links', () => {
+    const desc = 'Join Google Meet: https://meet.google.com/abc-defg-hij';
+    expect(extractMeetingLink(desc)).toBe('https://meet.google.com/abc-defg-hij');
+  });
+
+  test('returns null for descriptions without matching URLs', () => {
+    expect(extractMeetingLink('Event will happen in room 302')).toBeNull();
+    expect(extractMeetingLink(null)).toBeNull();
+    expect(extractMeetingLink(123)).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 9. ISO eventDate fallback (issue 12459)
+// ---------------------------------------------------------------------------
+// Real API events carry only a full ISO timestamp (eventDate) with no separate
+// event.time. Calendar URLs must still be generated from it instead of the
+// broken date-only fallback ("...undefinedT000000Z/...").
+describe('calendarUrlUtils — ISO eventDate fallback', () => {
+  const parseStartMs = (url) => {
+    const match = url.match(/dates=([^&]+)/);
+    if (!match) return null;
+    const startStr = decodeURIComponent(match[1]).split('/')[0];
+    const iso = `${startStr.substring(0, 4)}-${startStr.substring(4, 6)}-${startStr.substring(6, 8)}T${startStr.substring(9, 11)}:${startStr.substring(11, 13)}:${startStr.substring(13, 15)}Z`;
+    return new Date(iso).getTime();
+  };
+
+  const isoEvent = () =>
+    mkEvent({ date: undefined, time: undefined, eventDate: '2026-06-15T10:00:00' });
+
+  test('google URL derives a valid start from eventDate (not "undefined")', () => {
+    const url = getGoogleCalendarUrl(isoEvent(), 'UTC');
+    expect(url).toContain('dates=');
+    expect(url).not.toContain('undefined');
+    const startDate = new Date(parseStartMs(url));
+    expect(startDate.getUTCHours()).toBe(10);
+    expect(startDate.getUTCMinutes()).toBe(0);
+  });
+
+  test('google URL duration honours durationMinutes with ISO-only event', () => {
+    const event = isoEvent();
+    event.durationMinutes = 180;
+    const url = getGoogleCalendarUrl(event, 'UTC');
+    const startMs = parseStartMs(url);
+    const endMatch = decodeURIComponent(url.match(/dates=([^&]+)/)[1]).split('/')[1];
+    const endIso = `${endMatch.substring(0, 4)}-${endMatch.substring(4, 6)}-${endMatch.substring(6, 8)}T${endMatch.substring(9, 11)}:${endMatch.substring(11, 13)}:${endMatch.substring(13, 15)}Z`;
+    expect(new Date(endIso).getTime() - startMs).toBe(180 * 60 * 1000);
+  });
+
+  test('outlook URL derives valid start/end from eventDate', () => {
+    const url = getOutlookCalendarUrl(isoEvent(), 'UTC');
+    expect(url).toContain('startdt=');
+    expect(url).not.toContain('undefined');
+    const startdt = decodeURIComponent(url.match(/startdt=([^&]+)/)[1]);
+    expect(startdt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/);
+    expect(startdt.startsWith('2026-06-15T10:')).toBe(true);
+  });
+
+  test('yahoo URL derives valid start from eventDate', () => {
+    const url = getYahooCalendarUrl(isoEvent(), 'UTC');
+    expect(url).toContain('ST=');
+    expect(url).not.toContain('undefined');
+    expect(decodeURIComponent(url.match(/ST=([^&]+)/)[1])).toMatch(/^\d{8}T\d{6}Z$/);
+  });
+
+  test('explicit offset timestamp (Z) is respected directly', () => {
+    const event = mkEvent({ date: undefined, time: undefined, eventDate: '2026-06-15T10:00:00Z' });
+    const startDate = new Date(parseStartMs(getGoogleCalendarUrl(event, 'UTC')));
+    expect(startDate.getUTCHours()).toBe(10);
+  });
+
+  test('no date and no timestamp → legacy fallback (no crash, no undefined leak)', () => {
+    const event = mkEvent({ date: undefined, time: undefined });
+    const url = getGoogleCalendarUrl(event);
+    expect(typeof url).toBe('string');
+    expect(url).not.toContain('undefined');
+    expect(url).toContain(encodeURIComponent(event.title));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 10. Edge cases
 // ---------------------------------------------------------------------------
 describe('calendarUrlUtils — edge cases', () => {
   test('event with missing date returns a fallback URL string (not empty)', () => {

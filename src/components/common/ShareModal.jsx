@@ -1,4 +1,5 @@
-import { memo, useCallback, useEffect, useMemo } from "react";
+import { memo, useCallback, useMemo } from "react";
+import useModalManager from "hooks/useModalManager";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Copy,
@@ -7,12 +8,12 @@ import {
   Mail,
   MessageCircle,
   Send,
+  Share2,
   Twitter,
   X,
 } from "lucide-react";
-import { toast } from "react-toastify";
-import { isValidShareUrl } from "../../utils/shareUtils";
-
+import useEventShare from "hooks/useEventShare";
+import { createShareModalData } from "utils/shareModalUtils.js";
 const ModalCloseButton = memo(({ onClick }) => (
   <button
     type="button"
@@ -27,50 +28,22 @@ const ModalCloseButton = memo(({ onClick }) => (
 ModalCloseButton.displayName = "ModalCloseButton";
 
 const ShareModal = ({ isOpen, onClose, event }) => {
+  const { modalRef: containerRef } = useModalManager(isOpen, onClose);
   const shareData = useMemo(() => {
-    if (!event) {
-      return null;
-    }
-
-    const shareUrl = `${window.location.origin}/events/${event.id}`;
-    if (!isValidShareUrl(shareUrl)) {
-      console.warn("[ShareModal] Rejected invalid share URL:", shareUrl);
-      return null;
-    }
-    const shareText = `Check out this event: ${event.title}`;
-
-    return {
-      title: event.title,
-      image: event.image,
-      description: event.description ?? "",
-      shareUrl,
-      shareText,
-      links: {
-        twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`,
-        linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`,
-        whatsapp: `https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`,
-        facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
-        telegram: `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`,
-        email: `mailto:?subject=${encodeURIComponent(event.title)}&body=${encodeURIComponent(`${shareText}\n\n${shareUrl}`)}`,
-      },
-    };
+    return createShareModalData(event);
   }, [event]);
+  const { canNativeShare, copyInviteLink, isSharing, shareEvent } = useEventShare({
+    fallbackMessage: "Event invite link copied to clipboard",
+  });
+
+  const shareViaSystem = useCallback(async () => {
+    await shareEvent(shareData);
+  }, [shareData, shareEvent]);
 
   const copyLink = useCallback(async () => {
     if (!shareData?.shareUrl) return;
-
-    try {
-      if (!navigator?.clipboard) {
-        throw new Error("Clipboard API unavailable.");
-      }
-
-      await navigator.clipboard.writeText(shareData.shareUrl);
-      toast.success("Link copied to clipboard");
-    } catch (error) {
-      console.error("Failed to copy share link:", error);
-      toast.error("Could not copy the link");
-    }
-  }, [shareData]);
+    await copyInviteLink(shareData.shareUrl);
+  }, [copyInviteLink, shareData]);
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -82,35 +55,24 @@ const ShareModal = ({ isOpen, onClose, event }) => {
     };
 
     window.addEventListener("keydown", handleEsc);
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      window.removeEventListener("keydown", handleEsc);
-      document.body.style.overflow = "";
-    };
+    useScrollLock(isOpen);
   }, [isOpen, onClose]);
 
   return (
     <AnimatePresence>
       {isOpen && shareData ? (
         <motion.div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 px-4 py-6 backdrop-blur-sm"
+          ref={containerRef}
           role="dialog"
           aria-modal="true"
           aria-labelledby="share-modal-title"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
+          className="relative w-full max-w-md rounded-3xl border border-slate-100/10 bg-white p-6 shadow-2xl dark:border-slate-800/50 dark:bg-gray-900"
+          initial={{ opacity: 0, scale: 0.96, y: 12 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.96, y: 12 }}
+          transition={{ duration: 0.2 }}
+          onClick={(e) => e.stopPropagation()}
         >
-          <motion.div
-            className="relative w-full max-w-md rounded-3xl border border-slate-100/10 bg-white p-6 shadow-2xl dark:border-slate-800/50 dark:bg-gray-900"
-            initial={{ opacity: 0, scale: 0.96, y: 12 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: 12 }}
-            transition={{ duration: 0.2 }}
-            onClick={(event) => event.stopPropagation()}
-          >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800/40">
               <h2 id="share-modal-title" className="text-xl font-black tracking-tight text-slate-900 dark:text-white">
                 Share Event
@@ -125,6 +87,9 @@ const ShareModal = ({ isOpen, onClose, event }) => {
                   alt={shareData.title}
                   className="h-full w-full object-cover"
                   loading="lazy"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
                 />
               </div>
 
@@ -138,6 +103,17 @@ const ShareModal = ({ isOpen, onClose, event }) => {
             </div>
 
             <div className="mt-6 grid grid-cols-2 gap-3">
+              {canNativeShare ? (
+                <button
+                  type="button"
+                  onClick={shareViaSystem}
+                  disabled={isSharing}
+                  aria-label="Share this event using your device's native share sheet"
+                  className="col-span-2 flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 dark:focus:ring-offset-gray-900"
+                >
+                  <Share2 size={16} /> {isSharing ? "Sharing..." : "Share via System"}
+                </button>
+              ) : null}
               <a href={shareData.links.twitter} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 rounded-xl bg-black px-4 py-3 text-sm font-medium text-white transition-all hover:bg-slate-800">
                 <Twitter size={16} /> Twitter/X
               </a>
@@ -164,7 +140,6 @@ const ShareModal = ({ isOpen, onClose, event }) => {
                 <Copy size={16} /> Copy Link
               </button>
             </div>
-          </motion.div>
         </motion.div>
       ) : null}
     </AnimatePresence>

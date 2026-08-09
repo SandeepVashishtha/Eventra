@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "context/AuthContext";
 import { useNavigate, Navigate, useLocation, Link } from "react-router-dom";
 import {
   Users,
@@ -22,7 +22,8 @@ import {
   ChevronLeft,
   Clock,
 } from "lucide-react";
-import { exportToCSV, exportToJSON } from "../../utils/exportUtils";
+import { ENV } from "config/env";
+import { exportToCSV, exportToJSON } from "utils/exportUtils";
 import {
   AdminListCardSkeleton,
   AdminStatCardSkeleton,
@@ -35,15 +36,15 @@ import TicketScanner from "./TicketScanner";
 import ErrorBoundary from "../common/ErrorBoundary";
 import { toast } from "react-toastify";
 
-import { ROLES, PERMISSIONS } from "../../config/roles";
+import { ROLES, PERMISSIONS } from "config/roles";
 import {
   fetchAdminUsers,
   deleteAdminUser,
   fetchAdminEvents,
   deleteAdminEvent,
   fetchAdminStats,
-} from "../../services/adminService";
-import { safeJsonParse } from "../../utils/safeJsonParse";
+} from "services/adminService";
+import { safeJsonParse } from "utils/safeJsonParse";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -61,10 +62,11 @@ const stagger = {
 
 function ConfirmModal({ open, title, message, onConfirm, onCancel }) {
   useEffect(() => {
+    if (!open) return;
     const handleEsc = (e) => { if (e.key === "Escape") onCancel(); };
     document.addEventListener("keydown", handleEsc);
     return () => document.removeEventListener("keydown", handleEsc);
-  }, [onCancel]);
+  }, [open, onCancel]);
 
   if (!open) return null;
 
@@ -129,11 +131,31 @@ const AdminDashboard = () => {
   const [selectedWaitlistEvent, setSelectedWaitlistEvent] = useState(null);
   const [waitlistUsers, setWaitlistUsers] = useState([]);
 
-  const loadWaitlist = useCallback((eventId) => {
-    import("../../utils/waitlistUtils.js").then(({ getEventWaitlist }) => {
-      setWaitlistUsers(getEventWaitlist(eventId));
-    }).catch(() => setWaitlistUsers([]));
-  }, []);
+  const [waitlistAnalytics, setWaitlistAnalytics] = useState(null);
+
+ const loadWaitlist = useCallback((eventId) => {
+  import("utils/waitlistUtils.js")
+    .then(
+      async ({
+        getEventWaitlist,
+        getWaitlistAnalytics,
+        syncWaitlistFromServer,
+      }) => {
+        await syncWaitlistFromServer(eventId, user?.id);
+        setWaitlistUsers(
+          await getEventWaitlist(eventId, user?.id)
+        );
+
+        setWaitlistAnalytics(
+          await getWaitlistAnalytics(eventId, user?.id)
+        );
+      }
+    )
+    .catch(() => {
+      setWaitlistUsers([]);
+      setWaitlistAnalytics(null);
+    });
+}, [user]);
 
   const openWaitlistModal = (event) => {
     setSelectedWaitlistEvent(event);
@@ -144,8 +166,8 @@ const AdminDashboard = () => {
     if (!selectedWaitlistEvent) return;
     if (window.confirm("Are you sure you want to remove this user from the waitlist?")) {
       try {
-        const { organizerRemoveUser } = await import("../../utils/waitlistUtils.js");
-        await organizerRemoveUser(selectedWaitlistEvent.id, userId);
+        const { organizerRemoveUser } = await import("utils/waitlistUtils.js");
+        await organizerRemoveUser(selectedWaitlistEvent.id, userId, user?.id);
         toast.success("User removed from waitlist.");
         loadWaitlist(selectedWaitlistEvent.id);
       } catch (err) {
@@ -165,16 +187,16 @@ const AdminDashboard = () => {
     }
 
     try {
-      const { handleCapacityIncrease } = await import("../../utils/waitlistUtils.js");
-      
+      const { handleCapacityIncrease } = await import("utils/waitlistUtils.js");
+
       const updatedEvent = {
         ...selectedWaitlistEvent,
         maxAttendees: newCap,
         attendees: selectedWaitlistEvent.attendees
       };
-      
-      const promotedCount = await handleCapacityIncrease(updatedEvent, newCap);
-      
+
+      const promotedCount = await handleCapacityIncrease(updatedEvent, newCap, user?.id);
+
       const cacheKey = `event_detail_${selectedWaitlistEvent.id}`;
       const raw = localStorage.getItem(cacheKey);
       if (raw) {
@@ -185,7 +207,7 @@ const AdminDashboard = () => {
           localStorage.setItem(cacheKey, JSON.stringify(parsed));
         }
       }
-      
+
       setSelectedWaitlistEvent(prev => ({
         ...prev,
         maxAttendees: newCap,
@@ -257,20 +279,23 @@ const AdminDashboard = () => {
   }, []);
 
   useEffect(() => {
+    if (!isAdmin) return;
     loadStats();
-  }, [loadStats]);
+  }, [loadStats, isAdmin]);
 
   useEffect(() => {
+    if (!isAdmin) return;
     if (activeTab === "users") {
       loadUsers(usersPage, searchUser);
     }
-  }, [activeTab, usersPage]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeTab, usersPage, isAdmin]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
+    if (!isAdmin) return;
     if (activeTab === "events") {
       loadEvents(eventsPage, searchEvent);
     }
-  }, [activeTab, eventsPage]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeTab, eventsPage, isAdmin]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSearchUser = (value) => {
     setSearchUser(value);
@@ -486,7 +511,7 @@ const AdminDashboard = () => {
                 <div className="ad-toolbar">
                   <div className="ad-search-wrap">
                     <Search size={14} className="ad-search-icon" />
-                    <input className="ad-search" placeholder="Search users…" value={searchUser} onChange={(e) => handleSearchUser(e.target.value)} />
+                    <input className="ad-search" placeholder="Search users…" value={searchUser} onChange={(e) => handleSearchUser(e.target.value)} aria-label="Search users" />
                   </div>
                   <div className="ad-toolbar-right flex items-center gap-3">
                     <div className="relative">
@@ -546,7 +571,7 @@ const AdminDashboard = () => {
                                   <span key={r} style={{ marginRight: '4px' }}><StatusBadge status={r} /></span>
                                 ))}
                               </td>
-                              <td className="ad-muted">{u.createdAt || u.createdAt}</td>
+                              <td className="ad-muted">{u.createdAt || u.joinedAt || "—"}</td>
                               <td><StatusBadge status={u.status || "Active"} /></td>
                               <td>
                                 <div className="ad-action-btns">
@@ -593,7 +618,7 @@ const AdminDashboard = () => {
                 <div className="ad-toolbar">
                   <div className="ad-search-wrap">
                     <Search size={14} className="ad-search-icon" />
-                    <input className="ad-search" placeholder="Search events…" value={searchEvent} onChange={(e) => handleSearchEvent(e.target.value)} />
+                    <input className="ad-search" placeholder="Search events…" value={searchEvent} onChange={(e) => handleSearchEvent(e.target.value)} aria-label="Search events" />
                   </div>
                   <span className="ad-count">{events.length} event{events.length !== 1 ? "s" : ""}</span>
                 </div>
@@ -714,7 +739,7 @@ const AdminDashboard = () => {
             <p className="ad-footer-copyright">© {new Date().getFullYear()} Eventra. Admin Control Panel.</p>
             <div className="ad-footer-links">
               <Link to="/helpcenter" className="ad-footer-link">Help Center</Link>
-              <a href={`https://github.com/${process.env.REACT_APP_GITHUB_REPO || 'sandeepvashishtha/Eventra'}`} target="_blank" rel="noopener noreferrer" className="ad-footer-link">GitHub</a>
+              <a href={`https://github.com/${ENV.GITHUB_REPO}`} target="_blank" rel="noopener noreferrer" className="ad-footer-link">GitHub</a>
               <Link to="/privacy" className="ad-footer-link">Privacy Policy</Link>
               <Link to="/terms" className="ad-footer-link">Terms of Service</Link>
             </div>
@@ -750,7 +775,7 @@ const AdminDashboard = () => {
               </h3>
               <button onClick={() => setSelectedWaitlistEvent(null)} className="text-gray-500 hover:text-gray-700">✕</button>
             </div>
-            
+
             <div className="mb-4 flex items-center justify-between bg-slate-50 dark:bg-slate-800/40 p-3 rounded-xl">
               <span className="text-xs font-semibold text-slate-650 dark:text-slate-400">
                 Capacity: {selectedWaitlistEvent.attendees} / {selectedWaitlistEvent.maxAttendees} registered
@@ -762,6 +787,43 @@ const AdminDashboard = () => {
                 Increase Capacity
               </button>
             </div>
+
+            {waitlistAnalytics && (
+  <div
+    style={{
+      padding: "12px",
+      border: "1px solid #ddd",
+      borderRadius: "8px",
+      marginBottom: "16px",
+    }}
+  >
+    <h3>Waitlist Analytics</h3>
+
+    <p>
+      Total Waitlisted: {waitlistAnalytics.totalWaitlisted}
+    </p>
+
+    <p>
+      Waiting: {waitlistAnalytics.waiting}
+    </p>
+
+    <p>
+      Promoted: {waitlistAnalytics.promoted}
+    </p>
+
+    <p>
+      Removed: {waitlistAnalytics.removed}
+    </p>
+
+    <p>
+      Promotion Rate: {waitlistAnalytics.promotionRate}%
+    </p>
+
+    <p>
+      Average Wait Time: {waitlistAnalytics.averageWaitTime} hrs
+    </p>
+  </div>
+)}
 
             <div style={{ maxHeight: "300px", overflowY: "auto" }}>
               {waitlistUsers.length === 0 ? (

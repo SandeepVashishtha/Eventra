@@ -35,4 +35,6 @@ create_upstream_prs.py
 dummy_fix_*.txt
 test_cleanup.cjs
 *.log
+api
+middleware
 *.tsbuildinfo

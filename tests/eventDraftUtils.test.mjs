@@ -28,7 +28,10 @@ assert.equal(getDraft(), null);
 // Test saveDraft and getDraft
 const draftData = { title: "Super Hackathon", description: "Awesome builders event" };
 saveDraft(draftData);
-assert.deepEqual(getDraft(), draftData);
+const loaded = getDraft();
+assert.ok(loaded);
+assert.deepEqual(loaded.data, draftData);
+assert.ok(loaded.savedAt);
 
 // Test clearDraft
 clearDraft();
@@ -44,7 +47,7 @@ clearDraft();
 // Edge Case: Save empty draft data
 throwError = false;
 saveDraft({});
-assert.deepEqual(getDraft(), {});
+assert.deepEqual(getDraft()?.data, {});
 
 // Edge Case: Save null/invalid draft data
 saveDraft(null);

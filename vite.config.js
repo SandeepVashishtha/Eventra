@@ -1,15 +1,33 @@
 import { defineConfig, loadEnv, transformWithOxc } from "vite";
 import react from "@vitejs/plugin-react";
+
 import path from "path";
+import { fileURLToPath } from "url";
+import dotenv from "dotenv";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+dotenv.config();
 
 // Quick regex to detect JSX syntax — lets us skip transformWithOxc
 // on plain .js files that have no JSX (the common case).
 const JSX_HINT_RE = /<[A-Za-z][A-Za-z0-9.]*[\s\n\r/>]|<>/;
+const DEFAULT_BACKEND_TARGET = "http://localhost:8080";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
+  const backendTarget =
+    env.BACKEND_URL ||
+    env.VITE_API_URL?.replace(/\/api\/?$/, "") ||
+    env.REACT_APP_API_URL?.replace(/\/api\/?$/, "") ||
+    DEFAULT_BACKEND_TARGET;
 
   return {
+    appType: "spa",
+    base: env.VITE_BASE_URL || "/",
+    publicDir: "public",
+    cacheDir: process.env.VITE_CACHE_DIR || "node_modules/.vite",
+    clearScreen: false,
     plugins: [
       // Intercept .js files BEFORE vite:oxc / builtin:vite-transform so JSX
       // inside them is compiled correctly in both dev and production builds.
@@ -28,6 +46,25 @@ export default defineConfig(({ mode }) => {
         // Only .jsx/.tsx — .js files are handled above
         include: /\.(jsx|tsx)$/,
       }),
+      // Fail the build if an un-substituted %PLACEHOLDER% survives into the
+      // final index.html. Vite only auto-replaces %VITE_*% values, so any other
+      // %...% token is a build mistake — historically a literal %CSRF_TOKEN%
+      // was shipped and sent as the CSRF header on every mutating request.
+      {
+        name: "assert-no-html-placeholders",
+        enforce: "post",
+        transformIndexHtml(html) {
+          const placeholder = html.match(/%[A-Z_][A-Z0-9_]*%/g);
+          if (placeholder && placeholder.length > 0) {
+            throw new Error(
+              `[assert-no-html-placeholders] Un-substituted build placeholder(s) found in index.html: ` +
+                `${placeholder.join(", ")}. Vite only replaces %VITE_*% tokens; remove the ` +
+                `placeholder or define it as a VITE_ prefixed environment variable.`,
+            );
+          }
+          return html;
+        },
+      },
     ],
 
     // Path aliases — cleaner imports and faster resolution
@@ -39,6 +76,16 @@ export default defineConfig(({ mode }) => {
         "@hooks": path.resolve(__dirname, "src/hooks"),
         "@utils": path.resolve(__dirname, "src/utils"),
         "@context": path.resolve(__dirname, "src/context"),
+        "components": path.resolve(__dirname, "src/components"),
+        "Pages": path.resolve(__dirname, "src/Pages"),
+        "hooks": path.resolve(__dirname, "src/hooks"),
+        "utils": path.resolve(__dirname, "src/utils"),
+        "context": path.resolve(__dirname, "src/context"),
+        "services": path.resolve(__dirname, "src/services"),
+        "config": path.resolve(__dirname, "src/config"),
+        "constants": path.resolve(__dirname, "src/constants"),
+        "storage": path.resolve(__dirname, "src/storage"),
+        "validation": path.resolve(__dirname, "src/validation"),
       },
     },
 
@@ -46,6 +93,18 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       open: false,
       hmr: { overlay: true },
+      proxy: {
+        "/api": {
+          target: backendTarget,
+          changeOrigin: true,
+          secure: false,
+        },
+        "/stream": {
+          target: backendTarget,
+          changeOrigin: true,
+          secure: false,
+        },
+      },
     },
 
     // Pre-bundle heavy deps once → node_modules/.vite/deps
@@ -69,7 +128,6 @@ export default defineConfig(({ mode }) => {
         "date-fns",
         "recharts",
         "react-toastify",
-        "react-hot-toast",
         "dompurify",
         "fuse.js",
         "react-helmet-async",
@@ -81,18 +139,28 @@ export default defineConfig(({ mode }) => {
     },
 
     build: {
+      target: "es2020",
+      cssCodeSplit: true,
+      reportCompressedSize: false,
       outDir: "build",
+      emptyOutDir: true,
+      copyPublicDir: true,
       sourcemap: false,
       minify: "esbuild",
-      // Disable CSS minification — lightningcss (Vite 8 default) cannot parse
-      // the custom Tailwind `short` screen: (max-height: 520px) media query.
-      cssMinify: false,
-      chunkSizeWarningLimit: 1000,
-      // Use esbuild for CSS minification instead of the default lightningcss,
-      // which cannot parse the custom Tailwind `short` screen media query.
       cssMinify: "esbuild",
-      chunkSizeWarningLimit: 1500,
+      chunkSizeWarningLimit: 500,
+      modulePreload: {
+        polyfill: true,
+        resolveDependencies: (url, deps, { hostType }) => {
+          return deps;
+        },
+      },
+      manifest: true,
       rollupOptions: {
+        onwarn(warning, warn) {
+          if (warning.code === "MODULE_LEVEL_DIRECTIVE") return;
+          warn(warning);
+        },
         output: {
           // manualChunks must be a function in Vite 8 / Rolldown
           manualChunks(id) {
@@ -118,7 +186,6 @@ export default defineConfig(({ mode }) => {
             }
             if (
               id.includes("node_modules/react-toastify/") ||
-              id.includes("node_modules/react-hot-toast/") ||
               id.includes("node_modules/aos/")
             ) {
               return "vendor-ui";
@@ -128,8 +195,42 @@ export default defineConfig(({ mode }) => {
       },
     },
 
+    json: {
+      namedExports: true,
+      stringify: false,
+    },
+
     css: {
       devSourcemap: false,
+      modules: {
+        localsConvention: "camelCase",
+        generateScopedName: "[name]__[local]___[hash:base64:5]",
+      },
+      preprocessorOptions: {
+        scss: {
+          api: "modern-compiler",
+        },
+      },
+    },
+
+    worker: {
+      format: "es",
+      plugins: () => [],
+    },
+
+    envDir: process.cwd(),
+
+    assetsInclude: ["**/*.webp", "**/*.avif"],
+
+    esbuild: {
+      legalComments: "none",
+      treeShaking: true,
+    },
+
+    // logLevel: "warn",
+    define: {
+      __APP_VERSION__: JSON.stringify(process.env.npm_package_version || "0.0.0"),
+      __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
     },
   };
 });

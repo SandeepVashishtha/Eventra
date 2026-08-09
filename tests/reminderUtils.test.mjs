@@ -51,6 +51,7 @@ const {
   REMINDER_TIMINGS,
   getReminderId,
   isPastEvent,
+  getEventDateTime,
   getReminderTriggerTime,
   addReminder,
   removeReminder,
@@ -64,14 +65,46 @@ function resetStorage() {
   for (const k of Object.keys(_lsStore)) delete _lsStore[k];
 }
 
+function formatLocalDate(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 function futureEvent(offsetMinutes = 120) {
   const d = new Date(Date.now() + offsetMinutes * 60 * 1000);
   return {
     id: "evt-1",
     title: "Test Event",
-    date: d.toISOString().split("T")[0], // YYYY-MM-DD
+    date: formatLocalDate(d), // YYYY-MM-DD in the local timezone
     time: d.toTimeString().slice(0, 5), // HH:MM
     location: "Berlin",
+  };
+}
+
+function eventAtInstantInTimezone(instant, timezone, id = "evt-tz-dynamic") {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  const parts = Object.fromEntries(
+    formatter.formatToParts(instant).map((part) => [part.type, part.value])
+  );
+  const hour = String(parseInt(parts.hour, 10) % 24).padStart(2, "0");
+
+  return {
+    id,
+    title: `Timezone event ${id}`,
+    date: `${parts.year}-${parts.month}-${parts.day}`,
+    time: `${hour}:${parts.minute}`,
+    timezone,
+    location: timezone,
   };
 }
 
@@ -107,6 +140,51 @@ assert.equal(
 );
 
 assert.equal(isPastEvent({}), true, "isPastEvent returns true when event has no date");
+
+const localFutureEvent = futureEvent(30);
+assert.equal(
+  isPastEvent(localFutureEvent),
+  false,
+  "isPastEvent returns false for a local event 30 minutes in the future"
+);
+
+const losAngelesFuture = eventAtInstantInTimezone(
+  new Date(Date.now() + 6 * 60 * 60 * 1000),
+  "America/Los_Angeles",
+  "evt-la-future"
+);
+assert.equal(
+  isPastEvent(losAngelesFuture),
+  false,
+  "isPastEvent returns false for a future event in America/Los_Angeles"
+);
+
+const tokyoPast = eventAtInstantInTimezone(
+  new Date(Date.now() - 6 * 60 * 60 * 1000),
+  "Asia/Tokyo",
+  "evt-tokyo-past"
+);
+assert.equal(
+  isPastEvent(tokyoPast),
+  true,
+  "isPastEvent returns true for a past event in Asia/Tokyo"
+);
+
+const kiritimatiFuture = eventAtInstantInTimezone(
+  new Date(Date.now() + 8 * 60 * 60 * 1000),
+  "Pacific/Kiritimati",
+  "evt-kiritimati-future"
+);
+assert.equal(
+  isPastEvent(kiritimatiFuture),
+  false,
+  "isPastEvent handles future events across date-line timezones"
+);
+assert.ok(
+  Math.abs(getEventDateTime(losAngelesFuture).getTime() - (Date.now() + 6 * 60 * 60 * 1000)) <
+    70_000,
+  "getEventDateTime resolves timezone event times to the expected UTC instant"
+);
 
 // ── getReminderTriggerTime ────────────────────────────────────────────────────
 const futureEvt = futureEvent(120);
@@ -195,6 +273,50 @@ assert.equal(
   tzTrigger.getTime(),
   expectedTzTrigger.getTime(),
   "getReminderTriggerTime calculates correct timezone-aware trigger time"
+);
+
+// ── timezone persistence in stored reminder snapshots ─────────────────────────
+resetStorage();
+const tzSnapshotEvt = {
+  id: "evt-tz-snapshot",
+  title: "NY Event",
+  date: "2099-01-01",
+  time: "10:00",
+  timezone: "America/New_York",
+};
+const tzSnapshotResult = addReminder(tzSnapshotEvt, "1h");
+assert.equal(tzSnapshotResult.ok, true, "addReminder succeeds for a timezone event");
+assert.equal(
+  tzSnapshotResult.reminder.event.timezone,
+  "America/New_York",
+  "stored reminder snapshot retains the event timezone"
+);
+
+const liveInstant = getEventDateTime(tzSnapshotEvt).getTime();
+const snapshotInstant = getEventDateTime(tzSnapshotResult.reminder.event).getTime();
+assert.equal(
+  snapshotInstant,
+  liveInstant,
+  "getEventDateTime returns the same instant for the live event and the stored snapshot"
+);
+
+// Reminders stored before the timezone field existed must fall back to the
+// browser timezone without crashing.
+resetStorage();
+const legacySnapshot = {
+  id: "evt-legacy::1h",
+  eventId: "evt-legacy",
+  timing: "1h",
+  triggerAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+  event: { id: "evt-legacy", date: "2099-01-01", time: "10:00", title: "Legacy" },
+};
+window.localStorage.setItem(
+  "eventra_event_reminders",
+  JSON.stringify([legacySnapshot])
+);
+assert.ok(
+  getEventDateTime(getReminders()[0].event) instanceof Date,
+  "getEventDateTime resolves legacy snapshots without a timezone field"
 );
 
 console.log("All reminderUtils tests passed ✓");

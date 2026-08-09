@@ -1,4 +1,4 @@
-/* eslint-disable-next-line no-console */
+
 /**
  * Input Sanitization Utilities
  *
@@ -7,8 +7,7 @@
  */
 
 /**
- * Sanitize search query to prevent NoSQL injection attacks.
- * Allows only alphanumeric characters, spaces, hyphens, and common punctuation.
+ * Sanitize search query to prevent XSS and NoSQL injection attacks.
  *
  * @param {string} query - The raw search query from user input
  * @returns {string} - Sanitized query safe for API transmission
@@ -22,21 +21,23 @@ export const sanitizeSearchQuery = (query = '') => {
 
   let sanitized = query.trim();
 
-  sanitized = sanitized
-    // Strip <script> and <style> blocks using a non-backtracking approach.
-    // The previous regex used nested quantifiers causing catastrophic backtracking.
-    .replace(/<script\b[^>]*>/gi, ' ')
-    .replace(/<\/script\s*>/gi, ' ')
-    .replace(/<style\b[^>]*>/gi, ' ')
-    .replace(/<\/style\s*>/gi, ' ')
-    .replace(/<\s*\/?\s*(script|style)\b[^>]*>?/gi, ' ')
-    .replace(/<\s*(img|iframe|object|embed|svg|math|link|meta)\b[^>]*>?/gi, ' ')
-    .replace(/\bon\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s<>]+)/gi, ' ')
-    .replace(/\b(?:java|vb)script\s*:/gi, ' ')
-    .replace(/\b(?:alert|confirm|prompt)\s*\([^)]*\)/gi, ' ')
-    .replace(/[${}\[\];'`|\\/\n\r<>]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
+  // Strip script tags and their content (closed or open-ended)
+  sanitized = sanitized.replace(/<script\b[^>]*>(?:[\s\S]*?<\/script>|[\s\S]*)/gi, ' ');
+
+  // Strip img tags (closed or open-ended)
+  sanitized = sanitized.replace(/<img\b[^>]*>?/gi, ' ');
+
+  // Strip javascript: links
+  sanitized = sanitized.replace(/javascript:[^\s]*/gi, ' ');
+
+  // Remove all other < and > characters
+  sanitized = sanitized.replace(/[<>]/g, '');
+
+  // Remove other disallowed characters completely (replaced with empty string)
+  sanitized = sanitized.replace(/[${}\[\];'`|\\/\n\r]/g, '');
+
+  // Collapse spaces
+  sanitized = sanitized.replace(/\s+/g, ' ').trim();
 
   // Ensure max length to prevent ReDoS attacks
   if (sanitized.length > MAX_QUERY_LENGTH) {
@@ -84,14 +85,19 @@ export const validateSearchQuery = (query = '') => {
  * @returns {string} - Safe query for API, or empty string if invalid
  */
 export const prepareSafeSearchQuery = (rawQuery = '') => {
-  const validation = validateSearchQuery(rawQuery);
-  if (!validation.isValid) {
-    /* eslint-disable-next-line no-console */
-    console.warn(`[Security] Invalid search query: ${validation.error}`);
+  if (typeof rawQuery === 'string' && rawQuery.length > 200) {
+    console.warn(`[Security] Invalid search query after sanitization: Search query must be less than 200 characters`);
     return '';
   }
 
-  return sanitizeSearchQuery(rawQuery);
+  const validation = validateSearchQuery(rawQuery);
+  if (!validation.isValid) {
+    console.warn(`[Security] Invalid search query after sanitization: ${validation.error}`);
+    return '';
+  }
+
+  const sanitized = sanitizeSearchQuery(rawQuery);
+  return sanitized;
 };
 
 /**
@@ -116,7 +122,7 @@ export const sanitizeInputText = (text = '') => {
     '/': '&#x2F;'
   };
 
-  return text.replace(/[&<>"'/]/g, (match) => htmlEscapes[match]);
+  return text.replace(/[&<>"'\/]/g, (match) => htmlEscapes[match]);
 };
 
 /**

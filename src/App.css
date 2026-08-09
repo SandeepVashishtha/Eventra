@@ -37,10 +37,10 @@
 }
 .neon-logo {
   font-weight: 800;
-  color: var(--text-color) !important;
-  background: none !important;
-  -webkit-text-fill-color: initial !important;
-  filter: none !important;
+  color: var(--text-color);
+  background: none;
+  -webkit-text-fill-color: initial;
+  filter: none;
   background: linear-gradient(
     90deg,
     var(--primary-color),
@@ -110,11 +110,11 @@ main {
 
 /* FIX: Smooth background, text, and border color shifts on hover */
 .footer-social-btn:hover {
-  transform: translateY(-4px) !important;
-  background-color: var(--evt-footer-accent) !important; /* Elegant brand blue background */
-  color: var(--evt-color-white) !important; /* Changes the internal icon color to white */
-  border-color: var(--evt-footer-accent) !important; /* Changes border color to match */
-  box-shadow: 0 10px 15px -3px color-mix(in srgb, var(--evt-footer-accent) 40%, transparent) !important; /* Soft glowing blue shadow */
+  transform: translateY(-4px);
+  background-color: var(--evt-footer-accent); /* Elegant brand blue background */
+  color: var(--evt-color-white); /* Changes the internal icon color to white */
+  border-color: var(--evt-footer-accent); /* Changes border color to match */
+  box-shadow: 0 10px 15px -3px color-mix(in srgb, var(--evt-footer-accent) 40%, transparent); /* Soft glowing blue shadow */
 }
 
 /* Accessible focus rings to optimize for Lighthouse audit compliance */
@@ -127,8 +127,8 @@ main {
 /* Newsletter processing state variations */
 .footer-newsletter-input:disabled,
 .footer-newsletter-btn:disabled {
-  opacity: 0.6 !important;
-  cursor: not-allowed !important;
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .footer-newsletter-input:disabled {
@@ -791,7 +791,7 @@ main {
 }
 
 .submit-project {
-  padding: 0.625rem 1.5rem !important;
+  padding: 0.625rem 1.5rem;
 }
 
 .projects-grid {
@@ -1004,7 +1004,7 @@ main {
   }
 
   .podium-place {
-    order: unset !important;
+    order: unset;
   }
 
   .hackathon-card,
@@ -1346,8 +1346,8 @@ main {
     position: relative;
     width: 100%;
     height: auto;
-    opacity: 1 !important;
-    transform: none !important;
+    opacity: 1;
+    transform: none;
   }
 
   .card-content {
@@ -1369,14 +1369,6 @@ main {
   color-scheme: dark;
 }
 
-.dark p,
-.dark span,
-.dark h1,
-.dark h2,
-.dark h3,
-.dark h4,
-.dark h5,
-.dark h6,
-.dark label {
+:where(.dark p, .dark span, .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6, .dark label) {
   color: inherit;
 }
