@@ -231,8 +231,8 @@ const InteractiveWhiteboard = () => {
       // shape
       return {
         ...prev,
-        width: coords.x - prev.x,
-        height: coords.y - prev.y,
+        width: Math.abs(coords.x - prev.x),
+        height: Math.abs(coords.y - prev.y),
       };
     });
   }, [tool, isDrawing]);
