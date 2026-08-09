@@ -3,13 +3,12 @@ import { FixedSizeGrid as Grid } from "react-window";
 import EventCard from "../../Pages/Events/EventCard";
 import AutoSizer from "react-virtualized-auto-sizer";
 
-const COLUMN_COUNT = 3;
 const CARD_WIDTH = 380;
 const CARD_HEIGHT = 420;
 
 const Cell = memo(({ columnIndex, rowIndex, style, data }) => {
-  const { items } = data;
-  const index = rowIndex * COLUMN_COUNT + columnIndex;
+  const { items, colCount } = data;
+  const index = rowIndex * colCount + columnIndex;
   const event = items[index];
 
   if (!event) return null;
@@ -28,8 +27,6 @@ Cell.displayName = "Cell";
 // contributing to layout thrash and memory growth.
 
 const VirtualizedEventGrid = ({ events }) => {
-  const rowCount = Math.ceil(events.length / COLUMN_COUNT);
-
   return (
     <div style={{ width: "100%", height: "80vh" }}>
       <AutoSizer>
@@ -44,7 +41,7 @@ const VirtualizedEventGrid = ({ events }) => {
               rowCount={Math.ceil(events.length / colCount)}
               rowHeight={CARD_HEIGHT}
               width={width}
-              itemData={{ items: events }}
+              itemData={{ items: events, colCount }}
             >
               {Cell}
             </Grid>
