@@ -141,6 +141,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 org.springframework.http.HttpMethod.GET,
                                 "/api/events",
+                                "/api/events/search",
+                                "/api/events/alternatives",
                                 "/api/events/{id}",
                                 "/api/events/{id}/availability",
                                 "/api/events/{id}/seats",
