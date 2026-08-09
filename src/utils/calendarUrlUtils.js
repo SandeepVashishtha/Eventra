@@ -264,9 +264,11 @@ export const getYahooCalendarUrl = (event, timezone) => {
  *
  * @param {object} event  - Event object
  * @param {string} [timezone]  - IANA tz string; defaults to browser timezone
+ * @param {number|string} [reminderMinutes]  - Minutes before the event for a
+ *   VALARM reminder (e.g. 10, 30, 60). Omitted when falsy.
  * @returns {string|null}  A Blob URL that can be used in an <a href> tag with download attribute. Returns null on error.
  */
-export const generateIcsFileBlobUrl = (event, timezone) => {
+export const generateIcsFileBlobUrl = (event, timezone, reminderMinutes) => {
   if (!event) return null;
 
   const range = getEventUTCRange(event, timezone);
@@ -282,7 +284,9 @@ export const generateIcsFileBlobUrl = (event, timezone) => {
   }
 
   const now = new Date().toISOString().replace(/-|:|\.\d+/g, '');
-  
+
+  const reminderMinutesNum = parseInt(reminderMinutes, 10);
+
   const icsContent = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
@@ -297,6 +301,15 @@ export const generateIcsFileBlobUrl = (event, timezone) => {
     `SUMMARY:${(event.title || '').replace(/,/g, '\\,')}`,
     `DESCRIPTION:${(event.description || '').replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/,/g, '\\,')}`,
     `LOCATION:${(event.location || '').replace(/,/g, '\\,')}`,
+    ...(reminderMinutesNum > 0
+      ? [
+          'BEGIN:VALARM',
+          `TRIGGER:-PT${reminderMinutesNum}M`,
+          'ACTION:DISPLAY',
+          'DESCRIPTION:Reminder',
+          'END:VALARM',
+        ]
+      : []),
     'END:VEVENT',
     'END:VCALENDAR'
   ].join('\r\n');

@@ -323,6 +323,43 @@ describe('generateIcsFileBlobUrl', () => {
   test('returns null on null event', () => {
     expect(generateIcsFileBlobUrl(null)).toBeNull();
   });
+
+  test('emits a VALARM reflecting the requested reminder minutes', async () => {
+    const originalCreate = URL.createObjectURL;
+    const captured = [];
+    URL.createObjectURL = (blob) => {
+      captured.push(blob);
+      return 'blob:mock';
+    };
+    try {
+      const url = generateIcsFileBlobUrl(mkEvent(), undefined, 10);
+      expect(url).toBe('blob:mock');
+      expect(captured.length).toBe(1);
+      const content = await captured[0].text();
+      expect(content).toContain('BEGIN:VALARM');
+      expect(content).toContain('TRIGGER:-PT10M');
+      expect(content).toContain('ACTION:DISPLAY');
+      expect(content).toContain('END:VALARM');
+    } finally {
+      URL.createObjectURL = originalCreate;
+    }
+  });
+
+  test('omits VALARM when no reminder minutes are requested', async () => {
+    const originalCreate = URL.createObjectURL;
+    const captured = [];
+    URL.createObjectURL = (blob) => {
+      captured.push(blob);
+      return 'blob:mock';
+    };
+    try {
+      generateIcsFileBlobUrl(mkEvent(), undefined, 0);
+      const content = await captured[0].text();
+      expect(content).not.toContain('VALARM');
+    } finally {
+      URL.createObjectURL = originalCreate;
+    }
+  });
 });
 
 // ---------------------------------------------------------------------------
