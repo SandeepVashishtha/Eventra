@@ -75,6 +75,8 @@ public class AuthService {
                 .username(username)
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(Role.ATTENDEE)
+                .emailVerified(false)
+                .authProvider("LOCAL")
                 .build();
 
         user = userRepository.save(user);
@@ -160,8 +162,21 @@ public class AuthService {
                         .username(username)
                         .password(passwordEncoder.encode(securePassword))
                         .role(Role.ATTENDEE)
+                        .emailVerified(true)
+                        .authProvider("GOOGLE")
                         .build();
 
+                user = userRepository.save(user);
+            } else if (!user.isEmailVerified()
+                    && (user.getAuthProvider() == null || "LOCAL".equalsIgnoreCase(user.getAuthProvider()))) {
+                throw new InvalidGoogleTokenException(
+                        "An unverified password account already exists for this email. "
+                                + "Sign in with your password and verify the email before linking Google.");
+            } else if (!user.isEmailVerified()) {
+                user.setEmailVerified(true);
+                if (user.getAuthProvider() == null || user.getAuthProvider().isBlank()) {
+                    user.setAuthProvider("GOOGLE");
+                }
                 user = userRepository.save(user);
             }
 
