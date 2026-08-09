@@ -8,7 +8,7 @@ try {
       serverClockOffsetMs = Number(cached) || 0;
     }
   }
-} catch {}
+} catch { console.warn("[timeSync] Clock offset operation failed"); }
 
 export const getServerClockOffsetMs = () => serverClockOffsetMs;
 
@@ -18,7 +18,7 @@ export const setServerClockOffsetMs = (offsetMs) => {
     if (typeof localStorage !== "undefined") {
       localStorage.setItem("eventra_server_time_offset", String(serverClockOffsetMs));
     }
-  } catch {}
+  } catch { console.warn("[timeSync] Clock offset operation failed"); }
 };
 
 export const getServerNow = () => Date.now() + serverClockOffsetMs;
