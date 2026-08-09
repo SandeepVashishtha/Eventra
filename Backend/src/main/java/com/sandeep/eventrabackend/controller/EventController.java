@@ -9,6 +9,7 @@ import com.sandeep.eventrabackend.dto.response.AttendeeDirectoryResponse;
 import com.sandeep.eventrabackend.dto.response.EventAvailabilityResponse;
 import com.sandeep.eventrabackend.dto.response.EventResponse;
 import com.sandeep.eventrabackend.dto.response.PagedResponse;
+import com.sandeep.eventrabackend.dto.response.RegistrantsPageResponse;
 import com.sandeep.eventrabackend.dto.response.RegistrationResponse;
 import com.sandeep.eventrabackend.dto.response.WaitlistResponse;
 import com.sandeep.eventrabackend.service.EventService;
@@ -208,6 +209,20 @@ public class EventController {
                         Authentication authentication) {
 
                 return ResponseEntity.ok(eventService.getEventWaitlist(id, authentication.getName()));
+        }
+
+        @GetMapping("/{id}/registrants")
+        @PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN', 'SUPER_ADMIN')")
+        @Operation(summary = "List event registrants for export", description = "Paginated list of registrations for an event, restricted to organizers and admins. Pages are 1-based.", security = @SecurityRequirement(name = "bearerAuth"))
+        public ResponseEntity<RegistrantsPageResponse> getEventRegistrants(
+                        @Parameter(description = "ID of the event") @PathVariable Long id,
+                        @Parameter(description = "Page number (1-based)", example = "1")
+                        @RequestParam(defaultValue = "1") int page,
+                        @Parameter(description = "Registrants per page", example = "500")
+                        @RequestParam(defaultValue = "500") int limit,
+                        Authentication authentication) {
+
+                return ResponseEntity.ok(eventService.getEventRegistrants(id, authentication.getName(), page, limit));
         }
 
         @GetMapping("/{id}/attendees")

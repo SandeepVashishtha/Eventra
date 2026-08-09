@@ -8,8 +8,6 @@ import {
   Mail,
   Phone,
   FileText,
-  Github,
-  Linkedin,
   Globe,
   Edit3,
   Calendar,
@@ -20,6 +18,7 @@ import {
   Star,
   Zap,
 } from "lucide-react";
+import { FaGithub as Github, FaLinkedin as Linkedin } from "react-icons/fa";
 import { useAuth } from "context/AuthContext";
 import { syncSecureStorage } from "utils/secureStorage";
 import LazyImage from "../common/LazyImage";

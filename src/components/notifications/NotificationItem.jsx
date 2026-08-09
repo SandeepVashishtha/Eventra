@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Bell, Calendar, Megaphone, Shield, UserPlus, Trophy, Trash2 } from "lucide-react";
 import { NOTIFICATION_CATEGORIES } from "utils/notificationPreferences";
-import { getRelativeTime } from "utils/relativeTime";
 
 const CATEGORY_ICONS = {
   registrations: Calendar,

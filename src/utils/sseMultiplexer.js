@@ -556,7 +556,7 @@ class SseMultiplexer {
       let payload = evt.data;
       try {
         payload = JSON.parse(evt.data);
-      } catch { }
+      } catch { console.warn("[sseMultiplexer] JSON parse failed"); }
 
       // Dispatch locally
       this.dispatchLocalMessage(path, payload, evt.type);

@@ -60,7 +60,7 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(List.of(origins));
 
         configuration.setAllowedMethods(
-                List.of("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
         );
 
         configuration.setAllowedHeaders(
@@ -69,7 +69,13 @@ public class SecurityConfig {
                         "Content-Type",
                         "Accept",
                         "Origin",
-                        "X-Requested-With"
+                        "X-Requested-With",
+                        "X-CSRF-Token",
+                        "Idempotency-Key",
+                        "X-Request-Integrity",
+                        "X-Timestamp",
+                        "X-Nonce",
+                        "X-Signature"
                 )
         );
 
@@ -135,6 +141,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 org.springframework.http.HttpMethod.GET,
                                 "/api/events",
+                                "/api/events/search",
+                                "/api/events/alternatives",
                                 "/api/events/{id}",
                                 "/api/events/{id}/availability",
                                 "/api/events/{id}/seats",
@@ -149,6 +157,7 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/hackathons/{id}").permitAll()
                         // ── Public: Project categories endpoint ──────────────
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/projects/categories").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/feedback").permitAll()
                         // ── Admin Panel — ADMIN / SUPER_ADMIN only ────────
                         .requestMatchers("/api/admin/**").hasAnyAuthority("ADMIN", "SUPER_ADMIN")
                         // ── Public: Swagger / OpenAPI ────────────────────

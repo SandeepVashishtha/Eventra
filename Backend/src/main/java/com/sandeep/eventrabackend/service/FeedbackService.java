@@ -87,6 +87,17 @@ public class FeedbackService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<FeedbackResponse> getEventFeedback(Long eventId) {
+        if (!eventRepository.existsById(eventId)) {
+            throw new EventNotFoundException("Event not found with ID: " + eventId);
+        }
+
+        return feedbackRepository.findByEvent_IdOrderBySubmittedAtDesc(eventId).stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
     private FeedbackResponse mapToResponse(Feedback feedback) {
         return FeedbackResponse.builder()
                 .id(feedback.getId())

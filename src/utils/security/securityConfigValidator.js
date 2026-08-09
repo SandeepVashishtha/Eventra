@@ -29,8 +29,8 @@ export function getSecurityConfigurationWarnings(config = {}, environment = "dev
 }
 
 export function validateSecurityConfiguration(
-  config = process.env,
-  environment = process.env.NODE_ENV
+  config = getRuntimeEnv(),
+  environment = getRuntimeEnv().NODE_ENV || getRuntimeEnv().MODE || "development"
 ) {
   const warnings = getSecurityConfigurationWarnings(config, environment);
 

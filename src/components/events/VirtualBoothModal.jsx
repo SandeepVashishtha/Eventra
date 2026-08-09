@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import {
-  X, Briefcase, Globe, Linkedin, Twitter, Github,
+  X, Briefcase, Globe,
   Send, MessageSquare, ArrowLeft
 } from "lucide-react";
+import { FaLinkedin as Linkedin, FaTwitter as Twitter, FaGithub as Github } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { safeJsonParse } from "utils/safeJsonParse";
 import { useAuth } from "context/AuthContext";
