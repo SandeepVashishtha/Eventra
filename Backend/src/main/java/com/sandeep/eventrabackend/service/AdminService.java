@@ -33,20 +33,20 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AdminService {
 
-    private final UserRepository              userRepository;
-    private final EventRepository             eventRepository;
-    private final HackathonRepository         hackathonRepository;
+    private final UserRepository userRepository;
+    private final EventRepository eventRepository;
+    private final HackathonRepository hackathonRepository;
     private final FeedbackAnalyticsRepository feedbackRepository;
-    private final EventAnalyticsRepository    eventAnalyticsRepo;
+    private final EventAnalyticsRepository eventAnalyticsRepo;
     private final RegistrationAnalyticsRepository regRepo;
     private final EventRegistrationRepository eventRegistrationRepository;
-    private final EventWaitlistRepository     eventWaitlistRepository;
-    private final EventTeamMemberRepository   eventTeamMemberRepository;
+    private final EventWaitlistRepository eventWaitlistRepository;
+    private final EventTeamMemberRepository eventTeamMemberRepository;
     private final EventRoleAuditLogRepository eventRoleAuditLogRepository;
     private final HackathonRegistrationRepository hackathonRegistrationRepository;
-    private final ProjectUpvoteRepository     projectUpvoteRepository;
-    private final NotificationRepository      notificationRepository;
-    private final EventService                eventService;
+    private final ProjectUpvoteRepository projectUpvoteRepository;
+    private final NotificationRepository notificationRepository;
+    private final EventService eventService;
 
     // ══════════════════════════════════════════════════════════════════════
     // 1. USER MANAGEMENT
@@ -218,7 +218,8 @@ public class AdminService {
     // ══════════════════════════════════════════════════════════════════════
 
     /**
-     * Returns an extended admin dashboard with user, event, hackathon, and feedback stats.
+     * Returns an extended admin dashboard with user, event, hackathon, and feedback
+     * stats.
      */
     public AdminDashboardStatsDTO getAdminDashboard() {
         LocalDateTime now = LocalDateTime.now();
@@ -230,6 +231,8 @@ public class AdminService {
                 .newUsersThisMonth(userRepository.countByCreatedAtAfter(startOfMonth))
                 .totalAdmins(userRepository.countByRole(Role.ADMIN))
                 .totalOrganizers(userRepository.countByRole(Role.ORGANIZER))
+                .totalAttendees(userRepository.countByRole(Role.ATTENDEE)
+                        + userRepository.countByRole(Role.CLIENT))
                 .totalClients(userRepository.countByRole(Role.CLIENT))
                 // Events
                 .totalEvents(eventAnalyticsRepo.count())
@@ -258,7 +261,7 @@ public class AdminService {
         LocalDateTime from = LocalDateTime.now().minusMonths(months);
         List<Object[]> raw = userRepository.findMonthlySignupTrend(from);
 
-        final long[] cumulative = {0};
+        final long[] cumulative = { 0 };
         return raw.stream().map(row -> {
             long count = ((Number) row[1]).longValue();
             cumulative[0] += count;
@@ -278,8 +281,8 @@ public class AdminService {
                 .stream()
                 .map(row -> {
                     Map<String, Object> m = new LinkedHashMap<>();
-                    m.put("eventId",       ((Number) row[0]).longValue());
-                    m.put("eventTitle",    row[1].toString());
+                    m.put("eventId", ((Number) row[0]).longValue());
+                    m.put("eventTitle", row[1].toString());
                     m.put("registrations", ((Number) row[2]).longValue());
                     m.put("capacity",
                             row[3] != null ? ((Number) row[3]).intValue() : "Unlimited");
