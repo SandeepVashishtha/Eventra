@@ -34,13 +34,17 @@ public class ProjectService {
     }
 
     @Transactional
-    public ProjectResponse createProject(ProjectCreateRequest request) {
+    public ProjectResponse createProject(ProjectCreateRequest request, String userEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + userEmail));
+
         Project project = Project.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .category(request.getCategory())
                 .thumbnailUrl(request.getThumbnailUrl())
                 .githubUrl(request.getGithubUrl())
+                .createdBy(user)
                 .build();
 
         Project savedProject = projectRepository.save(project);

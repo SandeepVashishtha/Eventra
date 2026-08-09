@@ -82,8 +82,10 @@ public class ProjectController {
             )
     })
     public ResponseEntity<ProjectResponse> createProject(
-            @Valid @RequestBody ProjectCreateRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(projectService.createProject(request));
+            @Valid @RequestBody ProjectCreateRequest request,
+            Authentication authentication) {
+        String userEmail = authentication.getName();
+        return ResponseEntity.status(HttpStatus.CREATED).body(projectService.createProject(request, userEmail));
     }
 
     @GetMapping
