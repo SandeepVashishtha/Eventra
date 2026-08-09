@@ -1,10 +1,12 @@
-# Local / default profile — in-memory H2 only.
+# Local / default profile — file-based H2 so data (users, events, and the
+# persisted JWT blacklist) survives restarts. Override with DB_URL /
+# DB_USERNAME / DB_PASSWORD to point at any other JDBC datasource.
 spring:
   datasource:
-    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    url: ${DB_URL:jdbc:h2:file:./data/eventradb;DB_CLOSE_ON_EXIT=FALSE}
     driverClassName: org.h2.Driver
-    username: sa
-    password:
+    username: ${DB_USERNAME:sa}
+    password: ${DB_PASSWORD:}
 
   jpa:
     hibernate:
