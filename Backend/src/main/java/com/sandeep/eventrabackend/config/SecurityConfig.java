@@ -60,7 +60,7 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(List.of(origins));
 
         configuration.setAllowedMethods(
-                List.of("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
         );
 
         configuration.setAllowedHeaders(
@@ -69,7 +69,13 @@ public class SecurityConfig {
                         "Content-Type",
                         "Accept",
                         "Origin",
-                        "X-Requested-With"
+                        "X-Requested-With",
+                        "X-CSRF-Token",
+                        "Idempotency-Key",
+                        "X-Request-Integrity",
+                        "X-Timestamp",
+                        "X-Nonce",
+                        "X-Signature"
                 )
         );
 
