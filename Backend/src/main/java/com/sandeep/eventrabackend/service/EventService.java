@@ -436,11 +436,15 @@ public class EventService {
                 event.setDescription(request.getDescription());
                 event.setLocation(request.getLocation());
                 event.setEventDate(request.getEventDate());
-                event.setCapacity(request.getCapacity());
+                if (request.getCapacity() != null) {
+                        event.setCapacity(request.getCapacity());
+                }
                 if (request.getIsPublic() != null) {
                         event.setPublic(request.getIsPublic());
                 }
-                event.setImageUrl(request.getImageUrl());
+                if (request.getImageUrl() != null) {
+                        event.setImageUrl(request.getImageUrl());
+                }
                 if (request.getCategory() != null) {
                         event.setCategory(request.getCategory());
                 }

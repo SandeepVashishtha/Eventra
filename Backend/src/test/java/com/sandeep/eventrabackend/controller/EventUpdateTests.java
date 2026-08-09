@@ -231,6 +231,29 @@ public class EventUpdateTests {
     }
 
     @Test
+    @DisplayName("Partial update preserves existing capacity and imageUrl (#12456)")
+    void testUpdateWithoutCapacityOrImageUrlPreservesExistingValues() throws Exception {
+        existingEvent.setImageUrl("https://example.com/images/banner.jpg");
+        eventRepository.save(existingEvent);
+
+        EventUpdateRequest request = EventUpdateRequest.builder()
+                .title("Partial Update Title")
+                .description("Description")
+                .location("Location")
+                .eventDate(LocalDateTime.now().plusDays(10))
+                .build();
+
+        mockMvc.perform(put("/api/events/" + existingEvent.getId())
+                        .with(user("admin@example.com").authorities(() -> "ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("Partial Update Title"))
+                .andExpect(jsonPath("$.capacity").value(100))
+                .andExpect(jsonPath("$.imageUrl").value("https://example.com/images/banner.jpg"));
+    }
+
+    @Test
     @DisplayName("Capacity lower than registeredCount returns 409 (Conflict)")
     void testUpdateCapacityLowerThanRegisteredCount() throws Exception {
         // Manually set registeredCount for the event
