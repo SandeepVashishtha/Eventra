@@ -30,7 +30,7 @@ export default function ProjectHero({
     <div
       className={`
         relative overflow-hidden
-        bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white 
+        bg-linear-to-b from-blue-50 via-indigo-50/30 to-white 
         dark:from-slate-950 dark:via-slate-900 dark:to-black
         ${darkTheme.textPrimary}
         pt-16 sm:pt-18 lg:pt-20
@@ -118,7 +118,7 @@ export default function ProjectHero({
               style={{ fontFamily: '"Anton", sans-serif' }}
             >
               Discover{" "}
-              <span className="bg-gradient-to-r from-sky-500 via-indigo-500 to-pink-500 bg-clip-text text-transparent">
+              <span className="bg-linear-to-r from-sky-500 via-indigo-500 to-pink-500 bg-clip-text text-transparent">
                 Amazing
               </span>
               <br className="hidden sm:block" />
@@ -246,7 +246,7 @@ export default function ProjectHero({
                   data-aos="zoom-in"
                   data-aos-delay={700 + idx * 120}
                   className={`
-                    bg-gradient-to-br ${stat.color}
+                    bg-linear-to-br ${stat.color}
                     shadow hover:shadow-lg rounded-2xl
                     border border-transparent dark:border-slate-700
                     flex flex-col items-center justify-center

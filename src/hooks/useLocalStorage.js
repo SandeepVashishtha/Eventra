@@ -33,7 +33,6 @@ const useLocalStorage = (key, initialValue) => {
 
   // 🔥 FIX: Track when WE fired the event so we don't react to ourselves
   const isInternalWrite = useRef(false);
-
   const readValue = useCallback(() => {
     if (typeof window === "undefined") return initialValueRef.current;
     try {
@@ -94,7 +93,12 @@ const useLocalStorage = (key, initialValue) => {
 
   useEffect(() => {
     const handleStorageChange = (event) => {
-      // 🔥 FIX: Skip events WE fired — they are already handled by setStoredValue
+      // 🔥 FIX: Reset the internal-write flag UNCONDITIONALLY first.
+      // Previously the flag was only reset when bailing out at this check,
+      // so if a foreign `local-storage` event arrived for a different key
+      // (another useLocalStorage instance on the page) the flag would get
+      // stuck at `true` and every subsequent legitimate cross-tab update for
+      // THIS key would be silently dropped.
       if (isInternalWrite.current) {
         isInternalWrite.current = false;
         return;

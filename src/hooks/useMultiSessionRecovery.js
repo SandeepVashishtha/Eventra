@@ -31,7 +31,7 @@ export const useMultiSessionRecovery = ({
     setLocalSessions((current) =>
       normalizeMultiSessions([...current, ...readMultiSessions(storage, storageKey), ...initialSessions]),
     );
-  }, [initialSessions, storage, storageKey]);
+  }, [initialSessions, storage, storageKey, readMultiSessions]);
 
   const persist = useCallback(
     (nextSessions) => {

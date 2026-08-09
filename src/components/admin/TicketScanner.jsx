@@ -194,7 +194,7 @@ export default function TicketScanner() {
     try {
       ticketData = JSON.parse(decodedText);
     } catch {
-      if (decodedText.startsWith("eyJ")) {
+      if (decodedText.startsWith("eyJ") && decodedText.split(".").length === 3) {
         const activeEvent = events.find(e => String(e.id) === String(selectedEventId));
         ticketData = {
           ticketId: decodedText,

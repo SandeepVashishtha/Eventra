@@ -50,14 +50,10 @@ export const storageManager = {
 
       return parsed.value;
     } catch (error) {
-      // 4. Detailed logging instead of silent deletion
-      logger.error(`[Storage] Corruption error for key "${key}":`, error);
-      
-      // Only remove if it's a parse error (definitely corrupted)
-      if (error instanceof SyntaxError) {
-        logger.warn(`[Storage] Removing corrupted key: ${key}`);
-        localStorage.removeItem(key);
-      }
+      // safeJsonParse never re-throws SyntaxError — only localStorage access
+      // errors (SecurityError, QuotaExceededError) reach here. Log and return
+      // null; do not attempt removeItem since the access error would repeat.
+      logger.error(`[Storage] Access error for key "${key}":`, error);
       return null;
     }
   },

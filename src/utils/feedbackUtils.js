@@ -6,8 +6,24 @@
 
 import { safeJsonParse } from './safeJsonParse';
 import { sanitizeHtml } from './sanitizeHtml';
+import { API_ENDPOINTS, apiUtils } from '../config/api';
 
 const FEEDBACK_STORAGE_KEY = 'eventra_feedback';
+
+export const fetchEventFeedback = async (eventId) => {
+  const response = await apiUtils.get(API_ENDPOINTS.FEEDBACK.BY_EVENT(eventId));
+  return response.json();
+};
+
+export const submitEventFeedback = async ({ eventId, rating, comment, tags = [] }) => {
+  const response = await apiUtils.post(API_ENDPOINTS.FEEDBACK.BASE, {
+    eventId,
+    rating,
+    comment,
+    tags,
+  });
+  return response.json();
+};
 
 /**
  * Get all feedback for an event

@@ -4,6 +4,7 @@ import Hero from "./components/Hero";
 import WhatsHappening from "./components/WhatsHappening";
 import HomeCTA from "./components/HomeCTA";
 import RecommendationBanner from "./components/RecommendationBanner";
+import TrendingEvents from "../../components/TrendingEvents/TrendingEvents";
 import CollaborationNetworkMap from "../../components/visual/CollaborationNetworkMap";
 import CollaborationMap from "../../components/CollaborationMap";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
@@ -57,6 +58,7 @@ const HomePage = () => {
       {/* ─── PAGE CONTENT ───────────────────────────────────────────────── */}
       <Hero />
       <WhatsHappening />
+      <TrendingEvents title="Trending Events" limit={6} fetchSize={24} />
       <RecommendationBanner />
       <CollaborationNetworkMap />
       <CollaborationMap />

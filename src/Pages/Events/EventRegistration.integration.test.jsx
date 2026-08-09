@@ -86,7 +86,7 @@ describe('EventRegistration with Conflict Resolution - Integration', () => {
 
   describe('Registration Flow - With Conflicts', () => {
     it('should show conflict modal when conflict detected', async () => {
-      const user = userEvent.setup();
+      // const user = userEvent.setup();
 
       // Mock: User already registered for conflicting event
       const mockContext = {
@@ -136,7 +136,7 @@ describe('EventRegistration with Conflict Resolution - Integration', () => {
 
   describe('Conflict Modal User Actions', () => {
     it('should allow user to cancel registration', async () => {
-      const user = userEvent.setup();
+      // const user = userEvent.setup();
 
       // Setup: conflict detected
       const { hasConflict } = checkRegistrationConflict(

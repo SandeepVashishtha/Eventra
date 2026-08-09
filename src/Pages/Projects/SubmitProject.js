@@ -205,9 +205,13 @@ const handleSubmit = async (e) => {
 
     setIsSubmitting(true);
     try {
-      // Sanitize text fields before sending
+      // Sanitize and map text fields before sending
       const sanitizedData = {
         ...formData,
+        title: sanitizeInputText(formData.projectName),
+        category: formData.projectCategory || formData.projectType || "Other",
+        thumbnailUrl: formData.projectImage || "",
+        githubUrl: formData.githubLink || "",
         projectName: sanitizeInputText(formData.projectName),
         teamName: sanitizeInputText(formData.teamName),
         description: sanitizeInputText(formData.description),
@@ -479,6 +483,7 @@ const handleSubmit = async (e) => {
                         src={formData.projectImage}
                         alt="Project Preview"
                         className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                         loading="lazy"
                       />
                       <button
                         type="button"

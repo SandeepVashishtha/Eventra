@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { getOptimizedImageUrl, generateSrcSet } from "../../utils/imageOptimizer";
 import { ImageIcon } from "lucide-react";
 

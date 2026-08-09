@@ -30,7 +30,7 @@ const Unauthorized = () => {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 via-red-100 to-red-200 dark:from-red-900/40 dark:via-gray-900 dark:to-black overflow-hidden px-4">
+    <div className="relative min-h-screen flex items-center justify-center bg-linear-to-br from-red-50 via-red-100 to-red-200 dark:from-red-900/40 dark:via-gray-900 dark:to-black overflow-hidden px-4">
       {/* Floating decorative bubbles */}
       {bubblePositions.map((pos, i) => (
         <motion.div

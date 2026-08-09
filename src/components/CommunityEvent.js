@@ -1,5 +1,6 @@
 // src/pages/CommunityEventsPage.jsx
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import {
@@ -121,8 +122,8 @@ const CommunityEvent = () => {
     <div
       className={`
         relative overflow-hidden
-        /* 🔥 FIX: Changed bg-linear-to-b to bg-gradient-to-b for correct Tailwind execution */
-        bg-gradient-to-b from-blue-50 via-indigo-50/30 to-white 
+        /* Tailwind v4: bg-linear-to-b */
+        bg-linear-to-b from-blue-50 via-indigo-50/30 to-white 
         dark:from-slate-950 dark:via-slate-900 dark:to-black
         ${darkTheme.textPrimary}
         min-h-[80vh]
@@ -277,7 +278,7 @@ const CommunityEvent = () => {
         </div>
       </div>
 
-      {selectedEvent && (
+      {selectedEvent && createPortal(
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
           role="dialog"
@@ -363,7 +364,8 @@ const CommunityEvent = () => {
               </p>
             </div>
           </motion.div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

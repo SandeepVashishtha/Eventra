@@ -15,7 +15,7 @@ const LiveInteractionHub = () => {
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-black p-6">
+    <div className="min-h-screen bg-linear-to-br from-indigo-900 via-purple-900 to-black p-6">
       <div className="mx-auto max-w-4xl bg-white/10 backdrop-blur-xl rounded-3xl shadow-xl border border-white/20">
         <Tab.Group selectedIndex={selectedIndex} onChange={setSelectedIndex}>
           <Tab.List className="flex p-2 space-x-2">

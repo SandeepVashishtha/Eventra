@@ -38,6 +38,8 @@ const PURIFY_CONFIG = {
   ALLOWED_ATTR,
   ALLOW_DATA_ATTR: false,
   ADD_ATTR: ["target"],
+  FORBID_ATTR: ["onerror", "onload"],
+  ALLOW_UNKNOWN_PROTOCOLS: false,
 };
 
 let purifyInstance;
@@ -71,6 +73,23 @@ const getDOMPurify = () => {
       if ("target" in node) {
         node.setAttribute("target", "_blank");
         node.setAttribute("rel", "noopener noreferrer");
+      }
+
+      // Hardening: validate href/src data: URIs and block svg/scripts
+      if (node.hasAttribute("src")) {
+        const src = node.getAttribute("src").trim();
+        if (/^\s*data:/i.test(src)) {
+          const isSafeDataUri = /^\s*data:\s*image\/(png|jpeg|jpg|gif|webp)\s*;base64,/i.test(src);
+          if (!isSafeDataUri) {
+            node.removeAttribute("src");
+          }
+        }
+      }
+      if (node.hasAttribute("href")) {
+        const href = node.getAttribute("href").trim();
+        if (/^\s*data:/i.test(href)) {
+          node.removeAttribute("href");
+        }
       }
     });
     hookRegistered = true;

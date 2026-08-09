@@ -47,7 +47,7 @@ const FeedbackSummary = ({ eventId, compact = false }) => {
 
   // Full view (for event details page)
   return (
-    <div className="bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 rounded-2xl border border-indigo-200 dark:border-indigo-800 p-6 space-y-6">
+    <div className="bg-linear-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 rounded-2xl border border-indigo-200 dark:border-indigo-800 p-6 space-y-6">
       {/* Rating Section */}
       <div className="border-b border-indigo-200 dark:border-indigo-800 pb-6">
         <div className="flex items-start justify-between mb-4">
@@ -98,7 +98,7 @@ const FeedbackSummary = ({ eventId, compact = false }) => {
                     </span>
                     <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full transition-all"
+                        className="h-full bg-linear-to-r from-yellow-400 to-yellow-500 rounded-full transition-all"
                         style={{ width: `${percentage}%` }}
                       />
                     </div>

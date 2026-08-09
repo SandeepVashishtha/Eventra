@@ -317,7 +317,7 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
                               </span>
                               <div className="flex-1 h-2.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                                 <div
-                                  className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-sky-400 transition-all duration-500"
+                                  className="h-full rounded-full bg-linear-to-r from-indigo-500 to-sky-400 transition-all duration-500"
                                   style={{ width: `${percent}%` }}
                                 />
                               </div>
@@ -401,7 +401,7 @@ const SurveyAnalytics = ({ questions = [], surveyTitle = "Survey" }) => {
                             key={comment.id}
                             className="p-3 bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/40 rounded-2xl space-y-1.5 flex items-start gap-2.5 hover:bg-slate-100/50 dark:hover:bg-slate-900/30 transition"
                           >
-                            <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-500 to-sky-400 text-white flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5 shadow-sm">
+                            <div className="w-7 h-7 rounded-full bg-linear-to-tr from-indigo-500 to-sky-400 text-white flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5 shadow-sm">
                               {comment.author.charAt(0)}
                             </div>
                             <div className="flex-1 space-y-0.5">

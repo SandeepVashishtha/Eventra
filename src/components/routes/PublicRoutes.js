@@ -61,6 +61,7 @@ export const getPublicRoutes = () => [
   // 🔥 FIX: Wrapped naked HomePage with module boundary for safety
   <Route key="/" path="/" element={withModuleBoundary(<HomePage />, "Home")} />,
   <Route key="/events" path="/events" element={withModuleBoundary(<EventsPage />, "Events explorer")} />,
+  <Route key="/explore" path="/explore" element={withModuleBoundary(<EventsPage />, "Events explorer")} />,
   <Route key="/event-details" path="/events/:eventId" element={withModuleBoundary(<EventDetails />, "Event details")} />,
   
   

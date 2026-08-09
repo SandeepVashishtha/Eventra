@@ -29,7 +29,7 @@ const cards = [
   },
 ];
 
-export default function LeaderboardStatsCards({ stats, loading }) {
+export default function LeaderboardStatsCards({ stats, loading, error }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
       {cards.map((card, idx) => (
@@ -50,6 +50,8 @@ export default function LeaderboardStatsCards({ stats, loading }) {
             <p className="mt-1 text-3xl font-extrabold text-slate-950">
               {loading ? (
                 <span className="inline-block w-12 h-8 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
+              ) : error ? (
+                <span className="text-2xl font-bold text-slate-400">&mdash;</span>
               ) : (
                 <AnimatedCounter value={stats[card.key]} />
               )}

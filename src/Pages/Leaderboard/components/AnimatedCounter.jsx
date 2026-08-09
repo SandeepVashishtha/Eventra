@@ -2,6 +2,7 @@ import { useState, useRef, useMemo, useEffect } from "react";
 
 export default function AnimatedCounter({ value, duration = 1200 }) {
   const [count, setCount] = useState(0);
+  const currentVisualRef = useRef(0);
   const rafRef = useRef();
   const end = useMemo(() => {
     const end = typeof value === "string" ? parseInt(value, 10) : value;
@@ -22,7 +23,9 @@ export default function AnimatedCounter({ value, duration = 1200 }) {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
-      setCount(Math.round(eased * end));
+      const val = Math.round(eased * end);
+      setCount(val);
+      currentVisualRef.current = val;
 
       if (progress < 1) {
         rafRef.current = requestAnimationFrame(tick);

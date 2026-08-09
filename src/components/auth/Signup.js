@@ -267,14 +267,14 @@ const Signup = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: prefersReducedMotion ? 0 : 0.5 }}
-      className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/30 px-4 py-8 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 sm:px-6 lg:px-8"
+      className="min-h-screen bg-linear-to-br from-gray-50 via-blue-50/30 to-indigo-50/30 px-4 py-8 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 sm:px-6 lg:px-8"
     >
       <div className="mx-auto grid max-w-5xl items-center gap-8 md:grid-cols-2">
         <motion.section
           initial={{ x: prefersReducedMotion ? 0 : -20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: prefersReducedMotion ? 0 : 0.5 }}
-          className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 p-8 text-white shadow-2xl"
+          className="relative overflow-hidden rounded-3xl bg-linear-to-br from-blue-600 via-indigo-600 to-purple-700 p-8 text-white shadow-2xl"
         >
           <div className="absolute inset-0 opacity-10">
             <div className="absolute left-10 top-10 h-32 w-32 rounded-full bg-white blur-3xl" />

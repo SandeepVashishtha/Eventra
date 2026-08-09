@@ -1,6 +1,7 @@
 import React from "react";
 import "./ErrorBoundary.css";
 import { logError, persistErrors } from "../../utils/errorLogger";
+import { logSecurityEvent } from "../../utils/securityLogger";
 
 function generateErrorId() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -103,8 +104,8 @@ function buildDiagnosticReport(errorId, error, errorInfo) {
       const snap = {};
       for (let i = 0; i < sessionStorage.length; i++) {
         const k = sessionStorage.key(i);
-        if (k && !k.includes("token") && !k.includes("password")) {
-          try { snap[k] = sessionStorage.getItem(k)?.slice(0, 200); } catch {}
+        if (k && !k.includes("token") && !k.includes("password") && !k.includes("eventra:key-material") && !k.includes("eventra:key-salt")) {
+          try { snap[k] = process.env.NODE_ENV === "production" ? "[redacted]" : (sessionStorage.getItem(k)?.slice(0, 200)); } catch {}
         }
       }
       return JSON.stringify(snap, null, 2);
@@ -179,6 +180,7 @@ class ErrorBoundary extends React.Component {
 
     logError(error, errorInfo, { level, label: errorLabel });
 
+    logSecurityEvent("SYSTEM_CRASH", { message: error?.toString() || "Unknown error", level });
     persistErrors("error_log", {
       errorId,
       level,
@@ -204,6 +206,24 @@ class ErrorBoundary extends React.Component {
     this.setState({ isRecovering: true, recoveryMessage: "Reloading page..." });
     saveAppStateSnapshot();
     setTimeout(() => window.location.reload(), 300);
+  };
+
+  handleCopyReport = async () => {
+    const { error, errorInfo, errorId } = this.state;
+    const report = buildDiagnosticReport(errorId, error, errorInfo);
+
+    try {
+      await navigator.clipboard.writeText(report);
+      this.setState({ copied: true });
+      setTimeout(() => this.setState({ copied: false }), 2000);
+    } catch (err) {
+      console.error("Clipboard copy failed, using fallback:", err);
+      try {
+        const blob = new Blob([report], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        window.open(url, "_blank", "noopener,noreferrer");
+      } catch (_) {}
+    }
   };
 
   handleTryAgain = () => {
@@ -248,25 +268,6 @@ class ErrorBoundary extends React.Component {
       localStorage.clear();
     }
     setTimeout(() => window.location.reload(), 300);
-  };
-
-  handleCopyReport = () => {
-    const { error, errorInfo, errorId } = this.state;
-    const report = buildDiagnosticReport(errorId, error, errorInfo);
-
-    navigator.clipboard
-      .writeText(report)
-      .then(() => {
-        this.setState({ copied: true });
-        setTimeout(() => this.setState({ copied: false }), 2000);
-      })
-      .catch(() => {
-        try {
-          const blob = new Blob([report], { type: "text/plain" });
-          const url = URL.createObjectURL(blob);
-          window.open(url, "_blank", "noopener,noreferrer");
-        } catch {}
-      });
   };
 
   toggleDiagnostics = () => {

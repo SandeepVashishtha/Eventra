@@ -19,12 +19,12 @@ const UserProfileDropdown = ({
 }) => (
   <div className="relative profile-container">
     <button
-      onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+      onClick={() => setShowProfileDropdown((prev) => !prev)}
       type="button"
       aria-label="Open user menu"
       aria-expanded={showProfileDropdown}
       aria-haspopup="menu"
-      aria-controls="user-profile-menu"
+      aria-controls={showProfileDropdown ? "user-profile-menu" : undefined}
       className="flex items-center gap-2 text-sm font-medium text-black/90 dark:text-white/90 hover:text-black dark:hover:text-white transition-colors"
     >
       {user?.profilePicture ? (
@@ -69,9 +69,10 @@ const UserProfileDropdown = ({
                     e.currentTarget.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%239ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>';
                     e.currentTarget.style.backgroundColor = "#f3f4f6";
                   }}
+                   loading="lazy"
                 />
               ) : (
-                <div className="w-12 h-12 rounded-full bg-gradient-to-r from-indigo-800 to-indigo-950 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-full bg-linear-to-r from-indigo-800 to-indigo-950 flex items-center justify-center">
                   <UserIcon className="w-6 h-6 text-white" />
                 </div>
               )}

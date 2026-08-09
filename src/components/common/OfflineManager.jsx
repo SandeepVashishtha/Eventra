@@ -75,7 +75,7 @@ const OfflineManager = ({ isOpen, onClose }) => {
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-white dark:bg-gray-800 shadow-2xl z-[100] flex flex-col"
+            className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-white dark:bg-gray-800 shadow-2xl z-modal flex flex-col"
           >
             {/* Header */}
             <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">

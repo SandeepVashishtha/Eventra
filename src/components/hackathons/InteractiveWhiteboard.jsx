@@ -438,7 +438,7 @@ const InteractiveWhiteboard = () => {
             </div>
 
             {/* Note Textarea Container */}
-            <div className="flex-1 p-2 bg-gradient-to-b from-[#0e101a] to-[#0a0c12]">
+            <div className="flex-1 p-2 bg-linear-to-b from-[#0e101a] to-[#0a0c12]">
               <textarea
                 className="w-full h-full min-h-[80px] bg-transparent border-none outline-none resize-none text-xs text-gray-200 select-text cursor-text leading-relaxed p-1 font-medium"
                 value={sticky.text}

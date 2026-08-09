@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 const VenueMapBuilder = () => {
   const [elements, setElements] = useState([]);
@@ -26,7 +26,7 @@ const VenueMapBuilder = () => {
         <button onClick={addTable} className="bg-blue-600 px-4 py-2 rounded">Add Round Table</button>
         <button onClick={saveLayout} className="bg-green-600 px-4 py-2 rounded">Save Layout</button>
       </div>
-      <div className="w-full h-[600px] bg-slate-800 border border-slate-700 relative overflow-hidden">
+      <div className="w-full h-150 bg-slate-800 border border-slate-700 relative overflow-hidden">
         {elements.map(el => (
           <div 
             key={el.id} 

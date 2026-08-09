@@ -1,25 +1,12 @@
-export const safeJsonParse = (
-  value,
-  fallback = null,
-) => {
+export function safeJsonParse(str, fallback = null, validator = null) {
+  if (typeof str !== "string") return fallback;
   try {
-    if (!value || typeof value !== "string") {
-      return fallback;
+    const parsed = JSON.parse(str);
+    if (validator && typeof validator === "function") {
+      return validator(parsed) ? parsed : fallback;
     }
-
-    return JSON.parse(value);
+    return parsed;
   } catch {
     return fallback;
   }
-};
-
-export const safeJsonParseObject = (
-  value,
-  fallback = {}
-) => {
-  const result = safeJsonParse(value, fallback);
-  if (result !== null && typeof result === 'object' && !Array.isArray(result)) {
-    return result;
-  }
-  return fallback;
-};
+}

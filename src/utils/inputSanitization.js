@@ -93,14 +93,15 @@ export const validateSearchQuery = (query = '') => {
  * @returns {string} - Safe query for API, or empty string if invalid
  */
 export const prepareSafeSearchQuery = (rawQuery = '') => {
-  const validation = validateSearchQuery(rawQuery);
+  const sanitized = sanitizeSearchQuery(rawQuery);
+
+  const validation = validateSearchQuery(sanitized);
   if (!validation.isValid) {
-     
-    console.warn(`[Security] Invalid search query: ${validation.error}`);
+    console.warn(`[Security] Invalid search query after sanitization: ${validation.error}`);
     return '';
   }
 
-  return sanitizeSearchQuery(rawQuery);
+  return sanitized;
 };
 
 /**

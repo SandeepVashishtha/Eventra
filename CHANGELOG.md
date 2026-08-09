@@ -1,0 +1,1 @@
+- Fixed useEventRegistration.js line 265: `checkEventCapacity` now treats `maxAttendees: 0` as unlimited capacity.

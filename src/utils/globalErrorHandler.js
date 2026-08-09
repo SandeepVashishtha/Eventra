@@ -1,4 +1,5 @@
 import { logError } from "./errorLogger.js";
+import { logger } from "./logger.js";
 
 // Track recent errors to avoid flooding logs with identical stack traces
 // that happen in rapid succession (e.g. a render loop).
@@ -38,7 +39,7 @@ export const initializeGlobalErrorHandling = () => {
     const fp = buildFingerprint(error || message);
     if (isDuplicate(fp)) return;
 
-    console.error("[GlobalError]", error || message);
+    logger.error("[GlobalError]", error || message);
     if (error) {
       logError(error, null, { source, lineno, colno });
     }
@@ -50,7 +51,7 @@ export const initializeGlobalErrorHandling = () => {
     const fp = buildFingerprint(wrapped);
     if (isDuplicate(fp)) return;
 
-    console.error("[UnhandledPromiseRejection]", reason);
+    logger.error("[UnhandledPromiseRejection]", reason);
     logError(wrapped, null, {
       type: "unhandled_promise_rejection",
     });

@@ -1,7 +1,17 @@
 /**
+ * @typedef {Object} CalendarEvent
+ * @property {string} title - The title of the event.
+ * @property {string} [description] - A short description of the event.
+ * @property {string|Date} date - The start date/time of the event.
+ * @property {string|Date} [endDate] - The end date/time of the event.
+ * @property {string} [location] - The location or URL of the event.
+ * @property {string|number} [id] - A unique identifier for the event.
+ * @property {string} [joiningLink] - A URL to join the event.
+ */
+
+/**
  * Calendar Exporter Utility (RFC 5545 Compliant)
- * 
- * Provides robust mechanisms to generate downloadable standard .ics files
+ * * Provides robust mechanisms to generate downloadable standard .ics files
  * and external calendar subscription URLs (Google Calendar, Outlook Web).
  */
 
@@ -14,8 +24,6 @@ const formatToICSDate = (dateStr) => {
 };
 
 // Helper to safely escape special characters in ICS strings (RFC 5545 compliant).
-// Carriage returns (\r) are stripped before newlines are escaped so that
-// user-supplied text cannot inject extra ICS content lines via CRLF sequences.
 const escapeICSText = (text = "") => {
   return text
     .replace(/\\/g, "\\\\")
@@ -27,6 +35,7 @@ const escapeICSText = (text = "") => {
 
 /**
  * Downloads a standard .ics iCalendar file for the given event.
+ * @param {CalendarEvent} event - The event object to export.
  */
 export const downloadICSFile = (event) => {
   const { title, description, date, endDate, location, id } = event;
@@ -94,6 +103,8 @@ export const downloadICSFile = (event) => {
 
 /**
  * Generates an external Google Calendar addition link.
+ * @param {CalendarEvent} event
+ * @returns {string|null} The Google Calendar URL.
  */
 export const generateGoogleCalendarLink = (event) => {
   const { title, description, date, endDate, location } = event;
@@ -118,14 +129,22 @@ export const generateGoogleCalendarLink = (event) => {
 
 /**
  * Generates an external Outlook Web addition link.
+ * @param {CalendarEvent} event
+ * @returns {string|null} The Outlook Calendar URL.
  */
 export const generateOutlookLink = (event) => {
   const { title, description, date, endDate, location } = event;
   const startDate = new Date(date);
   if (isNaN(startDate.getTime())) return null;
-  
+
   const start = startDate.toISOString();
-  const end = endDate ? new Date(endDate).toISOString() : new Date(startDate.getTime() + 2 * 60 * 60 * 1000).toISOString();
+  const fallbackEnd = new Date(startDate.getTime() + 2 * 60 * 60 * 1000).toISOString();
+  // Use formatToICSDate for safe validation — matches the pattern used by
+  // generateGoogleCalendarLink and generateYahooCalendarLink. Falls back to
+  // the 2-hour default if endDate is absent or an invalid date string.
+  const end = endDate
+    ? (formatToICSDate(endDate) ? new Date(endDate).toISOString() : fallbackEnd)
+    : fallbackEnd;
 
   const baseUrl = "https://outlook.live.com/calendar/0/deeplink/compose";
   const params = new URLSearchParams({
@@ -141,10 +160,35 @@ export const generateOutlookLink = (event) => {
 };
 
 /**
+ * Generates an external Yahoo Calendar addition link.
+ * @param {CalendarEvent} event
+ * @returns {string|null} Yahoo Calendar URL or null if the event date is invalid.
+ */
+export const generateYahooCalendarLink = (event) => {
+  const { title, description, date, endDate, location } = event;
+  const start = formatToICSDate(date);
+  if (!start) return null;
+
+  const end = endDate
+    ? formatToICSDate(endDate)
+    : formatToICSDate(new Date(new Date(date).getTime() + 2 * 60 * 60 * 1000));
+
+  const params = new URLSearchParams({
+    v: '60',
+    title: title || 'Eventra Event',
+    st: start,
+    et: end,
+    desc: description || 'Event organized through the Eventra Platform.',
+    in_loc: location || 'Virtual / Online Event',
+  });
+
+  return `https://calendar.yahoo.com/?${params.toString()}`;
+};
+
+/**
  * Downloads a single .ics file containing multiple events.
- * Supports both flat event objects and nested registration objects.
- * @param {Array} events - List of event/registration objects to export
- * @param {string} filename - Custom filename for the downloaded file
+ * @param {Array<CalendarEvent>} events - List of event objects to export.
+ * @param {string} [filename="registered-events"] - Custom filename for the downloaded file.
  */
 export const downloadBulkICSFile = (events, filename = "registered-events") => {
   if (!Array.isArray(events) || events.length === 0) return;
@@ -164,7 +208,7 @@ export const downloadBulkICSFile = (events, filename = "registered-events") => {
     const { title, description, date, endDate, location, id } = eventObj;
     
     const formattedStart = formatToICSDate(date);
-    if (!formattedStart) return; // Skip invalid event
+    if (!formattedStart) return;
     
     const formattedEnd = endDate ? formatToICSDate(endDate) : formatToICSDate(new Date(new Date(date).getTime() + 2 * 60 * 60 * 1000));
 
@@ -211,3 +255,71 @@ export const downloadBulkICSFile = (events, filename = "registered-events") => {
   }
 };
 
+/**
+ * Pure function that builds and returns the ICS content string for a single event
+ * without triggering a download. Useful for server-side rendering, unit testing,
+ * or constructing a data URI.
+ *
+ * @param {CalendarEvent} event
+ * @returns {string|null} ICS content string, or null if the event date is invalid
+ */
+export const buildICSContent = (event) => {
+  const { title, description, date, endDate, location, id } = event;
+
+  const formattedStart = formatToICSDate(date);
+  if (!formattedStart) return null;
+
+  const formattedEnd = endDate
+    ? formatToICSDate(endDate)
+    : formatToICSDate(new Date(new Date(date).getTime() + 2 * 60 * 60 * 1000));
+  const createdDate = formatToICSDate(new Date());
+
+  const icsLines = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Eventra//Event Organizer Platform//EN",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+    "BEGIN:VEVENT",
+    `UID:eventra-${id || Date.now()}@eventra.com`,
+    `DTSTAMP:${createdDate}`,
+    `DTSTART:${formattedStart}`,
+    `DTEND:${formattedEnd}`,
+    `SUMMARY:${escapeICSText(title || "Eventra Scheduled Event")}`,
+    `DESCRIPTION:${escapeICSText(description || "Event organized through the Eventra Platform.")}`,
+    `LOCATION:${escapeICSText(location || "Virtual / Online Event")}`,
+    ...(event.joiningLink ? [`URL:${event.joiningLink}`] : []),
+    "STATUS:CONFIRMED",
+    "SEQUENCE:0",
+    "BEGIN:VALARM",
+    "TRIGGER:-PT1H",
+    "ACTION:DISPLAY",
+    "DESCRIPTION:Reminder: Your event starts in 1 hour",
+    "END:VALARM",
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ];
+
+  return icsLines.join("\r\n");
+};
+
+/**
+ * Generates a `webcal://` protocol link that opens directly in Apple Calendar,
+ * Outlook for Mac, and other native calendar apps — skipping the browser download step.
+ *
+ * The link is derived from a publicly-reachable HTTPS URL to an `.ics` feed.
+ *
+ * @param {string} httpsUrl - A public HTTPS URL to an .ics file or feed
+ * @returns {string|null}   The webcal:// equivalent, or null if httpsUrl is invalid
+ */
+export const generateWebCalLink = (httpsUrl) => {
+  if (!httpsUrl || typeof httpsUrl !== "string") return null;
+  try {
+    const url = new URL(httpsUrl);
+    if (url.protocol !== "https:") return null;
+    url.protocol = "webcal:";
+    return url.toString();
+  } catch {
+    return null;
+  }
+};

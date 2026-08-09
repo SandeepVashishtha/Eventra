@@ -10,7 +10,12 @@ import path from "node:path";
 import fs from "node:fs";
 
 export async function resolve(specifier, context, nextResolve) {
-  if (context.parentURL && (context.parentURL.includes("useOfflineSync.test.mjs") || context.parentURL.includes("useOfflineSync.js"))) {
+  if (context.parentURL && (
+    context.parentURL.includes("useOfflineSync.test.mjs") ||
+    context.parentURL.includes("useOfflineSync.js") ||
+    context.parentURL.includes("notificationSync.test.mjs") ||
+    context.parentURL.includes("useNotificationPoller.js")
+  )) {
     if (specifier.endsWith("AuthContext") || specifier.includes("AuthContext")) {
       return {
         url: pathToFileURL(path.resolve("tests/helpers/mockAuthContext.js")).href,

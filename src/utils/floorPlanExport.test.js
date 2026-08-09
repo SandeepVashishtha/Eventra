@@ -2,7 +2,7 @@ import {
   getCleanExportSvgString,
   exportAsSVG,
   exportAsPNG,
-  downloadLayoutJSON,
+  // downloadLayoutJSON,
   importLayoutJSON,
 } from "./floorPlanExport";
 

@@ -8,7 +8,7 @@ const assessStrength = (password) => {
     { label: "Contains a number", met: password ? /\d/.test(password) : false },
     { label: "Contains uppercase letter", met: password ? /[A-Z]/.test(password) : false },
     { label: "Contains lowercase letter", met: password ? /[a-z]/.test(password) : false },
-    { label: "Contains special character", met: password ? /[!@#$%^&*(),.?":{}|<>]/.test(password) : false }
+    { label: "Contains special character", met: password ? /[^A-Za-z0-9]/.test(password) : false }
   ];
 
   const criteriaMet = criteria.filter(c => c.met).length;
@@ -40,11 +40,11 @@ const PasswordStrengthIndicator = ({ password }) => {
   const getBarColorClass = (currentScore) => {
     switch (currentScore) {
       case 1:
-        return 'bg-gradient-to-r from-red-500 to-rose-500 shadow-sm shadow-red-500/20';
+        return 'bg-linear-to-r from-red-500 to-rose-500 shadow-sm shadow-red-500/20';
       case 2:
-        return 'bg-gradient-to-r from-amber-400 to-amber-500 shadow-sm shadow-amber-500/20';
+        return 'bg-linear-to-r from-amber-400 to-amber-500 shadow-sm shadow-amber-500/20';
       case 3:
-        return 'bg-gradient-to-r from-emerald-500 to-green-500 shadow-sm shadow-green-500/20';
+        return 'bg-linear-to-r from-emerald-500 to-green-500 shadow-sm shadow-green-500/20';
       default:
         return 'bg-slate-200 dark:bg-slate-700';
     }

@@ -75,7 +75,7 @@ export const validateForm = (formData) => {
       newErrors.registrationStart = "Registration start must be before the event starts";
     }
 
-    if (registrationEnd && !isNaN(eventStart.getTime()) && registrationEnd > eventStart) {
+    if (registrationEnd && !isNaN(eventStart.getTime()) && registrationEnd >= eventStart) {
       newErrors.registrationEnd = "Registration must close before the event starts";
     }
   }
