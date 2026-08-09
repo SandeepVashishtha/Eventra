@@ -451,6 +451,7 @@ export default function TicketScanner() {
     const option = e.target.options[idx];
     setManualEventId(option.value);
     setManualEventName(option.text);
+    setSelectedEventId(option.value);
   };
 
   return (
@@ -517,7 +518,13 @@ export default function TicketScanner() {
             <select
               id="active-event-select"
               value={selectedEventId}
-              onChange={(e) => setSelectedEventId(e.target.value)}
+              onChange={(e) => {
+                const idx = e.target.selectedIndex;
+                const option = e.target.options[idx];
+                setSelectedEventId(e.target.value);
+                setManualEventId(e.target.value);
+                setManualEventName(option?.text || "");
+              }}
               className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-350 focus:outline-none focus:border-indigo-500"
             >
               {events.length === 0 ? (
