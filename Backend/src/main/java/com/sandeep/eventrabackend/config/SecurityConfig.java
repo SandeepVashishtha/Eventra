@@ -148,7 +148,8 @@ public class SecurityConfig {
                                 "/api/events/{id}/seats",
                                 "/api/events/stream"
                         ).permitAll()
-                        .requestMatchers("/stream", "/stream/**").permitAll()
+                        .requestMatchers("/stream/events", "/stream/leaderboard", "/stream/live-audience").permitAll()
+                        .requestMatchers("/stream/notifications", "/stream/analytics").authenticated()
                         // ── Public: Projects endpoint ────────────────────────
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/projects").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/projects/{id}").permitAll()
