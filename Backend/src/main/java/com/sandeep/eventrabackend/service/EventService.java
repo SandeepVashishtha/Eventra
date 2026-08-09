@@ -202,7 +202,9 @@ public class EventService {
                         String search,
                         List<String> statuses,
                         String sort) {
-                Pageable pageable = PageRequest.of(page, size, resolveSort(sort));
+                int safePage = Math.max(0, page);
+                int safeSize = (size <= 0) ? 20 : Math.min(size, 100);
+                Pageable pageable = PageRequest.of(safePage, safeSize, resolveSort(sort));
                 Specification<Event> spec = EventSpecifications.publicListing(search, statuses);
                 Page<EventResponse> result = eventRepository.findAll(spec, pageable).map(this::toEventResponse);
                 return PagedResponse.from(result);
