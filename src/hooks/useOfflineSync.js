@@ -362,9 +362,15 @@ const useOfflineSync = () => {
 
         const syncStartTime = Date.now();
 
-        for (const item of sessionValidatedQueue) {
+        for (let index = 0; index < sessionValidatedQueue.length; index++) {
+          const item = sessionValidatedQueue[index];
           if (Date.now() - syncStartTime > SYNC_BUDGET_MS) {
             logger.warn("[useOfflineSync] Sync budget exceeded, stopping.");
+            // Preserve the unattempted remainder of the queue (including the
+            // current item, which has not been sent yet) for the next sync run
+            // so the budget break never silently discards queued offline actions.
+            const remaining = sessionValidatedQueue.slice(index);
+            failedQueue.push(...remaining);
             break;
           }
           // Halt the zombie loop immediately if the session changed or component unmounted.
