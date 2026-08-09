@@ -315,7 +315,19 @@ const useEventListing = () => {
   }, [scoredEvents]);
 
   const sortedEvents = useMemo(() => {
-    const base = sortType === "Best Match" ? scoredEvents : filteredEvents;
+    // Best Match must only re-order the already-filtered set (#12461).
+    // filteredEvents does not carry recommendation scores (useRecommendations
+    // returns a separate array), so enrich it from matchScoreMap first —
+    // otherwise the sort would compare all-zero scores and lose the ranking.
+    const base =
+      sortType === "Best Match"
+        ? filteredEvents.map((event) => ({
+            ...event,
+            recommendationScore: matchScoreMap.get(String(event.id))?.score ?? 0,
+            recommendationReasons: matchScoreMap.get(String(event.id))?.reasons ?? [],
+          }))
+        : filteredEvents;
+
     return [...base].sort((a, b) => {
       // Best Match: sort by AI recommendation score descending
       if (sortType === "Best Match") {
@@ -331,7 +343,7 @@ const useEventListing = () => {
       // Default / Newest
       return dateB - dateA;
     });
-  }, [filteredEvents, scoredEvents, sortType]);
+  }, [filteredEvents, matchScoreMap, sortType]);
 
   const paginatedEvents = useMemo(() => {
     // Server already returned one page — do not re-slice client-side.
