@@ -3,6 +3,8 @@ package com.sandeep.eventrabackend.controller;
 import com.sandeep.eventrabackend.dto.AdminDashboardStatsDTO;
 import com.sandeep.eventrabackend.dto.RegistrationTrendDTO;
 import com.sandeep.eventrabackend.dto.request.AdminUpdateRoleRequest;
+import com.sandeep.eventrabackend.dto.request.AdminUpdateUserRequest;
+import com.sandeep.eventrabackend.dto.request.EventUpdateRequest;
 import com.sandeep.eventrabackend.dto.response.*;
 import com.sandeep.eventrabackend.service.AdminService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -118,6 +120,15 @@ public class AdminController {
         return ResponseEntity.ok(adminService.updateUserRole(id, request.getRole()));
     }
 
+    @PutMapping("/users/{id}")
+    @Operation(summary = "Update a user", description = "Updates profile fields and optionally role for an existing user.")
+    public ResponseEntity<AdminUserResponse> updateUser(
+            @PathVariable Long id,
+            @Valid @RequestBody AdminUpdateUserRequest request
+    ) {
+        return ResponseEntity.ok(adminService.updateUser(id, request));
+    }
+
     @DeleteMapping("/users/{id}")
     @Operation(
             summary = "Delete a user",
@@ -178,6 +189,15 @@ public class AdminController {
             @Parameter(description = "ID of the event") @PathVariable Long id
     ) {
         return ResponseEntity.ok(adminService.getEventAttendees(id));
+    }
+
+    @PutMapping("/events/{id}")
+    @Operation(summary = "Update an event", description = "Admin override to update any event.")
+    public ResponseEntity<EventResponse> updateEvent(
+            @PathVariable Long id,
+            @Valid @RequestBody EventUpdateRequest request
+    ) {
+        return ResponseEntity.ok(adminService.updateEvent(id, request));
     }
 
     @DeleteMapping("/events/{id}")

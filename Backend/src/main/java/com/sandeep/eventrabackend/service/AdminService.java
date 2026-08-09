@@ -106,6 +106,49 @@ public class AdminService {
         return toAdminUserResponse(userRepository.save(targetUser));
     }
 
+    @Transactional
+    public AdminUserResponse updateUser(Long id, com.sandeep.eventrabackend.dto.request.AdminUpdateUserRequest request) {
+        User targetUser = userRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
+
+        Role callerRole = getAuthenticatedRole();
+        if (callerRole != Role.SUPER_ADMIN && targetUser.getRole() == Role.SUPER_ADMIN) {
+            throw new AccessDeniedException("Only SUPER_ADMIN users can modify SUPER_ADMIN accounts");
+        }
+
+        if (request.getFirstName() != null) {
+            targetUser.setFirstName(request.getFirstName().trim());
+        }
+        if (request.getLastName() != null) {
+            targetUser.setLastName(request.getLastName().trim());
+        }
+        if (request.getUsername() != null) {
+            String username = request.getUsername().trim();
+            if (!username.equalsIgnoreCase(targetUser.getUsername()) && userRepository.existsByUsername(username)) {
+                throw new IllegalArgumentException("Username is already taken");
+            }
+            targetUser.setUsername(username);
+        }
+        if (request.getEmail() != null) {
+            String email = request.getEmail().trim().toLowerCase();
+            if (!email.equalsIgnoreCase(targetUser.getEmail()) && userRepository.existsByEmail(email)) {
+                throw new IllegalArgumentException("Email is already taken");
+            }
+            targetUser.setEmail(email);
+        }
+        if (request.getRole() != null && !request.getRole().isBlank()) {
+            Role requestedRole = parseRole(request.getRole());
+            if (callerRole != Role.SUPER_ADMIN) {
+                if (requestedRole == Role.SUPER_ADMIN) {
+                    throw new AccessDeniedException("Only SUPER_ADMIN users can assign the SUPER_ADMIN role");
+                }
+            }
+            targetUser.setRole(requestedRole);
+        }
+
+        return toAdminUserResponse(userRepository.save(targetUser));
+    }
+
     /**
      * Deletes a user by ID.
      */
@@ -177,6 +220,35 @@ public class AdminService {
      * Force-deletes an event (admin override, bypasses organizer ownership).
      */
     @Transactional
+    @Transactional
+    public EventResponse updateEvent(Long id, com.sandeep.eventrabackend.dto.request.EventUpdateRequest request) {
+        Event event = eventRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Event not found with id: " + id));
+
+        event.setTitle(request.getTitle());
+        event.setDescription(request.getDescription());
+        event.setLocation(request.getLocation());
+        event.setEventDate(request.getEventDate());
+        if (request.getCapacity() != null) {
+            event.setCapacity(request.getCapacity());
+        }
+        if (request.getIsPublic() != null) {
+            event.setPublic(request.getIsPublic());
+        }
+        if (request.getImageUrl() != null) {
+            event.setImageUrl(request.getImageUrl());
+        }
+        if (request.getCategory() != null) {
+            event.setCategory(request.getCategory());
+        }
+        if (request.getTags() != null) {
+            event.setTags(request.getTags());
+        }
+
+        Event saved = eventRepository.save(event);
+        return toEventResponse(saved);
+    }
+
     public void deleteEvent(Long id) {
         if (!eventRepository.existsById(id)) {
             throw new EntityNotFoundException("Event not found with id: " + id);
