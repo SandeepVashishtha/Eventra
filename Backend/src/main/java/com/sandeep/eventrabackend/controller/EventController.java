@@ -119,6 +119,23 @@ public class EventController {
                                 eventService.getAllEvents(safePage, clampedSize, search, status, sort));
         }
 
+        @GetMapping("/alternatives")
+        @Operation(
+                        summary = "Suggest alternative events in a date window",
+                        description = "Returns a limited list of public events near a date for conflict resolution UI.")
+        public ResponseEntity<List<EventResponse>> getAlternativeEvents(
+                        @RequestParam(required = false) Long excludeId,
+                        @RequestParam(required = false) String around,
+                        @RequestParam(defaultValue = "14") int windowDays,
+                        @RequestParam(defaultValue = "20") int limit) {
+                java.time.LocalDateTime aroundDate = null;
+                if (around != null && !around.isBlank()) {
+                        aroundDate = java.time.LocalDateTime.parse(around);
+                }
+                return ResponseEntity.ok(
+                                eventService.findAlternativeEvents(excludeId, aroundDate, windowDays, limit));
+        }
+
         // ── Issue #12229 — GET /api/events/search ─────────────────────────────
 
         @GetMapping("/search")

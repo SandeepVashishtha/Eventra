@@ -34,5 +34,14 @@ export const eventService = {
   
   getRegistrants: async (eventId) => {
     return apiUtils.get(API_ENDPOINTS.EVENTS.REGISTRANTS(eventId));
-  }
+  },
+
+  getAlternatives: async ({ excludeId, around, windowDays = 14, limit = 20 } = {}) => {
+    const params = new URLSearchParams();
+    if (excludeId != null) params.set("excludeId", String(excludeId));
+    if (around) params.set("around", around);
+    params.set("windowDays", String(windowDays));
+    params.set("limit", String(limit));
+    return apiUtils.get(`${API_ENDPOINTS.EVENTS.ALTERNATIVES}?${params.toString()}`);
+  },
 };

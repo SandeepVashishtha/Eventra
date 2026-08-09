@@ -252,13 +252,15 @@ const useEventRegistration = (eventIdParam) => {
     const conflictCheck = checkRegistrationConflict(event, myEvents);
     if (conflictCheck.hasConflict) {
       try {
-        const res = await eventService.getAllEvents();
-        const raw = res.status === 200 ? res.data : null;
-        const realEvents = Array.isArray(raw?.content)
-          ? raw.content
-          : Array.isArray(raw)
-            ? raw
-            : [];
+        const around =
+          event.eventDate || event.date || event.startDate || undefined;
+        const res = await eventService.getAlternatives({
+          excludeId: event.id,
+          around,
+          windowDays: 14,
+          limit: 20,
+        });
+        const realEvents = Array.isArray(res?.data) ? res.data : [];
         const suggestions = suggestAlternativeEvents(event, realEvents, myEvents);
         setConflictData({
           conflicts: conflictCheck.conflicts,
