@@ -24,6 +24,8 @@ public interface EventRegistrationRepository extends JpaRepository<EventRegistra
 
     List<EventRegistration> findByEvent_Id(Long eventId);
 
+    List<EventRegistration> findByEvent_IdAndStatus(Long eventId, String status);
+
     List<EventRegistration> findByEvent_IdAndShowProfileInAttendeeDirectoryTrueOrderByRegisteredAtAsc(Long eventId);
 
     @Query("SELECT DISTINCT r.event.id FROM EventRegistration r WHERE r.user.id = :userId")

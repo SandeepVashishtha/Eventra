@@ -24,8 +24,6 @@ const MAX_TAG_LENGTH = 50;
 const SORT_MAPPING = {
   Newest: "date,desc",
   Upcoming: "date,asc",
-  // FIX (#7437): sort by AI recommendation score, highest first
-  "Best Match": "match,desc",
   Oldest: "date,asc",
   "Title A-Z": "title,asc",
   "Title Z-A": "title,desc",
@@ -57,6 +55,7 @@ const useEventListing = () => {
     totalElements: 0,
     first: true,
     last: true,
+    serverPaginated: false,
   });
   const [serverPaged, setServerPaged] = useState(false);
 
@@ -82,6 +81,10 @@ const useEventListing = () => {
 
     if (filterType && filterType !== "all") {
       params.append("status", filterType.toUpperCase());
+    }
+
+    if (categoryFilter && categoryFilter !== "all") {
+      params.append("category", categoryFilter);
     }
 
     if (safeFilters?.categories?.length) {
@@ -114,7 +117,7 @@ const useEventListing = () => {
     params.append("sort", sortValue);
 
     return params.toString();
-  }, [currentPage, eventsPerPage, debouncedSearchQuery, filterType, advancedFilters, sortType]);
+  }, [currentPage, eventsPerPage, debouncedSearchQuery, filterType, categoryFilter, advancedFilters, sortType]);
 
   const fetchEvents = useCallback(async () => {
     const requestId = ++latestRequestRef.current;
@@ -148,6 +151,7 @@ const useEventListing = () => {
         totalElements: responseData.totalElements || 0,
         first: responseData.first ?? true,
         last: responseData.last ?? true,
+        serverPaginated: Array.isArray(responseData.content),
       });
     } catch (error) {
       setEvents([]);
@@ -157,6 +161,7 @@ const useEventListing = () => {
         totalElements: 0,
         first: true,
         last: true,
+        serverPaginated: false,
       });
 
       if (error?.response?.status === 403) {
@@ -179,7 +184,7 @@ const useEventListing = () => {
       return;
     }
     setCurrentPage(1);
-  }, [searchQuery, filterType, sortType, advancedFilters, eventsPerPage]);
+  }, [searchQuery, filterType, categoryFilter, sortType, advancedFilters, eventsPerPage]);
 
   const setSafePage = useCallback(
     (page) => {
@@ -238,8 +243,11 @@ const useEventListing = () => {
       return true;
     });
 
-    // 3. Category filter
-    const target = categoryFilter && categoryFilter !== "all" ? categoryFilter.toLowerCase() : null;
+    // 3. Category filter (client-side only when the API did not page/filter for us)
+    const target =
+      !serverPaged && categoryFilter && categoryFilter !== "all"
+        ? categoryFilter.toLowerCase()
+        : null;
 
     if (target) {
       filtered = filtered.filter((event) => {
@@ -283,7 +291,7 @@ const useEventListing = () => {
 
     // 4. Advanced filters
     return applyAdvancedFilters(filtered, advancedFilters);
-  }, [events, filterType, categoryFilter, debouncedSearchQuery, advancedFilters]);
+  }, [events, filterType, categoryFilter, debouncedSearchQuery, advancedFilters, serverPaged]);
 
   // FIX (#7437): Enrich all events with AI recommendation scores so the
   // "Best Match" sort can rank events by personalised relevance.
@@ -305,7 +313,19 @@ const useEventListing = () => {
   }, [scoredEvents]);
 
   const sortedEvents = useMemo(() => {
-    const base = sortType === "Best Match" ? scoredEvents : filteredEvents;
+    // Best Match must only re-order the already-filtered set (#12461).
+    // filteredEvents does not carry recommendation scores (useRecommendations
+    // returns a separate array), so enrich it from matchScoreMap first —
+    // otherwise the sort would compare all-zero scores and lose the ranking.
+    const base =
+      sortType === "Best Match"
+        ? filteredEvents.map((event) => ({
+            ...event,
+            recommendationScore: matchScoreMap.get(String(event.id))?.score ?? 0,
+            recommendationReasons: matchScoreMap.get(String(event.id))?.reasons ?? [],
+          }))
+        : filteredEvents;
+
     return [...base].sort((a, b) => {
       // Best Match: sort by AI recommendation score descending
       if (sortType === "Best Match") {
@@ -321,16 +341,16 @@ const useEventListing = () => {
       // Default / Newest
       return dateB - dateA;
     });
-  }, [filteredEvents, scoredEvents, sortType]);
+  }, [filteredEvents, matchScoreMap, sortType]);
 
   const paginatedEvents = useMemo(() => {
     // Server already returned one page — do not re-slice client-side.
-    if (serverPaged) {
+    if (serverPaged || pagination.serverPaginated) {
       return sortedEvents;
     }
     const startIndex = (currentPage - 1) * eventsPerPage;
     return sortedEvents.slice(startIndex, startIndex + eventsPerPage);
-  }, [sortedEvents, currentPage, eventsPerPage, serverPaged]);
+  }, [sortedEvents, currentPage, eventsPerPage, serverPaged, pagination.serverPaginated]);
 
   const totalElements = serverPaged
     ? pagination.totalElements

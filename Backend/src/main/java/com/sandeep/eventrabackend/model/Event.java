@@ -96,8 +96,6 @@ public class Event {
     @Version
     private Long version;
 
-    private Set<User> attendees = new HashSet<>();
-
     // ── Helpers ─────────────────────────────────────────────────────────────
 
     /**
@@ -229,9 +227,6 @@ public class Event {
 
     public void setVersion(Long version) {
         this.version = version;
-    }
-
-        this.attendees = attendees;
     }
 
     public String getImageUrl() {

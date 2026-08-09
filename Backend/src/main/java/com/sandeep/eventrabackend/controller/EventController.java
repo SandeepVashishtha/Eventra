@@ -119,6 +119,23 @@ public class EventController {
                                 eventService.getAllEvents(safePage, clampedSize, search, status, sort));
         }
 
+        @GetMapping("/alternatives")
+        @Operation(
+                        summary = "Suggest alternative events in a date window",
+                        description = "Returns a limited list of public events near a date for conflict resolution UI.")
+        public ResponseEntity<List<EventResponse>> getAlternativeEvents(
+                        @RequestParam(required = false) Long excludeId,
+                        @RequestParam(required = false) String around,
+                        @RequestParam(defaultValue = "14") int windowDays,
+                        @RequestParam(defaultValue = "20") int limit) {
+                java.time.LocalDateTime aroundDate = null;
+                if (around != null && !around.isBlank()) {
+                        aroundDate = java.time.LocalDateTime.parse(around);
+                }
+                return ResponseEntity.ok(
+                                eventService.findAlternativeEvents(excludeId, aroundDate, windowDays, limit));
+        }
+
         // ── Issue #12229 — GET /api/events/search ─────────────────────────────
 
         @GetMapping("/search")
@@ -320,6 +337,26 @@ public class EventController {
 
                 return ResponseEntity.ok(
                                 eventService.cancelEvent(id, authentication.getName(), request));
+        }
+
+        @PostMapping("/{id}/resend-cancellation-notice")
+        @PreAuthorize("isAuthenticated()")
+        @Operation(summary = "Resend cancellation notice", description = "Resends the cancellation notification to a specific attendee.", security = @SecurityRequirement(name = "bearerAuth"))
+        public ResponseEntity<Void> resendCancellationNotice(
+                        @PathVariable Long id,
+                        @RequestBody java.util.Map<String, String> body,
+                        Authentication authentication) {
+                eventService.resendCancellationNotice(id, authentication.getName(), body.get("attendeeEmail"));
+                return ResponseEntity.ok().build();
+        }
+
+        @GetMapping("/{id}/notified-attendees")
+        @PreAuthorize("isAuthenticated()")
+        @Operation(summary = "List notified attendees", description = "Returns emails of confirmed attendees for a cancelled event.", security = @SecurityRequirement(name = "bearerAuth"))
+        public ResponseEntity<List<String>> getNotifiedAttendees(
+                        @PathVariable Long id,
+                        Authentication authentication) {
+                return ResponseEntity.ok(eventService.getNotifiedAttendees(id, authentication.getName()));
         }
 
         // ── Issue #2100 — DELETE /api/events/{id} ───────────────────────────────

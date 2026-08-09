@@ -46,6 +46,7 @@ public class AdminService {
     private final HackathonRegistrationRepository hackathonRegistrationRepository;
     private final ProjectUpvoteRepository     projectUpvoteRepository;
     private final NotificationRepository      notificationRepository;
+    private final EventService                eventService;
 
     // ══════════════════════════════════════════════════════════════════════
     // 1. USER MANAGEMENT
@@ -131,6 +132,9 @@ public class AdminService {
         projectUpvoteRepository.deleteByUser_Id(id);
         notificationRepository.deleteByUser_Id(id);
         feedbackRepository.deleteByUser_Id(id);
+        eventRepository.deleteAttendeeRowsByUserId(id);
+        eventTeamMemberRepository.clearAssignedByUserId(id);
+        eventTeamMemberRepository.deleteByUser_Id(id);
 
         for (Long eventId : affectedEventIds) {
             eventRepository.findById(eventId).ifPresent(event -> {
@@ -138,6 +142,7 @@ public class AdminService {
                         .countByEvent_IdAndStatus(eventId, "CONFIRMED"));
                 eventRepository.save(event);
             });
+            eventService.promoteWaitlistAfterVacancy(eventId);
         }
 
         userRepository.deleteById(id);
@@ -204,6 +209,7 @@ public class AdminService {
         if (!hackathonRepository.existsById(id)) {
             throw new EntityNotFoundException("Hackathon not found with id: " + id);
         }
+        hackathonRegistrationRepository.deleteByHackathonId(id);
         hackathonRepository.deleteById(id);
     }
 

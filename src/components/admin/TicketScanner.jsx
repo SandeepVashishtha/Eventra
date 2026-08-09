@@ -221,7 +221,14 @@ export default function TicketScanner() {
     } catch {
       if (decodedText.startsWith("eyJ") && decodedText.split(".").length === 3) {
         try {
-          const payload = JSON.parse(atob(decodedText.split(".")[1]));
+          // JWT payloads are base64url (RFC 4648): '-'/'_' instead of '+'/'/'
+          // and no padding. Convert to standard base64 before atob.
+          const encodedPayload = decodedText.split(".")[1];
+          const b64 = encodedPayload
+            .replace(/-/g, "+")
+            .replace(/_/g, "/")
+            .padEnd(Math.ceil(encodedPayload.length / 4) * 4, "=");
+          const payload = JSON.parse(atob(b64));
           const activeEvent = events.find(e => String(e.id) === String(selectedEventId));
           const ticketEventId = payload.eventId || payload.event_id;
           if (ticketEventId && String(ticketEventId) !== String(selectedEventId)) {
@@ -322,7 +329,7 @@ export default function TicketScanner() {
       await pushToQueue(
         {
           actionType: "TICKET_CHECK_IN",
-          ticketId,
+          ticketId: ticketData.ticketId,
           eventId: eventId || "unknown",
           endpoint: API_ENDPOINTS.TICKETS.CHECK_IN,
           payload: ticketData,
@@ -386,7 +393,7 @@ export default function TicketScanner() {
         return;
       }
 
-      await recordCheckIn(ticketId, eventId, { validatedAt: new Date().toISOString() });
+      await recordCheckIn(ticketData.ticketId, eventId, { validatedAt: new Date().toISOString() });
 
       triggerScanFeedback("verified");
       setScanResult({
@@ -451,6 +458,7 @@ export default function TicketScanner() {
     const option = e.target.options[idx];
     setManualEventId(option.value);
     setManualEventName(option.text);
+    setSelectedEventId(option.value);
   };
 
   return (
@@ -517,7 +525,13 @@ export default function TicketScanner() {
             <select
               id="active-event-select"
               value={selectedEventId}
-              onChange={(e) => setSelectedEventId(e.target.value)}
+              onChange={(e) => {
+                const idx = e.target.selectedIndex;
+                const option = e.target.options[idx];
+                setSelectedEventId(e.target.value);
+                setManualEventId(e.target.value);
+                setManualEventName(option?.text || "");
+              }}
               className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-350 focus:outline-none focus:border-indigo-500"
             >
               {events.length === 0 ? (

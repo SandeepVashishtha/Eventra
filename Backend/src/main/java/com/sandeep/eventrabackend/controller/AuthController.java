@@ -121,7 +121,7 @@ public class AuthController {
                 }
             }
             AuthResponse response = authService.refresh(refreshToken);
-            return ResponseEntity.ok(response);
+            return withAuthCookie(ResponseEntity.ok(), response);
         } catch (Exception ex) {
             ErrorResponse error = ErrorResponse.builder()
                     .status(HttpStatus.UNAUTHORIZED.value())
@@ -185,9 +185,9 @@ public ResponseEntity<AuthResponse> googleLogin(
         }
 
         if (!StringUtils.hasText(token)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+            return ResponseEntity.ok()
                     .header(HttpHeaders.SET_COOKIE, authCookieHelper.clearAuthCookie().toString())
-                    .body("Missing auth token");
+                    .body("Logged out successfully");
         }
 
         authService.logout(token);

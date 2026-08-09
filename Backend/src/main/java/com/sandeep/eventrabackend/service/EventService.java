@@ -12,7 +12,6 @@ import com.sandeep.eventrabackend.dto.response.RegistrationResponse;
 import com.sandeep.eventrabackend.dto.response.WaitlistResponse;
 import com.sandeep.eventrabackend.exception.EventFullException;
 import com.sandeep.eventrabackend.exception.EventNotFoundException;
-import com.sandeep.eventrabackend.exception.RegistrationClosedException;
 import com.sandeep.eventrabackend.exception.RegistrationConflictException;
 import com.sandeep.eventrabackend.model.Event;
 import com.sandeep.eventrabackend.model.EventRegistration;
@@ -136,8 +135,7 @@ public class EventService {
         }
 
         public EventAvailabilityResponse getEventAvailability(Long id, String userEmail) {
-                Event event = eventRepository.findById(id)
-                                .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + id));
+                Event event = requirePublicEvent(id);
 
                 Integer capacity = event.getCapacity();
                 int registeredCount = event.getRegisteredCount();
@@ -192,13 +190,23 @@ public class EventService {
          * Retrieves a page of public events with optional search / status / sort.
          */
         @Transactional(readOnly = true)
+
+        private Event requirePublicEvent(Long id) {
+                return eventRepository.findById(id)
+                                .filter(Event::isPublic)
+                                .orElseThrow(() -> new EventNotFoundException(
+                                                "Event not found with id: " + id));
+        }
+
         public PagedResponse<EventResponse> getAllEvents(
                         int page,
                         int size,
                         String search,
                         List<String> statuses,
                         String sort) {
-                Pageable pageable = PageRequest.of(page, size, resolveSort(sort));
+                int safePage = Math.max(0, page);
+                int safeSize = (size <= 0) ? 20 : Math.min(size, 100);
+                Pageable pageable = PageRequest.of(safePage, safeSize, resolveSort(sort));
                 Specification<Event> spec = EventSpecifications.publicListing(search, statuses);
                 Page<EventResponse> result = eventRepository.findAll(spec, pageable).map(this::toEventResponse);
                 return PagedResponse.from(result);
@@ -213,7 +221,9 @@ public class EventService {
                 String rawProperty = parts[0].trim();
                 String mapped = SORT_ALIASES.getOrDefault(rawProperty.toLowerCase(Locale.ROOT), rawProperty);
                 if (!ALLOWED_SORT_PROPERTIES.contains(mapped)) {
-                        return Sort.by(Sort.Direction.DESC, "eventDate");
+                        throw new IllegalArgumentException(
+                                        "Unsupported sort property '" + rawProperty + "'. Allowed values: "
+                                                        + String.join(", ", ALLOWED_SORT_PROPERTIES));
                 }
 
                 Sort.Direction direction = Sort.Direction.DESC;
@@ -222,6 +232,35 @@ public class EventService {
                 }
                 return Sort.by(direction, mapped);
         }
+
+        /**
+         * Returns a bounded window of public events near {@code around} for conflict
+         * alternative suggestions (avoids loading the entire catalog).
+         */
+        @Transactional(readOnly = true)
+        public List<EventResponse> findAlternativeEvents(
+                        Long excludeEventId,
+                        LocalDateTime around,
+                        int windowDays,
+                        int limit) {
+
+                LocalDateTime center = around != null ? around : LocalDateTime.now();
+                int days = Math.min(Math.max(windowDays, 1), 90);
+                int size = Math.min(Math.max(limit, 1), 50);
+                LocalDateTime from = center.minusDays(days);
+                LocalDateTime to = center.plusDays(days);
+
+                return eventRepository
+                                .findPublicAlternativesInWindow(
+                                                excludeEventId,
+                                                from,
+                                                to,
+                                                org.springframework.data.domain.PageRequest.of(0, size))
+                                .stream()
+                                .map(this::toEventResponse)
+                                .toList();
+        }
+
 
         /**
          * Returns a bounded window of public events near {@code around} for conflict
@@ -282,13 +321,15 @@ public class EventService {
         @Transactional(readOnly = true)
         public List<EventResponse> searchEvents(String search, String category, String startDate, String endDate,
                         Boolean free) {
-                List<Event> events = new ArrayList<>();
+                List<Event> events;
 
                 // Build query based on search criteria
                 if (search != null && !search.trim().isEmpty()) {
                         // Full-text search on title and description
                         events = eventRepository.findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
                                         search, search);
+                } else {
+                        events = eventRepository.findAll();
                 }
 
                 // Apply additional filters
@@ -325,11 +366,10 @@ public class EventService {
                         }
                 }
 
+                // Events do not currently model price, so a free filter cannot be applied.
+                // Do not use capacity as a proxy for price.
                 if (free != null && free) {
-                        List<Event> filteredEvents = events.stream()
-                                        .filter(event -> event.getCapacity() != null && event.getCapacity() == 0)
-                                        .collect(Collectors.toList());
-                        events = filteredEvents;
+                        // Intentionally no-op until pricing data is available.
                 }
 
                 return events.stream()
@@ -402,11 +442,15 @@ public class EventService {
                 event.setDescription(request.getDescription());
                 event.setLocation(request.getLocation());
                 event.setEventDate(request.getEventDate());
-                event.setCapacity(request.getCapacity());
+                if (request.getCapacity() != null) {
+                        event.setCapacity(request.getCapacity());
+                }
                 if (request.getIsPublic() != null) {
                         event.setPublic(request.getIsPublic());
                 }
-                event.setImageUrl(request.getImageUrl());
+                if (request.getImageUrl() != null) {
+                        event.setImageUrl(request.getImageUrl());
+                }
                 if (request.getCategory() != null) {
                         event.setCategory(request.getCategory());
                 }
@@ -459,7 +503,60 @@ public class EventService {
                 event.setRefundPolicy(refundPolicy);
                 event.setRefundPercent("PARTIAL".equals(refundPolicy) ? request.getRefundPercent() : null);
 
-                return toEventResponse(eventRepository.save(event));
+                Event saved = eventRepository.save(event);
+                if (!Boolean.FALSE.equals(request.getNotifyAttendees())) {
+                        notifyCancellation(saved, request.getReason());
+                }
+
+                return toEventResponse(saved);
+        }
+
+        @Transactional
+        public void resendCancellationNotice(Long eventId, String actorEmail, String attendeeEmail) {
+                Event event = eventRepository.findById(eventId)
+                                .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + eventId));
+                eventRoleService.requireRole(eventId, actorEmail, EventRole.ORGANIZER);
+
+                if (!"CANCELLED".equals(event.getStatus())) {
+                        throw new RegistrationConflictException("Event is not cancelled.");
+                }
+
+                EventRegistration registration = eventRegistrationRepository
+                                .findByEvent_IdAndUser_Email(eventId, attendeeEmail)
+                                .orElseThrow(() -> new UsernameNotFoundException(
+                                                "No registration found for attendee: " + attendeeEmail));
+
+                String reason = event.getCancellationReason() != null ? event.getCancellationReason()
+                                : "Event cancelled";
+                notificationRepository.save(Notification.builder()
+                                .user(registration.getUser())
+                                .title("Event cancelled")
+                                .message(event.getTitle() + " has been cancelled. Reason: " + reason)
+                                .build());
+        }
+
+        @Transactional(readOnly = true)
+        public List<String> getNotifiedAttendees(Long eventId, String actorEmail) {
+                Event event = eventRepository.findById(eventId)
+                                .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + eventId));
+                eventRoleService.requireRole(eventId, actorEmail, EventRole.ORGANIZER);
+
+                if (!"CANCELLED".equals(event.getStatus())) {
+                        return List.of();
+                }
+
+                return eventRegistrationRepository.findByEvent_IdAndStatus(eventId, "CONFIRMED").stream()
+                                .map(registration -> registration.getUser().getEmail())
+                                .toList();
+        }
+
+        private void notifyCancellation(Event event, String reason) {
+                eventRegistrationRepository.findByEvent_IdAndStatus(event.getId(), "CONFIRMED")
+                                .forEach(registration -> notificationRepository.save(Notification.builder()
+                                                .user(registration.getUser())
+                                                .title("Event cancelled")
+                                                .message(event.getTitle() + " has been cancelled. Reason: " + reason)
+                                                .build()));
         }
 
         /**
@@ -485,6 +582,10 @@ public class EventService {
         public WaitlistResponse joinWaitlist(Long eventId, String userEmail) {
                 Event event = eventRepository.findByIdWithLock(eventId)
                                 .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + eventId));
+
+                if (!event.isPublic()) {
+                        throw new EventNotFoundException("Event not found with id: " + eventId);
+                }
 
                 User user = userRepository.findByEmail(userEmail)
                                 .orElseThrow(() -> new UsernameNotFoundException(
@@ -710,6 +811,18 @@ public class EventService {
                                 .toList();
         }
 
+        /**
+         * Promotes the first waitlisted user when capacity is available.
+         * Used after registration cancel and admin user deletion frees seats.
+         */
+        @Transactional
+        public void promoteWaitlistAfterVacancy(Long eventId) {
+                Event event = eventRepository.findByIdWithLock(eventId)
+                                .orElseThrow(() -> new EventNotFoundException(
+                                                "Event not found with id: " + eventId));
+                promoteFirstWaitingUser(event);
+        }
+
         private RegistrationResponse promoteFirstWaitingUser(Event event) {
                 if (event.getCapacity() != null && event.getRegisteredCount() >= event.getCapacity()) {
                         return null;
@@ -777,6 +890,7 @@ public class EventService {
          */
         @Transactional(readOnly = true)
         public List<String> getOccupiedSeats(Long eventId) {
+                requirePublicEvent(eventId);
                 return eventRegistrationRepository.findByEvent_Id(eventId)
                                 .stream()
                                 .map(EventRegistration::getSeatId)
@@ -852,25 +966,4 @@ public class EventService {
                                 .build();
         }
 
-        private RegistrationConflictException mapRegistrationIntegrityViolation(
-                        DataIntegrityViolationException ex, String seatId) {
-                String details = String.valueOf(ex.getMostSpecificCause() != null
-                                ? ex.getMostSpecificCause().getMessage()
-                                : ex.getMessage()).toLowerCase();
-
-                if (details.contains("uk_event_registration_event_user")
-                                || (details.contains("event_id") && details.contains("user_id"))) {
-                        return new RegistrationConflictException(
-                                        "You are already registered for this event.");
-                }
-
-                if (details.contains("uk_event_registration_event_seat")
-                                || (seatId != null && !seatId.isBlank() && details.contains("seat"))) {
-                        return new RegistrationConflictException(
-                                        "Seat " + seatId + " is already taken.");
-                }
-
-                return new RegistrationConflictException(
-                                "Registration could not be completed due to a conflict. Please try again.");
-        }
 }

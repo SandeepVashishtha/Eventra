@@ -52,6 +52,11 @@ public class FeedbackService {
             throw new FeedbackAlreadyExistsException("You have already submitted feedback for this event.");
         }
 
+        // Validate rating is within valid range
+        if (request.getRating() == null || request.getRating() < 1 || request.getRating() > 5) {
+            throw new IllegalArgumentException("Rating must be an integer between 1 and 5.");
+        }
+
         Feedback feedback = new Feedback();
         feedback.setUser(user);
         feedback.setEvent(event);

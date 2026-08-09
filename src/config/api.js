@@ -156,13 +156,7 @@ API.interceptors.response.use(
     }
     return response;
   },
-  (error) => {
-    const status = error?.response?.status;
-    if (status === 401 && onUnauthorized) {
-      onUnauthorized();
-    }
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 setupRequestInterceptor(API, {
@@ -211,6 +205,7 @@ export const API_ENDPOINTS = {
     REGISTRANTS: (id) => buildApiUrl(`/events/${id}/registrants`),
     WAITLIST: (id) => buildApiUrl(`/events/${id}/waitlist`),
     SCHEDULE: (id) => buildApiUrl(`/events/${id}/schedule`),
+    ALTERNATIVES: buildApiUrl("/events/alternatives"),
     // Convenience helper — appends ?page=&size= for callers that build the
     // URL manually rather than going through eventFetchUtils.buildPaginatedUrl.
     PAGINATED: (page, size) => buildApiUrl(`/events?page=${page}&size=${size}`),

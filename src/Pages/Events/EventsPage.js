@@ -17,6 +17,9 @@ import PaginationControls from "./PaginationControls";
 import useEventListing from "./useEventListing";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { prepareSafeSearchQuery } from "../../utils/inputSanitization";
+import { safeJsonParse } from "utils/safeJsonParse";
+import RecentlyViewedEvents from "components/common/RecentlyViewedEvents";
+import TrendingEvents from "components/TrendingEvents/TrendingEvents";
 import ErrorBoundary from "../../components/common/ErrorBoundary";
 import ErrorMessage from "../../components/common/ErrorMessage";
 import { EventTimeline } from "../../components/EventTimeline";
@@ -66,7 +69,10 @@ const renderCardSection = (
   viewMode,
   searchQuery,
   onClearSearch,
-  matchScoreMap
+  matchScoreMap,
+  selectedEvents,
+  toggleCompare,
+  setShowComparison
 ) => {
   if (isLoading) {
   return <ExploreEventsSkeleton />;
@@ -176,7 +182,17 @@ const EventsPage = () => {
   const listing = useEventListing();
   const [selectedEvents, setSelectedEvents] = useState([]);
   const [showComparison, setShowComparison] = useState(false);
-  const { isLoading } = listing;
+  const {
+    isLoading,
+    setAdvancedFilters,
+    setCategoryFilter,
+    setEventsPerPage,
+    setFilterType,
+    setSafePage,
+    setSearchQuery,
+    setSortType,
+    setViewMode,
+  } = listing;
   const cardSectionRef = useRef();
   const hasHydratedFilters = useRef(false);
   const [filtersHydrated, setFiltersHydrated] = useState(false);
@@ -494,7 +510,10 @@ const category =
   listing.viewMode,
   listing.searchQuery,
   clearSearchAndFilters,
-  listing.matchScoreMap
+  listing.matchScoreMap,
+  selectedEvents,
+  toggleCompare,
+  setShowComparison
 )}
 
           {!listing.isLoading && listing.totalPages > 1 && (

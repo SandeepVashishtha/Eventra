@@ -51,6 +51,10 @@ public class UserService {
 
     @Transactional
     public void changePassword(String authenticatedEmail, ChangePasswordRequest request) {
+        if (request.getNewPassword() == null || request.getNewPassword().length() < 8) {
+            throw new IllegalArgumentException("New password must be at least 8 characters long.");
+        }
+
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
             throw new PasswordMismatchException("New password and confirm password do not match");
         }
@@ -60,6 +64,10 @@ public class UserService {
 
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
             throw new IllegalArgumentException("Current password is incorrect");
+        }
+
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("New password cannot be the same as your current password.");
         }
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));

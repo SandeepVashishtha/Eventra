@@ -1,20 +1,33 @@
 import { useState, useRef, useEffect } from 'react';
-import { Calendar, ChevronDown, X } from 'lucide-react';
+import { Calendar, ChevronDown, Download, ExternalLink, X } from 'lucide-react';
 import {
+    generateIcsFileBlobUrl,
     getGoogleCalendarUrl,
     getOutlookCalendarUrl,
     getYahooCalendarUrl,
     getWebcalSubscriptionUrl
 } from "utils/calendarUrlUtils";
-const generateICalContent = (event) => {
+const to24HourTime = (timeStr) => {
+  if (!timeStr) return '00:00';
+  const match = String(timeStr).match(/^(\d{1,2}):(\d{2})\s*([APap][Mm])?/);
+  if (!match) return timeStr;
+  let hours = parseInt(match[1], 10);
+  const minutes = match[2];
+  const period = match[3] ? match[3].toUpperCase() : '';
+  if (period === 'PM' && hours < 12) hours += 12;
+  if (period === 'AM' && hours === 12) hours = 0;
+  return `${String(hours).padStart(2, '0')}:${minutes}`;
+};
+
+const generateICalContent = (event, reminderMinutes = 30) => {
   const formatICalDate = (dateStr, timeStr) => {
     if (!dateStr) return '';
-    const dt = new Date(`${dateStr}T${timeStr || '00:00'}:00`);
+    const dt = new Date(`${dateStr}T${to24HourTime(timeStr)}:00`);
     return dt.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
   };
   const start = formatICalDate(event.date, event.time);
   const durationMs = (event.durationMinutes || 60) * 60 * 1000;
-  const endDate = new Date(new Date(`${event.date}T${event.time || '00:00'}:00`).getTime() + durationMs);
+  const endDate = new Date(new Date(`${event.date}T${to24HourTime(event.time)}:00`).getTime() + durationMs);
   const end = endDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
   return [
     'BEGIN:VCALENDAR',
@@ -29,7 +42,7 @@ const generateICalContent = (event) => {
     `URL:${event.joiningLink || window.location.href}`,
     `UID:${event.id || Date.now()}@eventra`,
     'BEGIN:VALARM',
-    'TRIGGER:-PT30M',
+    `TRIGGER:-PT${reminderMinutes}M`,
     'ACTION:DISPLAY',
     'DESCRIPTION:Reminder',
     'END:VALARM',
@@ -37,8 +50,6 @@ const generateICalContent = (event) => {
     'END:VCALENDAR',
   ].join('\r\n');
 };
-import { Calendar, ChevronDown, Download, ExternalLink, X } from 'lucide-react';
-import { generateIcsFileBlobUrl, getGoogleCalendarUrl, getOutlookCalendarUrl } from 'utils/calendarUrlUtils';
 
 const toSafeFilename = (value) =>
   (value || 'event')
@@ -46,8 +57,8 @@ const toSafeFilename = (value) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '') || 'event';
 
-const downloadIcal = (event) => {
-  const url = generateIcsFileBlobUrl(event);
+const downloadIcal = (event, reminderMinutes) => {
+  const url = generateIcsFileBlobUrl(event, undefined, reminderMinutes);
   if (!url) return false;
 
   const a = document.createElement('a');
@@ -99,7 +110,7 @@ const [reminder, setReminder] = useState("30");
 };
 
   const handleIcal = () => {
-    if (downloadIcal(event)) {
+    if (downloadIcal(event, reminder)) {
       setAdded('iCal file');
       timeoutRef.current = setTimeout(() => setOpen(false), 800);
     }

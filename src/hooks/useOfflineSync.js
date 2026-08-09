@@ -8,13 +8,14 @@ import {
 } from 'react';
 import { toast } from 'react-toastify';
 import { API_ENDPOINTS } from '../config/api.js';
+import { useAuth } from "context/AuthContext";
 
 import { logger } from "../utils/logger.js";
 import { getQueueIndexedDB, setQueue, clearQueue, filterQueueByOwnership, validateQueueSession } from '../utils/offlineQueue.js';
 import { ensureSessionSnapshot } from "../utils/sessionSnapshot.js";
 // isTokenValid import removed; authentication is now checked via isAuthenticated()
 // from AuthContext, which handles both token-based and cookie-managed sessions.
-import { fetchWithTimeout } from "../utils/fetchWithTimeout.js";
+import { fetchWithTimeout, FetchError } from "../utils/fetchWithTimeout.js";
 import { safeJsonParse } from "../utils/safeJsonParse.js";
 
 const MAX_RETRIES = 3;
@@ -23,18 +24,6 @@ const getReactHook = (name, fallback) => globalThis.React?.[name] || fallback;
 const useEffect = (...args) => getReactHook("useEffect", reactUseEffect)(...args);
 const useRef = (...args) => getReactHook("useRef", reactUseRef)(...args);
 
-const getAuthSnapshot = () => {
-  if (typeof globalThis.mockAuth === "function") {
-    return globalThis.mockAuth();
-  }
-
-  return {
-    token: null,
-    user: null,
-    isAuthenticated: () => false,
-    loading: false,
-  };
-};
 const getQueue = () =>
   typeof globalThis.mockGetQueueIndexedDB === "function"
     ? globalThis.mockGetQueueIndexedDB()
@@ -83,7 +72,9 @@ const SYNC_MESSAGE_TYPES = new Set(["SYNC_REQUESTED", "EVENTRA_BACKGROUND_SYNC"]
  */
 
 const useOfflineSync = () => {
-  const { token, user, isAuthenticated, loading } = getAuthSnapshot();
+  const authFromContext = useAuth();
+  const { token, user, isAuthenticated, loading } =
+    typeof globalThis.mockAuth === "function" ? globalThis.mockAuth() : authFromContext;
   const isSyncing = useRef(false);
   const isLockPending = useRef(false); // 🔥 FIX: Protects against asynchronous race conditions during Web Lock acquisition
   const conflictControllerRef = useRef(new AbortController());
@@ -209,18 +200,37 @@ const useOfflineSync = () => {
       if (forceOverride) headers['X-Override-Conflict'] = 'true';
       if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey;
 
-      const { response, data } = await postQueuedRequest(
-        url,
-        {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(payload),
-          signal // 🔥 FIX: Passed signal so network request aborts if component unmounts mid-sync
-        },
-        10000
-      );
+      let response;
+      let data;
+      try {
+        ({ response, data } = await postQueuedRequest(
+          url,
+          {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(payload),
+            signal // 🔥 FIX: Passed signal so network request aborts if component unmounts mid-sync
+          },
+          10000
+        ));
+      } catch (error) {
+        if (error instanceof FetchError && error.status != null) {
+          if (error.status === 409) {
+            return { status: "conflict", serverState: error.data || {} };
+          }
+          if (error.status >= 400 && error.status < 500) {
+            logger.warn(
+              `Offline queue: server rejected item with ${error.status} — dropping.`,
+              error.data || error.message
+            );
+            return { status: "dropped" };
+          }
+          throw new Error(`Sync failed with status: ${error.status}`);
+        }
+        throw error;
+      }
 
-      // Handle 409 Conflict specifically
+      // Handle 409 Conflict specifically (non-throwing adapters / mocks)
       if (response.status === 409) {
         const serverState = data || {};
         return { status: "conflict", serverState };
@@ -231,7 +241,7 @@ const useOfflineSync = () => {
       if (response.status >= 400 && response.status < 500) {
         logger.warn(
           `Offline queue: server rejected item with ${response.status} — dropping.`,
-          await response.text().catch(() => '')
+          data || ''
         );
         return { status: "dropped" };
       }
@@ -352,9 +362,15 @@ const useOfflineSync = () => {
 
         const syncStartTime = Date.now();
 
-        for (const item of sessionValidatedQueue) {
+        for (let index = 0; index < sessionValidatedQueue.length; index++) {
+          const item = sessionValidatedQueue[index];
           if (Date.now() - syncStartTime > SYNC_BUDGET_MS) {
             logger.warn("[useOfflineSync] Sync budget exceeded, stopping.");
+            // Preserve the unattempted remainder of the queue (including the
+            // current item, which has not been sent yet) for the next sync run
+            // so the budget break never silently discards queued offline actions.
+            const remaining = sessionValidatedQueue.slice(index);
+            failedQueue.push(...remaining);
             break;
           }
           // Halt the zombie loop immediately if the session changed or component unmounted.
@@ -368,7 +384,8 @@ const useOfflineSync = () => {
 
           if (retries >= MAX_RETRIES) {
             droppedCount++;
-            logger.warn(`[useOfflineSync] Item ${item.id} exceeded MAX_RETRIES (${MAX_RETRIES}). Dropping from queue.`);
+            logger.warn(`[useOfflineSync] Item ${item.id} exceeded MAX_RETRIES (${MAX_RETRIES}). Retaining in failed queue.`);
+            failedQueue.push({ ...item, retryCount: retries, exhausted: true });
             continue;
           }
 
@@ -410,8 +427,11 @@ const useOfflineSync = () => {
               }
             }
 
-            if (res.status === "success" || res.status === "dropped") {
+            if (res.status === "success") {
               successCount++;
+            } else if (res.status === "dropped") {
+              droppedCount++;
+              failedQueue.push({ ...item, retryCount: retries + 1, exhausted: true });
             } else {
               failedQueue.push({ ...item, retryCount: retries + 1 });
             }
@@ -422,21 +442,20 @@ const useOfflineSync = () => {
         }
 
         if (failedQueue.length > 0) {
-        await saveQueue(failedQueue);
+          await saveQueue(failedQueue);
           notify.warning(
             `Synced ${successCount} registration(s). ${failedQueue.length} remaining in local draft queue.`,
           );
+          if (droppedCount > 0) {
+            notify.error(
+              `${droppedCount} registration(s) paused after ${MAX_RETRIES} failed attempts. Retained in local drafts.`,
+            );
+          }
         } else {
           await emptyQueue();
           if (successCount > 0) {
             notify.success("All offline actions successfully synchronized!");
           }
-        }
-
-        if (droppedCount > 0) {
-          notify.error(
-            `${droppedCount} registration(s) paused after ${MAX_RETRIES} failed attempts. Retained in local drafts.`,
-          );
         }
       } catch (error) {
         // A crash anywhere in the replay run must never surface as a

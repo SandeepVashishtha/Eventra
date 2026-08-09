@@ -51,6 +51,10 @@ public class EventRegistrationAttemptService {
                         new EventNotFoundException(
                                 "Event not found with id: " + eventId));
 
+        if (!event.isPublic()) {
+            throw new EventNotFoundException("Event not found with id: " + eventId);
+        }
+
         if (event.isEventPast()) {
             throw new RegistrationClosedException("Registration is closed for this event.");
         }
@@ -85,8 +89,7 @@ public class EventRegistrationAttemptService {
         try {
             registration = eventRegistrationRepository.saveAndFlush(registration);
         } catch (DataIntegrityViolationException ex) {
-            throw new RegistrationConflictException(
-                    "Seat " + seatId + " is already taken.");
+            throw mapRegistrationIntegrityViolation(ex, seatId);
         }
 
         event.setRegisteredCount((int) eventRegistrationRepository
@@ -107,5 +110,27 @@ public class EventRegistrationAttemptService {
                 .registrationStatus(registration.getStatus())
                 .seatId(registration.getSeatId())
                 .build();
+    }
+
+    private RegistrationConflictException mapRegistrationIntegrityViolation(
+            DataIntegrityViolationException ex, String seatId) {
+        String details = String.valueOf(ex.getMostSpecificCause() != null
+                ? ex.getMostSpecificCause().getMessage()
+                : ex.getMessage()).toLowerCase();
+
+        if (details.contains("uk_event_registration_event_user")
+                || (details.contains("event_id") && details.contains("user_id"))) {
+            return new RegistrationConflictException(
+                    "You are already registered for this event.");
+        }
+
+        if (details.contains("uk_event_registration_event_seat")
+                || (seatId != null && !seatId.isBlank() && details.contains("seat"))) {
+            return new RegistrationConflictException(
+                    "Seat " + seatId + " is already taken.");
+        }
+
+        return new RegistrationConflictException(
+                "Registration could not be completed due to a conflict. Please try again.");
     }
 }
