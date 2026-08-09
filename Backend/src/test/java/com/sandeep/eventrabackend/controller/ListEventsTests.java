@@ -95,6 +95,14 @@ public class ListEventsTests {
 
     @Test
     @WithMockUser
+    void testGetAllEventsUnsupportedSortRejected() throws Exception {
+        mockMvc.perform(get("/api/events").param("sort", "match,desc"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("Unsupported sort property 'match'")));
+    }
+
+    @Test
+    @WithMockUser
     void testGetAllEventsSearch() throws Exception {
         mockMvc.perform(get("/api/events").param("search", "Alpha"))
                 .andExpect(status().isOk())

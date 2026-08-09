@@ -24,8 +24,6 @@ const MAX_TAG_LENGTH = 50;
 const SORT_MAPPING = {
   Newest: "date,desc",
   Upcoming: "date,asc",
-  // FIX (#7437): sort by AI recommendation score, highest first
-  "Best Match": "match,desc",
   Oldest: "date,asc",
   "Title A-Z": "title,asc",
   "Title Z-A": "title,desc",
