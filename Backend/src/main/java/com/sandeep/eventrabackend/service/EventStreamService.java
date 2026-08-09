@@ -39,7 +39,9 @@ public class EventStreamService {
                 emittersByTopic.computeIfAbsent(normalized, key -> new CopyOnWriteArrayList<>());
         AtomicInteger count = emitterCounts.computeIfAbsent(normalized, key -> new AtomicInteger());
 
-        if (count.get() >= MAX_EMITTERS_PER_TOPIC) {
+        int current = count.incrementAndGet();
+        if (current > MAX_EMITTERS_PER_TOPIC) {
+            count.decrementAndGet();
             throw new IllegalStateException(
                     "SSE emitter limit reached for topic '" + normalized + "'");
         }
@@ -51,7 +53,6 @@ public class EventStreamService {
         emitter.onError((ex) -> cleanup.run());
 
         emitters.add(emitter);
-        count.incrementAndGet();
 
         try {
             emitter.send(SseEmitter.event()
