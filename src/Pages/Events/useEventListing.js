@@ -79,7 +79,7 @@ const useEventListing = () => {
       params.append("search", safeSearch.trim().slice(0, MAX_SEARCH_LENGTH));
     }
 
-    if (filterType && filterType !== "all") {
+    if (filterType && filterType !== "all" && filterType !== "bookmarked") {
       params.append("status", filterType.toUpperCase());
     }
 
@@ -212,9 +212,18 @@ const useEventListing = () => {
   const dateRangeStats = useMemo(() => getDateRange(events), [events]);
 
   const filteredEvents = useMemo(() => {
+    // Bookmarked tab sources its events entirely from local storage: the
+    // backend has no BOOKMARKED status, and saved events may live on server
+    // pages that were never fetched. Render all saved events directly so the
+    // tab is not limited to the single server page (see buildQueryParams).
+    const baseEvents =
+      filterType === "bookmarked"
+        ? getBookmarkedEvents().map(normalizeEventItem)
+        : events;
+
     // 1. Fuzzy search first (or all events if no query)
     let filtered = debouncedSearchQuery.trim()
-      ? getRouteSearchResults(events, debouncedSearchQuery, [
+      ? getRouteSearchResults(baseEvents, debouncedSearchQuery, [
           { name: "title", weight: 0.8 },
           { name: "category", weight: 0.5 },
           { name: "tags", weight: 0.4 },
@@ -222,7 +231,7 @@ const useEventListing = () => {
           { name: "location.city", weight: 0.3 },
           { name: "description", weight: 0.1 },
         ])
-      : [...events];
+      : [...baseEvents];
 
     // 2. Status timing filter
     filtered = filtered.filter((event) => {
@@ -233,12 +242,6 @@ const useEventListing = () => {
       if (filterType === "upcoming" && status !== "upcoming") return false;
 
       if (filterType === "past" && status !== "past" && status !== "ended") return false;
-
-      if (filterType === "bookmarked") {
-        const bookmarks = getBookmarkedEvents();
-
-        return bookmarks.some((bookmark) => String(bookmark.id) === String(event.id));
-      }
 
       return true;
     });
@@ -343,21 +346,29 @@ const useEventListing = () => {
     });
   }, [filteredEvents, matchScoreMap, sortType]);
 
+  const isBookmarkedTab = filterType === "bookmarked";
+
   const paginatedEvents = useMemo(() => {
+    // Bookmarked events come from local storage, so paginate them
+    // client-side regardless of how the (regular) server page was returned.
+    if (isBookmarkedTab) {
+      const startIndex = (currentPage - 1) * eventsPerPage;
+      return sortedEvents.slice(startIndex, startIndex + eventsPerPage);
+    }
     // Server already returned one page — do not re-slice client-side.
     if (serverPaged || pagination.serverPaginated) {
       return sortedEvents;
     }
     const startIndex = (currentPage - 1) * eventsPerPage;
     return sortedEvents.slice(startIndex, startIndex + eventsPerPage);
-  }, [sortedEvents, currentPage, eventsPerPage, serverPaged, pagination.serverPaginated]);
+  }, [sortedEvents, currentPage, eventsPerPage, serverPaged, pagination.serverPaginated, isBookmarkedTab]);
 
-  const totalElements = serverPaged
-    ? pagination.totalElements
-    : sortedEvents.length;
-  const totalPages = serverPaged
-    ? pagination.totalPages || 1
-    : Math.ceil(sortedEvents.length / eventsPerPage) || 1;
+  const totalElements = isBookmarkedTab || !serverPaged
+    ? sortedEvents.length
+    : pagination.totalElements;
+  const totalPages = isBookmarkedTab || !serverPaged
+    ? Math.ceil(sortedEvents.length / eventsPerPage) || 1
+    : pagination.totalPages || 1;
 
   return {
     currentPage,
