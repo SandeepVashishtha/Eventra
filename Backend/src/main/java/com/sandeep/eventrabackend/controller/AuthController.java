@@ -3,6 +3,7 @@ package com.sandeep.eventrabackend.controller;
 import com.sandeep.eventrabackend.dto.request.LoginRequest;
 import com.sandeep.eventrabackend.dto.request.SignupRequest;
 import com.sandeep.eventrabackend.dto.request.GoogleAuthRequest;
+import com.sandeep.eventrabackend.dto.request.LogoutRequest;
 import com.sandeep.eventrabackend.dto.response.AuthResponse;
 import com.sandeep.eventrabackend.dto.response.ErrorResponse;
 import com.sandeep.eventrabackend.security.AuthCookieHelper;
@@ -167,8 +168,8 @@ public ResponseEntity<AuthResponse> googleLogin(
     @Operation(
             summary = "Logout user and invalidate token",
             description = """
-                    Blacklists the JWT (from Authorization header or HttpOnly cookie)
-                    and clears the auth cookie.
+                    Blacklists the access JWT (Authorization header or HttpOnly cookie) and an
+                    optional refresh token from the request body, then clears the auth cookie.
                     """
     )
     @ApiResponses({
@@ -178,19 +179,22 @@ public ResponseEntity<AuthResponse> googleLogin(
     })
     public ResponseEntity<String> logout(
             @RequestHeader(value = "Authorization", required = false) String bearerToken,
+            @RequestBody(required = false) LogoutRequest body,
             HttpServletRequest request) {
         String token = extractBearerToken(bearerToken);
         if (token == null) {
             token = authCookieHelper.extractToken(request);
         }
 
-        if (!StringUtils.hasText(token)) {
+        String refreshToken = body != null ? body.getRefreshToken() : null;
+
+        if (!StringUtils.hasText(token) && !StringUtils.hasText(refreshToken)) {
             return ResponseEntity.ok()
                     .header(HttpHeaders.SET_COOKIE, authCookieHelper.clearAuthCookie().toString())
                     .body("Logged out successfully");
         }
 
-        authService.logout(token);
+        authService.logout(token, refreshToken);
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, authCookieHelper.clearAuthCookie().toString())
                 .body("Logged out successfully");

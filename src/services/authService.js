@@ -15,7 +15,8 @@ export const authService = {
     return apiUtils.post(API_ENDPOINTS.AUTH.RESET_PASSWORD, { email });
   }, { maxTokens: 3, refillRate: 0.05 }),
   
-  logout: async () => {
-    return apiUtils.post(API_ENDPOINTS.AUTH.LOGOUT);
+  logout: async (refreshToken) => {
+    const body = refreshToken ? { refreshToken } : {};
+    return apiUtils.post(API_ENDPOINTS.AUTH.LOGOUT, body);
   }
 };

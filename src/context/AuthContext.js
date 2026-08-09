@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useCallback, useRef, useState } from "react";
 import { setOnUnauthorizedHandler, setRequiresReauthHandler, setAuthToken, setRefreshToken, apiUtils } from "../config/api.js";
+import { getRefreshToken } from "../config/api/interceptors.js";
 import { authService } from "../services/authService.js";
 import { syncSecureStorage } from "../utils/secureStorage.js";
 import { clearWaitlistCache } from "../utils/waitlistUtils.js";
@@ -409,7 +410,7 @@ export const AuthProvider = ({ children }) => {
    */
   const logout = useCallback(async () => {
     try {
-      await authService.logout();
+      await authService.logout(getRefreshToken());
     } catch (error) {
       console.warn("[AuthContext] Backend logout request failed (best-effort error):", error);
     }
