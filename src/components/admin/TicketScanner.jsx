@@ -188,7 +188,7 @@ export default function TicketScanner() {
     try {
       const updated = [entry, ...safeJsonParse(localStorage.getItem(HISTORY_CACHE_KEY), [])].slice(0, 50);
       localStorage.setItem(HISTORY_CACHE_KEY, JSON.stringify(updated));
-    } catch { /* ignore */ }
+    } catch { console.warn("[TicketScanner] Scan operation failed"); }
   }, []);
 
   const handleScanSuccess = async (decodedText) => {
