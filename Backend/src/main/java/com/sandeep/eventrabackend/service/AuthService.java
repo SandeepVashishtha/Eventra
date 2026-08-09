@@ -181,6 +181,17 @@ public class AuthService {
         tokenBlacklistService.addToBlacklist(token, expiration);
     }
 
+    public void reauth(String userEmail, String password) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new org.springframework.security.core.userdetails.UsernameNotFoundException(
+                        "User not found with email: " + userEmail));
+
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new org.springframework.security.authentication.BadCredentialsException(
+                    "Incorrect password");
+        }
+    }
+
     // ─── helpers ────────────────────────────────────────────────────────────────
 
     private String generateUniqueUsername(String base) {
