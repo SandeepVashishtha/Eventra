@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,15 +21,6 @@ public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecific
     Optional<Event> findByIdWithLock(@Param("id") Long id);
 
 
-    /**
-     * Find events by title or description containing the given search term
-     * (case-insensitive).
-     */
-    List<Event> findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
-            String titleSearch, String descriptionSearch);
 
-    /**
-     * Find events by category.
-     */
-    List<Event> findByCategory(String category);
+import java.time.LocalDateTime;
 }
