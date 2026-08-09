@@ -404,6 +404,35 @@ export const AuthProvider = ({ children }) => {
     [persistSession]
   );
 
+  const googleLogin = useCallback(
+    async (idToken) => {
+      setAuthRequest({ loading: true, error: null });
+
+      try {
+        const res = await authService.googleLogin(idToken);
+        const data = res.data;
+        const { refreshToken, sessionUser } = extractSession(data, data?.email || null);
+        const persisted = await persistSession("cookie-managed", sessionUser, refreshToken);
+        if (!persisted) return false;
+
+        setAuthRequest({ loading: false, error: null });
+        return true;
+      } catch (error) {
+        if (!isMountedRef.current) return false;
+        deleteCookie("token", {
+          path: "/",
+          secureVariants: true,
+        });
+        setAuthRequest({
+          loading: false,
+          error: getAuthErrorMessage(error, "Google login failed. Please try again."),
+        });
+        return false;
+      }
+    },
+    [persistSession]
+  );
+
   /**
    * Logs out the user.
    */
@@ -447,6 +476,7 @@ export const AuthProvider = ({ children }) => {
     requiresReauth,
     setRequiresReauth,
     login,
+    googleLogin,
     logout,
     setAuthSession,
     setUser,
@@ -460,6 +490,7 @@ export const AuthProvider = ({ children }) => {
     requiresReauth,
     setRequiresReauth,
     login,
+    googleLogin,
     logout,
     setAuthSession,
     setUser,
