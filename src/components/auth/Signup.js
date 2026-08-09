@@ -30,6 +30,7 @@ const INTRO_POINTS = [
 
 const checkPasswordRequirement = (password, requirement) => requirement.regex.test(password);
 
+
 export const FormField = ({
   id,
   label,

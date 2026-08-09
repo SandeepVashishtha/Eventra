@@ -3,7 +3,6 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { apiUtils, API_ENDPOINTS } from "../config/api.js";
 import { useAuth } from "../context/AuthContext.js";
 import usePageVisibility from "./usePageVisibility.js";
-import seedNotifications from "../data/mockNotifications.json";
 import { safeJsonParse } from "../utils/safeJsonParse.js";
 import { getNotificationMessage } from "../utils/notificationPreferences.js";
 import { get as idbGet, del as idbDel } from "idb-keyval";
@@ -30,7 +29,7 @@ const getStorageKey = (userId) => {
 
 const normalize = (n = {}) => ({
   ...n,
-  id: n.id || n._id || `${n.timestamp || n.createdAt || Date.now()}-${getNotificationMessage(n)}`,
+  id: n.id || n._id || `${n.timestamp || n.createdAt || Date.now()}-${Math.random().toString(36).slice(2)}`,
   timestamp: n.timestamp || n.createdAt || n.updatedAt || new Date().toISOString(),
 });
 
@@ -60,7 +59,7 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
   const tokenRef = useRef(token);
   const isPageVisibleRef = useRef(isPageVisible);
   const storageKeyRef = useRef(getStorageKey(user?.id));
-  const notificationsRef = useRef([]);
+  const notificationsRef = useRef(notifications);
 
   useEffect(() => { isMounted.current = true; return () => { isMounted.current = false; }; }, []);
   useEffect(() => { tokenRef.current = token; }, [token]);
@@ -142,9 +141,8 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
         applyList(Array.isArray(data) ? data : data?.content || [], { deliverNew: true });
       } catch {
         if (isMounted.current && tokenRef.current === t) {
-          const persisted = loadPersisted(storageKeyRef.current);
-          const fallback = persisted?.length ? persisted : seedNotifications.map(normalize);
-          applyList(fallback, { deliverNew: false });
+          const persisted = loadPersisted(storageKeyRef.current) || [];
+          applyList(persisted, { deliverNew: false });
         }
       } finally {
         if (!options.isBackground && isMounted.current && tokenRef.current === t) setLoading(false);
@@ -169,13 +167,18 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
     fetchNotifications({ isBackground: true }).then(() => {
       if (isMounted.current && tokenRef.current === t) setLoading(false);
     });
+    }, [token, fetchNotifications, hasCompletedInitialFetchRef]);
+
+  useEffect(() => {
+    if (!isPageVisible || !token) return;
+    const t = token;
     const interval = setInterval(() => {
-      if (isMounted.current && tokenRef.current === t && isPageVisibleRef.current) {
+      if (isMounted.current && tokenRef.current === t) {
         refetchRef.current({ isBackground: true });
       }
     }, POLLING_INTERVAL_MS);
     return () => clearInterval(interval);
-  }, [token, fetchNotifications, hasCompletedInitialFetchRef]);
+  }, [isPageVisible, token]);
 
   useEffect(() => {
     if (!isPageVisible || !token) return;
@@ -211,17 +214,19 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
   const markAllAsRead = useCallback(async () => {
     if (!token) return;
     const t = token;
-    let hasUnread = false;
+    // Read unread state from the ref OUTSIDE the state updater. Reading it
+    // inside setNotifications would be deferred by React until the render
+    // phase, so the check below would always see false and the action would
+    // become a no-op (#11774).
+    const hasUnread = notificationsRef.current.some((n) => !n.isRead);
+    if (!hasUnread) return;
+    const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.READ_ALL;
+    if (!endpoint) return;
     setNotifications((prev) => {
-      hasUnread = prev.some((n) => !n.isRead);
-      if (!hasUnread) return prev;
       const updated = prev.map((n) => ({ ...n, isRead: true }));
       persist(updated, storageKeyRef.current);
       return updated;
     });
-    if (!hasUnread) return;
-    const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.READ_ALL;
-    if (!endpoint) return;
     setUnreadCount(0);
     try {
       await apiUtils.put(endpoint, {});
@@ -237,24 +242,23 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
     async (id) => {
       if (!id) return;
       const t = token;
-      const currentNotifications = notificationsRef.current;
-      const removedIndex = currentNotifications.findIndex((n) => n.id === id);
-      const removedNotification = removedIndex >= 0 ? currentNotifications[removedIndex] : null;
-      if (!removedNotification) return;
-      const removedWasUnread = !removedNotification.isRead;
-      const optimisticallyUpdated = currentNotifications.filter((n) => n.id !== id);
-      setNotifications(optimisticallyUpdated);
-      notificationsRef.current = optimisticallyUpdated;
-      persist(optimisticallyUpdated, storageKeyRef.current);
+      const target = notificationsRef.current.find((n) => n.id === id);
+      const removedWasUnread = target ? !target.isRead : false;
+      setNotifications((prev) => {
+        const updated = prev.filter((n) => n.id !== id);
+        persist(updated, storageKeyRef.current);
+        return updated;
+      });
       if (removedWasUnread) setUnreadCount((p) => Math.max(0, p - 1));
       const fn = API_ENDPOINTS?.NOTIFICATIONS?.DELETE;
       const endpoint = token && typeof fn === "function" ? fn(id) : null;
 
       const restoreNotification = () => {
         if (!isMounted.current) return;
+        if (!target) return;
         setNotifications((prev) => {
           if (prev.some((n) => n.id === id)) return prev;
-          const updated = [...prev, removedNotification].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+          const updated = [...prev, target].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
           persist(updated, storageKeyRef.current);
           notificationsRef.current = updated;
           return updated;
@@ -358,8 +362,8 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
           }
           await idbDel("eventra_notifications");
         }
-      } catch {
-        // fail silently in environments without IndexedDB support
+      } catch (e) {
+        console.warn('[useNotificationPoller] Legacy IndexedDB migration failed', e);
       }
     };
 

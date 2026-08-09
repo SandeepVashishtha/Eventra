@@ -3,14 +3,14 @@ import { FiRotateCw } from "react-icons/fi";
 import TeamMatchmaking from "./components/TeamMatchmaking";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { fetchHackathons } from "services/hackathonService";
 import HackathonHero from "./HackathonHero";
 import HackathonCard from "./HackathonCard";
 import HackathonCTA from "./HackathonCTA";
 import Fuse from "fuse.js";
 import { createPortal } from "react-dom";
-// import BackToTopButton from "components/common/BackToTopButton";
+import BackToTopButton from "components/common/BackToTopButton";
 // import VirtualizedHackathonGrid from "components/common/VirtualizedHackathonGrid";
 import useDocumentTitle from "hooks/useDocumentTitle";
 import { filterHackathons } from "./hackathonFilterUtils.mjs";
@@ -225,9 +225,6 @@ const HackathonHub = () => {
   // NEW: Sort state
   const [sortBy, setSortBy] = useState("default");
 
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [filtersHydrated, setFiltersHydrated] = useState(false);
-  const hasHydratedFilters = useRef(false);
 
   // FIX: Prevent state updates on unmounted component
   const isMountedRef = useRef(true);
@@ -237,70 +234,55 @@ const HackathonHub = () => {
     };
   }, []);
 
+  // Fix: useEventFilters centralises URL sync + sessionStorage persistence
+  // replacing the 80-line manual hydration and sync useEffects above.
+  const { filters: urlFilters, setFilter: setUrlFilter, isHydrated } = useEventFilters({
+    storageKey: HACKATHON_FILTER_STORAGE_KEY,
+    defaults: {
+      tab: "all",
+      search: "",
+      difficulty: "",
+      prize: "",
+      location: "",
+      tags: "",
+      sort: "default",
+    },
+  });
+
+  // Sync URL filters into local state once hydrated
+  useEffect(() => {
+    if (!isHydrated) return;
+    setActiveTab(urlFilters.tab || "all");
+    setSearchQuery(urlFilters.search || "");
+    setFilters({
+      difficulty: urlFilters.difficulty || "",
+      prize: urlFilters.prize || "",
+      location: urlFilters.location || "",
+    });
+    setSelectedTags(urlFilters.tags ? urlFilters.tags.split(",").filter(Boolean) : []);
+    setSortBy(urlFilters.sort || "default");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isHydrated]);
+
+  // Sync local state changes back to URL via useEventFilters
+  useEffect(() => {
+    if (!isHydrated) return;
+    setUrlFilter({
+      tab: activeTab,
+      search: debouncedSearchQuery,
+      difficulty: filters.difficulty,
+      prize: filters.prize,
+      location: filters.location,
+      tags: selectedTags.join(","),
+      sort: sortBy,
+    });
+  }, [activeTab, debouncedSearchQuery, filters, selectedTags, sortBy, isHydrated, setUrlFilter]);
+
   useDocumentTitle("Eventra | Hackathons");
 
-  // Initialize state from URL params, falling back to persisted filters
-  useEffect(() => {
-    if (hasHydratedFilters.current) return;
 
-    let savedFilters = {};
-    try {
-      savedFilters = safeJsonParse(
-        window.sessionStorage.getItem(HACKATHON_FILTER_STORAGE_KEY) || "{}"
-      );
-    } catch {
-      savedFilters = {};
-    }
 
-    const tab = searchParams.get("tab") || savedFilters.activeTab || "all";
-    const search = searchParams.get("search") || savedFilters.searchQuery || "";
-    const difficulty = searchParams.get("difficulty") || savedFilters.filters?.difficulty || "";
-    const prize = searchParams.get("prize") || savedFilters.filters?.prize || "";
-    const locationVal = searchParams.get("location") || savedFilters.filters?.location || "";
-    const tagsParam = searchParams.get("tags");
-    const tags = tagsParam ? tagsParam.split(",") : savedFilters.selectedTags || [];
-    const sort = searchParams.get("sort") || savedFilters.sortBy || "default";
 
-    setActiveTab(tab);
-    setSearchQuery(search);
-    setFilters({ difficulty, prize, location: locationVal });
-    setSelectedTags(tags);
-    setSortBy(sort);
-
-    hasHydratedFilters.current = true;
-    setFiltersHydrated(true);
-  }, [searchParams]);
-
-  // Sync state back to sessionStorage and URL query params
-  useEffect(() => {
-    if (!filtersHydrated) return;
-
-    const params = {};
-    if (activeTab !== "all") params.tab = activeTab;
-    if (debouncedSearchQuery) params.search = debouncedSearchQuery;
-    if (filters.difficulty) params.difficulty = filters.difficulty;
-    if (filters.prize) params.prize = filters.prize;
-    if (filters.location) params.location = filters.location;
-    if (selectedTags.length > 0) params.tags = selectedTags.join(",");
-    if (sortBy && sortBy !== "default") params.sort = sortBy;
-
-    setSearchParams(params, { replace: true });
-
-    try {
-      window.sessionStorage.setItem(
-        HACKATHON_FILTER_STORAGE_KEY,
-        JSON.stringify({
-          activeTab,
-          searchQuery: debouncedSearchQuery,
-          filters,
-          selectedTags,
-          sortBy,
-        })
-      );
-    } catch {
-      // Ignored
-    }
-  }, [activeTab, debouncedSearchQuery, filters, selectedTags, sortBy, filtersHydrated, setSearchParams]);
 
   const cardsSectionRef = useRef(null);
   const searchInputRef = useRef(null);
@@ -452,6 +434,8 @@ const HackathonHub = () => {
     setSearchQuery("");
     setSelectedTags([]);
     setSortBy("default");
+    // Also clear URL and storage via useEventFilters
+    setUrlFilter({ tab: "all", search: "", difficulty: "", prize: "", location: "", tags: "", sort: "default" });
   };
 
   useEffect(() => {
@@ -794,6 +778,7 @@ const HackathonHub = () => {
 
       </div>
 
+      <BackToTopButton positionClass={positionClass} />
       <HackathonCTA />
     </div>
   );

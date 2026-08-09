@@ -59,6 +59,7 @@ const TeamWorkspace = () => {
   useEffect(() => {
     let sseSource = null;
     let fallbackInterval = null;
+    let isMounted = true;
     let idleTimeout = null;
 
     setConnectionStatus("connecting");
@@ -71,6 +72,7 @@ const TeamWorkspace = () => {
       ]);
 
       const fetchState = async () => {
+        if (!isMounted) return;
         try {
           const response = await fetch("/api/hackathons/team/sync", {
             method: "POST",

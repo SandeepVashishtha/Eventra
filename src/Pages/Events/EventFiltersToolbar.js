@@ -8,15 +8,13 @@ import useFilterSuggestions from "hooks/useFilterSuggestions";
 
 const CATEGORY_OPTIONS = [
   { id: "all", label: "All Categories" },
-  { id: "hackathons", label: "Hackathons" },
-  { id: "tech talks", label: "Tech Talks" },
-  { id: "web-development", label: "Web Development" },
-  { id: "ai-ml", label: "AI & Machine Learning" },
-  { id: "devops-cloud", label: "DevOps & Cloud" },
-  { id: "web3-blockchain", label: "Web3 & Blockchain" },
-  { id: "mobile", label: "Mobile Dev" },
-  { id: "design-ux", label: "Design & UX" },
-  { id: "cultural", label: "Cultural & Networking" },
+  { id: "tech", label: "Tech" },
+  { id: "art", label: "Art" },
+  { id: "music", label: "Music" },
+  { id: "sports", label: "Sports" },
+  { id: "education", label: "Education" },
+  { id: "networking", label: "Networking" },
+  { id: "other", label: "Other" },
 ];
 
 const EventFiltersToolbar = ({
@@ -39,8 +37,8 @@ const EventFiltersToolbar = ({
   onSearchChange,
   onResetFilters,
   visibleEvents = [],
-// onApplyPreset,
-// totalElements = 0,
+  // onApplyPreset,
+  // totalElements = 0,
 }) => {
   const [localQuery, setLocalQuery] = useState(searchQuery || "");
   const debounceRef = useRef(null);
@@ -48,19 +46,17 @@ const EventFiltersToolbar = ({
   // const { clearPresetError } = useEventFilterPresets();
 
   useFilterSuggestions({
-  currentFilters: currentFilterConfig ?? {
-    searchQuery,
-    filterType,
-    categoryFilter,
-    sortType,
-    viewMode,
-    advancedFilters,
-  },
-  visibleEvents,
-  presets: [],
-});
-
-
+    currentFilters: currentFilterConfig ?? {
+      searchQuery,
+      filterType,
+      categoryFilter,
+      sortType,
+      viewMode,
+      advancedFilters,
+    },
+    visibleEvents,
+    presets: [],
+  });
 
   useEffect(() => {
     setLocalQuery(searchQuery || "");
@@ -87,14 +83,10 @@ const EventFiltersToolbar = ({
     (filterType && filterType !== "all") ||
     (categoryFilter && categoryFilter !== "all");
 
-
-
   return (
     <div className="sticky top-0 z-30 w-full flex flex-col gap-6 bg-slate-950/80 backdrop-blur-md p-4 sm:p-6 rounded-3xl border border-slate-900 shadow-xl">
-
       {/* Header */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b border-slate-900 pb-5">
-
         <div>
           <h3 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
             <Filter size={18} className="text-indigo-400" />
@@ -108,7 +100,6 @@ const EventFiltersToolbar = ({
 
         {/* Controls */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full lg:w-auto">
-
           <button
             type="button"
             onClick={() => onToggleAdvancedFilters?.((isOpen) => !isOpen)}
@@ -118,10 +109,7 @@ const EventFiltersToolbar = ({
                 : "bg-slate-900 border-slate-800 text-slate-300 hover:text-white hover:bg-slate-850"
             }`}
           >
-            <Sparkles
-              size={14}
-              className={isAdvancedFiltersOpen ? "animate-pulse" : ""}
-            />
+            <Sparkles size={14} className={isAdvancedFiltersOpen ? "animate-pulse" : ""} />
             Advanced Options
           </button>
 
@@ -135,6 +123,11 @@ const EventFiltersToolbar = ({
               Reset Filters
             </button>
           )}
+          {!hasAnyFilterActive && (
+  <div className="w-full sm:w-auto flex items-center justify-center px-4 py-2.5 text-xs font-medium rounded-2xl border border-slate-800 bg-slate-900/40 text-slate-400">
+    No filters applied
+  </div>
+)}
           <button
             type="button"
             onClick={() => onToggleAdvancedFilters?.((isOpen) => !isOpen)}
@@ -162,7 +155,6 @@ const EventFiltersToolbar = ({
 
       {/* Search + Pills */}
       <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-4">
-
         {/* Search */}
         <div className="relative flex-1 group">
           <Search
@@ -191,7 +183,6 @@ const EventFiltersToolbar = ({
 
         {/* Pills */}
         <div className="flex flex-wrap sm:flex-nowrap gap-2 items-stretch sm:items-center w-full xl:w-auto overflow-x-auto scrollbar-none">
-
           {[
             { key: "all", label: "All Events" },
             { key: "live", label: "Live Now" },
@@ -221,13 +212,11 @@ const EventFiltersToolbar = ({
 
       {/* Categories */}
       <div className="flex flex-col gap-2">
-
         <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
           Domain Category
         </span>
 
         <div className="hidden md:flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none w-full">
-
           {CATEGORY_OPTIONS.map((cat) => {
             const isActive = categoryFilter === cat.id;
 
@@ -265,7 +254,6 @@ const EventFiltersToolbar = ({
 
       {/* Sort + View */}
       <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 border-t border-slate-900 pt-5">
-
         <div className="w-full lg:w-auto">
           <StyledDropdown
             label=""
@@ -277,7 +265,6 @@ const EventFiltersToolbar = ({
         </div>
 
         <div className="w-full lg:w-auto flex items-center justify-center space-x-2 bg-slate-900/60 border border-slate-800/80 rounded-xl p-1 shadow-inner">
-
           <button
             type="button"
             onClick={() => onViewModeChange("grid")}

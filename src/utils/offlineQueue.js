@@ -327,21 +327,39 @@ export const pushToQueue = async (item, userId = null) => {
     return false;
   }
   const isDuplicate = queue.some((existing) => {
-  if (actionItem.idempotencyKey && existing.idempotencyKey) {
-    return existing.idempotencyKey === actionItem.idempotencyKey;
-  }
+    if (actionItem.idempotencyKey && existing.idempotencyKey) {
+      return existing.idempotencyKey === actionItem.idempotencyKey;
+    }
 
-  return (
-    existing.eventId === actionItem.eventId &&
-    existing.userId === actionItem.userId &&
-    existing.actionType === actionItem.actionType
-  );
-});
+    // SECURITY (Issue #11074): offline check-ins must dedupe per attendee
+    // ticket, not per operator. Every offline scan for the same event shares
+    // the same eventId + operator userId + actionType, so the generic key
+    // below would collapse the second and every later attendee into the first
+    // item and they would never be synced.
+    if (actionItem.actionType === "TICKET_CHECK_IN") {
+      return (
+        existing.actionType === "TICKET_CHECK_IN" &&
+        existing.eventId === actionItem.eventId &&
+        Boolean(actionItem.payload?.ticketId) &&
+        existing.payload?.ticketId === actionItem.payload?.ticketId
+      );
+    }
+
+    return (
+      existing.eventId === actionItem.eventId &&
+      existing.userId === actionItem.userId &&
+      existing.actionType === actionItem.actionType
+    );
+  });
 
 if (isDuplicate) {
+  const identity =
+    actionItem.actionType === "TICKET_CHECK_IN"
+      ? `ticket ${actionItem.payload?.ticketId}`
+      : `user ${actionItem.userId}`;
   logger.warn(
     `[OfflineQueue] Duplicate action detected for event ${actionItem.eventId} ` +
-      `(user ${actionItem.userId}, type ${actionItem.actionType}). Skipping enqueue.`
+      `(${identity}, type ${actionItem.actionType}). Skipping enqueue.`
   );
   return true;
 }
@@ -414,7 +432,12 @@ export const setQueue = async (newQueue) => {
           return;
         }
 
-        newQueue.forEach((item) => store.put(item));
+        try {
+          newQueue.forEach((item) => store.put(item));
+        } catch (err) {
+          if (err.name === "QuotaExceededError") logger.error("[OfflineQueue] IndexedDB quota exceeded during setQueue", err);
+          throw err;
+        }
 
         tx.oncomplete = () => resolve();
         tx.onerror = (e) => reject(e.target?.error || new Error('IndexedDB transaction failed'));

@@ -50,12 +50,44 @@ const formatUTCtoCalendarString = (utcMs, mode = 'compact') => {
 };
 
 /**
+ * Parse a full ISO timestamp to UTC epoch ms.
+ *
+ * Handles both explicit-offset timestamps (e.g. "2026-06-01T10:00:00Z" or
+ * "2026-06-01T10:00:00+05:30", which are self-describing) and naive local
+ * wall-clock timestamps ("2026-06-01T10:00:00"), which are interpreted in the
+ * event's timezone via parseEventToUTC.
+ *
+ * @param {string} iso  - Full ISO timestamp, not a bare "YYYY-MM-DD" date
+ * @param {string} tz   - IANA timezone used for naive timestamps
+ * @returns {number|null}
+ */
+const parseIsoTimestampUTC = (iso, tz) => {
+  if (!iso || typeof iso !== 'string') return null;
+
+  // Explicit offset or Z suffix → the instant is self-describing
+  if (/[zZ]|[+-]\d{2}:?\d{2}$/.test(iso)) {
+    const ms = new Date(iso).getTime();
+    return Number.isNaN(ms) ? null : ms;
+  }
+
+  // Naive "YYYY-MM-DDTHH:MM[:ss]" → treat wall-clock as local in `tz`
+  const match = iso.match(/^(\d{4}-\d{2}-\d{2})T(\d{1,2}):(\d{2})/);
+  if (!match) return null;
+
+  return parseEventToUTC(match[1], `${match[2]}:${match[3]}`, tz);
+};
+
+/**
  * Convert a local event time to { startMs, endMs } in UTC epoch ms.
+ *
+ * Prefers the explicit { date, time } pair used by mock/hackathon events, then
+ * falls back to the single full ISO timestamp returned by the real API
+ * (event.eventDate / event.startDate / event.date).
  *
  * Falls back gracefully to a naive UTC interpretation (assumes UTC) when
  * timezone detection fails — better than producing a wildly wrong timestamp.
  *
- * @param {object} event  - Event object with .date, .time, .durationMinutes
+ * @param {object} event  - Event object with a .date/.time pair or an ISO timestamp
  * @param {string} [timezone]  - IANA timezone string; defaults to getUserTimezone()
  * @returns {{ startMs: number, endMs: number } | null}
  *   Returns null when date/time are unparseable.
@@ -65,20 +97,22 @@ const getEventUTCRange = (event, timezone) => {
     logger.error("[getEventUTCRange] Invalid event argument: must be an object.");
     return null;
   }
-  
-  if (!event.date || !event.time) {
-    logger.warn("[getEventUTCRange] Missing required event fields: 'date' and 'time' are mandatory.");
-    return null;
-  }
 
   // Fallback to detected browser timezone if none provided
   const tz = timezone || getUserTimezone();
 
   // parseEventToUTC handles all date formats (ISO, YYYY-MM-DD, Month DD YYYY)
   // and 12h/24h time strings, with DST-correct conversion via Intl.DateTimeFormat.
-  const startMs = parseEventToUTC(event.date, event.time, tz);
+  let startMs = parseEventToUTC(event.date, event.time, tz);
+
+  // Real API events carry only a full ISO timestamp (event.eventDate), with no
+  // separate event.time field. Parse it directly so calendar links stay valid.
   if (startMs === null || isNaN(startMs)) {
-    logger.warn(`[getEventUTCRange] Date '${event.date}' or time '${event.time}' could not be parsed.`);
+    startMs = parseIsoTimestampUTC(event.eventDate || event.startDate || event.date, tz);
+  }
+
+  if (startMs === null || isNaN(startMs)) {
+    logger.warn(`[getEventUTCRange] Date '${event.date || event.eventDate}' or time '${event.time}' could not be parsed.`);
     return null;
   }
 
@@ -230,9 +264,11 @@ export const getYahooCalendarUrl = (event, timezone) => {
  *
  * @param {object} event  - Event object
  * @param {string} [timezone]  - IANA tz string; defaults to browser timezone
+ * @param {number|string} [reminderMinutes]  - Minutes before the event for a
+ *   VALARM reminder (e.g. 10, 30, 60). Omitted when falsy.
  * @returns {string|null}  A Blob URL that can be used in an <a href> tag with download attribute. Returns null on error.
  */
-export const generateIcsFileBlobUrl = (event, timezone) => {
+export const generateIcsFileBlobUrl = (event, timezone, reminderMinutes) => {
   if (!event) return null;
 
   const range = getEventUTCRange(event, timezone);
@@ -248,7 +284,9 @@ export const generateIcsFileBlobUrl = (event, timezone) => {
   }
 
   const now = new Date().toISOString().replace(/-|:|\.\d+/g, '');
-  
+
+  const reminderMinutesNum = parseInt(reminderMinutes, 10);
+
   const icsContent = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
@@ -263,6 +301,15 @@ export const generateIcsFileBlobUrl = (event, timezone) => {
     `SUMMARY:${(event.title || '').replace(/,/g, '\\,')}`,
     `DESCRIPTION:${(event.description || '').replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/,/g, '\\,')}`,
     `LOCATION:${(event.location || '').replace(/,/g, '\\,')}`,
+    ...(reminderMinutesNum > 0
+      ? [
+          'BEGIN:VALARM',
+          `TRIGGER:-PT${reminderMinutesNum}M`,
+          'ACTION:DISPLAY',
+          'DESCRIPTION:Reminder',
+          'END:VALARM',
+        ]
+      : []),
     'END:VEVENT',
     'END:VCALENDAR'
   ].join('\r\n');

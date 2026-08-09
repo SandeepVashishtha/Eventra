@@ -226,6 +226,9 @@ const notifyClientsToSyncOfflineQueue = async () => {
     type: 'window',
   });
 
+  // Contract: useOfflineSync listens for EVENTRA_BACKGROUND_SYNC (see
+  // SYNC_MESSAGE_TYPES). Keep both sides in sync — guarded by
+  // tests/backgroundSyncMessageContract.test.mjs.
   clients.forEach((client) => {
     client.postMessage({
       type: 'EVENTRA_BACKGROUND_SYNC',
@@ -532,6 +535,9 @@ function handleStaticFetch(event, requestUrl) {
             if (response && response.status === 200 && response.type === 'basic') {
               caches.open(CACHE_NAME).then((cache) => {
                 cache.put(event.request, response).catch(() => console.warn("[SW] Cache put failed"));
+                cache.put(event.request, response).catch((err) => {
+      console.warn('[Service Worker] Cache put failed:', err);
+    });
               });
             }
           })

@@ -1753,28 +1753,48 @@
   flex-shrink: 0;
 }
 
-/* ── Summary pills row ── */
-.my-events-summary {
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
+.my-events-insights {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+  gap: 1rem;
   margin-bottom: 1.25rem;
+  align-items: stretch;
+}
+
+/* ── Summary cards row ── */
+.my-events-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 0;
 }
 
 .my-events-pill {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  display: grid;
+  grid-template-columns: auto 1fr;
   gap: 0.15rem;
   background: var(--card-bg-color);
   border: 1px solid var(--border-color);
   border-radius: 12px;
-  padding: 0.65rem 1.1rem;
-  min-width: 80px;
-  transition: box-shadow 0.2s;
+  padding: 0.8rem;
+  min-width: 0;
+  transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
 }
 .my-events-pill:hover {
   box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--pill-color, #6366f1) 34%, var(--border-color));
+}
+.my-events-pill-icon {
+  grid-row: span 3;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--pill-color, #6366f1) 14%, transparent);
+  color: var(--pill-color, #6366f1);
 }
 .my-events-pill-value {
   font-size: 1.35rem;
@@ -1788,6 +1808,98 @@
   color: var(--text-color-light);
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+.my-events-pill-note {
+  font-size: 0.72rem;
+  color: var(--text-color-light);
+  line-height: 1.2;
+}
+
+.my-events-analytics-panel {
+  background: var(--card-bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 0.95rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.9rem;
+  min-width: 0;
+}
+
+.my-events-analytics-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.my-events-eyebrow,
+.my-events-smart-summaries span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.my-events-eyebrow {
+  color: #4f46e5;
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.my-events-analytics-heading h3 {
+  margin: 0.25rem 0 0;
+  color: var(--text-color);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.my-events-ratio {
+  flex-shrink: 0;
+  color: #059669;
+  background: rgba(5, 150, 105, 0.1);
+  border-radius: 999px;
+  padding: 0.3rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.my-events-progress-track {
+  width: 100%;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  display: flex;
+  background: var(--border-color);
+}
+
+.my-events-progress-upcoming {
+  background: linear-gradient(90deg, #059669, #22c55e);
+  transition: width 0.55s ease;
+}
+
+.my-events-progress-completed {
+  background: linear-gradient(90deg, #94a3b8, #64748b);
+  transition: width 0.55s ease;
+}
+
+.my-events-smart-summaries {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.my-events-smart-summaries span {
+  max-width: 100%;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  padding: 0.35rem 0.6rem;
+  color: var(--text-color-light);
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
 /* ── Search + filter toolbar ── */
@@ -1963,6 +2075,28 @@
   .ud-stats-grid { grid-template-columns: repeat(4, 1fr); }
   .ud-quick-grid { grid-template-columns: repeat(4, 1fr); }
   .ud-three-col  { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 1180px) {
+  .my-events-insights {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .my-events-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .my-events-analytics-heading {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 430px) {
+  .my-events-summary {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ── Integrated Dashboard Footer ── */

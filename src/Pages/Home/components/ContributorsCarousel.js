@@ -1,3 +1,4 @@
+import useWindowSize from "hooks/useWindowSize";
 import { GitBranch, ChevronLeft, ChevronRight } from "lucide-react";
 import { FaMedal, FaCodeBranch, FaUserFriends, FaBuilding, FaMapMarkerAlt, FaGithub, FaExternalLinkAlt } from "react-icons/fa";
 import { useState, useEffect, useCallback, useRef, memo } from "react";
@@ -85,7 +86,7 @@ const cacheContributors = (data) => {
       STORAGE_KEY,
       JSON.stringify({ data, timestamp: Date.now() })
     );
-  } catch { }
+  } catch { console.warn("[ContributorsCarousel] Cache write failed"); }
 };
 
 const Contributors = () => {
@@ -93,7 +94,6 @@ const Contributors = () => {
   const [contributors, setContributors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [itemsPerView, setItemsPerView] = useState(4);
   const sectionRef = useRef(null);
 
   useEffect(() => {
@@ -116,22 +116,9 @@ const Contributors = () => {
     };
   }, []);
 
-  // Replace your previous `useEffect` for itemsPerView with this:
-  useEffect(() => {
-    const updateItemsPerView = () => {
-      if (window.innerWidth < 640) {
-        setItemsPerView(1); // Mobile: 1 item
-      } else if (window.innerWidth < 1024) {
-        setItemsPerView(2); // Tablet: 2 items
-      } else {
-        setItemsPerView(3); // Desktop: 3 items instead of 4
-      }
-    };
-
-    updateItemsPerView();
-    window.addEventListener("resize", updateItemsPerView);
-    return () => window.removeEventListener("resize", updateItemsPerView);
-  }, []);
+  // Fix: useWindowSize replaces manual resize listener
+  const { width } = useWindowSize();
+  const itemsPerView = width < 640 ? 1 : width < 1024 ? 2 : 3;
 
   // Fetches a single GitHub user profile via the backend proxy.
   const fetchGitHubProfile = useCallback(async (username) => {
@@ -232,7 +219,7 @@ const Contributors = () => {
       if (!backgroundRefresh) setContributors([]);
 
       if (error.name === "AbortError") {
-        //console.error("Contributor request timed out");
+        console.error("Contributor request timed out");
       }
     } finally {
       if (!backgroundRefresh) setLoading(false);

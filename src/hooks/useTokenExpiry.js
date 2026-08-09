@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback } from "react";
 import { toast } from "react-toastify";
 import { isTokenValid, decodeTokenPayload } from "../utils/tokenUtils";
 import { syncSecureStorage } from "../utils/secureStorage";
-
+import { logger } from "../utils/logger";
 export const MAX_TOKEN_EXPIRY_TIMEOUT_MS = 2_147_483_647;
 const TOKEN_EXPIRY_BUFFER_MS = 1_000;
 
@@ -27,6 +27,8 @@ export function useTokenExpiry({ token, user, onExpired }) {
     let hadPreviousSession = false;
     try { hadPreviousSession = !!syncSecureStorage.getItem("user"); } catch { console.warn("[useTokenExpiry] Failed to read session storage"); }
     console.warn("[useTokenExpiry] Session expired. Clearing state.");
+    try { hadPreviousSession = !!syncSecureStorage.getItem("user"); } catch {}
+    logger.warn("[useTokenExpiry] Session expired. Clearing state.");
     onExpired();
     if (!hadPreviousSession) return;
     if (expiryToastShownRef.current) return;

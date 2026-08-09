@@ -51,7 +51,7 @@ const useLocalStorage = (key, initialValue) => {
     const item = window.localStorage.getItem(key);
     return safeJsonParse(item, initialValue);
   } catch (error) {
-    console.warn(`useLocalStorage: error reading key "${key}":`, error);
+    logger.warn(`useLocalStorage: error reading key "${key}":`, error);
     return initialValue;
   }
   });
@@ -95,32 +95,36 @@ const useLocalStorage = (key, initialValue) => {
     }
   }, [key]);
 
-  useEffect(() => {
-    const handleStorageChange = (event) => {
-      // 🔥 FIX: Reset the internal-write flag UNCONDITIONALLY first.
-      // Previously the flag was only reset when bailing out at this check,
-      // so if a foreign `local-storage` event arrived for a different key
-      // (another useLocalStorage instance on the page) the flag would get
-      // stuck at `true` and every subsequent legitimate cross-tab update for
-      // THIS key would be silently dropped.
-      if (isInternalWrite.current) {
-        isInternalWrite.current = false;
-        return;
-      }
+  const handleStorageChange = useCallback((event) => {
+    // 🔥 FIX: Reset the internal-write flag UNCONDITIONALLY first.
+    // Previously the flag was only reset when bailing out at this check,
+    // so if a foreign `local-storage` event arrived for a different key
+    // (another useLocalStorage instance on the page) the flag would get
+    // stuck at `true` and every subsequent legitimate cross-tab update for
+    // THIS key would be silently dropped.
+    if (isInternalWrite.current) {
+      isInternalWrite.current = false;
+      return;
+    }
 
-      if (event.key === key || (event.type === "local-storage" && event.detail?.key === key)) {
-        setStoredValue(readValue());
-      }
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    window.addEventListener("local-storage", handleStorageChange);
-
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
-      window.removeEventListener("local-storage", handleStorageChange);
-    };
+    if (event.key === key || (event.type === "local-storage" && event.detail?.key === key)) {
+      setStoredValue(readValue());
+    }
   }, [key, readValue]);
+
+  const handlerRef = useRef(handleStorageChange);
+  handlerRef.current = handleStorageChange;
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handler = (e) => handlerRef.current(e);
+    window.addEventListener("storage", handler);
+    window.addEventListener("local-storage", handler);
+    return () => {
+      window.removeEventListener("storage", handler);
+      window.removeEventListener("local-storage", handler);
+    };
+  }, []);
 
   return [storedValue, setValue, removeValue];
 };
@@ -132,7 +136,8 @@ export const isLocalStorageAvailable = () => {
     window.localStorage.setItem(testKey, testKey);
     window.localStorage.removeItem(testKey);
     return true;
-  } catch {
+  } catch (err) {
+    console.warn("[useLocalStorage] Storage operation failed:", err);
     return false;
   }
 };

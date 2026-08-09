@@ -301,15 +301,14 @@ export default function OnboardingChecklist() {
   const handleDismiss = () => {
     setIsDismissed(true);
     setIsOpen(false);
+    try { localStorage.setItem("eventra_onboarding_dismissed", "true"); } catch {}
     showUndoToast({
       message: "Onboarding quest dismissed.",
       toastId: "dismiss-onboarding-checklist",
       onUndo: () => {
         setIsDismissed(false);
         setIsOpen(true);
-      },
-      onCommit: () => {
-        localStorage.setItem("eventra_onboarding_dismissed", "true");
+        try { localStorage.removeItem("eventra_onboarding_dismissed"); } catch {}
       },
     });
   };

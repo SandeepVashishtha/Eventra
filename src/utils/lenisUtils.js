@@ -3,13 +3,21 @@
  * Provides helper functions for controlling Lenis scroll behavior
  */
 
+const isBrowser = () => typeof window !== "undefined";
+
 /**
  * Scroll to a specific element smoothly
  * @param {string} selector - CSS selector for the target element
  * @param {Object} options - Scroll options
  */
 export const scrollToElement = (selector, options = {}) => {
-  const element = document.querySelector(selector);
+  if (!isBrowser()) return;
+  let element;
+  try {
+    element = document.querySelector(selector);
+  } catch {
+    return;
+  }
   if (element && window.lenis) {
     window.lenis.scrollTo(element, {
       offset: 0,
@@ -25,6 +33,7 @@ export const scrollToElement = (selector, options = {}) => {
  * @param {Object} options - Scroll options
  */
 export const scrollToTop = (options = {}) => {
+  if (!isBrowser()) return;
   if (window.lenis) {
     window.lenis.scrollTo(0, {
       duration: 1.2,
@@ -43,6 +52,7 @@ export const scrollToTop = (options = {}) => {
  * Stop Lenis scrolling (useful for modals)
  */
 export const stopScroll = () => {
+  if (!isBrowser()) return;
   if (window.lenis) {
     window.lenis.stop();
   }
@@ -52,6 +62,7 @@ export const stopScroll = () => {
  * Start Lenis scrolling
  */
 export const startScroll = () => {
+  if (!isBrowser()) return;
   if (window.lenis) {
     window.lenis.start();
   }
@@ -62,5 +73,6 @@ export const startScroll = () => {
  * @returns {number} Current scroll position
  */
 export const getScrollPosition = () => {
+  if (!isBrowser()) return 0;
   return window.lenis ? window.lenis.scroll : window.scrollY;
 };

@@ -9,6 +9,16 @@ const NotificationBell = () => {
   const wrapperRef = useRef(null);
 
   useEffect(() => {
+    const handleStorage = (e) => {
+      if (e.key === "eventra_unread_count") {
+        setUnreadCount(parseInt(e.newValue || "0", 10));
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
+  useEffect(() => {
     if (!isOpen) return;
 
     const handleClickOutside = (event) => {
@@ -31,6 +41,7 @@ const NotificationBell = () => {
 
   return (
     <div className="relative" ref={wrapperRef}>
+      <div aria-live="polite" className="sr-only">{unreadCount > 0 ? `You have ${unreadCount} unread notifications` : ""}</div>
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}

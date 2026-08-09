@@ -33,7 +33,8 @@ function readPersistedWaitlist(storageKey) {
   try {
     const raw = safeLocalStorage.getItem(storageKey);
     return raw ? JSON.parse(raw) : {};
-  } catch {
+  } catch (err) {
+    console.warn("[useWaitlist] Waitlist operation failed:", err);
     return {};
   }
 }
@@ -59,8 +60,8 @@ function persistWaitlist(map, storageKey) {
           mapToPersist[key] = rest;
         }
         safeLocalStorage.setItem(storageKey, JSON.stringify(mapToPersist));
-      } catch {
-        // ignore quota errors
+      } catch (err) {
+        console.warn("[useWaitlist] Waitlist operation failed:", err);
       }
     };
     if (typeof window.requestIdleCallback === "function") {

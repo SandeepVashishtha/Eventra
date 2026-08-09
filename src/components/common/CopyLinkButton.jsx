@@ -1,31 +1,26 @@
 import { useState } from "react";
 import { Link2, Check } from "lucide-react";
+import useEventShare from "hooks/useEventShare";
 
-const CopyLinkButton = () => {
+const CopyLinkButton = ({ title = "Event", text = "Check out this event!", url }) => {
   const [copied, setCopied] = useState(false);
+  const { canNativeShare, shareEvent, copyInviteLink } = useEventShare({
+    fallbackMessage: "Event invite link copied to clipboard",
+  });
 
   const handleCopy = async () => {
-  try {
-    if (navigator.share) {
-      await navigator.share({
-        title: "Event",
-        text: "Check out this event!",
-        url: textToCopy,
-      });
-      return;
+    const shareUrl = url || (typeof window !== "undefined" ? window.location.href : "");
+    const ok = canNativeShare
+      ? await shareEvent({ title, text, url: shareUrl })
+      : await copyInviteLink(shareUrl);
+
+    if (ok && !canNativeShare) {
+      setCopied(true);
+      setTimeout(() => {
+        setCopied(false);
+      }, 2000);
     }
-
-    await navigator.clipboard.writeText(textToCopy);
-
-    setCopied(true);
-
-    setTimeout(() => {
-      setCopied(false);
-    }, 2000);
-  } catch (err) {
-    console.error(err);
-  }
-};
+  };
 
   return (
     <button
@@ -36,7 +31,7 @@ const CopyLinkButton = () => {
           ? "bg-green-600 text-white"
           : "bg-indigo-600 hover:bg-indigo-700 text-white"
       }`}
-      aria-label="Copy event link"
+      aria-label={canNativeShare ? "Share event invite" : "Copy event link"}
     >
       {copied ? (
         <>
@@ -46,7 +41,7 @@ const CopyLinkButton = () => {
       ) : (
         <>
           <Link2 size={18} />
-          Copy Link
+          {canNativeShare ? "Share Event" : "Copy Link"}
         </>
       )}
     </button>

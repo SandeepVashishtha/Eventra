@@ -252,8 +252,15 @@ const useEventRegistration = (eventIdParam) => {
     const conflictCheck = checkRegistrationConflict(event, myEvents);
     if (conflictCheck.hasConflict) {
       try {
-        const res = await eventService.getAllEvents();
-        const realEvents = res.status === 200 ? res.data : [];
+        const around =
+          event.eventDate || event.date || event.startDate || undefined;
+        const res = await eventService.getAlternatives({
+          excludeId: event.id,
+          around,
+          windowDays: 14,
+          limit: 20,
+        });
+        const realEvents = Array.isArray(res?.data) ? res.data : [];
         const suggestions = suggestAlternativeEvents(event, realEvents, myEvents);
         setConflictData({
           conflicts: conflictCheck.conflicts,
@@ -310,7 +317,7 @@ const useEventRegistration = (eventIdParam) => {
       ...formData,
       additionalInfo: formData.additionalInfo.slice(0, MAX_NOTES_CHARS),
       priority: formData.priority,
-      eventId: parseInt(eventId),
+      eventId: parseInt(eventId, 10),
     };
 
     try {
@@ -329,14 +336,14 @@ const useEventRegistration = (eventIdParam) => {
         const queuePayload = {
           ...formData,
           additionalInfo: formData.additionalInfo.slice(0, MAX_NOTES_CHARS),
-          eventId: parseInt(eventId),
+          eventId: parseInt(eventId, 10),
         };
 
         const success = await pushToQueue(
           {
             actionType: "REGISTER_EVENT",
             endpoint: `/api/events/${eventId}/register`,
-            eventId: parseInt(eventId),
+            eventId: parseInt(eventId, 10),
             payload: queuePayload,
           },
           user.id

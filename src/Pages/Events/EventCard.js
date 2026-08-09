@@ -1,6 +1,8 @@
 import React, { memo, useCallback, useId, useState } from "react";
 import { logger } from "utils/logger";
 import LazyImage from "components/common/LazyImage";
+import { formatLocalDateTime } from "utils/localDateTime";
+import { formatLocalDateTime } from "utils/localDateTime";
 import ShareModal from "components/common/ShareModal";
 import StatusBadge from "components/common/StatusBadge";
 import { getEventStatus } from "utils/eventUtils";
@@ -10,57 +12,11 @@ import { useMyEvents } from "context/MyEventsContext";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
-import {
-  BookmarkCheck,
-  Bookmark,
-  MapPin,
-  Calendar,
-  Clock,
-  ArrowRight,
-} from "lucide-react";
+import { BookmarkCheck, Bookmark, MapPin, Calendar, Clock, ArrowRight } from "lucide-react";
 
-import {
-  isEventBookmarked,
-  addBookmarkedEvent,
-  removeBookmarkedEvent,
-} from "utils/bookmarkUtils";
+import { isEventBookmarked, addBookmarkedEvent, removeBookmarkedEvent } from "utils/bookmarkUtils";
 
-const formatEventDate = (dateValue) => {
-  if (!dateValue) return { short: "TBD", full: "Date TBD", relative: "" };
-  const d = new Date(dateValue);
-  if (isNaN(d.getTime())) return { short: "TBD", full: "Date TBD", relative: "" };
-
-  const now = new Date();
-  const diffMs = d - now;
-  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
-
-  let relative = "";
-  if (diffMs < 0) {
-    relative = "Past";
-  } else if (diffDays === 0) {
-    relative = "Today";
-  } else if (diffDays === 1) {
-    relative = "Tomorrow";
-  } else if (diffDays < 7) {
-    relative = `In ${diffDays} days`;
-  } else if (diffDays < 30) {
-    relative = `In ${Math.round(diffDays / 7)} w`;
-  } else {
-    relative = `In ${Math.round(diffDays / 30)} m`;
-  }
-
-  const short = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  const full = d.toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
-  const time = d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
-
-  return { short, full, relative, time };
-};
-
-const EventCard = ({ event }) => {
+const EventCard = ({ event, position }) => {
   const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
   const [imageFailed, setImageFailed] = useState(false);
   const titleId = useId();
@@ -71,7 +27,8 @@ const EventCard = ({ event }) => {
 
   const eventImage = event.image || event.imageUrl || null;
   const eventDate = event.date || event.eventDate || event.startDate || null;
-  const dateInfo = formatEventDate(eventDate);
+
+  const dateInfo = formatLocalDateTime(eventDate);
 
   const handleBookmarkToggle = useCallback(
     (e) => {
@@ -80,7 +37,10 @@ const EventCard = ({ event }) => {
       if (isBookmarked) {
         removeBookmarkedEvent(event.id);
         setIsBookmarked(false);
-        toast.info("Removed from saved events.", { toastId: `bookmark-${event.id}`, autoClose: 1800 });
+        toast.info("Removed from saved events.", {
+          toastId: `bookmark-${event.id}`,
+          autoClose: 1800,
+        });
       } else {
         addBookmarkedEvent({ ...event, status: computedStatus });
         setIsBookmarked(true);
@@ -104,7 +64,7 @@ const EventCard = ({ event }) => {
         {eventImage && !imageFailed ? (
           <LazyImage
             src={eventImage}
-            alt=""
+            alt={event.title ? `${event.title} event cover` : "Event cover image"}
             className="absolute inset-0 w-full h-full"
             imgClassName="object-cover w-full h-full opacity-90 group-hover:scale-102 transition-transform duration-700"
             onError={() => setImageFailed(true)}
@@ -150,14 +110,25 @@ const EventCard = ({ event }) => {
           id={titleId}
           className="text-text font-bold text-lg sm:text-xl leading-snug mb-2 group-hover:text-primary transition-colors duration-200 line-clamp-2"
         >
-          <Link to={`/events/${event.id}`}>
-            {event.title}
-          </Link>
+          <Link to={`/events/${event.id}`}>{event.title}</Link>
         </h3>
 
         <p className="text-text-light text-sm font-normal leading-relaxed mb-6 line-clamp-2">
           {event.description}
         </p>
+
+        {Array.isArray(event.tags) && event.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-4">
+            {event.tags.slice(0, 3).map((tag) => (
+              <span
+                key={tag}
+                className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20"
+              >
+                #{tag}
+              </span>
+            ))}
+          </div>
+        )}
 
         <div className="flex flex-col gap-2 mt-auto border-t border-border pt-4 text-xs font-semibold text-text-light">
           {event.location && (
@@ -169,12 +140,15 @@ const EventCard = ({ event }) => {
 
           <div className="flex items-center gap-2 truncate">
             <Calendar size={14} className="text-text-light/50 shrink-0" />
-            <span>{dateInfo.full}</span>
-            {dateInfo.time && dateInfo.full !== "Date TBD" && (
+            <span>{dateInfo.date}</span>
+
+            {dateInfo.time && dateInfo.date !== "Date TBD" && (
               <>
                 <span className="text-border">|</span>
                 <Clock size={12} className="text-text-light/40 shrink-0" />
                 <span>{dateInfo.time}</span>
+
+                <span className="text-xs text-text-light">({dateInfo.timezone})</span>
               </>
             )}
           </div>
@@ -185,7 +159,10 @@ const EventCard = ({ event }) => {
           className="mt-6 inline-flex items-center justify-center gap-1 w-full px-4 py-2.5 rounded-lg bg-text text-bg hover:opacity-90 text-sm font-semibold transition-all duration-200"
         >
           View Details
-          <ArrowRight size={14} className="transition-transform duration-200 group-hover:translate-x-0.5" />
+          <ArrowRight
+            size={14}
+            className="transition-transform duration-200 group-hover:translate-x-0.5"
+          />
         </Link>
       </div>
     </motion.article>

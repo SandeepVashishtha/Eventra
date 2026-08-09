@@ -11,6 +11,7 @@ permissions:
 jobs:
   auto-assign:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Auto-assign issue to commenter (robust)
         uses: actions/github-script@v7

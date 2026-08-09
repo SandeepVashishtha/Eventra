@@ -206,6 +206,11 @@ const ModernTestimonialTrain = () => {
           url: testimonial.shareUrl,
         });
       } catch { console.warn("[Testimonials] Share handler failed"); }
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error('Failed to share testimonial:', err);
+        }
+      }
     } else {
       // Fallback: copy to clipboard
       navigator.clipboard.writeText(`${testimonial.quote} — ${testimonial.author}, ${testimonial.company}`);

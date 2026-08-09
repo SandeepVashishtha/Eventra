@@ -45,21 +45,28 @@ export const pushToNotificationQueue = (action, payload) => {
 // 🔥 CodeScene refactor: extracted to keep syncNotificationQueue below the
 // "Complex Method" and "Bumpy Road" thresholds.
 const dispatchOne = async (item, apiUtils) => {
-  if (item.action === 'read') return apiUtils.put(item.payload.endpoint, {});
-  if (item.action === 'delete') return apiUtils.delete(item.payload.endpoint);
+  if (
+    !item ||
+    typeof item !== "object" ||
+    !item.payload ||
+    typeof item.payload.endpoint !== "string"
+  ) {
+    return false;
+  }
+
+  if (item.action === 'read') {
+    await apiUtils.put(item.payload.endpoint, {});
+    return true;
+  }
+  if (item.action === 'delete') {
+    await apiUtils.delete(item.payload.endpoint);
+    return true;
+  }
+
+  return false;
 };
 
-const trySyncItem = async (item, queue, apiUtils) => {
-  try {
-    await dispatchOne(item, apiUtils);
-    return null; // success — not remaining
-  } catch (e) {
-    console.error('Failed to sync queued notification action', e);
-    // Build the remaining list: failed item + everything after it
-    const failedIndex = queue.indexOf(item);
-    return [item, ...queue.slice(failedIndex + 1)];
-  }
-};
+
 
 export const syncNotificationQueue = async (apiUtils) => {
   const queue = safeGetQueue();
@@ -69,14 +76,20 @@ export const syncNotificationQueue = async (apiUtils) => {
   // a single failed item caused the entire queue to be wiped at the end of
   // the function, silently losing every subsequent item that had not yet been
   // attempted.
-  let remaining = [];
+  const remaining = [];
   for (const item of queue) {
-    const failedTail = await trySyncItem(item, queue, apiUtils);
-    if (failedTail) {
-      remaining = failedTail;
-      break;
+    try {
+      const success = await dispatchOne(item, apiUtils);
+      if (!success) {
+        console.warn("Discarding malformed notification queue item:", item);
+      }
+    } catch (e) {
+      console.error('Failed to sync queued notification action', e);
+      remaining.push(item);
     }
   }
 
   persistRemaining(remaining);
 };
+
+// Queue logic refactored for improved reliability

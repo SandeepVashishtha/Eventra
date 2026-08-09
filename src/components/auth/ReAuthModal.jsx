@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Lock, AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { apiUtils } from "config/api.js";
 import { toast } from "react-toastify";
 
@@ -8,6 +8,7 @@ const ReAuthModal = ({ onSuccess }) => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,7 +29,11 @@ const ReAuthModal = ({ onSuccess }) => {
         setError(res.data?.error || "Incorrect password");
       }
     } catch (err) {
-      setError(err.message || "Failed to verify session");
+      if (err.name === 'TypeError' || err.message === 'Failed to fetch') {
+        setError("Network error. Please check your connection and try again.");
+      } else {
+        setError(err.message || "Failed to verify session");
+      }
     } finally {
       setLoading(false);
     }

@@ -19,6 +19,10 @@ export const normalizeRoles = (roles = []) => {
       if (normalized === "EVENT_MANAGER") {
         return ROLES.ORGANIZER;
       }
+      // Backend historically assigned Role.CLIENT for default signup users
+      if (normalized === "CLIENT") {
+        return ROLES.ATTENDEE;
+      }
       return normalized;
     });
 };

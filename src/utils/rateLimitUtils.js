@@ -31,6 +31,12 @@ export function readPersistedRateLimit() {
 
     if (!Number.isFinite(attempts) || attempts < 0) return { attempts: 0, lockoutUntil: 0 };
 
+    // If lockout has expired, reset both attempts and lockout
+    if (Number.isFinite(lockoutUntil) && lockoutUntil > 0 && lockoutUntil <= Date.now()) {
+      clearPersistedRateLimit();
+      return { attempts: 0, lockoutUntil: 0 };
+    }
+
     // Discard expired lockouts — don't start with a stale "locked" state
     const validLockout = Number.isFinite(lockoutUntil) && lockoutUntil > Date.now()
       ? lockoutUntil

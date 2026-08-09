@@ -20,7 +20,7 @@ const optionalEnvVars = {
   },
   SENTRY_DSN: {
     keys: ["VITE_SENTRY_DSN", "REACT_APP_SENTRY_DSN"],
-    fallback: "https://0f5776d794dcf89120ca6b00a5923f93@o4511372299075584.ingest.de.sentry.io/4511556614946896",
+    fallback: "", // No fallback — absence means Sentry is intentionally disabled
   },
 };
 
@@ -53,9 +53,10 @@ const getEnvVar = (keys, fallback = "", { required = false, label } = {}) => {
   }
 
   if (required && !isDevelopment) {
-    console.error(
-      `[ENV ERROR] Missing required environment variable: ${label || keyList.join(" or ")}`
-    );
+    const varName = label || keyList.join(" or ");
+    // Throw in production so a misconfigured deployment fails immediately
+    // rather than silently using "" as a base URL for every API call.
+    throw new Error(`[ENV] Missing required environment variable: ${varName}`);
   }
 
   return "";
@@ -75,7 +76,9 @@ export const validateEnvironment = () => {
   }
 };
 
-validateEnvironment();
+// validateEnvironment() is NOT called here automatically.
+// Call it explicitly at app startup (e.g. in main.jsx) to avoid
+// polluting console output in test and SSR environments.
 
 export const ENV = {
   API_URL: getEnvVar(requiredEnvVars.API_URL, isDevelopment ? DEV_API_FALLBACK : "", {
