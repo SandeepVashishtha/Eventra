@@ -275,7 +275,15 @@ const EventRegistration = () => {
     if (conflictCheck.hasConflict) {
       try {
         const res = await apiUtils.get(API_ENDPOINTS.EVENTS.LIST);
-        const realEvents = res.status === 200 ? res.data : [];
+        // GET /api/events returns a PagedResponse ({ content: [...] }), not a
+        // plain array. Unwrap it so suggestAlternativeEvents receives a real
+        // array instead of returning [] on { content: [...] }.length === undefined.
+        const data = res.status === 200 ? res.data : [];
+        const realEvents = Array.isArray(data?.content)
+          ? data.content
+          : Array.isArray(data)
+            ? data
+            : [];
         const suggestions = suggestAlternativeEvents(event, realEvents, myEvents);
         setConflictData({
           conflicts: conflictCheck.conflicts,
