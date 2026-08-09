@@ -2,9 +2,10 @@ import { useState, useRef, useEffect } from "react";
 import ReactDOM from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  X, Sparkles, FileText, Github,
+  X, Sparkles, FileText,
   CheckCircle2, AlertTriangle, ArrowRight, Copy
 } from "lucide-react";
+import { FaGithub as Github } from "react-icons/fa";
 import { parseGithubProfile, parseResumePDF } from "utils/aiProfileParser";
 import { toast } from "react-toastify";
 

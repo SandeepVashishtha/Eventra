@@ -11,13 +11,12 @@ import {
   AtSign,
   Phone as PhoneIcon,
   FileText,
-  Github,
-  Linkedin,
   Link as LinkIcon,
   Image as ImageIcon,
   X as XIcon,
   Sparkles,
 } from "lucide-react";
+import { FaGithub as Github, FaLinkedin as Linkedin } from "react-icons/fa";
 
 import AiProfileGeneratorModal from "./AiProfileGeneratorModal";
 

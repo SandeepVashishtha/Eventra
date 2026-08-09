@@ -13,7 +13,6 @@ import {
   Server,
   Clipboard,
   GitBranch,
-  Github,
   ArrowRightCircle,
   HelpCircle,
   GitPullRequest,
@@ -25,6 +24,7 @@ import {
   Target,
   Rocket,
 } from "lucide-react";
+import { FaGithub as Github } from "react-icons/fa";
 import useReducedMotion from "hooks/useReducedMotion.js";
 import useDocumentTitle from "hooks/useDocumentTitle";
 
