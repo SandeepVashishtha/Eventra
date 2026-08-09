@@ -9,6 +9,8 @@ import com.sandeep.eventrabackend.dto.response.EventResponse;
 import com.sandeep.eventrabackend.dto.response.MyRegisteredEventResponse;
 import com.sandeep.eventrabackend.dto.response.PagedResponse;
 import com.sandeep.eventrabackend.dto.response.RegistrationResponse;
+import com.sandeep.eventrabackend.dto.response.AchievementBadgeResponse;
+import com.sandeep.eventrabackend.dto.response.UserAchievementsResponse;
 import com.sandeep.eventrabackend.dto.response.WaitlistResponse;
 import com.sandeep.eventrabackend.exception.EventFullException;
 import com.sandeep.eventrabackend.exception.EventNotFoundException;
@@ -46,9 +48,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -304,6 +308,91 @@ public class EventService {
                                 .stream()
                                 .map(this::toMyRegisteredEventResponse)
                                 .toList();
+        }
+
+        @Transactional(readOnly = true)
+        public UserAchievementsResponse getAchievementsForUser(String userEmail) {
+                userRepository.findByEmail(userEmail)
+                                .orElseThrow(() -> new UsernameNotFoundException(
+                                                "User not found with email: " + userEmail));
+
+                List<EventRegistration> registrations =
+                                eventRegistrationRepository.findByUser_EmailOrderByRegisteredAtDesc(userEmail);
+                long totalEvents = registrations.stream()
+                                .filter(registration -> "CONFIRMED".equals(registration.getStatus()))
+                                .count();
+                long gssocEvents = registrations.stream()
+                                .filter(registration -> "CONFIRMED".equals(registration.getStatus()))
+                                .filter(registration -> isGssocEvent(registration.getEvent()))
+                                .count();
+                int currentStreak = calculateCurrentStreak(registrations);
+
+                return UserAchievementsResponse.builder()
+                                .totalEvents(totalEvents)
+                                .gssocEvents(gssocEvents)
+                                .currentStreak(currentStreak)
+                                .badges(List.of(
+                                                buildBadge("first-step", "First Step",
+                                                                "Registered for your first event.", totalEvents, 1),
+                                                buildBadge("active-attendee", "Active Attendee",
+                                                                "Registered for five events.", totalEvents, 5),
+                                                buildBadge("streak-builder", "Streak Builder",
+                                                                "Attended events on three consecutive days.",
+                                                                currentStreak, 3),
+                                                buildBadge("gssoc-explorer", "GSSoC Explorer",
+                                                                "Joined two GSSoC-tagged events.", gssocEvents, 2)))
+                                .build();
+        }
+
+        private AchievementBadgeResponse buildBadge(
+                        String id,
+                        String name,
+                        String description,
+                        long currentProgress,
+                        long targetProgress) {
+                return AchievementBadgeResponse.builder()
+                                .id(id)
+                                .name(name)
+                                .description(description)
+                                .currentProgress(currentProgress)
+                                .targetProgress(targetProgress)
+                                .earned(currentProgress >= targetProgress)
+                                .build();
+        }
+
+        private boolean isGssocEvent(Event event) {
+                if (event == null) {
+                        return false;
+                }
+                String haystack = String.join(" ",
+                                String.valueOf(event.getTitle()),
+                                String.valueOf(event.getDescription()),
+                                String.valueOf(event.getCategory()),
+                                String.join(" ", event.getTags()))
+                                .toLowerCase(Locale.ROOT);
+                return haystack.contains("gssoc") || haystack.contains("girlscript");
+        }
+
+        private int calculateCurrentStreak(List<EventRegistration> registrations) {
+                LinkedHashSet<LocalDate> dates = registrations.stream()
+                                .filter(registration -> "CONFIRMED".equals(registration.getStatus()))
+                                .map(EventRegistration::getEvent)
+                                .filter(event -> event != null && event.getEventDate() != null)
+                                .map(event -> event.getEventDate().toLocalDate())
+                                .sorted(java.util.Comparator.reverseOrder())
+                                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+                int streak = 0;
+                LocalDate expected = null;
+                for (LocalDate date : dates) {
+                        if (expected == null || date.equals(expected)) {
+                                streak++;
+                                expected = date.minusDays(1);
+                        } else if (date.isBefore(expected)) {
+                                break;
+                        }
+                }
+                return streak;
         }
 
         /**
