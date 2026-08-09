@@ -1,3 +1,4 @@
+import useModalManager from "hooks/useModalManager";
 import { useEffect, useId, useRef } from "react";
 import "./ConfirmationModal.css";
 
@@ -20,8 +21,6 @@ const ConfirmationModal = ({
   cancelText = "Cancel",
 }) => {
   const cancelButtonRef = useRef(null);
-  const modalRef = useRef(null);
-  const previouslyFocusedElementRef = useRef(null);
   const titleId = useId();
   const descriptionId = useId();
 

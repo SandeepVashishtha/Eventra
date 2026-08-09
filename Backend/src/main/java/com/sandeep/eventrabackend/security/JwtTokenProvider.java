@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 
 import jakarta.annotation.PostConstruct;
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 @Component
@@ -31,6 +32,8 @@ public class JwtTokenProvider {
     @Value("${app.jwt.refresh-expiration-ms:604800000}")
     private long jwtRefreshExpirationMs;
 
+    private SecretKey cachedSecretKey;
+
     @PostConstruct
     public void validateSecret() {
         if (jwtSecret == null || jwtSecret.isBlank()) {
@@ -44,12 +47,18 @@ public class JwtTokenProvider {
             logger.warn("JWT_SECRET is shorter than 32 characters. " +
                         "For production, use a 256-bit key: openssl rand -base64 32");
         }
+
+        byte[] keyBytes;
+        try {
+            keyBytes = Decoders.BASE64.decode(jwtSecret);
+        } catch (Exception ex) {
+            keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
+        }
+        this.cachedSecretKey = Keys.hmacShaKeyFor(keyBytes);
     }
 
     private SecretKey getSigningKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(
-                java.util.Base64.getEncoder().encodeToString(jwtSecret.getBytes()));
-        return Keys.hmacShaKeyFor(keyBytes);
+        return this.cachedSecretKey;
     }
 
     public String generateToken(Authentication authentication) {

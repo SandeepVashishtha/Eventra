@@ -16,6 +16,7 @@ import {
 const EventCheckInScanner = ({ eventId, onCheckIn, existingCheckIns = [], registrations = [] }) => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
+  const frameRef = useRef(null);
   const [isScanning, setIsScanning] = useState(false);
   const [lastScannedId, setLastScannedId] = useState(null);
   const [scannedData, setScannedData] = useState(null);
@@ -55,6 +56,10 @@ const EventCheckInScanner = ({ eventId, onCheckIn, existingCheckIns = [], regist
 
   // Stop camera stream
   const stopCamera = () => {
+    if (frameRef.current) {
+      cancelAnimationFrame(frameRef.current);
+      frameRef.current = null;
+    }
     if (videoRef.current?.srcObject) {
       videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
     }
@@ -88,7 +93,7 @@ const EventCheckInScanner = ({ eventId, onCheckIn, existingCheckIns = [], regist
     }
 
     if (isScanning) {
-      requestAnimationFrame(processFrame);
+      frameRef.current = requestAnimationFrame(processFrame);
     }
   };
 
@@ -176,7 +181,10 @@ const EventCheckInScanner = ({ eventId, onCheckIn, existingCheckIns = [], regist
     }
 
     return () => {
-      // Cleanup
+      if (frameRef.current) {
+        cancelAnimationFrame(frameRef.current);
+        frameRef.current = null;
+      }
     };
   }, [isScanning]);
 

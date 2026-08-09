@@ -73,7 +73,7 @@ public class EventRoleService {
         }
 
         EventRole newRole = EventRole.from(request.getRole());
-        if (newRole == EventRole.OWNER && !isPlatformAdmin(actor) && !isLegacyOwner(eventId, actor.getId())) {
+        if (newRole == EventRole.OWNER && !isPlatformAdmin(actor) && !hasOwnerRole(eventId, actor.getId())) {
             throw new AccessDeniedException("Only the event owner can transfer ownership.");
         }
 
@@ -162,6 +162,15 @@ public class EventRoleService {
     private boolean isLegacyOwner(Long eventId, Long userId) {
         return eventRepository.findById(eventId)
                 .map(event -> userId != null && userId.equals(event.getOwnerId()))
+                .orElse(false);
+    }
+
+    private boolean hasOwnerRole(Long eventId, Long userId) {
+        if (isLegacyOwner(eventId, userId)) {
+            return true;
+        }
+        return eventTeamMemberRepository.findByEvent_IdAndUser_Id(eventId, userId)
+                .map(member -> member.getRole() == EventRole.OWNER)
                 .orElse(false);
     }
 

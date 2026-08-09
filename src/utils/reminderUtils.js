@@ -124,6 +124,7 @@ export const addReminder = (event, timing) => {
       title: event.title ?? "",
       date: event.date ?? "",
       time: event.time ?? "",
+      timezone: event.timezone || event.timeZone || null,
       location: event.location ?? "",
       type: event.type ?? event.category ?? "",
       image: event.image ?? event.imageUrl ?? "",
