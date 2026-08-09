@@ -113,8 +113,7 @@ const EventDetails = () => {
   const canManageEvent = isOrganizer && isEventOwner;
 
   const { isRegistered } = useMyEvents();
-  const [linkCopied, setLinkCopied] = useState(false);
-  const latestRequestIdRef = useRef(0);
+ const { copy, isCopied } = useClipboard({ resetMs: 2000 });
   const abortControllerRef = useRef(null);
 const copyLink = async () => {
     try {
@@ -332,30 +331,12 @@ Location: ${event.location}
 
 ${window.location.href}
 `;
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(link);
-      } else {
-        const textArea = document.createElement("textarea");
-        textArea.value = link;
-        textArea.style.position = "absolute";
-        textArea.style.left = "-999999px";
-        document.body.prepend(textArea);
-        textArea.select();
-        try {
-          document.execCommand("copy");
-        } finally {
-          textArea.remove();
-        }
-      }
-      toast.success("Event link copied to clipboard!");
-      setLinkCopied(true);
-      setTimeout(() => setLinkCopied(false), 2000);
-    } catch {
-      toast.error("Failed to copy link. Please copy the URL from your browser's address bar.");
-    }
+    const success = await copy(link, "eventLink");
+    if (success) toast.success("Event link copied to clipboard!");
+    else toast.error("Failed to copy link. Please copy the URL from your browser's address bar.");
   };
 
+  
   useKeyboardShortcuts({
     r: () => { if (event && !isEventRegistrationClosed(event)) navigate(`/events/${event.id}/register`); },
     c: handleCopy,
@@ -696,9 +677,15 @@ const lastUpdated = getLastUpdated(event.updatedAt);
                 </div>
               )}
 
-              <Link to="/events" className="inline-flex items-center justify-center rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800">
-                Back to Events
-              </Link>
+              
+      
+      <button
+  onClick={() => navigate(-1)}
+  className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
+>
+  <ArrowLeft size={16} />
+  Back to Results
+</button>
             </div>
           </div>
 
@@ -784,7 +771,15 @@ const lastUpdated = getLastUpdated(event.updatedAt);
               </div>
 
               <div className="rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
-                <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">Summary</h3>
+                <div className="flex items-center justify-between">
+  <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">
+    Summary
+  </h3>
+
+  <span className="text-xs text-gray-500 dark:text-gray-400">
+    📖 {getReadingTime(event.description)}
+  </span>
+</div>
                 <div
                   className="mt-3 text-gray-700 dark:text-gray-300 text-sm leading-6 prose prose-indigo dark:prose-invert"
                   dangerouslySetInnerHTML={{ __html: sanitizeMarkdown(event.description, marked.parse) }}

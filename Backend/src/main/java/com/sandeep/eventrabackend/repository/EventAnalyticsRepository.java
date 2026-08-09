@@ -42,8 +42,8 @@ public interface EventAnalyticsRepository extends JpaRepository<Event, Long> {
         """)
     Double findAverageCapacityUtilization();
 
-    // Total unique participants via the join table
-    @Query("SELECT COUNT(DISTINCT a.id) FROM Event e JOIN e.attendees a")
+    // Total unique participants via confirmed registrations
+    @Query("SELECT COUNT(DISTINCT r.user.id) FROM EventRegistration r WHERE r.status = 'CONFIRMED'")
     long countUniqueParticipants();
 
     // Events a user owns or manages (owner or member of the event team)

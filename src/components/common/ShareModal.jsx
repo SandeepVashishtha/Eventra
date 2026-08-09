@@ -45,6 +45,18 @@ const ShareModal = ({ isOpen, onClose, event }) => {
     await copyInviteLink(shareData.shareUrl);
   }, [copyInviteLink, shareData]);
 
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const handleEsc = (eventKey) => {
+      if (eventKey.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleEsc);
+    useScrollLock(isOpen);
+  }, [isOpen, onClose]);
 
   return (
     <AnimatePresence>

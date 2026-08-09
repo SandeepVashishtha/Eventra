@@ -78,13 +78,28 @@ public class EventRoleService {
         }
 
         User target = findUser(request.getUserEmail());
+
+        // If assigning OWNER, downgrade the current owner to ORGANIZER
+        if (newRole == EventRole.OWNER) {
+            eventTeamMemberRepository.findByEvent_IdAndRole(eventId, EventRole.OWNER)
+                    .filter(member -> !member.getUser().getEmail().equals(request.getUserEmail()))
+                    .ifPresent(currentOwner -> {
+                        currentOwner.setRole(EventRole.ORGANIZER);
+                        currentOwner.setAssignedAt(LocalDateTime.now());
+                        eventTeamMemberRepository.save(currentOwner);
+                        auditLogRepository.save(toAuditLog(eventId, currentOwner.getUser().getId(), actor, EventRole.OWNER, EventRole.ORGANIZER, "DOWNGRADED"));
+                    });
+            event.setOwnerId(target.getId());
+            eventRepository.save(event);
+        }
+
         EventTeamMember member = upsertRole(event, target, newRole, actor, "ASSIGNED");
         return toTeamMemberResponse(member);
     }
 
     @Transactional(readOnly = true)
     public List<EventTeamMemberResponse> getTeam(Long eventId, String actorEmail) {
-        requireRole(eventId, actorEmail, EventRole.OWNER);
+        requireRole(eventId, actorEmail, EventRole.ORGANIZER);
         return eventTeamMemberRepository.findByEvent_IdOrderByRoleDescAssignedAtDesc(eventId)
                 .stream()
                 .map(this::toTeamMemberResponse)
@@ -93,7 +108,7 @@ public class EventRoleService {
 
     @Transactional(readOnly = true)
     public List<EventRoleAuditResponse> getAuditLog(Long eventId, String actorEmail) {
-        requireRole(eventId, actorEmail, EventRole.OWNER);
+        requireRole(eventId, actorEmail, EventRole.ORGANIZER);
         return auditLogRepository.findByEventIdOrderByChangedAtDesc(eventId)
                 .stream()
                 .map(this::toAuditResponse)

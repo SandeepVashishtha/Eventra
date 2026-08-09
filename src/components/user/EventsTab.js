@@ -1,3 +1,4 @@
+import useDateFormatter from "hooks/useDateFormatter";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import ReactDOM from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -504,7 +505,9 @@ const EventsEmptyState = () => (
 );
 
 /* ---------------- Main EventsTab Component ---------------- */
-const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
+const EventsTab = ({
+  const { formatDate, formatShort } = useDateFormatter();
+ hostedEvents = [], onViewTicket }) => {
   const prefersReducedMotion = useReducedMotion();
   const staggerVariants = stagger(prefersReducedMotion);
   const { myEvents, removeRegistration, restoreRegistration, loading: myEventsLoading } = useMyEvents();

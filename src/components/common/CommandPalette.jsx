@@ -132,16 +132,15 @@ export default function CommandPalette({
   useModalManager(isOpen, onClose, { disableFocusTrap: true });
 
   // Auto focus input on open
-  useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => inputRef.current?.focus(), 150);
-    } else {
-      setQuery("");
-      setActiveIndex(0);
-    }
-    return () => {
-    };
-  }, [isOpen]);
+ useEffect(() => {
+  if (isOpen) {
+    setTimeout(() => inputRef.current?.focus(), 150);
+  } else {
+    setQuery("");
+    setActiveIndex(0);
+  }
+  return () => {};
+}, [isOpen]);
 
   // Handle selected item action
   const handleSelect = useCallback((item) => {

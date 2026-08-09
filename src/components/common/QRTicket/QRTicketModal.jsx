@@ -1,37 +1,13 @@
 /**
  * QRTicketModal.jsx
  * Eventra — Full ticket modal with download & share actions.
- *
- * Usage (e.g. in EventDetails.js or RegistrationsTab.jsx):
- *
- * import QRTicketModal from "../common/QRTicket/QRTicketModal";
- *
- * const [showTicket, setShowTicket] = useState(false);
- *
- * <button onClick={() => setShowTicket(true)}>View Ticket</button>
- *
- * <QRTicketModal
- * isOpen={showTicket}
- * onClose={() => setShowTicket(false)}
- * ticket={{
- * eventName: registration.eventName,
- * eventOrganizer: "GirlScript Foundation",
- * date: registration.eventDate,
- * time: registration.eventTime,
- * venue: registration.venue,
- * seat: registration.seat || "General",
- * holderName: user.name,
- * ticketId: registration.ticketId,
- * ticketType: registration.ticketTier || "General",
- * qrValue: `https://eventra.app/verify/${registration.ticketId}`,
- * }}
- * />
  */
 
 import { useRef, useEffect } from "react";
 import QRTicket from "./QRTicket";
 import { useTicketDownload } from "./useTicketDownload";
 import { toast } from "react-toastify";
+import useClipboard from "hooks/useClipboard";
 
 export default function QRTicketModal({ isOpen, onClose, ticket }) {
   const ticketRef = useRef(null);
@@ -39,7 +15,7 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
     ticketRef,
     ticket?.ticketId || "ticket"
   );
-
+  const { copy } = useClipboard();
   const modalRef = useRef(null);
 
   // Deep Fix 1: Global Escape Listener to prevent ghosting
@@ -58,13 +34,10 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
   // Deep Fix 2: Safe Body Scroll Lock (Prevents layout destruction on unmount)
   useEffect(() => {
     if (!isOpen) return;
-    
-    // Cache the original style before mutating so we don't destroy parent layout rules
     const originalStyle = window.getComputedStyle(document.body).overflow;
     document.body.style.overflow = "hidden";
-    
-    return () => { 
-      document.body.style.overflow = originalStyle; 
+    return () => {
+      document.body.style.overflow = originalStyle;
     };
   }, [isOpen]);
 
@@ -75,7 +48,7 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
     const focusableElements = modalRef.current.querySelectorAll(
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
     );
-    
+
     if (focusableElements.length === 0) return;
 
     const firstElement = focusableElements[0];
@@ -83,7 +56,6 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
 
     const handleFocusTrap = (e) => {
       if (e.key !== "Tab") return;
-
       if (e.shiftKey) {
         if (document.activeElement === firstElement) {
           e.preventDefault();
@@ -99,7 +71,6 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
 
     const modalElement = modalRef.current;
     modalElement.addEventListener("keydown", handleFocusTrap);
-    // Focus the modal automatically
     modalElement.focus();
 
     return () => {
@@ -109,6 +80,8 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
 
   const handleShare = async () => {
     const shareUrl = ticket?.qrValue || window.location.href;
+
+    // Try native share API first (mobile)
     if (navigator.share) {
       try {
         await navigator.share({
@@ -118,54 +91,23 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
         });
         return;
       } catch (err) {
-        if (err.name !== "AbortError") {
-          console.error("Native share failed", err);
-        } else {
-          return; // User intentionally cancelled native share
-        }
-      }
-    }
-    
-    // Fallback to Clipboard API
-    if (navigator.clipboard && window.isSecureContext) {
-      try {
-        await navigator.clipboard.writeText(shareUrl);
-        toast.success("Ticket link copied to clipboard!");
-        return;
-      } catch (err) {
-        console.error("Clipboard API failed", err);
+        if (err.name === "AbortError") return; // User cancelled
+        console.error("Native share failed", err);
       }
     }
 
-    // Ultimate fallback for insecure contexts (HTTP) or unsupported browsers
-    try {
-      const textArea = document.createElement("textarea");
-      textArea.value = shareUrl;
-      textArea.style.position = "fixed"; // Avoid scrolling to bottom
-      textArea.style.opacity = "0";
-      document.body.appendChild(textArea);
-      textArea.select();
-      const successful = document.execCommand("copy");
-      document.body.removeChild(textArea);
-      if (successful) {
-        toast.success("Ticket link copied to clipboard!");
-      } else {
-        toast.error("Failed to copy link. Please copy manually.");
-      }
-    } catch (err) {
-      console.error("Fallback clipboard failed", err);
-      toast.error("Failed to copy link. Please copy manually.");
-    }
+    // Fix: Replace 30-line Clipboard API + execCommand fallback with useClipboard
+    const success = await copy(shareUrl);
+    if (success) toast.success("Ticket link copied to clipboard!");
+    else toast.error("Failed to copy link. Please copy manually.");
   };
 
   if (!isOpen) return null;
 
   return (
-    // Backdrop
     <div
       ref={modalRef}
       tabIndex={-1}
-      // Removed inline onKeyDown since we now handle Escape globally and Tab securely
       className="fixed inset-0 z-50 flex items-center justify-center p-4 outline-none"
       style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
@@ -194,18 +136,17 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
 
         {/* Action buttons */}
         <div className="flex gap-3 w-full max-w-85">
-          {/* Download PNG */}
           <button
             onClick={downloadPNG}
             disabled={downloading}
             className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold text-white transition-opacity disabled:opacity-50"
             style={{ background: "#7c3aed" }}
-           aria-label="Save ticket as PNG">
+            aria-label="Save ticket as PNG"
+          >
             <DownloadIcon />
             {downloading ? "Saving…" : "Save PNG"}
           </button>
 
-          {/* Download PDF */}
           <button
             onClick={downloadPDF}
             disabled={downloading}
@@ -215,12 +156,12 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
               color: "white",
               border: "1px solid rgba(255,255,255,0.12)",
             }}
-           aria-label="Download ticket as PDF">
+            aria-label="Download ticket as PDF"
+          >
             <FileIcon />
             {downloading ? "…" : "PDF"}
           </button>
 
-          {/* Share */}
           <button
             onClick={handleShare}
             className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all"
@@ -229,7 +170,8 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
               color: "white",
               border: "1px solid rgba(255,255,255,0.12)",
             }}
-           aria-label="Share ticket">
+            aria-label="Share ticket"
+          >
             <ShareIcon />
             Share
           </button>
@@ -242,8 +184,6 @@ export default function QRTicketModal({ isOpen, onClose, ticket }) {
     </div>
   );
 }
-
-// ── Inline SVG icons (no extra deps needed) ──────────────────
 
 function DownloadIcon() {
   return (

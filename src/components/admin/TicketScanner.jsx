@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 import { safeJsonParse } from "utils/safeJsonParse";
+import useNetworkStatus from "hooks/useNetworkStatus";
 import {
   Camera,
   CameraOff,
@@ -43,7 +44,7 @@ export default function TicketScanner() {
   const [manualMode, setManualMode] = useState(false);
   const [checkinHistory, setCheckinHistory] = useState([]);
   const [events, setEvents] = useState([]);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const { isOnline } = useNetworkStatus();
   const [manualTicketId, setManualTicketId] = useState("");
   const [manualAttendeeName, setManualAttendeeName] = useState("");
   const [manualEventId, setManualEventId] = useState("");
@@ -68,17 +69,6 @@ export default function TicketScanner() {
     } finally {
       setStatsLoading(false);
     }
-  }, []);
-
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-    return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
-    };
   }, []);
 
   useEffect(() => {
@@ -230,13 +220,50 @@ export default function TicketScanner() {
       }
     } catch {
       if (decodedText.startsWith("eyJ") && decodedText.split(".").length === 3) {
-        const activeEvent = events.find(e => String(e.id) === String(selectedEventId));
-        ticketData = {
-          ticketId: decodedText,
-          eventId: selectedEventId,
-          userName: "Attendee",
-          eventName: activeEvent ? activeEvent.title : "Active Event"
-        };
+        try {
+          const payload = JSON.parse(atob(decodedText.split(".")[1]));
+          const activeEvent = events.find(e => String(e.id) === String(selectedEventId));
+          const ticketEventId = payload.eventId || payload.event_id;
+          if (ticketEventId && String(ticketEventId) !== String(selectedEventId)) {
+            setScanResult({
+              status: "flagged",
+              message: "This ticket is for a different event.",
+              raw: decodedText,
+            });
+            toast.error("Security Alert: Ticket does not match selected event!");
+            addToHistory({
+              id: `flagged-${Date.now()}`,
+              ticketId: decodedText.slice(0, 20),
+              name: "Unknown",
+              event: activeEvent ? activeEvent.title : "Unknown",
+              status: "Flagged",
+              time: new Date().toISOString(),
+            });
+            return;
+          }
+          ticketData = {
+            ticketId: decodedText,
+            eventId: ticketEventId || selectedEventId,
+            userName: payload.userName || payload.name || "Attendee",
+            eventName: activeEvent ? activeEvent.title : "Active Event"
+          };
+        } catch {
+          setScanResult({
+            status: "flagged",
+            message: "Invalid ticket format.",
+            raw: decodedText,
+          });
+          toast.error("Security Alert: Invalid Ticket QR Code scanned!");
+          addToHistory({
+            id: `flagged-${Date.now()}`,
+            ticketId: decodedText.slice(0, 20),
+            name: "Unknown",
+            event: "Unknown",
+            status: "Flagged",
+            time: new Date().toISOString(),
+          });
+          return;
+        }
       } else {
         setScanResult({
           status: "flagged",

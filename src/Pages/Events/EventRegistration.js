@@ -29,7 +29,7 @@ import {
 } from "utils/eventAvailabilityUtils.mjs";
 import { useFormValidation } from "hooks/useFormValidation";
 import SpatialSeatSelector from "components/events/SpatialSeatSelector";
-import { getEventStatus, isEventRegistrationClosed } from "utils/eventUtils";
+import { getEventStatus, isEventRegistrationClosed, normalizeEvent } from "utils/eventUtils";
 import { checkRegistrationConflict, suggestAlternativeEvents } from "utils/conflictDetection";
 import { useAuth } from "context/AuthContext";
 import { useMyEvents } from "context/MyEventsContext";
@@ -138,8 +138,8 @@ const EventRegistration = () => {
       priority: "Medium",
       showProfileInAttendeeDirectory: false,
     },
-  }
-);
+    validationRules
+  );
   // Load event data from backend API
   useEffect(() => {
     let isCancelled = false;
@@ -189,10 +189,10 @@ const EventRegistration = () => {
         if (response.status === 200 && response.data) {
           if (isCancelled) return;
 
-          const fetchedEvent = {
+          const fetchedEvent = normalizeEvent({
             ...response.data,
             status: getEventStatus(response.data),
-          };
+          });
           applyLoadedEvent(fetchedEvent);
           saveCachedEventDetail(fetchedEvent);
 
@@ -203,14 +203,16 @@ const EventRegistration = () => {
         console.error("Failed to load event details:", error);
         const cached = getCachedEventDetail(eventId);
         if (cached?.event) {
-          applyLoadedEvent({
-            ...cached.event,
-            status: getEventStatus(cached.event),
-            cacheInfo: {
-              cachedAt: cached.cachedAt,
-              label: getCacheAgeLabel(cached.cachedAt),
-            },
-          });
+          applyLoadedEvent(
+            normalizeEvent({
+              ...cached.event,
+              status: getEventStatus(cached.event),
+              cacheInfo: {
+                cachedAt: cached.cachedAt,
+                label: getCacheAgeLabel(cached.cachedAt),
+              },
+            })
+          );
 
           toast.warning(t("eventRegistration.toastShowingCached", { label: getCacheAgeLabel(cached.cachedAt) }));
           return;
@@ -274,8 +276,17 @@ const EventRegistration = () => {
     const conflictCheck = checkRegistrationConflict(event, myEvents);
     if (conflictCheck.hasConflict) {
       try {
-        const res = await apiUtils.get(API_ENDPOINTS.EVENTS.LIST);
-        const realEvents = res.status === 200 ? res.data : [];
+        const around =
+          event.eventDate || event.date || event.startDate || undefined;
+        const params = new URLSearchParams();
+        if (event?.id != null) params.set("excludeId", String(event.id));
+        if (around) params.set("around", around);
+        params.set("windowDays", "14");
+        params.set("limit", "20");
+        const res = await apiUtils.get(
+          `${API_ENDPOINTS.EVENTS.ALTERNATIVES}?${params.toString()}`
+        );
+        const realEvents = Array.isArray(res?.data) ? res.data : [];
         const suggestions = suggestAlternativeEvents(event, realEvents, myEvents);
         setConflictData({
           conflicts: conflictCheck.conflicts,
@@ -592,6 +603,15 @@ const EventRegistration = () => {
     const shareText = `I'm attending ${event.title} on Eventra! Join me there!`;
     const shareUrl = `${window.location.origin}/events/${event.id}`;
 
+    const successStartTime =
+      event.time ||
+      (event.date && !Number.isNaN(new Date(event.date).getTime())
+        ? new Date(event.date).toLocaleTimeString("en-US", {
+            hour: "numeric",
+            minute: "2-digit",
+          })
+        : "");
+
     const handleNativeShare = () => {
       if (navigator.share) {
         navigator
@@ -671,7 +691,7 @@ const EventRegistration = () => {
 
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-pink-500" />
-                <span>{event.time}</span>
+                <span>{successStartTime}</span>
               </div>
 
               <div className="flex items-center gap-2">

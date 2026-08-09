@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "context/AuthContext";
-import { isTokenValid } from "utils/auth";
+import { isAuthSessionValid } from "utils/auth";
 import Loading from "../common/Loading";
 
 const Gate = ({
@@ -18,7 +18,7 @@ const Gate = ({
   const { isAuthenticated, hasRole, hasPermission, loading, user, token, logout } = useAuth();
   const location = useLocation();
 
-  const sessionExpired = requireAuth && !loading && !isAuthenticated() && !!token && !isTokenValid(token);
+  const sessionExpired = requireAuth && !loading && !isAuthenticated() && !!token && !isAuthSessionValid(token);
 
   useEffect(() => {
     if (sessionExpired) logout();

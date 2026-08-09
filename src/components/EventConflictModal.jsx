@@ -1,3 +1,4 @@
+import useDateFormatter from "hooks/useDateFormatter";
 import { useRef, useEffect } from 'react';
 import { AlertTriangle, Clock, Calendar, X, ArrowRight, Globe } from 'lucide-react';
 import { formatTimeRange } from '../utils/conflictDetection';
@@ -37,16 +38,7 @@ const EventConflictModal = ({
   const userTimezone = getUserTimezone();
   const { containerRef: focusTrapRef } = useFocusTrap(isOpen, onCancel);
 
-  // 🔥 FIX: Added scroll lock to prevent background page from scrolling behind the modal
-  useEffect(() => {
-    if (isOpen) {
-      const originalStyle = window.getComputedStyle(document.body).overflow;
-      document.body.style.overflow = "hidden";
-      return () => {
-        document.body.style.overflow = originalStyle;
-      };
-    }
-  }, [isOpen]);
+useScrollLock(isOpen);
 
   useEffect(() => {
     if (isOpen) {

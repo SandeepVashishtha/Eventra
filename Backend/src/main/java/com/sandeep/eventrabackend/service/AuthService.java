@@ -21,6 +21,8 @@ import com.sandeep.eventrabackend.dto.request.GoogleAuthRequest;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import java.security.SecureRandom;
 import java.util.Base64;
+import java.time.ZoneId;
+import java.util.Date;
 
 @Service
 public class AuthService {
@@ -72,7 +74,7 @@ public class AuthService {
                 .email(normalizedEmail)
                 .username(username)
                 .password(passwordEncoder.encode(request.getPassword()))
-                .role(Role.CLIENT)
+                .role(Role.ATTENDEE)
                 .build();
 
         user = userRepository.save(user);
@@ -113,12 +115,19 @@ public AuthResponse googleLogin(GoogleAuthRequest request) {
         GoogleIdToken.Payload payload =
                 googleAuthService.verifyToken(request.getToken());
 
-        String email = payload.getEmail().toLowerCase();
+        if (!Boolean.TRUE.equals(payload.getEmailVerified())) {
+            throw new InvalidGoogleTokenException(
+                    "Google account email is not verified.");
+        }
+
+        String email = payload.getEmail();
 
         if (email == null || email.isBlank()) {
             throw new IllegalArgumentException(
                     "Google account must provide a valid email address.");
         }
+
+        email = email.toLowerCase();
 
        String firstName =
         (String) payload.get("given_name");
@@ -157,7 +166,7 @@ if (lastName == null || lastName.isBlank()) {
                     .email(email.toLowerCase())
                     .username(username)
                     .password(passwordEncoder.encode(securePassword))
-                    .role(Role.CLIENT)
+                    .role(Role.ATTENDEE)
                     .build();
 
             user = userRepository.save(user);
@@ -195,6 +204,7 @@ if (lastName == null || lastName.isBlank()) {
     private AuthResponse buildAuthResponse(User user, String token) {
         return AuthResponse.builder()
                 .token(token)
+                .refreshToken(jwtTokenProvider.generateRefreshToken(user.getEmail()))
                 .tokenType("Bearer")
                 .id(user.getId())
                 .firstName(user.getFirstName())
@@ -203,6 +213,44 @@ if (lastName == null || lastName.isBlank()) {
                 .username(user.getUsername())
                 .role(user.getRole().name())
                 .build();
+    }
+
+    public AuthResponse refresh(String refreshToken) {
+        if (refreshToken == null || refreshToken.isBlank()
+                || !jwtTokenProvider.validateToken(refreshToken)
+                || !jwtTokenProvider.isRefreshToken(refreshToken)) {
+            throw new org.springframework.security.authentication.BadCredentialsException(
+                    "Invalid refresh token");
+        }
+
+        if (tokenBlacklistService.isBlacklisted(refreshToken)) {
+            throw new org.springframework.security.authentication.BadCredentialsException(
+                    "Refresh token has been revoked");
+        }
+
+        String email = jwtTokenProvider.getUsernameFromToken(refreshToken);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new org.springframework.security.core.userdetails.UsernameNotFoundException(
+                        "User not found with email: " + email));
+
+        if (user.getPasswordChangedAt() != null) {
+            Date tokenIssuedAt = jwtTokenProvider.getIssuedAtDateFromToken(refreshToken);
+            long tokenIssuedSec = tokenIssuedAt.getTime() / 1000;
+            long passwordChangedSec = user.getPasswordChangedAt()
+                    .atZone(ZoneId.systemDefault())
+                    .toEpochSecond();
+            if (tokenIssuedSec < passwordChangedSec) {
+                throw new org.springframework.security.authentication.BadCredentialsException(
+                        "Refresh token invalidated by password change");
+            }
+        }
+
+        // Rotate: blacklist the presented refresh token, then mint a new pair.
+        tokenBlacklistService.addToBlacklist(
+                refreshToken, jwtTokenProvider.getExpirationDateFromToken(refreshToken));
+
+        String accessToken = jwtTokenProvider.generateToken(user.getEmail());
+        return buildAuthResponse(user, accessToken);
     }
 }
 
