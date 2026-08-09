@@ -31,6 +31,8 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             new EndpointRule("signup", POST, "/api/auth/signup"),
             new EndpointRule("forgotPassword", POST, "/api/auth/forgot-password"),
             new EndpointRule("forgotPassword", POST, "/api/auth/forgot-password/"),
+            new EndpointRule("resetPassword", POST, "/api/auth/reset-password"),
+            new EndpointRule("resetPassword", POST, "/api/auth/reset-password/"),
             new EndpointRule("contact", POST, "/api/contact"),
             new EndpointRule("contact", POST, "/api/contact/"),
             new EndpointRule("contact", POST, "/api/contacts"),
@@ -113,6 +115,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             case "login" -> properties.getLogin();
             case "signup" -> properties.getSignup();
             case "forgotPassword" -> properties.getForgotPassword();
+            case "resetPassword" -> properties.getResetPassword();
             case "contact" -> properties.getContact();
             default -> throw new IllegalArgumentException("Unknown rate limit endpoint: " + endpointName);
         };

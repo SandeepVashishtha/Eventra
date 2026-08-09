@@ -3,6 +3,8 @@ package com.sandeep.eventrabackend.controller;
 import com.sandeep.eventrabackend.dto.request.LoginRequest;
 import com.sandeep.eventrabackend.dto.request.SignupRequest;
 import com.sandeep.eventrabackend.dto.request.GoogleAuthRequest;
+import com.sandeep.eventrabackend.dto.request.ForgotPasswordRequest;
+import com.sandeep.eventrabackend.dto.request.ResetPasswordRequest;
 import com.sandeep.eventrabackend.dto.response.AuthResponse;
 import com.sandeep.eventrabackend.dto.response.ErrorResponse;
 import com.sandeep.eventrabackend.security.AuthCookieHelper;
@@ -23,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -132,6 +135,60 @@ public class AuthController {
                     .build();
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
         }
+    }
+
+    // ─── PASSWORD RESET ────────────────────────────────────────────────────────
+
+    @PostMapping("/forgot-password")
+    @SecurityRequirements   // no auth needed for this endpoint
+    @Operation(
+            summary = "Request a password reset",
+            description = """
+                    Accepts an email address and issues a short-lived password reset token
+                    for the matching account (if one exists).
+                    
+                    The raw `resetToken` is returned in the response so the client can
+                    present the "set new password" step; deployments with an email
+                    transport should instead email a reset link and remove the token
+                    from the response.
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Reset link dispatched (or account not found — same response to avoid enumeration)",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Validation error — missing/invalid email",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "429", description = "Forgot-password rate limit exceeded",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<Map<String, String>> forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest request) {
+        return ResponseEntity.ok(authService.forgotPassword(request.getEmail()));
+    }
+
+    @PostMapping("/reset-password")
+    @SecurityRequirements   // no auth needed for this endpoint
+    @Operation(
+            summary = "Set a new password using a reset token",
+            description = """
+                    Validates the password reset token issued by `POST /api/auth/forgot-password`
+                    and sets a new password for the account.
+                    
+                    The token is single-use and expires after a short window; previously issued
+                    JWTs are invalidated via the password-changed check.
+                    """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Password updated successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid/expired token, weak password, or mismatched confirmation",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "429", description = "Reset-password rate limit exceeded",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<String> resetPassword(
+            @Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request.getToken(), request.getNewPassword(), request.getConfirmPassword());
+        return ResponseEntity.ok("Password updated successfully");
     }
 
     @PostMapping("/google")

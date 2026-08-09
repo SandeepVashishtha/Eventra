@@ -13,6 +13,7 @@ public class RateLimitProperties {
     private EndpointLimit login = new EndpointLimit(5, Duration.ofMinutes(1));
     private EndpointLimit signup = new EndpointLimit(3, Duration.ofMinutes(10));
     private EndpointLimit forgotPassword = new EndpointLimit(3, Duration.ofMinutes(15));
+    private EndpointLimit resetPassword = new EndpointLimit(5, Duration.ofMinutes(15));
     private EndpointLimit contact = new EndpointLimit(5, Duration.ofMinutes(10));
 
     public boolean isEnabled() {
@@ -45,6 +46,14 @@ public class RateLimitProperties {
 
     public void setForgotPassword(EndpointLimit forgotPassword) {
         this.forgotPassword = forgotPassword;
+    }
+
+    public EndpointLimit getResetPassword() {
+        return resetPassword;
+    }
+
+    public void setResetPassword(EndpointLimit resetPassword) {
+        this.resetPassword = resetPassword;
     }
 
     public EndpointLimit getContact() {

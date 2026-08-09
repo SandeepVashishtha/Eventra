@@ -21,6 +21,9 @@ app:
     forgot-password:
       capacity: ${RATE_LIMIT_FORGOT_PASSWORD_CAPACITY:3}
       window: ${RATE_LIMIT_FORGOT_PASSWORD_WINDOW:15m}
+    reset-password:
+      capacity: ${RATE_LIMIT_RESET_PASSWORD_CAPACITY:5}
+      window: ${RATE_LIMIT_RESET_PASSWORD_WINDOW:15m}
     contact:
       capacity: ${RATE_LIMIT_CONTACT_CAPACITY:5}
       window: ${RATE_LIMIT_CONTACT_WINDOW:10m}

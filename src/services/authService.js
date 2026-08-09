@@ -12,8 +12,12 @@ export const authService = {
   }, { maxTokens: 3, refillRate: 0.05 }),
   
   resetPassword: withRateLimit(async (email) => {
-    return apiUtils.post(API_ENDPOINTS.AUTH.RESET_PASSWORD, { email });
+    return apiUtils.post(API_ENDPOINTS.AUTH.FORGOT_PASSWORD, { email });
   }, { maxTokens: 3, refillRate: 0.05 }),
+
+  confirmPasswordReset: async ({ token, newPassword, confirmPassword }) => {
+    return apiUtils.post(API_ENDPOINTS.AUTH.RESET_PASSWORD, { token, newPassword, confirmPassword });
+  },
   
   logout: async () => {
     return apiUtils.post(API_ENDPOINTS.AUTH.LOGOUT);
