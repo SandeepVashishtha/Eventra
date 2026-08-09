@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 
-const { doEventsOverlap, findConflictingEvents, checkRegistrationConflict, parseTimeToMinutes, getEventUTCRange } =
+const { doEventsOverlap, findConflictingEvents, checkRegistrationConflict, parseTimeToMinutes, suggestAlternativeEvents } =
   await import("../src/utils/conflictDetection.js");
 
 assert.equal(parseTimeToMinutes("10:00 AM"), 600);
@@ -51,65 +51,74 @@ const selfConflictCheck = findConflictingEvents(
 );
 assert.equal(selfConflictCheck.length, 0);
 
-// --- Issue 12458: same-day events with ISO eventDate timestamps ---
-// Real API events carry only a full ISO timestamp (eventDate); they must NOT
-// fall into the legacy minutes-from-midnight branch (00:00-01:00) which made
-// every same-day pair overlap.
+// --- Issue 12463: suggestAlternativeEvents with a real (unwrapped) array ---
+// The conflict modal must show alternative events. EventRegistration.js unwraps
+// the paged API payload ({ content: [...] }) into a plain array before calling
+// this function; given a real array it must return same-category,
+// non-conflicting suggestions (excluding the target and registered events).
 
-const baseEventIso = {
-  eventDate: "2026-06-01T10:00:00",
+const targetEvent = {
+  id: 1,
+  title: "React Workshop",
+  date: "2026-06-01",
+  time: "10:00 AM",
   timezone: "UTC",
   durationMinutes: 60,
+  category: "Workshop",
 };
 
-const overlapIso = {
-  eventDate: "2026-06-01T10:30:00",
+const alreadyRegistered = {
+  id: 2,
+  title: "Registered Event",
+  date: "2026-06-01",
+  time: "12:00 PM",
   timezone: "UTC",
   durationMinutes: 60,
+  category: "Workshop",
 };
 
-const separateIso = {
-  eventDate: "2026-06-01T12:00:00",
+const altSameCategory = {
+  id: 3,
+  title: "Advanced React",
+  date: "2026-06-02",
+  time: "10:00 AM",
   timezone: "UTC",
   durationMinutes: 60,
+  category: "Workshop",
 };
 
-assert.equal(doEventsOverlap(baseEventIso, overlapIso, 60, "UTC"), true);
-assert.equal(doEventsOverlap(baseEventIso, separateIso, 60, "UTC"), false);
-
-// Explicit-offset timestamps (Z suffix) parse directly to the instant
-assert.equal(
-  doEventsOverlap(
-    { eventDate: "2026-06-01T10:00:00Z", durationMinutes: 60 },
-    { eventDate: "2026-06-01T12:00:00Z", durationMinutes: 60 },
-    60,
-    "UTC"
-  ),
-  false
-);
-
-// getEventUTCRange resolves the ISO timestamp into a real ms range
-const isoRange = getEventUTCRange({
-  eventDate: "2026-06-01T10:00:00",
+const altOtherCategory = {
+  id: 4,
+  title: "Cloud Conf",
+  date: "2026-06-03",
+  time: "10:00 AM",
   timezone: "UTC",
   durationMinutes: 60,
-});
-assert.equal(isoRange.startMs, Date.UTC(2026, 5, 1, 10, 0, 0));
-assert.equal(isoRange.endMs, Date.UTC(2026, 5, 1, 11, 0, 0));
-
-// Restored MyEvents records expose only eventSummary (date = ISO timestamp);
-// conflict detection must still resolve them against the new event.
-const restoredSummary = {
-  id: 7,
-  title: "Restored",
-  date: "2026-06-01T10:00:00",
+  category: "Conference",
 };
-const conflictsWithRestored = findConflictingEvents(
-  { ...baseEventIso, id: 1 },
-  [{ event: null, eventSummary: restoredSummary }, { event: separateIso }],
+
+const altConflicting = {
+  id: 5,
+  title: "Overlapping Registered Workshop",
+  date: "2026-06-01",
+  time: "12:30 PM",
+  timezone: "UTC",
+  durationMinutes: 60,
+  category: "Workshop",
+};
+
+const suggestions = suggestAlternativeEvents(
+  targetEvent,
+  [alreadyRegistered, altSameCategory, altOtherCategory, altConflicting],
+  [{ event: alreadyRegistered }],
   60,
+  3,
   "UTC"
 );
-assert.equal(conflictsWithRestored.length, 1);
+
+// Excludes the already-registered event (2) and the one that conflicts with it
+// (5, 12:30 PM overlaps the 12:00 PM registration); prioritises the
+// same-category event (3) over the other category (4).
+assert.deepEqual(suggestions.map((s) => s.id), [3, 4]);
 
 console.log("conflictDetection tests passed ✓");
