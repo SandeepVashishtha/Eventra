@@ -96,6 +96,7 @@ const EditProfile = () => {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [saveError, setSaveError] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [currentSkillInput, setCurrentSkillInput] = useState("");
   const [aiModalOpen, setAiModalOpen] = useState(false);
@@ -251,6 +252,7 @@ const EditProfile = () => {
 
   const performSave = () => {
     setSuccessMessage("");
+    setSaveError("");
 
     const resolvedForm = {
       ...form,
@@ -280,9 +282,14 @@ const EditProfile = () => {
         profileHeadline: resolvedForm.profileHeadline || resolvedForm.bio || "",
         linkedinUrl: resolvedForm.linkedin || resolvedForm.linkedinUrl || "",
         githubUrl: resolvedForm.github || resolvedForm.githubUrl || "",
+        phone: resolvedForm.phone || "",
+        bio: resolvedForm.bio || "",
+        portfolio: resolvedForm.portfolio || "",
+        skills: Array.isArray(resolvedForm.skills) ? resolvedForm.skills : [],
+        profilePicture: resolvedForm.profilePicture || "",
       };
 
-      let savedProfile = resolvedForm;
+      let savedProfile;
       try {
         const response = await userService.updateProfile(apiPayload);
         const data = response.data || response;
@@ -294,9 +301,17 @@ const EditProfile = () => {
         };
       } catch (error) {
         console.error("Error saving profile to server:", error);
+        setLoading(false);
+        setSaveError(
+          error?.response?.data?.message ||
+            error?.message ||
+            "Failed to update profile. Please try again."
+        );
+        return;
       }
 
       setLoading(false);
+      setSaveError("");
       setSuccessMessage("Profile updated successfully");
       setConfirmOpen(false);
       setUser(savedProfile);
@@ -690,6 +705,12 @@ const EditProfile = () => {
             {successMessage && (
               <div className="rounded-lg bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 px-4 py-3 text-green-800 dark:text-green-200">
                 {successMessage}
+              </div>
+            )}
+
+            {saveError && (
+              <div className="rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 px-4 py-3 text-red-800 dark:text-red-200">
+                {saveError}
               </div>
             )}
 
