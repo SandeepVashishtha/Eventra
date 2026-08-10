@@ -1,3 +1,4 @@
+import useToast from "hooks/useToast";
 import React, { memo, useCallback, useId, useState } from "react";
 import { logger } from "utils/logger";
 import LazyImage from "components/common/LazyImage";
@@ -52,7 +53,7 @@ const EventCard = ({ event, position }) => {
       } else {
         addBookmarkedEvent({ ...event, status: computedStatus });
         setIsBookmarked(true);
-        toast.success("Event saved!", { toastId: `bookmark-${event.id}`, autoClose: 1800 });
+        success("Event saved!", { toastId: `bookmark-${event.id}` });
       }
     },
     [isBookmarked, event, computedStatus]
