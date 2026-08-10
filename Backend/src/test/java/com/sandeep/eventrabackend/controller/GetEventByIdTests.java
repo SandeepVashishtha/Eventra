@@ -15,6 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -80,8 +81,8 @@ public class GetEventByIdTests {
         mockMvc.perform(get("/api/events/" + publicEventId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title").value("Public Event"))
-                .andExpect(jsonPath("$.ownerId").doesNotExist())
-                .andExpect(jsonPath("$.cancellationReason").doesNotExist());
+                .andExpect(jsonPath("$.ownerId").value(nullValue()))
+                .andExpect(jsonPath("$.cancellationReason").value(nullValue()));
     }
 
     @Test
