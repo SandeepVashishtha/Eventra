@@ -530,6 +530,8 @@ public class EventService {
                                                         + event.getRegisteredCount() + ")");
                 }
 
+                Integer previousCapacity = event.getCapacity();
+
                 event.setTitle(request.getTitle());
                 event.setDescription(request.getDescription());
                 event.setLocation(request.getLocation());
@@ -551,6 +553,19 @@ public class EventService {
                 }
 
                 Event saved = eventRepository.save(event);
+
+                // Capacity increase frees seats — promote waitlisted users (same helper as cancel/admin)
+                boolean capacityIncreased = request.getCapacity() != null
+                                && previousCapacity != null
+                                && request.getCapacity() > previousCapacity;
+                if (capacityIncreased) {
+                        int freedSeats = request.getCapacity() - previousCapacity;
+                        for (int i = 0; i < freedSeats; i++) {
+                                promoteWaitlistAfterVacancy(saved.getId());
+                        }
+                        saved = eventRepository.findById(saved.getId()).orElse(saved);
+                }
+
                 return toEventResponse(saved);
         }
 
