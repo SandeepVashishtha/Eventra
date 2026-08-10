@@ -93,15 +93,8 @@ public class AdminService {
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
 
         Role callerRole = getAuthenticatedRole();
-
-        if (callerRole != Role.SUPER_ADMIN) {
-            if (requestedRole == Role.SUPER_ADMIN) {
-                throw new AccessDeniedException("Only SUPER_ADMIN users can assign the SUPER_ADMIN role");
-            }
-            if (targetUser.getRole() == Role.SUPER_ADMIN) {
-                throw new AccessDeniedException("Only SUPER_ADMIN users can modify SUPER_ADMIN accounts");
-            }
-        }
+        assertCanModifyTarget(callerRole, targetUser);
+        assertCanAssignRole(callerRole, requestedRole);
 
         targetUser.setRole(requestedRole);
         return toAdminUserResponse(userRepository.save(targetUser));
@@ -113,9 +106,7 @@ public class AdminService {
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
 
         Role callerRole = getAuthenticatedRole();
-        if (callerRole != Role.SUPER_ADMIN && targetUser.getRole() == Role.SUPER_ADMIN) {
-            throw new AccessDeniedException("Only SUPER_ADMIN users can modify SUPER_ADMIN accounts");
-        }
+        assertCanModifyTarget(callerRole, targetUser);
 
         if (request.getFirstName() != null) {
             targetUser.setFirstName(request.getFirstName().trim());
@@ -139,11 +130,7 @@ public class AdminService {
         }
         if (request.getRole() != null && !request.getRole().isBlank()) {
             Role requestedRole = parseRole(request.getRole());
-            if (callerRole != Role.SUPER_ADMIN) {
-                if (requestedRole == Role.SUPER_ADMIN) {
-                    throw new AccessDeniedException("Only SUPER_ADMIN users can assign the SUPER_ADMIN role");
-                }
-            }
+            assertCanAssignRole(callerRole, requestedRole);
             targetUser.setRole(requestedRole);
         }
 
@@ -164,9 +151,7 @@ public class AdminService {
         }
 
         Role callerRole = getAuthenticatedRole();
-        if (callerRole != Role.SUPER_ADMIN && targetUser.getRole() == Role.SUPER_ADMIN) {
-            throw new AccessDeniedException("Only SUPER_ADMIN users can delete SUPER_ADMIN accounts");
-        }
+        assertCanModifyTarget(callerRole, targetUser);
 
         List<Long> affectedEventIds = eventRegistrationRepository.findEventIdsByUser_Id(id);
 
@@ -483,5 +468,31 @@ public class AdminService {
             throw new AccessDeniedException("Unable to determine the authenticated user's role");
         }
         return Role.valueOf(authentication.getAuthorities().iterator().next().getAuthority());
+    }
+
+    /**
+     * Non–SUPER_ADMIN callers may not modify ADMIN or SUPER_ADMIN accounts
+     * (email/role/delete would otherwise enable peer admin takeover).
+     */
+    private void assertCanModifyTarget(Role callerRole, User targetUser) {
+        if (callerRole == Role.SUPER_ADMIN) {
+            return;
+        }
+        Role targetRole = targetUser.getRole();
+        if (targetRole == Role.SUPER_ADMIN) {
+            throw new AccessDeniedException("Only SUPER_ADMIN users can modify SUPER_ADMIN accounts");
+        }
+        if (targetRole == Role.ADMIN) {
+            throw new AccessDeniedException("Only SUPER_ADMIN users can modify ADMIN accounts");
+        }
+    }
+
+    private void assertCanAssignRole(Role callerRole, Role requestedRole) {
+        if (callerRole == Role.SUPER_ADMIN) {
+            return;
+        }
+        if (requestedRole == Role.SUPER_ADMIN || requestedRole == Role.ADMIN) {
+            throw new AccessDeniedException("Only SUPER_ADMIN users can assign ADMIN or SUPER_ADMIN roles");
+        }
     }
 }
