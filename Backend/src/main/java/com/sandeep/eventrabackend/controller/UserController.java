@@ -26,6 +26,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import com.sandeep.eventrabackend.dto.request.UpdateUserProfileRequest;
 import com.sandeep.eventrabackend.dto.response.UserProfileResponse;
 import com.sandeep.eventrabackend.service.UserService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
@@ -38,6 +40,10 @@ import java.util.Set;
 @RequestMapping("/api/users")
 @Tag(name = "Users", description = "Endpoints for authenticated user data")
 public class UserController {
+
+    private static final Set<String> ALLOWED_PREFERENCE_KEYS = Set.of("theme", "notifications");
+    private static final int MAX_PREFERENCES_BYTES = 4096;
+    private static final ObjectMapper PREFERENCES_MAPPER = new ObjectMapper();
 
     private final EventService eventService;
     private final UserService userService;
@@ -329,17 +335,43 @@ public class UserController {
             return ResponseEntity.ok(user.getPreferences() != null ? user.getPreferences() : Map.of());
         }
 
+        for (String key : incoming.keySet()) {
+            if (!ALLOWED_PREFERENCE_KEYS.contains(key)) {
+                throw new IllegalArgumentException(
+                        "Unknown preference key: " + key + ". Allowed keys: theme, notifications");
+            }
+        }
+
         String theme = (String) incoming.get("theme");
         if (theme != null && !Set.of("light", "dark", "system").contains(theme)) {
             throw new IllegalArgumentException("Invalid theme value: " + theme + ". Allowed values are light, dark, system.");
         }
 
+        Object notifications = incoming.get("notifications");
+        if (notifications != null && !(notifications instanceof Map)) {
+            throw new IllegalArgumentException("notifications preference must be an object");
+        }
+
         Map<String, Object> merged = new HashMap<>(user.getPreferences() != null ? user.getPreferences() : Map.of());
         merged.putAll(incoming);
+        enforcePreferencesSizeLimit(merged);
+
         user.setPreferences(merged);
 
         User updatedUser = userRepository.save(user);
         return ResponseEntity.ok(updatedUser.getPreferences());
+    }
+
+    private static void enforcePreferencesSizeLimit(Map<String, Object> preferences) {
+        try {
+            int size = PREFERENCES_MAPPER.writeValueAsBytes(preferences).length;
+            if (size > MAX_PREFERENCES_BYTES) {
+                throw new IllegalArgumentException(
+                        "Preferences payload exceeds maximum size of " + MAX_PREFERENCES_BYTES + " bytes");
+            }
+        } catch (JsonProcessingException ex) {
+            throw new IllegalArgumentException("Invalid preferences payload");
+        }
     }
 
     private UserProfileResponse mapToUserProfileResponse(User user) {
