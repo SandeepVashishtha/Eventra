@@ -28,7 +28,7 @@ public interface EventWaitlistRepository extends JpaRepository<EventWaitlist, Lo
             """)
     List<EventWaitlist> findWaitingByEventIdWithLock(@Param("eventId") Long eventId);
 
-    @Query("SELECT COALESCE(MAX(w.position), 0) FROM EventWaitlist w WHERE w.event.id = :eventId AND w.status = 'WAITING'")
+    @Query("SELECT COALESCE(MAX(w.position), 0) FROM EventWaitlist w WHERE w.event.id = :eventId")
     int findMaxPositionByEventId(@Param("eventId") Long eventId);
 
     void deleteByEvent_Id(Long eventId);
