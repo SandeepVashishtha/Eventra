@@ -281,9 +281,8 @@ const SignupForm = () => {
 
       const responseData = response.data || {};
       const sessionToken = "cookie-managed";
-      const refreshToken = responseData.refreshToken || null;
-      // Under the HttpOnly-cookie auth model the server sets the session
-      // cookie on the signup response. The client never sees a raw JWT.
+      // Under the HttpOnly-cookie auth model the server sets access + refresh
+      // cookies on the signup response. The client never stores raw JWTs.
 
       const sessionRoles = normalizeSignupRoles(responseData);
       const sessionUser = {
@@ -297,7 +296,7 @@ const SignupForm = () => {
         permissions: responseData?.permissions ?? [],
       };
 
-      setAuthSession(sessionToken, sessionUser, refreshToken);
+      setAuthSession(sessionToken, sessionUser, null);
       setLoading(false);
       isSubmittingRef.current = false; // reset so back-navigation can retry if needed
       setSuccess("Account created successfully. Redirecting to dashboard...");

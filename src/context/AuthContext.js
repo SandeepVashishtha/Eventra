@@ -140,8 +140,13 @@ export const AuthProvider = ({ children }) => {
     setAuthToken(null);
     setRefreshToken(null);
 
-    // Invalidate token cookie (must match the name used in persistSession)
+    // Best-effort clear of any JS-readable cookie remnants. HttpOnly cookies
+    // are cleared by the backend logout/refresh failure Set-Cookie headers.
     deleteCookie("token", {
+      path: "/",
+      secureVariants: true,
+    });
+    deleteCookie("refreshToken", {
       path: "/",
       secureVariants: true,
     });
@@ -317,8 +322,12 @@ export const AuthProvider = ({ children }) => {
     setToken(sessionToken);
     setUser(sessionUser);
     setAuthToken(sessionToken);
-    if (refreshToken) {
+    // Cookie-managed sessions keep refresh in an HttpOnly cookie — do not
+    // mirror it into JS memory. Body refresh is only for non-cookie clients.
+    if (refreshToken && sessionToken !== "cookie-managed") {
       setRefreshToken(refreshToken);
+    } else {
+      setRefreshToken(null);
     }
 
     // Security Contract (src/utils/httpOnlyStorage.js): the bearer token is
@@ -370,12 +379,11 @@ export const AuthProvider = ({ children }) => {
 
         const data = res.data;
 
-        const { refreshToken, sessionUser } = extractSession(data, usernameOrEmail);
+        const { sessionUser } = extractSession(data, usernameOrEmail);
 
-        // Session auth is the HttpOnly `token` cookie set by the backend.
+        // Session auth + refresh are HttpOnly cookies set by the backend.
         // Do not promote response-body JWTs into client-readable state.
-        // Refresh tokens are still returned in the body for silent renew.
-        const persisted = await persistSession("cookie-managed", sessionUser, refreshToken);
+        const persisted = await persistSession("cookie-managed", sessionUser, null);
         if (!persisted) return false;
 
         setAuthRequest({ loading: false, error: null });
@@ -384,6 +392,10 @@ export const AuthProvider = ({ children }) => {
         if (!isMountedRef.current) return false;
         // Fix (Issue #8646):
         deleteCookie("token", {
+          path: "/",
+          secureVariants: true,
+        });
+        deleteCookie("refreshToken", {
           path: "/",
           secureVariants: true,
         });
@@ -412,8 +424,8 @@ export const AuthProvider = ({ children }) => {
       try {
         const res = await authService.googleLogin(idToken);
         const data = res.data;
-        const { refreshToken, sessionUser } = extractSession(data, data?.email || null);
-        const persisted = await persistSession("cookie-managed", sessionUser, refreshToken);
+        const { sessionUser } = extractSession(data, data?.email || null);
+        const persisted = await persistSession("cookie-managed", sessionUser, null);
         if (!persisted) return false;
 
         setAuthRequest({ loading: false, error: null });
@@ -421,6 +433,10 @@ export const AuthProvider = ({ children }) => {
       } catch (error) {
         if (!isMountedRef.current) return false;
         deleteCookie("token", {
+          path: "/",
+          secureVariants: true,
+        });
+        deleteCookie("refreshToken", {
           path: "/",
           secureVariants: true,
         });

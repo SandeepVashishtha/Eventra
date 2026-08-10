@@ -56,7 +56,7 @@ public class AuthController {
                     - `confirmPassword` — must exactly match `password`
                     
                     On success returns a **JWT token** that can be used immediately.
-                    Also sets an HttpOnly `token` cookie for browser sessions.
+                    Also sets HttpOnly `token` and `refreshToken` cookies for browser sessions.
                     """
     )
     @ApiResponses({
@@ -71,7 +71,7 @@ public class AuthController {
     })
     public ResponseEntity<AuthResponse> signup(@Valid @RequestBody SignupRequest request) {
         AuthResponse response = authService.signup(request);
-        return withAuthCookie(ResponseEntity.status(HttpStatus.CREATED), response);
+        return withAuthCookies(ResponseEntity.status(HttpStatus.CREATED), response);
     }
 
     // ─── LOGIN ──────────────────────────────────────────────────────────────────
@@ -88,7 +88,7 @@ public class AuthController {
                     - Username       (e.g. `john_doe`)
                     
                     Use the returned `token` as `Authorization: Bearer <token>` for protected endpoints,
-                    or rely on the HttpOnly `token` cookie set on this response for browser sessions.
+                    or rely on the HttpOnly `token` / `refreshToken` cookies set on this response for browser sessions.
                     """
     )
 
@@ -105,18 +105,26 @@ public class AuthController {
     })
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         AuthResponse response = authService.login(request);
-        return withAuthCookie(ResponseEntity.ok(), response);
+        return withAuthCookies(ResponseEntity.ok(), response);
     }
 
     @PostMapping("/refresh")
     @SecurityRequirements
     @Operation(summary = "Refresh access token",
-            description = "Exchanges a valid refresh token for a new access + refresh pair. The old refresh token is blacklisted.")
+            description = """
+                    Exchanges a valid refresh token for a new access + refresh pair.
+                    Prefers the HttpOnly `refreshToken` cookie; falls back to JSON body or Bearer
+                    header for non-browser clients. The old refresh token is blacklisted.
+                    """)
     public ResponseEntity<?> refresh(
             @RequestBody(required = false) com.sandeep.eventrabackend.dto.request.RefreshTokenRequest body,
             HttpServletRequest request) {
         try {
-            String refreshToken = body != null ? body.getRefreshToken() : null;
+            // Cookie-first for browser clients; body/Bearer kept for mobile compatibility
+            String refreshToken = authCookieHelper.extractRefreshToken(request);
+            if (refreshToken == null || refreshToken.isBlank()) {
+                refreshToken = body != null ? body.getRefreshToken() : null;
+            }
             if (refreshToken == null || refreshToken.isBlank()) {
                 String auth = request.getHeader("Authorization");
                 if (auth != null && auth.startsWith("Bearer ")) {
@@ -124,7 +132,7 @@ public class AuthController {
                 }
             }
             AuthResponse response = authService.refresh(refreshToken);
-            return withAuthCookie(ResponseEntity.ok(), response);
+            return withAuthCookies(ResponseEntity.ok(), response);
         } catch (Exception ex) {
             ErrorResponse error = ErrorResponse.builder()
                     .status(HttpStatus.UNAUTHORIZED.value())
@@ -133,7 +141,9 @@ public class AuthController {
                     .path(request.getRequestURI())
                     .timestamp(LocalDateTime.now())
                     .build();
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .headers(clearAuthCookies())
+                    .body(error);
         }
     }
 
@@ -148,7 +158,7 @@ public class AuthController {
                 a new account is automatically created.
                 
                 Returns JWT token on success.
-                Also sets an HttpOnly `token` cookie for browser sessions.
+                Also sets HttpOnly `token` and `refreshToken` cookies for browser sessions.
                 """
 )
 @ApiResponses({
@@ -163,7 +173,7 @@ public ResponseEntity<AuthResponse> googleLogin(
 
     AuthResponse response = authService.googleLogin(request);
 
-    return withAuthCookie(ResponseEntity.ok(), response);
+    return withAuthCookies(ResponseEntity.ok(), response);
 }
 
     @PostMapping("/reauth")
@@ -194,7 +204,8 @@ public ResponseEntity<AuthResponse> googleLogin(
             summary = "Logout user and invalidate token",
             description = """
                     Blacklists the access JWT (Authorization header or HttpOnly cookie) and an
-                    optional refresh token from the request body, then clears the auth cookie.
+                    optional refresh token (HttpOnly cookie or request body), then clears the
+                    access + refresh auth cookies.
                     """
     )
     @ApiResponses({
@@ -210,27 +221,36 @@ public ResponseEntity<AuthResponse> googleLogin(
         if (token == null) {
             token = authCookieHelper.extractToken(request);
         }
-
-        String refreshToken = body != null ? body.getRefreshToken() : null;
-
-        if (!StringUtils.hasText(token) && !StringUtils.hasText(refreshToken)) {
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.SET_COOKIE, authCookieHelper.clearAuthCookie().toString())
-                    .body("Logged out successfully");
+        String refreshToken = authCookieHelper.extractRefreshToken(request);
+        if (!StringUtils.hasText(refreshToken) && body != null) {
+            refreshToken = body.getRefreshToken();
         }
 
-        authService.logout(token, refreshToken);
+        if (StringUtils.hasText(token) || StringUtils.hasText(refreshToken)) {
+            authService.logout(token, refreshToken);
+        }
+
         return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, authCookieHelper.clearAuthCookie().toString())
+                .headers(clearAuthCookies())
                 .body("Logged out successfully");
     }
 
-    private ResponseEntity<AuthResponse> withAuthCookie(
+    private ResponseEntity<AuthResponse> withAuthCookies(
             ResponseEntity.BodyBuilder builder, AuthResponse response) {
-        return builder
-                .header(HttpHeaders.SET_COOKIE,
-                        authCookieHelper.createAuthCookie(response.getToken()).toString())
-                .body(response);
+        HttpHeaders headers = new HttpHeaders();
+        authCookieHelper.apply(headers, authCookieHelper.createAuthCookie(response.getToken()));
+        if (StringUtils.hasText(response.getRefreshToken())) {
+            authCookieHelper.apply(headers,
+                    authCookieHelper.createRefreshCookie(response.getRefreshToken()));
+        }
+        return builder.headers(headers).body(response);
+    }
+
+    private HttpHeaders clearAuthCookies() {
+        HttpHeaders headers = new HttpHeaders();
+        authCookieHelper.apply(headers, authCookieHelper.clearAuthCookie());
+        authCookieHelper.apply(headers, authCookieHelper.clearRefreshCookie());
+        return headers;
     }
 
     private static String extractBearerToken(String bearerToken) {

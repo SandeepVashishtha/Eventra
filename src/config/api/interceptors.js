@@ -260,24 +260,27 @@ export function setupResponseInterceptor(api, { isDev, timeoutMs, getOnUnauthori
         if (!config._retry && !config.url?.includes("/auth/refresh")) {
           config._retry = true;
           try {
-            if (!_refreshToken) {
-              throw new Error("No refresh token available");
-            }
             if (isDev) logger.info(`[API] Attempting token refresh...`);
-            const refreshRes = await api.post("/auth/refresh", {
-              refreshToken: _refreshToken,
-            });
+            // Prefer HttpOnly refresh cookie (withCredentials). Body token is
+            // only sent when an in-memory refresh exists (e.g. mobile clients).
+            const refreshBody = _refreshToken ? { refreshToken: _refreshToken } : {};
+            const refreshRes = await api.post("/auth/refresh", refreshBody);
             const nextAccess = refreshRes?.data?.token;
             const nextRefresh = refreshRes?.data?.refreshToken;
-            if (nextAccess) {
+            const cookieManaged = !_authToken || _authToken === "cookie-managed";
+            if (cookieManaged) {
+              // New access + refresh cookies are set by the backend Set-Cookie headers.
+              if (applyAuthToken) applyAuthToken("cookie-managed");
+              else setAuthToken("cookie-managed");
+            } else if (nextAccess) {
               if (applyAuthToken) applyAuthToken(nextAccess);
               else setAuthToken(nextAccess);
               config.headers = config.headers || {};
               config.headers["Authorization"] = `Bearer ${nextAccess}`;
-            }
-            if (nextRefresh) {
-              if (applyRefreshToken) applyRefreshToken(nextRefresh);
-              else setRefreshToken(nextRefresh);
+              if (nextRefresh) {
+                if (applyRefreshToken) applyRefreshToken(nextRefresh);
+                else setRefreshToken(nextRefresh);
+              }
             }
             return api(config);
           } catch (refreshError) {
