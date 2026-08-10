@@ -26,6 +26,7 @@ import java.util.List;
 public class RateLimitingFilter extends OncePerRequestFilter {
 
     private static final String POST = "POST";
+    private static final String GET = "GET";
     private static final List<EndpointRule> ENDPOINT_RULES = List.of(
             new EndpointRule("login", POST, "/api/auth/login"),
             new EndpointRule("signup", POST, "/api/auth/signup"),
@@ -34,7 +35,8 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             new EndpointRule("contact", POST, "/api/contact"),
             new EndpointRule("contact", POST, "/api/contact/"),
             new EndpointRule("contact", POST, "/api/contacts"),
-            new EndpointRule("contact", POST, "/api/contacts/")
+            new EndpointRule("contact", POST, "/api/contacts/"),
+            new EndpointRule("githubProxy", GET, "/api/github-proxy")
     );
 
     private final RateLimitProperties properties;
@@ -114,6 +116,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             case "signup" -> properties.getSignup();
             case "forgotPassword" -> properties.getForgotPassword();
             case "contact" -> properties.getContact();
+            case "githubProxy" -> properties.getGithubProxy();
             default -> throw new IllegalArgumentException("Unknown rate limit endpoint: " + endpointName);
         };
     }
