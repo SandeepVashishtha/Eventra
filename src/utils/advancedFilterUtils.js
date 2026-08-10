@@ -145,6 +145,7 @@ export const filterByCategory = (events, selectedCategories) => {
   return events.filter((event) => {
     if (!event) return false;
     const eventCategory = normalizeFilterValue(event.category);
+    const eventCategories = event.categories || [];
     return selectedCategories.some((cat) => {
       const mappedCategory = EVENT_CATEGORIES.find(
         (category) =>
@@ -153,10 +154,12 @@ export const filterByCategory = (events, selectedCategories) => {
             normalizeFilterValue(category.label) === normalizeFilterValue(cat)),
       );
 
+      const normalizedCat = normalizeFilterValue(cat);
       return (
-        eventCategory === normalizeFilterValue(cat) ||
+        eventCategory === normalizedCat ||
         eventCategory === normalizeFilterValue(mappedCategory?.id) ||
-        eventCategory === normalizeFilterValue(mappedCategory?.label)
+        eventCategory === normalizeFilterValue(mappedCategory?.label) ||
+        eventCategories.some(ec => normalizeFilterValue(ec) === normalizedCat)
       );
     });
   });
@@ -349,7 +352,13 @@ export const applyAdvancedFilters = (events, filters = {}) => {
 export const getUniqueCategories = (events) => {
   const categories = new Set();
   events.forEach((event) => {
-    // Fallback to event.type if event.category is missing
+    // Add all categories from the categories array
+    if (event.categories && Array.isArray(event.categories)) {
+      event.categories.forEach(cat => {
+        if (cat) categories.add(cat);
+      });
+    }
+    // Fallback to event.category or event.type if categories array is missing
     const categoryValue = event.category || event.type;
     if (categoryValue) {
       categories.add(categoryValue);

@@ -270,10 +270,26 @@ const EventCreation = () => {
                       No banner uploaded
                     </div>
                   )}
-                  <div className="absolute top-4 left-4">
-                    <span className="px-4 py-1.5 bg-indigo-600 text-white text-sm font-bold rounded-full shadow-lg">
-                      {formData.category ? categories.find(c => (c.id === formData.category || c.value === formData.category))?.label : "General"}
-                    </span>
+                  <div className="absolute top-4 left-4 flex flex-wrap gap-2">
+                    {formData.categories && formData.categories.length > 0 ? (
+                      formData.categories.slice(0, 3).map((catId) => {
+                        const category = categories.find(c => c.id === catId || c.value === catId);
+                        return category ? (
+                          <span
+                            key={catId}
+                            className={`px-3 py-1 text-white text-sm font-bold rounded-full shadow-lg ${category.color}`}
+                          >
+                            {category.label}
+                          </span>
+                        ) : null;
+                      })
+                    ) : (
+                      formData.category && (
+                        <span className="px-4 py-1.5 bg-indigo-600 text-white text-sm font-bold rounded-full shadow-lg">
+                          {categories.find(c => (c.id === formData.category || c.value === formData.category))?.label || "General"}
+                        </span>
+                      )
+                    )}
                   </div>
                 </div>
 
