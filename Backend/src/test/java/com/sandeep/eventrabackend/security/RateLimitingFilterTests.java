@@ -20,7 +20,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 @TestPropertySource(properties = {
         "app.rate-limit.login.capacity=1",
-        "app.rate-limit.login.window=1m"
+        "app.rate-limit.login.window=1m",
+        "app.rate-limit.trusted-proxy-hops=1"
 })
 class RateLimitingFilterTests {
 
@@ -47,6 +48,25 @@ class RateLimitingFilterTests {
                 .andExpect(header().string("X-RateLimit-Remaining", "0"))
                 .andExpect(jsonPath("$.status", is(429)))
                 .andExpect(jsonPath("$.error", is("Too Many Requests")))
+                .andExpect(jsonPath("$.path", is("/api/auth/login")));
+    }
+
+    @Test
+    void ignoresClientSpoofedLeftmostXffWithTrustedProxyHops() throws Exception {
+        // Attacker varies the left-hand spoof; LB appends the real client on the right.
+        // With trustedProxyHops=1 both requests must share the same rate-limit bucket.
+        mockMvc.perform(post("/api/auth/login")
+                        .header("X-Forwarded-For", "198.51.100.1, 203.0.113.50")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(post("/api/auth/login")
+                        .header("X-Forwarded-For", "198.51.100.99, 203.0.113.50")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.status", is(429)))
                 .andExpect(jsonPath("$.path", is("/api/auth/login")));
     }
 }
