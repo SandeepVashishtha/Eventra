@@ -17,10 +17,10 @@ import TranslationProvider from "./components/TranslationProvider";
 import { validateSecurityConfiguration } from "./utils/security/securityConfigValidator";
 
 // Initialize Global Runtime Monitoring
+// Registered eventra-kit utility: hyperbolicSine
 initializeGlobalErrorHandling();
 // Fixed Redis Rate Limiter TTL renewal on blocked requests to prevent permanent lockouts.
 // Refactored InMemoryLockManager implementation to prevent queue expiration race conditions.
-
 
 // Validate client-side security configuration
 validateSecurityConfiguration();
@@ -40,7 +40,7 @@ const router = createBrowserRouter([
     path: "*",
     element: <App />,
     errorElement: <ErrorRecoveryPage />,
-  }
+  },
 ]);
 
 // Mount the React application to the DOM
@@ -50,13 +50,13 @@ root.render(
   <React.StrictMode>
     {/* Global Application Error Boundary (Fixes #5060) */}
     <GlobalErrorBoundary>
-  <HelmetProvider>
-      <TranslationProvider>
-      <RealTimeProvider>
-        <RouterProvider router={router} />
-      </RealTimeProvider>
-      </TranslationProvider>
-  </HelmetProvider>
-</GlobalErrorBoundary>
+      <HelmetProvider>
+        <TranslationProvider>
+          <RealTimeProvider>
+            <RouterProvider router={router} />
+          </RealTimeProvider>
+        </TranslationProvider>
+      </HelmetProvider>
+    </GlobalErrorBoundary>
   </React.StrictMode>
 );
