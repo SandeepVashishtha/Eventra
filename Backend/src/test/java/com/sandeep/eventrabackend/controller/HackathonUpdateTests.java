@@ -3,8 +3,11 @@ package com.sandeep.eventrabackend.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sandeep.eventrabackend.dto.request.HackathonUpdateRequest;
 import com.sandeep.eventrabackend.model.Hackathon;
+import com.sandeep.eventrabackend.model.Role;
+import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.HackathonRegistrationRepository;
 import com.sandeep.eventrabackend.repository.HackathonRepository;
+import com.sandeep.eventrabackend.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -12,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -37,14 +41,31 @@ public class HackathonUpdateTests {
     private HackathonRegistrationRepository hackathonRegistrationRepository;
 
     @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
     private ObjectMapper objectMapper;
 
     private Hackathon existingHackathon;
+    private User organizer;
 
     @BeforeEach
     void setUp() {
         hackathonRegistrationRepository.deleteAll();
         hackathonRepository.deleteAll();
+        userRepository.deleteAll();
+
+        organizer = userRepository.save(User.builder()
+                .firstName("Org")
+                .lastName("User")
+                .email("user")
+                .username("organizer")
+                .password(passwordEncoder.encode("password123"))
+                .role(Role.ORGANIZER)
+                .build());
 
         Hackathon hackathon = Hackathon.builder()
                 .title("Original Title")
@@ -55,6 +76,7 @@ public class HackathonUpdateTests {
                 .location("Original Location")
                 .mode("Online")
                 .registrationDeadline(LocalDateTime.now().plusDays(2))
+                .ownerId(organizer.getId())
                 .build();
         existingHackathon = hackathonRepository.save(hackathon);
     }
@@ -169,6 +191,39 @@ public class HackathonUpdateTests {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("Hackathon not found with id: 9999"));
+    }
+
+    @Test
+    @WithMockUser(authorities = "ORGANIZER")
+    @DisplayName("#11977 — ORGANIZER cannot update hackathon with null ownerId")
+    void testOrganizerCannotUpdateNullOwnerHackathon() throws Exception {
+        Hackathon orphan = hackathonRepository.save(Hackathon.builder()
+                .title("Orphan Title")
+                .description("Desc")
+                .organizer("Org")
+                .startDate(LocalDateTime.now().plusDays(5))
+                .endDate(LocalDateTime.now().plusDays(7))
+                .location("Loc")
+                .mode("Online")
+                .registrationDeadline(LocalDateTime.now().plusDays(2))
+                .ownerId(null)
+                .build());
+
+        HackathonUpdateRequest request = HackathonUpdateRequest.builder()
+                .title("Hijacked")
+                .description("Desc")
+                .organizer("Org")
+                .startDate(LocalDateTime.now().plusDays(10))
+                .endDate(LocalDateTime.now().plusDays(12))
+                .location("Loc")
+                .mode("Online")
+                .registrationDeadline(LocalDateTime.now().plusDays(5))
+                .build();
+
+        mockMvc.perform(put("/api/hackathons/" + orphan.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden());
     }
 
     @Test

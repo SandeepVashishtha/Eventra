@@ -8,6 +8,17 @@ export const formatICSDate = (dateString) => {
 };
 
 /**
+ * Escapes text for iCalendar property values per RFC 5545 §3.3.11.
+ * Backslashes, semicolons, commas, and newlines must be escaped.
+ */
+const escapeICS = (text = "") =>
+  String(text)
+    .replace(/\\/g, "\\\\")
+    .replace(/;/g, "\\;")
+    .replace(/,/g, "\\,")
+    .replace(/\n/g, "\\n");
+
+/**
  * Generates a standard Google Calendar template deep link URL
  */
 export const getGoogleCalendarUrl = (event) => {
@@ -35,9 +46,9 @@ export const generateRawICSContent = (event) => {
     `DTSTAMP:${formatICSDate(new Date().toISOString())}`,
     `DTSTART:${formatICSDate(event.startDateTime)}`,
     `DTEND:${formatICSDate(event.endDateTime)}`,
-    `SUMMARY:${(event.title || '').replace(/,/g, '\\,')}`,
-    `DESCRIPTION:${(event.description || '').replace(/,/g, '\\,')}`,
-    `LOCATION:${(event.location || '').replace(/,/g, '\\,')}`,
+    `SUMMARY:${escapeICS(event.title || '')}`,
+    `DESCRIPTION:${escapeICS(event.description || '')}`,
+    `LOCATION:${escapeICS(event.location || '')}`,
     'END:VEVENT',
     'END:VCALENDAR'
   ].join('\r\n');

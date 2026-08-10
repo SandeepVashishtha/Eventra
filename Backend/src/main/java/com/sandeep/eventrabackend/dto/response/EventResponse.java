@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Data
 @Builder
@@ -46,6 +47,12 @@ public class EventResponse {
 
     @Schema(description = "ID of the user who created (owns) this event", example = "7")
     private Long ownerId;
+
+    @Schema(description = "Event category for filtering and discovery", example = "Tech")
+    private String category;
+
+    @Schema(description = "Tags for the event to enable granular filtering and search", example = "AI,Conference,2026")
+    private Set<String> tags;
 
     @Schema(description = "Lifecycle status of the event", example = "SCHEDULED")
     private String status;
