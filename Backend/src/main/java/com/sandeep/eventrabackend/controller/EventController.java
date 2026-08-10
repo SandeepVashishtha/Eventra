@@ -74,13 +74,13 @@ public class EventController {
         // ── Issue #2099 — PUT /api/events/{id} ──────────────────────────────────
 
         @PutMapping("/{id}")
-        @PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN', 'SUPER_ADMIN')")
-        @Operation(summary = "Update an existing event", description = "Allows an ORGANIZER, ADMIN or SUPER_ADMIN to update event details.", security = @SecurityRequirement(name = "bearerAuth"))
+        @PreAuthorize("isAuthenticated()")
+        @Operation(summary = "Update an existing event", description = "Allows an event-team ORGANIZER/OWNER (or platform ADMIN) to update event details. Authorization is enforced via EventRoleService.", security = @SecurityRequirement(name = "bearerAuth"))
         @ApiResponses({
                         @ApiResponse(responseCode = "200", description = "Event updated successfully", content = @Content(schema = @Schema(implementation = EventResponse.class))),
                         @ApiResponse(responseCode = "400", description = "Invalid payload (validation failed)", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
                         @ApiResponse(responseCode = "401", description = "Unauthorized - JWT token missing or invalid", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-                        @ApiResponse(responseCode = "403", description = "Forbidden - User does not have ORGANIZER, ADMIN or SUPER_ADMIN role", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                        @ApiResponse(responseCode = "403", description = "Forbidden - Insufficient event role", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
                         @ApiResponse(responseCode = "404", description = "Event not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
         })
         public ResponseEntity<EventResponse> updateEvent(
@@ -203,8 +203,8 @@ public class EventController {
         }
 
         @GetMapping("/{id}/waitlist")
-        @PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN', 'SUPER_ADMIN')")
-        @Operation(summary = "List waitlisted users for an event", description = "Admin and organizer view of active waitlist entries.", security = @SecurityRequirement(name = "bearerAuth"))
+        @PreAuthorize("isAuthenticated()")
+        @Operation(summary = "List waitlisted users for an event", description = "Event-team organizer/owner view of active waitlist entries.", security = @SecurityRequirement(name = "bearerAuth"))
         public ResponseEntity<List<WaitlistResponse>> getWaitlist(
                         @Parameter(description = "ID of the event") @PathVariable Long id,
                         Authentication authentication) {
@@ -213,8 +213,8 @@ public class EventController {
         }
 
         @GetMapping("/{id}/registrants")
-        @PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN', 'SUPER_ADMIN')")
-        @Operation(summary = "List event registrants for export", description = "Paginated list of registrations for an event, restricted to organizers and admins. Pages are 1-based.", security = @SecurityRequirement(name = "bearerAuth"))
+        @PreAuthorize("isAuthenticated()")
+        @Operation(summary = "List event registrants for export", description = "Paginated list of registrations for an event, restricted to event-team organizers/owners and admins. Pages are 1-based.", security = @SecurityRequirement(name = "bearerAuth"))
         public ResponseEntity<RegistrantsPageResponse> getEventRegistrants(
                         @Parameter(description = "ID of the event") @PathVariable Long id,
                         @Parameter(description = "Page number (1-based)", example = "1")
@@ -255,8 +255,8 @@ public class EventController {
         }
 
         @DeleteMapping("/{id}/waitlist/{waitlistId}")
-        @PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN', 'SUPER_ADMIN')")
-        @Operation(summary = "Remove a waitlisted user", description = "Organizer/admin removes a waitlist entry without promoting them.", security = @SecurityRequirement(name = "bearerAuth"))
+        @PreAuthorize("isAuthenticated()")
+        @Operation(summary = "Remove a waitlisted user", description = "Event-team organizer/owner removes a waitlist entry without promoting them.", security = @SecurityRequirement(name = "bearerAuth"))
         public ResponseEntity<Void> removeWaitlistEntry(
                         @Parameter(description = "ID of the event") @PathVariable Long id,
                         @Parameter(description = "ID of the waitlist entry") @PathVariable Long waitlistId,
@@ -267,7 +267,7 @@ public class EventController {
         }
 
         @PostMapping("/{id}/waitlist/{waitlistId}/promote")
-        @PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN', 'SUPER_ADMIN')")
+        @PreAuthorize("isAuthenticated()")
         @Operation(summary = "Manually promote a waitlisted user", description = "Registers a waitlisted user when a spot is available.", security = @SecurityRequirement(name = "bearerAuth"))
         public ResponseEntity<RegistrationResponse> promoteWaitlistedUser(
                         @Parameter(description = "ID of the event") @PathVariable Long id,
@@ -334,10 +334,10 @@ public class EventController {
         // ── Event cancellation ─ POST /api/events/{id}/cancel ─────────────────
 
         @PostMapping("/{id}/cancel")
-        @PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN', 'SUPER_ADMIN')")
-        @Operation(summary = "Cancel an event", description = "Cancels an event. Only the event's own organizer or an "
+        @PreAuthorize("isAuthenticated()")
+        @Operation(summary = "Cancel an event", description = "Cancels an event. Only the event's own organizer/owner or an "
                         +
-                        "administrator (ADMIN / SUPER_ADMIN) may cancel an event.", security = @SecurityRequirement(name = "bearerAuth"))
+                        "administrator (ADMIN / SUPER_ADMIN) may cancel an event. Enforced via EventRoleService.", security = @SecurityRequirement(name = "bearerAuth"))
         @ApiResponses({
                         @ApiResponse(responseCode = "200", description = "Event cancelled successfully", content = @Content(schema = @Schema(implementation = EventResponse.class))),
                         @ApiResponse(responseCode = "400", description = "Invalid payload (validation failed)", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),

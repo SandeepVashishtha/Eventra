@@ -193,6 +193,29 @@ class EventRegistrantsTests {
     }
 
     @Test
+    @DisplayName("Event OWNER with ATTENDEE platform role can list registrants (#13604)")
+    void getRegistrants_EventOwnerWithAttendeePlatformRoleAllowed() throws Exception {
+        User attendeeOwner = userRepository.save(User.builder()
+                .firstName("Event")
+                .lastName("Owner")
+                .email("event-owner@example.com")
+                .username("eventowner")
+                .password(passwordEncoder.encode("password"))
+                .role(Role.ATTENDEE)
+                .build());
+
+        event.setOwnerId(attendeeOwner.getId());
+        event = eventRepository.save(event);
+        register(createClient("guest@example.com"));
+
+        mockMvc.perform(get("/api/events/{id}/registrants", event.getId())
+                        .with(user(attendeeOwner.getEmail())
+                                .authorities(new SimpleGrantedAuthority("ATTENDEE"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data", hasSize(1)));
+    }
+
+    @Test
     @DisplayName("Unauthenticated request gets 401")
     void getRegistrants_Unauthenticated() throws Exception {
         mockMvc.perform(get("/api/events/{id}/registrants", event.getId()))
