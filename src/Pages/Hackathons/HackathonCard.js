@@ -1,3 +1,4 @@
+import useCountdown from "hooks/useCountdown";
 import { CalendarIcon, MapPinIcon, ClockIcon, UserGroupIcon, TrophyIcon, BuildingLibraryIcon, ShareIcon } from "@heroicons/react/24/outline";
 import { motion } from "framer-motion";
 import { useState, useEffect, useCallback, useMemo, memo } from "react";
@@ -9,39 +10,7 @@ import ShareMenu from "components/common/ShareMenu";
 import { addHackathonToGoogleCalendar } from "utils/calendarUtils";
 import { generateEventSharingData } from "utils/shareUtils";
 
-const useCountdown = (targetDate) => {
-  useReducedMotion();
-  const calculateTimeLeft = useCallback(() => {
-    const difference = new Date(targetDate) - getServerTime();
-
-    if (!targetDate || difference <= 0) {
-      return null;
-    }
-
-    return {
-      days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-      hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
-      minutes: Math.floor((difference / 1000 / 60) % 60),
-    };
-  }, [targetDate]);
-
-  const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
-
-  useEffect(() => {
-    setTimeLeft(calculateTimeLeft());
-
-    let timerId = null;
-    timerId = setInterval(() => {
-      setTimeLeft(calculateTimeLeft());
-    }, 1000);
-
-    return () => {
-      if (timerId !== null) clearInterval(timerId);
-    };
-  }, [calculateTimeLeft]);
-
-  return timeLeft;
-};
+// Fix: replaced local useCountdown with centralised hook from hooks/useCountdown
 
 const CountdownTimer = ({ targetDate, label }) => {
   const timeLeft = useCountdown(targetDate);

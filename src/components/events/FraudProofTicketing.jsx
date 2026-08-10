@@ -1,24 +1,16 @@
+import useCountdown from "hooks/useCountdown";
 import React, { useState, useEffect } from 'react';
 
 const FraudProofTicketing = () => {
-  const [timeLeft, setTimeLeft] = useState(15);
   const [qrKey, setQrKey] = useState(0);
 
-  // Simulate dynamic QR code refresh
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          // Reset timer and update QR key to force re-render
-          setQrKey(k => k + 1);
-          return 15;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    
-    return () => clearInterval(timer);
-  }, []);
+  // Fix: useCountdown replaces manual setInterval countdown
+  // loop=true auto-restarts; onEnd increments qrKey to refresh QR
+  const { seconds: timeLeft } = useCountdown(null, {
+    totalSeconds: 15,
+    loop: true,
+    onEnd: () => setQrKey(k => k + 1),
+  });
 
   return (
     <div className="p-6 bg-slate-900 min-h-screen font-sans text-slate-200 flex items-center justify-center">

@@ -1,39 +1,12 @@
-import { useEffect, useState } from 'react';
+import useCountdown from "hooks/useCountdown";
 
+/**
+ * EventCountdown
+ * Fix: replaced 30-line manual calculateTimeLeft + setInterval with useCountdown hook.
+ * Added isMounted guard and server time support via the hook.
+ */
 const EventCountdown = ({ eventDate }) => {
- const [timeLeft, setTimeLeft] = useState(() => {
-    const difference = +new Date(eventDate) - +new Date();
-    if (difference > 0) {
-      return {
-        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-        hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
-        minutes: Math.floor((difference / 1000 / 60) % 60),
-        seconds: Math.floor((difference / 1000) % 60),
-      };
-    }
-    return { days: 0, hours: 0, minutes: 0, seconds: 0 };
-  });
-  useEffect(() => {
-    const calculateTimeLeft = () => {
-      const difference = +new Date(eventDate) - +new Date();
-      if (difference > 0) {
-        return {
-          days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-          hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
-          minutes: Math.floor((difference / 1000 / 60) % 60),
-          seconds: Math.floor((difference / 1000) % 60),
-        };
-      }
-      return { days: 0, hours: 0, minutes: 0, seconds: 0 };
-    };
-    let timerId = null;
-    timerId = setInterval(() => {
-      setTimeLeft(calculateTimeLeft());
-    }, 1000);
-    return () => {
-      if (timerId !== null) clearInterval(timerId);
-    };
-  }, [eventDate]);
+  const { days, hours, minutes, seconds } = useCountdown(eventDate);
 
   const formatNumber = (num) => String(num).padStart(2, '0');
 
@@ -42,22 +15,22 @@ const EventCountdown = ({ eventDate }) => {
       <p style={styles.title}>⏳ Event Starts In:</p>
       <div style={styles.timerWrapper}>
         <div style={styles.timeBox}>
-          <span style={styles.timeNum}>{formatNumber(timeLeft.days)}</span>
+          <span style={styles.timeNum}>{formatNumber(days)}</span>
           <span style={styles.timeLabel}>Days</span>
         </div>
         <span style={styles.colon}>:</span>
         <div style={styles.timeBox}>
-          <span style={styles.timeNum}>{formatNumber(timeLeft.hours)}</span>
+          <span style={styles.timeNum}>{formatNumber(hours)}</span>
           <span style={styles.timeLabel}>Hours</span>
         </div>
         <span style={styles.colon}>:</span>
         <div style={styles.timeBox}>
-          <span style={styles.timeNum}>{formatNumber(timeLeft.minutes)}</span>
+          <span style={styles.timeNum}>{formatNumber(minutes)}</span>
           <span style={styles.timeLabel}>Mins</span>
         </div>
         <span style={styles.colon}>:</span>
         <div style={styles.timeBox}>
-          <span style={styles.timeNum}>{formatNumber(timeLeft.seconds)}</span>
+          <span style={styles.timeNum}>{formatNumber(seconds)}</span>
           <span style={styles.timeLabel}>Secs</span>
         </div>
       </div>
