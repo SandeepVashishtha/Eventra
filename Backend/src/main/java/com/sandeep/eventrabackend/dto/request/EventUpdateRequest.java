@@ -31,7 +31,6 @@ public class EventUpdateRequest {
     private String location;
 
     @NotNull(message = "Event date is required")
-    @Future(message = "Event date must be in the future")
     @Schema(description = "Date and time when the event starts")
     private LocalDateTime eventDate;
 
