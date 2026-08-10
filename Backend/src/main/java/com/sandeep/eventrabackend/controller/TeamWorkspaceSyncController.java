@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -27,15 +28,24 @@ public class TeamWorkspaceSyncController {
     }
 
     @GetMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter stream() {
-        return teamWorkspaceSyncService.subscribe();
+    public SseEmitter stream(
+            @RequestParam(required = false) String roomKey,
+            @RequestParam(required = false) String hackathonId,
+            @RequestParam(required = false) String teamId) {
+        String resolved = teamWorkspaceSyncService.resolveRoomKey(roomKey, hackathonId, teamId);
+        return teamWorkspaceSyncService.subscribe(resolved);
     }
 
     @PostMapping
-    public ResponseEntity<Map<String, Object>> pollOrUpdate(@RequestBody(required = false) Map<String, Object> body) {
+    public ResponseEntity<Map<String, Object>> pollOrUpdate(
+            @RequestParam(required = false) String roomKey,
+            @RequestParam(required = false) String hackathonId,
+            @RequestParam(required = false) String teamId,
+            @RequestBody(required = false) Map<String, Object> body) {
+        String resolved = teamWorkspaceSyncService.resolveRoomKey(roomKey, hackathonId, teamId);
         if (body == null || body.isEmpty()) {
-            return ResponseEntity.ok(teamWorkspaceSyncService.snapshot());
+            return ResponseEntity.ok(teamWorkspaceSyncService.snapshot(resolved));
         }
-        return ResponseEntity.ok(teamWorkspaceSyncService.applyUpdate(body));
+        return ResponseEntity.ok(teamWorkspaceSyncService.applyUpdate(resolved, body));
     }
 }
