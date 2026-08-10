@@ -21,6 +21,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @TestPropertySource(properties = {
         "app.rate-limit.login.capacity=1",
         "app.rate-limit.login.window=1m",
+        "app.rate-limit.reauth.capacity=1",
+        "app.rate-limit.reauth.window=1m",
         "app.rate-limit.trusted-proxy-hops=1"
 })
 class RateLimitingFilterTests {
@@ -68,5 +70,25 @@ class RateLimitingFilterTests {
                 .andExpect(status().isTooManyRequests())
                 .andExpect(jsonPath("$.status", is(429)))
                 .andExpect(jsonPath("$.path", is("/api/auth/login")));
+    }
+
+    @Test
+    void returnsTooManyRequestsWhenReauthLimitIsExceeded() throws Exception {
+        String clientIp = "203.0.113.20";
+
+        mockMvc.perform(post("/api/auth/reauth")
+                        .header("X-Forwarded-For", clientIp)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"password\":\"x\"}"))
+                .andExpect(status().isUnauthorized());
+
+        mockMvc.perform(post("/api/auth/reauth")
+                        .header("X-Forwarded-For", clientIp)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"password\":\"x\"}"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(header().exists("Retry-After"))
+                .andExpect(jsonPath("$.status", is(429)))
+                .andExpect(jsonPath("$.path", is("/api/auth/reauth")));
     }
 }
