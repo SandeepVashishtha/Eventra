@@ -56,8 +56,8 @@ function persistWaitlist(map, storageKey) {
       try {
         const mapToPersist = {};
         for (const [key, value] of Object.entries(map)) {
-          const { pendingRemoval, ...rest } = value;
-          mapToPersist[key] = rest;
+          if (value.pendingRemoval) continue;
+          mapToPersist[key] = value;
         }
         safeLocalStorage.setItem(storageKey, JSON.stringify(mapToPersist));
       } catch (err) {
@@ -212,6 +212,11 @@ export default function useWaitlist(eventId, {
           if (!res.ok) {
             throw new Error(res.data?.message || "Failed to leave waitlist.");
           }
+          setWaitlistMap((prev) => {
+            const next = { ...prev };
+            delete next[id];
+            return next;
+          });
         } catch (err) {
           setWaitlistMap((prev) => ({ ...prev, [id]: prevEntry }));
           const msg = err.message || "Unable to leave waitlist right now.";
