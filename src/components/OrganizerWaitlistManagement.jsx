@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import { useAuth } from 'context/AuthContext';
+import { API_ENDPOINTS, apiUtils } from '../config/api';
 import {
   syncWaitlistFromServer,
   organizerRemoveUser,
@@ -80,13 +81,36 @@ const OrganizerWaitlistManagement = ({ eventId, eventName, currentAttendees = 0,
 
     setIsProcessing(true);
     try {
+      // Persist capacity via organizer update endpoint before promoting.
+      const detailResponse = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId));
+      const current = detailResponse.data || {};
+      const eventDate = current.eventDate;
+      const normalizedEventDate =
+        typeof eventDate === 'string'
+          ? eventDate.replace(/\.\d{3}Z$/, '').replace(/Z$/, '').slice(0, 19)
+          : eventDate;
+
+      await apiUtils.put(API_ENDPOINTS.EVENTS.DETAIL(eventId), {
+        title: current.title || eventName,
+        description: current.description || '',
+        location: current.location || '',
+        eventDate: normalizedEventDate,
+        capacity: Number(newCapacity),
+        isPublic: current.public ?? current.isPublic,
+        category: current.category,
+        ...(current.imageUrl ? { imageUrl: current.imageUrl } : {}),
+        ...(current.tags ? { tags: current.tags } : {}),
+      });
+
       const event = {
         id: eventId,
         title: eventName,
         attendees: currentAttendees,
+        maxAttendees: Number(newCapacity),
+        capacity: Number(newCapacity),
       };
 
-      const promotedCount = await handleCapacityIncrease(event, newCapacity, user?.id);
+      const promotedCount = await handleCapacityIncrease(event, Number(newCapacity), user?.id);
 
       if (promotedCount > 0) {
         toast.success(`${promotedCount} user(s) promoted from waitlist!`);
@@ -99,7 +123,7 @@ const OrganizerWaitlistManagement = ({ eventId, eventName, currentAttendees = 0,
       setNewCapacity(maxAttendees);
     } catch (error) {
       console.error('Capacity change error:', error);
-      toast.error('Failed to update capacity and promote users');
+      toast.error(error?.response?.data?.message || error.message || 'Failed to update capacity and promote users');
     } finally {
       setIsProcessing(false);
     }
