@@ -52,15 +52,21 @@ export const validateCoordinates = (latitude, longitude) => {
   return null;
 };
 
-export const buildEventPayload = (formData) => {
-  let coordinates = null;
-  if (formData.location?.coordinates?.latitude && formData.location?.coordinates?.longitude) {
-    coordinates = validateCoordinates(
-      formData.location?.coordinates?.latitude,
-      formData.location?.coordinates?.longitude
-    );
+const formatLocalDateTime = (date) => date.toISOString().slice(0, 19);
+
+const buildLocationString = (formData) => {
+  if (formData.isVirtual) {
+    const link = formData.virtualLink?.trim();
+    return link || "Virtual";
   }
 
+  const name = formData.location?.name?.trim() || "";
+  const address = formData.location?.address?.trim() || "";
+  if (name && address) return `${name}, ${address}`;
+  return name || address || "";
+};
+
+export const buildEventPayload = (formData) => {
   const eventStartDate = resolveEventInstant(
     formData.isMultiDay ? formData.startDate : formData.date,
     formData.startTime,
@@ -76,43 +82,21 @@ export const buildEventPayload = (formData) => {
     throw new Error("Invalid date or time format");
   }
 
-  const registrationStart = formData.registrationStart
-    ? resolveEventInstant(formData.registrationStart, "12:00 AM", formData.timezone)
-    : null;
-  const registrationEnd = formData.registrationEnd
-    ? resolveEventInstant(formData.registrationEnd, "11:59 PM", formData.timezone)
-    : null;
-
-  return {
+  const payload = {
     title: formData.title.trim(),
     description: formData.description.trim(),
-    startDate: eventStartDate.toISOString(),
-    endDate: eventEndDate.toISOString(),
-    timezone: formData.timezone,
-    location: formData.isVirtual
-      ? null
-      : {
-          name: formData.location.name.trim(),
-          address: formData.location.address?.trim() || "",
-          coordinates: coordinates,
-        },
-    isVirtual: formData.isVirtual,
-    virtualLink: formData.isVirtual ? formData.virtualLink.trim() : null,
+    location: buildLocationString(formData),
+    eventDate: formatLocalDateTime(eventStartDate),
     capacity: formData.capacity ? Number(formData.capacity) : null,
     isPublic: formData.isPublic,
-    requiresApproval: formData.requiresApproval,
-    registrationStart: registrationStart ? registrationStart.toISOString() : null,
-    registrationEnd: registrationEnd ? registrationEnd.toISOString() : null,
     category: formData.category,
     tags: formData.tags.filter((tag) => tag.trim()),
-    ticketTiers: formData.ticketTiers
-      .filter((tier) => tier.name.trim())
-      .map((tier) => ({
-        name: tier.name.trim(),
-        price: Number(tier.price) || 0,
-        capacity: tier.capacity ? Number(tier.capacity) : null,
-        description: tier.description?.trim() || "",
-      })),
-    venueMap: formData.venueMap || [],
   };
+
+  const imageUrl = formData.imageUrl?.trim();
+  if (imageUrl) {
+    payload.imageUrl = imageUrl;
+  }
+
+  return payload;
 };

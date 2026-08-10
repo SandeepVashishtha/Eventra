@@ -69,9 +69,12 @@ const EventCreation = () => {
     const response = await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, eventData);
     const result = response.data;
 
-    if (!(response.status === 200 && result.success)) {
+    // Backend returns 201 Created with EventResponse (id/title), not { success: true }.
+    const isSuccessStatus = response.status >= 200 && response.status < 300;
+    const hasEventData = Boolean(result && (result.id || result.title));
+    if (!(isSuccessStatus && hasEventData)) {
       const errorMessage =
-        result.message || result.error || `Server error: ${response.status}`;
+        result?.message || result?.error || `Server error: ${response.status}`;
       throw new Error(errorMessage);
     }
   });
