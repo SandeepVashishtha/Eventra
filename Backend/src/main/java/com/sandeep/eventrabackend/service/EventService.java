@@ -637,18 +637,39 @@ public class EventService {
                         return List.of();
                 }
 
-                return eventRegistrationRepository.findByEvent_IdAndStatus(eventId, "CONFIRMED").stream()
+                java.util.LinkedHashSet<String> emails = new java.util.LinkedHashSet<>();
+                eventRegistrationRepository.findByEvent_IdAndStatus(eventId, "CONFIRMED").stream()
                                 .map(registration -> registration.getUser().getEmail())
-                                .toList();
+                                .forEach(emails::add);
+                eventWaitlistRepository
+                                .findByEvent_IdAndStatusOrderByPositionAscJoinedAtAsc(eventId, "CANCELLED")
+                                .stream()
+                                .map(entry -> entry.getUser().getEmail())
+                                .forEach(emails::add);
+                return List.copyOf(emails);
         }
 
         private void notifyCancellation(Event event, String reason) {
+                String message = event.getTitle() + " has been cancelled. Reason: " + reason;
+
                 eventRegistrationRepository.findByEvent_IdAndStatus(event.getId(), "CONFIRMED")
                                 .forEach(registration -> notificationRepository.save(Notification.builder()
                                                 .user(registration.getUser())
                                                 .title("Event cancelled")
-                                                .message(event.getTitle() + " has been cancelled. Reason: " + reason)
+                                                .message(message)
                                                 .build()));
+
+                eventWaitlistRepository
+                                .findByEvent_IdAndStatusOrderByPositionAscJoinedAtAsc(event.getId(), "WAITING")
+                                .forEach(entry -> {
+                                        notificationRepository.save(Notification.builder()
+                                                        .user(entry.getUser())
+                                                        .title("Event cancelled")
+                                                        .message(message)
+                                                        .build());
+                                        entry.setStatus("CANCELLED");
+                                        eventWaitlistRepository.save(entry);
+                                });
         }
 
         /**
