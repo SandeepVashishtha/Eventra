@@ -233,6 +233,7 @@ export const API_ENDPOINTS = {
     LIST: buildApiUrl("/hackathons"),
     DETAIL: (id) => buildApiUrl(`/hackathons/${id}`),
     HOST: buildApiUrl("/hackathons"),
+    REGISTER: (id) => buildApiUrl(`/hackathons/${id}/register`),
   },
   NOTIFICATIONS: {
     BASE: buildApiUrl("/notifications"),
