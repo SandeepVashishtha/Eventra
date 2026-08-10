@@ -1,6 +1,7 @@
 package com.sandeep.eventrabackend.service;
 
 import com.sandeep.eventrabackend.dto.AdminDashboardStatsDTO;
+import com.sandeep.eventrabackend.dto.AdminStatsResponse;
 import com.sandeep.eventrabackend.dto.RegistrationTrendDTO;
 import com.sandeep.eventrabackend.dto.response.*;
 import com.sandeep.eventrabackend.model.Feedback;
@@ -321,6 +322,23 @@ public class AdminService {
                 .totalFeedbackSubmissions(feedbackRepository.countTotalFeedback())
                 .overallAverageRating(
                         Optional.ofNullable(feedbackRepository.findOverallAverageRating()).orElse(0.0))
+                .build();
+    }
+
+    /**
+     * Returns the compact dashboard stats consumed by the admin home page.
+     *
+     * <p>Mirrors {@code GET /api/admin/stats}: total users, active (participating)
+     * users, total and upcoming events, and total confirmed registrations.
+     */
+    public AdminStatsResponse getDashboardStats() {
+        LocalDateTime now = LocalDateTime.now();
+        return AdminStatsResponse.builder()
+                .totalUsers(userRepository.count())
+                .activeUsers(eventAnalyticsRepo.countUniqueParticipants())
+                .totalEvents(eventAnalyticsRepo.count())
+                .upcoming(eventAnalyticsRepo.countActiveEvents(now))
+                .totalParticipants(regRepo.countConfirmedRegistrations())
                 .build();
     }
 

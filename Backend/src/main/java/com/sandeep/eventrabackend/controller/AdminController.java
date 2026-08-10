@@ -1,6 +1,7 @@
 package com.sandeep.eventrabackend.controller;
 
 import com.sandeep.eventrabackend.dto.AdminDashboardStatsDTO;
+import com.sandeep.eventrabackend.dto.AdminStatsResponse;
 import com.sandeep.eventrabackend.dto.RegistrationTrendDTO;
 import com.sandeep.eventrabackend.dto.request.AdminUpdateRoleRequest;
 import com.sandeep.eventrabackend.dto.request.AdminUpdateUserRequest;
@@ -264,6 +265,22 @@ public class AdminController {
     // ══════════════════════════════════════════════════════════════════════
     // 4. ANALYTICS  —  /api/admin/analytics
     // ══════════════════════════════════════════════════════════════════════
+
+    @GetMapping("/stats")
+    @Operation(
+            summary = "Admin dashboard stats (home page)",
+            description = "Returns the compact stats card data rendered on the admin home page: " +
+                          "total users, active users, total and upcoming events, and total participants."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Dashboard stats fetched successfully",
+                    content = @Content(schema = @Schema(implementation = AdminStatsResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Forbidden",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<AdminStatsResponse> getStats() {
+        return ResponseEntity.ok(adminService.getDashboardStats());
+    }
 
     @GetMapping("/analytics/dashboard")
     @Operation(
