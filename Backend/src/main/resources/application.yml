@@ -27,6 +27,12 @@ app:
     github-proxy:
       capacity: ${RATE_LIMIT_GITHUB_PROXY_CAPACITY:30}
       window: ${RATE_LIMIT_GITHUB_PROXY_WINDOW:1m}
+    google:
+      capacity: ${RATE_LIMIT_GOOGLE_CAPACITY:10}
+      window: ${RATE_LIMIT_GOOGLE_WINDOW:1m}
+    refresh:
+      capacity: ${RATE_LIMIT_REFRESH_CAPACITY:30}
+      window: ${RATE_LIMIT_REFRESH_WINDOW:1m}
 
 google:
   client:
