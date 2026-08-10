@@ -14,7 +14,7 @@ import { REQUIRED_FIELDS, validateHostHackathonForm } from "utils/hostHackathonV
 const HostHackathon = () => {
   const prefersReducedMotion = useReducedMotion();
   const navigate = useNavigate();
-  const { user, token, isAuthenticated } = useAuth();
+  const { token, isAuthenticated } = useAuth();
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -28,8 +28,10 @@ const HostHackathon = () => {
     hackathonName: "",
     organizerName: "",
     email: "",
+    mode: "Online",
     startDate: "",
     endDate: "",
+    registrationDeadline: "",
     description: "",
     location: "",
     participantLimit: "",
@@ -48,14 +50,18 @@ const HostHackathon = () => {
   const participantLimitRef = useRef(null);
   const prizeDetailsRef = useRef(null);
   const websiteRef = useRef(null);
+  const modeRef = useRef(null);
+  const registrationDeadlineRef = useRef(null);
 
   const inputRefs = {
     hackathonName: hackathonNameRef,
     organizerName: organizerNameRef,
     email: emailRef,
     location: locationRef,
+    mode: modeRef,
     startDate: startDateRef,
     endDate: endDateRef,
+    registrationDeadline: registrationDeadlineRef,
     description: descriptionRef,
     participantLimit: participantLimitRef,
     prizeDetails: prizeDetailsRef,
@@ -102,16 +108,20 @@ const HostHackathon = () => {
 
     setIsSubmitting(true);
     try {
+      const registrationDeadline =
+        formData.registrationDeadline?.trim() || formData.startDate;
+
       await hostHackathon(
         {
-          ...formData,
-          // Sanitize description and other text inputs
+          title: sanitizeInputText(formData.hackathonName),
+          organizer: sanitizeInputText(formData.organizerName),
+          prizePool: sanitizeInputText(formData.prizeDetails),
           description: sanitizeInputText(formData.description),
-          hackathonName: sanitizeInputText(formData.hackathonName),
-          organizerName: sanitizeInputText(formData.organizerName),
           location: sanitizeInputText(formData.location),
-          prizeDetails: sanitizeInputText(formData.prizeDetails),
-          hostUserId: user?.id,
+          startDate: formData.startDate,
+          endDate: formData.endDate,
+          mode: formData.mode,
+          registrationDeadline,
         },
         {
           headers: {
@@ -126,8 +136,10 @@ const HostHackathon = () => {
         hackathonName: "",
         organizerName: "",
         email: "",
+        mode: "Online",
         startDate: "",
         endDate: "",
+        registrationDeadline: "",
         description: "",
         location: "",
         participantLimit: "",
@@ -330,6 +342,28 @@ const HostHackathon = () => {
             </motion.div>
           ))}
 
+          {/* Mode */}
+          <motion.div data-aos="fade-up" data-aos-delay="850">
+            <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <ComputerDesktopIcon className="w-5 h-5 mr-2 text-primary" />
+              Mode <span className="text-red-500 ml-1">*</span>
+            </label>
+            <select
+              ref={modeRef}
+              name="mode"
+              value={formData.mode}
+              onChange={handleChange}
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-bg text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all duration-300"
+            >
+              <option value="Online">Online</option>
+              <option value="Offline">Offline</option>
+              <option value="Hybrid">Hybrid</option>
+            </select>
+            {errors.mode && (
+              <p className="text-red-500 text-xs mt-1">{errors.mode}</p>
+            )}
+          </motion.div>
+
           {/* Date Fields */}
           <motion.div
             className="grid grid-cols-1 sm:grid-cols-2 gap-4"
@@ -363,6 +397,30 @@ const HostHackathon = () => {
                 )}
               </div>
             ))}
+          </motion.div>
+
+          {/* Registration Deadline */}
+          <motion.div data-aos="fade-up" data-aos-delay="950">
+            <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <CalendarDaysIcon className="w-5 h-5 mr-2 text-primary" />
+              Registration Deadline
+            </label>
+            <input
+              ref={registrationDeadlineRef}
+              type="date"
+              name="registrationDeadline"
+              value={formData.registrationDeadline}
+              onChange={handleChange}
+              min={today}
+              max={formData.startDate || undefined}
+              className="w-full text-gray-700 dark:text-gray-300 bg-bg rounded-lg p-3 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition duration-150 ease-in-out"
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Defaults to the start date if left blank.
+            </p>
+            {errors.registrationDeadline && (
+              <p className="text-red-500 text-xs mt-1">{errors.registrationDeadline}</p>
+            )}
           </motion.div>
 
           {/* Description */}
