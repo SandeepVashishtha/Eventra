@@ -43,15 +43,10 @@ export default function EventRoleManagement() {
     event.preventDefault();
     setSaving(true);
     try {
-      const response = await apiUtils.put(API_ENDPOINTS.EVENTS.ROLES(eventId), {
+      await apiUtils.put(API_ENDPOINTS.EVENTS.ROLES(eventId), {
         userEmail,
         role,
       });
-      const updatedMember = await response.json();
-      setMembers((current) => [
-        updatedMember,
-        ...current.filter((member) => member.userId !== updatedMember.userId),
-      ]);
       setUserEmail("");
       toast.success("Event role updated.");
       loadRoles();
