@@ -1,6 +1,6 @@
 /**
  * Route-Based Component Prefetching Utility
- * 
+ *
  * Caches and schedules dynamic imports for key lazy-loaded pages.
  */
 

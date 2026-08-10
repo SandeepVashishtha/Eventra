@@ -69,7 +69,8 @@ const filterEvents = (events, searchTerm, filterStatus, filterType) => {
   const normalizedSearch = searchTerm.trim().toLowerCase();
 
   return events.filter((event) => {
-    const searchTarget = `${event?.title || ""} ${event?.location || ""} ${event?.description || ""} ${(event?.tags || []).join(" ")}`.toLowerCase();
+    const searchTarget =
+      `${event?.title || ""} ${event?.location || ""} ${event?.description || ""} ${(event?.tags || []).join(" ")}`.toLowerCase();
     const matchSearch = !searchTerm || searchTarget.includes(normalizedSearch);
     const status = getEventStatus(event);
     const matchStatus = filterStatus === "All" || status === filterStatus;
@@ -160,144 +161,154 @@ const stagger = (prefersReducedMotion) => ({
 });
 
 /* ---------------- Event Card Component ---------------- */
-const EventCard = memo(({
-  event,
-  index,
-  onRemoveRegistration,
-  showCancel,
-  onViewTicket,
-  onLeaveReview,
-  addToRecentEvents,
-  onCopyLink,
-}) => {
-  const prefersReducedMotion = useReducedMotion();
-  const isOffline = useOfflineStatus();
-  const fadeUpVariants = fadeUp(prefersReducedMotion);
-  const status = getEventStatus(event);
-  const shortDate = formatShortDate(event?.date);
-  const isCompleted = status === "Completed";
+const EventCard = memo(
+  ({
+    event,
+    index,
+    onRemoveRegistration,
+    showCancel,
+    onViewTicket,
+    onLeaveReview,
+    addToRecentEvents,
+    onCopyLink,
+  }) => {
+    const prefersReducedMotion = useReducedMotion();
+    const isOffline = useOfflineStatus();
+    const fadeUpVariants = fadeUp(prefersReducedMotion);
+    const status = getEventStatus(event);
+    const shortDate = formatShortDate(event?.date);
+    const isCompleted = status === "Completed";
 
-  // Render tags
-  const renderTags = () => {
-    if (!event?.tags?.length) return null;
-    return (
-      <div className="px-6 pb-3 flex flex-wrap gap-1.5">
-        {event.tags.slice(0, 3).map((tag) => (
-          <span
-            key={tag}
-            className="text-xs font-medium px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
-          >
-            {tag}
-          </span>
-        ))}
-      </div>
-    );
-  };
-
-  // Render action buttons
-  const renderActions = () => {
-    if (showCancel) {
+    // Render tags
+    const renderTags = () => {
+      if (!event?.tags?.length) return null;
       return (
-        <>
-          {isCompleted ? (
-            <button
-              className="group/btn w-full sm:flex-1 inline-flex items-center justify-center gap-2 rounded-2xl bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-950/50 px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold transition-all duration-300 hover:scale-105"
-              onClick={() => onLeaveReview?.(event)}
+        <div className="px-6 pb-3 flex flex-wrap gap-1.5">
+          {event.tags.slice(0, 3).map((tag) => (
+            <span
+              key={tag}
+              className="text-xs font-medium px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
             >
-              <Star size={13} /> Leave Review
-            </button>
-          ) : (
-            <>
-              <button
-                className="group/btn w-full sm:flex-1 inline-flex items-center justify-center gap-2 rounded-2xl bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/50 px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold transition-all duration-300 hover:scale-105"
-                onClick={() => onRemoveRegistration?.(event?.id || event?.eventId, event?.title)}
-                disabled={isOffline}
-              >
-                <Trash2 size={13} /> Cancel Registration
-              </button>
-              <button
-                className="group/btn w-full sm:flex-1"
-                onClick={() => onViewTicket?.(event)}
-              >
-                <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-indigo-650 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
-                  <Ticket size={13} className="relative" />
-                  <span className="relative">Ticket</span>
-                </div>
-              </button>
-            </>
-          )}
-        </>
+              {tag}
+            </span>
+          ))}
+        </div>
       );
-    }
+    };
+
+    // Render action buttons
+    const renderActions = () => {
+      if (showCancel) {
+        return (
+          <>
+            {isCompleted ? (
+              <button
+                className="group/btn w-full sm:flex-1 inline-flex items-center justify-center gap-2 rounded-2xl bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-950/50 px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold transition-all duration-300 hover:scale-105"
+                onClick={() => onLeaveReview?.(event)}
+              >
+                <Star size={13} /> Leave Review
+              </button>
+            ) : (
+              <>
+                <button
+                  className="group/btn w-full sm:flex-1 inline-flex items-center justify-center gap-2 rounded-2xl bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/50 px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold transition-all duration-300 hover:scale-105"
+                  onClick={() => onRemoveRegistration?.(event?.id || event?.eventId, event?.title)}
+                  disabled={isOffline}
+                >
+                  <Trash2 size={13} /> Cancel Registration
+                </button>
+                <button
+                  className="group/btn w-full sm:flex-1"
+                  onClick={() => onViewTicket?.(event)}
+                >
+                  <div className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-indigo-650 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 w-full relative overflow-hidden cursor-pointer">
+                    <Ticket size={13} className="relative" />
+                    <span className="relative">Ticket</span>
+                  </div>
+                </button>
+              </>
+            )}
+          </>
+        );
+      }
+
+      return (
+        <button
+          className="group/btn w-full sm:flex-1 inline-flex items-center justify-center gap-2 rounded-2xl bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-950/50 px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold transition-all duration-300 hover:scale-105"
+          onClick={() => onCopyLink?.(event)}
+        >
+          <Copy size={13} /> Copy Link
+        </button>
+      );
+    };
 
     return (
-      <button
-        className="group/btn w-full sm:flex-1 inline-flex items-center justify-center gap-2 rounded-2xl bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-950/50 px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold transition-all duration-300 hover:scale-105"
-        onClick={() => onCopyLink?.(event)}
+      <motion.div
+        className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl flex flex-col overflow-hidden"
+        custom={index}
+        variants={fadeUpVariants}
+        initial="hidden"
+        animate="visible"
+        layout
       >
-        <Copy size={13} /> Copy Link
-      </button>
+        {event?.image && (
+          <div className="relative h-48 overflow-hidden">
+            <LazyImage
+              src={event.image}
+              alt={event.title}
+              aspectRatio="16/9"
+              className="w-full h-full"
+              imgClassName="object-cover transition-transform duration-700 group-hover:scale-110"
+            />
+          </div>
+        )}
+
+        {event?.description && (
+          <div className="px-6 py-4">
+            <p className="text-sm line-clamp-2">{event.description}</p>
+          </div>
+        )}
+
+        <div className="px-6 py-5 grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <MapPin size={14} /> {event?.location || "—"}
+          </div>
+          <div>
+            <Clock size={14} /> {event?.time || "—"}
+          </div>
+          <div>
+            <Tag size={14} /> {event?.type || "—"}
+          </div>
+          <div>
+            <Calendar size={14} /> {shortDate}
+          </div>
+        </div>
+
+        <div className="px-6 py-2 flex justify-between">
+          <span className="text-xs">{showCancel ? "Registered" : "Hosted"}</span>
+          <StatusBadge status={status} />
+        </div>
+
+        {renderTags()}
+
+        <div className="px-6 py-4 flex flex-col sm:flex-row gap-3 bg-linear-to-r from-gray-50/30 to-white/60 dark:from-gray-800/30 dark:to-gray-900/60 border-t border-gray-200/60 dark:border-gray-700/50 mt-auto">
+          {renderActions()}
+          <Link
+            to={`/events/${event?.id || event?.eventId}`}
+            onClick={() => addToRecentEvents?.(event)}
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold transition-all duration-300 hover:scale-105"
+          >
+            <Activity size={13} /> View Details
+          </Link>
+        </div>
+
+        <span className="absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900 text-white text-xs px-3 py-1 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none shadow-lg">
+          View Event Details
+        </span>
+      </motion.div>
     );
-  };
-
-  return (
-    <motion.div
-      className="group relative bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-3xl shadow-xl flex flex-col overflow-hidden"
-      custom={index}
-      variants={fadeUpVariants}
-      initial="hidden"
-      animate="visible"
-      layout
-    >
-      {event?.image && (
-        <div className="relative h-48 overflow-hidden">
-          <LazyImage
-            src={event.image}
-            alt={event.title}
-            aspectRatio="16/9"
-            className="w-full h-full"
-            imgClassName="object-cover transition-transform duration-700 group-hover:scale-110"
-          />
-        </div>
-      )}
-
-      {event?.description && (
-        <div className="px-6 py-4">
-          <p className="text-sm line-clamp-2">{event.description}</p>
-        </div>
-      )}
-
-      <div className="px-6 py-5 grid grid-cols-2 gap-4 text-sm">
-        <div><MapPin size={14} /> {event?.location || "—"}</div>
-        <div><Clock size={14} /> {event?.time || "—"}</div>
-        <div><Tag size={14} /> {event?.type || "—"}</div>
-        <div><Calendar size={14} /> {shortDate}</div>
-      </div>
-
-      <div className="px-6 py-2 flex justify-between">
-        <span className="text-xs">{showCancel ? "Registered" : "Hosted"}</span>
-        <StatusBadge status={status} />
-      </div>
-
-      {renderTags()}
-
-      <div className="px-6 py-4 flex flex-col sm:flex-row gap-3 bg-linear-to-r from-gray-50/30 to-white/60 dark:from-gray-800/30 dark:to-gray-900/60 border-t border-gray-200/60 dark:border-gray-700/50 mt-auto">
-        {renderActions()}
-        <Link
-          to={`/events/${event?.id || event?.eventId}`}
-          onClick={() => addToRecentEvents?.(event)}
-          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold transition-all duration-300 hover:scale-105"
-        >
-          <Activity size={13} /> View Details
-        </Link>
-      </div>
-
-      <span className="absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900 text-white text-xs px-3 py-1 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none shadow-lg">
-        View Event Details
-      </span>
-    </motion.div>
-  );
-});
+  }
+);
 EventCard.displayName = "EventCard";
 
 /* ---------------- Waitlist Card Component ---------------- */
@@ -369,7 +380,9 @@ WaitlistCard.displayName = "WaitlistCard";
 const EventsLoading = () => (
   <div className="ud-content">
     <div className="ud-tab-header">
-      <h2><Calendar /> Events</h2>
+      <h2>
+        <Calendar /> Events
+      </h2>
     </div>
 
     <div role="status" aria-live="polite" aria-label="Loading your events">
@@ -431,20 +444,50 @@ AnimatedMetric.displayName = "AnimatedMetric";
 
 const EventStats = ({ insights, prefersReducedMotion }) => {
   const stats = [
-    { label: "Registered", value: insights.registeredCount, color: "#4f46e5", icon: Ticket, note: "events joined" },
-    { label: "Hosted", value: insights.hostedCount, color: "#db2777", icon: Users, note: "created by you" },
-    { label: "Waitlist", value: insights.waitlistCount, color: "#d97706", icon: Clock, note: "pending seats" },
-    { label: "This month", value: insights.upcomingThisMonth, color: "#059669", icon: Calendar, note: "upcoming soon" },
+    {
+      label: "Registered",
+      value: insights.registeredCount,
+      color: "#4f46e5",
+      icon: Ticket,
+      note: "events joined",
+    },
+    {
+      label: "Hosted",
+      value: insights.hostedCount,
+      color: "#db2777",
+      icon: Users,
+      note: "created by you",
+    },
+    {
+      label: "Waitlist",
+      value: insights.waitlistCount,
+      color: "#d97706",
+      icon: Clock,
+      note: "pending seats",
+    },
+    {
+      label: "This month",
+      value: insights.upcomingThisMonth,
+      color: "#059669",
+      icon: Calendar,
+      note: "upcoming soon",
+    },
   ];
 
   const staggerVariants = stagger(prefersReducedMotion);
-  const upcomingRatio = insights.totalDatedEvents > 0
-    ? Math.round((insights.upcomingCount / insights.totalDatedEvents) * 100)
-    : 0;
+  const upcomingRatio =
+    insights.totalDatedEvents > 0
+      ? Math.round((insights.upcomingCount / insights.totalDatedEvents) * 100)
+      : 0;
   const completedRatio = insights.totalDatedEvents > 0 ? 100 - upcomingRatio : 0;
 
   return (
-    <motion.div className="my-events-insights" variants={staggerVariants} initial="hidden" animate="visible">
+    <motion.div
+      className="my-events-insights"
+      variants={staggerVariants}
+      initial="hidden"
+      animate="visible"
+    >
       <div className="my-events-summary" aria-label="Events dashboard participation insights">
         {stats.map((stat) => {
           const Icon = stat.icon;
@@ -455,8 +498,12 @@ const EventStats = ({ insights, prefersReducedMotion }) => {
               variants={fadeUp(prefersReducedMotion)}
               style={{ "--pill-color": stat.color }}
             >
-              <span className="my-events-pill-icon" aria-hidden="true"><Icon size={16} /></span>
-              <span className="my-events-pill-value"><AnimatedMetric value={stat.value} /></span>
+              <span className="my-events-pill-icon" aria-hidden="true">
+                <Icon size={16} />
+              </span>
+              <span className="my-events-pill-value">
+                <AnimatedMetric value={stat.value} />
+              </span>
               <span className="my-events-pill-label">{stat.label}</span>
               <span className="my-events-pill-note">{stat.note}</span>
             </motion.div>
@@ -467,21 +514,33 @@ const EventStats = ({ insights, prefersReducedMotion }) => {
       <motion.div className="my-events-analytics-panel" variants={fadeUp(prefersReducedMotion)}>
         <div className="my-events-analytics-heading">
           <div>
-            <span className="my-events-eyebrow"><BarChart3 size={14} /> Participation overview</span>
+            <span className="my-events-eyebrow">
+              <BarChart3 size={14} /> Participation overview
+            </span>
             <h3>Upcoming vs completed</h3>
           </div>
           <span className="my-events-ratio">{upcomingRatio}% upcoming</span>
         </div>
 
-        <div className="my-events-progress-track" aria-label={`${upcomingRatio}% upcoming events and ${completedRatio}% completed events`}>
+        <div
+          className="my-events-progress-track"
+          aria-label={`${upcomingRatio}% upcoming events and ${completedRatio}% completed events`}
+        >
           <span className="my-events-progress-upcoming" style={{ width: `${upcomingRatio}%` }} />
           <span className="my-events-progress-completed" style={{ width: `${completedRatio}%` }} />
         </div>
 
         <div className="my-events-smart-summaries">
-          <span><TrendingUp size={14} /> Most active: {insights.mostActiveCategory}</span>
-          <span><ListChecks size={14} /> Streak: {insights.registrationStreak} day{insights.registrationStreak === 1 ? "" : "s"}</span>
-          <span><Calendar size={14} /> {insights.recentSummary}</span>
+          <span>
+            <TrendingUp size={14} /> Most active: {insights.mostActiveCategory}
+          </span>
+          <span>
+            <ListChecks size={14} /> Streak: {insights.registrationStreak} day
+            {insights.registrationStreak === 1 ? "" : "s"}
+          </span>
+          <span>
+            <Calendar size={14} /> {insights.recentSummary}
+          </span>
         </div>
       </motion.div>
     </motion.div>
@@ -492,7 +551,9 @@ const EventStats = ({ insights, prefersReducedMotion }) => {
 const EventsEmptyState = () => (
   <motion.div className="ud-content">
     <div className="ud-tab-header">
-      <h2><Calendar /> Events</h2>
+      <h2>
+        <Calendar /> Events
+      </h2>
     </div>
     <EmptyState
       title="No Events Yet"
@@ -510,7 +571,13 @@ const EventsEmptyState = () => (
 const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const prefersReducedMotion = useReducedMotion();
   const staggerVariants = stagger(prefersReducedMotion);
-  const { myEvents, removeRegistration, restoreRegistration, loading: myEventsLoading } = useMyEvents();
+  const { formatDate, formatShort } = useDateFormatter();
+  const {
+    myEvents,
+    removeRegistration,
+    restoreRegistration,
+    loading: myEventsLoading,
+  } = useMyEvents();
   const { user } = useAuth();
 
   const [waitlistEvents, setWaitlistEvents] = useState([]);
@@ -534,46 +601,43 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
 
   // Registered events from user data
   const registeredEvents = useMemo(() => {
-  if (!myEvents || myEvents.length === 0) return [];
+    if (!myEvents || myEvents.length === 0) return [];
 
-  const seen = new Map();
+    const seen = new Map();
 
-  myEvents.forEach((registration) => {
-    const source =
-      registration.event ||
-      registration.eventSummary ||
-      registration;
+    myEvents.forEach((registration) => {
+      const source = registration.event || registration.eventSummary || registration;
 
-    const eventId = registration.eventId || source.id;
+      const eventId = registration.eventId || source.id;
 
-    const mapped = {
-      id: eventId,
-      eventId: eventId,
-      title: source.title,
-      description: source.description,
-      location: source.location,
-      date: source.date || source.startDate || source.eventDate,
-      time: source.time,
-      image: source.image || source.imageUrl,
-      imageUrl: source.image || source.imageUrl,
-      status: source.status || registration.status,
-      registeredAt: registration.registeredAt,
-      isRegistered: true,
-    };
+      const mapped = {
+        id: eventId,
+        eventId: eventId,
+        title: source.title,
+        description: source.description,
+        location: source.location,
+        date: source.date || source.startDate || source.eventDate,
+        time: source.time,
+        image: source.image || source.imageUrl,
+        imageUrl: source.image || source.imageUrl,
+        status: source.status || registration.status,
+        registeredAt: registration.registeredAt,
+        isRegistered: true,
+      };
 
-    const existing = seen.get(eventId);
+      const existing = seen.get(eventId);
 
-    if (!existing || (!existing.description && mapped.description)) {
-      seen.set(eventId, mapped);
-    }
-  });
+      if (!existing || (!existing.description && mapped.description)) {
+        seen.set(eventId, mapped);
+      }
+    });
 
-  return Array.from(seen.values());
-}, [myEvents]);
+    return Array.from(seen.values());
+  }, [myEvents]);
   // Available types for filter
   const availableTypes = useMemo(() => {
     const types = new Set();
-    [...registeredEvents, ...hostedEvents].forEach(event => {
+    [...registeredEvents, ...hostedEvents].forEach((event) => {
       if (event?.type) {
         types.add(event.type.charAt(0).toUpperCase() + event.type.slice(1));
       }
@@ -589,10 +653,12 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
         .then(async ({ getGlobalWaitlist }) => {
           const records = await getGlobalWaitlist(user.id || user.email);
           const userId = user.id || user.email;
-          const userWaitlists = records.filter(r => r.userId === userId && r.status === 'waiting');
-          const resolved = userWaitlists.map(w => {
-            const foundEvent = [...registeredEvents, ...hostedEvents].find(e =>
-              e.id === w.eventId || e.eventId === w.eventId
+          const userWaitlists = records.filter(
+            (r) => r.userId === userId && r.status === "waiting"
+          );
+          const resolved = userWaitlists.map((w) => {
+            const foundEvent = [...registeredEvents, ...hostedEvents].find(
+              (e) => e.id === w.eventId || e.eventId === w.eventId
             );
             if (foundEvent) {
               return { ...foundEvent, waitlistJoinedAt: w.joinedAt, isWaitlist: true };
@@ -642,7 +708,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
       }
       const updatedHistory = [
         debouncedTerm.trim(),
-        ...saved.filter((term) => term.toLowerCase() !== debouncedTerm.trim().toLowerCase())
+        ...saved.filter((term) => term.toLowerCase() !== debouncedTerm.trim().toLowerCase()),
       ].slice(0, 5);
       localStorage.setItem("recentSearches", JSON.stringify(updatedHistory));
       setRecentSearches(updatedHistory);
@@ -656,26 +722,36 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
     return sortEvents(filtered, sortBy);
   }, [registeredEvents, hostedEvents, debouncedTerm, filterStatus, filterType, sortBy]);
 
-  const filteredRegisteredEvents = filteredEvents.filter((event) => event.isRegistered || event.registeredAt);
-  const filteredHostedEvents = filteredEvents.filter((event) => !event.isRegistered && !event.registeredAt);
+  const filteredRegisteredEvents = filteredEvents.filter(
+    (event) => event.isRegistered || event.registeredAt
+  );
+  const filteredHostedEvents = filteredEvents.filter(
+    (event) => !event.isRegistered && !event.registeredAt
+  );
 
   const eventInsights = useMemo(() => {
     const dashboardEvents = [...registeredEvents, ...hostedEvents];
-    const upcomingCount = dashboardEvents.filter((event) => getEventStatus(event) !== "Completed").length;
-    const completedCount = dashboardEvents.filter((event) => getEventStatus(event) === "Completed").length;
+    const upcomingCount = dashboardEvents.filter(
+      (event) => getEventStatus(event) !== "Completed"
+    ).length;
+    const completedCount = dashboardEvents.filter(
+      (event) => getEventStatus(event) === "Completed"
+    ).length;
     const categoryCounts = dashboardEvents.reduce((counts, event) => {
       const category = normalizeCategory(event);
       counts.set(category, (counts.get(category) || 0) + 1);
       return counts;
     }, new Map());
-    const mostActiveCategory = Array.from(categoryCounts.entries()).sort((a, b) => b[1] - a[1])?.[0]?.[0] || "General";
+    const mostActiveCategory =
+      Array.from(categoryCounts.entries()).sort((a, b) => b[1] - a[1])?.[0]?.[0] || "General";
     const upcomingThisMonth = dashboardEvents.filter(
       (event) => getEventStatus(event) !== "Completed" && isWithinCurrentMonth(event)
     ).length;
     const registrationStreak = getRegistrationStreak(registeredEvents);
-    const recentSummary = recentEvents.length > 0
-      ? `${recentEvents.length} recently viewed`
-      : `${dashboardEvents.length + waitlistEvents.length} total activities`;
+    const recentSummary =
+      recentEvents.length > 0
+        ? `${recentEvents.length} recently viewed`
+        : `${dashboardEvents.length + waitlistEvents.length} total activities`;
 
     return {
       registeredCount: registeredEvents.length,
@@ -694,7 +770,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   const { registeredCount, hostedCount } = eventInsights;
 
   // Handlers
-  const triggerWaitlistUpdate = () => setWaitlistUpdated(prev => !prev);
+  const triggerWaitlistUpdate = () => setWaitlistUpdated((prev) => !prev);
 
   const addToRecentEvents = (event) => {
     const existing = JSON.parse(localStorage.getItem("recentEvents") || "[]");
@@ -732,11 +808,15 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
 
   const handleLeaveWaitlist = async (eventId, eventTitle) => {
     try {
-      const { getGlobalWaitlist, saveGlobalWaitlist, leaveWaitlist } = await import("utils/waitlistUtils.js");
+      const { getGlobalWaitlist, saveGlobalWaitlist, leaveWaitlist } =
+        await import("utils/waitlistUtils.js");
       const userId = user.id || user.email;
       const records = await getGlobalWaitlist(userId);
       const recordIndex = records.findIndex(
-        (record) => String(record.eventId) === String(eventId) && record.userId === userId && record.status === "waiting"
+        (record) =>
+          String(record.eventId) === String(eventId) &&
+          record.userId === userId &&
+          record.status === "waiting"
       );
       const previousRecord = recordIndex >= 0 ? { ...records[recordIndex] } : null;
 
@@ -771,7 +851,14 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
           } catch (err) {
             if (previousRecord) {
               const latest = await getGlobalWaitlist(userId);
-              if (!latest.some((record) => String(record.eventId) === String(eventId) && record.userId === userId && record.status === "waiting")) {
+              if (
+                !latest.some(
+                  (record) =>
+                    String(record.eventId) === String(eventId) &&
+                    record.userId === userId &&
+                    record.status === "waiting"
+                )
+              ) {
                 await saveGlobalWaitlist([previousRecord, ...latest], userId);
               }
               triggerWaitlistUpdate();
@@ -812,13 +899,12 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
   return (
     <motion.div className="ud-content">
       <div className="ud-tab-header">
-        <h2><Calendar /> Events</h2>
+        <h2>
+          <Calendar /> Events
+        </h2>
       </div>
 
-      <EventStats
-        insights={eventInsights}
-        prefersReducedMotion={prefersReducedMotion}
-      />
+      <EventStats insights={eventInsights} prefersReducedMotion={prefersReducedMotion} />
 
       <div className="my-events-container">
         {/* Toolbar */}
@@ -832,7 +918,11 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
             {searchQuery && (
-              <button className="ud-search-clear" onClick={() => setSearchQuery("")} aria-label="Clear search">
+              <button
+                className="ud-search-clear"
+                onClick={() => setSearchQuery("")}
+                aria-label="Clear search"
+              >
                 <X size={13} />
               </button>
             )}
@@ -888,8 +978,11 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
           <StyledDropdown
             label=""
             value={
-              sortBy === "soonest" ? "Soonest First" :
-              sortBy === "registered" ? "Registration Date" : "Event Name"
+              sortBy === "soonest"
+                ? "Soonest First"
+                : sortBy === "registered"
+                  ? "Registration Date"
+                  : "Event Name"
             }
             placeholder="Sort by"
             options={["Soonest First", "Registration Date", "Event Name"]}
@@ -950,10 +1043,16 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
                     <Ticket size={18} /> Registered Events
                   </h3>
                   <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
-                    {filteredRegisteredEvents.length} event{filteredRegisteredEvents.length === 1 ? "" : "s"}
+                    {filteredRegisteredEvents.length} event
+                    {filteredRegisteredEvents.length === 1 ? "" : "s"}
                   </span>
                 </div>
-                <motion.div className="ud-items-grid" variants={staggerVariants} initial="hidden" animate="visible">
+                <motion.div
+                  className="ud-items-grid"
+                  variants={staggerVariants}
+                  initial="hidden"
+                  animate="visible"
+                >
                   {filteredRegisteredEvents.map((event, index) => (
                     <EventCard
                       key={event.eventId || event.id}
@@ -975,12 +1074,20 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
             {filteredHostedEvents.length > 0 && (
               <section className="space-y-4 mt-8">
                 <div className="ud-tab-header">
-                  <h3 className="ud-page-title"><Calendar size={18} /> Hosted Events</h3>
+                  <h3 className="ud-page-title">
+                    <Calendar size={18} /> Hosted Events
+                  </h3>
                   <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">
-                    {filteredHostedEvents.length} event{filteredHostedEvents.length === 1 ? "" : "s"}
+                    {filteredHostedEvents.length} event
+                    {filteredHostedEvents.length === 1 ? "" : "s"}
                   </span>
                 </div>
-                <motion.div className="ud-items-grid" variants={staggerVariants} initial="hidden" animate="visible">
+                <motion.div
+                  className="ud-items-grid"
+                  variants={staggerVariants}
+                  initial="hidden"
+                  animate="visible"
+                >
                   {filteredHostedEvents.map((event, index) => (
                     <EventCard
                       key={event.id}
@@ -1006,7 +1113,12 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
                     {waitlistEvents.length} event{waitlistEvents.length === 1 ? "" : "s"}
                   </span>
                 </div>
-                <motion.div className="ud-items-grid" variants={staggerVariants} initial="hidden" animate="visible">
+                <motion.div
+                  className="ud-items-grid"
+                  variants={staggerVariants}
+                  initial="hidden"
+                  animate="visible"
+                >
                   {waitlistEvents.map((event, index) => (
                     <WaitlistCard
                       key={event.id}
@@ -1031,39 +1143,41 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
             onClose={() => setReviewTarget(null)}
           />
         )}
-        {cancelTarget && ReactDOM.createPortal(
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
-            onClick={handleCancelDismiss}
-          >
+        {cancelTarget &&
+          ReactDOM.createPortal(
             <div
-              className="bg-white dark:bg-gray-900 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+              onClick={handleCancelDismiss}
             >
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                Cancel Registration?
-              </h3>
-              <p className="text-gray-600 dark:text-gray-300 mb-6">
-                Are you sure you want to cancel your registration for &quot;{cancelTarget?.title}&quot;?
-              </p>
-              <div className="flex gap-3 justify-end">
-                <button
-                  onClick={handleCancelDismiss}
-                  className="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                >
-                  No, Keep It
-                </button>
-                <button
-                  onClick={handleCancelConfirm}
-                  className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-medium transition-colors"
-                >
-                  Yes, Cancel
-                </button>
+              <div
+                className="bg-white dark:bg-gray-900 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                  Cancel Registration?
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300 mb-6">
+                  Are you sure you want to cancel your registration for &quot;{cancelTarget?.title}
+                  &quot;?
+                </p>
+                <div className="flex gap-3 justify-end">
+                  <button
+                    onClick={handleCancelDismiss}
+                    className="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    No, Keep It
+                  </button>
+                  <button
+                    onClick={handleCancelConfirm}
+                    className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-medium transition-colors"
+                  >
+                    Yes, Cancel
+                  </button>
+                </div>
               </div>
-            </div>
-          </div>,
-          document.body
-        )}
+            </div>,
+            document.body
+          )}
       </AnimatePresence>
     </motion.div>
   );
