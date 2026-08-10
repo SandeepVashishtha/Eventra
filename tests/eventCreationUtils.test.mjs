@@ -6,7 +6,10 @@ const {
 } = await import("../src/utils/eventCreationUtils.js");
 
 assert.equal(parseTimeToMinutes("09:30"), 570);
+assert.equal(parseTimeToMinutes("00:00"), 0);
+assert.equal(parseTimeToMinutes("12:45"), 765);
 assert.equal(parseTimeToMinutes(""), 0);
+assert.equal(parseTimeToMinutes(null), 0);
 
 assert.deepEqual(validateCoordinates("40.7128", "-74.0060"), {
   latitude: 40.7128,
