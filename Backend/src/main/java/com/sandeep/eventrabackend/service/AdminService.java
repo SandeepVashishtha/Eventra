@@ -4,6 +4,7 @@ import com.sandeep.eventrabackend.dto.AdminDashboardStatsDTO;
 import com.sandeep.eventrabackend.dto.AdminStatsResponse;
 import com.sandeep.eventrabackend.dto.RegistrationTrendDTO;
 import com.sandeep.eventrabackend.dto.response.*;
+import com.sandeep.eventrabackend.exception.RegistrationConflictException;
 import com.sandeep.eventrabackend.model.Feedback;
 import com.sandeep.eventrabackend.model.Hackathon;
 import com.sandeep.eventrabackend.model.Role;
@@ -221,10 +222,17 @@ public class AdminService {
      * Force-deletes an event (admin override, bypasses organizer ownership).
      */
     @Transactional
-    @Transactional
     public EventResponse updateEvent(Long id, com.sandeep.eventrabackend.dto.request.EventUpdateRequest request) {
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Event not found with id: " + id));
+
+        Integer previousCapacity = event.getCapacity();
+
+        if (request.getCapacity() != null && request.getCapacity() < event.getRegisteredCount()) {
+            throw new RegistrationConflictException(
+                    "Capacity cannot be reduced below the current number of registered users ("
+                            + event.getRegisteredCount() + ")");
+        }
 
         event.setTitle(request.getTitle());
         event.setDescription(request.getDescription());
@@ -247,6 +255,12 @@ public class AdminService {
         }
 
         Event saved = eventRepository.save(event);
+
+        if (request.getCapacity() != null && previousCapacity != null
+                && request.getCapacity() > previousCapacity) {
+            eventService.promoteWaitlistAfterVacancy(id);
+        }
+
         return toEventResponse(saved);
     }
 
