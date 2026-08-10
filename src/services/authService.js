@@ -17,5 +17,9 @@ export const authService = {
   
   logout: async () => {
     return apiUtils.post(API_ENDPOINTS.AUTH.LOGOUT);
-  }
+  },
+
+  googleLogin: withRateLimit(async (token) => {
+    return apiUtils.post(API_ENDPOINTS.AUTH.GOOGLE, { token });
+  }, { maxTokens: 5, refillRate: 0.1 }),
 };

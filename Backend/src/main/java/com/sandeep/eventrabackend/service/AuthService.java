@@ -35,19 +35,19 @@ public class AuthService {
     private final TokenBlacklistService tokenBlacklistService;
 
     public AuthService(UserRepository userRepository,
-                   PasswordEncoder passwordEncoder,
-                   AuthenticationManager authenticationManager,
-                   JwtTokenProvider jwtTokenProvider,
-                   GoogleAuthService googleAuthService,
-                   TokenBlacklistService tokenBlacklistService) {
+            PasswordEncoder passwordEncoder,
+            AuthenticationManager authenticationManager,
+            JwtTokenProvider jwtTokenProvider,
+            GoogleAuthService googleAuthService,
+            TokenBlacklistService tokenBlacklistService) {
 
-    this.userRepository = userRepository;
-    this.passwordEncoder = passwordEncoder;
-    this.authenticationManager = authenticationManager;
-    this.jwtTokenProvider = jwtTokenProvider;
-    this.googleAuthService = googleAuthService;
-    this.tokenBlacklistService = tokenBlacklistService;
-}
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.authenticationManager = authenticationManager;
+        this.jwtTokenProvider = jwtTokenProvider;
+        this.googleAuthService = googleAuthService;
+        this.tokenBlacklistService = tokenBlacklistService;
+    }
 
     @Transactional
     public AuthResponse signup(SignupRequest request) {
@@ -75,12 +75,14 @@ public class AuthService {
                 .username(username)
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(Role.ATTENDEE)
+                .emailVerified(false)
+                .authProvider("LOCAL")
                 .build();
 
         user = userRepository.save(user);
 
-        // 5. Issue JWT
-        String token = jwtTokenProvider.generateToken(user.getEmail());
+        // 5. Issue JWT (embed the user's role claim for stateless RBAC checks)
+        String token = jwtTokenProvider.generateToken(user.getEmail(), user.getRole().name());
 
         return buildAuthResponse(user, token);
     }
@@ -94,103 +96,118 @@ public class AuthService {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         identifier,
-                        request.getPassword()
-                )
-        );
+                        request.getPassword()));
 
-        String token = jwtTokenProvider.generateToken(authentication);
-
-        // Reload user for profile info
+        // Reload user for profile info (and role claim for the JWT)
         User user = userRepository
                 .findByEmailOrUsername(identifier, identifier)
                 .orElseThrow();
 
+        String token = jwtTokenProvider.generateToken(user.getEmail(), user.getRole().name());
+
         return buildAuthResponse(user, token);
     }
 
-public AuthResponse googleLogin(GoogleAuthRequest request) {
+    public AuthResponse googleLogin(GoogleAuthRequest request) {
 
-    try {
+        try {
 
-        GoogleIdToken.Payload payload =
-                googleAuthService.verifyToken(request.getToken());
+            GoogleIdToken.Payload payload = googleAuthService.verifyToken(request.getToken());
 
-        if (!Boolean.TRUE.equals(payload.getEmailVerified())) {
-            throw new InvalidGoogleTokenException(
-                    "Google account email is not verified.");
+            if (!Boolean.TRUE.equals(payload.getEmailVerified())) {
+                throw new InvalidGoogleTokenException(
+                        "Google account email is not verified.");
+            }
+
+            String email = payload.getEmail();
+
+            if (email == null || email.isBlank()) {
+                throw new IllegalArgumentException(
+                        "Google account must provide a valid email address.");
+            }
+
+            email = email.toLowerCase();
+
+            String firstName = (String) payload.get("given_name");
+
+            String lastName = (String) payload.get("family_name");
+
+            if (firstName == null || firstName.isBlank()) {
+                firstName = "Google";
+            }
+
+            if (lastName == null || lastName.isBlank()) {
+                lastName = "User";
+            }
+
+            User user = userRepository
+                    .findByEmail(email)
+                    .orElse(null);
+
+            if (user == null) {
+
+                String baseUsername = email.split("@")[0].toLowerCase();
+
+                String username = generateUniqueUsername(baseUsername);
+
+                SecureRandom secureRandom = new SecureRandom();
+                byte[] randomBytes = new byte[32];
+                secureRandom.nextBytes(randomBytes);
+                String securePassword = Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
+
+                user = User.builder()
+                        .firstName(firstName)
+                        .lastName(lastName)
+                        .email(email.toLowerCase())
+                        .username(username)
+                        .password(passwordEncoder.encode(securePassword))
+                        .role(Role.ATTENDEE)
+                        .emailVerified(true)
+                        .authProvider("GOOGLE")
+                        .build();
+
+                user = userRepository.save(user);
+            } else if (!user.isEmailVerified()
+                    && (user.getAuthProvider() == null || "LOCAL".equalsIgnoreCase(user.getAuthProvider()))) {
+                throw new InvalidGoogleTokenException(
+                        "An unverified password account already exists for this email. "
+                                + "Sign in with your password and verify the email before linking Google.");
+            } else if (!user.isEmailVerified()) {
+                user.setEmailVerified(true);
+                if (user.getAuthProvider() == null || user.getAuthProvider().isBlank()) {
+                    user.setAuthProvider("GOOGLE");
+                }
+                user = userRepository.save(user);
+            }
+
+            String token = jwtTokenProvider.generateToken(user.getEmail(), user.getRole().name());
+
+            return buildAuthResponse(user, token);
+
+        } catch (InvalidGoogleTokenException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException("Google authentication failed", e);
         }
-
-        String email = payload.getEmail();
-
-        if (email == null || email.isBlank()) {
-            throw new IllegalArgumentException(
-                    "Google account must provide a valid email address.");
-        }
-
-        email = email.toLowerCase();
-
-       String firstName =
-        (String) payload.get("given_name");
-
-String lastName =
-        (String) payload.get("family_name");
-
-if (firstName == null || firstName.isBlank()) {
-    firstName = "Google";
-}
-
-if (lastName == null || lastName.isBlank()) {
-    lastName = "User";
-}
-
-        User user = userRepository
-                .findByEmail(email)
-                .orElse(null);
-
-        if (user == null) {
-
-            String baseUsername =
-                    email.split("@")[0].toLowerCase();
-
-            String username =
-                    generateUniqueUsername(baseUsername);
-
-            SecureRandom secureRandom = new SecureRandom();
-            byte[] randomBytes = new byte[32];
-            secureRandom.nextBytes(randomBytes);
-            String securePassword = Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
-
-            user = User.builder()
-                    .firstName(firstName)
-                    .lastName(lastName)
-                    .email(email.toLowerCase())
-                    .username(username)
-                    .password(passwordEncoder.encode(securePassword))
-                    .role(Role.ATTENDEE)
-                    .build();
-
-            user = userRepository.save(user);
-        }
-
-        String token =
-                jwtTokenProvider.generateToken(user.getEmail());
-
-        return buildAuthResponse(user, token);
-
-    } catch (InvalidGoogleTokenException e) {
-        throw e;
-    } catch (Exception e) {
-        throw new RuntimeException("Google authentication failed", e);
     }
-}
 
     public void logout(String token) {
         java.util.Date expiration = jwtTokenProvider.getExpirationDateFromToken(token);
         tokenBlacklistService.addToBlacklist(token, expiration);
     }
 
-    // ─── helpers ────────────────────────────────────────────────────────────────
+    public void reauth(String userEmail, String password) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new org.springframework.security.core.userdetails.UsernameNotFoundException(
+                        "User not found with email: " + userEmail));
 
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new org.springframework.security.authentication.BadCredentialsException(
+                    "Incorrect password");
+        }
+    }
+
+    // ─── helpers ────────────────────────────────────────────────────────────────
 
     private String generateUniqueUsername(String base) {
         String candidate = base;
@@ -249,8 +266,7 @@ if (lastName == null || lastName.isBlank()) {
         tokenBlacklistService.addToBlacklist(
                 refreshToken, jwtTokenProvider.getExpirationDateFromToken(refreshToken));
 
-        String accessToken = jwtTokenProvider.generateToken(user.getEmail());
+        String accessToken = jwtTokenProvider.generateToken(user.getEmail(), user.getRole().name());
         return buildAuthResponse(user, accessToken);
     }
 }
-

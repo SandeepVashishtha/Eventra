@@ -64,7 +64,7 @@ const SurveyEngine = () => {
           setDraftDetected(true);
           return; // Skip setting isInitialized to prevent early overwrite
         }
-      } catch {}
+      } catch { console.warn("[SurveyEngine] Draft detection failed"); }
     }
     setIsInitialized(true);
   }, []);

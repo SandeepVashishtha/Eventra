@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { AlertCircle } from "lucide-react";
-import { apiUtils } from "config/api.js";
+import { AlertCircle, Lock } from "lucide-react";
+import { apiUtils, API_ENDPOINTS } from "config/api.js";
 import { toast } from "react-toastify";
 
 const ReAuthModal = ({ onSuccess }) => {
@@ -21,12 +21,13 @@ const ReAuthModal = ({ onSuccess }) => {
     setError(null);
 
     try {
-      const res = await apiUtils.post("/auth/reauth", { password }, { skipAuth: true });
+      const res = await apiUtils.post(API_ENDPOINTS.AUTH.REAUTH, { password });
       if (res.ok) {
         toast.success("Session verified successfully");
         onSuccess();
       } else {
-        setError(res.data?.error || "Incorrect password");
+        const payload = typeof res.json === "function" ? await res.json() : res.data;
+        setError(payload?.error || "Incorrect password");
       }
     } catch (err) {
       if (err.name === 'TypeError' || err.message === 'Failed to fetch') {

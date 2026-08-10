@@ -45,3 +45,8 @@ export const fetchHackathons = async () => {
 export const hostHackathon = async (hackathonData, config) => {
   return apiUtils.post(API_ENDPOINTS.HACKATHONS.HOST, hackathonData, config);
 };
+
+export const registerHackathon = async (id) => {
+  return apiUtils.post(API_ENDPOINTS.HACKATHONS.REGISTER(id));
+};
+

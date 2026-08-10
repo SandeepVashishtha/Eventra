@@ -11,6 +11,7 @@ import com.sandeep.eventrabackend.dto.response.EventAvailabilityResponse;
 import com.sandeep.eventrabackend.dto.response.EventResponse;
 import com.sandeep.eventrabackend.dto.response.EventScheduleResponse;
 import com.sandeep.eventrabackend.dto.response.PagedResponse;
+import com.sandeep.eventrabackend.dto.response.RegistrantsPageResponse;
 import com.sandeep.eventrabackend.dto.response.RegistrationResponse;
 import com.sandeep.eventrabackend.dto.response.WaitlistResponse;
 import com.sandeep.eventrabackend.service.EventService;
@@ -29,6 +30,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 
 import jakarta.validation.Valid;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -229,6 +231,20 @@ public class EventController {
                 return ResponseEntity.ok(eventService.getEventWaitlist(id, authentication.getName()));
         }
 
+        @GetMapping("/{id}/registrants")
+        @PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN', 'SUPER_ADMIN')")
+        @Operation(summary = "List event registrants for export", description = "Paginated list of registrations for an event, restricted to organizers and admins. Pages are 1-based.", security = @SecurityRequirement(name = "bearerAuth"))
+        public ResponseEntity<RegistrantsPageResponse> getEventRegistrants(
+                        @Parameter(description = "ID of the event") @PathVariable Long id,
+                        @Parameter(description = "Page number (1-based)", example = "1")
+                        @RequestParam(defaultValue = "1") int page,
+                        @Parameter(description = "Registrants per page", example = "500")
+                        @RequestParam(defaultValue = "500") int limit,
+                        Authentication authentication) {
+
+                return ResponseEntity.ok(eventService.getEventRegistrants(id, authentication.getName(), page, limit));
+        }
+
         @GetMapping("/{id}/attendees")
         @Operation(summary = "List opted-in attendees for an event", description = "Returns attendees who explicitly opted into the event attendee directory. Only registered attendees, event owners, and administrators can view it.", security = @SecurityRequirement(name = "bearerAuth"))
         public ResponseEntity<List<AttendeeDirectoryResponse>> getAttendeeDirectory(
@@ -376,6 +392,16 @@ public class EventController {
                         @PathVariable Long id,
                         Authentication authentication) {
                 return ResponseEntity.ok(eventService.getNotifiedAttendees(id, authentication.getName()));
+        }
+
+
+        @GetMapping(value = "/{id}/feed.ics", produces = "text/calendar")
+        @Operation(summary = "ICS calendar feed for an event")
+        public ResponseEntity<String> getEventIcsFeed(@PathVariable Long id) {
+                String ics = eventService.buildIcsFeed(id);
+                return ResponseEntity.ok()
+                                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"event-" + id + ".ics\"")
+                                .body(ics);
         }
 
         // ── Issue #2100 — DELETE /api/events/{id} ───────────────────────────────
