@@ -1193,4 +1193,46 @@ public class EventService {
                 return new RegistrationConflictException(
                                 "Registration could not be completed due to a conflict. Please try again.");
         }
+
+        public String buildIcsFeed(Long eventId) {
+                Event event = eventRepository.findById(eventId)
+                                .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + eventId));
+
+                java.time.LocalDateTime start = event.getEventDate() != null
+                                ? event.getEventDate()
+                                : java.time.LocalDateTime.now();
+                java.time.LocalDateTime end = start.plusHours(2);
+                java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss");
+
+                String summary = escapeIcs(event.getTitle() != null ? event.getTitle() : "Eventra Event");
+                String description = escapeIcs(event.getDescription() != null ? event.getDescription() : "");
+                String location = escapeIcs(event.getLocation() != null ? event.getLocation() : "");
+                String uid = "event-" + event.getId() + "@eventra";
+
+                return "BEGIN:VCALENDAR\r\n"
+                                + "VERSION:2.0\r\n"
+                                + "PRODID:-//Eventra//EN\r\n"
+                                + "CALSCALE:GREGORIAN\r\n"
+                                + "METHOD:PUBLISH\r\n"
+                                + "BEGIN:VEVENT\r\n"
+                                + "UID:" + uid + "\r\n"
+                                + "DTSTAMP:" + java.time.LocalDateTime.now().format(fmt) + "\r\n"
+                                + "DTSTART:" + start.format(fmt) + "\r\n"
+                                + "DTEND:" + end.format(fmt) + "\r\n"
+                                + "SUMMARY:" + summary + "\r\n"
+                                + "DESCRIPTION:" + description + "\r\n"
+                                + "LOCATION:" + location + "\r\n"
+                                + "END:VEVENT\r\n"
+                                + "END:VCALENDAR\r\n";
+        }
+
+        private static String escapeIcs(String value) {
+                return value
+                                .replace("\\", "\\\\")
+                                .replace(",", "\\,")
+                                .replace(";", "\\;")
+                                .replace("\n", "\\n")
+                                .replace("\r", "");
+        }
+
 }

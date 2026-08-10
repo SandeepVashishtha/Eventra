@@ -28,6 +28,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 
 import jakarta.validation.Valid;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -372,6 +373,16 @@ public class EventController {
                         @PathVariable Long id,
                         Authentication authentication) {
                 return ResponseEntity.ok(eventService.getNotifiedAttendees(id, authentication.getName()));
+        }
+
+
+        @GetMapping(value = "/{id}/feed.ics", produces = "text/calendar")
+        @Operation(summary = "ICS calendar feed for an event")
+        public ResponseEntity<String> getEventIcsFeed(@PathVariable Long id) {
+                String ics = eventService.buildIcsFeed(id);
+                return ResponseEntity.ok()
+                                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"event-" + id + ".ics\"")
+                                .body(ics);
         }
 
         // ── Issue #2100 — DELETE /api/events/{id} ───────────────────────────────
