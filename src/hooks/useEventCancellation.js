@@ -111,7 +111,6 @@ const useEventCancellation = (eventId, onSuccess, ownerId) => {
           ...(refundPolicy === REFUND_POLICIES.PARTIAL && {
             refundPercent: Number(refundPercent),
           }),
-          cancelledAt: new Date().toISOString(),
         };
 
         const res = await apiUtils.post(
