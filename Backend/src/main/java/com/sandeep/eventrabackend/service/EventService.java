@@ -188,7 +188,7 @@ public class EventService {
         public EventResponse getPublicEventById(long id) {
                 return eventRepository.findById(id)
                                 .filter(Event::isPublic)
-                                .map(this::toEventResponse)
+                                .map(this::toPublicEventResponse)
                                 .orElseThrow(() -> new EventNotFoundException(
                                                 "Event not found with id: " + id));
         }
@@ -215,7 +215,7 @@ public class EventService {
                 int safeSize = (size <= 0) ? 20 : Math.min(size, 100);
                 Pageable pageable = PageRequest.of(safePage, safeSize, resolveSort(sort));
                 Specification<Event> spec = EventSpecifications.publicListing(search, statuses);
-                Page<EventResponse> result = eventRepository.findAll(spec, pageable).map(this::toEventResponse);
+                Page<EventResponse> result = eventRepository.findAll(spec, pageable).map(this::toPublicEventResponse);
                 return PagedResponse.from(result);
         }
 
@@ -264,7 +264,7 @@ public class EventService {
                                                 to,
                                                 org.springframework.data.domain.PageRequest.of(0, size))
                                 .stream()
-                                .map(this::toEventResponse)
+                                .map(this::toPublicEventResponse)
                                 .toList();
         }
 
@@ -293,7 +293,7 @@ public class EventService {
                                                 to,
                                                 org.springframework.data.domain.PageRequest.of(0, size))
                                 .stream()
-                                .map(this::toEventResponse)
+                                .map(this::toPublicEventResponse)
                                 .toList();
         }
 
@@ -466,7 +466,7 @@ public class EventService {
 
                 return events.stream()
                                 .filter(Event::isPublic)
-                                .map(this::toEventResponse)
+                                .map(this::toPublicEventResponse)
                                 .collect(Collectors.toList());
         }
 
@@ -1152,6 +1152,17 @@ public class EventService {
                                 .refundPolicy(event.getRefundPolicy())
                                 .refundPercent(event.getRefundPercent())
                                 .build();
+        }
+
+        /**
+         * Public catalog responses must not expose organizer user IDs or internal
+         * cancellation notes (Issue #13603).
+         */
+        private EventResponse toPublicEventResponse(Event event) {
+                EventResponse response = toEventResponse(event);
+                response.setOwnerId(null);
+                response.setCancellationReason(null);
+                return response;
         }
 
         private WaitlistResponse toWaitlistResponse(EventWaitlist entry) {

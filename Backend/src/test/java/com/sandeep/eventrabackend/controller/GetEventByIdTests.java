@@ -70,6 +70,21 @@ public class GetEventByIdTests {
     }
 
     @Test
+    void testPublicEventOmitsOwnerIdAndCancellationReason() throws Exception {
+        Event cancelled = eventRepository.findById(publicEventId).orElseThrow();
+        cancelled.setOwnerId(42L);
+        cancelled.setCancellationReason("internal ops note");
+        cancelled.setStatus("CANCELLED");
+        eventRepository.save(cancelled);
+
+        mockMvc.perform(get("/api/events/" + publicEventId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("Public Event"))
+                .andExpect(jsonPath("$.ownerId").doesNotExist())
+                .andExpect(jsonPath("$.cancellationReason").doesNotExist());
+    }
+
+    @Test
     @WithMockUser
     void testGetPrivateEventById() throws Exception {
         // This should pass after implementation. Currently it might fail (return 404).
