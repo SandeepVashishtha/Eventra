@@ -185,4 +185,42 @@ public class UserProfileUpdateTests {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("Validation Error"));
     }
+
+    @Test
+    @DisplayName("PUT /api/users/profile - rejects javascript: LinkedIn URL")
+    void testUpdateUserProfile_RejectsJavascriptLinkedinUrl() throws Exception {
+        UserProfileUpdateRequest request = UserProfileUpdateRequest.builder()
+                .firstName("John")
+                .lastName("Doe")
+                .username("johndoe")
+                .linkedinUrl("javascript:alert(1)")
+                .build();
+
+        mockMvc.perform(put("/api/users/profile")
+                        .with(user("john@example.com"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Validation Error"));
+    }
+
+    @Test
+    @DisplayName("PUT /api/users/profile - accepts https social URLs")
+    void testUpdateUserProfile_AcceptsHttpsSocialUrls() throws Exception {
+        UserProfileUpdateRequest request = UserProfileUpdateRequest.builder()
+                .firstName("John")
+                .lastName("Doe")
+                .username("johndoe")
+                .linkedinUrl("https://www.linkedin.com/in/johndoe")
+                .githubUrl("https://github.com/johndoe")
+                .build();
+
+        mockMvc.perform(put("/api/users/profile")
+                        .with(user("john@example.com"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.linkedinUrl").value("https://www.linkedin.com/in/johndoe"))
+                .andExpect(jsonPath("$.githubUrl").value("https://github.com/johndoe"));
+    }
 }

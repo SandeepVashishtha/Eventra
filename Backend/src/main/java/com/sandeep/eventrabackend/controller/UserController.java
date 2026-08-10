@@ -139,14 +139,21 @@ public class UserController {
         user.setLastName(request.getLastName());
         user.setUsername(request.getUsername());
         user.setProfileHeadline(request.getProfileHeadline());
-        user.setLinkedinUrl(request.getLinkedinUrl());
-        user.setGithubUrl(request.getGithubUrl());
+        user.setLinkedinUrl(normalizeBlankToNull(request.getLinkedinUrl()));
+        user.setGithubUrl(normalizeBlankToNull(request.getGithubUrl()));
 
         User updatedUser = userRepository.save(user);
         return ResponseEntity.ok(mapToUserProfileResponse(updatedUser));
     }
 
-/*
+    private static String normalizeBlankToNull(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
+    }
+
+    /*
     @PutMapping("/profile")
     @Operation(
             summary = "Update authenticated user profile",

@@ -2,6 +2,7 @@ package com.sandeep.eventrabackend.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -35,10 +36,12 @@ public class UserProfileUpdateRequest {
     private String profileHeadline;
 
     @Size(max = 255, message = "LinkedIn URL must be 255 characters or fewer")
+    @Pattern(regexp = "^(|(?i)https?://\\S+)$", message = "LinkedIn URL must use http or https scheme")
     @Schema(description = "LinkedIn profile URL", example = "https://www.linkedin.com/in/johndoe")
     private String linkedinUrl;
 
     @Size(max = 255, message = "GitHub URL must be 255 characters or fewer")
+    @Pattern(regexp = "^(|(?i)https?://\\S+)$", message = "GitHub URL must use http or https scheme")
     @Schema(description = "GitHub profile URL", example = "https://github.com/johndoe")
     private String githubUrl;
 }
