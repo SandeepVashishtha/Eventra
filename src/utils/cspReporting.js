@@ -59,19 +59,28 @@ function sendReport(report) {
     type: 'application/csp-report',
   });
 
-  try {
-    navigator.sendBeacon(reportUri, blob);
-  } catch {
-    // Beacon API unavailable — fall back to a best-effort fetch.
-    fetch(reportUri, {
-      method: 'POST',
-      body: JSON.stringify(report),
-      headers: { 'Content-Type': 'application/csp-report' },
-      keepalive: true,
-    }).catch(() => {
-      // Swallow — reporting is best-effort and must never crash the app.
-    });
+  const hasSendBeacon =
+    typeof navigator !== 'undefined' &&
+    typeof navigator.sendBeacon === 'function';
+
+  if (hasSendBeacon) {
+    try {
+      navigator.sendBeacon(reportUri, blob);
+      return;
+    } catch {
+      // Beacon API failed — fall back to fetch below.
+    }
   }
+
+  // Beacon API unavailable or threw error — fall back to a best-effort fetch.
+  fetch(reportUri, {
+    method: 'POST',
+    body: JSON.stringify(report),
+    headers: { 'Content-Type': 'application/csp-report' },
+    keepalive: true,
+  }).catch(() => {
+    // Swallow — reporting is best-effort and must never crash the app.
+  });
 }
 
 // ---------------------------------------------------------------------------
