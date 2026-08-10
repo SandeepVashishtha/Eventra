@@ -38,6 +38,9 @@ public class SecurityConfig {
     @Value("${app.cors.allowed-origins:http://localhost:3000,https://eventra.vercel.app,https://eventra.sandeepvashishtha.tech}")
     private String allowedOrigins;
 
+    @Value("${eventra.api-docs.enabled:false}")
+    private boolean apiDocsEnabled;
+
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
             UserDetailsService userDetailsService) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
@@ -125,8 +128,8 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 // Stateless sessions — JWT handles auth
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
+                .authorizeHttpRequests(auth -> {
+                        auth.requestMatchers("/api/auth/**").permitAll()
                         // ── Public: pre-submit availability checks ──────────
                         // Email/username validation runs before the user has a JWT.
                         .requestMatchers("/api/validate/**").permitAll()
@@ -163,19 +166,22 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/projects/categories").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/feedback").permitAll()
                         // ── Admin Panel — ADMIN / SUPER_ADMIN only ────────
-                        .requestMatchers("/api/admin/**").hasAnyAuthority("ADMIN", "SUPER_ADMIN")
-                        // ── Public: Swagger / OpenAPI ────────────────────
-                        .requestMatchers(
-                                "/swagger-ui.html",
-                                "/swagger-ui/**",
-                                "/api-docs",
-                                "/api-docs/**",
-                                "/api-docs.yaml",
-                                "/v3/api-docs",
-                                "/v3/api-docs/**")
-                        .permitAll()
+                        .requestMatchers("/api/admin/**").hasAnyAuthority("ADMIN", "SUPER_ADMIN");
+                        // ── Swagger / OpenAPI — only when explicitly enabled (dev)
+                        if (apiDocsEnabled) {
+                                auth.requestMatchers(
+                                                "/swagger-ui.html",
+                                                "/swagger-ui/**",
+                                                "/api-docs",
+                                                "/api-docs/**",
+                                                "/api-docs.yaml",
+                                                "/v3/api-docs",
+                                                "/v3/api-docs/**")
+                                        .permitAll();
+                        }
                         // ── Everything else requires a valid JWT ─────────
-                        .anyRequest().authenticated())
+                        auth.anyRequest().authenticated();
+                })
                 // Return 401 (not Spring Security's default 403) for missing/invalid JWT
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(unauthorizedEntryPoint()))
