@@ -940,6 +940,16 @@ public class EventService {
                                         "You are already registered for this event.");
                 }
 
+                if (seatId != null && !seatId.isBlank()) {
+                        if (!seatId.matches("^[^:\\s]+:\\d+$")) {
+                                throw new IllegalArgumentException(
+                                                "Invalid seatId format. Expected elementId:seatIndex");
+                        }
+                        if (eventRegistrationRepository.existsByEvent_IdAndSeatId(eventId, seatId)) {
+                                throw new RegistrationConflictException("Seat " + seatId + " is already taken.");
+                        }
+                }
+
                 if (event.getCapacity() != null
                                 && event.getRegisteredCount() >= event.getCapacity()) {
 
