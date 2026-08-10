@@ -7,7 +7,25 @@ import { useFocusTrap } from "hooks/useFocusTrap";
 export default function OfflineConflictModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [conflictData, setConflictData] = useState(null);
-  const trapRef = useFocusTrap(isOpen);
+
+  const handleResolve = (resolution) => {
+    if (!conflictData) return;
+    const { item, serverState } = conflictData;
+    const localPayload = item?.payload || {};
+    const serverPayload = serverState || {};
+
+    window.dispatchEvent(new CustomEvent("eventra-offline-conflict-resolved", {
+      detail: {
+        itemId: item.id,
+        resolution, // "local", "server", or "merge"
+        mergedPayload: resolution === "merge" ? { ...serverPayload, ...localPayload } : null
+      }
+    }));
+    setIsOpen(false);
+    setConflictData(null);
+  };
+
+  const { containerRef } = useFocusTrap(isOpen, () => handleResolve("server"));
 
   useEffect(() => {
     const handleConflict = (e) => {
@@ -30,29 +48,15 @@ export default function OfflineConflictModal() {
   const allKeys = Array.from(new Set([...Object.keys(localPayload), ...Object.keys(serverPayload)]))
     .filter(key => key !== "id" && key !== "userId" && key !== "eventId" && key !== "timestamp");
 
-  const handleResolve = (resolution) => {
-    // Dispatch resolution result
-    window.dispatchEvent(new CustomEvent("eventra-offline-conflict-resolved", {
-      detail: {
-        itemId: item.id,
-        resolution, // "local", "server", or "merge"
-        mergedPayload: resolution === "merge" ? { ...serverPayload, ...localPayload } : null
-      }
-    }));
-    setIsOpen(false);
-    setConflictData(null);
-  };
-
   return createPortal(
     <div className="ocm-modal-overlay">
       <div
-        ref={trapRef}
+        ref={containerRef}
         className="ocm-modal-container"
         role="dialog"
         aria-modal="true"
         aria-labelledby="ocm-title"
         tabIndex={-1}
-        onKeyDown={(e) => { if (e.key === 'Escape') handleResolve("server"); }}
       >
         {/* Header */}
         <div className="ocm-header">
