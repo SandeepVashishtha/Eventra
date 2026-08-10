@@ -1223,11 +1223,14 @@ public class EventService {
                 Event event = eventRepository.findById(eventId)
                                 .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + eventId));
 
-                java.time.LocalDateTime start = event.getEventDate() != null
-                                ? event.getEventDate()
-                                : java.time.LocalDateTime.now();
-                java.time.LocalDateTime end = start.plusHours(2);
-                java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss");
+                java.time.Instant start = event.getEventDate() != null
+                                ? event.getEventDate().atZone(java.time.ZoneId.systemDefault()).toInstant()
+                                : java.time.Instant.now();
+                // Event model has no endDate; default duration is 2 hours when end is unspecified.
+                java.time.Instant end = start.plus(java.time.Duration.ofHours(2));
+                java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter
+                                .ofPattern("yyyyMMdd'T'HHmmss'Z'")
+                                .withZone(java.time.ZoneOffset.UTC);
 
                 String summary = escapeIcs(event.getTitle() != null ? event.getTitle() : "Eventra Event");
                 String description = escapeIcs(event.getDescription() != null ? event.getDescription() : "");
@@ -1241,9 +1244,9 @@ public class EventService {
                                 + "METHOD:PUBLISH\r\n"
                                 + "BEGIN:VEVENT\r\n"
                                 + "UID:" + uid + "\r\n"
-                                + "DTSTAMP:" + java.time.LocalDateTime.now().format(fmt) + "\r\n"
-                                + "DTSTART:" + start.format(fmt) + "\r\n"
-                                + "DTEND:" + end.format(fmt) + "\r\n"
+                                + "DTSTAMP:" + fmt.format(java.time.Instant.now()) + "\r\n"
+                                + "DTSTART:" + fmt.format(start) + "\r\n"
+                                + "DTEND:" + fmt.format(end) + "\r\n"
                                 + "SUMMARY:" + summary + "\r\n"
                                 + "DESCRIPTION:" + description + "\r\n"
                                 + "LOCATION:" + location + "\r\n"
