@@ -7,6 +7,7 @@ import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.RecoverySessionRepository;
 import com.sandeep.eventrabackend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +16,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -29,9 +31,20 @@ public class SessionRecoveryService {
     public Map<String, Object> save(String userEmail, Map<String, Object> payload) {
         User user = requireUser(userEmail);
         String sessionId = stringOr(payload.get("sessionId"), UUID.randomUUID().toString());
-        RecoverySession session = recoverySessionRepository.findByIdAndUser_Id(sessionId, user.getId())
-                .orElseGet(RecoverySession::new);
-        session.setId(sessionId);
+
+        // findByIdAndUser_Id alone is not enough: a miss + assigned @Id causes JPA merge()
+        // to overwrite another user's row. Own it, create it, or deny — never steal.
+        Optional<RecoverySession> owned = recoverySessionRepository.findByIdAndUser_Id(sessionId, user.getId());
+        RecoverySession session;
+        if (owned.isPresent()) {
+            session = owned.get();
+        } else if (recoverySessionRepository.existsById(sessionId)) {
+            throw new AccessDeniedException("Recovery session belongs to another user");
+        } else {
+            session = new RecoverySession();
+            session.setId(sessionId);
+        }
+
         session.setUser(user);
         session.setName(stringOr(payload.get("name"), "Recovery Session"));
         session.setType(stringOr(payload.get("type"), "generic"));
