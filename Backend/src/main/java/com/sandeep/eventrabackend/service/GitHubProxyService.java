@@ -14,6 +14,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -21,13 +22,20 @@ import java.util.regex.Pattern;
 @Service
 public class GitHubProxyService {
 
-    private static final Set<String> ALLOWED_PREFIXES = Set.of(
-            "repos/",
-            "orgs/",
-            "users/"
+    /**
+     * Public Eventra surfaces only need this repo (contributors/stats) plus
+     * public user profile lookups. Broad {@code repos|orgs|users} prefixes let
+     * an unauthenticated caller abuse a shared {@code GITHUB_TOKEN}.
+     */
+    private static final Set<String> ALLOWED_REPOS = Set.of(
+            "repos/sandeepvashishtha/eventra"
     );
 
     private static final Pattern SAFE_PATH = Pattern.compile("^[A-Za-z0-9_./\\-]+$");
+    private static final Pattern USERS_PATH = Pattern.compile(
+            "^users/[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}(/[A-Za-z0-9_./\\-]*)?$",
+            Pattern.CASE_INSENSITIVE
+    );
 
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(5))
@@ -47,8 +55,7 @@ public class GitHubProxyService {
             return ResponseEntity.badRequest().body("{\"error\":\"invalid path\"}");
         }
 
-        boolean allowed = ALLOWED_PREFIXES.stream().anyMatch(normalized::startsWith);
-        if (!allowed) {
+        if (!isAllowlisted(normalized)) {
             return ResponseEntity.status(403).body("{\"error\":\"path not allowlisted\"}");
         }
 
@@ -90,5 +97,17 @@ public class GitHubProxyService {
             Thread.currentThread().interrupt();
             return ResponseEntity.status(502).body("{\"error\":\"github upstream failed\"}");
         }
+    }
+
+    static boolean isAllowlisted(String normalizedPath) {
+        String lower = normalizedPath.toLowerCase(Locale.ROOT);
+        if (lower.startsWith("repos/")) {
+            return ALLOWED_REPOS.stream().anyMatch(repo ->
+                    lower.equals(repo) || lower.startsWith(repo + "/"));
+        }
+        if (lower.startsWith("users/")) {
+            return USERS_PATH.matcher(normalizedPath).matches();
+        }
+        return false;
     }
 }
