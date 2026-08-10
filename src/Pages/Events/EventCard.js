@@ -1,3 +1,4 @@
+import useToast from "hooks/useToast";
 import React, { memo, useCallback, useId, useState } from "react";
 import { logger } from "utils/logger";
 import LazyImage from "components/common/LazyImage";
@@ -10,7 +11,6 @@ import AddToCalendar from "components/common/AddToCalendar";
 import { useMyEvents } from "context/MyEventsContext";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { toast } from "react-toastify";
 import {
   BookmarkCheck,
   Bookmark,
@@ -28,6 +28,7 @@ import {
 
 
 const EventCard = ({ event }) => {
+  const { success, info } = useToast();
   const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
   const [imageFailed, setImageFailed] = useState(false);
   const titleId = useId();
@@ -52,11 +53,11 @@ const dateInfo = formatLocalDateTime(eventDate);
       if (isBookmarked) {
         removeBookmarkedEvent(event.id);
         setIsBookmarked(false);
-        toast.info("Removed from saved events.", { toastId: `bookmark-${event.id}`, autoClose: 1800 });
+        info("Removed from saved events.", { toastId: `bookmark-${event.id}` });
       } else {
         addBookmarkedEvent({ ...event, status: computedStatus });
         setIsBookmarked(true);
-        toast.success("Event saved!", { toastId: `bookmark-${event.id}`, autoClose: 1800 });
+        success("Event saved!", { toastId: `bookmark-${event.id}` });
       }
     },
     [isBookmarked, event, computedStatus]

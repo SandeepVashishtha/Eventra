@@ -1,3 +1,4 @@
+import useToast from "hooks/useToast";
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 // Consolidated lucide-react imports for code cleanliness
@@ -17,6 +18,7 @@ import './ShareMenu.css';
  * @param {string} props.className - Additional classNames for the container
  */
 const ShareMenu = ({
+  const { success, error } = useToast();
   shareData,
   children,
   position = 'bottom',
@@ -106,7 +108,7 @@ const ShareMenu = ({
         // Ignore AbortError caused by users intentionally closing the native share dialog
         if (err.name !== 'AbortError') {
           console.error('Error sharing:', err);
-          toast.error("Failed to share event", { autoClose: 2000 });
+          error("Failed to share event");
         }
       });
       return;
