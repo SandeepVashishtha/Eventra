@@ -55,24 +55,17 @@ function buildReport(event) {
 function sendReport(report) {
   if (!reportUri) return;
 
-  const payload = JSON.stringify(report);
-  const blob = new Blob([payload], {
+  const blob = new Blob([JSON.stringify(report)], {
     type: 'application/csp-report',
   });
 
-  let queued = false;
-
   try {
-    queued = Boolean(navigator.sendBeacon && navigator.sendBeacon(reportUri, blob));
+    navigator.sendBeacon(reportUri, blob);
   } catch {
-    queued = false;
-  }
-
-  // Fall back to fetch if sendBeacon returned false or threw an exception
-  if (!queued) {
+    // Beacon API unavailable — fall back to a best-effort fetch.
     fetch(reportUri, {
       method: 'POST',
-      body: payload,
+      body: JSON.stringify(report),
       headers: { 'Content-Type': 'application/csp-report' },
       keepalive: true,
     }).catch(() => {
@@ -102,6 +95,9 @@ export function initCspReporting() {
   if (typeof document === 'undefined') return;
   // Guard against double registration
   if (_cspHandler) return;
+
+  // Do not attach listener if there is nowhere to log or send reports
+  if (!isDev && !reportUri) return;
 
   _cspHandler = (event) => {
     const report = buildReport(event);
