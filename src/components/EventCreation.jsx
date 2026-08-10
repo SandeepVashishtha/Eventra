@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
-import { ArrowRight, Pencil, CheckCircle, AlertCircle, Calendar, MapPin, Ticket as TicketIcon } from "lucide-react";
+import { ArrowRight, Pencil, CheckCircle, AlertCircle, Calendar, MapPin, Ticket as TicketIcon, History, Trash2, X } from "lucide-react";
 import { API_ENDPOINTS, apiUtils } from "../config/api";
 
 import { useEventForm } from "../hooks/useEventForm";
+import { formatDraftAge } from "../hooks/useFormDraft";
 import EventBasicInfo from "./common/EventCreation/EventBasicInfo";
 import EventMediaSection from "./common/EventCreation/EventMediaSection";
 import EventLocationSection from "./common/EventCreation/EventLocationSection";
@@ -42,6 +43,10 @@ const EventCreation = () => {
     updateTicketTier,
     handleRestoreDraft,
     handleDiscardDraft,
+    draftRestored,
+    dismissRestoredBanner,
+    lastSavedAt,
+    resetForm,
   } = useEventForm();
 
   const handlePreview = (e) => {
@@ -60,10 +65,12 @@ const EventCreation = () => {
       if (!API_ENDPOINTS.EVENTS.CREATE) {
         await new Promise((resolve) => setTimeout(resolve, 1000));
         toast.success("🎉 Mock event creation successful!");
+        resetForm();
         return;
       }
       await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, eventData);
       toast.success("🎉 Event published successfully!");
+      resetForm();
       setCurrentStep("form");
     } catch (err) {
       toast.error(err?.response?.data?.message || "Failed to create event.");
@@ -103,6 +110,33 @@ const EventCreation = () => {
                   Fill in the details below to get started with your awesome event.
                 </p>
               </div>
+
+              {draftRestored && (
+                <div
+                  role="status"
+                  className="flex items-center gap-3 p-4 rounded-2xl border border-indigo-100 dark:border-indigo-900/50 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-800 dark:text-indigo-200"
+                >
+                  <History className="w-5 h-5 shrink-0" />
+                  <p className="flex-1 text-sm font-medium">
+                    Draft restored from previous session
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleDiscardDraft}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" /> Discard Draft
+                  </button>
+                  <button
+                    type="button"
+                    onClick={dismissRestoredBanner}
+                    aria-label="Dismiss draft notice"
+                    className="p-1.5 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
 
               <form
                 onSubmit={handlePreview}
