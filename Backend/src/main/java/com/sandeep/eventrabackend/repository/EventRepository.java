@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -25,4 +26,28 @@ public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecific
     @Modifying
     @Query("UPDATE Event e SET e.availableSeats = e.availableSeats - 1 WHERE e.id = :id AND e.availableSeats > 0")
     int decrementSeatsAtomically(@Param("id") Long id);
+
+    @Modifying
+    @Query(value = "DELETE FROM event_attendees WHERE event_id = :eventId", nativeQuery = true)
+    void deleteAttendeeRowsByEventId(@Param("eventId") Long eventId);
+
+    /**
+     * Removes the given user from the event_attendees join table.
+     * Used before deleting a user so no orphaned attendee rows remain.
+     */
+    @Modifying
+    @Query(value = "DELETE FROM event_attendees WHERE user_id = :userId", nativeQuery = true)
+    void deleteAttendeeRowsByUserId(@Param("userId") Long userId);
+
+    /**
+     * Find events by title or description containing the given search term
+     * (case-insensitive).
+     */
+    List<Event> findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
+            String titleSearch, String descriptionSearch);
+
+    /**
+     * Find events by category.
+     */
+    List<Event> findByCategory(String category);
 }
