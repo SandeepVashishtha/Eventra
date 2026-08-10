@@ -32,4 +32,7 @@ public class CancelEventRequest {
 
     @Schema(description = "Optional timestamp recording when the event was cancelled (defaults to now)")
     private LocalDateTime cancelledAt;
+
+    @Schema(description = "Whether to notify confirmed attendees (defaults to true)")
+    private Boolean notifyAttendees;
 }

@@ -18,6 +18,11 @@ const LENGTH_RULES = [
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
 const URL_REGEX = /^(https?:\/\/)?([\w-]+(\.[\w-]+)+)(\/[\w-./?%&=]*)?$/i;
 
+const toDateString = (value) => {
+  if (!value) return "";
+  return value.includes("T") ? value.split("T")[0] : value;
+};
+
 const isOutOfBounds = (value, min, max) => {
   const length = value.trim().length;
   return length < min || length > max;
@@ -56,12 +61,12 @@ const validateWebsite = (data) => {
 
 const isStartInPast = (data, today) => {
   if (!data.startDate) return false;
-  return data.startDate < today;
+  return toDateString(data.startDate) < toDateString(today);
 };
 
 const isEndBeforeStart = (data) => {
   if (!data.endDate || !data.startDate) return false;
-  return data.endDate < data.startDate;
+  return toDateString(data.endDate) < toDateString(data.startDate);
 };
 
 const validateDateRange = (data, today) => {

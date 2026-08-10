@@ -1,0 +1,21 @@
+# Local / default profile — in-memory H2 only.
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driverClassName: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database-platform: org.hibernate.dialect.H2Dialect
+
+app:
+  jwt:
+    # Dev-only fallback so the app boots without env vars. Never used in prod.
+    secret: ${JWT_SECRET:dev-only-secret-key-change-me-before-anything-real-32b}
+
+google:
+  client:
+    id: ${GOOGLE_CLIENT_ID:dev-google-client-id}

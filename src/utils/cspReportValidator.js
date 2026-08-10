@@ -12,7 +12,7 @@ export function isValidCspReport(report) {
   // Prevent script/HTML tag injection in reports
   const blockedUri = payload["blocked-uri"];
   if (typeof blockedUri === "string") {
-    if (/<script|javascript:|data:/i.test(blockedUri)) {
+    if (/<script|javascript:|data:|<[a-z]+[^>]*on[a-z]+/i.test(blockedUri)) {
       return false;
     }
   }

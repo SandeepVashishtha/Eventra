@@ -1,5 +1,6 @@
 package com.sandeep.eventrabackend.controller;
 
+import com.sandeep.eventrabackend.dto.AnalyticsSummaryDTO;
 import com.sandeep.eventrabackend.dto.DashboardStatsDTO;
 import com.sandeep.eventrabackend.dto.FeedbackAnalyticsDTO;
 import com.sandeep.eventrabackend.dto.OrganizerInsightDTO;
@@ -28,6 +29,12 @@ public class AnalyticsController {
     @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<DashboardStatsDTO> getDashboardStats() {
         return ResponseEntity.ok(analyticsService.getDashboardStats());
+    }
+
+    @GetMapping("/summary")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<AnalyticsSummaryDTO> getSummary() {
+        return ResponseEntity.ok(analyticsService.getSummary());
     }
 
     @GetMapping("/registrations/trends")

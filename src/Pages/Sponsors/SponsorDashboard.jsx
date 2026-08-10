@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { safeJsonParse } from "utils/safeJsonParse";
+import { computeSponsorBoothMetrics } from "utils/sponsorAnalyticsUtils";
 
 const DEFAULT_SETTINGS = {
   id: "sp-custom",
@@ -17,6 +18,15 @@ const DEFAULT_SETTINGS = {
   sponsorJobs: "Senior Frontend Engineer, Backend Developer, UI/UX Designer"
 };
 
+const EMPTY_ANALYTICS = {
+  boothVisits: 0,
+  footfall: 0,
+  jobClicks: 0,
+  chatInitiations: 0,
+  qrScans: 0,
+  engagementRate: 0,
+};
+
 const SponsorDashboard = () => {
   // Fix: useUserPreferences replaces direct localStorage.getItem/setItem calls
   // Adds schema validation, cross-tab sync and default backfilling.
@@ -26,11 +36,7 @@ const SponsorDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [leads, setLeads] = useState([]);
-  const [analytics, setAnalytics] = useState({
-  boothVisits: 0,
-  qrScans: 0,
-  engagementRate: 0,
-});
+  const [analytics, setAnalytics] = useState(EMPTY_ANALYTICS);
   const [isSaving, setIsSaving] = useState(false);
   const saveTimeoutRef = useRef(null);
 
@@ -40,34 +46,33 @@ const SponsorDashboard = () => {
     };
   }, []);
 
-  // Mock analytics for the dashboard
-  const [stats] = useState({
-    footfall: Math.floor(Math.random() * 500) + 120,
-    jobClicks: Math.floor(Math.random() * 200) + 45,
-    chatInitiations: Math.floor(Math.random() * 100) + 20,
-  });
+ useEffect(() => {
+  // Load custom settings
+  const saved = localStorage.getItem("eventra_sponsor_settings");
 
-  // Fix: Sync sponsorPrefs into local settings state when hook hydrates
-  useEffect(() => {
-    if (sponsorPrefs && Object.keys(sponsorPrefs).length > 0) {
-      setSettings((prev) => ({ ...prev, ...sponsorPrefs }));
+  if (saved) {
+    try {
+      setSettings(safeJsonParse(saved, {}));
+    } catch (e) {
+      console.error("Failed to parse sponsor settings", e);
     }
-    // Load captured leads (separate from preferences)
-    const savedLeads = localStorage.getItem("eventra_sponsor_leads");
-    if (savedLeads) {
-      try {
-        const parsedLeads = safeJsonParse(savedLeads, []);
-        setLeads([...parsedLeads].reverse());
-        setAnalytics({
-          boothVisits: parsedLeads.length * 3,
-          qrScans: parsedLeads.length,
-          engagementRate: parsedLeads.length > 0
-            ? ((parsedLeads.length / (parsedLeads.length * 3)) * 100).toFixed(1)
-            : 0,
-        });
-      } catch (e) {
-        console.error("Failed to parse sponsor leads", e);
-      }
+  }
+
+  // Load captured leads
+  const savedLeads = localStorage.getItem("eventra_sponsor_leads");
+
+  if (savedLeads) {
+    try {
+      const parsedLeads = safeJsonParse(savedLeads, []);
+      const list = Array.isArray(parsedLeads) ? parsedLeads : [];
+
+      setLeads([...list].reverse());
+      setAnalytics(computeSponsorBoothMetrics(list));
+    } catch (e) {
+      console.error(
+        "Failed to parse sponsor leads",
+        e
+      );
     }
   }, [sponsorPrefs]);
 
@@ -110,12 +115,7 @@ const SponsorDashboard = () => {
     if (window.confirm("Are you sure you want to clear all leads? This cannot be undone.")) {
       localStorage.removeItem("eventra_sponsor_leads");
       setLeads([]);
-
-      setAnalytics({
-        boothVisits: 0,
-        qrScans: 0,
-        engagementRate: 0,
-      });
+      setAnalytics({ ...EMPTY_ANALYTICS });
       toast.success("Leads cleared.");
     }
   };
@@ -166,10 +166,13 @@ const SponsorDashboard = () => {
           <div className="space-y-8 animate-fade-in">
             {/* Analytics Cards */}
             <div>
-              <h2 className="text-lg font-black mb-4 flex items-center gap-2">
+              <h2 className="text-lg font-black mb-1 flex items-center gap-2">
                 <BarChart size={18} className="text-indigo-500" />
-                Real-Time Booth Analytics
+                Booth Analytics
               </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+                Counts are based on captured booth interactions. Metrics stay at zero until attendees visit, apply, or start a chat.
+              </p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
   <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-3xl p-6 shadow-sm">
     <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
@@ -182,7 +185,7 @@ const SponsorDashboard = () => {
 
   <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-3xl p-6 shadow-sm">
     <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
-      QR Lead Scans
+      Captured Interactions
     </h3>
     <p className="text-3xl font-black">
       {analytics.qrScans}
@@ -205,9 +208,9 @@ const SponsorDashboard = () => {
                     <Users size={16} />
                     <span className="text-xs font-bold uppercase tracking-wider">Total Footfall</span>
                   </div>
-                  <div className="text-4xl font-black">{stats.footfall}</div>
-                  <div className="text-[10px] text-emerald-500 font-bold mt-2 flex items-center gap-1">
-                    +12% from last hour
+                  <div className="text-4xl font-black">{analytics.footfall}</div>
+                  <div className="text-[10px] text-slate-400 font-bold mt-2 flex items-center gap-1">
+                    From recorded booth visits
                   </div>
                 </div>
 
@@ -217,9 +220,9 @@ const SponsorDashboard = () => {
                     <LinkIcon size={16} />
                     <span className="text-xs font-bold uppercase tracking-wider">Job Links Clicked</span>
                   </div>
-                  <div className="text-4xl font-black">{stats.jobClicks}</div>
-                  <div className="text-[10px] text-emerald-500 font-bold mt-2 flex items-center gap-1">
-                    High engagement rate
+                  <div className="text-4xl font-black">{analytics.jobClicks}</div>
+                  <div className="text-[10px] text-slate-400 font-bold mt-2 flex items-center gap-1">
+                    From apply actions
                   </div>
                 </div>
 
@@ -229,9 +232,9 @@ const SponsorDashboard = () => {
                     <MessageSquare size={16} />
                     <span className="text-xs font-bold uppercase tracking-wider">Chat Initiations</span>
                   </div>
-                  <div className="text-4xl font-black">{stats.chatInitiations}</div>
+                  <div className="text-4xl font-black">{analytics.chatInitiations}</div>
                   <div className="text-[10px] text-slate-400 font-bold mt-2 flex items-center gap-1">
-                    Live chat active
+                    From chat starts
                   </div>
                 </div>
               </div>
