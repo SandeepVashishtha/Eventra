@@ -3,10 +3,13 @@ export const REQUIRED_FIELDS = [
   "organizerName",
   "email",
   "location",
+  "mode",
   "startDate",
   "endDate",
   "description",
 ];
+
+const VALID_MODES = ["Online", "Offline", "Hybrid"];
 
 const LENGTH_RULES = [
   { field: "hackathonName", min: 3, max: 100, label: "Hackathon Name" },
@@ -87,6 +90,26 @@ const validateParticipantLimit = (data) => {
     : {};
 };
 
+const validateMode = (data) => {
+  if (!data.mode) return {};
+  return VALID_MODES.includes(data.mode)
+    ? {}
+    : { mode: "Mode must be Online, Offline, or Hybrid!" };
+};
+
+const validateRegistrationDeadline = (data, today) => {
+  const deadline = data.registrationDeadline?.trim();
+  if (!deadline) return {};
+  const deadlineStr = toDateString(deadline);
+  if (deadlineStr < toDateString(today)) {
+    return { registrationDeadline: "Registration deadline cannot be in the past!" };
+  }
+  if (data.startDate && deadlineStr > toDateString(data.startDate)) {
+    return { registrationDeadline: "Registration deadline cannot be after start date!" };
+  }
+  return {};
+};
+
 export const validateHostHackathonForm = (data, today = new Date().toISOString().split("T")[0]) => ({
   ...validateRequiredFields(data),
   ...validateLengthBounds(data),
@@ -94,4 +117,6 @@ export const validateHostHackathonForm = (data, today = new Date().toISOString()
   ...validateWebsite(data),
   ...validateDateRange(data, today),
   ...validateParticipantLimit(data),
+  ...validateMode(data),
+  ...validateRegistrationDeadline(data, today),
 });
