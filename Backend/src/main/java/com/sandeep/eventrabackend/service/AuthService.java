@@ -169,9 +169,23 @@ public class AuthService {
                 user = userRepository.save(user);
             } else if (!user.isEmailVerified()
                     && (user.getAuthProvider() == null || "LOCAL".equalsIgnoreCase(user.getAuthProvider()))) {
-                throw new InvalidGoogleTokenException(
-                        "An unverified password account already exists for this email. "
-                                + "Sign in with your password and verify the email before linking Google.");
+                // Unverified LOCAL accounts can be claimed by a verified Google identity
+                // for the same email. Verified LOCAL accounts are left untouched below.
+                SecureRandom secureRandom = new SecureRandom();
+                byte[] randomBytes = new byte[32];
+                secureRandom.nextBytes(randomBytes);
+                String securePassword = Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
+
+                user.setAuthProvider("GOOGLE");
+                user.setEmailVerified(true);
+                user.setPassword(passwordEncoder.encode(securePassword));
+                if (firstName != null && !firstName.isBlank()) {
+                    user.setFirstName(firstName);
+                }
+                if (lastName != null && !lastName.isBlank()) {
+                    user.setLastName(lastName);
+                }
+                user = userRepository.save(user);
             } else if (!user.isEmailVerified()) {
                 user.setEmailVerified(true);
                 if (user.getAuthProvider() == null || user.getAuthProvider().isBlank()) {
