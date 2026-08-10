@@ -1,0 +1,135 @@
+name: conflict checker
+
+on:
+  push:
+    branches: [main]
+    
+  schedule:
+    - cron: '0 */4 * * *' # Runs every 4 hours matching the repo schedule
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  check-conflicts:
+    name: Check Open PR Conflicts
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Scan open PRs for merge conflicts
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            const openPRs = await github.paginate(github.rest.pulls.list, {
+              owner,
+              repo,
+              state: 'open',
+              per_page: 100
+            });
+
+            console.log(`Scanning ${openPRs.length} open pull request(s) for merge conflicts...`);
+
+            for (const pr of openPRs) {
+              try {
+                const fullPR = (await github.rest.pulls.get({
+                  owner,
+                  repo,
+                  pull_number: pr.number
+                })).data;
+
+                const isConflict = fullPR.mergeable === false || fullPR.mergeable_state === 'dirty';
+                const currentLabels = (fullPR.labels || []).map(l => l.name.toLowerCase());
+                const hasConflictLabel = currentLabels.includes('merge conflicts');
+                const hasReadyLabel = currentLabels.includes('merge ready');
+
+                if (isConflict) {
+                  if (!hasConflictLabel) {
+                    try {
+                      await github.rest.issues.createLabel({
+                        owner,
+                        repo,
+                        name: 'merge conflicts',
+                        color: 'd73a4a',
+                        description: 'PR has merge conflicts'
+                      });
+                    } catch (e) {
+                      if (e.status !== 422) throw e;
+                    }
+
+                    await github.rest.issues.addLabels({
+                      owner,
+                      repo,
+                      issue_number: pr.number,
+                      labels: ['merge conflicts']
+                    });
+                    console.log(`Added 'merge conflicts' label to PR #${pr.number}`);
+
+                    // Post comment notifying the author about the merge conflict
+                    
+                    try {
+                      const author = fullPR.user ? fullPR.user.login : 'author';
+                      await github.rest.issues.createComment({
+                        owner,
+                        repo,
+                        issue_number: pr.number,
+                        body: `@${author}, please resolve the commit so that it will be merged soon ......`
+                      });
+                      console.log(`Posted merge conflict comment on PR #${pr.number}`);
+                    } catch (e) {
+                      console.error(`Failed to post merge conflict comment on PR #${pr.number}: ${e.message}`);
+                    }
+                  }
+
+                  if (hasReadyLabel) {
+                    await github.rest.issues.removeLabel({
+                      owner,
+                      repo,
+                      issue_number: pr.number,
+                      name: 'merge ready'
+                    });
+                    console.log(`Removed 'merge ready' label from PR #${pr.number}`);
+                  }
+                  
+                } else if (fullPR.mergeable === true) {
+                  if (!hasReadyLabel) {
+                    try {
+                      await github.rest.issues.createLabel({
+                        owner,
+                        repo,
+                        name: 'merge ready',
+                        color: '2cbe4e',
+                        description: 'PR is mergeable and has no conflicts'
+                      });
+                    } catch (e) {
+                      if (e.status !== 422) throw e;
+                    }
+
+                    await github.rest.issues.addLabels({
+                      owner,
+                      repo,
+                      issue_number: pr.number,
+                      labels: ['merge ready']
+                    });
+                    console.log(`Added 'merge ready' label to PR #${pr.number}`);
+                  }
+
+                  if (hasConflictLabel) {
+                    await github.rest.issues.removeLabel({
+                      owner,
+                      repo,
+                      issue_number: pr.number,
+                      name: 'merge conflicts'
+                    });
+                    console.log(`Removed 'merge conflicts' label from PR #${pr.number}`);                 
+                  }
+                }
+              } catch (e) {
+                console.error(`Error processing PR #${pr.number}: ${e.message}`);
+              }
+            }
+            
