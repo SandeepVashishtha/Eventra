@@ -15,6 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -67,6 +68,21 @@ public class GetEventByIdTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title").value("Public Event"))
                 .andExpect(jsonPath("$.public").value(true));
+    }
+
+    @Test
+    void testPublicEventOmitsOwnerIdAndCancellationReason() throws Exception {
+        Event cancelled = eventRepository.findById(publicEventId).orElseThrow();
+        cancelled.setOwnerId(42L);
+        cancelled.setCancellationReason("internal ops note");
+        cancelled.setStatus("CANCELLED");
+        eventRepository.save(cancelled);
+
+        mockMvc.perform(get("/api/events/" + publicEventId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("Public Event"))
+                .andExpect(jsonPath("$.ownerId").value(nullValue()))
+                .andExpect(jsonPath("$.cancellationReason").value(nullValue()));
     }
 
     @Test
