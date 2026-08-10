@@ -295,6 +295,7 @@ export const API_ENDPOINTS = {
     USERNAME: (username) => buildApiUrl(`/validate/username/${encodeURIComponent(username)}`),
     PHONE: buildApiUrl("/validate/phone"),
   },
+  CONTACT: buildApiUrl("/contact"),
 };
 
 /**
