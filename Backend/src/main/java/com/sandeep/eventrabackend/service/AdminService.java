@@ -12,6 +12,8 @@ import com.sandeep.eventrabackend.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.util.StringUtils;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -60,11 +62,18 @@ public class AdminService {
      * @param size page size
      * @param role optional role filter (e.g. "CLIENT") — null means all users
      */
-    public PagedResponse<AdminUserResponse> getUsers(int page, int size, String role) {
+    public PagedResponse<AdminUserResponse> getUsers(int page, int size, String role, String search) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<User> userPage;
+        boolean hasSearch = StringUtils.hasText(search);
+        String trimmedSearch = hasSearch ? search.trim() : null;
 
-        if (role != null && !role.isBlank()) {
+        if (hasSearch && role != null && !role.isBlank()) {
+            Role roleEnum = parseRole(role);
+            userPage = userRepository.searchUsersByRole(roleEnum, trimmedSearch, pageable);
+        } else if (hasSearch) {
+            userPage = userRepository.searchUsers(trimmedSearch, pageable);
+        } else if (role != null && !role.isBlank()) {
             Role roleEnum = parseRole(role);
             userPage = userRepository.findByRole(roleEnum, pageable);
         } else {
@@ -199,9 +208,13 @@ public class AdminService {
     /**
      * Returns all events (paginated), visible to admin regardless of isPublic.
      */
-    public PagedResponse<EventResponse> getEvents(int page, int size) {
+    public PagedResponse<EventResponse> getEvents(int page, int size, String search) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("eventDate").descending());
-        return PagedResponse.from(eventRepository.findAll(pageable).map(this::toEventResponse));
+        Specification<com.sandeep.eventrabackend.model.Event> spec = EventSpecifications.searchContains(search);
+        Page<com.sandeep.eventrabackend.model.Event> eventPage = spec == null
+                ? eventRepository.findAll(pageable)
+                : eventRepository.findAll(spec, pageable);
+        return PagedResponse.from(eventPage.map(this::toEventResponse));
     }
 
     /**

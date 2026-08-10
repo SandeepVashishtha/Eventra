@@ -31,6 +31,25 @@ public interface UserRepository extends JpaRepository<User, Long> {
     /** Returns all users with a specific role, paginated. */
     Page<User> findByRole(Role role, Pageable pageable);
 
+    @Query("""
+            SELECT u FROM User u WHERE
+            LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(u.username) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(u.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(u.lastName) LIKE LOWER(CONCAT('%', :search, '%'))
+            """)
+    Page<User> searchUsers(@Param("search") String search, Pageable pageable);
+
+    @Query("""
+            SELECT u FROM User u WHERE u.role = :role AND (
+            LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(u.username) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(u.firstName) LIKE LOWER(CONCAT('%', :search, '%')) OR
+            LOWER(u.lastName) LIKE LOWER(CONCAT('%', :search, '%'))
+            )
+            """)
+    Page<User> searchUsersByRole(@Param("role") Role role, @Param("search") String search, Pageable pageable);
+
     /** Count users created after the given timestamp — used for growth stats. */
     long countByCreatedAtAfter(LocalDateTime date);
 
