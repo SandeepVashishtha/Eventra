@@ -1,3 +1,4 @@
+import useUserPreferences from "hooks/useUserPreferences";
 import { useState, useEffect, useRef } from "react";
 import {
   BarChart, Users, Link as LinkIcon, MessageSquare,
@@ -17,6 +18,11 @@ const DEFAULT_SETTINGS = {
 };
 
 const SponsorDashboard = () => {
+  // Fix: useUserPreferences replaces direct localStorage.getItem/setItem calls
+  // Adds schema validation, cross-tab sync and default backfilling.
+  const { preferences: sponsorPrefs, setPreferences: setSponsorPrefs } =
+    useUserPreferences({ namespace: "sponsor" });
+
   const [activeTab, setActiveTab] = useState("overview");
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [leads, setLeads] = useState([]);
@@ -41,54 +47,37 @@ const SponsorDashboard = () => {
     chatInitiations: Math.floor(Math.random() * 100) + 20,
   });
 
- useEffect(() => {
-  // Load custom settings
-  const saved = localStorage.getItem("eventra_sponsor_settings");
-
-  if (saved) {
-    try {
-      setSettings(safeJsonParse(saved, {}));
-    } catch (e) {
-      console.error("Failed to parse sponsor settings", e);
+  // Fix: Sync sponsorPrefs into local settings state when hook hydrates
+  useEffect(() => {
+    if (sponsorPrefs && Object.keys(sponsorPrefs).length > 0) {
+      setSettings((prev) => ({ ...prev, ...sponsorPrefs }));
     }
-  }
-
-  // Load captured leads
-  const savedLeads = localStorage.getItem("eventra_sponsor_leads");
-
-  if (savedLeads) {
-    try {
-      const parsedLeads = safeJsonParse(savedLeads, []);
-
-      setLeads([...parsedLeads].reverse());
-
-      setAnalytics({
-        boothVisits: parsedLeads.length * 3,
-        qrScans: parsedLeads.length,
-        engagementRate:
-          parsedLeads.length > 0
-            ? (
-                (parsedLeads.length /
-                  (parsedLeads.length * 3)) *
-                100
-              ).toFixed(1)
+    // Load captured leads (separate from preferences)
+    const savedLeads = localStorage.getItem("eventra_sponsor_leads");
+    if (savedLeads) {
+      try {
+        const parsedLeads = safeJsonParse(savedLeads, []);
+        setLeads([...parsedLeads].reverse());
+        setAnalytics({
+          boothVisits: parsedLeads.length * 3,
+          qrScans: parsedLeads.length,
+          engagementRate: parsedLeads.length > 0
+            ? ((parsedLeads.length / (parsedLeads.length * 3)) * 100).toFixed(1)
             : 0,
-      });
-    } catch (e) {
-      console.error(
-        "Failed to parse sponsor leads",
-        e
-      );
+        });
+      } catch (e) {
+        console.error("Failed to parse sponsor leads", e);
+      }
     }
-  }
-}, []);
+  }, [sponsorPrefs]);
 
   const handleSaveSettings = (e) => {
     e.preventDefault();
     setIsSaving(true);
 
     saveTimeoutRef.current = setTimeout(() => {
-      localStorage.setItem("eventra_sponsor_settings", JSON.stringify(settings));
+      // Fix: persist via useUserPreferences instead of raw localStorage
+      setSponsorPrefs(settings);
       setIsSaving(false);
       toast.success("Booth settings updated successfully! Changes will reflect in the Virtual Venue.", {
         icon: <CheckCircle2 className="text-emerald-500" />
