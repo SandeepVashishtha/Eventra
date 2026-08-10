@@ -36,6 +36,7 @@ jest.mock('utils/conflictDetection', () => ({
 
 jest.mock('utils/eventUtils', () => ({
   getEventStatus: jest.fn().mockReturnValue('upcoming'),
+  getFomoStatus: jest.fn().mockReturnValue({ isLowInventory: false, message: null }),
 }));
 
 jest.mock('context/MyEventsContext', () => ({
@@ -47,6 +48,7 @@ jest.mock('components/common/ShareMenu', () =>
 );
 
 jest.mock('components/common/StatusBadge', () => () => null);
+jest.mock('components/common/SellingFastBadge', () => () => null);
 
 jest.mock('components/reminders/ReminderControls', () => () => null);
 
@@ -208,6 +210,37 @@ describe('EventCard', () => {
       expect(
         screen.getByRole('button', { name: /copy link for GSSoC Hackathon 2027/i })
       ).toBeInTheDocument();
+    });
+  });
+
+  describe('FOMO badge', () => {
+    const SellingFastBadge = require('components/common/SellingFastBadge').default;
+
+    beforeEach(() => {
+      // Mock the SellingFastBadge to render its message
+      SellingFastBadge.mockImplementation(({ message }) => (
+        <span data-testid="fomo-badge">{message}</span>
+      ));
+    });
+
+    it('shows "Selling Fast!" badge when inventory is low', () => {
+      getFomoStatus.mockReturnValue({ isLowInventory: true, message: "Selling Fast!" });
+      renderCard({ capacity: 100, registeredCount: 85 }); // 15 remaining (< 10% of 100 = 10, so should be low)
+      expect(screen.getByTestId('fomo-badge')).toBeInTheDocument();
+      expect(screen.getByText('Selling Fast!')).toBeInTheDocument();
+    });
+
+    it('shows "Only X Tickets Left!" badge when very few tickets remain', () => {
+      getFomoStatus.mockReturnValue({ isLowInventory: true, message: "Only 3 Tickets Left!" });
+      renderCard({ capacity: 50, registeredCount: 47 }); // 3 remaining
+      expect(screen.getByTestId('fomo-badge')).toBeInTheDocument();
+      expect(screen.getByText('Only 3 Tickets Left!')).toBeInTheDocument();
+    });
+
+    it('does not show FOMO badge when inventory is sufficient', () => {
+      getFomoStatus.mockReturnValue({ isLowInventory: false, message: null });
+      renderCard({ capacity: 100, registeredCount: 50 }); // 50 remaining (> 10% of 100)
+      expect(screen.queryByTestId('fomo-badge')).not.toBeInTheDocument();
     });
   });
 });

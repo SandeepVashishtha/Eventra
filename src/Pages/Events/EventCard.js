@@ -5,7 +5,7 @@ import LazyImage from "components/common/LazyImage";
 import { formatLocalDateTime } from "utils/localDateTime";
 import ShareModal from "components/common/ShareModal";
 import StatusBadge from "components/common/StatusBadge";
-import { getEventStatus } from "utils/eventUtils";
+import { getEventStatus, getFomoStatus } from "utils/eventUtils";
 import SocialShareButtons from "components/common/SocialShareButtons";
 import AddToCalendar from "components/common/AddToCalendar";
 import { useMyEvents } from "context/MyEventsContext";
@@ -16,6 +16,7 @@ import { BookmarkCheck, Bookmark, MapPin, Calendar, Clock, ArrowRight } from "lu
 
 import { isEventBookmarked, addBookmarkedEvent, removeBookmarkedEvent } from "utils/bookmarkUtils";
 import SeatsRemaining from "components/common/SeatsRemaining";
+import SellingFastBadge from "components/common/SellingFastBadge";
 import useEventAvailability from "hooks/useEventAvailability";
 
 const EventCard = ({ event, position }) => {
@@ -33,6 +34,11 @@ const EventCard = ({ event, position }) => {
 
   const isUserRegistered = isRegistered(event.id);
   const computedStatus = getEventStatus(event);
+
+  // Calculate FOMO status for low inventory
+  const capacity = availability?.capacity ?? event.capacity;
+  const registeredCount = availability?.registeredCount ?? event.registeredCount ?? event.attendees?.length ?? 0;
+  const { isLowInventory, message: fomoMessage } = getFomoStatus(capacity, registeredCount);
 
   const eventImage = event.image || event.imageUrl || null;
   const eventDate = event.date || event.eventDate || event.startDate || null;
@@ -95,6 +101,9 @@ const EventCard = ({ event, position }) => {
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider bg-emerald-500/90 text-white shadow-md">
               Registered
             </span>
+          )}
+          {isLowInventory && fomoMessage && (
+            <SellingFastBadge message={fomoMessage} />
           )}
         </div>
 

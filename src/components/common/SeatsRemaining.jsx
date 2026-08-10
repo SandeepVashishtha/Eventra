@@ -28,7 +28,8 @@ export function toneFor(capacity, registeredCount) {
   if (capacity == null) return "available";
   const remaining = capacity - registeredCount;
   if (remaining <= 0) return "full";
-  if (remaining <= Math.max(5, Math.ceil(capacity * 0.1))) return "low";
+  // Use 20 tickets threshold to match FOMO badge logic (10% of capacity OR < 20 tickets)
+  if (remaining <= Math.max(20, Math.ceil(capacity * 0.1))) return "low";
   return "available";
 }
 
