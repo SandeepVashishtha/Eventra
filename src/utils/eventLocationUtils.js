@@ -1,172 +1,176 @@
 /**
- * Determine whether an event is online.
+ * Event location utilities for physical and
+ * online events.
  */
-export const isOnlineEvent = (event) => {
-  if (!event) {
-    return false;
-  }
 
-  if (typeof event.isOnline === "boolean") {
-    return event.isOnline;
-  }
-
-  const mode = String(
-    event.mode ||
-      event.eventMode ||
-      event.type ||
-      ""
-  )
-    .trim()
-    .toLowerCase();
-
-  return [
-    "online",
-    "virtual",
-    "remote",
-    "webinar",
-  ].includes(mode);
+/**
+ * Event location types.
+ */
+export const LOCATION_TYPES = {
+  ONLINE: "online",
+  OFFLINE: "offline",
 };
 
 /**
- * Determine whether an event is a physical event.
+ * Detect whether an event is online.
  */
-export const isPhysicalEvent = (event) => {
+export const isOnlineEvent = (event = {}) => {
+  const type = String(
+    event.type ||
+      event.eventType ||
+      event.mode ||
+      event.locationType ||
+      ""
+  ).toLowerCase();
+
+  if (
+    type === "online" ||
+    type === "virtual" ||
+    type === "remote"
+  ) {
+    return true;
+  }
+
+  if (
+    event.isOnline === true ||
+    event.online === true ||
+    event.virtual === true
+  ) {
+    return true;
+  }
+
+  return false;
+};
+
+/**
+ * Detect whether an event is offline/physical.
+ */
+export const isOfflineEvent = (event = {}) => {
   return !isOnlineEvent(event);
 };
 
 /**
- * Extract normalized location information
- * from an event object.
+ * Get the event location information.
  */
-export const getEventLocation = (event) => {
-  if (!event) {
-    return {
-      name: "",
-      address: "",
-      city: "",
-      state: "",
-      country: "",
-      postalCode: "",
-      latitude: null,
-      longitude: null,
-      landmarks: [],
-    };
+export const getEventLocation = (
+  event = {}
+) => {
+  if (isOnlineEvent(event)) {
+    return null;
   }
 
   const location =
-    typeof event.location === "object" &&
-    event.location !== null
-      ? event.location
-      : {};
-
-  const latitude =
-    location.latitude ??
-    location.lat ??
-    event.latitude ??
-    event.lat ??
+    event.location ||
+    event.venue ||
+    event.address ||
     null;
 
-  const longitude =
-    location.longitude ??
-    location.lng ??
-    location.lon ??
-    event.longitude ??
-    event.lng ??
-    event.lon ??
-    null;
+  if (!location) {
+    return null;
+  }
 
-  const landmarks =
-    location.landmarks ||
-    event.landmarks ||
-    [];
+  /*
+   * Location stored as a string.
+   */
+  if (typeof location === "string") {
+    return {
+      name:
+        event.venueName ||
+        event.locationName ||
+        "",
+      address: location,
+      latitude:
+        toNumberOrNull(
+          event.latitude ??
+            event.lat
+        ),
+      longitude:
+        toNumberOrNull(
+          event.longitude ??
+            event.lng ??
+            event.lon
+        ),
+      landmarks:
+        normalizeLandmarks(
+          event.landmarks
+        ),
+    };
+  }
 
+  /*
+   * Location stored as an object.
+   */
   return {
     name:
       location.name ||
-      event.venue ||
+      location.venueName ||
       event.venueName ||
       "",
-
     address:
       location.address ||
-      event.address ||
+      location.fullAddress ||
+      location.formattedAddress ||
       "",
-
+    latitude:
+      toNumberOrNull(
+        location.latitude ??
+          location.lat ??
+          event.latitude ??
+          event.lat
+      ),
+    longitude:
+      toNumberOrNull(
+        location.longitude ??
+          location.lng ??
+          location.lon ??
+          event.longitude ??
+          event.lng ??
+          event.lon
+      ),
     city:
       location.city ||
       event.city ||
       "",
-
     state:
       location.state ||
       event.state ||
       "",
-
     country:
       location.country ||
       event.country ||
       "",
-
     postalCode:
       location.postalCode ||
       location.zipCode ||
       event.postalCode ||
-      event.zipCode ||
       "",
-
-    latitude:
-      toNumberOrNull(latitude),
-
-    longitude:
-      toNumberOrNull(longitude),
-
-    landmarks: Array.isArray(landmarks)
-      ? landmarks.filter(Boolean)
-      : [],
+    landmarks:
+      normalizeLandmarks(
+        location.landmarks ||
+          event.landmarks
+      ),
   };
 };
 
 /**
- * Check whether valid latitude and longitude
- * coordinates are available.
+ * Get a complete address string.
  */
-export const hasValidCoordinates = (
-  location
+export const getFullAddress = (
+  event = {}
 ) => {
-  if (!location) {
-    return false;
-  }
+  const location =
+    getEventLocation(event);
 
-  const latitude = Number(
-    location.latitude
-  );
-
-  const longitude = Number(
-    location.longitude
-  );
-
-  return (
-    Number.isFinite(latitude) &&
-    latitude >= -90 &&
-    latitude <= 90 &&
-    Number.isFinite(longitude) &&
-    longitude >= -180 &&
-    longitude <= 180
-  );
-};
-
-/**
- * Build a human-readable address.
- */
-export const formatLocationAddress = (
-  location
-) => {
   if (!location) {
     return "";
   }
 
+  if (location.address) {
+    return location.address;
+  }
+
   return [
-    location.address,
+    location.name,
     location.city,
     location.state,
     location.country,
@@ -177,94 +181,449 @@ export const formatLocationAddress = (
 };
 
 /**
- * Build a Google Maps directions URL.
- *
- * Uses coordinates when available and falls
- * back to the formatted address.
+ * Get the event venue name.
  */
-export const buildDirectionsUrl = (
-  location
+export const getVenueName = (
+  event = {}
 ) => {
+  const location =
+    getEventLocation(event);
+
   if (!location) {
     return "";
   }
 
-  let destination = "";
-
-  if (hasValidCoordinates(location)) {
-    destination = `${location.latitude},${location.longitude}`;
-  } else {
-    destination =
-      formatLocationAddress(location) ||
-      location.name ||
-      "";
-  }
-
-  if (!destination) {
-    return "";
-  }
-
-  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
-    destination
-  )}`;
+  return location.name || "";
 };
 
 /**
- * Build a Google Maps search URL.
+ * Get latitude and longitude.
  */
-export const buildMapSearchUrl = (
-  location
+export const getCoordinates = (
+  event = {}
 ) => {
+  const location =
+    getEventLocation(event);
+
   if (!location) {
-    return "";
+    return null;
   }
 
-  const query =
-    hasValidCoordinates(location)
-      ? `${location.latitude},${location.longitude}`
-      : formatLocationAddress(location) ||
-        location.name ||
-        "";
-
-  if (!query) {
-    return "";
+  if (
+    location.latitude === null ||
+    location.longitude === null
+  ) {
+    return null;
   }
 
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-    query
-  )}`;
+  return {
+    latitude: location.latitude,
+    longitude: location.longitude,
+  };
 };
 
 /**
- * Get a map-friendly location string.
+ * Check whether valid map coordinates exist.
  */
-export const getMapQuery = (location) => {
-  if (!location) {
-    return "";
-  }
-
-  if (hasValidCoordinates(location)) {
-    return `${location.latitude},${location.longitude}`;
-  }
-
-  return (
-    formatLocationAddress(location) ||
-    location.name ||
-    ""
+export const hasMapCoordinates = (
+  event = {}
+) => {
+  return Boolean(
+    getCoordinates(event)
   );
 };
 
 /**
- * Get a normalized event location summary.
+ * Generate a Google Maps search URL.
+ *
+ * This works with coordinates when available
+ * and falls back to the address.
  */
-export const getLocationSummary = (event) => {
+export const getDirectionsUrl = (
+  event = {}
+) => {
+  if (isOnlineEvent(event)) {
+    return null;
+  }
+
+  const coordinates =
+    getCoordinates(event);
+
+  if (coordinates) {
+    const {
+      latitude,
+      longitude,
+    } = coordinates;
+
+    return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+      `${latitude},${longitude}`
+    )}`;
+  }
+
+  const address =
+    getFullAddress(event);
+
+  if (!address) {
+    return null;
+  }
+
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+    address
+  )}`;
+};
+
+/**
+ * Generate a Google Maps place/search URL.
+ */
+export const getMapUrl = (
+  event = {}
+) => {
+  if (isOnlineEvent(event)) {
+    return null;
+  }
+
+  const coordinates =
+    getCoordinates(event);
+
+  if (coordinates) {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      `${coordinates.latitude},${coordinates.longitude}`
+    )}`;
+  }
+
+  const address =
+    getFullAddress(event);
+
+  if (!address) {
+    return null;
+  }
+
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+    address
+  )}`;
+};
+
+/**
+ * Get the online meeting URL.
+ */
+export const getMeetingUrl = (
+  event = {}
+) => {
+  if (!isOnlineEvent(event)) {
+    return null;
+  }
+
+  return (
+    event.meetingUrl ||
+    event.meetingLink ||
+    event.onlineLink ||
+    event.joinUrl ||
+    event.virtualLink ||
+    null
+  );
+};
+
+/**
+ * Check whether an online event has
+ * a meeting link.
+ */
+export const hasMeetingUrl = (
+  event = {}
+) => {
+  return Boolean(
+    getMeetingUrl(event)
+  );
+};
+
+/**
+ * Get the location display mode.
+ */
+export const getLocationType = (
+  event = {}
+) => {
+  return isOnlineEvent(event)
+    ? LOCATION_TYPES.ONLINE
+    : LOCATION_TYPES.OFFLINE;
+};
+
+/**
+ * Get a human-readable location label.
+ */
+export const getLocationTypeLabel = (
+  event = {}
+) => {
+  return isOnlineEvent(event)
+    ? "Online"
+    : "Offline";
+};
+
+/**
+ * Get the primary location text for
+ * displaying on event cards.
+ */
+export const getLocationDisplayText = (
+  event = {}
+) => {
+  if (isOnlineEvent(event)) {
+    return "Online Event";
+  }
+
+  const venueName =
+    getVenueName(event);
+
+  if (venueName) {
+    return venueName;
+  }
+
+  const address =
+    getFullAddress(event);
+
+  return address || "Location not available";
+};
+
+/**
+ * Get nearby landmarks.
+ */
+export const getNearbyLandmarks = (
+  event = {}
+) => {
+  const location =
+    getEventLocation(event);
+
+  if (!location) {
+    return [];
+  }
+
+  return normalizeLandmarks(
+    location.landmarks
+  );
+};
+
+/**
+ * Add a landmark to an event location.
+ */
+export const addLandmark = (
+  event,
+  landmark
+) => {
+  if (!event || !landmark) {
+    return event;
+  }
+
+  const existing =
+    getNearbyLandmarks(event);
+
+  const normalized =
+    normalizeLandmark(landmark);
+
+  if (!normalized) {
+    return event;
+  }
+
+  const duplicate =
+    existing.some(
+      (item) =>
+        getLandmarkName(item)
+          .toLowerCase() ===
+        getLandmarkName(
+          normalized
+        ).toLowerCase()
+    );
+
+  if (duplicate) {
+    return event;
+  }
+
+  return {
+    ...event,
+    landmarks: [
+      ...existing,
+      normalized,
+    ],
+  };
+};
+
+/**
+ * Format a coordinate for display.
+ */
+export const formatCoordinate = (
+  value,
+  decimals = 6
+) => {
+  const number =
+    toNumberOrNull(value);
+
+  if (number === null) {
+    return "";
+  }
+
+  return number.toFixed(decimals);
+};
+
+/**
+ * Validate an event location.
+ */
+export const validateEventLocation = (
+  event = {}
+) => {
+  if (isOnlineEvent(event)) {
+    const meetingUrl =
+      getMeetingUrl(event);
+
+    return {
+      valid: Boolean(meetingUrl),
+      type: LOCATION_TYPES.ONLINE,
+      error: meetingUrl
+        ? null
+        : "Online event meeting link is required.",
+    };
+  }
+
+  const location =
+    getEventLocation(event);
+
+  if (!location) {
+    return {
+      valid: false,
+      type: LOCATION_TYPES.OFFLINE,
+      error:
+        "Physical event venue information is required.",
+    };
+  }
+
+  if (
+    !location.address &&
+    !(
+      location.latitude !== null &&
+      location.longitude !== null
+    )
+  ) {
+    return {
+      valid: false,
+      type: LOCATION_TYPES.OFFLINE,
+      error:
+        "Provide a venue address or valid map coordinates.",
+    };
+  }
+
+  return {
+    valid: true,
+    type: LOCATION_TYPES.OFFLINE,
+    error: null,
+  };
+};
+
+/**
+ * Normalize a location object.
+ */
+export const normalizeEventLocation = (
+  location = {}
+) => {
+  if (
+    !location ||
+    typeof location !== "object"
+  ) {
+    return null;
+  }
+
+  return {
+    name:
+      location.name ||
+      location.venueName ||
+      "",
+    address:
+      location.address ||
+      location.fullAddress ||
+      location.formattedAddress ||
+      "",
+    latitude:
+      toNumberOrNull(
+        location.latitude ??
+          location.lat
+      ),
+    longitude:
+      toNumberOrNull(
+        location.longitude ??
+          location.lng ??
+          location.lon
+      ),
+    city:
+      location.city || "",
+    state:
+      location.state || "",
+    country:
+      location.country || "",
+    postalCode:
+      location.postalCode ||
+      location.zipCode ||
+      "",
+    landmarks:
+      normalizeLandmarks(
+        location.landmarks
+      ),
+  };
+};
+
+/**
+ * Create a physical location object.
+ */
+export const createEventLocation = ({
+  name = "",
+  address = "",
+  latitude = null,
+  longitude = null,
+  city = "",
+  state = "",
+  country = "",
+  postalCode = "",
+  landmarks = [],
+} = {}) => {
+  return {
+    name,
+    address,
+    latitude:
+      toNumberOrNull(latitude),
+    longitude:
+      toNumberOrNull(longitude),
+    city,
+    state,
+    country,
+    postalCode,
+    landmarks:
+      normalizeLandmarks(landmarks),
+  };
+};
+
+/**
+ * Create online event location data.
+ */
+export const createOnlineLocation = (
+  meetingUrl
+) => {
+  return {
+    type: LOCATION_TYPES.ONLINE,
+    meetingUrl:
+      meetingUrl || "",
+  };
+};
+
+/**
+ * Create an event location summary.
+ */
+export const getEventLocationSummary = (
+  event = {}
+) => {
   if (isOnlineEvent(event)) {
     return {
-      type: "Online",
+      type: LOCATION_TYPES.ONLINE,
       label: "Online Event",
-      address: "",
-      directionsUrl: "",
-      mapUrl: "",
+      venue: null,
+      address: null,
+      meetingUrl:
+        getMeetingUrl(event),
+      directionsUrl: null,
+      mapUrl: null,
+      landmarks: [],
     };
   }
 
@@ -272,81 +631,23 @@ export const getLocationSummary = (event) => {
     getEventLocation(event);
 
   return {
-    type: "Offline",
-    label: "Physical Event",
+    type: LOCATION_TYPES.OFFLINE,
+    label: "Offline Event",
+    venue:
+      location?.name || "",
     address:
-      formatLocationAddress(location),
+      getFullAddress(event),
+    meetingUrl: null,
     directionsUrl:
-      buildDirectionsUrl(location),
-    mapUrl:
-      buildMapSearchUrl(location),
+      getDirectionsUrl(event),
+    mapUrl: getMapUrl(event),
+    landmarks:
+      getNearbyLandmarks(event),
   };
 };
 
 /**
- * Validate a location object.
- */
-export const validateEventLocation = (
-  location
-) => {
-  if (!location) {
-    return {
-      valid: false,
-      errors: [
-        "Location information is required.",
-      ],
-    };
-  }
-
-  const errors = [];
-
-  if (!location.name) {
-    errors.push(
-      "Venue name is required."
-    );
-  }
-
-  if (
-    !location.address &&
-    !hasValidCoordinates(location)
-  ) {
-    errors.push(
-      "Provide an address or valid map coordinates."
-    );
-  }
-
-  if (
-    location.latitude !== undefined &&
-    location.latitude !== null &&
-    !Number.isFinite(
-      Number(location.latitude)
-    )
-  ) {
-    errors.push(
-      "Latitude must be a valid number."
-    );
-  }
-
-  if (
-    location.longitude !== undefined &&
-    location.longitude !== null &&
-    !Number.isFinite(
-      Number(location.longitude)
-    )
-  ) {
-    errors.push(
-      "Longitude must be a valid number."
-    );
-  }
-
-  return {
-    valid: errors.length === 0,
-    errors,
-  };
-};
-
-/**
- * Convert a value to a number or null.
+ * Convert a value to a valid number or null.
  */
 const toNumberOrNull = (value) => {
   if (
@@ -362,4 +663,80 @@ const toNumberOrNull = (value) => {
   return Number.isFinite(number)
     ? number
     : null;
+};
+
+/**
+ * Normalize landmarks into a consistent
+ * array format.
+ */
+const normalizeLandmarks = (
+  landmarks
+) => {
+  if (!Array.isArray(landmarks)) {
+    return [];
+  }
+
+  return landmarks
+    .map(normalizeLandmark)
+    .filter(Boolean);
+};
+
+/**
+ * Normalize one landmark.
+ */
+const normalizeLandmark = (
+  landmark
+) => {
+  if (!landmark) {
+    return null;
+  }
+
+  if (typeof landmark === "string") {
+    const name = landmark.trim();
+
+    return name
+      ? { name }
+      : null;
+  }
+
+  if (
+    typeof landmark === "object"
+  ) {
+    const name =
+      landmark.name ||
+      landmark.title ||
+      landmark.label ||
+      "";
+
+    if (!String(name).trim()) {
+      return null;
+    }
+
+    return {
+      ...landmark,
+      name: String(name).trim(),
+    };
+  }
+
+  return null;
+};
+
+/**
+ * Get a landmark's name.
+ */
+const getLandmarkName = (
+  landmark
+) => {
+  if (
+    typeof landmark === "string"
+  ) {
+    return landmark;
+  }
+
+  return (
+    landmark?.name ||
+    landmark?.title ||
+    landmark?.label ||
+    ""
+  );
 };

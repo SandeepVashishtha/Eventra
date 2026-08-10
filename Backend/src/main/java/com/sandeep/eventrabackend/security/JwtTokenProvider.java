@@ -1,8 +1,10 @@
 package com.sandeep.eventrabackend.security;
 
-import io.jsonwebtoken.*;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
+
+import javax.crypto.SecretKey;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,16 +12,21 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.UnsupportedJwtException;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
-import java.util.Date;
 
 @Component
 public class JwtTokenProvider {
 
     private static final Logger logger = LoggerFactory.getLogger(JwtTokenProvider.class);
     public static final String CLAIM_TOKEN_TYPE = "typ";
+    public static final String CLAIM_ROLE = "role";
     public static final String TYPE_ACCESS = "access";
     public static final String TYPE_REFRESH = "refresh";
 
@@ -39,13 +46,12 @@ public class JwtTokenProvider {
         if (jwtSecret == null || jwtSecret.isBlank()) {
             throw new IllegalStateException(
                     "JWT_SECRET environment variable is not set. " +
-                    "Application cannot start without a valid JWT signing key. " +
-                    "Generate one with: openssl rand -base64 32"
-            );
+                            "Application cannot start without a valid JWT signing key. " +
+                            "Generate one with: openssl rand -base64 32");
         }
         if (jwtSecret.length() < 32) {
             logger.warn("JWT_SECRET is shorter than 32 characters. " +
-                        "For production, use a 256-bit key: openssl rand -base64 32");
+                    "For production, use a 256-bit key: openssl rand -base64 32");
         }
 
         byte[] keyBytes;
@@ -67,28 +73,43 @@ public class JwtTokenProvider {
     }
 
     public String generateToken(String username) {
-        return buildToken(username, TYPE_ACCESS, jwtExpirationMs);
+        return buildToken(username, TYPE_ACCESS, jwtExpirationMs, null);
+    }
+
+    public String generateToken(String username, String role) {
+        return buildToken(username, TYPE_ACCESS, jwtExpirationMs, role);
     }
 
     public String generateRefreshToken(String username) {
-        return buildToken(username, TYPE_REFRESH, jwtRefreshExpirationMs);
+        return buildToken(username, TYPE_REFRESH, jwtRefreshExpirationMs, null);
     }
 
-    private String buildToken(String subject, String type, long expirationMs) {
+    private String buildToken(String subject, String type, long expirationMs, String role) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expirationMs);
 
-        return Jwts.builder()
+        var builder = Jwts.builder()
                 .subject(subject)
                 .claim(CLAIM_TOKEN_TYPE, type)
                 .issuedAt(now)
-                .expiration(expiryDate)
+                .expiration(expiryDate);
+
+        if (role != null && !role.isBlank()) {
+            builder.claim(CLAIM_ROLE, role);
+        }
+
+        return builder
                 .signWith(getSigningKey())
                 .compact();
     }
 
     public String getUsernameFromToken(String token) {
         return parseClaims(token).getSubject();
+    }
+
+    public String getRoleFromToken(String token) {
+        Object role = parseClaims(token).get(CLAIM_ROLE);
+        return role == null ? null : String.valueOf(role);
     }
 
     public Date getExpirationDateFromToken(String token) {

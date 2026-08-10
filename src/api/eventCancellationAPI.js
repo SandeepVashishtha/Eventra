@@ -1,4 +1,4 @@
-import { apiUtils } from "../config/api";
+import { apiUtils, API_ENDPOINTS } from "../config/api";
 
 /**
  * Event cancellation API with notification support
@@ -29,21 +29,21 @@ export const eventCancellationAPI = {
       notifyAttendees: options.notifyAttendees !== false,
     };
 
-    return apiUtils.post(`/api/events/${eventId}/cancel`, payload);
+    return apiUtils.post(API_ENDPOINTS.EVENTS.CANCEL(eventId), payload);
   },
 
   /**
    * Get cancellation details for an event
    */
   getCancellationDetails: async (eventId) => {
-    return apiUtils.get(`/api/events/${eventId}`);
+    return apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId));
   },
 
   /**
    * Resend cancellation notification to specific attendee
    */
   resendCancellationNotification: async (eventId, attendeeEmail) => {
-    return apiUtils.post(`/api/events/${eventId}/resend-cancellation-notice`, {
+    return apiUtils.post(`${API_ENDPOINTS.EVENTS.DETAIL(eventId)}/resend-cancellation-notice`, {
       attendeeEmail,
     });
   },
@@ -52,6 +52,6 @@ export const eventCancellationAPI = {
    * Get list of attendees who have been notified
    */
   getNotifiedAttendees: async (eventId) => {
-    return apiUtils.get(`/api/events/${eventId}/notified-attendees`);
+    return apiUtils.get(`${API_ENDPOINTS.EVENTS.DETAIL(eventId)}/notified-attendees`);
   },
 };

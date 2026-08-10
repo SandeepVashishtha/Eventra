@@ -17,11 +17,10 @@ import {
   ChevronDown,
   Sparkles,
   Trophy,
-  Linkedin,
-  Twitter,
   Share2,
   X,
 } from 'lucide-react';
+import { FaLinkedin as Linkedin, FaTwitter as Twitter } from 'react-icons/fa';
 
 // Escape XML special characters before embedding user-controlled values
 // into the generated SVG, preventing XML structure injection.

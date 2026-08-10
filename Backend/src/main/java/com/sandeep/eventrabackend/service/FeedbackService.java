@@ -2,6 +2,7 @@ package com.sandeep.eventrabackend.service;
 
 import com.sandeep.eventrabackend.dto.request.FeedbackRequest;
 import com.sandeep.eventrabackend.dto.response.FeedbackResponse;
+import com.sandeep.eventrabackend.dto.response.PublicFeedbackResponse;
 import com.sandeep.eventrabackend.exception.EventNotFoundException;
 import com.sandeep.eventrabackend.exception.FeedbackAlreadyExistsException;
 import com.sandeep.eventrabackend.exception.UserNotRegisteredException;
@@ -87,11 +88,32 @@ public class FeedbackService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<PublicFeedbackResponse> getEventFeedback(Long eventId) {
+        if (!eventRepository.existsById(eventId)) {
+            throw new EventNotFoundException("Event not found with ID: " + eventId);
+        }
+
+        return feedbackRepository.findByEvent_IdOrderBySubmittedAtDesc(eventId).stream()
+                .map(this::mapToPublicResponse)
+                .toList();
+    }
+
     private FeedbackResponse mapToResponse(Feedback feedback) {
         return FeedbackResponse.builder()
                 .id(feedback.getId())
                 .eventId(feedback.getEvent().getId())
                 .userId(feedback.getUser().getId())
+                .rating(feedback.getRating())
+                .comment(feedback.getComment())
+                .submittedAt(feedback.getSubmittedAt())
+                .build();
+    }
+
+    private PublicFeedbackResponse mapToPublicResponse(Feedback feedback) {
+        return PublicFeedbackResponse.builder()
+                .id(feedback.getId())
+                .eventId(feedback.getEvent().getId())
                 .rating(feedback.getRating())
                 .comment(feedback.getComment())
                 .submittedAt(feedback.getSubmittedAt())

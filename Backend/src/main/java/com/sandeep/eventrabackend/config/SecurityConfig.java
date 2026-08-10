@@ -60,7 +60,7 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(List.of(origins));
 
         configuration.setAllowedMethods(
-                List.of("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
         );
 
         configuration.setAllowedHeaders(
@@ -69,7 +69,13 @@ public class SecurityConfig {
                         "Content-Type",
                         "Accept",
                         "Origin",
-                        "X-Requested-With"
+                        "X-Requested-With",
+                        "X-CSRF-Token",
+                        "Idempotency-Key",
+                        "X-Request-Integrity",
+                        "X-Timestamp",
+                        "X-Nonce",
+                        "X-Signature"
                 )
         );
 
@@ -128,6 +134,7 @@ public class SecurityConfig {
                                 "/actuator/health/**"
                         ).permitAll()
                         .requestMatchers("/api/contact", "/api/contact/**", "/api/contacts", "/api/contacts/**").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/github-proxy").permitAll()
                         .requestMatchers("/api/events/*/roles", "/api/events/*/roles/**").authenticated()
                         // ── Public: Event read-only endpoints ────────────────
                         // Anyone can view an event or check its availability;
@@ -135,12 +142,16 @@ public class SecurityConfig {
                         .requestMatchers(
                                 org.springframework.http.HttpMethod.GET,
                                 "/api/events",
+                                "/api/events/search",
+                                "/api/events/alternatives",
                                 "/api/events/{id}",
                                 "/api/events/{id}/availability",
                                 "/api/events/{id}/seats",
+                                "/api/events/{id}/feed.ics",
                                 "/api/events/stream"
                         ).permitAll()
-                        .requestMatchers("/stream", "/stream/**").permitAll()
+                        .requestMatchers("/stream/events", "/stream/leaderboard", "/stream/live-audience").permitAll()
+                        .requestMatchers("/stream/notifications", "/stream/analytics").authenticated()
                         // ── Public: Projects endpoint ────────────────────────
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/projects").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/projects/{id}").permitAll()
@@ -149,6 +160,7 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/hackathons/{id}").permitAll()
                         // ── Public: Project categories endpoint ──────────────
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/projects/categories").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/feedback").permitAll()
                         // ── Admin Panel — ADMIN / SUPER_ADMIN only ────────
                         .requestMatchers("/api/admin/**").hasAnyAuthority("ADMIN", "SUPER_ADMIN")
                         // ── Public: Swagger / OpenAPI ────────────────────

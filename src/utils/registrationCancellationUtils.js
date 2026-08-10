@@ -1,3 +1,5 @@
+import { apiUtils, API_ENDPOINTS } from '../config/api';
+
 export const CANCELLATION_STATUS = "Cancelled";
 
 /**
@@ -32,7 +34,7 @@ export const canCancelRegistration = (
  * The utility updates the registration status and
  * records the cancellation timestamp.
  */
-export const cancelRegistration = (
+export const cancelRegistration = async (
   registration
 ) => {
   if (!registration) {
@@ -50,6 +52,46 @@ export const cancelRegistration = (
       success: false,
       message:
         "This registration cannot be cancelled.",
+      registration,
+      seatReleased: false,
+      waitlistEligible: false,
+    };
+  }
+
+  const eventId =
+    registration.eventId ||
+    registration.event?.id ||
+    registration.eventID;
+
+  if (!eventId) {
+    return {
+      success: false,
+      message: "Event id is required to cancel this registration.",
+      registration,
+      seatReleased: false,
+      waitlistEligible: false,
+    };
+  }
+
+  try {
+    const response = await apiUtils.delete(
+      API_ENDPOINTS.EVENTS.CANCEL_REGISTRATION(eventId)
+    );
+    if (!response.ok) {
+      return {
+        success: false,
+        message: "Unable to cancel registration on the server.",
+        registration,
+        seatReleased: false,
+        waitlistEligible: false,
+      };
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message:
+        error?.message ||
+        "Unable to cancel registration on the server.",
       registration,
       seatReleased: false,
       waitlistEligible: false,

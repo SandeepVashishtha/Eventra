@@ -1,4 +1,3 @@
- 
 /**
  * @file secureStorage.js
  * @module utils/secureStorage
@@ -74,11 +73,11 @@
  */
 const CRYPTO_CONFIG = {
   VERSION: 1,
-  ALGORITHM: 'AES-GCM',
+  ALGORITHM: "AES-GCM",
   KEY_LENGTH: 256,
   IV_LENGTH: 12,
   PBKDF2_ITERATIONS: 100_000,
-  PBKDF2_HASH: 'SHA-256',
+  PBKDF2_HASH: "SHA-256",
   SECRET_BYTE_LENGTH: 32, // 256-bit
 };
 
@@ -86,16 +85,16 @@ const CRYPTO_CONFIG = {
 const CRYPTO_ALGORITHM = CRYPTO_CONFIG.ALGORITHM;
 const KEY_LENGTH = CRYPTO_CONFIG.KEY_LENGTH;
 const IV_LENGTH = CRYPTO_CONFIG.IV_LENGTH;
- 
+
 const PBKDF2_ITERATIONS = CRYPTO_CONFIG.PBKDF2_ITERATIONS;
 
 const isCryptoAvailable = () => {
   try {
     return (
-      typeof window !== 'undefined' &&
-      typeof crypto !== 'undefined' &&
-      typeof crypto.subtle !== 'undefined' &&
-      typeof crypto.getRandomValues === 'function' &&
+      typeof window !== "undefined" &&
+      typeof crypto !== "undefined" &&
+      typeof crypto.subtle !== "undefined" &&
+      typeof crypto.getRandomValues === "function" &&
       window.isSecureContext !== false
     );
   } catch {
@@ -131,9 +130,9 @@ const cryptoSupported = isCryptoAvailable();
 //   best achievable protection for a purely client-side encryption scheme.
 // ---------------------------------------------------------------------------
 
-const MATERIAL_STORAGE_KEY = 'eventra:key-material';
-const SALT_STORAGE_KEY = 'eventra:key-salt';
-const KEY_METADATA_KEY = 'eventra:key-metadata';
+const MATERIAL_STORAGE_KEY = "eventra:key-material";
+const SALT_STORAGE_KEY = "eventra:key-salt";
+const KEY_METADATA_KEY = "eventra:key-metadata";
 const SECRET_BYTE_LENGTH = CRYPTO_CONFIG.SECRET_BYTE_LENGTH;
 
 /**
@@ -174,14 +173,11 @@ const getOrCreateSecret = (storageKey) => {
   }
 
   // SECURITY: Fail-closed if cryptographic randomness is unavailable
-  if (
-    typeof crypto === "undefined" ||
-    typeof crypto.getRandomValues !== "function"
-  ) {
+  if (typeof crypto === "undefined" || typeof crypto.getRandomValues !== "function") {
     throw new Error(
       "Secure cryptographic randomness is unavailable. " +
-      "Encryption requires a secure context (HTTPS) and Web Crypto API support. " +
-      "Cannot proceed without secure entropy for key generation."
+        "Encryption requires a secure context (HTTPS) and Web Crypto API support. " +
+        "Cannot proceed without secure entropy for key generation."
     );
   }
 
@@ -247,7 +243,7 @@ const initializeKeyMetadata = () => {
 let _keyMetadata = null;
 let _keyPromise = null;
 
-const getKeyMetadata = () => {
+const getOrInitKeyMetadata = () => {
   if (_keyMetadata) return _keyMetadata;
   if (typeof localStorage === "undefined") {
     _keyMetadata = {
@@ -280,17 +276,19 @@ const refreshKeyMaterial = () => {
     const saltStored = localStorage.getItem(SALT_STORAGE_KEY);
 
     if (!materialStored) {
-      throw new Error('Key material missing from localStorage after rotation');
+      throw new Error("Key material missing from localStorage after rotation");
     }
     if (!saltStored) {
-      throw new Error('Salt missing from localStorage after rotation');
+      throw new Error("Salt missing from localStorage after rotation");
     }
 
     const material = Uint8Array.from(atob(materialStored), (c) => c.charCodeAt(0));
     const salt = Uint8Array.from(atob(saltStored), (c) => c.charCodeAt(0));
 
     if (material.length !== SECRET_BYTE_LENGTH) {
-      throw new Error(`Key material has invalid length: ${material.length}, expected ${SECRET_BYTE_LENGTH}`);
+      throw new Error(
+        `Key material has invalid length: ${material.length}, expected ${SECRET_BYTE_LENGTH}`
+      );
     }
     if (salt.length !== SECRET_BYTE_LENGTH) {
       throw new Error(`Salt has invalid length: ${salt.length}, expected ${SECRET_BYTE_LENGTH}`);
@@ -299,7 +297,7 @@ const refreshKeyMaterial = () => {
     DERIVED_KEY_MATERIAL = material;
     DERIVED_KEY_SALT = salt;
   } catch (error) {
-    console.error('[secureStorage] Failed to refresh key material:', error);
+    console.error("[secureStorage] Failed to refresh key material:", error);
     throw new Error(`Key material refresh failed: ${error.message}`);
   }
 };
@@ -313,19 +311,19 @@ const getDerivedKey = () => {
       throw new Error("Secure storage is unavailable in this environment");
     }
     const keyMaterial = await crypto.subtle.importKey(
-      'raw',
+      "raw",
       DERIVED_KEY_MATERIAL,
-      'PBKDF2',
+      "PBKDF2",
       false,
-      ['deriveKey'],
+      ["deriveKey"]
     );
 
     // Use the iteration count from metadata for future compatibility
-    const iterations = getKeyMetadata()?.iterations || CRYPTO_CONFIG.PBKDF2_ITERATIONS;
+    const iterations = getOrInitKeyMetadata()?.iterations || CRYPTO_CONFIG.PBKDF2_ITERATIONS;
 
     return crypto.subtle.deriveKey(
       {
-        name: 'PBKDF2',
+        name: "PBKDF2",
         salt: DERIVED_KEY_SALT,
         iterations: iterations,
         hash: CRYPTO_CONFIG.PBKDF2_HASH,
@@ -333,7 +331,7 @@ const getDerivedKey = () => {
       keyMaterial,
       { name: CRYPTO_ALGORITHM, length: KEY_LENGTH },
       false,
-      ['encrypt', 'decrypt'],
+      ["encrypt", "decrypt"]
     );
   })();
 
@@ -356,7 +354,7 @@ const encryptValue = async (storageKey, plaintext) => {
   const encrypted = await crypto.subtle.encrypt(
     { name: CRYPTO_ALGORITHM, iv, additionalData: encoder.encode(storageKey) },
     key,
-    encoder.encode(plaintext),
+    encoder.encode(plaintext)
   );
   const ivBase64 = btoa(String.fromCharCode(...iv));
   const ctBase64 = btoa(String.fromCharCode(...new Uint8Array(encrypted)));
@@ -397,8 +395,8 @@ const decryptValue = async (storageKey, stored) => {
   }
 
   // Legacy format: ivBase64:ctBase64
-  const colonIdx = stored.indexOf(':');
-  if (colonIdx === -1) throw new Error('Invalid ciphertext format');
+  const colonIdx = stored.indexOf(":");
+  if (colonIdx === -1) throw new Error("Invalid ciphertext format");
   const ivBase64 = stored.slice(0, colonIdx);
   const ctBase64 = stored.slice(colonIdx + 1);
   const iv = Uint8Array.from(atob(ivBase64), (c) => c.charCodeAt(0));
@@ -406,7 +404,7 @@ const decryptValue = async (storageKey, stored) => {
   const decrypted = await crypto.subtle.decrypt(
     { name: CRYPTO_ALGORITHM, iv, additionalData: encoder.encode(storageKey) },
     key,
-    ciphertext,
+    ciphertext
   );
   return new TextDecoder().decode(decrypted);
 };
@@ -449,7 +447,7 @@ const decryptV1 = async (storageKey, payload, key, encoder) => {
   const decrypted = await crypto.subtle.decrypt(
     { name: CRYPTO_ALGORITHM, iv, additionalData: encoder.encode(storageKey) },
     key,
-    ciphertext,
+    ciphertext
   );
   return new TextDecoder().decode(decrypted);
 };
@@ -472,12 +470,12 @@ const migratePayload = async (fromVersion, toVersion, storageKey, plaintext) => 
   if (fromVersion === toVersion) {
     return await encryptValue(storageKey, plaintext);
   }
-  
+
   // Example future migration:
   // if (fromVersion === 1 && toVersion === 2) {
   //   return await encryptV2(storageKey, plaintext);
   // }
-  
+
   throw new Error(`Migration from v${fromVersion} to v${toVersion} not implemented`);
 };
 
@@ -520,7 +518,7 @@ const migratePayload = async (fromVersion, toVersion, storageKey, plaintext) => 
  */
 export const rotateKey = async () => {
   if (!cryptoSupported) {
-    throw new Error('Key rotation requires Web Crypto API support');
+    throw new Error("Key rotation requires Web Crypto API support");
   }
 
   const METADATA_KEYS = new Set([MATERIAL_STORAGE_KEY, SALT_STORAGE_KEY, KEY_METADATA_KEY]);
@@ -528,13 +526,15 @@ export const rotateKey = async () => {
   // 1. Decrypt existing records using the current key
   const decryptedItems = {};
   try {
-    const keysToProcess = Array.from({ length: localStorage.length }, (_, i) => localStorage.key(i));
+    const keysToProcess = Array.from({ length: localStorage.length }, (_, i) =>
+      localStorage.key(i)
+    );
     for (const keyName of keysToProcess) {
       if (!keyName || METADATA_KEYS.has(keyName)) continue;
-      
+
       const rawValue = localStorage.getItem(keyName);
       if (!rawValue) continue;
-      
+
       try {
         const decrypted = await decryptValue(keyName, rawValue);
         decryptedItems[keyName] = decrypted;
@@ -551,7 +551,7 @@ export const rotateKey = async () => {
   const newSalt = crypto.getRandomValues(new Uint8Array(SECRET_BYTE_LENGTH));
 
   if (newMaterial.length !== SECRET_BYTE_LENGTH || newSalt.length !== SECRET_BYTE_LENGTH) {
-    throw new Error('Generated key material or salt has invalid length');
+    throw new Error("Generated key material or salt has invalid length");
   }
 
   // 3. Temporarily switch in-memory key materials to encrypt the records
@@ -608,7 +608,7 @@ export const rotateKey = async () => {
     DERIVED_KEY_MATERIAL = oldMaterial;
     DERIVED_KEY_SALT = oldSalt;
     _keyPromise = oldKeyPromise;
-    
+
     // Attempt to restore old key materials in localStorage to keep it consistent
     try {
       localStorage.setItem(MATERIAL_STORAGE_KEY, btoa(String.fromCharCode(...oldMaterial)));
@@ -620,7 +620,7 @@ export const rotateKey = async () => {
 };
 
 export const getKeyMetadata = () => {
-  return _keyMetadata;
+  return getOrInitKeyMetadata();
 };
 
 export const getCryptoConfig = () => {
@@ -630,13 +630,15 @@ export const getCryptoConfig = () => {
 export const deriveKey = async (password, salt) => {
   const encoder = new TextEncoder();
   const material = password instanceof Uint8Array ? password : encoder.encode(password);
-  const keyMaterial = await crypto.subtle.importKey("raw", material, "PBKDF2", false, ["deriveKey"]);
+  const keyMaterial = await crypto.subtle.importKey("raw", material, "PBKDF2", false, [
+    "deriveKey",
+  ]);
   return crypto.subtle.deriveKey(
     { name: "PBKDF2", salt, iterations: PBKDF2_ITERATIONS, hash: "SHA-256" },
     keyMaterial,
     { name: CRYPTO_ALGORITHM, length: KEY_LENGTH },
     false,
-    ["encrypt", "decrypt"],
+    ["encrypt", "decrypt"]
   );
 };
 
@@ -645,7 +647,7 @@ export const encryptWithKey = async (key, plaintext) => {
   const encrypted = await crypto.subtle.encrypt(
     { name: CRYPTO_ALGORITHM, iv },
     key,
-    new TextEncoder().encode(plaintext),
+    new TextEncoder().encode(plaintext)
   );
   return `${btoa(String.fromCharCode(...iv))}:${btoa(String.fromCharCode(...new Uint8Array(encrypted)))}`;
 };
@@ -659,7 +661,7 @@ export const decryptWithKey = async (key, stored) => {
   return new TextDecoder().decode(decrypted);
 };
 
-const PLAINTEXT_SUFFIX = ':plaintext';
+const PLAINTEXT_SUFFIX = ":plaintext";
 
 const cleanupPlaintextFallbacks = () => {
   try {
@@ -674,9 +676,13 @@ const cleanupPlaintextFallbacks = () => {
   }
 };
 
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
   // Best-effort: errors here must never prevent module load
-  try { cleanupPlaintextFallbacks(); } catch { /* ignore */ }
+  try {
+    cleanupPlaintextFallbacks();
+  } catch {
+    /* ignore */
+  }
 }
 
 // In-memory cache for pending writes — the sole mechanism for serving reads
@@ -730,7 +736,7 @@ export const syncSecureStorage = {
             const encrypted = await encryptValue(key, plaintext);
             localStorage.setItem(key, encrypted);
           } catch (err) {
-            console.error('[secureStorage] Encryption failed for', key, err);
+            console.error("[secureStorage] Encryption failed for", key, err);
           }
         }
       }
@@ -769,7 +775,7 @@ export const syncSecureStorage = {
       }
       return true;
     } catch (error) {
-      console.error('[secureStorage] setItem failed:', error);
+      console.error("[secureStorage] setItem failed:", error);
       /* Removed destructive cleanup to prevent queued writes from being dropped silently */
       if (pendingWrites.get(key) === value) {
         pendingWrites.delete(key);
@@ -798,7 +804,7 @@ export const syncSecureStorage = {
       }
       return localStorage.getItem(key);
     } catch (error) {
-      console.error('[secureStorage] getItem failed:', error);
+      console.error("[secureStorage] getItem failed:", error);
       return null;
     }
   },
@@ -839,7 +845,7 @@ export const syncSecureStorage = {
 
       return stored;
     } catch (error) {
-      console.error('[secureStorage] getItemAsync failed:', error);
+      console.error("[secureStorage] getItemAsync failed:", error);
       return null;
     }
   },
@@ -860,7 +866,7 @@ export const syncSecureStorage = {
       localStorage.removeItem(key);
       localStorage.removeItem(key + PLAINTEXT_SUFFIX);
     } catch (error) {
-      console.error('[secureStorage] removeItem failed:', error);
+      console.error("[secureStorage] removeItem failed:", error);
     }
   },
 
@@ -874,7 +880,7 @@ export const syncSecureStorage = {
       localStorage.clear();
       _keyPromise = null;
     } catch (error) {
-      console.error('[secureStorage] clear failed:', error);
+      console.error("[secureStorage] clear failed:", error);
     }
   },
 

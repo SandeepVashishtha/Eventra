@@ -3,6 +3,7 @@ package com.sandeep.eventrabackend.controller;
 import com.sandeep.eventrabackend.dto.request.FeedbackRequest;
 import com.sandeep.eventrabackend.dto.response.ErrorResponse;
 import com.sandeep.eventrabackend.dto.response.FeedbackResponse;
+import com.sandeep.eventrabackend.dto.response.PublicFeedbackResponse;
 import com.sandeep.eventrabackend.service.FeedbackService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -16,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -58,6 +60,12 @@ public class FeedbackController {
         
         FeedbackResponse response = feedbackService.submitFeedback(authentication.getName(), request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @GetMapping
+    @Operation(summary = "Get feedback for an event", description = "Returns feedback submitted for a specific event.")
+    public ResponseEntity<List<PublicFeedbackResponse>> getEventFeedback(@RequestParam Long eventId) {
+        return ResponseEntity.ok(feedbackService.getEventFeedback(eventId));
     }
 
     @GetMapping("/organizers/{organizerId}/score")

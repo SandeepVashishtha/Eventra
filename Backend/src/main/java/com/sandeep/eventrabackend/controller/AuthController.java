@@ -3,6 +3,7 @@ package com.sandeep.eventrabackend.controller;
 import com.sandeep.eventrabackend.dto.request.LoginRequest;
 import com.sandeep.eventrabackend.dto.request.SignupRequest;
 import com.sandeep.eventrabackend.dto.request.GoogleAuthRequest;
+import com.sandeep.eventrabackend.dto.request.ReauthRequest;
 import com.sandeep.eventrabackend.dto.response.AuthResponse;
 import com.sandeep.eventrabackend.dto.response.ErrorResponse;
 import com.sandeep.eventrabackend.security.AuthCookieHelper;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -162,6 +164,29 @@ public ResponseEntity<AuthResponse> googleLogin(
 
     return withAuthCookie(ResponseEntity.ok(), response);
 }
+
+    @PostMapping("/reauth")
+    @Operation(summary = "Re-authenticate the current user with their password")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Password verified"),
+            @ApiResponse(responseCode = "401", description = "Incorrect password or unauthenticated",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<Map<String, Object>> reauth(
+            @Valid @RequestBody ReauthRequest request,
+            org.springframework.security.core.Authentication authentication) {
+        if (authentication == null || !StringUtils.hasText(authentication.getName())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Authentication required"));
+        }
+        try {
+            authService.reauth(authentication.getName(), request.getPassword());
+            return ResponseEntity.ok(Map.of("ok", true));
+        } catch (org.springframework.security.authentication.BadCredentialsException ex) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Incorrect password"));
+        }
+    }
 
     @PostMapping("/logout")
     @Operation(

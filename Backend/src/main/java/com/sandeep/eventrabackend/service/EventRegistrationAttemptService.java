@@ -55,6 +55,9 @@ public class EventRegistrationAttemptService {
             throw new EventNotFoundException("Event not found with id: " + eventId);
         }
 
+        // Registration is only valid for events that have not already ended.
+        // Without this guard the API accepted registrations for past events,
+        // inflating registeredCount and creating stale registration rows (#11781).
         if (event.isEventPast()) {
             throw new RegistrationClosedException("Registration is closed for this event.");
         }
@@ -64,8 +67,7 @@ public class EventRegistrationAttemptService {
                         new UsernameNotFoundException(
                                 "User not found with email: " + userEmail));
 
-        if (event.getAttendees().contains(user)
-                || eventRegistrationRepository.existsByEvent_IdAndUser_Email(eventId, userEmail)) {
+        if (eventRegistrationRepository.existsByEvent_IdAndUser_Email(eventId, userEmail)) {
             throw new RegistrationConflictException(
                     "You are already registered for this event.");
         }
@@ -75,8 +77,6 @@ public class EventRegistrationAttemptService {
             throw new EventFullException(
                     "Event is already full. Capacity: " + event.getCapacity());
         }
-
-        event.getAttendees().add(user);
 
         EventRegistration registration = new EventRegistration();
         registration.setEvent(event);

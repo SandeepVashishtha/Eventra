@@ -50,9 +50,9 @@ const RegistrationCancellation = ({
     setShowConfirmation(false);
   };
 
-  const handleConfirmCancellation = () => {
+  const handleConfirmCancellation = async () => {
     const result =
-      cancelRegistration(updatedRegistration);
+      await cancelRegistration(updatedRegistration);
 
     if (!result?.success) {
       setMessage(

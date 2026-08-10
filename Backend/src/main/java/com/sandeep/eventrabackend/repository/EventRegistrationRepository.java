@@ -1,6 +1,8 @@
 package com.sandeep.eventrabackend.repository;
 
 import com.sandeep.eventrabackend.model.EventRegistration;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -23,6 +25,8 @@ public interface EventRegistrationRepository extends JpaRepository<EventRegistra
     Optional<EventRegistration> findByEvent_IdAndUser_Email(Long eventId, String userEmail);
 
     List<EventRegistration> findByEvent_Id(Long eventId);
+
+    Page<EventRegistration> findByEvent_Id(Long eventId, Pageable pageable);
 
     List<EventRegistration> findByEvent_IdAndStatus(Long eventId, String status);
 
