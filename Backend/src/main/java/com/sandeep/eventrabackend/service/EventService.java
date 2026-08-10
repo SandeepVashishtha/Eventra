@@ -6,8 +6,10 @@ import com.sandeep.eventrabackend.dto.request.EventUpdateRequest;
 import com.sandeep.eventrabackend.dto.response.EventAvailabilityResponse;
 import com.sandeep.eventrabackend.dto.response.AttendeeDirectoryResponse;
 import com.sandeep.eventrabackend.dto.response.EventResponse;
+import com.sandeep.eventrabackend.dto.response.EventRegistrantResponse;
 import com.sandeep.eventrabackend.dto.response.MyRegisteredEventResponse;
 import com.sandeep.eventrabackend.dto.response.PagedResponse;
+import com.sandeep.eventrabackend.dto.response.RegistrantsPageResponse;
 import com.sandeep.eventrabackend.dto.response.RegistrationResponse;
 import com.sandeep.eventrabackend.dto.response.AchievementBadgeResponse;
 import com.sandeep.eventrabackend.dto.response.UserAchievementsResponse;
@@ -102,6 +104,7 @@ public class EventService {
         private final EventRoleAuditLogRepository eventRoleAuditLogRepository;
         private final UserRepository userRepository;
         private final EventRoleService eventRoleService;
+        private final EventStreamService eventStreamService;
 
         public EventService(
                         EventRepository eventRepository,
@@ -112,7 +115,8 @@ public class EventService {
                         FeedbackAnalyticsRepository feedbackRepository,
                         EventRoleAuditLogRepository eventRoleAuditLogRepository,
                         UserRepository userRepository,
-                        EventRoleService eventRoleService) {
+                        EventRoleService eventRoleService,
+                        EventStreamService eventStreamService) {
                 this.eventRepository = eventRepository;
                 this.eventRegistrationRepository = eventRegistrationRepository;
                 this.eventWaitlistRepository = eventWaitlistRepository;
@@ -122,6 +126,7 @@ public class EventService {
                 this.eventRoleAuditLogRepository = eventRoleAuditLogRepository;
                 this.userRepository = userRepository;
                 this.eventRoleService = eventRoleService;
+                this.eventStreamService = eventStreamService;
         }
 
         /**
@@ -735,6 +740,8 @@ public class EventService {
                                 .countByEvent_IdAndStatus(eventId, "CONFIRMED"));
                 eventRepository.save(event);
 
+                broadcastAvailability(event);
+
                 promoteFirstWaitingUser(event);
         }
 
@@ -750,6 +757,34 @@ public class EventService {
                                 .stream()
                                 .map(this::toWaitlistResponse)
                                 .toList();
+        }
+
+        /**
+         * Returns a paginated list of event registrants for organizer/admin export.
+         *
+         * <p>Pages are 1-based to match the frontend export contract
+         * ({@code src/Pages/Events/EventDetails.js} uses {@code page} starting at 1).
+         */
+        @Transactional(readOnly = true)
+        public RegistrantsPageResponse getEventRegistrants(Long eventId, String userEmail, int page, int limit) {
+                eventRepository.findById(eventId)
+                                .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + eventId));
+
+                eventRoleService.requireRole(eventId, userEmail, EventRole.ORGANIZER);
+
+                int safePage = Math.max(page, 1);
+                int safeLimit = Math.min(Math.max(limit, 1), 1000);
+                Pageable pageable = PageRequest.of(safePage - 1, safeLimit);
+
+                Page<EventRegistration> result = eventRegistrationRepository
+                                .findByEvent_Id(eventId, pageable);
+
+                return RegistrantsPageResponse.builder()
+                                .data(result.getContent().stream()
+                                                .map(this::toRegistrantResponse)
+                                                .toList())
+                                .totalPages(result.getTotalPages())
+                                .build();
         }
 
         @Transactional
@@ -930,6 +965,8 @@ public class EventService {
                                 .countByEvent_IdAndStatus(eventId, "CONFIRMED"));
                 Event saved = eventRepository.save(event);
 
+                broadcastAvailability(saved);
+
                 Integer spotsRemaining = (saved.getCapacity() == null)
                                 ? null
                                 : Math.max(
@@ -1016,6 +1053,8 @@ public class EventService {
                                 .countByEvent_IdAndStatus(event.getId(), "CONFIRMED"));
                 Event saved = eventRepository.save(event);
 
+                broadcastAvailability(saved);
+
                 entry.setStatus("PROMOTED");
                 entry.setPromotedAt(LocalDateTime.now());
                 eventWaitlistRepository.save(entry);
@@ -1077,6 +1116,22 @@ public class EventService {
                                 .build();
         }
 
+        /**
+         * Broadcasts the latest availability for an event to all connected SSE
+         * clients so seat counters update in real-time without a page reload.
+         *
+         * @param event the event whose availability just changed
+         */
+        private void broadcastAvailability(Event event) {
+                if (event == null) {
+                        return;
+                }
+
+                EventAvailabilityResponse availability = getEventAvailability(event.getId());
+
+                eventStreamService.broadcastAvailability(event.getId(), availability);
+        }
+
         private EventResponse toEventResponse(Event event) {
                 return EventResponse.builder()
                                 .id(event.getId())
@@ -1109,6 +1164,21 @@ public class EventService {
                                 .position(entry.getPosition())
                                 .status(entry.getStatus())
                                 .joinedAt(entry.getJoinedAt())
+                                .build();
+        }
+
+        private EventRegistrantResponse toRegistrantResponse(EventRegistration registration) {
+                User user = registration.getUser();
+                String displayName = (user.getFirstName() + " " + user.getLastName()).trim();
+
+                return EventRegistrantResponse.builder()
+                                .userId(user.getId())
+                                .name(displayName.isBlank() ? user.getUsername() : displayName)
+                                .email(user.getEmail())
+                                .username(user.getUsername())
+                                .registeredAt(registration.getRegisteredAt())
+                                .status(registration.getStatus())
+                                .seatId(registration.getSeatId())
                                 .build();
         }
 
@@ -1148,4 +1218,46 @@ public class EventService {
                 return new RegistrationConflictException(
                                 "Registration could not be completed due to a conflict. Please try again.");
         }
+
+        public String buildIcsFeed(Long eventId) {
+                Event event = eventRepository.findById(eventId)
+                                .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + eventId));
+
+                java.time.LocalDateTime start = event.getEventDate() != null
+                                ? event.getEventDate()
+                                : java.time.LocalDateTime.now();
+                java.time.LocalDateTime end = start.plusHours(2);
+                java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss");
+
+                String summary = escapeIcs(event.getTitle() != null ? event.getTitle() : "Eventra Event");
+                String description = escapeIcs(event.getDescription() != null ? event.getDescription() : "");
+                String location = escapeIcs(event.getLocation() != null ? event.getLocation() : "");
+                String uid = "event-" + event.getId() + "@eventra";
+
+                return "BEGIN:VCALENDAR\r\n"
+                                + "VERSION:2.0\r\n"
+                                + "PRODID:-//Eventra//EN\r\n"
+                                + "CALSCALE:GREGORIAN\r\n"
+                                + "METHOD:PUBLISH\r\n"
+                                + "BEGIN:VEVENT\r\n"
+                                + "UID:" + uid + "\r\n"
+                                + "DTSTAMP:" + java.time.LocalDateTime.now().format(fmt) + "\r\n"
+                                + "DTSTART:" + start.format(fmt) + "\r\n"
+                                + "DTEND:" + end.format(fmt) + "\r\n"
+                                + "SUMMARY:" + summary + "\r\n"
+                                + "DESCRIPTION:" + description + "\r\n"
+                                + "LOCATION:" + location + "\r\n"
+                                + "END:VEVENT\r\n"
+                                + "END:VCALENDAR\r\n";
+        }
+
+        private static String escapeIcs(String value) {
+                return value
+                                .replace("\\", "\\\\")
+                                .replace(",", "\\,")
+                                .replace(";", "\\;")
+                                .replace("\n", "\\n")
+                                .replace("\r", "");
+        }
+
 }

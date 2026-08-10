@@ -3,6 +3,7 @@ package com.sandeep.eventrabackend.controller;
 import com.sandeep.eventrabackend.dto.request.FeedbackRequest;
 import com.sandeep.eventrabackend.dto.response.ErrorResponse;
 import com.sandeep.eventrabackend.dto.response.FeedbackResponse;
+import com.sandeep.eventrabackend.dto.response.PublicFeedbackResponse;
 import com.sandeep.eventrabackend.service.FeedbackService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -63,7 +64,7 @@ public class FeedbackController {
 
     @GetMapping
     @Operation(summary = "Get feedback for an event", description = "Returns feedback submitted for a specific event.")
-    public ResponseEntity<List<FeedbackResponse>> getEventFeedback(@RequestParam Long eventId) {
+    public ResponseEntity<List<PublicFeedbackResponse>> getEventFeedback(@RequestParam Long eventId) {
         return ResponseEntity.ok(feedbackService.getEventFeedback(eventId));
     }
 

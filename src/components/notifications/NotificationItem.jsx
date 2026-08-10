@@ -2,15 +2,7 @@ import useDateFormatter from "hooks/useDateFormatter";
 import { memo } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import {
-  Bell,
-  Calendar,
-  Megaphone,
-  Shield,
-  UserPlus,
-  Trophy,
-  Trash2,
-} from "lucide-react";
+import { Bell, Calendar, Megaphone, Shield, UserPlus, Trophy, Trash2 } from "lucide-react";
 import { NOTIFICATION_CATEGORIES } from "utils/notificationPreferences";
 
 const CATEGORY_ICONS = {
@@ -30,12 +22,12 @@ const NotificationItem = ({
   compact = false,
   showActions = true,
 }) => {
+  // Fix: useDateFormatter replaces raw toLocaleDateString
   const { formatDate, getRelativeTime } = useDateFormatter();
   const category = notification.category || "system";
   const Icon = CATEGORY_ICONS[category] || Bell;
   const isUnread = !notification.isRead;
-  const categoryLabel =
-    NOTIFICATION_CATEGORIES[category]?.label || "Notification";
+  const categoryLabel = NOTIFICATION_CATEGORIES[category]?.label || "Notification";
 
   const content = (
     <>
@@ -79,8 +71,7 @@ const NotificationItem = ({
           className="mt-1.5 text-xs text-gray-400 dark:text-gray-500"
           title={new Date(notification.timestamp).toLocaleString()}
         >
-          {getRelativeTime(notification.timestamp) ||
-            formatDate(notification.timestamp)}
+          {getRelativeTime(notification.timestamp) || formatDate(notification.timestamp)}
         </p>
       </div>
     </>

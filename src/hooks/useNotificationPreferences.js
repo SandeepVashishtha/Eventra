@@ -40,7 +40,8 @@ export function useNotificationPreferences() {
       const endpoint = API_ENDPOINTS?.NOTIFICATIONS?.PREFERENCES;
       if (!token || !endpoint) return { savedRemotely: false, preferences: normalized };
       try {
-        await apiUtils.put(endpoint, normalized);
+        // UserController expects PreferencesUpdateRequest: { preferences: {...} }
+        await apiUtils.put(endpoint, { preferences: { notifications: normalized } });
         return { savedRemotely: true, preferences: normalized };
       } catch (error) {
         console.error("[useNotificationPreferences] Error saving:", error);

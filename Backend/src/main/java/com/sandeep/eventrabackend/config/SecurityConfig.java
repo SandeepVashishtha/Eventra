@@ -134,6 +134,7 @@ public class SecurityConfig {
                                 "/actuator/health/**"
                         ).permitAll()
                         .requestMatchers("/api/contact", "/api/contact/**", "/api/contacts", "/api/contacts/**").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/github-proxy").permitAll()
                         .requestMatchers("/api/events/*/roles", "/api/events/*/roles/**").authenticated()
                         // ── Public: Event read-only endpoints ────────────────
                         // Anyone can view an event or check its availability;
@@ -146,9 +147,11 @@ public class SecurityConfig {
                                 "/api/events/{id}",
                                 "/api/events/{id}/availability",
                                 "/api/events/{id}/seats",
+                                "/api/events/{id}/feed.ics",
                                 "/api/events/stream"
                         ).permitAll()
-                        .requestMatchers("/stream", "/stream/**").permitAll()
+                        .requestMatchers("/stream/events", "/stream/leaderboard", "/stream/live-audience").permitAll()
+                        .requestMatchers("/stream/notifications", "/stream/analytics").authenticated()
                         // ── Public: Projects endpoint ────────────────────────
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/projects").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/projects/{id}").permitAll()
