@@ -21,6 +21,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class SessionRecoveryService {
 
+    /** Maximum serialized draft JSON size accepted from clients. */
+    public static final int MAX_DRAFT_BYTES = 64 * 1024;
+
     private final RecoverySessionRepository recoverySessionRepository;
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
@@ -35,7 +38,13 @@ public class SessionRecoveryService {
         session.setUser(user);
         session.setName(stringOr(payload.get("name"), "Recovery Session"));
         session.setType(stringOr(payload.get("type"), "generic"));
-        session.setDraftData(writeJson(payload.getOrDefault("draftData", payload)));
+        String draftJson = writeJson(payload.getOrDefault("draftData", payload));
+        if (draftJson.length() > MAX_DRAFT_BYTES) {
+            throw new IllegalArgumentException(
+                    "draftData exceeds the maximum allowed size of " + MAX_DRAFT_BYTES
+                            + " bytes (got " + draftJson.length() + ").");
+        }
+        session.setDraftData(draftJson);
         session.setExpiresAt(LocalDateTime.now().plusDays(14));
         return toResponse(recoverySessionRepository.save(session));
     }

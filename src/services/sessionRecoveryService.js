@@ -5,7 +5,7 @@ import { safeJsonParse } from "../utils/safeJsonParse.js";
 export const CLOUD_RECOVERY_PENDING_KEY = "eventra:cloud-session-recovery:pending:v1";
 export const CLOUD_RECOVERY_CACHE_KEY = "eventra:cloud-session-recovery:cache:v1";
 export const DEFAULT_RECOVERY_RETENTION_DAYS = 7;
-export const MAX_DRAFT_BYTES = 512 * 1024;
+export const MAX_DRAFT_BYTES = 64 * 1024;
 
 const RECOVERY_TYPES = new Set([
   "event-creation",
