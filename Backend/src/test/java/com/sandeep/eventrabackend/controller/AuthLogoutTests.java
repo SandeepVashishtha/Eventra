@@ -8,6 +8,10 @@ import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.HackathonRegistrationRepository;
 import com.sandeep.eventrabackend.repository.NotificationRepository;
 import com.sandeep.eventrabackend.repository.UserRepository;
+import com.sandeep.eventrabackend.security.JwtTokenProvider;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,6 +23,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.Date;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -127,17 +136,51 @@ public class AuthLogoutTests {
     }
 
     @Test
-    @DisplayName("POST /api/auth/logout without token returns 401")
+    @DisplayName("POST /api/auth/logout without token still clears cookie")
     void testLogoutWithoutToken() throws Exception {
         mockMvc.perform(post("/api/auth/logout"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isOk())
+                .andExpect(cookie().maxAge("token", 0));
     }
 
     @Test
-    @DisplayName("POST /api/auth/logout with malformed token returns 401")
+    @DisplayName("POST /api/auth/logout with malformed token still clears cookie")
     void testLogoutWithMalformedToken() throws Exception {
         mockMvc.perform(post("/api/auth/logout")
-                        .header("Authorization", "InvalidFormat " + jwtToken))
-                .andExpect(status().isUnauthorized());
+                        .header("Authorization", "Bearer not-a-valid-jwt"))
+                .andExpect(status().isOk())
+                .andExpect(cookie().maxAge("token", 0));
+    }
+
+    @Test
+    @DisplayName("POST /api/auth/logout with expired token clears cookie (#13339)")
+    void testLogoutWithExpiredToken() throws Exception {
+        String expiredToken = buildExpiredAccessToken("test@example.com");
+
+        mockMvc.perform(post("/api/auth/logout")
+                        .cookie(new jakarta.servlet.http.Cookie("token", expiredToken)))
+                .andExpect(status().isOk())
+                .andExpect(cookie().maxAge("token", 0));
+    }
+
+    private String buildExpiredAccessToken(String email) {
+        String secret = "test-secret-key-that-is-at-least-256-bits-long-for-hs256-algorithm-ok";
+        byte[] keyBytes;
+        try {
+            keyBytes = Decoders.BASE64.decode(secret);
+        } catch (Exception ex) {
+            keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+        }
+        SecretKey key = Keys.hmacShaKeyFor(keyBytes);
+        Date issuedAt = Date.from(Instant.now().minusSeconds(7200));
+        Date expiresAt = Date.from(Instant.now().minusSeconds(3600));
+
+        return Jwts.builder()
+                .subject(email)
+                .claim(JwtTokenProvider.CLAIM_TOKEN_TYPE, JwtTokenProvider.TYPE_ACCESS)
+                .issuedAt(issuedAt)
+                .expiration(expiresAt)
+                .signWith(key)
+                .compact();
     }
 }
