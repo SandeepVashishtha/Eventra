@@ -241,7 +241,7 @@ export const API_ENDPOINTS = {
     READ: (id) => (id ? buildApiUrl(`/notifications/${id}/read`) : ""),
     DELETE: (id) => (id ? buildApiUrl(`/notifications/${id}`) : ""),
     READ_ALL: buildApiUrl("/notifications/read-all"),
-    PREFERENCES: buildApiUrl("/notifications/preferences"),
+    PREFERENCES: buildApiUrl("/users/preferences"),
     PUSH_SUBSCRIBE: buildApiUrl("/notifications/push-subscriptions"),
     PUSH_UNSUBSCRIBE: buildApiUrl("/notifications/push-subscriptions/unsubscribe"),
   },
