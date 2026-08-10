@@ -15,6 +15,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -263,5 +264,68 @@ public class FeedbackControllerTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("GET /api/feedback/organizers/{id} — organizer can view own feedback")
+    void testOrganizerFeedbackSelfAccess() throws Exception {
+        EventRegistration registration = new EventRegistration();
+        registration.setEvent(eventRepository.findById(eventId).orElseThrow());
+        registration.setUser(userRepository.findByEmail(testUserEmail).orElseThrow());
+        eventRegistrationRepository.save(registration);
+
+        FeedbackRequest request = FeedbackRequest.builder()
+                .eventId(eventId)
+                .rating(5)
+                .comment("Great event")
+                .build();
+
+        mockMvc.perform(post("/api/feedback")
+                        .with(user(testUserEmail))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(get("/api/feedback/organizers/{organizerId}", organizerId)
+                        .with(user(testUserEmail)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].userId").value(organizerId));
+    }
+
+    @Test
+    @DisplayName("GET /api/feedback/organizers/{id} — other user gets 403")
+    void testOrganizerFeedbackForbiddenForOtherUser() throws Exception {
+        User other = User.builder()
+                .firstName("Other")
+                .lastName("User")
+                .email("other@example.com")
+                .username("otheruser")
+                .password(passwordEncoder.encode("password"))
+                .role(Role.CLIENT)
+                .build();
+        userRepository.save(other);
+
+        mockMvc.perform(get("/api/feedback/organizers/{organizerId}", organizerId)
+                        .with(user("other@example.com")))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("GET /api/feedback/organizers/{id} — admin can view any organizer feedback")
+    void testOrganizerFeedbackAdminAccess() throws Exception {
+        User admin = User.builder()
+                .firstName("Admin")
+                .lastName("User")
+                .email("admin@example.com")
+                .username("adminuser")
+                .password(passwordEncoder.encode("password"))
+                .role(Role.ADMIN)
+                .build();
+        userRepository.save(admin);
+
+        mockMvc.perform(get("/api/feedback/organizers/{organizerId}", organizerId)
+                        .with(user("admin@example.com")
+                                .authorities(new SimpleGrantedAuthority("ADMIN"))))
+                .andExpect(status().isOk());
     }
 }
