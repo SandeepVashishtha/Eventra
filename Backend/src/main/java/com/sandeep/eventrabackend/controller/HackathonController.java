@@ -1,3 +1,4 @@
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 package com.sandeep.eventrabackend.controller;
@@ -128,10 +129,12 @@ public class HackathonController {
                     )
             )
     })
-    public ResponseEntity<HackathonResponse> createHackathon(
+    public ResponseEntity<HackathonResponse> @Transactional
+    createHackathon(
             @Valid @RequestBody HackathonCreateRequest request,
             Authentication authentication) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(hackathonService.createHackathon(request, authentication.getName()));
+        return ResponseEntity.status(HttpStatus.CREATED).body(hackathonService.@Transactional
+    createHackathon(request, authentication.getName()));
     }
 
     @PutMapping("/{id}")

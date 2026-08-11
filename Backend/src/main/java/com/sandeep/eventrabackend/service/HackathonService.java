@@ -68,7 +68,8 @@ public class HackathonService {
     }
 
     @Transactional
-    public HackathonResponse createHackathon(HackathonCreateRequest request, String userEmail) {
+    public HackathonResponse @Transactional
+    createHackathon(HackathonCreateRequest request, String userEmail) {
         User creator = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + userEmail));
 
