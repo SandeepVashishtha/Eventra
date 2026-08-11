@@ -239,10 +239,10 @@ public class HackathonController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN', 'SUPER_ADMIN')")
     @Operation(
             summary = "Delete a hackathon",
-            description = "Allows an ADMIN or SUPER_ADMIN to delete a hackathon.",
+            description = "Allows the hackathon owner, an ADMIN, or SUPER_ADMIN to delete a hackathon.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses({
@@ -259,7 +259,7 @@ public class HackathonController {
             ),
             @ApiResponse(
                     responseCode = "403",
-                    description = "Forbidden - User does not have the required role",
+                    description = "Forbidden - User does not have the required role or is not the hackathon owner",
                     content = @Content(
                             schema = @Schema(implementation = ErrorResponse.class)
                     )
@@ -274,8 +274,9 @@ public class HackathonController {
     })
     public ResponseEntity<Void> deleteHackathon(
             @Parameter(description = "ID of the hackathon to delete")
-            @PathVariable Long id) {
-        hackathonService.deleteHackathon(id);
+            @PathVariable Long id,
+            Authentication authentication) {
+        hackathonService.deleteHackathon(id, authentication.getName());
         return ResponseEntity.noContent().build();
     }
 }

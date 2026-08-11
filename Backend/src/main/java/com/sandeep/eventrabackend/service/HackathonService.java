@@ -183,12 +183,23 @@ public class HackathonService {
     }
 
     @Transactional
-    public void deleteHackathon(Long id) {
+    public void deleteHackathon(Long id, String userEmail) {
         Hackathon hackathon = hackathonRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new HackathonNotFoundException("Hackathon not found with id: " + id));
+
+        User currentUser = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + userEmail));
+
+        boolean isAdmin = currentUser.getRole() == Role.ADMIN || currentUser.getRole() == Role.SUPER_ADMIN;
+        Long ownerId = hackathon.getOwnerId();
+        if (!isAdmin && (ownerId == null || !ownerId.equals(currentUser.getId()))) {
+            throw new AccessDeniedException(
+                    "Only the hackathon's own organizer (or an administrator) can delete this hackathon.");
+        }
+
         hackathon.setDeleted(true);
         hackathonRepository.save(hackathon);
-        log.info("[AUDIT LOG] Administrative Action: HACKATHON_SOFT_DELETE | HackathonID: {} | Title: {}", hackathon.getId(), hackathon.getTitle());
+        log.info("[AUDIT LOG] Administrative Action: HACKATHON_SOFT_DELETE | HackathonID: {} | Title: {} | DeletedBy: {}", hackathon.getId(), hackathon.getTitle(), userEmail);
     }
 
     private HackathonResponse mapToResponse(Hackathon hackathon) {
