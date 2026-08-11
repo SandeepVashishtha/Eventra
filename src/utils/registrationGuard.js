@@ -41,13 +41,22 @@ export const recordRegistration = (userId, eventId, metadata = {}) => {
   const registry = getRegistry();
   const key = `${userId}_${eventId}`;
   if (registry[key]) return false;
-  registry[key] = {
-    userId,
-    eventId,
-    registeredAt: new Date().toISOString(),
-    ...metadata,
+
+  const updatedRegistry = {
+    ...registry,
+    [key]: {
+      userId,
+      eventId,
+      registeredAt: new Date().toISOString(),
+      ...metadata,
+    },
   };
-  return saveRegistry(registry);
+
+  const saved = saveRegistry(updatedRegistry);
+  if (saved) {
+    registry[key] = updatedRegistry[key];
+  }
+  return saved;
 };
 
 export const cancelRegistration = (userId, eventId) => {
@@ -55,8 +64,15 @@ export const cancelRegistration = (userId, eventId) => {
   const registry = getRegistry();
   const key = `${userId}_${eventId}`;
   if (!registry[key]) return false;
-  delete registry[key];
-  return saveRegistry(registry);
+
+  const updatedRegistry = { ...registry };
+  delete updatedRegistry[key];
+
+  const saved = saveRegistry(updatedRegistry);
+  if (saved) {
+    delete registry[key];
+  }
+  return saved;
 };
 
 export const getUserRegistrations = (userId) => {
