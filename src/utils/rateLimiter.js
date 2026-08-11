@@ -11,19 +11,38 @@
 
 /**
  * Creates a token bucket rate limiter.
- * @param {Object} options
- * @param {number} options.maxTokens - Maximum tokens in the bucket
- * @param {number} options.refillRate - Tokens added per second
+ * @param {Object} [options]
+ * @param {number} [options.maxTokens=10] - Maximum tokens in the bucket
+ * @param {number} [options.refillRate=2] - Tokens added per second
  * @param {number} [options.initialTokens] - Initial tokens (defaults to maxTokens)
+ * @param {string} [options.channelName] - Optional BroadcastChannel name for multi-tab sync
  * @returns {Object} Rate limiter instance
  */
 export function createRateLimiter({
   maxTokens = 10,
   refillRate = 2,
   initialTokens,
-}) {
+  channelName,
+} = {}) {
   let tokens = initialTokens ?? maxTokens;
   let lastRefill = Date.now();
+  let lockedUntil = 0;
+
+  // Multi-tab synchronization via BroadcastChannel
+  const channel =
+    channelName && typeof BroadcastChannel !== "undefined"
+      ? new BroadcastChannel(`rate_limiter_${channelName}`)
+      : null;
+
+  if (channel) {
+    channel.onmessage = (event) => {
+      if (event.data?.type === "CONSUME") {
+        tokens = Math.max(0, tokens - (event.data.cost || 1));
+      } else if (event.data?.type === "PENALIZE") {
+        lockedUntil = Math.max(lockedUntil, Date.now() + event.data.cooldownMs);
+      }
+    };
+  }
 
   function refill() {
     const now = Date.now();
@@ -34,28 +53,55 @@ export function createRateLimiter({
 
   return {
     /**
-     * Attempts to consume a token. Returns true if allowed.
+     * Attempts to consume tokens. Returns true if allowed.
      * @param {number} [cost=1] - Number of tokens to consume
      * @returns {boolean}
      */
     tryConsume(cost = 1) {
+      if (Date.now() < lockedUntil) return false;
+
       refill();
       if (tokens >= cost) {
         tokens -= cost;
+        if (channel) {
+          channel.postMessage({ type: "CONSUME", cost });
+        }
         return true;
       }
       return false;
     },
 
     /**
-     * Returns time in ms until the next token is available.
-     * @returns {number}
+     * Returns time in ms until the requested number of tokens is available.
+     * @param {number} [cost=1] - Number of tokens required
+     * @returns {number} Time in milliseconds to wait
      */
-    getRetryAfterMs() {
+    getRetryAfterMs(cost = 1) {
+      const now = Date.now();
+      let cooldownWait = 0;
+      if (now < lockedUntil) {
+        cooldownWait = lockedUntil - now;
+      }
+
       refill();
-      if (tokens >= 1) return 0;
-      const deficit = 1 - tokens;
-      return Math.ceil((deficit / refillRate) * 1000);
+      if (tokens >= cost && cooldownWait === 0) return 0;
+
+      const deficit = Math.max(0, cost - tokens);
+      const refillWait = Math.ceil((deficit / refillRate) * 1000);
+
+      return Math.max(cooldownWait, refillWait);
+    },
+
+    /**
+     * Temporarily locks token consumption during server-directed cooldowns (e.g. HTTP 429 Retry-After).
+     * @param {number} cooldownMs - Duration in ms to lock consumption
+     */
+    penalize(cooldownMs) {
+      lockedUntil = Date.now() + cooldownMs;
+      tokens = 0;
+      if (channel) {
+        channel.postMessage({ type: "PENALIZE", cooldownMs });
+      }
     },
 
     /**
@@ -73,30 +119,96 @@ export function createRateLimiter({
     reset() {
       tokens = maxTokens;
       lastRefill = Date.now();
+      lockedUntil = 0;
+    },
+
+    /**
+     * Cleans up channel resources.
+     */
+    destroy() {
+      if (channel) {
+        channel.close();
+      }
     },
   };
 }
 
 /**
- * Higher-order function that wraps an async function with rate limiting.
+ * Higher-order function that wraps an async function with rate limiting & queuing.
  * @param {Function} fn - The async function to rate-limit
- * @param {Object} limiterOptions - Options for createRateLimiter
+ * @param {Object} [options] - Limiter and execution options
+ * @param {number} [options.cost=1] - Token cost per call
+ * @param {'throw'|'queue'} [options.mode='throw'] - Execution strategy when limited
+ * @param {number} [options.maxQueueSize=20] - Maximum allowed queued items
  * @returns {Function} Rate-limited function
  */
-export function withRateLimit(fn, limiterOptions = {}) {
+export function withRateLimit(fn, options = {}) {
+  const {
+    cost = 1,
+    mode = "throw",
+    maxQueueSize = 20,
+    ...limiterOptions
+  } = options;
+
   const limiter = createRateLimiter({
     maxTokens: 5,
     refillRate: 1,
     ...limiterOptions,
   });
 
-  return async function rateLimited(...args) {
-    if (!limiter.tryConsume()) {
-      const retryMs = limiter.getRetryAfterMs();
-      throw new Error(
+  const executionQueue = [];
+  let isProcessingQueue = false;
+
+  async function processQueue() {
+    if (isProcessingQueue || executionQueue.length === 0) return;
+    isProcessingQueue = true;
+
+    while (executionQueue.length > 0) {
+      const nextItem = executionQueue[0];
+
+      if (limiter.tryConsume(nextItem.cost)) {
+        executionQueue.shift();
+        try {
+          const result = await fn.apply(nextItem.context, nextItem.args);
+          nextItem.resolve(result);
+        } catch (err) {
+          nextItem.reject(err);
+        }
+      } else {
+        const waitMs = limiter.getRetryAfterMs(nextItem.cost);
+        await new Promise((resolve) => setTimeout(resolve, Math.max(50, waitMs)));
+      }
+    }
+
+    isProcessingQueue = false;
+  }
+
+  return function rateLimited(...args) {
+    const context = this;
+
+    if (mode === "queue") {
+      if (executionQueue.length >= maxQueueSize) {
+        return Promise.reject(
+          new Error("Rate limit queue overflow. Too many pending requests.")
+        );
+      }
+
+      return new Promise((resolve, reject) => {
+        executionQueue.push({ resolve, reject, context, args, cost });
+        processQueue();
+      });
+    }
+
+    if (!limiter.tryConsume(cost)) {
+      const retryMs = limiter.getRetryAfterMs(cost);
+      const error = new Error(
         `Rate limited. Please wait ${Math.ceil(retryMs / 1000)} seconds.`
       );
+      error.retryAfterMs = retryMs;
+      error.limiter = limiter;
+      return Promise.reject(error);
     }
-    return fn.apply(this, args);
+
+    return Promise.resolve(fn.apply(context, args));
   };
 }
