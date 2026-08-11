@@ -169,9 +169,13 @@ public class EventController {
                         @Parameter(description = "Event category for filtering") @RequestParam(required = false) String category,
                         @Parameter(description = "Start date for filtering (ISO format)") @RequestParam(required = false) String startDate,
                         @Parameter(description = "End date for filtering (ISO format)") @RequestParam(required = false) String endDate,
-                        @Parameter(description = "Filter for free events only") @RequestParam(required = false) Boolean free) {
+                        @Parameter(description = "Filter for free events only") @RequestParam(required = false) Boolean free,
+                        @RequestParam(defaultValue = "0") int page,
+                        @RequestParam(defaultValue = "20") int size) {
 
-                List<EventResponse> events = eventService.searchEvents(search, category, startDate, endDate, free);
+                int clampedSize = Math.min(Math.max(size, 1), 100);
+                int safePage = Math.max(page, 0);
+                List<EventResponse> events = eventService.searchEvents(search, category, startDate, endDate, free, safePage, clampedSize);
                 return ResponseEntity.ok(events);
         }
 

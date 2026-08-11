@@ -11,6 +11,7 @@ import com.sandeep.eventrabackend.repository.ProjectUpvoteRepository;
 import com.sandeep.eventrabackend.repository.UserRepository;
 import com.sandeep.eventrabackend.exception.RegistrationConflictException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -52,8 +53,10 @@ public class ProjectService {
     }
 
     @Transactional(readOnly = true)
-    public List<ProjectResponse> getAllProjects() {
-        return projectRepository.findAll().stream()
+    public List<ProjectResponse> getAllProjects(int page, int size) {
+        int safePage = Math.max(0, page);
+        int safeSize = Math.min(Math.max(size, 1), 100);
+        return projectRepository.findAll(PageRequest.of(safePage, safeSize)).stream()
                 .map(this::toProjectResponse)
                 .collect(Collectors.toList());
     }

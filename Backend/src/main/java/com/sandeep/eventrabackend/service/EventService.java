@@ -417,50 +417,33 @@ public class EventService {
          */
         @Transactional(readOnly = true)
         public List<EventResponse> searchEvents(String search, String category, String startDate, String endDate,
-                        Boolean free) {
-                List<Event> events;
+                        Boolean free, int page, int size) {
+                int safePage = Math.max(0, page);
+                int safeSize = Math.min(Math.max(size, 1), 100);
 
-                // Build query based on search criteria
+                Specification<Event> spec = Specification.where(EventSpecifications.isPublic());
+
                 if (search != null && !search.trim().isEmpty()) {
-                        // Full-text search on title and description
-                        events = eventRepository.findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
-                                        search, search);
-                } else {
-                        events = eventRepository.findAll();
+                        String term = "%" + search.trim().toLowerCase() + "%";
+                        spec = spec.and((root, query, cb) -> cb.or(
+                                cb.like(cb.lower(root.get("title")), term),
+                                cb.like(cb.lower(root.get("description")), term)));
                 }
 
-                // Apply additional filters
                 if (category != null && !category.trim().isEmpty()) {
-                        List<Event> filteredEvents = events.stream()
-                                        .filter(event -> category.equals(event.getCategory()))
-                                        .collect(Collectors.toList());
-                        events = filteredEvents;
+                        spec = spec.and((root, query, cb) -> cb.equal(root.get("category"), category));
                 }
 
                 if (startDate != null && !startDate.trim().isEmpty()) {
-                        try {
-                                LocalDateTime startDateTime = LocalDateTime.parse(startDate);
-                                List<Event> filteredEvents = events.stream()
-                                                .filter(event -> event.getEventDate() != null &&
-                                                                !event.getEventDate().isBefore(startDateTime))
-                                                .collect(Collectors.toList());
-                                events = filteredEvents;
-                        } catch (Exception e) {
-                                // Invalid date format, ignore this filter
-                        }
+                        LocalDateTime startDateTime = LocalDateTime.parse(startDate);
+                        spec = spec.and((root, query, cb) ->
+                                cb.greaterThanOrEqualTo(root.get("eventDate"), startDateTime));
                 }
 
                 if (endDate != null && !endDate.trim().isEmpty()) {
-                        try {
-                                LocalDateTime endDateTime = LocalDateTime.parse(endDate);
-                                List<Event> filteredEvents = events.stream()
-                                                .filter(event -> event.getEventDate() != null &&
-                                                                !event.getEventDate().isAfter(endDateTime))
-                                                .collect(Collectors.toList());
-                                events = filteredEvents;
-                        } catch (Exception e) {
-                                // Invalid date format, ignore this filter
-                        }
+                        LocalDateTime endDateTime = LocalDateTime.parse(endDate);
+                        spec = spec.and((root, query, cb) ->
+                                cb.lessThanOrEqualTo(root.get("eventDate"), endDateTime));
                 }
 
                 // Events do not currently model price, so a free filter cannot be applied.
@@ -469,8 +452,8 @@ public class EventService {
                         // Intentionally no-op until pricing data is available.
                 }
 
-                return events.stream()
-                                .filter(Event::isPublic)
+                return eventRepository.findAll(spec, PageRequest.of(safePage, safeSize))
+                                .stream()
                                 .map(this::toPublicEventResponse)
                                 .collect(Collectors.toList());
         }
