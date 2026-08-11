@@ -293,6 +293,7 @@ const SignupForm = () => {
 
       setAuthSession(sessionToken, sessionUser, refreshToken);
       setLoading(false);
+      isSubmittingRef.current = false; // reset so back-navigation can retry if needed
       setSuccess("Account created successfully. Redirecting to dashboard...");
       toast.success("Account created successfully!");
       setTimeout(() => navigate("/dashboard", { replace: true }), 1000);
