@@ -62,6 +62,7 @@ const CollaborationHub = () => {
     deadline: "",
     skills: "",
   });
+  const [requestErrors, setRequestErrors] = useState({});
 
   const handleRequestChange = (e) => {
     const { name, value } = e.target;
@@ -77,9 +78,9 @@ const CollaborationHub = () => {
     }
     if (saved) {
       try {
-        const parsed = JSON.parse(saved);
+        const parsed = safeJsonParse(saved, {});
         if (Array.isArray(parsed)) {
-          return parsed.filter(item => item && typeof item === 'object');
+          return parsed.map(validateOpportunity).filter(Boolean);
         }
       } catch (e) {
         console.error("Failed to parse collaboration opportunities from localStorage", e);
@@ -246,7 +247,7 @@ const CollaborationHub = () => {
   };
 
   // Filtering opportunities dynamically
-  const query = searchQuery.toLowerCase();
+  const query = debouncedSearchQuery.toLowerCase();
 
   const filteredOpportunities = collaborationOpportunities.filter((opp) => {
     const matchesSearch =
@@ -286,7 +287,11 @@ const CollaborationHub = () => {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="collaboration-tabs max-w-4xl mx-auto flex gap-2 justify-center mb-10 p-2 bg-slate-100 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-800">
+      <div
+        role="tablist"
+        aria-label="Collaboration Hub sections"
+        className="collaboration-tabs max-w-4xl mx-auto flex gap-2 justify-center mb-10 p-2 bg-slate-100 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-800"
+      >
         {[
           { id: "opportunities", name: "Opportunities", icon: "🎯" },
           { id: "my-collaborations", name: "My Collaborations", icon: "🤝" },
@@ -307,7 +312,7 @@ const CollaborationHub = () => {
               setSearchQuery("");
             }}
           >
-            <span>{tab.icon}</span>
+            <span aria-hidden="true">{tab.icon}</span>
             {tab.name}
           </button>
         ))}
@@ -444,6 +449,8 @@ const CollaborationHub = () => {
                   <div className="opportunity-actions flex gap-2 pt-2">
                     <button
                       onClick={() => setSelectedOpportunity(opportunity)}
+                      aria-label={`Apply now for ${opportunity.title}`}
+                      title={`Apply now for ${opportunity.title}`}
                       className="flex-1 py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all text-center"
                     >
                       Apply Now
@@ -470,7 +477,7 @@ const CollaborationHub = () => {
                 onClick={() => setActiveSection("create-request")}
                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5"
               >
-                <Plus size={14} />
+                <Plus size={14} aria-hidden="true" />
                 New Collaboration
               </button>
             </div>
@@ -668,8 +675,9 @@ const CollaborationHub = () => {
                   name="type"
                   value={newRequest.type}
                   onChange={handleRequestChange}
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-955 text-slate-900 dark:text-white text-xs outline-none focus:border-indigo-500"
-                  required
+                  className={`px-4 py-2.5 rounded-xl border bg-white dark:bg-slate-955 text-slate-900 dark:text-white text-xs outline-none focus:border-indigo-500 ${
+                    requestErrors.type ? 'border-red-500' : 'border-slate-200 dark:border-slate-800'
+                  }`}
                   aria-required="true"
                   aria-invalid={newRequest.type === "" ? "true" : "false"}
                   aria-describedby="type-hint"
@@ -701,8 +709,9 @@ const CollaborationHub = () => {
                     rows="4"
                     maxLength={300}
                     placeholder="Describe partnership goals / Sponsorship details / Collaboration ideas..."
-                    required
-                    className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                    className={`w-full rounded-xl border bg-white dark:bg-gray-900 px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition ${
+                      requestErrors.description ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'
+                    }`}
                     aria-required="true"
                     aria-invalid={newRequest.description.trim() === "" ? "true" : "false"}
                     aria-describedby="desc-hint"
@@ -820,9 +829,11 @@ const CollaborationHub = () => {
             >
               <button
                 onClick={() => setSelectedOpportunity(null)}
+                title="Close"
                 className="absolute top-4 right-4 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                aria-label="Close modal"
               >
-                <X size={16} />
+                <X size={16} aria-hidden="true" />
               </button>
 
               <div className="flex items-center gap-2 text-indigo-500 font-extrabold text-[10px] tracking-wider uppercase mb-1.5">
@@ -942,12 +953,14 @@ const CollaborationHub = () => {
                   <button
                     type="button"
                     onClick={() => setSelectedOpportunity(null)}
+                    aria-label="Cancel and close proposal form"
                     className="flex-1 py-2.5 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-350 rounded-xl text-xs font-bold"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
+                    aria-label="Submit partnership proposal"
                     className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold"
                     aria-label="button"
                   >

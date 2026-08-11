@@ -1,64 +1,31 @@
-/**
- * @fileoverview useDebouncedSearch - Debounced search query hook
- * @module hooks/useDebouncedSearch
- */
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
-/**
- * Custom hook for debounced search/filter queries.
- * Prevents excessive re-renders and API calls by debouncing input changes.
- * 
- * @param {string} initialValue - Initial search value
- * @param {number} delay - Debounce delay in milliseconds (default: 300ms)
- * @returns {{ searchTerm, debouncedTerm, setSearchTerm, isDebouncing, clear }}
- */
-export function useDebouncedSearch(initialValue = '', delay = 300) {
-  const [searchTerm, setSearchTerm] = useState(initialValue);
-  const [debouncedTerm, setDebouncedTerm] = useState(initialValue);
-  const [isDebouncing, setIsDebouncing] = useState(false);
-  const timerRef = useRef(null);
+export const useDebouncedSearch = (searchCallback, delay = 300) => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const callbackRef = useRef(searchCallback);
+  const latestTermRef = useRef(searchTerm);
 
   useEffect(() => {
-    if (searchTerm === debouncedTerm) {
-      setIsDebouncing(false);
-      return;
-    }
+    callbackRef.current = searchCallback;
+  }, [searchCallback]);
 
-    setIsDebouncing(true);
-
-    // Clear any existing timeout to reset the debounce timer
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-    }
-
-    timerRef.current = setTimeout(() => {
-      setDebouncedTerm(searchTerm);
-      setIsDebouncing(false);
+  useEffect(() => {
+    latestTermRef.current = searchTerm;
+    const handler = setTimeout(() => {
+      if (callbackRef.current) {
+        callbackRef.current(latestTermRef.current);
+      }
     }, delay);
 
     return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-      }
+      clearTimeout(handler);
     };
-  }, [searchTerm, debouncedTerm, delay]);
-
-  const clear = useCallback(() => {
-    setSearchTerm('');
-    setDebouncedTerm('');
-    setIsDebouncing(false);
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-    }
-  }, []);
+  }, [searchTerm, delay]);
 
   return {
     searchTerm,
-    debouncedTerm,
     setSearchTerm,
-    isDebouncing,
-    clear,
   };
-}
+};
 
 export default useDebouncedSearch;

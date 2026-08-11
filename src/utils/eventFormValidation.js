@@ -1,5 +1,4 @@
 import { parseTimeToMinutes } from "./eventCreationUtils";
-
 export const validateForm = (formData) => {
   const newErrors = {};
 
@@ -40,10 +39,9 @@ export const validateForm = (formData) => {
     newErrors.location = "Location name is required for offline events";
   }
 
-  if (formData.isVirtual && !formData.virtualLink.trim()) {
+  if (formData.isVirtual && !formData.virtualLink?.trim()) {
     newErrors.virtualLink = "Virtual link is required for online events";
   }
-
   if (formData.capacity) {
     const capacity = Number(formData.capacity);
     if (!capacity || capacity <= 0) {
@@ -77,22 +75,22 @@ export const validateForm = (formData) => {
       newErrors.registrationStart = "Registration start must be before the event starts";
     }
 
-    if (registrationEnd && !isNaN(eventStart.getTime()) && registrationEnd > eventStart) {
+    if (registrationEnd && !isNaN(eventStart.getTime()) && registrationEnd >= eventStart) {
       newErrors.registrationEnd = "Registration must close before the event starts";
     }
   }
 
   if (formData.ticketTiers && formData.ticketTiers.length > 0) {
-    formData.ticketTiers.forEach((tier, index) => {
+    formData.ticketTiers.forEach((tier) => {
       if (tier.name && tier.name.trim()) {
         const price = Number(tier.price);
         if (price < 0) {
-          newErrors[`ticketPrice_${index}`] = "Ticket price cannot be negative";
+          newErrors[`ticketPrice_${tier.id}`] = "Ticket price cannot be negative";
         }
         if (tier.capacity) {
           const capacity = Number(tier.capacity);
           if (capacity <= 0) {
-            newErrors[`ticketCapacity_${index}`] = "Ticket capacity must be greater than 0";
+            newErrors[`ticketCapacity_${tier.id}`] = "Ticket capacity must be greater than 0";
           }
         }
       }

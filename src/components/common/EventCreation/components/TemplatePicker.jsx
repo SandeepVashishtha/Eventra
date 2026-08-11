@@ -41,11 +41,11 @@ export default function TemplatePicker({
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="px-8 py-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-indigo-50 to-white dark:from-gray-800 dark:to-gray-900">
+            <div className="px-8 py-6 border-b border-gray-200 dark:border-gray-700 bg-linear-to-r from-indigo-50 to-white dark:from-gray-800 dark:to-gray-900">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                 Event Templates
               </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              <p className="text-sm text-gray-600 dark:text-gray-200 mt-1">
                 {templates.length === 0
                   ? "No templates saved yet"
                   : `${templates.length} template${templates.length !== 1 ? "s" : ""} available`}
@@ -63,7 +63,7 @@ export default function TemplatePicker({
                   <div className="text-gray-400 dark:text-gray-500 mb-4">
                     <Download size={48} strokeWidth={1} />
                   </div>
-                  <p className="text-gray-600 dark:text-gray-400 font-medium">
+                  <p className="text-gray-600 dark:text-gray-200 font-medium">
                     No templates saved yet
                   </p>
                   <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
@@ -78,13 +78,13 @@ export default function TemplatePicker({
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.05 }}
-                      className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors border border-gray-200 dark:border-gray-700"
+                      className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors border border-gray-200 dark:border-gray-700"
                     >
                       <div className="flex-1">
                         <h3 className="font-semibold text-gray-900 dark:text-white">
                           {template.name}
                         </h3>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        <p className="text-xs text-gray-500 dark:text-gray-200 mt-1">
                           Created {new Date(template.createdAt).toLocaleDateString()}
                         </p>
                       </div>
@@ -122,7 +122,7 @@ export default function TemplatePicker({
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={onClose}
-                className="px-6 py-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium transition-colors"
+                className="px-6 py-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium transition-colors"
                 aria-label="Close template picker"
               >
                 Close

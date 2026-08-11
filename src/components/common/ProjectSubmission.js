@@ -1,10 +1,12 @@
-import { Github, ExternalLink, Plus, X } from "lucide-react";
-import { getPublicErrorMessage, FORM_ERRORS } from "../../utils/errorMessages";
+import { ExternalLink, Plus, X } from "lucide-react";
+import { FaGithub as Github } from "react-icons/fa";
+import { getPublicErrorMessage, FORM_ERRORS } from "utils/errorMessages";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useAuth } from "../../context/AuthContext";
-import { API_ENDPOINTS, apiUtils } from "../../config/api";
-import { getUserFullName } from "../../utils/userNameUtils.mjs";
+import { useAuth } from "context/AuthContext";
+
+import { projectService } from "services/projectService";
+import { getUserFullName } from "utils/userNameUtils.mjs";
 import CharacterCounter from "./CharacterCounter";
 import "./ProjectSubmission.css";
 
@@ -87,15 +89,11 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
     setSuccess("");
 
     try {
-      const response = await apiUtils.post(
-        API_ENDPOINTS.PROJECTS.SUBMIT,
-        formData,
-        {
-          headers: {
-            Authorization: token
-          }
+      const response = await projectService.submitProject(formData, {
+        headers: {
+          Authorization: token
         }
-      );
+      });
 
       const result = response.data;
       setSuccess(
@@ -120,12 +118,12 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
         <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100 mb-2">
           Please Login
         </h2>
-        <p className="text-gray-600 dark:text-gray-400 mb-6">
+        <p className="text-gray-600 dark:text-gray-200 mb-6">
           You need to be logged in to submit a project.
         </p>
         <button
           onClick={onClose}
-          className="bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white font-medium py-2.5 px-6 rounded-lg shadow-md transition-transform duration-200 hover:-translate-y-0.5"
+          className="bg-linear-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white font-medium py-2.5 px-6 rounded-lg shadow-md transition-transform duration-200 hover:-translate-y-0.5"
          aria-label="button">
           Close
         </button>
@@ -184,6 +182,9 @@ const ProjectSubmission = ({ onClose, onSubmit }) => {
               aria-describedby="description-counter"
               placeholder="Describe your project, its features, and purpose"
             />
+            <p className="text-xs text-gray-500 mt-1 text-right">
+  {description.length}/500 characters
+</p>
             <div className="flex justify-end mt-1">
               <CharacterCounter id="description-counter" value={formData.description} maxLength={1000} />
             </div>

@@ -6,43 +6,63 @@ import { logger } from "../utils/logger";
 const STORAGE_KEY = "eventra_recently_viewed";
 const MAX_ITEMS = 10;
 
-// Entries older than RECENTLY_VIEWED_TTL_MS are treated as stale and evicted
-// on load. 7 days balances relevance against storage growth.
+/**
+ * The key used to persist recently viewed events in localStorage.
+ * @type {string}
+ */
+const STORAGE_KEY = 'recentlyViewedEvents';
+
+/**
+ * The maximum number of recently viewed items to retain.
+ * @type {number}
+ */
+const MAX_ITEMS = 5;
+
+/**
+ * Time-to-live (TTL) duration for recently viewed entries (7 days in milliseconds).
+ * Entries older than this limit are considered stale and evicted from storage.
+ * @type {number}
+ */
 export const RECENTLY_VIEWED_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
-// ---------------------------------------------------------------------------
-// Minimal entry shape
-//
-// Previously stored the full event object spread:
-//   [event, ...filtered].slice(0, MAX_ITEMS)
-//
-// Full objects can be several kilobytes each. 10 entries = up to ~50 KB for
-// a display-only list of small cards. Store only the fields needed to render
-// the recently-viewed card and navigate to the event detail page.
-// ---------------------------------------------------------------------------
-const toRecentlyViewedEntry = (event) => ({
-  id: event?.id,
-  title: event?.title ?? "",
-  date: event?.date ?? "",
-  location: event?.location ?? "",
-  image: event?.image ?? event?.imageUrl ?? "",
-  category: event?.category ?? event?.type ?? "",
-  viewedAt: Date.now(),
-});
+/**
+ * @typedef {Object} RecentlyViewedEntry
+ * @property {string|number} id - Unique identifier of the event.
+ * @property {string} title - Title of the event.
+ * @property {string} date - Event date representation.
+ * @property {string} location - Venue or location of the event.
+ * @property {string} image - URL to the event's promotional image.
+ * @property {string} category - Classification type of the event.
+ * @property {number} viewedAt - Timestamp (Unix epoch) representing when the event was viewed.
+ */
 
+/**
+ * Transforms a full event object into a minimal shape to conserve localStorage space.
+ */
+const toRecentlyViewedEntry = (event) => {
+  const eventId = event?.id;
+  return {
+    id: eventId,
+    title: event.title,
+    date: event?.date ?? "",
+    location: event?.location ?? "",
+    image: event.image,
+    category: event.category,
+    viewedAt: Date.now(),
+  };
+};
+
+/**
+ * Checks if a recently viewed entry is still within the allowable TTL window (fresh).
+ */
 const isEntryFresh = (entry) => {
   const viewedAt = entry?.viewedAt;
-  if (!viewedAt || typeof viewedAt !== "number") return false;
+  if (!viewedAt || typeof viewedAt !== "number") return true;
   return Date.now() - viewedAt < RECENTLY_VIEWED_TTL_MS;
 };
 
 /**
- * useRecentlyViewed
- *
- * Tracks and persists the list of recently viewed events.
- *  - Capped at MAX_ITEMS = 10 entries
- *  - Entries older than RECENTLY_VIEWED_TTL_MS (7 days) are evicted on mount
- *  - Stores only minimal display fields, not the full event object
+ * Top-level helper to load the initial history array.
  */
 const useRecentlyViewed = () => {
   // 🔥 FIX 1: Lazy Initialization + Master's TTL logic combined
@@ -67,20 +87,9 @@ const useRecentlyViewed = () => {
     safeLocalStorage.setItem(STORAGE_KEY, JSON.stringify(recentlyViewed));
   }, [recentlyViewed]);
 
-  // 🔥 FIX 2: Cross-Tab Synchronization
-  // Listen for storage events from other tabs to keep the React state perfectly in sync globally.
   useEffect(() => {
-    const handleStorageChange = (event) => {
-      if (event.key === STORAGE_KEY) {
-        if (event.newValue) {
-          const parsed = safeJsonParse(event.newValue, []);
-          const fresh = Array.isArray(parsed) ? parsed.filter(isEntryFresh) : [];
-          setRecentlyViewed(fresh);
-        } else {
-          setRecentlyViewed([]);
-        }
-      }
-    };
+    saveHistory(recentlyViewed);
+  }, [recentlyViewed]);
 
     window.addEventListener("storage", handleStorageChange);
     return () => window.removeEventListener("storage", handleStorageChange);
@@ -103,17 +112,10 @@ const useRecentlyViewed = () => {
     });
   }, [setRecentlyViewed]);
 
-  /**
-   * Remove a single event from the history.
-   * @param {string|number} eventId
-   */
   const removeRecentlyViewed = useCallback((eventId) => {
     setRecentlyViewed((prev) => prev.filter((e) => e.id !== eventId));
   }, [setRecentlyViewed]);
 
-  /**
-   * Clear the entire recently viewed history from state and localStorage.
-   */
   const clearHistory = useCallback(() => {
     setRecentlyViewed([]);
     try {

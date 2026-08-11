@@ -1,3 +1,4 @@
+import { safeJsonParse } from "./safeJsonParse.js";
 export const NOTIFICATION_CATEGORIES = {
   registrations: {
     label: "Registrations",
@@ -25,6 +26,13 @@ export const NOTIFICATION_CATEGORIES = {
   },
 };
 
+export const NOTIFICATION_PRIORITIES = {
+  LOW: "low",
+  NORMAL: "normal",
+  HIGH: "high",
+  CRITICAL: "critical",
+};
+
 export const NOTIFICATION_SOUNDS = {
   none: { label: "Silent", frequency: null },
   chime: { label: "Soft chime", frequency: 660 },
@@ -38,6 +46,9 @@ export const PUSH_SUBSCRIPTION_KEY = "eventra_push_subscription";
 export const DEFAULT_NOTIFICATION_PREFERENCES = {
   inApp: true,
   push: false,
+  marketing: true,
+  social: true,
+  updates: true,
   email: true,
   emailDigest: "daily",
   sound: "chime",
@@ -57,6 +68,19 @@ export const getNotificationCategory = (notification = {}) => {
     "system";
   const category = String(rawCategory).toLowerCase();
   return NOTIFICATION_CATEGORIES[category] ? category : "system";
+};
+
+export const getNotificationPriority = (notification = {}) => {
+  if (!notification) return NOTIFICATION_PRIORITIES.NORMAL;
+  const rawPriority =
+    notification.priority ||
+    notification.level ||
+    notification.metadata?.priority ||
+    NOTIFICATION_PRIORITIES.NORMAL;
+  const priority = String(rawPriority).toLowerCase();
+  return Object.values(NOTIFICATION_PRIORITIES).includes(priority)
+    ? priority
+    : NOTIFICATION_PRIORITIES.NORMAL;
 };
 
 export const normalizeNotificationPreferences = (preferences = {}) => {
@@ -88,7 +112,7 @@ export const readNotificationPreferences = () => {
 
   try {
     const stored = window.localStorage.getItem(NOTIFICATION_PREFERENCES_KEY);
-    return normalizeNotificationPreferences(stored ? JSON.parse(stored) : {});
+    return normalizeNotificationPreferences(stored ? safeJsonParse(stored, {}) : {});
   } catch {
     return DEFAULT_NOTIFICATION_PREFERENCES;
   }
@@ -97,17 +121,37 @@ export const readNotificationPreferences = () => {
 export const writeNotificationPreferences = (preferences) => {
   if (typeof window === "undefined") return preferences;
   const normalized = normalizeNotificationPreferences(preferences);
-  window.localStorage.setItem(NOTIFICATION_PREFERENCES_KEY, JSON.stringify(normalized));
-  window.dispatchEvent(
-    new CustomEvent("eventra-notification-preferences", { detail: normalized })
-  );
+  try {
+    window.localStorage.setItem(NOTIFICATION_PREFERENCES_KEY, JSON.stringify(normalized));
+    window.dispatchEvent(
+      new CustomEvent("eventra-notification-preferences", { detail: normalized })
+    );
+  } catch {
+    // localStorage may be full or blocked — dispatch the event anyway
+    // so in-memory consumers stay in sync even if persistence fails
+    window.dispatchEvent(
+      new CustomEvent("eventra-notification-preferences", { detail: normalized })
+    );
+  }
   return normalized;
 };
 
 export const shouldDeliverNotification = (notification, preferences, channel) => {
   const normalized = normalizeNotificationPreferences(preferences);
+
+  // Global channel check (e.g. email/push/inApp completely toggled off)
+  const isChannelEnabled = Boolean(normalized[channel]);
+  if (!isChannelEnabled) return false;
+
+  // Critical notifications bypass category-level mutes
+  const priority = getNotificationPriority(notification);
+  if (priority === NOTIFICATION_PRIORITIES.CRITICAL) {
+    return true;
+  }
+
+  // Standard category check
   const category = getNotificationCategory(notification);
-  return Boolean(normalized[channel] && normalized.categories[category]?.[channel]);
+  return Boolean(normalized.categories[category]?.[channel]);
 };
 
 export const getNotificationTitle = (notification = {}) =>
@@ -146,6 +190,9 @@ export const playNotificationSound = (soundKey) => {
 };
 
 export const urlBase64ToUint8Array = (base64String) => {
+  if (typeof window === "undefined" || !base64String || typeof base64String !== "string") {
+    return new Uint8Array();
+  }
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
   const rawData = window.atob(base64);

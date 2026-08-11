@@ -1,20 +1,23 @@
+import useUserPreferences from "hooks/useUserPreferences";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Sun, MousePointer, Bell, ShieldCheck, ArrowRight, Key, Eye, EyeOff, Clipboard, Download, ShieldAlert, RefreshCw, SlidersHorizontal } from "lucide-react";
-import useLocalStorage from "../hooks/useLocalStorage";
 import useDocumentTitle from "../hooks/useDocumentTitle";
-import { toast } from "react-hot-toast";
+import { toast } from "react-toastify";
+import KeyboardShortcutsHelp from "../components/accessibility/KeyboardShortcutsHelp";
 
 const Settings = () => {
   useDocumentTitle("Eventra | Settings");
 
-  // Replace scattered localStorage.getItem / setItem calls with the hook
-  const [cursorEnabled, setCursorEnabled] = useLocalStorage("cursor", "on");
-  const [notificationsEnabled, setNotificationsEnabled] = useLocalStorage(
-    "notifications",
-    true
-  );
-  const [privacyMode, setPrivacyMode] = useLocalStorage("privacyMode", false);
+  // Fix: useUserPreferences centralises all preference state with schema
+  // validation, cross-tab sync and default backfilling.
+  const { preferences, setPreference } = useUserPreferences();
+  const cursorEnabled = preferences.cursor;
+  const setCursorEnabled = (v) => setPreference("cursor", v);
+  const notificationsEnabled = preferences.notifications;
+  const setNotificationsEnabled = (v) => setPreference("notifications", v);
+  const privacyMode = preferences.privacyMode;
+  const setPrivacyMode = (v) => setPreference("privacyMode", v);
 
   const handleCursorToggle = () => {
     const next = cursorEnabled === "off" ? "on" : "off";
@@ -26,13 +29,21 @@ const Settings = () => {
     );
   };
 
-  const [backupKey, setBackupKey] = useLocalStorage("backupKey", null);
+  const backupKey = preferences.backupKey;
+  const setBackupKey = (v) => setPreference("backupKey", v);
   const [showKey, setShowKey] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const saveTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    };
+  }, []);
 
   const generateBackupKey = () => {
     setIsGenerating(true);
-    setTimeout(() => {
+    saveTimeoutRef.current = setTimeout(() => {
       const words = [
         "alpha", "bravo", "charlie", "delta", "echo", "foxtrot", "golf", "hotel", "india", 
         "juliet", "kilo", "lima", "mike", "november", "oscar", "papa", "quebec", "romeo", 
@@ -82,6 +93,7 @@ const Settings = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
     toast.success("Backup key file downloaded!");
   };
 
@@ -200,6 +212,9 @@ const Settings = () => {
               </p>
             </div>
           </article>
+
+          {/* Keyboard Shortcuts Help */}
+          <KeyboardShortcutsHelp />
         </div>
 
         {/* Advanced Backup Recovery Key Generator Card */}

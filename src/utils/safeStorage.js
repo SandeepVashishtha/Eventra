@@ -1,3 +1,4 @@
+import { safeJsonParse } from "./safeJsonParse.js";
 const isBrowserStorageAvailable = (storage) => {
   if (!storage) return false;
 
@@ -97,7 +98,7 @@ const createSafeStorage = (getStorage) => {
 
     getJson(key, fallback = null) {
       const raw = this.getItem(key);
-      if (raw == null) return fallback;
+      if (raw === null || raw === undefined) return fallback;
 
       try {
         return JSON.parse(raw);
@@ -119,11 +120,11 @@ const createSafeStorage = (getStorage) => {
 };
 
 export const safeLocalStorage = createSafeStorage(() =>
-  typeof window !== "undefined" ? window.localStorage : null
+  typeof window !== "undefined" ? window.localStorage : (typeof globalThis !== "undefined" && globalThis.localStorage ? globalThis.localStorage : null)
 );
 
 export const safeSessionStorage = createSafeStorage(() =>
-  typeof window !== "undefined" ? window.sessionStorage : null
+  typeof window !== "undefined" ? window.sessionStorage : (typeof globalThis !== "undefined" && globalThis.sessionStorage ? globalThis.sessionStorage : null)
 );
 
 export const isLocalStorageAvailable = () => safeLocalStorage.isAvailable();

@@ -19,11 +19,21 @@ const normalizeList = (value) => {
 
 const unique = (items) => Array.from(new Set(items.filter(Boolean)));
 
-const getEventId = (event) => String(event?.id ?? event?.eventId ?? event?.title ?? "");
+const getEventId = (event) => {
+  if (!event) return null;
+  const id = event.id ?? event.eventId;
+  if (id === undefined || id === null || id === "") return null;
+  return String(id);
+};
 
 const unwrapEvent = (entry) => entry?.event || entry?.eventSummary || entry || {};
 
-const getEventCategory = (event) => normalizeText(event?.category || event?.type);
+const getEventCategory = (event) => {
+  if (event?.categories && Array.isArray(event.categories) && event.categories.length > 0) {
+    return normalizeText(event.categories[0]);
+  }
+  return normalizeText(event?.category || event?.type);
+};
 
 const getEventType = (event) => normalizeText(event?.type);
 
@@ -47,12 +57,6 @@ const createLocationMatcher = (preferredLocation) => {
     eventLocation && parts.some((part) => eventLocation.includes(part));
 };
 
-const buildLocationIndex = (preferredLocation) => {
-  const parts = getLocationParts(preferredLocation);
-  if (parts.length === 0) return null;
-  return { parts, test: (loc) => parts.some((part) => loc.includes(part)) };
-};
-
 const getPopularityScore = (event) => {
   const attendees = Number(event?.attendees) || 0;
   const capacity = Number(event?.maxAttendees) || 0;
@@ -62,17 +66,34 @@ const getPopularityScore = (event) => {
 };
 
 const _tagCache = new Map();
+const _cacheOrder = [];
+const MAX_CACHE_SIZE = 100;
 
 const _getCachedTags = (event) => {
+  // 🔥 FIX: Skip the cache entirely when the event has no real id.
+  // Previously getEventId fell back to the event title, so two events with
+  // the same title would collide on the same cache key and the last write
+  // would win — silently corrupting similarity scores. Returning the tags
+  // directly is correct here; the cache only exists to amortise work for
+  // events we expect to be re-encountered, and id-less events are not.
   const id = getEventId(event);
-  if (!id) return [];
-  if (_tagCache.has(id)) return _tagCache.get(id);
+  if (!id) return getEventTags(event);
+  if (_tagCache.has(id)) {
+    const tags = _tagCache.get(id);
+    const idx = _cacheOrder.indexOf(id);
+    if (idx > -1) _cacheOrder.splice(idx, 1);
+    _cacheOrder.push(id);
+    return tags;
+  }
+  if (_cacheOrder.length >= MAX_CACHE_SIZE) {
+    const oldest = _cacheOrder.shift();
+    _tagCache.delete(oldest);
+  }
   const tags = getEventTags(event);
   _tagCache.set(id, tags);
+  _cacheOrder.push(id);
   return tags;
 };
-
-const clearTagCache = () => _tagCache.clear();
 
 const getSimilarityScore = (candidate, interactedEvents) => {
   if (!interactedEvents.length) return 0;
@@ -283,7 +304,6 @@ export const buildPersonalizedRecommendations = ({
   includeInteracted = false,
   limit = 8,
 } = {}) => {
-  clearTagCache();
   const interactionProfile = buildInteractionProfile({
     registeredEvents,
     bookmarkedEvents,
@@ -292,18 +312,22 @@ export const buildPersonalizedRecommendations = ({
   });
 
   return events
-    .filter((event) => includeInteracted || !interactionProfile.registeredIds.has(getEventId(event)))
-    .map((event) => {
-      const result = calculateRecommendationScore(event, userProfile, interactionProfile);
-      return {
-        ...event,
-        calculatedMatch: result.score,
-        recommendationScore: result.score,
-        recommendationReasons: result.reasons,
-        breakdown: result.breakdown,
-      };
-    })
-    .filter((event) => event.recommendationScore > 0)
+    .reduce((acc, event) => {
+      if (includeInteracted || !interactionProfile.registeredIds.has(getEventId(event))) {
+        const result = calculateRecommendationScore(event, userProfile, interactionProfile);
+        const scored = {
+          ...event,
+          calculatedMatch: result.score,
+          recommendationScore: result.score,
+          recommendationReasons: result.reasons,
+          breakdown: result.breakdown,
+        };
+        if (scored.recommendationScore > 0) {
+          acc.push(scored);
+        }
+      }
+      return acc;
+    }, [])
     .sort((a, b) => b.recommendationScore - a.recommendationScore)
     .slice(0, limit);
 };

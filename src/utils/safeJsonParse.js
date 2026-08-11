@@ -1,25 +1,33 @@
-export const safeJsonParse = (
-  value,
-  fallback = null,
-) => {
+export function safeJsonParse(str, fallback = null, validator = null) {
+  if (typeof str !== "string") return fallback;
   try {
-    if (!value || typeof value !== "string") {
-      return fallback;
+    const parsed = JSON.parse(str);
+    if (validator && typeof validator === "function") {
+      return validator(parsed) ? parsed : fallback;
     }
-
-    return JSON.parse(value);
-  } catch (error) {
+    return parsed;
+  } catch {
     return fallback;
   }
-};
+}
 
-export const safeJsonParseObject = (
-  value,
-  fallback = {}
-) => {
-  const result = safeJsonParse(value, fallback);
-  if (result !== null && typeof result === 'object' && !Array.isArray(result)) {
-    return result;
+/**
+ * Safely parse JSON from localStorage with error logging and cleanup
+ * @param {string} key - localStorage key to parse
+ * @param {*} fallback - Value to return on parse failure
+ * @returns {*} Parsed value or fallback
+ */
+export function safeJsonParseFromStorage(key, fallback = null) {
+  try {
+    const value = localStorage.getItem(key);
+    if (value === null) return fallback;
+    const parsed = JSON.parse(value);
+    return parsed;
+  } catch (error) {
+    console.error(`[safeJsonParseFromStorage] Failed to parse localStorage key "${key}":`, error);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("eventra-storage-parse-error", { detail: { key } }));
+    }
+    return fallback;
   }
-  return fallback;
-};
+}

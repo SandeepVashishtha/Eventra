@@ -34,7 +34,6 @@ const useLocalStorage = (key, initialValue) => {
 
   // 🔥 FIX: Track when WE fired the event so we don't react to ourselves
   const isInternalWrite = useRef(false);
-
   const readValue = useCallback(() => {
     if (typeof window === "undefined") return initialValueRef.current;
 
@@ -99,6 +98,7 @@ const useLocalStorage = (key, initialValue) => {
   );
 
   const removeValue = useCallback(() => {
+    if (typeof window === "undefined") return;
     try {
       if (!safeLocalStorage.isAvailable()) {
         logger.warn(`useLocalStorage: storage unavailable for key "${key}"`);
@@ -130,19 +130,24 @@ const useLocalStorage = (key, initialValue) => {
         return;
       }
 
-      if (event.key === key || (event.type === "local-storage" && event.detail?.key === key)) {
-        setStoredValue(readValue());
-      }
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    window.addEventListener("local-storage", handleStorageChange);
-
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
-      window.removeEventListener("local-storage", handleStorageChange);
-    };
+    if (event.key === key || (event.type === "local-storage" && event.detail?.key === key)) {
+      setStoredValue(readValue());
+    }
   }, [key, readValue]);
+
+  const handlerRef = useRef(handleStorageChange);
+  handlerRef.current = handleStorageChange;
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handler = (e) => handlerRef.current(e);
+    window.addEventListener("storage", handler);
+    window.addEventListener("local-storage", handler);
+    return () => {
+      window.removeEventListener("storage", handler);
+      window.removeEventListener("local-storage", handler);
+    };
+  }, []);
 
   return [storedValue, setValue, removeValue];
 };

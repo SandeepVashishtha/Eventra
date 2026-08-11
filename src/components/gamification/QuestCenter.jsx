@@ -200,7 +200,7 @@ const playClaimSound = () => {
 };
 
 // ─── Main QuestCenter component ────────────────────────────────────────────────
-export default function QuestCenter({ totalEvents = 0, currentStreak = 0 }) {
+export default function QuestCenter({ totalEvents = 0, currentStreak = 0, gssocEvents = 0 }) {
   const confettiRef = useRef(null);
   const [activeTab, setActiveTab] = useState("daily");
   const claimedGuardRef = useRef({});
@@ -265,7 +265,7 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0 }) {
       wp["wq-4"] = Math.min(5, totalEvents);
       return { ...prev, dailyProgress: dp, weeklyProgress: wp };
     });
-  }, [totalEvents, currentStreak, state.dailyResetAt, state.weeklyResetAt]);
+  }, [totalEvents, currentStreak, gssocEvents, state.dailyResetAt, state.weeklyResetAt]);
 
   // Countdown timer
   useEffect(() => {
@@ -409,7 +409,7 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0 }) {
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.96 }}
             onClick={() => claimXP(quest.id, quest.rewardXP, isWeekly)}
-            className="mt-4 w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-black uppercase tracking-wider shadow-md hover:shadow-lg transition-shadow flex items-center justify-center gap-2"
+            className="mt-4 w-full py-2.5 rounded-xl bg-linear-to-r from-amber-500 to-orange-500 text-white text-xs font-black uppercase tracking-wider shadow-md hover:shadow-lg transition-shadow flex items-center justify-center gap-2"
           >
             <Gift className="w-3.5 h-3.5" />
             Claim {quest.rewardXP} XP
@@ -423,7 +423,7 @@ export default function QuestCenter({ totalEvents = 0, currentStreak = 0 }) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-gradient-to-br from-emerald-400/20 to-teal-400/10 rounded-2xl pointer-events-none"
+              className="absolute inset-0 bg-linear-to-br from-emerald-400/20 to-teal-400/10 rounded-2xl pointer-events-none"
             />
           )}
         </AnimatePresence>

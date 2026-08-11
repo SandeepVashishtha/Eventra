@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Html5Qrcode } from "html5-qrcode";
-import { safeParseJson } from "../../utils/jsonUtils";
+import { safeJsonParse } from "utils/safeJsonParse";
+import useNetworkStatus from "hooks/useNetworkStatus";
 import {
   Camera,
   CameraOff,
@@ -16,6 +17,7 @@ import {
   Search,
   Wifi,
   WifiOff,
+  Clock,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { pushToQueue } from "../../utils/offlineQueue";
@@ -28,7 +30,16 @@ import {
 import "./TicketScanner.css";
 const HISTORY_CACHE_KEY = "eventra_checkins_cache";
 
+const triggerScanFeedback = (status) => {
+  if (typeof window === "undefined") return;
+  if ("vibrate" in navigator) {
+    if (status === "verified") navigator.vibrate(100);
+    else navigator.vibrate([150, 50, 150]);
+  }
+};
+
 export default function TicketScanner() {
+  const { user } = useAuth();
   const [devices, setDevices] = useState([]);
   const [selectedCameraId, setSelectedCameraId] = useState("");
   const [scannerStatus, setScannerStatus] = useState("idle");
@@ -36,7 +47,7 @@ export default function TicketScanner() {
   const [manualMode, setManualMode] = useState(false);
   const [checkinHistory, setCheckinHistory] = useState([]);
   const [events, setEvents] = useState([]);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const { isOnline } = useNetworkStatus();
   const [manualTicketId, setManualTicketId] = useState("");
   const [manualAttendeeName, setManualAttendeeName] = useState("");
   const [manualEventId, setManualEventId] = useState("");
@@ -61,17 +72,6 @@ export default function TicketScanner() {
     } finally {
       setStatsLoading(false);
     }
-  }, []);
-
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-    return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
-    };
   }, []);
 
   useEffect(() => {
@@ -104,6 +104,7 @@ export default function TicketScanner() {
   useEffect(() => {
     fetchScannerEvents()
       .then((data) => {
+        if (!isMountedRef.current) return;
         setEvents(data);
         if (data.length > 0) {
           setManualEventId(data[0].id);
@@ -112,6 +113,7 @@ export default function TicketScanner() {
         }
       })
       .catch(() => {
+        if (!isMountedRef.current) return;
         setEvents([]);
       });
   }, []);
@@ -138,12 +140,17 @@ export default function TicketScanner() {
   }, []);
 
   const stopScanner = async () => {
-    if (qrCodeInstanceRef.current && qrCodeInstanceRef.current.isScanning) {
+    if (qrCodeInstanceRef.current) {
       try {
-        await qrCodeInstanceRef.current.stop();
-        if (isMountedRef.current) setScannerStatus("stopped");
+        if (qrCodeInstanceRef.current.isScanning) {
+          await qrCodeInstanceRef.current.stop();
+        }
+        await qrCodeInstanceRef.current.clear();
       } catch (err) {
         console.error("Failed to stop scanner:", err);
+      } finally {
+        qrCodeInstanceRef.current = null;
+        if (isMountedRef.current) setScannerStatus("stopped");
       }
     }
   };
@@ -194,9 +201,9 @@ export default function TicketScanner() {
     setCheckinHistory((prev) => [entry, ...prev].slice(0, 50));
     const cached = safeLocalStorage.getItem(HISTORY_CACHE_KEY) || "[]";
     try {
-      const updated = [entry, ...safeParseJson(localStorage.getItem(HISTORY_CACHE_KEY), [])].slice(0, 50);
+      const updated = [entry, ...safeJsonParse(localStorage.getItem(HISTORY_CACHE_KEY), [])].slice(0, 50);
       localStorage.setItem(HISTORY_CACHE_KEY, JSON.stringify(updated));
-    } catch { /* ignore */ }
+    } catch { console.warn("[TicketScanner] Scan operation failed"); }
   }, []);
 
   const handleScanSuccess = async (decodedText) => {
@@ -205,15 +212,73 @@ export default function TicketScanner() {
     let ticketData = null;
     try {
       ticketData = JSON.parse(decodedText);
+      // SECURITY (Issue #11073): only accept opaque, server-issued ticket
+      // tokens ({ ticketId }) that carry no forgeable claims. Any other JSON
+      // shape — e.g. {"ticketId":"x","userName":"Guest","role":"ADMIN"} — is
+      // rejected and routed to the same flagged path as a malformed QR.
+      const opaqueKeys = Object.keys(ticketData || {});
+      if (
+        !ticketData ||
+        typeof ticketData !== "object" ||
+        Array.isArray(ticketData) ||
+        opaqueKeys.length !== 1 ||
+        opaqueKeys[0] !== "ticketId"
+      ) {
+        throw new Error("Opaque ticket token required");
+      }
     } catch {
-      if (decodedText.startsWith("eyJ")) {
-        const activeEvent = events.find(e => String(e.id) === String(selectedEventId));
-        ticketData = {
-          ticketId: decodedText,
-          eventId: selectedEventId,
-          userName: "Attendee",
-          eventName: activeEvent ? activeEvent.title : "Active Event"
-        };
+      if (decodedText.startsWith("eyJ") && decodedText.split(".").length === 3) {
+        try {
+          // JWT payloads are base64url (RFC 4648): '-'/'_' instead of '+'/'/'
+          // and no padding. Convert to standard base64 before atob.
+          const encodedPayload = decodedText.split(".")[1];
+          const b64 = encodedPayload
+            .replace(/-/g, "+")
+            .replace(/_/g, "/")
+            .padEnd(Math.ceil(encodedPayload.length / 4) * 4, "=");
+          const payload = JSON.parse(atob(b64));
+          const activeEvent = events.find(e => String(e.id) === String(selectedEventId));
+          const ticketEventId = payload.eventId || payload.event_id;
+          if (ticketEventId && String(ticketEventId) !== String(selectedEventId)) {
+            setScanResult({
+              status: "flagged",
+              message: "This ticket is for a different event.",
+              raw: decodedText,
+            });
+            toast.error("Security Alert: Ticket does not match selected event!");
+            addToHistory({
+              id: `flagged-${Date.now()}`,
+              ticketId: decodedText.slice(0, 20),
+              name: "Unknown",
+              event: activeEvent ? activeEvent.title : "Unknown",
+              status: "Flagged",
+              time: new Date().toISOString(),
+            });
+            return;
+          }
+          ticketData = {
+            ticketId: decodedText,
+            eventId: ticketEventId || selectedEventId,
+            userName: payload.userName || payload.name || "Attendee",
+            eventName: activeEvent ? activeEvent.title : "Active Event"
+          };
+        } catch {
+          setScanResult({
+            status: "flagged",
+            message: "Invalid ticket format.",
+            raw: decodedText,
+          });
+          toast.error("Security Alert: Invalid Ticket QR Code scanned!");
+          addToHistory({
+            id: `flagged-${Date.now()}`,
+            ticketId: decodedText.slice(0, 20),
+            name: "Unknown",
+            event: "Unknown",
+            status: "Flagged",
+            time: new Date().toISOString(),
+          });
+          return;
+        }
       } else {
         setScanResult({
           status: "flagged",
@@ -234,6 +299,7 @@ export default function TicketScanner() {
     }
 
     if (!ticketData || typeof ticketData !== 'object' || !ticketData.ticketId) {
+      triggerScanFeedback("flagged");
       setScanResult({
         status: "flagged",
         message: "Invalid QR Code format. Ticket is secure and cannot be verified.",
@@ -263,17 +329,21 @@ export default function TicketScanner() {
 
     if (!isOnline) {
       setScanResult({
-        status: "verified",
+        status: "queued",
         data: ticketData,
-        message: "Check-in queued offline — will sync when connection resumes.",
+        message: "Check-in queued offline — will be verified when connection resumes.",
       });
       toast.info(`Offline check-in queued for ${userName}.`);
-      await pushToQueue({
-        actionType: "TICKET_CHECK_IN",
-        ticketId,
-        eventId: eventId || "unknown",
-        payload: ticketData,
-      });
+      await pushToQueue(
+        {
+          actionType: "TICKET_CHECK_IN",
+          ticketId: ticketData.ticketId,
+          eventId: eventId || "unknown",
+          endpoint: API_ENDPOINTS.TICKETS.CHECK_IN,
+          payload: ticketData,
+        },
+        user?.id
+      );
       addToHistory({
         id: `offline-${Date.now()}`,
         ticketId,
@@ -292,6 +362,24 @@ export default function TicketScanner() {
       if (result && result.valid) {
         ticketData.userName = result.userName || userName;
         ticketData.ticketId = result.registrationId || ticketId;
+      }
+
+      if (!result.valid) {
+        setScanResult({
+          status: "flagged",
+          data: ticketData,
+          message: result.message || "This ticket is not valid for entry.",
+        });
+        toast.error(`Invalid Ticket: ${ticketData.userName}`);
+        addToHistory({
+          id: `invalid-${Date.now()}`,
+          ticketId: ticketData.ticketId,
+          name: ticketData.userName,
+          event: eventName,
+          status: "Flagged",
+          time: new Date().toISOString(),
+        });
+        return;
       }
 
       if (result.alreadyCheckedIn) {
@@ -313,26 +401,9 @@ export default function TicketScanner() {
         return;
       }
 
-      if (!result.valid) {
-        setScanResult({
-          status: "flagged",
-          data: ticketData,
-          message: result.message || "This ticket is not valid for entry.",
-        });
-        toast.error(`Invalid Ticket: ${ticketData.userName}`);
-        addToHistory({
-          id: `invalid-${Date.now()}`,
-          ticketId: ticketData.ticketId,
-          name: ticketData.userName,
-          event: eventName,
-          status: "Flagged",
-          time: new Date().toISOString(),
-        });
-        return;
-      }
+      await recordCheckIn(ticketData.ticketId, eventId, { validatedAt: new Date().toISOString() });
 
-      await recordCheckIn(ticketId, eventId, { validatedAt: new Date().toISOString() });
-
+      triggerScanFeedback("verified");
       setScanResult({
         status: "verified",
         data: ticketData,
@@ -395,6 +466,7 @@ export default function TicketScanner() {
     const option = e.target.options[idx];
     setManualEventId(option.value);
     setManualEventName(option.text);
+    setSelectedEventId(option.value);
   };
 
   return (
@@ -470,7 +542,13 @@ export default function TicketScanner() {
             <select
               id="active-event-select"
               value={selectedEventId}
-              onChange={(e) => setSelectedEventId(e.target.value)}
+              onChange={(e) => {
+                const idx = e.target.selectedIndex;
+                const option = e.target.options[idx];
+                setSelectedEventId(e.target.value);
+                setManualEventId(e.target.value);
+                setManualEventName(option?.text || "");
+              }}
               className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-350 focus:outline-none focus:border-indigo-500"
             >
               {events.length === 0 ? (
@@ -730,6 +808,12 @@ export default function TicketScanner() {
                   <span className="text-[10px] font-black tracking-widest uppercase bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full mb-2">
                     Verified Entry
                   </span>
+                </>
+              )}
+              {scanResult.status === "queued" && (
+                <>
+                  <Clock className="w-16 h-16 text-amber-500 animate-pulse mb-3" />
+                  <span className="text-[10px] font-black tracking-widest uppercase bg-amber-500/20 text-amber-400 px-3 py-1 rounded-full mb-2">Queued for Verification</span>
                 </>
               )}
               {scanResult.status === "flagged" && (
