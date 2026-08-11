@@ -1,3 +1,4 @@
+import useWindowSize from "hooks/useWindowSize";
 /* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5 */
 import { motion } from "framer-motion";
 import { useState, useEffect, useCallback, useMemo, memo } from "react";

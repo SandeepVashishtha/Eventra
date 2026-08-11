@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Lock, AlertCircle } from "lucide-react";
-import { apiUtils } from "config/api.js";
+import { AlertCircle, Lock } from "lucide-react";
+import { apiUtils, API_ENDPOINTS } from "config/api.js";
 import { toast } from "react-toastify";
 
 const ReAuthModal = ({ onSuccess }) => {
@@ -9,41 +9,7 @@ const ReAuthModal = ({ onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  
-// WebAuthn Mock Logic for Frontend Completeness
-const handleWebAuthn = async () => {
-  try {
-    toast.info("Awaiting biometric scan...");
-    
-    // Simulate fetching challenge from backend
-    const challenge = new Uint8Array(32);
-    crypto.getRandomValues(challenge);
-    
-    // Call the native browser WebAuthn API
-    const credential = await navigator.credentials.get({
-      publicKey: {
-        challenge: challenge,
-        rpId: window.location.hostname,
-        userVerification: "required",
-        timeout: 60000,
-      }
-    });
 
-    if (credential) {
-      toast.success("Biometric verification successful!");
-      onSuccess();
-    }
-  } catch (err) {
-    if (err.name === 'NotAllowedError') {
-      setError("Biometric prompt cancelled.");
-    } else if (err.name === 'NotSupportedError') {
-      setError("WebAuthn is not supported or configured on this device.");
-    } else {
-      setError("Failed to verify biometrics. Please use your password.");
-      console.error(err);
-    }
-  }
-};
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!password) {
@@ -55,12 +21,13 @@ const handleWebAuthn = async () => {
     setError(null);
 
     try {
-      const res = await apiUtils.post("/auth/reauth", { password }, { skipAuth: true });
+      const res = await apiUtils.post(API_ENDPOINTS.AUTH.REAUTH, { password });
       if (res.ok) {
         toast.success("Session verified successfully");
         onSuccess();
       } else {
-        setError(res.data?.error || "Incorrect password");
+        const payload = typeof res.json === "function" ? await res.json() : res.data;
+        setError(payload?.error || "Incorrect password");
       }
     } catch (err) {
       if (err.name === 'TypeError' || err.message === 'Failed to fetch') {
@@ -135,11 +102,6 @@ const handleWebAuthn = async () => {
             )}
           </button>
         </form>
-          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <button type="button" onClick={handleWebAuthn} className="w-full py-2 px-4 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 flex justify-center items-center gap-2">
-              <Lock className="w-4 h-4" /> Use Biometrics (FaceID/TouchID)
-            </button>
-          </div>
       </motion.div>
     </div>
   );

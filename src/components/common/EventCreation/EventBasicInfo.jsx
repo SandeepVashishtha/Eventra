@@ -52,26 +52,40 @@ const EventBasicInfo = ({ formData, handleInputChange, handleFieldBlur, errors }
         </div>
       </FormField>
 
-      <FormField label="Category" icon={Tag} error={errors.category} required>
+      <FormField label="Categories" icon={Tag} error={errors.categories} required>
         <select
-          name="category"
-          value={formData.category}
-          onChange={handleInputChange}
+          name="categories"
+          value={formData.categories || []}
+          onChange={(e) => {
+            const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
+            if (selectedOptions.length <= 3) {
+              handleInputChange({
+                target: {
+                  name: "categories",
+                  value: selectedOptions
+                }
+              });
+            }
+          }}
           onBlur={handleFieldBlur}
+          multiple
+          size={4}
           className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-700
                    text-gray-900 dark:text-gray-100 focus:outline-none
                    focus:ring-2 focus:ring-indigo-500 focus:border-transparent
                    transition-all duration-200 ${
-                     errors.category ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+                     errors.categories ? "border-red-500" : "border-gray-300 dark:border-gray-600"
                    }`}
         >
-          <option value="">Select a category</option>
           {categories.map((cat) => (
             <option key={cat.id} value={cat.id}>
               {cat.label}
             </option>
           ))}
         </select>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          Hold Ctrl/Cmd to select multiple categories (max 3)
+        </p>
       </FormField>
 
       <FormField label="Description" icon={FileText} error={errors.description} required>

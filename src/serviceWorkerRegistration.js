@@ -176,3 +176,13 @@ export function unregister() {
       });
   }
 }
+
+export function registerWaitlistBackgroundSync(promotionToken) {
+  if ('serviceWorker' in navigator && 'SyncManager' in window) {
+    navigator.serviceWorker.ready
+      .then((registration) => {
+        return registration.sync.register(`sync-waitlist-promotion:${promotionToken}`);
+      })
+      .catch((err) => log("[SW] Background sync registration skipped/failed:", err));
+  }
+}

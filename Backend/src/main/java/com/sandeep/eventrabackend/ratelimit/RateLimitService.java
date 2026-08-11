@@ -5,14 +5,19 @@ import org.springframework.stereotype.Service;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 public class RateLimitService {
 
+    private static final long EVICTION_INTERVAL_MS = 60_000L;
+
     private final Clock clock;
     private final Map<String, Counter> counters = new ConcurrentHashMap<>();
+    private final AtomicLong lastEvictionMillis = new AtomicLong(0L);
 
     public RateLimitService() {
         this(Clock.systemUTC());
@@ -26,6 +31,8 @@ public class RateLimitService {
         if (capacity <= 0) {
             return new RateLimitResult(false, capacity, 0, window.toSeconds());
         }
+
+        maybeEvictExpired(window);
 
         String key = endpoint + ":" + clientIp;
         Counter counter = counters.computeIfAbsent(key, ignored -> new Counter(clock.instant(), 0));
@@ -44,6 +51,33 @@ public class RateLimitService {
 
             counter.requests++;
             return new RateLimitResult(true, capacity, capacity - counter.requests, 0);
+        }
+    }
+
+    private void maybeEvictExpired(Duration window) {
+        long nowMillis = clock.millis();
+        long previous = lastEvictionMillis.get();
+        if (nowMillis - previous < EVICTION_INTERVAL_MS) {
+            return;
+        }
+        if (!lastEvictionMillis.compareAndSet(previous, nowMillis)) {
+            return;
+        }
+
+        Instant cutoff = clock.instant().minus(window);
+        Iterator<Map.Entry<String, Counter>> iterator = counters.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, Counter> entry = iterator.next();
+            Counter counter = entry.getValue();
+            synchronized (counter) {
+                if (counter.windowStart.isBefore(cutoff) && counter.requests == 0
+                        || !counter.windowStart.plus(window).isAfter(cutoff)) {
+                    // Drop counters whose window has fully elapsed.
+                    if (!clock.instant().isBefore(counter.windowStart.plus(window))) {
+                        iterator.remove();
+                    }
+                }
+            }
         }
     }
 

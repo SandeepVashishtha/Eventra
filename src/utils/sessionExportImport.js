@@ -61,12 +61,14 @@ export const downloadSessionBackup = ({
   link.style.visibility = "hidden";
   document.body.appendChild(link);
 
-  try {
-    link.click();
-  } finally {
-    document.body.removeChild(link);
+  link.click();
+
+  setTimeout(() => {
+    if (link.parentNode) {
+      document.body.removeChild(link);
+    }
     urlApi.revokeObjectURL(url);
-  }
+  }, 1000);
 
   return { filename, count: normalizeMultiSessions(sessions).length };
 };

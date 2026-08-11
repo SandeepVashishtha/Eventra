@@ -35,6 +35,22 @@ export const updateAdminUser = async (userId, data) => {
   }
 };
 
+/**
+ * Updates the role of a user via the admin RBAC endpoint.
+ * Backend: PUT /api/admin/users/{id}/role
+ * @param {number|string} userId - ID of the target user
+ * @param {string} role - New role (e.g. "ATTENDEE", "ORGANIZER", "ADMIN", "SUPER_ADMIN")
+ * @returns {Promise<Object>} Updated AdminUserResponse
+ */
+export const updateAdminUserRole = async (userId, role) => {
+  try {
+    const response = await apiUtils.put(`${API_ENDPOINTS.ADMIN.USER(userId)}/role`, { role });
+    return response.data;
+  } catch (error) {
+    handleError(error, "Failed to update user role");
+  }
+};
+
 export const fetchAdminEvents = async ({ page = 0, size = 10, search = "" } = {}) => {
   try {
     const params = new URLSearchParams();
