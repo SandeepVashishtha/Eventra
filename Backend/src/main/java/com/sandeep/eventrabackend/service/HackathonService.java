@@ -1,3 +1,5 @@
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 package com.sandeep.eventrabackend.service;
 
 import org.slf4j.Logger;
@@ -58,7 +60,8 @@ public class HackathonService {
     }
 
     @Transactional(readOnly = true)
-    public HackathonResponse getHackathonById(Long id) {
+    public HackathonResponse @Cacheable(value = "hackathons", key = "#id")
+    getHackathonById(Long id) {
         return hackathonRepository.findByIdAndIsDeletedFalse(id)
                 .map(this::mapToResponse)
                 .orElseThrow(() -> new HackathonNotFoundException("Hackathon not found with id: " + id));
@@ -89,7 +92,8 @@ public class HackathonService {
     }
 
     @Transactional
-    public HackathonResponse updateHackathon(Long id, com.sandeep.eventrabackend.dto.request.HackathonUpdateRequest request, String userEmail) {
+    public HackathonResponse @CacheEvict(value = "hackathons", key = "#id")
+    updateHackathon(Long id, com.sandeep.eventrabackend.dto.request.HackathonUpdateRequest request, String userEmail) {
         Hackathon hackathon = hackathonRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new HackathonNotFoundException("Hackathon not found with id: " + id));
 

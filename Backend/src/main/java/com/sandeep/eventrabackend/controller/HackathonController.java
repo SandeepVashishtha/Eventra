@@ -1,3 +1,5 @@
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 package com.sandeep.eventrabackend.controller;
 
 import com.sandeep.eventrabackend.dto.request.HackathonCreateRequest;
@@ -176,12 +178,14 @@ public class HackathonController {
                     )
             )
     })
-    public ResponseEntity<HackathonResponse> updateHackathon(
+    public ResponseEntity<HackathonResponse> @CacheEvict(value = "hackathons", key = "#id")
+    updateHackathon(
             @Parameter(description = "ID of the hackathon to update")
             @PathVariable Long id,
             @Valid @RequestBody HackathonUpdateRequest request,
             Authentication authentication) {
-        return ResponseEntity.ok(hackathonService.updateHackathon(id, request, authentication.getName()));
+        return ResponseEntity.ok(hackathonService.@CacheEvict(value = "hackathons", key = "#id")
+    updateHackathon(id, request, authentication.getName()));
     }
 
     @GetMapping
@@ -223,10 +227,12 @@ public class HackathonController {
                     )
             )
     })
-    public ResponseEntity<HackathonResponse> getHackathonById(
+    public ResponseEntity<HackathonResponse> @Cacheable(value = "hackathons", key = "#id")
+    getHackathonById(
             @Parameter(description = "ID of the hackathon")
             @PathVariable Long id) {
-        return ResponseEntity.ok(hackathonService.getHackathonById(id));
+        return ResponseEntity.ok(hackathonService.@Cacheable(value = "hackathons", key = "#id")
+    getHackathonById(id));
     }
 
     @DeleteMapping("/{id}")
