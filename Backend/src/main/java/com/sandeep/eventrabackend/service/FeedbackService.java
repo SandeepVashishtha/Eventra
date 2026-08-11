@@ -76,7 +76,15 @@ public class FeedbackService {
     }
 
     @Transactional(readOnly = true)
-    public Map<String, Object> getOrganizerScore(Long organizerId) {
+    public Map<String, Object> getOrganizerScore(Long organizerId, String callerEmail) {
+        User caller = userRepository.findByEmail(callerEmail)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + callerEmail));
+
+        boolean isAdmin = caller.getRole() == Role.ADMIN || caller.getRole() == Role.SUPER_ADMIN;
+        if (!isAdmin && !caller.getId().equals(organizerId)) {
+            throw new AccessDeniedException("You are not authorized to view score for this organizer.");
+        }
+
         Double averageRating = feedbackRepository.findAverageRatingByOrganizer(organizerId);
         long reviewCount = feedbackRepository.countByOrganizer(organizerId);
 

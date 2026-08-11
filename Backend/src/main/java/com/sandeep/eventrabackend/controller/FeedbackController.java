@@ -70,9 +70,18 @@ public class FeedbackController {
     }
 
     @GetMapping("/organizers/{organizerId}/score")
-    @Operation(summary = "Get organizer score", description = "Returns the average rating and review count for an organizer.")
-    public ResponseEntity<Map<String, Object>> getOrganizerScore(@PathVariable Long organizerId) {
-        return ResponseEntity.ok(feedbackService.getOrganizerScore(organizerId));
+    @Operation(summary = "Get organizer score", description = "Returns the average rating and review count for an organizer. Only the organizer or an administrator may access this endpoint.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Organizer score fetched successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - JWT required",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Forbidden - Caller is not the organizer or an administrator",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<Map<String, Object>> getOrganizerScore(
+            @PathVariable Long organizerId,
+            Authentication authentication) {
+        return ResponseEntity.ok(feedbackService.getOrganizerScore(organizerId, authentication.getName()));
     }
 
     @GetMapping("/organizers/{organizerId}")
