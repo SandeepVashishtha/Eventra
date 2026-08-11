@@ -11,19 +11,19 @@ const TicketTiersSection = ({
   setErrors,
 }) => {
 
-  const handleTicketTierChange = (index, field, value) => {
+  const handleTicketTierChange = (id, field, value) => {
     setFormData((prev) => ({
       ...prev,
-      ticketTiers: prev.ticketTiers.map((tier, i) =>
-        i === index ? { ...tier, [field]: value } : tier
+      ticketTiers: prev.ticketTiers.map((tier) =>
+        tier.id === id ? { ...tier, [field]: value } : tier
       ),
     }));
 
     const errorKey =
     field === "price"
-        ? `ticketPrice_${index}`
+        ? `ticketPrice_${id}`
         : field === "capacity"
-        ? `ticketCapacity_${index}`
+        ? `ticketCapacity_${id}`
         : null;
 
     if (errorKey && errors[errorKey]) {
@@ -40,6 +40,7 @@ const TicketTiersSection = ({
       ticketTiers: [
         ...prev.ticketTiers,
         {
+          id: crypto.randomUUID(),
           name: "",
           price: 0,
           capacity: "",
@@ -49,11 +50,11 @@ const TicketTiersSection = ({
     }));
   };
 
-  const removeTicketTier = (index) => {
+  const removeTicketTier = (id) => {
     if (formData.ticketTiers.length > 1) {
       setFormData((prev) => ({
         ...prev,
-        ticketTiers: prev.ticketTiers.filter((_, i) => i !== index),
+        ticketTiers: prev.ticketTiers.filter((tier) => tier.id !== id),
       }));
     }
   };
@@ -77,7 +78,7 @@ const TicketTiersSection = ({
 <div className="space-y-6">
   {formData.ticketTiers.map((tier, index) => (
     <div
-      key={index}
+      key={tier.id}
       className="border border-gray-200 dark:border-gray-700 rounded-xl p-5 bg-gray-50 dark:bg-gray-800"
     >
       <div className="flex justify-between items-center mb-4">
@@ -88,7 +89,7 @@ const TicketTiersSection = ({
         {formData.ticketTiers.length > 1 && (
           <button
             type="button"
-            onClick={() => removeTicketTier(index)}
+            onClick={() => removeTicketTier(tier.id)}
             className="text-red-500 hover:text-red-700 text-sm font-medium"
           >
             Remove
@@ -107,7 +108,7 @@ const TicketTiersSection = ({
             type="text"
             value={tier.name}
             onChange={(e) =>
-              handleTicketTierChange(index, "name", e.target.value)
+              handleTicketTierChange(tier.id, "name", e.target.value)
             }
             placeholder="VIP / Early Bird / General"
             className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
@@ -125,18 +126,18 @@ const TicketTiersSection = ({
             min="0"
             value={tier.price}
             onChange={(e) =>
-              handleTicketTierChange(index, "price", e.target.value)
+              handleTicketTierChange(tier.id, "price", e.target.value)
             }
             className={`w-full border ${
-              errors[`ticketPrice_${index}`]
+              errors[`ticketPrice_${tier.id}`]
                 ? "border-red-500"
                 : "border-gray-300 dark:border-gray-600"
             } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100`}
           />
 
-          {errors[`ticketPrice_${index}`] && (
+          {errors[`ticketPrice_${tier.id}`] && (
             <span className="text-red-500 text-sm mt-1">
-              {errors[`ticketPrice_${index}`]}
+              {errors[`ticketPrice_${tier.id}`]}
             </span>
           )}
         </div>
@@ -152,19 +153,19 @@ const TicketTiersSection = ({
             min="1"
             value={tier.capacity}
             onChange={(e) =>
-              handleTicketTierChange(index, "capacity", e.target.value)
+              handleTicketTierChange(tier.id, "capacity", e.target.value)
             }
             placeholder="100"
             className={`w-full border ${
-              errors[`ticketCapacity_${index}`]
+              errors[`ticketCapacity_${tier.id}`]
                 ? "border-red-500"
                 : "border-gray-300 dark:border-gray-600"
             } rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100`}
           />
 
-          {errors[`ticketCapacity_${index}`] && (
+          {errors[`ticketCapacity_${tier.id}`] && (
             <span className="text-red-500 text-sm mt-1">
-              {errors[`ticketCapacity_${index}`]}
+              {errors[`ticketCapacity_${tier.id}`]}
             </span>
           )}
         </div>
@@ -180,7 +181,7 @@ const TicketTiersSection = ({
             maxLength={200}
             value={tier.description}
             onChange={(e) =>
-              handleTicketTierChange(index, "description", e.target.value)
+              handleTicketTierChange(tier.id, "description", e.target.value)
             }
             placeholder="Describe perks and benefits"
             className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 resize-none"
