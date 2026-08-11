@@ -327,9 +327,18 @@ export const navigateCalendarDate = (date, view, direction) => {
   const next = new Date(date);
   const amount = direction === "next" ? 1 : -1;
 
-  if (view === "month") next.setMonth(next.getMonth() + amount);
-  else if (view === "week") next.setDate(next.getDate() + amount * 7);
-  else next.setDate(next.getDate() + amount);
+  if (view === "month") {
+    // Clamp the anchor day to the 1st before advancing the month, otherwise
+    // JS Date rolls over: setMonth on Jan 31 lands on Mar 3 (Feb 31 doesn't
+    // exist), skipping February entirely. Anchoring on day 1 guarantees the
+    // target month is reached; the caller reselects a concrete day later.
+    next.setDate(1);
+    next.setMonth(next.getMonth() + amount);
+  } else if (view === "week") {
+    next.setDate(next.getDate() + amount * 7);
+  } else {
+    next.setDate(next.getDate() + amount);
+  }
 
   return next;
 };
