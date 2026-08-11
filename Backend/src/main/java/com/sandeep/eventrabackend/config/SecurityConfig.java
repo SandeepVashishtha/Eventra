@@ -127,6 +127,9 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        // ── Public: pre-submit availability checks ──────────
+                        // Email/username validation runs before the user has a JWT.
+                        .requestMatchers("/api/validate/**").permitAll()
                         .requestMatchers(
                                 "/actuator/health",
                                 "/actuator/health/**"
