@@ -6,10 +6,6 @@ export const parseTimeToMinutes = (timeStr) => {
   const parsed = parseTimeString(timeStr);
   if (!parsed) return 0;
 
-  if (isNaN(lat) || isNaN(lng)) {
-    return null;
-  }
-
   return parsed.hours * 60 + parsed.minutes;
 };
 
