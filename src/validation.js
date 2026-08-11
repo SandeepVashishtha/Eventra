@@ -43,7 +43,8 @@ export const validate = {
    * Input is length-capped before regex to guard against long-string attacks.
    */
   email: (val) => {
-    if (!val || val.length > MAX_EMAIL_LENGTH) return "Invalid email format";
+    if (!val) return "Email is required";
+    if (val.length > MAX_EMAIL_LENGTH) return "Email address is too long";
     return EMAIL_REGEX.test(val) || "Invalid email format";
   },
 
