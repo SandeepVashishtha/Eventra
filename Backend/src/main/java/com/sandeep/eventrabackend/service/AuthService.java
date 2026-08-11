@@ -11,6 +11,7 @@ import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.UserRepository;
 import com.sandeep.eventrabackend.security.JwtTokenProvider;
 import com.sandeep.eventrabackend.security.TokenBlacklistService;
+import com.sandeep.eventrabackend.security.TokenRefreshQueueHandler;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -33,13 +34,15 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final GoogleAuthService googleAuthService;
     private final TokenBlacklistService tokenBlacklistService;
+    private final TokenRefreshQueueHandler tokenRefreshQueueHandler;
 
     public AuthService(UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             AuthenticationManager authenticationManager,
             JwtTokenProvider jwtTokenProvider,
             GoogleAuthService googleAuthService,
-            TokenBlacklistService tokenBlacklistService) {
+            TokenBlacklistService tokenBlacklistService,
+            TokenRefreshQueueHandler tokenRefreshQueueHandler) {
 
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -47,6 +50,7 @@ public class AuthService {
         this.jwtTokenProvider = jwtTokenProvider;
         this.googleAuthService = googleAuthService;
         this.tokenBlacklistService = tokenBlacklistService;
+        this.tokenRefreshQueueHandler = tokenRefreshQueueHandler;
     }
 
     @Transactional
@@ -169,9 +173,23 @@ public class AuthService {
                 user = userRepository.save(user);
             } else if (!user.isEmailVerified()
                     && (user.getAuthProvider() == null || "LOCAL".equalsIgnoreCase(user.getAuthProvider()))) {
-                throw new InvalidGoogleTokenException(
-                        "An unverified password account already exists for this email. "
-                                + "Sign in with your password and verify the email before linking Google.");
+                // Unverified LOCAL accounts can be claimed by a verified Google identity
+                // for the same email. Verified LOCAL accounts are left untouched below.
+                SecureRandom secureRandom = new SecureRandom();
+                byte[] randomBytes = new byte[32];
+                secureRandom.nextBytes(randomBytes);
+                String securePassword = Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
+
+                user.setAuthProvider("GOOGLE");
+                user.setEmailVerified(true);
+                user.setPassword(passwordEncoder.encode(securePassword));
+                if (firstName != null && !firstName.isBlank()) {
+                    user.setFirstName(firstName);
+                }
+                if (lastName != null && !lastName.isBlank()) {
+                    user.setLastName(lastName);
+                }
+                user = userRepository.save(user);
             } else if (!user.isEmailVerified()) {
                 user.setEmailVerified(true);
                 if (user.getAuthProvider() == null || user.getAuthProvider().isBlank()) {
@@ -191,9 +209,18 @@ public class AuthService {
         }
     }
 
-    public void logout(String token) {
-        java.util.Date expiration = jwtTokenProvider.getExpirationDateFromToken(token);
-        tokenBlacklistService.addToBlacklist(token, expiration);
+    public void logout(String accessToken, String refreshToken) {
+        if (accessToken != null && !accessToken.isBlank()) {
+            java.util.Date expiration = jwtTokenProvider.getExpirationDateFromToken(accessToken);
+            tokenBlacklistService.addToBlacklist(accessToken, expiration);
+        }
+
+        if (refreshToken != null && !refreshToken.isBlank()
+                && jwtTokenProvider.validateToken(refreshToken)
+                && jwtTokenProvider.isRefreshToken(refreshToken)) {
+            java.util.Date refreshExpiration = jwtTokenProvider.getExpirationDateFromToken(refreshToken);
+            tokenBlacklistService.addToBlacklist(refreshToken, refreshExpiration);
+        }
     }
 
     public void reauth(String userEmail, String password) {
@@ -241,8 +268,15 @@ public class AuthService {
         }
 
         if (tokenBlacklistService.isBlacklisted(refreshToken)) {
-            throw new org.springframework.security.authentication.BadCredentialsException(
-                    "Refresh token has been revoked");
+            // Allow reuse within the short grace window after rotation so
+            // parallel requests racing on a just-rotated token succeed.
+            if (tokenRefreshQueueHandler != null
+                    && tokenRefreshQueueHandler.isWithinGracePeriod(refreshToken)) {
+                // fall through and rotate again
+            } else {
+                throw new org.springframework.security.authentication.BadCredentialsException(
+                        "Refresh token has been revoked");
+            }
         }
 
         String email = jwtTokenProvider.getUsernameFromToken(refreshToken);
@@ -265,6 +299,7 @@ public class AuthService {
         // Rotate: blacklist the presented refresh token, then mint a new pair.
         tokenBlacklistService.addToBlacklist(
                 refreshToken, jwtTokenProvider.getExpirationDateFromToken(refreshToken));
+        tokenRefreshQueueHandler.registerTokenRotation(refreshToken);
 
         String accessToken = jwtTokenProvider.generateToken(user.getEmail(), user.getRole().name());
         return buildAuthResponse(user, accessToken);

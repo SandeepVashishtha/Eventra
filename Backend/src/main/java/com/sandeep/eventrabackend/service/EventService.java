@@ -1,11 +1,17 @@
+import com.eventra.specification.SearchSpecification;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 package com.sandeep.eventrabackend.service;
 
 import com.sandeep.eventrabackend.dto.request.CancelEventRequest;
 import com.sandeep.eventrabackend.dto.request.EventCreateRequest;
+import com.sandeep.eventrabackend.dto.request.EventScheduleRequest;
 import com.sandeep.eventrabackend.dto.request.EventUpdateRequest;
 import com.sandeep.eventrabackend.dto.response.EventAvailabilityResponse;
 import com.sandeep.eventrabackend.dto.response.AttendeeDirectoryResponse;
 import com.sandeep.eventrabackend.dto.response.EventResponse;
+import com.sandeep.eventrabackend.dto.response.EventScheduleResponse;
 import com.sandeep.eventrabackend.dto.response.EventRegistrantResponse;
 import com.sandeep.eventrabackend.dto.response.MyRegisteredEventResponse;
 import com.sandeep.eventrabackend.dto.response.PagedResponse;
@@ -190,7 +196,7 @@ public class EventService {
         public EventResponse getPublicEventById(long id) {
                 return eventRepository.findById(id)
                                 .filter(Event::isPublic)
-                                .map(this::toEventResponse)
+                                .map(this::toPublicEventResponse)
                                 .orElseThrow(() -> new EventNotFoundException(
                                                 "Event not found with id: " + id));
         }
@@ -217,7 +223,7 @@ public class EventService {
                 int safeSize = (size <= 0) ? 20 : Math.min(size, 100);
                 Pageable pageable = PageRequest.of(safePage, safeSize, resolveSort(sort));
                 Specification<Event> spec = EventSpecifications.publicListing(search, statuses);
-                Page<EventResponse> result = eventRepository.findAll(spec, pageable).map(this::toEventResponse);
+                Page<EventResponse> result = eventRepository.findAll(spec, pageable).map(this::toPublicEventResponse);
                 return PagedResponse.from(result);
         }
 
@@ -266,36 +272,7 @@ public class EventService {
                                                 to,
                                                 org.springframework.data.domain.PageRequest.of(0, size))
                                 .stream()
-                                .map(this::toEventResponse)
-                                .toList();
-        }
-
-
-        /**
-         * Returns a bounded window of public events near {@code around} for conflict
-         * alternative suggestions (avoids loading the entire catalog).
-         */
-        @Transactional(readOnly = true)
-        public List<EventResponse> findAlternativeEvents(
-                        Long excludeEventId,
-                        LocalDateTime around,
-                        int windowDays,
-                        int limit) {
-
-                LocalDateTime center = around != null ? around : LocalDateTime.now();
-                int days = Math.min(Math.max(windowDays, 1), 90);
-                int size = Math.min(Math.max(limit, 1), 50);
-                LocalDateTime from = center.minusDays(days);
-                LocalDateTime to = center.plusDays(days);
-
-                return eventRepository
-                                .findPublicAlternativesInWindow(
-                                                excludeEventId,
-                                                from,
-                                                to,
-                                                org.springframework.data.domain.PageRequest.of(0, size))
-                                .stream()
-                                .map(this::toEventResponse)
+                                .map(this::toPublicEventResponse)
                                 .toList();
         }
 
@@ -381,18 +358,21 @@ public class EventService {
         }
 
         private int calculateCurrentStreak(List<EventRegistration> registrations) {
+                LocalDate today = LocalDate.now();
                 LinkedHashSet<LocalDate> dates = registrations.stream()
                                 .filter(registration -> "CONFIRMED".equals(registration.getStatus()))
                                 .map(EventRegistration::getEvent)
                                 .filter(event -> event != null && event.getEventDate() != null)
                                 .map(event -> event.getEventDate().toLocalDate())
+                                .filter(date -> !date.isAfter(today))
                                 .sorted(java.util.Comparator.reverseOrder())
                                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
                 int streak = 0;
-                LocalDate expected = null;
+                // A current streak may end today or yesterday.
+                LocalDate expected = dates.contains(today) ? today : today.minusDays(1);
                 for (LocalDate date : dates) {
-                        if (expected == null || date.equals(expected)) {
+                        if (date.equals(expected)) {
                                 streak++;
                                 expected = date.minusDays(1);
                         } else if (date.isBefore(expected)) {
@@ -468,7 +448,7 @@ public class EventService {
 
                 return events.stream()
                                 .filter(Event::isPublic)
-                                .map(this::toEventResponse)
+                                .map(this::toPublicEventResponse)
                                 .collect(Collectors.toList());
         }
 
@@ -488,6 +468,9 @@ public class EventService {
                 event.setCapacity(request.getCapacity());
                 event.setImageUrl(request.getImageUrl());
                 event.setCategory(request.getCategory());
+                if (request.getCategories() != null) {
+                    event.setCategories(new HashSet<>(request.getCategories()));
+                }
                 if (request.getTags() != null) {
                         event.setTags(new HashSet<>(request.getTags()));
                 }
@@ -519,7 +502,8 @@ public class EventService {
          * @throws EventNotFoundException if the event does not exist
          */
         @Transactional
-        public EventResponse updateEvent(Long id, EventUpdateRequest request, String userEmail) {
+        public EventResponse @CacheEvict(value = "events", key = "#id")
+    updateEvent(Long id, EventUpdateRequest request, String userEmail) {
                 Event event = eventRepository.findById(id)
                                 .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + id));
 
@@ -531,6 +515,8 @@ public class EventService {
                                         "Capacity cannot be reduced below the current number of registered users ("
                                                         + event.getRegisteredCount() + ")");
                 }
+
+                Integer previousCapacity = event.getCapacity();
 
                 event.setTitle(request.getTitle());
                 event.setDescription(request.getDescription());
@@ -548,12 +534,61 @@ public class EventService {
                 if (request.getCategory() != null) {
                         event.setCategory(request.getCategory());
                 }
+                if (request.getCategories() != null) {
+                    event.setCategories(new HashSet<>(request.getCategories()));
+                }
                 if (request.getTags() != null) {
                         event.setTags(new HashSet<>(request.getTags()));
                 }
 
                 Event saved = eventRepository.save(event);
+
+                // Capacity increase frees seats — promote waitlisted users (same helper as cancel/admin)
+                boolean capacityIncreased = request.getCapacity() != null
+                                && previousCapacity != null
+                                && request.getCapacity() > previousCapacity;
+                if (capacityIncreased) {
+                        int freedSeats = request.getCapacity() - previousCapacity;
+                        for (int i = 0; i < freedSeats; i++) {
+                                promoteWaitlistAfterVacancy(saved.getId());
+                        }
+                        saved = eventRepository.findById(saved.getId()).orElse(saved);
+                }
+
                 return toEventResponse(saved);
+        }
+
+        @Transactional(readOnly = true)
+        public EventScheduleResponse getEventSchedule(Long id) {
+                Event event = eventRepository.findById(id)
+                                .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + id));
+                return toEventScheduleResponse(event, null);
+        }
+
+        @Transactional
+        public EventScheduleResponse updateEventSchedule(Long id, EventScheduleRequest request, String userEmail) {
+                Event event = eventRepository.findById(id)
+                                .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + id));
+                eventRoleService.requireRole(id, userEmail, EventRole.ORGANIZER);
+
+                if (request.getStartDate() == null) {
+                        throw new IllegalArgumentException("Schedule startDate is required.");
+                }
+                if (request.getEndDate() != null && request.getEndDate().isBefore(request.getStartDate())) {
+                        throw new IllegalArgumentException("Schedule endDate must be after startDate.");
+                }
+
+                event.setEventDate(request.getStartDate());
+                Event saved = eventRepository.save(event);
+                return toEventScheduleResponse(saved, request.getEndDate());
+        }
+
+        private EventScheduleResponse toEventScheduleResponse(Event event, LocalDateTime endDate) {
+                return EventScheduleResponse.builder()
+                                .eventId(event.getId())
+                                .startDate(event.getEventDate())
+                                .endDate(endDate != null ? endDate : event.getEventDate())
+                                .build();
         }
 
         /**
@@ -639,18 +674,39 @@ public class EventService {
                         return List.of();
                 }
 
-                return eventRegistrationRepository.findByEvent_IdAndStatus(eventId, "CONFIRMED").stream()
+                java.util.LinkedHashSet<String> emails = new java.util.LinkedHashSet<>();
+                eventRegistrationRepository.findByEvent_IdAndStatus(eventId, "CONFIRMED").stream()
                                 .map(registration -> registration.getUser().getEmail())
-                                .toList();
+                                .forEach(emails::add);
+                eventWaitlistRepository
+                                .findByEvent_IdAndStatusOrderByPositionAscJoinedAtAsc(eventId, "CANCELLED")
+                                .stream()
+                                .map(entry -> entry.getUser().getEmail())
+                                .forEach(emails::add);
+                return List.copyOf(emails);
         }
 
         private void notifyCancellation(Event event, String reason) {
+                String message = event.getTitle() + " has been cancelled. Reason: " + reason;
+
                 eventRegistrationRepository.findByEvent_IdAndStatus(event.getId(), "CONFIRMED")
                                 .forEach(registration -> notificationRepository.save(Notification.builder()
                                                 .user(registration.getUser())
                                                 .title("Event cancelled")
-                                                .message(event.getTitle() + " has been cancelled. Reason: " + reason)
+                                                .message(message)
                                                 .build()));
+
+                eventWaitlistRepository
+                                .findByEvent_IdAndStatusOrderByPositionAscJoinedAtAsc(event.getId(), "WAITING")
+                                .forEach(entry -> {
+                                        notificationRepository.save(Notification.builder()
+                                                        .user(entry.getUser())
+                                                        .title("Event cancelled")
+                                                        .message(message)
+                                                        .build());
+                                        entry.setStatus("CANCELLED");
+                                        eventWaitlistRepository.save(entry);
+                                });
         }
 
         /**
@@ -744,7 +800,7 @@ public class EventService {
 
                 broadcastAvailability(event);
 
-                promoteFirstWaitingUser(event);
+                promoteWaitlistAfterVacancy(eventId);
         }
 
         @Transactional(readOnly = true)
@@ -948,7 +1004,14 @@ public class EventService {
                 Event event = eventRepository.findByIdWithLock(eventId)
                                 .orElseThrow(() -> new EventNotFoundException(
                                                 "Event not found with id: " + eventId));
-                promoteFirstWaitingUser(event);
+                while (event.getCapacity() == null || event.getRegisteredCount() < event.getCapacity()) {
+                        RegistrationResponse promoted = promoteFirstWaitingUser(event);
+                        if (promoted == null) {
+                                break;
+                        }
+                        event.setRegisteredCount((int) eventRegistrationRepository
+                                        .countByEvent_IdAndStatus(eventId, "CONFIRMED"));
+                }
         }
 
         private RegistrationResponse promoteFirstWaitingUser(Event event) {
@@ -956,21 +1019,20 @@ public class EventService {
                         return null;
                 }
 
-                return eventWaitlistRepository.findWaitingByEventIdWithLock(event.getId())
-                                .stream()
-                                .findFirst()
-                                .map(entry -> promoteEntry(event, entry))
-                                .orElse(null);
+                for (EventWaitlist entry : eventWaitlistRepository.findWaitingByEventIdWithLock(event.getId())) {
+                        if (eventRegistrationRepository.existsByEvent_IdAndUser_Email(
+                                        event.getId(), entry.getUser().getEmail())) {
+                                entry.setStatus("REMOVED");
+                                eventWaitlistRepository.save(entry);
+                                continue;
+                        }
+                        return promoteEntry(event, entry);
+                }
+                return null;
         }
 
         private RegistrationResponse promoteEntry(Event event, EventWaitlist entry) {
                 User user = entry.getUser();
-
-                if (eventRegistrationRepository.existsByEvent_IdAndUser_Email(event.getId(), user.getEmail())) {
-                        entry.setStatus("REMOVED");
-                        eventWaitlistRepository.save(entry);
-                        return null;
-                }
 
                 EventRegistration registration = new EventRegistration();
                 registration.setEvent(event);
@@ -1075,6 +1137,7 @@ public class EventService {
                                 .imageUrl(event.getImageUrl())
                                 .ownerId(event.getOwnerId())
                                 .category(event.getCategory())
+                                .categories(event.getCategories())
                                 .tags(event.getTags())
                                 .status(event.getStatus())
                                 .cancellationReason(event.getCancellationReason())
@@ -1082,6 +1145,17 @@ public class EventService {
                                 .refundPolicy(event.getRefundPolicy())
                                 .refundPercent(event.getRefundPercent())
                                 .build();
+        }
+
+        /**
+         * Public catalog responses must not expose organizer user IDs or internal
+         * cancellation notes (Issue #13603).
+         */
+        private EventResponse toPublicEventResponse(Event event) {
+                EventResponse response = toEventResponse(event);
+                response.setOwnerId(null);
+                response.setCancellationReason(null);
+                return response;
         }
 
         private WaitlistResponse toWaitlistResponse(EventWaitlist entry) {
@@ -1128,14 +1202,16 @@ public class EventService {
         }
 
         public String buildIcsFeed(Long eventId) {
-                Event event = eventRepository.findById(eventId)
-                                .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + eventId));
+                Event event = requirePublicEvent(eventId);
 
-                java.time.LocalDateTime start = event.getEventDate() != null
-                                ? event.getEventDate()
-                                : java.time.LocalDateTime.now();
-                java.time.LocalDateTime end = start.plusHours(2);
-                java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss");
+                java.time.Instant start = event.getEventDate() != null
+                                ? event.getEventDate().atZone(java.time.ZoneId.systemDefault()).toInstant()
+                                : java.time.Instant.now();
+                // Event model has no endDate; default duration is 2 hours when end is unspecified.
+                java.time.Instant end = start.plus(java.time.Duration.ofHours(2));
+                java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter
+                                .ofPattern("yyyyMMdd'T'HHmmss'Z'")
+                                .withZone(java.time.ZoneOffset.UTC);
 
                 String summary = escapeIcs(event.getTitle() != null ? event.getTitle() : "Eventra Event");
                 String description = escapeIcs(event.getDescription() != null ? event.getDescription() : "");
@@ -1149,9 +1225,9 @@ public class EventService {
                                 + "METHOD:PUBLISH\r\n"
                                 + "BEGIN:VEVENT\r\n"
                                 + "UID:" + uid + "\r\n"
-                                + "DTSTAMP:" + java.time.LocalDateTime.now().format(fmt) + "\r\n"
-                                + "DTSTART:" + start.format(fmt) + "\r\n"
-                                + "DTEND:" + end.format(fmt) + "\r\n"
+                                + "DTSTAMP:" + fmt.format(java.time.Instant.now()) + "\r\n"
+                                + "DTSTART:" + fmt.format(start) + "\r\n"
+                                + "DTEND:" + fmt.format(end) + "\r\n"
                                 + "SUMMARY:" + summary + "\r\n"
                                 + "DESCRIPTION:" + description + "\r\n"
                                 + "LOCATION:" + location + "\r\n"

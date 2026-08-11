@@ -168,7 +168,7 @@ const TYPE_STYLE = {
 
 const getTypeStyle = (type = "") =>
   TYPE_STYLE[type.toLowerCase()] ||
-  "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400";
+  "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-200";
 
 // ─── Skeleton card ────────────────────────────────────────────────────────────
 
@@ -244,7 +244,7 @@ const SimilarEventCard = memo(({ event, score, matchReason }) => {
         </h4>
 
         {/* Meta */}
-        <div className="flex flex-col gap-1 text-[11px] text-gray-500 dark:text-gray-400">
+        <div className="flex flex-col gap-1 text-[11px] text-gray-500 dark:text-gray-200">
           {formattedDate && (
             <span className="flex items-center gap-1">
               <Calendar size={11} className="shrink-0 text-gray-400" />
@@ -271,7 +271,7 @@ const SimilarEventCard = memo(({ event, score, matchReason }) => {
             {event.tags.slice(0, 3).map((tag) => (
               <span
                 key={tag}
-                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-medium rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
+                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-medium rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-200"
               >
                 <Tag size={8} />
                 {tag}
@@ -345,7 +345,7 @@ const SimilarEvents = ({ currentEvent }) => {
             <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">
               Similar Events
             </h2>
-            <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+            <p className="text-[11px] text-gray-500 dark:text-gray-200 mt-0.5">
               Based on category, tags, and type
             </p>
           </div>

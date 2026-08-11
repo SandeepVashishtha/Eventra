@@ -39,7 +39,7 @@ const FeedbackSummary = ({ eventId, compact = false }) => {
           <span className="font-semibold text-gray-900 dark:text-white">
             {averageRating.average}
           </span>
-          <span className="text-gray-500 dark:text-gray-400">({averageRating.count})</span>
+          <span className="text-gray-500 dark:text-gray-200">({averageRating.count})</span>
         </div>
       </div>
     );
@@ -79,7 +79,7 @@ const FeedbackSummary = ({ eventId, compact = false }) => {
           </div>
 
           <div className="flex-1">
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+            <p className="text-sm text-gray-600 dark:text-gray-200 mb-3">
               Based on {averageRating.count} review{averageRating.count !== 1 ? 's' : ''}
             </p>
 
@@ -93,7 +93,7 @@ const FeedbackSummary = ({ eventId, compact = false }) => {
 
                 return (
                   <div key={stars} className="flex items-center gap-2">
-                    <span className="text-xs text-gray-600 dark:text-gray-400 w-8">
+                    <span className="text-xs text-gray-600 dark:text-gray-200 w-8">
                       {stars}★
                     </span>
                     <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
@@ -102,7 +102,7 @@ const FeedbackSummary = ({ eventId, compact = false }) => {
                         style={{ width: `${percentage}%` }}
                       />
                     </div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 w-8 text-right">
+                    <span className="text-xs text-gray-500 dark:text-gray-200 w-8 text-right">
                       {percentage}%
                     </span>
                   </div>
@@ -131,7 +131,7 @@ const FeedbackSummary = ({ eventId, compact = false }) => {
               <div className="text-2xl font-bold text-green-600">
                 {recommendationStats.percentage}%
               </div>
-              <p className="text-xs text-gray-600 dark:text-gray-400">
+              <p className="text-xs text-gray-600 dark:text-gray-200">
                 {recommendationStats.recommendCount} of {recommendationStats.total}
               </p>
             </div>

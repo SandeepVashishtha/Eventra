@@ -8,13 +8,16 @@ import com.sandeep.eventrabackend.exception.FeedbackAlreadyExistsException;
 import com.sandeep.eventrabackend.exception.UserNotRegisteredException;
 import com.sandeep.eventrabackend.model.Event;
 import com.sandeep.eventrabackend.model.Feedback;
+import com.sandeep.eventrabackend.model.Role;
 import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.EventRegistrationRepository;
 import com.sandeep.eventrabackend.repository.EventRepository;
 import com.sandeep.eventrabackend.repository.FeedbackAnalyticsRepository;
 import com.sandeep.eventrabackend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -64,9 +67,12 @@ public class FeedbackService {
         feedback.setRating(request.getRating());
         feedback.setComment(request.getComment());
 
-        Feedback savedFeedback = feedbackRepository.save(feedback);
-
-        return mapToResponse(savedFeedback);
+        try {
+            Feedback savedFeedback = feedbackRepository.saveAndFlush(feedback);
+            return mapToResponse(savedFeedback);
+        } catch (DataIntegrityViolationException ex) {
+            throw new FeedbackAlreadyExistsException("You have already submitted feedback for this event.");
+        }
     }
 
     @Transactional(readOnly = true)
@@ -82,7 +88,15 @@ public class FeedbackService {
     }
 
     @Transactional(readOnly = true)
-    public List<FeedbackResponse> getOrganizerFeedback(Long organizerId) {
+    public List<FeedbackResponse> getOrganizerFeedback(Long organizerId, String callerEmail) {
+        User caller = userRepository.findByEmail(callerEmail)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + callerEmail));
+
+        boolean isAdmin = caller.getRole() == Role.ADMIN || caller.getRole() == Role.SUPER_ADMIN;
+        if (!isAdmin && !caller.getId().equals(organizerId)) {
+            throw new AccessDeniedException("You are not authorized to view feedback for this organizer.");
+        }
+
         return feedbackRepository.findByOrganizer(organizerId).stream()
                 .map(this::mapToResponse)
                 .toList();

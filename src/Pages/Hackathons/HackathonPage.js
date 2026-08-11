@@ -416,9 +416,13 @@ const HackathonHub = () => {
     } else if (sortBy === "oldest") {
       sorted.sort((a, b) => new Date(a.startDate || a.date || a.createdAt || 0) - new Date(b.startDate || b.date || b.createdAt || 0));
     } else if (sortBy === "prize_desc") {
+      const toNum = (value) => {
+        if (typeof value === "number") return value;
+        return Number(String(value || "").replace(/[^0-9.]/g, "")) || 0;
+      };
       sorted.sort((a, b) => {
-        const prizeA = typeof a.prizePool === 'number' ? a.prizePool : (a.prize || 0);
-        const prizeB = typeof b.prizePool === 'number' ? b.prizePool : (b.prize || 0);
+        const prizeA = toNum(a.prize ?? a.prizePool);
+        const prizeB = toNum(b.prize ?? b.prizePool);
         return prizeB - prizeA;
       });
     }

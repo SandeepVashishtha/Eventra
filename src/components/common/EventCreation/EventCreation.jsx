@@ -69,9 +69,12 @@ const EventCreation = () => {
     const response = await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, eventData);
     const result = response.data;
 
-    if (!(response.status === 200 && result.success)) {
+    // Backend returns 201 Created with EventResponse (id/title), not { success: true }.
+    const isSuccessStatus = response.status >= 200 && response.status < 300;
+    const hasEventData = Boolean(result && (result.id || result.title));
+    if (!(isSuccessStatus && hasEventData)) {
       const errorMessage =
-        result.message || result.error || `Server error: ${response.status}`;
+        result?.message || result?.error || `Server error: ${response.status}`;
       throw new Error(errorMessage);
     }
   });
@@ -405,7 +408,7 @@ const EventCreation = () => {
 
             <p
               className="
-          text-gray-600 dark:text-gray-400
+          text-gray-600 dark:text-gray-200
           mb-6
         "
             >
@@ -473,7 +476,7 @@ const EventCreation = () => {
             <h1 className="text-4xl sm:text-5xl font-extrabold text-indigo-800 dark:text-indigo-300 mb-4">
               Create Your Event
             </h1>
-            <p className="text-xs sm:text-base text-gray-600 dark:text-gray-400">
+            <p className="text-xs sm:text-base text-gray-600 dark:text-gray-200">
               Fill in the details below and bring your event to life!
             </p>
           </motion.div>

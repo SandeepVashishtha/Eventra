@@ -6,6 +6,7 @@ import com.sandeep.eventrabackend.dto.response.FeedbackResponse;
 import com.sandeep.eventrabackend.dto.response.PublicFeedbackResponse;
 import com.sandeep.eventrabackend.service.FeedbackService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -75,8 +76,18 @@ public class FeedbackController {
     }
 
     @GetMapping("/organizers/{organizerId}")
-    @Operation(summary = "Get organizer feedback", description = "Returns feedback submitted for past events owned by an organizer.")
-    public ResponseEntity<List<FeedbackResponse>> getOrganizerFeedback(@PathVariable Long organizerId) {
-        return ResponseEntity.ok(feedbackService.getOrganizerFeedback(organizerId));
+    @Operation(summary = "Get organizer feedback", description = "Returns feedback submitted for past events owned by an organizer. Only the organizer or an administrator may access this endpoint.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Organizer feedback fetched successfully",
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = FeedbackResponse.class)))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - JWT required",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Forbidden - Caller is not the organizer or an administrator",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<List<FeedbackResponse>> getOrganizerFeedback(
+            @PathVariable Long organizerId,
+            Authentication authentication) {
+        return ResponseEntity.ok(feedbackService.getOrganizerFeedback(organizerId, authentication.getName()));
     }
 }

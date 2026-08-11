@@ -1,5 +1,6 @@
 import { Calendar, MapPin, Tag, Star, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import { getCategoryByValue } from "constants/eventDefaults";
 
 const RecommendationCard = ({
   event,
@@ -59,11 +60,28 @@ const RecommendationCard = ({
             </div>
           )}
 
-          {event.category && (
-            <div className="flex items-center gap-2">
-              <Tag size={15} />
-              {event.category}
+          {event.categories && Array.isArray(event.categories) && event.categories.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {event.categories.slice(0, 3).map((catValue) => {
+                const category = getCategoryByValue(catValue);
+                return category ? (
+                  <span
+                    key={catValue}
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold text-white ${category.color}`}
+                  >
+                    <Tag size={12} />
+                    {category.label}
+                  </span>
+                ) : null;
+              })}
             </div>
+          ) : (
+            event.category && (
+              <div className="flex items-center gap-2">
+                <Tag size={15} />
+                {event.category}
+              </div>
+            )
           )}
 
         </div>

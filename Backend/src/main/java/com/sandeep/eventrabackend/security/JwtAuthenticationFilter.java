@@ -32,17 +32,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final TokenBlacklistService tokenBlacklistService;
     private final UserRepository userRepository;
     private final AuthCookieHelper authCookieHelper;
+    private final TokenRefreshQueueHandler tokenRefreshQueueHandler;
 
     public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider,
                                    UserDetailsService userDetailsService,
                                    TokenBlacklistService tokenBlacklistService,
                                    UserRepository userRepository,
-                                   AuthCookieHelper authCookieHelper) {
+                                   AuthCookieHelper authCookieHelper,
+                                   TokenRefreshQueueHandler tokenRefreshQueueHandler) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.userDetailsService = userDetailsService;
         this.tokenBlacklistService = tokenBlacklistService;
         this.userRepository = userRepository;
         this.authCookieHelper = authCookieHelper;
+        this.tokenRefreshQueueHandler = tokenRefreshQueueHandler;
     }
 
     @Override
@@ -54,10 +57,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String token = extractTokenFromRequest(request);
 
             if (StringUtils.hasText(token) && tokenBlacklistService.isBlacklisted(token)) {
-                logger.warn("Attempt to use blacklisted token.");
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.getWriter().write("Token has been revoked/logged out");
-                return;
+                if (tokenRefreshQueueHandler != null && tokenRefreshQueueHandler.isWithinGracePeriod(token)) {
+                    logger.info("Allowing grace-period token during concurrent refresh burst.");
+                } else {
+                    logger.warn("Attempt to use blacklisted token.");
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.getWriter().write("Token has been revoked/logged out");
+                    return;
+                }
             }
 
             if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
@@ -104,7 +111,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7);
         }
-        // Browser sessions: HttpOnly cookie set on login/signup/google
         return authCookieHelper.extractToken(request);
+    }
+
+    public boolean isTokenIssuedBeforePasswordUpdate(Date tokenIssuedAt, Date passwordUpdatedAt) {
+        if (passwordUpdatedAt == null || tokenIssuedAt == null) {
+            return false;
+        }
+        return tokenIssuedAt.before(passwordUpdatedAt);
     }
 }

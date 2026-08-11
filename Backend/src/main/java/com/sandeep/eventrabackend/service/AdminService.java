@@ -4,6 +4,7 @@ import com.sandeep.eventrabackend.dto.AdminDashboardStatsDTO;
 import com.sandeep.eventrabackend.dto.AdminStatsResponse;
 import com.sandeep.eventrabackend.dto.RegistrationTrendDTO;
 import com.sandeep.eventrabackend.dto.response.*;
+import com.sandeep.eventrabackend.exception.RegistrationConflictException;
 import com.sandeep.eventrabackend.model.Feedback;
 import com.sandeep.eventrabackend.model.Hackathon;
 import com.sandeep.eventrabackend.model.Role;
@@ -12,6 +13,8 @@ import com.sandeep.eventrabackend.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.util.StringUtils;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -60,11 +63,19 @@ public class AdminService {
      * @param size page size
      * @param role optional role filter (e.g. "CLIENT") — null means all users
      */
-    public PagedResponse<AdminUserResponse> getUsers(int page, int size, String role) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+    public PagedResponse<AdminUserResponse> getUsers(int page, int size, String role, String search) {
+        int safePage = Math.max(page, 0);
+        Pageable pageable = PageRequest.of(safePage, size, Sort.by("createdAt").descending());
         Page<User> userPage;
+        boolean hasSearch = StringUtils.hasText(search);
+        String trimmedSearch = hasSearch ? search.trim() : null;
 
-        if (role != null && !role.isBlank()) {
+        if (hasSearch && role != null && !role.isBlank()) {
+            Role roleEnum = parseRole(role);
+            userPage = userRepository.searchUsersByRole(roleEnum, trimmedSearch, pageable);
+        } else if (hasSearch) {
+            userPage = userRepository.searchUsers(trimmedSearch, pageable);
+        } else if (role != null && !role.isBlank()) {
             Role roleEnum = parseRole(role);
             userPage = userRepository.findByRole(roleEnum, pageable);
         } else {
@@ -93,15 +104,8 @@ public class AdminService {
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
 
         Role callerRole = getAuthenticatedRole();
-
-        if (callerRole != Role.SUPER_ADMIN) {
-            if (requestedRole == Role.SUPER_ADMIN) {
-                throw new AccessDeniedException("Only SUPER_ADMIN users can assign the SUPER_ADMIN role");
-            }
-            if (targetUser.getRole() == Role.SUPER_ADMIN) {
-                throw new AccessDeniedException("Only SUPER_ADMIN users can modify SUPER_ADMIN accounts");
-            }
-        }
+        assertCanModifyTarget(callerRole, targetUser);
+        assertCanAssignRole(callerRole, requestedRole);
 
         targetUser.setRole(requestedRole);
         return toAdminUserResponse(userRepository.save(targetUser));
@@ -113,9 +117,7 @@ public class AdminService {
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
 
         Role callerRole = getAuthenticatedRole();
-        if (callerRole != Role.SUPER_ADMIN && targetUser.getRole() == Role.SUPER_ADMIN) {
-            throw new AccessDeniedException("Only SUPER_ADMIN users can modify SUPER_ADMIN accounts");
-        }
+        assertCanModifyTarget(callerRole, targetUser);
 
         if (request.getFirstName() != null) {
             targetUser.setFirstName(request.getFirstName().trim());
@@ -139,11 +141,7 @@ public class AdminService {
         }
         if (request.getRole() != null && !request.getRole().isBlank()) {
             Role requestedRole = parseRole(request.getRole());
-            if (callerRole != Role.SUPER_ADMIN) {
-                if (requestedRole == Role.SUPER_ADMIN) {
-                    throw new AccessDeniedException("Only SUPER_ADMIN users can assign the SUPER_ADMIN role");
-                }
-            }
+            assertCanAssignRole(callerRole, requestedRole);
             targetUser.setRole(requestedRole);
         }
 
@@ -164,9 +162,7 @@ public class AdminService {
         }
 
         Role callerRole = getAuthenticatedRole();
-        if (callerRole != Role.SUPER_ADMIN && targetUser.getRole() == Role.SUPER_ADMIN) {
-            throw new AccessDeniedException("Only SUPER_ADMIN users can delete SUPER_ADMIN accounts");
-        }
+        assertCanModifyTarget(callerRole, targetUser);
 
         List<Long> affectedEventIds = eventRegistrationRepository.findEventIdsByUser_Id(id);
 
@@ -199,9 +195,14 @@ public class AdminService {
     /**
      * Returns all events (paginated), visible to admin regardless of isPublic.
      */
-    public PagedResponse<EventResponse> getEvents(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("eventDate").descending());
-        return PagedResponse.from(eventRepository.findAll(pageable).map(this::toEventResponse));
+    public PagedResponse<EventResponse> getEvents(int page, int size, String search) {
+        int safePage = Math.max(page, 0);
+        Pageable pageable = PageRequest.of(safePage, size, Sort.by("eventDate").descending());
+        Specification<com.sandeep.eventrabackend.model.Event> spec = EventSpecifications.searchContains(search);
+        Page<com.sandeep.eventrabackend.model.Event> eventPage = spec == null
+                ? eventRepository.findAll(pageable)
+                : eventRepository.findAll(spec, pageable);
+        return PagedResponse.from(eventPage.map(this::toEventResponse));
     }
 
     /**
@@ -221,10 +222,17 @@ public class AdminService {
      * Force-deletes an event (admin override, bypasses organizer ownership).
      */
     @Transactional
-    @Transactional
     public EventResponse updateEvent(Long id, com.sandeep.eventrabackend.dto.request.EventUpdateRequest request) {
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Event not found with id: " + id));
+
+        Integer previousCapacity = event.getCapacity();
+
+        if (request.getCapacity() != null && request.getCapacity() < event.getRegisteredCount()) {
+            throw new RegistrationConflictException(
+                    "Capacity cannot be reduced below the current number of registered users ("
+                            + event.getRegisteredCount() + ")");
+        }
 
         event.setTitle(request.getTitle());
         event.setDescription(request.getDescription());
@@ -247,6 +255,12 @@ public class AdminService {
         }
 
         Event saved = eventRepository.save(event);
+
+        if (request.getCapacity() != null && previousCapacity != null
+                && request.getCapacity() > previousCapacity) {
+            eventService.promoteWaitlistAfterVacancy(id);
+        }
+
         return toEventResponse(saved);
     }
 
@@ -270,7 +284,8 @@ public class AdminService {
      * Returns all hackathons (paginated).
      */
     public PagedResponse<HackathonResponse> getHackathons(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("startDate").descending());
+        int safePage = Math.max(page, 0);
+        Pageable pageable = PageRequest.of(safePage, size, Sort.by("startDate").descending());
         return PagedResponse.from(hackathonRepository.findAll(pageable).map(this::toHackathonResponse));
     }
 
@@ -393,7 +408,8 @@ public class AdminService {
      * Returns all feedback entries (paginated).
      */
     public PagedResponse<AdminFeedbackResponse> getAllFeedback(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("submittedAt").descending());
+        int safePage = Math.max(page, 0);
+        Pageable pageable = PageRequest.of(safePage, size, Sort.by("submittedAt").descending());
         return PagedResponse.from(feedbackRepository.findAll(pageable).map(this::toAdminFeedbackResponse));
     }
 
@@ -483,5 +499,31 @@ public class AdminService {
             throw new AccessDeniedException("Unable to determine the authenticated user's role");
         }
         return Role.valueOf(authentication.getAuthorities().iterator().next().getAuthority());
+    }
+
+    /**
+     * Non–SUPER_ADMIN callers may not modify ADMIN or SUPER_ADMIN accounts
+     * (email/role/delete would otherwise enable peer admin takeover).
+     */
+    private void assertCanModifyTarget(Role callerRole, User targetUser) {
+        if (callerRole == Role.SUPER_ADMIN) {
+            return;
+        }
+        Role targetRole = targetUser.getRole();
+        if (targetRole == Role.SUPER_ADMIN) {
+            throw new AccessDeniedException("Only SUPER_ADMIN users can modify SUPER_ADMIN accounts");
+        }
+        if (targetRole == Role.ADMIN) {
+            throw new AccessDeniedException("Only SUPER_ADMIN users can modify ADMIN accounts");
+        }
+    }
+
+    private void assertCanAssignRole(Role callerRole, Role requestedRole) {
+        if (callerRole == Role.SUPER_ADMIN) {
+            return;
+        }
+        if (requestedRole == Role.SUPER_ADMIN || requestedRole == Role.ADMIN) {
+            throw new AccessDeniedException("Only SUPER_ADMIN users can assign ADMIN or SUPER_ADMIN roles");
+        }
     }
 }

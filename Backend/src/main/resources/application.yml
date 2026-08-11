@@ -24,6 +24,9 @@ app:
     contact:
       capacity: ${RATE_LIMIT_CONTACT_CAPACITY:5}
       window: ${RATE_LIMIT_CONTACT_WINDOW:10m}
+    github-proxy:
+      capacity: ${RATE_LIMIT_GITHUB_PROXY_CAPACITY:30}
+      window: ${RATE_LIMIT_GITHUB_PROXY_WINDOW:1m}
 
 google:
   client:

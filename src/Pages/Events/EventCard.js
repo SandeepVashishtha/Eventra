@@ -1,10 +1,11 @@
+import useToast from "hooks/useToast";
 import React, { memo, useCallback, useId, useState } from "react";
 import { logger } from "utils/logger";
 import LazyImage from "components/common/LazyImage";
 import { formatLocalDateTime } from "utils/localDateTime";
 import ShareModal from "components/common/ShareModal";
 import StatusBadge from "components/common/StatusBadge";
-import { getEventStatus } from "utils/eventUtils";
+import { getEventStatus, getFomoStatus } from "utils/eventUtils";
 import SocialShareButtons from "components/common/SocialShareButtons";
 import AddToCalendar from "components/common/AddToCalendar";
 import { useMyEvents } from "context/MyEventsContext";
@@ -12,12 +13,14 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { BookmarkCheck, Bookmark, MapPin, Calendar, Clock, ArrowRight } from "lucide-react";
+import { categories, getCategoryByValue } from "constants/eventDefaults";
 
 import { isEventBookmarked, addBookmarkedEvent, removeBookmarkedEvent } from "utils/bookmarkUtils";
 import SeatsRemaining from "components/common/SeatsRemaining";
+import SellingFastBadge from "components/common/SellingFastBadge";
 import useEventAvailability from "hooks/useEventAvailability";
 
-const EventCard = ({ event, position }) => {
+const EventCard = ({ event, position, isHighlighted = false }) => {
   const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
   const [imageFailed, setImageFailed] = useState(false);
   const titleId = useId();
@@ -32,6 +35,11 @@ const EventCard = ({ event, position }) => {
 
   const isUserRegistered = isRegistered(event.id);
   const computedStatus = getEventStatus(event);
+
+  // Calculate FOMO status for low inventory
+  const capacity = availability?.capacity ?? event.capacity;
+  const registeredCount = availability?.registeredCount ?? event.registeredCount ?? event.attendees?.length ?? 0;
+  const { isLowInventory, message: fomoMessage } = getFomoStatus(capacity, registeredCount);
 
   const eventImage = event.image || event.imageUrl || null;
   const eventDate = event.date || event.eventDate || event.startDate || null;
@@ -52,7 +60,7 @@ const EventCard = ({ event, position }) => {
       } else {
         addBookmarkedEvent({ ...event, status: computedStatus });
         setIsBookmarked(true);
-        toast.success("Event saved!", { toastId: `bookmark-${event.id}`, autoClose: 1800 });
+        success("Event saved!", { toastId: `bookmark-${event.id}` });
       }
     },
     [isBookmarked, event, computedStatus]
@@ -87,13 +95,35 @@ const EventCard = ({ event, position }) => {
 
         {/* Overlay badges */}
         <div className="absolute top-4 left-4 flex flex-wrap gap-2">
-          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider bg-black/40 backdrop-blur-md text-white border border-white/10">
-            {event.type || event.category || "Event"}
-          </span>
+          {/* Color-coded category badges */}
+          {event.categories && Array.isArray(event.categories) && event.categories.length > 0 ? (
+            event.categories.slice(0, 3).map((catValue) => {
+              const category = getCategoryByValue(catValue);
+              return category ? (
+                <span
+                  key={catValue}
+                  className={`inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider text-white shadow-md ${category.color}`}
+                  style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}
+                >
+                  {category.label}
+                </span>
+              ) : null;
+            })
+          ) : (
+            // Fallback for backward compatibility - single category
+            (event.category || event.type) && (
+              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider bg-black/40 backdrop-blur-md text-white border border-white/10">
+                {event.category || event.type}
+              </span>
+            )
+          )}
           {isUserRegistered && (
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider bg-emerald-500/90 text-white shadow-md">
               Registered
             </span>
+          )}
+          {isLowInventory && fomoMessage && (
+            <SellingFastBadge message={fomoMessage} />
           )}
         </div>
 

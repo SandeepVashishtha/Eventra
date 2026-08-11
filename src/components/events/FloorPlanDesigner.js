@@ -510,7 +510,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
           <Layout className="text-indigo-500" size={24} />
           <div>
             <div className="fp-topbar-title">Interactive Venue Seating & Floor Planner</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">Design floors, place elements, and organize attendee seating slots</div>
+            <div className="text-xs text-gray-500 dark:text-gray-200 font-medium">Design floors, place elements, and organize attendee seating slots</div>
           </div>
         </div>
         <div className="fp-topbar-actions">

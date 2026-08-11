@@ -50,6 +50,8 @@ import { apiUtils, API_ENDPOINTS } from "config/api";
 import { getLastUpdated } from "utils/LastUpdatedUtils";
 import CopyButton from "components/ui/CopyButton";
 import AddToCalendar from "components/common/AddToCalendar";
+import useClipboard from "hooks/useClipboard";
+import { calculateReadTime, formatReadTime } from "utils/readTimeUtils";
 
 const formatEventDate = (dateValue) => {
   if (!dateValue) return { short: "TBD", full: "Date TBD", relative: "" };
@@ -84,6 +86,46 @@ const formatEventDate = (dateValue) => {
   const time = d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
 
   return { short, full, relative, time };
+};
+
+const padNumber = (value) => String(value).padStart(2, "0");
+
+const toCalendarDate = (dateValue) => {
+  if (!dateValue) return "";
+  const d = new Date(dateValue);
+  if (isNaN(d.getTime())) return "";
+  return `${d.getFullYear()}-${padNumber(d.getMonth() + 1)}-${padNumber(d.getDate())}`;
+};
+
+const toCalendarTime = (event, eventDate) => {
+  if (event?.time) {
+    const match = String(event.time).match(/(\d{1,2}):(\d{2})/);
+    if (match) return `${padNumber(match[1])}:${match[2]}`;
+  }
+  const d = eventDate ? new Date(eventDate) : null;
+  if (!d || isNaN(d.getTime())) return "00:00";
+  return `${padNumber(d.getHours())}:${padNumber(d.getMinutes())}`;
+};
+
+const getDurationMinutes = (startValue, endValue) => {
+  if (!startValue || !endValue) return 60;
+  const start = new Date(startValue);
+  const end = new Date(endValue);
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) return 60;
+  const minutes = Math.round((end - start) / 60000);
+  return Number.isFinite(minutes) && minutes > 0 ? minutes : 60;
+};
+
+const getCalendarLocation = (event) => {
+  const loc = event?.location;
+  if (!loc) return event?.isVirtual ? "Online" : "";
+  if (typeof loc === "string") return loc;
+  return loc.name || loc.address || (event?.isVirtual ? "Online" : "");
+};
+
+const getReadingTime = (text) => {
+  const display = formatReadTime(calculateReadTime(text));
+  return display || "0 min read";
 };
 
 const isRequestCanceled = (error, signal) =>
@@ -129,6 +171,7 @@ const EventDetails = () => {
   const { isRegistered } = useMyEvents();
   const { copy, isCopied } = useClipboard({ resetMs: 2000 });
   const abortControllerRef = useRef(null);
+  const latestRequestIdRef = useRef(0);
 
   // Live, real-time seat availability for this event. Subscribes to the shared
   // SSE stream and falls back to polling. Safe to call with a null eventId
@@ -137,18 +180,9 @@ const EventDetails = () => {
     enabled: eventId != null,
   });
   const copyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      setLinkCopied(true);
-
-      setTimeout(() => {
-        setLinkCopied(false);
-      }, 2000);
-
-      alert("Link copied successfully!");
-    } catch (error) {
-      alert("Unable to copy link.");
-    }
+    const success = await copy(window.location.href, "eventLink");
+    if (success) toast.success("Event link copied to clipboard!");
+    else toast.error("Unable to copy link. Please copy the URL from your browser's address bar.");
   };
   const loadEvent = useCallback(async () => {
     abortControllerRef.current?.abort();
@@ -275,7 +309,8 @@ const EventDetails = () => {
     return {
       title: sourceEvent.title ? `Copy of ${sourceEvent.title}` : "",
       description: sourceEvent.description || "",
-      category: sourceEvent.category || "",
+      categories: sourceEvent.categories && sourceEvent.categories.length > 0 ? sourceEvent.categories : [],
+      category: sourceEvent.category || sourceEvent.categories?.[0] || "",
       isMultiDay,
       date: isMultiDay ? "" : parsedStartDate,
       startDate: isMultiDay ? parsedStartDate : "",
@@ -465,14 +500,14 @@ ${window.location.href}
                 <button
                   onClick={handleCopy}
                   className={`p-2 rounded-full transition-colors ${
-                    linkCopied
+                    isCopied("eventLink")
                       ? "text-green-600 bg-green-50 dark:bg-green-900/30"
                       : "text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
                   }`}
-                  aria-label={linkCopied ? "Link copied!" : "Copy event link"}
-                  title={linkCopied ? "Copied!" : "Copy link"}
+                  aria-label={isCopied("eventLink") ? "Link copied!" : "Copy event link"}
+                  title={isCopied("eventLink") ? "Copied!" : "Copy link"}
                 >
-                  {linkCopied ? <Check size={28} /> : <Link2 size={28} />}
+                  {isCopied("eventLink") ? <Check size={28} /> : <Link2 size={28} />}
                 </button>
               </div>
               <div
@@ -559,7 +594,7 @@ ${window.location.href}
                     className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
                     aria-label="Copy event link"
                   >
-                    {linkCopied ? "Copied!" : "Copy Link"}
+                    {isCopied("eventLink") ? "Copied!" : "Copy Link"}
                   </button>
                   <div className="relative print-hide">
                     <button
@@ -680,7 +715,7 @@ ${window.location.href}
               aria-label="Live seat availability"
             >
               <div className="flex items-center justify-between gap-3">
-                <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">
+                <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-200">
                   Live Seat Availability
                 </h2>
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
@@ -705,7 +740,7 @@ ${window.location.href}
                 />
               </div>
 
-              <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+              <p className="mt-3 text-xs text-gray-500 dark:text-gray-200">
                 Seat counts update in real time as attendees register.
               </p>
             </section>
@@ -729,7 +764,7 @@ ${window.location.href}
                 <div className="flex items-center gap-3 rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
                   <Calendar className="h-5 w-5 text-indigo-600" />
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Date</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-200">Date</p>
                     <p className="font-semibold">
                       {eventDate && !isNaN(new Date(eventDate).getTime())
                         ? new Date(eventDate).toLocaleDateString("en-US", {
@@ -746,7 +781,7 @@ ${window.location.href}
                 <div className="flex items-center gap-3 rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
                   <Clock className="h-5 w-5 text-indigo-600" />
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Time</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-200">Time</p>
                     <p className="font-semibold">{event.time || dateInfo.time || "N/A"}</p>
                   </div>
                 </div>
@@ -754,7 +789,7 @@ ${window.location.href}
                 <div className="flex items-center gap-3 rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
                   <MapPin className="h-5 w-5 text-indigo-600" />
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Location</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-200">Location</p>
                     <p className="font-semibold">{event.location || "Online"}</p>
                   </div>
                 </div>
@@ -762,7 +797,7 @@ ${window.location.href}
                 <div className="flex items-center gap-3 rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
                   <Tag className="h-5 w-5 text-indigo-600" />
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Status</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-200">Status</p>
                     <div className="mt-1">
                       <StatusBadge status={event.status} />
                     </div>
@@ -781,7 +816,7 @@ ${window.location.href}
 
               {/* Add to Calendar & Copy Link */}
               <div className="rounded-3xl bg-slate-50 p-5 dark:bg-gray-800 space-y-4">
-                <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">
+                <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-200">
                   Add to Calendar
                 </h3>
 
@@ -796,11 +831,11 @@ ${window.location.href}
 
               <div className="rounded-3xl bg-slate-50 p-5 dark:bg-gray-800">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">
+                  <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-200">
                     Summary
                   </h3>
 
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                  <span className="text-xs text-gray-500 dark:text-gray-200">
                     📖 {getReadingTime(event.description)}
                   </span>
                 </div>
@@ -815,7 +850,7 @@ ${window.location.href}
               <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">
+                    <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-200">
                       <Users className="h-4 w-4" />
                       Attendees
                     </h3>
@@ -830,11 +865,11 @@ ${window.location.href}
 
                 <div className="mt-4 space-y-3">
                   {attendeesLoading ? (
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Loading attendees...</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-200">Loading attendees...</p>
                   ) : attendeesError ? (
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{attendeesError}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-200">{attendeesError}</p>
                   ) : attendees.length === 0 ? (
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                    <p className="text-sm text-gray-500 dark:text-gray-200">
                       No attendees have opted into the directory yet.
                     </p>
                   ) : (
@@ -853,7 +888,7 @@ ${window.location.href}
                                   {attendee.displayName}
                                 </p>
                                 {attendee.username && (
-                                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                                  <p className="text-xs text-gray-500 dark:text-gray-200">
                                     @{attendee.username}
                                   </p>
                                 )}
@@ -905,7 +940,7 @@ ${window.location.href}
           </div>
 
           <div className="mt-12">
-            <EventRecommendations currentEventId={event.id} currentCategory={event.category} />
+            <EventRecommendations currentEventId={event.id} currentCategory={event.category || event.categories?.[0]} />
           </div>
 
           {/* Similar Events — multi-signal recommendation section (#7754)

@@ -234,7 +234,7 @@ flex items-center gap-3
       {isOpen && (
         <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-4 sm:px-6 space-y-8">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-200 mb-2">
               Presets
             </p>
             <div className="flex flex-wrap gap-2">

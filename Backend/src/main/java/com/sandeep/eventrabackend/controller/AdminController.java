@@ -73,10 +73,13 @@ public class AdminController {
             @RequestParam(defaultValue = "10") int size,
 
             @Parameter(description = "Filter by role: CLIENT | ORGANIZER | ADMIN | SUPER_ADMIN")
-            @RequestParam(required = false) String role
+            @RequestParam(required = false) String role,
+
+            @Parameter(description = "Search email, username, first name, or last name (case-insensitive)")
+            @RequestParam(required = false) String search
     ) {
         int clampedSize = Math.min(Math.max(size, 1), 100);
-        return ResponseEntity.ok(adminService.getUsers(page, clampedSize, role));
+        return ResponseEntity.ok(adminService.getUsers(page, clampedSize, role, search));
     }
 
     @GetMapping("/users/{id}")
@@ -167,10 +170,13 @@ public class AdminController {
     })
     public ResponseEntity<PagedResponse<EventResponse>> getAllEvents(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+
+            @Parameter(description = "Search title, location, or description (case-insensitive)")
+            @RequestParam(required = false) String search
     ) {
         int clampedSize = Math.min(Math.max(size, 1), 100);
-        return ResponseEntity.ok(adminService.getEvents(page, clampedSize));
+        return ResponseEntity.ok(adminService.getEvents(page, clampedSize, search));
     }
 
     @GetMapping("/events/{id}/attendees")

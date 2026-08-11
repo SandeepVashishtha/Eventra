@@ -506,7 +506,7 @@ const EventRegistration = () => {
         return { success: false, error: "Login required", waitlistPosition: -1 };
       }
 
-      if (!validateAll()) {
+      if (!(await validateAll())) {
         toast.error(t("eventRegistration.toastValidationError"));
         return { success: false, error: "Validation failed", waitlistPosition: -1 };
       }
@@ -586,7 +586,7 @@ const EventRegistration = () => {
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
           {t("eventRegistration.notFoundTitle")}
         </h2>
-        <p className="text-gray-600 dark:text-gray-400 mb-6 text-center max-w-md">
+        <p className="text-gray-600 dark:text-gray-200 mb-6 text-center max-w-md">
           {t("eventRegistration.notFoundDescription")}
         </p>
         <Link
@@ -606,7 +606,7 @@ const EventRegistration = () => {
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
           {t("eventRegistration.pastEventTitle")}
         </h2>
-        <p className="text-gray-600 dark:text-gray-400 mb-6 text-center max-w-md">
+        <p className="text-gray-600 dark:text-gray-200 mb-6 text-center max-w-md">
           {isCancelledEvent
             ? "This event has been cancelled."
             : t("eventRegistration.pastEventDescription")}
@@ -707,7 +707,7 @@ const EventRegistration = () => {
               ? t("eventRegistration.successWaitlistTitle")
               : t("eventRegistration.successConfirmedTitle")}
           </h2>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mb-6 max-w-md mx-auto leading-relaxed">
+          <p className="text-gray-500 dark:text-gray-200 text-sm mb-6 max-w-md mx-auto leading-relaxed">
             {isEventFull
               ? t("eventRegistration.successWaitlistDesc", { position: waitlistPosition })
               : t("eventRegistration.successConfirmedDesc")}
@@ -721,7 +721,7 @@ const EventRegistration = () => {
               {event.title}
             </h3>
 
-            <div className="space-y-2.5 text-xs text-gray-600 dark:text-gray-400">
+            <div className="space-y-2.5 text-xs text-gray-600 dark:text-gray-200">
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-indigo-500" />
                 <span>
@@ -874,7 +874,7 @@ const EventRegistration = () => {
       <div className="max-w-4xl mx-auto">
         <Link
           to={isHackathonPath ? "/hackathons" : "/events"}
-          className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white mb-6 transition-colors"
+          className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-200 hover:text-black dark:hover:text-white mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           {isHackathonPath
@@ -1190,7 +1190,7 @@ const EventRegistration = () => {
                     <Eye className="h-4 w-4" />
                     Show my profile on the attendee list for this event.
                   </span>
-                  <span className="mt-1 block text-xs text-gray-500 dark:text-gray-400">
+                  <span className="mt-1 block text-xs text-gray-500 dark:text-gray-200">
                     Your name, username, headline, LinkedIn, and GitHub can be seen by registered
                     attendees only.
                   </span>
@@ -1202,7 +1202,7 @@ const EventRegistration = () => {
                 <button
                   type="button"
                   onClick={() => window.history.back()}
-                  className="flex-1 px-6 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
+                  className="flex-1 px-6 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors font-medium"
                 >
                   {t("eventRegistration.formCancel")}
                 </button>

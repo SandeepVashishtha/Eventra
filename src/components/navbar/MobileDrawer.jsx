@@ -6,8 +6,6 @@ import {
   UserPlus,
   Info,
   HelpCircle,
-  Sun,
-  Moon,
   MousePointer,
   Bell,
   LayoutDashboard,
@@ -17,6 +15,7 @@ import NavbarLinks from "./NavbarLinks";
 import { PRIMARY_NAV_ITEMS, SECONDARY_NAV_ITEMS } from "./constants/navItems";
 import LanguageSelector from "../LanguageSelector";
 import { useTheme } from "context/ThemeContext";
+import ThemeToggleButton from "../Layout/ThemeToggleButton";
 
 const MobileDrawer = ({
   isOpen,
@@ -262,28 +261,15 @@ const MobileDrawer = ({
             <div className="flex flex-col gap-4 px-1">
               <LanguageSelector className="w-full" />
 
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={toggleTheme}
-                  aria-pressed={isDarkMode}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border border-border text-sm font-medium hover:bg-bg-secondary transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                >
-                  {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-                  <span>{isDarkMode ? "Light" : "Dark"}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsCustomizerOpen(true);
-                    closeMenu();
-                  }}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border border-border text-sm font-medium hover:bg-bg-secondary transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                >
-                  <Sun size={18} className="text-primary" />
-                  <span>Appearance</span>
-                </button>
-              </div>
+              <ThemeToggleButton 
+                isDarkMode={isDarkMode} 
+                toggleTheme={toggleTheme} 
+                isMobile={true} 
+                setIsCustomizerOpen={() => {
+                  setIsCustomizerOpen(true);
+                  closeMenu();
+                }} 
+              />
 
               <div className="flex gap-3">
                 <button

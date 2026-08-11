@@ -622,7 +622,6 @@ export const rotateKey = async () => {
 export const getKeyMetadata = () => {
   return getOrInitKeyMetadata();
 };
-
 export const getCryptoConfig = () => {
   return { ...CRYPTO_CONFIG };
 };

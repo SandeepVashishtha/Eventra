@@ -18,7 +18,7 @@ export default function CookiesPage() {
           <h1 className="text-5xl font-bold tracking-tight text-gray-900 dark:text-white mb-4">
             Cookie Policy
           </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-400">Last updated: June 29, 2026</p>
+          <p className="text-xl text-gray-600 dark:text-gray-200">Last updated: June 29, 2026</p>
         </div>
 
         <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-800 p-10 md:p-14 space-y-14">
@@ -27,7 +27,7 @@ export default function CookiesPage() {
             <h2 className="text-3xl font-semibold mb-6 flex items-center gap-3 text-gray-900 dark:text-white">
               <FaCookie className="text-amber-500" /> What Are Cookies?
             </h2>
-            <p className="text-lg leading-relaxed text-gray-600 dark:text-gray-400">
+            <p className="text-lg leading-relaxed text-gray-600 dark:text-gray-200">
               Cookies are small text files that are stored on your device (computer, smartphone, or
               tablet) when you visit a website. They help websites remember information about your
               visit, making your experience more efficient and personalized.
@@ -39,7 +39,7 @@ export default function CookiesPage() {
             <h2 className="text-3xl font-semibold mb-6 text-gray-900 dark:text-white">
               Why Does Eventra Use Cookies?
             </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-400">
+            <p className="text-lg text-gray-600 dark:text-gray-200">
               We use cookies to provide a seamless experience, improve functionality, analyze usage,
               and enhance the overall quality of our platform.
             </p>
@@ -58,7 +58,7 @@ export default function CookiesPage() {
                   <FaShieldAlt className="text-2xl text-emerald-600" />
                   <h3 className="text-2xl font-semibold">1. Essential Cookies</h3>
                 </div>
-                <p className="text-gray-600 dark:text-gray-400 mb-2">
+                <p className="text-gray-600 dark:text-gray-200 mb-2">
                   These cookies are necessary for the website to function properly and cannot be
                   disabled.
                 </p>
@@ -71,7 +71,7 @@ export default function CookiesPage() {
                   <FaCog className="text-2xl text-blue-600" />
                   <h3 className="text-2xl font-semibold">2. Functional Cookies</h3>
                 </div>
-                <p className="text-gray-600 dark:text-gray-400 mb-2">
+                <p className="text-gray-600 dark:text-gray-200 mb-2">
                   These allow us to remember your preferences (language, theme, saved events, etc.)
                   for a better experience.
                 </p>
@@ -84,7 +84,7 @@ export default function CookiesPage() {
                   <FaChartBar className="text-2xl text-purple-600" />
                   <h3 className="text-2xl font-semibold">3. Analytics &amp; Performance Cookies</h3>
                 </div>
-                <p className="text-gray-600 dark:text-gray-400 mb-2">
+                <p className="text-gray-600 dark:text-gray-200 mb-2">
                   Help us understand how visitors use Eventra, which pages are most popular, and
                   improve our services.
                 </p>
@@ -97,7 +97,7 @@ export default function CookiesPage() {
                   <FaGlobe className="text-2xl text-rose-600" />
                   <h3 className="text-2xl font-semibold">4. Marketing Cookies</h3>
                 </div>
-                <p className="text-gray-600 dark:text-gray-400">
+                <p className="text-gray-600 dark:text-gray-200">
                   Used to show relevant advertisements and measure the effectiveness of our
                   marketing campaigns.
                 </p>
@@ -111,7 +111,7 @@ export default function CookiesPage() {
             <h2 className="text-3xl font-semibold mb-6 flex items-center gap-3 text-gray-900 dark:text-white">
               <FaUsers className="text-violet-500" /> Third-Party Cookies
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+            <p className="text-gray-600 dark:text-gray-200 leading-relaxed">
               We may use services from trusted third parties (such as Google Analytics, payment
               gateways, and social media platforms) that set their own cookies. These third parties
               have their own privacy and cookie policies.
@@ -124,10 +124,10 @@ export default function CookiesPage() {
               How to Manage Cookies
             </h2>
             <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-8">
-              <p className="mb-6 text-gray-600 dark:text-gray-400">
+              <p className="mb-6 text-gray-600 dark:text-gray-200">
                 You can control and manage cookies through your browser settings. Here’s how:
               </p>
-              <ul className="space-y-4 text-gray-600 dark:text-gray-400">
+              <ul className="space-y-4 text-gray-600 dark:text-gray-200">
                 <li className="flex gap-3">
                   <span className="font-medium text-gray-900 dark:text-white">1.</span>
                   Visit your browser’s settings or preferences menu
@@ -149,7 +149,7 @@ export default function CookiesPage() {
 
           {/* Contact */}
           <section className="pt-8 border-t border-gray-200 dark:border-gray-700">
-            <p className="text-center text-gray-600 dark:text-gray-400">
+            <p className="text-center text-gray-600 dark:text-gray-200">
               If you have any questions about our Cookie Policy, please contact us at{" "}
               <a
                 href="mailto:privacy@eventra.in"
@@ -162,7 +162,7 @@ export default function CookiesPage() {
         </div>
 
         {/* Footer Navigation */}
-        <div className="mt-12 flex flex-wrap justify-center gap-x-8 gap-y-3 text-sm text-gray-500 dark:text-gray-400">
+        <div className="mt-12 flex flex-wrap justify-center gap-x-8 gap-y-3 text-sm text-gray-500 dark:text-gray-200">
           <Link
             to="/privacy"
             className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"

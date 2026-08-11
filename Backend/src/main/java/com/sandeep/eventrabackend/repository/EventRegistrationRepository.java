@@ -16,6 +16,8 @@ public interface EventRegistrationRepository extends JpaRepository<EventRegistra
 
     boolean existsByEvent_IdAndUser_Email(Long eventId, String userEmail);
 
+    boolean existsByEvent_IdAndSeatId(Long eventId, String seatId);
+
     long countByEvent_IdAndStatus(Long eventId, String status);
 
     List<EventRegistration> findByUser_EmailOrderByRegisteredAtDesc(String userEmail);

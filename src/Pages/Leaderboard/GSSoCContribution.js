@@ -1,3 +1,4 @@
+import useCountdown from "hooks/useCountdown";
 import { useState, useMemo, useEffect, useCallback, memo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 // NEW
@@ -49,43 +50,7 @@ const GSSOC_TIMELINE = [
 // ];
 
 // ============ UTILITY HOOKS ============
-const useCountdown = (endDate, onEnd) => {
-  const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft(endDate));
-  const onEndRef = useRef(onEnd);
-
-  useEffect(() => {
-    onEndRef.current = onEnd;
-  }, [onEnd]);
-
-  useEffect(() => {
-    if (timeLeft.ended) {
-      onEndRef.current?.();
-      return;
-    }
-    const timer = setInterval(() => {
-      setTimeLeft(calculateTimeLeft(endDate));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [timeLeft.ended, endDate]);
-
-  return timeLeft;
-};
-
-const calculateTimeLeft = (endDate) => {
-  const end = new Date(endDate);
-  const now = new Date();
-  const diff = end - now;
-
-  if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0, ended: true };
-
-  return {
-    days: Math.floor(diff / (1000 * 60 * 60 * 24)),
-    hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
-    minutes: Math.floor((diff / 1000 / 60) % 60),
-    seconds: Math.floor((diff / 1000) % 60),
-    ended: false
-  };
-};
+// Fix: replaced local useCountdown + calculateTimeLeft with centralised hook
 
 const useKeyboardShortcut = (key, callback) => {
   const callbackRef = useRef(callback);
@@ -156,7 +121,7 @@ const HeroStatCard = memo(({ label, value, icon: Icon }) => (
   >
     <Icon className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1.5 text-indigo-500 dark:text-indigo-400" aria-hidden="true" />
     <div className="text-lg sm:text-xl font-bold tabular-nums text-gray-900 dark:text-white">{formatNumber(value)}</div>
-    <div className="text-xs text-gray-500 dark:text-gray-400">{label}</div>
+    <div className="text-xs text-gray-500 dark:text-gray-200">{label}</div>
   </motion.div>
 ));
 HeroStatCard.displayName = "HeroStatCard";
@@ -457,7 +422,7 @@ const GSSoCContribution = () => {
                 <div className="text-center py-4">
                   <Trophy className="w-12 h-12 mx-auto mb-3 text-indigo-400" aria-hidden="true" />
                   <p className="font-medium text-gray-900 dark:text-white">Program Completed!</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Check final rankings soon</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-200">Check final rankings soon</p>
                 </div>
               ) : (
                 <CountdownTimer timeLeft={timeLeft} />
@@ -490,7 +455,7 @@ const GSSoCContribution = () => {
             <h2 id="guidelines-heading" className="text-xl sm:text-2xl font-bold text-indigo-700 dark:text-indigo-400 mb-2">
               🌟 Contribution Guidelines
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+            <p className="text-gray-600 dark:text-gray-200 max-w-2xl mx-auto">
               Follow these best practices to make your open-source journey smooth and successful.
             </p>
           </div>
@@ -509,7 +474,7 @@ const GSSoCContribution = () => {
               >
                 <Icon className={`w-8 h-8 mb-3 ${color}`} />
                 <h3 className="font-bold text-gray-900 dark:text-white mb-1">{title}</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{desc}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-200">{desc}</p>
               </motion.article>
             ))}
           </div>
