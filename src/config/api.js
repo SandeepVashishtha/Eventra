@@ -204,6 +204,9 @@ export const API_ENDPOINTS = {
     AVAILABILITY: (id) => buildApiUrl(`/events/${id}/availability`),
     ATTENDEES: (id) => buildApiUrl(`/events/${id}/attendees`),
 
+    ROLES: (id) => buildApiUrl(`/events/${id}/roles`),
+    ROLE_AUDIT: (id) => buildApiUrl(`/events/${id}/roles/audit`),
+
     REGISTRANTS: (id) => buildApiUrl(`/events/${id}/registrants`),
     WAITLIST: (id) => buildApiUrl(`/events/${id}/waitlist`),
     SCHEDULE: (id) => buildApiUrl(`/events/${id}/schedule`),
