@@ -32,6 +32,10 @@ const PHONE_REGEX = /^\+?[\d\s\-()]+$/;
 const MAX_EMAIL_LENGTH = 254;
 const URL_REGEX = /^https?:\/\/[^\s]{1,2048}$/;
 
+// Single source of truth for special character matching — used by both
+// validate.password (sync) and validatePasswordStrength (async).
+const SPECIAL_CHAR_REGEX = /[!@#$%^&*(),.?":{}|<>+\-_=\/\\\[\]~`']/;
+
 // Shared top-level exports pointing directly to the source of truth constants
 export const emailPattern = EMAIL_REGEX;
 export const phonePattern = PHONE_REGEX;
@@ -53,7 +57,7 @@ export const validate = {
     const hasLower = /[a-z]/.test(val);
     const hasNumber = /\d/.test(val);
     // FIX: Explictly match special characters rather than allowing whitespace/invisible chars
-    const hasSpecial = /[!@#$%^&*(),.?":{}|<>+\-_=\/\\\[\]~`']/.test(val);
+    const hasSpecial = SPECIAL_CHAR_REGEX.test(val);
     if (!hasUpper || !hasLower || !hasNumber || !hasSpecial) {
       return "Password must meet all 5 security criteria: 8+ characters, uppercase, lowercase, number, and special character";
     }
@@ -349,7 +353,7 @@ export const validatePasswordStrength = async (password, options = {}) => {
     [!requireUppercase || /[A-Z]/.test(password), messages.uppercase || "Password must include an uppercase letter"],
     [!requireLowercase || /[a-z]/.test(password), messages.lowercase || "Password must include a lowercase letter"],
     [!requireNumber || /\d/.test(password), messages.number || "Password must include a number"],
-    [!requireSpecial || /[!@#$%^&*(),.?":{}|<>]/.test(password), messages.special || "Password must include a special character"],
+    [!requireSpecial || SPECIAL_CHAR_REGEX.test(password), messages.special || "Password must include a special character"],
   ];
 
   const failedCheck = checks.find(([passed]) => !passed);
