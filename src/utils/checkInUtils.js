@@ -103,20 +103,25 @@ export const recordCheckIn = (checkIn) => {
  */
 export const computeCheckInStats = (registrations = [], checkIns = []) => {
   const totalRegistrations = registrations.length;
-  const activeRegistrations = registrations.filter((r) => r.status !== 'cancelled').length;
+  const activeRegistrations = registrations.filter((r) => r.status !== 'cancelled');
+  const activeRegistrationsCount = activeRegistrations.length;
 
-  // Create a set of checked-in registration IDs for efficient lookup
-  const checkedInIds = new Set(checkIns.map((c) => c.registrationId));
-
-  const checkedIn = checkedInIds.size;
-  const notCheckedIn = activeRegistrations - checkedIn;
+  // Count only check-ins that reference an active (non-cancelled) registration,
+  // so stale offline replay, cancelled-then-rescanned tickets, or check-ins
+  // synced from another event cannot make the counts negative or exceed 100%.
+  const activeIds = new Set(activeRegistrations.map((r) => r.id));
+  const checkedIn = [...new Set(checkIns.map((c) => c.registrationId))]
+    .filter((id) => activeIds.has(id)).length;
+  const notCheckedIn = activeRegistrationsCount - checkedIn;
 
   // Calculate check-in rate
   const checkInRate =
-    activeRegistrations > 0 ? Math.round((checkedIn / activeRegistrations) * 10000) / 100 : 0;
+    activeRegistrationsCount > 0
+      ? Math.round((checkedIn / activeRegistrationsCount) * 10000) / 100
+      : 0;
 
-  // Get recent check-ins (last 10)
-  const recentCheckIns = checkIns
+  // Get recent check-ins (last 10) — sort a copy so the caller's array is not mutated
+  const recentCheckIns = [...checkIns]
     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
     .slice(0, 10)
     .map((c) => {
@@ -130,7 +135,7 @@ export const computeCheckInStats = (registrations = [], checkIns = []) => {
 
   return {
     totalRegistrations,
-    activeRegistrations,
+    activeRegistrations: activeRegistrationsCount,
     checkedIn,
     notCheckedIn,
     checkInRate,

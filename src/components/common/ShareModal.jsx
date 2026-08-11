@@ -1,17 +1,15 @@
-import { memo, useCallback, useEffect, useMemo } from "react";
-import { useFocusTrap } from "hooks/useFocusTrap";
+import { memo, useCallback, useMemo } from "react";
+import useModalManager from "hooks/useModalManager";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Copy,
-  Facebook,
-  Linkedin,
   Mail,
   MessageCircle,
   Send,
   Share2,
-  Twitter,
   X,
 } from "lucide-react";
+import { FaFacebook as Facebook, FaLinkedin as Linkedin, FaTwitter as Twitter } from "react-icons/fa";
 import useEventShare from "hooks/useEventShare";
 import { createShareModalData } from "utils/shareModalUtils.js";
 const ModalCloseButton = memo(({ onClick }) => (
@@ -28,7 +26,7 @@ const ModalCloseButton = memo(({ onClick }) => (
 ModalCloseButton.displayName = "ModalCloseButton";
 
 const ShareModal = ({ isOpen, onClose, event }) => {
-  const { containerRef } = useFocusTrap(isOpen, onClose);
+  const { modalRef: containerRef } = useModalManager(isOpen, onClose);
   const shareData = useMemo(() => {
     return createShareModalData(event);
   }, [event]);
@@ -44,24 +42,6 @@ const ShareModal = ({ isOpen, onClose, event }) => {
     if (!shareData?.shareUrl) return;
     await copyInviteLink(shareData.shareUrl);
   }, [copyInviteLink, shareData]);
-
-  useEffect(() => {
-    if (!isOpen) return undefined;
-
-    const handleEsc = (eventKey) => {
-      if (eventKey.key === "Escape") {
-        onClose();
-      }
-    };
-
-    window.addEventListener("keydown", handleEsc);
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      window.removeEventListener("keydown", handleEsc);
-      document.body.style.overflow = "";
-    };
-  }, [isOpen, onClose]);
 
   return (
     <AnimatePresence>

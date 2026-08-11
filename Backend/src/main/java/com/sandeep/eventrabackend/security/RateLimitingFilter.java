@@ -10,6 +10,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -25,6 +26,7 @@ import java.util.List;
 public class RateLimitingFilter extends OncePerRequestFilter {
 
     private static final String POST = "POST";
+    private static final String GET = "GET";
     private static final List<EndpointRule> ENDPOINT_RULES = List.of(
             new EndpointRule("login", POST, "/api/auth/login"),
             new EndpointRule("signup", POST, "/api/auth/signup"),
@@ -33,19 +35,23 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             new EndpointRule("contact", POST, "/api/contact"),
             new EndpointRule("contact", POST, "/api/contact/"),
             new EndpointRule("contact", POST, "/api/contacts"),
-            new EndpointRule("contact", POST, "/api/contacts/")
+            new EndpointRule("contact", POST, "/api/contacts/"),
+            new EndpointRule("githubProxy", GET, "/api/github-proxy")
     );
 
     private final RateLimitProperties properties;
     private final RateLimitService rateLimitService;
     private final ObjectMapper objectMapper;
+    private final int trustedProxyHops;
 
     public RateLimitingFilter(RateLimitProperties properties,
             RateLimitService rateLimitService,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            @Value("${app.rate-limit.trusted-proxy-hops:1}") int trustedProxyHops) {
         this.properties = properties;
         this.rateLimitService = rateLimitService;
         this.objectMapper = objectMapper;
+        this.trustedProxyHops = Math.max(0, trustedProxyHops);
     }
 
     @Override
@@ -60,10 +66,10 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         }
 
         EndpointLimit endpointLimit = limitFor(endpointRule.name());
-        String clientIp = resolveClientIp(request);
+        String bucketKey = resolveBucketKey(request);
         RateLimitResult result = rateLimitService.consume(
                 endpointRule.name(),
-                clientIp,
+                bucketKey,
                 endpointLimit.getCapacity(),
                 endpointLimit.getWindow()
         );
@@ -110,12 +116,58 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             case "signup" -> properties.getSignup();
             case "forgotPassword" -> properties.getForgotPassword();
             case "contact" -> properties.getContact();
+            case "githubProxy" -> properties.getGithubProxy();
             default -> throw new IllegalArgumentException("Unknown rate limit endpoint: " + endpointName);
         };
     }
 
+    private String resolveBucketKey(HttpServletRequest request) {
+        String clientIp = resolveClientIp(request);
+        String userKey = resolveAuthenticatedUserKey(request);
+        if (userKey != null) {
+            return userKey + "|" + clientIp;
+        }
+        return clientIp;
+    }
+
+    private String resolveAuthenticatedUserKey(HttpServletRequest request) {
+        var authentication = org.springframework.security.core.context.SecurityContextHolder
+                .getContext()
+                .getAuthentication();
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || authentication.getPrincipal() == null
+                || "anonymousUser".equals(authentication.getPrincipal())) {
+            return null;
+        }
+        String name = authentication.getName();
+        return StringUtils.hasText(name) ? "user:" + name.trim().toLowerCase() : null;
+    }
+
+    /**
+     * Resolve the originating client IP using {@code X-Forwarded-For} with a
+     * known trusted hop count (Azure/Vercel LB), falling back to {@code X-Real-IP}
+     * then {@link HttpServletRequest#getRemoteAddr()}.
+     */
     private String resolveClientIp(HttpServletRequest request) {
-        return request.getRemoteAddr();
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (StringUtils.hasText(forwarded)) {
+            String[] parts = forwarded.split(",");
+            // XFF is client, proxy1, proxy2 — strip trustedProxyHops from the right.
+            int clientIndex = Math.max(0, parts.length - 1 - trustedProxyHops);
+            String candidate = parts[clientIndex].trim();
+            if (StringUtils.hasText(candidate) && !"unknown".equalsIgnoreCase(candidate)) {
+                return candidate;
+            }
+        }
+
+        String realIp = request.getHeader("X-Real-IP");
+        if (StringUtils.hasText(realIp)) {
+            return realIp.trim();
+        }
+
+        String remote = request.getRemoteAddr();
+        return StringUtils.hasText(remote) ? remote : "unknown";
     }
 
     private record EndpointRule(String name, String method, String path) {

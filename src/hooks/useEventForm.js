@@ -4,15 +4,15 @@ import { API_ENDPOINTS, apiUtils } from "../config/api.js";
 import { useFormSubmit } from "./useFormSubmit";
 import {
   DRAFT_KEY,
+  getInitialFormData,
   initialFormData,
 } from "../constants/eventDefaults";
+import { useFormDraft } from "./useFormDraft";
 import {
   parseTimeToMinutes,
 } from "../utils/eventCreationUtils";
 import { sanitizeHtml } from "../utils/sanitizeHtml";
-import { logger } from "../utils/logger";
 import { useAuth } from "../context/AuthContext";
-import { safeJsonParse } from "../utils/safeJsonParse";
 import { getOrMigrateKey } from "../utils/storageKeyManager";
 
 // 🎯 Constants for better maintainability
@@ -37,15 +37,16 @@ const DEBOUNCE_DELAY = 1000;
  * inputs are handled automatically via `e.target.checked`.
  *
  * **2. Draft persistence**
- * Drafts are saved to `localStorage` under a user-scoped key
- * (`<DRAFT_KEY>_<userId>`, falling back to `<DRAFT_KEY>_guest` when
- * unauthenticated). Saves are debounced by `DEBOUNCE_DELAY` (1 s) to avoid
- * thrashing storage on every keystroke. `banner` and `bannerPreview` are
- * intentionally excluded from the draft — File objects cannot be serialised
- * and must be re-selected after a page reload. On mount (after a 300 ms
- * delay), the hook checks for an existing draft and surfaces
+ * Delegated to `useFormDraft`, which owns `formData` and mirrors it to
+ * `localStorage` under a user-scoped key (`<DRAFT_KEY>_<userId>`, falling back
+ * to `<DRAFT_KEY>_guest` when unauthenticated). Saves are debounced by
+ * `DEBOUNCE_DELAY` (1 s) to avoid thrashing storage on every keystroke.
+ * `banner` and `bannerPreview` are intentionally excluded from the draft —
+ * File objects cannot be serialised and must be re-selected after a page
+ * reload. On mount the hook checks for an existing draft and surfaces
  * `showRestoreModal` when one is found; the consumer decides whether to call
- * `handleRestoreDraft` or `handleDiscardDraft`.
+ * `handleRestoreDraft` or `handleDiscardDraft`. Until that decision is made no
+ * autosave runs, so an untouched form cannot overwrite the offered draft.
  *
  * **3. Validation**
  * `validateForm` reads from `formDataRef` (a ref kept in sync with state) so
@@ -234,10 +235,18 @@ const DEBOUNCE_DELAY = 1000;
  *                                         shows a success toast, and closes
  *                                         the restore modal. Signature:
  *                                         `() => void`.
- * @returns {Function} handleDiscardDraft - Removes the draft from localStorage
- *                                         and closes the restore modal without
- *                                         changing `formData`. Signature:
- *                                         `() => void`.
+ * @returns {Function} handleDiscardDraft - Removes the draft from localStorage,
+ *                                         resets `formData` to its initial
+ *                                         values and clears validation errors.
+ *                                         Signature: `() => void`.
+ * @returns {boolean}  draftRestored       - `true` once a draft has been
+ *                                          restored, so the UI can show the
+ *                                          "Draft restored" banner.
+ * @returns {string|null} lastSavedAt      - ISO timestamp of the most recent
+ *                                          autosave, or `null` before the
+ *                                          first one.
+ * @returns {Function} dismissRestoredBanner - Hides the restored banner.
+ *                                            Signature: `() => void`.
  *
  * // ── Derived state ──────────────────────────────────────────────────────────
  *
@@ -265,17 +274,29 @@ export const useEventForm = () => {
   const { user } = useAuth();
   const legacyKey = `${DRAFT_KEY}_${user?.id || "guest"}`;
   const scopedDraftKey = getOrMigrateKey(DRAFT_KEY, user?.id, legacyKey);
+  // 🗄️ Draft persistence — owns `formData` and mirrors it to localStorage.
+  const {
+    values: formData,
+    setValues: setFormData,
+    hasPendingDraft,
+    draftRestored,
+    lastSavedAt,
+    restoreDraft,
+    discardDraft,
+    clearDraft,
+    dismissRestoredBanner,
+  } = useFormDraft(scopedDraftKey, getInitialFormData, {
+    debounceMs: DEBOUNCE_DELAY,
+    exclude: ["banner", "bannerPreview"],
+  });
+
   // 📊 State Management
-  const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
   const [newTag, setNewTag] = useState("");
-  const [isDraftLoaded, setIsDraftLoaded] = useState(false);
-  const [showRestoreModal, setShowRestoreModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
   // 🔄 Refs for optimization
   const formDataRef = useRef(formData);
-  const saveDraftTimeoutRef = useRef(null);
 
   // Keep ref in sync with state
   useEffect(() => {
@@ -283,10 +304,10 @@ export const useEventForm = () => {
   }, [formData]);
 
   const resetForm = useCallback(() => {
-    setFormData(initialFormData);
+    setFormData(getInitialFormData());
     setErrors({});
-    localStorage.removeItem(scopedDraftKey);
-  }, [scopedDraftKey]);
+    clearDraft();
+  }, [setFormData, clearDraft]);
 
   // 🎯 Form Submission Hook
   const {
@@ -317,51 +338,6 @@ export const useEventForm = () => {
     resetForm();
     return result;
   });
-
-  // 🗄️ Draft Management
-  useEffect(() => {
-    const checkForDraft = () => {
-      try {
-        const saved = localStorage.getItem(scopedDraftKey);
-        if (saved) {
-          setShowRestoreModal(true);
-        }
-      } catch (error) {
-        logger.error("Failed to check for saved draft:", error);
-      } finally {
-        setIsDraftLoaded(true);
-      }
-    };
-
-    const timer = setTimeout(checkForDraft, 300);
-    return () => clearTimeout(timer);
-  }, [scopedDraftKey]);
-
-  // 💾 Debounced Draft Saving
-  useEffect(() => {
-    if (!isDraftLoaded) return;
-
-    if (saveDraftTimeoutRef.current) {
-      clearTimeout(saveDraftTimeoutRef.current);
-    }
-
-    saveDraftTimeoutRef.current = setTimeout(() => {
-      try {
-        const saveable = { ...formDataRef.current };
-        delete saveable.banner;
-        delete saveable.bannerPreview;
-        localStorage.setItem(scopedDraftKey, JSON.stringify(saveable));
-      } catch (error) {
-        logger.error("Failed to save draft:", error);
-      }
-    }, DEBOUNCE_DELAY);
-
-    return () => {
-      if (saveDraftTimeoutRef.current) {
-        clearTimeout(saveDraftTimeoutRef.current);
-      }
-    };
-  }, [formData, isDraftLoaded, scopedDraftKey]);
 
   // 🔍 Validation Logic
 
@@ -591,7 +567,7 @@ export const useEventForm = () => {
       delete newErrs[name];
       return newErrs;
     });
-  }, []);
+  }, [setFormData]);
 
   const handleNestedChange = useCallback((category, field, value) => {
     setFormData((prev) => ({
@@ -607,7 +583,7 @@ export const useEventForm = () => {
       delete newErrs[category];
       return newErrs;
     });
-  }, []);
+  }, [setFormData]);
 
   const addTag = useCallback(() => {
     const tag = newTag.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -617,14 +593,14 @@ export const useEventForm = () => {
       return { ...prev, tags: [...prev.tags, tag] };
     });
     setNewTag("");
-  }, [newTag]);
+  }, [newTag, setFormData]);
 
   const removeTag = useCallback((tagToRemove) => {
     setFormData((prev) => ({
       ...prev,
       tags: prev.tags.filter((tag) => tag !== tagToRemove),
     }));
-  }, []);
+  }, [setFormData]);
 
   const addTicketTier = useCallback(() => {
     setFormData((prev) => ({
@@ -634,14 +610,14 @@ export const useEventForm = () => {
         { id: Date.now(), name: "", price: "", capacity: "", description: "" },
       ],
     }));
-  }, []);
+  }, [setFormData]);
 
   const removeTicketTier = useCallback((index) => {
     setFormData((prev) => ({
       ...prev,
       ticketTiers: prev.ticketTiers.filter((_, i) => i !== index),
     }));
-  }, []);
+  }, [setFormData]);
 
   const updateTicketTier = useCallback((index, field, value) => {
     setFormData((prev) => ({
@@ -650,26 +626,17 @@ export const useEventForm = () => {
         i === index ? { ...tier, [field]: value } : tier
       ),
     }));
-  }, []);
+  }, [setFormData]);
 
   const handleRestoreDraft = useCallback(() => {
-    try {
-      const saved = localStorage.getItem(scopedDraftKey);
-      if (saved) {
-        setFormData((prev) => ({ ...prev, ...safeJsonParse(saved, {}), banner: null, bannerPreview: null }));
-        toast.success("Draft restored successfully!");
-      }
-    } catch (error) {
-      logger.error("Failed to restore draft:", error);
-    } finally {
-      setShowRestoreModal(false);
-    }
-  }, [scopedDraftKey]);
+    restoreDraft();
+    toast.success("Draft restored successfully!");
+  }, [restoreDraft]);
 
   const handleDiscardDraft = useCallback(() => {
-    localStorage.removeItem(scopedDraftKey);
-    setShowRestoreModal(false);
-  }, [scopedDraftKey]);
+    discardDraft();
+    setErrors({});
+  }, [discardDraft]);
 
   const hasUnsavedChanges = useMemo(() => {
     return Object.entries(formData).some(([key, value]) => {
@@ -708,7 +675,7 @@ export const useEventForm = () => {
       return { ...prev, banner: file, bannerPreview: objectUrl };
     });
     setErrors((prev) => ({ ...prev, banner: "" }));
-  }, []);
+  }, [setFormData]);
 
   // Browser guard for unsaved changes
   useEffect(() => {
@@ -763,8 +730,10 @@ export const useEventForm = () => {
     setErrors,
     newTag,
     setNewTag,
-    showRestoreModal,
-    setShowRestoreModal,
+    showRestoreModal: hasPendingDraft,
+    draftRestored,
+    lastSavedAt,
+    dismissRestoredBanner,
     isUploading,
     setIsUploading,
     isSubmitting,
