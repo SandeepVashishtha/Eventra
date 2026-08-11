@@ -50,10 +50,20 @@ export const getEventFeedback = (eventId) => {
  * @param {string} eventId - Event identifier
  * @param {Object} feedback - Feedback object { rating, comment, userId?, tags?, recommend? }
  * @returns {boolean} Success status
+ * @throws {Error} When rating is invalid (not a number or outside 1-5 range)
  */
 export const saveFeedback = (eventId, feedback) => {
   if (typeof window === "undefined") return false;
   try {
+    // Validate required fields
+    if (!eventId || !feedback || !feedback.userId) return false;
+
+    // Validate rating: must be a number between 1 and 5
+    const rating = Number(feedback.rating);
+    if (isNaN(rating) || rating < 1 || rating > 5) {
+      throw new Error('Rating must be a number between 1 and 5.');
+    }
+
     const allFeedback = safeJsonParse(localStorage.getItem(FEEDBACK_STORAGE_KEY), {});
     const rawList = allFeedback[eventId] || [];
 
@@ -61,17 +71,30 @@ export const saveFeedback = (eventId, feedback) => {
     const feedbackMap = new Map(rawList.map((f) => [f.userId, f]));
 
     const userId = feedback.userId || crypto.randomUUID();
-    const feedbackObject = {
+    const existingFeedback = feedbackMap.get(userId);
+    const now = new Date().toISOString();
+
+    // Normalize and sanitize feedback fields
+    const normalizedFeedback = {
       ...feedback,
       userId,
-      submittedAt: new Date().toISOString(),
+      rating,
+      comment: (feedback.comment || '').trim().slice(0, 1000),
+      tags: Array.isArray(feedback.tags) ? feedback.tags : [],
+      recommend: Boolean(feedback.recommend),
+      createdAt: existingFeedback ? existingFeedback.createdAt || existingFeedback.submittedAt || now : now,
+      updatedAt: now,
     };
 
-    feedbackMap.set(userId, feedbackObject);
+    feedbackMap.set(userId, normalizedFeedback);
     allFeedback[eventId] = Array.from(feedbackMap.values());
     localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(allFeedback));
     return true;
   } catch (error) {
+    // Re-throw validation errors so callers can handle them appropriately
+    if (error.message === 'Rating must be a number between 1 and 5.') {
+      throw error;
+    }
     console.warn("Error saving feedback:", error);
     return false;
   }
@@ -304,13 +327,14 @@ export const exportFeedbackAsCSV = (eventId) => {
       return '';
     }
 
-    const headers = ['Rating', 'Comment', 'Tags', 'Recommend', 'Submitted At'];
+    const headers = ['Rating', 'Comment', 'Tags', 'Recommend', 'Created At', 'Updated At'];
     const rows = feedback.map((f) => [
       sanitizeCSVCell(f.rating),
       sanitizeCSVCell(f.comment || ''),
       sanitizeCSVCell(Array.isArray(f.tags) ? f.tags.join(';') : ''),
       sanitizeCSVCell(f.recommend !== undefined ? (f.recommend ? 'Yes' : 'No') : ''),
-      sanitizeCSVCell(f.submittedAt ? new Date(f.submittedAt).toLocaleString() : ''),
+      sanitizeCSVCell(f.createdAt ? new Date(f.createdAt).toLocaleString() : ''),
+      sanitizeCSVCell(f.updatedAt ? new Date(f.updatedAt).toLocaleString() : ''),
     ]);
 
     const csv = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
