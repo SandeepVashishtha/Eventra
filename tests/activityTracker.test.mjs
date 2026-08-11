@@ -12,20 +12,18 @@ import { trackUserInterest } from "../src/utils/activityTracker.js";
 
 // Test 1: Standard functional interest tracking
 store["eventra_user_profile"] = null;
-trackUserInterest("design");
+await trackUserInterest("design");
 let profile = JSON.parse(store["eventra_user_profile"]);
 assert.ok(profile.interests.includes("design"), "Should add design to interests");
 
 // Track another interest
-trackUserInterest("coding");
+await trackUserInterest("coding");
 profile = JSON.parse(store["eventra_user_profile"]);
 assert.deepEqual(profile.interests, ["design", "coding"], "Should maintain both interests");
 
 // Test 2: Handle corrupt / invalid JSON in localStorage gracefully without stack overflow
 store["eventra_user_profile"] = "{invalid-json-corrupt-data";
-assert.doesNotThrow(() => {
-  trackUserInterest("hacking");
-}, "Should not throw or cause infinite recursion stack overflow on corrupted JSON");
+await trackUserInterest("hacking");
 
 profile = JSON.parse(store["eventra_user_profile"]);
 assert.deepEqual(profile.interests, ["hacking"], "Should successfully reset corrupt storage and add hacking");
@@ -35,16 +33,12 @@ globalThis.localStorage.setItem = () => {
   throw new Error("QuotaExceededError");
 };
 
-assert.doesNotThrow(() => {
-  trackUserInterest("security");
-}, "Should handle storage write failures gracefully without infinite recursion");
+await trackUserInterest("security");
 
 // Test 4: Handle invalid inputs (like empty strings, null, undefined, objects) gracefully
-assert.doesNotThrow(() => {
-  trackUserInterest("");
-  trackUserInterest(null);
-  trackUserInterest(undefined);
-  trackUserInterest({});
-}, "Should ignore invalid interest types without error");
+await trackUserInterest("");
+await trackUserInterest(null);
+await trackUserInterest(undefined);
+await trackUserInterest({});
 
 console.log("activityTracker tests passed ✓");
