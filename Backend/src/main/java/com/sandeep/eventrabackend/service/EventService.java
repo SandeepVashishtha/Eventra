@@ -1035,8 +1035,12 @@ public class EventService {
                         }
                 }
 
+                // FIX (#13914): atomic capacity guard. The single UPDATE
+                // increments registeredCount only while a seat is free (row
+                // count 1), so two concurrent registrations cannot both pass an
+                // in-memory check and overshoot capacity. Row count 0 => full.
                 if (event.getCapacity() != null
-                                && event.getRegisteredCount() >= event.getCapacity()) {
+                                && eventRepository.incrementRegisteredCountAtomically(eventId) == 0) {
 
                         throw new EventFullException(
                                         "Event is already full. Capacity: " + event.getCapacity());
