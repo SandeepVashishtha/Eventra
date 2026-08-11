@@ -169,6 +169,32 @@ const noCheckInStats = computeCheckInStats(registrations, []);
 assert.equal(noCheckInStats.checkedIn, 0, 'should handle no check-ins');
 assert.equal(noCheckInStats.notCheckedIn, 3, 'should count all as not checked in');
 
+// Test: computeCheckInStats - check-ins outside the active set must not produce
+// negative counts or a rate above 100%.
+const staleCheckIns = [
+  ...eventCheckIns,
+  { registrationId: 'reg-3', timestamp: new Date().toISOString(), scannedBy: 'scanner-1' },
+  { registrationId: 'reg-999', timestamp: new Date().toISOString(), scannedBy: 'scanner-1' },
+];
+const staleStats = computeCheckInStats(registrations, staleCheckIns);
+assert.equal(staleStats.checkedIn, 2, 'should count only check-ins for active registrations');
+assert.equal(staleStats.notCheckedIn, 1, 'should never report negative not-checked-in counts');
+assert.ok(staleStats.checkInRate <= 100, 'check-in rate should never exceed 100%');
+assert.equal(
+  staleStats.checkInRate,
+  66.67,
+  'should compute the rate against active registrations only'
+);
+
+// Test: computeCheckInStats - must not mutate the caller's checkIns array.
+const originalOrder = eventCheckIns.map((c) => c.registrationId);
+computeCheckInStats(registrations, eventCheckIns);
+assert.deepEqual(
+  eventCheckIns.map((c) => c.registrationId),
+  originalOrder,
+  'should not reorder the caller checkIns array'
+);
+
 // Test: computeSessionCheckInStats - basic session stats
 const sessions = [
   { id: 'session-1', name: 'Keynote', track: 'Main' },

@@ -18,6 +18,7 @@ public class WaitlistResponse {
     private Long id;
     private Long eventId;
     private String eventTitle;
+    private Long userId;
     private String userEmail;
     private int position;
     private String status;

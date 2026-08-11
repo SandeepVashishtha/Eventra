@@ -33,4 +33,6 @@ public class Project {
 
     @Builder.Default
     private long upvotes = 0;
+
+    private Long ownerId;
 }

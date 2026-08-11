@@ -4,9 +4,9 @@ export function sanitizeFilterQuery(queryObj) {
   Object.keys(queryObj).forEach((key) => {
     const val = queryObj[key];
     if (typeof val === "string") {
-      sanitized[key] = val.replace(/[$&<>]/g, ""); // strip sensitive characters
+      sanitized[key] = val.replace(/[$<>]/g, ""); // strip potentially dangerous characters
     } else if (Array.isArray(val)) {
-      sanitized[key] = val.map(item => (typeof item === "string" ? item.replace(/[$&<>]/g, "") : item));
+      sanitized[key] = val.map(item => (typeof item === "string" ? item.replace(/[$<>]/g, "") : item));
     } else {
       sanitized[key] = val;
     }

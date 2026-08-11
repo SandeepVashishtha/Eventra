@@ -28,7 +28,12 @@ const getEventId = (event) => {
 
 const unwrapEvent = (entry) => entry?.event || entry?.eventSummary || entry || {};
 
-const getEventCategory = (event) => normalizeText(event?.category || event?.type);
+const getEventCategory = (event) => {
+  if (event?.categories && Array.isArray(event.categories) && event.categories.length > 0) {
+    return normalizeText(event.categories[0]);
+  }
+  return normalizeText(event?.category || event?.type);
+};
 
 const getEventType = (event) => normalizeText(event?.type);
 

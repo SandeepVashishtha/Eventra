@@ -53,4 +53,15 @@ public class RegistrationResponse {
 
     @Schema(description = "Reserved seat identifier when the event supports seat selection.", example = "table-1:3")
     private String seatId;
-}
+
+    @Schema(description = "Group ID for group/bulk registrations.", example = "table-5-acme-corp")
+    private String groupId;
+
+    @Schema(description = "Flag indicating if this registration is the primary buyer for a group.", example = "true")
+    private Boolean isGroupPrimary;
+
+    @Schema(description = "Name of the group for display purposes.", example = "Acme Corp - Table 5")
+    private String groupName;
+
+    @Schema(description = "Registration ID for reference.", example = "12345")
+    private Long registrationId;

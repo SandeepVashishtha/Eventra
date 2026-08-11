@@ -155,7 +155,13 @@
     "viewMode": "వీక్షణ మోడ్",
     "timeline": "టైమ్‌లైన్",
     "recommendations": "మీ కోసం సూచనలు",
-    "saved": "సేవ్ చేసిన ఈవెంట్లు"
+    "saved": "సేవ్ చేసిన ఈవెంట్లు",
+    "noEventsScheduled": "షెడ్యూల్ చేయబడిన ఈవెంట్లు లేవు",
+    "noUpcomingEvents": "ఈ రోజుకు షెడ్యూల్ చేయబడిన రాబోయే ఈవెంట్లు లేవు.",
+    "noEventsMatch": "మీ ఫిల్టర్లకు సరిపోలే ఈవెంట్లు లేవు",
+    "noBookmarked": "బుక్‌మార్క్ చేయబడిన ఈవెంట్లు లేవు",
+    "noBookmarkedDesc": "అన్వేషించడం ప్రారంభించండి మరియు మీకు ఆసక్తి ఉన్న ఈవెంట్లను బుక్‌మార్క్ చేయండి!",
+    "noEventsMatchDesc": "మీ ఫిల్టర్లను సర్దుబాటు చేయండి లేదా అన్ని అందుబాటులో ఉన్న ఈవెంట్లను చూడడానికి వాటిని క్లియర్ చేయండి."
   },
   "hackathon": {
     "title": "Hackathons",
@@ -556,6 +562,21 @@
     "toastWaitlistSuccess": "Added to waitlist successfully!",
     "toastValidationError": "Please fix the errors before submitting."
   },
+  "askOrganizer": {
+    "title": "Ask the Organizer",
+    "subtitle": "Ask event-specific questions and see organizer answers in one public feed.",
+    "placeholder": "Is there vegan catering? Is there parking? Ask your question here.",
+    "send": "Ask Question",
+    "publicQA": "Public Q&A",
+    "noQuestions": "No public questions yet. Be the first to ask!",
+    "answeredBadge": "Answered",
+    "organizerResponseLabel": "Response from organizer",
+    "pendingAnswer": "Waiting for organizer response...",
+    "successSent": "Question sent! It is now visible in the public queue.",
+    "errorSending": "Could not send your question. Please try again.",
+    "errorLoading": "Unable to load public Q&A right now. Please try again shortly.",
+    "loginRequired": "Please log in to ask the organizer a question."
+  },
   "userAchievements": {
     "pageTitle": "Eventra | Achievements",
     "progressionStudio": "Progression Studio",
@@ -632,7 +653,128 @@
     "ctaHeading": "Need Help or Have Feedback?",
     "ctaSubtitle": "Reach out to our support team and we will get back to you within 24 hours",
     "ctaContactUs": "Contact Us",
-    "ctaGiveFeedback": "Give Feedback"
+    "ctaGiveFeedback": "Give Feedback",
+    "categories": {
+      "hostingHackathons": {
+        "title": "హ్యాకథాన్‌లు హోస్ట్ చేయడం",
+        "description": "Eventra లో హ్యాకథాన్‌లను ఎలా సృష్టించాలో మరియు నిర్వహించాలో తెలుసుకోండి."
+      },
+      "projectSubmission": {
+        "title": "ప్రాజెక్ట్ సబ్మిషన్",
+        "description": "మీ ప్రాజెక్ట్‌లను సబ్మిట్ చేయడం గురించి మీకు తెలుసుకోవలసిన అన్నీ."
+      },
+      "exploreProjects": {
+        "title": "ప్రాజెక్ట్‌లను అన్వేషించండి",
+        "description": "కమ్యూనిటీ నుండి ప్రాజెక్ట్‌లను కనుగొనండి మరియు బ్రౌజ్ చేయండి."
+      },
+      "contributing": {
+        "title": "సహకరించడం",
+        "description": "Eventra లో ఓపెన్ సోర్స్ ప్రాజెక్ట్‌లకు ఎలా సహకరించాలి."
+      },
+      "leaderboard": {
+        "title": "లీడర్‌బోర్డ్",
+        "description": "లీడర్‌బోర్డ్ ర్యాంకింగ్‌లు ఎలా పని చేస్తాయో అర్థం చేసుకోండి."
+      },
+      "tipsBestPractices": {
+        "title": "చిట్కాలు మరియు ఉత్తమ పద్ధతులు",
+        "description": "ఈ చిట్కాలతో Eventra ను గరిష్టంగా ఉపయోగించుకోండి."
+      },
+      "events": {
+        "title": "ఈవెంట్లు",
+        "description": "కమ్యూనిటీలో జరుగుతున్న ఈవెంట్లను కనుగొనండి మరియు చేరండి."
+      },
+      "seeOnGitHub": {
+        "title": "GitHub లో చూడండి",
+        "description": "సోర్స్ కోడ్‌ను యాక్సెస్ చేయండి మరియు GitHub లో సహకరించండి."
+      },
+      "apiDocs": {
+        "title": "API డాక్యుమెంటేషన్",
+        "description": "మా REST API ఉపయోగించి Eventra తో ఏకీకృతం చేయండి."
+      },
+      "contributors": {
+        "title": "సహకారులు",
+        "description": "Eventra ను నిర్మించే మరియు నిర్వహించే వ్యక్తులను కలవండి."
+      },
+      "communityEvents": {
+        "title": "కమ్యూనిటీ ఈవెంట్లు",
+        "description": "Eventra కమ్యూనిటీ నిర్వహించిన ఈవెంట్లను కనుగొనండి."
+      },
+      "contactUs": {
+        "title": "మమ్మల్ని సంప్రదించండి",
+        "description": "మద్దతు కోసం Eventra బృందాన్ని సంప్రదించండి."
+      }
+    },
+    "faqs": {
+      "1": {
+        "category": "ఈవెంట్లు",
+        "question": "నేను ఈవెంట్ లేదా హ్యాకథాన్‌కు ఎలా నమోదు చేసుకోవాలి?",
+        "answer": "ఈవెంట్లు లేదా హ్యాకథాన్‌ల పేజీకి వెళ్ళండి, మీకు నచ్చినది కనుగొనండి, మరియు నమోదు బటన్‌ను క్లిక్ చేయండి. అవసరమైన వివరాలు నింపి మీ నమోదును సబ్మిట్ చేయండి."
+      },
+      "2": {
+        "category": "ప్రాజెక్ట్‌లు",
+        "question": "నేను ప్రాజెక్ట్‌ను ఎలా సబ్మిట్ చేయాలి?",
+        "answer": "ప్రాజెక్ట్‌ల విభాగానికి వెళ్ళండి, ప్రాజెక్ట్ సబ్మిట్ చేయండి అని క్లిక్ చేయండి, మరియు మీ ప్రాజెక్ట్ శీర్షిక, వివరణ మరియు రిపోజిటరీ లింక్‌తో సహా అవసరమైన వివరాలు నింపండి."
+      },
+      "3": {
+        "category": "హ్యాకథాన్‌లు",
+        "question": "నేను హ్యాకథాన్‌లో ఎలా చేరాలి?",
+        "answer": "హ్యాకథాన్‌ల పేజీని బ్రౌజ్ చేయండి మరియు ఏదైనా తెరిచిన హ్యాకథాన్‌లో చేరండి అని క్లిక్ చేయండి. మీరు ఒంటరిగా లేదా జట్టులో భాగంగా పాల్గొనవచ్చు."
+      },
+      "4": {
+        "category": "కమ్యూనిటీ",
+        "question": "లీడర్‌బోర్డ్ స్కోర్ ఎలా లెక్కించబడుతుంది?",
+        "answer": "స్కోర్‌లు ప్లాట్‌ఫారమ్‌లో మీ సహకారాలు, ఈవెంట్ పాల్గొనడం, విలీనమైన పుల్ రిక్వెస్ట్‌లు మరియు ప్రాజెక్ట్ సబ్మిషన్‌ల ఆధారంగా ఉంటాయి."
+      },
+      "5": {
+        "category": "సహకారాలు",
+        "question": "నేను Eventra కు ఓపెన్ సోర్స్ ప్రాజెక్ట్‌గా ఎలా సహకరించాలి?",
+        "answer": "ప్రాజెక్ట్‌ను స్థానికంగా సెటప్ చేయడం, సమస్యలు ఎంచుకోవడం మరియు పుల్ రిక్వెస్ట్‌లు సబ్మిట్ చేయడంపై వివరణాత్మక సూచనల కోసం కంట్రిబ్యూటర్స్ గైడ్ పేజీని తనిఖీ చేయండి."
+      }
+    },
+    "tutorials": {
+      "hostingHackathon": {
+        "title": "హ్యాకథాన్ హోస్ట్ చేయడం",
+        "description": "Eventra లో మీ స్వంత హ్యాకథాన్‌ను సృష్టించడానికి మరియు ప్రచురించడానికి దశల వారీ గైడ్."
+      },
+      "submittingProject": {
+        "title": "ప్రాజెక్ట్ సబ్మిట్ చేయడం",
+        "description": "Eventra ప్లాట్‌ఫారమ్‌కు ప్రాజెక్ట్‌ను సబ్మిట్ చేయడం ద్వారా మీ పనిని ప్రదర్శించడం నేర్చుకోండి."
+      },
+      "creatingEvent": {
+        "title": "ఈవెంట్ సృష్టించడం",
+        "description": "పాల్గొనేవారికి అవసరమైన అన్ని వివరాలతో కమ్యూనిటీ ఈవెంట్‌లను సెటప్ చేయండి మరియు ప్రచురించండి."
+      },
+      "contributingGsoc": {
+        "title": "GSSoC ద్వారా సహకరించడం",
+        "description": "Eventra లో GirlScript Summer of Code ద్వారా ఓపెన్ సోర్స్ సహకారాలతో ప్రారంభించండి."
+      }
+    },
+    "guidelines": {
+      "checkHackathonRules": {
+        "title": "హ్యాకథాన్ నిబంధనలు తనిఖీ చేయండి",
+        "description": "మీరు అర్హులో కాదో నిర్ధారించుకోవడానికి హ్యాకథాన్‌లో చేరే ముందు ఎల్లప్పుడూ నిబంధనలు మరియు అర్హత ప్రమాణాలు చదవండి."
+      },
+      "documentYourWork": {
+        "title": "మీ పనిని డాక్యుమెంట్ చేయండి",
+        "description": "స్పష్టమైన README ఫైల్‌లు మరియు ప్రాజెక్ట్ వివరణలు వ్రాయండి."
+      },
+      "followContributionGuidelines": {
+        "title": "సహకార మార్గదర్శకాలను అనుసరించండి",
+        "description": "పుల్ రిక్వెస్ట్‌లు సబ్మిట్ చేయడానికి ముందు కంట్రిబ్యూటర్ గైడ్ చదవండి."
+      },
+      "respectDeadlines": {
+        "title": "గడువులను గౌరవించండి",
+        "description": "గడువుకు ముందు మీ ప్రాజెక్ట్‌లు మరియు నమోదులు సబ్మిట్ చేయండి."
+      },
+      "avoidDuplicates": {
+        "title": "డూప్లికేట్‌లు నివారించండి",
+        "description": "కొత్తవి సృష్టించే ముందు ఇప్పటికే ఉన్న ప్రాజెక్ట్‌లు మరియు సమస్యలను శోధించండి."
+      },
+      "getSupport": {
+        "title": "మద్దతు పొందండి",
+        "description": "మీరు ఇరుక్కుపోతే, సంప్రదింపుల పేజీ లేదా కమ్యూనిటీ ఛానెల్‌ల ద్వారా చేరుకోండి — మేము సహాయం చేయడానికి సంతోషంగా ఉన్నాము."
+      }
+    }
   },
   "contactUs": {
     "pageTitle": "Contact Us",
