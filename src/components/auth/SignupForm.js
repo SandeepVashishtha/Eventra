@@ -155,14 +155,19 @@ const SignupForm = () => {
     return () => clearTimeout(timer);
   }, [password, confirmPassword, setFieldState]);
 
-  // Password strength check useEffect
+  // Password strength check useEffect — debounced to match email validation pattern.
+  // Cleanup cancels the pending timer on each keystroke so only the final
+  // value triggers validatePasswordStrength, preventing stale-response race conditions.
   useEffect(() => {
-    const validatePwd = async () => {
-      if (!formData.password) {
-        setErrors((prev) => ({ ...prev, password: "" }));
-        setFieldState("password", "idle");
-        return;
-      }
+    if (!formData.password) {
+      setErrors((prev) => ({ ...prev, password: "" }));
+      setFieldState("password", "idle");
+      return;
+    }
+
+    setFieldState("password", "loading");
+
+    const timer = setTimeout(async () => {
       const result = await validatePasswordStrength(formData.password);
       if (result?.isValid) {
         setErrors((prev) => ({ ...prev, password: "" }));
@@ -171,8 +176,9 @@ const SignupForm = () => {
         setErrors((prev) => ({ ...prev, password: result?.message }));
         setFieldState("password", "error");
       }
-    };
-    validatePwd();
+    }, 400);
+
+    return () => clearTimeout(timer); // cancel on next keystroke
   }, [formData.password, setFieldState]);
 
   // Email validation check useEffect with 500ms debounce
