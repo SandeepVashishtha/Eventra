@@ -146,9 +146,9 @@ const EventCard = ({ event, position, isHighlighted = false }) => {
       <div className="flex flex-col flex-1 p-5 sm:p-6">
         <h3
           id={titleId}
-          className="text-text font-bold text-lg sm:text-xl leading-snug mb-2 group-hover:text-primary transition-colors duration-200 line-clamp-2"
+          className="text-text font-bold text-lg sm:text-xl leading-snug mb-2 group-hover:text-primary transition-colors duration-200 line-clamp-2 break-words min-w-0"
         >
-          <Link to={`/events/${event.id}`}>{event.title}</Link>
+          <Link to={`/events/${event.id}`} title={event.title}>{event.title}</Link>
         </h3>
 
         <p className="text-text-light text-sm font-normal leading-relaxed mb-6 line-clamp-2">
