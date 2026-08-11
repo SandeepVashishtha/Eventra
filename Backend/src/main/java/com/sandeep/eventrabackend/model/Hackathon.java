@@ -43,6 +43,8 @@ public class Hackathon {
 
     private String imageUrl;
 
+    private Integer maxParticipants;
+
     @Column(name = "owner_id")
     private Long ownerId;
 }

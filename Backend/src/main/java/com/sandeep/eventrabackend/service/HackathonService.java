@@ -108,7 +108,7 @@ public class HackathonService {
 
     @Transactional
     public HackathonRegistrationResponse registerUserForHackathon(Long id, String userEmail) {
-        Hackathon hackathon = hackathonRepository.findById(id)
+        Hackathon hackathon = hackathonRepository.findByIdWithLock(id)
                 .orElseThrow(() -> new HackathonNotFoundException("Hackathon not found with id: " + id));
 
         User user = userRepository.findByEmail(userEmail)
@@ -122,6 +122,14 @@ public class HackathonService {
         // Deadline check
         if (hackathon.getRegistrationDeadline() != null && LocalDateTime.now().isAfter(hackathon.getRegistrationDeadline())) {
             throw new RegistrationClosedException("Registration deadline has passed for this hackathon.");
+        }
+
+        // Capacity check (atomic under pessimistic write lock)
+        if (hackathon.getMaxParticipants() != null) {
+            long currentCount = hackathonRegistrationRepository.countByHackathon_Id(id);
+            if (currentCount >= hackathon.getMaxParticipants()) {
+                throw new RegistrationClosedException("Hackathon has reached maximum participant capacity.");
+            }
         }
 
         HackathonRegistration registration = HackathonRegistration.builder()
