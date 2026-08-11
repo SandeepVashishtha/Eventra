@@ -12,4 +12,5 @@ public interface HackathonRegistrationRepository extends JpaRepository<Hackathon
     void deleteByHackathonId(Long hackathonId);
 
     void deleteByUser_Id(Long userId);
+    long countByHackathon_Id(Long hackathonId);
 }

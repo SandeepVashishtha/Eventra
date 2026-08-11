@@ -133,7 +133,7 @@ const OrganizerCheckIn = ({ eventId, eventName, sessions = [], registrations = [
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
             Event Check-In Management
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-gray-600 dark:text-gray-200">
             {eventName || 'Event'} - Manage attendee check-ins
           </p>
         </div>
@@ -193,7 +193,7 @@ const OrganizerCheckIn = ({ eventId, eventName, sessions = [], registrations = [
                   <Users className="w-5 h-5 text-indigo-600" />
                   Group Check-In
                 </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                <p className="text-sm text-gray-600 dark:text-gray-200 mb-3">
                   Scan any group member's QR code to check in the entire party at once.
                 </p>
               </div>
@@ -210,7 +210,7 @@ const OrganizerCheckIn = ({ eventId, eventName, sessions = [], registrations = [
               {/* Key Metrics */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow">
-                  <div className="text-gray-600 dark:text-gray-400 text-sm font-medium">
+                  <div className="text-gray-600 dark:text-gray-200 text-sm font-medium">
                     Total Registered
                   </div>
                   <div className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
@@ -219,7 +219,7 @@ const OrganizerCheckIn = ({ eventId, eventName, sessions = [], registrations = [
                 </div>
 
                 <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow">
-                  <div className="text-gray-600 dark:text-gray-400 text-sm font-medium">
+                  <div className="text-gray-600 dark:text-gray-200 text-sm font-medium">
                     Checked In
                   </div>
                   <div className="text-3xl font-bold text-green-600 dark:text-green-400 mt-2">
@@ -228,7 +228,7 @@ const OrganizerCheckIn = ({ eventId, eventName, sessions = [], registrations = [
                 </div>
 
                 <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow">
-                  <div className="text-gray-600 dark:text-gray-400 text-sm font-medium">
+                  <div className="text-gray-600 dark:text-gray-200 text-sm font-medium">
                     Not Checked In
                   </div>
                   <div className="text-3xl font-bold text-orange-600 dark:text-orange-400 mt-2">
@@ -237,7 +237,7 @@ const OrganizerCheckIn = ({ eventId, eventName, sessions = [], registrations = [
                 </div>
 
                 <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow">
-                  <div className="text-gray-600 dark:text-gray-400 text-sm font-medium">
+                  <div className="text-gray-600 dark:text-gray-200 text-sm font-medium">
                     Check-In Rate
                   </div>
                   <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400 mt-2">
@@ -257,7 +257,7 @@ const OrganizerCheckIn = ({ eventId, eventName, sessions = [], registrations = [
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div>
-                      <div className="text-gray-600 dark:text-gray-400 text-sm font-medium">
+                      <div className="text-gray-600 dark:text-gray-200 text-sm font-medium">
                         Total Groups
                       </div>
                       <div className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
@@ -265,7 +265,7 @@ const OrganizerCheckIn = ({ eventId, eventName, sessions = [], registrations = [
                       </div>
                     </div>
                     <div>
-                      <div className="text-gray-600 dark:text-gray-400 text-sm font-medium">
+                      <div className="text-gray-600 dark:text-gray-200 text-sm font-medium">
                         Fully Checked In
                       </div>
                       <div className="text-3xl font-bold text-green-600 dark:text-green-400 mt-2">
@@ -273,7 +273,7 @@ const OrganizerCheckIn = ({ eventId, eventName, sessions = [], registrations = [
                       </div>
                     </div>
                     <div>
-                      <div className="text-gray-600 dark:text-gray-400 text-sm font-medium">
+                      <div className="text-gray-600 dark:text-gray-200 text-sm font-medium">
                         Partially Checked In
                       </div>
                       <div className="text-3xl font-bold text-orange-600 dark:text-orange-400 mt-2">
@@ -281,7 +281,7 @@ const OrganizerCheckIn = ({ eventId, eventName, sessions = [], registrations = [
                       </div>
                     </div>
                     <div>
-                      <div className="text-gray-600 dark:text-gray-400 text-sm font-medium">
+                      <div className="text-gray-600 dark:text-gray-200 text-sm font-medium">
                         Group Rate
                       </div>
                       <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400 mt-2">
@@ -298,7 +298,7 @@ const OrganizerCheckIn = ({ eventId, eventName, sessions = [], registrations = [
                   Check-In Progress
                 </h3>
                 <div className="space-y-2">
-                  <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
+                  <div className="flex justify-between text-sm text-gray-600 dark:text-gray-200">
                     <span>Progress</span>
                     <span>
                       {currentSessionStats?.checkedIn || stats.checkedIn} /{' '}
@@ -362,7 +362,7 @@ const OrganizerCheckIn = ({ eventId, eventName, sessions = [], registrations = [
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {filteredCheckIns.length === 0 ? (
                     <tr>
-                      <td colSpan="4" className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                      <td colSpan="4" className="px-6 py-8 text-center text-gray-500 dark:text-gray-200">
                         No check-ins yet
                       </td>
                     </tr>
@@ -372,17 +372,17 @@ const OrganizerCheckIn = ({ eventId, eventName, sessions = [], registrations = [
                       .map((checkIn) => {
                         const reg = registrations.find((r) => r.id === checkIn.registrationId);
                         return (
-                          <tr key={checkIn.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                          <tr key={checkIn.id} className="hover:bg-gray-50 dark:hover:bg-gray-600">
                             <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
                               {reg?.name || 'Unknown'}
                             </td>
-                            <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
+                            <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-200">
                               {reg?.email || 'unknown@example.com'}
                             </td>
-                            <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
+                            <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-200">
                               {new Date(checkIn.timestamp).toLocaleString()}
                             </td>
-                            <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
+                            <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-200">
                               {checkIn.scannedBy}
                             </td>
                           </tr>

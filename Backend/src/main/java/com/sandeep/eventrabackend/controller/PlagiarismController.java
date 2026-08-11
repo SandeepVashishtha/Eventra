@@ -13,7 +13,7 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/organizer/plagiarism")
-@CrossOrigin(origins = "*")
+@PreAuthorize("hasAnyAuthority('ORGANIZER', 'ADMIN', 'SUPER_ADMIN')")
 public class PlagiarismController {
 
     @Autowired

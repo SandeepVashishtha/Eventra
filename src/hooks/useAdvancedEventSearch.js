@@ -19,7 +19,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { safeLocalStorage } from "../utils/safeStorage";
-import { useDebounce } from "./useDebounce";
+import useDebounce from "./useDebounce";
 
 // ---------------------------------------------------------------------------
 // Constants

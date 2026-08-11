@@ -160,7 +160,7 @@ const OrganizerWaitlistManagement = ({ eventId, eventName, currentAttendees = 0,
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
             Waitlist Management
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-gray-600 dark:text-gray-200">
             {eventName || 'Event'} - Manage waitlist and auto-promotions
           </p>
         </div>
@@ -170,52 +170,52 @@ const OrganizerWaitlistManagement = ({ eventId, eventName, currentAttendees = 0,
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             {/* Capacity Status */}
             <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
-              <div className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-2">
+              <div className="text-gray-600 dark:text-gray-200 text-sm font-medium mb-2">
                 Current Capacity
               </div>
               <div className="text-3xl font-bold text-gray-900 dark:text-white">
                 {currentAttendees} / {maxAttendees}
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              <div className="text-xs text-gray-500 dark:text-gray-200 mt-2">
                 {spotsAvailable} spots available
               </div>
             </div>
 
             {/* Waitlist Count */}
             <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
-              <div className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-2">
+              <div className="text-gray-600 dark:text-gray-200 text-sm font-medium mb-2">
                 Waitlist
               </div>
               <div className="text-3xl font-bold text-orange-600 dark:text-orange-400">
                 {analytics.waiting}
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              <div className="text-xs text-gray-500 dark:text-gray-200 mt-2">
                 {analytics.totalWaitlisted} total recorded
               </div>
             </div>
 
             {/* Promoted Users */}
             <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
-              <div className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-2">
+              <div className="text-gray-600 dark:text-gray-200 text-sm font-medium mb-2">
                 Promoted
               </div>
               <div className="text-3xl font-bold text-green-600 dark:text-green-400">
                 {analytics.promoted}
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              <div className="text-xs text-gray-500 dark:text-gray-200 mt-2">
                 {analytics.promotionRate}% promotion rate
               </div>
             </div>
 
             {/* Avg Wait Time */}
             <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
-              <div className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-2">
+              <div className="text-gray-600 dark:text-gray-200 text-sm font-medium mb-2">
                 Avg Wait Time
               </div>
               <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
                 {analytics.averageWaitTime}h
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              <div className="text-xs text-gray-500 dark:text-gray-200 mt-2">
                 Hours until promotion
               </div>
             </div>
@@ -247,7 +247,7 @@ const OrganizerWaitlistManagement = ({ eventId, eventName, currentAttendees = 0,
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Increase Event Capacity
             </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-gray-600 dark:text-gray-200 mb-4">
               When you increase the capacity, waitlisted users will automatically be promoted to fill
               the new spots.
             </p>
@@ -260,7 +260,7 @@ const OrganizerWaitlistManagement = ({ eventId, eventName, currentAttendees = 0,
                   type="number"
                   value={maxAttendees}
                   disabled
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-400 opacity-50"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-200 opacity-50"
                 />
               </div>
               <div className="flex-1">
@@ -291,7 +291,7 @@ const OrganizerWaitlistManagement = ({ eventId, eventName, currentAttendees = 0,
                   setNewCapacity(maxAttendees);
                 }}
                 disabled={isProcessing}
-                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors"
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 font-medium transition-colors"
               >
                 Cancel
               </button>
@@ -328,26 +328,26 @@ const OrganizerWaitlistManagement = ({ eventId, eventName, currentAttendees = 0,
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {waitlist.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                    <td colSpan="6" className="px-6 py-8 text-center text-gray-500 dark:text-gray-200">
                       No users on waitlist
                     </td>
                   </tr>
                 ) : (
                   waitlist.map((user, index) => (
-                    <tr key={user.userId} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <tr key={user.userId} className="hover:bg-gray-50 dark:hover:bg-gray-600">
                       <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
                         #{index + 1}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
                         {user.userName}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-200">
                         {user.userEmail}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-200">
                         {user.phone || '-'}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-200">
                         {new Date(user.joinedAt).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 text-sm">

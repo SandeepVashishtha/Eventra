@@ -368,7 +368,7 @@ const EditProfile = () => {
               Auto-fill with AI
             </button>
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-gray-600 dark:text-gray-200 mt-1">
             Manage your personal information and how others see you on Eventra.
           </p>
         </div>
@@ -434,7 +434,7 @@ const EditProfile = () => {
               <div className="text-gray-900 dark:text-gray-100 font-semibold">
                 {form.fullName || form.username || form.email}
               </div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">
+              <div className="text-sm text-gray-500 dark:text-gray-200">
                 Update your avatar and profile info below.
               </div>
             </div>
@@ -718,7 +718,7 @@ const EditProfile = () => {
               <button
                 type="button"
                 onClick={() => window.history.back()}
-                className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
               >
                 Cancel
               </button>
@@ -757,14 +757,14 @@ const ConfirmModal = ({ open, onCancel, onConfirm, loading }) => {
       <div className="absolute inset-0 bg-black/50" onClick={onCancel} />
       <div className="relative w-full max-w-md mx-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl p-6 z-10">
         <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Save changes?</h4>
-        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+        <p className="mt-1 text-sm text-gray-600 dark:text-gray-200">
           Do you want to save your profile updates?
         </p>
         <div className="mt-5 flex items-center justify-end gap-3">
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+            className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
            aria-label="button">
             Cancel
           </button>

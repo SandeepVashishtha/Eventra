@@ -193,14 +193,14 @@ const GroupCheckInModal = ({
               >
                 Group Check-In
               </h2>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-gray-600 dark:text-gray-200">
                 {groupName}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 dark:hover:text-gray-300 rounded-lg transition-colors"
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 dark:hover:text-white rounded-lg transition-colors"
             aria-label="Close modal"
           >
             <X className="w-6 h-6" />
@@ -261,7 +261,7 @@ const GroupCheckInModal = ({
                 <p className="font-medium text-gray-900 dark:text-white">
                   {allSelected ? 'All members selected' : 'Select all members'}
                 </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="text-sm text-gray-500 dark:text-gray-200">
                   {checkableMembers.length} members available for check-in
                 </p>
               </div>
@@ -283,7 +283,7 @@ const GroupCheckInModal = ({
                         </span>
                       )}
                     </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-sm text-gray-600 dark:text-gray-200">
                       {primary.email}
                     </p>
                   </div>
@@ -294,7 +294,7 @@ const GroupCheckInModal = ({
                     </div>
                   ) : (
                     <div className="flex items-center">
-                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                      <span className="text-sm text-gray-500 dark:text-gray-200">
                         Not yet checked in
                       </span>
                     </div>
@@ -347,7 +347,7 @@ const GroupCheckInModal = ({
                           <p className="font-medium text-gray-900 dark:text-white truncate">
                             {member.name || `Attendee ${member.id}`}
                           </p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                          <p className="text-sm text-gray-600 dark:text-gray-200 truncate">
                             {member.email}
                           </p>
                         </div>

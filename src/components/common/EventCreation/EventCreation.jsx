@@ -408,7 +408,7 @@ const EventCreation = () => {
 
             <p
               className="
-          text-gray-600 dark:text-gray-400
+          text-gray-600 dark:text-gray-200
           mb-6
         "
             >
@@ -476,7 +476,7 @@ const EventCreation = () => {
             <h1 className="text-4xl sm:text-5xl font-extrabold text-indigo-800 dark:text-indigo-300 mb-4">
               Create Your Event
             </h1>
-            <p className="text-xs sm:text-base text-gray-600 dark:text-gray-400">
+            <p className="text-xs sm:text-base text-gray-600 dark:text-gray-200">
               Fill in the details below and bring your event to life!
             </p>
           </motion.div>
