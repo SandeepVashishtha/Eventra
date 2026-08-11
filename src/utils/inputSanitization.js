@@ -8,9 +8,23 @@
 
 // Single-pass regex targeting all disallowed characters.
 // Blocks NoSQL operators ($), object/array notation ({}, []), quotes/backticks ('"`),
-// pipes/statements (|;\), HTML tags (<>), and newline/carriage controls.
-const DISALLOWED_SEARCH_CHARS = /[\$\{\}\[\];'`|\\<>\n\r]/;
-const DISALLOWED_SEARCH_CHARS_GLOBAL = /[\$\{\}\[\];'`|\\<>\n\r]/g;
+// pipes/statements (|;\), HTML tags (<>), slashes (/), and newline/carriage controls.
+const DISALLOWED_SEARCH_CHARS = /[\$\{\}\[\];'"`|\\\/<>\n\r]/;
+const DISALLOWED_SEARCH_CHARS_GLOBAL = /[\$\{\}\[\];'"`|\\\/<>\n\r]/g;
+
+// Executable HTML structures that are dropped wholesale — a plain character strip
+// cannot remove them without leaving their inner payloads searchable.
+const SCRIPT_BLOCK_PATTERN = /<\s*(script|style)\b[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi;
+const SCRIPT_TAG_PATTERN = /<\s*\/?\s*(script|style)\b[^>]*>?/gi;
+const EMBED_TAG_PATTERN = /<\s*(img|iframe|object|embed|svg|math|link|meta)\b[^>]*>?/gi;
+const EVENT_HANDLER_PATTERN = /\bon\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s<>]+)/gi;
+const PROTOCOL_SCHEME_PATTERN = /\b(?:java|vb)script\s*:/gi;
+const JS_SINK_PATTERN = /\b(?:alert|confirm|prompt)\s*\([^)]*\)/gi;
+
+// Characters with special meaning in regular expressions. The sanitized query is
+// handed to backend search endpoints that may match with regex, so they must be
+// escaped to prevent Regex Injection / ReDoS (Issue #14658).
+const REGEXP_META_PATTERN = /[.*+?^${}()|[\]\\]/g;
 
 const MAX_QUERY_LENGTH = 200;
 
@@ -28,14 +42,40 @@ export const sanitizeSearchQuery = (query = '') => {
 
   let sanitized = query.trim();
 
-  // Single-pass replacement prevents sequential-pass assembly attacks (e.g., `<\<`)
-  sanitized = sanitized.replace(DISALLOWED_SEARCH_CHARS_GLOBAL, '');
+  sanitized = sanitized
+    // Drop executable blocks before stripping tag characters so their payloads
+    // cannot survive as searchable text.
+    .replace(SCRIPT_BLOCK_PATTERN, ' ')
+    .replace(SCRIPT_TAG_PATTERN, ' ')
+    .replace(EMBED_TAG_PATTERN, ' ')
+    .replace(EVENT_HANDLER_PATTERN, ' ')
+    .replace(PROTOCOL_SCHEME_PATTERN, ' ')
+    .replace(JS_SINK_PATTERN, ' ')
+    // Single-pass replacement prevents sequential-pass assembly attacks (e.g., `<\<`)
+    .replace(DISALLOWED_SEARCH_CHARS_GLOBAL, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 
   if (sanitized.length > MAX_QUERY_LENGTH) {
     sanitized = sanitized.substring(0, MAX_QUERY_LENGTH).trim();
   }
 
   return sanitized;
+};
+
+/**
+ * Escape regular-expression metacharacters so a sanitized query can be safely
+ * embedded in backend regex searches without Regex Injection or ReDoS.
+ *
+ * @param {string} value - String that will be used inside a regex
+ * @returns {string} - Regex-literal-safe copy
+ */
+export const escapeRegExp = (value = '') => {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  return value.replace(REGEXP_META_PATTERN, '\\$&');
 };
 
 /**
@@ -69,7 +109,8 @@ export const validateSearchQuery = (query = '') => {
 
 /**
  * Safe search query preparation for API calls.
- * Combines sanitization and validation.
+ * Combines sanitization and validation, then escapes regex metacharacters
+ * so the result is safe for backend regex-based search.
  *
  * @param {string} rawQuery - Raw user input
  * @returns {string} - Safe query for API, or empty string if invalid
@@ -87,7 +128,7 @@ export const prepareSafeSearchQuery = (rawQuery = '') => {
   }
 
   const sanitized = sanitizeSearchQuery(rawQuery);
-  return sanitized;
+  return escapeRegExp(sanitized);
 };
 
 /**
