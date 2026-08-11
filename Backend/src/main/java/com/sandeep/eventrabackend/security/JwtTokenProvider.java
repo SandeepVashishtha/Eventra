@@ -154,4 +154,11 @@ public class JwtTokenProvider {
                 .parseSignedClaims(token)
                 .getPayload();
     }
+
+    public boolean isTokenIssuedBeforePasswordUpdate(Date tokenIssuedAt, Date passwordUpdatedAt) {
+        if (passwordUpdatedAt == null || tokenIssuedAt == null) {
+            return false;
+        }
+        return tokenIssuedAt.before(passwordUpdatedAt);
+    }
 }
