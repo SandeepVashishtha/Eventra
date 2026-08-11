@@ -63,16 +63,24 @@ function sendReport(report, blockedUri) {
     return;
   }
 
-  const blob = new Blob([JSON.stringify(report)], {
+  const payload = JSON.stringify(report);
+  const blob = new Blob([payload], {
     type: 'application/csp-report',
   });
 
+  let queued = false;
+
   try {
-    navigator.sendBeacon(reportUri, blob);
+    queued = Boolean(navigator.sendBeacon && navigator.sendBeacon(reportUri, blob));
   } catch {
+    queued = false;
+  }
+
+  // Fall back to fetch if sendBeacon returned false or threw an exception
+  if (!queued) {
     fetch(reportUri, {
       method: 'POST',
-      body: JSON.stringify(report),
+      body: payload,
       headers: { 'Content-Type': 'application/csp-report' },
       keepalive: true,
     }).catch(() => {});
@@ -127,5 +135,4 @@ export function teardownCspReporting() {
 
   document.removeEventListener('securitypolicyviolation', _cspHandler);
   _cspHandler = null;
-  resetCspReportingState();
 }
