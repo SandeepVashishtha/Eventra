@@ -16,14 +16,17 @@ const Unauthorized = () => {
     { top: "50%", right: "2%" },
   ];
 
-  // Framer Motion variants for floating effect
+  // Framer Motion variants for floating effect.
+  // When reduced motion is preferred, repeat is set to 0 so the animation
+  // runs once (or not at all with duration:0) instead of looping infinitely
+  // at zero duration — which would hammer the animation scheduler every frame.
   const floatingVariants = {
     float: (i) => ({
-      y: [0, -20 - i * 3, 0],
-      x: [0, 20 + i * 5, 0],
+      y: prefersReducedMotion ? 0 : [0, -20 - i * 3, 0],
+      x: prefersReducedMotion ? 0 : [0, 20 + i * 5, 0],
       transition: {
         duration: prefersReducedMotion ? 0 : 6 + i,
-        repeat: Infinity,
+        repeat: prefersReducedMotion ? 0 : Infinity,
         ease: "easeInOut",
       },
     }),
