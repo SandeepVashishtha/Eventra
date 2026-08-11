@@ -1,5 +1,7 @@
+import { createThemeVariables, DEFAULT_THEME_VARIABLES } from "./colorTokens.js";
+
 export const darkTheme = {
-  section: "bg-white dark:bg-black text-gray-900 dark:text-white",
+  section: "bg-bg text-text",
 
   card: "bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700",
 
@@ -11,8 +13,7 @@ export const darkTheme = {
 
   buttonPrimary: "bg-blue-600 hover:bg-blue-700 text-white",
 
-  buttonSecondary:
-    "bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-white",
+  buttonSecondary: "bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-white",
 };
 
 export const THEMES = {
@@ -20,49 +21,14 @@ export const THEMES = {
     id: "default",
     name: "Classic Slate",
     accent: "from-blue-500 to-indigo-600",
-    colors: {
-      light: {
-        "--bg-color": "#ffffff",
-        "--text-color": "#1a1a1a",
-        "--text-color-light": "#4a4a4a",
-        "--border-color": "#e1e5e9",
-        "--card-bg-color": "#ffffff",
-        "--navbar-bg": "#ffffff",
-        "--sidebar-bg": "#f9fafb",
-        "--input-bg": "#ffffff",
-        "--input-text": "#1a1a1a",
-        "--table-bg": "#ffffff",
-        "--modal-bg": "#ffffff",
-        "--primary-color": "#2563eb",
-        "--secondary-color": "#475569",
-        "--accent-gradient": "linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)",
-        "--glow-color": "rgba(59, 130, 246, 0.2)"
-      },
-      dark: {
-        "--bg-color": "#0f172a",
-        "--text-color": "#f8fafc",
-        "--text-color-light": "#cbd5e1",
-        "--border-color": "#334155",
-        "--card-bg-color": "#111827",
-        "--navbar-bg": "#111827",
-        "--sidebar-bg": "#0f172a",
-        "--input-bg": "#1e293b",
-        "--input-text": "#f8fafc",
-        "--table-bg": "#111827",
-        "--modal-bg": "#1e293b",
-        "--primary-color": "#3b82f6",
-        "--secondary-color": "#475569",
-        "--accent-gradient": "linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)",
-        "--glow-color": "rgba(99, 102, 241, 0.3)"
-      }
-    }
+    colors: DEFAULT_THEME_VARIABLES,
   },
   "nova-cyberpunk": {
     id: "nova-cyberpunk",
     name: "Nova Cyberpunk",
     accent: "from-pink-500 to-purple-600",
     colors: {
-      light: {
+      light: createThemeVariables({
         "--bg-color": "#0a0516",
         "--text-color": "#f5f3ff",
         "--text-color-light": "#d8b4fe",
@@ -77,9 +43,9 @@ export const THEMES = {
         "--primary-color": "#ec4899",
         "--secondary-color": "#8b5cf6",
         "--accent-gradient": "linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%)",
-        "--glow-color": "rgba(236, 72, 153, 0.4)"
-      },
-      dark: {
+        "--glow-color": "rgba(236, 72, 153, 0.4)",
+      }),
+      dark: createThemeVariables({
         "--bg-color": "#0a0516",
         "--text-color": "#f5f3ff",
         "--text-color-light": "#d8b4fe",
@@ -94,16 +60,16 @@ export const THEMES = {
         "--primary-color": "#ec4899",
         "--secondary-color": "#8b5cf6",
         "--accent-gradient": "linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%)",
-        "--glow-color": "rgba(236, 72, 153, 0.4)"
-      }
-    }
+        "--glow-color": "rgba(236, 72, 153, 0.4)",
+      }),
+    },
   },
   "forest-mint": {
     id: "forest-mint",
     name: "Forest Mint",
     accent: "from-emerald-400 to-teal-600",
     colors: {
-      light: {
+      light: createThemeVariables({
         "--bg-color": "#f0fdf4",
         "--text-color": "#14532d",
         "--text-color-light": "#15803d",
@@ -118,9 +84,9 @@ export const THEMES = {
         "--primary-color": "#10b981",
         "--secondary-color": "#047857",
         "--accent-gradient": "linear-gradient(135deg, #10b981 0%, #047857 100%)",
-        "--glow-color": "rgba(16, 185, 129, 0.2)"
-      },
-      dark: {
+        "--glow-color": "rgba(16, 185, 129, 0.2)",
+      }),
+      dark: createThemeVariables({
         "--bg-color": "#06140e",
         "--text-color": "#f0fdf4",
         "--text-color-light": "#86efac",
@@ -135,16 +101,16 @@ export const THEMES = {
         "--primary-color": "#10b981",
         "--secondary-color": "#059669",
         "--accent-gradient": "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-        "--glow-color": "rgba(16, 185, 129, 0.4)"
-      }
-    }
+        "--glow-color": "rgba(16, 185, 129, 0.4)",
+      }),
+    },
   },
   "sunset-amber": {
     id: "sunset-amber",
     name: "Sunset Amber",
     accent: "from-amber-500 to-orange-600",
     colors: {
-      light: {
+      light: createThemeVariables({
         "--bg-color": "#fffbeb",
         "--text-color": "#78350f",
         "--text-color-light": "#b45309",
@@ -159,9 +125,9 @@ export const THEMES = {
         "--primary-color": "#f59e0b",
         "--secondary-color": "#b45309",
         "--accent-gradient": "linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)",
-        "--glow-color": "rgba(245, 158, 11, 0.2)"
-      },
-      dark: {
+        "--glow-color": "rgba(245, 158, 11, 0.2)",
+      }),
+      dark: createThemeVariables({
         "--bg-color": "#110b05",
         "--text-color": "#fffbeb",
         "--text-color-light": "#fcd34d",
@@ -176,16 +142,16 @@ export const THEMES = {
         "--primary-color": "#f59e0b",
         "--secondary-color": "#ea580c",
         "--accent-gradient": "linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)",
-        "--glow-color": "rgba(245, 158, 11, 0.4)"
-      }
-    }
+        "--glow-color": "rgba(245, 158, 11, 0.4)",
+      }),
+    },
   },
   "dracula-classic": {
     id: "dracula-classic",
     name: "Dracula Classic",
     accent: "from-pink-400 to-purple-500",
     colors: {
-      light: {
+      light: createThemeVariables({
         "--bg-color": "#f8f8f2",
         "--text-color": "#282a36",
         "--text-color-light": "#6272a4",
@@ -200,9 +166,9 @@ export const THEMES = {
         "--primary-color": "#bd93f9",
         "--secondary-color": "#ff79c6",
         "--accent-gradient": "linear-gradient(135deg, #ff79c6 0%, #bd93f9 100%)",
-        "--glow-color": "rgba(189, 147, 249, 0.2)"
-      },
-      dark: {
+        "--glow-color": "rgba(189, 147, 249, 0.2)",
+      }),
+      dark: createThemeVariables({
         "--bg-color": "#1e1f29",
         "--text-color": "#f8f8f2",
         "--text-color-light": "#bd93f9",
@@ -217,8 +183,8 @@ export const THEMES = {
         "--primary-color": "#bd93f9",
         "--secondary-color": "#ff79c6",
         "--accent-gradient": "linear-gradient(135deg, #ff79c6 0%, #bd93f9 100%)",
-        "--glow-color": "rgba(189, 147, 249, 0.4)"
-      }
-    }
-  }
+        "--glow-color": "rgba(189, 147, 249, 0.4)",
+      }),
+    },
+  },
 };

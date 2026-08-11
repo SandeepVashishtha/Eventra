@@ -36,7 +36,7 @@ const ArrowButton = ({ direction, disabled, onClick }) => {
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 transition hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+      className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 transition hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-600 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 dark:disabled:bg-gray-800/80 dark:disabled:text-gray-500"
       aria-label={`${direction === "previous" ? "Previous" : "Next"} page`}
     >
       <Icon size={18} />
@@ -116,17 +116,23 @@ const PaginationControls = ({
   onPageChange,
   onPageSizeChange,
 }) => {
-  if (totalEvents === 0) {
-    return null;
-  }
+  const safeTotalEvents = Number(totalEvents) || 0;
+const safeCurrentPage = Number(currentPage) || 1;
+const safeEventsPerPage = Number(eventsPerPage) || EVENTS_PER_PAGE_OPTIONS[0];
 
-  const startEvent = (currentPage - 1) * eventsPerPage + 1;
-  const endEvent = Math.min(currentPage * eventsPerPage, totalEvents);
+if (safeTotalEvents === 0) {
+  return null;
+}
 
+const startEvent = (safeCurrentPage - 1) * safeEventsPerPage + 1;
+const endEvent = Math.min(
+  safeCurrentPage * safeEventsPerPage,
+  safeTotalEvents
+);
   return (
     <div className="mt-10 flex flex-col gap-4 border-t border-gray-200 pt-6 dark:border-gray-700 sm:flex-row sm:items-center sm:justify-between">
       <p className="text-sm text-gray-600 dark:text-gray-400">
-        Showing {startEvent}–{endEvent} of {totalEvents} events
+        Showing {startEvent}–{endEvent} of {safeTotalEvents} events
       </p>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -140,7 +146,7 @@ const PaginationControls = ({
             type="button"
             onClick={() => onPageChange(1)}
             disabled={currentPage === 1}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 transition hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 transition hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-600 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 dark:disabled:bg-gray-800/80 dark:disabled:text-gray-500"
             aria-label="First page"
           >
             <ChevronsLeft size={18} />
@@ -168,7 +174,7 @@ const PaginationControls = ({
             type="button"
             onClick={() => onPageChange(totalPages)}
             disabled={currentPage === totalPages}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 transition hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 transition hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-600 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 dark:disabled:bg-gray-800/80 dark:disabled:text-gray-500"
             aria-label="Last page"
           >
             <ChevronsRight size={18} />

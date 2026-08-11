@@ -47,6 +47,19 @@ export const useFormValidation = (
   // Refs for debouncing and caching
   const timeoutRefs = useRef({});
   const validationCacheRef = useRef({});
+  const isMountedRef = useRef(true);
+  const valuesRef = useRef(values);
+  useEffect(() => { valuesRef.current = values; }, [values]);
+
+  /**
+   * Per-field monotonically-increasing generation counter.
+   * Incremented each time a new validation is started for a field so that
+   * any in-flight call that resolves later can detect it has been superseded
+   * and discard its result without touching state or the cache.
+   *
+   * Shape: { [fieldName]: number }
+   */
+  const validationGenerationRef = useRef({});
 
   /**
    * Clear debounce timeout for a field
@@ -59,15 +72,32 @@ export const useFormValidation = (
   }, []);
 
   /**
-   * Validate a single field with async support
+   * Validate a single field with async support.
+   *
+   * Race-condition safety: each invocation captures the current generation
+   * number for the field at the moment it starts.  After every await point the
+   * call checks whether it still holds the latest generation; if a newer call
+   * has since started it silently returns `null` without touching state or the
+   * cache, so stale results can never overwrite fresher ones.
    */
   const validateField = useCallback(
     async (fieldName, value, allValues) => {
+      // --- generation bookkeeping (must happen before any await) ---
+      const currentGeneration =
+        (validationGenerationRef.current[fieldName] ?? 0) + 1;
+      validationGenerationRef.current[fieldName] = currentGeneration;
+
+      /** Returns true when a newer validation has started for this field. */
+      const isStale = () =>
+        validationGenerationRef.current[fieldName] !== currentGeneration;
+
       if (!validationRules[fieldName]) {
-        setValidationState((prev) => ({
-          ...prev,
-          [fieldName]: "idle",
-        }));
+        if (isMountedRef.current && !isStale()) {
+          setValidationState((prev) => ({
+            ...prev,
+            [fieldName]: "idle",
+          }));
+        }
         return null;
       }
 
@@ -75,9 +105,17 @@ export const useFormValidation = (
         ? validationRules[fieldName]
         : [validationRules[fieldName]];
 
-      // Check cache first if enabled
+      // Check cache first if enabled (cache hits are instantaneous — no race risk)
       const cacheKey = `${fieldName}:${value}`;
-      if (cacheResults && validationCacheRef.current[cacheKey]) {
+      if (cacheResults && validationCacheRef.current[cacheKey] !== undefined) {
+        // Still update validationState so the UI reflects the cached outcome
+        if (isMountedRef.current && !isStale()) {
+          const cachedError = validationCacheRef.current[cacheKey];
+          setValidationState((prev) => ({
+            ...prev,
+            [fieldName]: cachedError ? "error" : "success",
+          }));
+        }
         return validationCacheRef.current[cacheKey];
       }
 
@@ -100,10 +138,12 @@ export const useFormValidation = (
             typeof validationResult?.then === "function" || validator?.async;
 
           if (isAsyncValidation) {
-            setValidationState((prev) => ({
-              ...prev,
-              [fieldName]: "validating",
-            }));
+            if (isMountedRef.current && !isStale()) {
+              setValidationState((prev) => ({
+                ...prev,
+                [fieldName]: "validating",
+              }));
+            }
 
             const validationStartedAt = Date.now();
             validationResult = await Promise.race([
@@ -115,11 +155,17 @@ export const useFormValidation = (
                 ),
               ),
             ]);
+
+            // Discard result if a newer validation has started while we awaited
+            if (isStale()) return null;
+
             const remainingLoadingTime = 200 - (Date.now() - validationStartedAt);
             if (remainingLoadingTime > 0) {
               await new Promise((resolve) =>
                 setTimeout(resolve, remainingLoadingTime),
               );
+              // Check again after the minimum-loading-time delay
+              if (isStale()) return null;
             }
           }
 
@@ -147,29 +193,32 @@ export const useFormValidation = (
 
           if (finalError) break; // Stop at first error
         } catch (err) {
+          // Discard error result if superseded
+          if (isStale()) return null;
+
           finalError = err.message || "Validation error";
-          setValidationState((prev) => ({
-            ...prev,
-            [fieldName]: "error",
-          }));
+          if (isMountedRef.current) {
+            setValidationState((prev) => ({
+              ...prev,
+              [fieldName]: "error",
+            }));
+          }
           break;
         }
       }
 
+      // Final stale-check before committing any state or cache writes
+      if (isStale()) return null;
+
       // Update validation state
-      if (!finalError) {
+      if (isMountedRef.current) {
         setValidationState((prev) => ({
           ...prev,
-          [fieldName]: "success",
-        }));
-      } else {
-        setValidationState((prev) => ({
-          ...prev,
-          [fieldName]: "error",
+          [fieldName]: finalError ? "error" : "success",
         }));
       }
 
-      // Cache the result
+      // Cache the result (only for the winning, non-stale call)
       if (cacheResults) {
         validationCacheRef.current[cacheKey] = finalError;
       }
@@ -209,20 +258,23 @@ export const useFormValidation = (
             validator?.constructor?.name === "AsyncFunction",
         );
 
-        if (mayValidateAsync) {
+        if (mayValidateAsync && isMountedRef.current) {
           setValidationState((prev) => ({ ...prev, [name]: "validating" }));
         }
 
         timeoutRefs.current[name] = setTimeout(async () => {
+          const currentValues = valuesRef.current;
           const error = await validateField(name, fieldValue, {
-            ...values,
+            ...currentValues,
             [name]: fieldValue,
           });
-          setErrors((prev) => ({ ...prev, [name]: error }));
+          if (isMountedRef.current) {
+            setErrors((prev) => ({ ...prev, [name]: error }));
+          }
         }, debounceMs);
       }
     },
-    [validationRules, values, validateField, debounceMs, clearFieldTimeout],
+    [validationRules, validateField, debounceMs, clearFieldTimeout],
   );
 
   /**
@@ -234,11 +286,13 @@ export const useFormValidation = (
       setTouched((prev) => ({ ...prev, [name]: true }));
 
       if (validationRules[name] && validateOnBlur) {
-        const error = await validateField(name, value, values);
-        setErrors((prev) => ({ ...prev, [name]: error }));
+        const error = await validateField(name, value, valuesRef.current);
+        if (isMountedRef.current) {
+          setErrors((prev) => ({ ...prev, [name]: error }));
+        }
       }
     },
-    [validationRules, values, validateField, validateOnBlur],
+    [validationRules, validateField, validateOnBlur],
   );
 
   /**
@@ -295,6 +349,10 @@ export const useFormValidation = (
     setValidationState({});
     setIsFormValid(false);
 
+    // Invalidate all in-flight validations so they discard their results
+    validationGenerationRef.current = {};
+    validationCacheRef.current = {};
+
     // Clear all pending timeouts
     Object.keys(timeoutRefs.current).forEach((fieldName) => {
       clearFieldTimeout(fieldName);
@@ -311,11 +369,13 @@ export const useFormValidation = (
 
       try {
         const isValid = await validateAll();
-        if (isValid) {
+        if (isValid && isMountedRef.current) {
           await onSubmit(values);
         }
       } finally {
-        setIsSubmitting(false);
+        if (isMountedRef.current) {
+          setIsSubmitting(false);
+        }
       }
     },
     [validateAll, values],
@@ -343,9 +403,12 @@ export const useFormValidation = (
    * Cleanup on unmount
    */
   useEffect(() => {
+    isMountedRef.current = true;
+    const currentTimeouts = timeoutRefs.current;
     return () => {
-      Object.keys(timeoutRefs.current).forEach((fieldName) => {
-        clearFieldTimeout(fieldName);
+      isMountedRef.current = false;
+      Object.keys(currentTimeouts).forEach((fieldName) => {
+        clearTimeout(currentTimeouts[fieldName]);
       });
     };
   }, [clearFieldTimeout]);

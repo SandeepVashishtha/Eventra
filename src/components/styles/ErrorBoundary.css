@@ -1,0 +1,60 @@
+.error-boundary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  padding: 2rem;
+}
+
+.error-boundary__content {
+  text-align: center;
+  max-width: 480px;
+  padding: 2rem;
+  border-radius: 12px;
+  background: var(--card-bg, #fff);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+}
+
+.error-boundary__title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary, #1a1a2e);
+  margin-bottom: 0.5rem;
+}
+
+.error-boundary__message {
+  color: var(--text-secondary, #6b7280);
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+.error-boundary__details {
+  text-align: left;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  overflow: auto;
+  max-height: 200px;
+}
+
+.error-boundary__retry {
+  padding: 0.75rem 2rem;
+  border: none;
+  border-radius: 8px;
+  background: var(--primary, #6366f1);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.error-boundary__retry:hover {
+  background: var(--primary-dark, #4f46e5);
+}
+
+.error-boundary__retry:focus-visible {
+  outline: 3px solid var(--primary, #6366f1);
+  outline-offset: 2px;
+}

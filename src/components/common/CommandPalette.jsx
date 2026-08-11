@@ -1,3 +1,4 @@
+import useModalManager from "hooks/useModalManager";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
@@ -18,6 +19,7 @@ import {
   ArrowDown,
   CornerDownLeft
 } from "lucide-react";
+import { useModalStack } from "hooks/useModalStack";
 
 const trendTags = ["AI", "Web3", "Hackathons", "Workshops", "Community", "Auth"];
 
@@ -36,6 +38,7 @@ export default function CommandPalette({
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef(null);
   const containerRef = useRef(null);
+  const { isTopmost } = useModalStack(isOpen);
 
   // Search Catalog containing navigations, quick system actions, events, and hackathons
   const searchCatalog = useMemo(() => [
@@ -43,7 +46,7 @@ export default function CommandPalette({
     { name: "Explore Events Portal", href: "/events", category: "Pages", type: "nav", icon: Calendar },
     { name: "Live Hackathons", href: "/hackathons", category: "Pages", type: "nav", icon: Sparkles },
     { name: "Platform Projects Hub", href: "/projects", category: "Pages", type: "nav", icon: Layers },
-    { name: "Leaderboard Standings", href: "/leaderBoard", category: "Pages", type: "nav", icon: Sparkles },
+    { name: "Leaderboard Standings", href: "/leaderboard", category: "Pages", type: "nav", icon: Sparkles },
     { name: "Eventra Bookmarks", href: "/bookmarks", category: "Pages", type: "nav", icon: Calendar },
     { name: "Contribute & Open Source Guide", href: "/contributorguide", category: "Pages", type: "nav", icon: Layers },
     { name: "Platform Frequently Asked Questions (FAQ)", href: "/faq", category: "Pages", type: "nav", icon: HelpCircle },
@@ -123,18 +126,21 @@ export default function CommandPalette({
     setActiveIndex(0);
   }, [query]);
 
+  // Fix: useModalManager handles escape key and scroll lock
+  // disableFocusTrap=true because CommandPalette has its own custom
+  // keyboard navigation for the results list
+  useModalManager(isOpen, onClose, { disableFocusTrap: true });
+
   // Auto focus input on open
-  useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => inputRef.current?.focus(), 150);
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [isOpen]);
+ useEffect(() => {
+  if (isOpen) {
+    setTimeout(() => inputRef.current?.focus(), 150);
+  } else {
+    setQuery("");
+    setActiveIndex(0);
+  }
+  return () => {};
+}, [isOpen]);
 
   // Handle selected item action
   const handleSelect = useCallback((item) => {
@@ -156,6 +162,8 @@ export default function CommandPalette({
     if (!isOpen) return;
 
     const handleKeyDown = (e) => {
+      if (!isTopmost()) return;
+
       if (e.key === "ArrowDown") {
         e.preventDefault();
         setActiveIndex(prev => (prev + 1) % Math.max(1, filteredItems.length));
@@ -175,7 +183,7 @@ export default function CommandPalette({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, filteredItems, activeIndex, handleSelect, onClose]);
+  }, [isOpen, filteredItems, activeIndex, handleSelect, onClose, isTopmost]);
 
   // Categorized index mapper helper
   const categorizedItems = useMemo(() => {
@@ -288,7 +296,7 @@ export default function CommandPalette({
                           className={`
                             group flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-150 select-none
                             ${active
-                              ? "bg-gradient-to-r from-indigo-600 to-pink-600 text-white shadow-lg shadow-indigo-500/20 translate-x-1"
+                              ? "bg-linear-to-r from-indigo-600 to-pink-600 text-white shadow-lg shadow-indigo-500/20 translate-x-1"
                               : "hover:bg-slate-100 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-300"
                             }
                           `}

@@ -21,7 +21,8 @@ import {
   getUserTimezone,
   parseEventToUTC,
   parseTimeString,
-} from './timezoneUtils';
+  normalizeDateString,
+} from "./timezoneUtils.js";
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -37,14 +38,62 @@ import {
  */
 const getEffectiveDuration = (event, fallbackMinutes = 60) => {
   const d = event?.durationMinutes;
-  return typeof d === 'number' && d > 0 ? d : fallbackMinutes;
+  return typeof d === "number" && d > 0 ? d : fallbackMinutes;
+};
+
+/**
+ * Parse a full ISO timestamp to UTC epoch ms.
+ *
+ * Handles both explicit-offset timestamps (e.g. "2026-06-01T10:00:00Z" or
+ * "2026-06-01T10:00:00+05:30", which are self-describing) and naive local
+ * wall-clock timestamps ("2026-06-01T10:00:00"), which are interpreted in the
+ * event's timezone via parseEventToUTC.
+ *
+ * @param {string} iso  - Full ISO timestamp, not a bare "YYYY-MM-DD" date
+ * @param {string} tz   - IANA timezone used for naive timestamps
+ * @returns {number|null}
+ */
+const parseIsoTimestampUTC = (iso, tz) => {
+  if (!iso || typeof iso !== "string") return null;
+
+  // Explicit offset or Z suffix → the instant is self-describing
+  if (/[zZ]|[+-]\d{2}:?\d{2}$/.test(iso)) {
+    const ms = new Date(iso).getTime();
+    return Number.isNaN(ms) ? null : ms;
+  }
+
+  // Naive "YYYY-MM-DDTHH:MM[:ss]" → treat wall-clock as local in `tz`
+  const match = iso.match(/^(\d{4}-\d{2}-\d{2})T(\d{1,2}):(\d{2})/);
+  if (!match) return null;
+
+  return parseEventToUTC(match[1], `${match[2]}:${match[3]}`, tz);
+};
+
+/**
+ * Resolve an event's start instant (UTC ms).
+ *
+ * Prefers the explicit { date, time } pair used by mock/hackathon events, then
+ * falls back to the single full ISO timestamp returned by the real API
+ * (event.eventDate / event.startDate / event.date). Returns null when neither
+ * is parseable.
+ *
+ * @param {object} event
+ * @param {string} tz
+ * @returns {number|null}
+ */
+const parseEventStartUTC = (event, tz) => {
+  const fromPair = parseEventToUTC(event?.date, event?.time, tz);
+  if (fromPair !== null) return fromPair;
+
+  const iso = event?.eventDate || event?.startDate || event?.date;
+  return parseIsoTimestampUTC(iso, tz);
 };
 
 /**
  * Convert an event to a UTC time-range { startMs, endMs }.
  * Returns null when the event lacks enough date/time data to parse.
  *
- * @param {object} event  - Event object with .date and .time fields
+ * @param {object} event  - Event object with a .date/.time pair or an ISO timestamp
  * @param {number} fallbackDuration  - Minutes to use when event.durationMinutes is absent
  * @param {string} [timezone]  - IANA tz string; defaults to browser's tz
  * @returns {{ startMs: number, endMs: number }|null}
@@ -53,7 +102,7 @@ export const getEventUTCRange = (event, fallbackDuration = 60, timezone) => {
   if (!event) return null;
 
   const tz = event.timezone || event.timeZone || timezone || getUserTimezone();
-  const startMs = parseEventToUTC(event.date, event.time, tz);
+  const startMs = parseEventStartUTC(event, tz);
 
   if (startMs === null) return null;
 
@@ -109,12 +158,7 @@ export const getEventTimeRange = (event, durationMinutes = 60) => {
  * @param {string} [timezone]       - IANA tz; defaults to browser tz
  * @returns {boolean}
  */
-export const doEventsOverlap = (
-  event1,
-  event2,
-  fallbackDuration = 60,
-  timezone
-) => {
+export const doEventsOverlap = (event1, event2, fallbackDuration = 60, timezone) => {
   const tz = timezone || getUserTimezone();
   const range1 = getEventUTCRange(event1, fallbackDuration, tz);
   const range2 = getEventUTCRange(event2, fallbackDuration, tz);
@@ -129,14 +173,9 @@ export const doEventsOverlap = (
   // Only reached when date/time fields are unparseable (e.g. undefined).
   // The legacy code compared raw date strings; we still do that but via
   // normalizeDateString for format-tolerance.
-  try {
-    const { normalizeDateString } = require('./timezoneUtils');
-    const d1 = normalizeDateString(event1?.date);
-    const d2 = normalizeDateString(event2?.date);
-    if (d1 && d2 && d1 !== d2) return false;
-  } catch {
-    if (event1?.date !== event2?.date) return false;
-  }
+  const d1 = normalizeDateString(event1?.date);
+  const d2 = normalizeDateString(event2?.date);
+  if (d1 && d2 && d1 !== d2) return false;
 
   const r1 = getEventTimeRange(event1, fallbackDuration);
   const r2 = getEventTimeRange(event2, fallbackDuration);
@@ -145,6 +184,12 @@ export const doEventsOverlap = (
 
 /**
  * Find all events in registeredEvents that conflict with newEvent.
+ *
+ * Null/undefined entries in registeredEvents are silently skipped. They can
+ * appear when localStorage is partially written (page closed mid-save), when
+ * a registration object has an explicitly null .event field, or when test
+ * fixtures pass sparse arrays. Without the filter(Boolean) guards the .map()
+ * call throws TypeError accessing .event on null.
  *
  * @param {object} newEvent
  * @param {Array}  registeredEvents
@@ -163,7 +208,10 @@ export const findConflictingEvents = (
   const tz = timezone || getUserTimezone();
 
   return registeredEvents
-    .map((reg) => reg.event || reg)
+    .filter(Boolean)                           // drop null/undefined registration entries
+    .map((reg) => reg.event || reg.eventSummary || reg)
+    .filter(Boolean)                           // drop registrations whose .event is also null
+    .filter((event) => !newEvent.id || !event.id || event.id !== newEvent.id)
     .filter((event) => doEventsOverlap(newEvent, event, fallbackDuration, tz));
 };
 
@@ -182,17 +230,16 @@ export const checkRegistrationConflict = (
   fallbackDuration = 60,
   timezone
 ) => {
-  const conflicts = findConflictingEvents(
-    newEvent,
-    registeredEvents,
-    fallbackDuration,
-    timezone
-  );
+  const conflicts = findConflictingEvents(newEvent, registeredEvents, fallbackDuration, timezone);
   return { hasConflict: conflicts.length > 0, conflicts };
 };
 
 /**
  * Suggest alternative events that don't conflict with the user's registered events.
+ *
+ * Null/undefined entries in registeredEvents are filtered out before building
+ * the registeredIds set to prevent TypeError on .event?.id access when entries
+ * are null (same root cause as the findConflictingEvents fix).
  *
  * @param {object} targetEvent
  * @param {Array}  allEvents
@@ -214,20 +261,19 @@ export const suggestAlternativeEvents = (
 
   const tz = timezone || getUserTimezone();
 
-  // Exclude the target event and already-registered events
+  // Exclude the target event and already-registered events.
+  // filter(Boolean) drops null/undefined entries before accessing .event?.id.
+  const safeRegistered = (registeredEvents || []).filter(Boolean);
+  const registeredIds = new Set(safeRegistered.map((reg) => reg.event?.id || reg.id));
   const availableEvents = allEvents.filter((event) => {
-    const isTargetEvent = event.id === targetEvent.id;
-    const isRegistered = registeredEvents.some(
-      (reg) => (reg.event?.id || reg.id) === event.id
-    );
-    return !isTargetEvent && !isRegistered;
+    return event && event.id !== targetEvent.id && !registeredIds.has(event.id);
   });
 
   // Keep only events that don't conflict with existing registrations
   const nonConflictingEvents = availableEvents.filter((event) => {
     const { hasConflict } = checkRegistrationConflict(
       event,
-      registeredEvents,
+      safeRegistered,
       fallbackDuration,
       tz
     );
@@ -235,20 +281,21 @@ export const suggestAlternativeEvents = (
   });
 
   // Prioritise events of the same category / type / tags as the target
+  const targetTagSet = new Set(targetEvent.tags || []);
+
   const sameCategoryEvents = nonConflictingEvents.filter(
     (event) =>
       event.category === targetEvent.category ||
       event.type === targetEvent.type ||
-      event.tags?.some((tag) => targetEvent.tags?.includes(tag))
+      event.tags?.some((tag) => targetTagSet.has(tag))
   );
 
   if (sameCategoryEvents.length >= maxSuggestions) {
     return sameCategoryEvents.slice(0, maxSuggestions);
   }
 
-  const otherEvents = nonConflictingEvents.filter(
-    (event) => !sameCategoryEvents.includes(event)
-  );
+  const sameCategorySet = new Set(sameCategoryEvents);
+  const otherEvents = nonConflictingEvents.filter((event) => !sameCategorySet.has(event));
 
   return [...sameCategoryEvents, ...otherEvents].slice(0, maxSuggestions);
 };
@@ -266,12 +313,7 @@ export const suggestAlternativeEvents = (
  * @param {string} [timezone]    - IANA tz; defaults to browser tz
  * @returns {string}  e.g. "10:00 AM – 11:30 AM"
  */
-export const formatTimeRange = (
-  timeStr,
-  durationMinutes = 60,
-  dateStr,
-  timezone
-) => {
+export const formatTimeRange = (timeStr, durationMinutes = 60, dateStr, timezone) => {
   const tz = timezone || getUserTimezone();
 
   // Timezone-aware path: requires a date string
@@ -280,10 +322,10 @@ export const formatTimeRange = (
     if (startMs !== null) {
       const endMs = startMs + durationMinutes * 60 * 1000;
 
-      const fmt = new Intl.DateTimeFormat('en-US', {
+      const fmt = new Intl.DateTimeFormat("en-US", {
         timeZone: tz,
-        hour: 'numeric',
-        minute: '2-digit',
+        hour: "numeric",
+        minute: "2-digit",
         hour12: true,
       });
 
@@ -296,12 +338,24 @@ export const formatTimeRange = (
   const endMinutes = startMinutes + durationMinutes;
 
   const formatMinutes = (mins) => {
-    const h = Math.floor(mins / 60) % 24;
-    const m = mins % 60;
-    const period = h >= 12 ? 'PM' : 'AM';
+    const safeMins = ((mins % 1440) + 1440) % 1440;
+    const h = Math.floor(safeMins / 60);
+    const m = Math.floor(safeMins % 60);
+    const period = h >= 12 ? "PM" : "AM";
     const displayH = h > 12 ? h - 12 : h === 0 ? 12 : h;
-    return `${displayH}:${String(m).padStart(2, '0')} ${period}`;
+    return `${displayH}:${String(m).padStart(2, "0")} ${period}`;
   };
 
   return `${formatMinutes(startMinutes)} – ${formatMinutes(endMinutes)}`;
+};
+
+export const compareEventTimezones = (event, targetTz) => {
+  if (!event || !targetTz) return null;
+  const userTz = getUserTimezone();
+  return {
+    userTime: formatTimeRange(event.time, event.durationMinutes, event.date, userTz),
+    targetTime: formatTimeRange(event.time, event.durationMinutes, event.date, targetTz),
+    userTz,
+    targetTz
+  };
 };

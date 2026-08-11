@@ -1,24 +1,27 @@
 // src/components/auth/PasswordStrengthIndicator.js
 import { AnimatePresence, motion } from 'framer-motion';
-import useReducedMotion from '../../hooks/useReducedMotion';
+import useReducedMotion from 'hooks/useReducedMotion';
 
 const assessStrength = (password) => {
   const criteria = [
-    { label: "At least 8 characters", met: password ? password.length >= 8 : false },
+    { label: "At least 8 characters", met: password ? password.length >= minLength : false },
     { label: "Contains a number", met: password ? /\d/.test(password) : false },
     { label: "Contains uppercase letter", met: password ? /[A-Z]/.test(password) : false },
     { label: "Contains lowercase letter", met: password ? /[a-z]/.test(password) : false },
-    { label: "Contains special character", met: password ? /[!@#$%^&*(),.?":{}|<>]/.test(password) : false }
+    { label: "Contains special character", met: password ? /[^A-Za-z0-9]/.test(password) : false }
   ];
 
   const criteriaMet = criteria.filter(c => c.met).length;
-  
+
   let score;
   let feedback;
 
   if (criteriaMet === 5) {
     score = 3;
     feedback = 'Excellent! Your password is secure and meets all criteria.';
+  } else if (criteriaMet === 4) {
+    score = 2;
+    feedback = 'Almost there! Add a special character for full strength.';
   } else if (criteriaMet >= 3) {
     score = 2;
     feedback = 'Moderate strength. Add special characters or letters for better security.';
@@ -26,31 +29,31 @@ const assessStrength = (password) => {
     score = 1;
     feedback = 'Weak password. Follow the validation checklist below.';
   }
-  
+
   return { score, feedback, criteriaMet, criteria };
 };
 
-const PasswordStrengthIndicator = ({ password }) => {
+const PasswordStrengthIndicator = ({ password, minLength = 8, requireSpecialChar = true }) => {
   const prefersReducedMotion = useReducedMotion();
   const { score, feedback, criteriaMet, criteria } = assessStrength(password);
 
   const getBarColorClass = (currentScore) => {
     switch (currentScore) {
       case 1:
-        return 'bg-gradient-to-r from-red-500 to-rose-500 shadow-sm shadow-red-500/20';
+        return 'bg-linear-to-r from-red-500 to-rose-500 shadow-sm shadow-red-500/20';
       case 2:
-        return 'bg-gradient-to-r from-amber-400 to-amber-500 shadow-sm shadow-amber-500/20';
+        return 'bg-linear-to-r from-amber-400 to-amber-500 shadow-sm shadow-amber-500/20';
       case 3:
-        return 'bg-gradient-to-r from-emerald-500 to-green-500 shadow-sm shadow-green-500/20';
+        return 'bg-linear-to-r from-emerald-500 to-green-500 shadow-sm shadow-green-500/20';
       default:
         return 'bg-slate-200 dark:bg-slate-700';
     }
   };
 
-  const strengthColorClass = score === 3 
-    ? "text-emerald-600 dark:text-emerald-400" 
-    : score === 2 
-      ? "text-amber-600 dark:text-amber-400" 
+  const strengthColorClass = score === 3
+    ? "text-emerald-600 dark:text-emerald-400"
+    : score === 2
+      ? "text-amber-600 dark:text-amber-400"
       : "text-red-500 dark:text-red-400";
 
   const getStrengthLabel = (currentScore) => {
