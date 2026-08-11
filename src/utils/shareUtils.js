@@ -21,7 +21,29 @@ const DEFAULT_EVENT_SHARE_HOST = "sandeepvashishtha.tech";
 //  - The configured PUBLIC_URL origin (from centralized env.js)
 //
 // Rejects: external URLs, javascript: URIs, data: URIs
+//
+// Both the configured PUBLIC_URL and any window.location.origin are run
+// through normalizeOrigin() so that protocol-less hostnames, explicit
+// default ports, hostname casing, and trailing slashes are handled
+// consistently before the strict origin comparison.
 // ---------------------------------------------------------------------------
+
+const normalizeOrigin = (urlStr) => {
+  if (!urlStr || typeof urlStr !== "string") return null;
+  const trimmed = urlStr.trim();
+  if (!trimmed) return null;
+  // Prepend https:// when the value lacks a scheme (e.g. "app.eventra.com"
+  // or "app.eventra.com:8443"), so new URL() does not throw on a bare host.
+  const withProtocol = /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed)
+    ? trimmed
+    : `https://${trimmed}`;
+  try {
+    return new URL(withProtocol).origin;
+  } catch {
+    return null;
+  }
+};
+
 export const isValidShareUrl = (url) => {
   if (!url || typeof url !== "string") return false;
   if (url.startsWith("/")) return true; // relative path — always same-origin
@@ -31,15 +53,13 @@ export const isValidShareUrl = (url) => {
     if (parsed.protocol === "javascript:" || parsed.protocol === "data:") return false;
 
     const allowedOrigins = new Set();
-    if (typeof window !== "undefined") allowedOrigins.add(window.location.origin);
+    if (typeof window !== "undefined" && window.location && window.location.origin) {
+      allowedOrigins.add(window.location.origin);
+    }
 
-    const configuredPublicUrl = ENV.PUBLIC_URL;
-    if (configuredPublicUrl) {
-      try {
-        allowedOrigins.add(new URL(configuredPublicUrl).origin);
-      } catch {
-        /* ignore malformed env var */
-      }
+    const configuredOrigin = normalizeOrigin(ENV.PUBLIC_URL);
+    if (configuredOrigin) {
+      allowedOrigins.add(configuredOrigin);
     }
 
     return allowedOrigins.has(parsed.origin);
