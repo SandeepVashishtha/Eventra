@@ -536,10 +536,20 @@ const SignupForm = () => {
             />
           )}
           <p className="text-xs text-center text-text-light">
-            By creating an account, you agree to our
-            <span className="text-primary cursor-pointer"> Terms of Service </span>
-            and
-            <span className="text-primary cursor-pointer"> Privacy Policy</span>.
+            By creating an account, you agree to our{" "}
+            <Link
+              to="/terms"
+              className="text-primary hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded"
+            >
+              Terms of Service
+            </Link>
+            {" "}and{" "}
+            <Link
+              to="/privacy"
+              className="text-primary hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded"
+            >
+              Privacy Policy
+            </Link>.
           </p>
           <motion.button
             type="submit"
