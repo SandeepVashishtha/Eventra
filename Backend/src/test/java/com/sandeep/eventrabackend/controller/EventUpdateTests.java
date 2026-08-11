@@ -1,6 +1,7 @@
 package com.sandeep.eventrabackend.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sandeep.eventrabackend.dto.request.EventScheduleRequest;
 import com.sandeep.eventrabackend.dto.request.EventUpdateRequest;
 import com.sandeep.eventrabackend.model.Event;
 import com.sandeep.eventrabackend.model.Role;
@@ -24,6 +25,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.LocalDateTime;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -298,5 +301,29 @@ public class EventUpdateTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict());
+    }
+
+    @Test
+    @DisplayName("Event schedule endDate is persisted and survives reload (#14603)")
+    void testScheduleEndDatePersisted() throws Exception {
+        LocalDateTime start = LocalDateTime.now().plusDays(2).withNano(0);
+        LocalDateTime end = start.plusHours(3);
+
+        EventScheduleRequest request = new EventScheduleRequest();
+        request.setStartDate(start);
+        request.setEndDate(end);
+
+        mockMvc.perform(patch("/api/events/" + existingEvent.getId() + "/schedule")
+                        .with(user("organizer@example.com").authorities(() -> "ORGANIZER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.endDate").value(end.toString()));
+
+        mockMvc.perform(get("/api/events/" + existingEvent.getId() + "/schedule")
+                        .with(user("organizer@example.com").authorities(() -> "ORGANIZER")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.startDate").value(start.toString()))
+                .andExpect(jsonPath("$.endDate").value(end.toString()));
     }
 }

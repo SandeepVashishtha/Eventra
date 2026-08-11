@@ -591,7 +591,7 @@ public class EventService {
         public EventScheduleResponse getEventSchedule(Long id) {
                 Event event = eventRepository.findById(id)
                                 .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + id));
-                return toEventScheduleResponse(event, null);
+                return toEventScheduleResponse(event);
         }
 
         @Transactional
@@ -608,15 +608,16 @@ public class EventService {
                 }
 
                 event.setEventDate(request.getStartDate());
+                event.setEndDate(request.getEndDate());
                 Event saved = eventRepository.save(event);
-                return toEventScheduleResponse(saved, request.getEndDate());
+                return toEventScheduleResponse(saved);
         }
 
-        private EventScheduleResponse toEventScheduleResponse(Event event, LocalDateTime endDate) {
+        private EventScheduleResponse toEventScheduleResponse(Event event) {
                 return EventScheduleResponse.builder()
                                 .eventId(event.getId())
                                 .startDate(event.getEventDate())
-                                .endDate(endDate != null ? endDate : event.getEventDate())
+                                .endDate(event.getEndDate() != null ? event.getEndDate() : event.getEventDate())
                                 .build();
         }
 
@@ -1343,8 +1344,10 @@ public class EventService {
                 java.time.Instant start = event.getEventDate() != null
                                 ? event.getEventDate().atZone(java.time.ZoneId.systemDefault()).toInstant()
                                 : java.time.Instant.now();
-                // Event model has no endDate; default duration is 2 hours when end is unspecified.
-                java.time.Instant end = start.plus(java.time.Duration.ofHours(2));
+                // Default duration is 2 hours when no end date was persisted.
+                java.time.Instant end = (event.getEndDate() != null
+                                ? event.getEndDate().atZone(java.time.ZoneId.systemDefault()).toInstant()
+                                : start.plus(java.time.Duration.ofHours(2)));
                 java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter
                                 .ofPattern("yyyyMMdd'T'HHmmss'Z'")
                                 .withZone(java.time.ZoneOffset.UTC);
