@@ -10,6 +10,16 @@ const getStorage = () => {
   return globalThis.localStorage;
 };
 
+const getStorage = () => {
+  if (typeof globalThis !== "undefined" && globalThis.localStorage) {
+    return globalThis.localStorage;
+  }
+  if (typeof window !== "undefined" && window.localStorage) {
+    return window.localStorage;
+  }
+  return null;
+};
+
 const readRegistrations = () => {
   const storage = getStorage();
   if (!storage) return {};
