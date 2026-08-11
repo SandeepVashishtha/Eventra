@@ -432,7 +432,7 @@ const ContactUs = () => {
       <SEOHead
         title={t("contactUs.pageTitle")}
         description={t("contactUs.pageDescription")}
-        url={window.location.href}
+        url={typeof window !== "undefined" ? window.location.href : ""}
       />
       <ContactUsInner />
     </>
