@@ -160,6 +160,26 @@ export const getNotificationTitle = (notification = {}) =>
 export const getNotificationMessage = (notification = {}) =>
   notification.message || notification.body || notification.description || "You have a new update.";
 
+/**
+ * Canonical dedupe key for a notification. The server id wins; otherwise an
+ * event-scoped key (eventId) when present; otherwise a deterministic key
+ * derived from timestamp + content. Both the SSE path and the poller derive
+ * ids from this helper, so the same logical notification delivered over both
+ * transports converges on a single entry instead of being counted twice
+ * (issue #14612).
+ */
+export const getNotificationDedupeKey = (notification = {}) => {
+  if (!notification) return "";
+  const serverId = notification.id || notification._id;
+  if (serverId) return String(serverId);
+  if (notification.eventId) return `event:${notification.eventId}`;
+  const timestamp =
+    notification.timestamp || notification.createdAt || notification.updatedAt || "";
+  const content = notification.message || notification.body || notification.description || "";
+  if (timestamp || content) return `${timestamp}-${content}`;
+  return "";
+};
+
 export const playNotificationSound = (soundKey) => {
   if (typeof window === "undefined") return;
   const sound = NOTIFICATION_SOUNDS[soundKey];

@@ -1,7 +1,7 @@
 import { createContext, useContext, useCallback, useMemo, useEffect, useRef } from "react";
 import { useAuth } from "./AuthContext";
 import useRealTimeConnection, { SSE_STATUS } from "../hooks/useRealTimeConnection";
-import { getNotificationCategory, getNotificationMessage, getNotificationTitle } from "../utils/notificationPreferences";
+import { getNotificationCategory, getNotificationDedupeKey, getNotificationMessage, getNotificationTitle } from "../utils/notificationPreferences";
 import { useNotificationPreferences } from "../hooks/useNotificationPreferences";
 import { usePushSubscription } from "../hooks/usePushSubscription";
 import { useNotificationDelivery } from "../hooks/useNotificationDelivery";
@@ -12,7 +12,7 @@ const NotificationContext = createContext();
 
 const normalizeNotification = (n = {}) => ({
   ...n,
-  id: n.id || n._id || `${n.timestamp || n.createdAt || Date.now()}-${getNotificationMessage(n)}`,
+  id: getNotificationDedupeKey(n) || `${Date.now()}-${Math.random().toString(36).slice(2)}`,
   title: getNotificationTitle(n),
   message: getNotificationMessage(n),
   category: getNotificationCategory(n),
