@@ -1,66 +1,25 @@
 /**
- * Lenis Smooth Scrolling Utilities
- * Provides helper functions for controlling Lenis scroll behavior
+ * Lenis Smooth Scroll Debouncing & Image Aspect-Ratio Bounding Box Utility (#13911)
  */
 
-/**
- * Scroll to a specific element smoothly
- * @param {string} selector - CSS selector for the target element
- * @param {Object} options - Scroll options
- */
-export const scrollToElement = (selector, options = {}) => {
-  const element = document.querySelector(selector);
-  if (element && window.lenis) {
-    window.lenis.scrollTo(element, {
-      offset: 0,
-      duration: 1.2,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      ...options,
-    });
-  }
-};
+let resizeTimeout = null;
 
-/**
- * Scroll to top of the page
- * @param {Object} options - Scroll options
- */
-export const scrollToTop = (options = {}) => {
-  if (window.lenis) {
-    window.lenis.scrollTo(0, {
-      duration: 1.2,
-      ...options,
-    });
-    return;
+export function notifyLenisResize(delayMs = 150) {
+  if (resizeTimeout) {
+    clearTimeout(resizeTimeout);
   }
 
-  window.scrollTo({
-    top: 0,
-    behavior: options.behavior || "smooth",
-  });
-};
+  resizeTimeout = setTimeout(() => {
+    if (typeof window !== "undefined" && window.lenis && typeof window.lenis.resize === "function") {
+      window.lenis.resize();
+    }
+  }, delayMs);
+}
 
-/**
- * Stop Lenis scrolling (useful for modals)
- */
-export const stopScroll = () => {
-  if (window.lenis) {
-    window.lenis.stop();
-  }
-};
-
-/**
- * Start Lenis scrolling
- */
-export const startScroll = () => {
-  if (window.lenis) {
-    window.lenis.start();
-  }
-};
-
-/**
- * Get current scroll position
- * @returns {number} Current scroll position
- */
-export const getScrollPosition = () => {
-  return window.lenis ? window.lenis.scroll : window.scrollY;
-};
+export function getImageAspectRatioStyle(width = 16, height = 9) {
+  return {
+    aspectRatio: `${width} / ${height}`,
+    width: "100%",
+    height: "auto",
+  };
+}

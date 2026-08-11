@@ -1,4 +1,28 @@
-import {
+import assert from 'node:assert/strict';
+import { beforeEach, describe, it } from 'node:test';
+import { JSDOM } from 'jsdom';
+
+const storage = new Map();
+const dom = new JSDOM('');
+
+globalThis.window = dom.window;
+globalThis.document = dom.window.document;
+globalThis.localStorage = {
+  getItem(key) {
+    return storage.has(key) ? storage.get(key) : null;
+  },
+  setItem(key, value) {
+    storage.set(key, String(value));
+  },
+  removeItem(key) {
+    storage.delete(key);
+  },
+  clear() {
+    storage.clear();
+  },
+};
+
+const {
   saveFeedback,
   getEventFeedback,
   getAverageRating,
@@ -9,7 +33,31 @@ import {
   deleteFeedback,
   exportFeedbackAsCSV,
   clearAllFeedback,
-} from '../../utils/feedbackUtils';
+  sanitizeCSVCell,
+} = await import('../src/utils/feedbackUtils.js');
+
+const expect = (actual) => ({
+  toBe(expected) {
+    assert.strictEqual(actual, expected);
+  },
+  toContain(expected) {
+    assert.ok(actual.includes(expected));
+  },
+  toHaveLength(expected) {
+    assert.strictEqual(actual.length, expected);
+  },
+  toBeNull() {
+    assert.strictEqual(actual, null);
+  },
+  not: {
+    toBeNull() {
+      assert.notStrictEqual(actual, null);
+    },
+    toContain(expected) {
+      assert.ok(!actual.includes(expected));
+    },
+  },
+});
 
 describe('Feedback Utils', () => {
   const testEventId = 'test-event-123';
@@ -74,6 +122,21 @@ describe('Feedback Utils', () => {
       const saved = getEventFeedback(testEventId);
       expect(saved).toHaveLength(2);
     });
+
+    it('should sanitize feedback comments when retrieved', () => {
+      saveFeedback(testEventId, {
+        rating: 5,
+        comment: '<p onclick="steal()">Great <script>alert("xss")</script><strong>event</strong></p>',
+        userId: testUserId,
+      });
+
+      const saved = getEventFeedback(testEventId);
+
+      expect(saved).toHaveLength(1);
+      expect(saved[0].comment).toBe('<p>Great <strong>event</strong></p>');
+      expect(saved[0].comment).not.toContain('onclick');
+      expect(saved[0].comment).not.toContain('<script>');
+    });
   });
 
   describe('getAverageRating', () => {
@@ -113,6 +176,15 @@ describe('Feedback Utils', () => {
       expect(stats.notRecommendCount).toBe(1);
       expect(stats.percentage).toBe(67);
     });
+
+    it('should return 0 percentage when no feedback exists (avoids NaN)', () => {
+      const stats = getRecommendationStats(testEventId);
+      expect(stats).toEqual({
+        recommendCount: 0,
+        notRecommendCount: 0,
+        percentage: 0,
+      });
+    });
   });
 
   describe('getTagStats', () => {
@@ -131,6 +203,35 @@ describe('Feedback Utils', () => {
       expect(stats['Great Speaker']).toBe(2);
       expect(stats['Well Organized']).toBe(1);
       expect(stats['Good Food']).toBe(1);
+    });
+
+    it('should handle undefined or null tags array without throwing error', () => {
+      saveFeedback(testEventId, {
+        rating: 5,
+        userId: 'user1',
+      }); // tags is undefined
+
+      saveFeedback(testEventId, {
+        rating: 4,
+        tags: null,
+        userId: 'user2',
+      }); // tags is null
+
+      saveFeedback(testEventId, {
+        rating: 3,
+        tags: ['Great Speaker'],
+        userId: 'user3',
+      });
+
+      const stats = getTagStats(testEventId);
+      expect(stats).toEqual({
+        'Great Speaker': 1,
+      });
+    });
+
+    it('should return empty object when event has no feedback', () => {
+      const stats = getTagStats('empty-event');
+      expect(stats).toEqual({});
     });
   });
 
@@ -197,6 +298,28 @@ describe('Feedback Utils', () => {
     });
   });
 
+  describe('sanitizeCSVCell', () => {
+    it('should wrap basic strings in double quotes', () => {
+      expect(sanitizeCSVCell('hello')).toBe('"hello"');
+    });
+
+    it('should return empty double quotes for null or undefined', () => {
+      expect(sanitizeCSVCell(null)).toBe('""');
+      expect(sanitizeCSVCell(undefined)).toBe('""');
+    });
+
+    it('should sanitize formula injection triggers (=, +, -, @, \\t, \\r)', () => {
+      expect(sanitizeCSVCell('=SUM(1,2)')).toBe(' "\'=SUM(1,2)"');
+      expect(sanitizeCSVCell('+12345')).toBe(' "\'+12345"');
+      expect(sanitizeCSVCell('-12345')).toBe(' "\'-12345"');
+      expect(sanitizeCSVCell('@ADMIN')).toBe(' "\'@ADMIN"');
+    });
+
+    it('should escape internal double quotes properly', () => {
+      expect(sanitizeCSVCell('Hello "World"')).toBe('"Hello ""World"""');
+    });
+  });
+
   describe('exportFeedbackAsCSV', () => {
     it('should export feedback as CSV', () => {
       saveFeedback(testEventId, {
@@ -218,6 +341,30 @@ describe('Feedback Utils', () => {
     it('should handle empty feedback', () => {
       const csv = exportFeedbackAsCSV(testEventId);
       expect(csv).toBe('');
+    });
+
+    it('should sanitize formula injection triggers in export', () => {
+      saveFeedback(testEventId, {
+        rating: 5,
+        comment: '=CMD|\' /C calc\'!A0',
+        tags: ['+DangerTag'],
+        userId: 'user1',
+      });
+
+      const csv = exportFeedbackAsCSV(testEventId);
+      expect(csv).toContain('\'=CMD|\' /C calc\'!A0');
+      expect(csv).toContain('\'+DangerTag');
+    });
+
+    it('should escape internal double quotes and wrap cells in quotes', () => {
+      saveFeedback(testEventId, {
+        rating: 4,
+        comment: 'She said "Awesome!" to everyone',
+        userId: 'user1',
+      });
+
+      const csv = exportFeedbackAsCSV(testEventId);
+      expect(csv).toContain('"She said ""Awesome!"" to everyone"');
     });
   });
 });

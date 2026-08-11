@@ -9,7 +9,7 @@ export const darkTheme = {
 
   textSecondary: "text-gray-600 dark:text-gray-300",
 
-  muted: "text-gray-500 dark:text-gray-400",
+  muted: "text-gray-500 dark:text-gray-200",
 
   buttonPrimary: "bg-blue-600 hover:bg-blue-700 text-white",
 

@@ -15,6 +15,9 @@ globalThis.localStorage = {
     }
   }
 };
+globalThis.window = {
+  localStorage: globalThis.localStorage
+};
 
 import { isAlreadyRegistered, saveRegistration } from "../src/utils/registerUtils.js";
 
