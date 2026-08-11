@@ -255,6 +255,7 @@ export const API_ENDPOINTS = {
     ACHIEVEMENTS: buildApiUrl("/users/achievements"),
     // (#7653) Endpoint for persisting user preferences (theme, etc.) across devices
     PREFERENCES: buildApiUrl("/users/preferences"),
+    CHANGE_PASSWORD: buildApiUrl("/users/change-password"),
   },
   ANALYTICS: {
     SUMMARY: buildApiUrl("/analytics/summary"),
