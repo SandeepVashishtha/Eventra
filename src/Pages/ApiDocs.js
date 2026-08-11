@@ -87,7 +87,7 @@ const ApiDocs = () => {
     status: "all",
     hackathonId: "1",
     sortBy: "recent",
-    authHeader: "Bearer evt_dev_test_token",
+    authHeader: "Bearer [redacted]",
     role: "all",
     page: "1",
   });
@@ -124,7 +124,7 @@ const ApiDocs = () => {
       
       switch (selectedEndpoint) {
         case "/mock-api/hackathons": {
-          const limitVal = parseInt(params.limit) || 5;
+          const limitVal = parseInt(params.limit, 10) || 5;
           const statusVal = params.status || "all";
           const allHackathons = [
             { id: 1, title: "CodeFest 2025", startDate: "2025-09-20", endDate: "2025-09-25", participants: 150, status: "completed" },
@@ -178,8 +178,8 @@ const ApiDocs = () => {
           break;
         }
         case "/mock-api/leaderboard": {
-          const limitVal = parseInt(params.limit) || 10;
-          const pageVal = parseInt(params.page) || 1;
+          const limitVal = parseInt(params.limit, 10) || 10;
+          const pageVal = parseInt(params.page, 10) || 1;
           const allLeaderboard = [
             { rank: 1, username: "coder123", points: 500 },
             { rank: 2, username: "dev_ankita", points: 230 },
@@ -554,7 +554,7 @@ const ApiDocs = () => {
 
               <div className="flex-1 flex items-center gap-2 px-3 py-1 bg-slate-950 border border-slate-850 rounded-lg text-[10px] font-mono text-slate-400 select-all overflow-x-auto whitespace-nowrap scrollbar-none">
                 <span className="text-emerald-500 font-bold uppercase shrink-0">GET</span>
-                <span>http://localhost:3000{selectedEndpoint}</span>
+                <span>{process.env.REACT_APP_API_URL || window.location.origin}{selectedEndpoint}</span>
                 {selectedEndpoint === "/mock-api/hackathons" && (
                   <span className="text-indigo-400 shrink-0">?limit={params.limit}&status={params.status}</span>
                 )}
