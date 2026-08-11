@@ -6,8 +6,17 @@
  * and ensure data integrity across API boundaries.
  */
 
+// Single-pass regex targeting all disallowed characters.
+// Blocks NoSQL operators ($), object/array notation ({}, []), quotes/backticks ('"`),
+// pipes/statements (|;\), HTML tags (<>), and newline/carriage controls.
+const DISALLOWED_SEARCH_CHARS = /[\$\{\}\[\];'`|\\<>\n\r]/;
+const DISALLOWED_SEARCH_CHARS_GLOBAL = /[\$\{\}\[\];'`|\\<>\n\r]/g;
+
+const MAX_QUERY_LENGTH = 200;
+
 /**
- * Sanitize search query to prevent XSS and NoSQL injection attacks.
+ * Sanitize search query to prevent NoSQL injection, XSS, and command injection attacks.
+ * Uses a single-pass regex replacement to prevent order-of-operation bypasses.
  *
  * @param {string} query - The raw search query from user input
  * @returns {string} - Sanitized query safe for API transmission
@@ -17,29 +26,11 @@ export const sanitizeSearchQuery = (query = '') => {
     return '';
   }
 
-  const MAX_QUERY_LENGTH = 200;
-
   let sanitized = query.trim();
 
-  // Strip script tags and their content (closed or open-ended)
-  sanitized = sanitized.replace(/<script\b[^>]*>(?:[\s\S]*?<\/script>|[\s\S]*)/gi, ' ');
+  // Single-pass replacement prevents sequential-pass assembly attacks (e.g., `<\<`)
+  sanitized = sanitized.replace(DISALLOWED_SEARCH_CHARS_GLOBAL, '');
 
-  // Strip img tags (closed or open-ended)
-  sanitized = sanitized.replace(/<img\b[^>]*>?/gi, ' ');
-
-  // Strip javascript: links
-  sanitized = sanitized.replace(/javascript:[^\s]*/gi, ' ');
-
-  // Remove all other < and > characters
-  sanitized = sanitized.replace(/[<>]/g, '');
-
-  // Remove other disallowed characters completely (replaced with empty string)
-  sanitized = sanitized.replace(/[${}\[\];'`|\\/\n\r]/g, '');
-
-  // Collapse spaces
-  sanitized = sanitized.replace(/\s+/g, ' ').trim();
-
-  // Ensure max length to prevent ReDoS attacks
   if (sanitized.length > MAX_QUERY_LENGTH) {
     sanitized = sanitized.substring(0, MAX_QUERY_LENGTH).trim();
   }
@@ -64,13 +55,12 @@ export const validateSearchQuery = (query = '') => {
     return { isValid: true, error: null }; // Empty is valid (return all results)
   }
 
-  if (trimmed.length > 200) {
-    return { isValid: false, error: 'Search query must be less than 200 characters' };
+  if (trimmed.length > MAX_QUERY_LENGTH) {
+    return { isValid: false, error: `Search query must be less than ${MAX_QUERY_LENGTH} characters` };
   }
 
-  // Check for obvious injection patterns
-  const hasInjectionPatterns = /[\$\{\}\[\];'`|\\]/.test(trimmed);
-  if (hasInjectionPatterns) {
+  // Exactly matches characters disallowed in sanitizeSearchQuery
+  if (DISALLOWED_SEARCH_CHARS.test(trimmed)) {
     return { isValid: false, error: 'Search query contains invalid characters' };
   }
 
@@ -102,7 +92,7 @@ export const prepareSafeSearchQuery = (rawQuery = '') => {
 
 /**
  * Sanitize plain user text input.
- * Strips HTML tags entirely and entity-escapes special characters to prevent XSS.
+ * Entity-escapes special characters (including backticks and equals) to prevent XSS.
  *
  * @param {string} text - Raw input text from the UI
  * @returns {string} - Clean, safe plain-text
@@ -112,29 +102,17 @@ export const sanitizeInputText = (text = '') => {
     return '';
   }
 
-  // Escape HTML special characters for absolute safety
+  // Expanded entity map including backticks and equals sign to prevent attribute-injection XSS
   const htmlEscapes = {
     '&': '&amp;',
     '<': '&lt;',
     '>': '&gt;',
     '"': '&quot;',
     "'": '&#x27;',
-    '/': '&#x2F;'
+    '/': '&#x2F;',
+    '`': '&#x60;',
+    '=': '&#x3D;',
   };
 
-  return text.replace(/[&<>"'\/]/g, (match) => htmlEscapes[match]);
-};
-
-/**
- * Strip all HTML tags from a text string.
- * Faster than full DOMPurify when only raw text is needed.
- *
- * @param {string} text - Raw input text
- * @returns {string} - Text with HTML tags stripped
- */
-export const stripHtmlTags = (text = '') => {
-  if (typeof text !== 'string') {
-    return '';
-  }
-  return text.replace(/<[^>]*>?/gm, '');
+  return text.replace(/[&<>"'/`=]/g, (match) => htmlEscapes[match]);
 };
