@@ -65,3 +65,4 @@ public class RegistrationResponse {
 
     @Schema(description = "Registration ID for reference.", example = "12345")
     private Long registrationId;
+}

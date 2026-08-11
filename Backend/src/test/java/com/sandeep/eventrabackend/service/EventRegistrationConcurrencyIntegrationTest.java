@@ -104,7 +104,7 @@ class EventRegistrationConcurrencyIntegrationTest {
                 try {
                     ready.countDown();
                     start.await();
-                    eventService.registerUserForEvent(event.getId(), email);
+                    eventService.registerUserForEvent(event.getId(), email, null);
                     successCount.incrementAndGet();
                 } catch (EventFullException | RegistrationConflictException ex) {
                     // Expected: event full or optimistic-lock retry exhausted
@@ -173,7 +173,7 @@ class EventRegistrationConcurrencyIntegrationTest {
                 try {
                     ready.countDown();
                     start.await();
-                    eventService.registerUserForEvent(event.getId(), email);
+                    eventService.registerUserForEvent(event.getId(), email, null);
                     successCount.incrementAndGet();
                 } catch (EventFullException | RegistrationConflictException ex) {
                     failureCount.incrementAndGet();

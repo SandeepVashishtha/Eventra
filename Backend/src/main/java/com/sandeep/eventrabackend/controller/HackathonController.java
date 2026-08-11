@@ -1,6 +1,3 @@
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 package com.sandeep.eventrabackend.controller;
 
 import com.sandeep.eventrabackend.dto.request.HackathonCreateRequest;
@@ -19,6 +16,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -129,12 +129,11 @@ public class HackathonController {
                     )
             )
     })
-    public ResponseEntity<HackathonResponse> @Transactional
-    createHackathon(
+    @Transactional
+    public ResponseEntity<HackathonResponse> createHackathon(
             @Valid @RequestBody HackathonCreateRequest request,
             Authentication authentication) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(hackathonService.@Transactional
-    createHackathon(request, authentication.getName()));
+        return ResponseEntity.status(HttpStatus.CREATED).body(hackathonService.createHackathon(request, authentication.getName()));
     }
 
     @PutMapping("/{id}")
@@ -181,14 +180,13 @@ public class HackathonController {
                     )
             )
     })
-    public ResponseEntity<HackathonResponse> @CacheEvict(value = "hackathons", key = "#id")
-    updateHackathon(
+    @CacheEvict(value = "hackathons", key = "#id")
+    public ResponseEntity<HackathonResponse> updateHackathon(
             @Parameter(description = "ID of the hackathon to update")
             @PathVariable Long id,
             @Valid @RequestBody HackathonUpdateRequest request,
             Authentication authentication) {
-        return ResponseEntity.ok(hackathonService.@CacheEvict(value = "hackathons", key = "#id")
-    updateHackathon(id, request, authentication.getName()));
+        return ResponseEntity.ok(hackathonService.updateHackathon(id, request, authentication.getName()));
     }
 
     @GetMapping
@@ -205,8 +203,8 @@ public class HackathonController {
                     )
             )
     })
-    public ResponseEntity<List<HackathonResponse>> getAllHackathons(@PageableDefault(size = 20, sort = "startDate") Pageable pageable) {
-        return ResponseEntity.ok(hackathonService.getAllHackathons(@PageableDefault(size = 20, sort = "startDate") Pageable pageable));
+    public ResponseEntity<Page<HackathonResponse>> getAllHackathons(@PageableDefault(size = 20, sort = "startDate") Pageable pageable) {
+        return ResponseEntity.ok(hackathonService.getAllHackathons(pageable));
     }
 
     @GetMapping("/{id}")
@@ -230,12 +228,11 @@ public class HackathonController {
                     )
             )
     })
-    public ResponseEntity<HackathonResponse> @Cacheable(value = "hackathons", key = "#id")
-    getHackathonById(
+    @Cacheable(value = "hackathons", key = "#id")
+    public ResponseEntity<HackathonResponse> getHackathonById(
             @Parameter(description = "ID of the hackathon")
             @PathVariable Long id) {
-        return ResponseEntity.ok(hackathonService.@Cacheable(value = "hackathons", key = "#id")
-    getHackathonById(id));
+        return ResponseEntity.ok(hackathonService.getHackathonById(id));
     }
 
     @DeleteMapping("/{id}")

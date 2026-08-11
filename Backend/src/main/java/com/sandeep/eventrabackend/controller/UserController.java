@@ -24,11 +24,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import com.sandeep.eventrabackend.dto.request.UpdateUserProfileRequest;
-import com.sandeep.eventrabackend.dto.response.UserProfileResponse;
 import com.sandeep.eventrabackend.service.UserService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;

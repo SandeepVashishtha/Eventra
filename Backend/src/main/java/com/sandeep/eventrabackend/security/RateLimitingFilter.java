@@ -19,6 +19,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -59,6 +60,23 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain)
             throws ServletException, IOException {
+        String path = request.getRequestURI();
+
+        // FIX (#13902): SSE stream reconnects use an isolated high-capacity bucket
+        if (path != null && path.startsWith("/api/stream/")) {
+            RateLimitResult result = rateLimitService.consume(
+                    "sse-stream",
+                    resolveBucketKey(request),
+                    1000,
+                    Duration.ofMinutes(1));
+            if (!result.allowed()) {
+                writeTooManyRequests(request, response, result);
+                return;
+            }
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         EndpointRule endpointRule = findEndpointRule(request);
         if (!properties.isEnabled() || endpointRule == null) {
             filterChain.doFilter(request, response);
@@ -82,6 +100,12 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             return;
         }
 
+        writeTooManyRequests(request, response, result);
+    }
+
+    private void writeTooManyRequests(HttpServletRequest request,
+            HttpServletResponse response,
+            RateLimitResult result) throws IOException {
         response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
         response.setHeader(HttpHeaders.RETRY_AFTER, String.valueOf(result.retryAfterSeconds()));
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);

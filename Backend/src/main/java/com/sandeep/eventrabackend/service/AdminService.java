@@ -5,6 +5,7 @@ import com.sandeep.eventrabackend.dto.AdminStatsResponse;
 import com.sandeep.eventrabackend.dto.RegistrationTrendDTO;
 import com.sandeep.eventrabackend.dto.response.*;
 import com.sandeep.eventrabackend.exception.RegistrationConflictException;
+import com.sandeep.eventrabackend.model.Event;
 import com.sandeep.eventrabackend.model.Feedback;
 import com.sandeep.eventrabackend.model.Hackathon;
 import com.sandeep.eventrabackend.model.Role;

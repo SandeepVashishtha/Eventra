@@ -127,7 +127,7 @@ public class ProjectService {
                 .category(project.getCategory())
                 .thumbnailUrl(project.getThumbnailUrl())
                 .githubUrl(project.getGithubUrl())
-                .upvotes(project.getUpvotes())
+                .upvotes((int) project.getUpvotes())
                 .build();
     }
 }

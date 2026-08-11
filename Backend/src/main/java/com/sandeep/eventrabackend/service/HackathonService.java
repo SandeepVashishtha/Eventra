@@ -1,5 +1,3 @@
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 package com.sandeep.eventrabackend.service;
 
 import org.slf4j.Logger;
@@ -20,6 +18,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import com.sandeep.eventrabackend.repository.UserRepository;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.security.access.AccessDeniedException;
@@ -60,16 +60,15 @@ public class HackathonService {
     }
 
     @Transactional(readOnly = true)
-    public HackathonResponse @Cacheable(value = "hackathons", key = "#id")
-    getHackathonById(Long id) {
+    @Cacheable(value = "hackathons", key = "#id")
+    public HackathonResponse getHackathonById(Long id) {
         return hackathonRepository.findByIdAndIsDeletedFalse(id)
                 .map(this::mapToResponse)
                 .orElseThrow(() -> new HackathonNotFoundException("Hackathon not found with id: " + id));
     }
 
     @Transactional
-    public HackathonResponse @Transactional
-    createHackathon(HackathonCreateRequest request, String userEmail) {
+    public HackathonResponse createHackathon(HackathonCreateRequest request, String userEmail) {
         User creator = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + userEmail));
 
@@ -93,8 +92,8 @@ public class HackathonService {
     }
 
     @Transactional
-    public HackathonResponse @CacheEvict(value = "hackathons", key = "#id")
-    updateHackathon(Long id, com.sandeep.eventrabackend.dto.request.HackathonUpdateRequest request, String userEmail) {
+    @CacheEvict(value = "hackathons", key = "#id")
+    public HackathonResponse updateHackathon(Long id, com.sandeep.eventrabackend.dto.request.HackathonUpdateRequest request, String userEmail) {
         Hackathon hackathon = hackathonRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new HackathonNotFoundException("Hackathon not found with id: " + id));
 

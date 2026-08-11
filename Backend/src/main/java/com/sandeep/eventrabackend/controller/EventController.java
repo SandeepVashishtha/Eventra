@@ -1,5 +1,3 @@
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 package com.sandeep.eventrabackend.controller;
 
 import com.sandeep.eventrabackend.dto.request.CancelEventRequest;
@@ -32,6 +30,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 
 import jakarta.validation.Valid;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -87,14 +86,13 @@ public class EventController {
                         @ApiResponse(responseCode = "403", description = "Forbidden - Insufficient event role", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
                         @ApiResponse(responseCode = "404", description = "Event not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
         })
-        public ResponseEntity<EventResponse> @CacheEvict(value = "events", key = "#id")
-    updateEvent(
+        @CacheEvict(value = "events", key = "#id")
+        public ResponseEntity<EventResponse> updateEvent(
                         @Parameter(description = "ID of the event to update") @PathVariable Long id,
                         @Valid @RequestBody EventUpdateRequest request,
                         Authentication authentication) {
 
-                EventResponse updatedEvent = eventService.@CacheEvict(value = "events", key = "#id")
-    updateEvent(id, request, authentication.getName());
+                EventResponse updatedEvent = eventService.updateEvent(id, request, authentication.getName());
                 return ResponseEntity.ok(updatedEvent);
         }
 

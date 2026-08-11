@@ -1,7 +1,3 @@
-import com.eventra.specification.SearchSpecification;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 package com.sandeep.eventrabackend.service;
 
 import com.sandeep.eventrabackend.dto.request.CancelEventRequest;
@@ -42,6 +38,7 @@ import com.sandeep.eventrabackend.repository.NotificationRepository;
 import com.sandeep.eventrabackend.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -245,35 +242,6 @@ public class EventService {
                 }
                 return Sort.by(direction, mapped);
         }
-
-        /**
-         * Returns a bounded window of public events near {@code around} for conflict
-         * alternative suggestions (avoids loading the entire catalog).
-         */
-        @Transactional(readOnly = true)
-        public List<EventResponse> findAlternativeEvents(
-                        Long excludeEventId,
-                        LocalDateTime around,
-                        int windowDays,
-                        int limit) {
-
-                LocalDateTime center = around != null ? around : LocalDateTime.now();
-                int days = Math.min(Math.max(windowDays, 1), 90);
-                int size = Math.min(Math.max(limit, 1), 50);
-                LocalDateTime from = center.minusDays(days);
-                LocalDateTime to = center.plusDays(days);
-
-                return eventRepository
-                                .findPublicAlternativesInWindow(
-                                                excludeEventId,
-                                                from,
-                                                to,
-                                                org.springframework.data.domain.PageRequest.of(0, size))
-                                .stream()
-                                .map(this::toPublicEventResponse)
-                                .toList();
-        }
-
 
         /**
          * Returns a bounded window of public events near {@code around} for conflict
@@ -529,8 +497,8 @@ public class EventService {
          * @throws EventNotFoundException if the event does not exist
          */
         @Transactional
-        public EventResponse @CacheEvict(value = "events", key = "#id")
-    updateEvent(Long id, EventUpdateRequest request, String userEmail) {
+        @CacheEvict(value = "events", key = "#id")
+        public EventResponse updateEvent(Long id, EventUpdateRequest request, String userEmail) {
                 Event event = eventRepository.findById(id)
                                 .orElseThrow(() -> new EventNotFoundException("Event not found with id: " + id));
 
