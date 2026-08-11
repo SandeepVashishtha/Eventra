@@ -35,6 +35,17 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
   const [isFormValid, setIsFormValid] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
 
+  const {
+    asyncErrors,
+    asyncTouched,
+    isAsyncValidating,
+    isAnyAsyncValidating,
+    hasAsyncErrors,
+    validateAsync,
+    clearAsyncError,
+    cleanup: cleanupAsync,
+  } = useAsyncValidation(asyncValidators);
+
   useEffect(() => {
     validationRulesRef.current = validationRules;
   }, [validationRules]);
@@ -94,19 +105,22 @@ export const useFormValidation = (initialState, validationRules, options = {}) =
     return error === true ? null : error;
   }, []);
 
-  // Validate all sync fields. Returns true when all pass.
-  const validateAll = useCallback(() => {
+  // Validate all fields (sync + async). Resolves async validator results so a
+  // pending Promise is never treated as a sync error.
+  const validateAll = useCallback(async () => {
     const newErrors = {};
     const newTouched = {};
     let isValid = true;
-    Object.keys(validationRulesRef.current).forEach((name) => {
-      newTouched[name] = true;
-      const error = validateField(name, values[name], values);
-      if (error) {
-        newErrors[name] = error;
-        isValid = false;
-      }
-    });
+    await Promise.all(
+      Object.keys(validationRulesRef.current).map(async (name) => {
+        newTouched[name] = true;
+        const error = await validateField(name, values[name], values);
+        if (error) {
+          newErrors[name] = error;
+          isValid = false;
+        }
+      })
+    );
     if (hasAsyncErrors) isValid = false;
     setTouched((prev) => ({ ...prev, ...newTouched }));
     setErrors(newErrors);
