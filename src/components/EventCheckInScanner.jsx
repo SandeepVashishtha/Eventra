@@ -6,7 +6,12 @@ import {
   validateCheckInPayload,
   recordCheckIn,
   hasBeenCheckedIn,
+  isGroupRegistration,
+  getGroupIdFromRegistration,
+  getGroupMembers,
 } from '../utils/checkInUtils.js';
+import GroupCheckInModal from './GroupCheckInModal';
+import { Users } from 'lucide-react';
 
 /**
  * EventCheckInScanner Component
@@ -16,11 +21,14 @@ import {
 const EventCheckInScanner = ({ eventId, onCheckIn, existingCheckIns = [], registrations = [] }) => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
+  const frameRef = useRef(null);
   const [isScanning, setIsScanning] = useState(false);
   const [lastScannedId, setLastScannedId] = useState(null);
   const [scannedData, setScannedData] = useState(null);
   const [cameraError, setCameraError] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [groupModalOpen, setGroupModalOpen] = useState(false);
+  const [groupPrimaryRegistration, setGroupPrimaryRegistration] = useState(null);
 
   // Initialize camera stream
   const startCamera = async () => {
@@ -55,6 +63,10 @@ const EventCheckInScanner = ({ eventId, onCheckIn, existingCheckIns = [], regist
 
   // Stop camera stream
   const stopCamera = () => {
+    if (frameRef.current) {
+      cancelAnimationFrame(frameRef.current);
+      frameRef.current = null;
+    }
     if (videoRef.current?.srcObject) {
       videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
     }
@@ -88,7 +100,7 @@ const EventCheckInScanner = ({ eventId, onCheckIn, existingCheckIns = [], regist
     }
 
     if (isScanning) {
-      requestAnimationFrame(processFrame);
+      frameRef.current = requestAnimationFrame(processFrame);
     }
   };
 
@@ -129,17 +141,34 @@ const EventCheckInScanner = ({ eventId, onCheckIn, existingCheckIns = [], regist
 
       const { registrationId } = parsedData;
 
-      // Check for duplicate check-in
+      // Find the registration
+      const registration = registrations.find((r) => r.id === registrationId || String(r.id) === String(registrationId));
+
+      if (!registration) {
+        toast.error('Registration not found for this event');
+        setIsProcessing(false);
+        return;
+      }
+
+      // Check if this is a group registration
+      if (isGroupRegistration(registration)) {
+        // Open group check-in modal
+        setGroupPrimaryRegistration(registration);
+        setGroupModalOpen(true);
+        setIsProcessing(false);
+        return;
+      }
+
+      // Check for duplicate check-in (non-group)
       if (hasBeenCheckedIn(registrationId, existingCheckIns)) {
-        const attendee = registrations.find((r) => r.id === registrationId);
         toast.warning(
-          `${attendee?.name || 'Attendee'} already checked in`
+          `${registration?.name || 'Attendee'} already checked in`
         );
         setIsProcessing(false);
         return;
       }
 
-      // Record check-in
+      // Record check-in for individual
       const checkInRecord = recordCheckIn({
         registrationId,
         timestamp: new Date().toISOString(),
@@ -154,8 +183,7 @@ const EventCheckInScanner = ({ eventId, onCheckIn, existingCheckIns = [], regist
         onCheckIn(checkInRecord, parsedData);
       }
 
-      const attendee = registrations.find((r) => r.id === registrationId);
-      toast.success(`✓ ${attendee?.name || 'Attendee'} checked in!`);
+      toast.success(`✓ ${registration?.name || 'Attendee'} checked in!`);
 
       // Reset state after 2 seconds
       setTimeout(() => {
@@ -176,7 +204,10 @@ const EventCheckInScanner = ({ eventId, onCheckIn, existingCheckIns = [], regist
     }
 
     return () => {
-      // Cleanup
+      if (frameRef.current) {
+        cancelAnimationFrame(frameRef.current);
+        frameRef.current = null;
+      }
     };
   }, [isScanning]);
 
@@ -302,6 +333,17 @@ const EventCheckInScanner = ({ eventId, onCheckIn, existingCheckIns = [], regist
         <strong>Note:</strong> To enable actual QR code detection, integrate a library like
         html5-qrcode or jsQR.
       </div>
+
+      {/* Group Check-In Modal */}
+      <GroupCheckInModal
+        isOpen={groupModalOpen}
+        onClose={() => setGroupModalOpen(false)}
+        primaryRegistration={groupPrimaryRegistration}
+        registrations={registrations}
+        existingCheckIns={existingCheckIns}
+        onCheckIn={onCheckIn}
+        eventId={eventId}
+      />
     </div>
   );
 };

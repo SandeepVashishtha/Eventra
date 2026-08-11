@@ -67,8 +67,13 @@ const useEventCancellation = (eventId, onSuccess, ownerId) => {
 
       // Guard (Issue #11021): role alone is not enough — only the event's own
       // organizer may cancel it. Prevents cross-tenant cancellation by swapping
-      // the event id in the URL.
-      if (ownerId != null && user?.id != null && String(ownerId) !== String(user.id)) {
+      // the event id in the URL. Admins may cancel any event.
+      if (
+        !isAdmin() &&
+        ownerId != null &&
+        user?.id != null &&
+        String(ownerId) !== String(user.id)
+      ) {
         setCancellationError("Only the event's own organizer can cancel this event.");
         return false;
       }

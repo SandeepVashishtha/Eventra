@@ -9,7 +9,9 @@ import {
   buildRanksMap,
   computeLeaderboardStats,
   getAchievementBadge,
-  LABEL_POINTS,
+  DIFFICULTY_POINTS,
+  QUALITY_MULTIPLIERS,
+  TYPE_BONUSES,
   DEFAULT_MERGED_PR_POINTS,
   ACHIEVEMENT_THRESHOLDS,
 } from "./leaderboardUtils";
@@ -19,10 +21,13 @@ import {
 // ---------------------------------------------------------------------------
 
 describe("normalizeLabel", () => {
-  it("lowercases and removes non-alphanumeric characters", () => {
-    expect(normalizeLabel("GSSoC Level1")).toBe("gssoclevel1");
-    expect(normalizeLabel("gssoc-level-1")).toBe("gssoclevel1");
-    expect(normalizeLabel("GSSOC_LEVEL_1")).toBe("gssoclevel1");
+  it("lowercases the label", () => {
+    expect(normalizeLabel("GSSoC Level1")).toBe("gssoc level1");
+    expect(normalizeLabel("LEVEL:Advanced")).toBe("level:advanced");
+  });
+
+  it("trims surrounding whitespace", () => {
+    expect(normalizeLabel("  level:beginner  ")).toBe("level:beginner");
   });
 
   it("handles empty string", () => {
@@ -39,13 +44,25 @@ describe("normalizeLabel", () => {
 // ---------------------------------------------------------------------------
 
 describe("calculatePrPoints", () => {
-  it("returns level3 points for a level3 label", () => {
-    expect(calculatePrPoints(["gssoclevel3"])).toBe(LABEL_POINTS.gssoclevel3);
+  it("returns difficulty points for a level:* label", () => {
+    expect(calculatePrPoints(["level:advanced"])).toBe(DIFFICULTY_POINTS["level:advanced"]);
   });
 
-  it("sums multiple recognised labels", () => {
-    expect(calculatePrPoints(["gssoclevel1", "gssoclevel2"])).toBe(
-      LABEL_POINTS.gssoclevel1 + LABEL_POINTS.gssoclevel2
+  it("keeps only the max difficulty value when multiple levels are present", () => {
+    expect(calculatePrPoints(["level:beginner", "level:critical"])).toBe(
+      DIFFICULTY_POINTS["level:critical"]
+    );
+  });
+
+  it("applies the quality multiplier", () => {
+    expect(calculatePrPoints(["level:beginner", "quality:exceptional"])).toBe(
+      Math.floor(DIFFICULTY_POINTS["level:beginner"] * QUALITY_MULTIPLIERS["quality:exceptional"])
+    );
+  });
+
+  it("adds the type bonus", () => {
+    expect(calculatePrPoints(["level:beginner", "type:security"])).toBe(
+      DIFFICULTY_POINTS["level:beginner"] + TYPE_BONUSES["type:security"]
     );
   });
 
@@ -63,9 +80,11 @@ describe("calculatePrPoints", () => {
     expect(calculatePrPoints("string")).toBe(DEFAULT_MERGED_PR_POINTS);
   });
 
-  it("normalises mixed-case and hyphenated label strings", () => {
-    expect(calculatePrPoints(["GSSoC Level3"])).toBe(LABEL_POINTS.gssoclevel3);
-    expect(calculatePrPoints(["gssoc-level-2"])).toBe(LABEL_POINTS.gssoclevel2);
+  it("normalises mixed-case label strings", () => {
+    expect(calculatePrPoints(["LEVEL:Advanced"])).toBe(DIFFICULTY_POINTS["level:advanced"]);
+    expect(calculatePrPoints(["quality:EXCEPTIONAL", "level:beginner"])).toBe(
+      Math.floor(DIFFICULTY_POINTS["level:beginner"] * QUALITY_MULTIPLIERS["quality:exceptional"])
+    );
   });
 });
 

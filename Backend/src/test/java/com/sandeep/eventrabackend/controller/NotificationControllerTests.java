@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -288,6 +289,64 @@ public class NotificationControllerTests {
     @DisplayName("PUT /api/notifications/read-all returns 401 for unauthenticated request (#11774)")
     void testMarkAllAsReadUnauthorized() throws Exception {
         mockMvc.perform(put("/api/notifications/read-all"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("DELETE /api/notifications/{id} deletes own notification (#12078)")
+    void testDeleteNotificationSuccess() throws Exception {
+        Notification n1 = Notification.builder()
+                .user(testUser1)
+                .title("To Delete")
+                .message("Msg")
+                .isRead(false)
+                .build();
+        n1 = notificationRepository.save(n1);
+
+        mockMvc.perform(delete("/api/notifications/" + n1.getId())
+                        .with(user("user1@example.com")))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/notifications")
+                        .with(user("user1@example.com")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
+    @DisplayName("DELETE /api/notifications/{id} returns 404 for another user's notification (#12078)")
+    void testDeleteNotificationIsolation() throws Exception {
+        Notification n2 = Notification.builder()
+                .user(testUser2)
+                .title("User 2 Notification")
+                .message("Secret")
+                .isRead(false)
+                .build();
+        n2 = notificationRepository.save(n2);
+
+        mockMvc.perform(delete("/api/notifications/" + n2.getId())
+                        .with(user("user1@example.com")))
+                .andExpect(status().isNotFound());
+
+        // The other user's notification must remain in the store.
+        mockMvc.perform(get("/api/notifications")
+                        .with(user("user2@example.com")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)));
+    }
+
+    @Test
+    @DisplayName("DELETE /api/notifications/{id} returns 404 for non-existent notification (#12078)")
+    void testDeleteNotificationNotFound() throws Exception {
+        mockMvc.perform(delete("/api/notifications/999")
+                        .with(user("user1@example.com")))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("DELETE /api/notifications/{id} returns 401 for unauthenticated request (#12078)")
+    void testDeleteNotificationUnauthorized() throws Exception {
+        mockMvc.perform(delete("/api/notifications/1"))
                 .andExpect(status().isUnauthorized());
     }
 }

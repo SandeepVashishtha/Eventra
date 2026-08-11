@@ -1,3 +1,4 @@
+import useModalManager from "hooks/useModalManager";
 import { useEffect, useId, useRef } from "react";
 import "./ConfirmationModal.css";
 
@@ -20,18 +21,13 @@ const ConfirmationModal = ({
   cancelText = "Cancel",
 }) => {
   const cancelButtonRef = useRef(null);
-  const modalRef = useRef(null);
-  const previouslyFocusedElementRef = useRef(null);
   const titleId = useId();
   const descriptionId = useId();
 
   useEffect(() => {
     if (!isOpen) return;
 
-    const prevOverflow = document.body.style.overflow;
     previouslyFocusedElementRef.current = document.activeElement;
-
-    document.body.style.overflow = "hidden";
     cancelButtonRef.current?.focus();
 
     const handleKeyDown = (event) => {
