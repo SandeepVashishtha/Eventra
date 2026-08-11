@@ -15,7 +15,7 @@ const API_KEY_PATTERN =
   /\b(api[-_ ]?key|apikey|x-api-key|client_secret|secret)\s*[:=]\s*["']?[^"',\s}]+["']?/gi;
 
 const SENSITIVE_KEY_PATTERN =
-  /(^|[-_\s.])(authorization|password|passwd|pwd|api[-_\s]?key|apikey|x-api-key|access[-_\s]?token|refresh[-_\s]?token|id[-_\s]?token|auth[-_\s]?token|jwt|secret|client[-_\s]?secret|token)([-_\s.]|$)/i;
+  /(^|[-_\s.])(authorization|password|passwd|pwd|api[-_\s]?key|apikey|x-api-key|access[-_\s]?token|refresh[-_\s]?token|id[-_\s]?token|auth[-_\s]?token|jwt|secret|client[-_\s]?secret|token|email)([-_\s.]|$)/i;
 
 const redactString = (value) =>
   value
