@@ -8,6 +8,12 @@ import java.time.LocalDateTime;
 @Entity
 @Table(
         name = "event_waitlist",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_event_waitlist_event_position",
+                        columnNames = {"event_id", "position"}
+                )
+        },
         indexes = {
                 @Index(
                         name = "idx_event_waitlist_event_status_position",

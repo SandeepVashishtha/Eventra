@@ -43,6 +43,12 @@ public class Hackathon {
 
     private String imageUrl;
 
+    private Integer maxParticipants;
+
     @Column(name = "owner_id")
     private Long ownerId;
+
+    @Builder.Default
+    @Column(name = "is_deleted", nullable = false)
+    private boolean isDeleted = false;
 }

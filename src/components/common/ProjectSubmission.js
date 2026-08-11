@@ -1,4 +1,5 @@
-import { Github, ExternalLink, Plus, X } from "lucide-react";
+import { ExternalLink, Plus, X } from "lucide-react";
+import { FaGithub as Github } from "react-icons/fa";
 import { getPublicErrorMessage, FORM_ERRORS } from "utils/errorMessages";
 import { useState } from "react";
 import { motion } from "framer-motion";

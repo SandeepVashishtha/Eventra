@@ -3,6 +3,8 @@ package com.sandeep.eventrabackend.controller;
 import com.sandeep.eventrabackend.dto.request.LoginRequest;
 import com.sandeep.eventrabackend.dto.request.SignupRequest;
 import com.sandeep.eventrabackend.dto.request.GoogleAuthRequest;
+import com.sandeep.eventrabackend.dto.request.LogoutRequest;
+import com.sandeep.eventrabackend.dto.request.ReauthRequest;
 import com.sandeep.eventrabackend.dto.response.AuthResponse;
 import com.sandeep.eventrabackend.dto.response.ErrorResponse;
 import com.sandeep.eventrabackend.security.AuthCookieHelper;
@@ -23,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -105,26 +108,38 @@ public class AuthController {
         return withAuthCookie(ResponseEntity.ok(), response);
     }
 
-        @PostMapping("/refresh")
-        @GetMapping("/refresh")
-        @SecurityRequirements
-        @Operation(summary = "Refresh access token",
-                        description = "Currently returns 401 — refresh-token flow not yet implemented.")
-        public ResponseEntity<ErrorResponse> refresh(HttpServletRequest request) {
-                ErrorResponse error = ErrorResponse.builder()
-                                .status(HttpStatus.UNAUTHORIZED.value())
-                                .error("Unauthorized")
-                                .message("No valid session. Please log in.")
-                                .path(request.getRequestURI())
-                                .timestamp(LocalDateTime.now())
-                                .build();
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+    @PostMapping("/refresh")
+    @SecurityRequirements
+    @Operation(summary = "Refresh access token",
+            description = "Exchanges a valid refresh token for a new access + refresh pair. The old refresh token is blacklisted.")
+    public ResponseEntity<?> refresh(
+            @RequestBody(required = false) com.sandeep.eventrabackend.dto.request.RefreshTokenRequest body,
+            HttpServletRequest request) {
+        try {
+            String refreshToken = body != null ? body.getRefreshToken() : null;
+            if (refreshToken == null || refreshToken.isBlank()) {
+                String auth = request.getHeader("Authorization");
+                if (auth != null && auth.startsWith("Bearer ")) {
+                    refreshToken = auth.substring(7).trim();
+                }
+            }
+            AuthResponse response = authService.refresh(refreshToken);
+            return withAuthCookie(ResponseEntity.ok(), response);
+        } catch (Exception ex) {
+            ErrorResponse error = ErrorResponse.builder()
+                    .status(HttpStatus.UNAUTHORIZED.value())
+                    .error("Unauthorized")
+                    .message("No valid session. Please log in.")
+                    .path(request.getRequestURI())
+                    .timestamp(LocalDateTime.now())
+                    .build();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
         }
+    }
 
-
-@PostMapping("/google")
-@SecurityRequirements
-@Operation(
+    @PostMapping("/google")
+    @SecurityRequirements
+    @Operation(
         summary = "Login/Register using Google",
         description = """
                 Authenticates user using Google OAuth token.
@@ -151,12 +166,35 @@ public ResponseEntity<AuthResponse> googleLogin(
     return withAuthCookie(ResponseEntity.ok(), response);
 }
 
+    @PostMapping("/reauth")
+    @Operation(summary = "Re-authenticate the current user with their password")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Password verified"),
+            @ApiResponse(responseCode = "401", description = "Incorrect password or unauthenticated",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<Map<String, Object>> reauth(
+            @Valid @RequestBody ReauthRequest request,
+            org.springframework.security.core.Authentication authentication) {
+        if (authentication == null || !StringUtils.hasText(authentication.getName())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Authentication required"));
+        }
+        try {
+            authService.reauth(authentication.getName(), request.getPassword());
+            return ResponseEntity.ok(Map.of("ok", true));
+        } catch (org.springframework.security.authentication.BadCredentialsException ex) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Incorrect password"));
+        }
+    }
+
     @PostMapping("/logout")
     @Operation(
             summary = "Logout user and invalidate token",
             description = """
-                    Blacklists the JWT (from Authorization header or HttpOnly cookie)
-                    and clears the auth cookie.
+                    Blacklists the access JWT (Authorization header or HttpOnly cookie) and an
+                    optional refresh token from the request body, then clears the auth cookie.
                     """
     )
     @ApiResponses({
@@ -166,19 +204,22 @@ public ResponseEntity<AuthResponse> googleLogin(
     })
     public ResponseEntity<String> logout(
             @RequestHeader(value = "Authorization", required = false) String bearerToken,
+            @RequestBody(required = false) LogoutRequest body,
             HttpServletRequest request) {
         String token = extractBearerToken(bearerToken);
         if (token == null) {
             token = authCookieHelper.extractToken(request);
         }
 
-        if (!StringUtils.hasText(token)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+        String refreshToken = body != null ? body.getRefreshToken() : null;
+
+        if (!StringUtils.hasText(token) && !StringUtils.hasText(refreshToken)) {
+            return ResponseEntity.ok()
                     .header(HttpHeaders.SET_COOKIE, authCookieHelper.clearAuthCookie().toString())
-                    .body("Missing auth token");
+                    .body("Logged out successfully");
         }
 
-        authService.logout(token);
+        authService.logout(token, refreshToken);
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, authCookieHelper.clearAuthCookie().toString())
                 .body("Logged out successfully");

@@ -85,12 +85,12 @@ export const saveFeedback = (eventId, feedback) => {
  */
 export const hasUserSubmittedFeedback = (eventId, userId = null) => {
   try {
-    const feedback = getEventFeedback(eventId);
     if (!userId) {
-      return feedback.length > 0;
+      return false;
     }
-    const userIdSet = new Set(feedback.map((f) => f.userId));
-    return userIdSet.has(userId);
+    const feedback = getEventFeedback(eventId);
+    const userIdSet = new Set(feedback.map((f) => String(f.userId)));
+    return userIdSet.has(String(userId));
   } catch (error) {
     console.warn("Error checking feedback status:", error);
     return false;
@@ -198,28 +198,23 @@ export const getTopFeedbackTags = (eventId, limit = 5) => {
  */
 export const getRecommendationStats = (eventId) => {
   try {
-    const feedback = getEventFeedback(eventId);
-    const { recommendCount, notRecommendCount, total } = feedback.reduce(
-      (acc, f) => {
-        if (f.recommend === true) acc.recommendCount++;
-        else if (f.recommend === false) acc.notRecommendCount++;
-        if (f.recommend !== undefined) acc.total++;
-        return acc;
-      },
-      { recommendCount: 0, notRecommendCount: 0, total: 0 }
-    );
+    const feedbackList = getEventFeedback(eventId);
 
-    const percentage = total > 0 ? Math.round((recommendCount / total) * 100) : 0;
+    if (!feedbackList || feedbackList.length === 0) {
+      return { recommendCount: 0, notRecommendCount: 0, percentage: 0 };
+    }
+
+    const recommendCount = feedbackList.filter((f) => Boolean(f.recommend)).length;
+    const total = feedbackList.length;
 
     return {
       recommendCount,
-      notRecommendCount,
-      total,
-      percentage,
+      notRecommendCount: total - recommendCount,
+      percentage: Math.round((recommendCount / total) * 100),
     };
   } catch (error) {
-    console.warn("Error calculating recommendation stats:", error);
-    return { recommendCount: 0, notRecommendCount: 0, total: 0, percentage: 0 };
+    //console.error('Error calculating recommendation stats:', error);
+    return { recommendCount: 0, notRecommendCount: 0, percentage: 0 };
   }
 };
 
@@ -230,18 +225,22 @@ export const getRecommendationStats = (eventId) => {
  */
 export const getTagStats = (eventId) => {
   try {
-    const feedback = getEventFeedback(eventId);
-    const tagCounts = {};
+    const feedbackList = getEventFeedback(eventId);
+    const stats = {};
 
-    feedback.forEach((f) => {
-      if (f.tags && Array.isArray(f.tags)) {
+    if (!feedbackList || !Array.isArray(feedbackList)) {
+      return stats;
+    }
+
+    feedbackList.forEach((f) => {
+      if (Array.isArray(f.tags)) {
         f.tags.forEach((tag) => {
-          tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+          stats[tag] = (stats[tag] || 0) + 1;
         });
       }
     });
 
-    return tagCounts;
+    return stats;
   } catch (error) {
     console.warn("Error calculating tag stats:", error);
     return {};
@@ -275,6 +274,24 @@ export const deleteFeedback = (eventId, userId = null) => {
 };
 
 /**
+ * Helper to sanitize CSV cells against Formula Injection and escape special characters
+ * @param {any} value - Cell value to sanitize
+ * @returns {string} Sanitized and quote-wrapped CSV cell string
+ */
+export const sanitizeCSVCell = (value) => {
+  if (value === null || value === undefined) return '""';
+  let stringValue = String(value);
+
+  // Prevent CSV Formula Injection (Excel / Google Sheets trigger characters)
+  if (/^[=+\-@\t\r]/.test(stringValue)) {
+    stringValue = `'${stringValue}`;
+  }
+
+  // Escape internal double quotes and wrap value in double quotes
+  return `"${stringValue.replace(/"/g, '""')}"`;
+};
+
+/**
  * Export feedback as CSV
  * @param {string} eventId - Event identifier
  * @returns {string} CSV string
@@ -289,14 +306,14 @@ export const exportFeedbackAsCSV = (eventId) => {
 
     const headers = ['Rating', 'Comment', 'Tags', 'Recommend', 'Submitted At'];
     const rows = feedback.map((f) => [
-      f.rating || '',
-      `"${(f.comment || '').replace(/"/g, '""')}"`,
-      (f.tags || []).join(';'),
-      f.recommend !== undefined ? (f.recommend ? 'Yes' : 'No') : '',
-      f.submittedAt ? new Date(f.submittedAt).toLocaleString() : '',
+      sanitizeCSVCell(f.rating),
+      sanitizeCSVCell(f.comment || ''),
+      sanitizeCSVCell(Array.isArray(f.tags) ? f.tags.join(';') : ''),
+      sanitizeCSVCell(f.recommend !== undefined ? (f.recommend ? 'Yes' : 'No') : ''),
+      sanitizeCSVCell(f.submittedAt ? new Date(f.submittedAt).toLocaleString() : ''),
     ]);
 
-    const csv = [headers, ...rows].map((row) => row.join(',')).join('\n');
+    const csv = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
     return csv;
   } catch (error) {
     console.warn("Error exporting feedback:", error);
