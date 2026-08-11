@@ -1,251 +1,50 @@
-/**
- * @fileoverview useBookmarks - Event bookmarks management hook
- * @module hooks/useBookmarks
- */
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { safeJsonParse } from "../utils/safeJsonParse";
-import { getOrMigrateKey } from "../utils/storageKeyManager";
-import { getServerNow } from "../utils/timeSync.js";
+import { useState, useCallback } from 'react';
 
-// Simple synchronous hash to avoid exposing raw userId (email) in localStorage keys.
-const hashUserId = (userId) => {
-  if (!userId || userId === "guest") return "guest";
-  let hash = 0;
-  for (let i = 0; i < userId.length; i++) {
-    const chr = userId.charCodeAt(i);
-    hash = (hash << 5) - hash + chr;
-    hash |= 0;
-  }
-  return Math.abs(hash).toString(36);
-};
+export const useBookmark = (initialState = false, hackathonId, apiEndpoint = '/api/bookmarks') => {
+  const [isBookmarked, setIsBookmarked] = useState(initialState);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-export const MAX_BOOKMARKS = 200;
+  const toggleBookmark = useCallback(async () => {
+    // 1. Capture the previous state for potential rollback
+    const previousState = isBookmarked;
+    const optimisticState = !previousState;
 
-// ---------------------------------------------------------------------------
-// Module-level cache
-//
-// Keyed by storageKey (e.g. "bookmarks_user123"). Shared across all hook
-// instances mounted at the same time, so multiple components calling
-// useBookmarks(userId) read from and write to one in-memory array instead of
-// each independently parsing localStorage on every render cycle.
-// ---------------------------------------------------------------------------
-const cache = new Map(); // Map<storageKey, BookmarkEntry[]>
+    // 2. Apply optimistic UI update immediately
+    setIsBookmarked(optimisticState);
+    setError(null);
 
-const readStorage = (key) => {
-  try {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem(key);
-      if (!stored) return [];
-      const parsed = safeJsonParse(stored, []);
-      return Array.isArray(parsed) ? parsed : [];
-    } else {
-      return [];
-    }
-  } catch {
-    return [];
-  }
-};
-
-const writeStorage = (key, value) => {
-  try {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(key, JSON.stringify(value));
-    }
-  } catch {
-    // localStorage quota exceeded — in-memory state remains correct
-  }
-};
-
-const LEGACY_BOOKMARKS_KEY = "eventra_bookmarked_events";
-
-const normalizeLegacyEntry = (entry) => ({
-  id: entry?.id,
-  title: entry?.title ?? "",
-  date: entry?.date ?? "",
-  location: entry?.location ?? "",
-  type: entry?.type ?? entry?.category ?? "",
-  image: entry?.image ?? entry?.imageUrl ?? "",
-  status: entry?.status ?? "",
-  savedAt: entry?.savedAt ?? entry?.bookmarkedAt ?? getServerNow(),
-});
-
-const migrateLegacyBookmarks = (bookmarks) => {
-  if (typeof window === "undefined") return bookmarks;
-
-  try {
-    const legacyRaw = localStorage.getItem(LEGACY_BOOKMARKS_KEY);
-    if (!legacyRaw) return bookmarks;
-
-    const legacyParsed = safeJsonParse(legacyRaw, []);
-    const legacy = Array.isArray(legacyParsed) ? legacyParsed : [];
-    localStorage.removeItem(LEGACY_BOOKMARKS_KEY);
-
-    if (legacy.length === 0) return bookmarks;
-
-    const merged = new Map(bookmarks.map((bookmark) => [bookmark.id, bookmark]));
-    legacy.forEach((entry) => {
-      if (!entry?.id || merged.has(entry.id)) return;
-      merged.set(entry.id, normalizeLegacyEntry(entry));
-    });
-
-    return Array.from(merged.values());
-  } catch {
-    return bookmarks;
-  }
-};
-
-const getOrPopulateCache = (key) => {
-  if (!cache.has(key)) {
-    const stored = readStorage(key);
-    const migrated = migrateLegacyBookmarks(stored);
-    if (migrated !== stored) {
-      writeStorage(key, migrated);
-    }
-    cache.set(key, migrated);
-  }
-  return cache.get(key);
-};
-
-const toBookmarkEntry = (event) => ({
-  id: event.id,
-  title: event?.title ?? "",
-  date: event?.date ?? "",
-  location: event?.location ?? "",
-  type: event?.type ?? event?.category ?? "",
-  image: event?.image ?? event?.imageUrl ?? "",
-  status: event?.status ?? "",
-  savedAt: getServerNow(),
-});
-
-/**
- * A custom React hook that manages bookmarked events for a user,
- * persisting them to localStorage keyed by userId.
- *
- * @param {string} [userId='guest'] - The user ID used as localStorage key
- */
-const useBookmarks = (userId = "guest") => {
-  const legacyKey = `bookmarks_${hashUserId(userId)}`;
-  const storageKey = getOrMigrateKey("bookmarks", userId, legacyKey);
-
-  // Seed state from cache (avoids a second localStorage read when the cache
-  // is already warm from another mounted instance or a previous render).
-  const [bookmarks, setBookmarks] = useState(() => getOrPopulateCache(storageKey));
-
-  const storageKeyRef = useRef(storageKey);
-  storageKeyRef.current = storageKey;
-
-  const prevBookmarksRef = useRef(null);
-
-  // When userId changes, pull the new user's bookmarks out of cache / storage.
-  useEffect(() => {
-    setBookmarks(getOrPopulateCache(storageKey));
-  }, [storageKey]);
-  const isInitialSave = useRef(true);
-
-  // Persist to localStorage and update the shared cache whenever state changes.
-  useEffect(() => {
-    // Skip write on the very first render cycle
-    if (prevBookmarksRef.current === null) {
-      prevBookmarksRef.current = bookmarks;
-    }
-    if (isInitialSave.current) {
-      isInitialSave.current = false;
-      return;
-    }
-    if (prevBookmarksRef.current === bookmarks) return;
-    prevBookmarksRef.current = bookmarks;
-
-    cache.set(storageKeyRef.current, bookmarks);
-    writeStorage(storageKeyRef.current, bookmarks);
-  }, [bookmarks]);
-
-  // Cross-tab sync: update state when another tab writes to the same key.
-  const bookmarksRef = useRef(bookmarks);
-  bookmarksRef.current = bookmarks;
-
-  useEffect(() => {
-    const handleStorageEvent = (e) => {
-      if (e.key !== storageKeyRef.current) return;
-      const fresh = e.newValue ? (() => {
-        try { 
-          const p = JSON.parse(e.newValue); 
-          if (!Array.isArray(p)) return [];
-          // Deep merge: combine existing local state with incoming storage state, keeping newest by savedAt
-          const merged = new Map();
-          bookmarksRef.current.forEach(b => merged.set(b.id, b));
-          p.forEach(b => {
-            if (!merged.has(b.id) || (b.savedAt || 0) > (merged.get(b.id).savedAt || 0)) {
-              merged.set(b.id, b);
-            }
-          });
-          return Array.from(merged.values()).sort((a, b) => (a.savedAt || 0) - (b.savedAt || 0));
-        } catch { return []; }
-      })() : [];
-      cache.set(storageKeyRef.current, fresh);
-      setBookmarks(fresh);
-    };
-
-    window.addEventListener("storage", handleStorageEvent);
-    return () => window.removeEventListener("storage", handleStorageEvent);
-  }, []);
-
-  // Cache bookmarks in a Set for O(1) lookups
-  const bookmarksSet = useMemo(() => {
-    return new Set(bookmarks.map(e => e.id));
-  }, [bookmarks]);
-
-  /**
-   * Toggles bookmark state for an event.
-   */
-  const toggleBookmark = useCallback((event) => {
-    if (!event?.id) return;
-
-    setBookmarks((prev) => {
-      const exists = prev.some((e) => e.id === event.id);
-
-      if (exists) {
-        return prev.filter((e) => e.id !== event.id);
-      }
-
-      const withNew = [...prev, toBookmarkEntry(event)];
-
-      if (withNew.length <= MAX_BOOKMARKS) return withNew;
-
-      // Evict the oldest entry to stay within the cap limits
-      const sorted = [...withNew].sort((a, b) => (a.savedAt ?? 0) - (b.savedAt ?? 0));
-      sorted.shift();
-      return sorted;
-    });
-  }, []);
-
-  /**
-   * Returns true if an event with the given id is currently bookmarked.
-   */
-  const isBookmarked = useCallback(
-    (id) => bookmarksSet.has(id),
-    [bookmarksSet],
-  );
-
-  /**
-   * Removes all bookmarks for the current user from both state and localStorage.
-   */
-  const clearBookmarks = useCallback(() => {
-    if (typeof window === "undefined") return;
-    setBookmarks([]);
-    cache.set(storageKeyRef.current, []);
+    // 3. Perform network request
     try {
-      localStorage.removeItem(storageKeyRef.current);
-    } catch {
-      // ignore storage access blocks
+      setIsLoading(true);
+      const response = await fetch(apiEndpoint, {
+        method: optimisticState ? 'POST' : 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ hackathonId }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Server rejected the bookmark update');
+      }
+      
+      // Success! The optimistic state is confirmed by the server.
+    } catch (err) {
+      // 4. Rollback to previous state on failure
+      setIsBookmarked(previousState);
+      setError(err.message || 'Failed to toggle bookmark. Reverting changes.');
+    } finally {
+      setIsLoading(false);
     }
-  }, []);
+  }, [isBookmarked, hackathonId, apiEndpoint]);
 
   return {
-    bookmarks,
-    toggleBookmark,
     isBookmarked,
-    clearBookmarks,
+    toggleBookmark,
+    isLoading,
+    error,
   };
 };
 
-export default useBookmarks;
+export default useBookmark;
