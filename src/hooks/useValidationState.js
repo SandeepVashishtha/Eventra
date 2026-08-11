@@ -62,6 +62,8 @@ import { useCallback, useMemo } from "react";
  * const FormInput = ({ label, name, value, onChange, validationState, error, touched }) => {
  *   const {
  *     shouldShowError,
+    isWarning,
+    shouldShowWarning,
  *     isValidating,
  *     fieldClassName,
  *     ariaAttributes,
@@ -116,6 +118,16 @@ export const useValidationState = (
         return "validating"; // Show spinner
       case "success":
         return "success"; // Show checkmark
+      case "warning":
+        if (typeof customMessages.warning === "function") {
+          return customMessages.warning(name, err);
+        }
+        if (typeof customMessages.warning === "string") {
+          return customMessages.warning;
+        }
+        return `${name} has a warning: ${err || "Validation warning"}`;
+      case "warning":
+        return "warning";
       case "error":
         return "error"; // Show error icon
       default:
@@ -144,6 +156,14 @@ export const useValidationState = (
           return customMessages.success;
         }
         return `${name} is valid`;
+      case "warning":
+        if (typeof customMessages.warning === "function") {
+          return customMessages.warning(name, err);
+        }
+        if (typeof customMessages.warning === "string") {
+          return customMessages.warning;
+        }
+        return `${name} has a warning: ${err || "Validation warning"}`;
       case "error":
         if (typeof customMessages.error === "function") {
           return customMessages.error(name, err);
@@ -174,6 +194,8 @@ export const useValidationState = (
   /**
    * Check if validation passed
    */
+  const isWarning = state === "warning";
+  const shouldShowWarning = Boolean(isTouched && isWarning);
   const isValid = useMemo(() => {
     return state === "success";
   }, [state]);
@@ -193,7 +215,15 @@ export const useValidationState = (
       switch (state) {
         case "success":
           return `${classes} border-green-500 dark:border-green-400`;
-        case "error":
+        case "warning":
+        if (typeof customMessages.warning === "function") {
+          return customMessages.warning(name, err);
+        }
+        if (typeof customMessages.warning === "string") {
+          return customMessages.warning;
+        }
+        return `${name} has a warning: ${err || "Validation warning"}`;
+      case "error":
           return `${classes} border-red-500 dark:border-red-400`;
         case "validating":
           return `${classes} border-blue-500 dark:border-blue-400`;
@@ -234,6 +264,8 @@ export const useValidationState = (
     statusIndicator,
     statusMessage,
     shouldShowError,
+    isWarning,
+    shouldShowWarning,
     isValidating,
     isValid,
 
