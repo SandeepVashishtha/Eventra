@@ -12,6 +12,7 @@ import com.sandeep.eventrabackend.repository.UserRepository;
 import com.sandeep.eventrabackend.security.JwtTokenProvider;
 import com.sandeep.eventrabackend.security.TokenBlacklistService;
 import com.sandeep.eventrabackend.security.TokenRefreshQueueHandler;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -22,11 +23,15 @@ import com.sandeep.eventrabackend.dto.request.GoogleAuthRequest;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import java.security.SecureRandom;
 import java.util.Base64;
+import java.util.Optional;
 import java.time.ZoneId;
 import java.util.Date;
 
 @Service
 public class AuthService {
+
+    /** Bounded retries for unique-username collisions under concurrent first logins. */
+    private static final int MAX_USERNAME_RETRIES = 5;
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -152,25 +157,10 @@ public class AuthService {
 
                 String baseUsername = email.split("@")[0].toLowerCase();
 
-                String username = generateUniqueUsername(baseUsername);
-
-                SecureRandom secureRandom = new SecureRandom();
-                byte[] randomBytes = new byte[32];
-                secureRandom.nextBytes(randomBytes);
-                String securePassword = Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
-
-                user = User.builder()
-                        .firstName(firstName)
-                        .lastName(lastName)
-                        .email(email.toLowerCase())
-                        .username(username)
-                        .password(passwordEncoder.encode(securePassword))
-                        .role(Role.ATTENDEE)
-                        .emailVerified(true)
-                        .authProvider("GOOGLE")
-                        .build();
-
-                user = userRepository.save(user);
+                // Race-safe create: a concurrent first login for the same email
+                // either wins the insert or adopts the winner; unique-username
+                // collisions are retried with a fresh candidate (bounded).
+                user = createOrGetGoogleUser(email, firstName, lastName, baseUsername);
             } else if (!user.isEmailVerified()
                     && (user.getAuthProvider() == null || "LOCAL".equalsIgnoreCase(user.getAuthProvider()))) {
                 // Unverified LOCAL accounts can be claimed by a verified Google identity
@@ -203,6 +193,10 @@ public class AuthService {
             return buildAuthResponse(user, token);
 
         } catch (InvalidGoogleTokenException e) {
+            throw e;
+        } catch (DataIntegrityViolationException e) {
+            // A unique-constraint race could not be resolved within the bounded
+            // retries; surface it as a 409 (Conflict) instead of a wrapped 500.
             throw e;
         } catch (Exception e) {
             throw new RuntimeException("Google authentication failed", e);
@@ -243,6 +237,52 @@ public class AuthService {
             candidate = base + counter++;
         }
         return candidate;
+    }
+
+    private String generateSecurePassword() {
+        SecureRandom secureRandom = new SecureRandom();
+        byte[] randomBytes = new byte[32];
+        secureRandom.nextBytes(randomBytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
+    }
+
+    /**
+     * Atomically create a brand-new Google account, tolerating concurrent first
+     * logins for the same email or username.
+     *
+     * <p>If {@code save()} hits the unique-email constraint, the winning request
+     * already committed the user — fetch and adopt it. If it hits the
+     * unique-username constraint, a concurrent login claimed the candidate;
+     * regenerate the username (the winning row is now visible) and retry,
+     * bounded by {@link #MAX_USERNAME_RETRIES}.
+     */
+    private User createOrGetGoogleUser(String email, String firstName, String lastName, String baseUsername) {
+        for (int attempt = 0; attempt < MAX_USERNAME_RETRIES; attempt++) {
+            User candidate = User.builder()
+                    .firstName(firstName)
+                    .lastName(lastName)
+                    .email(email)
+                    .username(generateUniqueUsername(baseUsername))
+                    .password(passwordEncoder.encode(generateSecurePassword()))
+                    .role(Role.ATTENDEE)
+                    .emailVerified(true)
+                    .authProvider("GOOGLE")
+                    .build();
+
+            try {
+                return userRepository.save(candidate);
+            } catch (DataIntegrityViolationException e) {
+                Optional<User> existing = userRepository.findByEmail(email);
+                if (existing.isPresent()) {
+                    return existing.get();
+                }
+                // Username collision — retry with a fresh candidate next loop.
+            }
+        }
+
+        throw new DataIntegrityViolationException(
+                "Could not create Google account for " + email + " after "
+                        + MAX_USERNAME_RETRIES + " attempts");
     }
 
     private AuthResponse buildAuthResponse(User user, String token) {
