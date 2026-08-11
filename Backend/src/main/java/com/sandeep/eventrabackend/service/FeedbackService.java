@@ -15,6 +15,7 @@ import com.sandeep.eventrabackend.repository.FeedbackAnalyticsRepository;
 import com.sandeep.eventrabackend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -64,9 +65,12 @@ public class FeedbackService {
         feedback.setRating(request.getRating());
         feedback.setComment(request.getComment());
 
-        Feedback savedFeedback = feedbackRepository.save(feedback);
-
-        return mapToResponse(savedFeedback);
+        try {
+            Feedback savedFeedback = feedbackRepository.saveAndFlush(feedback);
+            return mapToResponse(savedFeedback);
+        } catch (DataIntegrityViolationException ex) {
+            throw new FeedbackAlreadyExistsException("You have already submitted feedback for this event.");
+        }
     }
 
     @Transactional(readOnly = true)
