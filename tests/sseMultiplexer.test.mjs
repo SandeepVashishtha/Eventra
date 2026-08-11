@@ -392,7 +392,31 @@ const runTests = async () => {
 
   await testReconnectRequestUsesPerPathReconnect();
 
+  await testRelativeApiBaseUrl();
+
   console.log("🟢 All SSE Multiplexer unit tests completed successfully!");
+};
+
+const testRelativeApiBaseUrl = async () => {
+  process.env.REACT_APP_API_URL = "/api";
+  const { SSE_BASE_URL } = await import(`../src/config/backendConfig.js?relative=${Date.now()}`);
+
+  assert.equal(SSE_BASE_URL, "/", "Relative /api config should yield relative SSE base");
+
+  let sseBaseUrl = SSE_BASE_URL || "";
+  if (!sseBaseUrl || sseBaseUrl.startsWith("/")) {
+    const origin = globalThis.window.location.origin;
+    sseBaseUrl = sseBaseUrl ? `${origin}${sseBaseUrl}` : origin;
+  }
+
+  const sseUrl = new URL("/stream/relative-base", sseBaseUrl).href;
+  assert.equal(
+    sseUrl,
+    "https://api.example.test/stream/relative-base",
+    "Relative SSE base must resolve against window.location.origin"
+  );
+
+  process.env.REACT_APP_API_URL = "https://api.example.test";
 };
 
 // Run the suite
