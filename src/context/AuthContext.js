@@ -9,9 +9,7 @@ import { useTokenExpiry } from "../hooks/useTokenExpiry.js";
 import { isTokenValid } from "../utils/tokenUtils.js";
 import { toast } from "react-toastify";
 import { ROLES, ROLE_PERMISSIONS } from "../config/roles.js";
-import { getSessionChannel, closeSessionChannel, SESSION_TERMINATED, broadcastSessionTerminated } from "../utils/sessionBroadcast.js";
-import { deleteCookie } from "../utils/cookieUtils.js";
-import ReAuthModal from "../components/auth/ReAuthModal";
+import { logger } from "../utils/logger.js";
 
 // Create context for Authentication
 const AuthContext = createContext();
@@ -198,7 +196,7 @@ export const AuthProvider = ({ children }) => {
     try {
       hadPreviousSession = !!syncSecureStorage.getItem("user");
     } catch (e) {
-      console.warn("[AuthContext] Failed to read from secure storage during expiry check", e);
+      logger.warn("[AuthContext] Failed to read from secure storage during expiry check", e);
     }
 
     clearSession();
@@ -268,7 +266,7 @@ export const AuthProvider = ({ children }) => {
               clearSession();
             }
           } catch (storageErr) {
-            console.error("[AuthContext] Secure storage fallback read failure:", storageErr);
+            logger.error("[AuthContext] Secure storage fallback read failure:", storageErr);
             clearSession();
           }
         }
@@ -333,7 +331,7 @@ export const AuthProvider = ({ children }) => {
       const { permissions: _permissions, scopes: _scopes, ...displayProfile } = sessionUser;
       await syncSecureStorage.setItem("user", JSON.stringify(displayProfile));
     } catch (error) {
-      console.error("[AuthContext] Error persisting user profile safely:", error);
+      logger.error("[AuthContext] Error persisting user profile safely:", error);
     }
     return true;
   }, []);
@@ -441,7 +439,7 @@ export const AuthProvider = ({ children }) => {
     try {
       await authService.logout(getRefreshToken());
     } catch (error) {
-      console.warn("[AuthContext] Backend logout request failed (best-effort error):", error);
+      logger.warn("[AuthContext] Backend logout request failed (best-effort error):", error);
     }
     clearSession();
     broadcastSessionTerminated();
