@@ -178,7 +178,7 @@ const AskTheOrganizer = ({ eventId }) => {
             {t("askOrganizer.title", "Ask the Organizer")}
           </h3>
         </div>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        <p className="text-sm text-gray-500 dark:text-gray-200">
           {t(
             "askOrganizer.subtitle",
             "Ask event-specific questions and see organizer answers in one public feed."
@@ -235,7 +235,7 @@ const AskTheOrganizer = ({ eventId }) => {
           ) : publicQuestions.length === 0 ? (
             <div className="text-center py-8 bg-gray-50 dark:bg-gray-900/50 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700">
               <MessageSquare className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-sm text-gray-500 dark:text-gray-200">
                 {t("askOrganizer.noQuestions", "No public questions yet. Be the first to ask!")}
               </p>
             </div>

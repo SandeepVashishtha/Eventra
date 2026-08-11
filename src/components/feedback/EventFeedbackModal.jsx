@@ -133,7 +133,7 @@ const EventFeedbackModal = ({ isOpen, onClose, event }) => {
             <h2 id="event-feedback-title" className="text-2xl font-bold text-gray-900 dark:text-white">
               Share Your Feedback
             </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{event.title}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-200 mt-1">{event.title}</p>
           </div>
           <button
             onClick={onClose}
@@ -220,7 +220,7 @@ const EventFeedbackModal = ({ isOpen, onClose, event }) => {
               rows="4"
               maxLength="500"
             />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-right">
+            <p className="text-xs text-gray-500 dark:text-gray-200 mt-2 text-right">
               {comment.length}/500
             </p>
           </div>
@@ -233,7 +233,7 @@ const EventFeedbackModal = ({ isOpen, onClose, event }) => {
               handleReset();
               onClose();
             }}
-            className="flex-1 py-2.5 px-4 rounded-lg font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            className="flex-1 py-2.5 px-4 rounded-lg font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
           >
             Cancel
           </button>

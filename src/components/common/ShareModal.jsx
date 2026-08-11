@@ -82,7 +82,7 @@ const ShareModal = ({ isOpen, onClose, event }) => {
                 {shareData.title}
               </h3>
 
-              <p className="mt-1.5 text-xs leading-relaxed text-gray-500 dark:text-gray-400">
+              <p className="mt-1.5 text-xs leading-relaxed text-gray-500 dark:text-gray-200">
                 {shareData.description || "Share this event with your network."}
               </p>
             </div>

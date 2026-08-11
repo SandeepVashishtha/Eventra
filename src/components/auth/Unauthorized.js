@@ -62,7 +62,7 @@ const Unauthorized = () => {
           <h2 className="text-3xl font-extrabold text-gray-800 dark:text-gray-100">
             Access Denied
           </h2>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-gray-600 dark:text-gray-200">
             You don’t have permission to access this page.
           </p>
         </div>

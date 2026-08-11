@@ -20,7 +20,7 @@ const STATUS_STYLES = {
     iconBg: "bg-gray-400",
     line: "bg-gray-300 dark:bg-gray-700",
     badge: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
-    title: "text-gray-500 dark:text-gray-400",
+    title: "text-gray-500 dark:text-gray-200",
   },
 };
 
@@ -70,7 +70,7 @@ const TimelineMilestone = ({
         </div>
 
         {date && (
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-sm text-gray-500 dark:text-gray-200 mt-1">
             📅 {date}
           </p>
         )}

@@ -42,7 +42,7 @@ export default function WebRTCCollaborationHub({
                 <ShieldCheck className="w-3.5 h-3.5" /> WebRTC P2P
               </span>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            <p className="text-xs text-gray-500 dark:text-gray-200 mt-0.5">
               Room Token: <code className="font-mono text-indigo-600 dark:text-indigo-400">{roomId}</code> • Peer ID: <span className="font-mono">{peerId}</span>
             </p>
           </div>
@@ -58,7 +58,7 @@ export default function WebRTCCollaborationHub({
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 activeTab === "editor"
                   ? "bg-white dark:bg-gray-900 text-indigo-600 dark:text-indigo-400 shadow-sm"
-                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                  : "text-gray-600 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white"
               }`}
             >
               <Code2 className="w-4 h-4" />
@@ -71,7 +71,7 @@ export default function WebRTCCollaborationHub({
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 activeTab === "whiteboard"
                   ? "bg-white dark:bg-gray-900 text-indigo-600 dark:text-indigo-400 shadow-sm"
-                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                  : "text-gray-600 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white"
               }`}
             >
               <PenTool className="w-4 h-4" />
@@ -87,7 +87,7 @@ export default function WebRTCCollaborationHub({
               className={`p-2 rounded-xl border transition-all ${
                 isAudioActive
                   ? "bg-emerald-500 text-white border-emerald-600 shadow-sm"
-                  : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:bg-gray-200"
+                  : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-200 border-gray-200 dark:border-gray-700 hover:bg-gray-200"
               }`}
               title={isAudioActive ? "Mute Microphone" : "Unmute Microphone"}
             >
@@ -100,7 +100,7 @@ export default function WebRTCCollaborationHub({
               className={`p-2 rounded-xl border transition-all ${
                 isVideoActive
                   ? "bg-indigo-600 text-white border-indigo-700 shadow-sm"
-                  : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:bg-gray-200"
+                  : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-200 border-gray-200 dark:border-gray-700 hover:bg-gray-200"
               }`}
               title={isVideoActive ? "Turn Off Camera" : "Turn On Camera"}
             >
