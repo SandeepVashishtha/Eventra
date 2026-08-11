@@ -59,9 +59,9 @@ const Unauthorized = () => {
             <XCircle className="h-20 w-20 text-red-500" />
           </motion.div>
 
-          <h2 className="text-3xl font-extrabold text-gray-800 dark:text-gray-100">
+          <h1 className="text-3xl font-extrabold text-gray-800 dark:text-gray-100">
             Access Denied
-          </h2>
+          </h1>
           <p className="text-gray-600 dark:text-gray-400">
             You don’t have permission to access this page.
           </p>
