@@ -783,7 +783,7 @@ public class EventService {
 
                 broadcastAvailability(event);
 
-                promoteFirstWaitingUser(event);
+                promoteWaitlistAfterVacancy(eventId);
         }
 
         @Transactional(readOnly = true)
@@ -1059,7 +1059,14 @@ public class EventService {
                 Event event = eventRepository.findByIdWithLock(eventId)
                                 .orElseThrow(() -> new EventNotFoundException(
                                                 "Event not found with id: " + eventId));
-                promoteFirstWaitingUser(event);
+                while (event.getCapacity() == null || event.getRegisteredCount() < event.getCapacity()) {
+                        RegistrationResponse promoted = promoteFirstWaitingUser(event);
+                        if (promoted == null) {
+                                break;
+                        }
+                        event.setRegisteredCount((int) eventRegistrationRepository
+                                        .countByEvent_IdAndStatus(eventId, "CONFIRMED"));
+                }
         }
 
         private RegistrationResponse promoteFirstWaitingUser(Event event) {
@@ -1067,21 +1074,20 @@ public class EventService {
                         return null;
                 }
 
-                return eventWaitlistRepository.findWaitingByEventIdWithLock(event.getId())
-                                .stream()
-                                .findFirst()
-                                .map(entry -> promoteEntry(event, entry))
-                                .orElse(null);
+                for (EventWaitlist entry : eventWaitlistRepository.findWaitingByEventIdWithLock(event.getId())) {
+                        if (eventRegistrationRepository.existsByEvent_IdAndUser_Email(
+                                        event.getId(), entry.getUser().getEmail())) {
+                                entry.setStatus("REMOVED");
+                                eventWaitlistRepository.save(entry);
+                                continue;
+                        }
+                        return promoteEntry(event, entry);
+                }
+                return null;
         }
 
         private RegistrationResponse promoteEntry(Event event, EventWaitlist entry) {
                 User user = entry.getUser();
-
-                if (eventRegistrationRepository.existsByEvent_IdAndUser_Email(event.getId(), user.getEmail())) {
-                        entry.setStatus("REMOVED");
-                        eventWaitlistRepository.save(entry);
-                        return null;
-                }
 
                 EventRegistration registration = new EventRegistration();
                 registration.setEvent(event);
