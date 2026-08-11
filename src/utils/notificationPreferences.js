@@ -151,3 +151,72 @@ export const urlBase64ToUint8Array = (base64String) => {
   const rawData = window.atob(base64);
   return Uint8Array.from([...rawData].map((char) => char.charCodeAt(0)));
 };
+
+/* ==========================================================================
+   Push Notification & ServiceWorker Helpers (#14321)
+   ========================================================================== */
+
+/**
+ * Checks if browser push notifications and ServiceWorkers are supported.
+ * @returns {boolean}
+ */
+export const isPushSupported = () => {
+  if (typeof window === "undefined") return false;
+  return Boolean(
+    "serviceWorker" in navigator &&
+      "PushManager" in window &&
+      "Notification" in window
+  );
+};
+
+/**
+ * Returns the current Notification permission state.
+ * @returns {"granted" | "denied" | "default" | "unsupported"}
+ */
+export const getPushPermissionState = () => {
+  if (!isPushSupported()) return "unsupported";
+  return Notification.permission;
+};
+
+/**
+ * Requests browser permission for notifications.
+ * @returns {Promise<"granted" | "denied" | "default" | "unsupported">}
+ */
+export const requestPushPermission = async () => {
+  if (!isPushSupported()) return "unsupported";
+  try {
+    const permission = await Notification.requestPermission();
+    return permission;
+  } catch {
+    return "denied";
+  }
+};
+
+/**
+ * Subscribes a ServiceWorker registration to Web Push notifications.
+ * @param {ServiceWorkerRegistration} serviceWorkerRegistration 
+ * @param {string} vapidPublicKey 
+ * @returns {Promise<PushSubscription>}
+ */
+export const subscribeToPushNotifications = async (serviceWorkerRegistration, vapidPublicKey) => {
+  if (!isPushSupported()) throw new Error("Push notifications are not supported in this browser.");
+  if (!serviceWorkerRegistration) throw new Error("A valid ServiceWorkerRegistration is required.");
+
+  const applicationServerKey = urlBase64ToUint8Array(vapidPublicKey);
+  const subscription = await serviceWorkerRegistration.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey,
+  });
+
+  return subscription;
+};
+
+/**
+ * Retrieves an existing PushSubscription from a ServiceWorker registration if present.
+ * @param {ServiceWorkerRegistration} serviceWorkerRegistration 
+ * @returns {Promise<PushSubscription | null>}
+ */
+export const getExistingPushSubscription = async (serviceWorkerRegistration) => {
+  if (!isPushSupported() || !serviceWorkerRegistration) return null;
+  return await serviceWorkerRegistration.pushManager.getSubscription();
+};
