@@ -3,12 +3,10 @@ import { logger } from "./logger.js";
 const MULTIPLEX_CHANNEL_NAME = "eventra_sse_multiplexer";
 const LOCK_NAME = "eventra_sse_leader_lock";
 const HEARTBEAT_KEY = "eventra_sse_leader_heartbeat";
-
-// Unique identifier for this tab instance
 const TAB_ID = Math.random().toString(36).substring(2, 9);
 
-class SseMultiplexer {
-  constructor() {
+export class SseMultiplexer {
+  constructor(options = {}) {
     this.tabId = TAB_ID;
     this.isLeader = false;
     this.localSubscriptions = new Map(); // path -> Set of local callbacks
@@ -17,13 +15,18 @@ class SseMultiplexer {
     this.pathStatuses = new Map(); // path -> status string
     this.statusListeners = new Set(); // callbacks listening to status changes
 
+    // --- New Resiliency & Feature State ---
+    this.lastEventIds = new Map(); // path -> string (Last-Event-ID)
+    this.watchdogTimers = new Map(); // path -> timeout timer
+    this.reconnectAttempts = new Map(); // path -> retry count
+    this.getAuthToken = options.getAuthToken || null; // dynamic token resolver
+    this.staleTimeoutMs = options.staleTimeoutMs || 45000; // 45s connection watchdog
+
     if (typeof window !== "undefined") {
       this.channel = new BroadcastChannel(MULTIPLEX_CHANNEL_NAME);
       this.channel.onmessage = (e) => this.handleBroadcastMessage(e.data);
 
       this.setupLeaderElection();
-
-      // Sync on page close / unload
       window.addEventListener("beforeunload", () => this.teardown());
     }
   }
@@ -31,7 +34,6 @@ class SseMultiplexer {
   // --- 1. Leadership Election Management ---
   setupLeaderElection() {
     if (typeof navigator?.locks?.request === "function") {
-      // Modern Browsers: Web Locks API provides automatic, zero-latency coordination
       navigator.locks
         .request(LOCK_NAME, async () => {
           logger.log(`[SSE Multiplexer] Tab ${this.tabId} acquired lock and became LEADER.`);
@@ -39,16 +41,12 @@ class SseMultiplexer {
           this.queryGlobalSubscribers();
           this.reconcileConnections();
 
-          // Keep the lock active until tab unloads/unmounts
           await new Promise((resolve) => {
             this.releaseLockPromise = resolve;
           });
         })
         .catch((err) => {
-          logger.warn(
-            "[SSE Multiplexer] Web Locks election failed, falling back to LocalStorage:",
-            err
-          );
+          logger.warn("[SSE Multiplexer] Web Locks election failed, falling back to LocalStorage:", err);
           this.setupLocalStorageElection();
         });
     } else {
@@ -70,13 +68,11 @@ class SseMultiplexer {
         try {
           const parsed = JSON.parse(heartbeat);
           if (parsed && now - parsed.timestamp < HEARTBEAT_TIMEOUT && parsed.tabId !== this.tabId) {
-            // Active leader exists
             return;
           }
         } catch {}
       }
 
-      // Try to claim leadership
       this.claimLocalStorageLeadership();
     };
 
@@ -88,23 +84,17 @@ class SseMultiplexer {
     this.isLeader = true;
     logger.log(`[SSE Multiplexer] Tab ${this.tabId} claimed leadership via LocalStorage.`);
 
-    // Write an immediate heartbeat so other tabs see the new leader without
-    // waiting up to HEARTBEAT_INTERVAL (3 s) for the first interval tick.
     const writeHeartbeat = () => {
       try {
         localStorage.setItem(
           HEARTBEAT_KEY,
           JSON.stringify({ tabId: this.tabId, timestamp: Date.now() })
         );
-      } catch {
-        // localStorage unavailable — non-fatal, leadership still held in memory
-      }
+      } catch {}
     };
     writeHeartbeat();
 
-    // Heartbeat loop — keep the entry fresh while leadership is held
     this.heartbeatInterval = setInterval(writeHeartbeat, 2000);
-
     this.queryGlobalSubscribers();
     this.reconcileConnections();
   }
@@ -120,11 +110,9 @@ class SseMultiplexer {
     this.localSubscriptions.get(path).add(callback);
     if (statusCallback) {
       this.statusListeners.add(statusCallback);
-      // Immediately notify client of current status
       statusCallback(path, this.pathStatuses.get(path) || "idle");
     }
 
-    // Trigger local connection check if we are leader
     if (this.isLeader) {
       this.reconcileConnections();
     }
@@ -151,12 +139,8 @@ class SseMultiplexer {
 
   reconnect(path) {
     if (this.isLeader) {
-      const source = this.activeEventSources.get(path);
-      if (source) {
-        source.close();
-        this.activeEventSources.delete(path);
-      }
-      this.openEventSource(path);
+      this.closeEventSource(path);
+      this.scheduleReconnect(path, 0); // Immediate forced reconnect
     } else {
       this.broadcastMessage({ type: "RECONNECT_REQUEST", tabId: this.tabId, path });
     }
@@ -200,6 +184,7 @@ class SseMultiplexer {
             type: "SUBSCRIBERS_RESPONSE",
             tabId: this.tabId,
             paths: Array.from(this.localSubscriptions.keys()),
+            lastEventIds: Object.fromEntries(this.lastEventIds),
           });
         }
         break;
@@ -207,11 +192,19 @@ class SseMultiplexer {
       case "SUBSCRIBERS_RESPONSE":
         if (msg.paths) {
           msg.paths.forEach((p) => this.addGlobalSubscriber(p, msg.tabId));
-          if (this.isLeader) this.reconcileConnections();
         }
+        if (msg.lastEventIds) {
+          Object.entries(msg.lastEventIds).forEach(([path, lastId]) => {
+            if (!this.lastEventIds.has(path)) this.lastEventIds.set(path, lastId);
+          });
+        }
+        if (this.isLeader) this.reconcileConnections();
         break;
 
       case "SSE_MESSAGE":
+        if (msg.lastEventId) {
+          this.lastEventIds.set(msg.path, msg.lastEventId);
+        }
         this.dispatchLocalMessage(msg.path, msg.data, msg.eventType);
         break;
 
@@ -223,9 +216,6 @@ class SseMultiplexer {
         if (this.isLeader) {
           this.reconnect(msg.path);
         }
-        break;
-
-      default:
         break;
     }
   }
@@ -251,27 +241,23 @@ class SseMultiplexer {
     this.broadcastMessage({ type: "QUERY_SUBSCRIBERS", tabId: this.tabId });
   }
 
-  // --- 4. EventSource Lifecycle Management (Leader-Only) ---
+  // --- 4. Connection Lifecycle & Watchdog Engine ---
   reconcileConnections() {
     if (!this.isLeader) return;
 
-    // Get all paths that have at least one subscriber across all tabs
     const activePaths = new Set([
       ...Array.from(this.localSubscriptions.keys()),
       ...Array.from(this.globalSubscribers.keys()),
     ]);
 
-    // Close EventSources for paths that are no longer active
-    for (const [path, source] of this.activeEventSources.entries()) {
+    for (const [path] of this.activeEventSources.entries()) {
       if (!activePaths.has(path)) {
         logger.log(`[SSE Multiplexer] Closing inactive connection to path: ${path}`);
-        source.close();
-        this.activeEventSources.delete(path);
+        this.closeEventSource(path);
         this.updatePathStatus(path, "idle");
       }
     }
 
-    // Open EventSources for newly active paths
     for (const path of activePaths) {
       if (!this.activeEventSources.has(path)) {
         this.openEventSource(path);
@@ -279,7 +265,7 @@ class SseMultiplexer {
     }
   }
 
-  openEventSource(path) {
+  async openEventSource(path) {
     const sseBaseUrl =
       typeof window !== "undefined"
         ? process.env.VITE_API_URL ||
@@ -287,37 +273,127 @@ class SseMultiplexer {
           "http://localhost:8080/api/v1"
         : "http://localhost:8080/api/v1";
 
-    logger.log(`[SSE Multiplexer] Leader tab opening physical EventSource: ${sseBaseUrl}${path}`);
+    let url = `${sseBaseUrl}${path}`;
+    const urlParams = new URLSearchParams();
+
+    // 1. Dynamic Auth Token Injection
+    if (typeof this.getAuthToken === "function") {
+      try {
+        const token = await this.getAuthToken();
+        if (token) urlParams.append("token", token);
+      } catch (err) {
+        logger.error("[SSE Multiplexer] Failed to retrieve auth token:", err);
+      }
+    }
+
+    // 2. Last-Event-ID Failover Recovery
+    const lastEventId = this.lastEventIds.get(path);
+    if (lastEventId) {
+      urlParams.append("lastEventId", lastEventId);
+    }
+
+    const queryString = urlParams.toString();
+    if (queryString) {
+      url += (url.includes("?") ? "&" : "?") + queryString;
+    }
+
+    logger.log(`[SSE Multiplexer] Leader tab opening physical EventSource: ${url}`);
     this.updatePathStatus(path, "connecting");
 
-    const source = new EventSource(`${sseBaseUrl}${path}`, { withCredentials: true });
+    const source = new EventSource(url, { withCredentials: true });
     this.activeEventSources.set(path, source);
+    this.resetWatchdog(path);
 
     source.onopen = () => {
+      this.reconnectAttempts.set(path, 0); // Reset retry counter on success
       this.updatePathStatus(path, "connected");
+      this.resetWatchdog(path);
     };
 
     source.onmessage = (evt) => {
+      this.resetWatchdog(path);
+
+      if (evt.lastEventId) {
+        this.lastEventIds.set(path, evt.lastEventId);
+      }
+
       let payload = evt.data;
       try {
         payload = JSON.parse(evt.data);
       } catch {}
 
-      // Dispatch locally
+      // Heartbeat message handler (ignore ping frames, reset watchdog)
+      if (payload?.type === "ping" || evt.type === "ping") return;
+
       this.dispatchLocalMessage(path, payload, evt.type);
 
-      // Broadcast to follower tabs
       this.broadcastMessage({
         type: "SSE_MESSAGE",
         path,
         data: payload,
         eventType: evt.type,
+        lastEventId: evt.lastEventId,
       });
     };
 
     source.onerror = () => {
-      this.updatePathStatus(path, "reconnecting");
+      this.clearWatchdog(path);
+      this.closeEventSource(path);
+      this.scheduleReconnect(path);
     };
+  }
+
+  // --- 5. Exponential Backoff & Watchdog Logic ---
+  scheduleReconnect(path, overrideDelay) {
+    if (!this.isLeader) return;
+
+    const attempts = (this.reconnectAttempts.get(path) || 0) + 1;
+    this.reconnectAttempts.set(path, attempts);
+
+    // Exponential Backoff calculation: base 1s, max 30s + jitter
+    const delay =
+      overrideDelay !== undefined
+        ? overrideDelay
+        : Math.min(30000, Math.pow(2, attempts) * 1000) + Math.random() * 1000;
+
+    logger.warn(`[SSE Multiplexer] Reconnecting ${path} in ${Math.round(delay)}ms (Attempt ${attempts})`);
+    this.updatePathStatus(path, "reconnecting");
+
+    setTimeout(() => {
+      if (this.isLeader) {
+        this.openEventSource(path);
+      }
+    }, delay);
+  }
+
+  resetWatchdog(path) {
+    this.clearWatchdog(path);
+    if (!this.isLeader || this.staleTimeoutMs <= 0) return;
+
+    // Force disconnect and retry if no ping/data arrives before staleTimeoutMs
+    this.watchdogTimers.set(
+      path,
+      setTimeout(() => {
+        logger.warn(`[SSE Multiplexer] Connection stale for ${path}. Forcing reconnect.`);
+        this.reconnect(path);
+      }, this.staleTimeoutMs)
+    );
+  }
+
+  clearWatchdog(path) {
+    if (this.watchdogTimers.has(path)) {
+      clearTimeout(this.watchdogTimers.get(path));
+      this.watchdogTimers.delete(path);
+    }
+  }
+
+  closeEventSource(path) {
+    this.clearWatchdog(path);
+    const source = this.activeEventSources.get(path);
+    if (source) {
+      source.close();
+      this.activeEventSources.delete(path);
+    }
   }
 
   dispatchLocalMessage(path, data, eventType) {
@@ -336,12 +412,10 @@ class SseMultiplexer {
   updatePathStatus(path, status) {
     this.pathStatuses.set(path, status);
 
-    // Broadcast status to other tabs if we are the leader
     if (this.isLeader) {
       this.broadcastMessage({ type: "SSE_STATUS", path, status });
     }
 
-    // Trigger local status listeners
     this.statusListeners.forEach((listener) => {
       try {
         listener(path, status);
@@ -351,7 +425,7 @@ class SseMultiplexer {
     });
   }
 
-  // --- 5. Unload Cleanup ---
+  // --- 6. Unload Cleanup ---
   teardown() {
     logger.log(`[SSE Multiplexer] Teardown triggered for tab: ${this.tabId}`);
 
@@ -364,39 +438,20 @@ class SseMultiplexer {
       this.channel.close();
     }
 
-    // Close all physical EventSources if we were the leader
-    for (const source of this.activeEventSources.values()) {
-      source.close();
-    }
-    this.activeEventSources.clear();
-
-    if (this.releaseLockPromise) {
-      this.releaseLockPromise();
+    for (const path of this.activeEventSources.keys()) {
+      this.closeEventSource(path);
     }
 
+    if (this.releaseLockPromise) this.releaseLockPromise();
     if (this.localStorageInterval) clearInterval(this.localStorageInterval);
     if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
 
-    // Remove the heartbeat key from localStorage when this tab was the leader.
-    //
-    // Without this, the stale heartbeat persists after the tab closes. Remaining
-    // tabs read it in checkLeader() and see `now - parsed.timestamp < HEARTBEAT_TIMEOUT`
-    // (7 000 ms) as still valid, so they refuse to claim leadership for up to 7
-    // seconds. During that window no tab owns an SSE connection and real-time
-    // updates are silently dropped for all users.
-    //
-    // A browser crash bypasses beforeunload so the key may still linger —
-    // setupLocalStorageElection already handles that via the HEARTBEAT_TIMEOUT
-    // expiry. This removal covers the clean-close path.
     if (this.isLeader) {
       try {
         localStorage.removeItem(HEARTBEAT_KEY);
-      } catch {
-        // Non-fatal — the timeout mechanism in checkLeader will handle expiry
-      }
+      } catch {}
     }
   }
 }
 
-// Export single singleton instance across entire application scope
 export const sseMultiplexer = new SseMultiplexer();
