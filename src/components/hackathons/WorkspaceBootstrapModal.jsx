@@ -2,11 +2,12 @@ import { useState, useEffect, useCallback } from "react";
 import useClipboard from "hooks/useClipboard";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  X, Github, Rocket, ChevronRight, ChevronLeft,
+  X, Rocket, ChevronRight, ChevronLeft,
   Check, AlertCircle, Loader2, Plus, Trash2,
   Lock, Globe, ExternalLink, Copy, Users,
   KeyRound, FolderGit2, BookOpen,
 } from "lucide-react";
+import { FaGithub as Github } from "react-icons/fa";
 import {
   validateGitHubToken,
   slugifyRepoName,

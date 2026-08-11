@@ -234,7 +234,7 @@ public class HackathonUpdateTests {
                 .title("") // Blank title
                 .description("Desc")
                 .organizer("Org")
-                .startDate(LocalDateTime.now().minusDays(1)) // Past date
+                .startDate(LocalDateTime.now().plusDays(10))
                 .endDate(LocalDateTime.now().plusDays(12))
                 .location("Loc")
                 .mode("Online")
@@ -245,5 +245,33 @@ public class HackathonUpdateTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(authorities = "ADMIN")
+    @DisplayName("Update with past dates is allowed (#13605)")
+    void testUpdateWithPastDatesAllowed() throws Exception {
+        existingHackathon.setStartDate(LocalDateTime.now().minusDays(3));
+        existingHackathon.setEndDate(LocalDateTime.now().minusDays(1));
+        existingHackathon.setRegistrationDeadline(LocalDateTime.now().minusDays(4));
+        hackathonRepository.save(existingHackathon);
+
+        HackathonUpdateRequest request = HackathonUpdateRequest.builder()
+                .title("Live Hackathon Title")
+                .description("Updated Description")
+                .organizer("Updated Organizer")
+                .startDate(LocalDateTime.now().minusDays(3))
+                .endDate(LocalDateTime.now().minusDays(1))
+                .location("Updated Location")
+                .mode("Hybrid")
+                .registrationDeadline(LocalDateTime.now().minusDays(4))
+                .build();
+
+        mockMvc.perform(put("/api/hackathons/" + existingHackathon.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("Live Hackathon Title"))
+                .andExpect(jsonPath("$.mode").value("Hybrid"));
     }
 }

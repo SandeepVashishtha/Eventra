@@ -2,13 +2,13 @@ import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
 import LoginForm from "../LoginForm";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../../../context/AuthContext";
 
-jest.mock("../context/AuthContext", () => ({
+jest.mock("../../../context/AuthContext", () => ({
   useAuth: jest.fn(),
 }));
 
-jest.mock("../utils/toast", () => ({
+jest.mock("../../../utils/toast", () => ({
   showAuthToast: jest.fn((message, onClose) => {
     if (onClose) onClose();
   }),

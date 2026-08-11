@@ -97,6 +97,40 @@ public class ProjectControllerTests {
     }
 
     @Test
+    @WithMockUser(authorities = "ADMIN")
+    void testCreateProject_RejectsNonHttpThumbnailUrl_Returns400() throws Exception {
+        ProjectCreateRequest request = ProjectCreateRequest.builder()
+                .title("Unsafe Project")
+                .description("Description")
+                .category("Web Development")
+                .thumbnailUrl("javascript:alert(1)")
+                .githubUrl("https://github.com/user/repo")
+                .build();
+
+        mockMvc.perform(post("/api/projects")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(authorities = "ADMIN")
+    void testCreateProject_RejectsDataGithubUrl_Returns400() throws Exception {
+        ProjectCreateRequest request = ProjectCreateRequest.builder()
+                .title("Unsafe Project")
+                .description("Description")
+                .category("Web Development")
+                .thumbnailUrl("https://example.com/thumb.png")
+                .githubUrl("data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==")
+                .build();
+
+        mockMvc.perform(post("/api/projects")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void testCreateProject_Unauthenticated_Returns401() throws Exception {
         ProjectCreateRequest request = ProjectCreateRequest.builder()
                 .title("New Project")

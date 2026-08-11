@@ -2,6 +2,7 @@
  * checkInUtils.js
  * Utilities for managing event check-ins, QR code generation,
  * and check-in statistics.
+ * Now includes support for group/bulk check-ins.
  */
 
 /**
@@ -200,6 +201,65 @@ export const computeSessionCheckInStats = (sessions = [], attendanceLogs = [], c
 };
 
 /**
+ * Computes group-specific check-in statistics
+ * @param {Array} registrations - All registrations for the event
+ * @param {Array} checkIns - All check-ins recorded
+ * @returns {Object} Group statistics {totalGroups, fullyCheckedInGroups, partiallyCheckedInGroups, groupCheckInRate}
+ */
+export const computeGroupCheckInStats = (registrations = [], checkIns = []) => {
+  const checkedInIds = new Set(checkIns.map((c) => c.registrationId));
+  
+  // Group registrations by groupId
+  const groups = {};
+  registrations.forEach((reg) => {
+    if (reg.groupId) {
+      if (!groups[reg.groupId]) {
+        groups[reg.groupId] = [];
+      }
+      groups[reg.groupId].push(reg);
+    }
+  });
+
+  const totalGroups = Object.keys(groups).length;
+  
+  if (totalGroups === 0) {
+    return {
+      totalGroups: 0,
+      fullyCheckedInGroups: 0,
+      partiallyCheckedInGroups: 0,
+      groupCheckInRate: 0,
+      groups,
+    };
+  }
+
+  let fullyCheckedInGroups = 0;
+  let partiallyCheckedInGroups = 0;
+
+  Object.values(groups).forEach((groupMembers) => {
+    const allCheckedIn = groupMembers.every((m) => checkedInIds.has(m.id));
+    const someCheckedIn = groupMembers.some((m) => checkedInIds.has(m.id));
+
+    if (allCheckedIn) {
+      fullyCheckedInGroups++;
+    } else if (someCheckedIn) {
+      partiallyCheckedInGroups++;
+    }
+  });
+
+  const groupCheckInRate = totalGroups > 0
+    ? Math.round(((fullyCheckedInGroups + partiallyCheckedInGroups) / totalGroups) * 10000) / 100
+    : 0;
+
+  return {
+    totalGroups,
+    fullyCheckedInGroups,
+    partiallyCheckedInGroups,
+    groupCheckInRate,
+    groups,
+  };
+};
+
+/**
  * Exports check-in data as CSV
  * @param {Object} stats - Check-in statistics from computeCheckInStats
  * @param {Array} registrations - All registrations
@@ -256,4 +316,91 @@ export const exportCheckInAsCSV = (stats, registrations, checkIns, eventName = '
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+};
+
+/**
+ * Checks if a registration is part of a group
+ * @param {Object} registration - Registration object
+ * @returns {boolean} True if this is a group registration
+ */
+export const isGroupRegistration = (registration) => {
+  return registration && (registration.groupId || registration.isGroupPrimary);
+};
+
+/**
+ * Gets the group ID from a registration
+ * @param {Object} registration - Registration object
+ * @returns {string|null} Group ID or null if not part of a group
+ */
+export const getGroupIdFromRegistration = (registration) => {
+  return registration?.groupId || null;
+};
+
+/**
+ * Finds all registrations in the same group
+ * @param {string} groupId - The group ID to search for
+ * @param {Array} registrations - All registrations for the event
+ * @returns {Array} All registrations that belong to this group
+ */
+export const getGroupMembers = (groupId, registrations = []) => {
+  if (!groupId) return [];
+  return registrations.filter((reg) => reg.groupId === groupId);
+};
+
+/**
+ * Finds the primary buyer for a group
+ * @param {Array} groupMembers - Array of group member registrations
+ * @returns {Object|null} The primary buyer's registration or null
+ */
+export const getGroupPrimary = (groupMembers = []) => {
+  return groupMembers.find((reg) => reg.isGroupPrimary) || groupMembers[0] || null;
+};
+
+/**
+ * Checks if all members of a group are already checked in
+ * @param {Array} groupMembers - Array of group member registrations
+ * @param {Array} checkIns - All check-ins
+ * @returns {boolean} True if all group members are checked in
+ */
+export const isEntireGroupCheckedIn = (groupMembers = [], checkIns = []) => {
+  const checkedInIds = new Set(checkIns.map((c) => c.registrationId));
+  return groupMembers.every((member) => checkedInIds.has(member.id));
+};
+
+/**
+ * Gets the group name from a registration or group members
+ * @param {Object|Array} registrationOrGroup - Registration object or array of group members
+ * @returns {string} Group name or a default name
+ */
+export const getGroupName = (registrationOrGroup) => {
+  if (Array.isArray(registrationOrGroup)) {
+    const primary = getGroupPrimary(registrationOrGroup);
+    return primary?.groupName || `Group of ${registrationOrGroup.length}`;
+  }
+  return registrationOrGroup?.groupName || 'Group';
+};
+
+/**
+ * Records check-ins for multiple group members at once
+ * @param {Array} groupMembers - Array of group member registrations
+ * @param {string} scannedBy - Who performed the check-in
+ * @param {Array} existingCheckIns - Existing check-ins to avoid duplicates
+ * @returns {Array} Array of new check-in records
+ */
+export const recordGroupCheckIns = (groupMembers = [], scannedBy = 'group-check-in', existingCheckIns = []) => {
+  const existingIds = new Set(existingCheckIns.map((c) => c.registrationId));
+  const timestamp = new Date().toISOString();
+
+  return groupMembers
+    .filter((member) => !existingIds.has(member.id))
+    .map((member) => ({
+      id: `checkin-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      registrationId: member.id,
+      timestamp,
+      scannedBy,
+      status: 'completed',
+      groupId: member.groupId,
+      groupName: member.groupName,
+      isGroupCheckIn: true,
+    }));
 };

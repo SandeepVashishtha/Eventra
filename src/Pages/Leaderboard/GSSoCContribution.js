@@ -1,3 +1,4 @@
+import useCountdown from "hooks/useCountdown";
 import { useState, useMemo, useEffect, useCallback, memo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 // NEW
@@ -49,43 +50,7 @@ const GSSOC_TIMELINE = [
 // ];
 
 // ============ UTILITY HOOKS ============
-const useCountdown = (endDate, onEnd) => {
-  const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft(endDate));
-  const onEndRef = useRef(onEnd);
-
-  useEffect(() => {
-    onEndRef.current = onEnd;
-  }, [onEnd]);
-
-  useEffect(() => {
-    if (timeLeft.ended) {
-      onEndRef.current?.();
-      return;
-    }
-    const timer = setInterval(() => {
-      setTimeLeft(calculateTimeLeft(endDate));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [timeLeft.ended, endDate]);
-
-  return timeLeft;
-};
-
-const calculateTimeLeft = (endDate) => {
-  const end = new Date(endDate);
-  const now = new Date();
-  const diff = end - now;
-
-  if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0, ended: true };
-
-  return {
-    days: Math.floor(diff / (1000 * 60 * 60 * 24)),
-    hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
-    minutes: Math.floor((diff / 1000 / 60) % 60),
-    seconds: Math.floor((diff / 1000) % 60),
-    ended: false
-  };
-};
+// Fix: replaced local useCountdown + calculateTimeLeft with centralised hook
 
 const useKeyboardShortcut = (key, callback) => {
   const callbackRef = useRef(callback);

@@ -187,4 +187,19 @@ public class ProjectController {
             Authentication authentication) {
         return ResponseEntity.ok(projectService.upvoteProject(id, authentication.getName()));
     }
+
+    @PostMapping("/{id}/fork")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(
+            summary = "Fork a project",
+            description = "Creates a copy of an existing project owned by the authenticated user.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<ProjectResponse> forkProject(
+            @Parameter(description = "ID of the project to fork")
+            @PathVariable Long id,
+            Authentication authentication) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(projectService.forkProject(id, authentication.getName()));
+    }
 }

@@ -3,15 +3,13 @@ import useModalManager from "hooks/useModalManager";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Copy,
-  Facebook,
-  Linkedin,
   Mail,
   MessageCircle,
   Send,
   Share2,
-  Twitter,
   X,
 } from "lucide-react";
+import { FaFacebook as Facebook, FaLinkedin as Linkedin, FaTwitter as Twitter } from "react-icons/fa";
 import useEventShare from "hooks/useEventShare";
 import { createShareModalData } from "utils/shareModalUtils.js";
 const ModalCloseButton = memo(({ onClick }) => (
@@ -44,19 +42,6 @@ const ShareModal = ({ isOpen, onClose, event }) => {
     if (!shareData?.shareUrl) return;
     await copyInviteLink(shareData.shareUrl);
   }, [copyInviteLink, shareData]);
-
-  useEffect(() => {
-    if (!isOpen) return undefined;
-
-    const handleEsc = (eventKey) => {
-      if (eventKey.key === "Escape") {
-        onClose();
-      }
-    };
-
-    window.addEventListener("keydown", handleEsc);
-    useScrollLock(isOpen);
-  }, [isOpen, onClose]);
 
   return (
     <AnimatePresence>

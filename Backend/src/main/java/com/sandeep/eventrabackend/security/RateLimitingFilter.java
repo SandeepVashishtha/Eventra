@@ -26,6 +26,7 @@ import java.util.List;
 public class RateLimitingFilter extends OncePerRequestFilter {
 
     private static final String POST = "POST";
+    private static final String GET = "GET";
     private static final List<EndpointRule> ENDPOINT_RULES = List.of(
             new EndpointRule("login", POST, "/api/auth/login"),
             new EndpointRule("signup", POST, "/api/auth/signup"),
@@ -34,7 +35,8 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             new EndpointRule("contact", POST, "/api/contact"),
             new EndpointRule("contact", POST, "/api/contact/"),
             new EndpointRule("contact", POST, "/api/contacts"),
-            new EndpointRule("contact", POST, "/api/contacts/")
+            new EndpointRule("contact", POST, "/api/contacts/"),
+            new EndpointRule("githubProxy", GET, "/api/github-proxy")
     );
 
     private final RateLimitProperties properties;
@@ -114,6 +116,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             case "signup" -> properties.getSignup();
             case "forgotPassword" -> properties.getForgotPassword();
             case "contact" -> properties.getContact();
+            case "githubProxy" -> properties.getGithubProxy();
             default -> throw new IllegalArgumentException("Unknown rate limit endpoint: " + endpointName);
         };
     }
@@ -150,8 +153,12 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         String forwarded = request.getHeader("X-Forwarded-For");
         if (StringUtils.hasText(forwarded)) {
             String[] parts = forwarded.split(",");
-            // XFF is client, proxy1, proxy2 — strip trustedProxyHops from the right.
-            int clientIndex = Math.max(0, parts.length - 1 - trustedProxyHops);
+            // Proxies append the connecting peer on the right. Trust the rightmost
+            // N entries as infrastructure; the client is the leftmost of that
+            // trusted suffix (ignoring any client-supplied left-hand spoof).
+            // hops=1 on "spoof, real" → index length-1 = real.
+            int clientIndex = Math.min(parts.length - 1,
+                    Math.max(0, parts.length - trustedProxyHops));
             String candidate = parts[clientIndex].trim();
             if (StringUtils.hasText(candidate) && !"unknown".equalsIgnoreCase(candidate)) {
                 return candidate;

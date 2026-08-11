@@ -43,7 +43,7 @@ const EventRecommendation = () => {
             : event.price > 500
               ? "Advanced"
               : "Intermediate"),
-        tag: event.tags?.[0] || event.category,
+        tag: event.tags?.[0] || (event.categories && event.categories.length > 0 ? event.categories[0] : event.category),
       })),
     [],
   );
@@ -104,7 +104,7 @@ const EventRecommendation = () => {
         limit: events.length,
       }).map((event) => {
         const selectedBoost =
-          (interest && event.category === interest ? interestWeight : 0) +
+          (interest && ((event.categories && event.categories.includes(interest)) || event.category === interest) ? interestWeight : 0) +
           (level && event.level === level ? levelWeight : 0) +
           (eventType && event.type === eventType.toLowerCase() ? typeWeight : 0);
         const boost = Math.round(selectedBoost / 10);

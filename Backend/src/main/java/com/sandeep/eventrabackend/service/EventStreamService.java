@@ -1,5 +1,6 @@
 package com.sandeep.eventrabackend.service;
 
+import com.sandeep.eventrabackend.dto.response.EventAvailabilityResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -78,15 +79,16 @@ public class EventStreamService {
         for (SseEmitter emitter : emitters) {
             try {
                 emitter.send(SseEmitter.event().name(eventName).data(payload));
-            } catch (Exception ex) {
+            } catch (IOException ex) {
                 removeEmitter(normalized, emitter);
-                try {
-                    emitter.completeWithError(ex);
-                } catch (IllegalStateException ignored) {
-                    // Emitter already completed or closed; nothing left to clean up.
-                }
+                emitter.completeWithError(ex);
             }
         }
+    }
+
+    public void broadcastAvailability(Long eventId, EventAvailabilityResponse availability) {
+        if (eventId == null || availability == null) return;
+        publish("events", "availability", Map.of("eventId", eventId, "availability", availability));
     }
 
     private void removeEmitter(String topic, SseEmitter emitter) {

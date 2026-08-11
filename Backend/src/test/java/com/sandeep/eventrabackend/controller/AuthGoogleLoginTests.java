@@ -22,6 +22,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -72,10 +73,7 @@ class AuthGoogleLoginTests {
                 .role(Role.CLIENT)
                 .build());
 
-        GoogleIdToken.Payload payload = new GoogleIdToken.Payload();
-        payload.put("email", "John@Example.COM");
-        payload.put("given_name", "John");
-        payload.put("family_name", "Doe");
+        GoogleIdToken.Payload payload = verifiedGooglePayload("John@Example.COM", "John", "Doe");
         when(googleAuthService.verifyToken(anyString())).thenReturn(payload);
 
         mockMvc.perform(post("/api/auth/google")
@@ -92,10 +90,7 @@ class AuthGoogleLoginTests {
     @Test
     @DisplayName("Mixed-case Google email creates a single lowercased account when none exists")
     void googleLogin_MixedCaseEmail_CreatesLowercasedAccount() throws Exception {
-        GoogleIdToken.Payload payload = new GoogleIdToken.Payload();
-        payload.put("email", "Jane@Example.COM");
-        payload.put("given_name", "Jane");
-        payload.put("family_name", "Smith");
+        GoogleIdToken.Payload payload = verifiedGooglePayload("Jane@Example.COM", "Jane", "Smith");
         when(googleAuthService.verifyToken(anyString())).thenReturn(payload);
 
         mockMvc.perform(post("/api/auth/google")
@@ -106,5 +101,77 @@ class AuthGoogleLoginTests {
 
         assertEquals(1, userRepository.count());
         assertTrue(userRepository.findByEmail("jane@example.com").isPresent());
+    }
+
+    @Test
+    @DisplayName("Verified Google identity claims an unverified LOCAL account for the same email")
+    void googleLogin_UnverifiedLocal_LinksToGoogle() throws Exception {
+        String originalPasswordHash = passwordEncoder.encode("attacker-password");
+        userRepository.save(User.builder()
+                .firstName("Squatter")
+                .lastName("Local")
+                .email("claim@example.com")
+                .username("squatter")
+                .password(originalPasswordHash)
+                .role(Role.ATTENDEE)
+                .emailVerified(false)
+                .authProvider("LOCAL")
+                .build());
+
+        when(googleAuthService.verifyToken(anyString()))
+                .thenReturn(verifiedGooglePayload("claim@example.com", "Real", "Owner"));
+
+        mockMvc.perform(post("/api/auth/google")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("token", "google-id-token"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("claim@example.com"))
+                .andExpect(jsonPath("$.username").value("squatter"));
+
+        User linked = userRepository.findByEmail("claim@example.com").orElseThrow();
+        assertEquals("GOOGLE", linked.getAuthProvider());
+        assertTrue(linked.isEmailVerified());
+        assertFalse(passwordEncoder.matches("attacker-password", linked.getPassword()));
+        assertEquals(1, userRepository.count());
+    }
+
+    @Test
+    @DisplayName("Verified LOCAL accounts are not converted to Google on Google login")
+    void googleLogin_VerifiedLocal_DoesNotTakeOver() throws Exception {
+        String passwordHash = passwordEncoder.encode("owner-password");
+        userRepository.save(User.builder()
+                .firstName("Owner")
+                .lastName("Local")
+                .email("owner@example.com")
+                .username("owner")
+                .password(passwordHash)
+                .role(Role.ATTENDEE)
+                .emailVerified(true)
+                .authProvider("LOCAL")
+                .build());
+
+        when(googleAuthService.verifyToken(anyString()))
+                .thenReturn(verifiedGooglePayload("owner@example.com", "Other", "Person"));
+
+        mockMvc.perform(post("/api/auth/google")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("token", "google-id-token"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("owner@example.com"));
+
+        User unchanged = userRepository.findByEmail("owner@example.com").orElseThrow();
+        assertEquals("LOCAL", unchanged.getAuthProvider());
+        assertTrue(unchanged.isEmailVerified());
+        assertTrue(passwordEncoder.matches("owner-password", unchanged.getPassword()));
+        assertEquals("Owner", unchanged.getFirstName());
+    }
+
+    private static GoogleIdToken.Payload verifiedGooglePayload(String email, String givenName, String familyName) {
+        GoogleIdToken.Payload payload = new GoogleIdToken.Payload();
+        payload.put("email", email);
+        payload.put("email_verified", true);
+        payload.put("given_name", givenName);
+        payload.put("family_name", familyName);
+        return payload;
     }
 }

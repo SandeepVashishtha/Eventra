@@ -1,3 +1,4 @@
+import useUserPreferences from "hooks/useUserPreferences";
 import { useState, useEffect, useRef } from "react";
 import {
   BarChart, Users, Link as LinkIcon, MessageSquare,
@@ -27,6 +28,11 @@ const EMPTY_ANALYTICS = {
 };
 
 const SponsorDashboard = () => {
+  // Fix: useUserPreferences replaces direct localStorage.getItem/setItem calls
+  // Adds schema validation, cross-tab sync and default backfilling.
+  const { preferences: sponsorPrefs, setPreferences: setSponsorPrefs } =
+    useUserPreferences({ namespace: "sponsor" });
+
   const [activeTab, setActiveTab] = useState("overview");
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [leads, setLeads] = useState([]);
@@ -68,15 +74,15 @@ const SponsorDashboard = () => {
         e
       );
     }
-  }
-}, []);
+  }, [sponsorPrefs]);
 
   const handleSaveSettings = (e) => {
     e.preventDefault();
     setIsSaving(true);
 
     saveTimeoutRef.current = setTimeout(() => {
-      localStorage.setItem("eventra_sponsor_settings", JSON.stringify(settings));
+      // Fix: persist via useUserPreferences instead of raw localStorage
+      setSponsorPrefs(settings);
       setIsSaving(false);
       toast.success("Booth settings updated successfully! Changes will reflect in the Virtual Venue.", {
         icon: <CheckCircle2 className="text-emerald-500" />

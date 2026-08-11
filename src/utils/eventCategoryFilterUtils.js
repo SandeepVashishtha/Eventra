@@ -15,6 +15,11 @@ export const EVENT_CATEGORIES = [
 export const getEventCategory = (event) => {
   if (!event) return "";
 
+  // Return the first category from categories array if available
+  if (event.categories && Array.isArray(event.categories) && event.categories.length > 0) {
+    return event.categories[0];
+  }
+
   return (
     event.category ||
     event.eventCategory ||
@@ -49,7 +54,12 @@ export const filterEventsByCategory = (
       .trim()
       .toLowerCase();
 
-    return eventCategory === selectedCategory;
+    // Also check if the event has the category in its categories array
+    const hasCategoryInArray = event.categories && 
+      Array.isArray(event.categories) && 
+      event.categories.some(cat => cat.trim().toLowerCase() === selectedCategory);
+
+    return eventCategory === selectedCategory || hasCategoryInArray;
   });
 };
 
@@ -68,12 +78,17 @@ export const isEventInCategory = (
     return true;
   }
 
-  return (
-    getEventCategory(event)
-      .trim()
-      .toLowerCase() ===
-    category.trim().toLowerCase()
-  );
+  const normalizedCategory = category.trim().toLowerCase();
+  const eventCategory = getEventCategory(event)
+    .trim()
+    .toLowerCase();
+
+  // Also check if the event has the category in its categories array
+  const hasCategoryInArray = event.categories && 
+    Array.isArray(event.categories) && 
+    event.categories.some(cat => cat.trim().toLowerCase() === normalizedCategory);
+
+  return eventCategory === normalizedCategory || hasCategoryInArray;
 };
 
 /**
@@ -98,6 +113,15 @@ export const getAvailableCategories = (
   const categories = events
     .map(getEventCategory)
     .filter(Boolean);
+
+  // Also add categories from the categories array
+  events.forEach(event => {
+    if (event.categories && Array.isArray(event.categories)) {
+      event.categories.forEach(cat => {
+        if (cat) categories.push(cat);
+      });
+    }
+  });
 
   const normalizedCategories = new Map();
 

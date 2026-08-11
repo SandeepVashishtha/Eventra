@@ -25,6 +25,8 @@ export function useTokenExpiry({ token, user, onExpired }) {
     if (typeof window === "undefined") return;
 
     let hadPreviousSession = false;
+    try { hadPreviousSession = !!syncSecureStorage.getItem("user"); } catch { console.warn("[useTokenExpiry] Failed to read session storage"); }
+    console.warn("[useTokenExpiry] Session expired. Clearing state.");
     try { hadPreviousSession = !!syncSecureStorage.getItem("user"); } catch {}
     logger.warn("[useTokenExpiry] Session expired. Clearing state.");
     onExpired();

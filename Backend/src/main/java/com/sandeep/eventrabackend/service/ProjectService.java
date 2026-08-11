@@ -99,6 +99,26 @@ public class ProjectService {
         return getProjectById(id);
     }
 
+    @Transactional
+    public ProjectResponse forkProject(Long id, String userEmail) {
+        Project source = projectRepository.findById(id)
+                .orElseThrow(() -> new ProjectNotFoundException("Project not found with id: " + id));
+
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + userEmail));
+
+        Project fork = Project.builder()
+                .title(source.getTitle())
+                .description(source.getDescription())
+                .category(source.getCategory())
+                .thumbnailUrl(source.getThumbnailUrl())
+                .githubUrl(source.getGithubUrl())
+                .ownerId(user.getId())
+                .build();
+
+        return toProjectResponse(projectRepository.save(fork));
+    }
+
     private ProjectResponse toProjectResponse(Project project) {
         return ProjectResponse.builder()
                 .id(project.getId())

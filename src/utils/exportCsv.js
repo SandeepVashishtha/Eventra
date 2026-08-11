@@ -68,7 +68,7 @@ const sanitizeCSVField = (field) => {
 export const exportAttendeesToCSV = (attendees, filename = "event-attendees.csv") => {
   if (typeof window === "undefined" || typeof document === "undefined") return;
   if (!attendees || attendees.length === 0) {
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
       window.dispatchEvent(new CustomEvent("eventra-toast", { detail: { message: "No attendees to export", type: "warning" } }));
     }
     return { success: false, reason: "empty" };
