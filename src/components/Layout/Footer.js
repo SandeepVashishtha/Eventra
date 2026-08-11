@@ -1,217 +1,434 @@
-import { Book, BookOpen, Calendar, Folder, Github, Home, Info, Linkedin, MessageCircle, Plus, HelpCircle, Star, Trophy, Users, Mail, MessageSquare } from "lucide-react";
-import { useState } from "react";
+import useToast from "hooks/useToast";
+// Enforced dynamic copyright rendering under issue #2211
+import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
-const footerLinks = {
-  quick_links: [
-    { name: "Home", href: "/", icon: Home },
-    { name: "Events", href: "/events", icon: Calendar },
-    { name: "Hackathons", href: "/hackathons", icon: Star },
-    { name: "Projects", href: "/projects", icon: Folder },
-    { name: "About", href: "/about", icon: Info },
-  ],
-  community: [
-    { name: "Create Event", href: "/create-event", icon: Plus },
-    { name: "Community Events", href: "/communityEvent", icon: Users },
-    { name: "Documentation", href: "/documentation", icon: Book },
-    { name: "Contributors", href: "/contributors", icon: Users },
-    { name: "Contributors Guide", href: "/contributorguide", icon: Book },
-    { name: "Leaderboard", href: "/leaderboard", icon: Trophy },
-  ],
-  support: [
-    { name: "Help Center", href: "/helpcenter", icon: HelpCircle },
-    { name: "FAQ", href: "/faq", icon: HelpCircle },
-    { name: "Contact Us", href: "/contact", icon: Mail },
-    { name: "Feedback", href: "/feedback", icon: MessageSquare },
-    { name: "API Docs", href: "/apiDocs", icon: BookOpen },
-    { name: "Create Event", href: "/create-event", icon: Plus },
-    { name: "Community Events", href: "/community-event", icon: Users },
-    { name: "Documentation", href: "/documentation", icon: Book },
-    { name: "Contributors", href: "/contributors", icon: Users },
-    { name: "Contributors Guide", href: "/contributorguide", icon: Book },
-    { name: "Leaderboard", href: "/leaderboard", icon: Trophy },
-  ],
-};
+import { SiDiscord } from "react-icons/si";
+
+import {
+  FaBook,
+  FaBookOpen,
+  FaCalendarAlt,
+  FaComments,
+  FaEnvelope,
+  FaFolder,
+  FaGithub,
+  FaHome,
+  FaInfoCircle,
+  FaLinkedin,
+  FaPlus,
+  FaQuestion,
+  FaQuestionCircle,
+  FaStar,
+  FaTrophy,
+  FaUsers,
+  FaCode,
+} from "react-icons/fa";
+
+const footerColumns = [
+  {
+    heading: "footer.sections.quickLinks",
+    links: [
+      { nameKey: "footer.links.home", href: "/", icon: <FaHome size={12} /> },
+      { nameKey: "footer.links.events", href: "/events", icon: <FaCalendarAlt size={12} /> },
+      { nameKey: "footer.links.hackathons", href: "/hackathons", icon: <FaStar size={12} /> },
+      { nameKey: "footer.links.projects", href: "/projects", icon: <FaFolder size={12} /> },
+      { nameKey: "footer.links.about", href: "/about", icon: <FaInfoCircle size={12} /> },
+    ],
+  },
+  {
+    heading: "footer.sections.community",
+    links: [
+      { nameKey: "footer.links.createEvent", href: "/create-event", icon: <FaPlus size={12} /> },
+      {
+        nameKey: "footer.links.communityEvents",
+        href: "/community-event",
+        icon: <FaUsers size={12} />,
+      },
+      { nameKey: "footer.links.contributors", href: "/contributors", icon: <FaCode size={12} /> },
+      {
+        nameKey: "footer.links.contributorsGuide",
+        href: "/contributorguide",
+        icon: <FaBook size={12} />,
+      },
+      { nameKey: "footer.links.leaderboard", href: "/leaderboard", icon: <FaTrophy size={12} /> },
+    ],
+  },
+  {
+    heading: "footer.sections.support",
+    links: [
+      {
+        nameKey: "footer.links.documentation",
+        href: "/documentation",
+        icon: <FaBookOpen size={12} />,
+      },
+      {
+        nameKey: "footer.links.helpCenter",
+        href: "/helpcenter",
+        icon: <FaQuestionCircle size={12} />,
+      },
+      { nameKey: "footer.links.faq", href: "/faq", icon: <FaQuestion size={12} /> },
+      { nameKey: "footer.links.contactUs", href: "/contact", icon: <FaEnvelope size={12} /> },
+      { nameKey: "footer.links.feedback", href: "/feedback", icon: <FaComments size={12} /> },
+    ],
+  },
+];
 
 const socialLinks = [
   {
     name: "GitHub",
     href: "https://github.com/sandeepvashishtha/Eventra",
-    icon: Github,
+    icon: <FaGithub size={16} />,
+    label: "Star on GitHub",
   },
   {
     name: "LinkedIn",
     href: "https://www.linkedin.com/in/sandeepvashishtha/",
-    icon: Linkedin,
+    icon: <FaLinkedin size={16} />,
+    label: "LinkedIn",
   },
   {
     name: "Discord",
-    href: "https://discord.com/users/sandeep_vashishtha",
-    icon: MessageCircle,
+    href: "https://discord.gg/6MQ9r5nHT",
+    icon: <SiDiscord size={16} />,
+    label: "Join Discord",
   },
 ];
 
-const ExternalLink = ({ href, children, ...props }) => (
-  <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
+/* ================================
+   Secure External Link Handling
+================================ */
+
+const externalLinkProps = {
+  target: "_blank",
+  rel: "noopener noreferrer",
+};
+
+const ExternalLink = ({ href, children, className, ...props }) => (
+  <a href={href} {...externalLinkProps} className={className} {...props}>
     {children}
   </a>
 );
 
-const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-
-const formatTitle = (str) =>
-  str.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
 const Newsletter = () => {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState("");
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const value = email.trim();
+  const [feedback, setFeedback] = useState({
+    type: "",
+    message: "",
+  });
 
-    if (!value) return setMsg("Enter email");
-    if (!isValidEmail(value)) return setMsg("Invalid email");
+  // 🔥 FIX: Track mounted state to prevent memory leaks on unmount
+  const isMounted = useRef(true);
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
-    setLoading(true);
-    setMsg("");
+  const handleSubmit = async (event) => {
+    event.preventDefault();
 
-    await new Promise((resolve) => setTimeout(resolve, 700));
+    const trimmedEmail = email.trim();
 
-    setMsg("Subscribed!");
-    setEmail("");
-    setLoading(false);
+    if (!trimmedEmail) {
+      setFeedback({
+        type: "error",
+        message: t("footer.newsletter.emailRequired"),
+      });
+
+      return;
+    }
+
+    if (!isValidEmail(trimmedEmail)) {
+      setFeedback({
+        type: "error",
+        message: t("footer.newsletter.emailInvalid"),
+      });
+
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    setFeedback({
+      type: "",
+      message: "",
+    });
+
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // 🔥 FIX: Guard state updates
+      if (isMounted.current) {
+        setFeedback({
+          type: "success",
+          message: t("footer.newsletter.success"),
+        });
+
+        setEmail("");
+      }
+    } catch {
+      // 🔥 FIX: Guard state updates
+      if (isMounted.current) {
+        setFeedback({
+          type: "error",
+          message: t("footer.newsletter.error"),
+        });
+      }
+    } finally {
+      // 🔥 FIX: Guard state updates
+      if (isMounted.current) {
+        setIsSubmitting(false);
+      }
+    }
   };
 
-  return (
-    <div
-      className="w-full max-w-md rounded-2xl border bg-white/60 p-3 shadow-md sm:p-4 backdrop-blur-md"
-      style={{ borderColor: 'rgba(2,6,23,0.06)' }}
-    >
-      <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-        Stay updated
-      </h4>
-      <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-400">
-        Get product updates and community event highlights in your inbox.
-      </p>
+  const feedbackId = "footer-newsletter-feedback";
 
-      <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3 xs:flex-row">
-        <div className="group relative min-w-0 flex-1">
-          <Mail
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 transition-colors duration-200 group-hover:text-indigo-500"
+  const feedbackColor =
+    feedback.type === "success"
+      ? "text-green-600 dark:text-green-400"
+      : "text-red-600 dark:text-red-400";
+
+  return (
+    <div className="max-w-sm">
+      {/* Heading */}
+      <div className="mb-4">
+        <h4 className="text-sm font-medium text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
+          {t("footer.newsletter.heading")}
+        </h4>
+
+        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+          {t("footer.newsletter.description")}
+        </p>
+      </div>
+
+      {/* Newsletter Form */}
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <div className="relative">
+          <FaEnvelope
             size={14}
-            aria-hidden="true"
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
           />
+
           <input
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
             type="email"
-            placeholder="Enter email"
-            aria-label="Newsletter email"
-            className="footer-newsletter-input w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-3 text-sm text-slate-900 outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-indigo-400 hover:bg-indigo-50/40 hover:shadow-[0_8px_24px_rgba(99,102,241,0.14)] focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/15 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:border-indigo-400 dark:hover:bg-slate-900 dark:focus:bg-slate-950"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+
+              if (feedback.message) {
+                setFeedback({
+                  type: "",
+                  message: "",
+                });
+              }
+            }}
+            placeholder={t("footer.newsletter.placeholder")}
+            disabled={isSubmitting}
+            aria-describedby={feedback.message ? feedbackId : undefined}
+            aria-invalid={feedback.type === "error"}
+            className="
+                  w-full
+                  h-11
+                  pl-11
+                  pr-4
+                  rounded-xl
+                  border border-gray-200 dark:border-gray-700
+                  bg-gray-50 dark:bg-gray-900
+                  text-sm
+                  text-gray-900 dark:text-white
+                  placeholder:text-gray-400
+                  focus:outline-none
+                  focus:ring-2
+                  focus:ring-indigo-500
+                  focus:border-transparent
+                  transition-all duration-200
+                "
           />
         </div>
 
         <button
-          disabled={loading}
-          className="footer-newsletter-btn shrink-0 rounded-full bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white transition-shadow hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-slate-200"
-          style={{ boxShadow: '0 8px 28px rgba(224,233,242,0.18)' }}
+          type="submit"
+          disabled={isSubmitting}
+          className="
+                w-full
+                h-11
+                rounded-xl
+                bg-indigo-600
+                hover:bg-indigo-700
+                text-white
+                text-sm
+                font-semibold
+                transition-all
+                duration-200
+                hover:shadow-lg
+                hover:shadow-indigo-500/20
+                disabled:opacity-60
+                disabled:cursor-not-allowed
+              "
         >
-          {loading ? "..." : "Subscribe"}
+          {isSubmitting ? t("footer.newsletter.subscribing") : t("footer.newsletter.subscribe")}
         </button>
       </form>
 
-      {msg && (
-        <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">{msg}</p>
-      )}
+      {/* Feedback / Privacy */}
+      <div className="mt-3 min-h-[20px]" aria-live="polite">
+        {feedback.message ? (
+          <p id={feedbackId} className={`text-xs font-medium ${feedbackColor}`}>
+            {feedback.message}
+          </p>
+        ) : (
+          <p className="text-xs text-gray-400 dark:text-gray-500">
+            🔒 {t("footer.newsletter.privacy")}
+          </p>
+        )}
+      </div>
     </div>
   );
 };
 
-const Social = () => (
-  <div className="flex flex-wrap items-center gap-3">
-    {socialLinks.map(({ name, href, icon: Icon }) => (
-      <ExternalLink
-        key={name}
-        href={href}
-        className="footer-social-btn rounded-full bg-white/80 p-2 text-slate-700 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-slate-200"
-        aria-label={name}
-        style={{ boxShadow: '0 6px 18px rgba(2,6,23,0.04)' }}
-      >
-        <Icon size={16} />
-      </ExternalLink>
-    ))}
-  </div>
-);
-
-const FooterLinks = () => (
-  <div className="grid gap-5 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3 lg:gap-10">
-    {Object.entries(footerLinks).map(([key, links]) => (
-      <div key={key} className="min-w-0">
-        <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-          {formatTitle(key)}
-        </h4>
-
-        <ul className="mt-2 grid gap-2">
-          {links.map(({ name, href, icon: Icon }) => (
-            <li key={name}>
-              <Link
-                to={href}
-                className="footer-nav-link group flex min-h-8 items-center gap-3 rounded-lg text-sm text-slate-600 transition-all duration-500 ease-out hover:translate-x-0.5 hover:text-indigo-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-slate-300 dark:hover:text-indigo-300 sm:min-h-9 sm:hover:translate-x-1"
-              >
-                <Icon
-                  size={15}
-                  className="shrink-0 text-slate-400 transition-all duration-500 ease-out group-hover:scale-110 group-hover:text-indigo-500"
-                />
-                <span className="min-w-0 break-words">{name}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </div>
-    ))}
-  </div>
-);
-
 const Footer = () => {
+  const { success, error } = useToast();
+  const { t } = useTranslation();
   return (
+    
     <footer
-      className="site-footer"
-      style={{ background: 'linear-gradient(180deg, #E0E9F2 0%, #F7FBFF 100%)' }}
-    >
-      <div className="mx-auto grid w-full max-w-7xl gap-10 px-4 py-8 sm:px-6 sm:py-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:gap-12 lg:px-8">
-        <div className="flex min-w-0 flex-col gap-4">
-          <div className="flex items-center gap-3">
-            <img src="/favicon.png" alt="Eventra logo" className="h-10 w-10 shrink-0" />
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-              Eventra
-            </h2>
+     className="relative z-50 bg-white dark:bg-gray-950 border-t border-gray-100 dark:border-gray-800 transition-colors duration-300 hover:border-indigo-100 dark:hover:border-indigo-900">
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* ── Main grid ── */}
+        <div className="py-10 grid grid-cols-1 lg:grid-cols-[1.8fr_1fr_1fr_1fr] gap-8 lg:gap-12">
+          {/* Brand + newsletter */}
+         <div className="space-y-5 md:col-span-2 lg:col-span-1">
+            {/* Logo + tagline */}
+            <div>
+              <Link
+                to="/"
+                className="inline-flex items-center gap-2 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
+              >
+                <span
+                  className="text-xl font-extrabold tracking-tight text-gray-900 dark:text-white group-hover:!text-indigo-600 dark:group-hover:text-indigo-400 transition-all duration-300 group-hover:scale-105 inline-block"
+                  style={{ fontFamily: "Anton, sans-serif", letterSpacing: "-0.01em" }}
+                >
+                  Eventra
+                </span>
+              </Link>
+
+              {/* Open-source badge */}
+              <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800 align-middle transition-all duration-200 hover:bg-indigo-100 dark:hover:bg-indigo-900 hover:scale-110 cursor-default">
+                <FaCode size={9} aria-hidden="true" />
+                Open Source
+              </span>
+
+              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 leading-relaxed max-w-xs">
+                {t("footer.tagline")}
+              </p>
+            </div>
+
+            {/* Social links */}
+            <div className="flex flex-wrap items-center gap-2">
+              {socialLinks.map((s) => (
+                <ExternalLink
+                  key={s.name}
+                  href={s.href}
+                  aria-label={s.label}
+                  title={s.label}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-indigo-50 dark:hover:bg-indigo-950 hover:text-indigo-600 dark:hover:text-indigo-400 border border-gray-200 dark:border-gray-700 hover:border-indigo-200 dark:hover:border-indigo-800 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                >
+                  {s.icon}
+                  <span>{s.name}</span>
+                </ExternalLink>
+              ))}
+            </div>
+
+            {/* Newsletter */}
+            <Newsletter />
           </div>
 
-          <p className="max-w-md text-sm leading-6 text-slate-600">
-            Open-source event management for technical communities - discover, collaborate, and grow together.
-          </p>
-
-          <Newsletter />
-          <Social />
-        </div>
-
-        <div className="min-w-0">
-          <FooterLinks />
-        </div>
-      </div>
-
-      <div className="mt-6">
-        <div className="mx-auto w-full max-w-7xl px-4 pb-8 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-            <p className="text-sm text-slate-600">&copy; {new Date().getFullYear()} Eventra. All rights reserved.</p>
-
-            <div className="flex gap-6">
-              <Link to="/privacy" className="text-sm text-slate-600 hover:text-slate-900">Privacy</Link>
-              <Link to="/terms" className="text-sm text-slate-600 hover:text-slate-900">Terms</Link>
+          {/* Link columns */}
+          {footerColumns.map((col) => (
+            <div key={col.heading} className="min-w-[140px]">
+              <h4 className="text-[12px] leading-tight sm:text-xs font-semibold uppercase tracking-wide sm:tracking-widest text-gray-400 dark:text-gray-500 mb-2 sm:mb-4">
+                {t(col.heading)}
+              </h4>
+              <ul className="space-y-0.05 sm:space-y-2.5">
+                {col.links.map((link) => (
+                  <li key={link.nameKey || link.href}>
+                    <Link
+                      to={link.href}
+                      className="group relative inline-flex items-center gap-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400 hover:!text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded after:absolute after:left-6 after:-bottom-0.5 after:h-px after:w-0 after:bg-indigo-500 after:transition-all after:duration-300 group-hover:after:w-[calc(100%-1.5rem)]"
+                    >
+                      <span className="text-gray-400 dark:text-gray-500 group-hover:!text-indigo-500 dark:group-hover:text-indigo-400 transition-colors duration-200 shrink-0">
+                        {link.icon}
+                      </span>
+                      <span>{t(link.nameKey)}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
+          ))}
+        </div>
+
+        {/* ── Bottom bar ── */}
+        <div className="py-5 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-xs text-gray-400 dark:text-gray-500 transition-colors duration-200 hover:text-gray-600 dark:hover:text-gray-300">
+            © {new Date().getFullYear()} Eventra. <span>{t("footer.rights")}</span>
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+            <span className="font-medium">10K+ Users</span>
+
+            <span className="text-gray-300 dark:text-gray-700">•</span>
+
+            <span className="font-medium">500+ Events</span>
+
+            <span className="text-gray-300 dark:text-gray-700">•</span>
+
+            <span className="font-medium">Privacy Focused</span>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center sm:justify-end gap-x-3 gap-y-2 text-xs text-gray-400 dark:text-gray-500">
+            <Link
+              to="/privacy"
+              className="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
+            >
+              {t("footer.privacy")}
+            </Link>
+            <span className="text-gray-200 dark:text-gray-700" aria-hidden="true">
+              |
+            </span>
+            <Link
+              to="/terms"
+              className="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
+            >
+              {t("footer.terms")}
+            </Link>
+            <span className="text-gray-200 dark:text-gray-700" aria-hidden="true">
+              |
+            </span>
+            <Link
+              to="/cookies"
+              className="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
+            >
+              {t("footer.cookies")}
+            </Link>
+            <span className="text-gray-200 dark:text-gray-700" aria-hidden="true">
+              |
+            </span>
+            <Link
+              to="/api-docs"
+              className="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
+            >
+              {t("footer.links.apiDocs")}
+            </Link>
           </div>
         </div>
       </div>
