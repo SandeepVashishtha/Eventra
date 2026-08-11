@@ -160,6 +160,11 @@ function AnalyticsProvider({ children }) {
 // --- 4.5 Live Audience Coordination Provider ---
 const LiveAudienceContext = createContext(null);
 
+// Maximum number of questions retained per event. The reducer keeps a rolling
+// window so long-running, high-traffic sessions (hackathon demo rooms, live
+// Q&A) do not grow the event history without bound (issue #14611).
+const MAX_LIVE_QUESTIONS = 200;
+
 function liveAudienceReducer(state, action) {
   switch (action.type) {
     case "LOAD_INITIAL": {
@@ -182,7 +187,7 @@ function liveAudienceReducer(state, action) {
           ...state.events,
           [eventId]: {
             ...eventData,
-            questions: [...eventData.questions, question]
+            questions: [...eventData.questions, question].slice(-MAX_LIVE_QUESTIONS)
           }
         }
       };
