@@ -27,25 +27,37 @@ public class UserService {
 
     // Uses authenticated email extracted from Spring Security JWT context
     // to identify and update the currently logged-in user
+    private static final int MAX_NAME_LENGTH = 100;
+
+    private static String sanitizeName(String name, String fieldName) {
+        if (name == null) return null;
+        String trimmed = name.trim();
+        if (trimmed.isEmpty()) return null;
+        if (trimmed.length() > MAX_NAME_LENGTH) {
+            throw new IllegalArgumentException(fieldName + " must be " + MAX_NAME_LENGTH + " characters or less.");
+        }
+        if (trimmed.chars().anyMatch(Character::isISOControl)) {
+            throw new IllegalArgumentException(fieldName + " contains invalid characters.");
+        }
+        return trimmed;
+    }
+
     @Transactional
     public UserProfileResponse updateProfile(
             String authenticatedEmail,
             UpdateUserProfileRequest request
     ) {
 
-        // Fetch currently authenticated user from database
         User user = userRepository.findByEmail(authenticatedEmail)
                 .orElseThrow(() ->
                         new UsernameNotFoundException(
                                 "Authenticated user not found"));
 
-        // Update editable profile fields
-        user.setFirstName(request.getFirstName());
-        user.setLastName(request.getLastName());
+        user.setFirstName(sanitizeName(request.getFirstName(), "First name"));
+        user.setLastName(sanitizeName(request.getLastName(), "Last name"));
 
         User updatedUser = userRepository.save(user);
 
-        // Return updated user profile response
         return mapToProfileResponse(updatedUser);
     }
 
