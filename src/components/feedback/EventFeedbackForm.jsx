@@ -2,6 +2,8 @@ import { Star, MessageSquare, Send, CheckCircle, LogIn, ChevronRight, Loader2 } 
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { safeLocalStorage } from "../../utils/safeStorage";
+import { Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
 import { useAuth } from "context/AuthContext";
 import { fetchEventFeedback, submitEventFeedback } from "utils/feedbackUtils";
@@ -35,19 +37,16 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
   });
 
   useEffect(() => {
-    let isActive = true;
-
-    setSubmitted(false);
-    setRating(0);
-    setHoveredRating(0);
-    setComment("");
-    setStep("form");
-    setSurveyAnswers({
-      venue: 3,
-      content: 3,
-      audioVideo: 3,
-      pacing: 3
-    });
+    const key = `feedback-submitted-${eventId}`;
+    if (safeLocalStorage.getItem(key)) {
+      setSubmitted(true);
+    } else {
+      setSubmitted(false);
+      setRating(0);
+      setHoveredRating(0);
+      setComment("");
+    }
+  }, [eventId]);
 
     if (!eventId || !userId) {
       return () => {
@@ -120,14 +119,10 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await submitEventFeedback({
-        eventId,
-        rating,
-        comment: comment.trim(),
-        survey: surveyAnswers,
-        isAnonymous
-      });
+      // Simulate API submit delay
+      await new Promise((resolve) => setTimeout(resolve, 800));
 
+      safeLocalStorage.setItem(`feedback-submitted-${eventId}`, "true");
       setSubmitted(true);
       toast.success("Feedback & Survey submitted! Thank you for sharing your thoughts.");
     } catch (err) {
@@ -338,7 +333,8 @@ const EventFeedbackForm = ({ eventId, eventTitle = "this event" }) => {
                 Thank you for your feedback!
               </h4>
               <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto mt-2.5">
-                We&apos;ve received your submission. Your rating and comments have been shared with the event organizers.
+                We&apos;ve received your submission. Your rating and comments have been shared with
+                the event organizers.
               </p>
             </div>
           </motion.div>

@@ -1,11 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from "react";
 import { safeJsonParse } from "../utils/safeJsonParse";
+import { safeLocalStorage } from "../utils/safeStorage";
 import { logger } from "../utils/logger";
 
-/**
- * @file useRecentlyViewed.js
- * @description React hook to track, manage, and persist a collection of recently viewed events.
- */
+const STORAGE_KEY = "eventra_recently_viewed";
+const MAX_ITEMS = 10;
 
 /**
  * The key used to persist recently viewed events in localStorage.
@@ -65,98 +64,64 @@ const isEntryFresh = (entry) => {
 /**
  * Top-level helper to load the initial history array.
  */
-const loadInitialHistory = () => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const parsed = safeJsonParse(stored, []);
-      return Array.isArray(parsed) ? parsed.filter(isEntryFresh) : [];
-    }
-    return [];
-  } catch (err) {
-    logger.error('Failed to load recently viewed events:', err);
-    return [];
-  }
-};
-
-/**
- * Top-level helper to save the history array.
- */
-const saveHistory = (items) => {
-  try {
-    if (items.length === 0) {
-      localStorage.removeItem(STORAGE_KEY);
-    } else {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-    }
-    window.dispatchEvent(new Event('local-storage-recently-viewed-update'));
-  } catch (err) {
-    logger.error('Failed to save recently viewed events:', err);
-  }
-};
-
-/**
- * Top-level helper to handle cross-tab storage changes.
- */
-const handleStorageUpdate = (event, callback) => {
-  if (event.key !== STORAGE_KEY) return;
-  if (event.newValue) {
-    const parsed = safeJsonParse(event.newValue, []);
-    const fresh = Array.isArray(parsed) ? parsed.filter(isEntryFresh) : [];
-    callback(fresh);
-  } else {
-    callback([]);
-  }
-};
-
-/**
- * Top-level helper to append/prepend an event to the history array.
- */
-const pushHistoryEvent = (prevList, event) => {
-  const eventId = event?.id;
-  if (!event || !eventId) return prevList;
-  const filtered = prevList.filter((e) => String(e.id) !== String(eventId));
-  const entry = toRecentlyViewedEntry(event);
-  return [entry, ...filtered].slice(0, MAX_ITEMS);
-};
-
-/**
- * Custom React hook for tracking and persisting a list of recently viewed events.
- */
 const useRecentlyViewed = () => {
-  const [recentlyViewed, setRecentlyViewed] = useState(loadInitialHistory);
+  // 🔥 FIX 1: Lazy Initialization + Master's TTL logic combined
+  // Initialize synchronously from localStorage to prevent double-renders and FOUC.
+  const [recentlyViewed, setRecentlyViewed] = useState(() => {
+    const stored = safeLocalStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      try {
+        const parsed = safeJsonParse(stored, []);
+        const fresh = Array.isArray(parsed) ? parsed.filter(isEntryFresh) : [];
+        return fresh;
+      } catch (err) {
+        logger.error("Failed to load recently viewed events:", err);
+        return [];
+      }
+    }
+    return [];
+  });
+
+  // Persist to localStorage whenever state changes
+  useEffect(() => {
+    safeLocalStorage.setItem(STORAGE_KEY, JSON.stringify(recentlyViewed));
+  }, [recentlyViewed]);
 
   useEffect(() => {
     saveHistory(recentlyViewed);
   }, [recentlyViewed]);
 
-  useEffect(() => {
-    const handleStorageChange = (event) => handleStorageUpdate(event, setRecentlyViewed);
-    const handleLocalUpdate = () => setRecentlyViewed(loadInitialHistory());
-    
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('local-storage-recently-viewed-update', handleLocalUpdate);
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('local-storage-recently-viewed-update', handleLocalUpdate);
-    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
-  const addRecentlyViewed = useCallback((event) => {
-    setRecentlyViewed((prev) => pushHistoryEvent(prev, event));
-  }, []);
+  /**
+   * Add or move an event to the front of the recently viewed list.
+   * Stores only the minimal display entry — not the full event object.
+   *
+   * @param {Object} event - Event object to track.
+   */
+  const addRecentlyViewed = useCallback(
+    (event) => {
+      if (!event || !event.id) return;
+
+    setRecentlyViewed((prev) => {
+      const filtered = prev.filter((e) => e.id !== event.id);
+      const entry = toRecentlyViewedEntry(event);
+      return [entry, ...filtered].slice(0, MAX_ITEMS);
+    });
+  }, [setRecentlyViewed]);
 
   const removeRecentlyViewed = useCallback((eventId) => {
-    setRecentlyViewed((prev) => prev.filter((e) => String(e.id) !== String(eventId)));
-  }, []);
+    setRecentlyViewed((prev) => prev.filter((e) => e.id !== eventId));
+  }, [setRecentlyViewed]);
 
   const clearHistory = useCallback(() => {
     setRecentlyViewed([]);
     try {
       localStorage.removeItem(STORAGE_KEY);
     } catch (err) {
-      logger.error('Failed to clear recently viewed events:', err);
+      logger.error("Failed to clear recently viewed events:", err);
     }
   }, []);
 
