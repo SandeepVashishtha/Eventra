@@ -17,6 +17,7 @@ import { useReducedMotion } from "hooks/useReducedMotion";
 import { useOfflineStatus } from "hooks/useOfflineStatus";
 import StatusBadge from "../common/StatusBadge";
 import LazyImage from "../common/LazyImage";
+import { getCategoryByValue } from "constants/eventDefaults";
 
 // Helper functions
 const getEventStatus = (event) => {
@@ -142,7 +143,26 @@ const EventCard = memo(({
       <div className="px-6 py-5 grid grid-cols-2 gap-4 text-sm">
         <div><MapPin size={14} /> {event?.location || "—"}</div>
         <div><Clock size={14} /> {event?.time || "—"}</div>
-        <div><Tag size={14} /> {event?.type || "—"}</div>
+        <div>
+          <Tag size={14} className="inline" /> 
+          {event?.categories && Array.isArray(event.categories) && event.categories.length > 0 ? (
+            <span className="inline-flex flex-wrap gap-1">
+              {event.categories.slice(0, 2).map((catValue) => {
+                const category = getCategoryByValue(catValue);
+                return category ? (
+                  <span
+                    key={catValue}
+                    className={`px-2 py-0.5 text-white text-xs font-semibold rounded ${category.color}`}
+                  >
+                    {category.label}
+                  </span>
+                ) : null;
+              })}
+            </span>
+          ) : (
+            event?.type || event?.category || "—"
+          )}
+        </div>
         <div><Calendar size={14} /> {shortDate}</div>
       </div>
 

@@ -7,6 +7,7 @@ import {
   formatOrganizerEventDate,
   getOrganizerEventStatus,
 } from "../../utils/organizerProfileUtils";
+import { getCategoryByValue } from "constants/eventDefaults";
 
 const OrganizerEventCard = ({ event }) => {
   if (!event) return null;
@@ -22,6 +23,12 @@ const OrganizerEventCard = ({ event }) => {
     event.type ||
     event.category ||
     "Event";
+
+  const categoriesArray = event.categories && Array.isArray(event.categories) && event.categories.length > 0
+    ? event.categories
+    : eventType
+      ? [eventType]
+      : [];
 
   const eventDate =
     event.date ||
@@ -53,9 +60,30 @@ const OrganizerEventCard = ({ event }) => {
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <span className="inline-flex rounded-full bg-indigo-100 px-2.5 py-1 text-xs font-semibold text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">
-            {eventType}
-          </span>
+          <div className="flex flex-wrap gap-1.5">
+            {categoriesArray.slice(0, 3).map((catValue, index) => {
+              const category = getCategoryByValue(catValue);
+              if (category) {
+                return (
+                  <span
+                    key={catValue}
+                    className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold text-white ${category.color}`}
+                  >
+                    {category.label}
+                  </span>
+                );
+              }
+              // Fallback for non-matching categories
+              return (
+                <span
+                  key={catValue}
+                  className="inline-flex rounded-full bg-indigo-100 px-2.5 py-1 text-xs font-semibold text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300"
+                >
+                  {catValue}
+                </span>
+              );
+            })}
+          </div>
 
           <h3 className="mt-3 line-clamp-2 text-lg font-bold text-slate-800 dark:text-white">
             {eventName}

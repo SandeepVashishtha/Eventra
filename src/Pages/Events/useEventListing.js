@@ -253,15 +253,19 @@ const useEventListing = () => {
       filtered = filtered.filter((event) => {
         const cat = event.category?.toLowerCase() || "";
         const type = event.type?.toLowerCase() || "";
+        const categories = event.categories || [];
 
         // Normalize for fuzzy matching (strip non-alphanumerics)
         const norm = (s) => s.replace(/[^a-z0-9]+/g, "");
         const nTarget = norm(target);
         const nCat = norm(cat);
         const nType = norm(type);
+        
+        // Check if any category in categories array matches
+        const nCategories = categories.map(c => norm(c.toLowerCase()));
 
         // Exact category match takes priority (backend enum values)
-        if (nCat === nTarget) return true;
+        if (nCat === nTarget || nCategories.includes(nTarget)) return true;
 
         // Legacy / fuzzy fallback for older event data
         if (target === "hackathon" || target === "hackathons") {

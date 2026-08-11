@@ -275,7 +275,8 @@ const EventDetails = () => {
     return {
       title: sourceEvent.title ? `Copy of ${sourceEvent.title}` : "",
       description: sourceEvent.description || "",
-      category: sourceEvent.category || "",
+      categories: sourceEvent.categories && sourceEvent.categories.length > 0 ? sourceEvent.categories : [],
+      category: sourceEvent.category || sourceEvent.categories?.[0] || "",
       isMultiDay,
       date: isMultiDay ? "" : parsedStartDate,
       startDate: isMultiDay ? parsedStartDate : "",
@@ -905,7 +906,7 @@ ${window.location.href}
           </div>
 
           <div className="mt-12">
-            <EventRecommendations currentEventId={event.id} currentCategory={event.category} />
+            <EventRecommendations currentEventId={event.id} currentCategory={event.category || event.categories?.[0]} />
           </div>
 
           {/* Similar Events — multi-signal recommendation section (#7754)

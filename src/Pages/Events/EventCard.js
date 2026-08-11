@@ -13,6 +13,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 import { BookmarkCheck, Bookmark, MapPin, Calendar, Clock, ArrowRight } from "lucide-react";
+import { categories, getCategoryByValue } from "constants/eventDefaults";
 
 import { isEventBookmarked, addBookmarkedEvent, removeBookmarkedEvent } from "utils/bookmarkUtils";
 import SeatsRemaining from "components/common/SeatsRemaining";
@@ -94,9 +95,28 @@ const EventCard = ({ event, position }) => {
 
         {/* Overlay badges */}
         <div className="absolute top-4 left-4 flex flex-wrap gap-2">
-          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider bg-black/40 backdrop-blur-md text-white border border-white/10">
-            {event.type || event.category || "Event"}
-          </span>
+          {/* Color-coded category badges */}
+          {event.categories && Array.isArray(event.categories) && event.categories.length > 0 ? (
+            event.categories.slice(0, 3).map((catValue) => {
+              const category = getCategoryByValue(catValue);
+              return category ? (
+                <span
+                  key={catValue}
+                  className={`inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider text-white shadow-md ${category.color}`}
+                  style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}
+                >
+                  {category.label}
+                </span>
+              ) : null;
+            })
+          ) : (
+            // Fallback for backward compatibility - single category
+            (event.category || event.type) && (
+              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider bg-black/40 backdrop-blur-md text-white border border-white/10">
+                {event.category || event.type}
+              </span>
+            )
+          )}
           {isUserRegistered && (
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider bg-emerald-500/90 text-white shadow-md">
               Registered

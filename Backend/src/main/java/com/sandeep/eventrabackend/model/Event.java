@@ -58,6 +58,15 @@ public class Event {
     private String category;
 
     /**
+     * Multiple categories for the event to enable better discovery and filtering.
+     * Organizers can select up to 3 predefined categories.
+     */
+    @ElementCollection
+    @CollectionTable(name = "event_categories", joinColumns = @JoinColumn(name = "event_id"))
+    @Column(name = "category")
+    private Set<String> categories = new HashSet<>();
+
+    /**
      * Tags for the event to enable granular filtering and search.
      */
     @ElementCollection
@@ -243,6 +252,24 @@ public class Event {
 
     public void setCategory(String category) {
         this.category = category;
+    }
+
+    public Set<String> getCategories() {
+        return categories;
+    }
+
+    public void setCategories(Set<String> categories) {
+        this.categories = categories;
+    }
+
+    public void addCategory(String category) {
+        if (this.categories.size() < 3) {
+            this.categories.add(category);
+        }
+    }
+
+    public void removeCategory(String category) {
+        this.categories.remove(category);
     }
 
     public Set<String> getTags() {

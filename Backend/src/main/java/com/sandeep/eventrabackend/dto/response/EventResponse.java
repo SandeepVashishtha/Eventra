@@ -51,6 +51,9 @@ public class EventResponse {
     @Schema(description = "Event category for filtering and discovery", example = "Tech")
     private String category;
 
+    @Schema(description = "Multiple categories for the event to enable better discovery and filtering", example = "Tech,Music,Food")
+    private Set<String> categories;
+
     @Schema(description = "Tags for the event to enable granular filtering and search", example = "AI,Conference,2026")
     private Set<String> tags;
 

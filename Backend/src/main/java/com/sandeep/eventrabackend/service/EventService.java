@@ -486,6 +486,9 @@ public class EventService {
                 event.setCapacity(request.getCapacity());
                 event.setImageUrl(request.getImageUrl());
                 event.setCategory(request.getCategory());
+                if (request.getCategories() != null) {
+                    event.setCategories(new HashSet<>(request.getCategories()));
+                }
                 if (request.getTags() != null) {
                         event.setTags(new HashSet<>(request.getTags()));
                 }
@@ -545,6 +548,9 @@ public class EventService {
                 }
                 if (request.getCategory() != null) {
                         event.setCategory(request.getCategory());
+                }
+                if (request.getCategories() != null) {
+                    event.setCategories(new HashSet<>(request.getCategories()));
                 }
                 if (request.getTags() != null) {
                         event.setTags(new HashSet<>(request.getTags()));
@@ -1145,6 +1151,7 @@ public class EventService {
                                 .imageUrl(event.getImageUrl())
                                 .ownerId(event.getOwnerId())
                                 .category(event.getCategory())
+                                .categories(event.getCategories())
                                 .tags(event.getTags())
                                 .status(event.getStatus())
                                 .cancellationReason(event.getCancellationReason())

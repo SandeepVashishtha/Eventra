@@ -303,6 +303,16 @@ export const useEventForm = () => {
     formDataRef.current = formData;
   }, [formData]);
 
+  // Sync category field with categories for backward compatibility
+  useEffect(() => {
+    if (formData.categories && formData.categories.length > 0 && formData.category !== formData.categories[0]) {
+      setFormData(prev => ({
+        ...prev,
+        category: prev.categories[0]
+      }));
+    }
+  }, [formData.categories, formData.category, setFormData]);
+
   const resetForm = useCallback(() => {
     setFormData(getInitialFormData());
     setErrors({});
@@ -316,10 +326,18 @@ export const useEventForm = () => {
     error: submitError,
     success: submitSuccess
   } = useFormSubmit(async (eventData) => {
-    const sanitized = {
+    // Ensure backward compatibility - sync category with categories
+    const dataWithCompatibility = {
       ...eventData,
+      category: eventData.categories && eventData.categories.length > 0 
+        ? eventData.categories[0] 
+        : eventData.category || "",
+      categories: eventData.categories || [],
       description: sanitizeHtml(eventData.description || ""),
     };
+    
+    const sanitized = dataWithCompatibility;
+    
     if (!API_ENDPOINTS.EVENTS.CREATE) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       return { id: "mock-event-id", success: true };
@@ -366,7 +384,18 @@ export const useEventForm = () => {
     }
 
     if (!data.description?.trim()) newErrors.description = "Event description is required";
-    if (!data.category) newErrors.category = "Please select a category";
+    
+    // Validate categories (new multi-select field)
+    if (!data.categories || data.categories.length === 0) {
+      newErrors.categories = "Please select at least one category";
+    } else if (data.categories.length > 3) {
+      newErrors.categories = "You can select a maximum of 3 categories";
+    }
+    
+    // Backward compatibility - keep category field in sync
+    if (data.categories && data.categories.length > 0 && !data.category) {
+      newErrors.category = "Please select a category";
+    }
 
     if (data.isMultiDay) {
       if (!data.startDate) {
