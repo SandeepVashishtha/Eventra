@@ -205,15 +205,24 @@ public class AuthService {
 
     public void logout(String accessToken, String refreshToken) {
         if (accessToken != null && !accessToken.isBlank()) {
-            java.util.Date expiration = jwtTokenProvider.getExpirationDateFromToken(accessToken);
-            tokenBlacklistService.addToBlacklist(accessToken, expiration);
+            try {
+                java.util.Date expiration = jwtTokenProvider.getExpirationDateFromTokenAllowExpired(accessToken);
+                tokenBlacklistService.addToBlacklist(accessToken, expiration);
+            } catch (RuntimeException ex) {
+                // Best-effort blacklist: expired or malformed tokens must not block logout.
+            }
         }
 
-        if (refreshToken != null && !refreshToken.isBlank()
-                && jwtTokenProvider.validateToken(refreshToken)
-                && jwtTokenProvider.isRefreshToken(refreshToken)) {
-            java.util.Date refreshExpiration = jwtTokenProvider.getExpirationDateFromToken(refreshToken);
-            tokenBlacklistService.addToBlacklist(refreshToken, refreshExpiration);
+        if (refreshToken != null && !refreshToken.isBlank()) {
+            try {
+                if (jwtTokenProvider.isRefreshToken(refreshToken)) {
+                    java.util.Date refreshExpiration =
+                            jwtTokenProvider.getExpirationDateFromTokenAllowExpired(refreshToken);
+                    tokenBlacklistService.addToBlacklist(refreshToken, refreshExpiration);
+                }
+            } catch (RuntimeException ex) {
+                // Best-effort blacklist for refresh token as well.
+            }
         }
     }
 

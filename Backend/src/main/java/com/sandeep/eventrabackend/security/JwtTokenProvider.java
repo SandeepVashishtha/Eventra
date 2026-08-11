@@ -118,6 +118,21 @@ public class JwtTokenProvider {
         return parseClaims(token).getExpiration();
     }
 
+    /**
+     * Returns the JWT expiration even when the token is expired (for best-effort
+     * blacklisting during logout). Returns null if the token cannot be parsed.
+     */
+    public Date getExpirationDateFromTokenAllowExpired(String token) {
+        try {
+            return parseClaims(token).getExpiration();
+        } catch (ExpiredJwtException ex) {
+            return ex.getClaims().getExpiration();
+        } catch (RuntimeException ex) {
+            logger.debug("Unable to read expiration from token: {}", ex.getMessage());
+            return null;
+        }
+    }
+
     public Date getIssuedAtDateFromToken(String token) {
         return parseClaims(token).getIssuedAt();
     }
