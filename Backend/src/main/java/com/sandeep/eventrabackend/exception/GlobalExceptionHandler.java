@@ -108,10 +108,20 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(
             DataIntegrityViolationException ex,
             HttpServletRequest request) {
-        // e.g. a concurrent duplicate upvote hitting the (project_id, user_id)
-        // unique constraint should surface as a conflict, not a 500 (#11776).
-        return buildError(HttpStatus.CONFLICT, "Conflict",
-                "This resource already exists or was modified concurrently. Please try again.", request);
+        // A duplicate hitting a unique constraint (e.g. a repeat upvote on the
+        // (project_id, user_id) pair) is a genuine conflict → 409 (#11776).
+        // Any other integrity violation (NOT NULL, foreign key, CHECK, data too
+        // long...) is a client-side data problem and must surface as a 400, not
+        // a misleading 409.
+        String cause = ex.getMostSpecificCause() != null
+                ? ex.getMostSpecificCause().getMessage()
+                : ex.getMessage();
+        if (cause != null && cause.toLowerCase().contains("unique")) {
+            return buildError(HttpStatus.CONFLICT, "Conflict",
+                    "This resource already exists or was modified concurrently. Please try again.", request);
+        }
+        return buildError(HttpStatus.BAD_REQUEST, "Bad Request",
+                "The submitted data is invalid or conflicts with existing data. Please review and try again.", request);
     }
 
     @ExceptionHandler(FeedbackAlreadyExistsException.class)
