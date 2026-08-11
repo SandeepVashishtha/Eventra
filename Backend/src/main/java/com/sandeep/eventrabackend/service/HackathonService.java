@@ -1,5 +1,8 @@
 package com.sandeep.eventrabackend.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.sandeep.eventrabackend.dto.request.HackathonCreateRequest;
 import com.sandeep.eventrabackend.dto.response.HackathonRegistrationResponse;
 import com.sandeep.eventrabackend.dto.response.HackathonResponse;
@@ -27,6 +30,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class HackathonService {
+
+    private static final Logger log = LoggerFactory.getLogger(HackathonService.class);
 
     private final HackathonRepository hackathonRepository;
     private final HackathonRegistrationRepository hackathonRegistrationRepository;
@@ -79,6 +84,7 @@ public class HackathonService {
                 .build();
 
         Hackathon saved = hackathonRepository.save(hackathon);
+        log.info("[AUDIT LOG] Administrative Action: HACKATHON_SOFT_DELETE | HackathonID: {} | Title: {}", hackathon.getId(), hackathon.getTitle());
         return mapToResponse(saved);
     }
 
@@ -118,6 +124,8 @@ public class HackathonService {
         hackathon.setImageUrl(request.getImageUrl());
 
         Hackathon updated = hackathonRepository.save(hackathon);
+        log.info("[AUDIT LOG] Administrative Action: HACKATHON_SOFT_DELETE | HackathonID: {} | Title: {}", hackathon.getId(), hackathon.getTitle());
+        log.info("[AUDIT LOG] Administrative Action: HACKATHON_UPDATE | HackathonID: {} | UpdatedTitle: {}", updated.getId(), updated.getTitle());
         return mapToResponse(updated);
     }
 
@@ -175,6 +183,7 @@ public class HackathonService {
                 .orElseThrow(() -> new HackathonNotFoundException("Hackathon not found with id: " + id));
         hackathon.setDeleted(true);
         hackathonRepository.save(hackathon);
+        log.info("[AUDIT LOG] Administrative Action: HACKATHON_SOFT_DELETE | HackathonID: {} | Title: {}", hackathon.getId(), hackathon.getTitle());
     }
 
     private HackathonResponse mapToResponse(Hackathon hackathon) {
