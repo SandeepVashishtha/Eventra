@@ -102,11 +102,6 @@ export const calculateReadTime = (text) => {
   return minutes;
 };
 
-/**
- * Format read time for display
- * @param {number} minutes - Read time in minutes
- * @returns {string} - Formatted string (e.g., "2 min read")
- */
 export const formatReadTime = (minutes) => {
   if (!minutes || minutes <= 0) return "";
   if (minutes === 1) return "1 min read";

@@ -1,6 +1,8 @@
 // serviceWorkerRegistration.js
 // Registers the PWA service worker with dynamic lifecycle hooks to improve offline access.
 
+import { logger } from "./utils/logger";
+
 const isLocalhost = Boolean(
   window.location.hostname === 'localhost' ||
     // [::1] is the IPv6 localhost address.
@@ -9,11 +11,20 @@ const isLocalhost = Boolean(
     window.location.hostname.match(/^127(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/)
 );
 
-const isDev = process.env.NODE_ENV === 'development';
+const runtimeEnv =
+  typeof import.meta !== "undefined" && import.meta.env
+    ? import.meta.env
+    : typeof process !== "undefined" && process.env
+      ? process.env
+      : {};
+
+const isDev = runtimeEnv.DEV ?? runtimeEnv.NODE_ENV === 'development';
+const publicBaseUrl = runtimeEnv.BASE_URL || "/";
+const isProd = runtimeEnv.PROD ?? runtimeEnv.NODE_ENV === "production";
 
 const log = (...args) => {
   if (isDev) {
-    console.log(...args);
+    logger.info(...args);
   }
 };
 
@@ -40,16 +51,16 @@ const retryServiceWorkerOperation = async (
 };
 
 export function register(config) {
-  if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
+  if (isProd && 'serviceWorker' in navigator) {
     // The URL constructor is available in all browsers that support SW.
-    const publicUrl = new URL(process.env.PUBLIC_URL, window.location.href);
+    const publicUrl = new URL(publicBaseUrl, window.location.href);
     if (publicUrl.origin !== window.location.origin) {
       // Service worker won't work if PUBLIC_URL is on a different origin
       return;
     }
 
     window.addEventListener('load', () => {
-      const swUrl = `${process.env.PUBLIC_URL}/service-worker.js`;
+      const swUrl = `${publicUrl.pathname.replace(/\/$/, "")}/service-worker.js`;
 
       if (isLocalhost) {
         // This is running on localhost. Let's check if a service worker still exists or not.
@@ -79,7 +90,19 @@ function registerValidSW(swUrl, config) {
           log('[Service Worker] Cache updated to version:', event.data.version);
           window.dispatchEvent(new CustomEvent('sw-cache-updated', { detail: event.data }));
         }
+        if (event.data && (event.data.type === 'EVENTRA_BACKGROUND_SYNC' || event.data.type === 'SYNC_REQUESTED')) {
+          // The SW fired the offline queue background sync; re-dispatch as a
+          // DOM CustomEvent so the hook (and any other client) can react.
+          window.dispatchEvent(new CustomEvent('eventra-background-sync', { detail: event.data }));
+        }
       });
+
+      if ('periodicSync' in registration && registration.periodicSync) {
+        registration.periodicSync.register('eventra-data-sync', {
+          minInterval: 24 * 60 * 60 * 1000,
+        }).catch((err) => logger.warn("[SW] PeriodicSync registration failed:", err));
+      }
+
       registration.onupdatefound = () => {
         const installingWorker = registration.installing;
         if (installingWorker == null) {
@@ -88,14 +111,8 @@ function registerValidSW(swUrl, config) {
         installingWorker.onstatechange = () => {
           if (installingWorker.state === 'installed') {
             if (navigator.serviceWorker.controller) {
-              // At this point, the updated precached content has been fetched,
-              // but the previous service worker will still serve the older
-              // content until all client tabs are closed.
-              log(
-                'New content is available and will be used when all tabs for this page are closed. See https://cra.link/pwa.'
-              );
+              window.dispatchEvent(new CustomEvent('sw-update-available', { detail: { registration } }));
 
-              // Execute callback
               if (config && config.onUpdate) {
                 config.onUpdate(registration);
               }
@@ -115,7 +132,7 @@ function registerValidSW(swUrl, config) {
     })
     .catch((error) => {
       if (isDev) {
-        console.error(
+        logger.error(
           'Error during service worker registration:',
           error
         );
@@ -135,11 +152,15 @@ function checkValidServiceWorker(swUrl, config) {
         response.status === 404 ||
         (contentType != null && contentType.indexOf('javascript') === -1)
       ) {
-        // No service worker found. Probably a different app. Reload the page.
-        navigator.serviceWorker.ready.then((registration) => {
-          registration.unregister().then(() => {
+        // No service worker found. Unregister if exists and reload.
+        navigator.serviceWorker.getRegistration().then((registration) => {
+          if (registration) {
+            registration.unregister().then(() => {
+              window.location.reload();
+            });
+          } else {
             window.location.reload();
-          });
+          }
         });
       } else {
         // Service worker found. Proceed as normal.
@@ -155,12 +176,22 @@ export function unregister() {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.ready
       .then((registration) => {
-        registration.unregister();
+        return registration.unregister(); // return Promise<boolean> so rejections propagate to .catch()
       })
       .catch((error) => {
         if (isDev) {
-          console.error(error.message);
+          logger.error(error.message);
         }
       });
+  }
+}
+
+export function registerWaitlistBackgroundSync(promotionToken) {
+  if ('serviceWorker' in navigator && 'SyncManager' in window) {
+    navigator.serviceWorker.ready
+      .then((registration) => {
+        return registration.sync.register(`sync-waitlist-promotion:${promotionToken}`);
+      })
+      .catch((err) => log("[SW] Background sync registration skipped/failed:", err));
   }
 }

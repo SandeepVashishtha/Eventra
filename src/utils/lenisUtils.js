@@ -1,6 +1,5 @@
 /**
- * Lenis Smooth Scrolling Utilities
- * Provides helper functions for controlling Lenis scroll behavior
+ * Lenis Smooth Scroll Debouncing & Image Aspect-Ratio Bounding Box Utility (#13911)
  */
 
 /**
@@ -25,24 +24,17 @@ export const scrollToElement = (target, options = {}) => {
   }
 };
 
-/**
- * Scroll to top of the page
- * @param {Object} options - Scroll options
- */
-export const scrollToTop = (options = {}) => {
-  if (window.lenis) {
-    window.lenis.scrollTo(0, {
-      duration: 1.2,
-      ...options,
-    });
-    return;
+export function notifyLenisResize(delayMs = 150) {
+  if (resizeTimeout) {
+    clearTimeout(resizeTimeout);
   }
 
-  window.scrollTo({
-    top: 0,
-    behavior: options.behavior || "smooth",
-  });
-};
+  resizeTimeout = setTimeout(() => {
+    if (typeof window !== "undefined" && window.lenis && typeof window.lenis.resize === "function") {
+      window.lenis.resize();
+    }
+  }, delayMs);
+}
 
 /**
  * Stop Lenis scrolling (useful for modals)
