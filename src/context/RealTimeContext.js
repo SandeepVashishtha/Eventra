@@ -30,6 +30,20 @@ const initialAnalyticsState = {
 };
 
 // --- 3. Split the Reducers ---
+// Shared id-based dedupe used to merge snapshot lists with events already
+// applied live via SSE (issue #14610).
+function mergeUniqueById(...lists) {
+  const byId = new Map();
+  for (const list of lists) {
+    for (const item of list || []) {
+      const key = item && (item.id ?? item.eventId);
+      if (key === undefined || key === null || key === "") continue;
+      if (!byId.has(key)) byId.set(key, item);
+    }
+  }
+  return Array.from(byId.values());
+}
+
 function leaderboardReducer(state, action) {
   switch (action.type) {
     case "UPDATE":
@@ -53,8 +67,24 @@ function analyticsReducer(state, action) {
         recentCheckins: [action.payload, ...state.recentCheckins.slice(0, 49)],
         liveCount: state.liveCount + 1,
       };
-    case "UPDATE":
-      return { ...state, ...action.payload };
+    case "UPDATE": {
+      const incoming = action.payload || {};
+      // Metrics-only update (liveCount / scanVelocity) — nothing to merge.
+      if (!Array.isArray(incoming.recentCheckins)) {
+        return { ...state, ...incoming };
+      }
+      // Snapshot (reconnect / initial load): merge with the check-ins already
+      // applied via SSE by id instead of replacing them wholesale, so events
+      // streamed while the snapshot was in flight are not lost. liveCount is
+      // recomputed from the merged set rather than trusting the snapshot total.
+      const mergedCheckins = mergeUniqueById(state.recentCheckins, incoming.recentCheckins);
+      return {
+        ...state,
+        ...incoming,
+        recentCheckins: mergedCheckins.slice(0, 50),
+        liveCount: mergedCheckins.length,
+      };
+    }
     case "STATUS":
       return { ...state, status: action.payload };
     default:
@@ -164,11 +194,26 @@ function liveAudienceReducer(state, action) {
   switch (action.type) {
     case "LOAD_INITIAL": {
       const { eventId, questions, activePoll } = action.payload;
+      const existing = state.events[eventId] || { questions: [], activePoll: null };
+      // Merge the snapshot with questions already applied via SSE (e.g. a
+      // question streamed before the snapshot resolved) instead of replacing
+      // them wholesale. The snapshot wins for ids it already knows; ids only
+      // known locally are retained.
+      const mergedById = new Map();
+      for (const q of existing.questions || []) {
+        if (q && q.id !== undefined && q.id !== null) mergedById.set(q.id, q);
+      }
+      for (const q of questions || []) {
+        if (q && q.id !== undefined && q.id !== null) mergedById.set(q.id, q);
+      }
       return {
         ...state,
         events: {
           ...state.events,
-          [eventId]: { questions, activePoll }
+          [eventId]: {
+            questions: Array.from(mergedById.values()),
+            activePoll: activePoll ?? existing.activePoll,
+          }
         }
       };
     }
