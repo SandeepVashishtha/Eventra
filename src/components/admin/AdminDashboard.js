@@ -44,6 +44,7 @@ import {
   deleteAdminEvent,
   fetchAdminStats,
   updateAdminUserRole,
+  updateAdminEvent,
 } from "services/adminService";
 import { safeJsonParse } from "utils/safeJsonParse";
 
@@ -299,24 +300,50 @@ const AdminDashboard = () => {
 
   const handleIncreaseCapacity = async () => {
     if (!selectedWaitlistEvent) return;
+    const currentCapacity =
+      Number(selectedWaitlistEvent.maxAttendees ?? selectedWaitlistEvent.capacity) || 0;
+    const currentAttendees =
+      Number(selectedWaitlistEvent.attendees ?? selectedWaitlistEvent.registeredCount) || 0;
     const newCapStr = window.prompt(
       "Enter new capacity for this event:",
-      (Number(selectedWaitlistEvent.maxAttendees) || 0) + 10
+      currentCapacity + 10
     );
     if (!newCapStr) return;
     const newCap = parseInt(newCapStr, 10);
-    if (isNaN(newCap) || newCap <= (selectedWaitlistEvent.maxAttendees || 0)) {
+    if (isNaN(newCap) || newCap <= currentCapacity) {
       toast.error("Please enter a valid capacity greater than current capacity.");
       return;
     }
 
     try {
+      const eventDate = selectedWaitlistEvent.eventDate;
+      const normalizedEventDate =
+        typeof eventDate === "string"
+          ? eventDate.replace(/\.\d{3}Z$/, "").replace(/Z$/, "").slice(0, 19)
+          : eventDate;
+
+      // Persist capacity on the server before promoting waitlisted users.
+      await updateAdminEvent(selectedWaitlistEvent.id, {
+        title: selectedWaitlistEvent.title,
+        description: selectedWaitlistEvent.description,
+        location: selectedWaitlistEvent.location,
+        eventDate: normalizedEventDate,
+        capacity: newCap,
+        isPublic: selectedWaitlistEvent.public ?? selectedWaitlistEvent.isPublic,
+        category: selectedWaitlistEvent.category,
+        ...(selectedWaitlistEvent.imageUrl
+          ? { imageUrl: selectedWaitlistEvent.imageUrl }
+          : {}),
+        ...(selectedWaitlistEvent.tags ? { tags: selectedWaitlistEvent.tags } : {}),
+      });
+
       const { handleCapacityIncrease } = await import("utils/waitlistUtils.js");
 
       const updatedEvent = {
         ...selectedWaitlistEvent,
         maxAttendees: newCap,
-        attendees: selectedWaitlistEvent.attendees,
+        capacity: newCap,
+        attendees: currentAttendees,
       };
 
       const promotedCount = await handleCapacityIncrease(updatedEvent, newCap, user?.id);
@@ -327,7 +354,8 @@ const AdminDashboard = () => {
         const parsed = safeJsonParse(raw, null);
         if (parsed?.event) {
           parsed.event.maxAttendees = newCap;
-          parsed.event.attendees = (Number(parsed.event.attendees) || 0) + promotedCount;
+          parsed.event.capacity = newCap;
+          parsed.event.attendees = currentAttendees + promotedCount;
           localStorage.setItem(cacheKey, JSON.stringify(parsed));
         }
       }
@@ -335,7 +363,9 @@ const AdminDashboard = () => {
       setSelectedWaitlistEvent((prev) => ({
         ...prev,
         maxAttendees: newCap,
-        attendees: (Number(prev.attendees) || 0) + promotedCount,
+        capacity: newCap,
+        attendees: currentAttendees + promotedCount,
+        registeredCount: currentAttendees + promotedCount,
       }));
 
       loadEvents(eventsPage, searchEvent);
@@ -1223,7 +1253,8 @@ const AdminDashboard = () => {
 
             <div className="mb-4 flex items-center justify-between bg-slate-50 dark:bg-slate-800/40 p-3 rounded-xl">
               <span className="text-xs font-semibold text-slate-650 dark:text-slate-400">
-                Capacity: {selectedWaitlistEvent.attendees} / {selectedWaitlistEvent.maxAttendees}{" "}
+                Capacity: {selectedWaitlistEvent.attendees ?? selectedWaitlistEvent.registeredCount} /{" "}
+                {selectedWaitlistEvent.maxAttendees ?? selectedWaitlistEvent.capacity}{" "}
                 registered
               </span>
               <button
