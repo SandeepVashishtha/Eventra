@@ -54,7 +54,7 @@ This Code of Conduct applies within all project spaces, both public and private,
 
 ### Enforcement
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by contacting the project team at sandeepvashishtha@outlook.in.
+Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by contacting the project team at <sandeepvashishtha@outlook.in>.
 
 All complaints will be reviewed and investigated promptly, fairly, and confidentially. The project team will:
 
@@ -76,8 +76,8 @@ All participants are expected to cooperate in investigations and comply with any
 
 ### Attribution
 
-This Code of Conduct is adapted from the [Contributor Covenant](https://www.contributor-covenant.org/), version 2.0, available at https://www.contributor-covenant.org/version/2/0/code_of_conduct/.
-
+This Code of Conduct is adapted from the [Contributor Covenant](https://www.contributor-covenant.org/), version 2.0, available at <https://www.contributor-covenant.org/version/2/0/code_of_conduct/>.
 
 ### Incident Enforcement & Reporting Policy
+
 - Maintain clear reporting paths to SandeepVashishtha maintainer group.

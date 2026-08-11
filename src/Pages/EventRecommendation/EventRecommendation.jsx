@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import {
   X,
   Sliders,
@@ -6,28 +6,24 @@ import {
   AlertCircle,
   Sparkles,
   ChevronRight,
+  FilterX,
 } from "lucide-react";
-import toast, { Toaster } from "react-hot-toast";
-import {
-  generateAIInsights
-} from "../../services/aiRecommendationService";
+import { showSuccessToast } from "utils/toast";
+import EmptyState from "components/common/EmptyState";
 
 import {
   getUserProfile
-} from "../../utils/userProfileAnalyzer";
+} from "utils/userProfileAnalyzer";
 import {
   buildPersonalizedRecommendations,
   getTrendingEventsForArea,
-} from "../../utils/recommendationEngine";
-import { useAuth } from "../../context/AuthContext";
-import { useMyEvents } from "../../context/MyEventsContext";
-import useBookmarks from "../../hooks/useBookmarks";
-import useRecentlyViewed from "../../hooks/useRecentlyViewed";
-import {
-  getBookmarkedEvents,
-  subscribeToBookmarkChanges,
-} from "../../utils/bookmarkUtils";
+} from "utils/recommendationEngine";
+import { useAuth } from "context/AuthContext";
+import { useMyEvents } from "context/MyEventsContext";
+import useBookmarks from "hooks/useBookmarks";
+import useRecentlyViewed from "hooks/useRecentlyViewed";
 import mockEvents from "../Events/eventsMockData.json";
+import { EventCardSkeleton } from "components/common/SkeletonLoaders";
 
 
 const EventRecommendation = () => {
@@ -35,7 +31,6 @@ const EventRecommendation = () => {
   const { myEvents, addRegistration } = useMyEvents();
   const { bookmarks } = useBookmarks(user?.id || user?.email || "guest");
   const { recentlyViewed } = useRecentlyViewed();
-  const [globalBookmarks, setGlobalBookmarks] = useState(() => getBookmarkedEvents());
 
   const events = useMemo(
     () =>
@@ -48,7 +43,7 @@ const EventRecommendation = () => {
             : event.price > 500
               ? "Advanced"
               : "Intermediate"),
-        tag: event.tags?.[0] || event.category,
+        tag: event.tags?.[0] || (event.categories && event.categories.length > 0 ? event.categories[0] : event.category),
       })),
     [],
   );
@@ -65,51 +60,18 @@ const EventRecommendation = () => {
   const [interestWeight, setInterestWeight] = useState(40);
   const [levelWeight, setLevelWeight] = useState(30);
   const [typeWeight, setTypeWeight] = useState(30);
-  
+
   // Selected Event Modal State
   const [selectedEvent, setSelectedEvent] = useState(null);
 
-  const [aiInsights, setAiInsights] = useState("");
-
-  const [insightLoading, setInsightLoading] = useState(false);
-
-  useEffect(() => subscribeToBookmarkChanges(setGlobalBookmarks), []);
-
-  useEffect(() => {
-
-  const loadInsights = async () => {
-
-    if (!selectedEvent) return;
-
-    setInsightLoading(true);
-
-    const profile =
-      getUserProfile();
-
-    const insights =
-      await generateAIInsights(
-        selectedEvent,
-        profile
-      );
-
-    setAiInsights(insights);
-
-    setInsightLoading(false);
-
-  };
-
-  loadInsights();
-
-}, [selectedEvent]);
-
   const userProfile = useMemo(() => getUserProfile(), []);
   const preferredLocation = useMemo(() => {
-    const sources = [...myEvents, ...bookmarks, ...globalBookmarks, ...recentlyViewed]
+    const sources = [...myEvents, ...bookmarks, ...recentlyViewed]
       .map((entry) => entry?.event?.location || entry?.eventSummary?.location || entry?.location)
       .filter((locationValue) => locationValue && locationValue !== "Online");
 
     return sources[0] || user?.location || "";
-  }, [bookmarks, globalBookmarks, myEvents, recentlyViewed, user]);
+  }, [bookmarks, myEvents, recentlyViewed, user]);
 
   const trendingNearby = useMemo(
     () => getTrendingEventsForArea(events, preferredLocation, 4),
@@ -120,7 +82,7 @@ const EventRecommendation = () => {
     setHasSearched(true);
     setLoading(true);
     setShowOtherEvents(false);
-    
+
     // Track execution for onboarding checklist
     localStorage.setItem("eventra_ai_recommendation_generated", "true");
 
@@ -136,13 +98,13 @@ const EventRecommendation = () => {
         events,
         userProfile: selectedProfile,
         registeredEvents: myEvents,
-        bookmarkedEvents: [...bookmarks, ...globalBookmarks],
+        bookmarkedEvents: bookmarks,
         viewedEvents: recentlyViewed,
         location: preferredLocation,
         limit: events.length,
       }).map((event) => {
         const selectedBoost =
-          (interest && event.category === interest ? interestWeight : 0) +
+          (interest && ((event.categories && event.categories.includes(interest)) || event.category === interest) ? interestWeight : 0) +
           (level && event.level === level ? levelWeight : 0) +
           (eventType && event.type === eventType.toLowerCase() ? typeWeight : 0);
         const boost = Math.round(selectedBoost / 10);
@@ -313,7 +275,7 @@ const EventRecommendation = () => {
                   <Sliders size={16} className="text-primary" />
                   <span>Recommendation Weights</span>
                 </div>
-                
+
                 <div className="space-y-3">
                   <div>
                     <div className="flex justify-between text-xs font-medium mb-1 text-text-light">
@@ -391,27 +353,26 @@ const EventRecommendation = () => {
 
             {/* Loading */}
             {loading ? (
-
-              <div className="flex flex-col items-center justify-center py-20">
-
-                <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-
-                <p className="mt-5 text-text-light">
+              <>
+                <div className="sr-only" role="status" aria-live="polite">
                   Searching recommendations...
-                </p>
-
-              </div>
-
+                </div>
+                <div className="grid md:grid-cols-2 gap-4" aria-hidden="true">
+                  {[...Array(4)].map((_, i) => (
+                    <EventCardSkeleton key={i} />
+                  ))}
+                </div>
+              </>
             ) : recommendedEvents.length > 0 ? (
 
               <>
                 {/* Recommendations */}
                 <div className="grid md:grid-cols-2 gap-4">
 
-                  {recommendedEvents.map((event, index) => (
+                  {recommendedEvents.map((event) => (
 
                     <div
-                      key={index}
+                      key={event.id}
                       className="rounded-2xl border border-border p-5 hover:shadow-md transition-all bg-bg"
                     >
 
@@ -427,7 +388,7 @@ const EventRecommendation = () => {
 
                       </div>
 
-                      <h3 className="text-lg font-bold text-text">
+                      <h3 title={event.title} className="text-lg font-bold text-text line-clamp-2 break-words min-w-0">
                         {event.title}
                       </h3>
 
@@ -475,14 +436,14 @@ const EventRecommendation = () => {
 
                     <div className="grid md:grid-cols-2 gap-4">
 
-                      {otherEvents.map((event, index) => (
+                      {otherEvents.map((event) => (
 
                         <div
-                          key={index}
+                          key={event.id}
                           className="rounded-2xl border border-border p-5 bg-bg"
                         >
 
-                          <h3 className="text-lg font-bold text-text">
+                          <h3 title={event.title} className="text-lg font-bold text-text line-clamp-2 break-words min-w-0">
                             {event.title}
                           </h3>
 
@@ -503,69 +464,40 @@ const EventRecommendation = () => {
               </>
 
             ) : !hasSearched ? (
-
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-
-                <h3 className="text-xl font-semibold text-text">
-                  Ready to Discover Events?
-                </h3>
-
-                <p className="mt-2 text-sm text-text-light max-w-md">
-                  Select your preferences and generate personalized recommendations.
-                </p>
-
-              </div>
-
+              <EmptyState
+                type="default"
+                icon={<Sparkles size={48} className="text-primary animate-pulse" />}
+                title="Ready to Discover Events?"
+                message="Select your preferences and generate personalized recommendations."
+              />
             ) : (
-
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-
-                <h3 className="text-xl font-semibold text-text">
-                  No Relevant Events Found
-                </h3>
-
-                <p className="mt-2 text-sm text-text-light max-w-md">
-                  Try changing your interests, skill level, or event type.
-                </p>
-
-                <button
-                  onClick={() =>
-                    setShowOtherEvents(!showOtherEvents)
-                  }
-                  className="mt-6 px-5 py-3 rounded-xl bg-primary hover:opacity-90 text-white text-sm font-medium transition-all"
-                >
-                  Explore All Events
-                </button>
+              <>
+                <EmptyState
+                  type="filters"
+                  icon={<FilterX size={48} className="text-gray-400" />}
+                  title="No Relevant Events Found"
+                  message="Try changing your interests, skill level, or recommendation weights to discover more events."
+                  onBrowseAll={() => setShowOtherEvents(!showOtherEvents)}
+                />
 
                 {showOtherEvents && (
-
                   <div className="mt-8 w-full grid md:grid-cols-2 gap-4">
-
-                    {events.map((event, index) => (
-
+                    {events.map((event) => (
                       <div
-                        key={index}
+                        key={event.id}
                         className="rounded-2xl border border-border p-5 bg-bg text-left"
                       >
-
-                        <h3 className="text-lg font-bold text-text">
+                        <h3 title={event.title} className="text-lg font-bold text-text line-clamp-2 break-words min-w-0">
                           {event.title}
                         </h3>
-
                         <p className="mt-2 text-sm text-text-light">
                           {event.description}
                         </p>
-
                       </div>
-
                     ))}
-
                   </div>
-
                 )}
-
-              </div>
-
+              </>
             )}
 
           </div>
@@ -613,7 +545,7 @@ const EventRecommendation = () => {
               {/* Breakdown Matrix */}
               <div className="space-y-3">
                 <span className="text-xs font-extrabold text-text-light/60 uppercase tracking-widest block">Match Priority Matrix</span>
-                
+
                 {selectedEvent.breakdown && selectedEvent.breakdown.map((item, idx) => (
                   <div key={idx} className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
@@ -663,47 +595,6 @@ const EventRecommendation = () => {
   </strong>.
 
 </div>
-
-
-{/* AI Insights Section */}
-
-<div className="mt-6">
-
-  <h3 className="text-lg font-semibold mb-3 text-text">
-
-    AI Recommendation Insights
-
-  </h3>
-
-  {insightLoading ? (
-
-    <p className="text-text-light">
-
-      Generating AI insights...
-
-    </p>
-
-  ) : (
-
-    <div
-      className="
-        rounded-xl
-        bg-bg/50
-        p-4
-        text-sm
-        text-text-light
-        leading-7
-        whitespace-pre-line
-      "
-    >
-
-      {aiInsights}
-
-    </div>
-
-  )}
-
-</div>
             </div>
 
             {/* Footer Buttons */}
@@ -717,7 +608,7 @@ const EventRecommendation = () => {
               <button
                 onClick={() => {
                   addRegistration(selectedEvent, { source: "recommendation" });
-                  toast.success(`Successfully registered for ${selectedEvent.title}! Check your email for confirmation.`);
+                  showSuccessToast(`Successfully registered for ${selectedEvent.title}! Check your email for confirmation.`);
                   setSelectedEvent(null);
                 }}
                 className="flex-1 px-4 py-2.5 rounded-xl bg-primary hover:opacity-90 text-white text-xs font-bold transition-all shadow-md cursor-pointer"
@@ -728,8 +619,7 @@ const EventRecommendation = () => {
           </div>
         </div>
       )}
-      
-      <Toaster position="bottom-right" />
+
     </div>
   );
 };
