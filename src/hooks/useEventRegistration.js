@@ -78,7 +78,12 @@ const useEventRegistration = (eventIdParam) => {
   });
 
   // React Compiler automatically memoizes these, no need for useMemo
-  const isEventFull = event ? event.attendees >= event.maxAttendees : false;
+  // EventResponse exposes `capacity`/`registeredCount`; keep the mock-data
+  // aliases (maxAttendees/attendees) as a fallback for hackathon paths.
+  const isEventFull = event
+    ? (event.capacity ?? event.maxAttendees ?? 0) > 0 &&
+      (event.registeredCount ?? event.attendees ?? 0) >= (event.capacity ?? event.maxAttendees ?? 0)
+    : false;
   const isPastEvent = event ? (getEventStatus(event) === "past" || getEventStatus(event) === "ended") : false;
 
   const validationRules = {
@@ -231,17 +236,17 @@ const useEventRegistration = (eventIdParam) => {
       const freshRes = await eventService.getEventDetails(id);
       if (freshRes.status === 200) {
         const freshEvent = freshRes.data;
-        const capacity = freshEvent.maxAttendees ?? 0;
-        const attendees = freshEvent.attendees ?? 0;
+        const capacity = freshEvent.capacity ?? freshEvent.maxAttendees ?? 0;
+        const attendees = freshEvent.registeredCount ?? freshEvent.attendees ?? 0;
         return capacity > 0 && attendees >= capacity;
       }
-      const capacity = currentEvent?.maxAttendees ?? 0;
-      const attendees = currentEvent?.attendees ?? 0;
+      const capacity = currentEvent?.capacity ?? currentEvent?.maxAttendees ?? 0;
+      const attendees = currentEvent?.registeredCount ?? currentEvent?.attendees ?? 0;
       return capacity > 0 && attendees >= capacity;
     } catch (error) {
       console.error("[checkEventCapacity] Failed to check capacity:", error);
-      const capacity = currentEvent?.maxAttendees ?? 0;
-      const attendees = currentEvent?.attendees ?? 0;
+      const capacity = currentEvent?.capacity ?? currentEvent?.maxAttendees ?? 0;
+      const attendees = currentEvent?.registeredCount ?? currentEvent?.attendees ?? 0;
       return capacity > 0 && attendees >= capacity;
     }
   }, []);
