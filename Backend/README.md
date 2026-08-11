@@ -33,7 +33,7 @@ The backend implements a comprehensive set of modules to handle various platform
 
 | Module | Key Endpoints | Capabilities |
 | :--- | :--- | :--- |
-| **Auth** | `/api/auth/*` | Signup, Login, Google OAuth, Logout (Blacklisting) |
+| **Auth** | `/api/auth/*` | Signup, Login, Google OAuth, Logout (Blacklisting), Forgot/Reset password |
 | **Users** | `/api/users/*` | Profile retrieval/update, My registered events |
 | **Events** | `/api/events/*` | CRUD, Registration, Availability, SSE Stream |
 | **Projects** | `/api/projects/*` | List, Detail, Create, Categories, Upvoting |
