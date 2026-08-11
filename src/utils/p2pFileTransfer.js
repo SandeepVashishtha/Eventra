@@ -153,7 +153,16 @@ export async function getCachedFile(fileId) {
         if (chunks.length > 0) {
           // Sort chunks by index
           chunks.sort((a, b) => a.chunkIndex - b.chunkIndex);
-          resolve(chunks);
+
+          const totalExpected = chunks[0].totalChunks;
+          if (chunks.length === totalExpected) {
+            resolve(chunks);
+          } else {
+            logger.warn(
+              `[P2P Cache] Incomplete file cache found for ${fileId} (${chunks.length}/${totalExpected} chunks)`
+            );
+            resolve(null);
+          }
         } else {
           resolve(null);
         }

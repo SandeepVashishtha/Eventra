@@ -18,13 +18,18 @@
 // Helper to format Date objects into YYYYMMDDTHHmmSSZ format required by RFC 5545
 const formatToICSDate = (dateInput) => {
   if (!dateInput) return null;
-  const str =
-    dateInput instanceof Date
-      ? dateInput.toISOString()
-      : String(dateInput || "");
-  const date = new Date(str);
-  if (isNaN(date.getTime())) return null;
-  return str.replace(/[-:]/g, "").split(".")[0] + "Z";
+
+  let dateObj;
+  if (dateInput instanceof Date) {
+    dateObj = dateInput;
+  } else {
+    dateObj = new Date(dateInput);
+  }
+
+  if (Number.isNaN(dateObj.getTime())) return null;
+
+  const iso = dateObj.toISOString();
+  return iso.replace(/[-:]/g, "").split(".")[0] + "Z";
 };
 
 // Helper to safely escape special characters in ICS strings (RFC 5545 compliant).

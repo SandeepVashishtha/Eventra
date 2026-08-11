@@ -1,5 +1,6 @@
 import { logger } from "./logger.js";
 import { ENV } from "../config/env.js";
+import { SSE_BASE_URL } from "../config/backendConfig.js";
 
 const MULTIPLEX_CHANNEL_NAME = "eventra_sse_multiplexer";
 const LOCK_NAME = "eventra_sse_leader_lock";
@@ -536,7 +537,11 @@ class SseMultiplexer {
   }
 
   openEventSource(path) {
-    const sseBaseUrl = ENV.API_URL || (typeof window !== "undefined" ? window.location.origin : "http://localhost:8080");
+    let sseBaseUrl = SSE_BASE_URL || ENV.API_URL || "";
+    if (!sseBaseUrl || sseBaseUrl.startsWith("/")) {
+      const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost:8080";
+      sseBaseUrl = sseBaseUrl ? `${origin}${sseBaseUrl}` : origin;
+    }
 
     logger.log(`[SSE Multiplexer] Leader tab opening physical EventSource: ${sseBaseUrl}${path}`);
     this.updatePathStatus(path, "connecting");
@@ -556,7 +561,7 @@ class SseMultiplexer {
       let payload = evt.data;
       try {
         payload = JSON.parse(evt.data);
-      } catch { }
+      } catch { console.warn("[sseMultiplexer] JSON parse failed"); }
 
       // Dispatch locally
       this.dispatchLocalMessage(path, payload, evt.type);

@@ -1,3 +1,4 @@
+import useWindowSize from "hooks/useWindowSize";
 import { useEffect, useRef } from "react";
 
 const ConfettiCanvas = ({ 
@@ -16,11 +17,8 @@ const ConfettiCanvas = ({
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    const handleResize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-    window.addEventListener("resize", handleResize);
+    // Fix: sync canvas size on mount; useWindowSize hook handles live updates
+    // via the dependency array below
 
     const particles = [];
 
@@ -76,8 +74,7 @@ const ConfettiCanvas = ({
     }, duration);
 
     return () => {
-      window.removeEventListener("resize", handleResize);
-      cancelAnimationFrame(animationFrameId);
+        cancelAnimationFrame(animationFrameId);
       clearTimeout(timer);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps

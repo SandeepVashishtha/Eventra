@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.validator.constraints.URL;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Data
 @Builder
@@ -30,7 +31,6 @@ public class EventUpdateRequest {
     private String location;
 
     @NotNull(message = "Event date is required")
-    @Future(message = "Event date must be in the future")
     @Schema(description = "Date and time when the event starts")
     private LocalDateTime eventDate;
 
@@ -42,7 +42,15 @@ public class EventUpdateRequest {
     private Boolean isPublic;
 
     @URL(message = "Image URL must be a valid URL")
-    @Schema(description = "Optional URL to the event's banner or thumbnail image (link only)",
-            example = "https://example.com/images/event-banner.jpg")
+    @Schema(description = "Optional URL to the event's banner or thumbnail image (link only)", example = "https://example.com/images/event-banner.jpg")
     private String imageUrl;
+
+    @Schema(description = "Event category for filtering and discovery (kept for backward compatibility)", example = "Tech")
+    private String category;
+
+    @Schema(description = "Multiple categories for the event to enable better discovery and filtering (up to 3)", example = "Tech,Music,Food")
+    private Set<String> categories;
+
+    @Schema(description = "Optional tags for the event to enable granular filtering and search", example = "AI,Conference,2026")
+    private Set<String> tags;
 }
