@@ -1,171 +1,192 @@
-import { motion } from "framer-motion";
+import { useMemo } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
-  FaStar,
-  FaQrcode,
-  FaChartLine,
-  FaUsers,
-  FaLock,
-  FaGlobe,
-  FaArrowRight,
-} from "react-icons/fa";
+  ArrowRight,
+  CalendarCheck,
+  Code2,
+  Handshake,
+  QrCode,
+  Sparkles,
+  Trophy,
+} from "lucide-react";
+import { useTranslation } from "react-i18next";
 
-// Animation Variants
+const ICON_CLASSES = "text-blue-400 w-6 h-6";
+
+const CARD_BASE_CLASSES =
+  "group relative bg-slate-900/70 border border-slate-800 rounded-3xl overflow-hidden backdrop-blur-sm hover:border-blue-500/40 hover:-translate-y-1 transition-all duration-300";
+
+const HEADING_CLASSES = "text-4xl md:text-5xl font-bold text-white tracking-tight";
+
+const DESCRIPTION_CLASSES = "mt-6 text-lg text-slate-400 max-w-3xl mx-auto";
+
 const container = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.15 },
+    transition: { staggerChildren: 0.12 },
   },
 };
 
 const item = {
-  hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: "easeOut" } },
+  hidden: { opacity: 0, y: 25 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6 },
+  },
 };
 
-// UPDATED: Icon classNames now include dark mode variants
-const features = [
+const FEATURE_CONFIG = [
   {
-    icon: <FaStar className="text-indigo-500 dark:text-indigo-400 text-2xl" />,
-    title: "Smart Event Creation",
-    stat: "90% faster setup",
-    description: "Launch events in minutes with intelligent templates, automatic capacity management, and integrated ticketing. Full support for workshops, conferences, meetups, and specialized events.",
-    cta: "Start Creating",
+    id: "events",
+    icon: <CalendarCheck className={ICON_CLASSES} />,
+    link: "/events",
+    enabled: true,
   },
   {
-    icon: <FaQrcode className="text-indigo-500 dark:text-indigo-400 text-2xl" />,
-    title: "Instant QR Check-ins",
-    stat: "3 sec check-in",
-    description: "Lightning-fast attendee check-ins with QR codes that work offline. Real-time attendance tracking and automated no-show management keep your events running smoothly.",
-    cta: "See Demo",
+    id: "hackathons",
+    icon: <Trophy className={ICON_CLASSES} />,
+    link: "/hackathons",
+    enabled: true,
   },
   {
-    icon: <FaChartLine className="text-indigo-500 dark:text-indigo-400 text-2xl" />,
-    title: "Live Analytics",
-    stat: "15+ metrics",
-    description: "Real-time dashboards showing registration trends, attendance patterns, and engagement insights. Make data-driven decisions that lead to consistently better events.",
-    cta: "View Dashboard",
+    id: "projects",
+    icon: <Code2 className={ICON_CLASSES} />,
+    link: "/projects",
+    enabled: true,
   },
   {
-    icon: <FaUsers className="text-indigo-500 dark:text-indigo-400 text-2xl" />,
-    title: "Team Collaboration",
-    stat: "Unlimited members",
-    description: "Invite co-organizers, assign specific roles, and coordinate effortlessly. Built-in communication tools and task management ensure seamless teamwork.",
-    cta: "Add Team",
+    id: "connections",
+    icon: <Handshake className={ICON_CLASSES} />,
+    link: "/community-event",
+    enabled: true,
   },
   {
-    icon: <FaLock className="text-indigo-500 dark:text-indigo-400 text-2xl" />,
-    title: "Enterprise Security",
-    stat: "Bank-level security",
-    description: "SOC 2 compliant with end-to-end encryption. Advanced privacy controls and full GDPR compliance for handling sensitive attendee data with complete confidence.",
-    cta: "Learn More",
+    id: "manage",
+    icon: <QrCode className={ICON_CLASSES} />,
+    link: "/documentation",
+    enabled: true,
   },
   {
-    icon: <FaGlobe className="text-indigo-500 dark:text-indigo-400 text-2xl" />,
-    title: "Global Reach",
-    stat: "195 countries",
-    description: "Multi-timezone coordination, 30+ languages, and international payment processing. Host events anywhere in the world and welcome attendees from everywhere.",
-    cta: "Go Global",
+    id: "benefits",
+    icon: <Sparkles className={ICON_CLASSES} />,
+    link: "/signup",
+    enabled: true,
   },
 ];
 
 export default function Features() {
+  const { t } = useTranslation();
+  const shouldReduceMotion = useReducedMotion();
+
+  const features = useMemo(
+    () =>
+      FEATURE_CONFIG.map((feature) => ({
+        ...feature,
+        stat: t(`about.features.items.${feature.id}.stat`),
+        title: t(`about.features.items.${feature.id}.title`),
+        description: t(`about.features.items.${feature.id}.description`),
+        cta: t(`about.features.items.${feature.id}.cta`),
+      })),
+    [t],
+  );
+
+  const animationProps = shouldReduceMotion
+    ? { initial: false, animate: "visible" }
+    : { initial: "hidden", whileInView: "visible" };
+
   return (
     <section
       id="features"
-      // UPDATED: Section background
-      className="relative py-24 bg-white dark:bg-gray-900"
-      // AOS Implementation
-      data-aos="fade-up"
-      data-aos-duration="1000"
-      data-aos-offset="200"
+      aria-labelledby="features-heading"
+      className="relative py-24 bg-slate-950 overflow-hidden"
     >
-      {/* UPDATED: Decorative blobs for dark mode */}
-      <div className="absolute top-0 left-0 w-72 h-72 bg-indigo-200 dark:bg-indigo-900/40 rounded-full mix-blend-multiply dark:mix-blend-normal filter blur-3xl opacity-30 animate-pulse"></div>
-      <div className="absolute bottom-0 right-0 w-72 h-72 bg-blue-400 dark:bg-blue-900/40 rounded-full mix-blend-multiply dark:mix-blend-normal filter blur-3xl opacity-30 animate-pulse"></div>
+      {/* Background Glow */}
+      <div
+        aria-hidden="true"
+        className="absolute top-0 left-0 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl"
+      />
 
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 relative">
-        {/* Heading */}
+      <div
+        aria-hidden="true"
+        className="absolute bottom-0 right-0 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl"
+      />
+
+      <div className="relative max-w-7xl mx-auto px-6 lg:px-8">
+        {/* Header */}
         <motion.div
           variants={container}
-          initial="hidden"
-          animate="visible"
+          {...animationProps}
+          viewport={{ once: true }}
           className="text-center mb-20"
         >
-          {/* UPDATED: Text colors */}
-          <motion.h2
-            variants={item}
-            className="text-4xl sm:text-5xl font-extrabold text-gray-900 dark:text-gray-100 tracking-tight"
-          >
-            Features That Power Every Event
+          <motion.h2 variants={item} id="features-heading" className={HEADING_CLASSES}>
+            {t("about.features.heading")}
           </motion.h2>
-          <motion.p
-            variants={item}
-            className="mt-6 text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto"
-          >
-            From creation to check-ins, analytics, and collaboration — Eventra
-            has everything you need to host seamless events worldwide.
+
+          <motion.p variants={item} className={DESCRIPTION_CLASSES}>
+            {t("about.features.description")}
           </motion.p>
         </motion.div>
 
-        {/* Feature Grid */}
+        {/* Grid */}
         <motion.div
           variants={container}
-          initial="hidden"
-          animate="visible"
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10"
+          {...animationProps}
+          viewport={{ once: true }}
+          className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8"
+          role="list"
         >
-          {features.map((feature, index) => (
-            <motion.div
-              key={index}
+          {features.map((feature) => (
+            <motion.article
+              key={feature.id}
               variants={item}
-              whileHover={{ y: -6, scale: 1.03 }}
-              // AOS Implementation
-              data-aos="flip-up"
-              data-aos-delay={index * 100}
-              // UPDATED: Card background and border
-              className="relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300"
+              role="listitem"
+              whileHover={shouldReduceMotion ? {} : { y: -6 }}
+              className={CARD_BASE_CLASSES}
             >
-              {/* Top Banner */}
-              {/* UPDATED: Banner gradient, icon wrapper, and stat tag */}
-              <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-gray-100 dark:from-gray-700/50 to-white dark:to-gray-800/50">
-                <div className="w-12 h-12 flex items-center justify-center rounded-lg bg-white dark:bg-gray-700 shadow-md">
+              {/* Top */}
+              <div className="flex items-center justify-between px-6 py-5 border-b border-slate-800">
+                <div className="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center">
                   {feature.icon}
                 </div>
-                <span className="px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300">
+
+                <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-500/10 text-blue-300 border border-blue-500/20">
                   {feature.stat}
                 </span>
               </div>
 
               {/* Content */}
               <div className="p-6">
-                {/* UPDATED: Text colors */}
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                  {feature.title}
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-4">{feature.description}</p>
+                <h3 className="text-xl font-semibold text-white mb-3">{feature.title}</h3>
 
-                {/* UPDATED: Link colors */}
-                {feature.cta === "Start Creating" ? (
+                <p className="text-slate-400 leading-relaxed mb-6">{feature.description}</p>
+
+                {feature.enabled ? (
                   <Link
-                    to="/events"
-                    className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-medium text-sm flex items-center group"
+                    to={feature.link}
+                    className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 font-medium"
+                    aria-label={t("about.features.ctaAriaLabel", {
+                      cta: feature.cta,
+                      title: feature.title,
+                    })}
                   >
                     {feature.cta}
-                    <FaArrowRight className="ml-2 w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-200" />
+                    <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                   </Link>
                 ) : (
                   <span
-                    className="text-indigo-400 dark:text-indigo-600 font-medium text-sm flex items-center cursor-not-allowed opacity-60"
-                    title="Coming soon"
+                    className="inline-flex items-center gap-2 text-slate-500 cursor-not-allowed"
+                    aria-disabled="true"
                   >
-                      {feature.cta}
-                      <FaArrowRight className="ml-2 w-4 h-4" />
+                    {feature.cta}
+                    <ArrowRight className="w-4 h-4 opacity-50" />
                   </span>
                 )}
               </div>
-            </motion.div>
+            </motion.article>
           ))}
         </motion.div>
       </div>

@@ -39,6 +39,26 @@ assert.deepEqual(
   events.map((event) => event.id),
   "empty route search returns the full listing"
 );
-if (process.env.NODE_ENV === "development") {
+// Edge Case: Empty list of items
+assert.deepEqual(getRouteSearchResults([], "test", eventKeys), [], "empty list returns empty results");
+
+// Edge Case: Records with missing search fields
+const partiallyEmptyRecords = [
+  { id: 1, title: "Nextjs Bootcamp" },
+  { id: 2 },
+];
+assert.deepEqual(
+  getRouteSearchResults(partiallyEmptyRecords, "Nextjs", eventKeys).map(r => r.id),
+  [1],
+  "handles records missing target search keys gracefully"
+);
+
+// Edge Case: Handling null/undefined arguments
+assert.throws(() => {
+  getRouteSearchResults(null, "Nextjs", eventKeys);
+}, TypeError);
+assert.deepEqual(getRouteSearchResults(events, null, eventKeys).map(e => e.id), events.map(e => e.id), "null query returns all events");
+
+if (process.env.NODE_ENV === "development" || true) {
  console.log("route search query matching passed");
 }
