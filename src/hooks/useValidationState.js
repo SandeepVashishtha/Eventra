@@ -1,3 +1,5 @@
+const EMPTY_OBJECT = {};
+
 /**
  * Helper hook for managing validation state in forms
  * Works alongside useFormValidation hook for enhanced validation UX
@@ -62,6 +64,7 @@ import { useCallback, useMemo } from "react";
  * const FormInput = ({ label, name, value, onChange, validationState, error, touched }) => {
  *   const {
  *     shouldShowError,
+    fieldClassName,
     ariaProps,
     isWarning,
     shouldShowWarning,
@@ -103,7 +106,7 @@ export const useValidationState = (
   options = {},
 ) => {
   const isObjectOptions = typeof fieldName === "object" && fieldName !== null;
-  const opts = isObjectOptions ? fieldName : (typeof options === "object" && options !== null ? options : {});
+  const opts = isObjectOptions ? fieldName : (typeof options === "object" && options !== null ? options : EMPTY_OBJECT);
   const name = isObjectOptions ? fieldName.fieldName : fieldName;
   const state = isObjectOptions ? (fieldName.validationState ?? "idle") : validationState;
   const err = isObjectOptions ? (fieldName.error ?? null) : error;
@@ -276,19 +279,43 @@ export const useValidationState = (
 
     const ariaProps = useMemo(() => {
     const isInvalid = state === "error" && shouldShowError;
-    return {
+      const customFieldClassName = opts.fieldClassName;
+
+  const fieldClassName = useMemo(() => {
+    if (typeof customFieldClassName === "function") {
+      return customFieldClassName({ state, isTouched, shouldShowError,
+    fieldClassName, isValid });
+    }
+    return customFieldClassName || "";
+  }, [customFieldClassName, state, isTouched, shouldShowError,
+    fieldClassName, isValid]);
+
+  return {
       "aria-invalid": isInvalid,
       "aria-errormessage": isInvalid ? `${name}-error` : undefined,
       "aria-describedby": statusMessage ? `${name}-status` : undefined,
     };
   }, [state, shouldShowError,
+    fieldClassName,
     ariaProps, statusMessage, name]);
+
+    const customFieldClassName = opts.fieldClassName;
+
+  const fieldClassName = useMemo(() => {
+    if (typeof customFieldClassName === "function") {
+      return customFieldClassName({ state, isTouched, shouldShowError,
+    fieldClassName, isValid });
+    }
+    return customFieldClassName || "";
+  }, [customFieldClassName, state, isTouched, shouldShowError,
+    fieldClassName, isValid]);
 
   return {
     // Status checks
     statusIndicator,
     statusMessage,
     shouldShowError,
+    fieldClassName,
     ariaProps,
     isWarning,
     shouldShowWarning,
