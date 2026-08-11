@@ -4,10 +4,12 @@ import EventCheckInScanner from './EventCheckInScanner';
 import {
   computeCheckInStats,
   computeSessionCheckInStats,
+  computeGroupCheckInStats,
   generateCheckInCSV,
   exportCheckInAsCSV,
   getCheckInHistory,
 } from '../utils/checkInUtils.js';
+import { Users } from 'lucide-react';
 
 /**
  * OrganizerCheckIn Component
@@ -17,6 +19,7 @@ import {
 const OrganizerCheckIn = ({ eventId, eventName, sessions = [], registrations = [] }) => {
   const [checkIns, setCheckIns] = useState([]);
   const [stats, setStats] = useState(null);
+  const [groupStats, setGroupStats] = useState(null);
   const [sessionStats, setSessionStats] = useState({});
   const [selectedSession, setSelectedSession] = useState('all');
   const [viewMode, setViewMode] = useState('scanner'); // 'scanner' or 'history'
@@ -26,6 +29,10 @@ const OrganizerCheckIn = ({ eventId, eventName, sessions = [], registrations = [
   useEffect(() => {
     const newStats = computeCheckInStats(registrations, checkIns);
     setStats(newStats);
+
+    // Compute group statistics
+    const newGroupStats = computeGroupCheckInStats(registrations, checkIns);
+    setGroupStats(newGroupStats);
 
     if (sessions.length > 0) {
       const sessionStats = computeSessionCheckInStats(sessions, attendanceLogs, checkIns);
@@ -181,6 +188,15 @@ const OrganizerCheckIn = ({ eventId, eventName, sessions = [], registrations = [
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Scanner */}
             <div className="lg:col-span-1">
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+                  <Users className="w-5 h-5 text-indigo-600" />
+                  Group Check-In
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                  Scan any group member's QR code to check in the entire party at once.
+                </p>
+              </div>
               <EventCheckInScanner
                 eventId={eventId}
                 onCheckIn={handleCheckIn}
@@ -229,6 +245,52 @@ const OrganizerCheckIn = ({ eventId, eventName, sessions = [], registrations = [
                   </div>
                 </div>
               </div>
+
+              {/* Group Statistics (if there are groups) */}
+              {groupStats?.totalGroups > 0 && (
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Users className="w-5 h-5 text-indigo-600" />
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      Group Check-Ins
+                    </h3>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                      <div className="text-gray-600 dark:text-gray-400 text-sm font-medium">
+                        Total Groups
+                      </div>
+                      <div className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
+                        {groupStats.totalGroups}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-gray-600 dark:text-gray-400 text-sm font-medium">
+                        Fully Checked In
+                      </div>
+                      <div className="text-3xl font-bold text-green-600 dark:text-green-400 mt-2">
+                        {groupStats.fullyCheckedInGroups}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-gray-600 dark:text-gray-400 text-sm font-medium">
+                        Partially Checked In
+                      </div>
+                      <div className="text-3xl font-bold text-orange-600 dark:text-orange-400 mt-2">
+                        {groupStats.partiallyCheckedInGroups}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-gray-600 dark:text-gray-400 text-sm font-medium">
+                        Group Rate
+                      </div>
+                      <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400 mt-2">
+                        {groupStats.groupCheckInRate}%
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Progress Bar */}
               <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow">
