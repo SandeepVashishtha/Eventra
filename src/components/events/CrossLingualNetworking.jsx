@@ -58,7 +58,7 @@ const CrossLingualNetworking = () => {
     }, 800);
   };
 
-  const useIcebreaker = (text) => {
+  const handleIcebreakerSelect = (text) => {
     setInputText(text);
   };
 
@@ -203,13 +203,13 @@ const CrossLingualNetworking = () => {
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2 text-center">AI Ice Breaker Suggestions</span>
                   <div className="space-y-2">
                     <button 
-                      onClick={() => useIcebreaker("I'd love to learn more about NeuralTech's vision.")}
+                      onClick={() => handleIcebreakerSelect("I'd love to learn more about NeuralTech's vision.")}
                       className="w-full bg-white border border-indigo-200 text-indigo-700 text-xs py-2 px-4 rounded-full shadow-sm hover:bg-indigo-50 transition text-left"
                     >
                       "I'd love to learn more about NeuralTech's vision."
                     </button>
                     <button 
-                      onClick={() => useIcebreaker("Will you be attending the networking dinner tonight?")}
+                      onClick={() => handleIcebreakerSelect("Will you be attending the networking dinner tonight?")}
                       className="w-full bg-white border border-indigo-200 text-indigo-700 text-xs py-2 px-4 rounded-full shadow-sm hover:bg-indigo-50 transition text-left"
                     >
                       "Will you be attending the networking dinner tonight?"

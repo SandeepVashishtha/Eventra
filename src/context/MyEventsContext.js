@@ -57,7 +57,7 @@ const storageKey = (userId) => {
 const toEventSummary = (event) => ({
   id: event?.id,
   title: event?.title ?? "",
-  date: event?.date ?? "",
+  date: event?.date ?? event?.eventDate ?? "",
   location: event?.location ?? "",
   type: event?.type ?? event?.category ?? "",
   image: event?.image ?? event?.imageUrl ?? "",

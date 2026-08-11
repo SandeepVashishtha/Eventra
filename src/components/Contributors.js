@@ -1,4 +1,5 @@
-import { Github, ExternalLink, GitBranch, MapPin, Building, Users, Medal } from "lucide-react";
+import { ExternalLink, GitBranch, MapPin, Building, Users, Medal } from "lucide-react";
+import { FaGithub as Github } from "react-icons/fa";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { useReducedMotion } from '../hooks/useReducedMotion';
