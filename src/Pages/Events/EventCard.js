@@ -20,7 +20,7 @@ import SeatsRemaining from "components/common/SeatsRemaining";
 import SellingFastBadge from "components/common/SellingFastBadge";
 import useEventAvailability from "hooks/useEventAvailability";
 
-const EventCard = ({ event, position }) => {
+const EventCard = ({ event, position, isHighlighted = false }) => {
   const [isBookmarked, setIsBookmarked] = useState(() => isEventBookmarked(event.id));
   const [imageFailed, setImageFailed] = useState(false);
   const titleId = useId();

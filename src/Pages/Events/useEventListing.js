@@ -35,6 +35,7 @@ const normalizeEventItem = (event) => normalizeEvent(event);
 
 const useEventListing = () => {
   const [events, setEvents] = useState([]);
+  const [highlightedEventIds, setHighlightedEventIds] = useState([]);
   const [filterType, setFilterType] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [viewMode, setViewMode] = useState("grid");
@@ -379,6 +380,7 @@ const useEventListing = () => {
     eventsPerPage,
     fetchEvents,
     filteredEvents,
+    highlightedEventIds,
     filterType,
     categoryFilter,
     loadError,
