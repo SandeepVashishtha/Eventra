@@ -1,26 +1,35 @@
-package com.sandeep.eventrabackend.dto.response;
+package com.eventra.service;
 
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.eventra.model.EventWaitlist;
+import com.eventra.repository.EventWaitlistRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.util.Optional;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-@Schema(description = "Waitlist entry details for an event")
-public class WaitlistResponse {
+@Service
+public class EventWaitlistService {
 
-    private Long id;
-    private Long eventId;
-    private String eventTitle;
-    private Long userId;
-    private String userEmail;
-    private int position;
-    private String status;
-    private LocalDateTime joinedAt;
+    @Autowired
+    private EventWaitlistRepository waitlistRepository;
+
+    /**
+     * Promotes the next waitlist user upon ticket cancellation.
+     * Protected by @Transactional and pessimistic write locking to prevent race conditions.
+     */
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public void promoteNextWaitlistUser(Long eventId) {
+        // Fetch the next pending waitlist entry with PESSIMISTIC_WRITE lock
+        Optional<EventWaitlist> nextUserOpt = waitlistRepository.findNextPendingWithPessimisticWriteLock(eventId);
+
+        if (nextUserOpt.isPresent()) {
+            EventWaitlist waitlistEntry = nextUserOpt.get();
+            waitlistEntry.setStatus("PROMOTED");
+            waitlistRepository.save(waitlistEntry);
+            
+            // Trigger confirmation notification / ticket allocation logic here
+        }
+    }
 }
