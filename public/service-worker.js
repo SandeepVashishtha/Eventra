@@ -554,28 +554,29 @@ function handleNavigateFetch(event) {
  */
 function handleStaticFetch(event, requestUrl) {
   const isHashedAsset = requestUrl.pathname.startsWith('/assets/');
+  const pathname = requestUrl.pathname.toLowerCase();
+  const isVideo = pathname.endsWith('.mp4') || pathname.endsWith('.webm') || pathname.endsWith('.avi');
 
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
         if (isHashedAsset) {
-          // Hashed assets are immutable; serve from cache directly without network request
           return cachedResponse;
         }
 
         // Mutable assets: Stale-While-Revalidate
-        fetch(event.request)
-          .then((response) => {
-            if (response && response.status === 200 && response.type === 'basic') {
-              caches.open(CACHE_NAME).then((cache) => {
-                cache.put(event.request, response).catch(() => console.warn("[SW] Cache put failed"));
-                cache.put(event.request, response).catch((err) => {
-      console.warn('[Service Worker] Cache put failed:', err);
-    });
-              });
-            }
-          })
-          .catch(() => console.warn("[SW] Background fetch failed"));
+        if (!isVideo) {
+          fetch(event.request)
+            .then((response) => {
+              if (response && response.status === 200 && response.type === 'basic') {
+                caches.open(CACHE_NAME).then((cache) => {
+                  cache.put(event.request, response).catch(() => console.warn("[SW] Cache put failed"));
+                  pruneCacheLimit(cache, 100);
+                });
+              }
+            })
+            .catch(() => console.warn("[SW] Background fetch failed"));
+        }
 
         return cachedResponse;
       }
@@ -586,18 +587,28 @@ function handleStaticFetch(event, requestUrl) {
           if (!response || response.status !== 200 || response.type !== 'basic') {
             return response;
           }
-          const responseCopy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseCopy);
-          });
+          if (!isVideo) {
+            const responseCopy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseCopy);
+              pruneCacheLimit(cache, 100);
+            });
+          }
           return response;
         })
         .catch(() => {
-          // Return an explicit offline response for non-navigate requests
           return new Response('', { status: 503, statusText: 'Service Unavailable' });
         });
     })
   );
+}
+
+function pruneCacheLimit(cache, maxItems) {
+  cache.keys().then((keys) => {
+    if (keys.length > maxItems) {
+      cache.delete(keys[0]).then(() => pruneCacheLimit(cache, maxItems));
+    }
+  });
 }
 
 // Intercept fetch requests and apply offline caching strategies
