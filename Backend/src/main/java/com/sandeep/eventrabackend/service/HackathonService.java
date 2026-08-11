@@ -11,6 +11,8 @@ import com.sandeep.eventrabackend.model.HackathonRegistration;
 import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.HackathonRegistrationRepository;
 import com.sandeep.eventrabackend.repository.HackathonRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import com.sandeep.eventrabackend.repository.UserRepository;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -39,6 +41,11 @@ public class HackathonService {
     }
 
     @Transactional(readOnly = true)
+    public Page<HackathonResponse> getAllHackathons(Pageable pageable) {
+        return hackathonRepository.findAll(pageable)
+                .map(this::mapToResponse);
+    }
+
     public List<HackathonResponse> getAllHackathons() {
         return hackathonRepository.findAll().stream()
                 .map(this::mapToResponse)
