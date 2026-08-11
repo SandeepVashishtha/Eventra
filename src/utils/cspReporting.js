@@ -93,6 +93,9 @@ export function initCspReporting() {
   if (typeof document === 'undefined') return;
   if (_cspHandler) return;
 
+  // Do not attach listener if there is nowhere to log or send reports
+  if (!isDev && !reportUri) return;
+
   _cspHandler = (event) => {
     // FIX (#13909): Execution recursion guard & circuit breaker
     if (isProcessingReport) {
