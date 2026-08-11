@@ -4,6 +4,10 @@ import useDocumentTitle from "../hooks/useDocumentTitle";
 import useReducedMotion from "../hooks/useReducedMotion.js";
 import { Server, AlertCircle, BookOpen, Users, Trophy, Play, RefreshCw, Terminal, Settings } from "lucide-react";
 
+const getApiDocsBaseUrl = () => {
+  return import.meta.env.VITE_API_URL || (typeof window !== "undefined" ? window.location.origin : "");
+};
+
 const endpoints = [
   {
     icon: <Server className="w-7 h-7 text-sky-300" />,
@@ -32,7 +36,7 @@ const endpoints = [
     desc: "Retrieve projects submitted to hackathons.",
     method: "GET",
     url: "/mock-api/projects?hackathonId=<id>",
-example: `curl -X GET ${process.env.REACT_APP_API_URL}/projects?hackathonId=1`,
+    example: `curl -X GET ${getApiDocsBaseUrl()}/projects?hackathonId=1`,
     response: `[
   {
     "id": 42,
@@ -48,7 +52,7 @@ example: `curl -X GET ${process.env.REACT_APP_API_URL}/projects?hackathonId=1`,
     desc: "Get a list of top contributors and GSOC participants.",
     method: "GET",
     url: "/mock-api/contributors",
-  example: `fetch("${process.env.REACT_APP_API_URL}/contributors", {
+  example: `fetch("${getApiDocsBaseUrl()}/contributors", {
   headers: { Authorization: "Bearer <API_KEY>" }
 })`,
     response: `[
@@ -66,7 +70,7 @@ example: `curl -X GET ${process.env.REACT_APP_API_URL}/projects?hackathonId=1`,
     desc: "Fetch leaderboard rankings of participants.",
     method: "GET",
     url: "/mock-api/leaderboard?limit=10",
-    example: `curl -X GET \${process.env.REACT_APP_API_URL}/leaderboard?limit=10`,
+    example: `curl -X GET ${getApiDocsBaseUrl()}/leaderboard?limit=10`,
     response: `[
   {
     "rank": 1,
@@ -93,6 +97,7 @@ const ApiDocs = () => {
   });
   const [terminalOutput, setTerminalOutput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const apiBaseUrl = getApiDocsBaseUrl();
 
   const timeoutRef = useRef(null);
 
@@ -554,7 +559,7 @@ const ApiDocs = () => {
 
               <div className="flex-1 flex items-center gap-2 px-3 py-1 bg-slate-950 border border-slate-850 rounded-lg text-[10px] font-mono text-slate-400 select-all overflow-x-auto whitespace-nowrap scrollbar-none">
                 <span className="text-emerald-500 font-bold uppercase shrink-0">GET</span>
-                <span>{process.env.REACT_APP_API_URL || window.location.origin}{selectedEndpoint}</span>
+                <span>{apiBaseUrl}{selectedEndpoint}</span>
                 {selectedEndpoint === "/mock-api/hackathons" && (
                   <span className="text-indigo-400 shrink-0">?limit={params.limit}&status={params.status}</span>
                 )}
