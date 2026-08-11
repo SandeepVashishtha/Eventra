@@ -64,11 +64,14 @@ function readFirstBytes(file, length = 8) {
  * @param {Object} options - Validation options
  * @param {number} options.maxSizeMB - Maximum file size in MB (default: 5)
  * @param {string[]} options.allowedTypes - Allowed MIME types
- * @returns {Promise<{ valid: boolean, error?: string }>}
+ * @param {string[]} options.allowedExtensions - Allowed extensions
+ * @returns {{ valid: boolean, error?: string }}
  */
-export async function validateImageFile(file, options = {}) {
-  const maxSizeMB = options.maxSizeMB || DEFAULT_MAX_SIZE_MB;
-  const allowedTypes = options.allowedTypes || ALLOWED_IMAGE_TYPES;
+export function validateImageFile(file, options = {}) {
+  // Use nullish coalescing (??) so explicitly passing 0 is respected
+  const maxSizeMB = options.maxSizeMB ?? DEFAULT_MAX_SIZE_MB;
+  const allowedTypes = options.allowedTypes ?? ALLOWED_IMAGE_TYPES;
+  const allowedExtensions = options.allowedExtensions ?? ALLOWED_IMAGE_EXTENSIONS;
 
   if (!file) {
     return { valid: false, error: "No file provided" };
@@ -122,10 +125,10 @@ export async function validateImageFile(file, options = {}) {
     };
   }
 
-  if (!ALLOWED_IMAGE_EXTENSIONS.includes(ext)) {
+  if (!allowedExtensions.includes(ext)) {
     return {
       valid: false,
-      error: `File extension "${ext}" is not a recognized image format`,
+      error: `File extension "${ext}" is not a recognized or allowed image format`,
     };
   }
 
@@ -141,7 +144,8 @@ export async function validateImageFile(file, options = {}) {
  * @returns {{ valid: boolean, error?: string }}
  */
 export function validateFile(file, options = {}) {
-  const maxSizeMB = options.maxSizeMB || 10;
+  // Use nullish coalescing (??) so explicitly passing 0 is respected
+  const maxSizeMB = options.maxSizeMB ?? 10;
 
   if (!file) {
     return { valid: false, error: "No file provided" };
@@ -155,8 +159,13 @@ export function validateFile(file, options = {}) {
     };
   }
 
-  const cleanName = file.name.trim().replace(/\.+$/, "");
-  const ext = "." + cleanName.split(".").pop().toLowerCase();
+  // Added missing zero-byte check for consistency
+  if (file.size === 0) {
+    return { valid: false, error: "File is empty" };
+  }
+
+  const fileName = file.name.toLowerCase();
+  const ext = "." + fileName.split(".").pop();
 
   if (DANGEROUS_EXTENSIONS.includes(ext)) {
     return {
