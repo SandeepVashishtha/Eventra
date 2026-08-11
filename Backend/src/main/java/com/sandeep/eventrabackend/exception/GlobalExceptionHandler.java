@@ -1,3 +1,6 @@
+import java.util.Map;
+import java.util.HashMap;
+import jakarta.persistence.OptimisticLockException;
 package com.sandeep.eventrabackend.exception;
 
 import com.sandeep.eventrabackend.dto.response.ErrorResponse;
@@ -208,5 +211,15 @@ public class GlobalExceptionHandler {
                 .timestamp(LocalDateTime.now())
                 .build();
         return ResponseEntity.status(status).body(response);
+    }
+
+    @ExceptionHandler({OptimisticLockException.class, ObjectOptimisticLockingFailureException.class})
+    public ResponseEntity<Map<String, Object>> handleOptimisticLockException(Exception ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.CONFLICT.value());
+        body.put("error", "Conflict");
+        body.put("message", "Concurrent ticket cancellation detected. Please retry your request.");
+        return new ResponseEntity<>(body, HttpStatus.CONFLICT);
     }
 }
