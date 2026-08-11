@@ -18,9 +18,14 @@ import { createRateLimiter } from "../utils/rateLimiter";
  *   and opens a conflict-resolution modal when one is found.
  * - Checks live event capacity immediately before submission and notifies the
  *   user when the event is at full capacity.
- * - Uses a shared module-level `Map` lock (`registrationLocks` from
- *   `utils/registrationLocks`) and a ref
- *   (`isSubmittingRef`) to guard against duplicate concurrent submissions.
+ * - Uses a shared cross-tab lock (`registrationLocks` from
+ *   `utils/registrationLocks`, backed by a `localStorage` lease with a
+ *   10-minute expiry and a per-tab fast-path cache) plus a ref
+ *   (`isSubmittingRef`) to guard against duplicate concurrent submissions
+ *   within and across tabs.
+ * - Keeps the lease held while a registration is queued offline, so the same
+ *   event cannot be registered twice while the queue item is pending; the
+ *   lease auto-expires if the tab is closed before the queue drains.
  * - Falls back to an offline queue (`offlineQueue`) when a network/timeout
  *   error is detected, so the registration syncs automatically once
  *   connectivity is restored.
@@ -309,7 +314,12 @@ const useEventRegistration = (eventIdParam) => {
 
     setShowConflictModal(false);
 
-    registrationLocks.set(eventId, true);
+    // Claim the cross-tab localStorage lease before any async work. If a
+    // concurrent tab won the race, do not start a duplicate submission.
+    if (!registrationLocks.set(eventId)) {
+      toast.error("Another registration is in progress for this event. Please wait.");
+      return;
+    }
     isSubmittingRef.current = true;
     setSubmitting(true);
 
@@ -319,6 +329,8 @@ const useEventRegistration = (eventIdParam) => {
       priority: formData.priority,
       eventId: parseInt(eventId, 10),
     };
+
+    let keepLockAfterSubmit = false;
 
     try {
       await eventService.registerForEvent(eventId, payload);
@@ -350,6 +362,9 @@ const useEventRegistration = (eventIdParam) => {
         );
 
         if (success) {
+          // Hold the lease until the queued registration is actually synced so
+          // a duplicate cannot be queued; the 10-minute expiry bounds the hold.
+          keepLockAfterSubmit = true;
           setRegistered(true);
           addRegistration(event, formData);
           clearSession();
@@ -375,7 +390,9 @@ const useEventRegistration = (eventIdParam) => {
 
       toast.error(failureMessage);
     } finally {
-      registrationLocks.delete(eventId);
+      if (!keepLockAfterSubmit) {
+        registrationLocks.delete(eventId);
+      }
       isSubmittingRef.current = false;
       setSubmitting(false);
     }
