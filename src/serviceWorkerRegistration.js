@@ -147,11 +147,15 @@ function checkValidServiceWorker(swUrl, config) {
         response.status === 404 ||
         (contentType != null && contentType.indexOf('javascript') === -1)
       ) {
-        // No service worker found. Probably a different app. Reload the page.
-        navigator.serviceWorker.ready.then((registration) => {
-          registration.unregister().then(() => {
+        // No service worker found. Unregister if exists and reload.
+        navigator.serviceWorker.getRegistration().then((registration) => {
+          if (registration) {
+            registration.unregister().then(() => {
+              window.location.reload();
+            });
+          } else {
             window.location.reload();
-          });
+          }
         });
       } else {
         // Service worker found. Proceed as normal.
