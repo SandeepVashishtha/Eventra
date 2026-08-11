@@ -7,6 +7,8 @@
  * the bundle on load.
  */
 
+import CryptoJS from "crypto-js";
+
 const usedNonces = new Map();
 
 const MAX_REQUEST_AGE_MS = 5 * 60 * 1000;
@@ -30,42 +32,9 @@ const deterministicStringify = (obj) => {
   );
 };
 
-// Resolve a crypto-like object available in the current environment.
-const getCrypto = () => {
-  if (typeof globalThis !== "undefined" && globalThis.crypto?.subtle) {
-    return globalThis.crypto;
-  }
-  if (typeof window !== "undefined" && window.crypto?.subtle) {
-    return window.crypto;
-  }
-  return null;
-};
+const hmacSha256Hex = (secret, data) => CryptoJS.HmacSHA256(data, secret).toString();
 
-/**
- * Compute HMAC-SHA256 using the Web Crypto API.
- * Returns a hex string identical to what crypto.createHmac('sha256', secret)
- * would produce, but works in browsers.
- */
-const hmacSha256Hex = async (secret, data) => {
-  const c = getCrypto();
-  if (!c) {
-    throw new Error("HMAC: Web Crypto API is not available in this environment");
-  }
-  const enc = new TextEncoder();
-  const key = await c.subtle.importKey(
-    "raw",
-    enc.encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"]
-  );
-  const signature = await c.subtle.sign("HMAC", key, enc.encode(data));
-  return Array.from(new Uint8Array(signature))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-};
-
-export async function validateSignature(
+export function validateSignature(
   payload,
   timestamp,
   nonce,
@@ -106,7 +75,7 @@ export async function validateSignature(
     };
   }
 
-  const expectedSignature = await hmacSha256Hex(
+  const expectedSignature = hmacSha256Hex(
     secret,
     deterministicStringify(payload) + timestamp + nonce
   );
