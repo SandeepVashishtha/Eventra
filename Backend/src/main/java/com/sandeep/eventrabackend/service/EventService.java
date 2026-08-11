@@ -1,3 +1,5 @@
+import com.eventra.specification.SearchSpecification;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 package com.sandeep.eventrabackend.service;
