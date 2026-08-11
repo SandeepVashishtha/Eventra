@@ -10,7 +10,7 @@
  * - SSR-safe (no window access at module level)
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "react-toastify";
 import { apiUtils, API_ENDPOINTS } from "../config/api.js";
 import { safeLocalStorage } from "../utils/safeStorage";
@@ -39,39 +39,6 @@ function readPersistedWaitlist(storageKey) {
   }
 }
 
-let persistTimeout = null;
-
-/**
- * Persist the waitlist map to the given storage key. No-op if the key is
- * falsy (e.g. logged-out state where we want in-memory only, so nothing
- * leaks to the next user of a shared browser).
- */
-function persistWaitlist(map, storageKey) {
-  if (typeof window === "undefined" || !storageKey) return;
-  if (persistTimeout) {
-    clearTimeout(persistTimeout);
-  }
-  persistTimeout = setTimeout(() => {
-    const runWrite = () => {
-      try {
-        const mapToPersist = {};
-        for (const [key, value] of Object.entries(map)) {
-          if (value.pendingRemoval) continue;
-          mapToPersist[key] = value;
-        }
-        safeLocalStorage.setItem(storageKey, JSON.stringify(mapToPersist));
-      } catch (err) {
-        console.warn("[useWaitlist] Waitlist operation failed:", err);
-      }
-    };
-    if (typeof window.requestIdleCallback === "function") {
-      window.requestIdleCallback(() => runWrite(), { timeout: 100 });
-    } else {
-      runWrite();
-    }
-  }, 100);
-}
-
 /**
  * @param {string | number} eventId  - The event ID to manage
  * @param {Object}          [opts]
@@ -94,7 +61,7 @@ export default function useWaitlist(eventId, {
   const userId = user?.id;
 
   // Scope the persistence key to the authenticated user. For guests, `storageKey`
-  // is `undefined` so `persistWaitlist` becomes a no-op — the state stays in
+  // is `undefined` so the persistence effect becomes a no-op — the state stays in
   // memory for the session and never touches localStorage, so a guest can't leak
   // their positions to the next person on a shared browser. Authenticated
   // users go through getOrMigrateKey, which also adopts anything left under the
@@ -118,9 +85,64 @@ export default function useWaitlist(eventId, {
     setWaitlistMap(readPersistedWaitlist(storageKey));
   }, [storageKey]);
 
-  // Persist on every change (no-op for guests via the storageKey check)
+  // FIX (#14534): the debounce timer, idle callback and latest-snapshot refs
+  // live per hook instance, so concurrent instances never cancel each other's
+  // pending writes. Cleanup on unmount (and on every re-run) stops stale
+  // timers from firing after the component is gone or the session changed.
+  const persistTimeoutRef = useRef(null);
+  const idleCallbackRef = useRef(null);
+  const latestMapRef = useRef(waitlistMap);
+  latestMapRef.current = waitlistMap;
+  const storageKeyRef = useRef(storageKey);
+  storageKeyRef.current = storageKey;
+
+  // Persist on every change (no-op for guests via the storageKey check).
+  // The write reads the refs at firing time, so it always persists the latest
+  // snapshot and never writes to a key the current session no longer owns.
   useEffect(() => {
-    persistWaitlist(waitlistMap, storageKey);
+    if (typeof window === "undefined" || !storageKeyRef.current) return;
+    if (persistTimeoutRef.current) clearTimeout(persistTimeoutRef.current);
+    if (idleCallbackRef.current && typeof window.cancelIdleCallback === "function") {
+      window.cancelIdleCallback(idleCallbackRef.current);
+      idleCallbackRef.current = null;
+    }
+
+    persistTimeoutRef.current = setTimeout(() => {
+      const runWrite = () => {
+        idleCallbackRef.current = null;
+        const currentKey = storageKeyRef.current;
+        if (!currentKey) return;
+        const map = latestMapRef.current;
+        try {
+          const mapToPersist = {};
+          for (const [key, value] of Object.entries(map)) {
+            if (value.pendingRemoval) continue;
+            mapToPersist[key] = value;
+          }
+          safeLocalStorage.setItem(currentKey, JSON.stringify(mapToPersist));
+        } catch (err) {
+          console.warn("[useWaitlist] Waitlist operation failed:", err);
+        }
+      };
+      if (typeof window.requestIdleCallback === "function") {
+        idleCallbackRef.current = window.requestIdleCallback(() => runWrite(), { timeout: 100 });
+      } else {
+        runWrite();
+      }
+    }, 100);
+
+    return () => {
+      if (persistTimeoutRef.current) {
+        clearTimeout(persistTimeoutRef.current);
+        persistTimeoutRef.current = null;
+      }
+      if (idleCallbackRef.current) {
+        if (typeof window.cancelIdleCallback === "function") {
+          window.cancelIdleCallback(idleCallbackRef.current);
+        }
+        idleCallbackRef.current = null;
+      }
+    };
   }, [waitlistMap, storageKey]);
 
   /**
