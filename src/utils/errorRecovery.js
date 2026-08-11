@@ -103,9 +103,13 @@ export function logCategorizedError(error, errorInfo = null, metadata = {}) {
 }
 
 export async function invalidateCorruptedAssetCache() {
-  if (typeof caches === "undefined") return false;
-  const keys = await caches.keys();
-  const assetKeys = keys.filter((key) => /asset|vite|workbox|precache|eventra/i.test(key));
-  await Promise.all(assetKeys.map((key) => caches.delete(key)));
-  return assetKeys.length > 0;
+  try {
+    if (typeof caches === "undefined") return false;
+    const keys = await caches.keys();
+    const assetKeys = keys.filter((key) => /asset|vite|workbox|precache|eventra/i.test(key));
+    await Promise.all(assetKeys.map((key) => caches.delete(key)));
+    return assetKeys.length > 0;
+  } catch {
+    return false;
+  }
 }
