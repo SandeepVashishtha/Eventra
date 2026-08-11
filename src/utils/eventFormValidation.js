@@ -46,6 +46,8 @@ export const validateForm = (formData) => {
     const capacity = Number(formData.capacity);
     if (!capacity || capacity <= 0) {
       newErrors.capacity = "Please enter a valid number of attendees";
+    } else if (!Number.isInteger(capacity)) {
+      newErrors.capacity = "Capacity must be a whole number";
     } else if (capacity > 100000) {
       newErrors.capacity = "Maximum capacity is 100,000 attendees";
     }
@@ -91,6 +93,8 @@ export const validateForm = (formData) => {
           const capacity = Number(tier.capacity);
           if (capacity <= 0) {
             newErrors[`ticketCapacity_${tier.id}`] = "Ticket capacity must be greater than 0";
+          } else if (!Number.isInteger(capacity)) {
+            newErrors[`ticketCapacity_${tier.id}`] = "Ticket capacity must be a whole number";
           }
         }
       }
