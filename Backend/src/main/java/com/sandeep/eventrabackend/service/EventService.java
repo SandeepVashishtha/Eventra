@@ -1197,11 +1197,7 @@ public class EventService {
         @Transactional(readOnly = true)
         public List<String> getOccupiedSeats(Long eventId) {
                 requirePublicEvent(eventId);
-                return eventRegistrationRepository.findByEvent_Id(eventId)
-                                .stream()
-                                .map(EventRegistration::getSeatId)
-                                .filter(seatId -> seatId != null && !seatId.isBlank())
-                                .toList();
+                return eventRegistrationRepository.findSeatIdsByEvent_Id(eventId);
         }
 
         private MyRegisteredEventResponse toMyRegisteredEventResponse(
