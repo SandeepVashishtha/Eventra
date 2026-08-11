@@ -1,5 +1,8 @@
 package com.sandeep.eventrabackend.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.sandeep.eventrabackend.dto.request.HackathonCreateRequest;
 import com.sandeep.eventrabackend.dto.response.HackathonRegistrationResponse;
 import com.sandeep.eventrabackend.dto.response.HackathonResponse;
@@ -11,6 +14,8 @@ import com.sandeep.eventrabackend.model.HackathonRegistration;
 import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.HackathonRegistrationRepository;
 import com.sandeep.eventrabackend.repository.HackathonRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import com.sandeep.eventrabackend.repository.UserRepository;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -26,6 +31,8 @@ import java.util.stream.Collectors;
 @Service
 public class HackathonService {
 
+    private static final Logger log = LoggerFactory.getLogger(HackathonService.class);
+
     private final HackathonRepository hackathonRepository;
     private final HackathonRegistrationRepository hackathonRegistrationRepository;
     private final UserRepository userRepository;
@@ -39,6 +46,11 @@ public class HackathonService {
     }
 
     @Transactional(readOnly = true)
+    public Page<HackathonResponse> getAllHackathons(Pageable pageable) {
+        return hackathonRepository.findByIsDeletedFalse(pageable)
+                .map(this::mapToResponse);
+    }
+
     public List<HackathonResponse> getAllHackathons() {
         return hackathonRepository.findAll().stream()
                 .map(this::mapToResponse)
@@ -47,7 +59,7 @@ public class HackathonService {
 
     @Transactional(readOnly = true)
     public HackathonResponse getHackathonById(Long id) {
-        return hackathonRepository.findById(id)
+        return hackathonRepository.findByIdAndIsDeletedFalse(id)
                 .map(this::mapToResponse)
                 .orElseThrow(() -> new HackathonNotFoundException("Hackathon not found with id: " + id));
     }
@@ -72,12 +84,13 @@ public class HackathonService {
                 .build();
 
         Hackathon saved = hackathonRepository.save(hackathon);
+        log.info("[AUDIT LOG] Administrative Action: HACKATHON_SOFT_DELETE | HackathonID: {} | Title: {}", hackathon.getId(), hackathon.getTitle());
         return mapToResponse(saved);
     }
 
     @Transactional
     public HackathonResponse updateHackathon(Long id, com.sandeep.eventrabackend.dto.request.HackathonUpdateRequest request, String userEmail) {
-        Hackathon hackathon = hackathonRepository.findById(id)
+        Hackathon hackathon = hackathonRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new HackathonNotFoundException("Hackathon not found with id: " + id));
 
         User currentUser = userRepository.findByEmail(userEmail)
@@ -89,6 +102,14 @@ public class HackathonService {
         if (!isAdmin && (ownerId == null || !ownerId.equals(currentUser.getId()))) {
             throw new AccessDeniedException(
                     "Only the hackathon's own organizer (or an administrator) can manage this hackathon.");
+        }
+
+        // Validate chronological date range order
+        if (request.getStartDate() != null && request.getEndDate() != null && request.getStartDate().isAfter(request.getEndDate())) {
+            throw new IllegalArgumentException("Start date cannot be after end date.");
+        }
+        if (request.getRegistrationDeadline() != null && request.getEndDate() != null && request.getRegistrationDeadline().isAfter(request.getEndDate())) {
+            throw new IllegalArgumentException("Registration deadline cannot be after end date.");
         }
 
         hackathon.setTitle(request.getTitle());
@@ -103,12 +124,14 @@ public class HackathonService {
         hackathon.setImageUrl(request.getImageUrl());
 
         Hackathon updated = hackathonRepository.save(hackathon);
+        log.info("[AUDIT LOG] Administrative Action: HACKATHON_SOFT_DELETE | HackathonID: {} | Title: {}", hackathon.getId(), hackathon.getTitle());
+        log.info("[AUDIT LOG] Administrative Action: HACKATHON_UPDATE | HackathonID: {} | UpdatedTitle: {}", updated.getId(), updated.getTitle());
         return mapToResponse(updated);
     }
 
     @Transactional
     public HackathonRegistrationResponse registerUserForHackathon(Long id, String userEmail) {
-        Hackathon hackathon = hackathonRepository.findById(id)
+        Hackathon hackathon = hackathonRepository.findByIdWithLock(id)
                 .orElseThrow(() -> new HackathonNotFoundException("Hackathon not found with id: " + id));
 
         User user = userRepository.findByEmail(userEmail)
@@ -122,6 +145,14 @@ public class HackathonService {
         // Deadline check
         if (hackathon.getRegistrationDeadline() != null && LocalDateTime.now().isAfter(hackathon.getRegistrationDeadline())) {
             throw new RegistrationClosedException("Registration deadline has passed for this hackathon.");
+        }
+
+        // Capacity check (atomic under pessimistic write lock)
+        if (hackathon.getMaxParticipants() != null) {
+            long currentCount = hackathonRegistrationRepository.countByHackathon_Id(id);
+            if (currentCount >= hackathon.getMaxParticipants()) {
+                throw new RegistrationClosedException("Hackathon has reached maximum participant capacity.");
+            }
         }
 
         HackathonRegistration registration = HackathonRegistration.builder()
@@ -148,11 +179,11 @@ public class HackathonService {
 
     @Transactional
     public void deleteHackathon(Long id) {
-        if (!hackathonRepository.existsById(id)) {
-            throw new HackathonNotFoundException("Hackathon not found with id: " + id);
-        }
-        hackathonRegistrationRepository.deleteByHackathonId(id);
-        hackathonRepository.deleteById(id);
+        Hackathon hackathon = hackathonRepository.findByIdAndIsDeletedFalse(id)
+                .orElseThrow(() -> new HackathonNotFoundException("Hackathon not found with id: " + id));
+        hackathon.setDeleted(true);
+        hackathonRepository.save(hackathon);
+        log.info("[AUDIT LOG] Administrative Action: HACKATHON_SOFT_DELETE | HackathonID: {} | Title: {}", hackathon.getId(), hackathon.getTitle());
     }
 
     private HackathonResponse mapToResponse(Hackathon hackathon) {

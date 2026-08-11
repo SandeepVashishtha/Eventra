@@ -21,6 +21,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 
 import java.util.List;
 
@@ -195,8 +198,8 @@ public class HackathonController {
                     )
             )
     })
-    public ResponseEntity<List<HackathonResponse>> getAllHackathons() {
-        return ResponseEntity.ok(hackathonService.getAllHackathons());
+    public ResponseEntity<List<HackathonResponse>> getAllHackathons(@PageableDefault(size = 20, sort = "startDate") Pageable pageable) {
+        return ResponseEntity.ok(hackathonService.getAllHackathons(@PageableDefault(size = 20, sort = "startDate") Pageable pageable));
     }
 
     @GetMapping("/{id}")
