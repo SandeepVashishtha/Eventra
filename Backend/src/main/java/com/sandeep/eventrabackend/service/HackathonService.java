@@ -42,7 +42,7 @@ public class HackathonService {
 
     @Transactional(readOnly = true)
     public Page<HackathonResponse> getAllHackathons(Pageable pageable) {
-        return hackathonRepository.findAll(pageable)
+        return hackathonRepository.findByIsDeletedFalse(pageable)
                 .map(this::mapToResponse);
     }
 
@@ -54,7 +54,7 @@ public class HackathonService {
 
     @Transactional(readOnly = true)
     public HackathonResponse getHackathonById(Long id) {
-        return hackathonRepository.findById(id)
+        return hackathonRepository.findByIdAndIsDeletedFalse(id)
                 .map(this::mapToResponse)
                 .orElseThrow(() -> new HackathonNotFoundException("Hackathon not found with id: " + id));
     }
@@ -84,7 +84,7 @@ public class HackathonService {
 
     @Transactional
     public HackathonResponse updateHackathon(Long id, com.sandeep.eventrabackend.dto.request.HackathonUpdateRequest request, String userEmail) {
-        Hackathon hackathon = hackathonRepository.findById(id)
+        Hackathon hackathon = hackathonRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new HackathonNotFoundException("Hackathon not found with id: " + id));
 
         User currentUser = userRepository.findByEmail(userEmail)
@@ -171,11 +171,10 @@ public class HackathonService {
 
     @Transactional
     public void deleteHackathon(Long id) {
-        if (!hackathonRepository.existsById(id)) {
-            throw new HackathonNotFoundException("Hackathon not found with id: " + id);
-        }
-        hackathonRegistrationRepository.deleteByHackathonId(id);
-        hackathonRepository.deleteById(id);
+        Hackathon hackathon = hackathonRepository.findByIdAndIsDeletedFalse(id)
+                .orElseThrow(() -> new HackathonNotFoundException("Hackathon not found with id: " + id));
+        hackathon.setDeleted(true);
+        hackathonRepository.save(hackathon);
     }
 
     private HackathonResponse mapToResponse(Hackathon hackathon) {

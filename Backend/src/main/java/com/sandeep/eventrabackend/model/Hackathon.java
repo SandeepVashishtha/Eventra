@@ -47,4 +47,8 @@ public class Hackathon {
 
     @Column(name = "owner_id")
     private Long ownerId;
+
+    @Builder.Default
+    @Column(name = "is_deleted", nullable = false)
+    private boolean isDeleted = false;
 }
