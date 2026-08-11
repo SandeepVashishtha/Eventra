@@ -15,14 +15,17 @@ const t = (key) => i18n.t(key);
  * Shared validation copy used by sync and async validators.
  * Keep these messages short because they are shown inline under form fields.
  */
+// Use getters so t() is called at read-time, not at module load time.
+// This ensures translations are resolved after i18n is fully initialized
+// and always reflect the active language at the moment of use.
 export const VALIDATION_MESSAGES = {
-  required: t("validation.required"),
-  invalidEmail: t("validation.invalidEmail"),
-  emailTaken: t("validation.emailTaken"),
-  usernameTaken: t("validation.usernameTaken"),
-  weakPassword: t("validation.weakPassword"),
-  invalidPhone: t("validation.invalidPhone"),
-  validationUnavailable: t("validation.validationUnavailable"),
+  get required() { return t("validation.required"); },
+  get invalidEmail() { return t("validation.invalidEmail"); },
+  get emailTaken() { return t("validation.emailTaken"); },
+  get usernameTaken() { return t("validation.usernameTaken"); },
+  get weakPassword() { return t("validation.weakPassword"); },
+  get invalidPhone() { return t("validation.invalidPhone"); },
+  get validationUnavailable() { return t("validation.validationUnavailable"); },
 };
 
 // Single source of truth regular expressions (Anchored, non-backtracking)
