@@ -1,4 +1,4 @@
-import { apiUtils } from "../config/api";
+import { apiUtils, API_ENDPOINTS } from "../config/api";
 
 /**
  * Secure password change API
@@ -27,7 +27,7 @@ export const passwordAPI = {
       throw new Error("New password must be different from current password");
     }
 
-    return apiUtils.put("/api/users/change-password", {
+    return apiUtils.put(API_ENDPOINTS.USERS.CHANGE_PASSWORD, {
       currentPassword: credentials.currentPassword,
       newPassword: credentials.newPassword,
     });
