@@ -117,4 +117,45 @@ public class UserPreferencesTests {
                                 """))
                 .andExpect(status().isUnauthorized());
     }
+
+    @Test
+    @DisplayName("PUT /api/users/preferences - rejects unknown keys")
+    void testUpdatePreferences_RejectsUnknownKeys() throws Exception {
+        mockMvc.perform(put("/api/users/preferences")
+                        .with(user("john@example.com"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                { "preferences": { "evilKey": "payload" } }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Unknown preference key: evilKey. Allowed keys: theme, notifications"));
+    }
+
+    @Test
+    @DisplayName("PUT /api/users/preferences - accepts notifications object")
+    void testUpdatePreferences_AcceptsNotifications() throws Exception {
+        mockMvc.perform(put("/api/users/preferences")
+                        .with(user("john@example.com"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                { "preferences": { "notifications": { "inApp": true, "push": false } } }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.notifications.inApp").value(true))
+                .andExpect(jsonPath("$.notifications.push").value(false));
+    }
+
+    @Test
+    @DisplayName("PUT /api/users/preferences - rejects oversized payload")
+    void testUpdatePreferences_RejectsOversizedPayload() throws Exception {
+        String padding = "x".repeat(5000);
+        mockMvc.perform(put("/api/users/preferences")
+                        .with(user("john@example.com"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                { "preferences": { "notifications": { "blob": "%s" } } }
+                                """.formatted(padding)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Preferences payload exceeds maximum size of 4096 bytes"));
+    }
 }
