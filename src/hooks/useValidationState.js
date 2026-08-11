@@ -8,19 +8,45 @@ import { useCallback } from "react";
  * Hook to determine validation status based on field state
  * Returns human-readable status and visual indicators
  *
- * @param {string} fieldName - Field name
- * @param {string} validationState - Current validation state ('idle' | 'validating' | 'success' | 'error')
- * @param {string|null} error - Field error message
- * @param {boolean} touched - Whether field has been touched
+ * Supports both options object signature and positional parameters:
+ * e.g. useValidationState({ fieldName, validationState, error, touched, messages })
+ * e.g. useValidationState(fieldName, validationState, error, touched, messages)
+ *
+ * @param {string|Object} fieldNameOrOptions - Field name string or options object
+ * @param {string} [validationStateArg="idle"] - Current validation state ('idle' | 'validating' | 'success' | 'error')
+ * @param {string|null} [errorArg=null] - Field error message
+ * @param {boolean} [touchedArg=false] - Whether field has been touched
+ * @param {Object} [messagesArg={}] - Custom message template strings or formatter functions for i18n
  *
  * @returns {Object} Validation status info
  */
 export const useValidationState = (
-  fieldName,
-  validationState = "idle",
-  error = null,
-  touched = false,
+  fieldNameOrOptions,
+  validationStateArg = "idle",
+  errorArg = null,
+  touchedArg = false,
+  messagesArg = {},
 ) => {
+  // Normalize arguments for both object and positional parameter signatures
+  const isOptionsObject =
+    typeof fieldNameOrOptions === "object" && fieldNameOrOptions !== null;
+
+  const fieldName = isOptionsObject
+    ? fieldNameOrOptions.fieldName
+    : fieldNameOrOptions;
+  const validationState = isOptionsObject
+    ? fieldNameOrOptions.validationState ?? "idle"
+    : validationStateArg;
+  const error = isOptionsObject
+    ? fieldNameOrOptions.error ?? null
+    : errorArg;
+  const touched = isOptionsObject
+    ? fieldNameOrOptions.touched ?? false
+    : touchedArg;
+  const messages = isOptionsObject
+    ? fieldNameOrOptions.messages ?? {}
+    : messagesArg;
+
   /**
    * Get visual indicator based on validation state
    */
@@ -38,9 +64,21 @@ export const useValidationState = (
   }, [validationState]);
 
   /**
-   * Get status message for accessibility announcements
+   * Get status message for accessibility announcements and UI display.
+   * Resolves custom string templates or i18n formatter functions if provided in `messages`.
    */
   const getStatusMessage = useCallback(() => {
+    const customMessage = messages?.[validationState];
+
+    if (typeof customMessage === "function") {
+      return customMessage(fieldName, error);
+    }
+
+    if (typeof customMessage === "string") {
+      return customMessage;
+    }
+
+    // Default fallback messages
     switch (validationState) {
       case "validating":
         return `${fieldName} is being validated`;
@@ -51,13 +89,13 @@ export const useValidationState = (
       default:
         return "";
     }
-  }, [fieldName, error, validationState]);
+  }, [fieldName, error, validationState, messages]);
 
   /**
    * Check if field should show error message
    */
   const shouldShowError = useCallback(() => {
-    return touched && validationState === "error" && error;
+    return touched && validationState === "error" && Boolean(error);
   }, [touched, validationState, error]);
 
   /**
