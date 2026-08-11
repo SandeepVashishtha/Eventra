@@ -141,6 +141,21 @@ public class GlobalExceptionHandler {
                 "Uploaded file size exceeds the maximum permitted limit. Please upload a smaller file.", request);
     }
 
+    @ExceptionHandler({
+            java.time.format.DateTimeParseException.class,
+            org.springframework.http.converter.HttpMessageNotReadableException.class,
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class,
+            org.springframework.web.bind.MissingServletRequestParameterException.class,
+            jakarta.validation.ConstraintViolationException.class,
+            org.springframework.web.bind.ServletRequestBindingException.class,
+    })
+    public ResponseEntity<ErrorResponse> handleBadClientInput(Exception ex,
+            HttpServletRequest request) {
+        logger.warn("Malformed request: {}", ex.getMessage());
+        return buildError(HttpStatus.BAD_REQUEST, "Bad Request",
+                "Malformed request: " + ex.getMessage(), request);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(
             Exception ex,

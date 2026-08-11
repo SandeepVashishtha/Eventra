@@ -14,6 +14,7 @@ import com.sandeep.eventrabackend.repository.HackathonRepository;
 import com.sandeep.eventrabackend.repository.UserRepository;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.security.access.AccessDeniedException;
 import com.sandeep.eventrabackend.model.Role;
@@ -39,8 +40,10 @@ public class HackathonService {
     }
 
     @Transactional(readOnly = true)
-    public List<HackathonResponse> getAllHackathons() {
-        return hackathonRepository.findAll().stream()
+    public List<HackathonResponse> getAllHackathons(int page, int size) {
+        int safePage = Math.max(0, page);
+        int safeSize = Math.min(Math.max(size, 1), 100);
+        return hackathonRepository.findAll(PageRequest.of(safePage, safeSize)).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
