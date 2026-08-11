@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useCallback, useRef, useState } from "react";
 import { setOnUnauthorizedHandler, setRequiresReauthHandler, setAuthToken, setRefreshToken, apiUtils } from "../config/api.js";
+import { getRefreshToken } from "../config/api/interceptors.js";
 import { authService } from "../services/authService.js";
 import { syncSecureStorage } from "../utils/secureStorage.js";
 import { clearWaitlistCache } from "../utils/waitlistUtils.js";
@@ -404,12 +405,41 @@ export const AuthProvider = ({ children }) => {
     [persistSession]
   );
 
+  const googleLogin = useCallback(
+    async (idToken) => {
+      setAuthRequest({ loading: true, error: null });
+
+      try {
+        const res = await authService.googleLogin(idToken);
+        const data = res.data;
+        const { refreshToken, sessionUser } = extractSession(data, data?.email || null);
+        const persisted = await persistSession("cookie-managed", sessionUser, refreshToken);
+        if (!persisted) return false;
+
+        setAuthRequest({ loading: false, error: null });
+        return true;
+      } catch (error) {
+        if (!isMountedRef.current) return false;
+        deleteCookie("token", {
+          path: "/",
+          secureVariants: true,
+        });
+        setAuthRequest({
+          loading: false,
+          error: getAuthErrorMessage(error, "Google login failed. Please try again."),
+        });
+        return false;
+      }
+    },
+    [persistSession]
+  );
+
   /**
    * Logs out the user.
    */
   const logout = useCallback(async () => {
     try {
-      await authService.logout();
+      await authService.logout(getRefreshToken());
     } catch (error) {
       console.warn("[AuthContext] Backend logout request failed (best-effort error):", error);
     }
@@ -447,6 +477,7 @@ export const AuthProvider = ({ children }) => {
     requiresReauth,
     setRequiresReauth,
     login,
+    googleLogin,
     logout,
     setAuthSession,
     setUser,
@@ -460,6 +491,7 @@ export const AuthProvider = ({ children }) => {
     requiresReauth,
     setRequiresReauth,
     login,
+    googleLogin,
     logout,
     setAuthSession,
     setUser,

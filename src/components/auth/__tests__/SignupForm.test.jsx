@@ -2,13 +2,13 @@ import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
 import SignupForm, { normalizeSignupRoles } from "../SignupForm";
-import { apiUtils } from "../config/api";
+import { apiUtils } from "../../../config/api";
 import {
   validateEmailAvailability,
   validatePasswordStrength,
 } from "../../../validation";
 
-vi.mock("../config/api", () => ({
+vi.mock("../../../config/api", () => ({
   API_ENDPOINTS: {
     AUTH: {
       SIGNUP: "/auth/signup",
@@ -19,7 +19,7 @@ vi.mock("../config/api", () => ({
   },
 }));
 
-vi.mock("../context/AuthContext", () => ({
+vi.mock("../../../context/AuthContext", () => ({
   useAuth: () => ({
     setAuthSession: vi.fn(),
   }),

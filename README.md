@@ -105,15 +105,15 @@ Eventra brings together event discovery, hackathon management, and community col
 
 ## 🚀 Quick Links
 
-| Resource | Link |
-|----------|------|
-| 🤝 Contributing Guide | [CONTRIBUTING.md](CONTRIBUTING.md) |
-| 📜 Code of Conduct | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) |
-| ⚙️ Environment Setup | [docs/ENV_SETUP_GUIDE.md](docs/ENV_SETUP_GUIDE.md) |
-| 🏗️ Architecture | [docs/ARCHITECTURE_AND_ROLES.md](docs/ARCHITECTURE_AND_ROLES.md) |
-| 💻 Frontend Onboarding | [docs/frontend-onboarding.md](docs/frontend-onboarding.md) |
-| 🔒 Security Migration | [docs/SECURITY_MIGRATION.md](docs/SECURITY_MIGRATION.md) |
-| 📘 API Documentation | [docs/API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md) |
+| Resource               | Link                                                             |
+| ---------------------- | ---------------------------------------------------------------- |
+| 🤝 Contributing Guide  | [CONTRIBUTING.md](CONTRIBUTING.md)                               |
+| 📜 Code of Conduct     | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)                         |
+| ⚙️ Environment Setup   | [docs/ENV_SETUP_GUIDE.md](docs/ENV_SETUP_GUIDE.md)               |
+| 🏗️ Architecture        | [docs/ARCHITECTURE_AND_ROLES.md](docs/ARCHITECTURE_AND_ROLES.md) |
+| 💻 Frontend Onboarding | [docs/frontend-onboarding.md](docs/frontend-onboarding.md)       |
+| 🔒 Security Migration  | [docs/SECURITY_MIGRATION.md](docs/SECURITY_MIGRATION.md)         |
+| 📘 API Documentation   | [docs/API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md)           |
 
 ---
 
@@ -190,24 +190,25 @@ graph TD
 
 text
 Eventra/
-|-- docs/                # Architecture, env setup, onboarding, security docs
-|-- public/              # Static assets (images, icons, manifests)
-|-- scripts/             # Validation and automation scripts
+|-- docs/ # Architecture, env setup, onboarding, security docs
+|-- public/ # Static assets (images, icons, manifests)
+|-- scripts/ # Validation and automation scripts
 |-- src/
-|   |-- Pages/           # Route-level pages (Home, Events, Hackathons, Leaderboard, etc.)
-|   |-- components/      # Shared and feature components (Navbar, Footer, Cards)
-|   |-- context/         # React context providers (Auth, Theme, Toast)
-|   |-- hooks/           # Custom React hooks (useCountdown, useOnlineStatus, etc.)
-|   |-- utils/           # Utility modules (formatting, validation, helpers)
-|   |-- config/          # Runtime/env config helpers (backend URL resolution)
-|   |-- App.jsx          # Root component with route definitions
-|   `-- index.jsx        # Application entry point
+| |-- Pages/ # Route-level pages (Home, Events, Hackathons, Leaderboard, etc.)
+| |-- components/ # Shared and feature components (Navbar, Footer, Cards)
+| |-- context/ # React context providers (Auth, Theme, Toast)
+| |-- hooks/ # Custom React hooks (useCountdown, useOnlineStatus, etc.)
+| |-- utils/ # Utility modules (formatting, validation, helpers)
+| |-- config/ # Runtime/env config helpers (backend URL resolution)
+| |-- App.jsx # Root component with route definitions
+| `-- index.jsx        # Application entry point
 |-- tests/               # Node-based unit/integration tests (Vitest)
 |-- e2e/                 # Playwright end-to-end tests
 |-- vite.config.js       # Vite configuration (aliases, proxy, plugins)
 |-- vercel.json          # Vercel deployment config (rewrites, headers)
 `-- README.md
-```
+
+````
 
 ## Prerequisites
 
@@ -222,13 +223,14 @@ Eventra/
 git clone https://github.com/SandeepVashishtha/Eventra.git
 cd Eventra
 npm install
-```
+````
 
 1. Create your env file:
 
 ```bash
 cp .env.example .env
 ```
+
 > **Tip:** If your operating system does not support `cp`, copy the file manually or use `copy .env.example .env` on Windows.
 
 1. Start dev server:
@@ -424,21 +426,21 @@ If the frontend loads but API requests fail, confirm that one of `BACKEND_URL`, 
 
 Use `.env.example` as the source of truth. See [docs/ENV_SETUP_GUIDE.md](docs/ENV_SETUP_GUIDE.md) for detailed configuration information.
 
-| Variable | Required | Purpose |
-| --- | --- | --- |
-| `BACKEND_URL` | No | Backend origin (highest priority, overrides others) |
-| `VITE_API_URL` | No | Backend API base URL (Vite - preferred) |
-| `REACT_APP_API_URL` | No | Backend API base URL (CRA compatibility) |
-| `REACT_APP_GITHUB_REPO` | No | Public repo identifier used in metadata |
-| `REACT_APP_PUBLIC_URL` | No | Canonical public app URL |
-| `REACT_APP_VAPID_PUBLIC_KEY` | No | Public web-push key |
-| `REACT_APP_CSP_REPORT_URI` | No | CSP report endpoint |
-| `REACT_APP_SENTRY_DSN` | No | Sentry browser error reporting DSN, used only in production |
-| `JWT_SECRET` | Yes (server-side) | JWT signing secret for Edge Middleware auth verification |
-| `DATABASE_URL` | Yes (server-side, production) | Database connection URL for persistent authentication storage |
-| `KV_REST_API_URL` | Yes (server-side, production) | Vercel KV/Redis REST API URL for distributed rate limiting |
-| `KV_REST_API_TOKEN` | Yes (server-side, production) | Vercel KV/Redis REST API token for distributed rate limiting |
-| `BLOCKED_COUNTRIES` | No (server-side) | Comma-separated ISO 3166-1 alpha-2 country codes to block |
+| Variable                     | Required                      | Purpose                                                       |
+| ---------------------------- | ----------------------------- | ------------------------------------------------------------- |
+| `BACKEND_URL`                | No                            | Backend origin (highest priority, overrides others)           |
+| `VITE_API_URL`               | No                            | Backend API base URL (Vite - preferred)                       |
+| `REACT_APP_API_URL`          | No                            | Backend API base URL (CRA compatibility)                      |
+| `REACT_APP_GITHUB_REPO`      | No                            | Public repo identifier used in metadata                       |
+| `REACT_APP_PUBLIC_URL`       | No                            | Canonical public app URL                                      |
+| `REACT_APP_VAPID_PUBLIC_KEY` | No                            | Public web-push key                                           |
+| `REACT_APP_CSP_REPORT_URI`   | No                            | CSP report endpoint                                           |
+| `REACT_APP_SENTRY_DSN`       | No                            | Sentry browser error reporting DSN, used only in production   |
+| `JWT_SECRET`                 | Yes (server-side)             | JWT signing secret for Edge Middleware auth verification      |
+| `DATABASE_URL`               | Yes (server-side, production) | Database connection URL for persistent authentication storage |
+| `KV_REST_API_URL`            | Yes (server-side, production) | Vercel KV/Redis REST API URL for distributed rate limiting    |
+| `KV_REST_API_TOKEN`          | Yes (server-side, production) | Vercel KV/Redis REST API token for distributed rate limiting  |
+| `BLOCKED_COUNTRIES`          | No (server-side)              | Comma-separated ISO 3166-1 alpha-2 country codes to block     |
 
 Examples:
 
@@ -461,11 +463,13 @@ Security note: never place private secrets in `REACT_APP_*` or `VITE_*` variable
 The Edge Middleware supports configurable country-based access restrictions via the `BLOCKED_COUNTRIES` environment variable. This is a server-side configuration that affects all incoming requests.
 
 **Configuration:**
+
 - Set `BLOCKED_COUNTRIES` to a comma-separated list of two-letter ISO 3166-1 alpha-2 country codes
 - Leave empty to allow access from all countries (default behavior)
 - Country codes are case-insensitive and whitespace is trimmed automatically
 
 **Examples:**
+
 ```env
 # Block specific countries
 BLOCKED_COUNTRIES=CU,IR,KP,SY,RU
@@ -475,6 +479,7 @@ BLOCKED_COUNTRIES=
 ```
 
 **Behavior:**
+
 - Requests from blocked countries receive HTTP 451 (Unavailable For Legal Reasons)
 - Blocked requests are logged with the country code for monitoring
 - Self-hosted deployments can configure this based on their requirements
@@ -482,20 +487,20 @@ BLOCKED_COUNTRIES=
 
 ## Available Scripts
 
-| Command | Description |
-| --- | --- |
-| `npm run dev` | Start local dev server |
-| `npm run start` | Alias to Vite dev server |
-| `npm run build` | Production build |
-| `npm run preview` | Preview production build locally |
-| `npm run lint` | Run ESLint on `src/` |
-| `npm run lint:fix` | Auto-fix lint issues |
-| `npm run format` | Run Prettier on source files |
-| `npm run test` | Run unit test suite |
-| `npm run test:e2e` | Run Playwright E2E tests |
-| `npm run check` | Run lint + tests together (CI validation) |
-| `npm run storybook` | Start Storybook |
-| `npm run build-storybook` | Build Storybook static output |
+| Command                   | Description                               |
+| ------------------------- | ----------------------------------------- |
+| `npm run dev`             | Start local dev server                    |
+| `npm run start`           | Alias to Vite dev server                  |
+| `npm run build`           | Production build                          |
+| `npm run preview`         | Preview production build locally          |
+| `npm run lint`            | Run ESLint on `src/`                      |
+| `npm run lint:fix`        | Auto-fix lint issues                      |
+| `npm run format`          | Run Prettier on source files              |
+| `npm run test`            | Run unit test suite                       |
+| `npm run test:e2e`        | Run Playwright E2E tests                  |
+| `npm run check`           | Run lint + tests together (CI validation) |
+| `npm run storybook`       | Start Storybook                           |
+| `npm run build-storybook` | Build Storybook static output             |
 
 ## Testing and Quality
 
@@ -517,11 +522,13 @@ Vercel configuration is checked in via [`vercel.json`](vercel.json):
 ## Roadmap
 
 ### Current Goals
+
 - Expand GSSoC contributor dashboard with real-time leaderboard updates
 - Improve event discovery with advanced filtering and search
 - Enhance organizer tools for event analytics
 
 ### Planned Features
+
 - Mobile responsive redesign for core pages
 - Dark mode refinements across all surfaces
 - In-app notification system with email digests
@@ -529,6 +536,7 @@ Vercel configuration is checked in via [`vercel.json`](vercel.json):
 - Performance optimizations (code splitting, lazy loading)
 
 ### Future Improvements
+
 - Progressive Web App (PWA) support
 - Multi-language internationalization (i18n)
 - Integration with calendar apps (Google Calendar, Outlook)
@@ -543,6 +551,7 @@ Vercel configuration is checked in via [`vercel.json`](vercel.json):
 - [Security Migration Notes](docs/SECURITY_MIGRATION.md)
 - [API Documentation Notes](docs/API_DOCUMENTATION.md)
 - Client-side authentication audit logging utilities for development and debugging.
+
 ## Contributing
 
 We welcome contributions from the community! Please follow our guidelines to keep the project maintainable.
@@ -554,14 +563,14 @@ We welcome contributions from the community! Please follow our guidelines to kee
 
 Use descriptive branch names with a type prefix:
 
-| Prefix | Purpose |
-| --- | --- |
-| `fix/` | Bug fixes |
-| `feat/` | New features |
-| `docs/` | Documentation changes |
-| `refactor/` | Code refactoring |
-| `chore/` | Maintenance, dependencies |
-| `test/` | Test additions or fixes |
+| Prefix      | Purpose                   |
+| ----------- | ------------------------- |
+| `fix/`      | Bug fixes                 |
+| `feat/`     | New features              |
+| `docs/`     | Documentation changes     |
+| `refactor/` | Code refactoring          |
+| `chore/`    | Maintenance, dependencies |
+| `test/`     | Test additions or fixes   |
 
 Example: `feat/add-event-filters`, `fix/navbar-overlap`, `docs/update-readme`
 
@@ -578,6 +587,7 @@ Use conventional commit messages:
 Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`
 
 Examples:
+
 - `feat: add event search with date filters`
 - `fix: resolve navbar overlap on mobile`
 - `docs: update environment setup guide`
@@ -594,6 +604,26 @@ Before opening a pull request:
 - [ ] UI changes have been tested in light and dark mode
 - [ ] Commit messages follow conventional format
 - [ ] PR description clearly explains what and why
+
+### CI/CD & Branch Protection
+
+Eventra uses **GitHub Actions** for automated continuous integration on every pull request and push to the `main` branch. The CI pipeline ([`ci.yml`](.github/workflows/ci.yml)) validates that changes are safe to merge by running the following checks:
+
+| Check      | Command                |
+| ---------- | ---------------------- |
+| Linting    | `npm run lint`         |
+| Formatting | `npm run format:check` |
+| Build      | `npm run build:fast`   |
+| Unit tests | `npm test`             |
+
+**Recommended branch protection rules** (configure in _Settings → Branches → Add rule_ for `main`):
+
+- [x] **Require a pull request before merging** — at least 1 review approval.
+- [x] **Require status checks to pass before merging** — select the `Build, Lint & Test` job (the workflow's `build-and-test` job).
+- [x] **Require branches to be up to date** before merging.
+- [x] **Do not allow bypassing the above settings** (admins must also pass CI).
+
+> **For contributors:** Make sure all CI checks pass locally before requesting a review. The [`pull_request_template.md`](.github/pull_request_template.md) includes a checklist to confirm this. New contributors fork the repo and open PRs from their own branches — CI runs automatically on every PR.
 
 ## License
 

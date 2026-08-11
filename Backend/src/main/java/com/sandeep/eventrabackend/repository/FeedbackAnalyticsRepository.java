@@ -44,6 +44,8 @@ public interface FeedbackAnalyticsRepository extends JpaRepository<Feedback, Lon
 
     boolean existsByEvent_IdAndUser_Email(Long eventId, String email);
 
+    List<Feedback> findByEvent_IdOrderBySubmittedAtDesc(Long eventId);
+
     void deleteByUser_Id(Long userId);
 
     void deleteByEvent_Id(Long eventId);

@@ -11,6 +11,25 @@ export class FetchError extends Error {
   }
 }
 
+// ---------------------------------------------------------------------------
+// FIX (#13609): Token Refresh Queue / Subscriber Pattern for 401 Mutex Locks
+// ---------------------------------------------------------------------------
+let isRefreshingToken = false;
+let refreshTokenSubscribers = [];
+
+const subscribeTokenRefresh = (callback) => {
+  refreshTokenSubscribers.push(callback);
+};
+
+const onRefreshedToken = (newToken) => {
+  refreshTokenSubscribers.forEach((cb) => cb(newToken));
+  refreshTokenSubscribers = [];
+};
+
+export const setRefreshingState = (state) => {
+  isRefreshingToken = state;
+};
+
 export const fetchWithTimeout = async (
   url,
   options = {},
@@ -32,13 +51,24 @@ export const fetchWithTimeout = async (
       options.signal.addEventListener("abort", handleUserAbort);
     }
   }
+
+  // If a refresh is currently in progress, wait in queue before proceeding
+  if (isRefreshingToken && !url.includes("/auth/refresh")) {
+    await new Promise((resolve) => {
+      subscribeTokenRefresh((newToken) => {
+        if (options.headers && typeof options.headers.set === "function") {
+          options.headers.set("Authorization", `Bearer ${newToken}`);
+        }
+        resolve();
+      });
+    });
+  }
+
   const method = (options.method || "GET").toUpperCase();
   let requestHeaders = options.headers;
   if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
     const headers = new Headers(options.headers || {});
     if (!headers.has("Idempotency-Key")) {
-      // Fix (Issue #9230): Use crypto.getRandomValues() instead of Math.random()
-      // Math.random() is not cryptographically secure — values are predictable.
       let idempotencyKey;
       if (typeof crypto !== "undefined" && crypto.randomUUID) {
         idempotencyKey = crypto.randomUUID();
@@ -64,16 +94,11 @@ export const fetchWithTimeout = async (
     const response = await fetch(url, {
       ...options,
       headers: requestHeaders,
-      signal: controller.signal, // This now responds to BOTH the timeout and the user's unmount signal
+      signal: controller.signal,
     });
 
-    // Read the body once — directly from the response stream.
-    //
-    // The previous implementation used response.clone().json() which allocates
-    // a duplicate of the entire body in memory before parsing, doubling peak
-    // consumption for every request. Since callers consume the returned `data`
-    // field rather than response.body, there is no need to keep the original
-    // stream open. Read directly and skip the clone.
+    clearTimeout(timeoutId);
+
     let data = null;
     const contentType = response.headers.get("content-type") || "";
 
@@ -103,8 +128,9 @@ export const fetchWithTimeout = async (
       data,
     };
   } catch (error) {
+    clearTimeout(timeoutId);
+
     if (error instanceof FetchError) {
-      // Already a FetchError (thrown by the !response.ok block above) — rethrow as-is
       throw error;
     }
 
@@ -115,14 +141,7 @@ export const fetchWithTimeout = async (
       );
     }
 
-    // Network-level failure (e.g. TypeError: Failed to fetch) — wrap in FetchError
-    // so all callers can rely on a single consistent error type
     logger.error("[fetchWithTimeout] Request failed:", error);
     throw new FetchError(error.message || "Network request failed");
-  } finally {
-    clearTimeout(timeoutId);
-    if (options.signal) {
-      options.signal.removeEventListener("abort", handleUserAbort);
-    }
   }
 };

@@ -1,4 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { useParams, useSearchParams } from "react-router-dom";
+import { useAuth } from "context/AuthContext";
 import {
   Users,
   CheckCircle2,
@@ -27,6 +29,26 @@ const INITIAL_TEAM_MEMBERS = [
 ];
 
 const TeamWorkspace = () => {
+  const { id: hackathonId } = useParams();
+  const [searchParams] = useSearchParams();
+  const { user } = useAuth();
+  const teamId = searchParams.get("teamId");
+  const roomKeyParam = searchParams.get("roomKey");
+
+  const syncQuery = useMemo(() => {
+    const params = new URLSearchParams();
+    if (hackathonId) params.set("hackathonId", hackathonId);
+    if (teamId) params.set("teamId", teamId);
+    if (roomKeyParam) params.set("roomKey", roomKeyParam);
+    if (!hackathonId && !teamId && !roomKeyParam && user?.email) {
+      params.set("roomKey", `user:${user.email}`);
+    }
+    const qs = params.toString();
+    return qs ? `?${qs}` : "";
+  }, [hackathonId, teamId, roomKeyParam, user?.email]);
+
+  const syncBaseUrl = `/api/hackathons/team/sync${syncQuery}`;
+
   const [activeTab, setActiveTab] = useState("dashboard"); // 'dashboard' | 'whiteboard'
 
   // Team recruitment slots state
@@ -74,7 +96,7 @@ const TeamWorkspace = () => {
       const fetchState = async () => {
         if (!isMounted) return;
         try {
-          const response = await fetch("/api/hackathons/team/sync", {
+          const response = await fetch(syncBaseUrl, {
             method: "POST",
           });
           if (response.ok) {
@@ -105,7 +127,7 @@ const TeamWorkspace = () => {
       setConnectionStatus("connecting");
       try {
         logger.info(`${logPrefix} Establishing real-time Server-Sent Events stream...`);
-        sseSource = new EventSource("/api/hackathons/team/sync");
+        sseSource = new EventSource(syncBaseUrl);
 
         sseSource.onopen = () => {
           setConnectionStatus("sse");
@@ -185,7 +207,7 @@ const TeamWorkspace = () => {
       if (idleTimeout) clearTimeout(idleTimeout);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, []);
+  }, [syncBaseUrl]);
 
   // Auto-scroll chat
   useEffect(() => {

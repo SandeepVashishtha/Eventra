@@ -31,6 +31,7 @@ const normalize = (n = {}) => ({
   ...n,
   id: n.id || n._id || `${n.timestamp || n.createdAt || Date.now()}-${Math.random().toString(36).slice(2)}`,
   timestamp: n.timestamp || n.createdAt || n.updatedAt || new Date().toISOString(),
+  isRead: Boolean(n.isRead ?? n.read),
 });
 
 const persist = (items, storageKey) => {
@@ -115,9 +116,14 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
         return isNew && !n.isRead;
       });
       normalized.forEach((n) => addSeenId(n.id));
-      setNotifications(normalized);
-      setUnreadCount(normalized.filter((n) => !n.isRead).length);
-      persist(normalized, storageKeyRef.current);
+      setNotifications((prev) => {
+        const byId = new Map(normalized.map((n) => [n.id, n]));
+        const merged = normalized.concat(prev.filter((p) => !byId.has(p.id)));
+        const sorted = merged.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        persist(sorted, storageKeyRef.current);
+        return sorted;
+      });
+      setUnreadCount((prev) => Math.max(0, prev + incomingUnread.length));
       if (shouldDeliver && hasCompletedInitialFetchRef.current && incomingUnread.length > 0) {
         deliverNew(incomingUnread);
       }

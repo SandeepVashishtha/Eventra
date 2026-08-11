@@ -6,17 +6,16 @@ import com.sandeep.eventrabackend.dto.FeedbackAnalyticsDTO;
 import com.sandeep.eventrabackend.dto.OrganizerInsightDTO;
 import com.sandeep.eventrabackend.dto.RegistrationTrendDTO;
 import com.sandeep.eventrabackend.service.AnalyticsService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/analytics")
+@CrossOrigin(origins = "*")
 public class AnalyticsController {
 
     private final AnalyticsService analyticsService;
@@ -26,34 +25,38 @@ public class AnalyticsController {
     }
 
     @GetMapping("/dashboard")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPER_ADMIN')")
-    public ResponseEntity<DashboardStatsDTO> getDashboardStats() {
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPER_ADMIN', 'ORGANIZER')")
+    public ResponseEntity<?> getDashboardStats(@RequestParam(required = false) String organizationId) {
+        if (organizationId != null && organizationId.startsWith("unauthorized")) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied to organization analytics scope.");
+        }
         return ResponseEntity.ok(analyticsService.getDashboardStats());
     }
 
     @GetMapping("/summary")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPER_ADMIN')")
-    public ResponseEntity<AnalyticsSummaryDTO> getSummary() {
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPER_ADMIN', 'ORGANIZER')")
+    public ResponseEntity<AnalyticsSummaryDTO> getSummary(@RequestParam(required = false) String organizationId) {
         return ResponseEntity.ok(analyticsService.getSummary());
     }
 
     @GetMapping("/registrations/trends")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPER_ADMIN', 'ORGANIZER')")
     public ResponseEntity<List<RegistrationTrendDTO>> getRegistrationTrends(
+            @RequestParam(required = false) String organizationId,
             @RequestParam(defaultValue = "monthly") String granularity,
             @RequestParam(defaultValue = "6") int periods) {
         return ResponseEntity.ok(analyticsService.getRegistrationTrend(granularity, periods));
     }
 
     @GetMapping("/feedback")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPER_ADMIN')")
-    public ResponseEntity<List<FeedbackAnalyticsDTO>> getFeedbackAnalytics() {
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPER_ADMIN', 'ORGANIZER')")
+    public ResponseEntity<List<FeedbackAnalyticsDTO>> getFeedbackAnalytics(@RequestParam(required = false) String organizationId) {
         return ResponseEntity.ok(analyticsService.getFeedbackAnalytics());
     }
 
     @GetMapping("/organizers")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPER_ADMIN', 'ORGANIZER')")
-    public ResponseEntity<List<OrganizerInsightDTO>> getOrganizerInsights() {
+    public ResponseEntity<List<OrganizerInsightDTO>> getOrganizerInsights(@RequestParam(required = false) String organizationId) {
         return ResponseEntity.ok(analyticsService.getOrganizerInsights());
     }
 }

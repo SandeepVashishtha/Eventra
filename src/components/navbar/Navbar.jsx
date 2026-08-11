@@ -1,12 +1,15 @@
 import { memo, useRef, useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "context/AuthContext";
+import { useTheme } from "context/ThemeContext";
 import DesktopNavbar from "./DesktopNavbar";
 import MobileNavbar from "./MobileNavbar";
 import AuthButtons from "./AuthButtons";
 import ProfileMenu from "./ProfileMenu";
 import LanguageSelector from "../LanguageSelector";
 import NotificationBell from "../notifications/NotificationBell";
+import ThemeToggleButton from "../Layout/ThemeToggleButton";
+import ThemeCustomizer from "../Layout/ThemeCustomizer";
 import useBodyScrollLock from "./hooks/useBodyScrollLock";
 import useKeyboardShortcuts from "hooks/useKeyboardShortcuts";
 import { motion, useScroll, useSpring } from "framer-motion";
@@ -17,6 +20,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [scrolled, setScrolled] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
+  const { isDarkMode, toggleTheme, isCustomizerOpen, setIsCustomizerOpen } = useTheme();
   const authenticated = isAuthenticated();
   useBodyScrollLock(isMobileMenuOpen);
 
@@ -121,6 +125,12 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
             <div className="flex items-center justify-end gap-2 shrink-0">
               {/* Desktop CTAs & Profile */}
               <div className="hidden lg:flex items-center gap-2">
+                <ThemeToggleButton 
+                  isDarkMode={isDarkMode} 
+                  toggleTheme={toggleTheme} 
+                  isMobile={false} 
+                  setIsCustomizerOpen={setIsCustomizerOpen} 
+                />
                 <LanguageSelector compact />
                 {authenticated ? (
                   <>
@@ -176,6 +186,7 @@ const Navbar = ({ cursorEnabled, toggleCursor }) => {
           }}
         />
       </nav>
+      <ThemeCustomizer />
     </>
   );
 };

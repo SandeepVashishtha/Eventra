@@ -74,21 +74,22 @@ const EventAnalyticsDashboard = () => {
   const { eventId } = useParams();
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
+  const [selectedOrg, setSelectedOrg] = useState("org-global");
 
   useEffect(() => {
-    // Simulate loading data
+    setLoading(true);
     const timer = setTimeout(() => {
       setLoading(false);
-    }, 800);
+    }, 400);
     return () => clearTimeout(timer);
-  }, []);
+  }, [selectedOrg]);
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
-          <p className="text-slate-500 font-medium animate-pulse">Loading Analytics...</p>
+          <p className="text-slate-500 font-medium animate-pulse">Loading Analytics for {selectedOrg}...</p>
         </div>
       </div>
     );
@@ -116,10 +117,23 @@ const EventAnalyticsDashboard = () => {
               </p>
             </div>
           </div>
-          <button className="flex items-center justify-center gap-2 px-5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl font-bold text-sm shadow-sm hover:shadow transition-all active:scale-95">
-            <Download size={16} />
-            Export CSV
-          </button>
+
+          <div className="flex items-center gap-3">
+            <select
+              value={selectedOrg}
+              onChange={(e) => setSelectedOrg(e.target.value)}
+              className="px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 shadow-sm"
+            >
+              <option value="org-global">Organization Alpha</option>
+              <option value="org-beta">Organization Beta</option>
+              <option value="org-gamma">Organization Gamma</option>
+            </select>
+
+            <button className="flex items-center justify-center gap-2 px-5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl font-bold text-sm shadow-sm hover:shadow transition-all active:scale-95">
+              <Download size={16} />
+              Export CSV
+            </button>
+          </div>
         </div>
 
       {/* Tab Selection */}

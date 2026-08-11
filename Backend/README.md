@@ -85,11 +85,14 @@ The backend implements a comprehensive set of modules to handle various platform
 | `CORS_ALLOWED_ORIGINS`| No | Comma-separated list of allowed origins |
 | `RATE_LIMIT_ENABLED`| No | Toggle for API rate limiting (Default: true) |
 | `GOOGLE_CLIENT_ID` | No | Client ID for Google OAuth integration |
+| `DB_URL` | No | Dev datasource JDBC URL (Default: `jdbc:h2:file:./data/eventradb`) |
+| `DB_USERNAME` | No | Dev datasource username (Default: `sa`) |
+| `DB_PASSWORD` | No | Dev datasource password (Default: empty) |
 
 ## Database Configuration
 
-*   **Development**: By default, the application uses an in-memory **H2 Database** (`jdbc:h2:mem:testdb`) for easy local development without external dependencies.
-*   **Production**: The project is configured to support **PostgreSQL**. Database connection details should be provided via environment variables in a production environment.
+*   **Development**: By default, the application uses a **file-based H2 Database** (`jdbc:h2:file:./data/eventradb`) so that data — including the persisted JWT blacklist — survives application restarts. The database file is written under `Backend/data/`. Override the datasource with `DB_URL`, `DB_USERNAME`, and `DB_PASSWORD` (e.g. to point at a local PostgreSQL instance).
+*   **Production**: The project is configured to support **PostgreSQL**. Database connection details are provided via `DATABASE_URL`, `DATABASE_USERNAME`, and `DATABASE_PASSWORD` environment variables (see `application-prod.yml`).
 *   **JPA Strategy**: Hibernate is set to `update` mode in development, automatically managing schema changes based on entities.
 
 ## Running Tests
