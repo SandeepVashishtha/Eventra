@@ -26,19 +26,73 @@ export const submitEventFeedback = async ({ eventId, rating, comment, tags = [] 
 };
 
 /**
- * Get all feedback for an event
+ * Get all feedback for an event with optional pagination, sorting, and filtering
  * @param {string} eventId - Event identifier
- * @returns {Array} Array of feedback objects
+ * @param {Object} options - Optional configuration object
+ * @param {number} options.filterByRating - Filter by specific rating (1-5)
+ * @param {string} options.sortBy - Field to sort by (default: 'createdAt')
+ * @param {string} options.sortOrder - Sort order ('asc' or 'desc', default: 'desc')
+ * @param {number} options.page - Page number for pagination (1-indexed)
+ * @param {number} options.limit - Items per page
+ * @returns {Array|Object} Array of feedback objects, or paginated object with { data, total, page, totalPages }
  */
-export const getEventFeedback = (eventId) => {
+export const getEventFeedback = (eventId, options = {}) => {
   if (typeof window === "undefined") return [];
   try {
     const allFeedback = safeJsonParse(localStorage.getItem(FEEDBACK_STORAGE_KEY), {});
-    const rawFeedback = allFeedback[eventId] || [];
-    return rawFeedback.map(f => ({
+    let rawFeedback = allFeedback[eventId] || [];
+
+    // Apply sanitization to all feedback
+    let list = rawFeedback.map(f => ({
       ...f,
       comment: f.comment ? sanitizeHtml(f.comment) : f.comment
     }));
+
+    // 1. Filtering
+    if (options.filterByRating !== undefined) {
+      list = list.filter((f) => f.rating === options.filterByRating);
+    }
+
+    // 2. Sorting
+    const sortBy = options.sortBy || 'createdAt';
+    const sortOrder = options.sortOrder === 'asc' ? 1 : -1;
+    
+    // Create a safe sorting function that handles missing fields
+    list.sort((a, b) => {
+      const aVal = a[sortBy];
+      const bVal = b[sortBy];
+      
+      // Handle undefined/missing values by sorting them to the end
+      if (aVal === undefined || aVal === null) return 1;
+      if (bVal === undefined || bVal === null) return -1;
+      
+      // Numeric comparison for rating
+      if (sortBy === 'rating') {
+        return (aVal - bVal) * sortOrder;
+      }
+      
+      // String comparison for other fields (createdAt, updatedAt, etc.)
+      if (aVal > bVal) return sortOrder;
+      if (aVal < bVal) return -sortOrder;
+      return 0;
+    });
+
+    // 3. Pagination
+    if (options.page && options.limit) {
+      const page = Math.max(1, options.page);
+      const limit = Math.max(1, options.limit);
+      const start = (page - 1) * limit;
+      const total = list.length;
+      
+      return {
+        data: list.slice(start, start + limit),
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+      };
+    }
+
+    return list;
   } catch (error) {
     console.warn("Error retrieving feedback:", error);
     return [];
