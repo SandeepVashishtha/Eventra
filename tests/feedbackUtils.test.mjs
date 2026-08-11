@@ -33,6 +33,8 @@ const {
   deleteFeedback,
   exportFeedbackAsCSV,
   clearAllFeedback,
+  sanitizeCSVCell,
+} from '../../utils/feedbackUtils';
 } = await import('../src/utils/feedbackUtils.js');
 
 const expect = (actual) => ({
@@ -297,6 +299,28 @@ describe('Feedback Utils', () => {
     });
   });
 
+  describe('sanitizeCSVCell', () => {
+    it('should wrap basic strings in double quotes', () => {
+      expect(sanitizeCSVCell('hello')).toBe('"hello"');
+    });
+
+    it('should return empty double quotes for null or undefined', () => {
+      expect(sanitizeCSVCell(null)).toBe('""');
+      expect(sanitizeCSVCell(undefined)).toBe('""');
+    });
+
+    it('should sanitize formula injection triggers (=, +, -, @, \\t, \\r)', () => {
+      expect(sanitizeCSVCell('=SUM(1,2)')).toBe(' "\'=SUM(1,2)"');
+      expect(sanitizeCSVCell('+12345')).toBe(' "\'+12345"');
+      expect(sanitizeCSVCell('-12345')).toBe(' "\'-12345"');
+      expect(sanitizeCSVCell('@ADMIN')).toBe(' "\'@ADMIN"');
+    });
+
+    it('should escape internal double quotes properly', () => {
+      expect(sanitizeCSVCell('Hello "World"')).toBe('"Hello ""World"""');
+    });
+  });
+
   describe('exportFeedbackAsCSV', () => {
     it('should export feedback as CSV', () => {
       saveFeedback(testEventId, {
@@ -318,6 +342,30 @@ describe('Feedback Utils', () => {
     it('should handle empty feedback', () => {
       const csv = exportFeedbackAsCSV(testEventId);
       expect(csv).toBe('');
+    });
+
+    it('should sanitize formula injection triggers in export', () => {
+      saveFeedback(testEventId, {
+        rating: 5,
+        comment: '=CMD|\' /C calc\'!A0',
+        tags: ['+DangerTag'],
+        userId: 'user1',
+      });
+
+      const csv = exportFeedbackAsCSV(testEventId);
+      expect(csv).toContain('\'=CMD|\' /C calc\'!A0');
+      expect(csv).toContain('\'+DangerTag');
+    });
+
+    it('should escape internal double quotes and wrap cells in quotes', () => {
+      saveFeedback(testEventId, {
+        rating: 4,
+        comment: 'She said "Awesome!" to everyone',
+        userId: 'user1',
+      });
+
+      const csv = exportFeedbackAsCSV(testEventId);
+      expect(csv).toContain('"She said ""Awesome!"" to everyone"');
     });
   });
 });
