@@ -135,6 +135,17 @@ export const buildInteractionProfile = ({
     ...viewedEvents.map((entry) => ({ entry, weight: 1 })),
   ];
 
+  // Deduplicate by event ID, keeping the first (highest-weight) occurrence so
+  // an event registered + bookmarked + viewed is counted only once.
+  const seenIds = new Set();
+  const uniqueWeightedEvents = weightedEvents.filter(({ entry }) => {
+    const id = getEventId(unwrapEvent(entry));
+    if (!id) return true;
+    if (seenIds.has(id)) return false;
+    seenIds.add(id);
+    return true;
+  });
+
   const categoryWeights = {};
   const typeWeights = {};
   const tagWeights = {};
@@ -142,7 +153,7 @@ export const buildInteractionProfile = ({
   const interactedIds = new Set();
   const registeredIds = new Set();
 
-  weightedEvents.forEach(({ entry, weight }) => {
+  uniqueWeightedEvents.forEach(({ entry, weight }) => {
     const event = unwrapEvent(entry);
     const id = getEventId(event);
     const category = getEventCategory(event);
@@ -175,7 +186,7 @@ export const buildInteractionProfile = ({
     categories: categoryWeights,
     types: typeWeights,
     tags: tagWeights,
-    interactedEvents: weightedEvents.map(({ entry }) => unwrapEvent(entry)),
+    interactedEvents: uniqueWeightedEvents.map(({ entry }) => unwrapEvent(entry)),
     interactedIds,
     registeredIds,
     location: topLocation,

@@ -63,7 +63,7 @@ const interactions = buildInteractionProfile({
   location: "San Francisco",
 });
 assert.equal(interactions.categories["web development"], 4);
-assert.equal(interactions.categories["ai and machine learning"], 4);
+assert.equal(interactions.categories["ai and machine learning"], 3);
 assert(interactions.tags.react > 0);
 
 const collaborativeScore = calculateRecommendationScore(
