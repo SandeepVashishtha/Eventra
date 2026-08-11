@@ -191,9 +191,18 @@ public class AuthService {
         }
     }
 
-    public void logout(String token) {
-        java.util.Date expiration = jwtTokenProvider.getExpirationDateFromToken(token);
-        tokenBlacklistService.addToBlacklist(token, expiration);
+    public void logout(String accessToken, String refreshToken) {
+        if (accessToken != null && !accessToken.isBlank()) {
+            java.util.Date expiration = jwtTokenProvider.getExpirationDateFromToken(accessToken);
+            tokenBlacklistService.addToBlacklist(accessToken, expiration);
+        }
+
+        if (refreshToken != null && !refreshToken.isBlank()
+                && jwtTokenProvider.validateToken(refreshToken)
+                && jwtTokenProvider.isRefreshToken(refreshToken)) {
+            java.util.Date refreshExpiration = jwtTokenProvider.getExpirationDateFromToken(refreshToken);
+            tokenBlacklistService.addToBlacklist(refreshToken, refreshExpiration);
+        }
     }
 
     public void reauth(String userEmail, String password) {
