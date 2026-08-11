@@ -91,6 +91,14 @@ public class HackathonService {
                     "Only the hackathon's own organizer (or an administrator) can manage this hackathon.");
         }
 
+        // Validate chronological date range order
+        if (request.getStartDate() != null && request.getEndDate() != null && request.getStartDate().isAfter(request.getEndDate())) {
+            throw new IllegalArgumentException("Start date cannot be after end date.");
+        }
+        if (request.getRegistrationDeadline() != null && request.getEndDate() != null && request.getRegistrationDeadline().isAfter(request.getEndDate())) {
+            throw new IllegalArgumentException("Registration deadline cannot be after end date.");
+        }
+
         hackathon.setTitle(request.getTitle());
         hackathon.setDescription(request.getDescription());
         hackathon.setOrganizer(request.getOrganizer());
