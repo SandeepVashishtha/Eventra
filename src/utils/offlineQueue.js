@@ -596,6 +596,7 @@ const notifyQueueProcessed = (result) => {
  */
 export const processQueueItem = async (item, fetchFn, options = {}) => {
   const { signal, onConflict } = options;
+  let lastResponseWas5xx = false;
 
   for (let attempt = 0; attempt <= MAX_RETRY_COUNT; attempt++) {
     if (signal?.aborted) return { status: "error", item, error: new DOMException("Aborted", "AbortError") };
@@ -667,8 +668,10 @@ export const processQueueItem = async (item, fetchFn, options = {}) => {
       }
 
       // 5xx — retry with backoff
+      lastResponseWas5xx = true;
       clearPendingTimeout(); if (cleanupCombined) cleanupCombined(); continue;
     } catch (error) {
+      lastResponseWas5xx = false;
       clearPendingTimeout();
       if (cleanupCombined) cleanupCombined();
       if (error.name === "AbortError") return { status: "error", item, error };
@@ -677,7 +680,18 @@ export const processQueueItem = async (item, fetchFn, options = {}) => {
     }
   }
 
-  return { status: "dropped", item };
+  // Exhausted every attempt on a transient 5xx: retain the item for the next
+  // sync cycle instead of treating it like a confirmed 4xx rejection. Only
+  // confirmed client-side rejections (4xx) permanently drop an item (#14605).
+  if (lastResponseWas5xx) {
+    return {
+      status: "error",
+      item,
+      error: new Error(`Server responded with 5xx after ${MAX_RETRY_COUNT + 1} attempts`),
+    };
+  }
+
+  return { status: "error", item, error: new Error("Request failed after all retry attempts") };
 };
 
 /**

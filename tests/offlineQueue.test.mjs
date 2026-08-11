@@ -71,6 +71,7 @@ const {
   clearQueue,
   validateQueueSession,
   processQueue,
+  processQueueItem,
 } = await import(
   "../src/utils/offlineQueue.js"
 );
@@ -316,5 +317,48 @@ assert.equal(processResultForB.succeeded, 1, "User-b item should succeed");
 const finalQueue = getQueue();
 assert.equal(finalQueue.length, 1, "User A's item should remain in the queue");
 assert.equal(finalQueue[0].userId, "user-a", "Remaining item should belong to user-a");
+
+// ── 5xx on the final retry retains the item instead of dropping it (#14605) ──
+reset();
+// Cap long timers (exponential backoff, request timeout) so the full retry loop
+// completes quickly; the request-timeout abort still loses the race to an
+// immediately-resolving fetch response.
+const _origSetTimeout = global.setTimeout;
+global.setTimeout = (fn, delay = 0) => _origSetTimeout(fn, Math.min(delay, 5));
+
+const fivexxItem = {
+  id: "fivexx-item",
+  actionType: "REGISTER_EVENT",
+  eventId: "evt-5xx",
+  endpoint: "/api/events/register",
+  payload: { eventId: "evt-5xx" },
+  retryCount: 0,
+};
+
+let fivexxAttempts = 0;
+const fivexxResult = await processQueueItem(fivexxItem, async () => {
+  fivexxAttempts += 1;
+  return { ok: false, status: 503 };
+});
+
+assert.equal(fivexxAttempts, 6, "all retry attempts are made on a transient 5xx");
+assert.equal(
+  fivexxResult.status,
+  "error",
+  "final-attempt 5xx is classified as a transient error, not dropped"
+);
+assert.equal(
+  fivexxResult.item.id,
+  "fivexx-item",
+  "transient 5xx retains the queued item for the next sync cycle"
+);
+
+const fourxxResult = await processQueueItem(
+  { ...fivexxItem, id: "fourxx-item" },
+  async () => ({ ok: false, status: 400 })
+);
+assert.equal(fourxxResult.status, "dropped", "4xx rejection still drops the item");
+
+global.setTimeout = _origSetTimeout;
 
 console.log("All offlineQueue tests passed ✓");
