@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext.js";
 import usePageVisibility from "./usePageVisibility.js";
 import { safeJsonParse } from "../utils/safeJsonParse.js";
 import { getNotificationMessage } from "../utils/notificationPreferences.js";
+import { mergeNotificationLists } from "../utils/notificationMerge.js";
 import { get as idbGet, del as idbDel } from "idb-keyval";
 import { showUndoToast } from "../utils/toast.js";
 
@@ -109,21 +110,19 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
   };
 
   const applyList = useCallback(
-    (list, { deliverNew: shouldDeliver = false } = {}) => {
+    (list, { deliverNew: shouldDeliver = false, merge = false } = {}) => {
       const normalized = list.map(normalize);
       const incomingUnread = normalized.filter((n) => {
         const isNew = !seenIds.current.has(n.id);
         return isNew && !n.isRead;
       });
       normalized.forEach((n) => addSeenId(n.id));
-      setNotifications((prev) => {
-        const byId = new Map(normalized.map((n) => [n.id, n]));
-        const merged = normalized.concat(prev.filter((p) => !byId.has(p.id)));
-        const sorted = merged.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        persist(sorted, storageKeyRef.current);
-        return sorted;
-      });
-      setUnreadCount((prev) => Math.max(0, prev + incomingUnread.length));
+      const merged = merge
+        ? mergeNotificationLists(notificationsRef.current, normalized)
+        : normalized;
+      setNotifications(merged);
+      setUnreadCount(merged.filter((n) => !n.isRead).length);
+      persist(merged, storageKeyRef.current);
       if (shouldDeliver && hasCompletedInitialFetchRef.current && incomingUnread.length > 0) {
         deliverNew(incomingUnread);
       }
