@@ -90,6 +90,8 @@ const STORAGE_KEY_PREFIX = "eventra:prefs";
 const getStorageKey = (namespace) =>
   namespace ? `${STORAGE_KEY_PREFIX}:${namespace}` : STORAGE_KEY_PREFIX;
 
+const EMPTY_DEFAULTS = {};
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Storage helpers
 // ─────────────────────────────────────────────────────────────────────────────
@@ -137,7 +139,7 @@ const writeToStorage = (key, value) => {
 const useUserPreferences = ({ namespace } = {}) => {
   const storageKey = getStorageKey(namespace);
   const defaults = namespace
-    ? NAMESPACE_DEFAULTS[namespace] ?? {}
+    ? NAMESPACE_DEFAULTS[namespace] ?? EMPTY_DEFAULTS
     : GLOBAL_DEFAULTS;
 
   const [preferences, setPreferencesState] = useState(() =>
