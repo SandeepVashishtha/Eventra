@@ -10,9 +10,15 @@ import { useCallback, useMemo } from "react";
  * Custom React hook to compute visual states, accessibility attributes, and CSS class names 
  * based on the validation lifecycle of a form field.
  *
- * ### Purpose
- * Standardizes form field validation feedback across the application. It decouples the visual 
- * representation and accessibility characteristics of form inputs from the core validation logic.
+ * Supports both options object signature and positional parameters:
+ * e.g. useValidationState({ fieldName, validationState, error, touched, messages })
+ * e.g. useValidationState(fieldName, validationState, error, touched, messages)
+ *
+ * @param {string|Object} fieldNameOrOptions - Field name string or options object
+ * @param {string} [validationStateArg="idle"] - Current validation state ('idle' | 'validating' | 'success' | 'error')
+ * @param {string|null} [errorArg=null] - Field error message
+ * @param {boolean} [touchedArg=false] - Whether field has been touched
+ * @param {Object} [messagesArg={}] - Custom message template strings or formatter functions for i18n
  *
  * ### State & Styling Transitions
  * - **Un-touched Field**: If `touched` is false, styling class names returned via `fieldClassName` 
