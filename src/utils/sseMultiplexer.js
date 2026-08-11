@@ -1,4 +1,6 @@
 import { logger } from "./logger.js";
+import { ENV } from "../config/env.js";
+import { SSE_BASE_URL } from "../config/backendConfig.js";
 
 const MULTIPLEX_CHANNEL_NAME = "eventra_sse_multiplexer";
 const LOCK_NAME = "eventra_sse_leader_lock";
@@ -9,11 +11,32 @@ export class SseMultiplexer {
   constructor(options = {}) {
     this.tabId = TAB_ID;
     this.isLeader = false;
+    this.localStorageLeadershipToken = null;
+    this.localStorageClaimTimeout = null;
     this.localSubscriptions = new Map(); // path -> Set of local callbacks
     this.globalSubscribers = new Map(); // path -> Set of tabIds
     this.activeEventSources = new Map(); // path -> EventSource instance
     this.pathStatuses = new Map(); // path -> status string
     this.statusListeners = new Set(); // callbacks listening to status changes
+    this.lastSeenFollowers = new Map();
+    this.tabIdToPaths = new Map();
+    // FIX (#7855 Bug 4): Track per-path reconnect attempt counts and pending
+    // backoff timers so we can implement exponential backoff with jitter.
+    this.reconnectAttempts = new Map(); // path -> attempt count (number)
+    this.reconnectTimers = new Map();   // path -> setTimeout handle
+
+    this.msgHandlers = {
+      SUBSCRIBE: (msg) => this.handleSubscribe(msg),
+      UNSUBSCRIBE: (msg) => this.handleUnsubscribe(msg),
+      UNSUBSCRIBE_ALL: (msg) => this.handleUnsubscribeAll(msg),
+      QUERY_SUBSCRIBERS: (msg) => this.handleQuerySubscribers(msg),
+      SUBSCRIBERS_RESPONSE: (msg) => this.handleSubscribersResponse(msg),
+      SSE_MESSAGE: (msg) => this.handleSseMessage(msg),
+      SSE_STATUS: (msg) => this.handleSseStatus(msg),
+      RECONNECT_REQUEST: (msg) => this.handleReconnectRequest(msg),
+      PING: (msg) => this.handlePing(msg),
+      PONG: (msg) => this.handlePong(msg),
+    };
 
     // --- New Resiliency & Feature State ---
     this.lastEventIds = new Map(); // path -> string (Last-Event-ID)
@@ -38,6 +61,7 @@ export class SseMultiplexer {
         .request(LOCK_NAME, async () => {
           logger.log(`[SSE Multiplexer] Tab ${this.tabId} acquired lock and became LEADER.`);
           this.isLeader = true;
+          this.startHeartbeatChecks();
           this.queryGlobalSubscribers();
           this.reconcileConnections();
 
@@ -55,14 +79,38 @@ export class SseMultiplexer {
   }
 
   setupLocalStorageElection() {
+    if (this.localStorageInterval) clearInterval(this.localStorageInterval);
+
     const HEARTBEAT_INTERVAL = 3000;
     const HEARTBEAT_TIMEOUT = 7000;
 
     const checkLeader = () => {
-      if (this.isLeader) return;
-
       const now = Date.now();
       const heartbeat = localStorage.getItem(HEARTBEAT_KEY);
+
+      // If we think we're the leader, verify we still hold the heartbeat
+      if (this.isLeader) {
+        if (heartbeat) {
+          try {
+            const parsed = JSON.parse(heartbeat);
+            if (parsed && parsed.tabId !== this.tabId) {
+              // Another tab overwrote our heartbeat — we lost leadership
+              logger.log(`[SSE Multiplexer] Tab ${this.tabId} detected leadership loss. Relinquishing.`);
+              this.isLeader = false;
+              if (this.heartbeatInterval) {
+                clearInterval(this.heartbeatInterval);
+                this.heartbeatInterval = null;
+              }
+              // Close all physical EventSources since we're no longer leader
+              for (const source of this.activeEventSources.values()) {
+                source.close();
+              }
+              this.activeEventSources.clear();
+            }
+          } catch {}
+        }
+        return;
+      }
 
       if (heartbeat) {
         try {
@@ -70,7 +118,10 @@ export class SseMultiplexer {
           if (parsed && now - parsed.timestamp < HEARTBEAT_TIMEOUT && parsed.tabId !== this.tabId) {
             return;
           }
-        } catch {}
+        } catch {
+          setTimeout(() => this.claimLocalStorageLeadership(), Math.random() * 500);
+          return;
+        }
       }
 
       this.claimLocalStorageLeadership();
@@ -80,15 +131,80 @@ export class SseMultiplexer {
     checkLeader();
   }
 
-  claimLocalStorageLeadership() {
+  claimLocalStorageLeadership(heartbeatTimeout = 7000) {
+    if (this.localStorageClaimTimeout || this.isLeader) return;
+
+    const token = `${this.tabId}:${Date.now()}:${Math.random().toString(36).substring(2, 9)}`;
+    const timestamp = Date.now();
+
+    try {
+      const current = localStorage.getItem(HEARTBEAT_KEY);
+      const parsed = current ? JSON.parse(current) : null;
+      if (
+        parsed &&
+        parsed.tabId !== this.tabId &&
+        timestamp - parsed.timestamp < heartbeatTimeout
+      ) {
+        return;
+      }
+
+      localStorage.setItem(HEARTBEAT_KEY, JSON.stringify({ tabId: this.tabId, token, timestamp }));
+    } catch {
+      this.becomeLocalStorageLeader(token);
+      return;
+    }
+
+    const confirmDelay =
+      LOCAL_STORAGE_CONFIRM_MIN_MS + Math.floor(Math.random() * LOCAL_STORAGE_CONFIRM_JITTER_MS);
+
+    this.localStorageClaimTimeout = setTimeout(() => {
+      this.localStorageClaimTimeout = null;
+
+      try {
+        const heartbeat = JSON.parse(localStorage.getItem(HEARTBEAT_KEY) || "null");
+        if (heartbeat?.tabId !== this.tabId || heartbeat?.token !== token) return;
+      } catch {
+        return;
+      }
+
+      this.becomeLocalStorageLeader(token);
+    }, confirmDelay);
+  }
+
+  becomeLocalStorageLeader(token) {
     this.isLeader = true;
+    this.localStorageLeadershipToken = token;
     logger.log(`[SSE Multiplexer] Tab ${this.tabId} claimed leadership via LocalStorage.`);
 
     const writeHeartbeat = () => {
       try {
+        const current = JSON.parse(localStorage.getItem(HEARTBEAT_KEY) || "null");
+        if (
+          current?.tabId &&
+          current.tabId !== this.tabId &&
+          Date.now() - current.timestamp < 7000
+        ) {
+          for (const source of this.activeEventSources.values()) {
+            source.close();
+          }
+          this.activeEventSources.clear();
+          this.isLeader = false;
+          this.localStorageLeadershipToken = null;
+          if (this.heartbeatInterval) {
+            clearInterval(this.heartbeatInterval);
+            this.heartbeatInterval = null;
+          }
+          this.stopHeartbeatChecks();
+          return;
+        }
+
         localStorage.setItem(
           HEARTBEAT_KEY,
-          JSON.stringify({ tabId: this.tabId, timestamp: Date.now() })
+          JSON.stringify({
+            tabId: this.tabId,
+            token: this.localStorageLeadershipToken,
+            timestamp: Date.now(),
+          })
         );
       } catch {}
     };
@@ -158,30 +274,69 @@ export class SseMultiplexer {
   }
 
   handleBroadcastMessage(msg) {
-    if (!msg || msg.tabId === this.tabId) return;
+    if (!isValidBroadcastMessage(msg) || msg.tabId === this.tabId) return;
 
-    switch (msg.type) {
-      case "SUBSCRIBE":
-        this.addGlobalSubscriber(msg.path, msg.tabId);
-        if (this.isLeader) this.reconcileConnections();
-        break;
+    if (this.isLeader && this.lastSeenFollowers) {
+      this.lastSeenFollowers.set(msg.tabId, Date.now());
+    }
 
-      case "UNSUBSCRIBE":
-        this.removeGlobalSubscriber(msg.path, msg.tabId);
-        if (this.isLeader) this.reconcileConnections();
-        break;
+    const handler = this.msgHandlers[msg.type];
+    if (handler) {
+      handler(msg);
+    }
+  }
 
-      case "UNSUBSCRIBE_ALL":
-        if (msg.paths) {
-          msg.paths.forEach((p) => this.removeGlobalSubscriber(p, msg.tabId));
-          if (this.isLeader) this.reconcileConnections();
-        }
-        break;
+  handleSubscribe(msg) {
+    this.addGlobalSubscriber(msg.path, msg.tabId);
+    if (this.isLeader) {
+      this.reconcileConnections();
+      const currentStatus = this.pathStatuses.get(msg.path);
+      if (currentStatus) {
+        this.broadcastMessage({
+          type: "SSE_STATUS",
+          path: msg.path,
+          status: currentStatus,
+          tabId: this.tabId,
+        });
+      }
+    }
+  }
 
-      case "QUERY_SUBSCRIBERS":
-        if (this.localSubscriptions.size > 0) {
+  handleUnsubscribe(msg) {
+    this.removeGlobalSubscriber(msg.path, msg.tabId);
+    if (this.isLeader) this.reconcileConnections();
+  }
+
+  handleUnsubscribeAll(msg) {
+    if (msg.paths) {
+      msg.paths.forEach((p) => this.removeGlobalSubscriber(p, msg.tabId));
+      if (this.isLeader) this.reconcileConnections();
+    }
+  }
+
+  handleQuerySubscribers() {
+    if (this.localSubscriptions.size > 0) {
+      this.broadcastMessage({
+        type: "SUBSCRIBERS_RESPONSE",
+        tabId: this.tabId,
+        paths: Array.from(this.localSubscriptions.keys()),
+      });
+    }
+  }
+
+  handleSubscribersResponse(msg) {
+    if (!msg.paths) return;
+
+    msg.paths.forEach((p) => this.addGlobalSubscriber(p, msg.tabId));
+
+    if (this.isLeader) {
+      msg.paths.forEach((p) => {
+        const currentStatus = this.pathStatuses.get(p);
+        if (currentStatus) {
           this.broadcastMessage({
-            type: "SUBSCRIBERS_RESPONSE",
+            type: "SSE_STATUS",
+            path: p,
+            status: currentStatus,
             tabId: this.tabId,
             paths: Array.from(this.localSubscriptions.keys()),
             lastEventIds: Object.fromEntries(this.lastEventIds),
@@ -208,9 +363,9 @@ export class SseMultiplexer {
         this.dispatchLocalMessage(msg.path, msg.data, msg.eventType);
         break;
 
-      case "SSE_STATUS":
-        this.updatePathStatus(msg.path, msg.status);
-        break;
+  handleSseStatus(msg) {
+    this.updatePathStatus(msg.path, msg.status);
+  }
 
       case "RECONNECT_REQUEST":
         if (this.isLeader) {
@@ -220,11 +375,20 @@ export class SseMultiplexer {
     }
   }
 
+  handlePong() {
+    // No-op, handled by heartbeats tracking
+  }
+
   addGlobalSubscriber(path, tabId) {
     if (!this.globalSubscribers.has(path)) {
       this.globalSubscribers.set(path, new Set());
     }
     this.globalSubscribers.get(path).add(tabId);
+
+    if (!this.tabIdToPaths.has(tabId)) {
+      this.tabIdToPaths.set(tabId, new Set());
+    }
+    this.tabIdToPaths.get(tabId).add(path);
   }
 
   removeGlobalSubscriber(path, tabId) {
@@ -233,6 +397,14 @@ export class SseMultiplexer {
       set.delete(tabId);
       if (set.size === 0) {
         this.globalSubscribers.delete(path);
+      }
+    }
+
+    const paths = this.tabIdToPaths.get(tabId);
+    if (paths) {
+      paths.delete(path);
+      if (paths.size === 0) {
+        this.tabIdToPaths.delete(tabId);
       }
     }
   }
@@ -320,7 +492,7 @@ export class SseMultiplexer {
       let payload = evt.data;
       try {
         payload = JSON.parse(evt.data);
-      } catch {}
+      } catch { console.warn("[sseMultiplexer] JSON parse failed"); }
 
       // Heartbeat message handler (ignore ping frames, reset watchdog)
       if (payload?.type === "ping" || evt.type === "ping") return;
@@ -335,6 +507,11 @@ export class SseMultiplexer {
         lastEventId: evt.lastEventId,
       });
     };
+
+    source.onmessage = handleEvent("message");
+    ["availability", "init", "notification", "leaderboard", "analytics"].forEach((name) => {
+      source.addEventListener(name, handleEvent(name));
+    });
 
     source.onerror = () => {
       this.clearWatchdog(path);
@@ -413,7 +590,7 @@ export class SseMultiplexer {
     this.pathStatuses.set(path, status);
 
     if (this.isLeader) {
-      this.broadcastMessage({ type: "SSE_STATUS", path, status });
+      this.broadcastMessage({ type: "SSE_STATUS", path, status, tabId: this.tabId });
     }
 
     this.statusListeners.forEach((listener) => {
@@ -429,13 +606,22 @@ export class SseMultiplexer {
   teardown() {
     logger.log(`[SSE Multiplexer] Teardown triggered for tab: ${this.tabId}`);
 
+    this.stopHeartbeatChecks();
+
     if (this.channel) {
-      this.broadcastMessage({
-        type: "UNSUBSCRIBE_ALL",
-        tabId: this.tabId,
-        paths: Array.from(this.localSubscriptions.keys()),
-      });
-      this.channel.close();
+      try {
+        this.broadcastMessage({
+          type: "UNSUBSCRIBE_ALL",
+          tabId: this.tabId,
+          paths: Array.from(this.localSubscriptions.keys()),
+        });
+      } catch {}
+      try {
+        this.channel.close();
+      } catch {}
+      if (isVisibilityChange) {
+        this.channel = null;
+      }
     }
 
     for (const path of this.activeEventSources.keys()) {
@@ -451,6 +637,7 @@ export class SseMultiplexer {
         localStorage.removeItem(HEARTBEAT_KEY);
       } catch {}
     }
+    this.isLeader = false;
   }
 }
 
