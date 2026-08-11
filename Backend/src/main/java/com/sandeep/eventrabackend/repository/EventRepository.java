@@ -20,9 +20,17 @@ public interface EventRepository extends JpaRepository<Event, Long>, JpaSpecific
     Optional<Event> findByIdWithLock(@Param("id") Long id);
 
     /**
-     * FIX (#13914): Atomic single-query seat decrement to prevent PostgreSQL/MySQL row deadlocks
+     * FIX (#13914): Atomic single-query capacity guard for registration.
+     *
+     * <p>Increments {@code registeredCount} in one UPDATE only while a seat is
+     * free (a null {@code capacity} means unlimited), so concurrent
+     * registrations cannot both pass a read-modify-write check and overshoot
+     * capacity. The affected row count distinguishes "granted" (1) from
+     * "event full" (0). Built against the real {@code capacity} /
+     * {@code registeredCount} fields — no {@code availableSeats} column exists.
      */
-    @Modifying
-    @Query("UPDATE Event e SET e.availableSeats = e.availableSeats - 1 WHERE e.id = :id AND e.availableSeats > 0")
-    int decrementSeatsAtomically(@Param("id") Long id);
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE Event e SET e.registeredCount = e.registeredCount + 1 "
+            + "WHERE e.id = :id AND (e.capacity IS NULL OR e.capacity > e.registeredCount)")
+    int incrementRegisteredCountAtomically(@Param("id") Long id);
 }
