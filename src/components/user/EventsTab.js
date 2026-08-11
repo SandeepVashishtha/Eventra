@@ -296,7 +296,7 @@ const EventCard = memo(
           <Link
             to={`/events/${event?.id || event?.eventId}`}
             onClick={() => addToRecentEvents?.(event)}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold transition-all duration-300 hover:scale-105"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold transition-all duration-300 hover:scale-105"
           >
             <Activity size={13} /> View Details
           </Link>
@@ -351,7 +351,7 @@ const WaitlistCard = memo(({ event, index, onLeaveWaitlist }) => {
         <h4 className="text-lg font-bold text-gray-800 dark:text-gray-100 line-clamp-2 min-h-[56px] leading-snug mb-1">
           {event.title}
         </h4>
-        <div className="space-y-1.5 text-xs text-gray-500 dark:text-gray-400">
+        <div className="space-y-1.5 text-xs text-gray-500 dark:text-gray-200">
           <div className="flex items-center gap-1.5">
             <Calendar size={12} /> {event.date || "TBD"}
           </div>
@@ -998,7 +998,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
         {recentEvents.length > 0 && (
           <section className="mb-6">
             <div className="ud-tab-header">
-              <h3 className="ud-page-title text-sm font-medium text-gray-500 dark:text-gray-400">
+              <h3 className="ud-page-title text-sm font-medium text-gray-500 dark:text-gray-200">
                 <Clock size={16} /> Recently Viewed
               </h3>
             </div>
@@ -1007,7 +1007,7 @@ const EventsTab = ({ hostedEvents = [], onViewTicket }) => {
                 <Link
                   key={item.id || item.eventId}
                   to={`/events/${item.id || item.eventId}`}
-                  className="px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-full text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                  className="px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-full text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                 >
                   {item.title}
                 </Link>

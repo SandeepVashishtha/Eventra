@@ -175,13 +175,12 @@ export const calculateFeedbackTrend = (
 ) => {
   const trends = getFeedbackTrends(feedback);
 
-  if (trends.length < 2) {
+  if (!trends || trends.length < 2) {
     return "Stable";
   }
 
-  const first = trends[0].rating;
-  const last =
-    trends[trends.length - 1].rating;
+  const first = trends[0]?.rating ?? 0;
+  const last = trends[trends.length - 1]?.rating ?? 0;
 
   if (last > first + 0.2) {
     return "Improving";

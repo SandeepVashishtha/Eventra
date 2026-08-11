@@ -149,7 +149,7 @@ export const SkeletonLeaderboard = ({ rows = 10 }) => (
           {["Rank", "Contributor", "Points", "PRs"].map((col) => (
             <th
               key={col}
-              className="px-6 py-4 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              className="px-6 py-4 bg-gray-50 dark:bg-gray-800 text-left text-xs font-medium text-gray-500 dark:text-gray-200 uppercase tracking-wider"
             >
               {col}
             </th>

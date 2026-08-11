@@ -139,7 +139,7 @@ const [reminder, setReminder] = useState("30");
       {open && (
         <div className="absolute z-50 mt-2 w-52 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden">
           <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100 dark:border-gray-800">
-            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Choose calendar</span>
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-200">Choose calendar</span>
             <button onClick={() => setOpen(false)} className="text-gray-400 hover:text-gray-600">
               <X className="w-3.5 h-3.5" />
             </button>
@@ -171,7 +171,7 @@ const [reminder, setReminder] = useState("30");
 </button>
 
 <div className="border-t border-gray-100 dark:border-gray-800 px-4 py-3">
-  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
+  <label className="block text-xs font-medium text-gray-500 dark:text-gray-200 mb-2">
     Reminder Time
   </label>
 

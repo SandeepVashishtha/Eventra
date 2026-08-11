@@ -106,7 +106,7 @@ const EventCreation = () => {
                 <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">
                   Create Your <span className="text-indigo-600">Event</span>
                 </h1>
-                <p className="text-lg text-gray-600 dark:text-gray-400">
+                <p className="text-lg text-gray-600 dark:text-gray-200">
                   Fill in the details below to get started with your awesome event.
                 </p>
               </div>
@@ -255,7 +255,7 @@ const EventCreation = () => {
                 <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">
                   Review Your <span className="text-indigo-600">Event</span>
                 </h1>
-                <p className="text-lg text-gray-600 dark:text-gray-400">
+                <p className="text-lg text-gray-600 dark:text-gray-200">
                   Double check everything before going live!
                 </p>
               </div>
@@ -316,7 +316,7 @@ const EventCreation = () => {
                       <div>
                         <p className="text-sm text-gray-500">Date & Time</p>
                         <p className="font-bold text-gray-900 dark:text-white">{formatDate(formData.date || formData.startDate)}</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">{formatTime(formData.startTime)} - {formatTime(formData.endTime)}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-200">{formatTime(formData.startTime)} - {formatTime(formData.endTime)}</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-2xl">
@@ -327,7 +327,7 @@ const EventCreation = () => {
                           {/* 🔥 FIX: Added optional chaining and fallback to prevent Cannot read property 'name' crashes */}
                           {formData.isVirtual ? "Virtual Event" : formData.location?.name || "TBD"}
                         </p>
-                        {!formData.isVirtual && <p className="text-sm text-gray-600 dark:text-gray-400">{formData.location?.city || formData.location?.address}</p>}
+                        {!formData.isVirtual && <p className="text-sm text-gray-600 dark:text-gray-200">{formData.location?.city || formData.location?.address}</p>}
                       </div>
                     </div>
                   </div>

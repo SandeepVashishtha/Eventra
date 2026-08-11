@@ -74,7 +74,7 @@ export default function PlagiarismDashboard({ hackathonTitle = "Global Open Sour
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">
               Code Originality & Plagiarism Detector
             </h1>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            <p className="text-xs text-gray-500 dark:text-gray-200 mt-0.5">
               AST AST Fingerprint Scan • {hackathonTitle}
             </p>
           </div>
@@ -84,7 +84,7 @@ export default function PlagiarismDashboard({ hackathonTitle = "Global Open Sour
           <button
             type="button"
             onClick={handleExportCsv}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 transition-all shadow-sm"
           >
             <FileSpreadsheet className="w-4 h-4 text-emerald-500" />
             Export CSV Audit Report
@@ -106,7 +106,7 @@ export default function PlagiarismDashboard({ hackathonTitle = "Global Open Sour
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Pairwise Scanned</p>
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-200">Pairwise Scanned</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{comparisons.length}</p>
           </div>
           <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
@@ -116,7 +116,7 @@ export default function PlagiarismDashboard({ hackathonTitle = "Global Open Sour
 
         <div className="p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400">High Risk Flags (&gt;70%)</p>
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-200">High Risk Flags (&gt;70%)</p>
             <p className="text-2xl font-bold text-rose-600 dark:text-rose-400 mt-1">{highRiskCount}</p>
           </div>
           <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400">
@@ -126,7 +126,7 @@ export default function PlagiarismDashboard({ hackathonTitle = "Global Open Sour
 
         <div className="p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Clean Submissions</p>
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-200">Clean Submissions</p>
             <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">
               {comparisons.length - highRiskCount - mediumRiskCount}
             </p>

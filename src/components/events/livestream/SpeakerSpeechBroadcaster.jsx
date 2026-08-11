@@ -52,7 +52,7 @@ export default function SpeakerSpeechBroadcaster({ onBroadcastCaption = () => {}
               </span>
             )}
           </h4>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-gray-500 dark:text-gray-200">
             {lastSpeech ? `"${lastSpeech}"` : "Broadcasting live speech to event attendees via SSE"}
           </p>
         </div>

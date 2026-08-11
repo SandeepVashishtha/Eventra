@@ -1,3 +1,6 @@
+import java.util.Map;
+import java.util.HashMap;
+import jakarta.persistence.OptimisticLockException;
 package com.sandeep.eventrabackend.exception;
 
 import com.sandeep.eventrabackend.dto.response.ErrorResponse;
@@ -141,6 +144,21 @@ public class GlobalExceptionHandler {
                 "Uploaded file size exceeds the maximum permitted limit. Please upload a smaller file.", request);
     }
 
+    @ExceptionHandler({
+            java.time.format.DateTimeParseException.class,
+            org.springframework.http.converter.HttpMessageNotReadableException.class,
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class,
+            org.springframework.web.bind.MissingServletRequestParameterException.class,
+            jakarta.validation.ConstraintViolationException.class,
+            org.springframework.web.bind.ServletRequestBindingException.class,
+    })
+    public ResponseEntity<ErrorResponse> handleBadClientInput(Exception ex,
+            HttpServletRequest request) {
+        logger.warn("Malformed request: {}", ex.getMessage());
+        return buildError(HttpStatus.BAD_REQUEST, "Bad Request",
+                "Malformed request: " + ex.getMessage(), request);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(
             Exception ex,
@@ -220,5 +238,15 @@ public class GlobalExceptionHandler {
                 .timestamp(LocalDateTime.now())
                 .build();
         return ResponseEntity.status(status).body(response);
+    }
+
+    @ExceptionHandler({OptimisticLockException.class, ObjectOptimisticLockingFailureException.class})
+    public ResponseEntity<Map<String, Object>> handleOptimisticLockException(Exception ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.CONFLICT.value());
+        body.put("error", "Conflict");
+        body.put("message", "Concurrent ticket cancellation detected. Please retry your request.");
+        return new ResponseEntity<>(body, HttpStatus.CONFLICT);
     }
 }

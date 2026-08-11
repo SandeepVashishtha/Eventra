@@ -38,7 +38,7 @@ export default function FloorPlanAutoSolverModal({ onClose = () => {} }) {
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">
               Dynamic Floor Plan Layout Auto-Solver
             </h1>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            <p className="text-xs text-gray-500 dark:text-gray-200 mt-0.5">
               Constraint-based table placement & fire clearance optimization engine
             </p>
           </div>
@@ -46,7 +46,7 @@ export default function FloorPlanAutoSolverModal({ onClose = () => {} }) {
 
         <button
           onClick={onClose}
-          className="p-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white"
+          className="p-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-200 hover:text-gray-800 dark:hover:text-white"
         >
           <X className="w-5 h-5" />
         </button>

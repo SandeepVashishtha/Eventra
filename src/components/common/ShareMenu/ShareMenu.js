@@ -244,7 +244,7 @@ const ShareMenu = ({
                   {copied ? (
                     <Check className="w-4 h-4 text-green-600" />
                   ) : (
-                    <Copy className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    <Copy className="w-4 h-4 text-gray-600 dark:text-gray-200" />
                   )}
                 </div>
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">

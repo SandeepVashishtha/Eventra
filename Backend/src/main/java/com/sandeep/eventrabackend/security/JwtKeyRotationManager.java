@@ -1,3 +1,4 @@
+import java.util.Date;
 package com.sandeep.eventrabackend.security;
 
 import org.springframework.stereotype.Component;
@@ -47,5 +48,12 @@ public class JwtKeyRotationManager {
 
     public String getCurrentKeyId() {
         return currentKeyId;
+    }
+
+    public boolean isTokenIssuedBeforePasswordUpdate(Date tokenIssuedAt, Date passwordUpdatedAt) {
+        if (passwordUpdatedAt == null || tokenIssuedAt == null) {
+            return false;
+        }
+        return tokenIssuedAt.before(passwordUpdatedAt);
     }
 }
