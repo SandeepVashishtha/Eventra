@@ -825,7 +825,6 @@ public class EventService {
                 eventRegistrationRepository.delete(registration);
                 event.setRegisteredCount((int) eventRegistrationRepository
                                 .countByEvent_IdAndStatus(eventId, "CONFIRMED"));
-                eventRepository.save(event);
 
                 broadcastAvailability(event);
 
