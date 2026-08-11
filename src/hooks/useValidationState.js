@@ -1,11 +1,20 @@
-const EMPTY_OBJECT = {};
+import { useState, useCallback } from 'react';
 
-/**
- * Helper hook for managing validation state in forms
- * Works alongside useFormValidation hook for enhanced validation UX
- */
-import { useCallback, useMemo } from "react";
+export const useValidationState = (initialValues = {}, validationRules = {}) => {
+  const [values, setValues] = useState(initialValues);
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
 
+  const handleChange = useCallback((fieldName, value) => {
+    setValues((prev) => ({ ...prev, [fieldName]: value }));
+
+    // Clear field-level error dynamically when value changes
+    if (errors[fieldName]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[fieldName];
+        return newErrors;
+      });
 /**
  * Custom React hook to compute visual states, accessibility attributes, and CSS class names 
  * based on the validation lifecycle of a form field.
@@ -274,71 +283,26 @@ export const useValidationState = (
     } else {
       attributes["aria-invalid"] = "false";
     }
+  }, [errors]);
 
-    if (state === "validating") {
-      attributes["aria-busy"] = "true";
-    }
+  const handleBlur = useCallback((fieldName) => {
+    setTouched((prev) => ({ ...prev, [fieldName]: true }));
+  }, []);
 
-    if (isValid) {
-      attributes["aria-describedby"] = `${name}-success`;
-    }
-
-    return attributes;
-  }, [name, err, isTouched, state, isValid]);
-
-    const ariaProps = useMemo(() => {
-    const isInvalid = state === "error" && shouldShowError;
-      const customFieldClassName = opts.fieldClassName;
-
-  const fieldClassName = useMemo(() => {
-    if (typeof customFieldClassName === "function") {
-      return customFieldClassName({ state, isTouched, shouldShowError,
-    fieldClassName, isValid });
-    }
-    return customFieldClassName || "";
-  }, [customFieldClassName, state, isTouched, shouldShowError,
-    fieldClassName, isValid]);
+  const resetForm = useCallback((newValues = initialValues) => {
+    setValues(newValues);
+    setErrors({});
+    setTouched({});
+  }, [initialValues]);
 
   return {
-      "aria-invalid": isInvalid,
-      "aria-errormessage": isInvalid ? `${name}-error` : undefined,
-      "aria-describedby": statusMessage ? `${name}-status` : undefined,
-    };
-  }, [state, shouldShowError,
-    fieldClassName,
-    ariaProps, statusMessage, name]);
-
-    const customFieldClassName = opts.fieldClassName;
-
-  const fieldClassName = useMemo(() => {
-    if (typeof customFieldClassName === "function") {
-      return customFieldClassName({ state, isTouched, shouldShowError,
-    fieldClassName, isValid });
-    }
-    return customFieldClassName || "";
-  }, [customFieldClassName, state, isTouched, shouldShowError,
-    fieldClassName, isValid]);
-
-  return {
-    // Status checks
-    statusIndicator,
-    statusMessage,
-    shouldShowError,
-    fieldClassName,
-    ariaProps,
-    isWarning,
-    shouldShowWarning,
-    isValidating,
-    isValid,
-
-    // Styling
-    fieldClassName: getFieldClassName,
-    ariaAttributes,
-
-    // Direct accessors
-    validationState: state,
-    touched: isTouched,
-    error: err,
+    values,
+    errors,
+    touched,
+    handleChange,
+    handleBlur,
+    resetForm,
+    setErrors,
   };
 };
 

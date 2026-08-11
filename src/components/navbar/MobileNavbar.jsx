@@ -1,44 +1,52 @@
-import { Menu } from "lucide-react";
-import MobileDrawer from "./MobileDrawer";
+import React, { useEffect, useCallback } from 'react';
 
-const MobileNavbar = ({
-  isOpen,
-  setIsOpen,
-  isAuthenticated,
-  user,
-  logout,
-  cursorEnabled,
-  toggleCursor,
-}) => {
+export const MobileNav = ({ isOpen, onClose, children }) => {
+  const handleClose = useCallback(() => {
+    document.body.style.overflow = '';
+    if (onClose) {
+      onClose();
+    }
+  }, [onClose]);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
   return (
-    <>
-      <button
-        type="button"
-        onClick={() => setIsOpen((prev) => !prev)}
-        className="mobile-menu-button inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl p-3 text-text-light transition-all duration-200 hover:bg-bg-secondary hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95"
-        aria-label={isOpen ? "Close navigation menu" : "Open navigation menu"}
-        aria-expanded={isOpen}
-        aria-haspopup="dialog"
-        aria-controls="mobile-navigation-drawer"
-        title={isOpen ? "Close menu" : "Open menu"}
-      >
-        <Menu
-          className={`h-6 w-6 transition-transform duration-200 ${isOpen ? "rotate-90" : ""}`}
-          aria-hidden="true"
-        />
-      </button>
-
-      <MobileDrawer
-        isOpen={isOpen}
-        closeMenu={() => setIsOpen(false)}
-        isAuthenticated={isAuthenticated}
-        user={user}
-        logout={logout}
-        cursorEnabled={cursorEnabled}
-        toggleCursor={toggleCursor}
+    <div className="fixed inset-0 z-50 flex">
+      {/* Overlay Backdrop */}
+      <div
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+        onClick={handleClose}
+        aria-hidden="true"
       />
-    </>
+
+      {/* Sliding Drawer Panel */}
+      <div className="relative z-10 w-4/5 max-w-sm bg-white dark:bg-gray-900 h-full p-6 shadow-xl flex flex-col">
+        <button
+          type="button"
+          className="self-end p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          onClick={handleClose}
+          aria-label="Close navigation"
+        >
+          ✕
+        </button>
+        <div className="mt-4 flex-1 overflow-y-auto">
+          {children}
+        </div>
+      </div>
+    </div>
   );
 };
 
-export default MobileNavbar;
+export default MobileNav;
