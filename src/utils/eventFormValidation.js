@@ -1,4 +1,17 @@
 import { parseTimeToMinutes } from "./eventCreationUtils";
+
+const normalizeDateStr = (dateVal) => {
+  if (!dateVal) return "";
+  if (typeof dateVal !== "string") {
+    try {
+      dateVal = new Date(dateVal).toISOString();
+    } catch {
+      return "";
+    }
+  }
+  return dateVal.includes("T") ? dateVal.split("T")[0] : dateVal;
+};
+
 export const validateForm = (formData) => {
   const newErrors = {};
 
@@ -16,7 +29,9 @@ export const validateForm = (formData) => {
     if (!formData.endDate) newErrors.endDate = "End date is required";
 
     if (formData.startDate && formData.endDate) {
-      if (new Date(formData.endDate) < new Date(formData.startDate)) {
+      const startStr = normalizeDateStr(formData.startDate);
+      const endStr = normalizeDateStr(formData.endDate);
+      if (startStr && endStr && new Date(endStr) < new Date(startStr)) {
         newErrors.endDate = "End date must be after start date";
       }
     }
@@ -53,15 +68,35 @@ export const validateForm = (formData) => {
 
   if (formData.registrationStart || formData.registrationEnd) {
     const now = new Date();
+
+    const rawEventDate = formData.isMultiDay ? formData.startDate : formData.date;
+    const eventDateStr = normalizeDateStr(rawEventDate);
+    const eventTimeStr = formData.startTime || "00:00";
+    const eventStart = new Date(`${eventDateStr}T${eventTimeStr}`);
+
+    const regStartStr = normalizeDateStr(formData.registrationStart);
+    const regStartTimeStr = formData.registrationStartTime || "00:00";
     const registrationStart = formData.registrationStart
-      ? new Date(formData.registrationStart)
+      ? new Date(`${regStartStr}T${regStartTimeStr}`)
       : null;
+
+    const regEndStr = normalizeDateStr(formData.registrationEnd);
+    const regEndTimeStr = formData.registrationEndTime || "23:59";
     const registrationEnd = formData.registrationEnd
-      ? new Date(formData.registrationEnd)
+      ? new Date(`${regEndStr}T${regEndTimeStr}`)
       : null;
-    const eventStart = new Date(
-      `${formData.isMultiDay ? formData.startDate : formData.date}T${formData.startTime}`
-    );
+
+    if (registrationStart && isNaN(registrationStart.getTime())) {
+      newErrors.registrationStart = "Registration start date is invalid";
+    }
+
+    if (registrationEnd && isNaN(registrationEnd.getTime())) {
+      newErrors.registrationEnd = "Registration end date is invalid";
+    }
+
+    if (isNaN(eventStart.getTime())) {
+      newErrors.startTime = "Event start time is invalid";
+    }
 
     if (registrationStart && registrationStart < now) {
       newErrors.registrationStart = "Registration start cannot be in the past";
