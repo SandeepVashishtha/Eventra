@@ -252,6 +252,24 @@ export const deleteFeedback = (eventId, userId = null) => {
 };
 
 /**
+ * Helper to sanitize CSV cells against Formula Injection and escape special characters
+ * @param {any} value - Cell value to sanitize
+ * @returns {string} Sanitized and quote-wrapped CSV cell string
+ */
+export const sanitizeCSVCell = (value) => {
+  if (value === null || value === undefined) return '""';
+  let stringValue = String(value);
+
+  // Prevent CSV Formula Injection (Excel / Google Sheets trigger characters)
+  if (/^[=+\-@\t\r]/.test(stringValue)) {
+    stringValue = `'${stringValue}`;
+  }
+
+  // Escape internal double quotes and wrap value in double quotes
+  return `"${stringValue.replace(/"/g, '""')}"`;
+};
+
+/**
  * Export feedback as CSV
  * @param {string} eventId - Event identifier
  * @returns {string} CSV string
@@ -266,14 +284,14 @@ export const exportFeedbackAsCSV = (eventId) => {
 
     const headers = ['Rating', 'Comment', 'Tags', 'Recommend', 'Submitted At'];
     const rows = feedback.map((f) => [
-      f.rating || '',
-      `"${(f.comment || '').replace(/"/g, '""')}"`,
-      (f.tags || []).join(';'),
-      f.recommend !== undefined ? (f.recommend ? 'Yes' : 'No') : '',
-      new Date(f.submittedAt).toLocaleString(),
+      sanitizeCSVCell(f.rating),
+      sanitizeCSVCell(f.comment || ''),
+      sanitizeCSVCell(Array.isArray(f.tags) ? f.tags.join(';') : ''),
+      sanitizeCSVCell(f.recommend !== undefined ? (f.recommend ? 'Yes' : 'No') : ''),
+      sanitizeCSVCell(f.submittedAt ? new Date(f.submittedAt).toLocaleString() : ''),
     ]);
 
-    const csv = [headers, ...rows].map((row) => row.join(',')).join('\n');
+    const csv = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
     return csv;
   } catch (error) {
     //console.error('Error exporting feedback:', error);
