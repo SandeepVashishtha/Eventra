@@ -506,7 +506,7 @@ const EventRegistration = () => {
         return { success: false, error: "Login required", waitlistPosition: -1 };
       }
 
-      if (!validateAll()) {
+      if (!(await validateAll())) {
         toast.error(t("eventRegistration.toastValidationError"));
         return { success: false, error: "Validation failed", waitlistPosition: -1 };
       }
