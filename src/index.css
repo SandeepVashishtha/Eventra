@@ -1378,3 +1378,20 @@ html:not(.dark) ::placeholder {
 .dark #fluid {
   mix-blend-mode: plus-lighter; /* Extra premium neon glow on dark backgrounds */
 }
+
+/* GPU Accelerated Glassmorphism & Reduced Motion Styles (#14084) */
+@utility gpu-accelerated-glass {
+  transform: translateZ(0);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gpu-accelerated-glass {
+    backdrop-filter: none !important;
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
