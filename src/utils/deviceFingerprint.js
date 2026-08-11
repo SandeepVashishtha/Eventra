@@ -74,11 +74,8 @@ export const getDeviceFingerprint = () => {
 
     const fingerprintRaw = `${screenInfo}_${navInfo}_${canvasHash}`;
 
-    // Per-origin salt with time-based rotation: combines origin with a day offset
-    // so fingerprints rotate every 24 hours. The dayOffset uses a fixed epoch
-    // (2020-01-01) for consistent buckets across sessions.
-    const dayOffset = Math.floor((Date.now() - 1577836800000) / 86400000);
-    const salt = `eventra:fingerprint:${window.location.origin}:${dayOffset}`;
+    // Per-origin salt — stable across sessions and UTC day boundaries.
+    const salt = `eventra:fingerprint:${window.location.origin}`;
 
     _memoizedFingerprint = CryptoJS.SHA256(fingerprintRaw + salt).toString();
     return _memoizedFingerprint;
@@ -114,8 +111,7 @@ export const getFastFingerprint = () => {
   try {
     const screenInfo = `${window.screen?.width || 0}x${window.screen?.height || 0}x${window.screen?.colorDepth || 0}`;
     const navInfo = `${window.navigator?.userAgent || ""}_${window.navigator?.language || ""}_${window.navigator?.hardwareConcurrency || 0}`;
-    const dayOffset = Math.floor((Date.now() - 1577836800000) / 86400000);
-    const salt = `eventra:fast-fingerprint:${window.location.origin}:${dayOffset}`;
+    const salt = `eventra:fast-fingerprint:${window.location.origin}`;
     _memoizedFastFingerprint = CryptoJS.SHA256(`${screenInfo}_${navInfo}_${salt}`).toString();
     return _memoizedFastFingerprint;
   } catch {
@@ -143,6 +139,5 @@ export const _clearFingerprintCache = () => {
  */
 export const _getFingerprintSalt = () => {
   if (typeof window === "undefined") return "eventra:fingerprint:test";
-  const dayOffset = Math.floor((Date.now() - 1577836800000) / 86400000);
-  return `eventra:fingerprint:${window.location.origin}:${dayOffset}`;
+  return `eventra:fingerprint:${window.location.origin}`;
 };

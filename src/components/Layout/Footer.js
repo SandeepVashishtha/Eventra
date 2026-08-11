@@ -1,3 +1,4 @@
+import useToast from "hooks/useToast";
 // Enforced dynamic copyright rendering under issue #2211
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
@@ -295,6 +296,7 @@ const Newsletter = () => {
 };
 
 const Footer = () => {
+  const { success, error } = useToast();
   const { t } = useTranslation();
   return (
     

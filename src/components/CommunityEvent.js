@@ -97,14 +97,7 @@ const CommunityEvent = () => {
   
   // 🔥 FIX: Safe scroll locking that caches and restores the original CSS value
   useEffect(() => {
-    if (selectedEvent) {
-      const originalStyle = window.getComputedStyle(document.body).overflow;
-      document.body.style.overflow = "hidden";
-      
-      return () => {
-        document.body.style.overflow = originalStyle;
-      };
-    }
+    useScrollLock(!!selectedEvent);
   }, [selectedEvent]);
 
   // 🔥 FIX: Added Escape key listener to satisfy A11y dialog closing requirements

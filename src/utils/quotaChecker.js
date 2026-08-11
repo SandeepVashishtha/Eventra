@@ -4,6 +4,9 @@ export async function isStorageQuotaAvailable(bytesNeeded = 50000) {
   }
   try {
     const estimate = await navigator.storage.estimate();
+    if (!Number.isFinite(estimate.quota)) {
+      return true;
+    }
     const available = estimate.quota - estimate.usage;
     return available >= bytesNeeded;
   } catch {

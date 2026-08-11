@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "./useAuth";
-import { apiUtils } from "../config/api";
+import { apiUtils, API_ENDPOINTS } from "../config/api";
 
 /**
  * Hook to fetch only published events (respects draft visibility rules)
@@ -9,7 +9,7 @@ import { apiUtils } from "../config/api";
  * - Admin users: all events
  */
 export function usePublicEvents(options = {}) {
-  const { user, token } = useAuth();
+  const { token } = useAuth();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -28,10 +28,12 @@ export function usePublicEvents(options = {}) {
       // Add user context header for backend to filter appropriately
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-      const response = await apiUtils.get(
-        `/api/events?page=${page}&limit=${options.limit || 20}&status=PUBLISHED`,
-        { headers }
-      );
+      const params = new URLSearchParams({
+        page: String(page),
+        size: String(options.limit || 20),
+        status: "PUBLISHED",
+      });
+      const response = await apiUtils.get(`${API_ENDPOINTS.EVENTS.LIST}?${params.toString()}`, { headers });
 
       const newEvents = response.data?.events || response.data || [];
 
@@ -88,7 +90,9 @@ export function useUserVisibleEvents(userId) {
   const fetchUserEvents = async () => {
     setLoading(true);
     try {
-      const endpoint = user?.id === userId ? "/api/user/events" : `/api/events?organiser=${userId}`;
+      const endpoint = user?.id === userId
+        ? "/users/my-events"
+        : `${API_ENDPOINTS.EVENTS.LIST}?organiser=${encodeURIComponent(userId)}`;
 
       const response = await apiUtils.get(endpoint);
       setEvents(response.data?.events || response.data || []);
@@ -119,7 +123,7 @@ export function useEventDetail(eventId) {
   const fetchEvent = async () => {
     setLoading(true);
     try {
-      const response = await apiUtils.get(`/api/events/${eventId}`);
+      const response = await apiUtils.get(API_ENDPOINTS.EVENTS.DETAIL(eventId));
       setEvent(response.data);
     } catch (err) {
       // 404 for draft events user can't view

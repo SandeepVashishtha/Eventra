@@ -3,8 +3,10 @@ package com.sandeep.eventrabackend.controller;
 import com.sandeep.eventrabackend.dto.request.FeedbackRequest;
 import com.sandeep.eventrabackend.dto.response.ErrorResponse;
 import com.sandeep.eventrabackend.dto.response.FeedbackResponse;
+import com.sandeep.eventrabackend.dto.response.PublicFeedbackResponse;
 import com.sandeep.eventrabackend.service.FeedbackService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -16,6 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -60,6 +63,12 @@ public class FeedbackController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @GetMapping
+    @Operation(summary = "Get feedback for an event", description = "Returns feedback submitted for a specific event.")
+    public ResponseEntity<List<PublicFeedbackResponse>> getEventFeedback(@RequestParam Long eventId) {
+        return ResponseEntity.ok(feedbackService.getEventFeedback(eventId));
+    }
+
     @GetMapping("/organizers/{organizerId}/score")
     @Operation(summary = "Get organizer score", description = "Returns the average rating and review count for an organizer.")
     public ResponseEntity<Map<String, Object>> getOrganizerScore(@PathVariable Long organizerId) {
@@ -67,8 +76,18 @@ public class FeedbackController {
     }
 
     @GetMapping("/organizers/{organizerId}")
-    @Operation(summary = "Get organizer feedback", description = "Returns feedback submitted for past events owned by an organizer.")
-    public ResponseEntity<List<FeedbackResponse>> getOrganizerFeedback(@PathVariable Long organizerId) {
-        return ResponseEntity.ok(feedbackService.getOrganizerFeedback(organizerId));
+    @Operation(summary = "Get organizer feedback", description = "Returns feedback submitted for past events owned by an organizer. Only the organizer or an administrator may access this endpoint.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Organizer feedback fetched successfully",
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = FeedbackResponse.class)))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - JWT required",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Forbidden - Caller is not the organizer or an administrator",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<List<FeedbackResponse>> getOrganizerFeedback(
+            @PathVariable Long organizerId,
+            Authentication authentication) {
+        return ResponseEntity.ok(feedbackService.getOrganizerFeedback(organizerId, authentication.getName()));
     }
 }

@@ -39,21 +39,18 @@ const parseEventDate = (dateValue) => {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 };
 
-const asEndOfDay = (date) => {
-  if (!date) return null;
-  const clone = new Date(date.valueOf());
-  clone.setHours(23, 59, 59, 999);
-  return clone;
-};
-
 export const computeDateStatus = (event) => {
   const startDate = parseEventDate(event.startDate || event.date || event.eventDate);
-  const endDate = asEndOfDay(parseEventDate(event.endDate || event.date || event.eventDate));
   const now = getServerTime();
 
   if (!startDate) return "upcoming";
   if (now < startDate) return "upcoming";
-  if (endDate && now <= endDate) return "live";
+
+  // Moment-based, matching the backend's Event.isEventPast(): once the
+  // event's start time has passed it is no longer "live" — even when it is
+  // still the same calendar day. The old day-granular "live until midnight"
+  // kept the registration form enabled for hours after the event started
+  // while the server rejected every submission. (#12462)
   return "past";
 };
 
@@ -93,6 +90,34 @@ export const isEventRegistrationClosed = (eventOrStatus) => {
       : getEventStatus(eventOrStatus);
 
   return status === "past" || status === "ended" || status === "cancelled";
+};
+
+/**
+ * Check if an event has low inventory and should show FOMO badge.
+ * FOMO (Fear Of Missing Out) is triggered when remaining tickets drop below 10% 
+ * of capacity OR below 20 absolute tickets.
+ * 
+ * @param {number} capacity - Total event capacity
+ * @param {number} registeredCount - Number of registered participants
+ * @returns {Object} Object containing isLowInventory boolean and message string
+ */
+export const getFomoStatus = (capacity, registeredCount) => {
+  if (capacity == null || capacity <= 0) return { isLowInventory: false, message: null };
+  
+  const remaining = capacity - (registeredCount ?? 0);
+  if (remaining <= 0) return { isLowInventory: false, message: null }; // Event is full, not "selling fast"
+  
+  const lowThreshold = Math.max(20, Math.ceil(capacity * 0.1));
+  const isLowInventory = remaining <= lowThreshold;
+  
+  if (!isLowInventory) return { isLowInventory: false, message: null };
+  
+  // Generate appropriate FOMO message
+  if (remaining <= 5) {
+    return { isLowInventory: true, message: `Only ${remaining} Tickets Left!` };
+  } else {
+    return { isLowInventory: true, message: "Selling Fast!" };
+  }
 };
 
 export const normalizeEvent = (event) => {

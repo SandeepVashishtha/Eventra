@@ -159,7 +159,7 @@ public class EventRegistrationTests {
 
         mockMvc.perform(get("/api/events"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[?(@.id == " + privateEvent.getId() + ")]").isEmpty());
+                .andExpect(jsonPath("$.content[?(@.id == " + privateEvent.getId() + ")]").isEmpty());
     }
 
     @Test

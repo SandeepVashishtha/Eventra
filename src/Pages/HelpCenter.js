@@ -1,4 +1,5 @@
-import { ChevronDown, ChevronUp, MessageCircle, Github, Twitter, Youtube, Linkedin, Send } from "lucide-react";
+import { ChevronDown, ChevronUp, MessageCircle, Send } from "lucide-react";
+import { FaGithub as Github, FaTwitter as Twitter, FaYoutube as Youtube, FaLinkedin as Linkedin } from "react-icons/fa";
 import { useState, useEffect } from "react";
 import { motion, useAnimation } from "framer-motion";
 import useDocumentTitle from "../hooks/useDocumentTitle";

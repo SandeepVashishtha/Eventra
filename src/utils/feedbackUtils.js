@@ -85,12 +85,12 @@ export const saveFeedback = (eventId, feedback) => {
  */
 export const hasUserSubmittedFeedback = (eventId, userId = null) => {
   try {
-    const feedback = getEventFeedback(eventId);
     if (!userId) {
-      return feedback.length > 0;
+      return false;
     }
-    const userIdSet = new Set(feedback.map((f) => f.userId));
-    return userIdSet.has(userId);
+    const feedback = getEventFeedback(eventId);
+    const userIdSet = new Set(feedback.map((f) => String(f.userId)));
+    return userIdSet.has(String(userId));
   } catch (error) {
     console.warn("Error checking feedback status:", error);
     return false;
