@@ -45,17 +45,15 @@ import { useCallback, useMemo } from "react";
  * @param {string|null} [error=null] - The validation error message. Required when `validationState` is `'error'`.
  * @param {boolean} [touched=false] - Flag indicating if the user has interacted with the field.
  *
- * @returns {Object} Validation status and styling utilities.
- * @returns {string} Object.statusIndicator - Visual code indicating the indicator icon type to render (`'idle'`, `'validating'`, `'success'`, or `'error'`).
- * @returns {string} Object.statusMessage - A descriptive string announcement suitable for screen readers or ARIA live regions.
- * @returns {boolean} Object.shouldShowError - Helper flag to determine if the error message block should be rendered. Evaluates to true only if `touched` is true, state is `'error'`, and a non-empty `error` message exists.
- * @returns {boolean} Object.isValidating - Helper flag indicating if validation is currently in progress.
- * @returns {boolean} Object.isValid - Helper flag indicating if validation has completed successfully.
- * @returns {function(string): string} Object.fieldClassName - A memoized callback function that accepts a string of base CSS classes and returns the classes concatenated with appropriate tailwind border colors based on the validation status.
- * @returns {Object} Object.ariaAttributes - A memoized set of ARIA attributes (`aria-invalid`, `aria-describedby`, `aria-busy`) mapping to the current validation state.
- * @returns {string} Object.validationState - The original validation state string.
- * @returns {boolean} Object.touched - The original touched boolean flag.
- * @returns {string|null} Object.error - The original error string or null.
+ * Supports both options object signature and positional parameters:
+ * e.g. useValidationState({ fieldName, validationState, error, touched, messages })
+ * e.g. useValidationState(fieldName, validationState, error, touched, messages)
+ *
+ * @param {string|Object} fieldNameOrOptions - Field name string or options object
+ * @param {string} [validationStateArg="idle"] - Current validation state ('idle' | 'validating' | 'success' | 'error')
+ * @param {string|null} [errorArg=null] - Field error message
+ * @param {boolean} [touchedArg=false] - Whether field has been touched
+ * @param {Object} [messagesArg={}] - Custom message template strings or formatter functions for i18n
  *
  * @example
  * import React from 'react';
@@ -99,33 +97,32 @@ import { useCallback, useMemo } from "react";
  * };
  */
 export const useValidationState = (
-  fieldName,
-  validationState = "idle",
-  error = null,
-  touched = false,
-  options = {},
+  fieldNameOrOptions,
+  validationStateArg = "idle",
+  errorArg = null,
+  touchedArg = false,
+  messagesArg = {},
 ) => {
-  const isObjectOptions = typeof fieldName === "object" && fieldName !== null;
-  const opts = isObjectOptions ? fieldName : (typeof options === "object" && options !== null ? options : EMPTY_OBJECT);
-  const name = isObjectOptions ? fieldName.fieldName : fieldName;
-  const state = isObjectOptions ? (fieldName.validationState ?? "idle") : validationState;
-  const err = isObjectOptions ? (fieldName.error ?? null) : error;
-  const isTouched = isObjectOptions ? (fieldName.touched ?? false) : touched;
-  const customMessages = opts.messages || {};
-  const debounceDelay = opts.debounceDelay ?? 0;
+  // Normalize arguments for both object and positional parameter signatures
+  const isOptionsObject =
+    typeof fieldNameOrOptions === "object" && fieldNameOrOptions !== null;
 
-  const [debouncedState, setDebouncedState] = useState(state);
+  const fieldName = isOptionsObject
+    ? fieldNameOrOptions.fieldName
+    : fieldNameOrOptions;
+  const validationState = isOptionsObject
+    ? fieldNameOrOptions.validationState ?? "idle"
+    : validationStateArg;
+  const error = isOptionsObject
+    ? fieldNameOrOptions.error ?? null
+    : errorArg;
+  const touched = isOptionsObject
+    ? fieldNameOrOptions.touched ?? false
+    : touchedArg;
+  const messages = isOptionsObject
+    ? fieldNameOrOptions.messages ?? {}
+    : messagesArg;
 
-  useEffect(() => {
-    if (state === "validating" && debounceDelay > 0) {
-      const handler = setTimeout(() => {
-        setDebouncedState(state);
-      }, debounceDelay);
-      return () => clearTimeout(handler);
-    } else {
-      setDebouncedState(state);
-    }
-  }, [state, debounceDelay]);
   /**
    * Get visual indicator based on validation state
    * 🔥 FIX: Converted from invoked useCallback to useMemo for proper computed caching
@@ -154,10 +151,22 @@ export const useValidationState = (
   }, [state]);
 
   /**
-   * Get status message for accessibility announcements
+   * Get status message for accessibility announcements and UI display.
+   * Resolves custom string templates or i18n formatter functions if provided in `messages`.
    */
-  const statusMessage = useMemo(() => {
-    switch (state) {
+  const getStatusMessage = useCallback(() => {
+    const customMessage = messages?.[validationState];
+
+    if (typeof customMessage === "function") {
+      return customMessage(fieldName, error);
+    }
+
+    if (typeof customMessage === "string") {
+      return customMessage;
+    }
+
+    // Default fallback messages
+    switch (validationState) {
       case "validating":
         if (typeof customMessages.validating === "function") {
           return customMessages.validating(name);
@@ -193,14 +202,14 @@ export const useValidationState = (
       default:
         return "";
     }
-  }, [name, err, state, customMessages]);
+  }, [fieldName, error, validationState, messages]);
 
   /**
    * Check if field should show error message
    */
-  const shouldShowError = useMemo(() => {
-    return Boolean(touched && state === "error" && err);
-  }, [isTouched, state, err]);
+  const shouldShowError = useCallback(() => {
+    return touched && validationState === "error" && Boolean(error);
+  }, [touched, validationState, error]);
 
   /**
    * Check if validation is in progress
