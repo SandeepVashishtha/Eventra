@@ -109,6 +109,7 @@ export const sendNotification = (title, options = {}) => {
     };
 
     const notification = new Notification(title, notificationOptions);
+    let autoCloseTimer = null;
 
     // Attach event handlers if provided
     if (typeof options.onClick === "function") {
