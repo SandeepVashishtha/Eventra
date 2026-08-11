@@ -129,11 +129,24 @@ export const buildInteractionProfile = ({
   viewedEvents = [],
   location = "",
 } = {}) => {
-  const weightedEvents = [
-    ...registeredEvents.map((entry) => ({ entry, weight: 4 })),
-    ...bookmarkedEvents.map((entry) => ({ entry, weight: 3 })),
-    ...viewedEvents.map((entry) => ({ entry, weight: 1 })),
-  ];
+  const deduped = new Map();
+  [
+    { list: registeredEvents, weight: 4 },
+    { list: bookmarkedEvents, weight: 3 },
+    { list: viewedEvents, weight: 1 },
+  ].forEach(({ list, weight }) => {
+    list.forEach((entry) => {
+      const event = unwrapEvent(entry);
+      const id = getEventId(event);
+      if (!id) return;
+      const existing = deduped.get(id);
+      if (!existing || weight > existing.weight) {
+        deduped.set(id, { entry, weight, event });
+      }
+    });
+  });
+
+  const weightedEvents = [...deduped.values()];
 
   const categoryWeights = {};
   const typeWeights = {};
@@ -142,8 +155,7 @@ export const buildInteractionProfile = ({
   const interactedIds = new Set();
   const registeredIds = new Set();
 
-  weightedEvents.forEach(({ entry, weight }) => {
-    const event = unwrapEvent(entry);
+  weightedEvents.forEach(({ entry, weight, event }) => {
     const id = getEventId(event);
     const category = getEventCategory(event);
     const type = getEventType(event);
