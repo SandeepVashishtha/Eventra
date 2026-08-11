@@ -2,12 +2,12 @@ import useWindowSize from "hooks/useWindowSize";
 import { GitBranch, ChevronLeft, ChevronRight } from "lucide-react";
 import { FaMedal, FaCodeBranch, FaUserFriends, FaBuilding, FaMapMarkerAlt, FaGithub, FaExternalLinkAlt } from "react-icons/fa";
 import { useState, useEffect, useCallback, useRef, memo } from "react";
-import useReducedMotion from "../hooks/useReducedMotion.js";
+import useReducedMotion from "../../hooks/useReducedMotion";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { fetchWithTimeout } from "../utils/fetchWithTimeout";
-import { ContributorCardSkeleton } from "../components/common/SkeletonLoaders";
-import { safeJsonParse } from "../utils/safeJsonParse";
+import { fetchWithTimeout } from "../../utils/fetchWithTimeout";
+import { ContributorCardSkeleton } from "../../components/common/SkeletonLoaders";
+import { safeJsonParse } from "../../utils/safeJsonParse";
 
 // GitHub repo
 const GITHUB_REPO = "sandeepvashishtha/Eventra";
