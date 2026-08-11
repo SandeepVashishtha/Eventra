@@ -34,7 +34,6 @@ const {
   exportFeedbackAsCSV,
   clearAllFeedback,
   sanitizeCSVCell,
-} from '../../utils/feedbackUtils';
 } = await import('../src/utils/feedbackUtils.js');
 
 const expect = (actual) => ({
