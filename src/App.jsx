@@ -1,3 +1,4 @@
+import useWindowSize from "hooks/useWindowSize";
 import { useState, useEffect, lazy, Suspense } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -28,10 +29,7 @@ import { useRoutePrefetch } from "./hooks/useRoutePrefetch";
 import PageTransition from "./components/common/PageTransition";
 import Breadcrumbs from "./components/common/Breadcrumbs";
 import { getAuthRoutes, getProtectedRoutes } from "./components/routes/ProtectedRoutes";
-import {
-  AuthFormSkeleton,
-  ExploreEventsSkeleton,
-} from "./components/common/SkeletonLoaders";
+import { AuthFormSkeleton, ExploreEventsSkeleton } from "./components/common/SkeletonLoaders";
 
 // Route-level lazy splits - loaded only when route is visited
 const Footer = lazy(() => import("./components/Layout/Footer"));
@@ -74,8 +72,7 @@ const OfflineSyncManager = () => {
 function App() {
   const { t } = useTranslation();
   const location = useLocation();
-  const isDashboardOrAdmin =
-    location?.pathname === "/dashboard" || location?.pathname === "/admin";
+  const isDashboardOrAdmin = location?.pathname === "/dashboard" || location?.pathname === "/admin";
   const isHomePage = location?.pathname === "/";
   const pageLoader = (
     <div className="flex items-center justify-center min-h-screen text-gray-500">
@@ -91,10 +88,6 @@ function App() {
   });
   const [showKeyboardModal, setShowKeyboardModal] = useState(false);
   const [showChatbot, setShowChatbot] = useState(false);
-  const [isDesktop, setIsDesktop] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return window.innerWidth >= 1024;
-  });
 
   useLenis();
   useRoutePrefetch(); // Predictive route pre-loading
@@ -123,17 +116,8 @@ function App() {
     return () => clearTimeout(timer);
   }, []);
 
-  useEffect(() => {
-    const handleResize = () => {
-      setIsDesktop(window.innerWidth >= 1024);
-    };
-
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
+  // Fix: useWindowSize replaces manual resize listener — debounced, SSR-safe
+  const { isLarge: isDesktop } = useWindowSize();
 
   useEffect(() => {
     const handleCursorPreference = (event) => {
@@ -175,142 +159,140 @@ function App() {
   }, [t]);
 
   return (
-    
     <ErrorBoundary>
       <AuthProvider>
         <ThemeProvider>
-        <NotificationProvider>
-          <MyEventsProvider>
-            <SessionRecoveryProvider>
-              <NotificationToastContainer />
-              <Suspense fallback={null}>
-                <ReminderChecker />
-              </Suspense>
-              <OfflineSyncManager />
-<ScrollRestoration />
-              <div className="App">
-                <ErrorBoundary level="section" label="Navigation Bar">
-                  <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
-                </ErrorBoundary>
-
-                <OfflineBanner />
-                <OfflineConflictModal />
-                <UpdateAvailableBanner />
-
+          <NotificationProvider>
+            <MyEventsProvider>
+              <SessionRecoveryProvider>
+                <NotificationToastContainer />
                 <Suspense fallback={null}>
-                  <KeyboardShortcutsModal
-                    isOpen={showKeyboardModal}
-                    onClose={() => setShowKeyboardModal(false)}
-                  />
+                  <ReminderChecker />
                 </Suspense>
-
-                <Suspense fallback={null}>
-                  <OnboardingChecklist />
-                </Suspense>
-
-                <Breadcrumbs />
-
-                <main
-                  id="main-content"
-                  className="relative z-10 min-h-[85vh] pt-16 bg-bg text-text transition-colors duration-300"
-                >
-                  <PageTransition>
-                    <ErrorBoundary>
-                      <Routes location={location} key={location?.pathname || "default"}>
-                        {/* /explore is a legacy alias for the Events page */}
-                        <Route
-                          path="/explore"
-                          element={
-                            <Suspense fallback={<ExploreEventsSkeleton />}>
-                              <ExploreEvents />
-                            </Suspense>
-                          }
-                        />
-                        <Route
-                          path="/event-recommendation"
-                          element={
-                            <Suspense fallback={null}>
-                              <EventRecommendation />
-                            </Suspense>
-                          }
-                        />
-                        {getAuthRoutes()}
-                        {getProtectedRoutes()}
-                        <Route
-                          path="/event-recommendation"
-                          element={<Suspense fallback={null}><EventRecommendation /></Suspense>}
-                        />
-                        <Route
-                          path="/saved-events"
-                          element={
-                            <ProtectedRoute>
-                              <Suspense fallback={<AuthFormSkeleton />}>
-                                <SavedEventsPage />
-                              </Suspense>
-                            </ProtectedRoute>
-                          }
-                        />
-                        {/* All other routes (auth, dashboard, admin, profile, events, etc.)
-                            are handled by AppRoutes → PublicRoutes / ProtectedRoutes */}
-                        <Route
-                          path="*"
-                          element={
-                            <Suspense fallback={pageLoader}>
-                              <AppRoutes />
-                            </Suspense>
-                          }
-                        />
-                      </Routes>
-                    </ErrorBoundary>
-                  </PageTransition>
-                </main>
-
-                
-                {showChatbot && (
-                  <ErrorBoundary level="section" label="Chatbot Assist" silent>
-                    <Suspense fallback={null}>
-                      <Chatbot />
-                    </Suspense>
+                <OfflineSyncManager />
+                <ScrollRestoration />
+                <div className="App">
+                  <ErrorBoundary level="section" label="Navigation Bar">
+                    <Navbar cursorEnabled={cursorEnabled} toggleCursor={toggleCursor} />
                   </ErrorBoundary>
-                )}
 
-                <ErrorBoundary level="section" label="Footer">
+                  <OfflineBanner />
+                  <OfflineConflictModal />
+                  <UpdateAvailableBanner />
+
                   <Suspense fallback={null}>
-                    {!isDashboardOrAdmin && <Footer />}
+                    <KeyboardShortcutsModal
+                      isOpen={showKeyboardModal}
+                      onClose={() => setShowKeyboardModal(false)}
+                    />
                   </Suspense>
-                </ErrorBoundary>
 
-                <Suspense fallback={null}>
-              {/* Fix (Issue #10496): Pass chatbot open state directly to BackToTop so it
+                  <Suspense fallback={null}>
+                    <OnboardingChecklist />
+                  </Suspense>
+
+                  <Breadcrumbs />
+
+                  <main
+                    id="main-content"
+                    className="relative z-10 min-h-[85vh] pt-16 bg-bg text-text transition-colors duration-300"
+                  >
+                    <PageTransition>
+                      <ErrorBoundary>
+                        <Routes location={location} key={location?.pathname || "default"}>
+                          {/* /explore is a legacy alias for the Events page */}
+                          <Route
+                            path="/explore"
+                            element={
+                              <Suspense fallback={<ExploreEventsSkeleton />}>
+                                <ExploreEvents />
+                              </Suspense>
+                            }
+                          />
+                          <Route
+                            path="/event-recommendation"
+                            element={
+                              <Suspense fallback={null}>
+                                <EventRecommendation />
+                              </Suspense>
+                            }
+                          />
+                          {getAuthRoutes()}
+                          {getProtectedRoutes()}
+                          <Route
+                            path="/event-recommendation"
+                            element={
+                              <Suspense fallback={null}>
+                                <EventRecommendation />
+                              </Suspense>
+                            }
+                          />
+                          <Route
+                            path="/saved-events"
+                            element={
+                              <ProtectedRoute>
+                                <Suspense fallback={<AuthFormSkeleton />}>
+                                  <SavedEventsPage />
+                                </Suspense>
+                              </ProtectedRoute>
+                            }
+                          />
+                          {/* All other routes (auth, dashboard, admin, profile, events, etc.)
+                            are handled by AppRoutes → PublicRoutes / ProtectedRoutes */}
+                          <Route
+                            path="*"
+                            element={
+                              <Suspense fallback={pageLoader}>
+                                <AppRoutes />
+                              </Suspense>
+                            }
+                          />
+                        </Routes>
+                      </ErrorBoundary>
+                    </PageTransition>
+                  </main>
+
+                  {showChatbot && (
+                    <ErrorBoundary level="section" label="Chatbot Assist" silent>
+                      <Suspense fallback={null}>
+                        <Chatbot />
+                      </Suspense>
+                    </ErrorBoundary>
+                  )}
+
+                  <ErrorBoundary level="section" label="Footer">
+                    <Suspense fallback={null}>{!isDashboardOrAdmin && <Footer />}</Suspense>
+                  </ErrorBoundary>
+
+                  <Suspense fallback={null}>
+                    {/* Fix (Issue #10496): Pass chatbot open state directly to BackToTop so it
     reliably shifts up when the chatbot FAB is visible, instead of relying
     on DOM-based detection which can race with React rendering. */}
-<BackToTop avoidChatbot={showChatbot} />
-                </Suspense>
-                <Suspense fallback={null}>
-                  <FeedbackButton />
-                </Suspense>
-                <Suspense fallback={null}>
-                  <ThemeCustomizer />
-                </Suspense>
-                <Suspense fallback={null}>
-                  <SessionRecovery />
-                </Suspense>
-                {import.meta.env.DEV && <ErrorButton />}
+                    <BackToTop avoidChatbot={showChatbot} />
+                  </Suspense>
+                  <Suspense fallback={null}>
+                    <FeedbackButton />
+                  </Suspense>
+                  <Suspense fallback={null}>
+                    <ThemeCustomizer />
+                  </Suspense>
+                  <Suspense fallback={null}>
+                    <SessionRecovery />
+                  </Suspense>
+                  {import.meta.env.DEV && <ErrorButton />}
 
-                {isDesktop && (
-                  <ErrorBoundary level="section" label="Custom Cursor" silent>
-                    <Suspense fallback={null}>
-                      <FluidCursor enabled={cursorEnabled && !isHomePage} />
-                    </Suspense>
-                  </ErrorBoundary>
-                )}
-
-                
-              </div>
-              <UpdateAvailableBanner />
-            </SessionRecoveryProvider>
-          </MyEventsProvider>
-        </NotificationProvider>
+                  {isDesktop && (
+                    <ErrorBoundary level="section" label="Custom Cursor" silent>
+                      <Suspense fallback={null}>
+                        <FluidCursor enabled={cursorEnabled && !isHomePage} />
+                      </Suspense>
+                    </ErrorBoundary>
+                  )}
+                </div>
+                <UpdateAvailableBanner />
+              </SessionRecoveryProvider>
+            </MyEventsProvider>
+          </NotificationProvider>
         </ThemeProvider>
       </AuthProvider>
     </ErrorBoundary>

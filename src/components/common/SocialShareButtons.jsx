@@ -1,10 +1,13 @@
 import { useMemo, useCallback } from "react";
-import { Copy, Facebook, Linkedin, Mail, MessageCircle, Send, Twitter } from "lucide-react";
+import { Copy, Mail, MessageCircle, Send } from "lucide-react";
+import { FaFacebook as Facebook, FaLinkedin as Linkedin, FaTwitter as Twitter } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { isValidShareUrl } from "utils/shareUtils";
 import useClipboard from "hooks/useClipboard";
 
 const SocialShareButtons = ({ event, layout = "grid" }) => {
+  const { copy } = useClipboard();
+
   const shareData = useMemo(() => {
     if (!event || !event.id) return null;
 

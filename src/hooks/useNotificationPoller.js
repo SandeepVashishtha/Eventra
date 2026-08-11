@@ -3,7 +3,6 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { apiUtils, API_ENDPOINTS } from "../config/api.js";
 import { useAuth } from "../context/AuthContext.js";
 import usePageVisibility from "./usePageVisibility.js";
-import seedNotifications from "../data/mockNotifications.json";
 import { safeJsonParse } from "../utils/safeJsonParse.js";
 import { getNotificationMessage } from "../utils/notificationPreferences.js";
 import { get as idbGet, del as idbDel } from "idb-keyval";
@@ -32,6 +31,7 @@ const normalize = (n = {}) => ({
   ...n,
   id: n.id || n._id || `${n.timestamp || n.createdAt || Date.now()}-${Math.random().toString(36).slice(2)}`,
   timestamp: n.timestamp || n.createdAt || n.updatedAt || new Date().toISOString(),
+  isRead: Boolean(n.isRead ?? n.read),
 });
 
 const persist = (items, storageKey) => {
@@ -116,9 +116,14 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
         return isNew && !n.isRead;
       });
       normalized.forEach((n) => addSeenId(n.id));
-      setNotifications(normalized);
-      setUnreadCount(normalized.filter((n) => !n.isRead).length);
-      persist(normalized, storageKeyRef.current);
+      setNotifications((prev) => {
+        const byId = new Map(normalized.map((n) => [n.id, n]));
+        const merged = normalized.concat(prev.filter((p) => !byId.has(p.id)));
+        const sorted = merged.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        persist(sorted, storageKeyRef.current);
+        return sorted;
+      });
+      setUnreadCount((prev) => Math.max(0, prev + incomingUnread.length));
       if (shouldDeliver && hasCompletedInitialFetchRef.current && incomingUnread.length > 0) {
         deliverNew(incomingUnread);
       }
@@ -142,9 +147,8 @@ export function useNotificationPoller(deliverNew, hasCompletedInitialFetchRef) {
         applyList(Array.isArray(data) ? data : data?.content || [], { deliverNew: true });
       } catch {
         if (isMounted.current && tokenRef.current === t) {
-          const persisted = loadPersisted(storageKeyRef.current);
-          const fallback = persisted?.length ? persisted : seedNotifications.map(normalize);
-          applyList(fallback, { deliverNew: false });
+          const persisted = loadPersisted(storageKeyRef.current) || [];
+          applyList(persisted, { deliverNew: false });
         }
       } finally {
         if (!options.isBackground && isMounted.current && tokenRef.current === t) setLoading(false);

@@ -8,7 +8,7 @@ try {
       serverClockOffsetMs = Number(cached) || 0;
     }
   }
-} catch {}
+} catch { console.warn("[timeSync] Clock offset operation failed"); }
 
 export const getServerClockOffsetMs = () => serverClockOffsetMs;
 
@@ -18,21 +18,30 @@ export const setServerClockOffsetMs = (offsetMs) => {
     if (typeof localStorage !== "undefined") {
       localStorage.setItem("eventra_server_time_offset", String(serverClockOffsetMs));
     }
-  } catch {}
+  } catch { console.warn("[timeSync] Clock offset operation failed"); }
 };
 
 export const getServerNow = () => Date.now() + serverClockOffsetMs;
 
 export const getServerTime = () => new Date(getServerNow());
 
-export const syncServerTimeFromHeader = (headerValue) => {
+export const syncServerTimeFromHeader = (headerValue, requestSentAt) => {
   if (!headerValue || typeof headerValue !== "string") return false;
 
   const parsed = Date.parse(headerValue);
   if (Number.isNaN(parsed)) return false;
 
   const localNow = Date.now();
-  setServerClockOffsetMs(parsed - localNow);
+
+  // Compensate for network latency if request timing is available
+  if (typeof requestSentAt === "number" && requestSentAt > 0) {
+    const roundTripMs = localNow - requestSentAt;
+    // Assume symmetric latency: server time was received halfway through the round trip
+    const latencyCompensationMs = Math.round(roundTripMs / 2);
+    setServerClockOffsetMs(parsed + latencyCompensationMs - localNow);
+  } else {
+    setServerClockOffsetMs(parsed - localNow);
+  }
   return true;
 };
 

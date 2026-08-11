@@ -219,7 +219,7 @@ public class EventUpdateTests {
                 .title("") // Blank title
                 .description("Description")
                 .location("Location")
-                .eventDate(LocalDateTime.now().minusDays(1)) // Past date
+                .eventDate(LocalDateTime.now().plusDays(1))
                 .capacity(-10) // Negative capacity
                 .build();
 
@@ -228,6 +228,53 @@ public class EventUpdateTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Update with past eventDate is allowed (#13587)")
+    void testUpdateWithPastEventDateAllowed() throws Exception {
+        existingEvent.setEventDate(LocalDateTime.now().minusDays(2));
+        eventRepository.save(existingEvent);
+
+        EventUpdateRequest request = EventUpdateRequest.builder()
+                .title("Live Event Title")
+                .description("Updated Description")
+                .location("Updated Location")
+                .eventDate(LocalDateTime.now().minusDays(2))
+                .capacity(120)
+                .isPublic(true)
+                .build();
+
+        mockMvc.perform(put("/api/events/" + existingEvent.getId())
+                        .with(user("admin@example.com").authorities(() -> "ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("Live Event Title"))
+                .andExpect(jsonPath("$.capacity").value(120));
+    }
+
+    @Test
+    @DisplayName("Partial update preserves existing capacity and imageUrl (#12456)")
+    void testUpdateWithoutCapacityOrImageUrlPreservesExistingValues() throws Exception {
+        existingEvent.setImageUrl("https://example.com/images/banner.jpg");
+        eventRepository.save(existingEvent);
+
+        EventUpdateRequest request = EventUpdateRequest.builder()
+                .title("Partial Update Title")
+                .description("Description")
+                .location("Location")
+                .eventDate(LocalDateTime.now().plusDays(10))
+                .build();
+
+        mockMvc.perform(put("/api/events/" + existingEvent.getId())
+                        .with(user("admin@example.com").authorities(() -> "ADMIN"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("Partial Update Title"))
+                .andExpect(jsonPath("$.capacity").value(100))
+                .andExpect(jsonPath("$.imageUrl").value("https://example.com/images/banner.jpg"));
     }
 
     @Test

@@ -15,6 +15,7 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
@@ -129,6 +130,30 @@ public class GlobalExceptionHandler {
             AccessDeniedException ex,
             HttpServletRequest request) {
         return buildError(HttpStatus.FORBIDDEN, "Forbidden", "You do not have permission to access this resource", request);
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleMaxUploadSizeExceeded(
+            MaxUploadSizeExceededException ex,
+            HttpServletRequest request) {
+        logger.warn("File upload size exceeded: {}", ex.getMessage());
+        return buildError(HttpStatus.PAYLOAD_TOO_LARGE, "Payload Too Large",
+                "Uploaded file size exceeds the maximum permitted limit. Please upload a smaller file.", request);
+    }
+
+    @ExceptionHandler({
+            java.time.format.DateTimeParseException.class,
+            org.springframework.http.converter.HttpMessageNotReadableException.class,
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class,
+            org.springframework.web.bind.MissingServletRequestParameterException.class,
+            jakarta.validation.ConstraintViolationException.class,
+            org.springframework.web.bind.ServletRequestBindingException.class,
+    })
+    public ResponseEntity<ErrorResponse> handleBadClientInput(Exception ex,
+            HttpServletRequest request) {
+        logger.warn("Malformed request: {}", ex.getMessage());
+        return buildError(HttpStatus.BAD_REQUEST, "Bad Request",
+                "Malformed request: " + ex.getMessage(), request);
     }
 
     @ExceptionHandler(Exception.class)

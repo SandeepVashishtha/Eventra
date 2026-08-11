@@ -16,6 +16,7 @@ public class AdminDashboardStatsDTO {
     private long newUsersThisMonth;
     private long totalAdmins;
     private long totalOrganizers;
+    private long totalAttendees;
     private long totalClients;
 
     // ── Events ─────────────────────────────────────────────────────────────

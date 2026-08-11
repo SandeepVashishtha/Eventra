@@ -34,6 +34,16 @@ public interface EventAnalyticsRepository extends JpaRepository<Event, Long> {
         """)
     List<Object[]> findMostPopularEvents(Pageable pageable);
 
+    // Per-category registration distribution. Returns: [category, count]
+    @Query("""
+        SELECT e.category, COUNT(e)
+        FROM Event e
+        WHERE e.category IS NOT NULL AND e.category <> ''
+        GROUP BY e.category
+        ORDER BY COUNT(e) DESC
+        """)
+    List<Object[]> findCategoryBreakdown(Pageable pageable);
+
     // Average utilization across events that have a capacity set
     @Query("""
         SELECT AVG(e.registeredCount * 1.0 / NULLIF(e.capacity, 0))
@@ -42,8 +52,8 @@ public interface EventAnalyticsRepository extends JpaRepository<Event, Long> {
         """)
     Double findAverageCapacityUtilization();
 
-    // Total unique participants via the join table
-    @Query("SELECT COUNT(DISTINCT a.id) FROM Event e JOIN e.attendees a")
+    // Total unique participants via confirmed registrations
+    @Query("SELECT COUNT(DISTINCT r.user.id) FROM EventRegistration r WHERE r.status = 'CONFIRMED'")
     long countUniqueParticipants();
 
     // Events a user owns or manages (owner or member of the event team)

@@ -57,10 +57,11 @@ const EventCardSection = ({ isLoading, events, viewMode, filterType, onClearFilt
       >
         {visibleEvents.map((event, index) => (
           <EventCard
-            key={event.id || `${event.title}-${event.date}-${index}`}
-            event={event}
-            cacheInfo={cacheInfo}
-          />
+  key={event.id || `${event.title}-${event.date}-${index}`}
+  event={event}
+  position={index + 1}
+  cacheInfo={cacheInfo}
+/>
         ))}
       </div>
     </>
