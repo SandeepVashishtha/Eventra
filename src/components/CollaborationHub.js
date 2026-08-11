@@ -11,7 +11,6 @@ import EventMaterials from "./common/EventMaterials";
 import { Plus, Search, Check, X, Briefcase as BriefcaseIcon, DollarSign, Calendar, Users, Send, MessageCircle } from 'lucide-react';
 import CollaborativeWhiteboard from './common/CollaborativeWhiteboard';
 import { safeJsonParse } from "../utils/safeJsonParse";
-import { z } from 'zod';
 
 const COLLABORATION_TYPES = [
   'Sponsorship',
@@ -20,20 +19,35 @@ const COLLABORATION_TYPES = [
   'Technical Support',
 ];
 
-const collaborationRequestSchema = z.object({
-  title: z.string().trim().min(1, 'Project title is required.'),
-  type: z.enum(COLLABORATION_TYPES, {
-    error: 'Please select a collaboration type.',
-  }),
-  description: z
-    .string()
-    .trim()
-    .min(1, 'Description is required.')
-    .max(300, 'Description must be 300 characters or fewer.'),
-  budget: z.string().optional(),
-  deadline: z.string().optional(),
-  skills: z.string().optional(),
-});
+const validateCollaborationRequest = (request) => {
+  const data = {
+    title: request.title?.trim() || '',
+    type: request.type || '',
+    description: request.description?.trim() || '',
+    budget: request.budget || '',
+    deadline: request.deadline || '',
+    skills: request.skills || '',
+  };
+  const issues = [];
+
+  if (!data.title) {
+    issues.push({ path: ['title'], message: 'Project title is required.' });
+  }
+  if (!COLLABORATION_TYPES.includes(data.type)) {
+    issues.push({ path: ['type'], message: 'Please select a collaboration type.' });
+  }
+  if (!data.description) {
+    issues.push({ path: ['description'], message: 'Description is required.' });
+  } else if (data.description.length > 300) {
+    issues.push({ path: ['description'], message: 'Description must be 300 characters or fewer.' });
+  }
+
+  if (issues.length > 0) {
+    return { success: false, error: { issues } };
+  }
+
+  return { success: true, data };
+};
 
 
 const CollaborationHub = () => {
@@ -152,7 +166,7 @@ const CollaborationHub = () => {
   const handleRequestSubmit = (e) => {
   e.preventDefault();
 
-  const result = collaborationRequestSchema.safeParse(newRequest);
+  const result = validateCollaborationRequest(newRequest);
   if (!result.success) {
     const fieldErrors = {};
     result.error.issues.forEach((issue) => {
