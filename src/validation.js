@@ -15,14 +15,17 @@ const t = (key) => i18n.t(key);
  * Shared validation copy used by sync and async validators.
  * Keep these messages short because they are shown inline under form fields.
  */
+// Use getters so t() is called at read-time, not at module load time.
+// This ensures translations are resolved after i18n is fully initialized
+// and always reflect the active language at the moment of use.
 export const VALIDATION_MESSAGES = {
-  required: t("validation.required"),
-  invalidEmail: t("validation.invalidEmail"),
-  emailTaken: t("validation.emailTaken"),
-  usernameTaken: t("validation.usernameTaken"),
-  weakPassword: t("validation.weakPassword"),
-  invalidPhone: t("validation.invalidPhone"),
-  validationUnavailable: t("validation.validationUnavailable"),
+  get required() { return t("validation.required"); },
+  get invalidEmail() { return t("validation.invalidEmail"); },
+  get emailTaken() { return t("validation.emailTaken"); },
+  get usernameTaken() { return t("validation.usernameTaken"); },
+  get weakPassword() { return t("validation.weakPassword"); },
+  get invalidPhone() { return t("validation.invalidPhone"); },
+  get validationUnavailable() { return t("validation.validationUnavailable"); },
 };
 
 // Single source of truth regular expressions (Anchored, non-backtracking)
@@ -31,6 +34,10 @@ const PHONE_REGEX = /^\+?[\d\s\-()]+$/;
 
 const MAX_EMAIL_LENGTH = 254;
 const URL_REGEX = /^https?:\/\/[^\s]{1,2048}$/;
+
+// Single source of truth for special character matching — used by both
+// validate.password (sync) and validatePasswordStrength (async).
+const SPECIAL_CHAR_REGEX = /[!@#$%^&*(),.?":{}|<>+\-_=\/\\\[\]~`']/;
 
 // Shared top-level exports pointing directly to the source of truth constants
 export const emailPattern = EMAIL_REGEX;
@@ -43,7 +50,8 @@ export const validate = {
    * Input is length-capped before regex to guard against long-string attacks.
    */
   email: (val) => {
-    if (!val || val.length > MAX_EMAIL_LENGTH) return "Invalid email format";
+    if (!val) return "Email is required";
+    if (val.length > MAX_EMAIL_LENGTH) return "Email address is too long";
     return EMAIL_REGEX.test(val) || "Invalid email format";
   },
 
@@ -53,7 +61,7 @@ export const validate = {
     const hasLower = /[a-z]/.test(val);
     const hasNumber = /\d/.test(val);
     // FIX: Explictly match special characters rather than allowing whitespace/invisible chars
-    const hasSpecial = /[!@#$%^&*(),.?":{}|<>+\-_=\/\\\[\]~`']/.test(val);
+    const hasSpecial = SPECIAL_CHAR_REGEX.test(val);
     if (!hasUpper || !hasLower || !hasNumber || !hasSpecial) {
       return "Password must meet all 5 security criteria: 8+ characters, uppercase, lowercase, number, and special character";
     }
@@ -349,7 +357,7 @@ export const validatePasswordStrength = async (password, options = {}) => {
     [!requireUppercase || /[A-Z]/.test(password), messages.uppercase || "Password must include an uppercase letter"],
     [!requireLowercase || /[a-z]/.test(password), messages.lowercase || "Password must include a lowercase letter"],
     [!requireNumber || /\d/.test(password), messages.number || "Password must include a number"],
-    [!requireSpecial || /[!@#$%^&*(),.?":{}|<>]/.test(password), messages.special || "Password must include a special character"],
+    [!requireSpecial || SPECIAL_CHAR_REGEX.test(password), messages.special || "Password must include a special character"],
   ];
 
   const failedCheck = checks.find(([passed]) => !passed);

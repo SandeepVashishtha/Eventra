@@ -45,17 +45,15 @@ export default function LoginForm() {
     return ""; // Valid username
   };
   
+  // Login only checks presence — length/complexity rules belong on RegisterForm only.
+  // Enforcing a minimum length here permanently locks out users with legacy
+  // short passwords because the API call is never reached.
   const validatePassword = (value) => {
-  if (!value.trim()) {
-    return "Password is required.";
-  }
-
-  if (value.length < 8) {
-    return "Password must be at least 8 characters.";
-  }
-
-  return "";
-};
+    if (!value) {
+      return "Password is required.";
+    }
+    return "";
+  };
 const handlePasswordChange = (e) => {
     const value = e.target.value;
 

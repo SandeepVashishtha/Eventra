@@ -185,18 +185,38 @@ const HelpCenter = () => {
       <section className="py-16 px-4 max-w-6xl mx-auto">
         <h2 className="text-3xl font-semibold mb-8 text-center">{t("helpCenter.categoriesHeading")}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {categories.map((cat, idx) => (
-            <motion.div key={idx} whileHover={{ scale: 1.05 }}>
-              <Link
-                to={cat.link}
-                className="block bg-white dark:bg-gray-800 rounded-xl p-6 shadow hover:shadow-lg transition-shadow cursor-pointer"
-              >
+          {categories.map((cat, idx) => {
+            const isExternal = cat.link.startsWith("http://") || cat.link.startsWith("https://");
+            const cardContent = (
+              <>
                 <div className="mb-4">{cat.icon}</div>
                 <h3 className="text-xl font-semibold mb-2">{cat.title}</h3>
                 <p className="text-gray-600 dark:text-gray-300">{cat.description}</p>
-              </Link>
-            </motion.div>
-          ))}
+              </>
+            );
+
+            return (
+              <motion.div key={idx} whileHover={{ scale: 1.05 }}>
+                {isExternal ? (
+                  <a
+                    href={cat.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block bg-white dark:bg-gray-800 rounded-xl p-6 shadow hover:shadow-lg transition-shadow cursor-pointer"
+                  >
+                    {cardContent}
+                  </a>
+                ) : (
+                  <Link
+                    to={cat.link}
+                    className="block bg-white dark:bg-gray-800 rounded-xl p-6 shadow hover:shadow-lg transition-shadow cursor-pointer"
+                  >
+                    {cardContent}
+                  </Link>
+                )}
+              </motion.div>
+            );
+          })}
         </div>
       </section>
 
@@ -641,7 +661,7 @@ const HelpCenter = () => {
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link
                 to="/contact"
-                className="inline-flex items-center justify-center gap-2 bg-white text-black dark:bg-slate-900 dark:text-white" font-semibold px-8 py-4 rounded-full shadow-lg hover:bg-gray-100 transition-transform duration-300 
+                className="inline-flex items-center justify-center gap-2 bg-white text-black dark:bg-slate-900 dark:text-white font-semibold px-8 py-4 rounded-full shadow-lg hover:bg-gray-100 transition-transform duration-300"
               >
                 <Mail size={20} /> {t("helpCenter.ctaContactUs")}
               </Link>
