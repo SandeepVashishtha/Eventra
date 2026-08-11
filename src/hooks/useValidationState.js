@@ -109,6 +109,20 @@ export const useValidationState = (
   const err = isObjectOptions ? (fieldName.error ?? null) : error;
   const isTouched = isObjectOptions ? (fieldName.touched ?? false) : touched;
   const customMessages = opts.messages || {};
+  const debounceDelay = opts.debounceDelay ?? 0;
+
+  const [debouncedState, setDebouncedState] = useState(state);
+
+  useEffect(() => {
+    if (state === "validating" && debounceDelay > 0) {
+      const handler = setTimeout(() => {
+        setDebouncedState(state);
+      }, debounceDelay);
+      return () => clearTimeout(handler);
+    } else {
+      setDebouncedState(state);
+    }
+  }, [state, debounceDelay]);
   /**
    * Get visual indicator based on validation state
    * 🔥 FIX: Converted from invoked useCallback to useMemo for proper computed caching
