@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "./useAuth";
+import { useAuth } from "../context/AuthContext";
 import { apiUtils, API_ENDPOINTS } from "../config/api";
 
 /**

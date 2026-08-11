@@ -178,7 +178,7 @@ const EventCard = memo(({
         <Link
           to={`/events/${event?.id || event?.eventId}`}
           onClick={() => addToRecentEvents?.(event)}
-          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold transition-all duration-300 hover:scale-105"
+          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 px-3 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm font-bold transition-all duration-300 hover:scale-105"
         >
           <Activity size={13} /> View Details
         </Link>

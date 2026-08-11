@@ -33,6 +33,7 @@ const {
   deleteFeedback,
   exportFeedbackAsCSV,
   clearAllFeedback,
+  sanitizeCSVCell,
 } = await import('../src/utils/feedbackUtils.js');
 
 const expect = (actual) => ({
@@ -175,6 +176,15 @@ describe('Feedback Utils', () => {
       expect(stats.notRecommendCount).toBe(1);
       expect(stats.percentage).toBe(67);
     });
+
+    it('should return 0 percentage when no feedback exists (avoids NaN)', () => {
+      const stats = getRecommendationStats(testEventId);
+      expect(stats).toEqual({
+        recommendCount: 0,
+        notRecommendCount: 0,
+        percentage: 0,
+      });
+    });
   });
 
   describe('getTagStats', () => {
@@ -193,6 +203,35 @@ describe('Feedback Utils', () => {
       expect(stats['Great Speaker']).toBe(2);
       expect(stats['Well Organized']).toBe(1);
       expect(stats['Good Food']).toBe(1);
+    });
+
+    it('should handle undefined or null tags array without throwing error', () => {
+      saveFeedback(testEventId, {
+        rating: 5,
+        userId: 'user1',
+      }); // tags is undefined
+
+      saveFeedback(testEventId, {
+        rating: 4,
+        tags: null,
+        userId: 'user2',
+      }); // tags is null
+
+      saveFeedback(testEventId, {
+        rating: 3,
+        tags: ['Great Speaker'],
+        userId: 'user3',
+      });
+
+      const stats = getTagStats(testEventId);
+      expect(stats).toEqual({
+        'Great Speaker': 1,
+      });
+    });
+
+    it('should return empty object when event has no feedback', () => {
+      const stats = getTagStats('empty-event');
+      expect(stats).toEqual({});
     });
   });
 
@@ -259,6 +298,28 @@ describe('Feedback Utils', () => {
     });
   });
 
+  describe('sanitizeCSVCell', () => {
+    it('should wrap basic strings in double quotes', () => {
+      expect(sanitizeCSVCell('hello')).toBe('"hello"');
+    });
+
+    it('should return empty double quotes for null or undefined', () => {
+      expect(sanitizeCSVCell(null)).toBe('""');
+      expect(sanitizeCSVCell(undefined)).toBe('""');
+    });
+
+    it('should sanitize formula injection triggers (=, +, -, @, \\t, \\r)', () => {
+      expect(sanitizeCSVCell('=SUM(1,2)')).toBe(' "\'=SUM(1,2)"');
+      expect(sanitizeCSVCell('+12345')).toBe(' "\'+12345"');
+      expect(sanitizeCSVCell('-12345')).toBe(' "\'-12345"');
+      expect(sanitizeCSVCell('@ADMIN')).toBe(' "\'@ADMIN"');
+    });
+
+    it('should escape internal double quotes properly', () => {
+      expect(sanitizeCSVCell('Hello "World"')).toBe('"Hello ""World"""');
+    });
+  });
+
   describe('exportFeedbackAsCSV', () => {
     it('should export feedback as CSV', () => {
       saveFeedback(testEventId, {
@@ -280,6 +341,30 @@ describe('Feedback Utils', () => {
     it('should handle empty feedback', () => {
       const csv = exportFeedbackAsCSV(testEventId);
       expect(csv).toBe('');
+    });
+
+    it('should sanitize formula injection triggers in export', () => {
+      saveFeedback(testEventId, {
+        rating: 5,
+        comment: '=CMD|\' /C calc\'!A0',
+        tags: ['+DangerTag'],
+        userId: 'user1',
+      });
+
+      const csv = exportFeedbackAsCSV(testEventId);
+      expect(csv).toContain('\'=CMD|\' /C calc\'!A0');
+      expect(csv).toContain('\'+DangerTag');
+    });
+
+    it('should escape internal double quotes and wrap cells in quotes', () => {
+      saveFeedback(testEventId, {
+        rating: 4,
+        comment: 'She said "Awesome!" to everyone',
+        userId: 'user1',
+      });
+
+      const csv = exportFeedbackAsCSV(testEventId);
+      expect(csv).toContain('"She said ""Awesome!"" to everyone"');
     });
   });
 });

@@ -26,7 +26,7 @@ export default function StatsSection() {
           <h3 className="text-3xl font-bold text-indigo-700 dark:text-indigo-400">
             {stat.number}
           </h3>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">{stat.label}</p>
+          <p className="text-gray-600 dark:text-gray-200 mt-2">{stat.label}</p>
         </motion.div>
       ))}
     </motion.div>

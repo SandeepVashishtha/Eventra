@@ -51,7 +51,7 @@ export default function AnalyticsTab({ loading }) {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">Organizer Analytics</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-gray-500 dark:text-gray-200">
             Track your event performance and audience insights.
           </p>
         </div>
@@ -63,7 +63,7 @@ export default function AnalyticsTab({ loading }) {
             <Users size={24} />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-200">
               Total Registrations
             </p>
             <h3 className="text-2xl font-bold text-gray-900 dark:text-white">1,245</h3>
@@ -78,7 +78,7 @@ export default function AnalyticsTab({ loading }) {
             <Eye size={24} />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Page Views</p>
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-200">Page Views</p>
             <h3 className="text-2xl font-bold text-gray-900 dark:text-white">8,432</h3>
             <p className="text-xs text-green-500 flex items-center gap-1 mt-1">
               <TrendingUp size={12} /> +24% this week
@@ -91,7 +91,7 @@ export default function AnalyticsTab({ loading }) {
             <CalendarIcon size={24} />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Active Events</p>
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-200">Active Events</p>
             <h3 className="text-2xl font-bold text-gray-900 dark:text-white">12</h3>
             <p className="text-xs text-gray-400 mt-1">Across 3 categories</p>
           </div>
@@ -168,7 +168,7 @@ export default function AnalyticsTab({ loading }) {
             <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200 mb-4">
               Audience Demographics
             </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            <p className="text-sm text-gray-500 dark:text-gray-200 mb-4">
               Understand who is attending your events. Most of your audience consists of students.
             </p>
             <div className="space-y-3">

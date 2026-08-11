@@ -136,7 +136,7 @@ export default function TicketQRCode({
           )}
 
           {eventDate && (
-            <p className="text-xs text-center text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-center text-gray-500 dark:text-gray-200">
               {eventDate}
             </p>
           )}

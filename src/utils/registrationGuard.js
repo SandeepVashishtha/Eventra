@@ -20,11 +20,15 @@ const getRegistry = () => {
 };
 
 const saveRegistry = (registry) => {
-  if (!isStorageAvailable()) return false;
+  if (!isStorageAvailable()) {
+    console.warn("[RegistrationGuard] localStorage not available - registration state not persisted");
+    return false;
+  }
   try {
     window.localStorage.setItem(REGISTRY_KEY, JSON.stringify(registry));
     return true;
-  } catch {
+  } catch (error) {
+    console.warn("[RegistrationGuard] Failed to persist registration state:", error.message);
     return false;
   }
 };
@@ -47,7 +51,11 @@ export const recordRegistration = (userId, eventId, metadata = {}) => {
     registeredAt: new Date().toISOString(),
     ...metadata,
   };
-  return saveRegistry(registry);
+  const persisted = saveRegistry(registry);
+  if (!persisted) {
+    console.warn(`[RegistrationGuard] Registration for event ${eventId} could not be persisted - state may be lost on reload`);
+  }
+  return persisted;
 };
 
 export const cancelRegistration = (userId, eventId) => {
@@ -56,7 +64,11 @@ export const cancelRegistration = (userId, eventId) => {
   const key = `${userId}_${eventId}`;
   if (!registry[key]) return false;
   delete registry[key];
-  return saveRegistry(registry);
+  const persisted = saveRegistry(registry);
+  if (!persisted) {
+    console.warn(`[RegistrationGuard] Cancellation for event ${eventId} could not be persisted - state may be inconsistent on reload`);
+  }
+  return persisted;
 };
 
 export const getUserRegistrations = (userId) => {
