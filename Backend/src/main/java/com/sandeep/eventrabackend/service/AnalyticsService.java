@@ -46,15 +46,15 @@ public class AnalyticsService {
 
     // ── 0. Summary (admin dashboard) ────────────────────────────────────────
     public AnalyticsSummaryDTO getSummary() {
-        List<Object[]> rows = eventRepo.findMostPopularEvents(
+        List<Object[]> rows = eventRepo.findCategoryBreakdown(
                 PageRequest.of(0, BREAKDOWN_COLORS.length));
 
         List<CategoryBreakdownDTO> breakdown = new ArrayList<>(rows.size());
         for (int i = 0; i < rows.size(); i++) {
             Object[] row = rows.get(i);
             breakdown.add(CategoryBreakdownDTO.builder()
-                    .name(row[1].toString())
-                    .value(((Number) row[2]).longValue())
+                    .name(row[0].toString())
+                    .value(((Number) row[1]).longValue())
                     .color(BREAKDOWN_COLORS[i % BREAKDOWN_COLORS.length])
                     .build());
         }
