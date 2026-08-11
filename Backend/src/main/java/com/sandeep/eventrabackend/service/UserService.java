@@ -87,4 +87,16 @@ public class UserService {
                 .preferences(user.getPreferences())
                 .build();
     }
+
+    private void validateName(String name, String fieldName) {
+        if (name != null) {
+            if (name.trim().length() > 50) {
+                throw new IllegalArgumentException(fieldName + " exceeds maximum allowed length of 50 characters.");
+            }
+            if (name.matches(".*[\\p{Cc}\\p{Cn}].*")) {
+                throw new IllegalArgumentException(fieldName + " contains invalid control characters.");
+            }
+        }
+    }
+
 }
