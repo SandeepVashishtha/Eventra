@@ -211,7 +211,13 @@ const SurveyEngine = () => {
       return;
     }
 
-
+    const publishedSurvey = {
+      title: surveyTitle,
+      description: surveyDescription,
+      questions,
+      publishedAt: new Date().toISOString(),
+    };
+    localStorage.setItem("eventra_survey_active", JSON.stringify(publishedSurvey));
     localStorage.removeItem("eventra_survey_builder_draft");
     toast.success("Survey published and active for attendees!");
   };
