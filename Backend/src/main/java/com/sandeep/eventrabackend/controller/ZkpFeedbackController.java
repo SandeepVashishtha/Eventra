@@ -2,24 +2,27 @@ package com.sandeep.eventrabackend.controller;
 
 import com.sandeep.eventrabackend.service.ZkpVerifierService;
 import com.sandeep.eventrabackend.service.ZkpVerifierService.ZkpProofPayload;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashMap;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/feedback/zkp")
-@CrossOrigin(origins = "*")
 public class ZkpFeedbackController {
 
     @Autowired
     private ZkpVerifierService zkpVerifierService;
 
     @PostMapping("/submit")
-    public ResponseEntity<Map<String, Object>> submitAnonymousFeedback(@RequestBody ZkpProofPayload payload) {
+    public ResponseEntity<Map<String, Object>> submitAnonymousFeedback(@Valid @RequestBody ZkpProofPayload payload) {
         Map<String, Object> response = new HashMap<>();
 
         boolean isValid = zkpVerifierService.verifyProof(payload);
@@ -27,6 +30,13 @@ public class ZkpFeedbackController {
             response.put("success", false);
             response.put("message", "Invalid Zero-Knowledge Proof. Attendee membership could not be verified.");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+
+        boolean nullifierRecorded = zkpVerifierService.markNullifierUsed(payload.getEventId(), payload.getNullifierHash());
+        if (!nullifierRecorded) {
+            response.put("success", false);
+            response.put("message", "This proof has already been used. Each nullifier can only be submitted once.");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
         }
 
         response.put("success", true);
