@@ -80,7 +80,6 @@ describe('useValidationState — parameter signatures & defaults', () => {
     assert.strictEqual(result.current.error, null);
     assert.strictEqual(result.current.touched, false);
   });
-});
 
 describe('useValidationState — return contract shape', () => {
   it('returns all required status fields, direct accessors, and utility functions', () => {
@@ -124,6 +123,7 @@ describe('useValidationState — status indicators', () => {
     const { result } = renderHook(() => useValidationState('field', 'idle'));
     assert.strictEqual(result.current.statusIndicator, 'idle');
   });
+});
 
   it('returns validating indicator when validating', () => {
     const { result } = renderHook(() =>
@@ -158,7 +158,6 @@ describe('useValidationState — status messages & custom i18n support', () => {
       result.current.statusMessage,
       'Username is being validated'
     );
-  });
 
   it('returns default success message', () => {
     const { result } = renderHook(() =>
@@ -193,6 +192,7 @@ describe('useValidationState — status messages & custom i18n support', () => {
       'Checking availability...'
     );
   });
+});
 
   it('uses custom function formatters for status messages (i18n support)', () => {
     const { result } = renderHook(() =>
@@ -209,7 +209,6 @@ describe('useValidationState — status messages & custom i18n support', () => {
       result.current.statusMessage,
       'Email Address: Invalid format'
     );
-  });
 
   it('falls back to default message copy when a custom message key is missing', () => {
     const { result } = renderHook(() =>
@@ -254,7 +253,6 @@ describe('useValidationState — field class names', () => {
       classes.includes('border-red-500'),
       'Must include border-red-500'
     );
-  });
 
   it('applies blue border class for validating state when touched', () => {
     const { result } = renderHook(() =>
@@ -285,7 +283,6 @@ describe('useValidationState — ARIA attributes', () => {
       result.current.ariaAttributes['aria-describedby'],
       'email-error'
     );
-  });
 
   it('sets aria-describedby for success state when valid', () => {
     const { result } = renderHook(() =>
