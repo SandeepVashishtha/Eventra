@@ -442,29 +442,31 @@ public class EventService {
                 }
 
                 if (startDate != null && !startDate.trim().isEmpty()) {
+                        LocalDateTime startDateTime;
                         try {
-                                LocalDateTime startDateTime = LocalDateTime.parse(startDate);
-                                List<Event> filteredEvents = events.stream()
-                                                .filter(event -> event.getEventDate() != null &&
-                                                                !event.getEventDate().isBefore(startDateTime))
-                                                .collect(Collectors.toList());
-                                events = filteredEvents;
+                                startDateTime = LocalDateTime.parse(startDate);
                         } catch (Exception e) {
-                                // Invalid date format, ignore this filter
+                                throw new IllegalArgumentException("Invalid startDate parameter: " + startDate);
                         }
+                        List<Event> filteredEvents = events.stream()
+                                        .filter(event -> event.getEventDate() != null &&
+                                                        !event.getEventDate().isBefore(startDateTime))
+                                        .collect(Collectors.toList());
+                        events = filteredEvents;
                 }
 
                 if (endDate != null && !endDate.trim().isEmpty()) {
+                        LocalDateTime endDateTime;
                         try {
-                                LocalDateTime endDateTime = LocalDateTime.parse(endDate);
-                                List<Event> filteredEvents = events.stream()
-                                                .filter(event -> event.getEventDate() != null &&
-                                                                !event.getEventDate().isAfter(endDateTime))
-                                                .collect(Collectors.toList());
-                                events = filteredEvents;
+                                endDateTime = LocalDateTime.parse(endDate);
                         } catch (Exception e) {
-                                // Invalid date format, ignore this filter
+                                throw new IllegalArgumentException("Invalid endDate parameter: " + endDate);
                         }
+                        List<Event> filteredEvents = events.stream()
+                                        .filter(event -> event.getEventDate() != null &&
+                                                        !event.getEventDate().isAfter(endDateTime))
+                                        .collect(Collectors.toList());
+                        events = filteredEvents;
                 }
 
                 // Events do not currently model price, so a free filter cannot be applied.
