@@ -32,7 +32,7 @@ const HealthCheckPage = () => {
     version: APP_VERSION,
     buildTime: BUILD_TIME,
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || "production",
+    environment: (typeof import.meta !== "undefined" && import.meta.env?.MODE) || (typeof process !== "undefined" && process.env?.NODE_ENV) || "production",
   };
 
   return (
