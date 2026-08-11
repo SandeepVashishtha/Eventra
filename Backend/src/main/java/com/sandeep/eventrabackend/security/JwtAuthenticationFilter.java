@@ -1,7 +1,5 @@
 package com.sandeep.eventrabackend.security;
 
-import com.sandeep.eventrabackend.model.User;
-import com.sandeep.eventrabackend.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,9 +16,9 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
-import java.util.Optional;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -30,20 +28,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
     private final UserDetailsService userDetailsService;
     private final TokenBlacklistService tokenBlacklistService;
-    private final UserRepository userRepository;
     private final AuthCookieHelper authCookieHelper;
     private final TokenRefreshQueueHandler tokenRefreshQueueHandler;
 
     public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider,
                                    UserDetailsService userDetailsService,
                                    TokenBlacklistService tokenBlacklistService,
-                                   UserRepository userRepository,
                                    AuthCookieHelper authCookieHelper,
                                    TokenRefreshQueueHandler tokenRefreshQueueHandler) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.userDetailsService = userDetailsService;
         this.tokenBlacklistService = tokenBlacklistService;
-        this.userRepository = userRepository;
         this.authCookieHelper = authCookieHelper;
         this.tokenRefreshQueueHandler = tokenRefreshQueueHandler;
     }
@@ -74,13 +69,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     return;
                 }
                 String username = jwtTokenProvider.getUsernameFromToken(token);
+                // Single DB load: CustomUserDetails carries passwordChangedAt
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
                 Date tokenIssuedAt = jwtTokenProvider.getIssuedAtDateFromToken(token);
-                Optional<User> userOpt = userRepository.findByEmail(username);
-                if (userOpt.isPresent() && userOpt.get().getPasswordChangedAt() != null) {
+                LocalDateTime passwordChangedAt = null;
+                if (userDetails instanceof CustomUserDetails customUserDetails) {
+                    passwordChangedAt = customUserDetails.getPasswordChangedAt();
+                }
+                if (passwordChangedAt != null) {
                     long tokenIssuedSec = tokenIssuedAt.getTime() / 1000;
-                    long passwordChangedSec = userOpt.get().getPasswordChangedAt()
+                    long passwordChangedSec = passwordChangedAt
                             .atZone(ZoneId.systemDefault())
                             .toEpochSecond();
                     if (tokenIssuedSec < passwordChangedSec) {
