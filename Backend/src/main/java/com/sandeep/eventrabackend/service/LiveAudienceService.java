@@ -5,6 +5,7 @@ import com.sandeep.eventrabackend.dto.response.LiveAudienceDataResponse;
 import com.sandeep.eventrabackend.dto.response.LiveAudiencePollResponse;
 import com.sandeep.eventrabackend.dto.response.LiveAudienceQuestionResponse;
 import com.sandeep.eventrabackend.exception.EventNotFoundException;
+import com.sandeep.eventrabackend.exception.RegistrationConflictException;
 import com.sandeep.eventrabackend.model.Event;
 import com.sandeep.eventrabackend.model.EventRole;
 import com.sandeep.eventrabackend.model.LiveAudiencePoll;
@@ -19,6 +20,7 @@ import com.sandeep.eventrabackend.repository.LiveAudienceQuestionRepository;
 import com.sandeep.eventrabackend.repository.LiveAudienceQuestionUpvoteRepository;
 import com.sandeep.eventrabackend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -95,17 +97,27 @@ public class LiveAudienceService {
     @Transactional
     public LiveAudienceQuestionResponse upvoteQuestion(Long eventId, Long questionId, String email) {
         requireEvent(eventId);
-        LiveAudienceQuestion question = requireQuestion(eventId, questionId);
+        requireQuestion(eventId, questionId);
         User user = getUser(email);
         if (questionUpvoteRepository.existsByQuestionIdAndUserId(questionId, user.getId())) {
             throw new IllegalArgumentException("You have already upvoted this question");
         }
-        questionUpvoteRepository.save(LiveAudienceQuestionUpvote.builder()
-                .questionId(questionId)
-                .userId(user.getId())
-                .build());
-        question.setUpvotes(question.getUpvotes() + 1);
-        question = questionRepository.save(question);
+        try {
+            // saveAndFlush surfaces a concurrent unique-constraint violation
+            // here so we can map it to a friendly conflict instead of a 500,
+            // mirroring ProjectService.upvoteProject (#14509).
+            questionUpvoteRepository.saveAndFlush(LiveAudienceQuestionUpvote.builder()
+                    .questionId(questionId)
+                    .userId(user.getId())
+                    .build());
+        } catch (DataIntegrityViolationException ex) {
+            throw new RegistrationConflictException("You have already upvoted this question");
+        }
+        // Atomic bulk increment: concurrent upvotes cannot lose updates (#14509).
+        questionRepository.incrementUpvotes(questionId);
+        // The bulk update cleared the persistence context; re-read for the
+        // fresh counter.
+        LiveAudienceQuestion question = requireQuestion(eventId, questionId);
         LiveAudienceQuestionResponse response = toQuestionResponse(question);
         publish(eventId, "UPDATE_QUESTION", response);
         return response;
@@ -128,6 +140,9 @@ public class LiveAudienceService {
         requireEvent(eventId);
         requireModerator(eventId, email);
         requireQuestion(eventId, questionId);
+        // Remove the question's upvotes first so they are not orphaned in
+        // live_audience_question_upvotes (#14509).
+        questionUpvoteRepository.deleteByQuestionId(questionId);
         questionRepository.deleteById(questionId);
         publish(eventId, "DELETE_QUESTION", questionId);
     }
@@ -189,7 +204,7 @@ public class LiveAudienceService {
     @Transactional
     public LiveAudiencePollResponse submitVote(Long eventId, Long pollId, String option, String email) {
         requireEvent(eventId);
-        LiveAudiencePoll poll = requirePoll(eventId, pollId);
+        LiveAudiencePoll poll = requirePollForUpdate(eventId, pollId);
         if ("closed".equals(poll.getStatus())) {
             throw new IllegalArgumentException("Voting is closed for this poll");
         }
@@ -204,11 +219,20 @@ public class LiveAudienceService {
         if (!poll.getOptions().contains(trimmed)) {
             throw new IllegalArgumentException("Selected option is not part of this poll");
         }
-        pollVoteRepository.save(LiveAudiencePollVote.builder()
-                .pollId(pollId)
-                .userId(user.getId())
-                .optionText(trimmed)
-                .build());
+        try {
+            // saveAndFlush surfaces a concurrent unique-constraint violation
+            // here so we can map it to a friendly conflict instead of a 500
+            // (#14509).
+            pollVoteRepository.saveAndFlush(LiveAudiencePollVote.builder()
+                    .pollId(pollId)
+                    .userId(user.getId())
+                    .optionText(trimmed)
+                    .build());
+        } catch (DataIntegrityViolationException ex) {
+            throw new RegistrationConflictException("You have already voted in this poll");
+        }
+        // The poll row is locked (PESSIMISTIC_WRITE), so the read-modify-write
+        // on the results JSON cannot lose concurrent updates (#14509).
         Map<String, Object> results = poll.getResults() == null
                 ? new HashMap<>()
                 : new HashMap<>(poll.getResults());
@@ -238,6 +262,11 @@ public class LiveAudienceService {
 
     private LiveAudiencePoll requirePoll(Long eventId, Long pollId) {
         return pollRepository.findByIdAndEventId(pollId, eventId)
+                .orElseThrow(() -> new IllegalArgumentException("Poll not found with id: " + pollId));
+    }
+
+    private LiveAudiencePoll requirePollForUpdate(Long eventId, Long pollId) {
+        return pollRepository.findByIdAndEventIdForUpdate(pollId, eventId)
                 .orElseThrow(() -> new IllegalArgumentException("Poll not found with id: " + pollId));
     }
 
