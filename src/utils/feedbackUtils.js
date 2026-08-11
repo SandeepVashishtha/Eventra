@@ -180,24 +180,23 @@ export const getTopFeedbackTags = (eventId, limit = 5) => {
  */
 export const getRecommendationStats = (eventId) => {
   try {
-    const feedback = getEventFeedback(eventId);
-    const recommendations = feedback.map((f) => f.recommend).filter((r) => r !== undefined);
+    const feedbackList = getEventFeedback(eventId);
 
-    const recommendCount = recommendations.filter((r) => r === true).length;
-    const notRecommendCount = recommendations.filter((r) => r === false).length;
-    const total = recommendations.length;
+    if (!feedbackList || feedbackList.length === 0) {
+      return { recommendCount: 0, notRecommendCount: 0, percentage: 0 };
+    }
 
-    const percentage = total > 0 ? Math.round((recommendCount / total) * 100) : 0;
+    const recommendCount = feedbackList.filter((f) => Boolean(f.recommend)).length;
+    const total = feedbackList.length;
 
     return {
       recommendCount,
-      notRecommendCount,
-      total,
-      percentage,
+      notRecommendCount: total - recommendCount,
+      percentage: Math.round((recommendCount / total) * 100),
     };
   } catch (error) {
     //console.error('Error calculating recommendation stats:', error);
-    return { recommendCount: 0, notRecommendCount: 0, total: 0, percentage: 0 };
+    return { recommendCount: 0, notRecommendCount: 0, percentage: 0 };
   }
 };
 
@@ -208,18 +207,22 @@ export const getRecommendationStats = (eventId) => {
  */
 export const getTagStats = (eventId) => {
   try {
-    const feedback = getEventFeedback(eventId);
-    const tagCounts = {};
+    const feedbackList = getEventFeedback(eventId);
+    const stats = {};
 
-    feedback.forEach((f) => {
-      if (f.tags && Array.isArray(f.tags)) {
+    if (!feedbackList || !Array.isArray(feedbackList)) {
+      return stats;
+    }
+
+    feedbackList.forEach((f) => {
+      if (Array.isArray(f.tags)) {
         f.tags.forEach((tag) => {
-          tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+          stats[tag] = (stats[tag] || 0) + 1;
         });
       }
     });
 
-    return tagCounts;
+    return stats;
   } catch (error) {
     //console.error('Error calculating tag stats:', error);
     return {};
