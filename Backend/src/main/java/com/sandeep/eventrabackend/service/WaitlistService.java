@@ -1,38 +1,35 @@
-package com.sandeep.eventrabackend.service;
+package com.eventra.service;
 
+import com.eventra.model.EventWaitlist;
+import com.eventra.repository.EventWaitlistRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Optional;
 
-/**
- * Service managing event waitlist promotions with strict idempotency token deduplication.
- * Prevents double-claiming seat allocations during Service Worker background sync retries.
- */
 @Service
-public class WaitlistService {
+public class EventWaitlistService {
 
-    private final Set<String> processedPromotionTokens = ConcurrentHashMap.newKeySet();
+    @Autowired
+    private EventWaitlistRepository waitlistRepository;
 
     /**
-     * Process waitlist promotion acceptance.
-     * Returns true if successfully processed, false if duplicate/already processed.
+     * Promotes the next waitlist user upon ticket cancellation.
+     * Protected by @Transactional and pessimistic write locking to prevent race conditions.
      */
-    public boolean confirmPromotion(String promotionToken, String userId, String eventId) {
-        if (promotionToken == null || promotionToken.trim().isEmpty()) {
-            return false;
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public void promoteNextWaitlistUser(Long eventId) {
+        // Fetch the next pending waitlist entry with PESSIMISTIC_WRITE lock
+        Optional<EventWaitlist> nextUserOpt = waitlistRepository.findNextPendingWithPessimisticWriteLock(eventId);
+
+        if (nextUserOpt.isPresent()) {
+            EventWaitlist waitlistEntry = nextUserOpt.get();
+            waitlistEntry.setStatus("PROMOTED");
+            waitlistRepository.save(waitlistEntry);
+            
+            // Trigger confirmation notification / ticket allocation logic here
         }
-
-        // Idempotency Mutex Lock: reject duplicate confirmations for the same promotion token
-        if (!processedPromotionTokens.add(promotionToken)) {
-            return false; // Already processed
-        }
-
-        // Proceed with seat allocation logic
-        return true;
-    }
-
-    public boolean isTokenProcessed(String promotionToken) {
-        return processedPromotionTokens.contains(promotionToken);
     }
 }
