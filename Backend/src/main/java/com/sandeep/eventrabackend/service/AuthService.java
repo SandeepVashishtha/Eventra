@@ -11,6 +11,7 @@ import com.sandeep.eventrabackend.model.User;
 import com.sandeep.eventrabackend.repository.UserRepository;
 import com.sandeep.eventrabackend.security.JwtTokenProvider;
 import com.sandeep.eventrabackend.security.TokenBlacklistService;
+import com.sandeep.eventrabackend.security.TokenRefreshQueueHandler;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -21,6 +22,8 @@ import com.sandeep.eventrabackend.dto.request.GoogleAuthRequest;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import java.security.SecureRandom;
 import java.util.Base64;
+import java.time.ZoneId;
+import java.util.Date;
 
 @Service
 public class AuthService {
@@ -31,21 +34,24 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final GoogleAuthService googleAuthService;
     private final TokenBlacklistService tokenBlacklistService;
+    private final TokenRefreshQueueHandler tokenRefreshQueueHandler;
 
     public AuthService(UserRepository userRepository,
-                   PasswordEncoder passwordEncoder,
-                   AuthenticationManager authenticationManager,
-                   JwtTokenProvider jwtTokenProvider,
-                   GoogleAuthService googleAuthService,
-                   TokenBlacklistService tokenBlacklistService) {
+            PasswordEncoder passwordEncoder,
+            AuthenticationManager authenticationManager,
+            JwtTokenProvider jwtTokenProvider,
+            GoogleAuthService googleAuthService,
+            TokenBlacklistService tokenBlacklistService,
+            TokenRefreshQueueHandler tokenRefreshQueueHandler) {
 
-    this.userRepository = userRepository;
-    this.passwordEncoder = passwordEncoder;
-    this.authenticationManager = authenticationManager;
-    this.jwtTokenProvider = jwtTokenProvider;
-    this.googleAuthService = googleAuthService;
-    this.tokenBlacklistService = tokenBlacklistService;
-}
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.authenticationManager = authenticationManager;
+        this.jwtTokenProvider = jwtTokenProvider;
+        this.googleAuthService = googleAuthService;
+        this.tokenBlacklistService = tokenBlacklistService;
+        this.tokenRefreshQueueHandler = tokenRefreshQueueHandler;
+    }
 
     @Transactional
     public AuthResponse signup(SignupRequest request) {
@@ -72,13 +78,15 @@ public class AuthService {
                 .email(normalizedEmail)
                 .username(username)
                 .password(passwordEncoder.encode(request.getPassword()))
-                .role(Role.CLIENT)
+                .role(Role.ATTENDEE)
+                .emailVerified(false)
+                .authProvider("LOCAL")
                 .build();
 
         user = userRepository.save(user);
 
-        // 5. Issue JWT
-        String token = jwtTokenProvider.generateToken(user.getEmail());
+        // 5. Issue JWT (embed the user's role claim for stateless RBAC checks)
+        String token = jwtTokenProvider.generateToken(user.getEmail(), user.getRole().name());
 
         return buildAuthResponse(user, token);
     }
@@ -92,96 +100,141 @@ public class AuthService {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         identifier,
-                        request.getPassword()
-                )
-        );
+                        request.getPassword()));
 
-        String token = jwtTokenProvider.generateToken(authentication);
-
-        // Reload user for profile info
+        // Reload user for profile info (and role claim for the JWT)
         User user = userRepository
                 .findByEmailOrUsername(identifier, identifier)
                 .orElseThrow();
 
+        String token = jwtTokenProvider.generateToken(user.getEmail(), user.getRole().name());
+
         return buildAuthResponse(user, token);
     }
 
-public AuthResponse googleLogin(GoogleAuthRequest request) {
+    public AuthResponse googleLogin(GoogleAuthRequest request) {
 
-    try {
+        try {
 
-        GoogleIdToken.Payload payload =
-                googleAuthService.verifyToken(request.getToken());
+            GoogleIdToken.Payload payload = googleAuthService.verifyToken(request.getToken());
 
-        String email = payload.getEmail().toLowerCase();
+            if (!Boolean.TRUE.equals(payload.getEmailVerified())) {
+                throw new InvalidGoogleTokenException(
+                        "Google account email is not verified.");
+            }
 
-        if (email == null || email.isBlank()) {
-            throw new IllegalArgumentException(
-                    "Google account must provide a valid email address.");
+            String email = payload.getEmail();
+
+            if (email == null || email.isBlank()) {
+                throw new IllegalArgumentException(
+                        "Google account must provide a valid email address.");
+            }
+
+            email = email.toLowerCase();
+
+            String firstName = (String) payload.get("given_name");
+
+            String lastName = (String) payload.get("family_name");
+
+            if (firstName == null || firstName.isBlank()) {
+                firstName = "Google";
+            }
+
+            if (lastName == null || lastName.isBlank()) {
+                lastName = "User";
+            }
+
+            User user = userRepository
+                    .findByEmail(email)
+                    .orElse(null);
+
+            if (user == null) {
+
+                String baseUsername = email.split("@")[0].toLowerCase();
+
+                String username = generateUniqueUsername(baseUsername);
+
+                SecureRandom secureRandom = new SecureRandom();
+                byte[] randomBytes = new byte[32];
+                secureRandom.nextBytes(randomBytes);
+                String securePassword = Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
+
+                user = User.builder()
+                        .firstName(firstName)
+                        .lastName(lastName)
+                        .email(email.toLowerCase())
+                        .username(username)
+                        .password(passwordEncoder.encode(securePassword))
+                        .role(Role.ATTENDEE)
+                        .emailVerified(true)
+                        .authProvider("GOOGLE")
+                        .build();
+
+                user = userRepository.save(user);
+            } else if (!user.isEmailVerified()
+                    && (user.getAuthProvider() == null || "LOCAL".equalsIgnoreCase(user.getAuthProvider()))) {
+                // Unverified LOCAL accounts can be claimed by a verified Google identity
+                // for the same email. Verified LOCAL accounts are left untouched below.
+                SecureRandom secureRandom = new SecureRandom();
+                byte[] randomBytes = new byte[32];
+                secureRandom.nextBytes(randomBytes);
+                String securePassword = Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
+
+                user.setAuthProvider("GOOGLE");
+                user.setEmailVerified(true);
+                user.setPassword(passwordEncoder.encode(securePassword));
+                if (firstName != null && !firstName.isBlank()) {
+                    user.setFirstName(firstName);
+                }
+                if (lastName != null && !lastName.isBlank()) {
+                    user.setLastName(lastName);
+                }
+                user = userRepository.save(user);
+            } else if (!user.isEmailVerified()) {
+                user.setEmailVerified(true);
+                if (user.getAuthProvider() == null || user.getAuthProvider().isBlank()) {
+                    user.setAuthProvider("GOOGLE");
+                }
+                user = userRepository.save(user);
+            }
+
+            String token = jwtTokenProvider.generateToken(user.getEmail(), user.getRole().name());
+
+            return buildAuthResponse(user, token);
+
+        } catch (InvalidGoogleTokenException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException("Google authentication failed", e);
         }
-
-       String firstName =
-        (String) payload.get("given_name");
-
-String lastName =
-        (String) payload.get("family_name");
-
-if (firstName == null || firstName.isBlank()) {
-    firstName = "Google";
-}
-
-if (lastName == null || lastName.isBlank()) {
-    lastName = "User";
-}
-
-        User user = userRepository
-                .findByEmail(email)
-                .orElse(null);
-
-        if (user == null) {
-
-            String baseUsername =
-                    email.split("@")[0].toLowerCase();
-
-            String username =
-                    generateUniqueUsername(baseUsername);
-
-            SecureRandom secureRandom = new SecureRandom();
-            byte[] randomBytes = new byte[32];
-            secureRandom.nextBytes(randomBytes);
-            String securePassword = Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
-
-            user = User.builder()
-                    .firstName(firstName)
-                    .lastName(lastName)
-                    .email(email.toLowerCase())
-                    .username(username)
-                    .password(passwordEncoder.encode(securePassword))
-                    .role(Role.CLIENT)
-                    .build();
-
-            user = userRepository.save(user);
-        }
-
-        String token =
-                jwtTokenProvider.generateToken(user.getEmail());
-
-        return buildAuthResponse(user, token);
-
-    } catch (InvalidGoogleTokenException e) {
-        throw e;
-    } catch (Exception e) {
-        throw new RuntimeException("Google authentication failed", e);
     }
-}
 
-    public void logout(String token) {
-        java.util.Date expiration = jwtTokenProvider.getExpirationDateFromToken(token);
-        tokenBlacklistService.addToBlacklist(token, expiration);
+    public void logout(String accessToken, String refreshToken) {
+        if (accessToken != null && !accessToken.isBlank()) {
+            java.util.Date expiration = jwtTokenProvider.getExpirationDateFromToken(accessToken);
+            tokenBlacklistService.addToBlacklist(accessToken, expiration);
+        }
+
+        if (refreshToken != null && !refreshToken.isBlank()
+                && jwtTokenProvider.validateToken(refreshToken)
+                && jwtTokenProvider.isRefreshToken(refreshToken)) {
+            java.util.Date refreshExpiration = jwtTokenProvider.getExpirationDateFromToken(refreshToken);
+            tokenBlacklistService.addToBlacklist(refreshToken, refreshExpiration);
+        }
+    }
+
+    public void reauth(String userEmail, String password) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new org.springframework.security.core.userdetails.UsernameNotFoundException(
+                        "User not found with email: " + userEmail));
+
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new org.springframework.security.authentication.BadCredentialsException(
+                    "Incorrect password");
+        }
     }
 
     // ─── helpers ────────────────────────────────────────────────────────────────
-
 
     private String generateUniqueUsername(String base) {
         String candidate = base;
@@ -195,6 +248,7 @@ if (lastName == null || lastName.isBlank()) {
     private AuthResponse buildAuthResponse(User user, String token) {
         return AuthResponse.builder()
                 .token(token)
+                .refreshToken(jwtTokenProvider.generateRefreshToken(user.getEmail()))
                 .tokenType("Bearer")
                 .id(user.getId())
                 .firstName(user.getFirstName())
@@ -204,5 +258,50 @@ if (lastName == null || lastName.isBlank()) {
                 .role(user.getRole().name())
                 .build();
     }
-}
 
+    public AuthResponse refresh(String refreshToken) {
+        if (refreshToken == null || refreshToken.isBlank()
+                || !jwtTokenProvider.validateToken(refreshToken)
+                || !jwtTokenProvider.isRefreshToken(refreshToken)) {
+            throw new org.springframework.security.authentication.BadCredentialsException(
+                    "Invalid refresh token");
+        }
+
+        if (tokenBlacklistService.isBlacklisted(refreshToken)) {
+            // Allow reuse within the short grace window after rotation so
+            // parallel requests racing on a just-rotated token succeed.
+            if (tokenRefreshQueueHandler != null
+                    && tokenRefreshQueueHandler.isWithinGracePeriod(refreshToken)) {
+                // fall through and rotate again
+            } else {
+                throw new org.springframework.security.authentication.BadCredentialsException(
+                        "Refresh token has been revoked");
+            }
+        }
+
+        String email = jwtTokenProvider.getUsernameFromToken(refreshToken);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new org.springframework.security.core.userdetails.UsernameNotFoundException(
+                        "User not found with email: " + email));
+
+        if (user.getPasswordChangedAt() != null) {
+            Date tokenIssuedAt = jwtTokenProvider.getIssuedAtDateFromToken(refreshToken);
+            long tokenIssuedSec = tokenIssuedAt.getTime() / 1000;
+            long passwordChangedSec = user.getPasswordChangedAt()
+                    .atZone(ZoneId.systemDefault())
+                    .toEpochSecond();
+            if (tokenIssuedSec < passwordChangedSec) {
+                throw new org.springframework.security.authentication.BadCredentialsException(
+                        "Refresh token invalidated by password change");
+            }
+        }
+
+        // Rotate: blacklist the presented refresh token, then mint a new pair.
+        tokenBlacklistService.addToBlacklist(
+                refreshToken, jwtTokenProvider.getExpirationDateFromToken(refreshToken));
+        tokenRefreshQueueHandler.registerTokenRotation(refreshToken);
+
+        String accessToken = jwtTokenProvider.generateToken(user.getEmail(), user.getRole().name());
+        return buildAuthResponse(user, accessToken);
+    }
+}

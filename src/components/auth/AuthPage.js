@@ -9,6 +9,37 @@ import useReducedMotion from "hooks/useReducedMotion";
 const LoginForm = lazy(() => import("./LoginForm"));
 const SignupForm = lazy(() => import("./SignupForm"));
 
+const AUTH_ROUTES = new Set([
+  "/login",
+  "/register",
+  "/signup",
+  "/unauthorized",
+  "/password-reset",
+]);
+
+/**
+ * Only allow same-origin relative paths. Reject schemes, protocol-relative
+ * URLs, and anything that is not a single path starting with "/".
+ */
+export function sanitizeRedirectPath(candidate, fallback = "/dashboard") {
+  if (typeof candidate !== "string" || candidate.length === 0) {
+    return fallback;
+  }
+  const trimmed = candidate.trim();
+  if (
+    !trimmed.startsWith("/") ||
+    trimmed.startsWith("//") ||
+    trimmed.includes("\\") ||
+    /^\/[a-z][a-z0-9+.-]*:/i.test(trimmed)
+  ) {
+    return fallback;
+  }
+  if (AUTH_ROUTES.has(trimmed.split(/[?#]/, 1)[0])) {
+    return fallback;
+  }
+  return trimmed;
+}
+
 const AuthPage = () => {
   const prefersReducedMotion = useReducedMotion();
   const location = useLocation();
@@ -19,7 +50,6 @@ const AuthPage = () => {
   const sessionExpired = location.state?.sessionExpired === true;
   const from = location.state?.from;
 
-  // 🔥 FIX 1A: Derived the raw path
   const rawRedirectPath =
     typeof from === "string"
       ? from
@@ -33,14 +63,7 @@ const AuthPage = () => {
 
   useEffect(() => {
     if (isAuthenticated()) {
-      // 🔥 FIX 1B: The Infinite Redirect Guard
-      // Prevents redirecting authenticated users back into an auth-loop.
-      // Only redirect to dashboard for actual auth routes, not event registration pages
-      const authRoutes = ["/login", "/register", "/signup", "/unauthorized", "/password-reset"];
-      const isAuthRoute = authRoutes.includes(rawRedirectPath);
-      const safeRedirectPath = isAuthRoute ? "/dashboard" : rawRedirectPath;
-
-      navigate(safeRedirectPath, { replace: true });
+      navigate(sanitizeRedirectPath(rawRedirectPath), { replace: true });
     }
   }, [navigate, isAuthenticated, rawRedirectPath]);
 

@@ -1,4 +1,5 @@
-import { Github, Twitter, Linkedin, MessageCircle, Code, Laptop, Brain, Code2, Plus, ArrowRight } from "lucide-react";
+import { MessageCircle, Code, Laptop, Brain, Code2, Plus, ArrowRight } from "lucide-react";
+import { FaGithub as Github, FaTwitter as Twitter, FaLinkedin as Linkedin } from "react-icons/fa";
 import React from "react";
 import { motion } from "framer-motion";
 import useReducedMotion from "hooks/useReducedMotion.js";
