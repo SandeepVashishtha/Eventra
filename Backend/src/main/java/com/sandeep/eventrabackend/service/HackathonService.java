@@ -73,6 +73,9 @@ public class HackathonService {
         User creator = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + userEmail));
 
+        // FIX (#14532): reject inverted date ranges on create, same as update.
+        validateDateRanges(request.getStartDate(), request.getEndDate(), request.getRegistrationDeadline());
+
         Hackathon hackathon = Hackathon.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
@@ -88,7 +91,7 @@ public class HackathonService {
                 .build();
 
         Hackathon saved = hackathonRepository.save(hackathon);
-        log.info("[AUDIT LOG] Administrative Action: HACKATHON_SOFT_DELETE | HackathonID: {} | Title: {}", hackathon.getId(), hackathon.getTitle());
+        log.info("[AUDIT LOG] Administrative Action: HACKATHON_CREATE | HackathonID: {} | Title: {}", saved.getId(), saved.getTitle());
         return mapToResponse(saved);
     }
 
@@ -109,29 +112,34 @@ public class HackathonService {
                     "Only the hackathon's own organizer (or an administrator) can manage this hackathon.");
         }
 
-        // Validate chronological date range order
-        if (request.getStartDate() != null && request.getEndDate() != null && request.getStartDate().isAfter(request.getEndDate())) {
-            throw new IllegalArgumentException("Start date cannot be after end date.");
-        }
-        if (request.getRegistrationDeadline() != null && request.getEndDate() != null && request.getRegistrationDeadline().isAfter(request.getEndDate())) {
-            throw new IllegalArgumentException("Registration deadline cannot be after end date.");
-        }
+        // FIX (#14532): shared chronological validation, null-safe for partial updates.
+        validateDateRanges(request.getStartDate(), request.getEndDate(), request.getRegistrationDeadline());
 
-        hackathon.setTitle(request.getTitle());
-        hackathon.setDescription(request.getDescription());
-        hackathon.setOrganizer(request.getOrganizer());
-        hackathon.setStartDate(request.getStartDate());
-        hackathon.setEndDate(request.getEndDate());
-        hackathon.setLocation(request.getLocation());
-        hackathon.setMode(request.getMode());
-        hackathon.setPrizePool(request.getPrizePool());
-        hackathon.setRegistrationDeadline(request.getRegistrationDeadline());
-        hackathon.setImageUrl(request.getImageUrl());
+        // FIX (#14532): partial update — only apply fields present in the request,
+        // so a single-field payload cannot wipe the other columns.
+        if (request.getTitle() != null) hackathon.setTitle(request.getTitle());
+        if (request.getDescription() != null) hackathon.setDescription(request.getDescription());
+        if (request.getOrganizer() != null) hackathon.setOrganizer(request.getOrganizer());
+        if (request.getStartDate() != null) hackathon.setStartDate(request.getStartDate());
+        if (request.getEndDate() != null) hackathon.setEndDate(request.getEndDate());
+        if (request.getLocation() != null) hackathon.setLocation(request.getLocation());
+        if (request.getMode() != null) hackathon.setMode(request.getMode());
+        if (request.getPrizePool() != null) hackathon.setPrizePool(request.getPrizePool());
+        if (request.getRegistrationDeadline() != null) hackathon.setRegistrationDeadline(request.getRegistrationDeadline());
+        if (request.getImageUrl() != null) hackathon.setImageUrl(request.getImageUrl());
 
         Hackathon updated = hackathonRepository.save(hackathon);
-        log.info("[AUDIT LOG] Administrative Action: HACKATHON_SOFT_DELETE | HackathonID: {} | Title: {}", hackathon.getId(), hackathon.getTitle());
         log.info("[AUDIT LOG] Administrative Action: HACKATHON_UPDATE | HackathonID: {} | UpdatedTitle: {}", updated.getId(), updated.getTitle());
         return mapToResponse(updated);
+    }
+
+    private void validateDateRanges(LocalDateTime startDate, LocalDateTime endDate, LocalDateTime registrationDeadline) {
+        if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
+            throw new IllegalArgumentException("Start date cannot be after end date.");
+        }
+        if (registrationDeadline != null && endDate != null && registrationDeadline.isAfter(endDate)) {
+            throw new IllegalArgumentException("Registration deadline cannot be after end date.");
+        }
     }
 
     @Transactional
