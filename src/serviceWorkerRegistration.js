@@ -171,7 +171,7 @@ export function unregister() {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.ready
       .then((registration) => {
-        registration.unregister();
+        return registration.unregister(); // return Promise<boolean> so rejections propagate to .catch()
       })
       .catch((error) => {
         if (isDev) {
