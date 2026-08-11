@@ -40,7 +40,7 @@ export function calculateAttendeeNoShowProbability(attendee = {}) {
 /**
  * Predict total turnout metrics for an entire event registration list.
  */
-export function predictEventTurnout(registrations = []) {
+export function predictEventTurnout(registrations = [], eventCapacity = 0) {
   if (!Array.isArray(registrations) || registrations.length === 0) {
     return {
       totalRegistered: 0,
@@ -48,6 +48,7 @@ export function predictEventTurnout(registrations = []) {
       predictedNoShows: 0,
       turnoutPercentage: 0,
       recommendedOverbookingCapacity: 0,
+      recommendedWaitlistPromotions: 0,
     };
   }
 
@@ -65,11 +66,18 @@ export function predictEventTurnout(registrations = []) {
   const noShowRate = predictedNoShows / totalRegistered;
   const recommendedOverbookingCapacity = Math.round(totalRegistered * (1 + noShowRate * 0.8));
 
+  // Only recommend waitlist promotions if event has valid positive capacity
+  const expectedNoShowSeats = predictedNoShows;
+  const recommendedWaitlistPromotions = eventCapacity > 0
+    ? Math.min(expectedNoShowSeats, Math.max(0, eventCapacity - totalRegistered + expectedNoShowSeats))
+    : 0;
+
   return {
     totalRegistered,
     predictedTurnout,
     predictedNoShows,
     turnoutPercentage,
     recommendedOverbookingCapacity,
+    recommendedWaitlistPromotions,
   };
 }
