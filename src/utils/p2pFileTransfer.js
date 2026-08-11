@@ -21,7 +21,7 @@ let dbInstance = null;
 // Initialize IndexedDB
 const getDB = () => {
   if (dbInstance) return Promise.resolve(dbInstance);
-  if (typeof indexedDB === "undefined") {
+  if (typeof window === "undefined" || typeof indexedDB === "undefined") {
     return Promise.reject(new Error("IndexedDB is not available in this environment"));
   }
   return new Promise((resolve, reject) => {
