@@ -3,18 +3,7 @@
  * Prevents raw internal stack traces and sensitive database errors from leaking to users.
  */
 
-const STATUS_MESSAGES = {
-  400: "The request could not be understood. Please check your input and try again.",
-  401: "Your credentials are incorrect or your session has expired. Please sign in again.",
-  403: "You don't have permission to perform this action.",
-  404: "The requested resource was not found.",
-  409: "This information is already in use. Please try a different value.",
-  422: "Some fields contain invalid values. Please review and correct them.",
-  429: "Too many requests. Please wait a moment before trying again.",
-  500: "Something went wrong on our end. Please try again shortly.",
-  502: "The service is temporarily unavailable. Please try again shortly.",
-  503: "The service is temporarily unavailable. Please try again shortly.",
-};
+import i18n from "../i18n/i18n.js";
 
 const KEYWORD_MESSAGES = [
   { pattern: /email.*already.*exist|already.*registered|duplicate.*email/i, message: "This email is already registered. Try signing in instead.", action: "SIGN_IN" },

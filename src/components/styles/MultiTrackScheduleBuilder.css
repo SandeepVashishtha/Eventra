@@ -1,0 +1,856 @@
+/* Multi-Track Schedule Builder Styles */
+
+.multi-track-schedule-builder {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-radius: 12px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Header */
+.mtb-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+}
+
+.mtb-title-section h2 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.mtb-subtitle {
+  margin: 4px 0 0 0;
+  font-size: 14px;
+  color: #666;
+}
+
+.mtb-header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Status Cards */
+.mtb-status-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.mtb-status-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #007bff;
+}
+
+.mtb-status-card.alert {
+  border-left-color: #dc3545;
+}
+
+.mtb-status-card.success {
+  border-left-color: #28a745;
+}
+
+.mtb-status-card svg {
+  flex-shrink: 0;
+  color: #007bff;
+}
+
+.mtb-status-card.alert svg {
+  color: #dc3545;
+}
+
+.mtb-status-card.success svg {
+  color: #28a745;
+}
+
+.mtb-status-label {
+  margin: 0;
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.mtb-status-value {
+  margin: 4px 0 0 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+/* View Selector */
+.mtb-view-selector {
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.mtb-view-button {
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mtb-view-button:hover {
+  border-color: #007bff;
+  color: #007bff;
+}
+
+.mtb-view-button.active {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+/* Content Layout */
+.mtb-content {
+  display: grid;
+  grid-template-columns: 280px 1fr 300px;
+  gap: 16px;
+  min-height: 600px;
+}
+
+/* Panels */
+.mtb-panel {
+  background: white;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mtb-panel h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a1a;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #eee;
+}
+
+/* Tracks Panel */
+.mtb-tracks-panel {
+  grid-column: 1;
+  grid-row: 1 / span 3;
+  overflow-y: auto;
+  max-height: 600px;
+}
+
+.mtb-add-track {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mtb-tracks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mtb-track-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+  transition: all 0.2s ease;
+}
+
+.mtb-track-card:hover {
+  background: #e9ecef;
+  border-color: #adb5bd;
+}
+
+.mtb-track-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.mtb-track-name {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.mtb-track-sessions {
+  margin: 2px 0 0 0;
+  font-size: 12px;
+  color: #666;
+}
+
+.mtb-track-utilization {
+  margin: 2px 0 0 0;
+  font-size: 11px;
+  color: #007bff;
+  font-weight: 500;
+}
+
+/* Main Panel */
+.mtb-main-panel {
+  grid-column: 2;
+  grid-row: 1 / span 3;
+  background: white;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
+  max-height: 600px;
+}
+
+/* Calendar View */
+.mtb-calendar-view {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.mtb-calendar-grid {
+  display: grid;
+  grid-template-columns: 80px repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1px;
+  background: #dee2e6;
+  padding: 1px;
+}
+
+.mtb-calendar-header {
+  display: grid;
+  grid-template-columns: 80px repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1px;
+  background: #dee2e6;
+  padding: 1px;
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.mtb-time-column,
+.mtb-track-column-header {
+  background: #007bff;
+  padding: 8px;
+  text-align: center;
+}
+
+.mtb-time-slot {
+  background: white;
+  padding: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  text-align: center;
+}
+
+.mtb-track-time-slot {
+  background: white;
+  padding: 4px;
+  min-height: 60px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.mtb-session-block {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+  font-size: 11px;
+}
+
+.mtb-session-block:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.mtb-session-block.editing {
+  border-color: #ffc107;
+  box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.3);
+}
+
+.mtb-session-title {
+  margin: 0;
+  font-weight: 600;
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mtb-session-speaker {
+  margin: 1px 0 0 0;
+  font-size: 10px;
+  opacity: 0.9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* List View */
+.mtb-list-view {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.mtb-sessions-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.mtb-sessions-table thead {
+  background: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.mtb-sessions-table th {
+  padding: 12px;
+  text-align: left;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.mtb-sessions-table tbody tr {
+  border-bottom: 1px solid #dee2e6;
+  transition: background-color 0.2s ease;
+}
+
+.mtb-sessions-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.mtb-sessions-table tbody tr.editing {
+  background-color: #fff3cd;
+}
+
+.mtb-sessions-table td {
+  padding: 12px;
+  color: #333;
+}
+
+.mtb-title-cell {
+  font-weight: 600;
+  color: #007bff;
+}
+
+/* Conflicts View */
+.mtb-conflicts-view {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.mtb-validation-section,
+.mtb-conflicts-section {
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.mtb-validation-section h3,
+.mtb-conflicts-section h3 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.mtb-issues-list,
+.mtb-warnings-list {
+  margin-bottom: 16px;
+}
+
+.mtb-issues-title,
+.mtb-warnings-title {
+  margin: 0 0 8px 0;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #666;
+}
+
+.mtb-issue-item,
+.mtb-warning-item {
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  margin-bottom: 4px;
+  border-radius: 4px;
+  align-items: flex-start;
+  font-size: 13px;
+}
+
+.mtb-issue-error {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.mtb-warning-item {
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeaa7;
+}
+
+.mtb-issue-item svg,
+.mtb-warning-item svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.mtb-issue-item p,
+.mtb-warning-item p {
+  margin: 0;
+}
+
+.mtb-success-message {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+  border-radius: 4px;
+}
+
+.mtb-success-message p {
+  margin: 0;
+}
+
+.mtb-conflicts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mtb-conflict-item {
+  padding: 12px;
+  border-radius: 6px;
+  border-left: 4px solid #dc3545;
+  background: #fff5f7;
+}
+
+.mtb-conflict-item.mtb-conflict-warning {
+  border-left-color: #ffc107;
+  background: #fffbf0;
+}
+
+.mtb-conflict-header {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.mtb-conflict-type {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #007bff;
+  color: white;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.mtb-conflict-severity {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #dc3545;
+  color: white;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.mtb-conflict-severity.mtb-conflict-warning {
+  background: #ffc107;
+  color: #333;
+}
+
+.mtb-conflict-message {
+  margin: 0 0 8px 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+}
+
+.mtb-conflict-details {
+  font-size: 12px;
+  color: #666;
+}
+
+.mtb-conflict-details p {
+  margin: 2px 0;
+}
+
+/* Stats View */
+.mtb-stats-view {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.mtb-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.mtb-stat-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 16px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.mtb-stat-card h4 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.9;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.mtb-stat-large {
+  margin: 8px 0 0 0;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.mtb-track-stats {
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.mtb-track-stats h3 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.mtb-track-stat {
+  padding: 12px;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.mtb-track-stat-name {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #007bff;
+}
+
+.mtb-track-stat-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #666;
+}
+
+/* Editor Panel */
+.mtb-editor-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  justify-content: flex-end;
+  align-items: stretch;
+}
+
+.mtb-editor-overlay.active {
+  display: flex;
+}
+
+.mtb-editor-panel {
+  background: white;
+  width: 300px;
+  overflow-y: auto;
+  padding: 24px;
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
+}
+
+.mtb-editor-panel h3 {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.mtb-form-group {
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mtb-form-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.mtb-input,
+.mtb-textarea {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: inherit;
+  transition: border-color 0.2s ease;
+}
+
+.mtb-input:focus,
+.mtb-textarea:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.mtb-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.mtb-editor-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+/* Buttons */
+.mtb-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.mtb-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.mtb-button:active {
+  transform: translateY(0);
+}
+
+.mtb-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.mtb-button-primary {
+  background: #007bff;
+  color: white;
+}
+
+.mtb-button-primary:hover:not(:disabled) {
+  background: #0056b3;
+}
+
+.mtb-button-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.mtb-button-secondary:hover:not(:disabled) {
+  background: #545b62;
+}
+
+.mtb-button-danger {
+  background: #dc3545;
+  color: white;
+}
+
+.mtb-button-danger:hover:not(:disabled) {
+  background: #bb2d3b;
+}
+
+.mtb-button-small {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+/* Action Bar */
+.mtb-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-top: 2px solid #dee2e6;
+}
+
+.mtb-status-info {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.mtb-valid {
+  color: #28a745;
+}
+
+.mtb-invalid {
+  color: #dc3545;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .mtb-content {
+    grid-template-columns: 1fr;
+  }
+
+  .mtb-tracks-panel {
+    grid-column: 1;
+    grid-row: auto;
+    max-height: none;
+  }
+
+  .mtb-main-panel {
+    grid-column: 1;
+    grid-row: auto;
+    max-height: none;
+  }
+
+  .mtb-editor-panel {
+    width: 100%;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border-radius: 12px 12px 0 0;
+    max-height: 80vh;
+  }
+}
+
+@media (max-width: 768px) {
+  .multi-track-schedule-builder {
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .mtb-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .mtb-status-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .mtb-view-selector {
+    overflow-x: auto;
+  }
+
+  .mtb-calendar-grid {
+    grid-template-columns: 60px repeat(auto-fit, minmax(120px, 1fr));
+  }
+
+  .mtb-sessions-table {
+    font-size: 11px;
+  }
+
+  .mtb-sessions-table th,
+  .mtb-sessions-table td {
+    padding: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .multi-track-schedule-builder {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .mtb-title-section h2 {
+    font-size: 20px;
+  }
+
+  .mtb-status-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .mtb-view-selector {
+    flex-wrap: wrap;
+  }
+
+  .mtb-view-button {
+    flex: 1;
+    min-width: 100px;
+  }
+
+  .mtb-action-bar {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .mtb-button {
+    width: 100%;
+  }
+}
