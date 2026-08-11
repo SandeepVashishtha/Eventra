@@ -53,3 +53,14 @@ management:
 
 server:
   forward-headers-strategy: framework
+
+# Secure default: OpenAPI/Swagger is off unless a profile enables it (dev).
+eventra:
+  api-docs:
+    enabled: ${EVENTRA_API_DOCS_ENABLED:false}
+
+springdoc:
+  api-docs:
+    enabled: ${eventra.api-docs.enabled:false}
+  swagger-ui:
+    enabled: ${eventra.api-docs.enabled:false}

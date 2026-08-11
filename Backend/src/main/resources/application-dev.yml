@@ -21,3 +21,7 @@ app:
 google:
   client:
     id: ${GOOGLE_CLIENT_ID:dev-google-client-id}
+
+eventra:
+  api-docs:
+    enabled: true
