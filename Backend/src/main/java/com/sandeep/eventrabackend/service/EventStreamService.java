@@ -7,8 +7,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -29,12 +30,6 @@ public class EventStreamService {
     private final Map<String, CopyOnWriteArrayList<SseEmitter>> emittersByTopic = new ConcurrentHashMap<>();
     private final Map<String, AtomicInteger> emitterCounts = new ConcurrentHashMap<>();
 
-    /**
-     * Creates a new SseEmitter, registers cleanup hooks, and sends an initial
-     * connection event.
-     *
-     * @return a configured SseEmitter
-     */
     public SseEmitter createEmitter() {
         return createEmitter("events");
     }
@@ -74,39 +69,46 @@ public class EventStreamService {
         return emitter;
     }
 
-    /**
-     * Broadcasts an availability update to all connected SSE emitters.
-     * The event payload includes the event id and the full availability
-     * response so clients can update their seat counters in real-time.
-     *
-     * @param eventId      the id of the event whose availability changed
-     * @param availability the latest availability data for the event
-     */
-    public void broadcastAvailability(Long eventId, EventAvailabilityResponse availability) {
-        if (eventId == null || availability == null) {
+    public void publish(String topic, String eventName, Object payload) {
+        String normalized = normalizeTopic(topic);
+        CopyOnWriteArrayList<SseEmitter> emitters = emittersByTopic.get(normalized);
+        if (emitters == null || emitters.isEmpty()) {
             return;
         }
 
-        Map<String, Object> payload = Map.of(
-                "eventId", eventId,
-                "availability", availability);
-
         for (SseEmitter emitter : emitters) {
             try {
-                emitter.send(SseEmitter.event()
-                        .name("availability")
-                        .data(payload));
-            } catch (IOException e) {
-                log.warn("Failed to send availability update to emitter, removing it", e);
-                removeEmitter(emitter);
-            } catch (IllegalStateException e) {
-                // Emitter already completed/timed out
-                removeEmitter(emitter);
+                emitter.send(SseEmitter.event().name(eventName).data(payload));
+            } catch (IOException ex) {
+                removeEmitter(normalized, emitter);
+                emitter.completeWithError(ex);
             }
         }
     }
 
-    private void removeEmitter(SseEmitter emitter) {
-        emitters.remove(emitter);
+    public void broadcastAvailability(Long eventId, EventAvailabilityResponse availability) {
+        if (eventId == null || availability == null) return;
+        publish("events", "availability", Map.of("eventId", eventId, "availability", availability));
+    }
+
+    private void removeEmitter(String topic, SseEmitter emitter) {
+        CopyOnWriteArrayList<SseEmitter> emitters = emittersByTopic.get(topic);
+        if (emitters != null && emitters.remove(emitter)) {
+            AtomicInteger count = emitterCounts.get(topic);
+            if (count != null) {
+                count.updateAndGet(value -> Math.max(0, value - 1));
+            }
+        }
+    }
+
+    private static String normalizeTopic(String topic) {
+        if (topic == null || topic.isBlank()) {
+            return "events";
+        }
+        String normalized = topic.trim().toLowerCase();
+        if (!KNOWN_TOPICS.contains(normalized)) {
+            throw new IllegalArgumentException("Unknown SSE topic: " + topic);
+        }
+        return normalized;
     }
 }
