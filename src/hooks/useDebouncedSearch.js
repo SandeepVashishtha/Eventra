@@ -3,6 +3,7 @@
  * @module hooks/useDebouncedSearch
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { prepareSafeSearchQuery } from '../utils/inputSanitization.js';
 
 /**
  * Custom hook for debounced search/filter queries.
@@ -14,12 +15,14 @@ import { useState, useEffect, useRef, useCallback } from 'react';
  */
 export function useDebouncedSearch(initialValue = '', delay = 300) {
   const [searchTerm, setSearchTerm] = useState(initialValue);
-  const [debouncedTerm, setDebouncedTerm] = useState(initialValue);
+  const [debouncedTerm, setDebouncedTerm] = useState(prepareSafeSearchQuery(initialValue));
   const [isDebouncing, setIsDebouncing] = useState(false);
   const timerRef = useRef(null);
+  const sequenceRef = useRef(0);
 
   useEffect(() => {
-    if (searchTerm === debouncedTerm) {
+    const safeSearchTerm = prepareSafeSearchQuery(searchTerm);
+    if (safeSearchTerm === debouncedTerm) {
       setIsDebouncing(false);
       return;
     }
@@ -32,7 +35,8 @@ export function useDebouncedSearch(initialValue = '', delay = 300) {
     }
 
     timerRef.current = setTimeout(() => {
-      setDebouncedTerm(searchTerm);
+      sequenceRef.current += 1;
+      setDebouncedTerm(safeSearchTerm);
       setIsDebouncing(false);
     }, delay);
 
@@ -58,6 +62,7 @@ export function useDebouncedSearch(initialValue = '', delay = 300) {
     setSearchTerm,
     isDebouncing,
     clear,
+    sequence: sequenceRef.current,
   };
 }
 

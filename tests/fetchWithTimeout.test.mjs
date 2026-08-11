@@ -100,6 +100,23 @@ try {
     "Should throw FetchError on manual abort"
   );
 
+  // Test Case 6: Verify options parameter is not mutated (headers not poisoned)
+  const userOptions = {
+    method: "POST",
+    headers: { "Content-Type": "application/json" }
+  };
+  global.fetch = async (url, options) => {
+    return {
+      ok: true,
+      status: 200,
+      headers: { get: () => "application/json" },
+      json: async () => ({ success: true })
+    };
+  };
+
+  await fetchWithTimeout("https://api.example.com/mutate-check", userOptions);
+  assert.equal(userOptions.headers["Idempotency-Key"], undefined, "Idempotency-Key should not be added to original options.headers object");
+
   console.log("fetchWithTimeout tests passed ✓");
 } finally {
   global.fetch = originalFetch;

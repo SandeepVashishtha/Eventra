@@ -95,7 +95,7 @@ function registerValidSW(swUrl, config) {
       if ('periodicSync' in registration && registration.periodicSync) {
         registration.periodicSync.register('eventra-data-sync', {
           minInterval: 24 * 60 * 60 * 1000,
-        }).catch(() => {});
+        }).catch((err) => logger.warn("[SW] PeriodicSync registration failed:", err));
       }
 
       registration.onupdatefound = () => {
@@ -174,5 +174,15 @@ export function unregister() {
           logger.error(error.message);
         }
       });
+  }
+}
+
+export function registerWaitlistBackgroundSync(promotionToken) {
+  if ('serviceWorker' in navigator && 'SyncManager' in window) {
+    navigator.serviceWorker.ready
+      .then((registration) => {
+        return registration.sync.register(`sync-waitlist-promotion:${promotionToken}`);
+      })
+      .catch((err) => log("[SW] Background sync registration skipped/failed:", err));
   }
 }

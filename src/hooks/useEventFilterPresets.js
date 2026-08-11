@@ -18,22 +18,24 @@ const createPresetId = () => {
 
 export const useEventFilterPresets = ({
   storageKey = EVENT_FILTER_PRESETS_STORAGE_KEY,
-  storage = globalThis.localStorage,
+  storage = null,
 } = {}) => {
+  const resolvedStorage =
+    storage ?? (typeof globalThis !== "undefined" ? globalThis.localStorage : null);
   const [presets, setPresets] = useState([]);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    setPresets(readFilterPresets(storage, storageKey));
-  }, [storage, storageKey]);
+    setPresets(readFilterPresets(resolvedStorage, storageKey));
+  }, [resolvedStorage, storageKey]);
 
   const persist = useCallback(
     (nextPresets) => {
-      const persisted = writeFilterPresets(nextPresets, storage, storageKey);
+      const persisted = writeFilterPresets(nextPresets, resolvedStorage, storageKey);
       setPresets(persisted);
       return persisted;
     },
-    [storage, storageKey],
+    [resolvedStorage, storageKey],
   );
 
   const savePreset = useCallback(

@@ -1,7 +1,7 @@
-import React from "react";
+
 import { motion } from "framer-motion";
-import { Calendar, FileText, Tag, Users } from "lucide-react";
-import { categories } from "../../../constants/eventDefaults";
+import { FileText, Tag, Users } from "lucide-react";
+import { categories } from "../constants/eventDefaults";
 import CharacterCounter from "../CharacterCounter";
 
 const FormField = ({ label, icon: Icon, error, children, required, hint }) => (
@@ -14,7 +14,7 @@ const FormField = ({ label, icon: Icon, error, children, required, hint }) => (
     {children}
     {hint && <p className="text-xs text-gray-500 dark:text-gray-400">{hint}</p>}
     {error && (
-      <motion.p 
+      <motion.p
         initial={{ opacity: 0, y: -5 }}
         animate={{ opacity: 1, y: 0 }}
         className="text-red-500 text-sm flex items-center gap-1"
@@ -26,7 +26,7 @@ const FormField = ({ label, icon: Icon, error, children, required, hint }) => (
   </div>
 );
 
-const EventBasicInfo = ({ formData, handleInputChange, errors }) => {
+const EventBasicInfo = ({ formData, handleInputChange, handleFieldBlur, errors }) => {
   return (
     <div className="space-y-6">
       <FormField label="Event Title" icon={FileText} error={errors.title} required>
@@ -36,11 +36,12 @@ const EventBasicInfo = ({ formData, handleInputChange, errors }) => {
           name="title"
           value={formData.title}
           onChange={handleInputChange}
+          onBlur={handleFieldBlur}
           maxLength={200}
           aria-describedby="title-counter"
           placeholder="Give your event a catchy title"
-          className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-700 
-                   text-gray-900 dark:text-gray-100 focus:outline-none 
+          className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-700
+                   text-gray-900 dark:text-gray-100 focus:outline-none
                    focus:ring-2 focus:ring-indigo-500 focus:border-transparent
                    transition-all duration-200 ${
                      errors.title ? "border-red-500" : "border-gray-300 dark:border-gray-600"
@@ -51,25 +52,40 @@ const EventBasicInfo = ({ formData, handleInputChange, errors }) => {
         </div>
       </FormField>
 
-      <FormField label="Category" icon={Tag} error={errors.category} required>
+      <FormField label="Categories" icon={Tag} error={errors.categories} required>
         <select
-          name="category"
-          value={formData.category}
-          onChange={handleInputChange}
-          className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-700 
-                   text-gray-900 dark:text-gray-100 focus:outline-none 
+          name="categories"
+          value={formData.categories || []}
+          onChange={(e) => {
+            const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
+            if (selectedOptions.length <= 3) {
+              handleInputChange({
+                target: {
+                  name: "categories",
+                  value: selectedOptions
+                }
+              });
+            }
+          }}
+          onBlur={handleFieldBlur}
+          multiple
+          size={4}
+          className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-700
+                   text-gray-900 dark:text-gray-100 focus:outline-none
                    focus:ring-2 focus:ring-indigo-500 focus:border-transparent
                    transition-all duration-200 ${
-                     errors.category ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+                     errors.categories ? "border-red-500" : "border-gray-300 dark:border-gray-600"
                    }`}
         >
-          <option value="">Select a category</option>
           {categories.map((cat) => (
             <option key={cat.id} value={cat.id}>
               {cat.label}
             </option>
           ))}
         </select>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          Hold Ctrl/Cmd to select multiple categories (max 3)
+        </p>
       </FormField>
 
       <FormField label="Description" icon={FileText} error={errors.description} required>
@@ -78,12 +94,13 @@ const EventBasicInfo = ({ formData, handleInputChange, errors }) => {
           name="description"
           value={formData.description}
           onChange={handleInputChange}
+          onBlur={handleFieldBlur}
           rows={5}
           maxLength={500}
           aria-describedby="description-counter"
           placeholder="Tell people what your event is about..."
-          className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-700 
-                   text-gray-900 dark:text-gray-100 focus:outline-none 
+          className={`w-full border rounded-lg p-3 bg-white dark:bg-gray-700
+                   text-gray-900 dark:text-gray-100 focus:outline-none
                    focus:ring-2 focus:ring-indigo-500 focus:border-transparent
                    transition-all duration-200 resize-none ${
                      errors.description ? "border-red-500" : "border-gray-300 dark:border-gray-600"
@@ -102,8 +119,8 @@ const EventBasicInfo = ({ formData, handleInputChange, errors }) => {
             value={formData.capacity}
             onChange={handleInputChange}
             placeholder="Unlimited"
-            className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 
-                     bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 
+            className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3
+                     bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100
                      focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
         </FormField>

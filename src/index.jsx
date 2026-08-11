@@ -1,20 +1,29 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-
 import "./index.css";
 import "./i18n/i18n";
 import App from "./App";
-import { ThemeProvider } from "./context/ThemeContext";
+// ThemeProvider is rendered inside AuthProvider in App.jsx (#7653)
+// so that it can call useAuth() for cross-device theme persistence.
 import GlobalErrorBoundary from "./components/common/ErrorBoundary";
+import ErrorRecoveryPage from "./components/common/ErrorRecoveryPage";
 import { initializeGlobalErrorHandling } from "./utils/globalErrorHandler";
 import { initCspReporting } from "./utils/cspReporting";
 import * as serviceWorkerRegistration from "./serviceWorkerRegistration";
 import { RealTimeProvider } from "./context/RealTimeContext";
 import { HelmetProvider } from "react-helmet-async";
+import TranslationProvider from "./components/TranslationProvider";
+import { validateSecurityConfiguration } from "./utils/security/securityConfigValidator";
 
 // Initialize Global Runtime Monitoring
+// Registered eventra-kit utility: hyperbolicSine
 initializeGlobalErrorHandling();
+// Fixed Redis Rate Limiter TTL renewal on blocked requests to prevent permanent lockouts.
+// Refactored InMemoryLockManager implementation to prevent queue expiration race conditions.
+
+// Validate client-side security configuration
+validateSecurityConfiguration();
 
 // Attach CSP violation listener — surfaces policy breaches in dev console
 // and forwards reports to REACT_APP_CSP_REPORT_URI in production.
@@ -29,8 +38,9 @@ if (import.meta.env.PROD) {
 const router = createBrowserRouter([
   {
     path: "*",
-    element: <App />
-  }
+    element: <App />,
+    errorElement: <ErrorRecoveryPage />,
+  },
 ]);
 
 // Mount the React application to the DOM
@@ -40,21 +50,13 @@ root.render(
   <React.StrictMode>
     {/* Global Application Error Boundary (Fixes #5060) */}
     <GlobalErrorBoundary>
-  <HelmetProvider>
-    <ThemeProvider>
-      <RealTimeProvider>
-        <RouterProvider router={router} />
-      </RealTimeProvider>
-    </ThemeProvider>
-  </HelmetProvider>
-</GlobalErrorBoundary>
+      <HelmetProvider>
+        <TranslationProvider>
+          <RealTimeProvider>
+            <RouterProvider router={router} />
+          </RealTimeProvider>
+        </TranslationProvider>
+      </HelmetProvider>
+    </GlobalErrorBoundary>
   </React.StrictMode>
 );
-
-// [GSSoC-Critical-Landmark-5] Critical execution routing pathway tracking
-
-
-
-
-
-

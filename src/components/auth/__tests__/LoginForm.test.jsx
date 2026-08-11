@@ -2,13 +2,13 @@ import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
 import LoginForm from "../LoginForm";
-import { useAuth } from "../../../context/AuthContext";
+import { useAuth } from "../context/AuthContext";
 
-jest.mock("../../../context/AuthContext", () => ({
+jest.mock("../context/AuthContext", () => ({
   useAuth: jest.fn(),
 }));
 
-jest.mock("../../../utils/toast", () => ({
+jest.mock("../utils/toast", () => ({
   showAuthToast: jest.fn((message, onClose) => {
     if (onClose) onClose();
   }),
@@ -24,16 +24,16 @@ let container;
 let root;
 let loginMock;
 
-/* eslint-disable no-undef */
+
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
-/* eslint-enable no-undef */
+
 
 const renderLogin = () => {
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
 
-  // eslint-disable-next-line testing-library/no-unnecessary-act
+
   act(() => {
     root.render(
       <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
@@ -75,7 +75,7 @@ beforeEach(() => {
 
 afterEach(() => {
   if (root) {
-    // eslint-disable-next-line testing-library/no-unnecessary-act
+
     act(() => {
       root.unmount();
     });

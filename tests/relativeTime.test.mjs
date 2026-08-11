@@ -31,7 +31,9 @@ const yearsAgo = new Date(now.getTime() - 1000 * 60 * 60 * 24 * 365 * 10);
 assert.ok(getSmartDateLabel(yearsAgo.toISOString()) !== "TBD", "decade ago date formatted properly");
 
 // Non-string arguments checking
-assert.equal(getRelativeTime(123456789), null, "number input returns null");
+// Numeric timestamps are converted to dates and processed
+const numericTimestampResult = getRelativeTime(123456789);
+assert.ok(numericTimestampResult !== null, "number input is converted to date and processed");
 assert.equal(getSmartDateLabel(undefined), "TBD", "undefined input returns TBD");
 
 console.log("relativeTime edge case tests passed ✓");

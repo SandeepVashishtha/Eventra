@@ -1,5 +1,7 @@
 import { ENV } from "../config/env.js";
 
+const DEFAULT_EVENT_SHARE_HOST = "sandeepvashishtha.tech";
+
 /**
  * Sharing utility functions for Eventra
  * These functions generate URLs for sharing content across various platforms
@@ -83,6 +85,10 @@ export const generateSharingUrl = (shareData, platform) => {
       return `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
 
     case "messenger":
+      // Messenger sharing requires a Facebook App ID (app_id parameter) which
+      // is not available in this client-side configuration.
+      // Callers should hide or disable the Messenger share button.
+      console.warn("[shareUtils] Messenger sharing is not supported — no Facebook App ID configured.");
       return "";
 
     case "linkedin":
@@ -109,22 +115,32 @@ export const generateSharingUrl = (shareData, platform) => {
  * @returns {Object} Sharing data object
  */
 export const generateEventSharingData = (event, baseUrl = null) => {
-  const publicUrl = ENV.PUBLIC_URL;
+  if (!event?.id) {
+    console.warn("[shareUtils] generateEventSharingData called with missing event.id — share URL cannot be constructed.");
+    return {
+      title: "",
+      description: "",
+      url: "",
+      hashtags: "eventra,event,tech",
+      image: "",
+    };
+  }
 
-  // If baseUrl is provided, use it, otherwise detect
+  // Determine the correct base URL for sharing
+  const currentOrigin =
+    typeof window !== "undefined"
+      ? window.location.origin
+      : "";
+
+  const effectiveBase = baseUrl || currentOrigin || ENV.PUBLIC_URL || `https://${DEFAULT_EVENT_SHARE_HOST}`;
+  const deployedOrigin = effectiveBase.startsWith("http")
+    ? effectiveBase.replace(/\/$/, "")
+    : `https://${effectiveBase}`;
+
+  // If baseUrl is provided, use it. Otherwise use the current origin or public share host so
+  // copied/shared event links stay stable across local and production renders.
   if (!baseUrl) {
-    if (typeof window !== "undefined") {
-      const currentUrl = window.location.href;
-      // Use the configured public URL if it matches the current domain
-      if (publicUrl && currentUrl.includes(publicUrl)) {
-        baseUrl = publicUrl;
-      } else {
-        // Use the current origin (localhost or other development environment)
-        baseUrl = window.location.origin;
-      }
-    } else {
-      baseUrl = publicUrl; // Fallback for SSR/Node
-    }
+    baseUrl = deployedOrigin;
   }
 
   // Create a proper event URL
@@ -156,9 +172,14 @@ export const generateEventSharingData = (event, baseUrl = null) => {
  * @returns {Promise<boolean>} Success status
  */
 export const copyToClipboard = async (text) => {
+  if (typeof document === "undefined") {
+    return false;
+  }
+
   try {
-    if (navigator.clipboard) {
-      await navigator.clipboard.writeText(text);
+    const clipboard = globalThis.navigator?.clipboard;
+    if (clipboard) {
+      await clipboard.writeText(text);
       return true;
     } else {
       // Fallback for older browsers
@@ -173,7 +194,6 @@ export const copyToClipboard = async (text) => {
       return successful;
     }
   } catch (err) {
-    // eslint-disable-next-line no-console
     console.error("Failed to copy text: ", err);
     return false;
   }

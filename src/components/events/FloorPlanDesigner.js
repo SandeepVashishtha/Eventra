@@ -1,16 +1,28 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { Layout, Save, RotateCcw, Plus, Minus, Move, AlertTriangle, Undo2, Redo2 } from "lucide-react";
+import { Layout, Save, RotateCcw, Plus, Minus, Move, AlertTriangle, Undo2, Redo2, Users } from "lucide-react";
+import { LiveAudienceContext } from "context/RealTimeContext";
 import { toast } from "react-toastify";
 import ConfirmationModal from "../../common/ConfirmationModal";
 import ElementPalette from "./FloorPlan/ElementPalette";
 import PropertiesPanel from "./FloorPlan/PropertiesPanel";
-import { PRESETS } from "../../constants/floorPlanPresets";
-import { checkCollision, getSeatPositions } from "../../utils/floorPlanGeometry";
-import { exportAsSVG, exportAsPNG, downloadLayoutJSON, importLayoutJSON } from "../../utils/floorPlanExport";
+import { PRESETS } from "constants/floorPlanPresets";
+import { checkCollision, getSeatPositions } from "utils/floorPlanGeometry";
+import { exportAsSVG, exportAsPNG, downloadLayoutJSON, importLayoutJSON } from "utils/floorPlanExport";
 import "./FloorPlanDesigner.css";
+import { safeJsonParse } from "utils/safeJsonParse";
 
 const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
+  const realTimeCtx = useContext(LiveAudienceContext);
+  const [concurrentUsers, setConcurrentUsers] = useState(0);
+
+  useEffect(() => {
+     if(realTimeCtx && realTimeCtx.socket) {
+        realTimeCtx.socket.on("presence_update", (data) => setConcurrentUsers(data.count));
+        realTimeCtx.socket.emit("join_floorplan");
+        return () => realTimeCtx.socket.emit("leave_floorplan");
+     }
+  }, [realTimeCtx]);
   const navigate = useNavigate();
   const [elements, setElements] = useState([]);
   const [history, setHistory] = useState({ past: [], future: [] });
@@ -21,7 +33,11 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
   const [announcement, setAnnouncement] = useState("");
   const announce = useCallback((message) => {
     setAnnouncement("");
-    setTimeout(() => { setAnnouncement(message); }, 50);
+    if (announceTimerRef.current) clearTimeout(announceTimerRef.current);
+    announceTimerRef.current = setTimeout(() => {
+      setAnnouncement(message);
+      announceTimerRef.current = null;
+    }, 50);
   }, []);
 
   const [zoom, setZoom] = useState(0.8);
@@ -31,6 +47,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
 
   const canvasRef = useRef(null);
   const rafRef = useRef(null);
+  const announceTimerRef = useRef(null);
   const zoomRef = useRef(zoom);
   const snapToGridRef = useRef(snapToGrid);
   const selectedIdRef = useRef(selectedId);
@@ -141,20 +158,31 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
     const currentSelectedId = selectedIdRef.current;
     commitElementsChange((currentElements) => currentElements.map(el => {
       const nextAssignments = { ...el.assignedAttendees };
-      Object.keys(nextAssignments).forEach(k => {
-        if (nextAssignments[k] === attendeeName) {
-          delete nextAssignments[k];
-        }
-      });
       if (el.id === currentSelectedId) {
         if (attendeeName !== "") {
+          Object.keys(nextAssignments).forEach(k => {
+            if (nextAssignments[k] === attendeeName) {
+              delete nextAssignments[k];
+            }
+          });
           nextAssignments[seatIndex] = attendeeName;
         } else {
           delete nextAssignments[seatIndex];
         }
         return { ...el, assignedAttendees: nextAssignments };
       }
-      return { ...el, assignedAttendees: nextAssignments };
+
+      // Clear duplicate attendee assignments from other tables
+      let changed = false;
+      if (attendeeName !== "") {
+        Object.keys(nextAssignments).forEach(k => {
+          if (nextAssignments[k] === attendeeName) {
+            delete nextAssignments[k];
+            changed = true;
+          }
+        });
+      }
+      return changed ? { ...el, assignedAttendees: nextAssignments } : el;
     }));
   };
 
@@ -162,9 +190,8 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
     const savedLayout = localStorage.getItem(`eventra_floorplan_${eventId}`);
     let initialElements = [];
     if (savedLayout) {
-      try {
-        initialElements = JSON.parse(savedLayout);
-      } catch (e) {
+      initialElements = safeJsonParse(savedLayout, []);
+      if (!Array.isArray(initialElements)) {
         toast.error("Invalid floor plan format");
         initialElements = PRESETS.banquet;
       }
@@ -426,6 +453,10 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
         cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
       }
+      if (announceTimerRef.current !== null) {
+        clearTimeout(announceTimerRef.current);
+        announceTimerRef.current = null;
+      }
     };
   }, [handleMouseMove, handleMouseUp]);
 
@@ -467,6 +498,11 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
 
   return (
     <div className="fp-container">
+      {concurrentUsers > 1 && (
+        <div className="flex items-center gap-2 bg-amber-500/20 border border-amber-500/50 text-amber-500 px-4 py-2 rounded-lg m-4 text-sm font-bold shadow-lg absolute top-16 left-1/2 -translate-x-1/2 z-50">
+           <Users size={16} /> Warning: {concurrentUsers - 1} other organizer(s) are currently editing this floor plan.
+        </div>
+      )}
       <div style={{ position: "absolute", width: "1px", height: "1px", padding: "0", margin: "-1px", overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", border: "0" }}
         aria-live="polite" role="status">{announcement}</div>
       <div className="fp-topbar">
@@ -511,6 +547,7 @@ const FloorPlanDesigner = ({ eventId = "default", onDirtyChange }) => {
             <button onClick={() => loadPreset("conference")} className="text-xs font-semibold px-2 py-0.5 hover:text-indigo-400 text-gray-300 transition-colors">Keynote</button>
           </div>
           <button onClick={() => navigate(`/events/${eventId}/virtual-venue-walkthrough`)} className="fp-btn fp-btn-primary" aria-label="3D Walkthrough">3D Walkthrough</button>
+          {lastSavedElementsStr && !isDirty && <span className="text-emerald-500 text-sm font-medium mr-3">All changes saved</span>}
           <button onClick={saveLayout} className="fp-btn fp-btn-primary" aria-label="button"><Save size={16} /> Save Layout</button>
         </div>
       </div>

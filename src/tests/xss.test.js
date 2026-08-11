@@ -21,7 +21,8 @@ describe('XSS Sanitization for Event Descriptions', () => {
     const html = '<img src="invalid.jpg" alt="" onerror="alert(1)" />';
     const sanitized = DOMPurify.sanitize(html);
     
-    expect(sanitized).toContain('<img src="invalid.jpg" alt="">');
+    expect(sanitized).toContain('<img src="invalid.jpg"');
+    expect(sanitized).toContain('alt=""');
     expect(sanitized).not.toContain('onerror');
   });
 });

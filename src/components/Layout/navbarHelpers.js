@@ -16,7 +16,7 @@ export const clearBodyScrollStyles = () => {
     const stored = document.body.style.top;
     Object.assign(document.body.style, { position: "", top: "", left: "", right: "", width: "" });
     if (stored) window.scrollTo(0, parseInt(stored, 10) * -1 || 0);
-  } catch (e) {
+  } catch {
     /* ignore */
   }
 };

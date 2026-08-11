@@ -26,6 +26,7 @@ const DocumentationPage = lazy(() => import("../../Pages/About/DocumentationPage
 const FAQPage = lazy(() => import("../../Pages/FAQ/FAQPage"));
 const Terms = lazy(() => import("../../Pages/Terms"));
 const Privacy = lazy(() => import("../../Pages/Privacy").then((module) => ({ default: module.Privacy })));
+const Cookies = lazy(() => import("../../Pages/Cookies"));
 const ApiDocs = lazy(() => import("../../Pages/ApiDocs"));
 const HelpCenter = lazy(() => import("../../Pages/HelpCenter"));
 const ContactUs = lazy(() => import("../../Pages/Contact/ContactUs"));
@@ -61,6 +62,7 @@ export const getPublicRoutes = () => [
   // 🔥 FIX: Wrapped naked HomePage with module boundary for safety
   <Route key="/" path="/" element={withModuleBoundary(<HomePage />, "Home")} />,
   <Route key="/events" path="/events" element={withModuleBoundary(<EventsPage />, "Events explorer")} />,
+  <Route key="/explore" path="/explore" element={withModuleBoundary(<EventsPage />, "Events explorer")} />,
   <Route key="/event-details" path="/events/:eventId" element={withModuleBoundary(<EventDetails />, "Event details")} />,
   
   
@@ -80,6 +82,7 @@ export const getPublicRoutes = () => [
   <Route key="/documentation" path="/documentation" element={withModuleBoundary(<DocumentationPage />, "Documentation")} />,
   <Route key="/terms" path="/terms" element={withModuleBoundary(<Terms />, "Terms")} />,
   <Route key="/privacy" path="/privacy" element={withModuleBoundary(<Privacy />, "Privacy")} />,
+  <Route key="/cookies" path="/cookies" element={withModuleBoundary(<Cookies />, "Cookies")} />,
   <Route key="/api-docs" path="/api-docs" element={withModuleBoundary(<ApiDocs />, "API Docs")} />,
   <Route key="/helpcenter" path="/helpcenter" element={withModuleBoundary(<HelpCenter />, "Help Center")} />,
   <Route key="/feedback" path="/feedback" element={withModuleBoundary(<FeedbackPage />, "Feedback")} />,
