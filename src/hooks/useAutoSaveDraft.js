@@ -37,6 +37,7 @@ export const useAutoSaveDraft = (formData, onSave, intervalMs = 30000, enabled =
 
   // Save on page unload
   useEffect(() => {
+    if (typeof window === "undefined") return;
     if (!enabled) return;
     const handleUnload = () => saveDraft(formDataRef.current);
     window.addEventListener("beforeunload", handleUnload);
