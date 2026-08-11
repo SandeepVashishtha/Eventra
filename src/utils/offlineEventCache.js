@@ -1,4 +1,4 @@
-import { safeJsonParse } from "./safeJsonParse";
+import { safeJsonParse } from "./safeJsonParse.js";
 
 const EVENTS_CACHE_KEY = "eventra_cached_events";
 const EVENT_DETAILS_CACHE_KEY = "eventra_cached_event_details";

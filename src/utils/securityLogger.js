@@ -34,7 +34,7 @@ export function logSecurityEvent(eventType, data) {
 
       localStorage.setItem("eventra_security_events", JSON.stringify(logs));
     }
-  } catch (err) {
+  } catch {
     // Ignore storage failures (e.g. QuotaExceededError or private browsing)
   }
 }

@@ -1,6 +1,7 @@
+import useDateFormatter from "hooks/useDateFormatter";
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import useRecentlyViewed from '../../hooks/useRecentlyViewed';
+import useRecentlyViewed from 'hooks/useRecentlyViewed';
 import LazyImage from './LazyImage';
 import './RecentlyViewedEvents.css';
 
@@ -138,7 +139,7 @@ const RecentlyViewedCard = ({ event, onCardClick, onRemove }) => {
 
 /**
  * RecentlyViewedTracker Component
- * 
+ *
  * Simple declarative component to trigger adding an event to history.
  * Intended to be rendered in EventDetails.js with `<RecentlyViewedTracker event={event} />`
  */
@@ -160,6 +161,8 @@ export const RecentlyViewedTracker = ({ event }) => {
  * Displays a horizontal scrollable strip of recently viewed events.
  */
 const RecentlyViewedEvents = ({ maxVisible = 6, onEventClick }) => {
+  // Fix: useDateFormatter replaces raw toLocaleDateString
+  const { formatDate } = useDateFormatter();
   const { recentlyViewed, removeRecentlyViewed, clearHistory } = useRecentlyViewed();
   const navigate = useNavigate();
   const [showAll, setShowAll] = useState(false);

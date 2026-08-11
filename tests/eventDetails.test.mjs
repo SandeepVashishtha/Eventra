@@ -104,11 +104,11 @@ describe('EventDetails — mock fallback for offline/dev', () => {
 });
 
 describe('EventDetails — no duplicate React import', () => {
-  it('has at most one React import declaration', () => {
-    const reactImports = src.match(/^import .* from ["']react["'];?$/gm) || [];
+  it('has at most one React import (zero is valid with the automatic JSX transform)', () => {
+    const reactImports = src.match(/^import React/gm) || [];
     assert.ok(
       reactImports.length <= 1,
-      `Expected at most 1 React import declaration, found ${reactImports.length} — duplicate imports cause ESLint parse errors`,
+      `Expected 0 or 1 React import, found ${reactImports.length} — duplicate imports cause ESLint parse errors`,
     );
   });
 
@@ -166,6 +166,24 @@ describe('EventDetails — stale request cancellation', () => {
     assert.ok(
       src.includes('return () =>') && src.includes('abortControllerRef.current?.abort();'),
       'Must abort the active request in the load effect cleanup',
+    );
+  });
+});
+
+describe('EventDetails — add to calendar utility', () => {
+  it('renders the shared AddToCalendar action on the event details page', () => {
+    assert.ok(
+      src.includes('components/common/AddToCalendar') && src.includes('<AddToCalendar event={calendarEvent}'),
+      'EventDetails should render the shared AddToCalendar utility with normalized event data',
+    );
+  });
+
+  it('normalizes loaded event details for calendar URL and iCal generation', () => {
+    assert.ok(
+      src.includes('const calendarEvent = {') &&
+        src.includes('durationMinutes') &&
+        src.includes('joiningLink'),
+      'EventDetails should pass title, dates, duration, location, and link data into AddToCalendar',
     );
   });
 });

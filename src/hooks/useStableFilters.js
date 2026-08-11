@@ -94,7 +94,7 @@ export function useStableFilters(initialValue) {
       // JSON.stringify failed (circular ref or non-serialisable value)
       // — fall through and let React decide whether to re-render.
     }
-    setValueInternal(newValue);
+    setValueInternal(typeof newValue === 'function' ? newValue(valueRef.current) : newValue);
   }, []);
 
   return [value, setStableValue];

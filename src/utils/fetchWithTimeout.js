@@ -1,4 +1,4 @@
-import { logger } from "./logger";
+import { logger } from "./logger.js";
 
 const DEFAULT_TIMEOUT = 10000;
 
@@ -10,6 +10,25 @@ export class FetchError extends Error {
     this.data = data;
   }
 }
+
+// ---------------------------------------------------------------------------
+// FIX (#13609): Token Refresh Queue / Subscriber Pattern for 401 Mutex Locks
+// ---------------------------------------------------------------------------
+let isRefreshingToken = false;
+let refreshTokenSubscribers = [];
+
+const subscribeTokenRefresh = (callback) => {
+  refreshTokenSubscribers.push(callback);
+};
+
+const onRefreshedToken = (newToken) => {
+  refreshTokenSubscribers.forEach((cb) => cb(newToken));
+  refreshTokenSubscribers = [];
+};
+
+export const setRefreshingState = (state) => {
+  isRefreshingToken = state;
+};
 
 export const fetchWithTimeout = async (
   url,
@@ -27,32 +46,58 @@ export const fetchWithTimeout = async (
   if (options.signal) {
     if (options.signal.aborted) {
       controller.abort();
+      throw new DOMException("Aborted", "AbortError");
     } else {
       options.signal.addEventListener("abort", handleUserAbort);
     }
   }
 
+  // If a refresh is currently in progress, wait in queue before proceeding
+  if (isRefreshingToken && !url.includes("/auth/refresh")) {
+    await new Promise((resolve) => {
+      subscribeTokenRefresh((newToken) => {
+        if (options.headers && typeof options.headers.set === "function") {
+          options.headers.set("Authorization", `Bearer ${newToken}`);
+        }
+        resolve();
+      });
+    });
+  }
+
   const method = (options.method || "GET").toUpperCase();
+  let requestHeaders = options.headers;
   if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
     const headers = new Headers(options.headers || {});
     if (!headers.has("Idempotency-Key")) {
-      const idempotencyKey = typeof crypto !== "undefined" && crypto.randomUUID
-        ? crypto.randomUUID()
-        : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-            const r = Math.random() * 16 | 0;
-            const v = c === 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-          });
+      let idempotencyKey;
+      if (typeof crypto !== "undefined" && crypto.randomUUID) {
+        idempotencyKey = crypto.randomUUID();
+      } else if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+        const bytes = new Uint8Array(16);
+        crypto.getRandomValues(bytes);
+        bytes[6] = (bytes[6] & 0x0f) | 0x40;
+        bytes[8] = (bytes[8] & 0x3f) | 0x80;
+        idempotencyKey = [...bytes].map((b, i) =>
+          [4, 6, 8, 10].includes(i)
+            ? '-' + b.toString(16).padStart(2, '0')
+            : b.toString(16).padStart(2, '0')
+        ).join('');
+      } else {
+        throw new Error("[fetchWithTimeout] crypto API unavailable — cannot generate secure Idempotency-Key");
+      }
       headers.set("Idempotency-Key", idempotencyKey);
     }
-    options.headers = headers;
+    requestHeaders = headers;
   }
 
   try {
     const response = await fetch(url, {
       ...options,
+      headers: requestHeaders,
       signal: controller.signal,
     });
+
+    clearTimeout(timeoutId);
 
     let data = null;
     const contentType = response.headers.get("content-type") || "";
@@ -83,8 +128,9 @@ export const fetchWithTimeout = async (
       data,
     };
   } catch (error) {
+    clearTimeout(timeoutId);
+
     if (error instanceof FetchError) {
-      // Already a FetchError (thrown by the !response.ok block above) — rethrow as-is
       throw error;
     }
 
@@ -95,14 +141,7 @@ export const fetchWithTimeout = async (
       );
     }
 
-    // Network-level failure (e.g. TypeError: Failed to fetch) — wrap in FetchError
-    // so all callers can rely on a single consistent error type
     logger.error("[fetchWithTimeout] Request failed:", error);
     throw new FetchError(error.message || "Network request failed");
-  } finally {
-    clearTimeout(timeoutId);
-    if (options.signal) {
-      options.signal.removeEventListener("abort", handleUserAbort);
-    }
   }
 };

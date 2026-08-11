@@ -44,7 +44,7 @@ export const getOptimizedImageUrl = (originalUrl, options = {}) => {
   // Relative paths (/images/hero.jpg), blob: URLs, and data: URIs cannot
   // be Cloudinary-transformed and are returned unchanged.
   if (originalUrl.startsWith("http")) {
-    return `https://res.cloudinary.com/${cloudName}/image/fetch/${transformations}/${encodeURIComponent(originalUrl)}`;
+    return `https://res.cloudinary.com/${cloudName}/image/fetch/${transformations}/${originalUrl}`;
   }
 
   // Fallback for local assets
@@ -63,7 +63,7 @@ export const getOptimizedImageUrl = (originalUrl, options = {}) => {
  * Callers should handle the empty string by omitting the srcset attribute or
  * falling back to the bare src attribute only:
  *   const srcSet = generateSrcSet(url);
- *   <img src={url} srcSet={srcSet || undefined} />
+ *   <img src={url} srcSet={srcSet || undefined} alt={description} />
  *
  * @param {string} url    - Image URL (must be absolute HTTP/HTTPS to be useful)
  * @param {string} format - Target image format (default: "webp")

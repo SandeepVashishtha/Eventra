@@ -1,22 +1,22 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactDOM from "react-dom"; // 🔥 FIX: Required for Modal Portal
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { safeJsonParse } from "../../utils/safeJsonParse";
-import { syncSecureStorage } from "../../utils/secureStorage";
+import { safeJsonParse } from "utils/safeJsonParse";
+import { syncSecureStorage } from "utils/secureStorage";
+import { userService } from "../../services/userService";
 
 import {
   User as UserIcon,
   AtSign,
   Phone as PhoneIcon,
   FileText,
-  Github,
-  Linkedin,
   Link as LinkIcon,
   Image as ImageIcon,
   X as XIcon,
   Sparkles,
 } from "lucide-react";
+import { FaGithub as Github, FaLinkedin as Linkedin } from "react-icons/fa";
 
 import AiProfileGeneratorModal from "./AiProfileGeneratorModal";
 
@@ -26,9 +26,12 @@ const initialFormState = {
   email: "",
   phone: "",
   bio: "",
+  profileHeadline: "",
   skills: [],
   github: "",
+  githubUrl: "",
   linkedin: "",
+  linkedinUrl: "",
   portfolio: "",
   avatarBase64: "",
 };
@@ -87,11 +90,12 @@ const EditProfile = () => {
   const { user, setUser } = useAuth();
 
   // Initialize with fallback progression to prevent undefined fields
-  const [form, setForm] = useState(user ? { ...initialFormState, ...user } : initialFormState);
+  const [form, setForm] = useState(user ? { ...initialFormState, ...user, skills: user.skills || [] } : initialFormState);
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [saveError, setSaveError] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [currentSkillInput, setCurrentSkillInput] = useState("");
   const [aiModalOpen, setAiModalOpen] = useState(false);
@@ -112,6 +116,7 @@ const EditProfile = () => {
         ...prev,
         bio: parsedData.bio || prev.bio,
         github: parsedData.github || prev.github,
+        githubUrl: parsedData.github || prev.githubUrl,
         portfolio: parsedData.portfolio || prev.portfolio,
         skills: nextSkills,
       };
@@ -136,12 +141,12 @@ const EditProfile = () => {
           if (saved) {
             const parsed = safeJsonParse(saved, null);
             if (parsed) {
-              setForm(parsed);
+              setForm({ ...initialFormState, ...parsed, skills: parsed.skills || [] });
               return;
             }
           }
           if (user) {
-            setForm((prev) => ({ ...prev, ...user }));
+            setForm((prev) => ({ ...prev, ...user, skills: user.skills || [] }));
           }
         }
       } catch (error) {
@@ -177,12 +182,13 @@ const EditProfile = () => {
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: undefined }));
   };
 
-  const calculateCompletion = () => {
+  const calculateCompletion = useCallback(() => {
     const fields = [
       "username",
       "email",
       "phone",
       "bio",
+      "profileHeadline",
       "github",
       "linkedin",
       "portfolio",
@@ -201,7 +207,7 @@ const EditProfile = () => {
     if (form.skills && form.skills.length > 0) filled++;
 
     return Math.round((filled / 10) * 100);
-  };
+  }, [form, user]);
 
   const completionPercentage = useMemo(() => calculateCompletion(), [calculateCompletion]);
 
@@ -245,6 +251,7 @@ const EditProfile = () => {
 
   const performSave = () => {
     setSuccessMessage("");
+    setSaveError("");
 
     const resolvedForm = {
       ...form,
@@ -266,15 +273,52 @@ const EditProfile = () => {
       // 🔥 FIX 1: If user navigated away, stop executing!
       if (!isMounted.current) return;
 
+      const [firstNameFallback, ...lastNameParts] = (resolvedForm.fullName || "").trim().split(/\s+/);
+      const apiPayload = {
+        firstName: user?.firstName || firstNameFallback || "Eventra",
+        lastName: user?.lastName || lastNameParts.join(" ") || "User",
+        username: resolvedForm.username,
+        profileHeadline: resolvedForm.profileHeadline || resolvedForm.bio || "",
+        linkedinUrl: resolvedForm.linkedin || resolvedForm.linkedinUrl || "",
+        githubUrl: resolvedForm.github || resolvedForm.githubUrl || "",
+        phone: resolvedForm.phone || "",
+        bio: resolvedForm.bio || "",
+        portfolio: resolvedForm.portfolio || "",
+        skills: Array.isArray(resolvedForm.skills) ? resolvedForm.skills : [],
+        profilePicture: resolvedForm.profilePicture || "",
+      };
+
+      let savedProfile;
+      try {
+        const response = await userService.updateProfile(apiPayload);
+        const data = response.data || response;
+        savedProfile = {
+          ...resolvedForm,
+          ...data,
+          github: data.githubUrl || resolvedForm.github,
+          linkedin: data.linkedinUrl || resolvedForm.linkedin,
+        };
+      } catch (error) {
+        console.error("Error saving profile to server:", error);
+        setLoading(false);
+        setSaveError(
+          error?.response?.data?.message ||
+            error?.message ||
+            "Failed to update profile. Please try again."
+        );
+        return;
+      }
+
       setLoading(false);
+      setSaveError("");
       setSuccessMessage("Profile updated successfully");
       setConfirmOpen(false);
-      setUser(resolvedForm);
-      
+      setUser(savedProfile);
+
       // 🔥 FIX 2: Strip massive Base64 strings before saving to storage to prevent QuotaExceededError crashes
-      const safeStorageUser = { ...resolvedForm };
+      const safeStorageUser = { ...savedProfile };
       delete safeStorageUser.avatarBase64;
-      
+
       try {
         await syncSecureStorage.setItem("user", JSON.stringify(safeStorageUser));
       } catch {
@@ -324,7 +368,7 @@ const EditProfile = () => {
               Auto-fill with AI
             </button>
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-gray-600 dark:text-gray-200 mt-1">
             Manage your personal information and how others see you on Eventra.
           </p>
         </div>
@@ -390,7 +434,7 @@ const EditProfile = () => {
               <div className="text-gray-900 dark:text-gray-100 font-semibold">
                 {form.fullName || form.username || form.email}
               </div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">
+              <div className="text-sm text-gray-500 dark:text-gray-200">
                 Update your avatar and profile info below.
               </div>
             </div>
@@ -508,6 +552,23 @@ const EditProfile = () => {
                     placeholder="Tell us about yourself..."
                     className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Networking Headline
+                  </label>
+                  <input
+                    type="text"
+                    name="profileHeadline"
+                    value={form.profileHeadline || ""}
+                    onChange={handleChange}
+                    maxLength={160}
+                    placeholder="Full Stack Developer looking for a team"
+                    className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Shown only when you opt into an event attendee directory.
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -646,12 +707,18 @@ const EditProfile = () => {
               </div>
             )}
 
+            {saveError && (
+              <div className="rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 px-4 py-3 text-red-800 dark:text-red-200">
+                {saveError}
+              </div>
+            )}
+
             {/* Actions */}
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 type="button"
                 onClick={() => window.history.back()}
-                className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
               >
                 Cancel
               </button>
@@ -690,14 +757,14 @@ const ConfirmModal = ({ open, onCancel, onConfirm, loading }) => {
       <div className="absolute inset-0 bg-black/50" onClick={onCancel} />
       <div className="relative w-full max-w-md mx-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl p-6 z-10">
         <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Save changes?</h4>
-        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+        <p className="mt-1 text-sm text-gray-600 dark:text-gray-200">
           Do you want to save your profile updates?
         </p>
         <div className="mt-5 flex items-center justify-end gap-3">
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+            className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
            aria-label="button">
             Cancel
           </button>

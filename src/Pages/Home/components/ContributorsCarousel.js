@@ -1,12 +1,13 @@
+import useWindowSize from "hooks/useWindowSize";
 import { GitBranch, ChevronLeft, ChevronRight } from "lucide-react";
 import { FaMedal, FaCodeBranch, FaUserFriends, FaBuilding, FaMapMarkerAlt, FaGithub, FaExternalLinkAlt } from "react-icons/fa";
-import { useState, useEffect, useCallback, useRef } from "react";
-import useReducedMotion from "../../../hooks/useReducedMotion.js";
+import { useState, useEffect, useCallback, useRef, memo } from "react";
+import useReducedMotion from "../hooks/useReducedMotion.js";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { fetchWithTimeout } from "../../../utils/fetchWithTimeout";
-import { ContributorCardSkeleton } from "../../../components/common/SkeletonLoaders";
-import { safeJsonParse } from "../../../utils/safeJsonParse";
+import { fetchWithTimeout } from "../utils/fetchWithTimeout";
+import { ContributorCardSkeleton } from "../components/common/SkeletonLoaders";
+import { safeJsonParse } from "../utils/safeJsonParse";
 
 // GitHub repo
 const GITHUB_REPO = "sandeepvashishtha/Eventra";
@@ -40,12 +41,12 @@ const fetchInBatches = async (items, asyncFn, batchSize = PROFILE_BATCH_SIZE) =>
   const results = [];
   for (let i = 0; i < items.length; i += batchSize) {
     const batch = items.slice(i, i + batchSize);
-     
+
     const batchResults = await Promise.allSettled(batch.map(asyncFn));
     results.push(...batchResults);
     // Insert a delay between batches (but not after the last one)
     if (i + batchSize < items.length) {
-       
+
       await new Promise((resolve) => setTimeout(resolve, BATCH_DELAY_MS));
     }
   }
@@ -85,7 +86,7 @@ const cacheContributors = (data) => {
       STORAGE_KEY,
       JSON.stringify({ data, timestamp: Date.now() })
     );
-  } catch { }
+  } catch { console.warn("[ContributorsCarousel] Cache write failed"); }
 };
 
 const Contributors = () => {
@@ -93,7 +94,6 @@ const Contributors = () => {
   const [contributors, setContributors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [itemsPerView, setItemsPerView] = useState(4);
   const sectionRef = useRef(null);
 
   useEffect(() => {
@@ -116,22 +116,9 @@ const Contributors = () => {
     };
   }, []);
 
-  // Replace your previous `useEffect` for itemsPerView with this:
-  useEffect(() => {
-    const updateItemsPerView = () => {
-      if (window.innerWidth < 640) {
-        setItemsPerView(1); // Mobile: 1 item
-      } else if (window.innerWidth < 1024) {
-        setItemsPerView(2); // Tablet: 2 items
-      } else {
-        setItemsPerView(3); // Desktop: 3 items instead of 4
-      }
-    };
-
-    updateItemsPerView();
-    window.addEventListener("resize", updateItemsPerView);
-    return () => window.removeEventListener("resize", updateItemsPerView);
-  }, []);
+  // Fix: useWindowSize replaces manual resize listener
+  const { width } = useWindowSize();
+  const itemsPerView = width < 640 ? 1 : width < 1024 ? 2 : 3;
 
   // Fetches a single GitHub user profile via the backend proxy.
   const fetchGitHubProfile = useCallback(async (username) => {
@@ -232,7 +219,7 @@ const Contributors = () => {
       if (!backgroundRefresh) setContributors([]);
 
       if (error.name === "AbortError") {
-        //console.error("Contributor request timed out");
+        console.error("Contributor request timed out");
       }
     } finally {
       if (!backgroundRefresh) setLoading(false);
@@ -311,7 +298,7 @@ const Contributors = () => {
           <button
             onClick={prevSlide}
             // UPDATED: Arrow button styles
-            className="absolute left-0 top-[35%] -translate-y-1/2 -translate-x-4 z-10 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 transition-all duration-300 border border-gray-200 dark:border-gray-700"
+            className="absolute left-0 top-[35%] -translate-y-1/2 -translate-x-4 z-10 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-gray-100 dark:hover:bg-gray-600 hover:scale-110 transition-all duration-300 border border-gray-200 dark:border-gray-700"
             disabled={loading || currentIndex === 0}
             aria-label="Previous slide">
             {/* UPDATED: Arrow icon color */}
@@ -321,7 +308,7 @@ const Contributors = () => {
           <button
             onClick={nextSlide}
             // UPDATED: Arrow button styles
-            className="absolute right-0 top-[35%] -translate-y-1/2 translate-x-4 z-10 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-110 transition-all duration-300 border border-gray-200 dark:border-gray-700"
+            className="absolute right-0 top-[35%] -translate-y-1/2 translate-x-4 z-10 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-gray-100 dark:hover:bg-gray-600 hover:scale-110 transition-all duration-300 border border-gray-200 dark:border-gray-700"
             disabled={loading || currentIndex + itemsPerView >= contributors.length}
             aria-label="Next slide"
           >
@@ -415,21 +402,21 @@ const Contributors = () => {
                       <div className="flex flex-col items-center bg-white/60 dark:bg-gray-700/60 backdrop-blur-md p-2 rounded-lg shadow-sm">
                         <FaCodeBranch className="text-gray-900 dark:text-indigo-400 mb-1" />
                         <span className="font-semibold">{c.public_repos}</span>
-                        <span className="text-xs text-gray-600 dark:text-gray-400">
+                        <span className="text-xs text-gray-600 dark:text-gray-200">
                           Repos
                         </span>
                       </div>
                       <div className="flex flex-col items-center bg-white/60 dark:bg-gray-700/60 backdrop-blur-md p-2 rounded-lg shadow-sm">
                         <FaUserFriends className="text-gray-900 dark:text-indigo-400 mb-1" />
                         <span className="font-semibold">{c.followers}</span>
-                        <span className="text-xs text-gray-600 dark:text-gray-400">
+                        <span className="text-xs text-gray-600 dark:text-gray-200">
                           Followers
                         </span>
                       </div>
                       <div className="flex flex-col items-center bg-white/60 dark:bg-gray-700/60 backdrop-blur-md p-2 rounded-lg shadow-sm">
                         <GitBranch className="text-gray-900 dark:text-indigo-400 mb-1 w-4 h-4" />
                         <span className="font-semibold">{c.contributions}</span>
-                        <span className="text-xs text-gray-600 dark:text-gray-400">
+                        <span className="text-xs text-gray-600 dark:text-gray-200">
                           Contribs
                         </span>
                       </div>
@@ -495,16 +482,14 @@ const Contributors = () => {
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6 mt-8 w-full max-w-md mx-auto sm:max-w-none">
             <Link
               to="/contributors"
-              onClick={() => window.scrollTo(0, 0)}
               className="inline-flex items-center justify-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-8 py-3 w-full sm:w-auto rounded-full font-semibold shadow-lg hover:bg-zinc-800 dark:hover:bg-gray-200 hover:scale-105 transition-all duration-300 ease-out"
             >
               <span>View All Contributors</span>
               <FaExternalLinkAlt className="text-sm" />
             </Link>
             <Link
-              to="/ContributorGuide"
-              onClick={() => window.scrollTo(0, 0)}
-              className="inline-flex items-center justify-center gap-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-8 py-3 w-full sm:w-auto rounded-full font-semibold shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-105 transition-all duration-300 ease-out"
+              to="/contributorguide"
+              className="inline-flex items-center justify-center gap-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-8 py-3 w-full sm:w-auto rounded-full font-semibold shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 hover:scale-105 transition-all duration-300 ease-out"
             >
               <span>Guide</span>
               <FaExternalLinkAlt className="text-sm" />
@@ -516,4 +501,4 @@ const Contributors = () => {
   );
 };
 
-export default Contributors;
+export default memo(Contributors);

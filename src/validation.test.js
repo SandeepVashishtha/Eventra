@@ -268,6 +268,15 @@ describe("Validation Utilities", () => {
         expect(validate.detectHTML("<p>Hello</p>")).toBe(true);
         expect(validate.detectHTML("Hello world")).toBe(false);
       });
+
+      it("truncates oversized input before regex evaluation to avoid ReDoS", () => {
+        const malicious = "<".repeat(50_000);
+        const start = performance.now();
+        expect(validate.sanitizeSurveyPrompt(malicious)).toBe("");
+        expect(validate.sanitizeSurveyOption(malicious)).toBe("");
+        expect(validate.detectHTML(malicious)).toBe(true);
+        expect(performance.now() - start).toBeLessThan(100);
+      });
     });
   });
 

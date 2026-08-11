@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from 'context/AuthContext';
 import './Auth.css';
 import { Eye, EyeOff } from 'lucide-react';
+import SocialLogin from './SocialLogin';
 
 export default function LoginForm() {
   const navigate = useNavigate();
@@ -19,14 +20,50 @@ export default function LoginForm() {
     if (!value.trim()) {
       return "Username or Email is required.";
     }
-    // Allow letters, numbers, @, ., _, - only
-    const validChars = /^[a-zA-Z0-9@._-]+$/;
+
+    const isEmail = value.includes('@');
+
+    // Handle Email Validation
+    if (isEmail) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(value)) {
+        return "Please enter a valid email address.";
+      }
+      return ""; // Valid email
+    }
+
+    // Handle Username Validation
+    if (value.trim().length < 3) {
+      return "Username must be at least 3 characters long.";
+    }
+
+    const validChars = /^[a-zA-Z0-9._-]+$/;
     if (!validChars.test(value)) {
-      return "Only letters, numbers, @, ., _, - are allowed.";
+      return "Only letters, numbers, ., _, - are allowed in usernames.";
+    }
+
+    return ""; // Valid username
+  };
+  
+  // Login only checks presence — length/complexity rules belong on RegisterForm only.
+  // Enforcing a minimum length here permanently locks out users with legacy
+  // short passwords because the API call is never reached.
+  const validatePassword = (value) => {
+    if (!value) {
+      return "Password is required.";
     }
     return "";
   };
+const handlePasswordChange = (e) => {
+    const value = e.target.value;
 
+    setPassword(value);
+
+    setErrors((prev) => ({
+        ...prev,
+        password: validatePassword(value),
+    }));
+};
   const handleEmailOrUsernameChange = (e) => {
     const value = e.target.value;
     setEmailOrUsername(value);
@@ -38,10 +75,15 @@ export default function LoginForm() {
     e.preventDefault();
 
     const emailError = validateEmailOrUsername(emailOrUsername);
-    if (emailError) {
-      setErrors({ emailOrUsername: emailError });
-      return;
-    }
+const passwordError = validatePassword(password);
+
+if (emailError || passwordError) {
+  setErrors({
+    emailOrUsername: emailError,
+    password: passwordError,
+  });
+  return;
+}
 
     setErrors({});
     setLoading(true);
@@ -124,12 +166,18 @@ export default function LoginForm() {
           <label htmlFor="login-password">Password</label>
           <div className="relative">
             <input
-              id="login-password"
-              type={showPassword ? 'text' : 'password'}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={isSubmitDisabled}
-              required
+  id="login-password"
+  type={showPassword ? "text" : "password"}
+  value={password}
+  onChange={handlePasswordChange}
+  onBlur={() =>
+    setErrors((prev) => ({
+      ...prev,
+      password: validatePassword(password),
+    }))
+  }
+  disabled={isSubmitDisabled}
+  required
               placeholder="Enter your password"
               className="
                 w-full
@@ -156,6 +204,11 @@ export default function LoginForm() {
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
+          {errors.password && (
+            <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+              ⚠ {errors.password}
+            </p>
+          )}
         </div>
 
         <div className="text-right mt-2">
@@ -189,6 +242,8 @@ export default function LoginForm() {
         >
           {isSubmitDisabled ? 'Authenticating...' : 'Login'}
         </button>
+
+        <SocialLogin />
 
         <p className="text-center text-sm text-gray-500 mt-6">
           Don&apos;t have an account?

@@ -6,7 +6,7 @@ const SCROLL_THRESHOLD = 400; // px — button appears after scrolling this far
 const BackToTop = ({ 
   threshold = SCROLL_THRESHOLD,
   showProgress = true,
-  avoidChatbot = true,
+  avoidChatbot = false,
   className = ""
 }) => {
   const [visible, setVisible] = useState(false);
@@ -72,7 +72,9 @@ const BackToTop = ({
   const strokeDashoffset = circumference - (progress / 100) * circumference;
   
   let positionClass = "";
-  if (avoidChatbot && hasChatbot) {
+// Fix (Issue #10496): Use the avoidChatbot prop directly (passed from App.jsx)
+  // instead of DOM-based hasChatbot detection which races with React rendering.
+  if (avoidChatbot) {
     positionClass = "fixed bottom-[calc(5.5rem+var(--safe-area-bottom))] right-[calc(1rem+var(--safe-area-right))] z-50 sm:bottom-24 sm:right-6";
   } else {
     positionClass = "fixed bottom-[calc(1rem+var(--safe-area-bottom))] right-[calc(1rem+var(--safe-area-right))] z-50 sm:bottom-6 sm:right-6";

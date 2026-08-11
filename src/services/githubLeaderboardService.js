@@ -2,12 +2,15 @@ import { calculatePrPoints } from "../utils/leaderboardUtils";
 import { logger } from "../utils/logger";
 
 const REPO_OWNER = "SandeepVashishtha";
-const REPO_NAME  = "Eventra";
+const REPO_NAME = "Eventra";
 const APPROVED_LABEL = "gssoc:approved";
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const CACHE_KEY = "eventra_leaderboard_v1";
 const GITHUB_API = "https://api.github.com";
 const PER_PAGE = 100;
+
+const getGitHubToken = () =>
+  import.meta.env.VITE_GITHUB_TOKEN || import.meta.env.GITHUB_TOKEN || "";
 
 function readCache() {
   try {
@@ -42,16 +45,23 @@ function writeCache(data) {
 }
 
 async function fetchPRPage(page, signal) {
-  const url = new URL(
-    `/repos/${REPO_OWNER}/${REPO_NAME}/pulls`,
-    GITHUB_API
-  );
+  const url = new URL(`/repos/${REPO_OWNER}/${REPO_NAME}/pulls`, GITHUB_API);
+
   url.searchParams.set("state", "closed");
   url.searchParams.set("per_page", String(PER_PAGE));
   url.searchParams.set("page", String(page));
 
+  const token = getGitHubToken();
+
+  const headers = {
+    Accept: "application/vnd.github+json",
+    ...(token && {
+      Authorization: `Bearer ${token}`,
+    }),
+  };
+
   const res = await fetch(url.toString(), {
-    headers: { Accept: "application/vnd.github+json" },
+    headers,
     signal,
   });
 
@@ -62,6 +72,7 @@ async function fetchPRPage(page, signal) {
         : res.status === 404
         ? `Repository ${REPO_OWNER}/${REPO_NAME} not found on GitHub.`
         : `GitHub API error (HTTP ${res.status}).`;
+
     throw new Error(msg);
   }
 
@@ -104,15 +115,18 @@ function aggregateContributors(prs) {
     if (map.has(login)) {
       const entry = map.get(login);
       entry.points += prPoints;
-      entry.prs    += 1;
+      entry.prs += 1;
     } else {
       map.set(login, {
         username: login,
-        name:     pr.user?.name ?? login,
-        avatar:   avatar_url ?? `https://avatars.githubusercontent.com/${encodeURIComponent(login)}`,
-        profile:  html_url   ?? `https://github.com/${encodeURIComponent(login)}`,
-        points:   prPoints,
-        prs:      1,
+        name: pr.user?.name ?? login,
+        avatar:
+          avatar_url ??
+          `https://avatars.githubusercontent.com/${encodeURIComponent(login)}`,
+        profile:
+          html_url ?? `https://github.com/${encodeURIComponent(login)}`,
+        points: prPoints,
+        prs: 1,
       });
     }
   }
@@ -124,11 +138,6 @@ export async function fetchLeaderboardData(forceRefresh = false, signal) {
   if (!forceRefresh) {
     const cached = readCache();
     if (cached) {
-      logger.log(
-        `[Leaderboard] Serving from cache (age: ${Math.round(
-          (Date.now() - cached.timestamp) / 60_000
-        )} min)`
-      );
       return cached.data;
     }
   }
@@ -154,5 +163,6 @@ export function clearLeaderboardCache() {
   try {
     localStorage.removeItem(CACHE_KEY);
   } catch {
+    // Ignore localStorage errors
   }
 }

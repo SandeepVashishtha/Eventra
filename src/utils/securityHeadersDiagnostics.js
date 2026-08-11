@@ -17,16 +17,16 @@ export const getSecurityHeadersDiagnostics = () => {
   diagnostics.push({
     name: "CSP Reporting",
     value:
-      process.env.REACT_APP_CSP_REPORT_URI ||
+      import.meta.env?.VITE_CSP_REPORT_URI ||
       "Not configured",
     status:
-      process.env.REACT_APP_CSP_REPORT_URI
+      import.meta.env?.VITE_CSP_REPORT_URI
         ? "success"
         : "warning",
     recommendation:
-      process.env.REACT_APP_CSP_REPORT_URI
+      import.meta.env?.VITE_CSP_REPORT_URI
         ? "Violation reporting enabled."
-        : "Configure REACT_APP_CSP_REPORT_URI for reporting.",
+        : "Configure VITE_CSP_REPORT_URI for reporting.",
   });
 
   return diagnostics;

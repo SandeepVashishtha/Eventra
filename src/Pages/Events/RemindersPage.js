@@ -1,14 +1,14 @@
-import { useEffect, useMemo, useState ,useRef  } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Bell, CalendarDays, Clock, MapPin, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
+import useDocumentTitle from "hooks/useDocumentTitle";
 import {
   getActiveReminders,
   removeReminderById,
   subscribeToReminderChanges,
-} from "../../utils/reminderUtils";
+} from "utils/reminderUtils";
 
-import { parseEventDateTimeLocal } from "../../utils/timezoneUtils";
+import { parseEventDateTimeLocal } from "utils/timezoneUtils";
 
 const formatEventDate = (event) => {
   const parsed = parseEventDateTimeLocal(event.date, event.time);
@@ -99,7 +99,7 @@ const RemindersPage = () => {
             <h2 className="text-2xl font-bold text-gray-950 dark:text-white">
               No active reminders
             </h2>
-            <p className="mx-auto mt-3 max-w-xl text-sm leading-7 text-gray-600 dark:text-gray-400 sm:text-base">
+            <p className="mx-auto mt-3 max-w-xl text-sm leading-7 text-gray-600 dark:text-gray-200 sm:text-base">
               Bookmark or register for an upcoming event, then choose a reminder time from its event card or details page.
             </p>
             <Link
@@ -161,7 +161,7 @@ const RemindersPage = () => {
                               <p className="text-sm font-semibold text-gray-900 dark:text-white">
                                 {reminder.timingLabel}
                               </p>
-                              <p className="mt-1 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                              <p className="mt-1 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-200">
                                 <Clock className="h-3.5 w-3.5" />
                                 Alerts on {formatTriggerDate(reminder.triggerAt)}
                               </p>

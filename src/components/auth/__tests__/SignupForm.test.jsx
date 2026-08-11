@@ -54,16 +54,16 @@ vi.mock("../../../validation", () => ({
 let container;
 let root;
 
- 
+
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
- 
+
 
 const renderSignup = () => {
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
 
-   
+
   act(() => {
     root.render(
       <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
@@ -124,7 +124,7 @@ beforeEach(() => {
 
 afterEach(() => {
   if (root) {
-     
+
     act(() => {
       root.unmount();
     });

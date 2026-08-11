@@ -2,18 +2,19 @@ import { ArrowRightIcon, ChartBarIcon, UserGroupIcon, StarIcon, ClipboardDocumen
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
-import useReducedMotion from "../../hooks/useReducedMotion.js";
-import { useAuth } from "../../context/AuthContext";
+import useReducedMotion from "hooks/useReducedMotion.js";
+import { useAuth } from "context/AuthContext";
 
-import { hostHackathon } from "../../services/hackathonService";
-import { sanitizeInputText } from "../../utils/inputSanitization";
+import { hostHackathon } from "services/hackathonService";
+import { sanitizeInputText } from "utils/inputSanitization";
+import { REQUIRED_FIELDS, validateHostHackathonForm } from "utils/hostHackathonValidation";
 
 const HostHackathon = () => {
   const prefersReducedMotion = useReducedMotion();
   const navigate = useNavigate();
-  const { user, token, isAuthenticated } = useAuth();
+  const { token, isAuthenticated } = useAuth();
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -27,8 +28,10 @@ const HostHackathon = () => {
     hackathonName: "",
     organizerName: "",
     email: "",
+    mode: "Online",
     startDate: "",
     endDate: "",
+    registrationDeadline: "",
     description: "",
     location: "",
     participantLimit: "",
@@ -47,14 +50,18 @@ const HostHackathon = () => {
   const participantLimitRef = useRef(null);
   const prizeDetailsRef = useRef(null);
   const websiteRef = useRef(null);
+  const modeRef = useRef(null);
+  const registrationDeadlineRef = useRef(null);
 
   const inputRefs = {
     hackathonName: hackathonNameRef,
     organizerName: organizerNameRef,
     email: emailRef,
     location: locationRef,
+    mode: modeRef,
     startDate: startDateRef,
     endDate: endDateRef,
+    registrationDeadline: registrationDeadlineRef,
     description: descriptionRef,
     participantLimit: participantLimitRef,
     prizeDetails: prizeDetailsRef,
@@ -67,78 +74,7 @@ const HostHackathon = () => {
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-  const requiredFields = [
-    "hackathonName",
-    "organizerName",
-    "email",
-    "location",
-    "startDate",
-    "endDate",
-    "description",
-  ];
-
-  const validateForm = (data) => {
-    const newErrors = {};
-
-    // Required fields
-    for (const field of requiredFields) {
-      if (!data[field]?.trim()) {
-        newErrors[field] = `${field.replace(/([A-Z])/g, " $1")} is required!`;
-      }
-    }
-
-    // Hackathon Name validation
-    if (data.hackathonName && (data.hackathonName.trim().length < 3 || data.hackathonName.trim().length > 100)) {
-      newErrors.hackathonName = "Hackathon Name must be between 3 and 100 characters long!";
-    }
-
-    // Organizer validation
-    if (data.organizerName && (data.organizerName.trim().length < 3 || data.organizerName.trim().length > 100)) {
-      newErrors.organizerName = "Organizer Name must be between 3 and 100 characters long!";
-    }
-
-    // Location validation
-    if (data.location && (data.location.trim().length < 3 || data.location.trim().length > 100)) {
-      newErrors.location = "Location must be between 3 and 100 characters long!";
-    }
-
-    // ✅ Email validation — stricter regex to prevent invalid TLDs
-    if (data.email) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
-      if (!emailRegex.test(data.email.trim())) {
-        newErrors.email = "Please enter a valid email address!";
-      }
-    }
-
-    // Website (optional)
-    if (data.website?.trim()) {
-      const urlRegex = /^(https?:\/\/)?([\w-]+(\.[\w-]+)+)(\/[\w-./?%&=]*)?$/i;
-      if (!urlRegex.test(data.website)) {
-        newErrors.website = "Please enter a valid URL!";
-      }
-    }
-
-    // Date validations
-    if (data.startDate && data.startDate < today) {
-      newErrors.startDate = "Start date cannot be in the past!";
-    }
-    if (data.endDate && data.startDate && data.endDate < data.startDate) {
-      newErrors.endDate = "End date cannot be before start date!";
-    }
-
-    // Description validation
-    if (data.description && (data.description.trim().length < 20 || data.description.trim().length > 2000)) {
-      newErrors.description =
-        "Description must be between 20 and 2000 characters long!";
-    }
-
-    // Participant Limit validation
-    if (data.participantLimit && Number(data.participantLimit) < 1) {
-      newErrors.participantLimit = "Participant limit must be at least 1!";
-    }
-
-    return newErrors;
-  };
+  const requiredFields = REQUIRED_FIELDS;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -149,7 +85,7 @@ const HostHackathon = () => {
       return;
     }
 
-    const validationErrors = validateForm({ ...formData });
+    const validationErrors = validateHostHackathonForm({ ...formData }, today);
 
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
@@ -172,16 +108,20 @@ const HostHackathon = () => {
 
     setIsSubmitting(true);
     try {
+      const registrationDeadline =
+        formData.registrationDeadline?.trim() || formData.startDate;
+
       await hostHackathon(
         {
-          ...formData,
-          // Sanitize description and other text inputs
+          title: sanitizeInputText(formData.hackathonName),
+          organizer: sanitizeInputText(formData.organizerName),
+          prizePool: sanitizeInputText(formData.prizeDetails),
           description: sanitizeInputText(formData.description),
-          hackathonName: sanitizeInputText(formData.hackathonName),
-          organizerName: sanitizeInputText(formData.organizerName),
           location: sanitizeInputText(formData.location),
-          prizeDetails: sanitizeInputText(formData.prizeDetails),
-          hostUserId: user?.id,
+          startDate: formData.startDate,
+          endDate: formData.endDate,
+          mode: formData.mode,
+          registrationDeadline,
         },
         {
           headers: {
@@ -196,8 +136,10 @@ const HostHackathon = () => {
         hackathonName: "",
         organizerName: "",
         email: "",
+        mode: "Online",
         startDate: "",
         endDate: "",
+        registrationDeadline: "",
         description: "",
         location: "",
         participantLimit: "",
@@ -267,7 +209,7 @@ const HostHackathon = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-bg text-text flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 pt-20">
+    <div className="min-h-screen overflow-x-hidden bg-bg text-text flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 pt-20">
       {/* Heading Section */}
       <motion.div
         initial={{ opacity: 0, y: -30 }}
@@ -282,7 +224,7 @@ const HostHackathon = () => {
           Host Your Hackathon
         </h1>
         <p className="text-xs sm:text-base text-gray-600 dark:text-gray-400">
-         &quot;Fill in the details below and let&apos;s get your hackathon live!&quot;
+          &quot;Fill in the details below and let&apos;s get your hackathon live!&quot;
         </p>
       </motion.div>
 
@@ -361,7 +303,7 @@ const HostHackathon = () => {
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
-        className="w-full max-w-4xl bg-card-bg shadow-xl rounded-2xl p-8 border border-border"
+        className="w-full max-w-4xl overflow-x-hidden bg-card-bg shadow-xl rounded-2xl p-8 border border-border"
         data-aos="fade-up"
         data-aos-delay="400"
       >
@@ -369,11 +311,11 @@ const HostHackathon = () => {
           {formFields.map((field, index) => (
             <motion.div
               key={field.name}
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: prefersReducedMotion ? 0 : 0.5 }}
-              data-aos="fade-right"
+              data-aos="fade-up"
               data-aos-delay={index * 50 + 500}
             >
               <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -400,6 +342,28 @@ const HostHackathon = () => {
             </motion.div>
           ))}
 
+          {/* Mode */}
+          <motion.div data-aos="fade-up" data-aos-delay="850">
+            <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <ComputerDesktopIcon className="w-5 h-5 mr-2 text-primary" />
+              Mode <span className="text-red-500 ml-1">*</span>
+            </label>
+            <select
+              ref={modeRef}
+              name="mode"
+              value={formData.mode}
+              onChange={handleChange}
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-bg text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all duration-300"
+            >
+              <option value="Online">Online</option>
+              <option value="Offline">Offline</option>
+              <option value="Hybrid">Hybrid</option>
+            </select>
+            {errors.mode && (
+              <p className="text-red-500 text-xs mt-1">{errors.mode}</p>
+            )}
+          </motion.div>
+
           {/* Date Fields */}
           <motion.div
             className="grid grid-cols-1 sm:grid-cols-2 gap-4"
@@ -420,11 +384,11 @@ const HostHackathon = () => {
                   value={formData[name]}
                   onChange={handleChange}
                   min={today}
-                  className="w-full text-gray-700 dark:text-gray-300 
-        bg-bg 
-        rounded-lg p-3 
+                  className="w-full text-gray-700 dark:text-gray-300
+        bg-bg
+        rounded-lg p-3
         border border-gray-300 dark:border-gray-600
-        focus:outline-none 
+        focus:outline-none
         focus:ring-2 focus:ring-primary focus:border-primary
         transition duration-150 ease-in-out"
                 />
@@ -433,6 +397,30 @@ const HostHackathon = () => {
                 )}
               </div>
             ))}
+          </motion.div>
+
+          {/* Registration Deadline */}
+          <motion.div data-aos="fade-up" data-aos-delay="950">
+            <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <CalendarDaysIcon className="w-5 h-5 mr-2 text-primary" />
+              Registration Deadline
+            </label>
+            <input
+              ref={registrationDeadlineRef}
+              type="date"
+              name="registrationDeadline"
+              value={formData.registrationDeadline}
+              onChange={handleChange}
+              min={today}
+              max={formData.startDate || undefined}
+              className="w-full text-gray-700 dark:text-gray-300 bg-bg rounded-lg p-3 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition duration-150 ease-in-out"
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Defaults to the start date if left blank.
+            </p>
+            {errors.registrationDeadline && (
+              <p className="text-red-500 text-xs mt-1">{errors.registrationDeadline}</p>
+            )}
           </motion.div>
 
           {/* Description */}
@@ -544,14 +532,14 @@ const HostHackathon = () => {
             Explore Hosting Options
           </motion.button>
 
-          <motion.a
-            href="/hackathons"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="inline-block bg-bg text-text border border-border px-8 py-3 rounded-xl shadow-lg hover:bg-card-bg transition-all duration-300"
-          >
-            Explore Hackathons
-          </motion.a>
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <Link
+              to="/hackathons"
+              className="inline-block bg-bg text-text border border-border px-8 py-3 rounded-xl shadow-lg hover:bg-card-bg transition-all duration-300"
+            >
+              Explore Hackathons
+            </Link>
+          </motion.div>
         </div>
       </motion.div>
     </div>

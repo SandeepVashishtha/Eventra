@@ -1,11 +1,11 @@
 import { useMemo, useRef, useState, useEffect, useCallback } from "react";
 
-import ErrorBoundary from "../../components/common/ErrorBoundary";
-import { fetchLeaderboardData, getCacheTimestamp, clearLeaderboardCache } from "../../services/githubLeaderboardService";
+import ErrorBoundary from "components/common/ErrorBoundary";
+import { fetchLeaderboardData, getCacheTimestamp, clearLeaderboardCache } from "services/githubLeaderboardService";
 import confetti from "canvas-confetti";
 import GSSoCContribution from "./GSSoCContribution";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
-import { useLeaderboardStream } from "../../context/RealTimeContext";
+import useDocumentTitle from "hooks/useDocumentTitle";
+import { useLeaderboardStream } from "context/RealTimeContext";
 import {
   filterContributors,
   sortContributors,
@@ -14,13 +14,13 @@ import {
   buildRanksMap,
   computeLeaderboardStats,
   applyAchievementBonus,
-} from "../../utils/leaderboardUtils";
+} from "utils/leaderboardUtils";
 
 import { useTranslation } from "react-i18next";
-import { logger } from "../../utils/logger";
-import { storageManager } from "../../utils/storage/storageManager";
-import { STORAGE_KEYS } from "../../utils/storage/storageKeys";
-import { validators } from "../../utils/storage/storageValidators";
+import { logger } from "utils/logger";
+import { storageManager } from "utils/storage/storageManager";
+import { STORAGE_KEYS } from "utils/storage/storageKeys";
+import { validators } from "utils/storage/storageValidators";
 
 import LeaderboardHero from "./components/LeaderboardHero";
 import LeaderboardPodium from "./components/LeaderboardPodium";
@@ -53,7 +53,9 @@ const formatLastUpdated = (timestamp, t) => {
 };
 
 const prepareLeaderboardEntries = (entries = []) =>
-  entries.map((entry) => applyAchievementBonus({ ...entry }));
+  entries
+    .map((entry) => applyAchievementBonus({ ...entry }))
+    .sort((a, b) => b.points - a.points);
 
 const useDebouncedValue = (value, delay) => {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -92,7 +94,8 @@ export default function LeaderBoard() {
   const { t } = useTranslation();
   useDocumentTitle(t("leaderboard.pageTitle"));
 
-  const CATEGORY_FILTERS = useMemo(() => [
+  // eslint-disable-next-line no-unused-vars
+  const _CATEGORY_FILTERS = useMemo(() => [
     { id: "overall", label: t("leaderboard.filters.overall"), icon: "🏆", description: t("leaderboard.filters.overallDesc") },
     { id: "monthly", label: t("leaderboard.filters.monthly"), icon: "⭐", description: t("leaderboard.filters.monthlyDesc") },
     { id: "mentors", label: t("leaderboard.filters.mentors"), icon: "🎓", description: t("leaderboard.filters.mentorsDesc") },
@@ -160,7 +163,8 @@ export default function LeaderBoard() {
 
   const top3 = useMemo(() => sortedContributors.slice(0, 3), [sortedContributors]);
 
-  const sortOptions = useMemo(
+  // eslint-disable-next-line no-unused-vars
+  const _sortOptions = useMemo(
     () => [
       { label: t("leaderboard.sortOptions.points"), value: "points" },
       { label: t("leaderboard.sortOptions.prs"), value: "prs" },

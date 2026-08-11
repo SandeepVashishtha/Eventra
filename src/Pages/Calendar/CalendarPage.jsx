@@ -23,11 +23,11 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { darkTheme } from "../../components/styles/theme";
-import { getEventStatus } from "../../utils/eventUtils";
+import { darkTheme } from "components/styles/theme";
+import { getEventStatus } from "utils/eventUtils";
 import useCalendarEvents from "./useCalendarEvents";
-import { SkeletonBlock } from "../../components/common/SkeletonLoaders";
-import EmptyState from "../../components/common/EmptyState";
+import { SkeletonBlock } from "components/common/SkeletonLoaders";
+import EmptyState from "components/common/EmptyState";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "./CalendarPage.css";
 import { useTranslation } from "react-i18next";

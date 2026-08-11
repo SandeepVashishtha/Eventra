@@ -1,24 +1,41 @@
 import { useState, useEffect } from 'react';
-import { joinWaitlist, leaveWaitlist, getWaitlistStatus, getWaitlistCount } from '../../services/waitlistService';
+import { joinWaitlist, leaveWaitlist, getWaitlistStatus, getWaitlistCount } from 'services/waitlistService';
+import { showUndoToast } from 'utils/toast';
 
 // Custom hook - args grouped into single options object (fixes Excess Function Arguments)
 const useWaitlist = ({ eventId, isFullyBooked, waitlistEnabled, isAuthenticated, token }) => {
   const [onWaitlist, setOnWaitlist] = useState(false);
   const [position, setPosition] = useState(null);
-  const [waitlistCount, setWaitlistCount] = useState(0);
+  // null = unknown (e.g. attendees get 403 from organizer-only list endpoint)
+  const [waitlistCount, setWaitlistCount] = useState(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!isFullyBooked || !waitlistEnabled) return;
 
-    getWaitlistCount(eventId).then(data => setWaitlistCount(data.count));
+    let cancelled = false;
+
+    getWaitlistCount(eventId)
+      .then(data => {
+        if (!cancelled) setWaitlistCount(data.count ?? null);
+      })
+      .catch(() => console.warn("[WaitlistButton] API call failed"));
+      .catch((err) => {
+        console.warn('Failed to fetch waitlist data:', err);
+      });
 
     if (isAuthenticated && token) {
-      getWaitlistStatus(eventId, token).then(data => {
-        setOnWaitlist(data.onWaitlist);
-        setPosition(data.position);
-      });
+      getWaitlistStatus(eventId, token)
+        .then(data => {
+          if (!cancelled) {
+            setOnWaitlist(data.onWaitlist);
+            setPosition(data.position);
+          }
+        })
+        .catch(() => console.warn("[WaitlistButton] API call failed"));
     }
+
+    return () => { cancelled = true; };
   }, [eventId, isFullyBooked, waitlistEnabled, isAuthenticated, token]);
 
   const handleClick = async () => {
@@ -29,15 +46,33 @@ const useWaitlist = ({ eventId, isFullyBooked, waitlistEnabled, isAuthenticated,
     setLoading(true);
     try {
       if (onWaitlist) {
-        await leaveWaitlist(eventId, token);
         setOnWaitlist(false);
         setPosition(null);
-        setWaitlistCount(prev => prev - 1);
+        setWaitlistCount(prev => (typeof prev === 'number' ? prev - 1 : prev));
+        showUndoToast({
+          message: 'Removed from waitlist.',
+          toastId: `common-leave-waitlist-${eventId}`,
+          onUndo: () => {
+            setOnWaitlist(true);
+            setPosition(position);
+            setWaitlistCount(prev => (typeof prev === 'number' ? prev + 1 : prev));
+          },
+          onCommit: async () => {
+            try {
+              await leaveWaitlist(eventId, token);
+            } catch (err) {
+              setOnWaitlist(true);
+              setPosition(position);
+              setWaitlistCount(prev => (typeof prev === 'number' ? prev + 1 : prev));
+              alert(err.message);
+            }
+          },
+        });
       } else {
         const data = await joinWaitlist(eventId, token);
         setOnWaitlist(true);
         setPosition(data.position);
-        setWaitlistCount(prev => prev + 1);
+        setWaitlistCount(prev => (typeof prev === 'number' ? prev + 1 : prev));
       }
     } catch (err) {
       alert(err.message);
@@ -52,7 +87,10 @@ const useWaitlist = ({ eventId, isFullyBooked, waitlistEnabled, isAuthenticated,
 const WaitlistInfo = ({ waitlistCount, position, onWaitlist }) => (
   <div>
     <span className="text-sm text-gray-500">
-      Event is full · {waitlistCount} {waitlistCount === 1 ? 'person' : 'people'} on waitlist
+      Event is full
+      {typeof waitlistCount === 'number' && (
+        <> · {waitlistCount} {waitlistCount === 1 ? 'person' : 'people'} on waitlist</>
+      )}
     </span>
     {onWaitlist && position && (
       <span className="block text-sm font-medium text-blue-600">

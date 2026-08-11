@@ -24,16 +24,16 @@ let container;
 let root;
 let loginMock;
 
- 
+
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
- 
+
 
 const renderLogin = () => {
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
 
-   
+
   act(() => {
     root.render(
       <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
@@ -75,7 +75,7 @@ beforeEach(() => {
 
 afterEach(() => {
   if (root) {
-     
+
     act(() => {
       root.unmount();
     });

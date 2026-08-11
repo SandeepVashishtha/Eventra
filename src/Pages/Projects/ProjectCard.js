@@ -1,12 +1,13 @@
-import { Star, Github, ExternalLink, AlertCircle, GitPullRequest, Cpu, Code2, Layers, Bookmark } from "lucide-react";
+import { Star, ExternalLink, AlertCircle, GitPullRequest, Cpu, Code2, Bookmark } from "lucide-react";
+import { FaGithub as Github } from "react-icons/fa";
 import { useState, useEffect, useRef, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import useReducedMotion from "../../hooks/useReducedMotion.js";
-import { fetchGitHubRepo, getGitHubRepoDetails } from "../../utils/githubApiClient.js";
-import { safeJsonParse } from "../../utils/safeJsonParse";
-import { useAuth } from "../../context/AuthContext.js";
+import useReducedMotion from "hooks/useReducedMotion.js";
+import { fetchGitHubRepo, getGitHubRepoDetails } from "utils/githubApiClient.js";
+import { safeJsonParse } from "utils/safeJsonParse";
+import { useAuth } from "context/AuthContext.js";
 import { toast } from "react-toastify";
-import { projectService } from "../../services/projectService.js";
+import { projectService } from "services/projectService.js";
 
 // Cache Keys & Constants
 const CACHE_KEY = "eventra_github_metrics_cache";
@@ -104,7 +105,9 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
           cache = saved ? safeJsonParse(saved, {}) : {};
           cache[key] = { data: updated, timestamp: Date.now() };
           saveMetricsCache(cache);
-        } catch {}
+        } catch (err) {
+          console.warn('Failed to update metrics cache:', err);
+        }
         return updated;
       });
       toast.success("Project upvoted successfully!");
@@ -141,7 +144,9 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
           cache = saved ? safeJsonParse(saved, {}) : {};
           cache[key] = { data: updated, timestamp: Date.now() };
           saveMetricsCache(cache);
-        } catch {}
+        } catch (err) {
+          console.warn('Failed to update metrics cache:', err);
+        }
         return updated;
       });
       toast.success("Project forked successfully!");
@@ -176,7 +181,7 @@ const ProjectCard = ({ project, index, isBookmarked, onBookmarkToggle }) => {
         try {
           const saved = localStorage.getItem(CACHE_KEY);
           cache = saved ? safeJsonParse(saved, {}) : {};
-        } catch (e) {
+        } catch {
           cache = {};
         }
 

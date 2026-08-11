@@ -229,7 +229,7 @@ const ApiDocs = () => {
           in this frontend demo.
         </p>
 
-        <p className="mt-4 text-sm text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+        <p className="mt-4 text-sm text-gray-600 dark:text-gray-200 max-w-2xl mx-auto">
           These documented endpoints return sample JSON-style data in the demo
           app. Connect a backend service before using them as production APIs.
         </p>
@@ -281,7 +281,7 @@ const ApiDocs = () => {
                     {ep.url}
                   </td>
 
-                  <td className="p-4 text-gray-500 dark:text-gray-400">
+                  <td className="p-4 text-gray-500 dark:text-gray-200">
                     {ep.desc}
                   </td>
                 </tr>
@@ -309,7 +309,7 @@ const ApiDocs = () => {
                 <h3 className="text-xl font-semibold">{ep.title}</h3>
               </div>
 
-              <p className="text-gray-600 dark:text-gray-400 mb-3">
+              <p className="text-gray-600 dark:text-gray-200 mb-3">
                 {ep.desc}
               </p>
 
@@ -554,7 +554,7 @@ const ApiDocs = () => {
 
               <div className="flex-1 flex items-center gap-2 px-3 py-1 bg-slate-950 border border-slate-850 rounded-lg text-[10px] font-mono text-slate-400 select-all overflow-x-auto whitespace-nowrap scrollbar-none">
                 <span className="text-emerald-500 font-bold uppercase shrink-0">GET</span>
-                <span>http://localhost:3000{selectedEndpoint}</span>
+                <span>{process.env.REACT_APP_API_URL || window.location.origin}{selectedEndpoint}</span>
                 {selectedEndpoint === "/mock-api/hackathons" && (
                   <span className="text-indigo-400 shrink-0">?limit={params.limit}&status={params.status}</span>
                 )}

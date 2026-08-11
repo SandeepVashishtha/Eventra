@@ -66,7 +66,8 @@ globalThis.indexedDB = {
 
 // Mock window and CustomEvent
 globalThis.window = {
-  dispatchEvent: (event) => {},
+  dispatchEvent: () => {},
+  location: { href: "http://localhost/" },
 };
 Object.defineProperty(globalThis, "navigator", {
   value: { onLine: false },
@@ -189,6 +190,59 @@ console.log("Running Waitlist System unit tests...");
   console.log("✓ Test 5: Leave Waitlist");
 }
 
+// 5b. Leaving notifies users whose queue position improves
+{
+  resetAll();
+  const eventId = 1;
+  const joinedAt = Date.now();
+  saveGlobalWaitlist([
+    {
+      userId: "u-1",
+      userName: "User One",
+      userEmail: "u1@example.com",
+      eventId,
+      eventTitle: "React Conf",
+      joinedAt: new Date(joinedAt).toISOString(),
+      status: "waiting",
+    },
+    {
+      userId: "u-2",
+      userName: "User Two",
+      userEmail: "u2@example.com",
+      eventId,
+      eventTitle: "React Conf",
+      joinedAt: new Date(joinedAt + 1000).toISOString(),
+      status: "waiting",
+    },
+    {
+      userId: "u-3",
+      userName: "User Three",
+      userEmail: "u3@example.com",
+      eventId,
+      eventTitle: "React Conf",
+      joinedAt: new Date(joinedAt + 2000).toISOString(),
+      status: "waiting",
+    },
+  ]);
+
+  await leaveWaitlist(eventId, "u-1");
+
+  const u2Inbox = JSON.parse(localStorage.getItem("eventra_notification_inbox_u-2"));
+  const u3Inbox = JSON.parse(localStorage.getItem("eventra_notification_inbox_u-3"));
+  assert.equal(u2Inbox[0].title, "Waitlist Position Updated");
+  assert.equal(
+    u2Inbox[0].message,
+    "Your waitlist position for React Conf moved from #2 to #1!"
+  );
+  assert.equal(u2Inbox[0].metadata.previousPosition, 2);
+  assert.equal(u2Inbox[0].metadata.currentPosition, 1);
+  assert.equal(
+    u3Inbox[0].message,
+    "Your waitlist position for React Conf moved from #3 to #2!"
+  );
+  console.log("Test 5b: Position change notifications after leave");
+}
+
 // 6. Promote Next User on Cancellation
 {
   resetAll();
@@ -232,6 +286,38 @@ console.log("Running Waitlist System unit tests...");
   const all = getGlobalWaitlist();
   assert.equal(all.filter(r => r.status === "promoted").length, 2);
   console.log("✓ Test 7: Auto-Promotion on Capacity Increase");
+}
+
+// 7b. Batch promotion sends one final queue movement notification
+{
+  resetAll();
+  const eventId = 3;
+  const event = { id: eventId, title: "DevOps Summit", maxAttendees: 10, attendees: 10 };
+  const joinedAt = Date.now();
+
+  saveGlobalWaitlist([1, 2, 3, 4, 5].map((position) => ({
+    userId: `u-${position}`,
+    userName: `User ${position}`,
+    userEmail: `u${position}@example.com`,
+    eventId,
+    eventTitle: event.title,
+    joinedAt: new Date(joinedAt + position).toISOString(),
+    status: "waiting",
+  })));
+
+  const promotedCount = await handleCapacityIncrease(event, 12);
+  assert.equal(promotedCount, 2);
+
+  const u5Inbox = JSON.parse(localStorage.getItem("eventra_notification_inbox_u-5"));
+  const movementNotifications = u5Inbox.filter((n) => n.title === "Waitlist Position Updated");
+  assert.equal(movementNotifications.length, 1);
+  assert.equal(
+    movementNotifications[0].message,
+    "Your waitlist position for DevOps Summit moved from #5 to #3!"
+  );
+  assert.equal(movementNotifications[0].metadata.previousPosition, 5);
+  assert.equal(movementNotifications[0].metadata.currentPosition, 3);
+  console.log("Test 7b: Batch position movement notification");
 }
 
 // 8. Organizer Manual User Removal
@@ -332,6 +418,44 @@ console.log("Running Waitlist System unit tests...");
 
   apiUtils.post = originalPost;
   console.log("✓ Test 11: Promote Record Online Server Error");
+}
+
+// 12. Offline join enqueues a JOIN_WAITLIST item for later sync (Issue #11538)
+{
+  resetAll();
+  navigator.onLine = false;
+  const eventId = 1;
+  const user = { id: "user-1", email: "user1@example.com", fullName: "User One" };
+  const form = { phone: "123456", eventTitle: "React Conf" };
+
+  const entry = await joinWaitlist(eventId, user, form);
+  assert.equal(entry.status, "waiting");
+
+  const queue = JSON.parse(localStorage.getItem("eventra_offline_queue")) || [];
+  assert.equal(queue.length, 1, "Offline join should enqueue exactly one queue item");
+
+  const item = queue[0];
+  assert.equal(item.actionType, "JOIN_WAITLIST");
+  assert.equal(item.eventId, 1);
+  assert.equal(item.userId, "user-1");
+  assert.equal(item.idempotencyKey, "waitlist-join-user-1-1");
+  assert.ok(/\/events\/1\/waitlist$/.test(item.endpoint), `endpoint should hit the waitlist route (got ${item.endpoint})`);
+  assert.equal(item.payload.userId, "user-1");
+  assert.equal(item.payload.name, "User One");
+  assert.equal(item.payload.email, "user1@example.com");
+  assert.equal(item.payload.phone, "123456");
+  assert.equal(item.payload.eventTitle, "React Conf");
+
+  // A duplicate offline join is rejected and must not enqueue a second item
+  await assert.rejects(
+    async () => {
+      await joinWaitlist(eventId, user, form);
+    },
+    /already on the waitlist/
+  );
+  const queueAfter = JSON.parse(localStorage.getItem("eventra_offline_queue")) || [];
+  assert.equal(queueAfter.length, 1, "Duplicate join must not create a second queue item");
+  console.log("✓ Test 12: Offline join enqueues JOIN_WAITLIST for sync");
 }
 
 console.log("\nAll Waitlist unit tests passed successfully! ✓");

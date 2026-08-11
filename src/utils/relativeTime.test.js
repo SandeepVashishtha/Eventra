@@ -1,4 +1,5 @@
-import { getRelativeTime, getSmartDateLabel } from "./relativeTime";
+import { getRelativeTime, getSmartDateLabel, isPast, isFuture } from "./relativeTime";
+import { setServerClockOffsetMs } from "./timeSync.js";
 
 describe("relativeTime utilities", () => {
   describe("getRelativeTime", () => {
@@ -48,6 +49,26 @@ describe("relativeTime utilities", () => {
       expect(formatted).toContain("Jul");
       expect(formatted).toContain("15");
       expect(formatted).toContain("2026");
+    });
+  });
+
+  describe("isPast and isFuture", () => {
+    afterEach(() => {
+      setServerClockOffsetMs(0);
+    });
+
+    it("uses server-synced time instead of raw client clock", () => {
+      const now = Date.now();
+      const twoMinutesAgo = new Date(now - 2 * 60 * 1000).toISOString();
+      const twoMinutesAhead = new Date(now + 2 * 60 * 1000).toISOString();
+
+      expect(isPast(twoMinutesAgo)).toBe(true);
+      expect(isFuture(twoMinutesAhead)).toBe(true);
+
+      // Client clock 5 minutes behind server: event ended 3 min ago on server
+      setServerClockOffsetMs(5 * 60 * 1000);
+      const threeMinutesAgoServer = new Date(now - 3 * 60 * 1000).toISOString();
+      expect(isPast(threeMinutesAgoServer)).toBe(true);
     });
   });
 });

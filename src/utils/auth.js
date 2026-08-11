@@ -17,8 +17,11 @@ export function decodeJwtPayload(token) {
     const parts = token.split(".");
     if (parts.length !== 3) return null;
 
+    // Deep Fix: Validate the raw base64url string BEFORE mutating it.
+    // Testing after replacing -/_ with +// caused valid tokens to be rejected.
+    if (!BASE64URL_RE.test(parts[1])) return null;
+
     const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-    if (!BASE64URL_RE.test(base64)) return null;
 
     const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
 
@@ -61,4 +64,8 @@ export function getTokenTTL(token) {
   }
   const now = Math.floor(Date.now() / 1000);
   return payload.exp - now - CLOCK_SKEW_BUFFER;
+}
+
+export function isAuthSessionValid(token) {
+  return token === "cookie-managed" || isTokenValid(token);
 }

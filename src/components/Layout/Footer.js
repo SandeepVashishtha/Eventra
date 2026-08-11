@@ -1,5 +1,6 @@
+import useToast from "hooks/useToast";
 // Enforced dynamic copyright rendering under issue #2211
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
@@ -40,17 +41,33 @@ const footerColumns = [
     heading: "footer.sections.community",
     links: [
       { nameKey: "footer.links.createEvent", href: "/create-event", icon: <FaPlus size={12} /> },
-      { nameKey: "footer.links.communityEvents", href: "/community-event", icon: <FaUsers size={12} /> },
+      {
+        nameKey: "footer.links.communityEvents",
+        href: "/community-event",
+        icon: <FaUsers size={12} />,
+      },
       { nameKey: "footer.links.contributors", href: "/contributors", icon: <FaCode size={12} /> },
-      { nameKey: "footer.links.contributorsGuide", href: "/contributorguide", icon: <FaBook size={12} /> },
-      { nameKey: "footer.links.leaderboard", href: "/leaderBoard", icon: <FaTrophy size={12} /> },
+      {
+        nameKey: "footer.links.contributorsGuide",
+        href: "/contributorguide",
+        icon: <FaBook size={12} />,
+      },
+      { nameKey: "footer.links.leaderboard", href: "/leaderboard", icon: <FaTrophy size={12} /> },
     ],
   },
   {
     heading: "footer.sections.support",
     links: [
-      { nameKey: "footer.links.documentation", href: "/documentation", icon: <FaBookOpen size={12} /> },
-      { nameKey: "footer.links.helpCenter", href: "/helpcenter", icon: <FaQuestionCircle size={12} /> },
+      {
+        nameKey: "footer.links.documentation",
+        href: "/documentation",
+        icon: <FaBookOpen size={12} />,
+      },
+      {
+        nameKey: "footer.links.helpCenter",
+        href: "/helpcenter",
+        icon: <FaQuestionCircle size={12} />,
+      },
       { nameKey: "footer.links.faq", href: "/faq", icon: <FaQuestion size={12} /> },
       { nameKey: "footer.links.contactUs", href: "/contact", icon: <FaEnvelope size={12} /> },
       { nameKey: "footer.links.feedback", href: "/feedback", icon: <FaComments size={12} /> },
@@ -88,31 +105,19 @@ const externalLinkProps = {
   rel: "noopener noreferrer",
 };
 
-const ExternalLink = ({
-  href,
-  children,
-  className,
-  ...props
-}) => (
-  <a
-    href={href}
-    {...externalLinkProps}
-    className={className}
-    {...props}
-  >
+const ExternalLink = ({ href, children, className, ...props }) => (
+  <a href={href} {...externalLinkProps} className={className} {...props}>
     {children}
   </a>
 );
 
-const isValidEmail = (value) =>
-  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
 const Newsletter = () => {
   const { t } = useTranslation();
   const [email, setEmail] = useState("");
 
-  const [isSubmitting, setIsSubmitting] =
-    useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [feedback, setFeedback] = useState({
     type: "",
@@ -158,9 +163,7 @@ const Newsletter = () => {
     });
 
     try {
-      await new Promise((resolve) =>
-        setTimeout(resolve, 1000)
-      );
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // 🔥 FIX: Guard state updates
       if (isMounted.current) {
@@ -187,8 +190,7 @@ const Newsletter = () => {
     }
   };
 
-  const feedbackId =
-    "footer-newsletter-feedback";
+  const feedbackId = "footer-newsletter-feedback";
 
   const feedbackColor =
     feedback.type === "success"
@@ -203,16 +205,13 @@ const Newsletter = () => {
           {t("footer.newsletter.heading")}
         </h4>
 
-        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+        <p className="mt-2 text-sm text-gray-500 dark:text-gray-200 leading-relaxed">
           {t("footer.newsletter.description")}
         </p>
       </div>
 
       {/* Newsletter Form */}
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-3"
-      >
+      <form onSubmit={handleSubmit} className="space-y-3">
         <div className="relative">
           <FaEnvelope
             size={14}
@@ -234,9 +233,7 @@ const Newsletter = () => {
             }}
             placeholder={t("footer.newsletter.placeholder")}
             disabled={isSubmitting}
-            aria-describedby={
-              feedback.message ? feedbackId : undefined
-            }
+            aria-describedby={feedback.message ? feedbackId : undefined}
             aria-invalid={feedback.type === "error"}
             className="
                   w-full
@@ -257,7 +254,7 @@ const Newsletter = () => {
                 "
           />
         </div>
- 
+
         <button
           type="submit"
           disabled={isSubmitting}
@@ -278,22 +275,14 @@ const Newsletter = () => {
                 disabled:cursor-not-allowed
               "
         >
-          {isSubmitting
-            ? t("footer.newsletter.subscribing")
-            : t("footer.newsletter.subscribe")}
+          {isSubmitting ? t("footer.newsletter.subscribing") : t("footer.newsletter.subscribe")}
         </button>
       </form>
 
       {/* Feedback / Privacy */}
-      <div
-        className="mt-3 min-h-[20px]"
-        aria-live="polite"
-      >
+      <div className="mt-3 min-h-[20px]" aria-live="polite">
         {feedback.message ? (
-          <p
-            id={feedbackId}
-            className={`text-xs font-medium ${feedbackColor}`}
-          >
+          <p id={feedbackId} className={`text-xs font-medium ${feedbackColor}`}>
             {feedback.message}
           </p>
         ) : (
@@ -306,84 +295,19 @@ const Newsletter = () => {
   );
 };
 
-// const SocialLinksRender = () => {
-//   const { t } = useTranslation();
-//   return (
-//     <div>
-//       <h4 className="text-lg font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-3">
-//         {t("footer.followUs")}
-//       </h4>
-
-//       <div className="flex flex-wrap gap-4 items-center">
-//         {socialLinks.map((link) => (
-//           <ExternalLink
-//             key={link.name}
-//             href={link.href}
-//             className="text-gray-500 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 rounded-full"
-//             aria-label={link.name}
-//             title={link.name}
-//           >
-//             <span className="sr-only">
-//               {link.name}
-//             </span>
-
-//             {link.icon}
-//           </ExternalLink>
-//         ))}
-//       </div>
-//     </div>
-//   );
-// };
-
-// const FooterLinksRender = () => {
-//   const { t } = useTranslation();
-//   return (
-//     <>
-//       {Object.entries(footerLinks).map(
-//         ([key, links]) => (
-//           <div
-//             key={key}
-//             className="py-2 flex flex-col gap-2"
-//           >
-//             <h4 className="text-sm font-bold mb-4 tracking-wide text-gray-900 dark:text-white uppercase">
-//               {t(footerSectionKeys[key])}
-//             </h4>
-
-//             <ul className="space-y-3">
-//               {links.map((link) => (
-//                 <li key={link.nameKey}>
-//                   <Link
-//                     to={link.href}
-//                     className="text-sm text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white flex items-center gap-4 transition-all duration-300 hover:translate-x-1 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 rounded"
-//                   >
-//                     {link.icon && (
-//                       <span className="text-gray-700 dark:text-gray-200 group-hover:scale-110 transition-all duration-300">
-//                         {link.icon}
-//                       </span>
-//                     )}
-
-//                     <span>{t(link.nameKey)}</span>
-//                   </Link>
-//                 </li>
-//               ))}
-//             </ul>
-//           </div>
-//         )
-//       )}
-//     </>
-//   );
-// };
-
 const Footer = () => {
+  const { success, error } = useToast();
   const { t } = useTranslation();
   return (
-    <footer className="relative z-50 bg-white dark:bg-gray-950 border-t border-gray-100 dark:border-gray-800 transition-colors duration-300 hover:border-indigo-100 dark:hover:border-indigo-900">
+    
+    <footer
+     className="relative z-50 bg-white dark:bg-gray-950 border-t border-gray-100 dark:border-gray-800 transition-colors duration-300 hover:border-indigo-100 dark:hover:border-indigo-900">
+      
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
         {/* ── Main grid ── */}
-        <div className="py-10 grid grid-cols-3 lg:grid-cols-[1.8fr_1fr_1fr_1fr] gap-3 sm:gap-6 lg:gap-12">
+        <div className="py-10 grid grid-cols-1 lg:grid-cols-[1.8fr_1fr_1fr_1fr] gap-8 lg:gap-12">
           {/* Brand + newsletter */}
-          <div className="space-y-5 col-span-3 lg:col-span-1">
+         <div className="space-y-5 md:col-span-2 lg:col-span-1">
             {/* Logo + tagline */}
             <div>
               <Link
@@ -404,7 +328,7 @@ const Footer = () => {
                 Open Source
               </span>
 
-              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 leading-relaxed max-w-xs">
+              <p className="mt-2 text-sm text-gray-500 dark:text-gray-200 leading-relaxed max-w-xs">
                 {t("footer.tagline")}
               </p>
             </div>
@@ -431,8 +355,8 @@ const Footer = () => {
 
           {/* Link columns */}
           {footerColumns.map((col) => (
-            <div key={col.heading} className="min-w-0">
-              <h4 className="text-[12px] leading-tight truncate sm:text-xs font-semibold uppercase tracking-wide sm:tracking-widest text-gray-400 dark:text-gray-500 mb-2 sm:mb-4">
+            <div key={col.heading} className="min-w-[140px]">
+              <h4 className="text-[12px] leading-tight sm:text-xs font-semibold uppercase tracking-wide sm:tracking-widest text-gray-400 dark:text-gray-500 mb-2 sm:mb-4">
                 {t(col.heading)}
               </h4>
               <ul className="space-y-0.05 sm:space-y-2.5">
@@ -440,7 +364,7 @@ const Footer = () => {
                   <li key={link.nameKey || link.href}>
                     <Link
                       to={link.href}
-                      className="group relative inline-flex items-center gap-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400 hover:!text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded after:absolute after:left-6 after:-bottom-0.5 after:h-px after:w-0 after:bg-indigo-500 after:transition-all after:duration-300 group-hover:after:w-[calc(100%-1.5rem)]"
+                      className="group relative inline-flex items-center gap-2 text-xs sm:text-sm text-gray-500 dark:text-gray-200 hover:!text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded after:absolute after:left-6 after:-bottom-0.5 after:h-px after:w-0 after:bg-indigo-500 after:transition-all after:duration-300 group-hover:after:w-[calc(100%-1.5rem)]"
                     >
                       <span className="text-gray-400 dark:text-gray-500 group-hover:!text-indigo-500 dark:group-hover:text-indigo-400 transition-colors duration-200 shrink-0">
                         {link.icon}
@@ -455,27 +379,20 @@ const Footer = () => {
         </div>
 
         {/* ── Bottom bar ── */}
-        <div className="py-5 border-t border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-xs text-gray-400 dark:text-gray-500 transition-colors duration-200 hover:text-gray-600 dark:hover:text-gray-300">
-            © {new Date().getFullYear()} Eventra.{" "}
-            <span>{t("footer.rights")}</span>
+        <div className="py-5 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-xs text-gray-400 dark:text-gray-500 transition-colors duration-200 hover:text-gray-600 dark:hover:text-white">
+            © {new Date().getFullYear()} Eventra. <span>{t("footer.rights")}</span>
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+          <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-gray-500 dark:text-gray-200">
             <span className="font-medium">10K+ Users</span>
 
-            <span className="text-gray-300 dark:text-gray-700">
-              •
-            </span>
+            <span className="text-gray-300 dark:text-gray-700">•</span>
 
             <span className="font-medium">500+ Events</span>
 
-            <span className="text-gray-300 dark:text-gray-700">
-              •
-            </span>
+            <span className="text-gray-300 dark:text-gray-700">•</span>
 
-            <span className="font-medium">
-              Privacy Focused
-            </span>
+            <span className="font-medium">Privacy Focused</span>
           </div>
 
           <div className="flex flex-wrap items-center justify-center sm:justify-end gap-x-3 gap-y-2 text-xs text-gray-400 dark:text-gray-500">
@@ -485,14 +402,27 @@ const Footer = () => {
             >
               {t("footer.privacy")}
             </Link>
-            <span className="text-gray-200 dark:text-gray-700" aria-hidden="true">|</span>
+            <span className="text-gray-200 dark:text-gray-700" aria-hidden="true">
+              |
+            </span>
             <Link
               to="/terms"
               className="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
             >
               {t("footer.terms")}
             </Link>
-            <span className="text-gray-200 dark:text-gray-700" aria-hidden="true">|</span>
+            <span className="text-gray-200 dark:text-gray-700" aria-hidden="true">
+              |
+            </span>
+            <Link
+              to="/cookies"
+              className="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
+            >
+              {t("footer.cookies")}
+            </Link>
+            <span className="text-gray-200 dark:text-gray-700" aria-hidden="true">
+              |
+            </span>
             <Link
               to="/api-docs"
               className="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
@@ -504,8 +434,6 @@ const Footer = () => {
       </div>
     </footer>
   );
-
 };
 
 export default Footer;
-// THEME HARMONIZATION: Integrated active dark mode classes (dark:bg-slate-900, dark:text-white) to prevent visual background jarring.

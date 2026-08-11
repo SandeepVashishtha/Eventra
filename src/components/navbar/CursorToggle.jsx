@@ -12,10 +12,10 @@ const CursorToggle = ({ cursorEnabled, toggleCursor }) => {
         onClick={toggleCursor}
         aria-pressed={cursorEnabled}
         aria-label="Toggle background cursor effects"
-        className={`h-9 w-9 rounded-full border transition-colors flex items-center justify-center shadow-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+        className={`h-9 w-9 rounded-full border transition-all duration-200 flex items-center justify-center shadow-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary hover:-translate-y-0.5 active:translate-y-0 ${
           cursorEnabled
             ? "border-primary/40 bg-primary/10 text-primary"
-            : "border-border bg-card-bg text-text-light hover:bg-bg-secondary"
+            : "border-border bg-card-bg text-text-light hover:bg-bg-secondary hover:border-border/80"
         }`}
       >
         <MousePointer className="h-4 w-4" aria-hidden="true" />

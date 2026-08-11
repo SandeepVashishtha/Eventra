@@ -12,7 +12,6 @@ export const safeCookieStorage = {
         expires: expiresDate,
         path: "/",
         secure: true,
-        sameSite: "Strict",
       });
     } catch {
       return false;

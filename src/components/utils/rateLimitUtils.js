@@ -44,9 +44,9 @@ export function readPersistedRateLimit() {
       : 0;
 
     return { attempts, lockoutUntil: validLockout };
-  } catch {
-    return { attempts: 0, lockoutUntil: 0 };
-  }
+  } catch (err) {
+      console.warn("[rateLimitUtils] Rate limit operation failed:", err);
+    }
 }
 
 /**
@@ -62,10 +62,9 @@ export function persistRateLimit(attempts, lockoutUntil) {
   try {
     sessionStorage.setItem(STORAGE_KEY_ATTEMPTS, String(attempts));
     sessionStorage.setItem(STORAGE_KEY_LOCKOUT_UNTIL, String(lockoutUntil));
-  } catch {
-    // sessionStorage may be full or blocked in privacy mode — fail silently.
-    // The in-memory state is still active; this is a best-effort durability layer.
-  }
+  } catch (err) {
+      console.warn("[rateLimitUtils] Rate limit operation failed:", err);
+    }
 }
 
 /**
@@ -76,9 +75,9 @@ export function clearPersistedRateLimit() {
   try {
     sessionStorage.removeItem(STORAGE_KEY_ATTEMPTS);
     sessionStorage.removeItem(STORAGE_KEY_LOCKOUT_UNTIL);
-  } catch {
-    // Ignore — clearing is best-effort
-  }
+  } catch (err) {
+      console.warn("[rateLimitUtils] Rate limit operation failed:", err);
+    }
 }
 
 /**

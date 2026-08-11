@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bell, CheckCheck, Filter, Search, Wifi, WifiOff } from "lucide-react";
-import { useNotification } from "../../context/NotificationContext";
-import { NOTIFICATION_CATEGORIES } from "../../utils/notificationPreferences";
-import NotificationItem from "../../components/notifications/NotificationItem";
-import EmptyState from "../../components/common/EmptyState";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
+import { useNotification } from "context/NotificationContext";
+import { NOTIFICATION_CATEGORIES } from "utils/notificationPreferences";
+import NotificationItem from "components/notifications/NotificationItem";
+import EmptyState from "components/common/EmptyState";
+import useDocumentTitle from "hooks/useDocumentTitle";
 
 const FILTER_OPTIONS = [
   { id: "all", label: "All" },
@@ -89,7 +89,7 @@ const NotificationCenter = () => {
               <Bell className="h-7 w-7 text-indigo-600" aria-hidden="true" />
               Notification Center
             </h1>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-200">
               {unreadCount} unread · {notifications.length} total
             </p>
           </div>
@@ -99,7 +99,7 @@ const NotificationCenter = () => {
               className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${
                 isConnected
                   ? "bg-green-50 text-green-700 dark:bg-green-950/40 dark:text-green-400"
-                  : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                  : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-200"
               }`}
             >
               {isConnected ? (
@@ -158,7 +158,7 @@ const NotificationCenter = () => {
               className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                 activeFilter === option.id
                   ? "bg-indigo-600 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-600"
               }`}
             >
               {option.label}

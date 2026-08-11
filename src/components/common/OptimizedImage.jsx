@@ -1,20 +1,20 @@
 import { useState } from "react";
-import { getOptimizedImageUrl, generateSrcSet } from "../../utils/imageOptimizer";
+import { getOptimizedImageUrl, generateSrcSet } from "utils/imageOptimizer";
 import { ImageIcon } from "lucide-react";
 
-const OptimizedImage = ({ 
-  src, 
-  alt, 
-  className = "", 
+const OptimizedImage = ({
+  src,
+  alt,
+  className = "",
   aspectRatio = "16/9",
-  priority = false 
+  priority = false
 }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
 
   if (!src || hasError) {
     return (
-      <div 
+      <div
         className={`bg-gray-100 dark:bg-gray-800 flex items-center justify-center ${className}`}
         style={{ aspectRatio }}
       >
@@ -24,7 +24,7 @@ const OptimizedImage = ({
   }
 
   return (
-    <div 
+    <div
       className={`relative overflow-hidden ${className}`}
       style={{ aspectRatio }}
     >

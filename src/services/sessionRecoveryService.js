@@ -1,11 +1,11 @@
-import { API_ENDPOINTS, apiUtils } from "../config/api";
-import { sanitizeSessionState } from "../utils/sessionSanitization";
-import { safeJsonParse } from "../utils/safeJsonParse";
+import { API_ENDPOINTS, apiUtils } from "../config/api.js";
+import { sanitizeSessionState } from "../utils/sessionSanitization.js";
+import { safeJsonParse } from "../utils/safeJsonParse.js";
 
 export const CLOUD_RECOVERY_PENDING_KEY = "eventra:cloud-session-recovery:pending:v1";
 export const CLOUD_RECOVERY_CACHE_KEY = "eventra:cloud-session-recovery:cache:v1";
 export const DEFAULT_RECOVERY_RETENTION_DAYS = 7;
-export const MAX_DRAFT_BYTES = 512 * 1024;
+export const MAX_DRAFT_BYTES = 64 * 1024;
 
 const RECOVERY_TYPES = new Set([
   "event-creation",
@@ -290,7 +290,8 @@ export const syncPendingRecoverySessions = async (
     try {
       const saved = await saveRecoverySession(session);
       synced.push(saved);
-    } catch {
+    } catch (err) {
+      console.error('[sessionRecoveryService] Sync failed for session', session?.sessionId, err);
       failed.push(session);
     }
   }

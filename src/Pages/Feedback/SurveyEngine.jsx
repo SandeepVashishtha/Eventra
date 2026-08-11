@@ -2,10 +2,10 @@ import { Plus, Trash2, PlusCircle, Save, ArrowUp, ArrowDown } from "lucide-react
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
-import SurveyAnalytics from "../../components/admin/SurveyAnalytics";
+import useDocumentTitle from "hooks/useDocumentTitle";
+import SurveyAnalytics from "components/admin/SurveyAnalytics";
 import { validate } from "../../validation";
-import { safeJsonParse } from "../../utils/safeJsonParse";
+import { safeJsonParse } from "utils/safeJsonParse";
 
 const SurveyEngine = () => {
   useDocumentTitle("Eventra | Dynamic Survey Engine");
@@ -39,7 +39,7 @@ const SurveyEngine = () => {
     },
   ]);
 
-  
+
   const [activeTab, setActiveTab] = useState("builder"); // "builder" | "preview"
   const [confirmModal, setConfirmModal] = useState({
     open: false,
@@ -64,7 +64,7 @@ const SurveyEngine = () => {
           setDraftDetected(true);
           return; // Skip setting isInitialized to prevent early overwrite
         }
-      } catch {}
+      } catch { console.warn("[SurveyEngine] Draft detection failed"); }
     }
     setIsInitialized(true);
   }, []);
@@ -211,7 +211,13 @@ const SurveyEngine = () => {
       return;
     }
 
-
+    const publishedSurvey = {
+      title: surveyTitle,
+      description: surveyDescription,
+      questions,
+      publishedAt: new Date().toISOString(),
+    };
+    localStorage.setItem("eventra_survey_active", JSON.stringify(publishedSurvey));
     localStorage.removeItem("eventra_survey_builder_draft");
     toast.success("Survey published and active for attendees!");
   };
@@ -219,7 +225,7 @@ const SurveyEngine = () => {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
       <div className="max-w-5xl mx-auto">
-        
+
         {/* HEADER BAR */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
@@ -230,7 +236,7 @@ const SurveyEngine = () => {
               Build custom feedback forms, ratings, and questionnaires for your attendees.
             </p>
           </div>
-          
+
           <div className="flex items-center gap-3">
             <button
               onClick={handleSaveSurvey}
@@ -354,7 +360,7 @@ const SurveyEngine = () => {
                               {questionTypes.find((t) => t.value === question.type)?.label}
                             </span>
                           </div>
-                          
+
                           <input
                             type="text"
                             value={question.questionText}
@@ -362,7 +368,7 @@ const SurveyEngine = () => {
                             placeholder="Type your question prompt here..."
                             className="w-full text-lg font-semibold bg-transparent border-b border-slate-200 dark:border-slate-800 focus:border-indigo-500 outline-none pb-1 transition-all"
                           />
-                          
+
                           {/* REAL-TIME VALIDATION WARNINGS & COUNTERS */}
                           <div className="flex justify-between items-center text-[10px] font-semibold pt-1">
                             <div className="text-rose-500 flex items-center gap-1">
@@ -389,7 +395,7 @@ const SurveyEngine = () => {
                           >
                             <ArrowUp className="w-4 h-4" />
                           </button>
-                          
+
                           <button
                             onClick={() => moveQuestion(index, "down")}
                             disabled={index === questions.length - 1}
@@ -402,7 +408,7 @@ const SurveyEngine = () => {
                           >
                             <ArrowDown className="w-4 h-4" />
                           </button>
-                          
+
                           <button
                             id="ymjlwm"
                             onClick={() =>
@@ -606,7 +612,7 @@ const SurveyEngine = () => {
       {confirmModal.open && (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
     <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-md p-6 animate-in fade-in zoom-in duration-200">
-      
+
       <h2 className="text-xl font-bold text-slate-800 dark:text-white">
         Confirm Delete
       </h2>

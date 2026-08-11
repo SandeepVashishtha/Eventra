@@ -11,14 +11,15 @@ permissions:
 jobs:
   unassign-stale:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Unassign stale assignees (nuanced)
         uses: actions/github-script@v7
         with:
           script: |
             const cfg = {
-              warningDays: 2,
-              staleDays: 4,
+              warningDays: 3,
+              staleDays: 5,
               // Ignore bot/app actors when computing human activity
               ignoredActorTypes: ['Bot', 'Organization', 'User'],
               // If issue has any of these labels, never unassign

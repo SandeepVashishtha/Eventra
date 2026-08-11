@@ -15,7 +15,7 @@ const CATEGORY_FILTERS = new Set([
   "design-ux",
   "cultural",
 ]);
-const SORT_TYPES = new Set(["Newest", "Upcoming"]);
+const SORT_TYPES = new Set(["Newest", "Upcoming", "Popular", "Oldest"]);
 const VIEW_MODES = new Set(["grid", "list"]);
 
 export const getDefaultEventFilterConfig = () => ({

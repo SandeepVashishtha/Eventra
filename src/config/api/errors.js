@@ -35,7 +35,7 @@ export const normalizeApiError = (error) => {
     error.message?.includes("timeout")
   ) {
     return new ApiError(
-      `Request timed out after ${config.timeout || 15000 / 1000}s: ${config.method?.toUpperCase()} ${config.url}`,
+      `Request timed out after ${(config.timeout || 15000) / 1000}s: ${config.method?.toUpperCase()} ${config.url}`,
       { status, isTimeout: true }
     );
   }

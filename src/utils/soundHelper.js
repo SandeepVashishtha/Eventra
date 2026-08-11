@@ -14,7 +14,7 @@ export function playNotificationSound() {
     
     osc.start();
     osc.stop(audioCtx.currentTime + 0.15);
-  } catch {
-    // Audio Context blocked or not supported
+  } catch (e) {
+    console.warn('[soundHelper] AudioContext not available', e);
   }
 }

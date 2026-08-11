@@ -1,3 +1,5 @@
+import { redactSensitiveData } from "./security/redactSensitiveData.js";
+
 /**
  * Determines if the current environment is for development.
  * Safe in both browser (Vite via import.meta.env) and Node-like environments
@@ -61,6 +63,8 @@ const sanitizeArgs = (args) =>
 const formatMessage = (level, message) => {
   return `[${level.toUpperCase()}] ${message}`;
 };
+
+const redactLogArgs = (args) => args.map((arg) => redactSensitiveData(arg));
 
 /**
  * A logger utility that wraps console methods.

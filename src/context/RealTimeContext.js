@@ -3,7 +3,9 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useReducer,
+  useRef,
 } from "react";
 import useRealTimeConnection, { SSE_STATUS } from "../hooks/useRealTimeConnection";
 
@@ -20,18 +22,11 @@ const initialLeaderboardState = {
   status: SSE_STATUS.IDLE,
 };
 
-// Maximum number of event IDs retained for deduplication.
-// Old entries are evicted once this limit is reached.
-const SEEN_EVENTS_MAX = 200;
-
 const initialAnalyticsState = {
   recentCheckins: [],
   liveCount: 0,
   scanVelocity: 0,
   status: SSE_STATUS.IDLE,
-  // Bounded cache of processed event IDs — prevents duplicate CHECKIN
-  // events (e.g. from SSE reconnect replay) from inflating counts.
-  seenEventIds: [],
 };
 
 // --- 3. Split the Reducers ---
@@ -52,25 +47,12 @@ function leaderboardReducer(state, action) {
 
 function analyticsReducer(state, action) {
   switch (action.type) {
-    case "CHECKIN": {
-      const eventId = action.payload?.id;
-      // Ignore events whose ID was already processed in this session.
-      // This prevents SSE reconnect replay from inflating liveCount and
-      // recentCheckins when the server re-delivers historical events.
-      if (eventId && state.seenEventIds.includes(eventId)) {
-        return state;
-      }
-      // Record the new ID, evicting the oldest entry if the cache is full.
-      const updatedSeenIds = eventId
-        ? [...state.seenEventIds, eventId].slice(-SEEN_EVENTS_MAX)
-        : state.seenEventIds;
+    case "CHECKIN":
       return {
         ...state,
-        seenEventIds: updatedSeenIds,
         recentCheckins: [action.payload, ...state.recentCheckins.slice(0, 49)],
         liveCount: state.liveCount + 1,
       };
-    }
     case "UPDATE":
       return { ...state, ...action.payload };
     case "STATUS":
@@ -81,6 +63,11 @@ function analyticsReducer(state, action) {
 }
 
 // --- 4. Isolated Providers ---
+// FIX (#7855 Bug 3): STATUS_DEBOUNCE_MS throttles the STATUS dispatch so that
+// rapid connect/disconnect cycles (e.g. flaky connections) do not trigger a
+// re-render storm. 500 ms matches the suggested batch window in the issue.
+const STATUS_DEBOUNCE_MS = 500;
+
 function LeaderboardProvider({ children }) {
   const [state, dispatch] = useReducer(leaderboardReducer, initialLeaderboardState);
 
@@ -96,12 +83,32 @@ function LeaderboardProvider({ children }) {
     onMessage,
   });
 
+  // FIX (#7855 Bug 3): Debounce STATUS dispatches so rapid SSE reconnection
+  // cycles (CONNECTING → OPEN → CLOSED → RECONNECTING in quick succession)
+  // are collapsed into a single state update, preventing a re-render cascade
+  // in every consumer of LeaderboardContext.
+  const statusDebounceRef = useRef(null);
   useEffect(() => {
-    dispatch({ type: "STATUS", payload: status });
+    clearTimeout(statusDebounceRef.current);
+    statusDebounceRef.current = setTimeout(() => {
+      dispatch({ type: "STATUS", payload: status });
+    }, STATUS_DEBOUNCE_MS);
+    return () => clearTimeout(statusDebounceRef.current);
   }, [status]);
 
+  // FIX (#7855 Bug 3): Memoize the context value so that LeaderboardContext
+  // consumers wrapped in React.memo can bail out of re-renders when neither
+  // contributors nor lastSynced nor status has changed.
+  // Without this, `value={state}` creates a new object reference on every
+  // render of LeaderboardProvider, defeating all downstream memoization.
+  const contextValue = useMemo(
+    () => state,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [state.contributors, state.lastSynced, state.status]
+  );
+
   return (
-    <LeaderboardContext.Provider value={state}>
+    <LeaderboardContext.Provider value={contextValue}>
       {children}
     </LeaderboardContext.Provider>
   );
@@ -124,14 +131,164 @@ function AnalyticsProvider({ children }) {
     onMessage,
   });
 
+  // FIX (#7855 Bug 3): Same debounce pattern as LeaderboardProvider.
+  const statusDebounceRef = useRef(null);
+  useEffect(() => {
+    clearTimeout(statusDebounceRef.current);
+    statusDebounceRef.current = setTimeout(() => {
+      dispatch({ type: "STATUS", payload: status });
+    }, STATUS_DEBOUNCE_MS);
+    return () => clearTimeout(statusDebounceRef.current);
+  }, [status]);
+
+  // FIX (#7855 Bug 3): Memoize context value — AnalyticsContext consumers
+  // wrapped in React.memo can now bail out of re-renders when recentCheckins,
+  // liveCount, scanVelocity, and status are all unchanged.
+  const contextValue = useMemo(
+    () => state,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [state.recentCheckins, state.liveCount, state.scanVelocity, state.status]
+  );
+
+  return (
+    <AnalyticsContext.Provider value={contextValue}>
+      {children}
+    </AnalyticsContext.Provider>
+  );
+}
+
+// --- 4.5 Live Audience Coordination Provider ---
+const LiveAudienceContext = createContext(null);
+
+function liveAudienceReducer(state, action) {
+  switch (action.type) {
+    case "LOAD_INITIAL": {
+      const { eventId, questions, activePoll } = action.payload;
+      return {
+        ...state,
+        events: {
+          ...state.events,
+          [eventId]: { questions, activePoll }
+        }
+      };
+    }
+    case "NEW_QUESTION": {
+      const { eventId, question } = action.payload;
+      const eventData = state.events[eventId] || { questions: [], activePoll: null };
+      if (eventData.questions.some(q => q.id === question.id)) return state;
+      return {
+        ...state,
+        events: {
+          ...state.events,
+          [eventId]: {
+            ...eventData,
+            questions: [...eventData.questions, question]
+          }
+        }
+      };
+    }
+    case "UPDATE_QUESTION": {
+      const { eventId, question } = action.payload;
+      const eventData = state.events[eventId] || { questions: [], activePoll: null };
+      return {
+        ...state,
+        events: {
+          ...state.events,
+          [eventId]: {
+            ...eventData,
+            questions: eventData.questions.map(q => q.id === question.id ? question : q)
+          }
+        }
+      };
+    }
+    case "DELETE_QUESTION": {
+      const { eventId, questionId } = action.payload;
+      const eventData = state.events[eventId] || { questions: [], activePoll: null };
+      return {
+        ...state,
+        events: {
+          ...state.events,
+          [eventId]: {
+            ...eventData,
+            questions: eventData.questions.filter(q => q.id !== questionId)
+          }
+        }
+      };
+    }
+    case "SET_POLL":
+    case "UPDATE_POLL": {
+      const { eventId, poll } = action.payload;
+      const eventData = state.events[eventId] || { questions: [], activePoll: null };
+      return {
+        ...state,
+        events: {
+          ...state.events,
+          [eventId]: {
+            ...eventData,
+            activePoll: poll
+          }
+        }
+      };
+    }
+    case "STATUS":
+      return { ...state, status: action.payload };
+    default:
+      return state;
+  }
+}
+
+function LiveAudienceProvider({ children }) {
+  const [state, dispatch] = useReducer(liveAudienceReducer, {
+    events: {},
+    status: SSE_STATUS.IDLE,
+  });
+
+  const onMessage = useCallback((data) => {
+    if (!data || !data.eventId || !data.type) return;
+    const { eventId, type, payload } = data;
+    switch (type) {
+      case "NEW_QUESTION":
+        dispatch({ type: "NEW_QUESTION", payload: { eventId, question: payload } });
+        break;
+      case "UPDATE_QUESTION":
+        dispatch({ type: "UPDATE_QUESTION", payload: { eventId, question: payload } });
+        break;
+      case "DELETE_QUESTION":
+        dispatch({ type: "DELETE_QUESTION", payload: { eventId, questionId: payload } });
+        break;
+      case "SET_POLL":
+      case "UPDATE_POLL":
+        dispatch({ type: "UPDATE_POLL", payload: { eventId, poll: payload } });
+        break;
+      default:
+        break;
+    }
+  }, []);
+
+  const { status } = useRealTimeConnection("/stream/live-audience", {
+    onMessage,
+  });
+
   useEffect(() => {
     dispatch({ type: "STATUS", payload: status });
   }, [status]);
 
+  const loadInitialData = useCallback((eventId, data) => {
+    dispatch({
+      type: "LOAD_INITIAL",
+      payload: { eventId, questions: data.questions || [], activePoll: data.activePoll || null }
+    });
+  }, []);
+
+  const value = {
+    state,
+    loadInitialData
+  };
+
   return (
-    <AnalyticsContext.Provider value={state}>
+    <LiveAudienceContext.Provider value={value}>
       {children}
-    </AnalyticsContext.Provider>
+    </LiveAudienceContext.Provider>
   );
 }
 
@@ -141,7 +298,9 @@ export function RealTimeProvider({ children }) {
   return (
     <LeaderboardProvider>
       <AnalyticsProvider>
-        {children}
+        <LiveAudienceProvider>
+          {children}
+        </LiveAudienceProvider>
       </AnalyticsProvider>
     </LeaderboardProvider>
   );
@@ -160,5 +319,14 @@ export const useLeaderboardStream = () => {
 export const useAnalyticsStream = () => {
   const ctx = useContext(AnalyticsContext);
   if (!ctx) throw new Error("useAnalyticsStream must be used inside RealTimeProvider");
+  return ctx;
+};
+
+export const useLiveAudienceStream = () => {
+  const ctx = useContext(LiveAudienceContext);
+  if (typeof globalThis !== "undefined" && typeof globalThis.mockLiveAudienceStream === "function") {
+    return globalThis.mockLiveAudienceStream();
+  }
+  if (!ctx) throw new Error("useLiveAudienceStream must be used inside RealTimeProvider");
   return ctx;
 };

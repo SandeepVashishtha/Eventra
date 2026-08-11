@@ -1,47 +1,19 @@
+import useCountdown from "hooks/useCountdown";
 import { CalendarIcon, MapPinIcon, ClockIcon, UserGroupIcon, TrophyIcon, BuildingLibraryIcon, ShareIcon } from "@heroicons/react/24/outline";
 import { motion } from "framer-motion";
 import { useState, useEffect, useCallback, useMemo, memo } from "react";
 import { useNavigate } from "react-router-dom";
-import useReducedMotion from "../../hooks/useReducedMotion.js";
-import { getServerTime } from "../../utils/timeSync";
+import { toast } from "react-toastify";
+import useReducedMotion from "hooks/useReducedMotion.js";
+import { getServerTime } from "utils/timeSync";
+import { useAuth } from "context/AuthContext";
+import { registerHackathon } from "services/hackathonService";
 
-import ShareMenu from "../../components/common/ShareMenu";
-import { addHackathonToGoogleCalendar } from "../../utils/calendarUtils";
-import { generateEventSharingData } from "../../utils/shareUtils";
+import ShareMenu from "components/common/ShareMenu";
+import { addHackathonToGoogleCalendar } from "utils/calendarUtils";
+import { generateEventSharingData } from "utils/shareUtils";
 
-const useCountdown = (targetDate) => {
-  useReducedMotion();
-  const calculateTimeLeft = useCallback(() => {
-    const difference = new Date(targetDate) - getServerTime();
-
-    if (!targetDate || difference <= 0) {
-      return null;
-    }
-
-    return {
-      days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-      hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
-      minutes: Math.floor((difference / 1000 / 60) % 60),
-    };
-  }, [targetDate]);
-
-  const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
-
-  useEffect(() => {
-    setTimeLeft(calculateTimeLeft());
-
-    let timerId = null;
-    timerId = setInterval(() => {
-      setTimeLeft(calculateTimeLeft());
-    }, 1000);
-
-    return () => {
-      if (timerId !== null) clearInterval(timerId);
-    };
-  }, [calculateTimeLeft]);
-
-  return timeLeft;
-};
+// Fix: replaced local useCountdown with centralised hook from hooks/useCountdown
 
 const CountdownTimer = ({ targetDate, label }) => {
   const timeLeft = useCountdown(targetDate);
@@ -143,6 +115,8 @@ const formatDateRange = (startDate, endDate) => {
 const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
   const prefersReducedMotion = useReducedMotion();
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+  const [isRegistering, setIsRegistering] = useState(false);
   const normalizedHackathon = {
     ...hackathon,
     title: hackathon?.title || "Untitled Hackathon",
@@ -171,6 +145,37 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
     ...normalizedHackathon,
     date: normalizedHackathon.startDate,
   });
+
+  const handleRegister = useCallback(async () => {
+    if (!isAuthenticated()) {
+      toast.info("Please log in to register for this hackathon.");
+      navigate("/login", {
+        state: { from: `/hackathons` },
+      });
+      return;
+    }
+
+    if (isRegistering) return;
+
+    setIsRegistering(true);
+    try {
+      await registerHackathon(normalizedHackathon.id);
+      toast.success(`Registered for ${normalizedHackathon.title}!`);
+    } catch (error) {
+      const status = error?.response?.status;
+      const message = error?.response?.data?.message;
+      if (status === 409) {
+        toast.info(message || "You are already registered for this hackathon.");
+      } else if (status === 401) {
+        toast.info("Please log in to register for this hackathon.");
+        navigate("/login", { state: { from: `/hackathons` } });
+      } else {
+        toast.error(message || "Failed to register. Please try again.");
+      }
+    } finally {
+      setIsRegistering(false);
+    }
+  }, [isAuthenticated, isRegistering, navigate, normalizedHackathon.id, normalizedHackathon.title]);
 
   return (
     <motion.div
@@ -310,10 +315,11 @@ const HackathonCard = ({ hackathon, isFeatured = false, ...props }) => {
             <>
               <button
                 type="button"
-                onClick={() => navigate(`/register/${normalizedHackathon.id}`)}
-                className="rounded-xl bg-linear-to-r from-blue-600 via-indigo-600 to-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg"
+                onClick={handleRegister}
+                disabled={isRegistering}
+                className="rounded-xl bg-linear-to-r from-blue-600 via-indigo-600 to-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Register
+                {isRegistering ? "Registering..." : "Register"}
               </button>
               <a
                 href={addHackathonToGoogleCalendar(normalizedHackathon)}

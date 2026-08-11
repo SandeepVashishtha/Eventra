@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState , useRef  } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   FILTER_SUGGESTIONS_STORAGE_KEY,
   generateFilterSuggestions,
@@ -12,12 +12,14 @@ export const useFilterSuggestions = ({
   currentFilters = {},
   visibleEvents = [],
   presets = [],
-  storage = globalThis.localStorage,
+  storage = null,
   storageKey = FILTER_SUGGESTIONS_STORAGE_KEY,
   limit = 10,
 } = {}) => {
+  const resolvedStorage =
+    storage ?? (typeof globalThis !== "undefined" ? globalThis.localStorage : null);
   const [history, setHistory] = useState(() =>
-    readSuggestionHistory(storage, storageKey),
+    readSuggestionHistory(resolvedStorage, storageKey),
   );
 
   const filterSignature = useMemo(
@@ -42,27 +44,29 @@ export const useFilterSuggestions = ({
   );
 
   useEffect(() => {
-    const storedHistory = readSuggestionHistory(storage, storageKey);
+    const storedHistory = readSuggestionHistory(resolvedStorage, storageKey);
     setHistory(storedHistory);
-  }, [storage, storageKey]);
+  }, [resolvedStorage, storageKey]);
 
   useEffect(() => {
     setHistory((previous) => {
       const next = recordFilterActivity(previous, currentFilters);
-      writeSuggestionHistory(next, storage, storageKey);
+      writeSuggestionHistory(next, resolvedStorage, storageKey);
       return next;
     });
-  }, [filterSignature, storage, storageKey, recordFilterActivity, writeSuggestionHistory]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterSignature, resolvedStorage, storageKey]);
 
   useEffect(() => {
     if (!Array.isArray(visibleEvents) || visibleEvents.length === 0) return;
 
     setHistory((previous) => {
       const next = recordVisibleEventSignals(previous, visibleEvents);
-      writeSuggestionHistory(next, storage, storageKey);
+      writeSuggestionHistory(next, resolvedStorage, storageKey);
       return next;
     });
-  }, [visibleEventSignature, storage, storageKey, recordVisibleEventSignals, writeSuggestionHistory]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleEventSignature, resolvedStorage, storageKey]);
 
   const suggestions = useMemo(
     () =>

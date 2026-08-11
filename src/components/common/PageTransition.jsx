@@ -50,11 +50,7 @@ const getVariants = (pathname) => {
   };
 };
 
-const reducedMotionVariants = {
-  initial: { opacity: 0 },
-  animate: { opacity: 1 },
-  exit:    { opacity: 0 },
-};
+
 
 const getTransition = (pathname) => {
   if (pathname.startsWith("/events/") || pathname.startsWith("/hackathons/")) {

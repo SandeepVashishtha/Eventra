@@ -61,6 +61,8 @@ export const parseTimeString = (timeStr) => {
     const minutes = parseInt(amPmMatch[2], 10);
     const period = amPmMatch[3].toUpperCase();
 
+    if (hours < 1 || hours > 12) return null;
+
     if (period === 'PM' && hours !== 12) hours += 12;
     if (period === 'AM' && hours === 12) hours = 0;
 

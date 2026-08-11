@@ -1,3 +1,4 @@
+import usePaginatedFetch from "hooks/usePaginatedFetch";
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
@@ -10,8 +11,8 @@ import {
   Users,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import { API_ENDPOINTS, apiUtils } from "../../config/api";
-import useEventScheduling from "../../hooks/useEventScheduling";
+import { API_ENDPOINTS, apiUtils } from "config/api";
+import useEventScheduling from "hooks/useEventScheduling";
 import {
   buildCalendarDays,
   buildTimeSlots,
@@ -22,7 +23,7 @@ import {
   navigateCalendarDate,
   normalizeScheduledEvents,
   toDateKey,
-} from "../../utils/eventSchedulingUtils";
+} from "utils/eventSchedulingUtils";
 import mockEvents from "../Events/eventsMockData.json";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "./CalendarPage.css";
@@ -182,8 +183,6 @@ const ConflictDialog = ({ pendingConflict, onCancel, onOverride, isSaving }) => 
 
 const EventSchedulerCalendar = () => {
   const [sourceEvents, setSourceEvents] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState("");
   const [view, setView] = useState("week");
   const [anchorDate, setAnchorDate] = useState(new Date());
   const [dragOverKey, setDragOverKey] = useState("");
@@ -226,12 +225,11 @@ const EventSchedulerCalendar = () => {
     },
   });
 
-  const loadEvents = useCallback(async () => {
-    setIsLoading(true);
-    setLoadError("");
-
-    try {
-      const response = await apiUtils.get(API_ENDPOINTS.EVENTS.LIST);
+  // Fix: usePaginatedFetch replaces 25-line manual fetch pattern —
+  // adds AbortController cleanup and retry support automatically.
+  const { isLoading, error: loadError, refetch: loadEvents } = usePaginatedFetch(
+    async (signal) => {
+      const response = await apiUtils.get(API_ENDPOINTS.EVENTS.LIST, { signal });
       const responseData = response?.data || {};
       const list = Array.isArray(responseData.content)
         ? responseData.content
@@ -241,19 +239,19 @@ const EventSchedulerCalendar = () => {
       const merged = mergeScheduleOverrides(list);
       setSourceEvents(merged);
       setEvents(merged);
-    } catch (error) {
-      setLoadError(error?.message || "Loaded mock events because live events are unavailable.");
+      return { data: list };
+    },
+    { maxRetries: 1 }
+  );
+
+  // Fallback to mock events on error
+  useEffect(() => {
+    if (loadError) {
       const merged = mergeScheduleOverrides(mockEvents);
       setSourceEvents(merged);
       setEvents(merged);
-    } finally {
-      setIsLoading(false);
     }
-  }, [setEvents]);
-
-  useEffect(() => {
-    loadEvents();
-  }, [loadEvents]);
+  }, [loadError, setEvents]);
 
   useEffect(() => {
     if (scheduleError) toast.error(scheduleError);

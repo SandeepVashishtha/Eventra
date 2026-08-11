@@ -61,12 +61,14 @@ export const downloadSessionBackup = ({
   link.style.visibility = "hidden";
   document.body.appendChild(link);
 
-  try {
-    link.click();
-  } finally {
-    document.body.removeChild(link);
+  link.click();
+
+  setTimeout(() => {
+    if (link.parentNode) {
+      document.body.removeChild(link);
+    }
     urlApi.revokeObjectURL(url);
-  }
+  }, 1000);
 
   return { filename, count: normalizeMultiSessions(sessions).length };
 };
@@ -103,7 +105,7 @@ export const validateSessionBackup = (backup) => {
     return { ok: false, error: "Unsupported session backup version." };
   }
 
-  if (!backup.exportedAt || Number.isNaN(new Date(backup.exportedAt).getTime())) {
+  if (typeof backup.exportedAt !== "string" || Number.isNaN(new Date(backup.exportedAt).getTime())) {
     return { ok: false, error: "Backup export timestamp is missing or invalid." };
   }
 

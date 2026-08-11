@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { WifiOff, Wifi, X } from "lucide-react";
-import { useOfflineStatus } from "../../hooks/useOfflineStatus";
+import { useOfflineStatus } from "hooks/useOfflineStatus";
 
 /**
  * OfflineIndicator

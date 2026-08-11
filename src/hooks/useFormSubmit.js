@@ -23,11 +23,11 @@ const isOfflineSubmissionError = (error) =>
  *
  * @param {Function} submitFn - Async function that performs the submission
  * @param {Object} [offlineOptions={}] - Optional offline queuing configuration
- * @param {boolean} [offlineOptions.queueOffline] - Enable offline queuing on network failure
- * @param {string} [offlineOptions.actionType] - Action type label for the queue item
- * @param {string} [offlineOptions.endpoint] - API endpoint for the queue item
- * @param {string} [offlineOptions.userId] - User ID to associate with the queue item
- * @param {Function} [offlineOptions.createQueueItem] - Custom queue item factory function
+ * @param {boolean} [offlineOptionsRef.current.queueOffline] - Enable offline queuing on network failure
+ * @param {string} [offlineOptionsRef.current.actionType] - Action type label for the queue item
+ * @param {string} [offlineOptionsRef.current.endpoint] - API endpoint for the queue item
+ * @param {string} [offlineOptionsRef.current.userId] - User ID to associate with the queue item
+ * @param {Function} [offlineOptionsRef.current.createQueueItem] - Custom queue item factory function
  * @returns {{ handleSubmit: Function, isSubmitting: boolean, error: string|null, success: boolean }}
  *
  * @example
@@ -37,11 +37,20 @@ const isOfflineSubmissionError = (error) =>
  * );
  */
 
-export function useFormSubmit(submitFn, offlineOptions = {}) {
+const defaultOfflineOptions = {};
+
+export function useFormSubmit(submitFn, offlineOptions = defaultOfflineOptions) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const isInFlight = useRef(false);
+  const submitFnRef = useRef(submitFn);
+  const offlineOptionsRef = useRef(offlineOptions);
+
+  useEffect(() => {
+    submitFnRef.current = submitFn;
+    offlineOptionsRef.current = offlineOptions;
+  }, [submitFn, offlineOptions]);
   const isMounted = useRef(true);
 
   useEffect(() => {
@@ -61,22 +70,22 @@ export function useFormSubmit(submitFn, offlineOptions = {}) {
     setSuccess(false);
 
     try {
-      await submitFn(data);
+      await submitFnRef.current(data);
       if (isMounted.current) {
         setSuccess(true);
       }
     } catch (err) {
-      if (offlineOptions.queueOffline && isOfflineSubmissionError(err)) {
+      if (offlineOptionsRef.current.queueOffline && isOfflineSubmissionError(err)) {
         const queueItem =
-          typeof offlineOptions.createQueueItem === "function"
-            ? offlineOptions.createQueueItem(data, err)
+          typeof offlineOptionsRef.current.createQueueItem === "function"
+            ? offlineOptionsRef.current.createQueueItem(data, err)
             : {
-              actionType: offlineOptions.actionType || "FORM_SUBMISSION",
-              endpoint: offlineOptions.endpoint,
+              actionType: offlineOptionsRef.current.actionType || "FORM_SUBMISSION",
+              endpoint: offlineOptionsRef.current.endpoint,
               payload: data,
             };
 
-        const queued = await pushToQueue(queueItem, offlineOptions.userId || null);
+        const queued = await pushToQueue(queueItem, offlineOptionsRef.current.userId || null);
         if (queued) {
           if (isMounted.current) {
             setSuccess(true);

@@ -1,7 +1,7 @@
 import React from "react";
 import "./ErrorBoundary.css";
-import { logError, persistErrors } from "../../utils/errorLogger";
-import { logSecurityEvent } from "../../utils/securityLogger";
+import { logError, persistErrors } from "utils/errorLogger";
+import { logSecurityEvent } from "utils/securityLogger";
 import {
   categorizeError,
   ERROR_CATEGORIES,
@@ -9,7 +9,7 @@ import {
   invalidateCorruptedAssetCache,
   isRecoverableError,
   logCategorizedError,
-} from "../../utils/errorRecovery";
+} from "utils/errorRecovery";
 
 function generateErrorId() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -215,6 +215,23 @@ class ErrorBoundary extends React.Component {
     }
   }
 
+  // Lock body scroll when the full-page error overlay is visible so the
+  // body scrollbar doesn't show through the fixed overlay (double scrollbar).
+  componentDidUpdate(_, prevState) {
+    const { level = "page" } = this.props;
+    if (level !== "page") return;
+    if (this.state.hasError && !prevState.hasError) {
+      document.body.style.overflow = "hidden";
+    } else if (!this.state.hasError && prevState.hasError) {
+      document.body.style.overflow = "";
+    }
+  }
+
+  componentWillUnmount() {
+    // Always restore body scroll when this boundary unmounts.
+    document.body.style.overflow = "";
+  }
+
   handleReload = () => {
     this.setState({ isRecovering: true, recoveryMessage: "Reloading page..." });
     saveAppStateSnapshot();
@@ -285,7 +302,7 @@ class ErrorBoundary extends React.Component {
     saveAppStateSnapshot();
     try {
       const preserved = {};
-      ["theme", "cursor", "eventra_user_prefs"].forEach((key) => {
+      ["theme", "cursor", "eventra_user_prefs", "token", "user", "eventra:key-material", "eventra:key-salt"].forEach((key) => {
         const val = localStorage.getItem(key);
         if (val) preserved[key] = val;
       });

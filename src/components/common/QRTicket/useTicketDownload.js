@@ -48,19 +48,28 @@ export function useTicketDownload(ticketRef, ticketId = "ticket") {
     try {
       const canvas = await captureCanvas();
       
-      // Use toBlob instead of toDataURL to prevent massive base64 memory allocation
-      canvas.toBlob((blob) => {
-        if (!blob) throw new Error("Canvas rendering failed");
-        
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.download = `eventra-ticket-${ticketId}.png`;
-        link.href = url;
-        link.click();
-        
-        // Deep Fix 3: Defer revocation to prevent WebKit/Safari silent download failures
-        setTimeout(() => URL.revokeObjectURL(url), 150);
-      }, "image/png");
+      // Use toBlob inside a Promise to properly handle asynchronous errors and flow
+      await new Promise((resolve, reject) => {
+        canvas.toBlob((blob) => {
+          try {
+            if (!blob) throw new Error("Canvas rendering failed");
+            
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.download = `eventra-ticket-${ticketId}.png`;
+            link.href = url;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Deep Fix 3: Defer revocation to prevent WebKit/Safari silent download failures
+            setTimeout(() => URL.revokeObjectURL(url), 150);
+            resolve();
+          } catch (err) {
+            reject(err);
+          }
+        }, "image/png");
+      });
     } catch (err) {
       console.error("[QRTicket] PNG download failed:", err);
       toast.error("Failed to generate PNG. Please try again.");

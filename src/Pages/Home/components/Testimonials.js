@@ -1,6 +1,7 @@
 import { Quote, Star, Play, Pause, ChevronLeft, ChevronRight, Share2, CheckCircle, ExternalLink } from "lucide-react";
-import { useRef, useEffect, useState, useMemo, useCallback } from "react";
+import { useRef, useEffect, useState, useMemo, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Link } from "react-router-dom";
 
 // 🎯 Enhanced testimonials data with more metadata
 const testimonials = [
@@ -204,7 +205,12 @@ const ModernTestimonialTrain = () => {
           text: testimonial.quote,
           url: testimonial.shareUrl,
         });
-      } catch {}
+      } catch { console.warn("[Testimonials] Share handler failed"); }
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error('Failed to share testimonial:', err);
+        }
+      }
     } else {
       // Fallback: copy to clipboard
       navigator.clipboard.writeText(`${testimonial.quote} — ${testimonial.author}, ${testimonial.company}`);
@@ -273,7 +279,7 @@ const ModernTestimonialTrain = () => {
             className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 flex items-center gap-1.5 ${
               activeCategory === cat.key
                 ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30"
-                : "bg-white/60 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700"
+                : "bg-white/60 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-700"
             }`}
             aria-pressed={activeCategory === cat.key}
           >
@@ -287,7 +293,7 @@ const ModernTestimonialTrain = () => {
       <div className="max-w-7xl mx-auto mb-6 flex items-center justify-center gap-4">
         <button
           onClick={() => setIsPlaying(prev => !prev)}
-          className="p-3 rounded-full bg-white/80 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 hover:bg-indigo-50 dark:hover:bg-gray-700 transition-all shadow-sm"
+          className="p-3 rounded-full bg-white/80 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 hover:bg-indigo-50 dark:hover:bg-gray-600 transition-all shadow-sm"
           aria-label={isPlaying ? "Pause auto-scroll" : "Play auto-scroll"}
           title={isPlaying ? "Pause (Space)" : "Play (Space)"}
         >
@@ -296,7 +302,7 @@ const ModernTestimonialTrain = () => {
         
         <button
           onClick={() => { setCurrentIndex(prev => Math.max(0, prev - 1)); jumpToIndex(Math.max(0, currentIndex - 1)); }}
-          className="p-3 rounded-full bg-white/80 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 hover:bg-indigo-50 dark:hover:bg-gray-700 transition-all shadow-sm disabled:bg-gray-100 disabled:text-gray-400 dark:disabled:bg-gray-800/80 dark:disabled:text-gray-500 disabled:border-transparent"
+          className="p-3 rounded-full bg-white/80 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 hover:bg-indigo-50 dark:hover:bg-gray-600 transition-all shadow-sm disabled:bg-gray-100 disabled:text-gray-400 dark:disabled:bg-gray-800/80 dark:disabled:text-gray-500 disabled:border-transparent"
           disabled={currentIndex === 0}
           aria-label="Previous testimonial"
           title="← Arrow Key"
@@ -306,7 +312,7 @@ const ModernTestimonialTrain = () => {
         
         <button
           onClick={() => { setCurrentIndex(prev => Math.min(filteredTestimonials.length - 1, prev + 1)); jumpToIndex(Math.min(filteredTestimonials.length - 1, currentIndex + 1)); }}
-          className="p-3 rounded-full bg-white/80 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 hover:bg-indigo-50 dark:hover:bg-gray-700 transition-all shadow-sm disabled:bg-gray-100 disabled:text-gray-400 dark:disabled:bg-gray-800/80 dark:disabled:text-gray-500 disabled:border-transparent"
+          className="p-3 rounded-full bg-white/80 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 hover:bg-indigo-50 dark:hover:bg-gray-600 transition-all shadow-sm disabled:bg-gray-100 disabled:text-gray-400 dark:disabled:bg-gray-800/80 dark:disabled:text-gray-500 disabled:border-transparent"
           disabled={currentIndex === filteredTestimonials.length - 1}
           aria-label="Next testimonial"
           title="Arrow Key →"
@@ -372,14 +378,14 @@ const ModernTestimonialTrain = () => {
                     />
                     <div className="ml-4 text-left flex-1 min-w-0">
                       <div className="font-semibold text-gray-900 dark:text-gray-100 truncate">{testimonial.author}</div>
-                      <div className="text-xs text-gray-600 dark:text-gray-400 truncate">{testimonial.role}</div>
+                      <div className="text-xs text-gray-600 dark:text-gray-200 truncate">{testimonial.role}</div>
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-xs text-gray-400 dark:text-gray-500 truncate">{testimonial.company}</span>
                         {testimonial.companyLogo && (
                           <img src={testimonial.companyLogo} alt={`${testimonial.company} logo`} className="h-4 opacity-70" loading="lazy" />
                         )}
                       </div>
-                      <div className="text-[10px] text-gray-400 dark:text-gray-400 mt-1">{testimonial.date}</div>
+                      <div className="text-[10px] text-gray-400 dark:text-gray-200 mt-1">{testimonial.date}</div>
                     </div>
                   </div>
 
@@ -439,12 +445,12 @@ const ModernTestimonialTrain = () => {
           <span className="text-sm text-gray-700 dark:text-gray-300">
             Have a story to share?
           </span>
-          <a
-            href="/submit-testimonial"
+          <Link
+            to="/submit-testimonial"
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition-colors shadow-md hover:shadow-lg"
           >
             Share Your Story <ExternalLink className="w-3.5 h-3.5" />
-          </a>
+          </Link>
         </div>
       </motion.div>
 
@@ -456,4 +462,4 @@ const ModernTestimonialTrain = () => {
   );
 };
 
-export default ModernTestimonialTrain;
+export default memo(ModernTestimonialTrain);

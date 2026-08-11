@@ -15,6 +15,7 @@ export const calculateReadTime = (text) => {
   if (text == null || text === "") return 0;
 
   const wordCount = getWordCount(text);
+  if (wordCount === 0) return 0;
   return Math.max(1, Math.ceil(wordCount / WORDS_PER_MINUTE));
 };
 

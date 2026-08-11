@@ -1,4 +1,4 @@
-import { parseTimeString } from "./timezoneUtils";
+import { parseTimeString, resolveEventInstant } from "./timezoneUtils.js";
 
 export const parseTimeToMinutes = (timeStr) => {
   if (!timeStr) return 0;
@@ -48,60 +48,51 @@ export const validateCoordinates = (latitude, longitude) => {
   return null;
 };
 
-export const buildEventPayload = (formData) => {
-  let coordinates = null;
-  if (formData.location?.coordinates?.latitude && formData.location?.coordinates?.longitude) {
-    coordinates = validateCoordinates(
-      formData.location?.coordinates?.latitude,
-      formData.location?.coordinates?.longitude
-    );
+const formatLocalDateTime = (date) => date.toISOString().slice(0, 19);
+
+const buildLocationString = (formData) => {
+  if (formData.isVirtual) {
+    const link = formData.virtualLink?.trim();
+    return link || "Virtual";
   }
 
-  const eventStartDate = new Date(
-    `${formData.isMultiDay ? formData.startDate : formData.date}T${formData.startTime}`
+  const name = formData.location?.name?.trim() || "";
+  const address = formData.location?.address?.trim() || "";
+  if (name && address) return `${name}, ${address}`;
+  return name || address || "";
+};
+
+export const buildEventPayload = (formData) => {
+  const eventStartDate = resolveEventInstant(
+    formData.isMultiDay ? formData.startDate : formData.date,
+    formData.startTime,
+    formData.timezone,
   );
-  const eventEndDate = new Date(
-    `${formData.isMultiDay ? formData.endDate : formData.date}T${formData.endTime}`
+  const eventEndDate = resolveEventInstant(
+    formData.isMultiDay ? formData.endDate : formData.date,
+    formData.endTime,
+    formData.timezone,
   );
 
   if (isNaN(eventStartDate.getTime()) || isNaN(eventEndDate.getTime())) {
     throw new Error("Invalid date or time format");
   }
 
-  return {
+  const payload = {
     title: formData.title.trim(),
     description: formData.description.trim(),
-    startDate: eventStartDate.toISOString(),
-    endDate: eventEndDate.toISOString(),
-    timezone: formData.timezone,
-    location: formData.isVirtual
-      ? null
-      : {
-          name: formData.location.name.trim(),
-          address: formData.location.address?.trim() || "",
-          coordinates: coordinates,
-        },
-    isVirtual: formData.isVirtual,
-    virtualLink: formData.isVirtual ? formData.virtualLink.trim() : null,
+    location: buildLocationString(formData),
+    eventDate: formatLocalDateTime(eventStartDate),
     capacity: formData.capacity ? Number(formData.capacity) : null,
     isPublic: formData.isPublic,
-    requiresApproval: formData.requiresApproval,
-    registrationStart: formData.registrationStart
-      ? new Date(formData.registrationStart).toISOString()
-      : null,
-    registrationEnd: formData.registrationEnd
-      ? new Date(formData.registrationEnd).toISOString()
-      : null,
     category: formData.category,
     tags: formData.tags.filter((tag) => tag.trim()),
-    ticketTiers: formData.ticketTiers
-      .filter((tier) => tier.name.trim())
-      .map((tier) => ({
-        name: tier.name.trim(),
-        price: Number(tier.price) || 0,
-        capacity: tier.capacity ? Number(tier.capacity) : null,
-        description: tier.description?.trim() || "",
-      })),
-    venueMap: formData.venueMap || [],
   };
+
+  const imageUrl = formData.imageUrl?.trim();
+  if (imageUrl) {
+    payload.imageUrl = imageUrl;
+  }
+
+  return payload;
 };

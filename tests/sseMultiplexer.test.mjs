@@ -148,6 +148,55 @@ const testStatusSyncOnSubscribe = async () => {
   }
 };
 
+const testReconnectRequestUsesPerPathReconnect = async () => {
+  // A RECONNECT_REQUEST from a follower must re-establish only the requested
+  // path via the parameterized reconnect(path) -> openEventSource(path) flow,
+  // not the no-arg visibility reconnect that re-runs leader election.
+  sseMultiplexer.isLeader = true;
+  sseMultiplexer.channel = new globalThis.BroadcastChannel("eventra_sse_multiplexer");
+  sseMultiplexer.channel.onmessage = (e) => sseMultiplexer.handleBroadcastMessage(e.data);
+  sseMultiplexer.activeEventSources.clear();
+
+  const opened = [];
+  const originalOpen = sseMultiplexer.openEventSource.bind(sseMultiplexer);
+  sseMultiplexer.openEventSource = (path) => {
+    opened.push(path);
+    return originalOpen(path);
+  };
+
+  try {
+    sseMultiplexer.activeEventSources.set(
+      "/stream/leaderboard",
+      new globalThis.EventSource("https://api.example.test/stream/leaderboard")
+    );
+
+    sseMultiplexer.handleReconnectRequest({
+      type: "RECONNECT_REQUEST",
+      tabId: "tab_b",
+      path: "/stream/leaderboard",
+    });
+
+    assert.ok(
+      opened.includes("/stream/leaderboard"),
+      "Reconnect request must re-open the requested path's EventSource"
+    );
+    assert.equal(
+      opened.length,
+      1,
+      "Only the requested path should be re-opened, not every path"
+    );
+    assert.equal(
+      sseMultiplexer.isLeader,
+      true,
+      "Per-path reconnect must not re-run the visibility/leader-election flow"
+    );
+  } finally {
+    sseMultiplexer.openEventSource = originalOpen;
+    sseMultiplexer.channel?.close();
+    channels.clear();
+  }
+};
+
 const runTests = async () => {
   process.env.REACT_APP_API_URL = "https://api.example.test";
 
@@ -341,7 +390,33 @@ const runTests = async () => {
 
   await testStatusSyncOnSubscribe();
 
+  await testReconnectRequestUsesPerPathReconnect();
+
+  await testRelativeApiBaseUrl();
+
   console.log("🟢 All SSE Multiplexer unit tests completed successfully!");
+};
+
+const testRelativeApiBaseUrl = async () => {
+  process.env.REACT_APP_API_URL = "/api";
+  const { SSE_BASE_URL } = await import(`../src/config/backendConfig.js?relative=${Date.now()}`);
+
+  assert.equal(SSE_BASE_URL, "/", "Relative /api config should yield relative SSE base");
+
+  let sseBaseUrl = SSE_BASE_URL || "";
+  if (!sseBaseUrl || sseBaseUrl.startsWith("/")) {
+    const origin = globalThis.window.location.origin;
+    sseBaseUrl = sseBaseUrl ? `${origin}${sseBaseUrl}` : origin;
+  }
+
+  const sseUrl = new URL("/stream/relative-base", sseBaseUrl).href;
+  assert.equal(
+    sseUrl,
+    "https://api.example.test/stream/relative-base",
+    "Relative SSE base must resolve against window.location.origin"
+  );
+
+  process.env.REACT_APP_API_URL = "https://api.example.test";
 };
 
 // Run the suite

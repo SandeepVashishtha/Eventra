@@ -79,11 +79,11 @@ const createSafeStorage = (getStorage) => {
 
     getJson(key, fallback = null) {
       const raw = this.getItem(key);
-      if (raw == null) return fallback;
+      if (raw === null || raw === undefined) return fallback;
 
       try {
         return safeJsonParse(raw, {});
-      } catch (_) {
+      } catch {
         // Stored values can be user-edited or corrupted; callers should keep running.
         return fallback;
       }

@@ -65,9 +65,7 @@ export const invalidateSession = async () => {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-    }).catch(() => {
-      // Silently fail if backend is unreachable — still clear client state
-    });
+    }).catch(() => console.warn("[sessionManager] Backend unreachable"));
   } finally {
     clearAuthStorage();
     clearAuthCookies();
@@ -79,7 +77,7 @@ export const invalidateSession = async () => {
         await Promise.all(
           cacheNames.map((name) => caches.delete(name))
         );
-      } catch {}
+      } catch { console.warn("[sessionManager] Cache cleanup failed"); }
     }
   }
 };

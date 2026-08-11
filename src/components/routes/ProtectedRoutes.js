@@ -3,7 +3,7 @@ import { Route } from "react-router-dom";
 
 import ProtectedRoute from "../auth/ProtectedRoute";
 import ErrorBoundary from "../common/ErrorBoundary";
-import { ROLES, PERMISSIONS } from "../../config/roles";
+import { ROLES, PERMISSIONS } from "config/roles";
 
 // 🔥 FIX: Removed all duplicate const declarations that were causing fatal SyntaxErrors
 const NotificationSettings = lazy(() => import("../../Pages/NotificationSettings"));
@@ -25,6 +25,8 @@ const UIInventory = lazy(() => import("../admin/UIInventory"));
 const SponsorDashboard = lazy(() => import("../../Pages/Sponsors/SponsorDashboard"));
 const EventAnalyticsDashboard = lazy(() => import("../../Pages/Events/EventAnalyticsDashboard.jsx"));
 const EventSchedulerCalendar = lazy(() => import("../../Pages/Calendar/EventSchedulerCalendar.jsx"));
+const VirtualVenueWalkthrough = lazy(() => import("../../Pages/Events/VirtualVenueWalkthrough.jsx"));
+const EventRoleManagement = lazy(() => import("../../Pages/Events/EventRoleManagement.jsx"));
 
 // 🔥 FIX: Added Suspense wrapper required for React.lazy() to prevent layout thrashing and crashes
 const withModuleBoundary = (children, boundaryName) => (
@@ -213,6 +215,24 @@ export const getProtectedRoutes = () => [
     element={
       <ProtectedRoute>
         {withModuleBoundary(<EventAnalyticsDashboard />, "Event Analytics Dashboard")}
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/events/:eventId/roles"
+    path="/events/:eventId/roles"
+    element={
+      <ProtectedRoute>
+        {withModuleBoundary(<EventRoleManagement />, "Event Role Management")}
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="/events/:eventId/virtual-venue-walkthrough"
+    path="/events/:eventId/virtual-venue-walkthrough"
+    element={
+      <ProtectedRoute>
+        {withModuleBoundary(<VirtualVenueWalkthrough />, "Virtual Venue Walkthrough")}
       </ProtectedRoute>
     }
   />,

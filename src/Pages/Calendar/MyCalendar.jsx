@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMyEvents } from "../../context/MyEventsContext";
+import { useMyEvents } from "context/MyEventsContext";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Calendar as CalendarIcon,
@@ -18,8 +18,8 @@ import {
   downloadICSFile,
   downloadBulkICSFile,
   generateGoogleCalendarLink,
-} from "../../utils/calendarExporter";
-import SkeletonCalendar from "../../components/common/SkeletonCalendar";
+} from "utils/calendarExporter";
+import SkeletonCalendar from "components/common/SkeletonCalendar";
 
 // Category Configuration Map
 const CATEGORIES = [
@@ -33,6 +33,10 @@ const CATEGORIES = [
 
 const MyCalendar = () => {
   const { myEvents, loading } = useMyEvents();
+  const calendarEvents = myEvents.map((item) => ({
+    ...item,
+    event: item.event || item.eventSummary || {},
+  }));
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState("grid");
@@ -130,7 +134,7 @@ const MyCalendar = () => {
   };
 
   const getEventsForDate = (day) => {
-    return myEvents.filter((item) => {
+    return calendarEvents.filter((item) => {
       if (!item.event?.date) return false;
       const eventDate = new Date(item.event.date);
       const inMonth =
@@ -150,7 +154,7 @@ const MyCalendar = () => {
   };
 
   const getSelectedDateEvents = () => {
-    return myEvents.filter((item) => {
+    return calendarEvents.filter((item) => {
       if (!item.event?.date) return false;
       const eventDate = new Date(item.event.date);
       const isSameDate =
@@ -162,7 +166,7 @@ const MyCalendar = () => {
   };
 
   const getFilteredAllEvents = () => {
-    return myEvents
+    return calendarEvents
       .filter((item) => item.event && matchesCategory(item.event.category, activeCategory))
       .sort((a, b) => new Date(a.event.date) - new Date(b.event.date));
   };

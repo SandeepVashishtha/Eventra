@@ -9,7 +9,7 @@
  * authenticated API responses. Only public, non-authenticated endpoints
  * are cached to prevent privacy leaks and stale data exposure.
  */
-const CACHE_NAME = 'eventra-cache-v3';
+const CACHE_NAME = 'eventra-cache-v4';
 const BACKGROUND_SYNC_TAG = 'eventra-offline-queue-sync';
 const ASSETS_TO_CACHE = [
   '/',
@@ -53,6 +53,11 @@ const SENSITIVE_API_PATTERNS = [
   '/api/attendances',
   '/api/my-events',
   '/api/event-registrations',
+  '/api/events/*/attendees',
+  '/api/events/*/notified-attendees',
+  '/api/events/*/registration',
+  '/api/events/*/roles',
+  '/api/events/*/waitlist',
 
   // Volunteer/organizer only
   '/api/admin/',
@@ -75,12 +80,33 @@ const SENSITIVE_API_PATTERNS = [
  * - Static configuration
  */
 const PUBLIC_API_PATTERNS = [
-  '/api/events',
   '/api/categories',
-  '/api/locations',
   '/api/config',
+  '/api/locations',
   '/api/public',
 ];
+
+const PUBLIC_EVENT_ROUTE_PATTERNS = [
+  /^\/api\/events$/,
+  /^\/api\/events\/search$/,
+  /^\/api\/events\/alternatives$/,
+  /^\/api\/events\/stream$/,
+  /^\/api\/events\/\d+$/,
+  /^\/api\/events\/\d+\/availability$/,
+  /^\/api\/events\/\d+\/seats$/,
+];
+
+function matchesPathPattern(pathname, pattern) {
+  if (pattern.includes('*')) {
+    const expression = new RegExp(`^${pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace('\\*', '[^/]+')}$`);
+    return expression.test(pathname);
+  }
+  return pathname.startsWith(pattern);
+}
+
+function isPublicEventRoute(pathname) {
+  return PUBLIC_EVENT_ROUTE_PATTERNS.some((pattern) => pattern.test(pathname));
+}
 
 /**
  * Check if an API endpoint should be cached based on security rules.
@@ -92,7 +118,11 @@ const PUBLIC_API_PATTERNS = [
  * @param {Response} response - The response object (to check headers)
  * @returns {boolean} True if safe to cache, false if should skip cache
  */
-function isSafeToCache(pathname, response) {
+function isSafeToCache(pathname, response, request) {
+  if (request?.headers?.has('Authorization') || request?.headers?.has('Cookie')) {
+    return false;
+  }
+
   // Always respect Cache-Control header from server (most important)
   const cacheControl = response?.headers?.get('Cache-Control') || '';
 
@@ -108,9 +138,13 @@ function isSafeToCache(pathname, response) {
 
   // SECURITY: Never cache sensitive/authenticated endpoints
   for (const pattern of SENSITIVE_API_PATTERNS) {
-    if (pathname.startsWith(pattern)) {
+    if (matchesPathPattern(pathname, pattern)) {
       return false;
     }
+  }
+
+  if (isPublicEventRoute(pathname)) {
+    return true;
   }
 
   // Only cache endpoints explicitly marked as public
@@ -226,6 +260,9 @@ const notifyClientsToSyncOfflineQueue = async () => {
     type: 'window',
   });
 
+  // Contract: useOfflineSync listens for EVENTRA_BACKGROUND_SYNC (see
+  // SYNC_MESSAGE_TYPES). Keep both sides in sync — guarded by
+  // tests/backgroundSyncMessageContract.test.mjs.
   clients.forEach((client) => {
     client.postMessage({
       type: 'EVENTRA_BACKGROUND_SYNC',
@@ -441,7 +478,7 @@ function handleApiFetch(event, requestUrl) {
     fetch(event.request)
       .then((response) => {
         // SECURITY: Only cache responses that are safe according to security rules
-        if (response.status === 200 && isSafeToCache(requestUrl.pathname, response)) {
+        if (response.status === 200 && isSafeToCache(requestUrl.pathname, response, event.request)) {
           const responseCopy = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
             log(`[Service Worker] Caching public API response: ${requestUrl.pathname}`);
@@ -456,7 +493,7 @@ function handleApiFetch(event, requestUrl) {
         // Only serve cached response if it was safe to cache (public endpoint)
         return caches.match(event.request).then((cachedResponse) => {
           // Only return cached response if it's from a public endpoint
-          if (cachedResponse && isSafeToCache(requestUrl.pathname, cachedResponse)) {
+          if (cachedResponse && isSafeToCache(requestUrl.pathname, cachedResponse, event.request)) {
             log(`[Service Worker] Serving cached public API response: ${requestUrl.pathname}`);
             return cachedResponse;
           }
@@ -478,50 +515,100 @@ function handleApiFetch(event, requestUrl) {
 }
 
 /**
- * Handle cache-first caching for static assets.
+ * Handle network-first caching for navigation requests (HTML page loads).
+ *
+ * Ensures the browser always receives the latest index.html and its hashed
+ * assets when online, but falls back to the cached index.html when offline.
  *
  * @param {FetchEvent} event - The fetch event
  */
-function handleStaticFetch(event) {
+function handleNavigateFetch(event) {
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => {
+        if (response && response.status === 200) {
+          const responseCopy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseCopy);
+          });
+        }
+        return response;
+      })
+      .catch(() => {
+        return caches.match('/index.html');
+      })
+  );
+}
+
+/**
+ * Handle caching for static assets.
+ *
+ * For hashed assets (e.g., in /assets/), we use a strict Cache-First strategy
+ * WITHOUT background revalidation, since hashed files are immutable.
+ *
+ * For mutable assets (e.g., /favicon.png, /manifest.json, /sun.svg), we use
+ * Stale-While-Revalidate to ensure fast loading while keeping them fresh.
+ *
+ * @param {FetchEvent} event - The fetch event
+ * @param {URL} requestUrl - The parsed request URL
+ */
+function handleStaticFetch(event, requestUrl) {
+  const isHashedAsset = requestUrl.pathname.startsWith('/assets/');
+  const pathname = requestUrl.pathname.toLowerCase();
+  const isVideo = pathname.endsWith('.mp4') || pathname.endsWith('.webm') || pathname.endsWith('.avi');
+
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
-        // Stale-while-revalidate: serve cache, update in background
-        fetch(event.request)
-          .then((response) => {
-            if (response && response.status === 200 && response.type === 'basic') {
-              caches.open(CACHE_NAME).then((cache) => {
-                cache.put(event.request, response).catch(() => { });
-              });
-            }
-          })
-          .catch(() => {/* Ignore bg fetch failures when offline */ });
+        if (isHashedAsset) {
+          return cachedResponse;
+        }
+
+        // Mutable assets: Stale-While-Revalidate
+        if (!isVideo) {
+          fetch(event.request)
+            .then((response) => {
+              if (response && response.status === 200 && response.type === 'basic') {
+                caches.open(CACHE_NAME).then((cache) => {
+                  cache.put(event.request, response).catch(() => console.warn("[SW] Cache put failed"));
+                  pruneCacheLimit(cache, 100);
+                });
+              }
+            })
+            .catch(() => console.warn("[SW] Background fetch failed"));
+        }
 
         return cachedResponse;
       }
 
+      // Cache miss: fetch from network
       return fetch(event.request)
         .then((response) => {
           if (!response || response.status !== 200 || response.type !== 'basic') {
             return response;
           }
-          const responseCopy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseCopy);
-          });
+          if (!isVideo) {
+            const responseCopy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseCopy);
+              pruneCacheLimit(cache, 100);
+            });
+          }
           return response;
         })
         .catch(() => {
-          if (event.request.mode === 'navigate') {
-            return caches.match('/index.html');
-          }
-          // Return an explicit offline response for non-navigate requests
-          // (e.g. CSS, JS, images). Returning undefined here would cause
-          // "Failed to convert value to 'Response'" TypeError.
           return new Response('', { status: 503, statusText: 'Service Unavailable' });
         });
     })
   );
+}
+
+function pruneCacheLimit(cache, maxItems) {
+  cache.keys().then((keys) => {
+    if (keys.length > maxItems) {
+      cache.delete(keys[0]).then(() => pruneCacheLimit(cache, maxItems));
+    }
+  });
 }
 
 // Intercept fetch requests and apply offline caching strategies
@@ -540,19 +627,25 @@ self.addEventListener('fetch', (event) => {
   // undefined instead of a valid Response. Let the browser handle them.
   if (requestUrl.origin !== self.location.origin) return;
 
-  // CUSTOM CACHING STRATEGY: Stale-While-Revalidate with TTL for leaderboard data.
+  // 1. Navigation requests (HTML page views): Network-First
+  if (event.request.mode === 'navigate') {
+    handleNavigateFetch(event);
+    return;
+  }
+
+  // 2. CUSTOM CACHING STRATEGY: Stale-While-Revalidate with TTL for leaderboard data.
   // Ensures fast response, offline support, and automatic revalidation/client notification.
   if (requestUrl.pathname === '/api/leaderboard') {
     handleLeaderboardFetch(event, requestUrl);
     return;
   }
 
-  // SECURITY: Network-First strategy for API routes with sensitive data filtering
+  // 3. SECURITY: Network-First strategy for API routes with sensitive data filtering
   if (requestUrl.pathname.startsWith('/api/')) {
     handleApiFetch(event, requestUrl);
     return;
   }
 
-  // Cache-First strategy for static assets and page views
-  handleStaticFetch(event);
+  // 4. Cache-First or Stale-While-Revalidate strategy for static assets
+  handleStaticFetch(event, requestUrl);
 });

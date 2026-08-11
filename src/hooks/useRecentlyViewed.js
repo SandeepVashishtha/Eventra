@@ -89,6 +89,7 @@ const saveHistory = (items) => {
     } else {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
     }
+    window.dispatchEvent(new Event('local-storage-recently-viewed-update'));
   } catch (err) {
     logger.error('Failed to save recently viewed events:', err);
   }
@@ -131,8 +132,15 @@ const useRecentlyViewed = () => {
 
   useEffect(() => {
     const handleStorageChange = (event) => handleStorageUpdate(event, setRecentlyViewed);
+    const handleLocalUpdate = () => setRecentlyViewed(loadInitialHistory());
+    
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener('local-storage-recently-viewed-update', handleLocalUpdate);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('local-storage-recently-viewed-update', handleLocalUpdate);
+    };
   }, []);
 
   const addRecentlyViewed = useCallback((event) => {

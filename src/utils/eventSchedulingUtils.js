@@ -122,6 +122,11 @@ export const getEventDurationMinutes = (event = {}) => {
     return Math.round((end.getTime() - start.getTime()) / 60000);
   }
 
+  // Fallback: use start time + default duration instead of midnight
+  if (start && !event.endTime) {
+    return DEFAULT_DURATION_MINUTES;
+  }
+
   return DEFAULT_DURATION_MINUTES;
 };
 

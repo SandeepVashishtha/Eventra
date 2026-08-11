@@ -20,7 +20,8 @@ const SearchEmptyState = ({
   browseLabel = "Browse",
   browsePath = "/",
   onClear,
-  variant = "search",
+  // eslint-disable-next-line no-unused-vars
+  variant: _variant = "search",
   title: customTitle,
   description: customDescription,
 }) => {

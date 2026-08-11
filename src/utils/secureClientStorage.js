@@ -36,10 +36,6 @@ const isSensitiveKey = (key) => {
   return BLOCKED_KEYS.some((blocked) => lowerKey.includes(blocked.toLowerCase()));
 };
 
-const isAllowedKey = (key) => {
-  return ALLOWED_KEYS.some((allowed) => key.startsWith(allowed));
-};
-
 const sanitizeValue = (value) => {
   if (typeof value === "object" && value !== null) {
     const sanitized = { ...value };

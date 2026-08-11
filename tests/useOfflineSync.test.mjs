@@ -259,6 +259,47 @@ const runAll = async () => {
   resetReact(); // Cleans up previous effects
   console.log("  pass  Interval cleanup is correct!");
 
+  // Test 5: Legacy TICKET_CHECK_IN items (queued without an endpoint) must
+  // replay to the ticket check-in endpoint, never the event registration route.
+  console.log("Running Test 5: TICKET_CHECK_IN routes to check-in endpoint");
+  resetReact();
+  globalThis.mockFetchWithTimeout = async (url, options) => {
+    fetchCalls.push({ url, options });
+    return {
+      response: { ok: true, status: 200 },
+      data: {},
+    };
+  };
+  currentAuth = {
+    token: "mock-token",
+    user: { id: "u1" },
+    isAuthenticated: () => true,
+    loading: false,
+  };
+  currentQueue = [
+    {
+      id: "checkin-1",
+      userId: "u1",
+      actionType: "TICKET_CHECK_IN",
+      eventId: "evt-1",
+      payload: { ticketId: "T-1", eventId: "evt-1" },
+      retryCount: 0,
+    },
+  ];
+  fetchCalls = [];
+  renderHook();
+
+  window.dispatchEvent(new window.Event("online"));
+  await new Promise((resolve) => setTimeout(resolve, 50));
+
+  assert.equal(fetchCalls.length, 1, "The check-in item should be replayed");
+  assert.ok(
+    fetchCalls[0].url.includes("/tickets/checkin"),
+    `Check-in must replay to /tickets/checkin, got: ${fetchCalls[0].url}`
+  );
+  assert.equal(currentQueue.length, 0, "Queue should be cleared after successful check-in replay");
+  console.log("  pass  TICKET_CHECK_IN routes to check-in endpoint!");
+
   console.log("All useOfflineSync tests passed successfully!");
 };
 

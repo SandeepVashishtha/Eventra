@@ -2,15 +2,15 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
-import { authService } from "../../services/authService";
+import { authService } from "services/authService";
 
-import { ROLES } from "../../config/roles";
-import { useAuth } from "../../context/AuthContext";
+import { ROLES } from "config/roles";
+import { useAuth } from "context/AuthContext";
 import { FormFieldWrapper, ValidationMessage } from "../forms";
 import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
 import { User, AtSign, Lock, Eye, EyeOff, Zap, LoaderCircle } from "lucide-react";
 import { validate, validateEmailAvailability, validatePasswordStrength } from "../../validation";
-import { getPublicErrorMessage, AUTH_ERRORS } from "../../utils/errorMessages";
+import { getPublicErrorMessage, AUTH_ERRORS } from "utils/errorMessages";
 
 const getResultMessage = (result, fallback) => (result?.isValid ? "" : result?.message || fallback);
 
@@ -46,6 +46,7 @@ const SignupForm = () => {
   });
 
   const [errors, setErrors] = useState({});
+  useEffect(() => { setErrors({}); }, []); // Clear errors on mount
   const [submitError, setSubmitError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -154,14 +155,19 @@ const SignupForm = () => {
     return () => clearTimeout(timer);
   }, [password, confirmPassword, setFieldState]);
 
-  // Password strength check useEffect
+  // Password strength check useEffect — debounced to match email validation pattern.
+  // Cleanup cancels the pending timer on each keystroke so only the final
+  // value triggers validatePasswordStrength, preventing stale-response race conditions.
   useEffect(() => {
-    const validatePwd = async () => {
-      if (!formData.password) {
-        setErrors((prev) => ({ ...prev, password: "" }));
-        setFieldState("password", "idle");
-        return;
-      }
+    if (!formData.password) {
+      setErrors((prev) => ({ ...prev, password: "" }));
+      setFieldState("password", "idle");
+      return;
+    }
+
+    setFieldState("password", "loading");
+
+    const timer = setTimeout(async () => {
       const result = await validatePasswordStrength(formData.password);
       if (result?.isValid) {
         setErrors((prev) => ({ ...prev, password: "" }));
@@ -170,8 +176,9 @@ const SignupForm = () => {
         setErrors((prev) => ({ ...prev, password: result?.message }));
         setFieldState("password", "error");
       }
-    };
-    validatePwd();
+    }, 400);
+
+    return () => clearTimeout(timer); // cancel on next keystroke
   }, [formData.password, setFieldState]);
 
   // Email validation check useEffect with 500ms debounce
@@ -273,7 +280,8 @@ const SignupForm = () => {
       }
 
       const responseData = response.data || {};
-      const sessionToken = responseData.token || "cookie-managed";
+      const sessionToken = "cookie-managed";
+      const refreshToken = responseData.refreshToken || null;
       // Under the HttpOnly-cookie auth model the server sets the session
       // cookie on the signup response. The client never sees a raw JWT.
 
@@ -289,8 +297,9 @@ const SignupForm = () => {
         permissions: responseData?.permissions ?? [],
       };
 
-      setAuthSession(sessionToken, sessionUser);
+      setAuthSession(sessionToken, sessionUser, refreshToken);
       setLoading(false);
+      isSubmittingRef.current = false; // reset so back-navigation can retry if needed
       setSuccess("Account created successfully. Redirecting to dashboard...");
       toast.success("Account created successfully!");
       setTimeout(() => navigate("/dashboard", { replace: true }), 1000);
@@ -527,10 +536,20 @@ const SignupForm = () => {
             />
           )}
           <p className="text-xs text-center text-text-light">
-            By creating an account, you agree to our
-            <span className="text-primary cursor-pointer"> Terms of Service </span>
-            and
-            <span className="text-primary cursor-pointer"> Privacy Policy</span>.
+            By creating an account, you agree to our{" "}
+            <Link
+              to="/terms"
+              className="text-primary hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded"
+            >
+              Terms of Service
+            </Link>
+            {" "}and{" "}
+            <Link
+              to="/privacy"
+              className="text-primary hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded"
+            >
+              Privacy Policy
+            </Link>.
           </p>
           <motion.button
             type="submit"

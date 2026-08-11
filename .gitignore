@@ -4,6 +4,8 @@
 node_modules
 build/
 .DS_Store
+.agents
+skills-lock.json
 
 # Secret Files - DO NOT COMMIT
 *.SECRETS.*
@@ -37,7 +39,12 @@ devserver.err.log
 storybook-static
 .storybook/cache/
 
+# Generated lint reports
+eslint-report.json
+lint_output.txt
+
 # Playwright
 playwright-report/
 test-results/
 playwright/.cache/
+.opencode

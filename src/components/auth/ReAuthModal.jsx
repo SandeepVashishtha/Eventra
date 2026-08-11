@@ -1,13 +1,14 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Lock, AlertCircle } from "lucide-react";
-import { apiUtils } from "../../config/api.js";
+import { AlertCircle, Lock } from "lucide-react";
+import { apiUtils, API_ENDPOINTS } from "config/api.js";
 import { toast } from "react-toastify";
 
 const ReAuthModal = ({ onSuccess }) => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,15 +21,20 @@ const ReAuthModal = ({ onSuccess }) => {
     setError(null);
 
     try {
-      const res = await apiUtils.post("/auth/reauth", { password }, { skipAuth: true });
+      const res = await apiUtils.post(API_ENDPOINTS.AUTH.REAUTH, { password });
       if (res.ok) {
         toast.success("Session verified successfully");
         onSuccess();
       } else {
-        setError(res.data?.error || "Incorrect password");
+        const payload = typeof res.json === "function" ? await res.json() : res.data;
+        setError(payload?.error || "Incorrect password");
       }
     } catch (err) {
-      setError(err.message || "Failed to verify session");
+      if (err.name === 'TypeError' || err.message === 'Failed to fetch') {
+        setError("Network error. Please check your connection and try again.");
+      } else {
+        setError(err.message || "Failed to verify session");
+      }
     } finally {
       setLoading(false);
     }
@@ -42,7 +48,7 @@ const ReAuthModal = ({ onSuccess }) => {
         className="bg-white dark:bg-gray-800 rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative overflow-hidden"
       >
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 to-orange-500"></div>
-        
+
         <div className="text-center mb-6">
           <div className="mx-auto bg-red-100 dark:bg-red-900/30 w-16 h-16 rounded-full flex items-center justify-center mb-4">
             <Lock className="w-8 h-8 text-red-600 dark:text-red-400" />
@@ -50,7 +56,7 @@ const ReAuthModal = ({ onSuccess }) => {
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
             Verify Your Session
           </h2>
-          <p className="text-gray-500 dark:text-gray-400 text-sm">
+          <p className="text-gray-500 dark:text-gray-200 text-sm">
             For your security, we need to verify your identity. Your session has been flagged due to inactivity or a security rule.
           </p>
         </div>

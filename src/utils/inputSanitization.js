@@ -1,4 +1,3 @@
-import createDOMPurify from "dompurify";
 
 /**
  * Input Sanitization Utilities

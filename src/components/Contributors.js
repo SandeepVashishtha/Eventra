@@ -1,4 +1,5 @@
-import { Github, ExternalLink, GitBranch, MapPin, Building, Users, Medal } from "lucide-react";
+import { ExternalLink, GitBranch, MapPin, Building, Users, Medal } from "lucide-react";
+import { FaGithub as Github } from "react-icons/fa";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { useReducedMotion } from '../hooks/useReducedMotion';
@@ -9,10 +10,21 @@ import { storageManager } from "../utils/storage/storageManager";
 import { STORAGE_KEYS } from "../utils/storage/storageKeys";
 import { validators } from "../utils/storage/storageValidators";
 import { fetchWithTimeout } from "../utils/fetchWithTimeout";
-import EmptyState from "../common/EmptyState";
+import EmptyState from "./common/EmptyState";
 // GitHub repo
 const GITHUB_REPO = "sandeepvashishtha/Eventra";
 const CACHE_DURATION = 60 * 60 * 1000; // 1 hr
+// Fix (Issue #10500): Keep stale cache for up to 24h as fallback on 429
+const STALE_CACHE_DURATION = 24 * 60 * 60 * 1000;
+
+const getStaleCachedContributors = () => {
+  const cachedData = storageManager.get(
+    STORAGE_KEYS.GITHUB_CONTRIBUTORS,
+    validators.isObject,
+  );
+  if (!cachedData?.data || !cachedData?.timestamp) return null;
+  return Date.now() - cachedData.timestamp > STALE_CACHE_DURATION ? null : cachedData.data;
+};
 const REQUEST_TIMEOUT = 10000;
 const MAX_CONTRIBUTOR_PAGES = 10;
 const PROFILE_FETCH_DELAY_MS = 100; // Throttle profile API calls to avoid rate limiting
@@ -30,6 +42,14 @@ const fetchJsonWithTimeout = async (url) => {
     const { data } = await fetchWithTimeout(proxyUrl, {}, REQUEST_TIMEOUT);
     return data;
   } catch (error) {
+    // Fix (Issue #10500): Handle 429 rate limit — respect Retry-After header
+    if (error?.status === 429) {
+      const retryAfter = parseInt(error?.headers?.get?.("Retry-After") || "60", 10);
+      throw Object.assign(new Error("GitHub API rate limit exceeded"), {
+        status: 429,
+        retryAfter,
+      });
+    }
     if (url.startsWith("https://api.github.com") && (error?.status === 401 || error?.status === 403)) {
       const { data } = await fetchWithTimeout(
         buildDirectGitHubUrl(url),
@@ -92,7 +112,6 @@ const ContributorsInner = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [recentSearches, setRecentSearches] = useState([]);
   const fetchControllerRef = useRef(null);
   const isFetchingRef = useRef(false);
 
@@ -212,12 +231,27 @@ const ContributorsInner = () => {
       cacheContributors(enhanced);
     } catch (err) {
       if (err.name === "AbortError") return;
-      setError(
-        err?.name === "AbortError"
-          ? "GitHub took too long to respond. Please try again."
-          : "Unable to load contributors from GitHub right now. Please try again.",
-      );
-      setContributors([]);
+
+      // Fix (Issue #10500): On 429, show stale cached data if available
+      // instead of an empty list, and show a helpful rate-limit message.
+      if (err?.status === 429) {
+        const stale = getStaleCachedContributors();
+        if (stale && stale.length > 0) {
+          setContributors(stale);
+          setError(
+            `GitHub API rate limit reached. Showing cached data. ` +
+            `Retry after ${err.retryAfter ?? 60}s.`
+          );
+        } else {
+          setError(
+            "GitHub API rate limit reached. Please wait a minute and try again."
+          );
+          setContributors([]);
+        }
+      } else {
+        setError("Unable to load contributors from GitHub right now. Please try again.");
+        setContributors([]);
+      }
     } finally {
       setLoading(false);
       isFetchingRef.current = false;
@@ -227,12 +261,8 @@ const ContributorsInner = () => {
   useEffect(() => {
     fetchContributors();
   }, [fetchContributors]);
-useEffect(() => {
-  const saved =
-    JSON.parse(localStorage.getItem("contributorSearchHistory")) || [];
 
-  setRecentSearches(saved);
-}, []);
+
   // Filter contributors based on search term
   const filteredContributors = contributors.filter(
     (c) =>
@@ -268,7 +298,7 @@ useEffect(() => {
           <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-4">
             Contributors are unavailable
           </h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">{error}</p>
+          <p className="text-gray-600 dark:text-gray-200 mb-6">{error}</p>
           <button
             type="button"
             onClick={fetchContributors}
@@ -319,7 +349,7 @@ useEffect(() => {
         </motion.h2>
 
         {filteredContributors.length === 0 ? (
-          <div className="text-center text-gray-600 dark:text-gray-400 text-lg">
+          <div className="text-center text-gray-600 dark:text-gray-200 text-lg">
           <EmptyState
   title="No Contributors Found"
   description={
@@ -402,14 +432,14 @@ useEffect(() => {
                   <div className="flex flex-col items-center bg-white/60 dark:bg-gray-600/50 backdrop-blur-md p-2 rounded-lg shadow-sm">
                     <GitBranch className="text-black dark:text-white mb-1" />
                     <span className="font-semibold">{c.public_repos}</span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                    <span className="text-xs text-gray-500 dark:text-gray-200">
                       Repos
                     </span>
                   </div>
                   <div className="flex flex-col items-center bg-white/60 dark:bg-gray-600/50 backdrop-blur-md p-2 rounded-lg shadow-sm">
                     <Users className="text-black dark:text-white mb-1" />
                     <span className="font-semibold">{c.followers}</span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                    <span className="text-xs text-gray-500 dark:text-gray-200">
                       Followers
                     </span>
                   </div>
@@ -418,7 +448,7 @@ useEffect(() => {
                       🔥
                     </span>
                     <span className="font-semibold">{c.contributions}</span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                    <span className="text-xs text-gray-500 dark:text-gray-200">
                       Contribs
                     </span>
                   </div>
@@ -437,7 +467,7 @@ useEffect(() => {
                 </div>
 
                 {/* Extra Info */}
-                <div className="flex flex-col gap-1 text-xs text-gray-500 dark:text-gray-400 mb-4">
+                <div className="flex flex-col gap-1 text-xs text-gray-500 dark:text-gray-200 mb-4">
                   {c.company && (
                     <span className="flex items-center gap-1 justify-center">
                       <Building /> {c.company}

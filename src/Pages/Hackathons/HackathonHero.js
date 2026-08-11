@@ -1,13 +1,45 @@
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useInView } from "framer-motion";
 import { Award, Calendar, Code2, Sparkles, Users, X, Rocket } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import ModernSearchInput from "../../components/common/ModernSearchInput";
-import { useAuth } from "../../context/AuthContext";
+import { useRef, useState, useEffect } from "react";
+import ModernSearchInput from "components/common/ModernSearchInput";
+import { useAuth } from "context/AuthContext";
 import CountUpLib from "react-countup";
-import ErrorBoundary from "../../components/common/ErrorBoundary";
-import useReducedMotion from "../../hooks/useReducedMotion.js";
+import ErrorBoundary from "components/common/ErrorBoundary";
+import useReducedMotion from "hooks/useReducedMotion.js";
 
 const CountUp = CountUpLib.default || CountUpLib;
+
+const StatCounter = ({ stat, shouldAnimate, delay = 0 }) => {
+  const prefix = stat.prefix || "";
+  const suffix = stat.suffix || "";
+
+  if (!shouldAnimate) {
+    return (
+      <>
+        {prefix}0{suffix}
+      </>
+    );
+  }
+
+  return (
+    // Fix (Issue #10485): Add key prop to force CountUp to remount when
+    // shouldAnimate becomes true. Without this, CountUp renders once with
+    // shouldAnimate=false (static "0"), then when isStatsInView fires,
+    // React re-renders the parent but CountUp never restarts its animation
+    // because the component instance was already mounted — causing the 3rd
+    // and 4th counters (Projects Built, Prizes Awarded) to stay frozen at 0.
+    <CountUp
+      key={`${stat.label}-animated`}
+      start={0}
+      end={stat.value}
+      duration={2.5}
+      prefix={prefix}
+      suffix={suffix}
+      delay={delay}
+    />
+  );
+};
 // Tag component for selected tags in search bar
 const Tag = ({ tag, onRemove }) => (
   <motion.div
@@ -42,6 +74,14 @@ export default function HackathonHero({
   const navigate = useNavigate();
   const { user } = useAuth();
 
+  const statsRef = useRef(null);
+  const isStatsInView = useInView(statsRef, { once: true, margin: "-100px" });
+  const [hasMounted, setHasMounted] = useState(false);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
   return (
     <div className="relative overflow-hidden bg-linear-to-b from-slate-50 via-indigo-50/40 to-slate-50 dark:from-slate-950 dark:via-indigo-950/60 dark:to-slate-950 text-slate-900 dark:text-white py-16 sm:py-20 md:py-24 border-b border-slate-200 dark:border-indigo-900/40 transition-colors duration-300">
 
@@ -74,8 +114,7 @@ export default function HackathonHero({
       </div>
 
       {/* ======================= HERO SECTION ======================= */}
-      <div className="relative px-4 min-h-[75vh] flex flex-col items-center justify-center text-center z-10">
-
+      <div className="relative px-4 min-h-[55vh] flex flex-col items-center justify-start text-center z-10">
         {/* Premium badge */}
         <motion.div
           initial={{ opacity: 0, y: -16 }}
@@ -124,7 +163,7 @@ export default function HackathonHero({
           transition={{ delay: 0.35, duration: prefersReducedMotion ? 0 : 0.6 }}
          className="w-full max-w-[700px] mx-auto mt-8"
         >
-          <div className="rounded-2xl border border-white/60 dark:border-white/10 bg-white/60 dark:bg-white/5 px-2 py-2 shadow-lg dark:shadow-[0_8px_40px_rgba(99,102,241,0.15)] backdrop-blur-xl ring-1 ring-inset ring-slate-200/50 dark:ring-white/5">
+          <div className="rounded-2xl bg-white/60 dark:bg-white/5 p-1 backdrop-blur-xl">
             <ModernSearchInput
               searchInputRef={searchInputRef}
               value={searchQuery}
@@ -169,7 +208,7 @@ export default function HackathonHero({
                 {filteredCount}{" "}{filteredCount === 1 ? "hackathon" : "hackathons"} found
               </span>
             ) : (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="mt-4 flex flex-col items-center text-center p-6 bg-white/40 dark:bg-slate-900/40 rounded-2xl border border-indigo-100 dark:border-indigo-900/50 backdrop-blur-md w-full"
@@ -225,7 +264,7 @@ export default function HackathonHero({
       {/* STATS SECTION */}
       {searchQuery.trim() === "" && selectedTags.length === 0 && (
         <ErrorBoundary level="section" label="Hackathon Statistics">
-          <div className="relative max-w-6xl mx-auto px-4 sm:px-6 mt-14 sm:mt-20 mb-12 sm:mb-16 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div ref={statsRef} className="relative max-w-6xl mx-auto px-4 sm:px-6 mt-14 sm:mt-20 mb-12 sm:mb-16 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {[
               { label: "Hackathons Hosted", value: 120, suffix: "+", icon: Calendar, color: "from-blue-500 to-indigo-500" },
               { label: "Participants", value: 50, suffix: "k+", icon: Users, color: "from-violet-500 to-purple-500" },
@@ -262,12 +301,10 @@ export default function HackathonHero({
                 </motion.div>
 
                 <p className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
-                  <CountUp
-                    start={0}
-                    end={stat.value}
-                    duration={2.5}
-                    prefix={stat.prefix}
-                    suffix={stat.suffix}
+                  <StatCounter
+                    stat={stat}
+                    shouldAnimate={hasMounted && isStatsInView}
+                    delay={prefersReducedMotion ? 0 : 0.15 + idx * 0.12}
                   />
                 </p>
                 <p className="mt-1 text-sm font-medium text-slate-500 dark:text-slate-400">
@@ -281,4 +318,3 @@ export default function HackathonHero({
     </div>
   );
 }
-

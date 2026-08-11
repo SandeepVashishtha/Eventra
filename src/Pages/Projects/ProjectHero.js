@@ -1,10 +1,11 @@
-import { Github, Twitter, Linkedin, MessageCircle, Code, Laptop, Brain, Code2, Plus, ArrowRight } from "lucide-react";
+import { MessageCircle, Code, Laptop, Brain, Code2, Plus, ArrowRight } from "lucide-react";
+import { FaGithub as Github, FaTwitter as Twitter, FaLinkedin as Linkedin } from "react-icons/fa";
 import React from "react";
 import { motion } from "framer-motion";
-import useReducedMotion from "../../hooks/useReducedMotion.js";
+import useReducedMotion from "hooks/useReducedMotion.js";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
-import { darkTheme } from "../../components/styles/theme";
+import { useAuth } from "context/AuthContext";
+import { darkTheme } from "components/styles/theme";
 
 const iconList = [
   { icon: <Github />, color: "#333" },
@@ -30,7 +31,7 @@ export default function ProjectHero({
     <div
       className={`
         relative overflow-hidden
-        bg-linear-to-b from-blue-50 via-indigo-50/30 to-white 
+        bg-linear-to-b from-blue-50 via-indigo-50/30 to-white
         dark:from-slate-950 dark:via-slate-900 dark:to-black
         ${darkTheme.textPrimary}
         pt-16 sm:pt-18 lg:pt-20

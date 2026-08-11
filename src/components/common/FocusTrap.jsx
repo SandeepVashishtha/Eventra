@@ -1,5 +1,4 @@
-import React from 'react';
-import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { useFocusTrap } from 'hooks/useFocusTrap';
 
 /**
  * FocusTrap

@@ -32,14 +32,24 @@ import {
 } from "@heroicons/react/24/solid";
 import { API_ENDPOINTS, apiUtils } from "../../../config/api";
 import { useFormSubmit } from "../../../hooks/useFormSubmit";
-import { validateCoordinates, buildEventPayload } from "../../../utils/eventCreationUtils";
+import { buildEventPayload } from "../../../utils/eventCreationUtils";
 import { validateForm } from "../../../utils/eventFormValidation";
 import { safeJsonParse } from "../../../utils/safeJsonParse";
 
+
 const EventCreation = () => {
   const prefersReducedMotion = useReducedMotion();
+  const location = useLocation();
 
   const [currentStep, setCurrentStep] = useState(CREATION_STEPS.FORM);
+  const [formData, setFormData] = useState(initialFormData);
+  const [errors, setErrors] = useState({});
+  const [newTag, setNewTag] = useState("");
+  const [isDraftLoaded, setIsDraftLoaded] = useState(false);
+  const [showRestoreModal, setShowRestoreModal] = useState(false);
+  const [restoreDraftMessage, setRestoreDraftMessage] = useState(
+    "A previously saved event draft was found. Would you like to restore it?"
+  );
 
   const {
     handleSubmit: submitEventForm,
@@ -59,9 +69,12 @@ const EventCreation = () => {
     const response = await apiUtils.post(API_ENDPOINTS.EVENTS.CREATE, eventData);
     const result = response.data;
 
-    if (!(response.status === 200 && result.success)) {
+    // Backend returns 201 Created with EventResponse (id/title), not { success: true }.
+    const isSuccessStatus = response.status >= 200 && response.status < 300;
+    const hasEventData = Boolean(result && (result.id || result.title));
+    if (!(isSuccessStatus && hasEventData)) {
       const errorMessage =
-        result.message || result.error || `Server error: ${response.status}`;
+        result?.message || result?.error || `Server error: ${response.status}`;
       throw new Error(errorMessage);
     }
   });
@@ -77,17 +90,6 @@ const EventCreation = () => {
       });
     }
   }, [submitSuccess]);
-
-  const [formData, setFormData] = useState(initialFormData);
-  const [errors, setErrors] = useState({});
-  const [newTag, setNewTag] = useState("");
-  const [isDraftLoaded, setIsDraftLoaded] = useState(false);
-  const [showRestoreModal, setShowRestoreModal] = useState(false);
-  const [lastSavedAt, setLastSavedAt] = useState(null);
-  const [restoreDraftMessage, setRestoreDraftMessage] = useState(
-    "A previously saved event draft was found. Would you like to restore it?"
-  );
-  const location = useLocation();
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -406,7 +408,7 @@ const EventCreation = () => {
 
             <p
               className="
-          text-gray-600 dark:text-gray-400
+          text-gray-600 dark:text-gray-200
           mb-6
         "
             >
@@ -474,7 +476,7 @@ const EventCreation = () => {
             <h1 className="text-4xl sm:text-5xl font-extrabold text-indigo-800 dark:text-indigo-300 mb-4">
               Create Your Event
             </h1>
-            <p className="text-xs sm:text-base text-gray-600 dark:text-gray-400">
+            <p className="text-xs sm:text-base text-gray-600 dark:text-gray-200">
               Fill in the details below and bring your event to life!
             </p>
           </motion.div>
@@ -907,9 +909,9 @@ const EventCreation = () => {
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {formData.tags.map((tag, index) => (
+                  {formData.tags.map((tag) => (
                     <span
-                      key={index}
+                      key={tag}
                       className="inline-flex items-center gap-1 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full text-sm font-medium"
                     >
                       #{tag}
@@ -954,4 +956,3 @@ const EventCreation = () => {
 };
 
 export default EventCreation;
-

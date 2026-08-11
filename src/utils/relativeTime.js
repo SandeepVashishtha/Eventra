@@ -1,3 +1,5 @@
+import { getServerNow } from "./timeSync.js";
+
 const RELATIVE_TIME_FALLBACK = "—";
 
 export function getRelativeTime(dateInput) {
@@ -11,7 +13,7 @@ export function getRelativeTime(dateInput) {
   if (typeof dateInput === "string" && dateInput.trim() === "") {
     return RELATIVE_TIME_FALLBACK;
   }
-  const now = new Date();
+  const now = new Date(getServerNow());
   const date = new Date(dateInput);
 
   if (Number.isNaN(date.getTime())) return RELATIVE_TIME_FALLBACK;
@@ -46,7 +48,12 @@ export function getRelativeTime(dateInput) {
   if (diffDay < 30)
     return `In ${Math.floor(diffDay / 7)} week${Math.floor(diffDay / 7) !== 1 ? "s" : ""}`;
 
-  return null;
+  return new Date(dateInput).toLocaleDateString("en-US", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 export function getSmartDateLabel(dateInput, timeInput = "") {
@@ -73,12 +80,12 @@ export function isPast(dateInput) {
   if (!dateInput) return false;
   const parsed = new Date(dateInput);
   if (isNaN(parsed.getTime())) return false;
-  return parsed.getTime() < Date.now();
+  return parsed.getTime() < getServerNow();
 }
 
 export function isFuture(dateInput) {
   if (!dateInput) return false;
   const parsed = new Date(dateInput);
   if (isNaN(parsed.getTime())) return false;
-  return parsed.getTime() > Date.now();
+  return parsed.getTime() > getServerNow();
 }

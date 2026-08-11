@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { Clock } from "lucide-react";
-import { getServerTime } from "../../utils/timeSync";
-import { resolveEventInstant } from "../../utils/timezoneUtils";
+import { getServerTime } from "utils/timeSync";
+import { resolveEventInstant } from "utils/timezoneUtils";
 
 /**
  * Resolves the countdown deadline anchored to the event's own timezone so the

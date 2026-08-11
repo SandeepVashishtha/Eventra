@@ -38,6 +38,14 @@ export default function AppRoutes() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/dashboard/quests"
+          element={
+            <ProtectedRoute>
+              <UserAchievements />
+            </ProtectedRoute>
+          }
+        />
 
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

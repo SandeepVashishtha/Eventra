@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
-import EventRegistration from '../Pages/Events/EventRegistration';
-import { checkRegistrationConflict, suggestAlternativeEvents } from '../utils/conflictDetection';
+import EventRegistration from './EventRegistration';
+import { checkRegistrationConflict, suggestAlternativeEvents } from '../../utils/conflictDetection';
 
 /**
  * Integration Tests: Event Conflict Resolver with Registration Flow
@@ -50,11 +50,11 @@ describe('EventRegistration with Conflict Resolution - Integration', () => {
       const user = userEvent.setup();
       
       // Mock: User has no existing registrations
-      const mockContext = {
-        myEvents: [],
-        user: { id: 'user1', email: 'test@example.com' },
-        isAuthenticated: () => true,
-      };
+      // const mockContext = {
+      //   myEvents: [],
+      //   user: { id: 'user1', email: 'test@example.com' },
+      //   isAuthenticated: () => true,
+      // };
 
       // Mock API
       vi.mock('../config/api', () => ({

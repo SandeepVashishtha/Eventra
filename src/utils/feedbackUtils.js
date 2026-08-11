@@ -1,18 +1,18 @@
- 
+
 /**
  * Feedback Utilities
  * Handles localStorage-based feedback management for events
  */
 
-import { safeJsonParse } from './safeJsonParse';
-import { sanitizeHtml } from './sanitizeHtml';
-import { API_ENDPOINTS, apiUtils } from '../config/api';
+import { safeJsonParse } from "./safeJsonParse.js";
+import { sanitizeHtml } from "./sanitizeHtml.js";
+import { API_ENDPOINTS, apiUtils } from "../config/api.js";
 
 const FEEDBACK_STORAGE_KEY = 'eventra_feedback';
 
 export const fetchEventFeedback = async (eventId) => {
   const response = await apiUtils.get(API_ENDPOINTS.FEEDBACK.BY_EVENT(eventId));
-  return response.json();
+  return response.data;
 };
 
 export const submitEventFeedback = async ({ eventId, rating, comment, tags = [] }) => {
@@ -22,7 +22,7 @@ export const submitEventFeedback = async ({ eventId, rating, comment, tags = [] 
     comment,
     tags,
   });
-  return response.json();
+  return response.data;
 };
 
 /**
@@ -31,6 +31,7 @@ export const submitEventFeedback = async ({ eventId, rating, comment, tags = [] 
  * @returns {Array} Array of feedback objects
  */
 export const getEventFeedback = (eventId) => {
+  if (typeof window === "undefined") return [];
   try {
     const allFeedback = safeJsonParse(localStorage.getItem(FEEDBACK_STORAGE_KEY), {});
     const rawFeedback = allFeedback[eventId] || [];
@@ -38,8 +39,8 @@ export const getEventFeedback = (eventId) => {
       ...f,
       comment: f.comment ? sanitizeHtml(f.comment) : f.comment
     }));
-  } catch {
-    //console.error('Error retrieving feedback:', error);
+  } catch (error) {
+    console.warn("Error retrieving feedback:", error);
     return [];
   }
 };
@@ -51,6 +52,7 @@ export const getEventFeedback = (eventId) => {
  * @returns {boolean} Success status
  */
 export const saveFeedback = (eventId, feedback) => {
+  if (typeof window === "undefined") return false;
   try {
     const allFeedback = safeJsonParse(localStorage.getItem(FEEDBACK_STORAGE_KEY), {});
     const rawList = allFeedback[eventId] || [];
@@ -58,17 +60,19 @@ export const saveFeedback = (eventId, feedback) => {
     // Use a Map for O(1) userId lookups instead of O(N) findIndex
     const feedbackMap = new Map(rawList.map((f) => [f.userId, f]));
 
+    const userId = feedback.userId || crypto.randomUUID();
     const feedbackObject = {
       ...feedback,
+      userId,
       submittedAt: new Date().toISOString(),
     };
 
-    feedbackMap.set(feedback.userId, feedbackObject);
+    feedbackMap.set(userId, feedbackObject);
     allFeedback[eventId] = Array.from(feedbackMap.values());
     localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(allFeedback));
     return true;
-  } catch {
-    //console.error('Error saving feedback:', error);
+  } catch (error) {
+    console.warn("Error saving feedback:", error);
     return false;
   }
 };
@@ -81,14 +85,14 @@ export const saveFeedback = (eventId, feedback) => {
  */
 export const hasUserSubmittedFeedback = (eventId, userId = null) => {
   try {
-    const feedback = getEventFeedback(eventId);
     if (!userId) {
-      return feedback.length > 0;
+      return false;
     }
-    const userIdSet = new Set(feedback.map((f) => f.userId));
-    return userIdSet.has(userId);
-  } catch {
-    //console.error('Error checking feedback status:', error);
+    const feedback = getEventFeedback(eventId);
+    const userIdSet = new Set(feedback.map((f) => String(f.userId)));
+    return userIdSet.has(String(userId));
+  } catch (error) {
+    console.warn("Error checking feedback status:", error);
     return false;
   }
 };
@@ -105,8 +109,8 @@ export const getUserFeedback = (eventId, userId = null) => {
     if (!userId) return feedback[0] || null;
     const feedbackMap = new Map(feedback.map((f) => [f.userId, f]));
     return feedbackMap.get(userId) || null;
-  } catch {
-    //console.error('Error retrieving user feedback:', error);
+  } catch (error) {
+    console.warn("Error retrieving user feedback:", error);
     return null;
   }
 };
@@ -133,8 +137,8 @@ export const getAverageRating = (eventId) => {
       count: ratings.length,
       total,
     };
-  } catch {
-    //console.error('Error calculating average rating:', error);
+  } catch (error) {
+    console.warn("Error calculating average rating:", error);
     return { average: 0, count: 0, total: 0 };
   }
 };
@@ -166,8 +170,8 @@ export const getRatingBreakdown = (eventId) => {
     });
 
     return breakdown;
-  } catch {
-    //console.error('Error calculating rating breakdown:', error);
+  } catch (error) {
+    console.warn("Error calculating rating breakdown:", error);
     return { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
   }
 };
@@ -194,28 +198,23 @@ export const getTopFeedbackTags = (eventId, limit = 5) => {
  */
 export const getRecommendationStats = (eventId) => {
   try {
-    const feedback = getEventFeedback(eventId);
-    const { recommendCount, notRecommendCount, total } = feedback.reduce(
-      (acc, f) => {
-        if (f.recommend === true) acc.recommendCount++;
-        else if (f.recommend === false) acc.notRecommendCount++;
-        if (f.recommend !== undefined) acc.total++;
-        return acc;
-      },
-      { recommendCount: 0, notRecommendCount: 0, total: 0 }
-    );
+    const feedbackList = getEventFeedback(eventId);
 
-    const percentage = total > 0 ? Math.round((recommendCount / total) * 100) : 0;
+    if (!feedbackList || feedbackList.length === 0) {
+      return { recommendCount: 0, notRecommendCount: 0, percentage: 0 };
+    }
+
+    const recommendCount = feedbackList.filter((f) => Boolean(f.recommend)).length;
+    const total = feedbackList.length;
 
     return {
       recommendCount,
-      notRecommendCount,
-      total,
-      percentage,
+      notRecommendCount: total - recommendCount,
+      percentage: Math.round((recommendCount / total) * 100),
     };
-  } catch {
+  } catch (error) {
     //console.error('Error calculating recommendation stats:', error);
-    return { recommendCount: 0, notRecommendCount: 0, total: 0, percentage: 0 };
+    return { recommendCount: 0, notRecommendCount: 0, percentage: 0 };
   }
 };
 
@@ -226,20 +225,24 @@ export const getRecommendationStats = (eventId) => {
  */
 export const getTagStats = (eventId) => {
   try {
-    const feedback = getEventFeedback(eventId);
-    const tagCounts = {};
+    const feedbackList = getEventFeedback(eventId);
+    const stats = {};
 
-    feedback.forEach((f) => {
-      if (f.tags && Array.isArray(f.tags)) {
+    if (!feedbackList || !Array.isArray(feedbackList)) {
+      return stats;
+    }
+
+    feedbackList.forEach((f) => {
+      if (Array.isArray(f.tags)) {
         f.tags.forEach((tag) => {
-          tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+          stats[tag] = (stats[tag] || 0) + 1;
         });
       }
     });
 
-    return tagCounts;
-  } catch {
-    //console.error('Error calculating tag stats:', error);
+    return stats;
+  } catch (error) {
+    console.warn("Error calculating tag stats:", error);
     return {};
   }
 };
@@ -251,6 +254,7 @@ export const getTagStats = (eventId) => {
  * @returns {boolean} Success status
  */
 export const deleteFeedback = (eventId, userId = null) => {
+  if (typeof window === "undefined") return false;
   try {
     const allFeedback = safeJsonParse(localStorage.getItem(FEEDBACK_STORAGE_KEY), {});
     const eventFeedback = allFeedback[eventId] || [];
@@ -263,10 +267,28 @@ export const deleteFeedback = (eventId, userId = null) => {
 
     localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(allFeedback));
     return true;
-  } catch {
-    //console.error('Error deleting feedback:', error);
+  } catch (error) {
+    console.warn("Error deleting feedback:", error);
     return false;
   }
+};
+
+/**
+ * Helper to sanitize CSV cells against Formula Injection and escape special characters
+ * @param {any} value - Cell value to sanitize
+ * @returns {string} Sanitized and quote-wrapped CSV cell string
+ */
+export const sanitizeCSVCell = (value) => {
+  if (value === null || value === undefined) return '""';
+  let stringValue = String(value);
+
+  // Prevent CSV Formula Injection (Excel / Google Sheets trigger characters)
+  if (/^[=+\-@\t\r]/.test(stringValue)) {
+    stringValue = `'${stringValue}`;
+  }
+
+  // Escape internal double quotes and wrap value in double quotes
+  return `"${stringValue.replace(/"/g, '""')}"`;
 };
 
 /**
@@ -284,17 +306,17 @@ export const exportFeedbackAsCSV = (eventId) => {
 
     const headers = ['Rating', 'Comment', 'Tags', 'Recommend', 'Submitted At'];
     const rows = feedback.map((f) => [
-      f.rating || '',
-      `"${(f.comment || '').replace(/"/g, '""')}"`,
-      (f.tags || []).join(';'),
-      f.recommend !== undefined ? (f.recommend ? 'Yes' : 'No') : '',
-      new Date(f.submittedAt).toLocaleString(),
+      sanitizeCSVCell(f.rating),
+      sanitizeCSVCell(f.comment || ''),
+      sanitizeCSVCell(Array.isArray(f.tags) ? f.tags.join(';') : ''),
+      sanitizeCSVCell(f.recommend !== undefined ? (f.recommend ? 'Yes' : 'No') : ''),
+      sanitizeCSVCell(f.submittedAt ? new Date(f.submittedAt).toLocaleString() : ''),
     ]);
 
-    const csv = [headers, ...rows].map((row) => row.join(',')).join('\n');
+    const csv = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
     return csv;
-  } catch {
-    //console.error('Error exporting feedback:', error);
+  } catch (error) {
+    console.warn("Error exporting feedback:", error);
     return '';
   }
 };
@@ -303,11 +325,12 @@ export const exportFeedbackAsCSV = (eventId) => {
  * Clear all feedback (for testing)
  */
 export const clearAllFeedback = () => {
+  if (typeof window === "undefined") return false;
   try {
     localStorage.removeItem(FEEDBACK_STORAGE_KEY);
     return true;
-  } catch {
-    //console.error('Error clearing feedback:', error);
+  } catch (error) {
+    console.warn("Error clearing feedback:", error);
     return false;
   }
 };
