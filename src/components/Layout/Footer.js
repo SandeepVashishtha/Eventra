@@ -205,7 +205,7 @@ const Newsletter = () => {
           {t("footer.newsletter.heading")}
         </h4>
 
-        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+        <p className="mt-2 text-sm text-gray-500 dark:text-gray-200 leading-relaxed">
           {t("footer.newsletter.description")}
         </p>
       </div>
@@ -328,7 +328,7 @@ const Footer = () => {
                 Open Source
               </span>
 
-              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 leading-relaxed max-w-xs">
+              <p className="mt-2 text-sm text-gray-500 dark:text-gray-200 leading-relaxed max-w-xs">
                 {t("footer.tagline")}
               </p>
             </div>
@@ -364,7 +364,7 @@ const Footer = () => {
                   <li key={link.nameKey || link.href}>
                     <Link
                       to={link.href}
-                      className="group relative inline-flex items-center gap-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400 hover:!text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded after:absolute after:left-6 after:-bottom-0.5 after:h-px after:w-0 after:bg-indigo-500 after:transition-all after:duration-300 group-hover:after:w-[calc(100%-1.5rem)]"
+                      className="group relative inline-flex items-center gap-2 text-xs sm:text-sm text-gray-500 dark:text-gray-200 hover:!text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded after:absolute after:left-6 after:-bottom-0.5 after:h-px after:w-0 after:bg-indigo-500 after:transition-all after:duration-300 group-hover:after:w-[calc(100%-1.5rem)]"
                     >
                       <span className="text-gray-400 dark:text-gray-500 group-hover:!text-indigo-500 dark:group-hover:text-indigo-400 transition-colors duration-200 shrink-0">
                         {link.icon}
@@ -380,10 +380,10 @@ const Footer = () => {
 
         {/* ── Bottom bar ── */}
         <div className="py-5 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-xs text-gray-400 dark:text-gray-500 transition-colors duration-200 hover:text-gray-600 dark:hover:text-gray-300">
+          <p className="text-xs text-gray-400 dark:text-gray-500 transition-colors duration-200 hover:text-gray-600 dark:hover:text-white">
             © {new Date().getFullYear()} Eventra. <span>{t("footer.rights")}</span>
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+          <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-gray-500 dark:text-gray-200">
             <span className="font-medium">10K+ Users</span>
 
             <span className="text-gray-300 dark:text-gray-700">•</span>

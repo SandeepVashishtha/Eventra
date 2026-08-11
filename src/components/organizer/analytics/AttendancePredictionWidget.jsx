@@ -26,7 +26,7 @@ export default function AttendancePredictionWidget() {
             <h3 className="text-sm font-bold text-gray-900 dark:text-white">
               Predictive ML Turnout Engine
             </h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-gray-500 dark:text-gray-200">
               No-Show Risk & Attendee Attendance Analytics
             </p>
           </div>

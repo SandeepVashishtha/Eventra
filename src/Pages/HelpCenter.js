@@ -260,7 +260,7 @@ const HelpCenter = () => {
               <h3 className="font-semibold text-lg mb-2 group-hover:text-indigo-500 transition-colors">
                 {item.title}
               </h3>
-              <p className="text-gray-500 dark:text-gray-400 text-sm">
+              <p className="text-gray-500 dark:text-gray-200 text-sm">
                 {t("helpCenter.communityVisitLink")}
               </p>
             </a>
@@ -381,7 +381,7 @@ const HelpCenter = () => {
                       >
                         {guide.difficulty}
                       </span>
-                      <span className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+                      <span className="flex items-center text-xs text-gray-500 dark:text-gray-200">
                         <Clock className="w-3 h-3 mr-1" />
                         {guide.time}
                       </span>
@@ -550,7 +550,7 @@ const HelpCenter = () => {
               >
                 <button
                   onClick={() => toggleFAQ(faq.id)}
-                  className="w-full p-6 text-left rounded-2xl transition-colors duration-200 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  className="w-full p-6 text-left rounded-2xl transition-colors duration-200 hover:bg-gray-50 dark:hover:bg-gray-600"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
@@ -570,9 +570,9 @@ const HelpCenter = () => {
                     </div>
                     <div className="flex-shrink-0 ml-4">
                       {expandedFAQ === faq.id ? (
-                        <ChevronUp className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                        <ChevronUp className="w-5 h-5 text-gray-500 dark:text-gray-200" />
                       ) : (
-                        <ChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                        <ChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-200" />
                       )}
                     </div>
                   </div>

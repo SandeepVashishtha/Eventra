@@ -135,7 +135,7 @@ export default function PairCodeEditor({
 
         {/* Controls */}
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 mr-2">
+          <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-200 mr-2">
             <Users className="w-3.5 h-3.5 text-indigo-500" />
             <span>{activePeers.length + 1} Editors online</span>
           </div>
@@ -154,7 +154,7 @@ export default function PairCodeEditor({
             type="button"
             onClick={handleCopy}
             title="Copy Code"
-            className="p-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="p-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
           >
             {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
           </button>
@@ -163,7 +163,7 @@ export default function PairCodeEditor({
             type="button"
             onClick={handleDownload}
             title="Export Source File"
-            className="p-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="p-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
           >
             <Download className="w-4 h-4" />
           </button>
