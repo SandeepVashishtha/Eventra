@@ -114,6 +114,14 @@ public class JwtTokenProvider {
         return role == null ? null : String.valueOf(role);
     }
 
+    public Claims getClaimsFromToken(String token) {
+        return Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+    }
+
     public Date getExpirationDateFromToken(String token) {
         return parseClaims(token).getExpiration();
     }
