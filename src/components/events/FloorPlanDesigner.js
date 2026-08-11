@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Layout, Save, RotateCcw, Plus, Minus, Move, AlertTriangle, Undo2, Redo2, Users } from "lucide-react";
 import { LiveAudienceContext } from "context/RealTimeContext";
 import { toast } from "react-toastify";
-import ConfirmationModal from "../../common/ConfirmationModal";
+import ConfirmationModal from "../common/ConfirmationModal";
 import ElementPalette from "./FloorPlan/ElementPalette";
 import PropertiesPanel from "./FloorPlan/PropertiesPanel";
 import { PRESETS } from "constants/floorPlanPresets";
