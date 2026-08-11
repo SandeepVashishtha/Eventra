@@ -15,6 +15,7 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
@@ -129,6 +130,15 @@ public class GlobalExceptionHandler {
             AccessDeniedException ex,
             HttpServletRequest request) {
         return buildError(HttpStatus.FORBIDDEN, "Forbidden", "You do not have permission to access this resource", request);
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleMaxUploadSizeExceeded(
+            MaxUploadSizeExceededException ex,
+            HttpServletRequest request) {
+        logger.warn("File upload size exceeded: {}", ex.getMessage());
+        return buildError(HttpStatus.PAYLOAD_TOO_LARGE, "Payload Too Large",
+                "Uploaded file size exceeds the maximum permitted limit. Please upload a smaller file.", request);
     }
 
     @ExceptionHandler(Exception.class)

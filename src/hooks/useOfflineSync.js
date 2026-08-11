@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @fileoverview useOfflineSync - Offline queue sync hook with cross-tab locking
  * @module hooks/useOfflineSync
  */

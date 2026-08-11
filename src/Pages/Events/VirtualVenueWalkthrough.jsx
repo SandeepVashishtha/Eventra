@@ -7,6 +7,7 @@ import useReducedMotion from "hooks/useReducedMotion";
 import VirtualBoothModal from "components/events/VirtualBoothModal";
 import { toast } from "react-toastify";
 import { safeJsonParse } from "utils/safeJsonParse";
+import { webglPool } from "./utils/webglContextPool";
 
 // Default premium developer sponsor booths (fallback if none loaded from designer)
 const DEFAULT_SPONSORS = [
@@ -165,6 +166,10 @@ const VirtualVenueWalkthrough = () => {
     }
 
     setSponsorBooths(baseSponsors);
+
+    return () => {
+      webglPool.releaseContext();
+    };
   }, []);
 
   const handleMouseMove = (e) => {

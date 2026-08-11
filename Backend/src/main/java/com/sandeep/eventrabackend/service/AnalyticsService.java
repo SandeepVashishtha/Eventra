@@ -1,9 +1,11 @@
 package com.sandeep.eventrabackend.service;
 
 import com.sandeep.eventrabackend.dto.DashboardStatsDTO;
+import com.sandeep.eventrabackend.dto.CategoryBreakdownDTO;
 import com.sandeep.eventrabackend.dto.FeedbackAnalyticsDTO;
 import com.sandeep.eventrabackend.dto.OrganizerInsightDTO;
 import com.sandeep.eventrabackend.dto.RegistrationTrendDTO;
+import com.sandeep.eventrabackend.dto.AnalyticsSummaryDTO;
 import com.sandeep.eventrabackend.model.Event;
 import com.sandeep.eventrabackend.model.Role;
 import com.sandeep.eventrabackend.model.User;
@@ -20,6 +22,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,10 +35,47 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AnalyticsService {
 
+    private static final String[] BREAKDOWN_COLORS = {
+            "#6366f1", "#ec4899", "#10b981", "#f59e0b", "#06b6d4"
+    };
+
     private final EventAnalyticsRepository eventRepo;
     private final RegistrationAnalyticsRepository regRepo;
     private final FeedbackAnalyticsRepository feedbackRepo;
     private final UserRepository userRepository;
+
+    // ── 0. Summary (admin dashboard) ────────────────────────────────────────
+    public AnalyticsSummaryDTO getSummary() {
+        List<Object[]> rows = eventRepo.findMostPopularEvents(
+                PageRequest.of(0, BREAKDOWN_COLORS.length));
+
+        List<CategoryBreakdownDTO> breakdown = new ArrayList<>(rows.size());
+        for (int i = 0; i < rows.size(); i++) {
+            Object[] row = rows.get(i);
+            breakdown.add(CategoryBreakdownDTO.builder()
+                    .name(row[1].toString())
+                    .value(((Number) row[2]).longValue())
+                    .color(BREAKDOWN_COLORS[i % BREAKDOWN_COLORS.length])
+                    .build());
+        }
+
+        return AnalyticsSummaryDTO.builder()
+                .stats(getDashboardStats())
+                .categoryBreakdown(breakdown)
+                .hoursActive(computeHoursActive())
+                .securityHealth(null)
+                .activeAlerts(0)
+                .build();
+    }
+
+    private String computeHoursActive() {
+        LocalDateTime first = regRepo.findEarliestRegistration();
+        if (first == null) {
+            return "0h 0m";
+        }
+        long minutes = Duration.between(first, LocalDateTime.now()).toMinutes();
+        return (minutes / 60) + "h " + (minutes % 60) + "m";
+    }
 
     // ── 1. Dashboard ──────────────────────────────────────────────────────────
     public DashboardStatsDTO getDashboardStats() {

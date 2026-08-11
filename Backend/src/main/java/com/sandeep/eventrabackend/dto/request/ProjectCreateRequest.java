@@ -2,6 +2,7 @@ package com.sandeep.eventrabackend.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -26,9 +27,19 @@ public class ProjectCreateRequest {
     @Schema(description = "Project category", example = "Web Development")
     private String category;
 
+    @Pattern(
+            regexp = "^(https?://).+",
+            flags = Pattern.Flag.CASE_INSENSITIVE,
+            message = "thumbnailUrl must be an http(s) URL"
+    )
     @Schema(description = "URL to the project's thumbnail image", example = "https://example.com/thumb.png")
     private String thumbnailUrl;
 
+    @Pattern(
+            regexp = "^(https?://).+",
+            flags = Pattern.Flag.CASE_INSENSITIVE,
+            message = "githubUrl must be an http(s) URL"
+    )
     @Schema(description = "URL to the project's GitHub repository", example = "https://github.com/user/repo")
     private String githubUrl;
 }
