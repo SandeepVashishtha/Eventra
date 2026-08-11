@@ -381,18 +381,21 @@ public class EventService {
         }
 
         private int calculateCurrentStreak(List<EventRegistration> registrations) {
+                LocalDate today = LocalDate.now();
                 LinkedHashSet<LocalDate> dates = registrations.stream()
                                 .filter(registration -> "CONFIRMED".equals(registration.getStatus()))
                                 .map(EventRegistration::getEvent)
                                 .filter(event -> event != null && event.getEventDate() != null)
                                 .map(event -> event.getEventDate().toLocalDate())
+                                .filter(date -> !date.isAfter(today))
                                 .sorted(java.util.Comparator.reverseOrder())
                                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
                 int streak = 0;
-                LocalDate expected = null;
+                // A current streak may end today or yesterday.
+                LocalDate expected = dates.contains(today) ? today : today.minusDays(1);
                 for (LocalDate date : dates) {
-                        if (expected == null || date.equals(expected)) {
+                        if (date.equals(expected)) {
                                 streak++;
                                 expected = date.minusDays(1);
                         } else if (date.isBefore(expected)) {
