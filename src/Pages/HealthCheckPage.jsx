@@ -13,8 +13,9 @@
 
 import { useEffect } from "react";
 
-const APP_VERSION = import.meta.env.VITE_APP_VERSION || import.meta.env.REACT_APP_VERSION || "1.0.0";
-const BUILD_TIME = import.meta.env.VITE_APP_BUILD_TIME || import.meta.env.REACT_APP_BUILD_TIME || new Date().toISOString();
+const env = typeof import.meta !== "undefined" ? import.meta.env || {} : {};
+const APP_VERSION = env.VITE_APP_VERSION || env.REACT_APP_VERSION || "1.0.0";
+const BUILD_TIME = env.VITE_APP_BUILD_TIME || env.REACT_APP_BUILD_TIME || new Date().toISOString();
 
 const HealthCheckPage = () => {
   // Update the document title so monitor screenshots are unambiguous
