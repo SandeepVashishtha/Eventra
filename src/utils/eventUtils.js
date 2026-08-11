@@ -1,3 +1,8 @@
+/**
+ * Event Status Utility Module
+ * Handles status normalization, full-day date boundary calculations, and registration guards.
+ */
+
 const mapStatusKey = (status = "") => {
   if (!status || typeof status !== "string") return "";
 
@@ -13,7 +18,6 @@ const mapStatusKey = (status = "") => {
     done: "past",
     ended: "ended",
     "event ended": "ended",
-    "event ended ": "ended",
   };
 
   return explicitStatusMap[normalized] ?? normalized;
@@ -32,7 +36,9 @@ const asEndOfDay = (date) => {
   return clone;
 };
 
-export const computeDateStatus = (event) => {
+export const computeDateStatus = (event = {}) => {
+  if (!event) return "upcoming";
+
   const startDate = parseEventDate(event.startDate || event.date);
   const endDate = asEndOfDay(parseEventDate(event.endDate || event.date));
   const now = new Date();
@@ -45,6 +51,7 @@ export const computeDateStatus = (event) => {
 
 export const getEventStatus = (event) => {
   if (!event) return "upcoming";
+
   const explicitStatus = mapStatusKey(event.status);
   const dateStatus = computeDateStatus(event);
 
@@ -58,6 +65,8 @@ export const getEventStatus = (event) => {
 };
 
 export const isEventRegistrationClosed = (eventOrStatus) => {
+  if (!eventOrStatus) return true;
+
   const status =
     typeof eventOrStatus === "string"
       ? mapStatusKey(eventOrStatus)
@@ -66,7 +75,11 @@ export const isEventRegistrationClosed = (eventOrStatus) => {
   return status === "past" || status === "ended";
 };
 
-export const normalizeEvent = (event) => ({
-  ...event,
-  status: getEventStatus(event),
-});
+export const normalizeEvent = (event) => {
+  if (!event) return null;
+
+  return {
+    ...event,
+    status: getEventStatus(event),
+  };
+};
