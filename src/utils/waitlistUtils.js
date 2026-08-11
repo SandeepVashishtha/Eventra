@@ -405,7 +405,11 @@ export const joinWaitlist = async (eventId, user, registrationForm = {}) => {
   } catch (error) {
     const status = error?.status || error?.response?.status;
     if (status === 409) {
-      throw new Error("You are already on the waitlist for this event.");
+      const serverMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Unable to join waitlist due to a conflict.";
+      throw new Error(serverMessage);
     }
     if (error.isNetworkError || error.isTimeout) {
       // Fall through to offline fallback
