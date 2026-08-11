@@ -288,13 +288,18 @@ export const getMyWaitlistEntry = async (eventId) => {
     : null;
 };
 
+const parseJoinedAtTime = (joinedAt) => {
+  const time = new Date(joinedAt).getTime();
+  return Number.isFinite(time) ? time : Infinity;
+};
+
 // Get waitlist entries for a specific event with 'waiting' status
 export const getEventWaitlist = async (eventId, userId) => {
   const id = parseEventId(eventId);
   const records = await getGlobalWaitlist(userId);
   return records
     .filter((r) => r.eventId === id && r.status === "waiting")
-    .sort((a, b) => (new Date(a.joinedAt).getTime() || Infinity) - (new Date(b.joinedAt).getTime() || Infinity));
+    .sort((a, b) => parseJoinedAtTime(a.joinedAt) - parseJoinedAtTime(b.joinedAt));
 };
 
 // Calculate queue position (1-indexed) for a user on a specific event
