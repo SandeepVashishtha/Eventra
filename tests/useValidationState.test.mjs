@@ -1,242 +1,218 @@
 /**
  * Tests for src/hooks/useValidationState.js
  *
- * Verifies the validation state management hook contract.
+ * Verifies the validation state management hook contract using functional behavioral testing.
  */
 
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import path from 'path';
+import { renderHook } from '@testing-library/react';
+import useValidationStateDefault, {
+  useValidationState,
+} from '../src/hooks/useValidationState.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-const src = readFileSync(
-  path.resolve(__dirname, '../src/hooks/useValidationState.js'),
-  'utf8',
-);
-
-describe('useValidationState — source contract', () => {
-  it('exports useValidationState as named export', () => {
+describe('useValidationState — exports contract', () => {
+  it('exports useValidationState as named and default exports', () => {
     assert.ok(
-      src.includes('export const useValidationState'),
-      'Must export useValidationState as named export',
+      typeof useValidationState === 'function',
+      'Must export useValidationState as named function',
     );
-  });
-
-  it('exports useValidationState as default export', () => {
     assert.ok(
-      src.includes('export default useValidationState'),
+      typeof useValidationStateDefault === 'function',
       'Must export useValidationState as default export',
     );
-  });
-
-  it('uses useCallback for memoized functions', () => {
-    assert.ok(
-      src.includes('useCallback'),
-      'Must use useCallback for memoized functions',
+    assert.strictEqual(
+      useValidationState,
+      useValidationStateDefault,
+      'Named and default exports must be identical',
     );
   });
 });
 
-describe('useValidationState — parameters', () => {
-  it('accepts fieldName as first parameter', () => {
-    assert.ok(
-      src.includes('fieldName'),
-      'Must accept fieldName as first parameter',
-    );
+describe('useValidationState — parameters & default values', () => {
+  it('handles fieldName as first parameter and applies default arguments when omitted', () => {
+    const { result } = renderHook(() => useValidationState('username'));
+
+    assert.strictEqual(result.current.validationState, 'idle');
+    assert.strictEqual(result.current.error, null);
+    assert.strictEqual(result.current.touched, false);
   });
 
-  it('accepts validationState as second parameter', () => {
-    assert.ok(
-      src.includes('validationState = "idle"'),
-      'Must accept validationState as second parameter with default idle',
+  it('accepts custom parameter values for fieldName, validationState, error, and touched', () => {
+    const { result } = renderHook(() =>
+      useValidationState('email', 'error', 'Invalid email address', true),
     );
+
+    assert.strictEqual(result.current.validationState, 'error');
+    assert.strictEqual(result.current.error, 'Invalid email address');
+    assert.strictEqual(result.current.touched, true);
   });
 
-  it('accepts error as third parameter', () => {
-    assert.ok(
-      src.includes('error = null'),
-      'Must accept error as third parameter with default null',
+  it('handles edge cases: undefined options or empty fieldName', () => {
+    const { result } = renderHook(() =>
+      useValidationState('', undefined, undefined, undefined),
     );
-  });
 
-  it('accepts touched as fourth parameter', () => {
-    assert.ok(
-      src.includes('touched = false'),
-      'Must accept touched as fourth parameter with default false',
+    assert.strictEqual(result.current.validationState, 'idle');
+    assert.strictEqual(result.current.error, null);
+    assert.strictEqual(result.current.touched, false);
+  });
+});
+
+describe('useValidationState — return contract shape', () => {
+  it('returns all expected properties and helper methods', () => {
+    const { result } = renderHook(() => useValidationState('password'));
+
+    const keys = [
+      'statusIndicator',
+      'statusMessage',
+      'shouldShowError',
+      'isValidating',
+      'isValid',
+      'fieldClassName',
+      'ariaAttributes',
+      'validationState',
+      'touched',
+      'error',
+    ];
+
+    for (const key of keys) {
+      assert.ok(
+        key in result.current,
+        `Returned object must contain property "${key}"`,
+      );
+    }
+
+    assert.strictEqual(
+      typeof result.current.fieldClassName,
+      'function',
+      'fieldClassName must be a function',
     );
   });
 });
 
-describe('useValidationState — return contract', () => {
-  it('returns statusIndicator', () => {
+describe('useValidationState — status indicators and messages', () => {
+  it('returns idle indicator and message for default/idle state', () => {
+    const { result } = renderHook(() => useValidationState('username', 'idle'));
+
+    assert.ok(result.current.statusIndicator, 'Should have an idle status indicator');
+    assert.strictEqual(result.current.isValidating, false);
+  });
+
+  it('returns validating indicator, isValidating flag, and message when validating', () => {
+    const { result } = renderHook(() =>
+      useValidationState('username', 'validating'),
+    );
+
+    assert.strictEqual(result.current.isValidating, true);
     assert.ok(
-      src.includes('statusIndicator'),
-      'Must return statusIndicator',
+      result.current.statusMessage?.includes('is being validated'),
+      'Status message must state field is being validated',
     );
   });
 
-  it('returns statusMessage', () => {
+  it('returns success indicator, isValid flag, and message when success', () => {
+    const { result } = renderHook(() =>
+      useValidationState('username', 'success'),
+    );
+
+    assert.strictEqual(result.current.isValid, true);
     assert.ok(
-      src.includes('statusMessage'),
-      'Must return statusMessage',
+      result.current.statusMessage?.includes('is valid'),
+      'Status message must state field is valid',
     );
   });
 
-  it('returns shouldShowError', () => {
-    assert.ok(
-      src.includes('shouldShowError'),
-      'Must return shouldShowError',
+  it('returns error indicator, shouldShowError flag, and message when error occurs', () => {
+    const { result } = renderHook(() =>
+      useValidationState('username', 'error', 'Username taken', true),
     );
-  });
 
-  it('returns isValidating', () => {
+    assert.strictEqual(result.current.isValid, false);
+    assert.strictEqual(result.current.shouldShowError, true);
     assert.ok(
-      src.includes('isValidating'),
-      'Must return isValidating',
-    );
-  });
-
-  it('returns isValid', () => {
-    assert.ok(
-      src.includes('isValid'),
-      'Must return isValid',
-    );
-  });
-
-  it('returns fieldClassName function', () => {
-    assert.ok(
-      src.includes('fieldClassName'),
-      'Must return fieldClassName function',
-    );
-  });
-
-  it('returns ariaAttributes', () => {
-    assert.ok(
-      src.includes('ariaAttributes'),
-      'Must return ariaAttributes',
-    );
-  });
-
-  it('returns validationState', () => {
-    assert.ok(
-      src.includes('validationState'),
-      'Must return validationState',
-    );
-  });
-
-  it('returns touched', () => {
-    assert.ok(
-      src.includes('touched'),
-      'Must return touched',
-    );
-  });
-
-  it('returns error', () => {
-    assert.ok(
-      src.includes('error'),
-      'Must return error',
-    );
-  });
-});
-
-describe('useValidationState — status indicators', () => {
-  it('returns validating indicator when validating', () => {
-    assert.ok(
-      src.includes('case "validating"'),
-      'Must return validating indicator when validating',
-    );
-  });
-
-  it('returns success indicator when success', () => {
-    assert.ok(
-      src.includes('case "success"'),
-      'Must return success indicator when success',
-    );
-  });
-
-  it('returns error indicator when error', () => {
-    assert.ok(
-      src.includes('case "error"'),
-      'Must return error indicator when error',
-    );
-  });
-
-  it('returns idle indicator when idle', () => {
-    assert.ok(
-      src.includes('default:'),
-      'Must return idle indicator when idle',
-    );
-  });
-});
-
-describe('useValidationState — status messages', () => {
-  it('returns validating message when validating', () => {
-    assert.ok(
-      src.includes('is being validated'),
-      'Must return validating message when validating',
-    );
-  });
-
-  it('returns valid message when success', () => {
-    assert.ok(
-      src.includes('is valid'),
-      'Must return valid message when success',
-    );
-  });
-
-  it('returns error message when error', () => {
-    assert.ok(
-      src.includes('has an error'),
-      'Must return error message when error',
+      result.current.statusMessage?.includes('has an error'),
+      'Status message must state field has an error',
     );
   });
 });
 
 describe('useValidationState — field class names', () => {
-  it('applies green border for success state', () => {
+  it('applies blue border class for validating state', () => {
+    const { result } = renderHook(() =>
+      useValidationState('field', 'validating'),
+    );
+
+    const classes = result.current.fieldClassName();
     assert.ok(
-      src.includes('border-green-500'),
-      'Must apply green border for success state',
+      classes.includes('border-blue-500'),
+      'Class list must include border-blue-500 when validating',
     );
   });
 
-  it('applies red border for error state', () => {
+  it('applies green border class for success state', () => {
+    const { result } = renderHook(() =>
+      useValidationState('field', 'success'),
+    );
+
+    const classes = result.current.fieldClassName();
     assert.ok(
-      src.includes('border-red-500'),
-      'Must apply red border for error state',
+      classes.includes('border-green-500'),
+      'Class list must include border-green-500 on success',
     );
   });
 
-  it('applies blue border for validating state', () => {
+  it('applies red border class for error state', () => {
+    const { result } = renderHook(() =>
+      useValidationState('field', 'error', 'Required', true),
+    );
+
+    const classes = result.current.fieldClassName();
     assert.ok(
-      src.includes('border-blue-500'),
-      'Must apply blue border for validating state',
+      classes.includes('border-red-500'),
+      'Class list must include border-red-500 on error',
     );
   });
 });
 
 describe('useValidationState — ARIA attributes', () => {
-  it('sets aria-invalid when error exists', () => {
-    assert.ok(
-      src.includes('aria-invalid'),
-      'Must set aria-invalid when error exists',
+  it('sets aria-busy when field is validating', () => {
+    const { result } = renderHook(() =>
+      useValidationState('field', 'validating'),
     );
+
+    assert.strictEqual(result.current.ariaAttributes['aria-busy'], true);
   });
 
-  it('sets aria-describedby for error message', () => {
+  it('sets aria-invalid and aria-describedby when error exists and field is touched', () => {
+    const { result } = renderHook(() =>
+      useValidationState('field', 'error', 'Required field', true),
+    );
+
+    assert.strictEqual(result.current.ariaAttributes['aria-invalid'], true);
     assert.ok(
-      src.includes('aria-describedby'),
-      'Must set aria-describedby for error message',
+      'aria-describedby' in result.current.ariaAttributes,
+      'Must set aria-describedby for error message target',
     );
   });
+});
 
-  it('sets aria-busy when validating', () => {
-    assert.ok(
-      src.includes('aria-busy'),
-      'Must set aria-busy when validating',
+describe('useValidationState — memoization & reference stability', () => {
+  it('maintains function reference (useCallback) for fieldClassName across re-renders when dependencies are unchanged', () => {
+    const { result, rerender } = renderHook(
+      ({ name, state }) => useValidationState(name, state),
+      { initialProps: { name: 'email', state: 'idle' } },
+    );
+
+    const initialFieldClassName = result.current.fieldClassName;
+
+    // Re-render with identical props
+    rerender({ name: 'email', state: 'idle' });
+
+    assert.strictEqual(
+      result.current.fieldClassName,
+      initialFieldClassName,
+      'fieldClassName reference should be preserved via useCallback across re-renders with unchanged dependencies',
     );
   });
 });
