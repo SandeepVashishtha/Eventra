@@ -75,6 +75,18 @@ const Dropdown = ({
       event.preventDefault();
       setOpen(false);
     }
+
+    if (event.key === "Home") {
+      event.preventDefault();
+      setOpen(true);
+      setActiveIndex(0);
+    }
+
+    if (event.key === "End") {
+      event.preventDefault();
+      setOpen(true);
+      setActiveIndex(allOptions.length - 1);
+    }
   };
 
   const handleListboxKeyDown = (event) => {
@@ -98,6 +110,16 @@ const Dropdown = ({
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       handleSelect(allOptions[currentActiveIndex]);
+    }
+
+    if (event.key === "Home") {
+      event.preventDefault();
+      setActiveIndex(0);
+    }
+
+    if (event.key === "End") {
+      event.preventDefault();
+      setActiveIndex(allOptions.length - 1);
     }
   };
 
@@ -166,7 +188,7 @@ const Dropdown = ({
                 aria-selected={value === opt || (!value && opt === placeholder)}
                 onClick={() => handleSelect(opt)}
                 onMouseEnter={() => setActiveIndex(index)}
-                className={`px-4 py-2 text-sm cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-100 ${
+                className={`px-4 py-2 text-sm cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-100 ${
                   index === currentActiveIndex ? "bg-indigo-50 dark:bg-gray-700" : ""
                 } ${
                   value === opt || (!value && opt === placeholder)

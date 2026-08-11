@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+ 
 import { lazy } from "react";
 
 const RELOAD_KEY = "eventra_chunk_reload_attempts";
